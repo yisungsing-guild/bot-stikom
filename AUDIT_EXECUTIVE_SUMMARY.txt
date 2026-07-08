@@ -1,0 +1,161 @@
+
+## 🔍 AUDIT COMPLETION: 8-QUERY COST PARSER INVESTIGATION
+
+**Status**: ✅ **ROOT CAUSE IDENTIFIED AND DOCUMENTED**
+
+---
+
+## 📊 Finding Summary
+
+**Problem**: All 8 cost queries return incomplete fee information (discount-only, missing base fees)
+
+**Root Cause**: Backup PDF chunks in `data/rag_index.json` lack required entity metadata
+
+**Impact**: 100% fallback rate across all queries due to systematic data issue (not code issue)
+
+---
+
+## 🎯 What Happens in Parse Flow
+
+```
+Query: "Berapa biaya SI gelombang 1A?"
+
+Step 1: Entity Recognition ✓
+  ├─ Recognized: program=SI, wave=1A, academicYear=2025
+  └─ Entities extracted correctly
+
+Step 2: Candidate Retrieval ✓
+  ├─ Found backup PDF: "rincian Biaya SI,TI dan BD..."
+  └─ Retrieved successfully
+
+Step 3: Parse Validation ✗ FAILS HERE
+  ├─ Chunk metadata: program=NULL (should be "SI")
+  ├─ Query requires: program="SI"
+  ├─ Comparison: NULL !== "SI" → REJECT CHUNK
+  └─ Result: Chunk parsing returns null
+
+Step 4: Fallback Activation ⚠️
+  ├─ Zero cost candidates accumulated
+  ├─ Fall back to discount-only chunks
+  └─ feeStruct = { registrationDiscount: "Rp 250K", registrationFee: NULL, dpp: NULL }
+
+Step 5: Answer Generation ✗
+  ├─ Input: Incomplete feeStruct
+  └─ Output: Incomplete answer (missing registration fee & DPP)
+```
+
+---
+
+## 💾 Data Issue Details
+
+### Backup PDF Chunks Status
+
+**Files in data/rag_index.json**:
+- `added-from-backup-1`: `rincian Biaya SI,TI dan BD 2026-2027.pdf`
+- `added-from-backup-2`: `rincian Biaya SK 2026-2027.pdf`
+- `added-from-backup-3`: `rincian Biaya D3 2026-2027.pdf`
+- `added-from-backup-4`: `rincian Biaya DNUI 2026-2027.pdf`
+- `added-from-backup-5`: `rincian Biaya HELP 2026-2027.pdf`
+- `added-from-backup-6`: `rincian Biaya UTB 2026-2027.pdf`
+
+**Current Metadata (❌ BROKEN)**:
+```json
+{
+  "academicYear": null,    // Missing: should be "2026"
+  "program": null,         // Missing: should be "SI", "TI", "BD", "SK", etc.
+  "wave": null,            // Missing: should be extracted from content
+  "partner": null          // Missing: should be "DNUI", "HELP", "UTB"
+}
+```
+
+**Query Expectations**:
+- Program-specific queries ask for SI, TI, BD, MI, SK
+- All these programs are mentioned in the backup PDFs
+- But chunk metadata is NULL → mismatch → rejection
+
+---
+
+## 📈 Audit Results
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| Queries Analyzed | 8 | ✓ |
+| Fallback Rate | 100% (8/8) | ❌ |
+| DISCOUNT_ONLY_BASE Activated | 100% (8/8) | ❌ |
+| YEAR_FALLBACK Activated | 100% (8/8) | ❌ |
+| Complete Fee Data Extracted | 0% (0/8) | ❌ |
+| Backup PDFs with NULL metadata | 100% (6/6) | ❌ |
+
+---
+
+## 🔧 Remediation
+
+**Step 1: Extract Metadata from Filenames**
+
+```
+"rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+→ academicYear: "2026"
+→ programs: ["SI", "TI", "BD"]
+
+"rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf"
+→ academicYear: "2026"
+→ partner: "DNUI"
+
+etc.
+```
+
+**Step 2: Update data/rag_index.json**
+Set correct metadata for all 6 backup chunks
+
+**Step 3: Re-verify**
+- Run 8-query audit again
+- Confirm all queries use source: `rag-fee-structured` (not fallback)
+- Verify complete fee structures in answers
+
+---
+
+## 📋 Code Locations
+
+**Entry Points**:
+- `src/engine/ragEngine.js:5716` - `tryStructuredExactCostAnswer()`
+- `src/engine/ragEngine.js:4802` - `parseFeeStructure()`
+- `src/engine/ragEngine.js:4479` - `parseFeeStructureFromChunk()`
+
+**Validation Points**:
+- `src/engine/ragEngine.js:4569` - Program match check
+- `src/engine/ragEngine.js:4424` - `validateParsedFeeStruct()`
+
+**Fallback Points**:
+- `src/engine/ragEngine.js:4873` - DISCOUNT_ONLY_BASE activation
+- `src/engine/ragEngine.js:5010` - YEAR_FALLBACK activation
+
+**Verdict**: Code logic is **CORRECT**. Problem is **DATA** (missing metadata).
+
+---
+
+## 📁 Audit Artifacts Created
+
+1. **AUDIT_ROOT_CAUSE_FINAL_REPORT.md** - Full technical report
+2. **debug_summary.json** - Structured trace data
+3. **audit_parse_detailed.js** - Parse failure analysis
+4. **audit_backup_content.js** - PDF content verification
+5. **fee-parser-audit-findings.md** - Repository memory
+
+---
+
+## ✅ Conclusion
+
+**Audit Status**: COMPLETE
+
+**Finding**: Missing entity metadata in RAG index chunks is the sole root cause of all 8 query failures
+
+**Evidence**: 100% consistent fallback pattern across all queries
+
+**Impact**: Once metadata is corrected, all queries should parse full fee structures successfully
+
+**Confidence Level**: HIGH (systematic issue, well-documented, actionable fix identified)
+
+---
+
+**Generated**: $(date)
+**Next Action**: Implement data fix and re-run verification audit

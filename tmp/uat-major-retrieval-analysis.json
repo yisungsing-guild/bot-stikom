@@ -1,0 +1,978 @@
+[
+  {
+    "query": "Kapan pendaftaran beasiswa KIP dibuka?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": "KIP",
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Kapan pendaftaran beasiswa KIP dibuka?\n\nFokus pada beasiswa KIP.",
+          "detectedIntent": "COST",
+          "programHint": null,
+          "queryEntities": {
+            "intent": "GENERAL",
+            "program": null,
+            "programLabel": null,
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": "REGISTRATION",
+            "category": "BEASISWA",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSource": "rag-no-match",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut 🙏\n\nAgar saya bisa membantu lebih baik, coba tuliskan pertanyaan\ndengan lebih spesifik, misalnya:\n  - Nama program studi yang dimaksud\n  - Gelombang pendaftaran\n "
+        }
+      }
+    ]
+  },
+  {
+    "query": "Apa saja persyaratan beasiswa 1K1S?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_AFTER_RAG",
+        "value": {
+          "question": "Apa saja persyaratan beasiswa 1K1S?\n\nFokus pada beasiswa 1K1S.",
+          "source": "rag-scholarship-overview",
+          "preview": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\n\n- Beasiswa ranking kelas\n- Beasiswa prestasi (lokal/nasional/internasional)\n- Beasiswa KIP\n- Beasiswa 1K1S\n- Beasiswa Yayasan\n\nKakak mau tanya yang mana? B"
+        }
+      },
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": "1K1S",
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Apa saja persyaratan beasiswa 1K1S?\n\nFokus pada beasiswa 1K1S.",
+          "detectedIntent": "SCHOLARSHIP",
+          "programHint": null,
+          "queryEntities": {
+            "intent": "GENERAL",
+            "program": null,
+            "programLabel": null,
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "BEASISWA",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSource": "rag-scholarship-overview",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\n\n- Beasiswa ranking kelas\n- Beasiswa prestasi (lokal/nasional/internasional)\n- Beasiswa KIP\n- Beasiswa 1K1S\n- Beasiswa Yayasan\n\nKakak mau tanya yang mana? B"
+        }
+      }
+    ]
+  },
+  {
+    "query": "Apakah beasiswa 1K1S tersedia untuk TI?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_AFTER_RAG",
+        "value": {
+          "question": "Program Studi: Teknologi Informasi\nApakah beasiswa 1K1S tersedia untuk TI?\n\nFokus pada beasiswa 1K1S.",
+          "source": "rag-scholarship-overview",
+          "preview": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\n\n- Beasiswa ranking kelas\n- Beasiswa prestasi (lokal/nasional/internasional)\n- Beasiswa KIP\n- Beasiswa 1K1S\n- Beasiswa Yayasan\n\nKakak mau tanya yang mana? B"
+        }
+      },
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": "1K1S",
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Program Studi: Teknologi Informasi\nApakah beasiswa 1K1S tersedia untuk TI?\n\nFokus pada beasiswa 1K1S.",
+          "detectedIntent": "ACADEMIC_PROGRAM",
+          "programHint": "TI",
+          "queryEntities": {
+            "intent": "ACADEMIC_PROGRAM",
+            "program": "TI",
+            "programLabel": "TEKNOLOGI_INFORMASI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "BEASISWA",
+            "pageNumber": null,
+            "academicIntent": "FOKUS_PRODI"
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSource": "rag-scholarship-overview",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\n\n- Beasiswa ranking kelas\n- Beasiswa prestasi (lokal/nasional/internasional)\n- Beasiswa KIP\n- Beasiswa 1K1S\n- Beasiswa Yayasan\n\nKakak mau tanya yang mana? B"
+        }
+      }
+    ]
+  },
+  {
+    "query": "Apa syarat beasiswa prestasi?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_AFTER_RAG",
+        "value": {
+          "question": "Apa syarat beasiswa prestasi?\n\nFokus pada beasiswa Prestasi.",
+          "source": "rag-scholarship-prestasi-clarify",
+          "preview": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?"
+        }
+      },
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": "Prestasi",
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Apa syarat beasiswa prestasi?\n\nFokus pada beasiswa Prestasi.",
+          "detectedIntent": "SCHOLARSHIP",
+          "programHint": null,
+          "queryEntities": {
+            "intent": "GENERAL",
+            "program": null,
+            "programLabel": null,
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": "PRESTASI",
+            "feeType": null,
+            "category": "BEASISWA",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSource": "rag-scholarship-prestasi-clarify",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?"
+        }
+      }
+    ]
+  },
+  {
+    "query": "Bagaimana mengajukan beasiswa prestasi?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_AFTER_RAG",
+        "value": {
+          "question": "Bagaimana mengajukan beasiswa prestasi?\n\nFokus pada beasiswa Prestasi.",
+          "source": "rag-scholarship-prestasi-clarify",
+          "preview": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?"
+        }
+      },
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": "Prestasi",
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Bagaimana mengajukan beasiswa prestasi?\n\nFokus pada beasiswa Prestasi.",
+          "detectedIntent": "SCHOLARSHIP",
+          "programHint": null,
+          "queryEntities": {
+            "intent": "GENERAL",
+            "program": null,
+            "programLabel": null,
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": "PRESTASI",
+            "feeType": null,
+            "category": "BEASISWA",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSource": "rag-scholarship-prestasi-clarify",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?"
+        }
+      }
+    ]
+  },
+  {
+    "query": "Berapa besar potongan beasiswa prestasi?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_AFTER_RAG",
+        "value": {
+          "question": "Berapa besar potongan beasiswa prestasi?\n\nFokus pada beasiswa Prestasi.",
+          "source": "rag-scholarship-prestasi-clarify",
+          "preview": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?"
+        }
+      },
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": "Prestasi",
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Berapa besar potongan beasiswa prestasi?\n\nFokus pada beasiswa Prestasi.",
+          "detectedIntent": "COST",
+          "programHint": null,
+          "queryEntities": {
+            "intent": "COST",
+            "program": null,
+            "programLabel": null,
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": "PRESTASI",
+            "feeType": "DISCOUNT",
+            "category": "BEASISWA",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSource": "rag-scholarship-prestasi-clarify",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?\n\nUntuk meringankan "
+        }
+      }
+    ]
+  },
+  {
+    "query": "Berapa biaya masuk TI?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": null,
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Program Studi: Teknologi Informasi\nUser meminta perhitungan total pembayaran untuk mendaftar/biaya awal masuk.\nTugas:\n1) Jika dokumen mencantumkan TOTAL (mis. total biaya awal masuk/total pembayaran), sebutkan totalnya.\n2) Jika tidak ada total, jumlahkan komponen yang tertulis (contoh: biaya pendaftaran + DPP + biaya semester awal/komponen awal masuk) dan tampilkan perhitungannya.\n3) Jika total bergantung skenario (gelombang/potongan, pengakuan SKS, cuti, tesis, atau pilihan pembayaran/cicilan), ajukan maksimal 1 pertanyaan klarifikasi untuk menentukan skenario.\n\nPertanyaan user: Berapa biaya masuk TI?",
+          "detectedIntent": "COST",
+          "programHint": "SK",
+          "queryEntities": {
+            "intent": "ACADEMIC_PROGRAM",
+            "program": "SK",
+            "programLabel": "SISTEM_KOMPUTER",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": "DPP",
+            "category": "BEASISWA",
+            "pageNumber": null,
+            "academicIntent": "BIAYA"
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSuccess": false
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Baik, untuk S1 Program Studi Teknologi Informasi.\nAgar saya bisa hitungkan totalnya dengan tepat, kakak daftar skenario yang mana?\n- Gelombang berapa (Khusus/I/II/III/IV)?\n- Ada pengakuan SKS / cuti / rencana sampai tesis (semester 5+) atau"
+        }
+      }
+    ]
+  },
+  {
+    "query": "Berapa biaya kuliah Sistem Informasi per semester?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Untuk Prodi Sistem Informasi, biaya pendidikan per semester: Rp 6.500.000.\n\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n* Beasiswa KIP\n* Beasiswa 1K1S ("
+        }
+      }
+    ]
+  },
+  {
+    "query": "Biaya Bisnis Digital berapa?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_AFTER_RAG",
+        "value": {
+          "question": "Program Studi: Bisnis Digital\nBiaya Bisnis Digital berapa?",
+          "source": "rag-fee-breakdown",
+          "preview": "Berikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Bisnis Digital:\n\n- Pendaftaran: Rp 500.000\n- Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1\n- Jas Almamater, Topi: Rp 750.000 - Saat Re"
+        }
+      },
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": null,
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Program Studi: Bisnis Digital\nBiaya Bisnis Digital berapa?",
+          "detectedIntent": "COST",
+          "programHint": "BD",
+          "queryEntities": {
+            "intent": "ACADEMIC_PROGRAM",
+            "program": "BD",
+            "programLabel": "BISNIS_DIGITAL",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "BIAYA",
+            "pageNumber": null,
+            "academicIntent": "BIAYA"
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSource": "rag-fee-breakdown",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Baik, kak. Terimakasih atas pertanyaannya.\n\nUntuk program studi Bisnis Digital, rincian biaya sebagai berikut:\n\nPendaftaran:\n* Biaya pendaftaran: Rp 500.000\n* Potongan biaya pendaftaran: Rp 0\nTotal biaya pendaftaran: Rp 500.000\n\nBiaya awal "
+        }
+      }
+    ]
+  },
+  {
+    "query": "Berapa biaya Sistem Komputer di ITB STIKOM Bali?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_AFTER_RAG",
+        "value": {
+          "question": "Program Studi: Sistem Komputer\nBerapa biaya Sistem Komputer di ITB STIKOM Bali?",
+          "source": "rag-fee-breakdown",
+          "preview": "Berikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Sistem Komputer:\n\n- Pendaftaran: Rp 500.000 - Pada Saat Daftar\n- Dana Pendidikan Pokok (DPP): Rp 11.000.000 - Dicicil per bulans/d UTS-1\n- Jas, Topi Almamater: Rp 750.000 -"
+        }
+      },
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": null,
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Program Studi: Sistem Komputer\nBerapa biaya Sistem Komputer di ITB STIKOM Bali?",
+          "detectedIntent": "COST",
+          "programHint": "SK",
+          "queryEntities": {
+            "intent": "ACADEMIC_PROGRAM",
+            "program": "SK",
+            "programLabel": "SISTEM_KOMPUTER",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "BIAYA",
+            "pageNumber": null,
+            "academicIntent": "BIAYA"
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSource": "rag-fee-breakdown",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Baik, kak. Terimakasih atas pertanyaannya.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n* Biaya pendaftaran: Rp 500.000\n* Potongan biaya pendaftaran: Rp 0\nTotal biaya pendaftaran: Rp 500.000\n\nBiaya awal"
+        }
+      }
+    ]
+  },
+  {
+    "query": "Berapa DPP untuk TI?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Untuk Prodi Teknologi Informasi, Dana Pendidikan Pokok (DPP): Rp 14.000.000.\n\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n* Beasiswa KIP\n* Beasiswa 1K1S"
+        }
+      }
+    ]
+  },
+  {
+    "query": "Berapa biaya pendaftaran untuk SI?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Untuk Prodi Sistem Informasi, biaya pendaftaran: Rp 500.000 (dibayar saat daftar).\n\nMau sekalian saya jelaskan rincian biaya pendidikan lengkap (pendaftaran, DPP, biaya per semester, dan komponen awal masuk)?\nBalas: YA atau TIDAK."
+        }
+      }
+    ]
+  },
+  {
+    "query": "Bagaimana cara daftar PMB?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": null,
+          "topRetrievedChunks": [
+            {
+              "id": "ab4847b9-9868-4e8c-beff-5ebd56aca298",
+              "trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+              "filename": null,
+              "score": 1,
+              "preview": "ak-hak dari pada calon mahasiswa penerima besiswa tersebut adalah sebagaimana tercantum dalam lampiran - 3 surat peratur"
+            }
+          ],
+          "selectedChunk": {
+            "id": "ab4847b9-9868-4e8c-beff-5ebd56aca298",
+            "trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+            "filename": null,
+            "score": 1,
+            "preview": "ak-hak dari pada calon mahasiswa penerima besiswa tersebut adalah sebagaimana tercantum dalam lampiran - 3 surat peratur"
+          }
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Bagaimana cara daftar PMB?",
+          "detectedIntent": "SCHEDULE",
+          "programHint": null,
+          "queryEntities": {
+            "intent": "GENERAL",
+            "program": null,
+            "programLabel": null,
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "PMB",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 1,
+          "selectedChunks": [
+            {
+              "id": "ab4847b9-9868-4e8c-beff-5ebd56aca298",
+              "score": 1
+            }
+          ],
+          "finalContextSources": [
+            "614dbde8-6a43-4f06-84da-3fab41c3538b"
+          ],
+          "sourceFiles": [
+            "614dbde8-6a43-4f06-84da-3fab41c3538b"
+          ],
+          "ragSource": "rag-lexical-fallback",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Aku nemu info yang relevan di data training:\n...meneliti berkas-berkas prestasi mahasiswa baru dan mengajukan daftar besaran beasiswa ke Rektor atau Wakil Rektor II secara berkala.: Apabila dikemudian hari terdapat kekeliruan dalam surat pe"
+        }
+      }
+    ]
+  },
+  {
+    "query": "Apa fasilitas kampus yang tersedia?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": null,
+          "topRetrievedChunks": [
+            {
+              "id": "5af85c70-ae38-4256-8b78-25aa0a1fbe76",
+              "trainingId": "eee828da-6ee4-4591-a9a8-18fa2e73c822",
+              "filename": "hobi-sesuai-program-studi.docx",
+              "score": 0.3337963087490452,
+              "preview": "sekolah Pernah Mengikuti kompetisi bisnis atau startup Suka Tawar Menawar Seorang Influencer Seorang Blogger Seorang Vlo"
+            },
+            {
+              "id": "141a8d3b-936d-423c-a9f1-e477fcc72cc9",
+              "trainingId": "260498bd-646e-4b98-b5e6-e45102f2c20c",
+              "filename": "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf",
+              "score": 0.23593868714514563,
+              "preview": "dan Inovasi Daerah Provinsi Bali 6. Kepala Badan Kepegawaian dan Pengembangan Sumber Daya Manusia Provinsi Bali 7. Kepal"
+            }
+          ],
+          "selectedChunk": {
+            "id": "5af85c70-ae38-4256-8b78-25aa0a1fbe76",
+            "trainingId": "eee828da-6ee4-4591-a9a8-18fa2e73c822",
+            "filename": "hobi-sesuai-program-studi.docx",
+            "score": 0.3337963087490452,
+            "preview": "sekolah Pernah Mengikuti kompetisi bisnis atau startup Suka Tawar Menawar Seorang Influencer Seorang Blogger Seorang Vlo"
+          }
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Apa fasilitas kampus yang tersedia?",
+          "detectedIntent": "GENERAL",
+          "programHint": "SK",
+          "queryEntities": {
+            "intent": "GENERAL",
+            "program": "SK",
+            "programLabel": "SISTEM_KOMPUTER",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "LOKASI",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 2,
+          "selectedChunks": [
+            {
+              "id": "5af85c70-ae38-4256-8b78-25aa0a1fbe76",
+              "filename": "hobi-sesuai-program-studi.docx",
+              "score": 0.3337963087490452
+            },
+            {
+              "id": "141a8d3b-936d-423c-a9f1-e477fcc72cc9",
+              "filename": "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf",
+              "score": 0.23593868714514563
+            }
+          ],
+          "finalContextSources": [
+            "hobi-sesuai-program-studi.docx",
+            "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf"
+          ],
+          "sourceFiles": [
+            "hobi-sesuai-program-studi.docx",
+            "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf"
+          ],
+          "ragSource": "rag-answer-rejected",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Data tidak ditemukan secara pasti pada dokumen."
+        }
+      }
+    ]
+  },
+  {
+    "query": "Apakah ada laboratorium komputer di kampus?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": null,
+          "topRetrievedChunks": [
+            {
+              "id": "26c3bf37-dc70-447d-99fa-9aefd80641d6",
+              "trainingId": "134f76e4-8365-4bb4-afdf-3f7370ecdb7e",
+              "filename": null,
+              "score": 0.6,
+              "preview": "INSTITUTTEKNOLOGIDANBISNIS\nSTIKOMBALI\nINSTITUTTEKNOLOGIDANBISNIS\n(ITB\n)STIKOMBALI\nKampus\nDenpasar\nJL.RayaPuputanNo.86Ren"
+            }
+          ],
+          "selectedChunk": {
+            "id": "26c3bf37-dc70-447d-99fa-9aefd80641d6",
+            "trainingId": "134f76e4-8365-4bb4-afdf-3f7370ecdb7e",
+            "filename": null,
+            "score": 0.6,
+            "preview": "INSTITUTTEKNOLOGIDANBISNIS\nSTIKOMBALI\nINSTITUTTEKNOLOGIDANBISNIS\n(ITB\n)STIKOMBALI\nKampus\nDenpasar\nJL.RayaPuputanNo.86Ren"
+          }
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Apakah ada laboratorium komputer di kampus?",
+          "detectedIntent": "GENERAL",
+          "programHint": null,
+          "queryEntities": {
+            "intent": "GENERAL",
+            "program": null,
+            "programLabel": null,
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "LOKASI",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 1,
+          "selectedChunks": [
+            {
+              "id": "26c3bf37-dc70-447d-99fa-9aefd80641d6",
+              "score": 0.6
+            }
+          ],
+          "finalContextSources": [
+            "134f76e4-8365-4bb4-afdf-3f7370ecdb7e"
+          ],
+          "sourceFiles": [
+            "134f76e4-8365-4bb4-afdf-3f7370ecdb7e"
+          ],
+          "ragSource": "rag-lexical-fallback",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Aku nemu info yang relevan di data training:\n...SISWABARU KELASREGULER PROGRAM STUDISISTEMKOMPUTER T.A2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1.Pendaftaran 500.000 Pada Saat Daftar 2.Dana Pendidikan Pokok(DPP)11.000.000 Dicicil Per Bl"
+        }
+      }
+    ]
+  },
+  {
+    "query": "Bagaimana akses kantin dan fasilitas olahraga?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": null,
+          "topRetrievedChunks": [
+            {
+              "id": "4201bafe-8ebc-4d24-ba66-e106a030f784",
+              "trainingId": "260498bd-646e-4b98-b5e6-e45102f2c20c",
+              "filename": "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf",
+              "score": 0.2648312138860571,
+              "preview": "5. Kepala Badan Perencanaan Pembangunan Daerah Kabupaten Gianyar. 6. Kepala Badan Perencanaan Pembangunan Daerah Kabupat"
+            },
+            {
+              "id": "141a8d3b-936d-423c-a9f1-e477fcc72cc9",
+              "trainingId": "260498bd-646e-4b98-b5e6-e45102f2c20c",
+              "filename": "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf",
+              "score": 0.25660879394466024,
+              "preview": "dan Inovasi Daerah Provinsi Bali 6. Kepala Badan Kepegawaian dan Pengembangan Sumber Daya Manusia Provinsi Bali 7. Kepal"
+            },
+            {
+              "id": "5af85c70-ae38-4256-8b78-25aa0a1fbe76",
+              "trainingId": "eee828da-6ee4-4591-a9a8-18fa2e73c822",
+              "filename": "hobi-sesuai-program-studi.docx",
+              "score": 0.24458079149214523,
+              "preview": "sekolah Pernah Mengikuti kompetisi bisnis atau startup Suka Tawar Menawar Seorang Influencer Seorang Blogger Seorang Vlo"
+            }
+          ],
+          "selectedChunk": {
+            "id": "4201bafe-8ebc-4d24-ba66-e106a030f784",
+            "trainingId": "260498bd-646e-4b98-b5e6-e45102f2c20c",
+            "filename": "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf",
+            "score": 0.2648312138860571,
+            "preview": "5. Kepala Badan Perencanaan Pembangunan Daerah Kabupaten Gianyar. 6. Kepala Badan Perencanaan Pembangunan Daerah Kabupat"
+          }
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Bagaimana akses kantin dan fasilitas olahraga?",
+          "detectedIntent": "GENERAL",
+          "programHint": "SK",
+          "queryEntities": {
+            "intent": "GENERAL",
+            "program": "SK",
+            "programLabel": "SISTEM_KOMPUTER",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "FASILITAS",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 3,
+          "selectedChunks": [
+            {
+              "id": "4201bafe-8ebc-4d24-ba66-e106a030f784",
+              "filename": "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf",
+              "score": 0.2648312138860571
+            },
+            {
+              "id": "141a8d3b-936d-423c-a9f1-e477fcc72cc9",
+              "filename": "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf",
+              "score": 0.25660879394466024
+            },
+            {
+              "id": "5af85c70-ae38-4256-8b78-25aa0a1fbe76",
+              "filename": "hobi-sesuai-program-studi.docx",
+              "score": 0.24458079149214523
+            }
+          ],
+          "finalContextSources": [
+            "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf",
+            "hobi-sesuai-program-studi.docx"
+          ],
+          "sourceFiles": [
+            "20260209202540Undangan FKP RKPD Prov Bali 2027.pdf",
+            "hobi-sesuai-program-studi.docx"
+          ],
+          "ragSource": "rag-answer-rejected",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Data tidak ditemukan secara pasti pada dokumen."
+        }
+      }
+    ]
+  },
+  {
+    "query": "Bagaimana cara menuju kampus dengan transportasi umum?",
+    "finalMessage": null,
+    "ragUsed": null,
+    "rawRAG": null,
+    "logs": [
+      {
+        "type": "TRACE_RAG_SCHOLARSHIP",
+        "value": {
+          "detectedScholarship": null,
+          "topRetrievedChunks": [],
+          "selectedChunk": null
+        }
+      },
+      {
+        "type": "RAG_DEBUG",
+        "value": {
+          "query": "Bagaimana cara menuju kampus dengan transportasi umum?",
+          "detectedIntent": "GENERAL",
+          "programHint": null,
+          "queryEntities": {
+            "intent": "GENERAL",
+            "program": null,
+            "programLabel": null,
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "LOKASI",
+            "pageNumber": null,
+            "academicIntent": null
+          },
+          "selectedChunkCount": 0,
+          "selectedChunks": [],
+          "finalContextSources": [],
+          "sourceFiles": [],
+          "ragSource": "rag-no-match",
+          "ragSuccess": true
+        }
+      },
+      {
+        "type": "TRACE_RAW_RAG_ANSWER",
+        "value": {
+          "chatId": "uat-test",
+          "preview": "Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut 🙏\n\nAgar saya bisa membantu lebih baik, coba tuliskan pertanyaan\ndengan lebih spesifik, misalnya:\n  - Nama program studi yang dimaksud\n  - Gelombang pendaftaran\n "
+        }
+      }
+    ]
+  }
+]

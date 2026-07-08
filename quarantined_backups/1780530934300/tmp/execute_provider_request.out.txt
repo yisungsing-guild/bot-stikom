@@ -1,0 +1,25 @@
+﻿ROUTER LAYERS [
+  { name: 'bound dispatch', path: '/webhook', methods: { post: true } }
+]
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-chat',
+  text: 'apa itu SI?',
+  messageId: 'msg-123',
+  inboundTs: 1780109768412
+}
+SEND MESSAGE test-chat Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.
+{"level":30,"time":1780109768910,"pid":10376,"hostname":"DESKTOP-MQLDQK0","stage":"","programInText":"Sistem Informasi","looksSpecific":true,"isPureSelection":false,"ragEnabled":true,"hasData":true,"msg":"[Provider] Skipping choose_program RAG - conditions not met"}
+[findReplyByRules] No keyword match found
+SEND MESSAGE test-chat Siap, aku bantu jawab ya.
+Berikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Sistem Informasi:
+- Pendaftaran: Rp 500.000
+- Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1
+- Jas Almamater, Topi: Rp 750.000 - Saat Registrasi I
+- Kaos, Tas, GMTI: Rp 750.000 - Saat Registrasi I
+- Biaya Pendidikan Per Semester: Rp 6.500.000 - Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS
+- Biaya Pengalaman Industri (Internasional): Rp 5.000.000 - Dicicil 5 kali per semester
+- Biaya Pengalaman Industri (Nasional): Rp 2.500.000 - Dicicil 5 kali per semester
+- Biaya Pengalaman Industri (Lokal): Rp 1.500.000 - Dicicil 5 kali per semester
+Catatan: Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk.
+Total (dihitung): Rp 31.500.000
+Mau saya rangkum juga skema potongan per gelombangnya?

@@ -1,0 +1,117 @@
+[
+  {
+    "detectedProgram": "Sistem Informasi",
+    "canonicalProgram": "Sistem Informasi",
+    "detectedIntent": "PROGRAM_INFO",
+    "selectedRoute": "rag-answer-rejected",
+    "retrievalQuery": "apa itu SI?",
+    "topChunks": [
+      {
+        "rank": 1,
+        "id": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "trainingId": "f76ea84a-1b92-4125-a592-e2f15fb38117",
+        "divisionKey": null,
+        "score": 0.24110370632610686,
+        "snippet": "8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026 II C | 19 APRIL 2026 s/d 2 MEI 2026 | 3 MEI 2026 | 5 MEI 2026 | 5 MEI 2026 s/d 15 MEI 2026 III A | 3 MEI 2026 s/d 16 MEI 2026 | 17 MEI 2026 | 19 MEI 2026 | 19 MEI 2026 s/d 29 MEI 2026 III B | 17 MEI 2026 s/d 30 MEI 2026 | 31"
+      },
+      {
+        "rank": 2,
+        "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "trainingId": "eee828da-6ee4-4591-a9a8-18fa2e73c822",
+        "divisionKey": null,
+        "score": 0.43139904214449726,
+        "snippet": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi teknologi sepert i robotik, coding, IoT Suka Membaca buku atau artikel tentang teknologi terbaru Bisa Membuat robot sederhana Suka Main Game Pernah Mengembangkan aplikasi berbasis hardware-software (embedd"
+      },
+      {
+        "rank": 3,
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "trainingId": "9358faf2-c0bf-438b-90e4-5f801f43ea0d",
+        "divisionKey": null,
+        "score": 0.5847907786807801,
+        "snippet": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Animator Peneliti Sistem Informasi Software Engineer Cyber Security Analyst & IT Forensic Specialist Menghasilkan lulusan yang memiliki kompetensi dalam penerapan teknologi komputer da"
+      },
+      {
+        "rank": 4,
+        "id": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "trainingId": "a76df111-bc3f-4122-9066-3aa29d3cf22b",
+        "divisionKey": "kemahasiswaan",
+        "score": 0.015700149794843722,
+        "snippet": "NO. ORMAWA PEMBINA KOORDINATOR 1 BADAN EKSEKUTIF MAHASISWA IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KOM 2 DEWAN PERWAKILAN MAHASISWA IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KOM 3 UKM GHoST KADEK SURYA ADI SAPUTRA, S.KOM., M.KOM 4 UKM D.O.S AYU CHRISNIYANTI, S.KOM., M.BA 5 UKM TEATER BINER TRIA HIKMAH FRATIWI"
+      },
+      {
+        "rank": 5,
+        "id": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "trainingId": "a76df111-bc3f-4122-9066-3aa29d3cf22b",
+        "divisionKey": "kemahasiswaan",
+        "score": 0.00997067374297292,
+        "snippet": "AMPING ORGANISASI MAHASISWA INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI NO ORMAWA PEMBINA PENDAMPING 1 BEM KADEK SURYA ADI SAPUTRA, S.KOM., M.KOM I PUTU AGUS ARI MAHENDRA, S.KOM., M.KOM 2 DPM I PUTU AGUS ARI MAHENDRA, S.KOM., M.KOM KADEK SURYA ADI SAPUTRA, S.KOM., M.KOM 3 U2M DEDY PANJI AGUSTINO, S.KO"
+      },
+      {
+        "rank": 6,
+        "id": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "trainingId": "a76df111-bc3f-4122-9066-3aa29d3cf22b",
+        "divisionKey": "kemahasiswaan",
+        "score": 0.01393250980915111,
+        "snippet": "I MADE BUDI ADNYANA, S.KOM., M.T. 14 TARI KADEK SIDIK ARYAWAN, S.SN., M.SN NI MADE DEWI KANSA PUTRI, S.E., M.M PUTU TJINTIA KENCANA DEWI, SE., MM NO ORMAWA PEMBINA PENDAMPING 15 PMK RICKY AURELIUS NURTANTO DIAZ, S.KOM., M.T. PAULA DEWANTI, S.KOM., M.KOM 16 HIMAPRODI TI ROSALIA HADI, S.KOM., M.T NI M"
+      },
+      {
+        "rank": 7,
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "trainingId": "ca79325a-566e-47f2-97d0-18e96d0dbd9c",
+        "divisionKey": "international",
+        "score": 0.010012983113604582,
+        "snippet": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki program Double Degree bersama HELP University, Malaysia. 10. Program studi apa yang ditawarkan dalam skem"
+      },
+      {
+        "rank": 8,
+        "id": "df08e490-0b11-441e-bbca-977fc155d693",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan.xlsx",
+        "trainingId": "dc303847-58ab-45f8-a93f-97d4e425ca1b",
+        "divisionKey": null,
+        "score": 0.469425094399664,
+        "snippet": "branding | social media strategy | startup business | entrepreneurship\" | \"Suka bisnis | media sosial | dan strategi pemasaran\" | \"Digital Marketing Specialist | Content Strategist | SEO Specialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Pengelolaan database "
+      },
+      {
+        "rank": 9,
+        "id": "b43febf7-af1d-4176-a61c-e68e2cfdd8c6",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "d6385d2b-c9a5-48c7-9b2f-cf69d7520f2c",
+        "divisionKey": null,
+        "score": 0.3297773173223263,
+        "snippet": "ka mendaftar pada Gelombang I Rp. 200.000,- Jika mendaftar pada Gelombang II Rp. 150.000,- Jika mendaftar pada Gelombang III Rp. 100.000,- Jika mendaftar pada Gelombang IV Ditambah Rp. 50.000,- Jika Alumni SMK TI Bali Global dan SMK Pandawa Bali Global i Dipindai dengan i@ CamScanner ."
+      }
+    ]
+  },
+  {
+    "detectedProgram": "Sistem Informasi",
+    "canonicalProgram": "Sistem Informasi",
+    "detectedIntent": "PROGRAM_INFO",
+    "selectedRoute": "rag-answer-rejected",
+    "retrievalQuery": "di SI belajar apa?",
+    "topChunks": [
+      {
+        "rank": 1,
+        "id": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "trainingId": "f76ea84a-1b92-4125-a592-e2f15fb38117",
+        "divisionKey": null,
+        "score": 0.2041312180668931,
+        "snippet": "8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026 II C | 19 APRIL 2026 s/d 2 MEI 2026 | 3 MEI 2026 | 5 MEI 2026 | 5 MEI 2026 s/d 15 MEI 2026 III A | 3 MEI 2026 s/d 16 MEI 2026 | 17 MEI 2026 | 19 MEI 2026 | 19 MEI 2026 s/d 29 MEI 2026 III B | 17 MEI 2026 s/d 30 MEI 2026 | 31"
+      },
+      {
+        "rank": 2,
+        "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "trainingId": "eee828da-6ee4-4591-a9a8-18fa2e73c822",
+        "divisionKey": null,
+        "score": 0.46022232870795415,
+        "snippet": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi teknologi sepert i robotik, coding, IoT Suka Membaca buku atau artikel tentang teknologi terbaru Bisa Membuat robot sederhana Suka Main Game Pernah Mengembangkan aplikasi berbasis hardware-software (embedd"
+      },
+... (file continues)

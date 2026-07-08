@@ -1,0 +1,813 @@
+[
+  {
+    "key": "TI",
+    "question": "berapa biaya prodi ti gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.",
+      "source": "rag-answer-rejected",
+      "contexts": [
+        {
+          "id": "program_studi-29",
+          "chunk": "Program Studi Teknologi Informasi - Apa Yang Dipelajari\n# Apa Yang Dipelajari\n\nPembelajaran mencakup pemrograman, pengembangan aplikasi web dan mobile, jaringan komputer, cloud computing, keamanan siber, integrasi API, serta operasi sistem. Mahasiswa juga mempelajari praktik deployment agar aplikasi siap digunakan pada lingkungan produksi. Kalau ada pertanyaan seperti \"Di Teknologi Informasi belajar apa saja?\", bagian ini adalah ringkasan utamanya: coding, aplikasi web/mobile, jaringan, cloud, keamanan siber, integrasi API, dan operasi sistem.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "apa_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "apa_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-31",
+          "chunk": "Program Studi Teknologi Informasi - Skill Yang Dipelajari\n# Skill Yang Dipelajari\n\nSkill yang dibangun meliputi coding standar industri, debugging, version control, desain arsitektur aplikasi, otomasi deployment, pengamanan aplikasi dasar, dan troubleshooting infrastruktur. Mahasiswa juga berlatih menyusun dokumentasi teknis yang mudah digunakan tim lain.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "skill_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "skill_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-32",
+          "chunk": "Program Studi Teknologi Informasi - Prospek Kerja\n# Prospek Kerja\n\nProspek kerja lulusan mencakup software engineer, web developer, mobile developer, DevOps engineer, cloud engineer, network engineer, cybersecurity analyst, serta QA engineer. Kebutuhan profesi ini tinggi di software house, startup produk digital, e-commerce, dan perusahaan lintas sektor yang mengembangkan sistem internal. Kalau ditanya \"Prospek kerja TI bagaimana?\", fokus kariernya ada di pengembangan perangkat lunak, infrastruktur, deployment, pengujian, dan keamanan sistem.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "prospek_kerja",
+            "type": "career",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "prospek_kerja",
+              "career"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-33",
+          "chunk": "Program Studi Teknologi Informasi - Career Path\n# Career Path\n\nCareer path biasanya dimulai dari junior developer atau IT support engineer, meningkat ke mid-level engineer, lalu senior engineer atau technical lead. Jalur lanjutan dapat mengarah ke solution architect, engineering manager, platform lead, atau security specialist sesuai minat dan portofolio. Kalau ditanya \"lulusan TI kerja dimana?\" atau \"kerjanya nanti jadi apa?\", jawabannya mengarah ke software engineer, web/mobile developer, DevOps, cloud engineer, network engineer, cybersecurity, dan QA.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "career_path",
+            "type": "career",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "career_path",
+              "career"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-34",
+          "chunk": "Program Studi Teknologi Informasi - Contoh Pekerjaan\n# Contoh Pekerjaan\n\nContoh pekerjaan sehari-hari meliputi membangun modul aplikasi, memperbaiki bug produksi, membuat endpoint API, menyiapkan pipeline CI/CD, memonitor performa server, dan menerapkan kontrol keamanan dasar agar sistem tetap stabil dan aman.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "contoh_pekerjaan",
+            "type": "career",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "contoh_pekerjaan",
+              "career"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "tuition_fee-37",
+          "chunk": "Program Studi Tuition Fee - tuition fee\nTuition Fee knowledge\n\nPertanyaan cepat:\n- Biaya kuliah berapa? - Biaya pendaftaran dan DPP berapa? - Ada potongan atau beasiswa biaya kuliah? Jawaban ringkas:\n- Biaya kuliah biasanya terdiri dari biaya pendaftaran, DPP, dan komponen per semester atau per layanan sesuai program studi. - Besaran biaya bisa berbeda menurut program studi, jalur masuk, dan gelombang pendaftaran. - Jika kamu tanya \"biaya kuliah berapa?\", jawaban yang tepat harus mengarah ke rincian biaya program yang dimaksud, bukan angka umum yang dipaksakan ke semua prodi. Gunakan kategori ini untuk pertanyaan tentang:\n- biaya kuliah\n- pendaftaran\n- DPP\n- UKM atau pembayaran per semester\nTuition Fee docs guidance\n\nPurpose:\n- Dedicated tuition and fee descriptions, payment schedules, per-semester costs, discounts.",
+          "filename": "docs/retrieval/knowledge_domains/tuition_fee.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "tuition_fee",
+            "topic": "tuition_fee",
+            "type": "program_detail",
+            "audience": "prospective_student",
+            "tags": [
+              "tuition_fee",
+              "program_detail"
+            ],
+            "source": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        }
+      ],
+      "confidenceScore": 105,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "TI",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_trusted_source_chunks",
+        "matchedChunks": [
+          {
+            "id": "program_studi-29",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "program_studi-31",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "program_studi-32",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "program_studi-33",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "program_studi-34",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "tuition_fee-37",
+            "filename": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "key": "SI",
+    "question": "berapa biaya prodi si gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.",
+      "source": "rag-answer-rejected",
+      "contexts": [
+        {
+          "id": "program_studi-12",
+          "chunk": "Program Studi Sistem Informasi - Ringkasan Program\n# Ringkasan Program\n\nProgram Studi Sistem Informasi berfokus pada cara merancang solusi digital yang menghubungkan kebutuhan bisnis, proses organisasi, dan teknologi informasi. Mahasiswa belajar melihat masalah dari sisi pengguna, data, dan proses kerja agar solusi yang dibuat tidak hanya canggih secara teknis, tetapi juga efektif dipakai di dunia nyata.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "ringkasan_program",
+            "type": "program_detail",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_informasi",
+              "ringkasan_program",
+              "program_detail"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-13",
+          "chunk": "Program Studi Sistem Informasi - Apa Yang Dipelajari\n# Apa Yang Dipelajari\n\nMahasiswa mempelajari analisis kebutuhan pengguna, perancangan proses bisnis, manajemen data, desain aplikasi, dan tata kelola sistem informasi. Selain aspek teknis, pembelajaran menekankan komunikasi kebutuhan dengan stakeholder, dokumentasi, serta evaluasi dampak sistem terhadap kinerja organisasi. Kalau ditanya singkat \"Di Sistem Informasi belajar apa saja?\", bagian ini menjawab inti kurikulumnya: analisis kebutuhan, proses bisnis, manajemen data, desain aplikasi, dan tata kelola sistem informasi.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "apa_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_informasi",
+              "apa_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-14",
+          "chunk": "Program Studi Sistem Informasi - Mata Kuliah Utama\n# Mata Kuliah Utama\n\nMata kuliah utama biasanya mencakup analisis dan perancangan sistem, basis data, manajemen proyek TI, enterprise resource planning, business intelligence, audit sistem informasi, serta tata kelola TI. Pada fase lanjutan, mahasiswa mengerjakan studi kasus implementasi sistem di konteks bisnis atau layanan publik.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "mata_kuliah_utama",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_informasi",
+              "mata_kuliah_utama",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-15",
+          "chunk": "Program Studi Sistem Informasi - Skill Yang Dipelajari\n# Skill Yang Dipelajari\n\nSkill inti yang dibangun meliputi problem solving terstruktur, pemodelan proses bisnis, penyusunan requirement, query dan manajemen data, dashboard analitik, serta kemampuan presentasi solusi ke tim non-teknis. Mahasiswa juga dilatih bekerja kolaboratif melalui proyek tim dan simulasi kebutuhan pengguna.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "skill_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_informasi",
+              "skill_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-16",
+          "chunk": "Program Studi Sistem Informasi - Prospek Kerja\n# Prospek Kerja\n\nLulusan memiliki prospek kerja pada area business analyst, system analyst, IT project coordinator, data analyst, IT auditor, hingga product support specialist. Peran ini dibutuhkan di perusahaan teknologi, perbankan, ritel, rumah sakit, instansi pemerintah, dan startup yang sedang transformasi digital. Kalau ditanya singkat \"Prospek kerja Sistem Informasi bagaimana?\", arah utamanya adalah peran yang menjembatani bisnis, data, dan implementasi sistem di organisasi.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "prospek_kerja",
+            "type": "career",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_informasi",
+              "prospek_kerja",
+              "career"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          }
+        },
+        {
+          "id": "tuition_fee-37",
+          "chunk": "Program Studi Tuition Fee - tuition fee\nTuition Fee knowledge\n\nPertanyaan cepat:\n- Biaya kuliah berapa? - Biaya pendaftaran dan DPP berapa? - Ada potongan atau beasiswa biaya kuliah? Jawaban ringkas:\n- Biaya kuliah biasanya terdiri dari biaya pendaftaran, DPP, dan komponen per semester atau per layanan sesuai program studi. - Besaran biaya bisa berbeda menurut program studi, jalur masuk, dan gelombang pendaftaran. - Jika kamu tanya \"biaya kuliah berapa?\", jawaban yang tepat harus mengarah ke rincian biaya program yang dimaksud, bukan angka umum yang dipaksakan ke semua prodi. Gunakan kategori ini untuk pertanyaan tentang:\n- biaya kuliah\n- pendaftaran\n- DPP\n- UKM atau pembayaran per semester\nTuition Fee docs guidance\n\nPurpose:\n- Dedicated tuition and fee descriptions, payment schedules, per-semester costs, discounts.",
+          "filename": "docs/retrieval/knowledge_domains/tuition_fee.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "tuition_fee",
+            "topic": "tuition_fee",
+            "type": "program_detail",
+            "audience": "prospective_student",
+            "tags": [
+              "tuition_fee",
+              "program_detail"
+            ],
+            "source": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        }
+      ],
+      "confidenceScore": 105,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "SI",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_trusted_source_chunks",
+        "matchedChunks": [
+          {
+            "id": "program_studi-12",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          },
+          {
+            "id": "program_studi-13",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          },
+          {
+            "id": "program_studi-14",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          },
+          {
+            "id": "program_studi-15",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          },
+          {
+            "id": "program_studi-16",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+          },
+          {
+            "id": "tuition_fee-37",
+            "filename": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "key": "BD",
+    "question": "berapa biaya prodi bd gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.",
+      "source": "rag-answer-rejected",
+      "contexts": [
+        {
+          "id": "program_studi-4",
+          "chunk": "Program Studi Bisnis Digital - Ringkasan Program\n# Ringkasan Program\n\nProgram Studi Bisnis Digital memadukan strategi bisnis, pemasaran digital, analitik data, dan pemanfaatan teknologi untuk pertumbuhan usaha. Mahasiswa belajar memahami perilaku pasar dan merancang model bisnis yang relevan di ekosistem digital.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "ringkasan_program",
+            "type": "program_detail",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "bisnis_digital",
+              "ringkasan_program",
+              "program_detail"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          }
+        },
+        {
+          "id": "program_studi-5",
+          "chunk": "Program Studi Bisnis Digital - Apa Yang Dipelajari\n# Apa Yang Dipelajari\n\nMahasiswa mempelajari dasar manajemen, digital marketing, e-commerce, customer experience, data analytics, product innovation, dan kewirausahaan digital. Pembelajaran menekankan eksperimen berbasis data, validasi pasar, serta pengambilan keputusan bisnis yang terukur.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "apa_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "bisnis_digital",
+              "apa_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          }
+        },
+        {
+          "id": "program_studi-6",
+          "chunk": "Program Studi Bisnis Digital - Mata Kuliah Utama\n# Mata Kuliah Utama\n\nMata kuliah utama biasanya meliputi manajemen pemasaran digital, social media strategy, search engine marketing, analitik bisnis, manajemen produk digital, financial planning, supply chain digital, dan business model innovation. Mahasiswa juga mengerjakan proyek kampanye atau simulasi pengembangan produk digital.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "mata_kuliah_utama",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "bisnis_digital",
+              "mata_kuliah_utama",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          }
+        },
+        {
+          "id": "program_studi-7",
+          "chunk": "Program Studi Bisnis Digital - Skill Yang Dipelajari\n# Skill Yang Dipelajari\n\nSkill yang dikembangkan mencakup riset pasar digital, perencanaan kampanye, optimasi funnel, interpretasi metrik performa, penyusunan strategi go-to-market, serta kolaborasi lintas fungsi dengan tim kreatif dan teknis. Mahasiswa juga dilatih menyusun pitch bisnis dan proposal pengembangan produk.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "skill_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "bisnis_digital",
+              "skill_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          }
+        },
+        {
+          "id": "program_studi-8",
+          "chunk": "Program Studi Bisnis Digital - Prospek Kerja\n# Prospek Kerja\n\nProspek kerja meliputi digital marketing specialist, growth marketer, business development associate, e-commerce analyst, CRM specialist, product marketing, dan entrepreneur digital. Lulusan dibutuhkan pada brand, agensi, startup, marketplace, dan perusahaan yang sedang mempercepat kanal digital.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "prospek_kerja",
+            "type": "career",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "bisnis_digital",
+              "prospek_kerja",
+              "career"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          }
+        },
+        {
+          "id": "tuition_fee-37",
+          "chunk": "Program Studi Tuition Fee - tuition fee\nTuition Fee knowledge\n\nPertanyaan cepat:\n- Biaya kuliah berapa? - Biaya pendaftaran dan DPP berapa? - Ada potongan atau beasiswa biaya kuliah? Jawaban ringkas:\n- Biaya kuliah biasanya terdiri dari biaya pendaftaran, DPP, dan komponen per semester atau per layanan sesuai program studi. - Besaran biaya bisa berbeda menurut program studi, jalur masuk, dan gelombang pendaftaran. - Jika kamu tanya \"biaya kuliah berapa?\", jawaban yang tepat harus mengarah ke rincian biaya program yang dimaksud, bukan angka umum yang dipaksakan ke semua prodi. Gunakan kategori ini untuk pertanyaan tentang:\n- biaya kuliah\n- pendaftaran\n- DPP\n- UKM atau pembayaran per semester\nTuition Fee docs guidance\n\nPurpose:\n- Dedicated tuition and fee descriptions, payment schedules, per-semester costs, discounts.",
+          "filename": "docs/retrieval/knowledge_domains/tuition_fee.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "tuition_fee",
+            "topic": "tuition_fee",
+            "type": "program_detail",
+            "audience": "prospective_student",
+            "tags": [
+              "tuition_fee",
+              "program_detail"
+            ],
+            "source": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        }
+      ],
+      "confidenceScore": 100,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "BD",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_trusted_source_chunks",
+        "matchedChunks": [
+          {
+            "id": "program_studi-4",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          },
+          {
+            "id": "program_studi-5",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          },
+          {
+            "id": "program_studi-6",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          },
+          {
+            "id": "program_studi-7",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          },
+          {
+            "id": "program_studi-8",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+          },
+          {
+            "id": "tuition_fee-37",
+            "filename": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "key": "MI",
+    "question": "berapa biaya prodi mi gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Program Studi: MI (SI)\nGelombang: 1A\nGelombang 1A\nTahun Akademik: 2026\n\n\nPendaftaran:\nPotongan Pendaftaran Gelombang 1:\nRp 300.000, \nSumber:\n- rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "source": "rag-fee-structured-fallback-discount",
+      "contexts": [
+        {
+          "id": "added-from-backup-1",
+          "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+          "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+          "trainingId": null,
+          "metadata": {
+            "category": "tuition_fee",
+            "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+          }
+        }
+      ],
+      "confidenceScore": 15,
+      "confidenceTier": "MEDIUM",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "MI",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "used_discount_only_fallback",
+        "parsedDiscount": "Rp 300.000, "
+      },
+      "trustScore": 50,
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "trainingId": null,
+      "chunkContext": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang "
+    }
+  },
+  {
+    "key": "SK",
+    "question": "berapa biaya prodi sk gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.",
+      "source": "rag-answer-rejected",
+      "contexts": [
+        {
+          "id": "program_studi-23",
+          "chunk": "Program Studi Sistem Komputer - Skill Yang Dipelajari\n# Skill Yang Dipelajari\n\nSkill inti meliputi perancangan sistem embedded, pemrograman mikrokontroler, troubleshooting perangkat, konfigurasi jaringan, integrasi sensor, serta pengujian kestabilan sistem. Mahasiswa juga belajar membuat dokumentasi teknis agar implementasi dapat direplikasi dan dipelihara.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "skill_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_komputer",
+              "skill_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          }
+        },
+        {
+          "id": "program_studi-25",
+          "chunk": "Program Studi Sistem Komputer - Career Path\n# Career Path\n\nCareer path biasanya dimulai dari junior engineer atau technical support engineer, meningkat ke mid-level engineer, lalu senior engineer atau infrastructure lead. Jalur spesialis dapat berkembang ke architect IoT, industrial automation specialist, atau network security engineer. Kalau ditanya \"lulusan SK kerja dimana?\" atau \"kerjanya nanti jadi apa?\", jawabannya mengarah ke embedded engineer, IoT engineer, network administrator, system integrator, automation, dan infrastruktur.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "career_path",
+            "type": "career",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_komputer",
+              "career_path",
+              "career"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          }
+        },
+        {
+          "id": "program_studi-20",
+          "chunk": "Program Studi Sistem Komputer - Ringkasan Program\n# Ringkasan Program\n\nProgram Studi Sistem Komputer berfokus pada integrasi perangkat keras dan perangkat lunak, mulai dari sistem tertanam sampai infrastruktur komputasi. Mahasiswa belajar merancang sistem komputasi yang efisien, stabil, dan dapat dioperasikan untuk kebutuhan industri.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "ringkasan_program",
+            "type": "program_detail",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_komputer",
+              "ringkasan_program",
+              "program_detail"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          }
+        },
+        {
+          "id": "program_studi-21",
+          "chunk": "Program Studi Sistem Komputer - Apa Yang Dipelajari\n# Apa Yang Dipelajari\n\nMahasiswa mempelajari arsitektur komputer, elektronika digital, mikrokontroler, Internet of Things, jaringan, sistem operasi, dan pemrograman tingkat rendah. Pembelajaran menekankan pemahaman menyeluruh dari layer perangkat hingga aplikasi agar solusi bekerja end-to-end. Kalau ada pertanyaan seperti \"Di Sistem Komputer belajar apa saja?\", inti pembelajarannya adalah hardware, embedded, IoT, jaringan, sistem operasi, dan pemrograman tingkat rendah.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "apa_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_komputer",
+              "apa_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          }
+        },
+        {
+          "id": "program_studi-22",
+          "chunk": "Program Studi Sistem Komputer - Mata Kuliah Utama\n# Mata Kuliah Utama\n\nMata kuliah utama umumnya mencakup organisasi dan arsitektur komputer, sistem digital, pemrograman embedded, interfacing perangkat, jaringan komputer, administrasi sistem, IoT engineering, serta keamanan perangkat dan jaringan. Proyek praktikum sering berupa prototipe perangkat cerdas atau sistem monitoring otomatis.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "mata_kuliah_utama",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "sistem_komputer",
+              "mata_kuliah_utama",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          }
+        },
+        {
+          "id": "tuition_fee-37",
+          "chunk": "Program Studi Tuition Fee - tuition fee\nTuition Fee knowledge\n\nPertanyaan cepat:\n- Biaya kuliah berapa? - Biaya pendaftaran dan DPP berapa? - Ada potongan atau beasiswa biaya kuliah? Jawaban ringkas:\n- Biaya kuliah biasanya terdiri dari biaya pendaftaran, DPP, dan komponen per semester atau per layanan sesuai program studi. - Besaran biaya bisa berbeda menurut program studi, jalur masuk, dan gelombang pendaftaran. - Jika kamu tanya \"biaya kuliah berapa?\", jawaban yang tepat harus mengarah ke rincian biaya program yang dimaksud, bukan angka umum yang dipaksakan ke semua prodi. Gunakan kategori ini untuk pertanyaan tentang:\n- biaya kuliah\n- pendaftaran\n- DPP\n- UKM atau pembayaran per semester\nTuition Fee docs guidance\n\nPurpose:\n- Dedicated tuition and fee descriptions, payment schedules, per-semester costs, discounts.",
+          "filename": "docs/retrieval/knowledge_domains/tuition_fee.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "tuition_fee",
+            "topic": "tuition_fee",
+            "type": "program_detail",
+            "audience": "prospective_student",
+            "tags": [
+              "tuition_fee",
+              "program_detail"
+            ],
+            "source": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        }
+      ],
+      "confidenceScore": 105,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "SK",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_trusted_source_chunks",
+        "matchedChunks": [
+          {
+            "id": "program_studi-23",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          },
+          {
+            "id": "program_studi-25",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          },
+          {
+            "id": "program_studi-20",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          },
+          {
+            "id": "program_studi-21",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          },
+          {
+            "id": "program_studi-22",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+          },
+          {
+            "id": "tuition_fee-37",
+            "filename": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "key": "UTB",
+    "question": "berapa biaya prodi dengan partner utb gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Program Studi: Program Studi\nGelombang: 1A\nGelombang 1A\nTahun Akademik: 2026\n\n\nPendaftaran:\nPotongan Pendaftaran Gelombang 1:\nRp 300.000 \nSumber:\n- rincian Biaya UTB Tahun Ajaran 2026-2027.pdf",
+      "source": "rag-fee-structured-fallback-discount",
+      "contexts": [
+        {
+          "id": "added-from-backup-6",
+          "filename": "rincian Biaya UTB Tahun Ajaran 2026-2027.pdf",
+          "chunk": "RINCIAN BIAYA DUAL DEGREE UTB T.A 2026/2027\n1. Pendaftaran 500.000\n2. DPP 14.000.000\nPotongan pendaftaran: Rp.300.000 Khusus; Rp.250.000 Gelombang I\n",
+          "trainingId": null,
+          "metadata": {
+            "category": "tuition_fee",
+            "source": "pdf/rincian Biaya UTB Tahun Ajaran 2026-2027.pdf"
+          }
+        }
+      ],
+      "confidenceScore": 16,
+      "confidenceTier": "MEDIUM",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": null,
+          "partner": "UTB",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "used_discount_only_fallback",
+        "parsedDiscount": "Rp 300.000 "
+      },
+      "trustScore": 50,
+      "filename": "rincian Biaya UTB Tahun Ajaran 2026-2027.pdf",
+      "sourceFile": "rincian Biaya UTB Tahun Ajaran 2026-2027.pdf",
+      "trainingId": null,
+      "chunkContext": "RINCIAN BIAYA DUAL DEGREE UTB T.A 2026/2027\n1. Pendaftaran 500.000\n2. DPP 14.000.000\nPotongan pendaftaran: Rp.300.000 Khusus; Rp.250.000 Gelombang I\n"
+    }
+  },
+  {
+    "key": "DNUI",
+    "question": "berapa biaya prodi dengan partner dnui gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Program Studi: Program Studi\nGelombang: 1A\nGelombang 1A\nTahun Akademik: 2026\n\n\nPendaftaran:\nPotongan Pendaftaran Gelombang 1:\nRp 1.500.000 \nSumber:\n- rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+      "source": "rag-fee-structured-fallback-discount",
+      "contexts": [
+        {
+          "id": "added-from-backup-4",
+          "filename": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+          "chunk": "RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n1. Pendaftaran 3.000.000\n2. Dana Pendidikan Pokok 20.000.000\nPenjelasan Potongan : Rp.1.500.000 Gelombang Khusus, Rp.1.250.000 Gelombang I\n",
+          "trainingId": null,
+          "metadata": {
+            "category": "tuition_fee",
+            "source": "pdf/rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf"
+          }
+        }
+      ],
+      "confidenceScore": 16,
+      "confidenceTier": "MEDIUM",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": null,
+          "partner": "DNUI",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "used_discount_only_fallback",
+        "parsedDiscount": "Rp 1.500.000 "
+      },
+      "trustScore": 50,
+      "filename": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+      "sourceFile": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+      "trainingId": null,
+      "chunkContext": "RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n1. Pendaftaran 3.000.000\n2. Dana Pendidikan Pokok 20.000.000\nPenjelasan Potongan : Rp.1.500.000 Gelombang Khusus, Rp.1.250.000 Gelombang I\n"
+    }
+  },
+  {
+    "key": "HELP",
+    "question": "berapa biaya prodi dengan partner help gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Program Studi: Program Studi\nGelombang: 1A\nGelombang 1A\nTahun Akademik: 2026\n\n\nPendaftaran:\nPotongan Pendaftaran Gelombang 1:\nRp 1.500.000 \nSumber:\n- rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+      "source": "rag-fee-structured-fallback-discount",
+      "contexts": [
+        {
+          "id": "added-from-backup-5",
+          "filename": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+          "chunk": "RINCIAN BIAYA PROGRAM DUAL DEGREE HELP T.A 2026/2027\n1. Pendaftaran 3.000.000\n2. Dana Pendidikan Pokok 20.000.000\nPotongan: Rp.1.500.000 Gelombang Khusus; Rp.1.250.000 Gelombang I\n",
+          "trainingId": null,
+          "metadata": {
+            "category": "tuition_fee",
+            "source": "pdf/rincian Biaya HELP Tahun Ajaran 2026-2027.pdf"
+          }
+        }
+      ],
+      "confidenceScore": 16,
+      "confidenceTier": "MEDIUM",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": null,
+          "partner": "HELP",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "used_discount_only_fallback",
+        "parsedDiscount": "Rp 1.500.000 "
+      },
+      "trustScore": 50,
+      "filename": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+      "sourceFile": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+      "trainingId": null,
+      "chunkContext": "RINCIAN BIAYA PROGRAM DUAL DEGREE HELP T.A 2026/2027\n1. Pendaftaran 3.000.000\n2. Dana Pendidikan Pokok 20.000.000\nPotongan: Rp.1.500.000 Gelombang Khusus; Rp.1.250.000 Gelombang I\n"
+    }
+  }
+]

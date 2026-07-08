@@ -1,0 +1,137 @@
+[
+  {
+    "prompt": "saya suka merakit perangkat, jurusan apa cocok?",
+    "source": "rag-major-recommendation-hoby-doc-lines",
+    "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Sistem Komputer. | Alasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Komputer.\\n\\n Contoh yang sejalan: Sistem Komputer Merakit komputer.",
+    "contexts": [
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      },
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      },
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      },
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      },
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      }
+    ]
+  },
+  {
+    "prompt": "apakah prodi SI terakreditasi?",
+    "source": "gpt-4o-mini",
+    "answer": "Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.",
+    "contexts": [
+      {
+        "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+        "trainingId": "file-6467e454a2de",
+        "preview": "Aktivitas : Bermain game\nNo : 47 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Menggambar\nNo : 48 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Animasi/drama\nNo : 49 | Program Stud"
+      },
+      {
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+        "trainingId": "file-842336211fcd",
+        "preview": "[Sheet: Sheet1]\nPenjelasan Prodi dan Karier Masa Depan : Prodi | col2 : Penjelasan prodi | col3 : Yang Dipelajari | col4 : Cocok Untuk | col5 : Peluang Kerja\nPenjelasan Prodi dan Karier Masa Depan : S"
+      }
+    ]
+  },
+  {
+    "prompt": "gelombang apa saja yang ada?",
+    "source": "rag-wave-list",
+    "answer": "Gelombang PMB yang tersedia: Khusus, VI, I A, I B, I C, II A, II B, II C, III A, III B, III C, IV A, IV B, IV C, Sisipan 1, Sisipan 2. | Kakak mau cek gelombang yang mana? (contoh: \"2 B\" / \"Gelombang II B\" / \"Khusus\") |  | Mau saya bantu jelaskan detail gelombang atau jadwalnya?",
+    "contexts": [
+      {
+        "filename": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "4f3faa7b-3a20-416e-8379-a4d1fc9fa9ff",
+        "preview": "3. Beasiswa untuk Dana Pendidikan Pokok :\na. Gelombang Khusus : Rp. 10.000.000\nb. Gelombang I : Rp. 8.000.000\nc. Gelombang II : Rp. 6.000.000\nd. Gelombang III : Rp. 4.000.000\ne. Gelombang IV : Rp. 2.0"
+      },
+      {
+        "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "5dd6cc3e-eab8-4c04-97b4-1aa28bf0f1d9",
+        "preview": "Rp. 2.000.000,- Jika Registrasi pada Gelombang Khusus\nRp. 1.000.000.- Jika Registrasi pada Gelombang I"
+      },
+      {
+        "filename": "rincian Biaya UTB Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "9e78055e-aaa5-43ac-aa43-476a1f6e48ba",
+        "preview": "Rp. 1.000.000,- Jika Registrasi pada Gelombang III\nRp. 500.000,- Jika Registrasi pada Gelombang IV\nTl Tist—"
+      },
+      {
+        "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "396fba62-a94b-4fb6-a1d9-dfcf1e5cd2ee",
+        "preview": "Gelombang I : 5096"
+      },
+      {
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+        "preview": "Gelombang I : 5090"
+      }
+    ]
+  },
+  {
+    "prompt": "berapa biaya pendaftaran untuk Dual Degree UTB gelombang 1?",
+    "source": "rag-fee-structured",
+    "answer": "Program Studi: SK | Gelombang: 1 | Tahun Akademik: 2026 |  | Biaya Pendaftaran: |  | Potongan Pendaftaran (Gel 1): | Rp 200.000 |  | Total Pendaftaran: | Rp 0 |  | DPP: | Rp 500.000 |  | Potongan DPP (Gel 1): | Rp 300.000 |  | Biaya Perlengkapan: |  | - Jas almamater: Rp 0 | - Topi: Rp 0 | - Kaos: Rp 0 | - GMTI: Rp 0 | - Tas: Rp 0 |  | Subtotal Awal Masuk: Rp 500.000 | Total Biaya Masuk: Rp 200.000 |  | Sumber: |  | - rincian Biaya SK Tahun Ajaran 2026-2027.pdf | - rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf | - Cam Scanner 12-02-2026 14.39 (1).pdf |  | Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?",
+    "contexts": [
+      {
+        "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "5dd6cc3e-eab8-4c04-97b4-1aa28bf0f1d9",
+        "preview": "Ringkasan dokumen:\nProgram studi terlihat: PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\nProgram internasional / kerja sama internasional: \\ (ITB) STIKOM BALI\nBiaya pendaftaran: 1. Pendaftaran 500.000 P"
+      },
+      {
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+        "preview": "Rp. 1.500.000,- Jika Registrasi pada Gelombang II"
+      },
+      {
+        "filename": "CamScanner 12-02-2026 14.39 (1).pdf",
+        "trainingId": "019d9084-e611-42c4-ab64-378b7880d585",
+        "preview": "1. Potongan Biaya Pendaftaran :\nRp. 200.000,- Jika Mendaftar pada Gelombang I\nRp. 100.000,- Jika Mendaftar pada Gelombang II\nDitambah Rp. 200.000,- Jika Alumni ITB STIKOM Bali\n2. Beasiswa Semester unt"
+      }
+    ]
+  },
+  {
+    "prompt": "jelaskan program Bisnis Digital secara singkat",
+    "source": "gpt-4o-mini",
+    "answer": "Program studi Bisnis Digital berfokus pada pengelolaan bisnis berbasis digital dengan mengadopsi tren terkini di sektor industri e-commerce. Lulusan dari program ini memiliki peluang karier sebagai Digital Marketing Specialist, Business Analyst, dan Project Manager. | Apa saja hobi atau aktivitas yang cocok untuk mahasiswa di program ini?",
+    "contexts": [
+      {
+        "filename": "hobi_prodi_lengkap (1).xlsx",
+        "trainingId": "a4834fc1-bb66-4146-8774-88b321fba707",
+        "preview": "No | Program Studi | Hobi / Aktivitas\n1 | Bisnis Digital & DKV | Membuat konten media sosial\n2 | Bisnis Digital & DKV | Memiliki sosial media\n3 | Bisnis Digital & DKV | Menulis blog/artikel\n4 | Bisnis"
+      },
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": "HOBI DAN KECOCOKAN PRODI\nnoprodihobi\n1\nBisnis Digital & DKVMembuat konten media sosial\n2\nBisnis Digital & DKVMemiliki sosial media\n3\nBisnis Digital & DKVMenulis blog/artikel\n4\nBisnis Digital & DKVDesa"
+      },
+      {
+        "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+        "trainingId": "file-6467e454a2de",
+        "preview": ": Bisnis Digital & DKV | Hobi / Aktivitas : Dropshipper/reseller\nNo : 11 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Analisis tren pasar\nNo : 12 | Program Studi : Bisnis Digital & DKV "
+      },
+      {
+        "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+        "trainingId": "file-6467e454a2de",
+        "preview": "[Sheet: Hobi Prodi]\nNo : 1 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Membuat konten media sosial\nNo : 2 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Memiliki sosial me"
+      },
+      {
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+        "trainingId": "file-842336211fcd",
+        "preview": "controller, embedded system, IoT, robotika, jaringan komputer, sistem digital | col4 : Suka perangkat elektronik, robot, dan praktik teknis | col5 : IoT Engineer, Hardware Engineer, Robotics Engineer,"
+      }
+    ]
+  }
+]

@@ -1,0 +1,329 @@
+{
+  "generatedAt": "2026-07-03T03:36:39.389Z",
+  "config": {
+    "PROGRAM_MATCH_BOOST": "0.6",
+    "RAG_EXACT_PROGRAM_MATCH_BOOST": "1.0"
+  },
+  "results": [
+    {
+      "question": "Saya suka bermain game dan membuat konten, hobi ini cocok untuk prodi apa?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.\\n\\n Contoh yang sejalan: Sistem Informasi Bermain game; Sistem Informasi Konten media sosial; Sistem Informasi Membuat game.",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    },
+    {
+      "question": "Kalau hobiku adalah menggambar dan edit video, jurusan apa yang paling pas?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Bisnis Digital.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Bisnis Digital.\\n\\n Contoh yang sejalan: Bisnis Digital Editing video; Bisnis Digital Analisis tren pasar.",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    },
+    {
+      "question": "Saya senang nonton anime, bikin konten digital, dan main game, prodi apa bagus?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Bisnis Digital.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Bisnis Digital.\\n\\n Contoh yang sejalan: Bisnis Digital Membuat konten media sosial; Bisnis Digital Memiliki sosial media; Bisnis Digital Menulis blog/artikel.",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    },
+    {
+      "question": "Hobi saya terbiasa dengan media sosial dan desain sederhana, prodi apa ya?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.\\n\\n Contoh yang sejalan: Sistem Informasi Desain grafis; Sistem Informasi Konten media sosial; Sistem Informasi Memiliki sosial media.",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    },
+    {
+      "question": "Saya suka coding kecil-kecilan dan bikin website, hobi ini cocok di jurusan mana?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.\\n\\n Contoh yang sejalan: Sistem Informasi Website pribadi.\nMau saya jelaskan lagi bagian lain?",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    },
+    {
+      "question": "Paling sering saya bikin video pendek dan main game, jurusan mana yang sesuai?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.\\n\\n Contoh yang sejalan: Sistem Informasi Bermain game; Sistem Informasi Editing video; Sistem Informasi Membuat game.\nMau saya jelaskan lagi bagian lain?",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    },
+    {
+      "question": "Suka belajar IT lewat game dan konten digital, bisa cocok di prodi apa?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Bisnis Digital.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Bisnis Digital.\\n\\n Contoh yang sejalan: Bisnis Digital Membuat konten media sosial; Bisnis Digital Memiliki sosial media; Bisnis Digital Menulis blog/artikel.",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    },
+    {
+      "question": "Kalau saya suka fotografi dan social media, jurusan apa yang cocok dengan hobi itu?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.\\n\\n Contoh yang sejalan: Sistem Informasi Fotografi; Sistem Informasi Konten media sosial; Sistem Informasi Memiliki sosial media.",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    },
+    {
+      "question": "Saya hobi membuat aplikasi sederhana dan desain visual, prodi apa yang cocok?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Bisnis Digital.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Bisnis Digital.\\n\\n Contoh yang sejalan: Bisnis Digital Membuat konten media sosial; Bisnis Digital Desain grafis; Bisnis Digital Membuat podcast.",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    },
+    {
+      "question": "Mau tanya: hobi saya digital content creation dan game, tepatnya cocok di jurusan mana?",
+      "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Bisnis Digital.\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Bisnis Digital.\\n\\n Contoh yang sejalan: Bisnis Digital Membuat konten media sosial; Bisnis Digital Memiliki sosial media; Bisnis Digital Menulis blog/artikel.\nMau saya jelaskan lagi bagian lain?",
+      "contexts": [
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        },
+        {
+          "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+          "filename": "HOBY.pdf",
+          "preview": ""
+        }
+      ],
+      "error": null
+    }
+  ]
+}

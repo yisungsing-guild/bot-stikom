@@ -1,0 +1,288 @@
+﻿
+=== REQUEST q1 prodi apa saja yang ada di stikom?
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-chat-q1',
+  text: 'prodi apa saja yang ada di stikom?',
+  messageId: 'msg-q1',
+  inboundTs: 1780109893896
+}
+[findReplyByRules] No keyword match found
+SEND MESSAGE [test-chat-q1] Program studi yang tersedia di ITB STIKOM Bali:
+S2 (Pascasarjana):
+- S2 Sistem Informasi (SI)
+S1 (Sarjana):
+- Sistem Informasi
+- Teknologi Informasi
+- Bisnis Digital
+- Sistem Komputer
+D3 (Diploma):
+- D3 Manajemen Informatika
+Program International / Dual Degree:
+- Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) ΓÇö Prodi: Bisnis Digital
+- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China ΓÇö Prodi: Bisnis Digital
+- Dual Degree (International Class) dengan HELP University, Malaysia ΓÇö Prodi: Sistem Informasi
+Kalau kakak mau, sebutkan prodi + gelombang (jika relevan), nanti saya bantu jelaskan rincian biaya/jadwal yang tertulis.
+RES SEND { ok: true, source: 'program_list', ragUsed: false }
+
+=== REQUEST q2 di sistem informasi belajar apa saja?
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-chat-q2',
+  text: 'di sistem informasi belajar apa saja?',
+  messageId: 'msg-q2',
+  inboundTs: 1780109894844
+}
+[DEBUG] persistProgramHint early test-chat-q2 Sistem Informasi
+SEND MESSAGE [test-chat-q2] Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.
+[findReplyByRules] No keyword match found
+SEND MESSAGE [test-chat-q2] Siap, aku bantu jawab ya.
+Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.
+Alasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.
+Contoh yang sejalan: Sistem Informasi Bermain game; Sistem Informasi Menggambar; Sistem Informasi Animasi/drama.
+Mau saya jelaskan lagi bagian lain?
+Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:
+- Beasiswa KIP
+- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)
+- Beasiswa Prestasi
+- Beasiswa Yayasan
+- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global
+- Kuliah Sambil Kerja di Luar Negeri
+Apakah Kakak ingin dijelaskan tentang?
+- Biaya perkuliahan program studi yang lainnya
+- Salah satu jenis beasiswa
+- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll
+Silahkan diketikkan.
+RES SEND { ok: true, ragUsed: true }
+
+=== REQUEST q3 prospek kerja TI bagaimana?
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-chat-q3',
+  text: 'prospek kerja TI bagaimana?',
+  messageId: 'msg-q3',
+  inboundTs: 1780109895258
+}
+SEND MESSAGE [test-chat-q3] Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.
+[findReplyByRules] No keyword match found
+SEND MESSAGE [test-chat-q3] Siap, aku bantu jawab ya.
+Berikut ringkasan singkat masing-masing prodi:
+- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.
+- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.
+- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.
+- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.
+Kalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:
+- Beasiswa KIP
+- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)
+- Beasiswa Prestasi
+- Beasiswa Yayasan
+- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global
+- Kuliah Sambil Kerja di Luar Negeri
+Apakah Kakak ingin dijelaskan tentang?
+- Biaya perkuliahan program studi yang lainnya
+- Salah satu jenis beasiswa
+- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll
+Silahkan diketikkan.
+RES SEND { ok: true, ragUsed: true }
+
+=== REQUEST q4 berapa biaya SI?
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-chat-q4',
+  text: 'berapa biaya SI?',
+  messageId: 'msg-q4',
+  inboundTs: 1780109895570
+}
+[DEBUG] persistProgramHint early test-chat-q4 Sistem Informasi
+SEND MESSAGE [test-chat-q4] Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.
+[findReplyByRules] No keyword match found
+SEND MESSAGE [test-chat-q4] Baik, kak. Terimakasih atas pertanyaannya.
+
+Untuk program studi Sistem Informasi, rincian biaya sebagai berikut:
+
+Pendaftaran:
+* Biaya pendaftaran: Rp 500.000
+* Potongan biaya pendaftaran: Rp 0
+Total biaya pendaftaran: Rp 500.000
+
+Biaya awal masuk untuk Prodi Sistem Informasi:
+* Jas almamater dan topi: Rp 750.000
+* Kaos, tas, GMTI: Rp 750.000
+Subtotal biaya awal masuk: Rp 2.000.000
+* Potongan biaya DPP: Rp 0
+Total biaya awal masuk setelah potongan: Rp 2.000.000
+
+Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:
+* Beasiswa KIP
+* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)
+* Beasiswa Prestasi
+* Beasiswa Yayasan
+* Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global
+* Kuliah Sambil Kerja di Luar Negeri
+
+Apakah Kakak ingin dijelaskan tentang?
+* Biaya perkuliahan program studi yang lainnya
+* Salah satu jenis beasiswa
+* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll
+Silahkan diketikkan.
+RES SEND { ok: true, ragUsed: true }
+
+=== REQUEST q5 syarat pendaftaran apa saja?
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-chat-q5',
+  text: 'syarat pendaftaran apa saja?',
+  messageId: 'msg-q5',
+  inboundTs: 1780109896474
+}
+SEND MESSAGE [test-chat-q5] Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.
+[findReplyByRules] No keyword match found
+SEND MESSAGE [test-chat-q5] Siap, aku bantu jelaskan info akademik.
+Maaf, engine AI belum dikonfigurasi (OPENAIAPIKEY kosong), jadi saya belum bisa menjawab saat ini.
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:
+- Beasiswa KIP
+- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)
+- Beasiswa Prestasi
+- Beasiswa Yayasan
+- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global
+- Kuliah Sambil Kerja di Luar Negeri
+Apakah Kakak ingin dijelaskan tentang?
+- Biaya perkuliahan program studi yang lainnya
+- Salah satu jenis beasiswa
+- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll
+Silahkan diketikkan.
+RES SEND { ok: true, ragUsed: true }
+
+=== REQUEST q6 masih buka pendaftaran?
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-chat-q6',
+  text: 'masih buka pendaftaran?',
+  messageId: 'msg-q6',
+  inboundTs: 1780109897197
+}
+SEND MESSAGE [test-chat-q6] Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.
+[findReplyByRules] No keyword match found
+SEND MESSAGE [test-chat-q6] Siap, aku bantu jelaskan soal jadwal.
+Jadwal PMB tersedia dan dibagi per gelombang (contoh: Khusus, I A/I B/I C, II A/II B/II C, dst.).
+Kakak ingin cek jadwal gelombang yang mana? (Balas misalnya: "2 B" / "Gelombang II B" / "Khusus").
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:
+- Beasiswa KIP
+- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)
+- Beasiswa Prestasi
+- Beasiswa Yayasan
+- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global
+- Kuliah Sambil Kerja di Luar Negeri
+Apakah Kakak ingin dijelaskan tentang?
+- Biaya perkuliahan program studi yang lainnya
+- Salah satu jenis beasiswa
+- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll
+Silahkan diketikkan.
+RES SEND { ok: true, ragUsed: true }
+
+=== REQUEST q7 berapa biaya pendaftaran prodi sistem informasi
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-chat-q7',
+  text: 'berapa biaya pendaftaran prodi sistem informasi',
+  messageId: 'msg-q7',
+  inboundTs: 1780109898253
+}
+[DEBUG] persistProgramHint early test-chat-q7 Sistem Informasi
+SEND MESSAGE [test-chat-q7] Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.
+SEND MESSAGE [test-chat-q7] Untuk Prodi Sistem Informasi, biaya pendaftaran: Rp 500.000 (dibayar saat daftar).
+Mau sekalian saya jelaskan rincian biaya pendidikan lengkap (pendaftaran, DPP, biaya per semester, dan komponen awal masuk)?
+Balas: YA atau TIDAK.
+RES SEND {
+  ok: true,
+  source: 'fast_fee',
+  program: 'Sistem Informasi',
+  choice: 'pendaftaran',
+  offerBreakdown: true
+}
+
+=== REQUEST q8 apa bedanya Sistem Informasi dan Sistem Komputer?
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-chat-q8',
+  text: 'apa bedanya Sistem Informasi dan Sistem Komputer?',
+  messageId: 'msg-q8',
+  inboundTs: 1780109898324
+}
+[DEBUG] persistProgramHint early test-chat-q8 Sistem Informasi
+SEND MESSAGE [test-chat-q8] Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.
+[findReplyByRules] No keyword match found
+SEND MESSAGE [test-chat-q8] Siap, aku bantu jawab ya.
+Prodi yang paling cocok untuk hobi merakit komputer/PC atau perangkat keras adalah Sistem Komputer (SK).
+Alasan: SK menekankan arsitektur komputer, sistem tertanam, dan perangkat keras - cocok untuk yang suka merakit dan bekerja dengan hardware.
+Mau saya jelaskan lagi bagian lain?
+Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:
+- Beasiswa KIP
+- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)
+- Beasiswa Prestasi
+- Beasiswa Yayasan
+- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global
+- Kuliah Sambil Kerja di Luar Negeri
+Apakah Kakak ingin dijelaskan tentang?
+- Biaya perkuliahan program studi yang lainnya
+- Salah satu jenis beasiswa
+- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll
+Silahkan diketikkan.
+RES SEND { ok: true, ragUsed: true }
+
+=== RAG QUERY LOG ===
+{
+  queryId: 1,
+  question: 'Program Studi: Sistem Informasi\ndi sistem informasi belajar apa saja?',
+  source: 'rag-major-recommendation-hoby-doc-lines',
+  success: true,
+  confidenceScore: undefined,
+  answerSnippet: 'Siap, aku bantu jawab ya. Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi. Alasan: aktivitas yang ka'
+}
+{
+  queryId: 2,
+  question: 'prospek kerja TI bagaimana?',
+  source: 'rag-prodi-overview',
+  success: true,
+  confidenceScore: undefined,
+  answerSnippet: 'Siap, aku bantu jawab ya. Berikut ringkasan singkat masing-masing prodi: - Bisnis Digital (BD): fokus pada strategi bisn'
+}
+{
+  queryId: 3,
+  question: 'Program Studi: Sistem Informasi\n' +
+    'berapa biaya SI?\n' +
+    'Follow-up: berapa biaya SI?',
+  source: 'rag-fee-breakdown',
+  success: true,
+  confidenceScore: undefined,
+  answerSnippet: 'Siap, aku bantu jelaskan soal biaya. Berikut rangkuman rincian biaya untuk Kelas Reguler ╬ô├ç├╢ Program Studi Sistem Inform'
+}
+{
+  queryId: 4,
+  question: 'Apa saja persyaratan (syarat) dan dokumen/berkas yang dibutuhkan untuk pendaftaran kuliah (PMB) di ITB STIKOM Bali? Jawab berdasarkan formulir pendaftaran/dokumen PMB yang ada. Jika ada ketentuan format/ukuran/scan, sebutkan.',
+  source: 'rag-no-ai',
+  success: true,
+  confidenceScore: 0.012834249083702008,
+  answerSnippet: 'Siap, aku bantu jelaskan info akademik. Maaf, engine AI belum dikonfigurasi (OPENAI_API_KEY kosong), jadi saya belum bis'
+}
+{
+  queryId: 5,
+  question: 'masih buka pendaftaran?\nFollow-up: masih buka pendaftaran?',
+  source: 'rag-no-match',
+  success: true,
+  confidenceScore: 0.034119984360919065,
+  answerSnippet: null
+}
+{
+  queryId: 6,
+  question: 'masih buka pendaftaran?\nFollow-up: masih buka pendaftaran?',
+  source: 'rag-schedule-overview',
+  success: true,
+  confidenceScore: 0.6121693923890474,
+  answerSnippet: 'Siap, aku bantu jelaskan soal jadwal. Jadwal PMB tersedia dan dibagi per gelombang (contoh: Khusus, I A/I B/I C, II A/II'
+}
+{
+  queryId: 7,
+  question: 'Program Studi: Sistem Informasi\n' +
+    'apa bedanya Sistem Informasi dan Sistem Komputer?',
+  source: 'rag-major-recommendation',
+  success: true,
+  confidenceScore: undefined,
+  answerSnippet: 'Siap, aku bantu jawab ya. Prodi yang paling cocok untuk hobi merakit komputer/PC atau perangkat keras adalah Sistem Komp'
+}

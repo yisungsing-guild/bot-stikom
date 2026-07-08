@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-06-12T03:13:51.990Z",
+  "summary": {
+    "totalSIChunksBecomingEligible": 0,
+    "nonSIKurikulumChunksAtRisk": 0,
+    "verdict": "DONT_PATCH"
+  },
+  "queryAnalysis": {
+    "query1": {
+      "siChunksBecomingEligible": 0,
+      "nonSIKurikulumAtRisk": [],
+      "currentWinner": {
+        "rank": 2,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "program": "SI",
+        "filename": "CHATBOT - Double Degree (1).docx"
+      },
+      "newWinner": null,
+      "statusChanges": []
+    }
+  }
+}

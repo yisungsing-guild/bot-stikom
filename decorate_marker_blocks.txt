@@ -1,0 +1,1461 @@
+MARKER:=== BEFORE DECORATE === POS:11720
+PRE:y="program studi: teknologi informasi
+apa yang dipelajari di ti?" expandedQuery="program studi: teknologi informasi
+apa yang dipelajari di ti teknologi informasi?" questionTokens=["program","studi:","teknologi","informasi","apa","yang","dipelajari","ti","teknologi","informasi?"] overlapTokens=["program","studi:","apa","yang","ti"] overlapRatio=0.5
+[2026-06-05 13:53:05.533 +0800] INFO: [RAG] enrollment discount helper called
+    question: "program studi: teknologi informasi\napa yang dipelajari di ti?"
+[2026-06-05 13:53:05.538 +0800] WARN: [AI] Model normalized
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-05 13:53:05.540 +0800] INFO: [AI RAG] Sending updated RAG prompt
+    qLen: 61
+    ctxLen: 6032
+    style: "SEMI"
+    assistHintsLen: 24
+    compactPrompt: false
+
+POST:=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 't
+---
+MARKER:=== BEFORE DECORATE === POS:14849
+PRE:r, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?\n' +
+    'Butu'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yan…'
+}
+
+POST:=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+=== FULL_BEFORE_DECORATE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (
+---
+MARKER:=== BEFORE DECORATE === POS:18086
+PRE:eer Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.\n' +
+    '\n' +
+    'Apakah ada aspek tertentu '
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informas…'
+}
+
+POST:=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+=== FULL_BEFORE_DECORATE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehat'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  c
+---
+MARKER:=== BEFORE DECORATE === POS:36353
+PRE:ingId": "66bcaec6-88a7-4ac2-8ae4-660bd3084393",
+        "divisionKey": null,
+        "score": 0.010746458959271463,
+        "snippet": "omputer 78 Teknologi InformasiKabel LAN 79 Teknologi InformasiUI/UX design 80 Teknologi InformasiEditing video 81 Teknologi InformasiPengolahan data 82 Teknologi InformasiMembaca buku IT 83 Teknologi "
+      },
+      {
+        "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "filename": null,
+        "trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "divisionKey": null,
+        "score": 0.4265438766231666,
+        "snippet": "19 Oktober 2023 PENERIMA PROGRAM BEASISWA RANKING KELAS DI ITB STIKOM BALI \" L STIKOM Bali memberikan beasiswa kepada: a. Calon mahasiswa dari : SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN"
+      }
+    ]
+
+POST:=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jari'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Tekn
+---
+MARKER:=== FULL_BEFORE_DECORATE === POS:12054
+PRE:verlapRatio=0.5
+[2026-06-05 13:53:05.533 +0800] INFO: [RAG] enrollment discount helper called
+    question: "program studi: teknologi informasi\napa yang dipelajari di ti?"
+[2026-06-05 13:53:05.538 +0800] WARN: [AI] Model normalized
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-05 13:53:05.540 +0800] INFO: [AI RAG] Sending updated RAG prompt
+    qLen: 61
+    ctxLen: 6032
+    style: "SEMI"
+    assistHintsLen: 24
+    compactPrompt: false
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+
+POST:=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengemban
+---
+MARKER:=== FULL_BEFORE_DECORATE === POS:15174
+PRE:melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?\n' +
+    'Butu'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yan…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+
+POST:=== FULL_BEFORE_DECORATE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pe
+---
+MARKER:=== FULL_BEFORE_DECORATE === POS:18421
+PRE:aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.\n' +
+    '\n' +
+    'Apakah ada aspek tertentu '
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informas…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+
+POST:=== FULL_BEFORE_DECORATE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehat'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan t
+---
+MARKER:=== FULL_BEFORE_DECORATE === POS:36688
+PRE: "
+      },
+      {
+        "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "filename": null,
+        "trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "divisionKey": null,
+        "score": 0.4265438766231666,
+        "snippet": "19 Oktober 2023 PENERIMA PROGRAM BEASISWA RANKING KELAS DI ITB STIKOM BALI \" L STIKOM Bali memberikan beasiswa kepada: a. Calon mahasiswa dari : SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN"
+      }
+    ]
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+
+POST:=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jari'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info f
+---
+MARKER:=== AFTER DECORATE === POS:12545
+PRE:
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+POST:=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?\n' +
+    'Butu'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yan…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bid
+---
+MARKER:=== AFTER DECORATE === POS:15732
+PRE:I) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+=== FULL_BEFORE_DECORATE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+POST:=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.\n' +
+    '\n' +
+    'Apakah ada aspek tertentu '
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informas…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat
+---
+MARKER:=== AFTER DECORATE === POS:18915
+PRE:hatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+=== FULL_BEFORE_DECORATE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+POST:=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehat'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.\n' +
+    '\n' +
+    'Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?\n' +
+    'B'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan. - Posisi yang umum: Pengembang perangkat l…'
+}
+[2026-06-05 13:53:07.795 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug:
+---
+MARKER:=== AFTER DECORATE === POS:37418
+PRE:ngembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+POST:=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jari'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.\n' +
+    '- Desain UI/UX: Mempelajari prinsip-prinsip desain a'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 
+---
+MARKER:FINAL_WA_OUTPUT_V2 POS:12878
+PRE: ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+
+POST:FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?\n' +
+    'Butu'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yan…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+=== FULL_BEFORE_DECORATE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan tek
+---
+MARKER:FINAL_WA_OUTPUT_V2 POS:16056
+PRE: dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+
+POST:FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.\n' +
+    '\n' +
+    'Apakah ada aspek tertentu '
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informas…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+=== FULL_BEFORE_DECORATE ===
+Prospe
+---
+MARKER:FINAL_WA_OUTPUT_V2 POS:19249
+PRE:
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+
+POST:FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehat'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.\n' +
+    '\n' +
+    'Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?\n' +
+    'B'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan. - Posisi yang umum: Pengembang perangkat l…'
+}
+[2026-06-05 13:53:07.795 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug: {
+      "query": "Program Studi: Teknologi Informasi\nMata kuliah TI?",
+      "detectedIntent": "ACADEMIC_PROGRAM",
+      "programHint": "TI",
+      "queryEntities": {
+        "intent": "ACADEMIC_PROGRAM",
+        "program": "TI",
+        "programLabel": "TEKNOLOGI_INFORMASI",
+        "programMode": null,
+        "wave": null,
+    
+---
+MARKER:FINAL_WA_OUTPUT_V2 POS:37752
+PRE:.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+
+POST:FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jari'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.\n' +
+    '- Desain UI/UX: Mempelajari prinsip-prinsip desain a'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.…'
+}
+[2026-06-05 13:53:08.780 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug: {
+      "query": "Program Studi: Teknologi Informasi\nApa yang dipelajari di TI?",      "detectedIntent": "ACADEMIC_P
+---
+MARKER:=== FULL_FINAL_WA_MESSAGE === POS:13267
+PRE:bih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+
+POST:=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?\n' +
+    'Butu'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yan…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+=== FULL_BEFORE_DECORATE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+B
+---
+MARKER:=== FULL_FINAL_WA_MESSAGE === POS:16446
+PRE:tahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada'
+}
+
+POST:=== FULL_FINAL_WA_MESSAGE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.\n' +
+    '\n' +
+    'Apakah ada aspek tertentu '
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informas…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+=== FULL_BEFORE_DECORATE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanju
+---
+MARKER:=== FULL_FINAL_WA_MESSAGE === POS:19639
+PRE:h lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehat'
+}
+
+POST:=== FULL_FINAL_WA_MESSAGE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.\n' +
+    '\n' +
+    'Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?\n' +
+    'B'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan. - Posisi yang umum: Pengembang perangkat l…'
+}
+[2026-06-05 13:53:07.795 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug: {
+      "query": "Program Studi: Teknologi Informasi\nMata kuliah TI?",
+      "detectedIntent": "ACADEMIC_PROGRAM",
+      "programHint": "TI",
+      "queryEntities": {
+        "intent": "ACADEMIC_PROGRAM",
+        "program": "TI",
+        "programLabel": "TEKNOLOGI_INFORMASI",
+        "programMode": null,
+        "wave": null,
+        "waveGroup": null,
+        "academicYear": null,
+        "partner": null,
+        "campus": null,
+        "jalur": null,
+        "feeType": null,
+        "category": "KURIKULUM",
+        "pageNumber": null,
+        "academicIntent": "MATA_KULIAH"
+      },
+      "selectedChunkCount": 6,
+      "selectedChunks": [
+        {
+          "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+       
+---
+MARKER:=== FULL_FINAL_WA_MESSAGE === POS:38142
+PRE:h lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jari'
+}
+
+POST:=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.\n' +
+    '- Desain UI/UX: Mempelajari prinsip-prinsip desain a'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.…'
+}
+[2026-06-05 13:53:08.780 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug: {
+      "query": "Program Studi: Teknologi Informasi\nApa yang dipelajari di TI?",      "detectedIntent": "ACADEMIC_PROGRAM",
+      "programHint": "TI",
+      "queryEntities": {
+        "intent": "ACADEMIC_PROGRAM",
+        "program": "TI",
+        "programLabel": "TEKNOLOGI_INFORMASI",
+        "programMode": null,
+        "wave": null,
+        "waveGroup": null,
+        "academicYear": null,
+        "partner": null,
+        "campus": null,
+        "jalur": null,
+        "feeType": null,
+        "categ
+---
+MARKER:=== FINAL WA MESSAGE === POS:14081
+PRE:_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+
+POST:=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?\n' +
+    'Butu'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yan…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+=== FULL_BEFORE_DECORATE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Tekno
+---
+MARKER:=== FINAL WA MESSAGE === POS:17327
+PRE:an dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+
+POST:=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.\n' +
+    '\n' +
+    'Apakah ada aspek tertentu '
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informas…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+=== FULL_BEFORE_DECORATE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berba'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehat'
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat lu
+---
+MARKER:=== FINAL WA MESSAGE === POS:20456
+PRE:_MESSAGE ===
+Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.
+
+- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.
+- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.
+
+Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+
+POST:=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan.\n' +
+    '\n' +
+    '- Posisi yang umum: Pengembang perangkat lunak, analis sistem, administrator jaringan, dan spesialis keamanan siber.\n' +
+    '- Sektor industri: TI dapat bekerja di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.\n' +
+    '\n' +
+    'Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?\n' +
+    'B'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan. - Posisi yang umum: Pengembang perangkat l…'
+}
+[2026-06-05 13:53:07.795 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug: {
+      "query": "Program Studi: Teknologi Informasi\nMata kuliah TI?",
+      "detectedIntent": "ACADEMIC_PROGRAM",
+      "programHint": "TI",
+      "queryEntities": {
+        "intent": "ACADEMIC_PROGRAM",
+        "program": "TI",
+        "programLabel": "TEKNOLOGI_INFORMASI",
+        "programMode": null,
+        "wave": null,
+        "waveGroup": null,
+        "academicYear": null,
+        "partner": null,
+        "campus": null,
+        "jalur": null,
+        "feeType": null,
+        "category": "KURIKULUM",
+        "pageNumber": null,
+        "academicIntent": "MATA_KULIAH"
+      },
+      "selectedChunkCount": 6,
+      "selectedChunks": [
+        {
+          "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+          "filename": "hobi-sesuai-program-studi.docx",
+          "score": 0.4405209287988315
+        },
+        {
+          "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+          "filename": "HOBY.pdf",
+          "score": 0.0469596102449573
+        },
+        {
+          "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+          "score": 0.39551788234372387
+        },
+        {
+          "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+          "filename": "HOBY.pdf",
+          "score": 0.013490729946505773
+        },
+        {
+          "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+          "score": 0.44457955908526087
+        },
+        {
+          "id": "57133696-2e84-4e4b-96b9-6500af3a01b2",
+          "score": 0.3709316315800084
+        }
+      ],
+      "finalContextSources": [
+        "hobi-sesuai-program-stud
+---
+MARKER:=== FINAL WA MESSAGE === POS:39195
+PRE:angkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pengguna untuk aplikasi dan situs web.
+- Pengolahan data: Teknik untuk mengumpulkan, menganalisis, dan mengelola data.
+
+Apa aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+
+POST:=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.\n' +
+    '- Desain UI/UX: Mempelajari prinsip-prinsip desain a'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.…'
+}
+[2026-06-05 13:53:08.780 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug: {
+      "query": "Program Studi: Teknologi Informasi\nApa yang dipelajari di TI?",      "detectedIntent": "ACADEMIC_PROGRAM",
+      "programHint": "TI",
+      "queryEntities": {
+        "intent": "ACADEMIC_PROGRAM",
+        "program": "TI",
+        "programLabel": "TEKNOLOGI_INFORMASI",
+        "programMode": null,
+        "wave": null,
+        "waveGroup": null,
+        "academicYear": null,
+        "partner": null,
+        "campus": null,
+        "jalur": null,
+        "feeType": null,
+        "category": "PROGRAM_STUDI",
+        "pageNumber": null,
+        "academicIntent": "MATA_KULIAH"
+      },
+      "selectedChunkCount": 6,
+      "selectedChunks": [
+        {
+          "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+          "filename": "hobi-sesuai-program-studi.docx",
+          "score": 0.4712860429029587
+        },
+        {
+          "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+          "filename": "HOBY.pdf",
+          "score": 0.033278003200464326
+        },
+        {
+          "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+          "score": 0.3783036769490688
+        },
+        {
+          "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+          "filename": "HOBY.pdf",
+          "score": 0.00238393694288917
+        },
+        {
+          "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+          "score": 0.411850657338135
+        },
+        {
+          "id": "57133696-2e84-4e4b-96b9-6500af3a01b2",
+          "score": 0.31540604926010557
+        }
+      ],
+      "finalContextSources": [
+        "hobi-sesuai-program-studi.docx"
+---

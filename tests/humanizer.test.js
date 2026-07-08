@@ -1,0 +1,235 @@
+/**
+ * Test suite for humanizer module
+ * Tests the presentation/humanization layer improvements
+ */
+
+const {
+  buildHumanizedIntentConfirmation,
+  generateFollowUpQuestions,
+  formatHumanizedResponse,
+  applyVirtualAssistantPersona,
+  extractProgramName,
+  cleanMainAnswer
+} = require('../src/engine/humanizer');
+
+describe('Humanizer Module', () => {
+  describe('buildHumanizedIntentConfirmation', () => {
+    it('should build natural program studi confirmation', () => {
+      const result = buildHumanizedIntentConfirmation('program_studi', 'Apa itu SI?', {
+        program: 'Sistem Informasi'
+      });
+      
+      expect(result).toBeTruthy();
+      expect(result).toContain('Sistem Informasi');
+      expect(result).not.toContain('Topik:');
+    });
+
+    it('should build fee confirmation with context', () => {
+      const result = buildHumanizedIntentConfirmation('biaya', 'Berapa biaya SI?', {
+        program: 'Sistem Informasi',
+        feeChoice: 'semester'
+      });
+      
+      expect(result).toBeTruthy();
+      expect(result).toContain('biaya per semester');
+      expect(result).not.toContain('Kesimpulan:');
+    });
+
+    it('should build scholarship confirmation', () => {
+      const result = buildHumanizedIntentConfirmation('beasiswa', 'Ada beasiswa prestasi?');
+      
+      expect(result).toBeTruthy();
+      expect(result).toContain('beasiswa');
+    });
+
+    it('should build KIP-specific scholarship confirmation', () => {
+      const result = buildHumanizedIntentConfirmation('beasiswa', 'Ada beasiswa KIP?');
+      expect(result).toContain('beasiswa KIP');
+    });
+
+    it('should build 1K1S-specific scholarship confirmation', () => {
+      const result = buildHumanizedIntentConfirmation('beasiswa', 'Apa syarat beasiswa 1K1S?');
+      expect(result).toContain('beasiswa KIP');
+    });
+
+    it('should provide general confirmation fallback', () => {
+      const result = buildHumanizedIntentConfirmation('general', 'Random question');
+      
+      expect(result).toBeTruthy();
+      expect(result.length > 0).toBe(true);
+    });
+  });
+
+  describe('generateFollowUpQuestions', () => {
+    it('should generate 3 follow-up questions for program_studi intent', () => {
+      const questions = generateFollowUpQuestions('program_studi', {
+        program: 'Sistem Informasi'
+      });
+      
+      expect(Array.isArray(questions)).toBe(true);
+      expect(questions.length).toBeLessThanOrEqual(3);
+      expect(questions.length).toBeGreaterThan(0);
+      questions.forEach(q => {
+        expect(typeof q).toBe('string');
+        expect(q.length > 0).toBe(true);
+      });
+    });
+
+    it('should generate questions for biaya intent', () => {
+      const questions = generateFollowUpQuestions('biaya');
+      
+      expect(questions.length).toBeLessThanOrEqual(3);
+      expect(questions.some(q => /biaya|beasiswa|cicilan/i.test(q))).toBe(true);
+    });
+
+    it('should generate questions for beasiswa intent', () => {
+      const questions = generateFollowUpQuestions('beasiswa');
+      
+      expect(questions.length).toBeLessThanOrEqual(3);
+      expect(questions.some(q => /beasiswa|syarat/i.test(q))).toBe(true);
+    });
+
+    it('should not have duplicate questions', () => {
+      const questions = generateFollowUpQuestions('prospek_kerja', {});
+      const unique = new Set(questions);
+      
+      expect(unique.size).toBe(questions.length);
+    });
+  });
+
+  describe('formatHumanizedResponse', () => {
+    it('should format response without system labels', () => {
+      const mainAnswer = `Topik: Program Studi
+      Sistem Informasi adalah program yang mempelajari...
+      Informasi Terkait: Prospek kerja
+      Kesimpulan: Siswa akan menjadi developer`;
+      
+      const result = formatHumanizedResponse(mainAnswer, 'Apa itu SI?', {
+        intent: 'program_studi'
+      });
+      
+      expect(result).toBeTruthy();
+      expect(result).not.toContain('Topik:');
+      expect(result).not.toContain('Kesimpulan:');
+      expect(result).not.toContain('Informasi Terkait:');
+    });
+
+    it('should include intent confirmation and follow-ups', () => {
+      const mainAnswer = 'Sistem Informasi adalah jurusan yang mempelajari IT dan programming.';
+      
+      const result = formatHumanizedResponse(mainAnswer, 'Apa itu SI?', {
+        intent: 'program_studi',
+        program: 'Sistem Informasi'
+      });
+      
+      expect(result).toContain(mainAnswer);
+      expect(result.includes('•')).toBe(true); // Contains bullet points for follow-ups
+    });
+  });
+
+  describe('applyVirtualAssistantPersona', () => {
+    it('should improve persona with natural phrases', () => {
+      const input = 'Baik kak, ini informasi tentang program studi.';
+      const result = applyVirtualAssistantPersona(input);
+      
+      expect(result).toBeTruthy();
+      expect(result).toContain('Baik Kak');
+    });
+
+    it('should remove standalone kak greetings and normalize address', () => {
+      const input = `Baik kak,
+      Informasi untuk Anda mengenai...`;
+      
+      const result = applyVirtualAssistantPersona(input);
+      
+      expect(result).not.toContain('Anda');
+      expect(result).toContain('Kakak');
+    });
+
+    it('should soften language', () => {
+      const input = 'Mohon perhatian Anda. Jika ada pertanyaan...';
+      const result = applyVirtualAssistantPersona(input);
+      
+      expect(result).not.toContain('Mohon');
+      expect(result).not.toContain('Jika');
+    });
+  });
+
+  describe('cleanMainAnswer', () => {
+    it('should remove system labels', () => {
+      const input = `Topik: Program Studi
+      Berikut penjelasannya...
+      Informasi Terkait: Prospek
+      Kesimpulan: Ringkasnya...`;
+      
+      const result = cleanMainAnswer(input);
+      
+      expect(result).not.toContain('Topik:');
+      expect(result).not.toContain('Informasi Terkait:');
+      expect(result).not.toContain('Kesimpulan:');
+    });
+  });
+
+  describe('extractProgramName', () => {
+    it('should extract program names from queries', () => {
+      expect(extractProgramName('Apa itu SI?')).toBe('Sistem Informasi');
+      expect(extractProgramName('Biaya TI berapa?')).toBe('Teknologi Informasi');
+      expect(extractProgramName('Program BD bagus ga?')).toBe('Bisnis Digital');
+      expect(extractProgramName('Info SK?')).toBe('Sistem Komputer');
+    });
+
+    it('should return null for unknown programs', () => {
+      expect(extractProgramName('Random text')).toBeNull();
+    });
+  });
+
+  describe('Integration: Full humanization flow', () => {
+    it('should transform old-style response to humanized format', () => {
+      const oldStyleResponse = `Baik kak,
+
+Topik: Biaya Sistem Informasi
+
+Biaya Sistem Informasi dibagi menjadi beberapa komponen:
+
+1. DPP (Dana Pendidikan Pokok): Rp 25.000.000
+2. Biaya per Semester: Rp 3.000.000 - Rp 5.000.000
+
+Informasi Terkait:
+- Cek beasiswa yang tersedia
+- Simulasi cicilan bulanan
+- Syarat dan proses pendaftaran
+
+Kesimpulan: Jadi estimasi biaya awal masuknya sekitar Rp 25 juta.`;
+
+      const result = formatHumanizedResponse(
+        oldStyleResponse,
+        'Berapa biaya SI?',
+        { 
+          intent: 'biaya',
+          program: 'Sistem Informasi'
+        }
+      );
+
+      expect(result).toBeTruthy();
+      expect(result).not.toContain('Topik:');
+      expect(result).not.toContain('Kesimpulan:');
+      expect(result).not.toContain('Informasi Terkait:');
+      expect(result).toContain('Rp');
+      expect(result).toContain('•');
+    });
+
+    it('should fall back honestly when no relevant data is available', () => {
+      const result = formatHumanizedResponse('', 'Ada info beasiswa KIP?', { intent: 'beasiswa' });
+      expect(result).toContain('Maaf Kak, saat ini saya belum menemukan detail beasiswa tersebut pada basis pengetahuan saya');
+      expect(result).toContain('Admin PMB');
+    });
+
+    it('should filter non-STIKOM program recommendations from program-related answers', () => {
+      const rawAnswer = `Teknik Informatika juga sering direkomendasikan untuk data analyst.
+Sistem Informasi di STIKOM Bali lebih cocok untuk kebutuhan data dan bisnis.`;
+      const result = formatHumanizedResponse(rawAnswer, 'Mau jadi Data Analyst cocok jurusan apa?', { intent: 'program_studi' });
+      expect(result).not.toContain('Teknik Informatika');
+      expect(result).toContain('Sistem Informasi');
+    });
+  });
+});

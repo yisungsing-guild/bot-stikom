@@ -1,0 +1,60 @@
+  }
+}
+
+function getIndexPath() {
+  return INDEX_PATH;
+}
+
+function parseCompactRupiahNumber(raw, opts = null) {
+  if (!raw && raw !== 0) return null;
+  let s = String(raw || '').trim();
+  if (!s) return null;
+
+  // Repair common OCR noise
+  s = s.replace(/[oO]/g, '0').replace(/[lI]/g, '1');
+
+  // Remove currency prefix like 'Rp' optionally followed by dot/space
+  s = s.replace(/^Rp[\s\.]*/i, '');
+
+  // Keep only digits, dots and commas
+  const digitsAndSep = s.replace(/[^0-9\.,]/g, '');
+  if (!digitsAndSep) return null;
+
+  // Remove thousand separators (both '.' and ',') — rupiah amounts are integers
+  const cleaned = digitsAndSep.replace(/[\.,]/g, '');
+  if (!/^[0-9]+$/.test(cleaned)) return null;
+  const n = parseInt(cleaned, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
+module.exports = {
+  ingestTrainingData,
+  query,
+  computeEmbedding,
+  chunkText,
+  cleanAnswerLanguage,
+  formatRagAnswer,
+  validateFinalAnswer,
+  validateNumericGrounding,
+  parseCompactRupiahNumber,
+  isSafeForInference,
+  scoreSourceTrust,
+  validateSourceTrust,
+  removeTrainingFromIndex,
+  getIndexPath,
+  extractHintsFromChunks,
+  getRagStyle,
+  normalizeProgramLabel,
+  normalizeWaveLabel,
+  extractStructuredEntities,
+  extractAcademicIntent,
+  filterRelevantChunks,
+  validateAcademicProgramContexts,
+  extractStructuredChunkMetadata,
+  getChunkEntities,
+  getChunkScoreBreakdown,
+  tryStructuredExactCostAnswer,
+  tryStructuredProgramRecommendationAnswer,
+  tokenizeForRelevanceGuard
+};
+

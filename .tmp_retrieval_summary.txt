@@ -1,0 +1,80 @@
+QUESTION: Apa itu Sistem Informasi?
+ queryForRetrieval: apa itu sistem informasi
+ intent: ACADEMIC_PROGRAM userIntent: DEFINISI_PRODI
+ counts: top20=20 relevant=1 validated=91 final=15
+ trace beforeFiltering: {'found': True, 'rank': 1, 'score': 0.4467595339588613, 'compositeScore': 4.460675953395887, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ trace afterFilterRelevant: {'found': False}
+ trace afterApplyIntent: {'found': True, 'rank': 1, 'score': 0.4467595339588613, 'compositeScore': 4.460675953395887, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ trace afterFinalRanking: {'found': True, 'rank': 1, 'score': 0.4467595339588613, 'compositeScore': 4.460675953395887, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ finalIds:
+   {"rank": 1, "id": "6631dfc1-b46c-4933-a340-392dfd2250d6", "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx", "docCategory": "KURIKULUM", "score": "0.4468", "compositeScore": "4.4607", "finalScore": "1.0000"}
+   {"rank": 2, "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d", "filename": "CHATBOT - Double Degree (1).docx", "docCategory": "PROGRAM_KHUSUS", "score": "0.0000", "compositeScore": "4.2000", "finalScore": "1.0000"}
+   {"rank": 3, "id": "b411e939-1537-4fd5-af3d-541424f9d3a3", "filename": "CHATBOT - Double Degree (1).docx", "docCategory": "PROGRAM_KHUSUS", "score": "0.0000", "compositeScore": "4.2000", "finalScore": "1.0000"}
+   {"rank": 4, "id": "618a0474-969a-463f-91cd-c010a27beb48", "filename": "Penjelasan Semua Program Studi.pdf", "docCategory": "KURIKULUM", "score": "0.5848", "compositeScore": "3.8785", "finalScore": "1.0000"}
+   {"rank": 5, "id": "8491b972-ee0b-4806-bd7e-8508c61ed46b", "filename": "hobi_prodi_lengkap (1).xlsx", "docCategory": "UNKNOWN", "score": "0.5391", "compositeScore": "3.4159", "finalScore": "1.0000"}
+   {"rank": 6, "id": "74be5da2-8251-4417-a1de-41c3a4b70239", "filename": "HOBY.pdf", "docCategory": "UNKNOWN", "score": "0.5298", "compositeScore": "3.3150", "finalScore": "1.0000"}
+   {"rank": 7, "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71", "filename": "hobi-sesuai-program-studi.docx", "docCategory": "UNKNOWN", "score": "0.4314", "compositeScore": "3.1431", "finalScore": "1.0000"}
+   {"rank": 8, "id": "c6c92a40-8437-4942-81aa-3003a7a6ad6f", "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf", "docCategory": "AKREDITASI", "score": "0.4456", "compositeScore": "3.1146", "finalScore": "1.0000"}
+   {"rank": 9, "id": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8", "filename": "HOBY.pdf", "docCategory": "UNKNOWN", "score": "0.0000", "compositeScore": "3.1000", "finalScore": "1.0000"}
+   {"rank": 10, "id": "a7138ef0-668b-419e-81cc-a700296b8fee", "filename": "004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx", "docCategory": "PROSPEK_KERJA", "score": "0.4070", "compositeScore": "1.0607", "finalScore": "1.0000"}
+---
+QUESTION: Apa prospek kerja Sistem Informasi?
+ queryForRetrieval: apa prospek kerja sistem informasi
+ intent: ACADEMIC_PROGRAM userIntent: PROSPEK_KERJA
+ counts: top20=20 relevant=1 validated=86 final=15
+ trace beforeFiltering: {'found': True, 'rank': 1, 'score': 0.5544533639784639, 'compositeScore': 4.246445336397847, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ trace afterFilterRelevant: {'found': False}
+ trace afterApplyIntent: {'found': True, 'rank': 1, 'score': 0.5544533639784639, 'compositeScore': 4.246445336397847, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ trace afterFinalRanking: {'found': True, 'rank': 1, 'score': 0.5544533639784639, 'compositeScore': 4.246445336397847, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ finalIds:
+   {"rank": 1, "id": "6631dfc1-b46c-4933-a340-392dfd2250d6", "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx", "docCategory": "KURIKULUM", "score": "0.5545", "compositeScore": "4.2464", "finalScore": "1.0000"}
+   {"rank": 2, "id": "b411e939-1537-4fd5-af3d-541424f9d3a3", "filename": "CHATBOT - Double Degree (1).docx", "docCategory": "PROGRAM_KHUSUS", "score": "0.0000", "compositeScore": "3.9750", "finalScore": "1.0000"}
+   {"rank": 3, "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d", "filename": "CHATBOT - Double Degree (1).docx", "docCategory": "PROGRAM_KHUSUS", "score": "0.0000", "compositeScore": "3.9300", "finalScore": "1.0000"}
+   {"rank": 4, "id": "618a0474-969a-463f-91cd-c010a27beb48", "filename": "Penjelasan Semua Program Studi.pdf", "docCategory": "KURIKULUM", "score": "0.6428", "compositeScore": "3.6143", "finalScore": "1.0000"}
+   {"rank": 5, "id": "8491b972-ee0b-4806-bd7e-8508c61ed46b", "filename": "hobi_prodi_lengkap (1).xlsx", "docCategory": "UNKNOWN", "score": "0.5464", "compositeScore": "3.1466", "finalScore": "1.0000"}
+   {"rank": 6, "id": "74be5da2-8251-4417-a1de-41c3a4b70239", "filename": "HOBY.pdf", "docCategory": "UNKNOWN", "score": "0.5378", "compositeScore": "3.0458", "finalScore": "1.0000"}
+   {"rank": 7, "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71", "filename": "hobi-sesuai-program-studi.docx", "docCategory": "UNKNOWN", "score": "0.5024", "compositeScore": "2.8802", "finalScore": "1.0000"}
+   {"rank": 8, "id": "c6c92a40-8437-4942-81aa-3003a7a6ad6f", "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf", "docCategory": "AKREDITASI", "score": "0.4458", "compositeScore": "2.8446", "finalScore": "1.0000"}
+   {"rank": 9, "id": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8", "filename": "HOBY.pdf", "docCategory": "UNKNOWN", "score": "0.0000", "compositeScore": "2.8300", "finalScore": "1.0000"}
+   {"rank": 10, "id": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0", "filename": "1fe1697b-db27-4099-88ff-935c4495a898", "docCategory": "UNKNOWN", "score": "0.4606", "compositeScore": "2.6261", "finalScore": "1.0000"}
+---
+QUESTION: Apa yang dipelajari di Sistem Informasi?
+ queryForRetrieval: apa yang dipelajari di sistem informasi
+ intent: ACADEMIC_PROGRAM userIntent: KURIKULUM_PEMBELAJARAN
+ counts: top20=20 relevant=1 validated=80 final=14
+ trace beforeFiltering: {'found': True, 'rank': 1, 'score': 0.4463655648617254, 'compositeScore': 4.400636556486173, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ trace afterFilterRelevant: {'found': False}
+ trace afterApplyIntent: {'found': True, 'rank': 1, 'score': 0.4463655648617254, 'compositeScore': 4.400636556486173, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ trace afterFinalRanking: {'found': True, 'rank': 1, 'score': 0.4463655648617254, 'compositeScore': 4.400636556486173, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ finalIds:
+   {"rank": 1, "id": "6631dfc1-b46c-4933-a340-392dfd2250d6", "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx", "docCategory": "KURIKULUM", "score": "0.4464", "compositeScore": "4.4006", "finalScore": "1.0000"}
+   {"rank": 2, "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d", "filename": "CHATBOT - Double Degree (1).docx", "docCategory": "PROGRAM_KHUSUS", "score": "0.0000", "compositeScore": "4.1400", "finalScore": "1.0000"}
+   {"rank": 3, "id": "b411e939-1537-4fd5-af3d-541424f9d3a3", "filename": "CHATBOT - Double Degree (1).docx", "docCategory": "PROGRAM_KHUSUS", "score": "0.0000", "compositeScore": "4.1400", "finalScore": "1.0000"}
+   {"rank": 4, "id": "618a0474-969a-463f-91cd-c010a27beb48", "filename": "Penjelasan Semua Program Studi.pdf", "docCategory": "KURIKULUM", "score": "0.5755", "compositeScore": "3.8175", "finalScore": "1.0000"}
+   {"rank": 5, "id": "8491b972-ee0b-4806-bd7e-8508c61ed46b", "filename": "hobi_prodi_lengkap (1).xlsx", "docCategory": "UNKNOWN", "score": "0.5530", "compositeScore": "3.3573", "finalScore": "1.0000"}
+   {"rank": 6, "id": "74be5da2-8251-4417-a1de-41c3a4b70239", "filename": "HOBY.pdf", "docCategory": "UNKNOWN", "score": "0.5447", "compositeScore": "3.2565", "finalScore": "1.0000"}
+   {"rank": 7, "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71", "filename": "hobi-sesuai-program-studi.docx", "docCategory": "UNKNOWN", "score": "0.5001", "compositeScore": "3.0900", "finalScore": "1.0000"}
+   {"rank": 8, "id": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8", "filename": "HOBY.pdf", "docCategory": "UNKNOWN", "score": "0.0000", "compositeScore": "3.0400", "finalScore": "1.0000"}
+   {"rank": 9, "id": "0bfcc496-e685-48df-b451-5a55c58e9ee3", "filename": "SK PEMBINA ORMAWA 2026.pdf", "docCategory": "SK", "score": "0.0000", "compositeScore": "2.2200", "finalScore": "1.0000"}
+   {"rank": 10, "id": "3d903276-efe5-4ee9-807a-aa3ebcb828e6", "filename": "SK PEMBINA ORMAWA 2026.pdf", "docCategory": "SK", "score": "0.0000", "compositeScore": "2.2200", "finalScore": "1.0000"}
+---
+QUESTION: Apa keunggulan Sistem Informasi?
+ queryForRetrieval: apa keunggulan sistem informasi
+ intent: PROGRAM userIntent: GENERAL
+ counts: top20=20 relevant=2 validated=211 final=20
+ trace beforeFiltering: {'found': True, 'rank': 17, 'score': 0.4545237861697449, 'compositeScore': 2.9314523786169744, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ trace afterFilterRelevant: {'found': False}
+ trace afterApplyIntent: {'found': True, 'rank': 16, 'score': 0.4545237861697449, 'compositeScore': 2.9314523786169744, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ trace afterFinalRanking: {'found': True, 'rank': 16, 'score': 0.4545237861697449, 'compositeScore': 2.9314523786169744, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}
+ finalIds:
+   {"rank": 1, "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d", "filename": "CHATBOT - Double Degree (1).docx", "docCategory": "PROGRAM_KHUSUS", "score": "0.0000", "compositeScore": "3.3000", "finalScore": "1.0000"}
+   {"rank": 2, "id": "74be5da2-8251-4417-a1de-41c3a4b70239", "filename": "HOBY.pdf", "docCategory": "UNKNOWN", "score": "0.5278", "compositeScore": "3.2548", "finalScore": "1.0000"}
+   {"rank": 3, "id": "b411e939-1537-4fd5-af3d-541424f9d3a3", "filename": "CHATBOT - Double Degree (1).docx", "docCategory": "PROGRAM_KHUSUS", "score": "0.0000", "compositeScore": "3.2400", "finalScore": "1.0000"}
+   {"rank": 4, "id": "c4b537df-3774-42de-b51c-82f5a35bdee6", "filename": "smoke-sectiontitle-ok-1779082103888", "docCategory": "BIAYA", "score": "0.4129", "compositeScore": "3.1933", "finalScore": "1.0000"}
+   {"rank": 5, "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5", "filename": "smoke-sectiontitle-ok-1779082103888", "docCategory": "BIAYA", "score": "0.4763", "compositeScore": "3.1016", "finalScore": "1.0000"}
+   {"rank": 6, "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86", "filename": "smoke-sectiontitle-ok-1779082103888", "docCategory": "BIAYA", "score": "0.4711", "compositeScore": "3.1011", "finalScore": "1.0000"}
+   {"rank": 7, "id": "a0f70379-20e4-493a-ace1-69d9f54f8611", "filename": "smoke-sectiontitle-ok-1779082103888", "docCategory": "BIAYA", "score": "0.4622", "compositeScore": "3.1002", "finalScore": "1.0000"}
+   {"rank": 8, "id": "37dc572d-f30d-47eb-b5ca-63fb21bba88a", "filename": "smoke-sectiontitle-ok-1779082103888", "docCategory": "BIAYA", "score": "0.4479", "compositeScore": "3.0988", "finalScore": "1.0000"}
+   {"rank": 9, "id": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3", "filename": "smoke-sectiontitle-ok-1779082103888", "docCategory": "BIAYA", "score": "0.4449", "compositeScore": "3.0985", "finalScore": "1.0000"}
+   {"rank": 10, "id": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3", "filename": "smoke-sectiontitle-ok-1779082103888", "docCategory": "BIAYA", "score": "0.4428", "compositeScore": "3.0983", "finalScore": "1.0000"}
+---

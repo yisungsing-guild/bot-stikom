@@ -1,0 +1,69 @@
+[
+  {
+    "prompt": "jurusan double degree itu apa keuntungannya?",
+    "source": "rag-dual-degree-benefits",
+    "answer": "Keuntungan program Double Degree antara lain: |  | - Mendapat pengalaman belajar dengan mitra universitas lain, sehingga wawasan akademik dan jaringan lebih luas. | - Memiliki profil yang lebih global dan siap untuk pasar kerja internasional. | - Bisa memperoleh pengalaman kurikulum dan budaya kerja yang berbeda dari program reguler. | - Membuka peluang karier yang lebih luas karena lulusannya punya keunggulan kompetitif di bidang yang membutuhkan pemahaman global. |  | Di ITB STIKOM Bali, program Double Degree yang tersedia bekerja sama dengan mitra UTB, DNUI, dan HELP. |  | Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "contexts": []
+  },
+  {
+    "prompt": "apakah ada program double degree internasional?",
+    "source": "rag-dual-degree-list",
+    "answer": "Ada. Di data PMB, program Dual Degree yang tercantum yaitu: |  | - Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi: Bisnis Digital | - Dual Degree (International Class) dengan HELP University, Malaysia - Prodi: Sistem Informasi |  | Kakak mau info Dual Degree yang mana? Balas: DNUI / HELP. | Mau saya jelaskan lagi bagian lain?",
+    "contexts": []
+  },
+  {
+    "prompt": "kalau biaya untuk double degree apakah ada potongan biaya?",
+    "source": "rag-dual-degree-dpp-discount",
+    "answer": "Informasi Potongan DPP (Dana Pendidikan Pokok) untuk Program Double/Dual Degree |  | Potongan diberikan berdasarkan gelombang saat registrasi: |  | - Gelombang Khusus: Rp. 3.000.000, - | - Gelombang I: Rp. 2.000.000, - | - Gelombang II: Rp. 1.500.000, - | - Gelombang III: Rp. 1.000.000, - | - Gelombang IV: Rp. 500.000, - |  | Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk: |  | - Beasiswa KIP | - Beasiswa 1K1S (Satu Keluarga Satu Sarjana) | - Beasiswa Prestasi | - Beasiswa Yayasan | - Beasiswa khusus untuk alumni — silakan hubungi PMB untuk detail | - Kuliah Sambil Kerja di Luar Negeri |  | Apakah Kakak ingin dijelaskan tentang? |  | - Biaya perkuliahan program studi yang lainnya | - Salah satu jenis beasiswa | - Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll |  | Silahkan diketikkan. | Perlu saya cek opsi beasiswa atau potongan biaya yang relevan?",
+    "contexts": []
+  },
+  {
+    "prompt": "Apa prospek kerja Sistem Informasi?",
+    "source": "gpt-4o-mini",
+    "answer": "Prospek kerja untuk lulusan Sistem Informasi cukup luas dan menjanjikan. |  | - Business Analyst: Menganalisis kebutuhan bisnis dan merancang solusi sistem informasi. | - System Analyst: Mengembangkan dan mengelola sistem informasi untuk meningkatkan efisiensi organisasi. | - Pekerjaan lain: Perekayasa Sistem Informasi, Desainer Grafis, Animator, dan Peneliti Sistem Informasi. |  | Lulusan juga dapat berkarir di bidang digital business, manajemen proyek IT, dan business intelligence. | Apakah ada posisi tertentu yang ingin kamu ketahui lebih lanjut?",
+    "contexts": [
+      {
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+        "trainingId": "file-842336211fcd",
+        "preview": "[Sheet: Sheet1]\nPenjelasan Prodi dan Karier Masa Depan : Prodi | col2 : Penjelasan prodi | col3 : Yang Dipelajari | col4 : Cocok Untuk | col5 : Peluang Kerja\nPenjelasan Prodi dan Karier Masa Depan : S"
+      },
+      {
+        "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+        "trainingId": "file-6467e454a2de",
+        "preview": "Aktivitas : Bermain game\nNo : 47 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Menggambar\nNo : 48 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Animasi/drama\nNo : 49 | Program Stud"
+      }
+    ]
+  },
+  {
+    "prompt": "aku suka buat konten di instagram cocok jurusan apa?",
+    "source": "rag-major-recommendation-hoby-doc-lines",
+    "answer": "Prodi yang paling cocok untuk hobi tersebut adalah Bisnis Digital. | Alasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Bisnis Digital.\\n\\n Contoh yang sejalan: Bisnis Digital & DKVMembuat konten media sosial; Bisnis Digital & DKVMembuat podcast.",
+    "contexts": [
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      },
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      },
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      },
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      },
+      {
+        "filename": "HOBY.pdf",
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "preview": ""
+      }
+    ]
+  }
+]

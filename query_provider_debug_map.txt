@@ -1,0 +1,56 @@
+QUERY=Program Studi: Teknologi Informasi\nMata kuliah TI?
+INTENT=ACADEMIC_PROGRAM PROGRAM=TI ACADEMIC_INTENT=MATA_KULIAH
+SNIPPET=
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pen
+---
+QUERY=Program Studi: Teknologi Informasi\nApa itu TI?
+INTENT=ACADEMIC_PROGRAM PROGRAM=TI ACADEMIC_INTENT=DEFINISI_PRODI
+SNIPPET=
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pen
+---
+QUERY=Program Studi: Teknologi Informasi\nProspek kerja TI?
+INTENT=ACADEMIC_PROGRAM PROGRAM=TI ACADEMIC_INTENT=PROSPEK_KERJA
+SNIPPET=
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.
+
+- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan, termasuk LAN/Wi Fi dan keamanan jaringan.
+- Desain UI/UX: Mempelajari prinsip-prinsip desain antarmuka pengguna dan pengalaman pen
+---
+QUERY=Program Studi: Teknologi Informasi\nApa yang dipelajari di TI?
+INTENT=ACADEMIC_PROGRAM PROGRAM=TI ACADEMIC_INTENT=MATA_KULIAH
+SNIPPET=
+
+---

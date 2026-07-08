@@ -1,0 +1,1351 @@
+[
+  {
+    "query": "apa itu SI",
+    "queryEntities": {
+      "intent": "GENERAL",
+      "program": "SI",
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": null,
+      "pageNumber": null
+    },
+    "before": [
+      {
+        "score": 0.47758,
+        "compositeScore": 1,
+        "id": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "filename": null,
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.469622,
+        "compositeScore": 1,
+        "id": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "filename": null,
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.475961,
+        "compositeScore": 1,
+        "id": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.241104,
+        "compositeScore": 1,
+        "id": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.431399,
+        "compositeScore": 1,
+        "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.445606,
+        "compositeScore": 1,
+        "id": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.398027,
+        "compositeScore": 1,
+        "id": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.584791,
+        "compositeScore": 1,
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.0157,
+        "compositeScore": 1,
+        "id": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.009971,
+        "compositeScore": 1,
+        "id": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "after": [
+      {
+        "score": 0.241104,
+        "compositeScore": 1,
+        "id": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.431399,
+        "compositeScore": 1,
+        "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.584791,
+        "compositeScore": 1,
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.025148,
+        "compositeScore": 1,
+        "id": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "filename": "HOBY.pdf",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": -0.005793,
+        "compositeScore": 1,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.010013,
+        "compositeScore": 1,
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.469425,
+        "compositeScore": 1,
+        "id": "df08e490-0b11-441e-bbca-977fc155d693",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan.xlsx",
+        "program": "SI",
+        "aliases": [
+          "SI"
+        ],
+        "chunkType": "GENERAL",
+        "category": null
+      }
+    ],
+    "counts": {
+      "exact": 7,
+      "null": 0,
+      "other": 0
+    }
+  },
+  {
+    "query": "apa itu TI",
+    "queryEntities": {
+      "intent": "GENERAL",
+      "program": "TI",
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": null,
+      "pageNumber": null
+    },
+    "before": [
+      {
+        "score": 0.331639,
+        "compositeScore": 1,
+        "id": "24d0850c-334f-4e9d-8a42-9a83a3868f6c",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.218568,
+        "compositeScore": 1,
+        "id": "faa7492b-b672-42cc-9121-fdb8ca19a5b5",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.240753,
+        "compositeScore": 1,
+        "id": "c49b1692-d7d9-4f82-bb10-1430ea327e92",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.284856,
+        "compositeScore": 1,
+        "id": "206c0be0-43cd-4c2b-aa82-b73a3b0afc7d",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.394186,
+        "compositeScore": 1,
+        "id": "32b0526e-e1e5-46ff-9cd5-e844a5410e52",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.277993,
+        "compositeScore": 1,
+        "id": "56d195ca-0577-445d-bc41-531feb64da64",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.393004,
+        "compositeScore": 1,
+        "id": "c412f7ba-8d34-440d-9c96-ba2fe558092c",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.431357,
+        "compositeScore": 1,
+        "id": "035e5603-2e9f-4571-bb6a-44123b9ee79f",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.238202,
+        "compositeScore": 1,
+        "id": "c7ba5e28-eebb-4c26-8c3c-2691f1528d06",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.397023,
+        "compositeScore": 1,
+        "id": "a42a7806-c12f-426d-aec5-5015821d6dba",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "after": [
+      {
+        "score": 0.314639,
+        "compositeScore": 1,
+        "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.276136,
+        "compositeScore": 1,
+        "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.225631,
+        "compositeScore": 1,
+        "id": "f2615890-0f34-4f41-aff0-411232af57d1",
+        "filename": null,
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.309443,
+        "compositeScore": 1,
+        "id": "b43febf7-af1d-4176-a61c-e68e2cfdd8c6",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.233528,
+        "compositeScore": 1,
+        "id": "95a5a385-3629-4559-ab45-731ef5bc5eb6",
+        "filename": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.043158,
+        "compositeScore": 1,
+        "id": "30de4303-a936-445f-b20f-0a12fd9001ab",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.019762,
+        "compositeScore": 1,
+        "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+        "filename": "HOBY.pdf",
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.028446,
+        "compositeScore": 1,
+        "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+        "filename": "HOBY.pdf",
+        "program": "TI",
+        "aliases": [
+          "TI"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "counts": {
+      "exact": 8,
+      "null": 0,
+      "other": 0
+    }
+  },
+  {
+    "query": "apa itu BD",
+    "queryEntities": {
+      "intent": "GENERAL",
+      "program": "BD",
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": null,
+      "pageNumber": null
+    },
+    "before": [
+      {
+        "score": 0.551806,
+        "compositeScore": 1,
+        "id": "6e5e038d-2ce3-40f7-a94f-418e9243b605",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.502111,
+        "compositeScore": 1,
+        "id": "d606b890-f373-42c8-a8bc-cd07cdc15b55",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.494155,
+        "compositeScore": 1,
+        "id": "8b6335e1-f699-4c00-8ec1-b159018d7e7a",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.368612,
+        "compositeScore": 1,
+        "id": "75d0543d-a1b4-4b91-ab74-93e8740ea8b3",
+        "filename": "SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.021333,
+        "compositeScore": 1,
+        "id": "5879e63a-a356-4e52-ad42-411704458587",
+        "filename": "HOBY.pdf",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.008724,
+        "compositeScore": 1,
+        "id": "9dc1e354-7530-4d36-8456-276cc034ef95",
+        "filename": "HOBY.pdf",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.015231,
+        "compositeScore": 1,
+        "id": "bbde344f-8514-4416-bcf3-932f17b215e3",
+        "filename": "HOBY.pdf",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.019792,
+        "compositeScore": 1,
+        "id": "f55fe74b-aae6-49bf-b339-c3bd8ef94f4b",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.0116,
+        "compositeScore": 1,
+        "id": "a07977f5-08a2-4bfd-ac86-203bd6d015de",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.006053,
+        "compositeScore": 1,
+        "id": "ed1910ec-e128-4e5b-99a4-837a3eb84722",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "after": [
+      {
+        "score": 0.494155,
+        "compositeScore": 1,
+        "id": "8b6335e1-f699-4c00-8ec1-b159018d7e7a",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.008724,
+        "compositeScore": 1,
+        "id": "9dc1e354-7530-4d36-8456-276cc034ef95",
+        "filename": "HOBY.pdf",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.019792,
+        "compositeScore": 1,
+        "id": "f55fe74b-aae6-49bf-b339-c3bd8ef94f4b",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "program": "BD",
+        "aliases": [
+          "BD"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "counts": {
+      "exact": 3,
+      "null": 0,
+      "other": 0
+    }
+  },
+  {
+    "query": "apa itu SK",
+    "queryEntities": {
+      "intent": "GENERAL",
+      "program": "SK",
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": null,
+      "pageNumber": null
+    },
+    "before": [
+      {
+        "score": 0.469135,
+        "compositeScore": 1,
+        "id": "26c3bf37-dc70-447d-99fa-9aefd80641d6",
+        "filename": null,
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.43658,
+        "compositeScore": 1,
+        "id": "951253be-3ee5-4039-bba6-5c433e7c6d56",
+        "filename": null,
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.419014,
+        "compositeScore": 1,
+        "id": "7c95608b-000d-4044-9d84-c0a8f3faadcc",
+        "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.390499,
+        "compositeScore": 1,
+        "id": "ba687ae4-8186-4f35-881c-31d28e09ec05",
+        "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.427585,
+        "compositeScore": 1,
+        "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+        "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.50043,
+        "compositeScore": 1,
+        "id": "5af85c70-ae38-4256-8b78-25aa0a1fbe76",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.273344,
+        "compositeScore": 1,
+        "id": "f159181b-198c-45fc-b16c-23575dd49959",
+        "filename": "SERTIFIKAT AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.31823,
+        "compositeScore": 1,
+        "id": "a21d4528-76de-43f8-bf10-2711d98ac203",
+        "filename": "SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.252419,
+        "compositeScore": 1,
+        "id": "5cd52867-097c-4e79-a061-a251438c4889",
+        "filename": "SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.278099,
+        "compositeScore": 1,
+        "id": "deddd966-f3d7-4af9-822e-d2cf64d243cb",
+        "filename": "SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "after": [
+      {
+        "score": 0.427585,
+        "compositeScore": 1,
+        "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+        "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.50043,
+        "compositeScore": 1,
+        "id": "5af85c70-ae38-4256-8b78-25aa0a1fbe76",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.31823,
+        "compositeScore": 1,
+        "id": "a21d4528-76de-43f8-bf10-2711d98ac203",
+        "filename": "SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.33137,
+        "compositeScore": 1,
+        "id": "ae536d74-4ca6-4904-a732-d3ddb7cd3ce7",
+        "filename": "SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.360191,
+        "compositeScore": 1,
+        "id": "1c73b58c-a096-484e-ad39-68e5a3386872",
+        "filename": "SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.402686,
+        "compositeScore": 1,
+        "id": "10346138-d662-44b5-aa45-9de9b6603d7b",
+        "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.41626,
+        "compositeScore": 1,
+        "id": "70831198-6c86-49f4-af19-d9506384515d",
+        "filename": "SK AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.371178,
+        "compositeScore": 1,
+        "id": "3414b89a-c911-4c74-8389-f749e95f950b",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.567248,
+        "compositeScore": 1,
+        "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "program": "SK",
+        "aliases": [
+          "SK",
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.02659,
+        "compositeScore": 1,
+        "id": "4c7648cd-57e3-44cc-8974-f2f4b78abf49",
+        "filename": "HOBY.pdf",
+        "program": "SK",
+        "aliases": [
+          "SK"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "counts": {
+      "exact": 10,
+      "null": 0,
+      "other": 0
+    }
+  },
+  {
+    "query": "apa itu MI",
+    "queryEntities": {
+      "intent": "GENERAL",
+      "program": "MI",
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": null,
+      "pageNumber": null
+    },
+    "before": [
+      {
+        "score": 0.197087,
+        "compositeScore": 1,
+        "id": "ff602b46-9998-449c-9c94-4e3694e461e6",
+        "filename": null,
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.199882,
+        "compositeScore": 1,
+        "id": "18c006db-daf4-4877-b146-27792e1ea273",
+        "filename": null,
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.224877,
+        "compositeScore": 1,
+        "id": "530d8d16-ee37-4dee-b744-23bd4ea2c0f0",
+        "filename": null,
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.200896,
+        "compositeScore": 1,
+        "id": "39e0d964-21a6-4013-89c8-91644c0793e3",
+        "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.194893,
+        "compositeScore": 1,
+        "id": "eaf68cd9-e36b-43fe-8b58-3f958861ab38",
+        "filename": "SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.190294,
+        "compositeScore": 1,
+        "id": "fc0c3b22-b9f6-44ee-8eb1-7a42db22afa0",
+        "filename": "SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.216046,
+        "compositeScore": 1,
+        "id": "7db938ae-25cd-497f-9672-abf743a1362f",
+        "filename": "SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.2495,
+        "compositeScore": 1,
+        "id": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.190869,
+        "compositeScore": 1,
+        "id": "798a2d13-45d5-4e46-a187-7cdddc599674",
+        "filename": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": "GENERAL",
+        "category": null
+      },
+      {
+        "score": 0.324007,
+        "compositeScore": 0.164401,
+        "id": "b6ec8ef8-960d-4ed8-91af-db940e807bc9",
+        "filename": "Kalender Pendaftaran TA 2026-2027 (1).xls",
+        "program": null,
+        "aliases": [],
+        "chunkType": "GENERAL",
+        "category": null
+      }
+    ],
+    "after": [
+      {
+        "score": 0.194893,
+        "compositeScore": 1,
+        "id": "eaf68cd9-e36b-43fe-8b58-3f958861ab38",
+        "filename": "SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.2495,
+        "compositeScore": 1,
+        "id": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "program": "MI",
+        "aliases": [
+          "MI"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "counts": {
+      "exact": 2,
+      "null": 0,
+      "other": 0
+    }
+  },
+  {
+    "query": "apa itu RPL",
+    "queryEntities": {
+      "intent": "GENERAL",
+      "program": "RPL",
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": null,
+      "pageNumber": null
+    },
+    "before": [
+      {
+        "score": 0.422444,
+        "compositeScore": 1,
+        "id": "dafafaa8-bf70-497d-a070-5dad9476470d",
+        "filename": null,
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.395318,
+        "compositeScore": 1,
+        "id": "f7a736f1-a3c8-49a9-a052-c544f5a37d7d",
+        "filename": null,
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.422516,
+        "compositeScore": 1,
+        "id": "f97841d5-7b9f-4fd5-b710-e25e5e59277a",
+        "filename": null,
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.438016,
+        "compositeScore": 1,
+        "id": "b45de948-8f16-4125-9fdc-a51b29b96e2c",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.377918,
+        "compositeScore": 1,
+        "id": "033200da-f56f-4de2-b162-5d8bf64429e7",
+        "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.559695,
+        "compositeScore": 1,
+        "id": "86d3d85e-ecdf-4b24-bfa2-d3166dc6232f",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.621698,
+        "compositeScore": 1,
+        "id": "891d0c01-c702-4ee5-a457-e1e6fc770efd",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.537074,
+        "compositeScore": 1,
+        "id": "9d6f3990-17ba-4982-bc24-c6b7b2a9551d",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.50635,
+        "compositeScore": 1,
+        "id": "e17e8333-8e8c-4c1c-9bf6-21bd04a2d156",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.404888,
+        "compositeScore": 1,
+        "id": "96a7c700-341d-4ff3-8546-b9fc5534ecea",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "after": [
+      {
+        "score": 0.559695,
+        "compositeScore": 1,
+        "id": "86d3d85e-ecdf-4b24-bfa2-d3166dc6232f",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.621698,
+        "compositeScore": 1,
+        "id": "891d0c01-c702-4ee5-a457-e1e6fc770efd",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.537074,
+        "compositeScore": 1,
+        "id": "9d6f3990-17ba-4982-bc24-c6b7b2a9551d",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.50635,
+        "compositeScore": 1,
+        "id": "e17e8333-8e8c-4c1c-9bf6-21bd04a2d156",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.404888,
+        "compositeScore": 1,
+        "id": "96a7c700-341d-4ff3-8546-b9fc5534ecea",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.314545,
+        "compositeScore": 1,
+        "id": "701351db-951e-44cd-b565-d2d3cdf43e6d",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.491405,
+        "compositeScore": 1,
+        "id": "be937c50-cb9b-47d4-9638-fa033091d827",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.58183,
+        "compositeScore": 1,
+        "id": "c08074c3-28f7-47bf-a1e4-a17af0c0e709",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.459716,
+        "compositeScore": 1,
+        "id": "a1b1dc73-9b4a-42db-aee7-4a6f496c11e1",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      },
+      {
+        "score": 0.582205,
+        "compositeScore": 1,
+        "id": "2b08dbd0-837c-4827-a7bc-2607a192f4a0",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "program": "RPL",
+        "aliases": [
+          "RPL"
+        ],
+        "chunkType": null,
+        "category": null
+      }
+    ],
+    "counts": {
+      "exact": 10,
+      "null": 0,
+      "other": 0
+    }
+  }
+]

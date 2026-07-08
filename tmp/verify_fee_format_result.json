@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "body": {
+    "ok": true,
+    "source": "program_list",
+    "ragUsed": false
+  },
+  "sent": [
+    {
+      "chatId": "verify-user",
+      "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+    },
+    {
+      "chatId": "verify-user",
+      "text": "Program studi yang tersedia di ITB STIKOM Bali:\n\nS2 (Pascasarjana):\n\n- S2 Sistem Informasi (SI)\n\nS1 (Sarjana):\n\n- Sistem Informasi\n- Teknologi Informasi\n- Bisnis Digital\n- Sistem Komputer\n\nD3 (Diploma):\n\n- D3 Manajemen Informatika\n\nDouble Degree:\n\n- Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) — Prodi: Bisnis Digital\n- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China — Prodi: Bisnis Digital\n- Dual Degree (International Class) dengan HELP University, Malaysia — Prodi: Sistem Informasi\n\nKalau kakak mau, sebutkan prodi + gelombang (jika relevan), nanti saya bantu jelaskan rincian biaya/jadwal yang tertulis."
+    }
+  ]
+}

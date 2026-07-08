@@ -1,0 +1,92 @@
+{
+  "queryEntities": {
+    "intent": "ACADEMIC_PROGRAM",
+    "program": "TI",
+    "programMode": null,
+    "wave": null,
+    "waveGroup": null,
+    "academicYear": null,
+    "partner": null,
+    "campus": null,
+    "jalur": null,
+    "feeType": null,
+    "category": null,
+    "pageNumber": null,
+    "academicIntent": "DEFINISI_PRODI"
+  },
+  "item": {
+    "id": "93f59730-63c1-40ec-963d-7b96808de922",
+    "score": 0.5347979621766592,
+    "compositeScore": 2.2,
+    "semanticScore": 0.5347979621766592,
+    "attributeScore": 1,
+    "metadataBoost": 1.94,
+    "scoreComponents": {
+      "rawSemanticScore": 0.5347979621766592,
+      "semanticBoost": 0.05347979621766592,
+      "evidenceScore": 0.18,
+      "keywordScore": 1,
+      "attributeScore": 1,
+      "exactBoost": 1,
+      "metadataBoost": 1.94,
+      "categorySignal": 0.2,
+      "trustBoost": 0,
+      "otherBoosts": -0.83,
+      "legalPenalty": 0,
+      "headerPenalty": 0,
+      "lowOcrPenalty": 0,
+      "feeKeywordPenalty": 0,
+      "programOverviewPenalty": -0.6,
+      "multiProgramPenalty": -0.35,
+      "itemEntities": {
+        "program": "TI",
+        "programMode": "INTERNATIONAL",
+        "wave": null,
+        "waveGroup": null,
+        "academicYear": null,
+        "partner": null,
+        "campus": "BALI",
+        "jalur": null,
+        "feeType": null,
+        "category": "UNKNOWN",
+        "pageNumber": null
+      },
+      "itemCategory": "KURIKULUM",
+      "queryCategory": "PROGRAM_STUDI",
+      "exactMatch": {
+        "score": 100,
+        "rejected": false,
+        "meta": {
+          "waveGroupMatched": false
+        }
+      }
+    },
+    "chunk": "tion\nTechnology Researcher\nMore Info\nProfil Lulusan\nGelar S.Kom.\nTeknologi\nInformasi\n@proditistikombaliti.stikom-bali.ac.id\nProfil\nTeknologi Informasi\n\nAkun Instagram\nbisnisdigital.stikom-bali.ac.id\nWebsite bisnis digital\nProfil Bisnis\nDigital\nGelar : S.Bns\nBisnis Digital\nMenjadikan peserta didik memahami\ndan mampu mengimplementasikan\npengelolaan bisnis berbasis digital\ndengan mengadopsi trend\nperkembangan terkini di sektor\nindustri  E-Commerce.\nProject Manager\nBusiness Analyst\nMarket Analyst\nProduct Manager\nProfil Lulusan :\nDigital Marketing Specialist\nDigital Strategist\n@bisdi.stikombali",
+    "trainingId": "9358faf2-c0bf-438b-90e4-5f801f43ea0d",
+    "filename": "Penjelasan Semua Program Studi.pdf",
+    "divisionKey": null,
+    "updatedAt": null,
+    "createdAt": "2026-04-27T03:54:36.422Z"
+  },
+  "chunkMetadata": {
+    "program": "BD",
+    "programMode": "INTERNATIONAL",
+    "wave": null,
+    "waveGroup": null,
+    "academicYear": null,
+    "partner": null,
+    "campus": "BALI",
+    "jalur": null,
+    "feeType": null,
+    "category": "PROGRAM_STUDI",
+    "sectionTitle": null,
+    "pageNumber": null,
+    "programName": null,
+    "programAliases": [
+      "BD"
+    ]
+  },
+  "resultSource": "rag-answer-rejected",
+  "validatedScoredLen": 0,
+  "contextsLen": 12
+}

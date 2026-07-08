@@ -1,0 +1,84 @@
+{
+  "TRACE_PROGRAM_QUERY": [
+    {
+      "timestamp": "2026-06-10T01:50:40.387Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    },
+    {
+      "timestamp": "2026-06-10T01:50:40.432Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    }
+  ],
+  "TRACE_PROGRAM_RAG": [],
+  "TRACE_PROGRAM_FINAL": [
+    {
+      "timestamp": "2026-06-10T01:50:40.402Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "extractedProgram": null,
+      "finalAnswer": "Untuk seseorang yang suka coding, saya rekomendasikan program studi berikut di ITB STIKOM Bali:\n\n1. ",
+      "ragSource": "rag-match"
+    },
+    {
+      "timestamp": "2026-06-10T01:50:40.443Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "extractedProgram": null,
+      "finalAnswer": "Untuk seseorang yang suka coding, saya rekomendasikan program studi berikut di ITB STIKOM Bali:\n\n1. ",
+      "ragSource": "rag-match"
+    }
+  ],
+  "TRACE_SCHOLARSHIP_INTENT": [],
+  "TRACE_CAREER_INTENT": [
+    {
+      "timestamp": "2026-06-10T01:50:40.396Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "intent": "CAREER_GUIDANCE_RECOMMENDATION",
+      "recommendedPrograms": [
+        "TEKNOLOGI_INFORMASI",
+        "SISTEM_INFORMASI",
+        "SISTEM_KOMPUTER"
+      ],
+      "source": "rag_mock"
+    },
+    {
+      "timestamp": "2026-06-10T01:50:40.438Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "intent": "CAREER_GUIDANCE_RECOMMENDATION",
+      "recommendedPrograms": [
+        "TEKNOLOGI_INFORMASI",
+        "SISTEM_INFORMASI",
+        "SISTEM_KOMPUTER"
+      ],
+      "source": "rag_mock"
+    }
+  ],
+  "TRACE_FULL_FLOW": [
+    {
+      "timestamp": "2026-06-10T01:50:40.343Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "test-user-4",
+      "userQuery": "Saya suka coding cocok jurusan apa?"
+    },
+    {
+      "timestamp": "2026-06-10T01:50:40.391Z",
+      "step": "RAG_QUERY_START",
+      "input": "Saya suka coding cocok jurusan apa?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-06-10T01:50:40.428Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "scenario-6",
+      "userQuery": "Saya suka coding cocok jurusan apa?"
+    },
+    {
+      "timestamp": "2026-06-10T01:50:40.435Z",
+      "step": "RAG_QUERY_START",
+      "input": "Saya suka coding cocok jurusan apa?",
+      "options": {}
+    }
+  ]
+}

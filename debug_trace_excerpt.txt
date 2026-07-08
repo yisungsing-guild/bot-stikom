@@ -1,0 +1,44 @@
+[TRACE_PARSE_FEE_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  chunkId: 'program_studi-29',
+  queryEntities: {
+    intent: 'COST',
+    program: 'TI',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2025',
+    campus: 'BALI'
+  },
+  chunkPreview: 'Program Studi Teknologi Informasi - Apa Yang Dipelajari\n' +
+    '# Apa Yang Dipelajari\n' +
+    '\n' +
+    'Pembelajaran mencakup pemrograman, pengembangan aplikasi web dan mobile, jaringan komputer, cloud computing, keamanan sib',
+  academicYear: '2025'
+}
+[TRACE_PARSE_CHUNK_1_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  chunkId: 'program_studi-29',
+  isGlobalDiscount: false,
+  queryProgram: 'TI',
+  entProgram: 'TI',
+  queryWave: '1A',
+  entWave: null,
+  queryWaveGroup: '1',
+  entWaveGroup: null,
+  queryAcademicYear: '2025',
+  entAcademicYear: null,
+  chunkPreview: 'Program Studi Teknologi Informasi - Apa Yang Dipelajari\n' +
+    '# Apa Yang Dipelajari\n' +
+    '\n' +
+    'Pembelajaran mencakup'
+}
+[TRACE_PARSE_CHUNK_2_MONEY] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  registrationFee: null,
+  dpp: null,
+  dppDiscount: null,
+  registrationDiscount: null,
+  ukt: null,
+  scholarship: null
+}
+[TRACE_PARSE_CHUNK_4_COST_PRESENCE] {

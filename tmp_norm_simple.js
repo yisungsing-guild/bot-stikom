@@ -1,0 +1,1 @@
+function normalizeWhitespace(s){ return String(s || '').replace(/[\u00A0\t]+/g, ' ').replace(/\s+/g, ' ').trim(); } console.log(normalizeWhitespace('berapa biaya pendaftaran di stikom?')); console.log(Array.from(normalizeWhitespace('berapa biaya pendaftaran di stikom?')).map(c=>c.charCodeAt(0)));

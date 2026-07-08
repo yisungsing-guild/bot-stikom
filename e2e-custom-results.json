@@ -1,0 +1,48 @@
+[
+  {
+    "query": "beasiswa",
+    "success": true,
+    "source": "rag-scholarship-overview",
+    "answer": "Siap, aku bantu jelaskan soal biaya.\nAda beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\n\n- Beasiswa ranking kelas\n- Beasiswa prestasi (lokal/nasional/internasional)\n- Beasiswa KIP\n- Beasiswa 1K1S\n- Beasiswa Yayasan\n\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?"
+  },
+  {
+    "query": "beasiswa alumni",
+    "success": true,
+    "source": "gpt-4o-mini",
+    "confidenceTier": "HIGH",
+    "answer": "Saya belum menemukan detail yang benar-benar sesuai mengenai beasiswa alumni yang ada.\nNamun, informasi yang tersedia menyebutkan bahwa ITB STIKOM Bali memberikan beasiswa kepada calon mahasiswa baru yang memiliki rangking di kelas serta berprestasi di bidang akademik atau non-akademik.\nApakah ada informasi spesifik lain yang ingin kamu ketahui tentang beasiswa di ITB STIKOM Bali?\n\n- --"
+  },
+  {
+    "query": "SMK TI Bali Global",
+    "success": true,
+    "source": "gpt-4o-mini",
+    "confidenceTier": "HIGH",
+    "answer": "🎓 Informasi mengenai.\nSaya belum menemukan detail yang benar-benar sesuai mengenai yang ada. Jika ada informasi spesifik yang Anda cari, silakan beri tahu.\nApakah Anda ingin tahu tentang program atau beasiswa yang tersedia di sekolah tersebut?\n\nSilakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus."
+  },
+  {
+    "query": "SMK Pandawa Bali Global",
+    "success": true,
+    "source": "gpt-4o-mini",
+    "confidenceTier": "HIGH",
+    "answer": "Saya belum menemukan detail yang benar-benar sesuai mengenai.\nApakah ada informasi spesifik yang ingin kamu ketahui tentang?\n\nMau saya bantu jelaskan detail gelombang atau jadwal pendaftaran?\n\nSilakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus."
+  },
+  {
+    "query": "biaya SI",
+    "success": true,
+    "source": "rag-fee-breakdown",
+    "answer": "Siap, aku bantu jelaskan soal biaya.\nBerikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Sistem Informasi:\n\n- Pendaftaran: Rp 500.000\n- Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1\n- Jas Almamater, Topi: Rp 750.000 - Saat Registrasi I\n- Kaos, Tas, GMTI: Rp 750.000 - Saat Registrasi I\n- Biaya Pendidikan Per Semester: Rp 6.500.000 - Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS\n- Biaya Pengalaman Industri (Internasional): Rp 5.000.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Nasional): Rp 2.500.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Lokal): Rp 1.500.000 - Dicicil 5 kali per semester\n\nCatatan: Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk.\nTotal (dihitung): Rp 31.500.000\nMau saya rangkum juga skema potongan per gelombangnya?"
+  },
+  {
+    "query": "kelas malam",
+    "success": true,
+    "source": "rag-lexical-fallback",
+    "answer": "Siap, aku bantu jawab ya.\n\nAku nemu info yang relevan di data training:\n...ISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1) BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3) KELAS PAGI / SIANG | KELAS SORE/MALAM KARYAWAN | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1) BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3) DOUBLE DEGREE | INTERNASIONAL PROGRAM (S.KOM B.IT) | NATIONAL PROGRAM...\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\nMau saya jelaskan lagi bagian lain?"
+  },
+  {
+    "query": "kurikulum TI",
+    "success": true,
+    "source": "gpt-4o-mini",
+    "confidenceTier": "HIGH",
+    "answer": "🎓 Ini informasi mengenai kurikulum Teknologi Informasi.\nKurikulum Teknologi Informasi di STIKOM Bali dirancang untuk memberikan pemahaman mendalam tentang pengelolaan bisnis berbasis digital dan teknologi terkini. Beberapa fokus utama dalam kurikulum ini meliputi:\n\n- Pengembangan keterampilan dalam digital marketing dan e-commerce.\n- Penerapan teknologi informasi dalam berbagai aspek bisnis dan analisis pasar.\n\nMau tahu lebih lanjut tentang program spesifik atau mata kuliah yang ditawarkan?"
+  }
+]

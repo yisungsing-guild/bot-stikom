@@ -1,0 +1,1413 @@
+========================================================================================================================
+QUESTION: Apa itu Sistem Informasi?
+
+SCENARIO: Current
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.4607 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.2000 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.2000 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.8785 | sem=0.5848 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.830
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.4159 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.3692 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+7. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.3150 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2841 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2835 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2813 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 6 (Δ0)
+7. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.25, Metadata 100%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.5277 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.2000 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.2000 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.9662 | sem=0.5848 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.830
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.4968 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4251 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+7. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.3945 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.3592 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.3578 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.3521 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 6 (Δ0)
+7. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.50, Metadata 100%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.6394 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.2000 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.2000 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=4.1124 | sem=0.5848 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.830
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.6315 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+6. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.5269 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+7. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.5182 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4843 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4815 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4703 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 6 (Δ1)
+7. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 7 (Δ-1)
+8. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x1.00, Metadata 100%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.8628 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=4.4048 | sem=0.5848 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.830
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.2000 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.2000 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.9010 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+6. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.7918 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.7346 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.7290 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.7066 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.7044 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 3 (Δ0)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 4 (Δ-2)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 6 (Δ1)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 7 (Δ1)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 9 (Δ1)
+10. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 10 (Δ-4)
+
+
+SCENARIO: Semantic x0.25, Metadata 75%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.6602 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4750 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4750 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.0987 | sem=0.5848 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.830
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.8951 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+6. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.8945 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+7. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.8843 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.8292 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.8278 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.8221 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 6 (Δ1)
+7. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 7 (Δ-2)
+8. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.50, Metadata 75%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.7719 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4750 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4750 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.2449 | sem=0.5848 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.830
+5. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.0269 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+6. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.0190 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+7. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9882 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9543 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9515 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9403 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 5 (Δ2)
+6. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 6 (Δ-1)
+7. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 7 (Δ-1)
+8. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x1.00, Metadata 75%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.9953 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.5373 | sem=0.5848 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.830
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4750 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4750 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+5. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.2918 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+6. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.2885 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2046 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1990 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1766 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1744 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 3 (Δ0)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 4 (Δ-2)
+5. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 5 (Δ2)
+6. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 6 (Δ-1)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 7 (Δ1)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 9 (Δ1)
+10. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 10 (Δ-4)
+
+
+SCENARIO: Semantic x0.25, Metadata 50%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.7927 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.7500 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.7500 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.3945 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.3651 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+6. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2992 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+7. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2978 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2921 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2858 | sem=0.4471 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2857 | sem=0.4468 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 4 (Δ3)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 9 (Δ2)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 12 -> 10 (Δ2)
+
+
+SCENARIO: Semantic x0.50, Metadata 50%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.9044 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.7500 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.7500 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.5269 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4582 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+6. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4243 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+7. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4215 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4103 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.4065 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+10. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.3976 | sem=0.4471 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 4 (Δ3)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 8 (Δ2)
+9. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 9 (Δ-4)
+10. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 10 (Δ1)
+
+
+SCENARIO: Semantic x1.00, Metadata 50%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.1278 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.7918 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.7500 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.7500 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.6760 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+6. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6746 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+7. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=2.6698 | sem=0.5848 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.830
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6690 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6466 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6444 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 2 (Δ5)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 3 (Δ0)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 4 (Δ-2)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 6 (Δ2)
+7. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 7 (Δ-3)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 9 (Δ1)
+10. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 10 (Δ-4)
+
+
+SCENARIO: Semantic x0.25, Metadata 25%
+1. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.0250 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+2. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.0250 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+3. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=1.9252 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+4. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=1.8945 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8351 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+6. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7692 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+7. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7678 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7621 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7558 | sem=0.4471 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7557 | sem=0.4468 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 1 (Δ2)
+2. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 2 (Δ0)
+3. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 3 (Δ-2)
+4. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 4 (Δ3)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 9 (Δ2)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 12 -> 10 (Δ2)
+
+
+SCENARIO: Semantic x0.50, Metadata 25%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.0369 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+2. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.0269 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.0250 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.0250 | sem=0.0000 | meta=2.9000 | evidence=0.180 | exact=1.000 | other=0.120
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.9282 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+6. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8943 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+7. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8915 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8803 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8676 | sem=0.4471 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8674 | sem=0.4468 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 2 (Δ5)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 3 (Δ0)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 4 (Δ-2)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 9 (Δ2)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 12 -> 10 (Δ2)
+
+
+SCENARIO: Semantic x1.00, Metadata 25%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.2918 | sem=0.5298 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.082
+2. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.2603 | sem=0.4468 | meta=3.4700 | evidence=0.180 | exact=1.000 | other=-0.234
+3. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1446 | sem=0.5006 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1390 | sem=0.4950 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+5. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1166 | sem=0.4726 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1144 | sem=0.3724 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=0.032
+7. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0911 | sem=0.4471 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+8. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0908 | sem=0.4468 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+9. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0903 | sem=0.4463 | meta=2.1200 | evidence=0.180 | exact=1.000 | other=-0.066
+10. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.0635 | sem=0.5390 | meta=2.4500 | evidence=0.180 | exact=1.000 | other=-0.268
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 1 (Δ6)
+2. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 2 (Δ-1)
+3. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 8 -> 3 (Δ5)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 9 -> 4 (Δ5)
+5. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 5 (Δ5)
+6. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 6 (Δ0)
+7. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 7 (Δ4)
+8. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 12 -> 8 (Δ4)
+9. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 13 -> 9 (Δ4)
+10. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 10 (Δ-5)
+
+========================================================================================================================
+QUESTION: Apa prospek kerja Sistem Informasi?
+
+SCENARIO: Current
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.2464 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.9750 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.9300 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.6143 | sem=0.6428 | meta=3.2900 | evidence=0.090 | exact=1.000 | other=-0.830
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.1466 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1014 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+7. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.0458 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0100 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0090 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0090 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 2 (Δ0)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 3 (Δ0)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 6 (Δ0)
+7. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.25, Metadata 100%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.3296 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.9750 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.9300 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.7107 | sem=0.6428 | meta=3.2900 | evidence=0.090 | exact=1.000 | other=-0.830
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.2286 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1606 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+7. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.1265 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0790 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0766 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0766 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 2 (Δ0)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 3 (Δ0)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 6 (Δ0)
+7. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.50, Metadata 100%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.4682 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.9750 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.9300 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.8714 | sem=0.6428 | meta=3.2900 | evidence=0.090 | exact=1.000 | other=-0.830
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.3652 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+6. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.2609 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+7. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2592 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1939 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1892 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1891 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 2 (Δ0)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 3 (Δ0)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 6 (Δ1)
+7. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 7 (Δ-1)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x1.00, Metadata 100%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.7455 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=4.1928 | sem=0.6428 | meta=3.2900 | evidence=0.090 | exact=1.000 | other=-0.830
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.9750 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.9300 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.6384 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+6. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.5298 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+7. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4564 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4238 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4145 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4142 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 3 (Δ-1)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 4 (Δ-1)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 6 (Δ1)
+7. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 7 (Δ-1)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.25, Metadata 75%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.5071 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.2950 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.2500 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=2.8882 | sem=0.6428 | meta=3.2900 | evidence=0.090 | exact=1.000 | other=-0.830
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6756 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+6. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.6715 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+7. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.6611 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5940 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5916 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5916 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 2 (Δ0)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 3 (Δ0)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 6 (Δ1)
+7. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 7 (Δ-2)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.50, Metadata 75%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.6457 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.2950 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.2500 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.0489 | sem=0.6428 | meta=3.2900 | evidence=0.090 | exact=1.000 | other=-0.830
+5. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.8059 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+6. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.7977 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+7. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7742 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7089 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7042 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7041 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 2 (Δ0)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 3 (Δ0)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 5 (Δ2)
+6. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 6 (Δ-1)
+7. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 7 (Δ-1)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x1.00, Metadata 75%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.9230 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.3703 | sem=0.6428 | meta=3.2900 | evidence=0.090 | exact=1.000 | other=-0.830
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.2950 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.2500 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+5. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.0748 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+6. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.0709 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+7. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9714 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9388 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9295 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9292 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 3 (Δ-1)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 4 (Δ-1)
+5. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 5 (Δ2)
+6. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 6 (Δ-1)
+7. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 7 (Δ-1)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.25, Metadata 50%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.6846 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.6150 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.5700 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+4. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.2165 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1906 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1090 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+7. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1066 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1066 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0972 | sem=0.4127 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | JADWAL | score=2.0970 | sem=0.2679 | meta=1.8200 | evidence=0.000 | exact=1.000 | other=0.120
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 2 (Δ0)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 3 (Δ0)
+4. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 4 (Δ3)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 9 (Δ2)
+10. Kalender Pendaftaran.xlsx (7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba) from 14 -> 10 (Δ4)
+
+
+SCENARIO: Semantic x0.50, Metadata 50%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.8232 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.6150 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.5700 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+4. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.3509 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2892 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+6. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.2302 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+7. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=2.2264 | sem=0.6428 | meta=3.2900 | evidence=0.090 | exact=1.000 | other=-0.830
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2239 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2192 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2191 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 2 (Δ0)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 3 (Δ0)
+4. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 4 (Δ3)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 6 (Δ-1)
+7. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 7 (Δ-3)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x1.00, Metadata 50%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.1005 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.6198 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.6150 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.5700 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+5. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=2.5478 | sem=0.6428 | meta=3.2900 | evidence=0.090 | exact=1.000 | other=-0.830
+6. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.5034 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+7. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4864 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4538 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4445 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4442 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 2 (Δ5)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 3 (Δ-1)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 4 (Δ-1)
+5. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 5 (Δ-1)
+6. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 6 (Δ-1)
+7. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 7 (Δ-1)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.25, Metadata 25%
+1. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.9350 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+2. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.8900 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+3. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=1.8621 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+4. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=1.7615 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7056 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+6. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | JADWAL | score=1.6420 | sem=0.2679 | meta=1.8200 | evidence=0.000 | exact=1.000 | other=0.120
+7. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6240 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6216 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6216 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+10. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6122 | sem=0.4127 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 1 (Δ1)
+2. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 2 (Δ1)
+3. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 3 (Δ-2)
+4. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 4 (Δ3)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. Kalender Pendaftaran.xlsx (7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba) from 14 -> 6 (Δ8)
+7. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 7 (Δ1)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 9 (Δ1)
+10. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 10 (Δ1)
+
+
+SCENARIO: Semantic x0.50, Metadata 25%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.0007 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.9350 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+3. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=1.8959 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.8900 | sem=0.0000 | meta=2.7200 | evidence=0.090 | exact=1.000 | other=0.120
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8042 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7389 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+7. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7342 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7341 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+9. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=1.7162 | sem=0.5023 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=-0.080
+10. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7154 | sem=0.4127 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 2 (Δ0)
+3. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 3 (Δ4)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 3 -> 4 (Δ-1)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 8 (Δ2)
+9. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 17 -> 9 (Δ8)
+10. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 10 (Δ1)
+
+
+SCENARIO: Semantic x1.00, Metadata 25%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.2780 | sem=0.5545 | meta=3.2900 | evidence=0.135 | exact=1.000 | other=-0.234
+2. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.1648 | sem=0.5378 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=0.082
+3. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0014 | sem=0.3944 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=0.032
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.9688 | sem=0.4598 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+5. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=1.9673 | sem=0.5023 | meta=1.8200 | evidence=0.090 | exact=1.000 | other=-0.080
+6. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.9595 | sem=0.4505 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.9592 | sem=0.4502 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+8. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=1.9359 | sem=0.5464 | meta=2.2700 | evidence=0.090 | exact=1.000 | other=-0.268
+9. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.9350 | sem=0.0000 | meta=2.7200 | evidence=0.135 | exact=1.000 | other=0.120
+10. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.9217 | sem=0.4127 | meta=1.9400 | evidence=0.090 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 2 (Δ5)
+3. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 3 (Δ3)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 4 (Δ4)
+5. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 17 -> 5 (Δ12)
+6. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 9 -> 6 (Δ3)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 10 -> 7 (Δ3)
+8. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 8 (Δ-3)
+9. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 2 -> 9 (Δ-7)
+10. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 10 (Δ1)
+
+========================================================================================================================
+QUESTION: Apa yang dipelajari di Sistem Informasi?
+
+SCENARIO: Current
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.4006 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.1400 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.1400 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.8175 | sem=0.5755 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.830
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.3573 | sem=0.5530 | meta=2.4500 | evidence=0.120 | exact=1.000 | other=-0.268
+6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.3103 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+7. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.2565 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2238 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2231 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2209 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 6 (Δ0)
+7. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.25, Metadata 100%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.4676 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.1400 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.1400 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.9039 | sem=0.5755 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.830
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.4402 | sem=0.5530 | meta=2.4500 | evidence=0.120 | exact=1.000 | other=-0.268
+6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.3678 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+7. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.3382 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2984 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2967 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2913 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 6 (Δ0)
+7. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.50, Metadata 100%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.5792 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.1400 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.1400 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=4.0477 | sem=0.5755 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.830
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.5785 | sem=0.5530 | meta=2.4500 | evidence=0.120 | exact=1.000 | other=-0.268
+6. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.4744 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+7. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4636 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4229 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4194 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4086 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 6 (Δ1)
+7. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 7 (Δ-1)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x1.00, Metadata 100%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=4.8024 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=4.3355 | sem=0.5755 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.830
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.1400 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=4.1400 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.8550 | sem=0.5530 | meta=2.4500 | evidence=0.120 | exact=1.000 | other=-0.268
+6. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.7467 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+7. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.6717 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.6649 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.6552 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.6432 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 3 (Δ0)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 4 (Δ-2)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 6 (Δ1)
+7. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 7 (Δ1)
+8. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 9 (Δ-3)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.25, Metadata 75%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.6001 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4150 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4150 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.0364 | sem=0.5755 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.830
+5. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.8382 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.8378 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+7. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.8277 | sem=0.5530 | meta=2.4500 | evidence=0.120 | exact=1.000 | other=-0.268
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7684 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7667 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7613 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 5 (Δ2)
+6. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 6 (Δ0)
+7. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 7 (Δ-2)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.50, Metadata 75%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.7117 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4150 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4150 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.1802 | sem=0.5755 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.830
+5. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.9744 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+6. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.9660 | sem=0.5530 | meta=2.4500 | evidence=0.120 | exact=1.000 | other=-0.268
+7. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9336 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.8929 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.8894 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.8786 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 4 (Δ0)
+5. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 5 (Δ2)
+6. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 6 (Δ-1)
+7. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 7 (Δ-1)
+8. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x1.00, Metadata 75%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.9349 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=3.4680 | sem=0.5755 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.830
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4150 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.4150 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+5. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.2467 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+6. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=3.2425 | sem=0.5530 | meta=2.4500 | evidence=0.120 | exact=1.000 | other=-0.268
+7. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1417 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1349 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1252 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1132 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 3 (Δ0)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 4 (Δ-2)
+5. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 5 (Δ2)
+6. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 6 (Δ-1)
+7. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 7 (Δ1)
+8. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 9 (Δ-3)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.25, Metadata 50%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.7326 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.6900 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.6900 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.3382 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.3078 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2384 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2367 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2313 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2280 | sem=0.4560 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2269 | sem=0.4515 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 4 (Δ3)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 9 (Δ2)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 12 -> 10 (Δ2)
+
+
+SCENARIO: Semantic x0.50, Metadata 50%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.8442 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.6900 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.6900 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.4744 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4036 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.3629 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.3594 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+8. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.3535 | sem=0.5530 | meta=2.4500 | evidence=0.120 | exact=1.000 | other=-0.268
+9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.3486 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.3420 | sem=0.4560 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 2 (Δ1)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 3 (Δ-1)
+4. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 4 (Δ3)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 7 (Δ2)
+8. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 8 (Δ-3)
+9. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 9 (Δ1)
+10. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 10 (Δ1)
+
+
+SCENARIO: Semantic x1.00, Metadata 50%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=3.0674 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.7467 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.6900 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.6900 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | UNKNOWN | score=2.6300 | sem=0.5530 | meta=2.4500 | evidence=0.120 | exact=1.000 | other=-0.268
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6117 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6049 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+8. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | KURIKULUM | score=2.6005 | sem=0.5755 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.830
+9. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5952 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5832 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 2 (Δ5)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 3 (Δ0)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 4 (Δ-2)
+5. hobi_prodi_lengkap (1).xlsx (8491b972-ee0b-4806-bd7e-8508c61ed46b) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 7 (Δ2)
+8. Penjelasan Semua Program Studi.pdf (618a0474-969a-463f-91cd-c010a27beb48) from 4 -> 8 (Δ-4)
+9. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 9 (Δ-3)
+10. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 10 (Δ0)
+
+
+SCENARIO: Semantic x0.25, Metadata 25%
+1. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.9650 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+2. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.9650 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+3. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=1.8651 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+4. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=1.8382 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7778 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7084 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7067 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7013 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6980 | sem=0.4560 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6969 | sem=0.4515 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 1 (Δ2)
+2. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 2 (Δ0)
+3. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 3 (Δ-2)
+4. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 4 (Δ3)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 9 (Δ2)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 12 -> 10 (Δ2)
+
+
+SCENARIO: Semantic x0.50, Metadata 25%
+1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=1.9767 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+2. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=1.9744 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.9650 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+4. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.9650 | sem=0.0000 | meta=2.9000 | evidence=0.120 | exact=1.000 | other=0.120
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8736 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8329 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8294 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8186 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8120 | sem=0.4560 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8097 | sem=0.4515 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 1 (Δ0)
+2. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 2 (Δ5)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 3 (Δ0)
+4. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 2 -> 4 (Δ-2)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 9 (Δ2)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 12 -> 10 (Δ2)
+
+
+SCENARIO: Semantic x1.00, Metadata 25%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.2467 | sem=0.5447 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | KURIKULUM | score=2.1999 | sem=0.4464 | meta=3.4700 | evidence=0.120 | exact=1.000 | other=-0.234
+3. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0817 | sem=0.4977 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+4. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0749 | sem=0.4909 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+5. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0652 | sem=0.3832 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=0.032
+6. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0532 | sem=0.4692 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+7. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=2.0401 | sem=0.5001 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.080
+8. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0400 | sem=0.4560 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+9. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0355 | sem=0.4515 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+10. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0322 | sem=0.4482 | meta=2.1200 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 7 -> 1 (Δ6)
+2. Penjelasan Prodi dan Karier Masa Depan (1).xlsx (6631dfc1-b46c-4933-a340-392dfd2250d6) from 1 -> 2 (Δ-1)
+3. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 8 -> 3 (Δ5)
+4. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 9 -> 4 (Δ5)
+5. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 6 -> 5 (Δ1)
+6. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 10 -> 6 (Δ4)
+7. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 17 -> 7 (Δ10)
+8. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 11 -> 8 (Δ3)
+9. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 12 -> 9 (Δ3)
+10. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 13 -> 10 (Δ3)
+
+========================================================================================================================
+QUESTION: Apa keunggulan Sistem Informasi?
+
+SCENARIO: Current
+1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.3000 | sem=0.0000 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.120
+2. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.2548 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.2400 | sem=0.0000 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.120
+4. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1933 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+5. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | JADWAL | score=3.1441 | sem=0.2409 | meta=2.0000 | evidence=0.000 | exact=1.000 | other=0.120
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1016 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1011 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1002 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0988 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0985 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 1 -> 1 (Δ0)
+2. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 2 (Δ0)
+3. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 3 (Δ0)
+4. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 4 (Δ0)
+5. Kalender Pendaftaran.xlsx (7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 6 (Δ0)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 10 (Δ0)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 18 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? false
+
+
+SCENARIO: Semantic x0.25, Metadata 100%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.3340 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.3000 | sem=0.0000 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2552 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+4. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.2400 | sem=0.0000 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.120
+5. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | JADWAL | score=3.1802 | sem=0.2409 | meta=2.0000 | evidence=0.000 | exact=1.000 | other=0.120
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1731 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1718 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1696 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1660 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.1652 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 1 -> 2 (Δ-1)
+3. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 3 (Δ1)
+4. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 4 (Δ-1)
+5. Kalender Pendaftaran.xlsx (7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 6 (Δ0)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 10 (Δ0)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 18 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x0.50, Metadata 100%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.4659 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.3585 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=3.3000 | sem=0.0000 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2922 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+5. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2895 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+6. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=3.2876 | sem=0.4952 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.080
+7. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2851 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2779 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2764 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.2754 | sem=0.4428 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 1 -> 3 (Δ-2)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 4 (Δ2)
+5. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 5 (Δ2)
+6. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 12 -> 6 (Δ6)
+7. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 7 (Δ1)
+8. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 9 (Δ1)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 11 -> 10 (Δ1)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 15 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x1.00, Metadata 100%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.7298 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.5649 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+3. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=3.5352 | sem=0.4952 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.080
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.5303 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+5. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.5251 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+6. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.5162 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.5019 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4989 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.4968 | sem=0.4428 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. f6fba3b8-10b8-4773-9537-ed5d368a1f62 | 1fe1697b-db27-4099-88ff-935c4495a898 | BIAYA | score=3.4633 | sem=0.4733 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.130
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 2 (Δ2)
+3. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 12 -> 3 (Δ9)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 4 (Δ2)
+5. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 5 (Δ2)
+6. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 11 -> 9 (Δ2)
+10. 1fe1697b-db27-4099-88ff-935c4495a898 (f6fba3b8-10b8-4773-9537-ed5d368a1f62) from 14 -> 10 (Δ4)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 11 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x0.25, Metadata 75%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.8340 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.8000 | sem=0.0000 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7552 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+4. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.7400 | sem=0.0000 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.120
+5. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | JADWAL | score=2.6802 | sem=0.2409 | meta=2.0000 | evidence=0.000 | exact=1.000 | other=0.120
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6731 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6718 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6696 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6660 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.6652 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 1 -> 2 (Δ-1)
+3. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 3 (Δ1)
+4. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 4 (Δ-1)
+5. Kalender Pendaftaran.xlsx (7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 6 (Δ0)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 10 (Δ0)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 18 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x0.50, Metadata 75%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.9659 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.8585 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.8000 | sem=0.0000 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7922 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+5. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7895 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+6. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=2.7876 | sem=0.4952 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.080
+7. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7851 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7779 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7764 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.7754 | sem=0.4428 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 1 -> 3 (Δ-2)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 4 (Δ2)
+5. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 5 (Δ2)
+6. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 12 -> 6 (Δ6)
+7. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 7 (Δ1)
+8. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 9 (Δ1)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 11 -> 10 (Δ1)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 15 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x1.00, Metadata 75%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=3.2298 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0649 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+3. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=3.0352 | sem=0.4952 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.080
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0303 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+5. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0251 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+6. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0162 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=3.0019 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9989 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.9968 | sem=0.4428 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. f6fba3b8-10b8-4773-9537-ed5d368a1f62 | 1fe1697b-db27-4099-88ff-935c4495a898 | BIAYA | score=2.9633 | sem=0.4733 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.130
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 2 (Δ2)
+3. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 12 -> 3 (Δ9)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 4 (Δ2)
+5. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 5 (Δ2)
+6. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 11 -> 9 (Δ2)
+10. 1fe1697b-db27-4099-88ff-935c4495a898 (f6fba3b8-10b8-4773-9537-ed5d368a1f62) from 14 -> 10 (Δ4)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 11 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x0.25, Metadata 50%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.3340 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.3000 | sem=0.0000 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2552 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+4. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.2400 | sem=0.0000 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.120
+5. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | JADWAL | score=2.1802 | sem=0.2409 | meta=2.0000 | evidence=0.000 | exact=1.000 | other=0.120
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1731 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1718 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1696 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1660 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.1652 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 1 -> 2 (Δ-1)
+3. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 3 (Δ1)
+4. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 4 (Δ-1)
+5. Kalender Pendaftaran.xlsx (7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 6 (Δ0)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 10 (Δ0)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 18 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x0.50, Metadata 50%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.4659 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.3585 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=2.3000 | sem=0.0000 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2922 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+5. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2895 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+6. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=2.2876 | sem=0.4952 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.080
+7. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2851 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2779 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2764 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.2754 | sem=0.4428 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 1 -> 3 (Δ-2)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 4 (Δ2)
+5. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 5 (Δ2)
+6. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 12 -> 6 (Δ6)
+7. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 7 (Δ1)
+8. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 9 (Δ1)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 11 -> 10 (Δ1)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 15 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x1.00, Metadata 50%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.7298 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5649 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+3. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=2.5352 | sem=0.4952 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.080
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5303 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+5. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5251 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+6. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5162 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.5019 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4989 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.4968 | sem=0.4428 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. f6fba3b8-10b8-4773-9537-ed5d368a1f62 | 1fe1697b-db27-4099-88ff-935c4495a898 | BIAYA | score=2.4633 | sem=0.4733 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.130
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 2 (Δ2)
+3. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 12 -> 3 (Δ9)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 4 (Δ2)
+5. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 5 (Δ2)
+6. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 11 -> 9 (Δ2)
+10. 1fe1697b-db27-4099-88ff-935c4495a898 (f6fba3b8-10b8-4773-9537-ed5d368a1f62) from 14 -> 10 (Δ4)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 11 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x0.25, Metadata 25%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=1.8340 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.8000 | sem=0.0000 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.120
+3. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7552 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+4. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.7400 | sem=0.0000 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.120
+5. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | JADWAL | score=1.6802 | sem=0.2409 | meta=2.0000 | evidence=0.000 | exact=1.000 | other=0.120
+6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6731 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6718 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6696 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6660 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.6652 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 1 -> 2 (Δ-1)
+3. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 3 (Δ1)
+4. CHATBOT - Double Degree (1).docx (b411e939-1537-4fd5-af3d-541424f9d3a3) from 3 -> 4 (Δ-1)
+5. Kalender Pendaftaran.xlsx (7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba) from 5 -> 5 (Δ0)
+6. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 6 (Δ0)
+7. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 7 (Δ0)
+8. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 8 (Δ0)
+9. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 9 (Δ0)
+10. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 10 (Δ0)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 18 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x0.50, Metadata 25%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=1.9659 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.8585 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | PROGRAM_KHUSUS | score=1.8000 | sem=0.0000 | meta=2.0000 | evidence=0.180 | exact=1.000 | other=0.120
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7922 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+5. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7895 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+6. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=1.7876 | sem=0.4952 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.080
+7. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7851 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7779 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7764 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.7754 | sem=0.4428 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 2 (Δ2)
+3. CHATBOT - Double Degree (1).docx (c2961b13-bd76-4f6b-9c39-1e19606b6a5d) from 1 -> 3 (Δ-2)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 4 (Δ2)
+5. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 5 (Δ2)
+6. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 12 -> 6 (Δ6)
+7. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 7 (Δ1)
+8. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 8 (Δ1)
+9. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 9 (Δ1)
+10. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 11 -> 10 (Δ1)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 15 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+
+SCENARIO: Semantic x1.00, Metadata 25%
+1. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | UNKNOWN | score=2.2298 | sem=0.5278 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.082
+2. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0649 | sem=0.4129 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=0.032
+3. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | UNKNOWN | score=2.0352 | sem=0.4952 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.080
+4. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0303 | sem=0.4763 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+5. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0251 | sem=0.4711 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+6. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0162 | sem=0.4622 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+7. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=2.0019 | sem=0.4479 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+8. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.9989 | sem=0.4449 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+9. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | BIAYA | score=1.9968 | sem=0.4428 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.066
+10. f6fba3b8-10b8-4773-9537-ed5d368a1f62 | 1fe1697b-db27-4099-88ff-935c4495a898 | BIAYA | score=1.9633 | sem=0.4733 | meta=2.0000 | evidence=0.120 | exact=1.000 | other=-0.130
+
+Top10 position changes (new rank vs baseline):
+1. HOBY.pdf (74be5da2-8251-4417-a1de-41c3a4b70239) from 2 -> 1 (Δ1)
+2. smoke-sectiontitle-ok-1779082103888 (c4b537df-3774-42de-b51c-82f5a35bdee6) from 4 -> 2 (Δ2)
+3. hobi-sesuai-program-studi.docx (d45aa54b-c8a7-4a88-bf47-defbcf1f2a71) from 12 -> 3 (Δ9)
+4. smoke-sectiontitle-ok-1779082103888 (0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5) from 6 -> 4 (Δ2)
+5. smoke-sectiontitle-ok-1779082103888 (3546c7cc-7dc3-4a1e-b318-79648193fb86) from 7 -> 5 (Δ2)
+6. smoke-sectiontitle-ok-1779082103888 (a0f70379-20e4-493a-ace1-69d9f54f8611) from 8 -> 6 (Δ2)
+7. smoke-sectiontitle-ok-1779082103888 (37dc572d-f30d-47eb-b5ca-63fb21bba88a) from 9 -> 7 (Δ2)
+8. smoke-sectiontitle-ok-1779082103888 (ce42bcfd-a809-4551-9ffa-f7af5eb695b3) from 10 -> 8 (Δ2)
+9. smoke-sectiontitle-ok-1779082103888 (e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3) from 11 -> 9 (Δ2)
+10. 1fe1697b-db27-4099-88ff-935c4495a898 (f6fba3b8-10b8-4773-9537-ed5d368a1f62) from 14 -> 10 (Δ4)
+
+-- QUERY IMPACT for 'Apa keunggulan Sistem Informasi?' --
+Baseline top1 id: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+Scenario top1 id: 74be5da2-8251-4417-a1de-41c3a4b70239
+High semantic chunk id: 8491b972-ee0b-4806-bd7e-8508c61ed46b
+High semantic rank: 11 (baseline 18)
+High semantic moved up? undefined
+Top1 changed? true
+
+========================================================================================================================

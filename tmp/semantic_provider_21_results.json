@@ -1,0 +1,58 @@
+[
+  {
+    "no": 1,
+    "question": "Assalamualaikum",
+    "status": 200,
+    "messages": [
+      "Wa'alaikumsalam kak. Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+    ]
+  },
+  {
+    "no": 2,
+    "question": "Om Swastiastu",
+    "status": 200,
+    "messages": [
+      "Om Swastiastu, kak. Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+    ]
+  },
+  {
+    "no": 3,
+    "question": "Shalom",
+    "status": 200,
+    "messages": [
+      "Shalom, kak. Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+    ]
+  },
+  {
+    "no": 4,
+    "question": "Namo Buddhaya",
+    "status": 200,
+    "messages": [
+      "Namo Buddhaya, kak. Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+    ]
+  },
+  {
+    "no": 5,
+    "question": "Salam Kebajikan",
+    "status": 200,
+    "messages": [
+      "Salam Kebajikan, kak. Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+    ]
+  },
+  {
+    "no": 6,
+    "question": "Rahayu",
+    "status": 200,
+    "messages": [
+      "Rahayu, kak. Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+    ]
+  },
+  {
+    "no": 7,
+    "question": "Apa kabar?",
+    "status": 200,
+    "messages": [
+      "Saya baik-baik saja, terima kasih! Bagaimana dengan kamu?"
+    ]
+  }
+]

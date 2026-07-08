@@ -1,0 +1,3803 @@
+{
+  "summary": {
+    "totalQueries": 25,
+    "greetingPct": 100,
+    "assumptionPct": 100,
+    "answerPct": 100,
+    "conclusionPct": 0,
+    "recommendationPct": 100,
+    "topIssues": [
+      {
+        "issue": "missing conclusion",
+        "count": 25
+      }
+    ]
+  },
+  "results": [
+    {
+      "program": "Sistem Informasi",
+      "queryLabel": "Definisi",
+      "question": "Jelaskan apa itu program studi Sistem Informasi di ITB STIKOM Bali",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "🎓 Kamu ingin tahu tentang program studi Sistem Informasi di ITB STIKOM Bali.\nProgram studi Sistem Informasi di ITB STIKOM Bali menghasilkan lulusan yang memiliki kompetensi dalam:\n• Penerapan teknologi komputer dan jaringan untuk mengelola, mengolah, dan mendistribusikan informasi secara efektif dan inovatif.\n• Pengembangan perangkat lunak, teknologi cloud, Dev Ops, keamanan siber, dan investigasi forensik.\nMau tahu lebih lanjut tentang profil lulusan atau mata kuliah yang ditawarkan?\n---",
+      "decoratedAnswer": "🎓 Kamu ingin tahu tentang program studi Sistem Informasi di ITB STIKOM Bali.\nProgram studi Sistem Informasi di ITB STIKOM Bali menghasilkan lulusan yang memiliki kompetensi dalam:\n• Penerapan teknologi komputer dan jaringan untuk mengelola, mengolah, dan mendistribusikan informasi secara efektif dan inovatif.\n• Pengembangan perangkat lunak, teknologi cloud, Dev Ops, keamanan siber, dan investigasi forensik.\nMau tahu lebih lanjut tentang profil lulusan atau mata kuliah yang ditawarkan?\n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "🎓 Kamu ingin tahu tentang program studi Sistem Informasi di ITB STIKOM Bali.\nProgram studi Sistem Informasi di ITB STIKOM Bali menghasilkan lulusan yang memiliki kompetensi dalam:\n• Penerapan teknologi komputer dan jaringan untuk mengelola, mengolah, dan mendistribusikan informasi secara efektif dan inovatif.\n• Pengembangan perangkat lunak, teknologi cloud, Dev Ops, keamanan siber, dan investigasi forensik.\nMau tahu lebih lanjut tentang profil lulusan atau mata kuliah yang ditawarkan?\n---",
+        "assumption": "Pengguna ingin definisi dan gambaran singkat tentang program studi.",
+        "body": "🎓 Kamu ingin tahu tentang program studi Sistem Informasi di ITB STIKOM Bali.\nProgram studi Sistem Informasi di ITB STIKOM Bali menghasilkan lulusan yang memiliki kompetensi dalam:\n• Penerapan teknologi komputer dan jaringan untuk mengelola, mengolah, dan mendistribusikan informasi secara efektif dan inovatif.\n• Pengembangan perangkat lunak, teknologi cloud, Dev Ops, keamanan siber, dan investigasi forensik.\nMau tahu lebih lanjut tentang profil lulusan atau mata kuliah yang ditawarkan?\n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "SI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_STUDI",
+          "pageNumber": null,
+          "academicIntent": "DEFINISI_PRODI"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 2,
+        "afterIntentValidationCount": 2,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 777 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "618a0474-969a-463f-91cd-c010a27beb48",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "ac.id\nsisteminformasi.stikombali\nPerekayasa Sistem Informasi\nPerekayasa Sistem Informasi\nMultimedia\nDesain Grafis & Animator\nPeneliti Sistem Informasi",
+            "score": 0.5877717564282985,
+            "semanticScore": 0.5877717564282985,
+            "rawScore": 3.958777,
+            "finalScore": 1,
+            "compositeScore": 3.958777,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.2399999999999998,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5877717564282985,
+              "semanticBoost": 0.05877717564282985,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.2399999999999998,
+              "rawScore": 2.7587771756428294,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.83,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "text": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP U",
+            "score": 0.007962586876624569,
+            "semanticScore": 0.007962586876624569,
+            "rawScore": 3.575796,
+            "finalScore": 1,
+            "compositeScore": 3.575796,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.1199999999999997,
+            "scoreComponents": {
+              "rawSemanticScore": 0.007962586876624569,
+              "semanticBoost": 0.0007962586876624569,
+              "evidenceScore": 0.135,
+              "keywordScore": 0.75,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.1199999999999997,
+              "rawScore": 3.575796258687662,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": 0.12000000000000001,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "SI",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": "DNUI",
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "PROGRAM_KHUSUS",
+                "pageNumber": null
+              },
+              "itemCategory": "PROGRAM_KHUSUS",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "PROGRAM_KHUSUS",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Sistem Informasi",
+      "queryLabel": "Mata kuliah",
+      "question": "Apa saja yang dipelajari di Sistem Informasi? Jelaskan kurikulumnya.",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "---\n📚 Kamu ingin tahu tentang kurikulum di Program Studi Sistem Informasi.\nDi Program Studi Sistem Informasi, mahasiswa mempelajari berbagai aspek teknologi dan manajemen informasi, termasuk:\n• Pengembangan perangkat lunak: Teknik dan metodologi dalam menciptakan aplikasi.\n• Pengelolaan database: Cara mengelola dan mengolah data secara efektif.\n• Keamanan siber: Prinsip dan praktik untuk melindungi informasi dari ancaman.\nKurikulum dirancang untuk mempersiapkan lulusan yang siap menghadapi dunia kerja dengan kompetensi yang relevan.\nMau tahu lebih lanjut tentang mata kuliah spesifik yang ditawarkan atau prospek karir setelah lulus?\n---",
+      "decoratedAnswer": "---\n📚 Kamu ingin tahu tentang kurikulum di Program Studi Sistem Informasi.\nDi Program Studi Sistem Informasi, mahasiswa mempelajari berbagai aspek teknologi dan manajemen informasi, termasuk:\n• Pengembangan perangkat lunak: Teknik dan metodologi dalam menciptakan aplikasi.\n• Pengelolaan database: Cara mengelola dan mengolah data secara efektif.\n• Keamanan siber: Prinsip dan praktik untuk melindungi informasi dari ancaman.\nKurikulum dirancang untuk mempersiapkan lulusan yang siap menghadapi dunia kerja dengan kompetensi yang relevan.\nMau tahu lebih lanjut tentang mata kuliah spesifik yang ditawarkan atau prospek karir setelah lulus?\n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "---\n📚 Kamu ingin tahu tentang kurikulum di Program Studi Sistem Informasi.\nDi Program Studi Sistem Informasi, mahasiswa mempelajari berbagai aspek teknologi dan manajemen informasi, termasuk:\n• Pengembangan perangkat lunak: Teknik dan metodologi dalam menciptakan aplikasi.\n• Pengelolaan database: Cara mengelola dan mengolah data secara efektif.\n• Keamanan siber: Prinsip dan praktik untuk melindungi informasi dari ancaman.\nKurikulum dirancang untuk mempersiapkan lulusan yang siap menghadapi dunia kerja dengan kompetensi yang relevan.\nMau tahu lebih lanjut tentang mata kuliah spesifik yang ditawarkan atau prospek karir setelah lulus?\n---",
+        "assumption": "Pengguna ingin detail materi atau mata kuliah yang dipelajari di program studi.",
+        "body": "---\n📚 Kamu ingin tahu tentang kurikulum di Program Studi Sistem Informasi.\nDi Program Studi Sistem Informasi, mahasiswa mempelajari berbagai aspek teknologi dan manajemen informasi, termasuk:\n• Pengembangan perangkat lunak: Teknik dan metodologi dalam menciptakan aplikasi.\n• Pengelolaan database: Cara mengelola dan mengolah data secara efektif.\n• Keamanan siber: Prinsip dan praktik untuk melindungi informasi dari ancaman.\nKurikulum dirancang untuk mempersiapkan lulusan yang siap menghadapi dunia kerja dengan kompetensi yang relevan.\nMau tahu lebih lanjut tentang mata kuliah spesifik yang ditawarkan atau prospek karir setelah lulus?\n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "PROGRAM",
+          "program": "SI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_STUDI",
+          "pageNumber": null,
+          "academicIntent": "MATA_KULIAH"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 4,
+        "afterIntentValidationCount": 4,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 621 chars",
+                "contains_forbidden_pattern: \\badministrasi\\b"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 777 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "text": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP U",
+            "score": 0.048691773492642434,
+            "semanticScore": 0.048691773492642434,
+            "rawScore": 3.004869,
+            "finalScore": 1,
+            "compositeScore": 3.004869,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.048691773492642434,
+              "semanticBoost": 0.004869177349264244,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 3.0048691773492644,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": 0.12000000000000001,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "SI",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": "DNUI",
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "PROGRAM_KHUSUS",
+                "pageNumber": null
+              },
+              "itemCategory": "PROGRAM_KHUSUS",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "PROGRAM_KHUSUS",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "text": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampu",
+            "score": 0.03493402793204455,
+            "semanticScore": 0.03493402793204455,
+            "rawScore": 3.003493,
+            "finalScore": 1,
+            "compositeScore": 3.003493,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.03493402793204455,
+              "semanticBoost": 0.0034934027932044553,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 3.0034934027932048,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": 0.12000000000000001,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "SI",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": "HELP",
+                "campus": "BALI",
+                "jalur": "KERJASAMA",
+                "feeType": null,
+                "category": "PROGRAM_KHUSUS",
+                "pageNumber": null
+              },
+              "itemCategory": "PROGRAM_KHUSUS",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "PROGRAM_KHUSUS",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "ecialist | Brand Manager | Business Development | Startup Founder\"\nManajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamka",
+            "score": 0.4874642813024625,
+            "semanticScore": 0.4874642813024625,
+            "rawScore": 2.694746,
+            "finalScore": 1,
+            "compositeScore": 2.694746,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.4874642813024625,
+              "semanticBoost": 0.04874642813024625,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 2.6947464281302462,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.23399999999999999,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "SI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "SK",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "618a0474-969a-463f-91cd-c010a27beb48",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "ac.id\nsisteminformasi.stikombali\nPerekayasa Sistem Informasi\nPerekayasa Sistem Informasi\nMultimedia\nDesain Grafis & Animator\nPeneliti Sistem Informasi",
+            "score": 0.5864875122340031,
+            "semanticScore": 0.5864875122340031,
+            "rawScore": 2.108649,
+            "finalScore": 1,
+            "compositeScore": 2.108649,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5864875122340031,
+              "semanticBoost": 0.05864875122340031,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 2.1086487512234005,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.83,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Sistem Informasi",
+      "queryLabel": "Prospek kerja",
+      "question": "Prospek kerja lulusan Sistem Informasi di ITB STIKOM Bali seperti apa?",
+      "intent": "PROSPEK_KERJA",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Sistem Informasi di ITB STIKOM Bali.\nLulusan Sistem Informasi di ITB STIKOM Bali memiliki prospek kerja yang baik, dengan kompetensi dalam:\n• Pengembangan perangkat lunak dan teknologi cloud\n• Keamanan siber dan investigasi forensik\n• Pengelolaan data dan penerapan teknologi untuk mendukung proses bisnis\nMereka dapat berkarir sebagai Perekayasa Sistem Informasi, Software Engineer, Cyber Security Analyst, dan posisi lainnya di bidang teknologi informasi.\nMau tahu lebih lanjut tentang posisi karir tertentu atau gaji yang diharapkan?",
+      "decoratedAnswer": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Sistem Informasi di ITB STIKOM Bali.\nLulusan Sistem Informasi di ITB STIKOM Bali memiliki prospek kerja yang baik, dengan kompetensi dalam:\n• Pengembangan perangkat lunak dan teknologi cloud\n• Keamanan siber dan investigasi forensik\n• Pengelolaan data dan penerapan teknologi untuk mendukung proses bisnis\nMereka dapat berkarir sebagai Perekayasa Sistem Informasi, Software Engineer, Cyber Security Analyst, dan posisi lainnya di bidang teknologi informasi.\nMau tahu lebih lanjut tentang posisi karir tertentu atau gaji yang diharapkan?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?",
+      "parsed": {
+        "greeting": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Sistem Informasi di ITB STIKOM Bali.\nLulusan Sistem Informasi di ITB STIKOM Bali memiliki prospek kerja yang baik, dengan kompetensi dalam:\n• Pengembangan perangkat lunak dan teknologi cloud\n• Keamanan siber dan investigasi forensik\n• Pengelolaan data dan penerapan teknologi untuk mendukung proses bisnis\nMereka dapat berkarir sebagai Perekayasa Sistem Informasi, Software Engineer, Cyber Security Analyst, dan posisi lainnya di bidang teknologi informasi.\nMau tahu lebih lanjut tentang posisi karir tertentu atau gaji yang diharapkan?",
+        "assumption": "Pengguna mencari informasi karir dan peluang kerja lulusan program studi.",
+        "body": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Sistem Informasi di ITB STIKOM Bali.\nLulusan Sistem Informasi di ITB STIKOM Bali memiliki prospek kerja yang baik, dengan kompetensi dalam:\n• Pengembangan perangkat lunak dan teknologi cloud\n• Keamanan siber dan investigasi forensik\n• Pengelolaan data dan penerapan teknologi untuk mendukung proses bisnis\nMereka dapat berkarir sebagai Perekayasa Sistem Informasi, Software Engineer, Cyber Security Analyst, dan posisi lainnya di bidang teknologi informasi.\nMau tahu lebih lanjut tentang posisi karir tertentu atau gaji yang diharapkan?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "SI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "KARIR",
+          "pageNumber": null,
+          "academicIntent": "PROSPEK_KERJA"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 2,
+        "afterIntentValidationCount": 2,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "PROSPEK_KERJA",
+            "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "618a0474-969a-463f-91cd-c010a27beb48",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "ac.id\nsisteminformasi.stikombali\nPerekayasa Sistem Informasi\nPerekayasa Sistem Informasi\nMultimedia\nDesain Grafis & Animator\nPeneliti Sistem Informasi",
+            "score": 0.6497783598907177,
+            "semanticScore": 0.6497783598907177,
+            "rawScore": 3.974978,
+            "finalScore": 1,
+            "compositeScore": 3.974978,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.2399999999999998,
+            "scoreComponents": {
+              "rawSemanticScore": 0.6497783598907177,
+              "semanticBoost": 0.06497783598907178,
+              "evidenceScore": 0.1,
+              "keywordScore": 0.5555555555555556,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.2399999999999998,
+              "rawScore": 2.7749778359890716,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.83,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          },
+          {
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "text": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP U",
+            "score": 0.0009618990239265942,
+            "semanticScore": 0.0009618990239265942,
+            "rawScore": 3.540096,
+            "finalScore": 1,
+            "compositeScore": 3.540096,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.1199999999999997,
+            "scoreComponents": {
+              "rawSemanticScore": 0.0009618990239265942,
+              "semanticBoost": 0.00009618990239265943,
+              "evidenceScore": 0.1,
+              "keywordScore": 0.5555555555555556,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.1199999999999997,
+              "rawScore": 3.5400961899023926,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": 0.12000000000000001,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "SI",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": "DNUI",
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "PROGRAM_KHUSUS",
+                "pageNumber": null
+              },
+              "itemCategory": "PROGRAM_KHUSUS",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "PROGRAM_KHUSUS",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Sistem Informasi",
+      "queryLabel": "Biaya",
+      "question": "Berapa biaya kuliah untuk program Sistem Informasi?",
+      "intent": "BIAYA_PENDIDIKAN",
+      "source": "rag-fee-semester-only",
+      "queryAnswer": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Sistem Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+      "decoratedAnswer": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Sistem Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?",
+      "parsed": {
+        "greeting": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Sistem Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+        "assumption": "Pengguna ingin mengetahui besaran biaya kuliah untuk program studi tersebut.",
+        "body": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Sistem Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": null
+    },
+    {
+      "program": "Sistem Informasi",
+      "queryLabel": "Akreditasi",
+      "question": "Apa akreditasi program Sistem Informasi di ITB STIKOM Bali?",
+      "intent": "AKREDITASI_PERINGKAT",
+      "source": "rag-accreditation",
+      "queryAnswer": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Sistem Informasi: Baik Sekali.\nNomor SK: /LAM-INFOKOM/Ak/S/XII/2023.\nMau saya jelaskan lagi bagian lain?",
+      "decoratedAnswer": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Sistem Informasi: Baik Sekali.\nNomor SK: /LAM-INFOKOM/Ak/S/XII/2023.\nMau saya jelaskan lagi bagian lain?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Sistem Informasi: Baik Sekali.\nNomor SK: /LAM-INFOKOM/Ak/S/XII/2023.\nMau saya jelaskan lagi bagian lain?",
+        "assumption": "Pengguna ingin mengetahui peringkat atau status akreditasi program studi.",
+        "body": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Sistem Informasi: Baik Sekali.\nNomor SK: /LAM-INFOKOM/Ak/S/XII/2023.\nMau saya jelaskan lagi bagian lain?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": null
+    },
+    {
+      "program": "Teknologi Informasi",
+      "queryLabel": "Definisi",
+      "question": "Jelaskan apa itu program studi Teknologi Informasi di ITB STIKOM Bali",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "Saya belum menemukan detail yang benar-benar sesuai mengenai program studi Teknologi Informasi di ITB STIKOM Bali.\nMau saya bantu dengan informasi lain terkait beasiswa atau program yang tersedia?",
+      "decoratedAnswer": "Saya belum menemukan detail yang benar-benar sesuai mengenai program studi Teknologi Informasi di ITB STIKOM Bali.\nMau saya bantu dengan informasi lain terkait beasiswa atau program yang tersedia?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "Saya belum menemukan detail yang benar-benar sesuai mengenai program studi Teknologi Informasi di ITB STIKOM Bali.\nMau saya bantu dengan informasi lain terkait beasiswa atau program yang tersedia?",
+        "assumption": "Pengguna ingin definisi dan gambaran singkat tentang program studi.",
+        "body": "Saya belum menemukan detail yang benar-benar sesuai mengenai program studi Teknologi Informasi di ITB STIKOM Bali.\nMau saya bantu dengan informasi lain terkait beasiswa atau program yang tersedia?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "TI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_STUDI",
+          "pageNumber": null,
+          "academicIntent": "DEFINISI_PRODI"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 3,
+        "afterIntentValidationCount": 2,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "c6f6004f-9a66-4663-babc-516137904ed3",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 797 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "f2615890-0f34-4f41-aff0-411232af57d1",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 800 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "forbidden_category",
+            "category": "BIAYA",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "95a5a385-3629-4559-ab45-731ef5bc5eb6"
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+            "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+            "docCategory": "BEASISWA",
+            "text": "19 Oktober 2023 \nPENERIMA PROGRAM BEASISWA RANKING KELAS DI \nITB STIKOM BALI \" \nL STIKOM Bali memberikan beasiswa kepada: \na.  Calon mahasiswa dari : ",
+            "score": 0.5057960867729963,
+            "semanticScore": 0.5057960867729963,
+            "rawScore": 3.33058,
+            "finalScore": 1,
+            "compositeScore": 3.33058,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.1199999999999997,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5057960867729963,
+              "semanticBoost": 0.05057960867729963,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.1199999999999997,
+              "rawScore": 3.3305796086772994,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.13,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": -0.25,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": "UKT",
+                "category": "BEASISWA",
+                "pageNumber": null
+              },
+              "itemCategory": "BEASISWA",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "BEASISWA",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "f2615890-0f34-4f41-aff0-411232af57d1",
+            "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+            "docCategory": "UNKNOWN",
+            "text": "ja, SMKN 3 Singaraja \nSMAN 1  Bangli, SMKN 1  Bangli \nSMAN 1 Negara \nSMAN 1  Amlapura \n1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 \n2.  Ran",
+            "score": 0.3775872145735964,
+            "semanticScore": 0.3775872145735964,
+            "rawScore": 3.050259,
+            "finalScore": 1,
+            "compositeScore": 3.050259,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.1199999999999997,
+            "scoreComponents": {
+              "rawSemanticScore": 0.3775872145735964,
+              "semanticBoost": 0.037758721457359645,
+              "evidenceScore": 0.0225,
+              "keywordScore": 0.125,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.1199999999999997,
+              "rawScore": 3.050258721457359,
+              "finalScore": 1,
+              "categorySignal": 0,
+              "trustBoost": 0,
+              "otherBoosts": -0.33,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": -0.25,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": "UKT",
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "UNKNOWN",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "UNKNOWN",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Teknologi Informasi",
+      "queryLabel": "Mata kuliah",
+      "question": "Apa saja yang dipelajari di Teknologi Informasi? Jelaskan kurikulumnya.",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "Kurikulum Teknologi Informasi umumnya mencakup berbagai aspek penting dalam bidang ini. Materi yang dipelajari biasanya meliputi pemrograman, jaringan komputer, basis data, keamanan siber, dan pengembangan perangkat lunak. \nRincian spesifik mengenai kurikulum di SMK TI Bali Global Sebali atau institusi lain belum terlihat.",
+      "decoratedAnswer": "Kurikulum Teknologi Informasi umumnya mencakup berbagai aspek penting dalam bidang ini. Materi yang dipelajari biasanya meliputi pemrograman, jaringan komputer, basis data, keamanan siber, dan pengembangan perangkat lunak. \nRincian spesifik mengenai kurikulum di SMK TI Bali Global Sebali atau institusi lain belum terlihat.\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "Kurikulum Teknologi Informasi umumnya mencakup berbagai aspek penting dalam bidang ini. Materi yang dipelajari biasanya meliputi pemrograman, jaringan komputer, basis data, keamanan siber, dan pengembangan perangkat lunak. \nRincian spesifik mengenai kurikulum di SMK TI Bali Global Sebali atau institusi lain belum terlihat.",
+        "assumption": "Pengguna ingin detail materi atau mata kuliah yang dipelajari di program studi.",
+        "body": "Kurikulum Teknologi Informasi umumnya mencakup berbagai aspek penting dalam bidang ini. Materi yang dipelajari biasanya meliputi pemrograman, jaringan komputer, basis data, keamanan siber, dan pengembangan perangkat lunak. \nRincian spesifik mengenai kurikulum di SMK TI Bali Global Sebali atau institusi lain belum terlihat.",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "PROGRAM",
+          "program": "TI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_STUDI",
+          "pageNumber": null,
+          "academicIntent": "MATA_KULIAH"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 1,
+        "afterIntentValidationCount": 1,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "f2615890-0f34-4f41-aff0-411232af57d1",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 800 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "f2615890-0f34-4f41-aff0-411232af57d1",
+            "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+            "docCategory": "UNKNOWN",
+            "text": "ja, SMKN 3 Singaraja \nSMAN 1  Bangli, SMKN 1  Bangli \nSMAN 1 Negara \nSMAN 1  Amlapura \n1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 \n2.  Ran",
+            "score": 0.348967630928503,
+            "semanticScore": 0.348967630928503,
+            "rawScore": 2.554897,
+            "finalScore": 1,
+            "compositeScore": 2.554897,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.348967630928503,
+              "semanticBoost": 0.0348967630928503,
+              "evidenceScore": 0.03,
+              "keywordScore": 0.16666666666666666,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 2.5548967630928505,
+              "finalScore": 1,
+              "categorySignal": 0,
+              "trustBoost": 0,
+              "otherBoosts": -0.33,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": -0.25,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": "UKT",
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "UNKNOWN",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "UNKNOWN",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Teknologi Informasi",
+      "queryLabel": "Prospek kerja",
+      "question": "Prospek kerja lulusan Teknologi Informasi di ITB STIKOM Bali seperti apa?",
+      "intent": "PROSPEK_KERJA",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "---\n💼 Kamu ingin tahu tentang prospek kerja lulusan Teknologi Informasi di ITB STIKOM Bali.\nLulusan Teknologi Informasi di ITB STIKOM Bali memiliki prospek kerja yang baik, dengan peluang di berbagai sektor, seperti:\n• Perusahaan teknologi: Banyak lulusan yang bekerja di perusahaan-perusahaan IT, baik lokal maupun internasional.\n• Start-up: Lulusan juga berpeluang untuk bergabung dengan start-up yang sedang berkembang, terutama di bidang pengembangan perangkat lunak dan aplikasi.\nApakah kamu ingin tahu lebih lanjut tentang jenis pekerjaan spesifik yang bisa diambil oleh lulusan ini?\n---",
+      "decoratedAnswer": "---\n💼 Kamu ingin tahu tentang prospek kerja lulusan Teknologi Informasi di ITB STIKOM Bali.\nLulusan Teknologi Informasi di ITB STIKOM Bali memiliki prospek kerja yang baik, dengan peluang di berbagai sektor, seperti:\n• Perusahaan teknologi: Banyak lulusan yang bekerja di perusahaan-perusahaan IT, baik lokal maupun internasional.\n• Start-up: Lulusan juga berpeluang untuk bergabung dengan start-up yang sedang berkembang, terutama di bidang pengembangan perangkat lunak dan aplikasi.\nApakah kamu ingin tahu lebih lanjut tentang jenis pekerjaan spesifik yang bisa diambil oleh lulusan ini?\n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?",
+      "parsed": {
+        "greeting": "---\n💼 Kamu ingin tahu tentang prospek kerja lulusan Teknologi Informasi di ITB STIKOM Bali.\nLulusan Teknologi Informasi di ITB STIKOM Bali memiliki prospek kerja yang baik, dengan peluang di berbagai sektor, seperti:\n• Perusahaan teknologi: Banyak lulusan yang bekerja di perusahaan-perusahaan IT, baik lokal maupun internasional.\n• Start-up: Lulusan juga berpeluang untuk bergabung dengan start-up yang sedang berkembang, terutama di bidang pengembangan perangkat lunak dan aplikasi.\nApakah kamu ingin tahu lebih lanjut tentang jenis pekerjaan spesifik yang bisa diambil oleh lulusan ini?\n---",
+        "assumption": "Pengguna mencari informasi karir dan peluang kerja lulusan program studi.",
+        "body": "---\n💼 Kamu ingin tahu tentang prospek kerja lulusan Teknologi Informasi di ITB STIKOM Bali.\nLulusan Teknologi Informasi di ITB STIKOM Bali memiliki prospek kerja yang baik, dengan peluang di berbagai sektor, seperti:\n• Perusahaan teknologi: Banyak lulusan yang bekerja di perusahaan-perusahaan IT, baik lokal maupun internasional.\n• Start-up: Lulusan juga berpeluang untuk bergabung dengan start-up yang sedang berkembang, terutama di bidang pengembangan perangkat lunak dan aplikasi.\nApakah kamu ingin tahu lebih lanjut tentang jenis pekerjaan spesifik yang bisa diambil oleh lulusan ini?\n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "TI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "KARIR",
+          "pageNumber": null,
+          "academicIntent": "PROSPEK_KERJA"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 3,
+        "afterIntentValidationCount": 2,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "PROSPEK_KERJA",
+            "chunkId": "c6f6004f-9a66-4663-babc-516137904ed3",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 797 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "PROSPEK_KERJA",
+            "chunkId": "f2615890-0f34-4f41-aff0-411232af57d1",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 800 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "forbidden_category",
+            "category": "BIAYA",
+            "intent": "PROSPEK_KERJA",
+            "chunkId": "95a5a385-3629-4559-ab45-731ef5bc5eb6"
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+            "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+            "docCategory": "BEASISWA",
+            "text": "19 Oktober 2023 \nPENERIMA PROGRAM BEASISWA RANKING KELAS DI \nITB STIKOM BALI \" \nL STIKOM Bali memberikan beasiswa kepada: \na.  Calon mahasiswa dari : ",
+            "score": 0.5285720617995683,
+            "semanticScore": 0.5285720617995683,
+            "rawScore": 3.302857,
+            "finalScore": 1,
+            "compositeScore": 3.302857,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.1199999999999997,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5285720617995683,
+              "semanticBoost": 0.05285720617995683,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.1199999999999997,
+              "rawScore": 3.3028572061799566,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.13,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": -0.25,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": "UKT",
+                "category": "BEASISWA",
+                "pageNumber": null
+              },
+              "itemCategory": "BEASISWA",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "BEASISWA",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          },
+          {
+            "id": "f2615890-0f34-4f41-aff0-411232af57d1",
+            "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+            "docCategory": "UNKNOWN",
+            "text": "ja, SMKN 3 Singaraja \nSMAN 1  Bangli, SMKN 1  Bangli \nSMAN 1 Negara \nSMAN 1  Amlapura \n1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 \n2.  Ran",
+            "score": 0.41328369269291304,
+            "semanticScore": 0.41328369269291304,
+            "rawScore": 3.051328,
+            "finalScore": 1,
+            "compositeScore": 3.051328,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.1199999999999997,
+            "scoreComponents": {
+              "rawSemanticScore": 0.41328369269291304,
+              "semanticBoost": 0.04132836926929131,
+              "evidenceScore": 0.019999999999999997,
+              "keywordScore": 0.1111111111111111,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.1199999999999997,
+              "rawScore": 3.051328369269291,
+              "finalScore": 1,
+              "categorySignal": 0,
+              "trustBoost": 0,
+              "otherBoosts": -0.33,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": -0.25,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": "UKT",
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "UNKNOWN",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "UNKNOWN",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Teknologi Informasi",
+      "queryLabel": "Biaya",
+      "question": "Berapa biaya kuliah untuk program Teknologi Informasi?",
+      "intent": "BIAYA_PENDIDIKAN",
+      "source": "rag-fee-semester-only",
+      "queryAnswer": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Teknologi Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+      "decoratedAnswer": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Teknologi Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?",
+      "parsed": {
+        "greeting": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Teknologi Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+        "assumption": "Pengguna ingin mengetahui besaran biaya kuliah untuk program studi tersebut.",
+        "body": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Teknologi Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": null
+    },
+    {
+      "program": "Teknologi Informasi",
+      "queryLabel": "Akreditasi",
+      "question": "Apa akreditasi program Teknologi Informasi di ITB STIKOM Bali?",
+      "intent": "AKREDITASI_PERINGKAT",
+      "source": "rag-accreditation",
+      "queryAnswer": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Teknologi Informasi: Baik.\nNomor SK: /BAN-PT/Ak/S/IX/2022.\nMau saya jelaskan lagi bagian lain?",
+      "decoratedAnswer": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Teknologi Informasi: Baik.\nNomor SK: /BAN-PT/Ak/S/IX/2022.\nMau saya jelaskan lagi bagian lain?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Teknologi Informasi: Baik.\nNomor SK: /BAN-PT/Ak/S/IX/2022.\nMau saya jelaskan lagi bagian lain?",
+        "assumption": "Pengguna ingin mengetahui peringkat atau status akreditasi program studi.",
+        "body": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Teknologi Informasi: Baik.\nNomor SK: /BAN-PT/Ak/S/IX/2022.\nMau saya jelaskan lagi bagian lain?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": null
+    },
+    {
+      "program": "Sistem Komputer",
+      "queryLabel": "Definisi",
+      "question": "Jelaskan apa itu program studi Sistem Komputer di ITB STIKOM Bali",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "---\n💻 Kamu ingin tahu tentang program studi Sistem Komputer di ITB STIKOM Bali.\nProgram Studi Sistem Komputer di ITB STIKOM Bali menghasilkan lulusan yang memiliki kompetensi dalam:\n• Merancang dan mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, dan sistem kontrol.\n• Menerapkan prinsip keamanan jaringan serta menguasai jaringan komputer.\nMau tahu lebih lanjut tentang peluang karier setelah lulus dari program ini?\n---",
+      "decoratedAnswer": "---\n💻 Kamu ingin tahu tentang program studi Sistem Komputer di ITB STIKOM Bali.\nProgram Studi Sistem Komputer di ITB STIKOM Bali menghasilkan lulusan yang memiliki kompetensi dalam:\n• Merancang dan mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, dan sistem kontrol.\n• Menerapkan prinsip keamanan jaringan serta menguasai jaringan komputer.\nMau tahu lebih lanjut tentang peluang karier setelah lulus dari program ini?\n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "---\n💻 Kamu ingin tahu tentang program studi Sistem Komputer di ITB STIKOM Bali.\nProgram Studi Sistem Komputer di ITB STIKOM Bali menghasilkan lulusan yang memiliki kompetensi dalam:\n• Merancang dan mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, dan sistem kontrol.\n• Menerapkan prinsip keamanan jaringan serta menguasai jaringan komputer.\nMau tahu lebih lanjut tentang peluang karier setelah lulus dari program ini?\n---",
+        "assumption": "Pengguna ingin definisi dan gambaran singkat tentang program studi.",
+        "body": "---\n💻 Kamu ingin tahu tentang program studi Sistem Komputer di ITB STIKOM Bali.\nProgram Studi Sistem Komputer di ITB STIKOM Bali menghasilkan lulusan yang memiliki kompetensi dalam:\n• Merancang dan mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, dan sistem kontrol.\n• Menerapkan prinsip keamanan jaringan serta menguasai jaringan komputer.\nMau tahu lebih lanjut tentang peluang karier setelah lulus dari program ini?\n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "SK",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_STUDI",
+          "pageNumber": null,
+          "academicIntent": "DEFINISI_PRODI"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 5,
+        "afterIntentValidationCount": 5,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "04de8b53-fcc5-454d-9f35-bfb6dc187e9f",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 255 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 616 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Thing",
+            "score": 0.6552963310015313,
+            "semanticScore": 0.6552963310015313,
+            "rawScore": 4.01053,
+            "finalScore": 1,
+            "compositeScore": 4.01053,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.2399999999999998,
+            "scoreComponents": {
+              "rawSemanticScore": 0.6552963310015313,
+              "semanticBoost": 0.06552963310015313,
+              "evidenceScore": 0.135,
+              "keywordScore": 0.75,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.2399999999999998,
+              "rawScore": 2.8105296331001526,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.83,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sist",
+            "score": 0.5482679626276393,
+            "semanticScore": 0.5482679626276393,
+            "rawScore": 3.700827,
+            "finalScore": 1,
+            "compositeScore": 3.700827,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5482679626276393,
+              "semanticBoost": 0.05482679626276393,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.5008267962627637,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer",
+            "score": 0.5228290668215366,
+            "semanticScore": 0.5228290668215366,
+            "rawScore": 3.698283,
+            "finalScore": 1,
+            "compositeScore": 3.698283,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5228290668215366,
+              "semanticBoost": 0.052282906682153664,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.4982829066821535,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "04de8b53-fcc5-454d-9f35-bfb6dc187e9f",
+            "filename": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+            "docCategory": "AKREDITASI",
+            "text": "Badan Akreditasi Nasional Perguruan Tinggi\nberdasarkan Keputusan BAN-PT No. 12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021, menyatakan bahwa\nProgram Studi",
+            "score": 0.5729111193754959,
+            "semanticScore": 0.5729111193754959,
+            "rawScore": 3.153291,
+            "finalScore": 1,
+            "compositeScore": 3.153291,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.2399999999999998,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5729111193754959,
+              "semanticBoost": 0.05729111193754959,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.2399999999999998,
+              "rawScore": 3.9532911119375496,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": 0.366,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": "NATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "PROGRAM",
+                "pageNumber": null
+              },
+              "itemCategory": "AKREDITASI",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "AKREDITASI",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+            "docCategory": "JADWAL",
+            "text": "ULUS | : | NEM :\nFACEBOOK/INSTAGRAM | :\nPROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\n",
+            "score": 0.4926789454387663,
+            "semanticScore": 0.4926789454387663,
+            "rawScore": 1.806768,
+            "finalScore": 1,
+            "compositeScore": 1.806768,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.4926789454387663,
+              "semanticBoost": 0.04926789454387663,
+              "evidenceScore": 0.0675,
+              "keywordScore": 0.375,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 2.706767894543877,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.22999999999999998,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": "REGULER",
+                "feeType": null,
+                "category": "JADWAL",
+                "pageNumber": null
+              },
+              "itemCategory": "JADWAL",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "JADWAL",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Sistem Komputer",
+      "queryLabel": "Mata kuliah",
+      "question": "Apa saja yang dipelajari di Sistem Komputer? Jelaskan kurikulumnya.",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "---\n💻 Kamu ingin tahu tentang kurikulum di Program Studi Sistem Komputer.\nDi Program Studi Sistem Komputer, mahasiswa mempelajari:\n• Sistem Internet of Things (IoT): Merancang dan mengimplementasikan sistem IoT.\n• Jaringan Komputer: Menerapkan prinsip keamanan jaringan dan merancang sistem jaringan.\n• Sistem Tertanam: Mengembangkan sistem tertanam dan kontrol.\n• Robotika: Praktik teknis dalam pengembangan robot.\nMau tahu lebih lanjut tentang peluang karier setelah lulus dari program ini?\n---",
+      "decoratedAnswer": "---\n💻 Kamu ingin tahu tentang kurikulum di Program Studi Sistem Komputer.\nDi Program Studi Sistem Komputer, mahasiswa mempelajari:\n• Sistem Internet of Things (IoT): Merancang dan mengimplementasikan sistem IoT.\n• Jaringan Komputer: Menerapkan prinsip keamanan jaringan dan merancang sistem jaringan.\n• Sistem Tertanam: Mengembangkan sistem tertanam dan kontrol.\n• Robotika: Praktik teknis dalam pengembangan robot.\nMau tahu lebih lanjut tentang peluang karier setelah lulus dari program ini?\n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "---\n💻 Kamu ingin tahu tentang kurikulum di Program Studi Sistem Komputer.\nDi Program Studi Sistem Komputer, mahasiswa mempelajari:\n• Sistem Internet of Things (IoT): Merancang dan mengimplementasikan sistem IoT.\n• Jaringan Komputer: Menerapkan prinsip keamanan jaringan dan merancang sistem jaringan.\n• Sistem Tertanam: Mengembangkan sistem tertanam dan kontrol.\n• Robotika: Praktik teknis dalam pengembangan robot.\nMau tahu lebih lanjut tentang peluang karier setelah lulus dari program ini?\n---",
+        "assumption": "Pengguna ingin detail materi atau mata kuliah yang dipelajari di program studi.",
+        "body": "---\n💻 Kamu ingin tahu tentang kurikulum di Program Studi Sistem Komputer.\nDi Program Studi Sistem Komputer, mahasiswa mempelajari:\n• Sistem Internet of Things (IoT): Merancang dan mengimplementasikan sistem IoT.\n• Jaringan Komputer: Menerapkan prinsip keamanan jaringan dan merancang sistem jaringan.\n• Sistem Tertanam: Mengembangkan sistem tertanam dan kontrol.\n• Robotika: Praktik teknis dalam pengembangan robot.\nMau tahu lebih lanjut tentang peluang karier setelah lulus dari program ini?\n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "PROGRAM",
+          "program": "SK",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": null,
+          "pageNumber": null,
+          "academicIntent": "MATA_KULIAH"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 6,
+        "afterIntentValidationCount": 6,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 616 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sist",
+            "score": 0.5667167609831468,
+            "semanticScore": 0.5667167609831468,
+            "rawScore": 2.562672,
+            "finalScore": 1,
+            "compositeScore": 2.562672,
+            "attributeScore": 1,
+            "metadataBoost": 2,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5667167609831468,
+              "semanticBoost": 0.05667167609831469,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2,
+              "rawScore": 2.5626716760983146,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer",
+            "score": 0.5494345336292814,
+            "semanticScore": 0.5494345336292814,
+            "rawScore": 2.530943,
+            "finalScore": 1,
+            "compositeScore": 2.530943,
+            "attributeScore": 1,
+            "metadataBoost": 2,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5494345336292814,
+              "semanticBoost": 0.05494345336292814,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2,
+              "rawScore": 2.530943453362928,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Thing",
+            "score": 0.5366344541895408,
+            "semanticScore": 0.5366344541895408,
+            "rawScore": 2.283663,
+            "finalScore": 1,
+            "compositeScore": 2.283663,
+            "attributeScore": 1,
+            "metadataBoost": 2,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5366344541895408,
+              "semanticBoost": 0.053663445418954084,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2,
+              "rawScore": 2.283663445418954,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.83,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "70831198-6c86-49f4-af19-d9506384515d",
+            "filename": "SK AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf",
+            "docCategory": "AKREDITASI",
+            "text": "KEPUTUSAN\nLEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER\nNomor:068/SK/LAM-INFOKOM/Ak/S/IV/2025\nTENTANG\nPERINGKAT AKREDITASI PROGRAM STUDI SISTEM ",
+            "score": 0.4519421187928309,
+            "semanticScore": 0.4519421187928309,
+            "rawScore": 2.075194,
+            "finalScore": 1,
+            "compositeScore": 2.075194,
+            "attributeScore": 1,
+            "metadataBoost": 2,
+            "scoreComponents": {
+              "rawSemanticScore": 0.4519421187928309,
+              "semanticBoost": 0.045194211879283096,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2,
+              "rawScore": 2.875194211879283,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.22999999999999998,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": "2025",
+                "partner": null,
+                "campus": "BALI",
+                "jalur": "REGULER",
+                "feeType": null,
+                "category": "AKREDITASI",
+                "pageNumber": null
+              },
+              "itemCategory": "AKREDITASI",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "AKREDITASI",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "10346138-d662-44b5-aa45-9de9b6603d7b",
+            "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+            "docCategory": "AKREDITASI",
+            "text": "KEPUTUSAN\nLEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER\nNomor:149/SK/LAM-INFOKOM/Ak/S/XII/2023\nTENTANG\nPERINGKAT AKREDITASI PROGRAM STUDI SISTEM",
+            "score": 0.43923657002984384,
+            "semanticScore": 0.43923657002984384,
+            "rawScore": 2.073924,
+            "finalScore": 1,
+            "compositeScore": 2.073924,
+            "attributeScore": 1,
+            "metadataBoost": 2,
+            "scoreComponents": {
+              "rawSemanticScore": 0.43923657002984384,
+              "semanticBoost": 0.04392365700298439,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2,
+              "rawScore": 2.8739236570029845,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.22999999999999998,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": "REGULER",
+                "feeType": null,
+                "category": "AKREDITASI",
+                "pageNumber": null
+              },
+              "itemCategory": "AKREDITASI",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "AKREDITASI",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+            "docCategory": "JADWAL",
+            "text": "ULUS | : | NEM :\nFACEBOOK/INSTAGRAM | :\nPROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\n",
+            "score": 0.45666194060249027,
+            "semanticScore": 0.45666194060249027,
+            "rawScore": 1.975666,
+            "finalScore": 1,
+            "compositeScore": 1.975666,
+            "attributeScore": 1,
+            "metadataBoost": 2,
+            "scoreComponents": {
+              "rawSemanticScore": 0.45666194060249027,
+              "semanticBoost": 0.04566619406024903,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2,
+              "rawScore": 2.875666194060249,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.22999999999999998,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": "REGULER",
+                "feeType": null,
+                "category": "JADWAL",
+                "pageNumber": null
+              },
+              "itemCategory": "JADWAL",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "JADWAL",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Sistem Komputer",
+      "queryLabel": "Prospek kerja",
+      "question": "Prospek kerja lulusan Sistem Komputer di ITB STIKOM Bali seperti apa?",
+      "intent": "PROSPEK_KERJA",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Sistem Komputer di ITB STIKOM Bali.\nLulusan Program Studi Sistem Komputer memiliki berbagai peluang kerja, antara lain:\n• IoT Engineer: Mengembangkan dan menerapkan solusi Internet of Things.\n• Hardware Engineer: Merancang dan mengembangkan perangkat keras.\n• Robotics Engineer: Bekerja di bidang robotika dan otomatisasi.\n• Network Engineer: Mengelola dan merancang jaringan komputer.\n• Embedded System Engineer: Fokus pada sistem tertanam dan kontrol.\nMau tahu lebih lanjut tentang kompetensi yang diajarkan di program ini? \n---",
+      "decoratedAnswer": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Sistem Komputer di ITB STIKOM Bali.\nLulusan Program Studi Sistem Komputer memiliki berbagai peluang kerja, antara lain:\n• IoT Engineer: Mengembangkan dan menerapkan solusi Internet of Things.\n• Hardware Engineer: Merancang dan mengembangkan perangkat keras.\n• Robotics Engineer: Bekerja di bidang robotika dan otomatisasi.\n• Network Engineer: Mengelola dan merancang jaringan komputer.\n• Embedded System Engineer: Fokus pada sistem tertanam dan kontrol.\nMau tahu lebih lanjut tentang kompetensi yang diajarkan di program ini? \n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?",
+      "parsed": {
+        "greeting": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Sistem Komputer di ITB STIKOM Bali.\nLulusan Program Studi Sistem Komputer memiliki berbagai peluang kerja, antara lain:\n• IoT Engineer: Mengembangkan dan menerapkan solusi Internet of Things.\n• Hardware Engineer: Merancang dan mengembangkan perangkat keras.\n• Robotics Engineer: Bekerja di bidang robotika dan otomatisasi.\n• Network Engineer: Mengelola dan merancang jaringan komputer.\n• Embedded System Engineer: Fokus pada sistem tertanam dan kontrol.\nMau tahu lebih lanjut tentang kompetensi yang diajarkan di program ini? \n---",
+        "assumption": "Pengguna mencari informasi karir dan peluang kerja lulusan program studi.",
+        "body": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Sistem Komputer di ITB STIKOM Bali.\nLulusan Program Studi Sistem Komputer memiliki berbagai peluang kerja, antara lain:\n• IoT Engineer: Mengembangkan dan menerapkan solusi Internet of Things.\n• Hardware Engineer: Merancang dan mengembangkan perangkat keras.\n• Robotics Engineer: Bekerja di bidang robotika dan otomatisasi.\n• Network Engineer: Mengelola dan merancang jaringan komputer.\n• Embedded System Engineer: Fokus pada sistem tertanam dan kontrol.\nMau tahu lebih lanjut tentang kompetensi yang diajarkan di program ini? \n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "SK",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "KARIR",
+          "pageNumber": null,
+          "academicIntent": "PROSPEK_KERJA"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 5,
+        "afterIntentValidationCount": 5,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "PROSPEK_KERJA",
+            "chunkId": "04de8b53-fcc5-454d-9f35-bfb6dc187e9f",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 255 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "PROSPEK_KERJA",
+            "chunkId": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 616 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Thing",
+            "score": 0.608632908169805,
+            "semanticScore": 0.608632908169805,
+            "rawScore": 3.970863,
+            "finalScore": 1,
+            "compositeScore": 3.970863,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.2399999999999998,
+            "scoreComponents": {
+              "rawSemanticScore": 0.608632908169805,
+              "semanticBoost": 0.0608632908169805,
+              "evidenceScore": 0.1,
+              "keywordScore": 0.5555555555555556,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.2399999999999998,
+              "rawScore": 2.77086329081698,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.83,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          },
+          {
+            "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sist",
+            "score": 0.5711970107817268,
+            "semanticScore": 0.5711970107817268,
+            "rawScore": 3.69312,
+            "finalScore": 1,
+            "compositeScore": 3.69312,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5711970107817268,
+              "semanticBoost": 0.057119701078172685,
+              "evidenceScore": 0.07999999999999999,
+              "keywordScore": 0.4444444444444444,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.4931197010781725,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          },
+          {
+            "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer",
+            "score": 0.5595978649062914,
+            "semanticScore": 0.5595978649062914,
+            "rawScore": 3.67196,
+            "finalScore": 1,
+            "compositeScore": 3.67196,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5595978649062914,
+              "semanticBoost": 0.05595978649062914,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.471959786490629,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          },
+          {
+            "id": "04de8b53-fcc5-454d-9f35-bfb6dc187e9f",
+            "filename": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+            "docCategory": "AKREDITASI",
+            "text": "Badan Akreditasi Nasional Perguruan Tinggi\nberdasarkan Keputusan BAN-PT No. 12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021, menyatakan bahwa\nProgram Studi",
+            "score": 0.4677079249006056,
+            "semanticScore": 0.4677079249006056,
+            "rawScore": 3.092771,
+            "finalScore": 1,
+            "compositeScore": 3.092771,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.2399999999999998,
+            "scoreComponents": {
+              "rawSemanticScore": 0.4677079249006056,
+              "semanticBoost": 0.04677079249006056,
+              "evidenceScore": 0.039999999999999994,
+              "keywordScore": 0.2222222222222222,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.2399999999999998,
+              "rawScore": 3.8927707924900603,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": 0.366,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": "NATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "PROGRAM",
+                "pageNumber": null
+              },
+              "itemCategory": "AKREDITASI",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "AKREDITASI",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          },
+          {
+            "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+            "docCategory": "JADWAL",
+            "text": "ULUS | : | NEM :\nFACEBOOK/INSTAGRAM | :\nPROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\n",
+            "score": 0.4700401263004429,
+            "semanticScore": 0.4700401263004429,
+            "rawScore": 1.777004,
+            "finalScore": 1,
+            "compositeScore": 1.777004,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.4700401263004429,
+              "semanticBoost": 0.04700401263004429,
+              "evidenceScore": 0.039999999999999994,
+              "keywordScore": 0.2222222222222222,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 2.6770040126300443,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.22999999999999998,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": "REGULER",
+                "feeType": null,
+                "category": "JADWAL",
+                "pageNumber": null
+              },
+              "itemCategory": "JADWAL",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "JADWAL",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Sistem Komputer",
+      "queryLabel": "Biaya",
+      "question": "Berapa biaya kuliah untuk program Sistem Komputer?",
+      "intent": "BIAYA_PENDIDIKAN",
+      "source": "rag-fee-semester-only",
+      "queryAnswer": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Sistem Komputer, biaya pendidikan per semester (UKT): Rp 6.000.000 (Menjelang Perwalian Kecuali Reg).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+      "decoratedAnswer": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Sistem Komputer, biaya pendidikan per semester (UKT): Rp 6.000.000 (Menjelang Perwalian Kecuali Reg).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?",
+      "parsed": {
+        "greeting": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Sistem Komputer, biaya pendidikan per semester (UKT): Rp 6.000.000 (Menjelang Perwalian Kecuali Reg).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+        "assumption": "Pengguna ingin mengetahui besaran biaya kuliah untuk program studi tersebut.",
+        "body": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Sistem Komputer, biaya pendidikan per semester (UKT): Rp 6.000.000 (Menjelang Perwalian Kecuali Reg).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": null
+    },
+    {
+      "program": "Sistem Komputer",
+      "queryLabel": "Akreditasi",
+      "question": "Apa akreditasi program Sistem Komputer di ITB STIKOM Bali?",
+      "intent": "AKREDITASI_PERINGKAT",
+      "source": "rag-accreditation",
+      "queryAnswer": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Sistem Komputer: Baik.\nNomor SK: /BAN-PT/Ak/S/X/2022.\nMau saya jelaskan lagi bagian lain?",
+      "decoratedAnswer": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Sistem Komputer: Baik.\nNomor SK: /BAN-PT/Ak/S/X/2022.\nMau saya jelaskan lagi bagian lain?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Sistem Komputer: Baik.\nNomor SK: /BAN-PT/Ak/S/X/2022.\nMau saya jelaskan lagi bagian lain?",
+        "assumption": "Pengguna ingin mengetahui peringkat atau status akreditasi program studi.",
+        "body": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Sistem Komputer: Baik.\nNomor SK: /BAN-PT/Ak/S/X/2022.\nMau saya jelaskan lagi bagian lain?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": null
+    },
+    {
+      "program": "Bisnis Digital",
+      "queryLabel": "Definisi",
+      "question": "Jelaskan apa itu program studi Bisnis Digital di ITB STIKOM Bali",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "🎓 Kamu ingin tahu tentang program studi Bisnis Digital di ITB STIKOM Bali.\nProgram studi Bisnis Digital bertujuan untuk menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital. Program ini mengadopsi tren perkembangan terkini di sektor industri E-commerce. Lulusan dari program ini memiliki peluang profesi sebagai:\n• Digital Marketing Specialist\n• Digital Strategist\n• Project Manager\n• Business Analyst\n• Market Analyst\n• Product Manager\nMau tahu lebih lanjut tentang kurikulum atau mata kuliah yang ditawarkan di program ini? \n---",
+      "decoratedAnswer": "🎓 Kamu ingin tahu tentang program studi Bisnis Digital di ITB STIKOM Bali.\nProgram studi Bisnis Digital bertujuan untuk menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital. Program ini mengadopsi tren perkembangan terkini di sektor industri E-commerce. Lulusan dari program ini memiliki peluang profesi sebagai:\n• Digital Marketing Specialist\n• Digital Strategist\n• Project Manager\n• Business Analyst\n• Market Analyst\n• Product Manager\nMau tahu lebih lanjut tentang kurikulum atau mata kuliah yang ditawarkan di program ini? \n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "🎓 Kamu ingin tahu tentang program studi Bisnis Digital di ITB STIKOM Bali.\nProgram studi Bisnis Digital bertujuan untuk menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital. Program ini mengadopsi tren perkembangan terkini di sektor industri E-commerce. Lulusan dari program ini memiliki peluang profesi sebagai:\n• Digital Marketing Specialist\n• Digital Strategist\n• Project Manager\n• Business Analyst\n• Market Analyst\n• Product Manager\nMau tahu lebih lanjut tentang kurikulum atau mata kuliah yang ditawarkan di program ini? \n---",
+        "assumption": "Pengguna ingin definisi dan gambaran singkat tentang program studi.",
+        "body": "🎓 Kamu ingin tahu tentang program studi Bisnis Digital di ITB STIKOM Bali.\nProgram studi Bisnis Digital bertujuan untuk menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital. Program ini mengadopsi tren perkembangan terkini di sektor industri E-commerce. Lulusan dari program ini memiliki peluang profesi sebagai:\n• Digital Marketing Specialist\n• Digital Strategist\n• Project Manager\n• Business Analyst\n• Market Analyst\n• Product Manager\nMau tahu lebih lanjut tentang kurikulum atau mata kuliah yang ditawarkan di program ini? \n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "BD",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_STUDI",
+          "pageNumber": null,
+          "academicIntent": "DEFINISI_PRODI"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 1,
+        "afterIntentValidationCount": 1,
+        "rejected": [],
+        "validatedScored": [
+          {
+            "id": "52b64e6e-5b44-48a3-9749-9ac9f61a0388",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "knis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"P",
+            "score": 0.60246943084599,
+            "semanticScore": 0.60246943084599,
+            "rawScore": 4.056247,
+            "finalScore": 1,
+            "compositeScore": 4.056247,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.60246943084599,
+              "semanticBoost": 0.060246943084599006,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.856246943084599,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.23399999999999999,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "BD",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KARIR",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Bisnis Digital",
+      "queryLabel": "Mata kuliah",
+      "question": "Apa saja yang dipelajari di Bisnis Digital? Jelaskan kurikulumnya.",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "🎓 Kamu ingin tahu tentang kurikulum di program Bisnis Digital.\nDi program Bisnis Digital, mahasiswa mempelajari:\n• Pengelolaan bisnis berbasis digital: Memahami dan mengimplementasikan strategi bisnis yang relevan dengan perkembangan industri E-commerce.\n• Peluang profesi: Lulusan dapat berkarir sebagai Digital Marketing Specialist, Digital Strategist, Project Manager, Business Analyst, Market Analyst, dan Product Manager.\nMau tahu lebih lanjut tentang mata kuliah spesifik yang diajarkan atau detail lainnya? \n---",
+      "decoratedAnswer": "🎓 Kamu ingin tahu tentang kurikulum di program Bisnis Digital.\nDi program Bisnis Digital, mahasiswa mempelajari:\n• Pengelolaan bisnis berbasis digital: Memahami dan mengimplementasikan strategi bisnis yang relevan dengan perkembangan industri E-commerce.\n• Peluang profesi: Lulusan dapat berkarir sebagai Digital Marketing Specialist, Digital Strategist, Project Manager, Business Analyst, Market Analyst, dan Product Manager.\nMau tahu lebih lanjut tentang mata kuliah spesifik yang diajarkan atau detail lainnya? \n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "🎓 Kamu ingin tahu tentang kurikulum di program Bisnis Digital.\nDi program Bisnis Digital, mahasiswa mempelajari:\n• Pengelolaan bisnis berbasis digital: Memahami dan mengimplementasikan strategi bisnis yang relevan dengan perkembangan industri E-commerce.\n• Peluang profesi: Lulusan dapat berkarir sebagai Digital Marketing Specialist, Digital Strategist, Project Manager, Business Analyst, Market Analyst, dan Product Manager.\nMau tahu lebih lanjut tentang mata kuliah spesifik yang diajarkan atau detail lainnya? \n---",
+        "assumption": "Pengguna ingin detail materi atau mata kuliah yang dipelajari di program studi.",
+        "body": "🎓 Kamu ingin tahu tentang kurikulum di program Bisnis Digital.\nDi program Bisnis Digital, mahasiswa mempelajari:\n• Pengelolaan bisnis berbasis digital: Memahami dan mengimplementasikan strategi bisnis yang relevan dengan perkembangan industri E-commerce.\n• Peluang profesi: Lulusan dapat berkarir sebagai Digital Marketing Specialist, Digital Strategist, Project Manager, Business Analyst, Market Analyst, dan Product Manager.\nMau tahu lebih lanjut tentang mata kuliah spesifik yang diajarkan atau detail lainnya? \n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "PROGRAM",
+          "program": "BD",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_STUDI",
+          "pageNumber": null,
+          "academicIntent": "MATA_KULIAH"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 2,
+        "afterIntentValidationCount": 2,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "f55fe74b-aae6-49bf-b339-c3bd8ef94f4b",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "f55fe74b-aae6-49bf-b339-c3bd8ef94f4b",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "text": "a pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Offi",
+            "score": 0.06514053421226616,
+            "semanticScore": 0.06514053421226616,
+            "rawScore": 3.006514,
+            "finalScore": 1,
+            "compositeScore": 3.006514,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.06514053421226616,
+              "semanticBoost": 0.006514053421226617,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 3.0065140534212267,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": 0.12000000000000001,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "BD",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": "DNUI",
+                "campus": "BALI",
+                "jalur": "KERJASAMA",
+                "feeType": null,
+                "category": "PROGRAM_KHUSUS",
+                "pageNumber": null
+              },
+              "itemCategory": "PROGRAM_KHUSUS",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "PROGRAM_KHUSUS",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "52b64e6e-5b44-48a3-9749-9ac9f61a0388",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "knis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"P",
+            "score": 0.6768589455240023,
+            "semanticScore": 0.6768589455240023,
+            "rawScore": 2.713686,
+            "finalScore": 1,
+            "compositeScore": 2.713686,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.6768589455240023,
+              "semanticBoost": 0.06768589455240023,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 2.7136858945524,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.23399999999999999,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "BD",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KARIR",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Bisnis Digital",
+      "queryLabel": "Prospek kerja",
+      "question": "Prospek kerja lulusan Bisnis Digital di ITB STIKOM Bali seperti apa?",
+      "intent": "PROSPEK_KERJA",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Bisnis Digital di ITB STIKOM Bali.\nLulusan program Bisnis Digital memiliki peluang profesi yang luas, antara lain:\n• Digital Marketing Specialist: Mengelola strategi pemasaran digital.\n• Digital Strategist: Merancang dan mengimplementasikan strategi bisnis berbasis digital.\n• Project Manager: Mengawasi proyek-proyek dalam bidang digital.\n• Business Analyst: Menganalisis data untuk pengambilan keputusan bisnis.\n• Market Analyst dan Product Manager: Mengelola produk dan menganalisis pasar.\nMau tahu lebih lanjut tentang mata kuliah yang diajarkan di program ini atau ada pertanyaan lain? \n---",
+      "decoratedAnswer": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Bisnis Digital di ITB STIKOM Bali.\nLulusan program Bisnis Digital memiliki peluang profesi yang luas, antara lain:\n• Digital Marketing Specialist: Mengelola strategi pemasaran digital.\n• Digital Strategist: Merancang dan mengimplementasikan strategi bisnis berbasis digital.\n• Project Manager: Mengawasi proyek-proyek dalam bidang digital.\n• Business Analyst: Menganalisis data untuk pengambilan keputusan bisnis.\n• Market Analyst dan Product Manager: Mengelola produk dan menganalisis pasar.\nMau tahu lebih lanjut tentang mata kuliah yang diajarkan di program ini atau ada pertanyaan lain? \n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?",
+      "parsed": {
+        "greeting": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Bisnis Digital di ITB STIKOM Bali.\nLulusan program Bisnis Digital memiliki peluang profesi yang luas, antara lain:\n• Digital Marketing Specialist: Mengelola strategi pemasaran digital.\n• Digital Strategist: Merancang dan mengimplementasikan strategi bisnis berbasis digital.\n• Project Manager: Mengawasi proyek-proyek dalam bidang digital.\n• Business Analyst: Menganalisis data untuk pengambilan keputusan bisnis.\n• Market Analyst dan Product Manager: Mengelola produk dan menganalisis pasar.\nMau tahu lebih lanjut tentang mata kuliah yang diajarkan di program ini atau ada pertanyaan lain? \n---",
+        "assumption": "Pengguna mencari informasi karir dan peluang kerja lulusan program studi.",
+        "body": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Bisnis Digital di ITB STIKOM Bali.\nLulusan program Bisnis Digital memiliki peluang profesi yang luas, antara lain:\n• Digital Marketing Specialist: Mengelola strategi pemasaran digital.\n• Digital Strategist: Merancang dan mengimplementasikan strategi bisnis berbasis digital.\n• Project Manager: Mengawasi proyek-proyek dalam bidang digital.\n• Business Analyst: Menganalisis data untuk pengambilan keputusan bisnis.\n• Market Analyst dan Product Manager: Mengelola produk dan menganalisis pasar.\nMau tahu lebih lanjut tentang mata kuliah yang diajarkan di program ini atau ada pertanyaan lain? \n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "BD",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "KARIR",
+          "pageNumber": null,
+          "academicIntent": "PROSPEK_KERJA"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 1,
+        "afterIntentValidationCount": 1,
+        "rejected": [],
+        "validatedScored": [
+          {
+            "id": "52b64e6e-5b44-48a3-9749-9ac9f61a0388",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "knis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"P",
+            "score": 0.6278479860986351,
+            "semanticScore": 0.6278479860986351,
+            "rawScore": 4.028785,
+            "finalScore": 1,
+            "compositeScore": 4.028785,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.6278479860986351,
+              "semanticBoost": 0.06278479860986351,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.8287847986098633,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.23399999999999999,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "BD",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KARIR",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Bisnis Digital",
+      "queryLabel": "Biaya",
+      "question": "Berapa biaya kuliah untuk program Bisnis Digital?",
+      "intent": "BIAYA_PENDIDIKAN",
+      "source": "rag-fee-semester-only",
+      "queryAnswer": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Bisnis Digital, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+      "decoratedAnswer": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Bisnis Digital, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?",
+      "parsed": {
+        "greeting": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Bisnis Digital, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+        "assumption": "Pengguna ingin mengetahui besaran biaya kuliah untuk program studi tersebut.",
+        "body": "Siap, aku bantu jelaskan soal biaya.\nUntuk Kelas Reguler ΓÇö Program Studi Bisnis Digital, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": null
+    },
+    {
+      "program": "Bisnis Digital",
+      "queryLabel": "Akreditasi",
+      "question": "Apa akreditasi program Bisnis Digital di ITB STIKOM Bali?",
+      "intent": "AKREDITASI_PERINGKAT",
+      "source": "rag-accreditation",
+      "queryAnswer": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Bisnis Digital: Baik.\nNomor SK: /BAN-PT/Ak/S/X/2022.\nMau saya jelaskan lagi bagian lain?",
+      "decoratedAnswer": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Bisnis Digital: Baik.\nNomor SK: /BAN-PT/Ak/S/X/2022.\nMau saya jelaskan lagi bagian lain?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Bisnis Digital: Baik.\nNomor SK: /BAN-PT/Ak/S/X/2022.\nMau saya jelaskan lagi bagian lain?",
+        "assumption": "Pengguna ingin mengetahui peringkat atau status akreditasi program studi.",
+        "body": "Siap, aku bantu jawab ya.\nAkreditasi Prodi Bisnis Digital: Baik.\nNomor SK: /BAN-PT/Ak/S/X/2022.\nMau saya jelaskan lagi bagian lain?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": null
+    },
+    {
+      "program": "Manajemen Informatika",
+      "queryLabel": "Definisi",
+      "question": "Jelaskan apa itu program studi Manajemen Informatika di ITB STIKOM Bali",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "🎓 Kamu ingin tahu tentang program studi Manajemen Informatika di ITB STIKOM Bali.\nProgram studi Manajemen Informatika merupakan pendidikan vokasi yang fokus pada pengembangan kompetensi untuk siap kerja. Gelar yang diperoleh adalah Amd. Kom, dan lulusan dapat berkarir sebagai:\n• Web Developer\n• Database Administrator\n• IT Entrepreneur\nMau tahu lebih lanjut tentang profil lulusan atau karir yang bisa diambil setelah lulus? \n---",
+      "decoratedAnswer": "🎓 Kamu ingin tahu tentang program studi Manajemen Informatika di ITB STIKOM Bali.\nProgram studi Manajemen Informatika merupakan pendidikan vokasi yang fokus pada pengembangan kompetensi untuk siap kerja. Gelar yang diperoleh adalah Amd. Kom, dan lulusan dapat berkarir sebagai:\n• Web Developer\n• Database Administrator\n• IT Entrepreneur\nMau tahu lebih lanjut tentang profil lulusan atau karir yang bisa diambil setelah lulus? \n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "🎓 Kamu ingin tahu tentang program studi Manajemen Informatika di ITB STIKOM Bali.\nProgram studi Manajemen Informatika merupakan pendidikan vokasi yang fokus pada pengembangan kompetensi untuk siap kerja. Gelar yang diperoleh adalah Amd. Kom, dan lulusan dapat berkarir sebagai:\n• Web Developer\n• Database Administrator\n• IT Entrepreneur\nMau tahu lebih lanjut tentang profil lulusan atau karir yang bisa diambil setelah lulus? \n---",
+        "assumption": "Pengguna ingin definisi dan gambaran singkat tentang program studi.",
+        "body": "🎓 Kamu ingin tahu tentang program studi Manajemen Informatika di ITB STIKOM Bali.\nProgram studi Manajemen Informatika merupakan pendidikan vokasi yang fokus pada pengembangan kompetensi untuk siap kerja. Gelar yang diperoleh adalah Amd. Kom, dan lulusan dapat berkarir sebagai:\n• Web Developer\n• Database Administrator\n• IT Entrepreneur\nMau tahu lebih lanjut tentang profil lulusan atau karir yang bisa diambil setelah lulus? \n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "MI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_STUDI",
+          "pageNumber": null,
+          "academicIntent": "DEFINISI_PRODI"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 1,
+        "afterIntentValidationCount": 1,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 467 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "ce.\nProject Manager\nBusiness Analyst\nMarket Analyst\nProduct Manager\nProfil Lulusan :\nDigital Marketing Specialist\nDigital Strategist\n@bisdi.stikombali",
+            "score": 0.5515866544835525,
+            "semanticScore": 0.5515866544835525,
+            "rawScore": 4.327659,
+            "finalScore": 1,
+            "compositeScore": 4.327659,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.2399999999999998,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5515866544835525,
+              "semanticBoost": 0.05515866544835525,
+              "evidenceScore": 0.11249999999999999,
+              "keywordScore": 0.625,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.2399999999999998,
+              "rawScore": 3.127658665448355,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.48,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "MI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "PROGRAM_STUDI",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Manajemen Informatika",
+      "queryLabel": "Mata kuliah",
+      "question": "Apa saja yang dipelajari di Manajemen Informatika? Jelaskan kurikulumnya.",
+      "intent": "DEFINISI_PRODI",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "---\n💡 Kamu ingin tahu tentang kurikulum Manajemen Informatika.\nDi program Manajemen Informatika, kamu akan mempelajari berbagai kompetensi yang siap untuk dunia kerja, antara lain:\n• Digital Marketing Specialist: Fokus pada strategi pemasaran digital.\n• Web Developer: Pengembangan aplikasi web dan sistem informasi.\n• Database Administrator: Manajemen dan pengelolaan basis data.\n• IT Entrepreneur: Kewirausahaan di bidang teknologi informasi.\nMau tahu lebih lanjut tentang akreditasi program ini atau profil lulusan lainnya?\n---",
+      "decoratedAnswer": "---\n💡 Kamu ingin tahu tentang kurikulum Manajemen Informatika.\nDi program Manajemen Informatika, kamu akan mempelajari berbagai kompetensi yang siap untuk dunia kerja, antara lain:\n• Digital Marketing Specialist: Fokus pada strategi pemasaran digital.\n• Web Developer: Pengembangan aplikasi web dan sistem informasi.\n• Database Administrator: Manajemen dan pengelolaan basis data.\n• IT Entrepreneur: Kewirausahaan di bidang teknologi informasi.\nMau tahu lebih lanjut tentang akreditasi program ini atau profil lulusan lainnya?\n---\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "---\n💡 Kamu ingin tahu tentang kurikulum Manajemen Informatika.\nDi program Manajemen Informatika, kamu akan mempelajari berbagai kompetensi yang siap untuk dunia kerja, antara lain:\n• Digital Marketing Specialist: Fokus pada strategi pemasaran digital.\n• Web Developer: Pengembangan aplikasi web dan sistem informasi.\n• Database Administrator: Manajemen dan pengelolaan basis data.\n• IT Entrepreneur: Kewirausahaan di bidang teknologi informasi.\nMau tahu lebih lanjut tentang akreditasi program ini atau profil lulusan lainnya?\n---",
+        "assumption": "Pengguna ingin detail materi atau mata kuliah yang dipelajari di program studi.",
+        "body": "---\n💡 Kamu ingin tahu tentang kurikulum Manajemen Informatika.\nDi program Manajemen Informatika, kamu akan mempelajari berbagai kompetensi yang siap untuk dunia kerja, antara lain:\n• Digital Marketing Specialist: Fokus pada strategi pemasaran digital.\n• Web Developer: Pengembangan aplikasi web dan sistem informasi.\n• Database Administrator: Manajemen dan pengelolaan basis data.\n• IT Entrepreneur: Kewirausahaan di bidang teknologi informasi.\nMau tahu lebih lanjut tentang akreditasi program ini atau profil lulusan lainnya?\n---",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "GENERAL",
+          "program": "MI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": null,
+          "pageNumber": null,
+          "academicIntent": "MATA_KULIAH"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 2,
+        "afterIntentValidationCount": 2,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 467 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "eaf68cd9-e36b-43fe-8b58-3f958861ab38",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 899 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "ce.\nProject Manager\nBusiness Analyst\nMarket Analyst\nProduct Manager\nProfil Lulusan :\nDigital Marketing Specialist\nDigital Strategist\n@bisdi.stikombali",
+            "score": 0.5085123291742744,
+            "semanticScore": 0.5085123291742744,
+            "rawScore": 2.510851,
+            "finalScore": 1,
+            "compositeScore": 2.510851,
+            "attributeScore": 1,
+            "metadataBoost": 2,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5085123291742744,
+              "semanticBoost": 0.050851232917427436,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2,
+              "rawScore": 2.5108512329174273,
+              "finalScore": 1,
+              "categorySignal": 0,
+              "trustBoost": 0,
+              "otherBoosts": -0.6,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "MI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "eaf68cd9-e36b-43fe-8b58-3f958861ab38",
+            "filename": "SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+            "docCategory": "AKREDITASI",
+            "text": "kreditasi \nNasional \nPerguruan \nTinggi \ntentang \nAkreditasi \nProgram \nStudi \nManajemen \nInformatika \npada \nProgram \nDiploma-IIl \nInstitut \nTeknologi \n",
+            "score": 0.4842866396413995,
+            "semanticScore": 0.4842866396413995,
+            "rawScore": 2.308429,
+            "finalScore": 1,
+            "compositeScore": 2.308429,
+            "attributeScore": 1,
+            "metadataBoost": 2,
+            "scoreComponents": {
+              "rawSemanticScore": 0.4842866396413995,
+              "semanticBoost": 0.04842866396413995,
+              "evidenceScore": 0.06,
+              "keywordScore": 0.3333333333333333,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2,
+              "rawScore": 3.1084286639641396,
+              "finalScore": 1,
+              "categorySignal": 0,
+              "trustBoost": 0,
+              "otherBoosts": 0,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "MI",
+                "programMode": "NATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "AKREDITASI",
+                "pageNumber": null
+              },
+              "itemCategory": "AKREDITASI",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "AKREDITASI",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Manajemen Informatika",
+      "queryLabel": "Prospek kerja",
+      "question": "Prospek kerja lulusan Manajemen Informatika di ITB STIKOM Bali seperti apa?",
+      "intent": "PROSPEK_KERJA",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Manajemen Informatika di ITB STIKOM Bali.\nLulusan Manajemen Informatika memiliki berbagai peluang karir, antara lain:\n• Project Manager: Mengelola proyek teknologi informasi.\n• Business Analyst: Menganalisis kebutuhan bisnis dan solusi teknologi.\n• Market Analyst: Menganalisis pasar dan tren teknologi.\n• Product Manager: Mengelola pengembangan produk teknologi.\nMau tahu lebih lanjut tentang spesialisasi tertentu atau informasi lainnya?",
+      "decoratedAnswer": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Manajemen Informatika di ITB STIKOM Bali.\nLulusan Manajemen Informatika memiliki berbagai peluang karir, antara lain:\n• Project Manager: Mengelola proyek teknologi informasi.\n• Business Analyst: Menganalisis kebutuhan bisnis dan solusi teknologi.\n• Market Analyst: Menganalisis pasar dan tren teknologi.\n• Product Manager: Mengelola pengembangan produk teknologi.\nMau tahu lebih lanjut tentang spesialisasi tertentu atau informasi lainnya?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?",
+      "parsed": {
+        "greeting": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Manajemen Informatika di ITB STIKOM Bali.\nLulusan Manajemen Informatika memiliki berbagai peluang karir, antara lain:\n• Project Manager: Mengelola proyek teknologi informasi.\n• Business Analyst: Menganalisis kebutuhan bisnis dan solusi teknologi.\n• Market Analyst: Menganalisis pasar dan tren teknologi.\n• Product Manager: Mengelola pengembangan produk teknologi.\nMau tahu lebih lanjut tentang spesialisasi tertentu atau informasi lainnya?",
+        "assumption": "Pengguna mencari informasi karir dan peluang kerja lulusan program studi.",
+        "body": "🎓 Kamu ingin tahu tentang prospek kerja lulusan Manajemen Informatika di ITB STIKOM Bali.\nLulusan Manajemen Informatika memiliki berbagai peluang karir, antara lain:\n• Project Manager: Mengelola proyek teknologi informasi.\n• Business Analyst: Menganalisis kebutuhan bisnis dan solusi teknologi.\n• Market Analyst: Menganalisis pasar dan tren teknologi.\n• Product Manager: Mengelola pengembangan produk teknologi.\nMau tahu lebih lanjut tentang spesialisasi tertentu atau informasi lainnya?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan keunggulan program Studi tersebut lagi?\n* Mau saya jelaskan prospek kerja atau mata kuliah lain?\n* Mau info biaya atau akreditasi untuk program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "MI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "KARIR",
+          "pageNumber": null,
+          "academicIntent": "PROSPEK_KERJA"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 1,
+        "afterIntentValidationCount": 1,
+        "rejected": [],
+        "validatedScored": [
+          {
+            "id": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "ce.\nProject Manager\nBusiness Analyst\nMarket Analyst\nProduct Manager\nProfil Lulusan :\nDigital Marketing Specialist\nDigital Strategist\n@bisdi.stikombali",
+            "score": 0.613381009769435,
+            "semanticScore": 0.613381009769435,
+            "rawScore": 4.341338,
+            "finalScore": 1,
+            "compositeScore": 4.341338,
+            "attributeScore": 1.2,
+            "metadataBoost": 2.2399999999999998,
+            "scoreComponents": {
+              "rawSemanticScore": 0.613381009769435,
+              "semanticBoost": 0.061338100976943505,
+              "evidenceScore": 0.12,
+              "keywordScore": 0.6666666666666666,
+              "attributeScore": 1.2,
+              "exactBoost": 1.2,
+              "metadataBoost": 2.2399999999999998,
+              "rawScore": 3.141338100976943,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.48,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "MI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 120,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Manajemen Informatika",
+      "queryLabel": "Biaya",
+      "question": "Berapa biaya kuliah untuk program Manajemen Informatika?",
+      "intent": "BIAYA_PENDIDIKAN",
+      "source": "gpt-4o-mini",
+      "queryAnswer": "🎓 Kamu ingin tahu tentang biaya kuliah untuk program Manajemen Informatika.\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya kuliah untuk program tersebut. Namun, program ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja.\nMau tahu lebih lanjut tentang profil lulusan atau program studi lainnya?",
+      "decoratedAnswer": "🎓 Kamu ingin tahu tentang biaya kuliah untuk program Manajemen Informatika.\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya kuliah untuk program tersebut. Namun, program ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja.\nMau tahu lebih lanjut tentang profil lulusan atau program studi lainnya?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?",
+      "parsed": {
+        "greeting": "🎓 Kamu ingin tahu tentang biaya kuliah untuk program Manajemen Informatika.\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya kuliah untuk program tersebut. Namun, program ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja.\nMau tahu lebih lanjut tentang profil lulusan atau program studi lainnya?",
+        "assumption": "Pengguna ingin mengetahui besaran biaya kuliah untuk program studi tersebut.",
+        "body": "🎓 Kamu ingin tahu tentang biaya kuliah untuk program Manajemen Informatika.\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya kuliah untuk program tersebut. Namun, program ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja.\nMau tahu lebih lanjut tentang profil lulusan atau program studi lainnya?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan juga jadwal pendaftaran atau gelombang yang berlaku?\n* Mau saya bantu hitung total biaya awal masuk atau potongan?\n* Mau info kontak atau persyaratan pendaftaran?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "MI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": "UKT",
+          "category": "BIAYA",
+          "pageNumber": null,
+          "academicIntent": "BIAYA"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 1,
+        "afterIntentValidationCount": 1,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "BIAYA_PENDIDIKAN",
+            "chunkId": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 467 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "ce.\nProject Manager\nBusiness Analyst\nMarket Analyst\nProduct Manager\nProfil Lulusan :\nDigital Marketing Specialist\nDigital Strategist\n@bisdi.stikombali",
+            "score": 0.4129089987535843,
+            "semanticScore": 0.4129089987535843,
+            "rawScore": 3.809291,
+            "finalScore": 1,
+            "compositeScore": 3.809291,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.4129089987535843,
+              "semanticBoost": 0.04129089987535843,
+              "evidenceScore": 0.108,
+              "keywordScore": 0.6,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.6092908998753583,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.48,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "MI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "BIAYA",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "BIAYA"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "BIAYA_PENDIDIKAN"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "program": "Manajemen Informatika",
+      "queryLabel": "Akreditasi",
+      "question": "Apa akreditasi program Manajemen Informatika di ITB STIKOM Bali?",
+      "intent": "AKREDITASI_PERINGKAT",
+      "source": "rag-accreditation-campus-doc",
+      "queryAnswer": "Siap, aku bantu jawab ya.\nAkreditasi kampus: A.\nNomor SK: 3033/SK/BAN-PT/Ak. KP/PT/XII/2025.\nSumber: dokumen SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign. pdf (dokumen akreditasi kampus). Untuk kepastian resmi, verifikasi ke admin atau dokumen resmi.\nMau saya jelaskan lagi bagian lain?",
+      "decoratedAnswer": "Siap, aku bantu jawab ya.\nAkreditasi kampus: A.\nNomor SK: 3033/SK/BAN-PT/Ak. KP/PT/XII/2025.\nSumber: dokumen SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign. pdf (dokumen akreditasi kampus). Untuk kepastian resmi, verifikasi ke admin atau dokumen resmi.\nMau saya jelaskan lagi bagian lain?\n\nRekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?",
+      "parsed": {
+        "greeting": "Siap, aku bantu jawab ya.\nAkreditasi kampus: A.\nNomor SK: 3033/SK/BAN-PT/Ak. KP/PT/XII/2025.\nSumber: dokumen SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign. pdf (dokumen akreditasi kampus). Untuk kepastian resmi, verifikasi ke admin atau dokumen resmi.\nMau saya jelaskan lagi bagian lain?",
+        "assumption": "Pengguna ingin mengetahui peringkat atau status akreditasi program studi.",
+        "body": "Siap, aku bantu jawab ya.\nAkreditasi kampus: A.\nNomor SK: 3033/SK/BAN-PT/Ak. KP/PT/XII/2025.\nSumber: dokumen SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign. pdf (dokumen akreditasi kampus). Untuk kepastian resmi, verifikasi ke admin atau dokumen resmi.\nMau saya jelaskan lagi bagian lain?",
+        "conclusion": "(tidak eksplisit)",
+        "recommendation": "Rekomendasi pertanyaan berikutnya:\n* Mau saya jelaskan lagi program studi atau jurusan lain?\n* Mau saya bantu cek status akreditasi terbaru?\n* Mau saya jelaskan prospek kerja atau kurikulum program ini?"
+      },
+      "evaluation": {
+        "greeting": "✅",
+        "assumption": "✅",
+        "answer": "✅",
+        "conclusion": "❌",
+        "recommendation": "✅"
+      },
+      "debug": null
+    }
+  ]
+}

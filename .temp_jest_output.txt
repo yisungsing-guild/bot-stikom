@@ -1,0 +1,253 @@
+﻿  console.log
+    [DEBUG] persistProgramHint early user-topic-prioritization Teknologi Informasi
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [sendBotMessage wrapper] sending {
+      toChatId: 'user-topic-prioritization',
+      messageTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - ',
+      replyTimeoutIsHard: false,
+      timeoutFired: false,
+      outboundSent: false
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [sendBotMessageRaw START] {
+      chatId: 'user-topic-prioritization',
+      incomingTextType: 'string',
+      incomingTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - ',
+      optsType: 'object',
+      optsPreview: {}
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [sendBotMessageRaw] entry {
+      chatId: 'user-topic-prioritization',
+      originalTextType: 'string',
+      originalTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - Nama program studi y',
+      normalizedTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - Nama program studi y',
+      optsType: 'object',
+      safeOptsType: 'object',
+      safeOptsKeys: []
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [SEND BOT RAW] provider.sendMessage args {
+      chatId: 'user-topic-prioritization',
+      outboundText: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '- Nama program studi yang',
+      payloadType: 'string',
+      optsType: 'object',
+      opts: {},
+      providerSendMessageType: 'function'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [ProviderRoute] res.send called {
+      argsLen: 1,
+      bodyType: 'object',
+      bodySource: 'fallback',
+      lastResponseSource: 'fallback'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [ProviderRoute] res.send called {
+      argsLen: 1,
+      bodyType: 'string',
+      bodySource: null,
+      lastResponseSource: 'fallback'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG] persistProgramHint early user-topic-prioritization Sistem Informasi
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [sendBotMessage wrapper] sending {
+      toChatId: 'user-topic-prioritization',
+      messageTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - ',
+      replyTimeoutIsHard: false,
+      timeoutFired: false,
+      outboundSent: false
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [sendBotMessageRaw START] {
+      chatId: 'user-topic-prioritization',
+      incomingTextType: 'string',
+      incomingTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - ',
+      optsType: 'object',
+      optsPreview: {}
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [sendBotMessageRaw] entry {
+      chatId: 'user-topic-prioritization',
+      originalTextType: 'string',
+      originalTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - Nama program studi y',
+      normalizedTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - Nama program studi y',
+      optsType: 'object',
+      safeOptsType: 'object',
+      safeOptsKeys: []
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [ProviderRoute] res.send called {
+      argsLen: 1,
+      bodyType: 'object',
+      bodySource: 'fallback',
+      lastResponseSource: 'fallback'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [ProviderRoute] res.send called {
+      argsLen: 1,
+      bodyType: 'string',
+      bodySource: null,
+      lastResponseSource: 'fallback'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [sendBotMessage wrapper] sending {
+      toChatId: 'user-topic-prioritization',
+      messageTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - ',
+      replyTimeoutIsHard: false,
+      timeoutFired: false,
+      outboundSent: false
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [sendBotMessageRaw START] {
+      chatId: 'user-topic-prioritization',
+      incomingTextType: 'string',
+      incomingTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - ',
+      optsType: 'object',
+      optsPreview: {}
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [sendBotMessageRaw] entry {
+      chatId: 'user-topic-prioritization',
+      originalTextType: 'string',
+      originalTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - Nama program studi y',
+      normalizedTextPreview: 'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n' +
+        '\n' +
+        'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+        'dengan lebih spesifik, misalnya:\n' +
+        '  - Nama program studi y',
+      optsType: 'object',
+      safeOptsType: 'object',
+      safeOptsKeys: []
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [ProviderRoute] res.send called {
+      argsLen: 1,
+      bodyType: 'object',
+      bodySource: 'fallback',
+      lastResponseSource: 'fallback'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [ProviderRoute] res.send called {
+      argsLen: 1,
+      bodyType: 'string',
+      bodySource: null,
+      lastResponseSource: 'fallback'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+

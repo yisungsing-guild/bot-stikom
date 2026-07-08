@@ -1,0 +1,43 @@
+[
+  {
+    "prompt": "perbandingan SI vs TI dari sisi biaya dan prospek",
+    "source": "rag-program-comparison",
+    "answer": "PMB, ringkasan yang relevan untuk Sistem Informasi, Teknologi Informasi adalah: |  | - Sistem Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1. | - Teknologi Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1. | Mau saya jelaskan lebih detail untuk salah satu prodi atau bandingkan dari sisi biaya, kurikulum, atau prospek kerja?",
+    "contexts": []
+  },
+  {
+    "prompt": "apa itu RPL dan bagaimana caranya?",
+    "source": "rag-rpl",
+    "answer": "Jalur RPL (Rekognisi Pembelajaran Lampau) adalah mekanisme pengakuan kompetensi atau pengalaman sebelumnya sehingga beberapa mata kuliah dapat diakui. |  | Biasanya langkah umum: |  | - Siapkan bukti pengalaman atau sertifikat (sertifikat pelatihan, surat keterangan kerja, portofolio, transkrip nilai jika ada). | - Ajukan permohonan RPL ke bagian PMB/akademik dengan melampirkan dokumen pendukung. | - Tim akademik akan menilai kelayakan; bisa ada tes/penilaian tambahan atau wawancara. |  | Untuk ketentuan dan persyaratan pasti di ITB STIKOM Bali, minta saya sambungkan ke admin (balas: ADMIN), atau sebutkan apakah kakak punya pengalaman kerja/sertifikat tertentu agar saya bantu arahkan dokumen yang perlu disiapkan. |  | Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "contexts": []
+  },
+  {
+    "prompt": "berapa lama durasi S1 Sistem Informasi?",
+    "source": "gpt-4o-mini",
+    "answer": "Durasi program S1 Sistem Informasi umumnya adalah 4 tahun. | Apakah ada informasi lain yang ingin kamu ketahui tentang program ini? | Mau saya jelaskan prospek kerja atau kurikulum program studi ini?",
+    "contexts": [
+      {
+        "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+        "trainingId": "file-6467e454a2de",
+        "preview": "Aktivitas : Bermain game\nNo : 47 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Menggambar\nNo : 48 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Animasi/drama\nNo : 49 | Program Stud"
+      },
+      {
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+        "trainingId": "file-842336211fcd",
+        "preview": "[Sheet: Sheet1]\nPenjelasan Prodi dan Karier Masa Depan : Prodi | col2 : Penjelasan prodi | col3 : Yang Dipelajari | col4 : Cocok Untuk | col5 : Peluang Kerja\nPenjelasan Prodi dan Karier Masa Depan : S"
+      }
+    ]
+  },
+  {
+    "prompt": "bagaimana proses perkuliahan double degree HELP?",
+    "source": "rag-dual-degree-list",
+    "answer": "Ada. Di data PMB, program Dual Degree yang tercantum yaitu: |  | - Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) - Prodi: Bisnis Digital | - Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi: Bisnis Digital | - Dual Degree (International Class) dengan HELP University, Malaysia - Prodi: Sistem Informasi |  | Kakak mau info Dual Degree yang mana? Balas: UTB / DNUI / HELP. |  | Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "contexts": []
+  },
+  {
+    "prompt": "saya mau tahu beasiswa yang tersedia",
+    "source": "rag-scholarship-overview",
+    "answer": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB: |  | - Beasiswa ranking kelas | - Beasiswa prestasi (lokal/nasional/internasional) | - Beasiswa KIP | - Beasiswa 1K1S | - Beasiswa Yayasan |  | Kakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\". | Perlu saya cek opsi beasiswa atau potongan biaya yang relevan?",
+    "contexts": []
+  }
+]

@@ -1,0 +1,132 @@
+suspicious_count=20
+CATEGORY: OCR corruption count=3
+  example: id=859852c9-866f-4cca-963b-bb4e61813843 filename=003 TEMPLATE IA Implementation Agreement - STIKOMBALI - 2025.docx normalize=null
+  example: id=3cab78d6-e010-4cc1-8091-e80167e1c48d filename=004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx normalize=null
+  example: id=690600e1-cd44-4413-940a-003cd96115d9 filename=Pedoman RPL ITB STIKOM Bali.pdf normalize=null
+CATEGORY: Program name split across lines count=16
+  example: id=abcd877f-1378-448c-94dd-e7ef6dde5d6a filename=20260209202540Undangan FKP RKPD Prov Bali 2027.pdf normalize=null
+  example: id=76eac90a-5f85-4350-b5fd-89f51ce0eccb filename=SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf normalize=null
+  example: id=af57cc78-8247-41d8-815a-ffda6cd059c2 filename=SK AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf normalize=null
+CATEGORY: Regex coverage lacking or pattern mismatch count=1
+  example: id=b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 filename=CHATBOT - Double Degree (1).docx normalize=null
+
+--- 1
+id=859852c9-866f-4cca-963b-bb4e61813843
+filename=003 TEMPLATE IA Implementation Agreement - STIKOMBALI - 2025.docx
+normalizeProgramLabel=null
+chunkPreview=……. tentang ………, nomor: ……. dan nomor: …….. tanggal ………. PARA PIHAK telah melaksanakan kegiatan , sebagai berikut Judul kegiatan : Tanggal : Lokasi : Penyelenggara : Jumlah Peserta : Tujuan Kegiatan : Ringkasan : Para Pihak sepakat hal ini memberikan manfaat bagi PARA PIHAK Demikian dokumen perjanjian pelaksanaan kerja sama ini dibuat dan ditandatangani oleh PARA PIHAK untuk dipergunakan sebagaimana mestinya. Pelaksana Nama Prodi : Mitra/Partner Mengetahui (Wakil Rektor / Dekan/ Dir . ) (tanda t
+cause=OCR corruption
+--- 2
+id=3cab78d6-e010-4cc1-8091-e80167e1c48d
+filename=004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx
+normalizeProgramLabel=null
+chunkPreview=LAPORAN KEGIATAN ( DI ISI DENGAN JUDUL KEGIATAN YANG DI LAKUKAN ) NB. Cover Bisa di sesuaikan dengan kegiatan yang dilakukan INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI TAHUN … Latar Belakang Uraian lengkap latar belakang kegiatan Tujuan dan Manfaat Kegiatan Kerja Sama Jelaskan tujuan dan manfaat yang diperoleh dari kegiatan tersebut Referensi Kerja Sama Dokumen yang menjadi referensi pelaksanaan kerja sama, seperti nomor MoU /KB, perihal MoU/KB. Mitra Kerja Sama Sertakan identitas mitra kerja sam
+cause=OCR corruption
+--- 3
+id=abcd877f-1378-448c-94dd-e7ef6dde5d6a
+filename=20260209202540Undangan FKP RKPD Prov Bali 2027.pdf
+normalizeProgramLabel=null
+chunkPreview=A. DPRD Provinsi Bali \n1. Ketua DPRD Provinsi Bali \n2. Ketua Komisi I DPRD Provinsi Bali \n3. Ketua Komisi II DPRD Provinsi Bali \n4. Ketua Komisi III DPRD Provinsi Bali \n5. Ketua Komisi IV DPRD Provinsi Bali \nB. Perguruan Tinggi \n1. Rektor Universitas Udayana \n2. Rektor Universitas Pendidikan Ganesha \n3. Rektor Universitas Hindu Negeri I Gusti Bagus Sugriwa Denpasar \n4. Direktur Politeknik Negeri Bali \n5. Direktur Poltekkes Negeri Denpasar \n6. Direktur Politeknik Pariwisata Bali \n7. Rektor Instit
+cause=Program name split across lines
+--- 4
+id=76eac90a-5f85-4350-b5fd-89f51ce0eccb
+filename=SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf
+normalizeProgramLabel=null
+chunkPreview=2 Tahun 2012 tentang Pendidikan Tinggi  (Lembaran Negara\nRepublik  Indonesia  Tahun  2012  Nomor  158,  Tambahan  Lembaran  Negara  Republik\nIndonesia Nomor 5336);\n  2.Peraturan  Menteri  Pendidikan  dan  Kebudayaan  Republik Indonesia Nomor 3 Tahun\n2020  tentang  Standar  Nasional  Pendidikan  Tinggi  (Berita  Negara  Republik  Indonesia\nTahun 2020 Nomor 47);\n  3.Peraturan  Menteri  Pendidikan  dan  Kebudayaan  Republik Indonesia Nomor 5 Tahun\n2020 tentang Akreditasi Program Studi dan Perguruan
+cause=Program name split across lines
+--- 5
+id=af57cc78-8247-41d8-815a-ffda6cd059c2
+filename=SK AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf
+normalizeProgramLabel=null
+chunkPreview=ntang Pendidikan Tinggi  (Lembaran Negara\nRepublik  Indonesia  Tahun  2012  Nomor  158,  Tambahan  Lembaran  Negara  Republik\nIndonesia Nomor 5336);\n  2.Peraturan  Menteri  Pendidikan  dan  Kebudayaan  Republik Indonesia Nomor 3 Tahun\n2020  tentang  Standar  Nasional  Pendidikan  Tinggi  (Berita  Negara  Republik  Indonesia\nTahun 2020 Nomor 47);\n  3.Peraturan  Menteri  Pendidikan  dan  Kebudayaan  Republik Indonesia Nomor 5 Tahun\n2020 tentang Akreditasi Program Studi dan Perguruan Tinggi (Berita
+cause=Program name split across lines
+--- 6
+id=5052471d-54e9-4248-8c5c-ad8cd79c2807
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=ERSYARATAN PESERTA ........................................................................................... 11 \n2.3. PROGRAM STUDI PENYELENGGARA ........................................................................... 11 \n2.4. PENGAKUAN KREDIT DAN MASA STUDI ....................................................................... 12 \n2.5. ORGANISASI PENGELOLA ........................................................................................ 12 \nBAB III PENILAIAN DAN REKOGNISI ........
+cause=Program name split across lines
+--- 7
+id=1737b507-f4b6-46c5-ba53-9e867fe7bd58
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=20 \nyang memuat daftar mata kuliah, jumlah sks dan nilai dari masing masing \ncalon. Secara  skematis  rekognisi  dari  capaian  pembelajaran  formal, \nnonformal, informal dan/atau pengalaman kerja tersebut dapat dilihat pada \nGambar 4. \n3.3. Bukti Portofolio \nBukti yang dapat digunakan untuk mendukung klaim peserta atas pencapaian \nprofesiensi capaian pembelajaran Mata Kuliah tersebut antara lain rekognisi \ndari capaian pembelajaran formal sebelumnya, dan rekognisi dari capaian \npembelajaran non
+cause=Program name split across lines
+--- 8
+id=b89701ea-f7ae-462d-b0cf-b5bf33f0cd89
+filename=CHATBOT - Double Degree (1).docx
+normalizeProgramLabel=null
+chunkPreview=GREE 1. Apa itu program Double Degree di ITB STIKOM Bali? Program Double Degree adalah program kuliah yang memungkinkan mahasiswa memperoleh dua gelar akademik sekaligus , yaitu dari ITB STIKOM Bali dan universitas mitra luar negeri. 2. Apa keuntungan mengikuti program Double Degree? Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional , wawasan global, jaringan internasional , serta dua ijazah yang dapat meningkatkan daya saing karier . 3. Berapa lama masa studi program Double
+cause=Regex coverage lacking or pattern mismatch
+--- 9
+id=b5c4e64e-065b-4774-8d06-d10436d41ab0
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=2.3. PROGRAM STUDI PENYELENGGARA ........................................................................... 11\n2.4. PENGAKUAN KREDIT DAN MASA STUDI ....................................................................... 12\n2.5. ORGANISASI PENGELOLA ........................................................................................ 12\nBAB III PENILAIAN DAN REKOGNISI ...................................................................... 15\n3.1. PROSES PENILAIAN. .............................
+cause=Program name split across lines
+--- 10
+id=690600e1-cd44-4413-940a-003cd96115d9
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=a. Program studi pada perguruan tinggi sebelumnya\nb. Pendidikan nonformal atau informal\nc. Pengalaman kerja setelah lulus dari jenjang pendidikan menengah\natau setara.\nSebagai  contoh,  jika  seseorang  bekerja  setelah  lulus  SMA  dan\nmendapatkan pengalaman kerja, hasil belajar dari pengalamannya tersebut\ndapat diakui dan disetarakan dengan hasil belajar formal pada beberapa mata\nkuliah di universitas atau sekolah tinggi, melalui penilaian. Pengakuan ini\ndapat menghasilkan kredit semester (sks
+cause=OCR corruption
+--- 11
+id=087c5d32-5fea-4c3e-be19-c1c89f425b72
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=Program Studi yang dituju paling sedikit dua tahun\nPersyaratan ini bertujuan untuk memastikan bahwa semua peserta\nmemiliki latar belakang yang cukup untuk mengikuti proses pengakuan dan\npenyetaraan dengan kualifikasi akademik yang dituju.
+cause=Program name split across lines
+--- 12
+id=99e9d183-2bfc-4f8a-8abe-b9e744db01a5
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=peserta atas pencapaian\nprofesiensi capaian pembelajaran Mata Kuliah tersebut antara lain rekognisi\ndari capaian pembelajaran formal sebelumnya, dan rekognisi dari capaian\npembelajaran nonformal, informal dan pengalaman kerja.\n3.3.1. Pembelajaran Formal sebelumnya\nCalon mahasiswa yang mengajukan rekognisi Capaian Pembelajaran\nyang diperoleh dari pendidikan formal pada Program Studi pada Perguruan\nTinggi sebelumnya, misal, pernah mengikuti kuliah di Perguruan Tinggi lain,\nbaik  selesai  maupun  t
+cause=Program name split across lines
+--- 13
+id=c17741ab-fb70-4f81-9fc3-bc84724685ff
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=Program Studi\nLogo Perguruan Tinggi
+cause=Program name split across lines
+--- 14
+id=ae04514f-fc94-47c3-a262-9bb534f5a271
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=dengan  kesempatan  untuk  melanjutkan  pendidikan  pada  Perguruan  Tinggi  yang\ndituju bagi masyarakat lulusan SMA atau sederajat atau bagi masyarakat yang pernah kuliah\ntetapi  terputus  dan  telah  memiliki  pengalaman,  baik  pengalaman  bekerja  secara  mandiri,\nmaupun pengalaman bekerja di perusahaan, lembaga pemerintah atau swasta, kemudian akan\nmelanjutkan pendidikannya pada jenjang pendidikan tinggi.\nPada  bagian  ini  juga  dijelaskan  mengenai  kesetaraan  antara  hasil  belajar  ber
+cause=Program name split across lines
+--- 15
+id=5f09dce7-4b0e-42fa-ad9d-eb5496ce615b
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=ini juga dijelaskan mengenai nama dan jenjang kualifikasi program studi, Capaian\nPembelajaran  Lulusan  dan  Daftar  Mata  Kuliah  yang  harus  ditempuh  untuk  menyelesaikan
+cause=Program name split across lines
+--- 16
+id=6598aa8f-67e6-49c7-9221-122b7aaa1236
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=Pendidikan pada program studi tersebut.\nPada  bagian  ini  juga  memuat  instruksi  kepada  calon  untuk  memilih  Mata  Kuliah  yang  akan
+cause=Program name split across lines
+--- 17
+id=73f6a572-8f2c-40d0-b2e4-32241a65756c
+filename=Pedoman RPL ITB STIKOM Bali.pdf
+normalizeProgramLabel=null
+chunkPreview=EVALUASI DIRI\n(FED-NOMOR)\n1\nHarap diisi oleh Prodi pada PT sebelum diedarkan kepada pelamar\n28
+cause=Program name split across lines
+--- 18
+id=9e15f89c-e877-4a9b-b3f9-6af6d46a238a
+filename=SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf
+normalizeProgramLabel=null
+chunkPreview=Sertifikat akreditasi program studi ini berlaku\nJakarta, 17 - November - 2021
+cause=Program name split across lines
+--- 19
+id=7ce71480-d0bb-4cc7-956f-d8fa3da6ab29
+filename=SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf
+normalizeProgramLabel=null
+chunkPreview=Ringkasan dokumen:\nProgram studi terlihat: Tahun 2020 tentang Akreditasi Program Studi dan\nProgram internasional / kerja sama internasional: TEKNOLOGI DAN BISNIS STIKOM BALI,\nSyarat/dokumen: tidak memenuhi syarat Peringkat Akreditasi.
+cause=Program name split across lines
+--- 20
+id=bcbb1b15-62ea-460a-940a-8fbe5eea33d2
+filename=Penjelasan Prodi dan Karier Masa Depan.xlsx
+normalizeProgramLabel=null
+chunkPreview=Ringkasan dokumen:\nProgram studi terlihat: Penjelasan Prodi dan Karier Masa Depan
+cause=Program name split across lines

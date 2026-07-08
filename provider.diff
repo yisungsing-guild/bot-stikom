@@ -1,0 +1,1062 @@
+﻿diff --git a/src/routes/provider.js b/src/routes/provider.js
+index ba30174..685e752 100644
+--- a/src/routes/provider.js
++++ b/src/routes/provider.js
+@@ -499,21 +499,87 @@ module.exports = function (provider) {
+   // Intent detection for better RAG filtering
+   function detectIntent(question) {
+     const q = String(question || '').toLowerCase().trim();
+-    const careerSignal = /\b(coding|ngoding|programmer|software engineer|software\s+engineer|data analyst|ai engineer|ai\s+engineer|cyber security|cybersecurity)\b/.test(q);
+-    if (careerSignal) return 'ACADEMIC_PROGRAM';
+-    const programSignal = /\b(si|ti|bd|sk|mi|rpl|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika|rekayasa perangkat lunak)\b/.test(q);
+-    const academicSignal = /\b(apa\s+itu|belajar\s+apa|mata\s+kuliah|kurikulum|fokus|prospek\s+kerja|karir|coding|ngoding|akreditasi|konsentrasi|bidang\s+keahlian|jurusan\s+apa|apa\s+yang\s+dipelajari)\b/.test(q);
+-    // Recommendation signals: hobby/interest ΓåÆ ask which program fits
+-    const recommendSignal = /\b(suka\s+ngoding|suka\s+bikin\s+aplikasi|suka\s+aplikasi|suka\s+komputer|suka\s+teknologi|cocok\s+(jurusan|masuk\s+jurusan)|jurusan\s+yang\s+sesuai|minat\s+jurusan|rekomendasi\s+jurusan)\b/.test(q);
+-    if (/\b(harga|biaya|mahal|murah|pendaftaran|gelombang|dpp|ukt|potongan|diskon|kuliah|pendidikan|bayar|total)\b/.test(q)) return 'COST';
+-    if (programSignal && academicSignal) return 'ACADEMIC_PROGRAM';
+-    if (recommendSignal) return 'ACADEMIC_PROGRAM';
+-    if (/\b(ada\s+ga|ada\s+gak|ada\s+tidak)\b/.test(q) && /\b(internasional|double degree|dual degree|dnui|help|utb|program|kelas\s+internasional|kelas\s+nasional|china|bali|online)\b/.test(q)) return 'PROGRAM';
+-    if (/\b(internasional|double degree|dual degree|dnui|help|utb|china|bali|online|program|kelas)\b/.test(q)) return 'PROGRAM';
+-    if (/\b(jadwal|gelombang|daftar|pendaftaran|deadline|tanggal)\b/.test(q)) return 'SCHEDULE';
+-    if (/\b(akreditasi|peringkat|rank)\b/.test(q)) return 'ACCREDITATION';
+-    if (/\b(beasiswa|scholarship|potongan|diskon)\b/.test(q)) return 'SCHOLARSHIP';
+-    if (/\b(ukm|ormawa|organisasi|mahasiswa)\b/.test(q)) return 'UKM';
++    const words = question.trim().split(/\s+/);
++    
++    // === ENHANCED INTENT DETECTION ===
++    // Program codes: SI, TI, SK, BD, MI, DKV, TRPL, TK, MM, AN, DG, RPL
++    const programCodes = /^(si|ti|sk|bd|mi|dkv|trpl|tk|mm|an|dg|rpl)$/i;
++    // Wave codes: 1A, 2C, 3, 4, Khusus, I, II, III, IV
++    const waveCodes = /^(1[a-c]|2[a-c]|3|4|khusus|[i]{1,4}|iv)$/i;
++    // Full program names
++    const programNames = /\b(sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika|desain komunikasi visual|teknologi rekayasa perangkat lunak|teknologi komputer|multimedia|animasi|desain grafis|rekayasa perangkat lunak)\b/i;
++    
++    // Check if query contains explicit program codes
++    const hasProgram = words.some(w => programCodes.test(w));
++    const hasWave = words.some(w => waveCodes.test(w));
++    const hasProgramName = programNames.test(q);
++    
++    // === COST DETECTION (Priority 1) ===
++    // If contains clear cost keywords, it's asking about cost
++    if (/\b(harga|biaya|mahal|murah|pendaftaran|gelombang|dpp|ukt|spp|potongan|diskon|kuliah|pendidikan|bayar|total|investasi|uang|komposisi|rincian|cicil|angsuran)\b/.test(q)) {
++      return 'COST';
++    }
++    
++    // If query is program code + wave pattern (e.g., "SI 2C?", "TI 1A?")
++    // ΓåÆ asking about cost for that specific program+wave
++    if ((hasProgram && hasWave) || (hasProgram && /\d+|[a-c]|khusus/i.test(q))) {
++      return 'COST';
++    }
++    
++    // === ACADEMIC PROGRAM DETECTION (Priority 2) ===
++    // Explicit academic keywords
++    const academicSignal = /\b(apa\s+itu|belajar\s+apa|mata\s+kuliah|kurikulum|fokus|prospek\s+kerja|karir|coding|ngoding|akreditasi|konsentrasi|bidang\s+keahlian|jurusan\s+apa|apa\s+yang\s+dipelajari|prospek|peluang|jenjang|skill|keahlian)\b/i.test(q);
++    
++    // Career signal keywords (Coding, Data, AI, etc)
++    const careerSignal = /\b(coding|ngoding|programmer|software engineer|software\s+engineer|data analyst|ai engineer|ai\s+engineer|cyber security|cybersecurity)\b/i.test(q);
++    
++    // If query contains program code/name + academic keyword ΓåÆ ACADEMIC_PROGRAM
++    if ((hasProgram || hasProgramName) && academicSignal) {
++      return 'ACADEMIC_PROGRAM';
++    }
++    
++    // If just program code with short query (Γëñ3 words) asking about definition/what it is
++    if (hasProgram && (words.length <= 3 || /\bapa|jelaskan|definisi/i.test(q))) {
++      return 'ACADEMIC_PROGRAM';
++    }
++    
++    // Career signal = likely asking about a program related to that career
++    if (careerSignal) {
++      return 'ACADEMIC_PROGRAM';
++    }
++    
++    // Recommendation signals: hobby/interest ΓåÆ which program fits
++    const recommendSignal = /\b(suka\s+ngoding|suka\s+bikin\s+aplikasi|suka\s+aplikasi|suka\s+komputer|suka\s+teknologi|cocok\s+(jurusan|masuk\s+jurusan)|jurusan\s+yang\s+sesuai|minat\s+jurusan|rekomendasi\s+jurusan)\b/i.test(q);
++    if (recommendSignal) {
++      return 'ACADEMIC_PROGRAM';
++    }
++    
++    // Program-related signals
++    const programSignal = /\b(si|ti|bd|sk|mi|rpl|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika|rekayasa perangkat lunak)\b/i.test(q);
++    if (programSignal && academicSignal) {
++      return 'ACADEMIC_PROGRAM';
++    }
++    
++    // === OTHER INTENTS ===
++    if (/\b(ada\s+ga|ada\s+gak|ada\s+tidak)\b/i.test(q) && /\b(internasional|double degree|dual degree|dnui|help|utb|program|kelas\s+internasional|kelas\s+nasional|china|bali|online)\b/i.test(q)) {
++      return 'PROGRAM';
++    }
++    if (/\b(internasional|double degree|dual degree|dnui|help|utb|china|bali|online|program|kelas)\b/i.test(q)) {
++      return 'PROGRAM';
++    }
++    if (/\b(jadwal|gelombang|daftar|pendaftaran|deadline|tanggal)\b/i.test(q)) {
++      return 'SCHEDULE';
++    }
++    if (/\b(akreditasi|peringkat|rank)\b/i.test(q)) {
++      return 'ACCREDITATION';
++    }
++    if (/\b(beasiswa|scholarship|potongan|diskon)\b/i.test(q)) {
++      return 'SCHOLARSHIP';
++    }
++    if (/\b(ukm|ormawa|organisasi|mahasiswa)\b/i.test(q)) {
++      return 'UKM';
++    }
++    
+     return 'GENERAL';
+   }
+ 
+@@ -597,6 +663,10 @@ module.exports = function (provider) {
+     const aliasProgramMatch = /\b(si|ti|bd|sk|mi|dkv|trpl|tk|mm|an|dg|rpl|dnui|utb|help)\b/i.test(q)
+       && /\b(sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika|desain komunikasi visual|teknologi rekayasa perangkat lunak|teknologi komputer|multimedia|animasi|desain grafis|rekayasa perangkat lunak|dnui|utb|help university)\b/i.test(ctx);
+ 
++    const isBroadPmbRequest = /\b(pmb|penerimaan mahasiswa baru|pendaftaran|registrasi)\b/i.test(q);
++    const isPmbContext = /\b(alur|cara daftar|langkah|prosedur|syarat|dokumen|berkas|formulir|jadwal|tanggal|deadline|kontak|whatsapp|wa|email|website|pmb|pendaftaran|registrasi)\b/i.test(ctx);
++    if (isBroadPmbRequest && isPmbContext) return true;
++
+     return overlapRatio >= 0.1 || overlap >= 2 || aliasProgramMatch; // At least 10% overlap or 2 matching words, or program alias/full-name match
+   }
+ 
+@@ -612,8 +682,17 @@ module.exports = function (provider) {
+ 
+   function buildProgramComparisonRewrite(question) {
+     const raw = String(question || '').trim();
++    try {
++      const outDir = path.join(__dirname, '..', '..', 'tmp');
++      if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
++      const logPath = path.join(outDir, 'provider_traces.log');
++      fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), topic: 'buildProgramComparisonRewrite.enter', question: raw.slice(0,200) }) + '\n');
++    } catch (e) {}
+     if (!raw) return null;
+-    const q = raw
++    // Strip session-provided program hint metadata so the comparison rewrite
++    // uses the actual order of programs in the user's query.
++    const sanitized = raw.replace(/^\s*Program\s+Studi\s*:[^\n]*\n+/i, '').trim();
++    const q = sanitized
+       .toLowerCase()
+       .replace(/[\u2018\u2019\u201C\u201D]/g, '"')
+       .replace(/[^\p{L}\p{N}\s/\\-]/gu, ' ')
+@@ -643,12 +722,29 @@ module.exports = function (provider) {
+       found.push({ key, name: displayName });
+     };
+ 
+-    // Full-name detection (more reliable than short codes)
+-    if (/\bsistem\s+informasi\b/i.test(q)) pushUnique('si', 'Sistem Informasi');
+-    if (/\bsistem\s+komputer\b/i.test(q)) pushUnique('sk', 'Sistem Komputer');
+-    if (/\bteknologi\s+informasi\b/i.test(q)) pushUnique('ti', 'Teknologi Informasi');
+-    if (/\bbisnis\s+digital\b/i.test(q)) pushUnique('bd', 'Bisnis Digital');
+-    if (/\bmanajemen\s+informatika\b/i.test(q)) pushUnique('mi', 'Manajemen Informatika');
++    // Full-name detection (more reliable than short codes), preserving the order
++    // of first appearance in the user's query.
++    const programTerms = [
++      { key: 'si', name: 'Sistem Informasi', re: /\bsistem\s+informasi\b/i },
++      { key: 'sk', name: 'Sistem Komputer', re: /\bsistem\s+komputer\b/i },
++      { key: 'ti', name: 'Teknologi Informasi', re: /\bteknik\s+informatika\b/i },
++      { key: 'ti', name: 'Teknologi Informasi', re: /\bteknologi\s+informasi\b/i },
++      { key: 'ti', name: 'Teknologi Informasi', re: /\binformatika\b/i },
++      { key: 'bd', name: 'Bisnis Digital', re: /\bbisnis\s+digital\b/i },
++      { key: 'mi', name: 'Manajemen Informatika', re: /\bmanajemen\s+informatika\b/i }
++    ];
++
++    const termMatches = [];
++    for (const term of programTerms) {
++      const m = term.re.exec(q);
++      if (m && typeof m.index === 'number') {
++        termMatches.push({ index: m.index, key: term.key, name: term.name });
++      }
++    }
++    termMatches.sort((a, b) => a.index - b.index);
++    for (const match of termMatches) {
++      pushUnique(match.key, match.name);
++    }
+ 
+     // Short codes (only when comparison keywords already detected)
+     for (const key of ['ti', 'si', 'sk', 'bd', 'mi']) {
+@@ -663,24 +759,28 @@ module.exports = function (provider) {
+     // Special mapping: when user says only "d3 vs s2", use the known programs.
+     // This matches existing Jest expectations.
+     if (found.length < 2 && hasD3 && hasS2) {
+-      return {
++      const out = {
+         question: 'Bandingkan Program Studi D3 Manajemen Informatika dan S2 Sistem Informasi.',
+         answerQuestion:
+           'Bandingkan Program Studi D3 Manajemen Informatika dan S2 Sistem Informasi. Jelaskan perbedaan fokus pembelajaran, contoh mata kuliah, prospek karier, dan cocok untuk siapa. Jawab ringkas dan jelas.',
+         meta: { a: 'D3 Manajemen Informatika', b: 'S2 Sistem Informasi' }
+       };
++      try { const logPath = path.join(__dirname, '..', '..', 'tmp', 'provider_traces.log'); fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), topic: 'buildProgramComparisonRewrite.rewrite', out }) + '\n'); } catch (e) {}
++      return out;
+     }
+ 
+     if (found.length >= 2) {
+       const a = found[0].name;
+       const b = found[1].name;
+       const rewritten = `Bandingkan Program Studi ${a} dan ${b}.`;
+-      return {
++      const out = {
+         question: rewritten,
+         answerQuestion:
+           `${rewritten} Jelaskan perbedaan fokus pembelajaran, contoh mata kuliah, prospek karier, dan cocok untuk siapa. Jawab ringkas dan jelas.`,
+         meta: { a, b }
+       };
++      try { const logPath = path.join(__dirname, '..', '..', 'tmp', 'provider_traces.log'); fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), topic: 'buildProgramComparisonRewrite.rewrite', out }) + '\n'); } catch (e) {}
++      return out;
+     }
+ 
+     return null;
+@@ -733,6 +833,7 @@ module.exports = function (provider) {
+     };
+ 
+     const opts = (options && typeof options === 'object') ? options : {};
++    const forceRag = !!opts.forceRag;
+ 
+     // Comparison intent rewrite:
+     // When users ask "beda/perbedaan/ti vs sk", rewrite the raw question to a
+@@ -797,13 +898,14 @@ module.exports = function (provider) {
+ 
+     // Prefer deterministic bundled-index answer for fee/total cost questions when available.
+     let ragResult = null;
++    let isCostIntent = false;
+     try {
+       const qForDet = String(questionForDivision || question || '').trim();
+       const augmentedQuery = String(questionForDivision || '').trim();
+       const costCheckInput = originalQuery;
+       const providerIntentOnOriginal = detectIntent(originalQuery);
+       try { console.log('[TRACE_INTENT_PROVIDER]', { providerIntentOnOriginal, originalQuery }); } catch(e) {}
+-      const isCostIntent = providerIntentOnOriginal === 'COST' || /\b(?:biaya|dpp|pendaftaran|gelombang|ukt|cicilan|total biaya|harga)\b/i.test(costCheckInput);
++      isCostIntent = providerIntentOnOriginal === 'COST' || /\b(?:biaya|dpp|pendaftaran|gelombang|ukt|cicilan|total biaya|harga)\b/i.test(costCheckInput);
+       try {
+         logger.info({ originalQuery, augmentedQuery, costCheckInput, providerIntentOnOriginal, isCostIntent }, '[TRACE_COST_CHECK_INPUT]');
+       } catch (e) {}
+@@ -918,19 +1020,23 @@ module.exports = function (provider) {
+               const outDir = path.join(__dirname, '..', '..', 'tmp');
+               if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+               const logPath = path.join(outDir, 'provider_traces.log');
+-              fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_PROVIDER_SKIP_RAG_FOR_FAST_FEE', chatId, reason: 'session_flag' }) + '\n');
++              if (process.env.ENABLE_FAST_FEE_TRACING === 'true') {
++                fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_PROVIDER_SKIP_RAG_FOR_FAST_FEE', chatId, reason: 'session_flag' }) + '\n');
++              }
+             } catch (e) {}
+           }
+ 
+           const qForDetLocal = String(questionForDivision || question || '').trim();
+           const feeChoiceLocal = (typeof parseFeeDetailChoice === 'function') ? parseFeeDetailChoice(qForDetLocal) : null;
+-          if (!shouldSkipRag && allowBundledIndexLocal && typeof allowFastFeeFor === 'function' && allowFastFeeFor(qForDetLocal, { feeChoice: !!(feeChoiceLocal === 'breakdown'), pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer) })) {
++          if (!shouldSkipRag && !forceRag && allowBundledIndexLocal && typeof allowFastFeeFor === 'function' && allowFastFeeFor(qForDetLocal, { feeChoice: !!(feeChoiceLocal === 'breakdown'), pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer) })) {
+             shouldSkipRag = true;
+             try {
+               const outDir = path.join(__dirname, '..', '..', 'tmp');
+               if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+               const logPath = path.join(outDir, 'provider_traces.log');
+-              fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_PROVIDER_SKIP_RAG_FOR_FAST_FEE', chatId, query: qForDetLocal }) + '\n');
++              if (process.env.ENABLE_FAST_FEE_TRACING === 'true') {
++                fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_PROVIDER_SKIP_RAG_FOR_FAST_FEE', chatId, query: qForDetLocal }) + '\n');
++              }
+             } catch (e) {}
+           }
+         } catch (e) {}
+@@ -996,6 +1102,14 @@ module.exports = function (provider) {
+         const logPath = path.join(outDir, 'provider_traces.log');
+         fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_PROVIDER_AFTER_RAG', chatId, rag: { success: ragResult && ragResult.success, source: ragResult && ragResult.source, contexts: Array.isArray(ragResult && ragResult.contexts) ? ragResult.contexts.length : 0 } }) + '\n');
+       } catch (e) {}
++      try {
++        console.log('[TRACE_RAG_RESULT_ANSWER]', {
++          chatId,
++          ragSource: ragResult && ragResult.source ? ragResult.source : null,
++          ragSuccess: ragResult && ragResult.success ? true : false,
++          answerPreview: String(ragResult && ragResult.answer || '').slice(0, 240)
++        });
++      } catch (e) {}
+     } catch (e) {}
+ 
+     const queryEntities = effectiveQueryEntities;
+@@ -1905,6 +2019,12 @@ module.exports = function (provider) {
+       return /\b(biaya|uang\s+kuliah|ukt|spp|semester|bayar|pendaftaran|registrasi|dpp|rincian\s+biaya)\b/i.test(t);
+     }
+ 
++    function isExplicitDetailedFeeQuestion(text) {
++      const t = String(text || '').toLowerCase();
++      if (!t.trim()) return false;
++      return /\b(?:gelombang|prodi|rincian|dpp|ukt|perlengkapan|potongan)\b/i.test(t) && /\b(biaya|uang\s+kuliah|ukt|spp|semester|bayar|pendaftaran|registrasi|dpp|rincian\s+biaya)\b/i.test(t);
++    }
++
+     // Central guard: allow fast fee answers only when caller explicitly requested
+     // fee info or when we're in an active pending fee/menu flow.
+     // Restored behavior: prefer deterministic fast-path when the user clearly
+@@ -1915,11 +2035,26 @@ module.exports = function (provider) {
+       const feeChoice = !!o.feeChoice;
+       const pendingOffer = !!o.pendingFeeBreakdownOffer;
+ 
+-      // Emit a quick trace for decision entry
++      // Strong safety: force retrieval (no fast-path) for explicitly detailed
++      // cost queries. This prevents the bundled fast-fee from hijacking
++      // questions that mention wave/program/detailed components.
+       try {
+-        const outDir = path.join(__dirname, '..', '..', 'tmp');
+-        if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+-        fs.appendFileSync(path.join(outDir, 'provider_traces.log'), JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_FAST_FEE_CHECK', query: String(q).slice(0, 200), opts: { feeChoice, pendingOffer } }) + '\n');
++        const detailedKeywords = /\b(?:gelombang|prodi|rincian|dpp|ukt|perlengkapan|potongan)\b/i;
++        const costWords = /\b(?:biaya|uang|dpp|ukt|spp|pendaftaran|dana)\b/i;
++        if (detailedKeywords.test(q) && costWords.test(q)) {
++          return false;
++        }
++      } catch (e) {
++        // ignore pattern failures and fall back to existing logic
++      }
++
++      // Emit a quick trace for decision entry only when explicitly enabled.
++      try {
++        if (process.env.ENABLE_FAST_FEE_TRACING === 'true') {
++          const outDir = path.join(__dirname, '..', '..', 'tmp');
++          if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
++          fs.appendFileSync(path.join(outDir, 'provider_traces.log'), JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_FAST_FEE_CHECK', query: String(q).slice(0, 200), opts: { feeChoice, pendingOffer } }) + '\n');
++        }
+       } catch (e) {}
+ 
+       let isExplicit = false;
+@@ -1935,6 +2070,12 @@ module.exports = function (provider) {
+         );
+       } catch (e) { hasProgram = false; }
+ 
++      let isDetailedFeeQuestion = false;
++      try { isDetailedFeeQuestion = isExplicitDetailedFeeQuestion(q); } catch (e) { isDetailedFeeQuestion = false; }
++      if (isExplicit && isDetailedFeeQuestion) {
++        return false;
++      }
++
+       // 1) Explicit fee questions should use fast-path.
+       if (isExplicit) {
+         return true;
+@@ -1956,6 +2097,19 @@ module.exports = function (provider) {
+       return false;
+     }
+ 
++    // Helper: detect detailed fee queries (shared guard)
++    function isDetailedFeeQuery(raw) {
++      const t = String(raw || '').toLowerCase();
++      if (!t.trim()) return false;
++      const detailedKeywords = /\b(?:gelombang|prodi|rincian|dpp|ukt|perlengkapan|potongan)\b/i;
++      const costWords = /\b(?:biaya|uang|dpp|ukt|spp|pendaftaran|dana)\b/i;
++      try {
++        return detailedKeywords.test(t) && costWords.test(t);
++      } catch (e) {
++        return false;
++      }
++    }
++
+     function logRouteDecision(query, detectedProgram, intent, isFeeQuestionFlag, selectedRoute) {
+       try {
+         logger.info({ query, detectedProgram, intent, isFeeQuestion: !!isFeeQuestionFlag, selectedRoute }, '[Provider] Route selection');
+@@ -3344,6 +3498,23 @@ module.exports = function (provider) {
+ 
+   function buildFastFeeAnswer(program, choice, feeBasics, opts) {
+     try { logger.info({ program, choice }, '[Provider] buildFastFeeAnswer called'); } catch (e) {}
++    // Double-safety guard: if caller passed an originalQuery in opts and it
++    // looks like a detailed fee query, refuse to build a fast answer so
++    // caller will fall back to RAG retrieval.
++    try {
++      const options = (opts && typeof opts === 'object') ? opts : {};
++      const orig = options.originalQuery || options.routeText || null;
++      if (orig && isDetailedFeeQuery(orig)) {
++        try { console.log('[FAST_FEE_GUARD] buildFastFeeAnswer refusing due to originalQuery detailed match', { program, choice, orig: String(orig).slice(0,200) }); } catch(e){}
++        return null;
++      }
++    } catch (e) {}
++    try {
++      const outDir = path.join(__dirname, '..', '..', 'tmp');
++      if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
++      const logPath = path.join(outDir, 'provider_traces.log');
++      fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), topic: 'buildFastFeeAnswer.enter', program, choice, feeBasicsKeys: feeBasics ? Object.keys(feeBasics) : null }) + '\n');
++    } catch (e) {}
+     if (!choice || !feeBasics) return null;
+ 
+     const options = (opts && typeof opts === 'object') ? opts : {};
+@@ -6113,18 +6284,29 @@ module.exports = function (provider) {
+     // Preserve any follow-up prompts already present in the raw answer text.
+ 
+     try {
++      let decorated;
+       // Use new humanizer if explicitly requested
+       if (options.useHumanizer) {
+-        return buildHumanizedWhatsappReply({
++        decorated = buildHumanizedWhatsappReply({
+           mainAnswer: out,
+           userQuery: inboundUserText,
+           intent: normalizeHumanizerIntent(options.intent),
+           context: options.context || {}
+         });
++        console.log('[TRACE_AFTER_BUILD_HUMANIZED_WHATSAPP_REPLY]', {
++          preview: String(decorated || '').slice(0, 240),
++          mode: 'humanizer'
++        });
++        return decorated;
+       }
+       
+       // Default: use original decorator
+-      return decorateBotAnswerTextCore(out, inboundUserText);
++      decorated = decorateBotAnswerTextCore(out, inboundUserText);
++      console.log('[TRACE_AFTER_DECORATE_BOT_ANSWER_TEXT]', {
++        preview: String(decorated || '').slice(0, 240),
++        mode: 'core'
++      });
++      return decorated;
+     } catch (e) {
+       console.error('Error decorating bot answer:', e);
+       return out;
+@@ -6202,40 +6384,81 @@ module.exports = function (provider) {
+       const { detectIntentFromAnswer, mapProviderIntentToFormatter } = require('../utils/whatsappFormatter');
+       const candidateIntent = detectIntentFromAnswer(String(messageText || ''), String(userQuery || ''));
+       const mappedIncomingIntent = mapProviderIntentToFormatter(incomingIntent);
++      console.log('[TRACE_INTENT_DETECT]', {
++        incomingIntent,
++        mappedIncomingIntent,
++        incomingConfidence,
++        candidateIntent,
++        messageText: String(messageText || '').slice(0, 240),
++        userQuery: String(userQuery || '').slice(0, 240)
++      });
++      const authoritativeFormatterIntents = new Set(['biaya', 'pendaftaran', 'beasiswa', 'kampus', 'program', 'kontak', 'lokasi']);
+       const finalIntent = (() => {
+-        if (incomingIntent && incomingConfidence >= 0.80) {
+-          if (candidateIntent && candidateIntent !== mappedIncomingIntent) {
++        // If provider/incoming intent is high-confidence, treat it as authoritative
++        // unless it is GENERAL/UNKNOWN. Humanizer (candidateIntent) must not override.
++        const HIGH_CONF_THRESHOLD = 0.80;
++        const incomingIsHigh = incomingIntent && incomingConfidence >= HIGH_CONF_THRESHOLD;
++        const incomingIsGeneral = !mappedIncomingIntent || String(mappedIncomingIntent).toLowerCase() === 'general' || String(mappedIncomingIntent).toLowerCase() === 'unknown';
++
++        if (incomingIsHigh && !incomingIsGeneral) {
++          // Provider intent locked ΓÇö do not allow humanizer to change it
++          console.log('[TRACE_INTENT_LOCKED]', {
++            incomingIntent,
++            mappedIncomingIntent,
++            incomingConfidence,
++            candidateIntent,
++            reason: 'high-confidence provider intent locked as source-of-truth'
++          });
++          return mappedIncomingIntent;
++        }
++
++        // If incoming intent is GENERAL/UNKNOWN or confidence is low, allow candidate to override
++        if (!incomingIsHigh || incomingIsGeneral) {
++          if (candidateIntent && candidateIntent !== mappedIncomingIntent && candidateIntent !== 'general') {
+             console.log('[TRACE_INTENT_OVERRIDE]', {
++              action: 'overridden',
++              incomingIntent,
++              mappedIncomingIntent,
++              incomingConfidence,
++              candidateIntent,
++              userQuery: String(userQuery || ''),
++              preview: String(messageText || '').slice(0, 240),
++              reason: 'candidate intent allowed to override (incoming general/low-confidence)'
++            });
++            return candidateIntent;
++          }
++
++          // Preserve mapped incoming intent if candidate is general or absent
++          if (mappedIncomingIntent) {
++            console.log('[TRACE_INTENT_PRESERVED]', {
+               action: 'preserved',
+               incomingIntent,
+               mappedIncomingIntent,
+               incomingConfidence,
+               candidateIntent,
+               userQuery: String(userQuery || ''),
+-              preview: String(messageText || '').slice(0, 240)
++              preview: String(messageText || '').slice(0, 240),
++              reason: 'mapped incoming used when candidate is general or absent'
+             });
++            return mappedIncomingIntent;
+           }
+-          return mappedIncomingIntent || 'general';
+-        }
+ 
+-        if (candidateIntent && candidateIntent !== mappedIncomingIntent && candidateIntent !== 'general') {
+-          console.log('[TRACE_INTENT_OVERRIDE]', {
+-            action: 'overridden',
+-            incomingIntent,
+-            mappedIncomingIntent,
+-            incomingConfidence,
+-            candidateIntent,
+-            userQuery: String(userQuery || ''),
+-            preview: String(messageText || '').slice(0, 240)
+-          });
+-          return candidateIntent;
++          if (candidateIntent) {
++            console.log('[TRACE_INTENT_FINAL_DECISION]', { final: candidateIntent, reason: 'use candidate intent (no mapped incoming)'});
++            return candidateIntent;
++          }
++
++          console.log('[TRACE_INTENT_FINAL_DECISION]', { final: 'general', reason: 'fallback general' });
++          return 'general';
+         }
+ 
++        // Default fallback
+         return mappedIncomingIntent || candidateIntent || 'general';
+       })();
+ 
+       return finalIntent || 'general';
+     } catch (e) {
++      console.log('[TRACE_INTENT_DETECT_ERROR]', { error: e && e.message, incomingIntent, incomingConfidence, userQuery, messageText: String(messageText || '').slice(0, 240) });
+       return incomingIntent || 'general';
+     }
+   }
+@@ -6285,7 +6508,7 @@ module.exports = function (provider) {
+     if (!t) return false;
+     // If it includes typical question/cost/jadwal words, treat as a specific ask.
+     if (t.includes('?')) return true;
+-    return /\b(berapa|kapan|dimana|di\s+mana|gimana|bagaimana|rincian|detail|lengkap|biaya|dpp|semester|cicil|cicilan|pembayaran|potongan|diskon|gelombang|jadwal|syarat|kontak|alamat|email|website|wa\b|whatsapp|telepon|telp)\b/i.test(t);
++    return /\b(berapa|kapan|dimana|di\s+mana|gimana|bagaimana|rincian|detail|lengkap|biaya|bayar|dibayar|dibayarkan|pembayaran|potongan|diskon|gelombang|jadwal|syarat|kontak|alamat|email|website|wa\b|whatsapp|telepon|telp)\b/i.test(t);
+   }
+ 
+   function parseRegistrationInfoChoice(text) {
+@@ -6405,6 +6628,39 @@ module.exports = function (provider) {
+       sessionDataKeys: sessionData ? Object.keys(sessionData) : null
+     });
+ 
++    // Early anchored RAG: if user is in registrationFlow.choose_program (S1)
++    // and asked a program-specific total question, attempt anchored RAG
++    // immediately so deterministic fast-paths don't short-circuit it.
++    try {
++      const flow = sessionData && sessionData.registrationFlow ? sessionData.registrationFlow : null;
++      const stage = flow && flow.stage ? String(flow.stage) : '';
++      const degreeInFlow = flow && flow.degree ? String(flow.degree) : '';
++      const trimmedTextForAnchored = String(userText || '').trim();
++      const programInTextAnchored = extractSpecificProgramHint(trimmedTextForAnchored) || extractProgramHint(trimmedTextForAnchored);
++      const looksSpecificAnchored = looksLikeProgramSpecificQuestion(trimmedTextForAnchored);
++      const isPureSelectionAnchored = isPureS1ProgramSelection(trimmedTextForAnchored);
++      if (stage === 'choose_program' && degreeInFlow === 'S1' && programInTextAnchored && looksSpecificAnchored && !isPureSelectionAnchored && isRagEnabled()) {
++        const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
++        const qAnchored = `Program Studi: ${programInTextAnchored}\n${trimmedTextForAnchored}`;
++        console.log('[DEBUG] early choose_program anchored RAG attempt', { chatId, program: programInTextAnchored, q: String(qAnchored).slice(0,140) });
++        try {
++          const rr = await ragQueryWithEval(chatId, qAnchored, topK, { answerQuestion: qAnchored, minScore: 0, forceRag: true });
++          if (rr && rr.success && rr.answer) {
++            await sendBotMessage(chatId, String(rr.answer || '').trim());
++            try {
++              const currentState = session ? session.state : 'root';
++              const prevData = sessionData || {};
++              const newData = { ...prevData, lastProgramHint: String(programInTextAnchored) };
++              await prisma.session.upsert({ where: { chatId }, create: { chatId, state: currentState, data: newData }, update: { state: currentState, data: newData } });
++            } catch (e) { logger.warn({ err: e.message }, '[Provider] Failed to persist lastProgramHint (early choose_program anchored rag)'); }
++            return res.send({ ok: true, source: 'choose_program_specific_rag_early', program: String(programInTextAnchored), ragUsed: true });
++          }
++        } catch (e) {
++          logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] early choose_program anchored rag failed');
++        }
++      }
++    } catch (e) {}
++
+     // Try RAG first (best chance to compute from official components/totals).
+     if (isRagEnabled()) {
+       const trainingState = await getTrainingStateCached();
+@@ -6437,7 +6693,8 @@ module.exports = function (provider) {
+             sessionProgram
+           });
+         } catch (e) {}
+-        const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q });
++        console.log('[DEBUG] fee-path calling ragQueryWithEval', { chatId, program: finalProgram, q: String(q).slice(0,140) });
++        const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, forceRag: true });
+         console.log('[TRACE_FEE_RAG_RESULT]', {
+           program: programLabel,
+           detectedProgram,
+@@ -6625,8 +6882,8 @@ module.exports = function (provider) {
+     if (/bisnis\s+digital/i.test(t)) return 'Bisnis Digital';
+     if (/sistem\s+komputer/i.test(t)) return 'Sistem Komputer';
+ 
+-    // Conservative abbreviation parsing only when explicitly tied to "program studi" / "prodi".
+-    const abbr = /(program\s+studi|prodi)\s*[:\-]?\s*(ti|si|bd|sk)\b/i.exec(t);
++    // Conservative abbreviation parsing only when explicitly tied to "program studi" / "prodi" / "jurusan".
++    const abbr = /(program\s+studi|prodi|jurusan)\s*[:\-]?\s*(ti|si|bd|sk)\b/i.exec(t);
+     if (abbr && abbr[2]) {
+       const code = abbr[2].toLowerCase();
+       if (code === 'ti') return 'Teknologi Informasi';
+@@ -7395,9 +7652,13 @@ module.exports = function (provider) {
+ 
+       // Case B: no timestamp -> best-effort window on arrival time.
+       if (!inboundTs && prev && prev.norm === norm && (nowMs - prev.ts) <= INBOUND_TEXT_WINDOW_MS) {
+-        console.log('[ProviderRoute] Duplicate inbound text ignored (no messageId)', { chatId, windowMs: INBOUND_TEXT_WINDOW_MS });
+-        try { console.log('[TRACE_PROVIDER_SKIP_REASON]', { chatId, reason: 'text_window', windowMs: INBOUND_TEXT_WINDOW_MS, norm }); try { const outDir = path.join(__dirname, '..', '..', 'tmp'); if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true }); fs.appendFileSync(path.join(outDir, 'provider_traces.log'), JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_PROVIDER_SKIP_REASON', chatId, reason: 'text_window', windowMs: INBOUND_TEXT_WINDOW_MS }) + '\n'); } catch (e) {} } catch (e) {}
+-        return res.send({ ok: true, deduped: true, reason: 'text_window' });
++        const lastOutbound = lastOutboundByChat.get(chatId);
++        const allowRepeatAfterReply = lastOutbound && typeof lastOutbound.ts === 'number' && lastOutbound.ts > prev.ts;
++        if (!allowRepeatAfterReply) {
++          console.log('[ProviderRoute] Duplicate inbound text ignored (no messageId)', { chatId, windowMs: INBOUND_TEXT_WINDOW_MS });
++          try { console.log('[TRACE_PROVIDER_SKIP_REASON]', { chatId, reason: 'text_window', windowMs: INBOUND_TEXT_WINDOW_MS, norm }); try { const outDir = path.join(__dirname, '..', '..', 'tmp'); if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true }); fs.appendFileSync(path.join(outDir, 'provider_traces.log'), JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_PROVIDER_SKIP_REASON', chatId, reason: 'text_window', windowMs: INBOUND_TEXT_WINDOW_MS }) + '\n'); } catch (e) {} } catch (e) {}
++          return res.send({ ok: true, deduped: true, reason: 'text_window' });
++        }
+       }
+ 
+       lastInboundByChat.set(chatId, { norm, ts: inboundTs || nowMs, inboundTs: inboundTs || null });
+@@ -7550,7 +7811,47 @@ module.exports = function (provider) {
+         } catch (e) {}
+         try {
+           // Determine if we should use the new humanizer
+-          const useHumanizer = shouldUseHumanizer(messageText, text);
++          // If the outgoing message is the generic gelombang clarification and the
++        // user is in registrationFlow choose_program asking about total cost for a
++        // specific S1 program, prefer an anchored RAG answer instead of the
++        // mini-menu. This handles cases where intent detection produced a
++        // generic prompt earlier in the pipeline.
++        try {
++          const wavePromptRegex = /Untuk menghitung totalnya, kakak masuk gelombang yang mana\?/i;
++          const isWavePrompt = wavePromptRegex.test(String(messageText || ''));
++          if (isWavePrompt && sessionData && sessionData.registrationFlow && sessionData.registrationFlow.stage === 'choose_program') {
++            const flowDegree = sessionData.registrationFlow && sessionData.registrationFlow.degree ? String(sessionData.registrationFlow.degree) : '';
++            const isTotal = isTotalCostRequest(String(text || ''));
++            if (flowDegree === 'S1' && isTotal) {
++              let explicitProg = extractSpecificProgramHint(String(text || '')) || extractProgramHint(String(text || '')) || null;
++              if (!explicitProg && sessionData && sessionData.lastProgramHint) explicitProg = sessionData.lastProgramHint;
++              if (explicitProg && typeof ragQueryWithEval === 'function') {
++                try {
++                  const ts = await getTrainingStateCached();
++                  const hasActiveTrainingDataLocal = (ts && ts.activeCount ? ts.activeCount : 0) > 0;
++                  const allowIndexFallbackLocal = HAS_BUNDLED_RAG_INDEX && !((ts && ts.totalCount ? ts.totalCount : 0) > 0);
++                  // Attempt anchored RAG override when RAG is enabled. Avoid relying
++                  // on training-state heuristics here so test environments or
++                  // newly-provisioned indexes don't prevent anchored answers.
++                  if (isRagEnabled()) {
++                    const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
++                    const q = `Program Studi: ${explicitProg}\n${String(text || '').trim()}`;
++                    console.log('[DEBUG] wave-override calling ragQueryWithEval', { chatId, program: explicitProg, q: String(q).slice(0,140) });
++                    const rr = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0, forceRag: true });
++                    if (rr && rr.success && rr.answer) {
++                      messageText = String(rr.answer || '').trim();
++                      console.log('[OVERRIDE] replaced wave prompt with anchored RAG answer', { chatId, program: explicitProg });
++                    }
++                  }
++                } catch (e) {
++                  // non-fatal: continue with original messageText
++                }
++              }
++            }
++          }
++        } catch (e) {}
++
++        const useHumanizer = shouldUseHumanizer(messageText, text);
+           const decoratorOptions = {};
+           
+           if (useHumanizer) {
+@@ -7652,6 +7953,39 @@ module.exports = function (provider) {
+       'Session lookup timed out'
+     );
+     let sessionData = (session && session.data) ? session.data : {};
++
++    // Quick top-level anchored RAG: if user is in registrationFlow.choose_program (S1)
++    // and asked a specific program total question, use the official wrapper
++    // so the same evaluator/skip/fallback/logging pipeline is preserved.
++    try {
++      const flowTop = sessionData && sessionData.registrationFlow ? sessionData.registrationFlow : null;
++      const stageTop = flowTop && flowTop.stage ? String(flowTop.stage) : '';
++      const degreeTop = flowTop && flowTop.degree ? String(flowTop.degree) : '';
++      const txtTop = String(text || '').trim();
++      const programTop = (typeof extractSpecificProgramHint === 'function') ? (extractSpecificProgramHint(txtTop) || extractProgramHint(txtTop)) : extractProgramHint(txtTop);
++      const looksSpecificTop = (typeof looksLikeProgramSpecificQuestion === 'function') ? looksLikeProgramSpecificQuestion(txtTop) : false;
++      if (stageTop === 'choose_program' && degreeTop === 'S1' && programTop && looksSpecificTop && isRagEnabled()) {
++        try {
++          const qTop = `Program Studi: ${programTop}\n${txtTop}`;
++          const topKTop = parseInt(process.env.RAG_TOP_K || '6', 10);
++          console.log('[DEBUG] top-level anchored ragQueryWithEval call', { chatId, program: programTop, q: String(qTop).slice(0,140) });
++          const rrTop = await ragQueryWithEval(chatId, qTop, topKTop, { answerQuestion: qTop, minScore: 0, forceRag: true });
++          if (rrTop && rrTop.success && rrTop.answer) {
++            await sendBotMessage(chatId, String(rrTop.answer || '').trim());
++            try {
++              const currentState = session ? session.state : 'root';
++              const prevData = sessionData || {};
++              const newData = { ...prevData, lastProgramHint: String(programTop) };
++              await prisma.session.upsert({ where: { chatId }, create: { chatId, state: currentState, data: newData }, update: { state: currentState, data: newData } });
++            } catch (e) { logger.warn({ err: e.message }, '[Provider] Failed to persist lastProgramHint (top-level anchored rag)'); }
++            return res.send({ ok: true, source: 'choose_program_specific_rag_top', program: String(programTop), ragUsed: true });
++          }
++        } catch (e) {
++          logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] top-level anchored ragQueryWithEval failed');
++        }
++      }
++    } catch (e) {}
++
+     // Early optimization: mark session to skip RAG when the incoming text clearly
+     // requests fee info and bundled index is available. This prevents scattered
+     // RAG calls (many callsites) from running before deterministic fast-paths.
+@@ -7660,13 +7994,32 @@ module.exports = function (provider) {
+       const inferredChoiceEarly = (typeof parseFeeDetailChoice === 'function') ? parseFeeDetailChoice(routeTextEarly) : null;
+       const allowFastEarly = HAS_BUNDLED_RAG_INDEX && (typeof allowFastFeeFor === 'function') && allowFastFeeFor(routeTextEarly, { feeChoice: !!(inferredChoiceEarly === 'breakdown'), pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer) });
+       if (allowFastEarly) {
+-        sessionData._skipRagForFastFee = true;
++        // Do not set global skip flag when user is in a registrationFlow choose_program
++        // asking about a specific S1 program ΓÇö anchored RAG should be attempted.
++        let shouldSetSkip = true;
+         try {
+-          const outDir = path.join(__dirname, '..', '..', 'tmp');
+-          if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+-          const logPath = path.join(outDir, 'provider_traces.log');
+-          fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE', chatId, routeTextEarly }) + '\n');
++          const flowEarly = sessionData && sessionData.registrationFlow ? sessionData.registrationFlow : null;
++          const stageEarly = flowEarly && flowEarly.stage ? String(flowEarly.stage) : '';
++          const degreeEarly = flowEarly && flowEarly.degree ? String(flowEarly.degree) : '';
++          const rt = String(routeTextEarly || '').trim();
++          const programInTextEarlyLocal = (typeof extractSpecificProgramHint === 'function') ? (extractSpecificProgramHint(rt) || extractProgramHint(rt)) : (extractProgramHint(rt) || null);
++          const looksSpecificEarlyLocal = (typeof looksLikeProgramSpecificQuestion === 'function') ? looksLikeProgramSpecificQuestion(rt) : false;
++          const isPureSelectionEarlyLocal = (typeof isPureS1ProgramSelection === 'function') ? isPureS1ProgramSelection(rt) : false;
++          if (stageEarly === 'choose_program' && degreeEarly === 'S1' && programInTextEarlyLocal && looksSpecificEarlyLocal && !isPureSelectionEarlyLocal) {
++            shouldSetSkip = false;
++          }
+         } catch (e) {}
++        if (shouldSetSkip) {
++          sessionData._skipRagForFastFee = true;
++          try {
++            const outDir = path.join(__dirname, '..', '..', 'tmp');
++            if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
++            const logPath = path.join(outDir, 'provider_traces.log');
++            if (process.env.ENABLE_FAST_FEE_TRACING === 'true') {
++              fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE', chatId, routeTextEarly }) + '\n');
++            }
++          } catch (e) {}
++        }
+       }
+     } catch (e) {}
+     try {
+@@ -7697,7 +8050,12 @@ module.exports = function (provider) {
+       if (hasEphemeral) {
+         const lastBot = (typeof getLastBotMessageFromSessionData === 'function') ? getLastBotMessageFromSessionData(sessionData) : '';
+         const askedFollowup = lastBotLikelyAskedForFollowup(lastBot);
+-        const isFollowup = isLikelyFollowupQuestion(text) && askedFollowup;
++        const isCostIntent = incomingIntent === 'COST';
++        const looksLikeNewTopic = (typeof looksLikeNewTopicQuestion === 'function')
++          ? !!looksLikeNewTopicQuestion(String(text || '').trim())
++          : false;
++        const isNewTopicFollowupOverride = !isCostIntent && looksLikeNewTopic;
++        const isFollowup = isLikelyFollowupQuestion(text) && askedFollowup && !isNewTopicFollowupOverride;
+         const explicitProgramInText = extractSpecificProgramHint(text) || extractDualDegreeHint(text) || null;
+         const numericSelection = getNumericMenuSelection(text);
+ 
+@@ -7731,10 +8089,6 @@ module.exports = function (provider) {
+           ? !!isAcknowledgementOnly(String(text || ''))
+           : /^(ok|oke|sip|siap|baik|ya|iya|y|ok\s*ya)$/i.test(String(text || '').trim());
+ 
+-        const looksLikeNewTopic = (typeof looksLikeNewTopicQuestion === 'function')
+-          ? !!looksLikeNewTopicQuestion(String(text || '').trim())
+-          : false;
+-
+         const keepEphemeralBecauseFollowupShape =
+           (hasPendingProgramSelection && looksLikeProgramPick) ||
+           (hasPendingProgramInfoMenu && /\b(biaya|jadwal|syarat|persyaratan|dokumen|berkas|formulir|kontak|alur)\b/i.test(String(text || ''))) ||
+@@ -8186,7 +8540,9 @@ module.exports = function (provider) {
+             try {
+               const outDir = path.join(__dirname, '..', '..', 'tmp');
+               if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+-              fs.appendFileSync(path.join(outDir, 'provider_traces.log'), JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_PROVIDER_SKIP_RAG_FOR_FAST_FEE', chatId, query: routeTextMaybe }) + '\n');
++              if (process.env.ENABLE_FAST_FEE_TRACING === 'true') {
++                fs.appendFileSync(path.join(outDir, 'provider_traces.log'), JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_PROVIDER_SKIP_RAG_FOR_FAST_FEE', chatId, query: routeTextMaybe }) + '\n');
++              }
+             } catch (e) {}
+           }
+         } catch (e) {}
+@@ -9767,7 +10123,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   // Use the original pending flag to decide fast-path eligibility
+                   const allowFast = allowFastFeeFor(routeText, { pendingFeeBreakdownOffer: !!pending, feeChoice: true });
+                   logRouteDecision(routeText, program, (typeof detectIntent === 'function' ? detectIntent(routeText) : null), isExplicitFeeQuestion(routeText), allowFast ? 'fee_fast' : 'skip_fee_fast');
+-                  const fast = allowFast ? buildFastFeeAnswer(program, 'semester', feeBasics) : null;
++                  let fast = null;
++                  if (allowFast) {
++                    const _guardText = (typeof routeText !== 'undefined' && routeText) || (typeof q !== 'undefined' && q) || (typeof trimmed !== 'undefined' && trimmed) || (typeof text !== 'undefined' && text) || '';
++                    if (!isDetailedFeeQuery(_guardText)) {
++                      fast = buildFastFeeAnswer(program, 'semester', feeBasics, { originalQuery: _guardText });
++                    } else {
++                      try { console.log('[FAST_FEE_GUARD] skipping fast-path (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++                    }
++                  }
+                   if (fast) {
+                     await sendBotMessage(chatId, fast);
+ 
+@@ -10264,7 +10628,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   const routeText = String((typeof trimmed !== 'undefined' && trimmed) ? trimmed : (typeof text !== 'undefined' ? text : '')).trim();
+                   const allowFast = allowFastFeeFor(routeText, { pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer), feeChoice: !!feeChoice });
+                   logRouteDecision(routeText, programHint, (typeof detectIntent === 'function' ? detectIntent(routeText) : null), isExplicitFeeQuestion(routeText), allowFast ? 'fee_fast' : 'skip_fee_fast');
+-                  const fast = allowFast ? buildFastFeeAnswer(programHint, 'breakdown', feeBasics) : null;
++                  let fast = null;
++                  if (allowFast) {
++                    const _guardText = (typeof routeText !== 'undefined' && routeText) || (typeof routeTextMaybe !== 'undefined' && routeTextMaybe) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
++                    if (!isDetailedFeeQuery(_guardText)) {
++                      fast = buildFastFeeAnswer(programHint, 'breakdown', feeBasics, { originalQuery: _guardText });
++                    } else {
++                      try { console.log('[FAST_FEE_GUARD] skipping fast-path (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++                    }
++                  }
+                   try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: !!allowFast, hasBundleData: !!feeBasics, fastAnswerFound: !!fast, routeText }); } catch(e) {}
+                   if (fast) {
+                     await sendBotMessage(chatId, fast);
+@@ -11396,18 +11768,22 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+       const flow = sessionData && sessionData.registrationFlow ? sessionData.registrationFlow : null;
+       const stage = flow && flow.stage ? String(flow.stage) : '';
+       const degreeInFlow = flow && flow.degree ? String(flow.degree) : '';
+-      const programInText = extractSpecificProgramHint(String(text || '').trim());
++      const trimmedText = String(text || '').trim();
++      const programInText = extractSpecificProgramHint(trimmedText) || extractProgramHint(trimmedText);
++      const looksSpecific = looksLikeProgramSpecificQuestion(trimmedText);
++      const isPureSelection = isPureS1ProgramSelection(trimmedText);
++      const ragReady = isRagEnabled() && (hasActiveTrainingData || allowIndexFallbackNoDb);
++      console.log('[DEBUG] choose_program anchored rag check', { chatId, stage, degreeInFlow, programInText, looksSpecific, isPureSelection, ragReady, text: trimmedText });
+       if (
+         stage === 'choose_program' &&
+         degreeInFlow === 'S1' &&
+         programInText &&
+-        looksLikeProgramSpecificQuestion(String(text || '').trim()) &&
+-        !isPureS1ProgramSelection(String(text || '').trim()) &&
+-        isRagEnabled() &&
+-        (hasActiveTrainingData || allowIndexFallbackNoDb)
++        looksSpecific &&
++        !isPureSelection &&
++        ragReady
+       ) {
+         const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+-        const q = `Program Studi: ${programInText}\n${String(text || '').trim()}`;
++        const q = `Program Studi: ${programInText}\n${trimmedText}`;
+ 
+         // Try deterministic fast-path first (do not call ragQuery directly)
+             try {
+@@ -11419,13 +11795,23 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   const outDir = path.join(__dirname, '..', '..', 'tmp');
+                   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+                   const logPath = path.join(outDir, 'provider_traces.log');
+-                  fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE', chatId, routeText: String(q).slice(0,200) }) + '\n');
++                  if (process.env.ENABLE_FAST_FEE_TRACING === 'true') {
++                    fs.appendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE', chatId, routeText: String(q).slice(0,200) }) + '\n');
++                  }
+                 } catch (e) {}
+ 
+                 try {
+                   const feeBasics = extractFeeBasicsFromBundledIndex();
+                   const choice = inferredChoice || 'semester';
+-                  const fast = buildFastFeeAnswer(programInText, (choice === 'breakdown') ? 'breakdown' : choice, feeBasics);
++                  let fast = null;
++                  {
++                    const _guardText = (typeof q !== 'undefined' && q) || (typeof programInText !== 'undefined' && programInText) || (typeof text !== 'undefined' && text) || '';
++                    if (!isDetailedFeeQuery(_guardText)) {
++                      fast = buildFastFeeAnswer(programInText, (choice === 'breakdown') ? 'breakdown' : choice, feeBasics, { originalQuery: _guardText });
++                    } else {
++                      try { console.log('[FAST_FEE_GUARD] skipping fast-path (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++                    }
++                  }
+                   try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: !!allowFast, hasBundleData: !!feeBasics, fastAnswerFound: !!fast, routeText: q }); } catch(e) {}
+                   if (fast) {
+                     await sendBotMessage(chatId, String(fast || '').trim());
+@@ -11444,7 +11830,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             } catch (e) {}
+ 
+         // Fall back to retrieval but prefer ragQueryWithEval (so wrapper can evaluate guards)
+-        const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0 });
++        const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0, forceRag: true });
+         if (ragResult && ragResult.success && ragResult.answer) {
+           await sendBotMessage(chatId, String(ragResult.answer || '').trim());
+           try {
+@@ -11473,12 +11859,11 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           const flow = sessionData && sessionData.registrationFlow ? sessionData.registrationFlow : null;
+           const stage = flow && flow.stage ? String(flow.stage) : '';
+           const degreeInFlow = flow && flow.degree ? String(flow.degree) : '';
+-          const programInText = extractSpecificProgramHint(trimmedTotalReq);
++          const programInText = extractSpecificProgramHint(trimmedTotalReq) || extractProgramHint(trimmedTotalReq);
+           const shouldAnchorRag =
+             stage === 'choose_program' &&
+             degreeInFlow === 'S1' &&
+             programInText &&
+-            looksLikeProgramSpecificQuestion(trimmedTotalReq) &&
+             !isPureS1ProgramSelection(trimmedTotalReq) &&
+             isRagEnabled() &&
+             (hasActiveTrainingData || allowIndexFallbackNoDb);
+@@ -11486,7 +11871,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           if (shouldAnchorRag) {
+             const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+             const q = `Program Studi: ${programInText}\n${trimmedTotalReq}`;
+-            const ragResult = await ragQuery(q, topK, { answerQuestion: q, minScore: 0 });
++            const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0, forceRag: true });
+             if (ragResult && ragResult.success && ragResult.answer) {
+               await sendBotMessage(chatId, String(ragResult.answer || '').trim());
+               try {
+@@ -11506,6 +11891,13 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+ 
+         const pendingTotal = sessionData && sessionData.pendingTotalCost ? sessionData.pendingTotalCost : null;
+         const programInTextQuick = extractSpecificProgramHint(trimmedTotalReq) || extractProgramHint(trimmedTotalReq);
++        console.log('[DEBUG] total handler initial', {
++          chatId,
++          trimmedTotalReq,
++          programInTextQuick,
++          activeProgramFromSession: getActiveProgram({ chatId, userText: trimmedTotalReq, sessionData }).activeProgram,
++          sessionDataKeys: sessionData ? Object.keys(sessionData) : null
++        });
+         // If there's an active pendingTotalCost and the user didn't explicitly state a program in this message,
+         // skip this early handler so the pending-total handlers below can interpret short-wave replies.
+         if (pendingTotal && !programInTextQuick) {
+@@ -11714,7 +12106,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             const routeTextEarly = String(trimmed || text || '').trim();
+             const allowFastEarly = allowFastFeeFor(routeTextEarly, { feeChoice: true, pendingFeeDetail: !!(sessionData && sessionData.pendingFeeDetail) });
+             logRouteDecision(routeTextEarly, programFast, (typeof detectIntent === 'function' ? detectIntent(routeTextEarly) : null), isExplicitFeeQuestion(routeTextEarly), allowFastEarly ? 'fee_fast' : 'skip_fee_fast');
+-            const fastEarly = allowFastEarly ? buildFastFeeAnswer(programFast, effectiveChoiceEarly, feeBasicsEarly, { showProgramLabel }) : null;
++            let fastEarly = null;
++            if (allowFastEarly) {
++              const _guardText = (typeof anchored !== 'undefined' && anchored) || (typeof routeText !== 'undefined' && routeText) || (typeof q !== 'undefined' && q) || '';
++              if (!isDetailedFeeQuery(_guardText)) {
++                fastEarly = buildFastFeeAnswer(programFast, effectiveChoiceEarly, feeBasicsEarly, { showProgramLabel, originalQuery: _guardText });
++              } else {
++                try { console.log('[FAST_FEE_GUARD] skipping fastEarly (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++              }
++            }
+             try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: !!allowFastEarly, hasBundleData: !!feeBasicsEarly, fastAnswerFound: !!fastEarly, routeText: routeTextEarly }); } catch(e) {}
+             // internal debug removed
+             if (fastEarly) {
+@@ -11987,7 +12387,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 const routeTextReg = String(trimmed || text || '').trim();
+                 const allowFastReg = allowFastFeeFor(routeTextReg, { feeChoice: !!feeChoice, pendingFeeDetail: !!(sessionData && sessionData.pendingFeeDetail) });
+                 logRouteDecision(routeTextReg, programFast, (typeof detectIntent === 'function' ? detectIntent(routeTextReg) : null), isExplicitFeeQuestion(routeTextReg), allowFastReg ? 'fee_fast' : 'skip_fee_fast');
+-                const fast = allowFastReg ? buildFastFeeAnswer(programFast, effectiveChoice, feeBasics, { showProgramLabel }) : null;
++                let fast = null;
++                if (allowFastReg) {
++                  const _guardText = (typeof routeTextReg !== 'undefined' && routeTextReg) || (typeof routeText !== 'undefined' && routeText) || (typeof text !== 'undefined' && text) || '';
++                  if (!isDetailedFeeQuery(_guardText)) {
++                    fast = buildFastFeeAnswer(programFast, effectiveChoice, feeBasics, { showProgramLabel, originalQuery: _guardText });
++                  } else {
++                    try { console.log('[FAST_FEE_GUARD] skipping fastReg (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++                  }
++                }
+                 try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: !!allowFastReg, hasBundleData: !!feeBasics, fastAnswerFound: !!fast, routeText: routeTextReg }); } catch(e) {}
+                 if (fast) {
+                   const shouldOfferFeeBreakdown = false;
+@@ -12848,7 +13256,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+           const q = `Program Studi: ${programInText}\n${trimmedFee}`;
+           logger.info({ stage, programInText, question: trimmedFee, q }, '[Provider] Calling RAG for choose_program specific question');
+-          const ragResult = await ragQuery(q, topK, { answerQuestion: q, minScore: 0 });
++          const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0, forceRag: true });
+           logger.info({ ragResult }, '[Provider] RAG result for choose_program specific question');
+           if (ragResult && ragResult.success && ragResult.answer) {
+             await sendBotMessage(chatId, String(ragResult.answer || '').trim());
+@@ -12975,7 +13383,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             const routeTextGel = String(trimmedFee || text || '').trim();
+             const allowFastGel = allowFastFeeFor(routeTextGel, { feeChoice: !!feeChoice });
+             logRouteDecision(routeTextGel, programFromText, (typeof detectIntent === 'function' ? detectIntent(routeTextGel) : null), isExplicitFeeQuestion(routeTextGel), allowFastGel ? 'fee_fast' : 'skip_fee_fast');
+-            const fast = allowFastGel ? buildFastFeeAnswer(programFromText, 'breakdown', feeBasics, { showProgramLabel: true, wave: gel }) : null;
++            let fast = null;
++            if (allowFastGel) {
++              const _guardText = (typeof routeTextGel !== 'undefined' && routeTextGel) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
++              if (!isDetailedFeeQuery(_guardText)) {
++                fast = buildFastFeeAnswer(programFromText, 'breakdown', feeBasics, { showProgramLabel: true, wave: gel, originalQuery: _guardText });
++              } else {
++                try { console.log('[FAST_FEE_GUARD] skipping fastGel (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++              }
++            }
+             try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: !!allowFastGel, hasBundleData: !!feeBasics, fastAnswerFound: !!fast, routeText: routeTextGel }); } catch(e) {}
+             if (fast) {
+               await sendBotMessage(chatId, String(fast || '').trim());
+@@ -13001,7 +13417,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           const routeTextFast = String(trimmedFee || text || '').trim();
+           const allowFastMain = allowFastFeeFor(routeTextFast, { feeChoice: !!feeChoice, pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer) });
+           logRouteDecision(routeTextFast, programFast, (typeof detectIntent === 'function' ? detectIntent(routeTextFast) : null), isExplicitFeeQuestion(routeTextFast), allowFastMain ? 'fee_fast' : 'skip_fee_fast');
+-          const fast = allowFastMain ? buildFastFeeAnswer(programFast, feeChoice, feeBasics, { showProgramLabel }) : null;
++          let fast = null;
++          if (allowFastMain) {
++            const _guardText = (typeof routeTextFast !== 'undefined' && routeTextFast) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
++            if (!isDetailedFeeQuery(_guardText)) {
++              fast = buildFastFeeAnswer(programFast, feeChoice, feeBasics, { showProgramLabel, originalQuery: _guardText });
++            } else {
++              try { console.log('[FAST_FEE_GUARD] skipping fastMain (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++            }
++          }
+           try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: !!allowFastMain, hasBundleData: !!feeBasics, fastAnswerFound: !!fast, routeText: routeTextFast }); } catch(e) {}
+           if (fast) {
+             const shouldOfferFeeBreakdown = feeChoice !== 'breakdown';
+@@ -13777,7 +14201,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                         fs.appendFileSync(lp, JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_ALLOW_FAST_RESULT', chatId, allowFast: !!allowFastPick }) + '\n');
+                       } catch (e) {}
+                       logRouteDecision(routeTextPick, programPick, (typeof detectIntent === 'function' ? detectIntent(routeTextPick) : null), isExplicitFeeQuestion(routeTextPick), allowFastPick ? 'fee_fast' : 'skip_fee_fast');
+-                      const fast = allowFastPick ? buildFastFeeAnswer(programPick, 'breakdown', feeBasics) : null;
++                      let fast = null;
++                      if (allowFastPick) {
++                        const _guardText = (typeof routeTextPick !== 'undefined' && routeTextPick) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
++                        if (!isDetailedFeeQuery(_guardText)) {
++                          fast = buildFastFeeAnswer(programPick, 'breakdown', feeBasics, { originalQuery: _guardText });
++                        } else {
++                          try { console.log('[FAST_FEE_GUARD] skipping fastPick (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++                        }
++                      }
+                       try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: !!allowFastPick, hasBundleData: !!feeBasics, fastAnswerFound: !!fast, routeText: routeTextPick }); } catch(e) {}
+                     if (fast) {
+                       await sendBotMessage(chatId, fast);
+@@ -13822,7 +14254,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                     const routeTextPick = String(pendingQuestion || text || '').trim();
+                     const allowFastPick = allowFastFeeFor(routeTextPick, { feeChoice: choice === 'breakdown' });
+                     logRouteDecision(routeTextPick, programPick, (typeof detectIntent === 'function' ? detectIntent(routeTextPick) : null), isExplicitFeeQuestion(routeTextPick), allowFastPick ? 'fee_fast' : 'skip_fee_fast');
+-                    const fast = allowFastPick ? buildFastFeeAnswer(programPick, choice, feeBasics) : null;
++                    let fast = null;
++                    if (allowFastPick) {
++                      const _guardText = (typeof routeTextPick !== 'undefined' && routeTextPick) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
++                      if (!isDetailedFeeQuery(_guardText)) {
++                        fast = buildFastFeeAnswer(programPick, choice, feeBasics, { originalQuery: _guardText });
++                      } else {
++                        try { console.log('[FAST_FEE_GUARD] skipping fastPick (choice) (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++                      }
++                    }
+                     try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: !!allowFastPick, hasBundleData: !!feeBasics, fastAnswerFound: !!fast, routeText: routeTextPick }); } catch(e) {}
+                     if (fast) {
+                       const out = String(fast || '').trim() + offerSuffix;
+@@ -14043,7 +14483,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               const feeBasicsDiag = allowBundledIndex ? extractFeeBasicsFromBundledIndex() : null;
+               const routeTextFollowDiag = String(text || '').trim();
+               const allowFastFollowDiag = allowBundledIndex ? allowFastFeeFor(routeTextFollowDiag, { pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer), feeChoice: true }) : false;
+-              const fastCandidateDiag = (allowFastFollowDiag && feeBasicsDiag && program) ? buildFastFeeAnswer(program, 'breakdown', feeBasicsDiag) : null;
++              let fastCandidateDiag = null;
++              if (allowFastFollowDiag && feeBasicsDiag && program) {
++                const _guardText = (typeof routeTextFollowDiag !== 'undefined' && routeTextFollowDiag) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
++                if (!isDetailedFeeQuery(_guardText)) {
++                  fastCandidateDiag = buildFastFeeAnswer(program, 'breakdown', feeBasicsDiag, { originalQuery: _guardText });
++                } else {
++                  try { console.log('[FAST_FEE_GUARD] skipping fastCandidateDiag (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++                }
++              }
+               // (removed temporary TRACE_YA_ULTRA_FAST log)
+             } catch (e) {}
+ 
+@@ -14092,12 +14540,28 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 // Compute candidate if anchored would allow fast answer (for diagnostics only)
+                 let fastCandidateAnchored = null;
+                 try {
+-                  fastCandidateAnchored = (allowFastFollowAnchored && feeBasics && program) ? buildFastFeeAnswer(program, 'breakdown', feeBasics) : null;
++                  fastCandidateAnchored = null;
++                  if (allowFastFollowAnchored && feeBasics && program) {
++                    const _guardText = (typeof anchored !== 'undefined' && anchored) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
++                    if (!isDetailedFeeQuery(_guardText)) {
++                      fastCandidateAnchored = buildFastFeeAnswer(program, 'breakdown', feeBasics, { originalQuery: _guardText });
++                    } else {
++                      try { console.log('[FAST_FEE_GUARD] skipping fastCandidateAnchored (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++                    }
++                  }
+                 } catch (e) { fastCandidateAnchored = null; }
+                 // (removed temporary TRACE_YA_ULTRA_VARS and DNUI_TRACE logs)
+                 const allowFastFollow = allowFastFollowRoute || allowFastFollowAnchored;
+                 logRouteDecision(routeTextFollow, program, (typeof detectIntent === 'function' ? detectIntent(routeTextFollow) : null), isExplicitFeeQuestion(routeTextFollow), allowFastFollow ? 'fee_fast' : 'skip_fee_fast');
+-                const fast = allowFastFollow ? buildFastFeeAnswer(program, 'breakdown', feeBasics) : null;
++                let fast = null;
++                if (allowFastFollow) {
++                  const _guardText = (typeof routeTextFollow !== 'undefined' && routeTextFollow) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
++                  if (!isDetailedFeeQuery(_guardText)) {
++                    fast = buildFastFeeAnswer(program, 'breakdown', feeBasics, { originalQuery: _guardText });
++                  } else {
++                    try { console.log('[FAST_FEE_GUARD] skipping fastFollow (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++                  }
++                }
+                 try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: !!allowFastFollow, hasBundleData: !!feeBasics, fastAnswerFound: !!fast, routeText: routeTextFollow, allowFastFollowAnchored: !!allowFastFollowAnchored }); } catch(e) {}
+                 if (fast) {
+                   await sendBotMessage(chatId, fast);
+@@ -14327,7 +14791,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             const routeTextFast = String(text || '').trim();
+             const allowFastMain = allowFastFeeFor(routeTextFast, { feeChoice: !!feeChoice, pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer) });
+             logRouteDecision(routeTextFast, programFast, (typeof detectIntent === 'function' ? detectIntent(routeTextFast) : null), isExplicitFeeQuestion(routeTextFast), allowFastMain ? 'fee_fast' : 'skip_fee_fast');
+-            const fast = allowFastMain ? buildFastFeeAnswer(programFast, feeChoice, feeBasics, { showProgramLabel }) : null;
++            let fast = null;
++            if (allowFastMain) {
++              const _guardText = (typeof routeTextFast !== 'undefined' && routeTextFast) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
++              if (!isDetailedFeeQuery(_guardText)) {
++                fast = buildFastFeeAnswer(programFast, feeChoice, feeBasics, { showProgramLabel, originalQuery: _guardText });
++              } else {
++                try { console.log('[FAST_FEE_GUARD] skipping fastMain (detailed query)', { chatId, guardText: String(_guardText).slice(0,200) }); } catch(e){}
++              }
++            }
+             if (fast) {
+               const shouldOfferFeeBreakdown =
+                 (feeChoice === 'semester' || feeChoice === 'pendaftaran' || feeChoice === 'dpp') &&

@@ -1,0 +1,36 @@
+# Node / dependencies
+node_modules/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+# SECURITY: Do NOT whitelist production env files. Keep .env.production and .env.production.local ignored.
+# If you need an example, use .env.example only.
+
+# Credential notes (keep local only)
+SUPABASE_CREDENTIALS.md
+
+# Databases
+prisma/dev.db
+prisma/dev.db-journal
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# Uploads and generated files
+uploads/
+src/data/rag_index.json
+
+# Admin UI build output (generated)
+admin-ui/out/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

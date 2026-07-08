@@ -1,0 +1,86 @@
+[
+  {
+    "query": "Apa itu Sistem Informasi",
+    "auditLog": {
+      "timestamp": "2026-06-02T06:31:50.088Z",
+      "beforeCount": 528,
+      "afterCount": 0,
+      "filtered": 528
+    },
+    "rejectReasonCountsFromLogs": {
+      "not_in_allowed_categories": 32,
+      "forbidden_category": 47,
+      "no_evidence_for_intent": 4,
+      "not_relevant_to_question": 1
+    }
+  },
+  {
+    "query": "Apa yang dipelajari di Sistem Informasi",
+    "auditLog": {
+      "timestamp": "2026-06-02T07:27:33.764Z",
+      "beforeCount": 4,
+      "afterCount": 4,
+      "filtered": 0
+    },
+    "rejectReasonCountsFromLogs": {
+      "no_evidence_for_intent": 4
+    }
+  },
+  {
+    "query": "Prospek kerja Sistem Informasi",
+    "auditLog": {
+      "timestamp": "2026-06-02T06:31:59.799Z",
+      "beforeCount": 528,
+      "afterCount": 0,
+      "filtered": 528
+    },
+    "rejectReasonCountsFromLogs": {
+      "not_in_allowed_categories": 32,
+      "forbidden_category": 47,
+      "no_evidence_for_intent": 4,
+      "not_relevant_to_question": 1
+    }
+  },
+  {
+    "query": "Apa itu Teknologi Informasi",
+    "auditLog": {
+      "timestamp": "2026-06-02T06:32:05.353Z",
+      "beforeCount": 528,
+      "afterCount": 0,
+      "filtered": 528
+    },
+    "rejectReasonCountsFromLogs": {
+      "not_in_allowed_categories": 35,
+      "forbidden_category": 24,
+      "no_evidence_for_intent": 1
+    }
+  },
+  {
+    "query": "Apa yang dipelajari di Teknologi Informasi",
+    "auditLog": {
+      "timestamp": "2026-06-02T07:27:46.219Z",
+      "beforeCount": 528,
+      "afterCount": 335,
+      "filtered": 193
+    },
+    "rejectReasonCountsFromLogs": {
+      "no_evidence_for_intent": 21,
+      "forbidden_category": 17,
+      "not_relevant_to_question": 3
+    }
+  },
+  {
+    "query": "Prospek kerja Teknologi Informasi",
+    "auditLog": {
+      "timestamp": "2026-06-02T06:32:09.749Z",
+      "beforeCount": 528,
+      "afterCount": 0,
+      "filtered": 528
+    },
+    "rejectReasonCountsFromLogs": {
+      "not_in_allowed_categories": 35,
+      "forbidden_category": 24,
+      "no_evidence_for_intent": 1
+    }
+  }
+]

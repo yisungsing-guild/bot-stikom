@@ -1,0 +1,191 @@
+﻿
+==========================================================================================
+E2E PROVIDER WEBHOOK VALIDATION - FINAL TEST
+==========================================================================================
+
+
+Testing: "apa itu SI?"
+------------------------------------------------------------------------------------------
+{"level":30,"time":1780206373684,"pid":14424,"hostname":"DESKTOP-MQLDQK0","detectIntent":"GENERAL","programHint":null,"msg":"[Provider DEBUG] incoming intent/programHint"}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: '62812345678',
+  text: 'apa itu SI?',
+  messageId: 'test_1780206373585_sstsure',
+  inboundTs: 1780206373585
+}
+{"level":30,"time":1780206373988,"pid":14424,"hostname":"DESKTOP-MQLDQK0","stage":"","programInText":"Sistem Informasi","looksSpecific":true,"isPureSelection":false,"ragEnabled":true,"hasData":true,"msg":"[Provider] Skipping choose_program RAG - conditions not met"}
+[findReplyByRules] No keyword match found
+Γ£ù Intent: N/A
+Γ£ù Fee Question: false
+Γ£ù Selected Route: N/A
+Γ£ù Program: N/A
+Γ£ù Fee Keywords: YES ΓÜá∩╕Å
+Γ£ù Message: "Siap, aku bantu jawab ya. Berikut ringkasan singkat masing-masing prodi: - Bisnis Digital (BD): foku..."
+
+Testing: "di SI belajar apa?"
+------------------------------------------------------------------------------------------
+{"level":30,"time":1780206375198,"pid":14424,"hostname":"DESKTOP-MQLDQK0","detectIntent":"GENERAL","programHint":null,"msg":"[Provider DEBUG] incoming intent/programHint"}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: '62812345678',
+  text: 'di SI belajar apa?',
+  messageId: 'test_1780206375193_99b26y8',
+  inboundTs: 1780206375193
+}
+{"level":30,"time":1780206375238,"pid":14424,"hostname":"DESKTOP-MQLDQK0","stage":"","programInText":"Sistem Informasi","looksSpecific":true,"isPureSelection":false,"ragEnabled":true,"hasData":true,"msg":"[Provider] Skipping choose_program RAG - conditions not met"}
+[findReplyByRules] No keyword match found
+[ProviderRoute] Duplicate outbound text suppressed { chatId: '62812345678', windowMs: 5000 }
+Γ£ô Intent: N/A
+Γ£ô Fee Question: false
+Γ£ô Selected Route: N/A
+Γ£ô Program: N/A
+Γ£ô Fee Keywords: NO
+Γ£ô Message: ""
+
+Testing: "prospek kerja SI?"
+------------------------------------------------------------------------------------------
+{"level":30,"time":1780206376302,"pid":14424,"hostname":"DESKTOP-MQLDQK0","detectIntent":"GENERAL","programHint":null,"msg":"[Provider DEBUG] incoming intent/programHint"}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: '62812345678',
+  text: 'prospek kerja SI?',
+  messageId: 'test_1780206376299_gxm5omi',
+  inboundTs: 1780206376299
+}
+{"level":30,"time":1780206376330,"pid":14424,"hostname":"DESKTOP-MQLDQK0","stage":"","programInText":"Sistem Informasi","looksSpecific":true,"isPureSelection":false,"ragEnabled":true,"hasData":true,"msg":"[Provider] Skipping choose_program RAG - conditions not met"}
+[findReplyByRules] No keyword match found
+[ProviderRoute] Duplicate outbound text suppressed { chatId: '62812345678', windowMs: 5000 }
+Γ£ô Intent: N/A
+Γ£ô Fee Question: false
+Γ£ô Selected Route: N/A
+Γ£ô Program: N/A
+Γ£ô Fee Keywords: NO
+Γ£ô Message: ""
+
+Testing: "lulusan TI bekerja dimana?"
+------------------------------------------------------------------------------------------
+{"level":30,"time":1780206377415,"pid":14424,"hostname":"DESKTOP-MQLDQK0","detectIntent":"GENERAL","programHint":null,"msg":"[Provider DEBUG] incoming intent/programHint"}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: '62812345678',
+  text: 'lulusan TI bekerja dimana?',
+  messageId: 'test_1780206377411_h7kxb92',
+  inboundTs: 1780206377411
+}
+{"level":30,"time":1780206377448,"pid":14424,"hostname":"DESKTOP-MQLDQK0","stage":"","programInText":"Sistem Informasi","looksSpecific":true,"isPureSelection":false,"ragEnabled":true,"hasData":true,"msg":"[Provider] Skipping choose_program RAG - conditions not met"}
+[findReplyByRules] No keyword match found
+[ProviderRoute] Duplicate outbound text suppressed { chatId: '62812345678', windowMs: 5000 }
+Γ£ô Intent: N/A
+Γ£ô Fee Question: false
+Γ£ô Selected Route: N/A
+Γ£ô Program: N/A
+Γ£ô Fee Keywords: NO
+Γ£ô Message: ""
+
+Testing: "apa itu TI?"
+------------------------------------------------------------------------------------------
+{"level":30,"time":1780206378595,"pid":14424,"hostname":"DESKTOP-MQLDQK0","detectIntent":"GENERAL","programHint":null,"msg":"[Provider DEBUG] incoming intent/programHint"}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: '62812345678',
+  text: 'apa itu TI?',
+  messageId: 'test_1780206378592_43y8w04',
+  inboundTs: 1780206378592
+}
+{"level":30,"time":1780206378624,"pid":14424,"hostname":"DESKTOP-MQLDQK0","stage":"","programInText":"Sistem Informasi","looksSpecific":true,"isPureSelection":false,"ragEnabled":true,"hasData":true,"msg":"[Provider] Skipping choose_program RAG - conditions not met"}
+[findReplyByRules] No keyword match found
+[ProviderRoute] Duplicate outbound text suppressed { chatId: '62812345678', windowMs: 5000 }
+Γ£ô Intent: N/A
+Γ£ô Fee Question: false
+Γ£ô Selected Route: N/A
+Γ£ô Program: N/A
+Γ£ô Fee Keywords: NO
+Γ£ô Message: ""
+
+Testing: "apa itu SK?"
+------------------------------------------------------------------------------------------
+{"level":30,"time":1780206379718,"pid":14424,"hostname":"DESKTOP-MQLDQK0","detectIntent":"GENERAL","programHint":null,"msg":"[Provider DEBUG] incoming intent/programHint"}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: '62812345678',
+  text: 'apa itu SK?',
+  messageId: 'test_1780206379715_wric8g4',
+  inboundTs: 1780206379715
+}
+{"level":30,"time":1780206379749,"pid":14424,"hostname":"DESKTOP-MQLDQK0","stage":"","programInText":"Sistem Informasi","looksSpecific":true,"isPureSelection":false,"ragEnabled":true,"hasData":true,"msg":"[Provider] Skipping choose_program RAG - conditions not met"}
+[findReplyByRules] No keyword match found
+Γ£ù Intent: N/A
+Γ£ù Fee Question: false
+Γ£ù Selected Route: N/A
+Γ£ù Program: N/A
+Γ£ù Fee Keywords: YES ΓÜá∩╕Å
+Γ£ù Message: "Siap, aku bantu jawab ya. Berikut ringkasan singkat masing-masing prodi: - Bisnis Digital (BD): foku..."
+
+Testing: "apa itu BD?"
+------------------------------------------------------------------------------------------
+{"level":30,"time":1780206380876,"pid":14424,"hostname":"DESKTOP-MQLDQK0","detectIntent":"GENERAL","programHint":null,"msg":"[Provider DEBUG] incoming intent/programHint"}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: '62812345678',
+  text: 'apa itu BD?',
+  messageId: 'test_1780206380874_2rlp675',
+  inboundTs: 1780206380874
+}
+{"level":30,"time":1780206380904,"pid":14424,"hostname":"DESKTOP-MQLDQK0","stage":"","programInText":"Sistem Informasi","looksSpecific":true,"isPureSelection":false,"ragEnabled":true,"hasData":true,"msg":"[Provider] Skipping choose_program RAG - conditions not met"}
+[findReplyByRules] No keyword match found
+[ProviderRoute] Duplicate outbound text suppressed { chatId: '62812345678', windowMs: 5000 }
+Γ£ô Intent: N/A
+Γ£ô Fee Question: false
+Γ£ô Selected Route: N/A
+Γ£ô Program: N/A
+Γ£ô Fee Keywords: NO
+Γ£ô Message: ""
+
+Testing: "Biaya SI sebelumnya. Pertanyaan user saat ini: apa itu SI?"
+------------------------------------------------------------------------------------------
+{"level":30,"time":1780206381996,"pid":14424,"hostname":"DESKTOP-MQLDQK0","detectIntent":"COST","programHint":"Sistem Informasi","msg":"[Provider DEBUG] incoming intent/programHint"}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: '62812345678',
+  text: 'Biaya SI sebelumnya. Pertanyaan user saat ini: apa itu SI?',
+  messageId: 'test_1780206381993_krfi80n',
+  inboundTs: 1780206381993
+}
+[DEBUG] persistProgramHint early 62812345678 Sistem Informasi
+{"level":30,"time":1780206382041,"pid":14424,"hostname":"DESKTOP-MQLDQK0","stage":"","programInText":"Sistem Informasi","looksSpecific":true,"isPureSelection":false,"ragEnabled":true,"hasData":true,"msg":"[Provider] Skipping choose_program RAG - conditions not met"}
+[findReplyByRules] No keyword match found
+Γ£ù Intent: N/A
+Γ£ù Fee Question: false
+Γ£ù Selected Route: N/A
+Γ£ù Program: N/A
+Γ£ù Fee Keywords: YES ΓÜá∩╕Å
+Γ£ù Message: "Siap, aku bantu jawab ya. Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi. Alasa..."
+
+==========================================================================================
+VALIDATION SUMMARY
+==========================================================================================
+
+Γ£ô Passing: 5/8
+Γ£ù Failing: 3/8
+
+Failing Tests:
+  Γ£ù "apa itu SI?": Fee keywords detected
+     Route: N/A
+     Message: Siap, aku bantu jawab ya. Berikut ringkasan singkat masing-masing prodi: - Bisnis Digital (BD): foku
+  Γ£ù "apa itu SK?": Fee keywords detected
+     Route: N/A
+     Message: Siap, aku bantu jawab ya. Berikut ringkasan singkat masing-masing prodi: - Bisnis Digital (BD): foku
+  Γ£ù "Biaya SI sebelumnya. Pertanyaan user saat ini: apa itu SI?": Fee keywords detected
+     Route: N/A
+     Message: Siap, aku bantu jawab ya. Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi. Alasa
+
+Results Summary:
+
+Query                                              | Intent | Fee Q | Fee Keywords | Status
+----------------------------------------------------------------------------------------------------
+apa itu SI?                                        | N/A     | false  | Γ£ù YES     | Γ£ù FAIL
+di SI belajar apa?                                 | N/A     | false  | Γ£ô NO      | Γ£ô PASS
+prospek kerja SI?                                  | N/A     | false  | Γ£ô NO      | Γ£ô PASS
+lulusan TI bekerja dimana?                         | N/A     | false  | Γ£ô NO      | Γ£ô PASS
+apa itu TI?                                        | N/A     | false  | Γ£ô NO      | Γ£ô PASS
+apa itu SK?                                        | N/A     | false  | Γ£ù YES     | Γ£ù FAIL
+apa itu BD?                                        | N/A     | false  | Γ£ô NO      | Γ£ô PASS
+Biaya SI sebelumnya. Pertanyaan user saat ini: a   | N/A     | false  | Γ£ù YES     | Γ£ù FAIL
+
+==========================================================================================
+Γ¥î SOME TESTS FAILED - Further investigation needed.
+==========================================================================================
+

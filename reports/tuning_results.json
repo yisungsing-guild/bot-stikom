@@ -1,0 +1,14 @@
+[
+  {
+    "file": "prodi_aspect_report_run_1.json",
+    "totalAspects": 33,
+    "passed": 15,
+    "passRate": 0.45454545454545453
+  },
+  {
+    "file": "prodi_aspect_report_run_2.json",
+    "totalAspects": 33,
+    "passed": 15,
+    "passRate": 0.45454545454545453
+  }
+]

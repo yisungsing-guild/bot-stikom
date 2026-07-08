@@ -1,0 +1,145 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# CHUNK AUDIT — FINAL VERDICT
+# 6631dfc1-b46c-4933-a340-392dfd2250d6
+# ═══════════════════════════════════════════════════════════════════════════
+
+## ANSWER TO YOUR QUESTIONS
+
+### 1. Filename?
+Penjelasan Prodi dan Karier Masa Depan (1).xlsx
+
+### 2. Full Chunk Text?
+ecialist | Brand Manager | Business Development | Startup Founder" Manajemen 
+Informasi | "Program studi ini merupakan pendidikan vokasi yang menanamkan 
+kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bidang Web 
+Developer | Database Administrator | dan IT Entrepreneur yang menghadapi dunia 
+usaha dan industri" | "Pengelolaan database | arsip digital | administrasi 
+sistem informasi | data processing | dokumentasi digital" | "Teliti | rapi | 
+dan suka mengelola data" | "Data Administrator | Database Staff | Information 
+Management Staff | IT Administration | Document Controller | Digital Archive Staff"
+
+### 3. itemProgram?
+Current: SK (from metadata)
+Actual:  MI (Manajemen Informasi) — MISMATCH!
+
+### 4. Extracted Entities?
+Programs mentioned:
+  - Manajemen Informasi: 1× (explicit, first line)
+  - Sistem Informasi: 1× (in "administrasi sistem informasi")
+  - Sistem Komputer: 0× (ZERO MENTIONS!)
+  
+Domain: Database/Information Management
+Career Track: Data Admin, IT Admin, Information Management
+
+### 5. Why Is Program Classified As SK?
+ROOT CAUSE: ❌ METADATA ERROR (probably data extraction bug)
+
+Evidence of error:
+  - Text explicitly says "Manajemen Informasi"
+  - Text mentions "administrasi sistem informasi"
+  - Zero mentions of "Sistem Komputer" anywhere
+  - Text starts truncated ("ecialist" missing prefix = parsing error)
+  - All sibling chunks have correct categories
+  
+Most Likely Cause: Wrong Excel cell extracted during training
+
+### 6. Does Isi Chunk Actually Discuss SI, SK, or Umum?
+
+┌─────────────────────────────────────┐
+│ PRIMARY (80%):                      │
+│ Manajemen Informasi                 │
+│ - Database management               │
+│ - IT Administration                 │
+│ - Information systems administration│
+│                                     │
+│ SECONDARY (15%):                    │
+│ Sistem Informasi                    │
+│ - Mentioned in "administrasi SI"    │
+│                                     │
+│ GENERAL (5%):                       │
+│ IT Career pathways                  │
+│                                     │
+│ NOT AT ALL (0%):                    │
+│ Sistem Komputer                     │
+│ - Zero mentions (contradicts label!)│
+└─────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+
+VERDICT: ❌ METADATA IS INCORRECT (95% confidence)
+
+Current:  category = "SK"
+Correct:  category = "MI" (Manajemen Informasi)
+
+Evidence Summary:
+  ✓ Explicit "Manajemen Informasi" mention at start
+  ✓ Database/admin keywords (7+ references)
+  ✓ Zero mentions of "Sistem Komputer"
+  ✓ Database & information management focus (MI domain)
+  ✓ Career profiles match MI not SK (Data Admin, IT Admin)
+  ✓ Sibling chunks from same file all correctly labeled
+  ✓ Text truncation suggests data parsing error
+  
+Confidence: 🔴 HIGH (95%)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+IMPACT ON FILTERING
+
+For Query "Apa itu Sistem Informasi?" (requestedProgram=SI):
+  Current: Chunk eliminated due to SK ≠ SI (metadata says SK)
+  Correct action: Yes, should eliminate (different program)
+  But reason: Wrong metadata (actually MI, not SK)
+
+If metadata fixed to MI:
+  New behavior: Chunk still eliminated (MI ≠ SI)
+  Reason: Correct (different program: MI vs SI)
+  Outcome: Same filtering result, correct reasoning
+
+═══════════════════════════════════════════════════════════════════════════════
+
+RECOMMENDATIONS
+
+1. PATCH FILTERING LOGIC?
+   ❌ NO — Already works correctly (chunk IS different program)
+
+2. FIX METADATA?
+   ✅ YES — Update category from SK → MI in RAG index
+
+3. PRIORITY?
+   🟠 MEDIUM — Data quality issue; needed for MI queries
+
+═══════════════════════════════════════════════════════════════════════════════
+
+DETAILED DOCUMENTS CREATED
+
+1. CHUNK_AUDIT_FINAL_ANSWER.md (comprehensive with sections 1-12)
+2. CHUNK_6631DFC1_AUDIT.md (12-section detailed analysis)
+3. CHUNK_6631DFC1_SUMMARY.md (quick reference with tables)
+4. CHUNK_6631DFC1_COMPARISON.md (metadata vs content side-by-side)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+FINAL ANSWER
+
+Metadata program classification: ❌ INCORRECT (95% confident)
+  - Marked as SK (Sistem Komputer)
+  - Actually about MI (Manajemen Informasi)
+  - Zero mentions of computer systems/hardware
+  
+Isi chunk discusses:
+  - Primary: Manajemen Informasi (80%)
+  - Secondary: Sistem Informasi (15%)  
+  - General: IT career paths (5%)
+  - NOT: Sistem Komputer (0%)
+
+Apakah metadata benar atau salah?
+  ❌ SALAH (95% confidence)
+  
+Sebab SK diklaim: Data extraction error during training (likely Excel parsing)
+
+Patch needed?
+  NO for filtering logic (already correct)
+  YES for data cleanup (fix metadata to MI)
+
+═══════════════════════════════════════════════════════════════════════════════

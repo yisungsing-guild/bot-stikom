@@ -1,0 +1,59 @@
+{
+  "count": 6,
+  "rows": [
+    {
+      "id": "089b0ba9-6699-4837-bd91-4ef43c5a1638",
+      "username": "direktur",
+      "displayName": "Direktur Pemasaran & Humas",
+      "role": "admin",
+      "passwordHash": "$2b$10$tiNtl9NGdVr4UdxpUI8w5eMQ6L14PK8Qmk2W.o0qP03U3xZyVC6fu",
+      "createdAt": "2026-03-31T05:31:06.222Z",
+      "updatedAt": "2026-04-23T06:59:35.491Z"
+    },
+    {
+      "id": "ec7429f3-4a42-4fe2-a8c1-ef48827e1546",
+      "username": "kemahasiswaan",
+      "displayName": "Dir Kemahasiswaan",
+      "role": "kemahasiswaan",
+      "passwordHash": "$2b$10$htwXSB5X1divF3FAYWXPm.szNGvOUFfjF0JdgFuFGY8REYrgvvWie",
+      "createdAt": "2026-03-31T05:31:06.622Z",
+      "updatedAt": "2026-04-23T06:59:35.903Z"
+    },
+    {
+      "id": "b7f4c0eb-f8e3-4434-b1c7-b47a3b36db0a",
+      "username": "kerjasama",
+      "displayName": "Dir Kerjasama, Layanan Industri & Inkubator Bisnis",
+      "role": "kerjasama",
+      "passwordHash": "$2b$10$zRPoMfE2tiU/tirmmKakReCH39D19f2MntHMnujuih6im7sU4fa.W",
+      "createdAt": "2026-03-31T05:31:07.206Z",
+      "updatedAt": "2026-04-23T06:59:36.486Z"
+    },
+    {
+      "id": "73bb7c92-b1a7-47dd-bdb2-660219125eb6",
+      "username": "international",
+      "displayName": "Dir Urusan International",
+      "role": "international",
+      "passwordHash": "$2b$10$VSgsI5KkN.3iHgufgwT7VebKDi8IkszX0dHUPTlcPDIOyCuF3i.e.",
+      "createdAt": "2026-03-31T05:31:07.492Z",
+      "updatedAt": "2026-04-23T06:59:36.776Z"
+    },
+    {
+      "id": "2883ce03-f9e4-44b9-85e1-d7e2365178f1",
+      "username": "keuangan",
+      "displayName": "Keuangan",
+      "role": "keuangan",
+      "passwordHash": "$2b$10$758gzDTbIPf.PcfAIoFcDu/IVbb9RG/OYLOatJgEgmpCRTE/RruqG",
+      "createdAt": "2026-03-31T05:31:07.783Z",
+      "updatedAt": "2026-04-23T06:59:37.071Z"
+    },
+    {
+      "id": "bee0a040-4063-46f9-994b-a5df9685cb17",
+      "username": "akademik",
+      "displayName": "Akademik",
+      "role": "admin",
+      "passwordHash": "$2b$10$NHU1xV8/VwG8hZoJEyHhM.OggrTYtHDZPwAfNFKP4NXn9PLsuHBTS",
+      "createdAt": "2026-03-31T05:31:06.912Z",
+      "updatedAt": "2026-04-24T02:07:39.607Z"
+    }
+  ]
+}

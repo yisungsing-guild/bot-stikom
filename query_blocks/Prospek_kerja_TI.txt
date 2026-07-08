@@ -1,0 +1,102 @@
+trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "divisionKey": null,
+        "score": 0.403980292442926,
+        "snippet": "19 Oktober 2023 PENERIMA PROGRAM BEASISWA RANKING KELAS DI ITB STIKOM BALI \" L STIKOM Bali memberikan beasiswa kepada: a. Calon mahasiswa dari : SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN"
+      }
+    ]
+[2026-06-05 13:53:07.926 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug: {
+      "query": "Program Studi: Teknologi Informasi\nProspek kerja TI?",
+      "detectedIntent": "ACADEMIC_PROGRAM",
+      "programHint": "TI",
+      "queryEntities": {
+        "intent": "ACADEMIC_PROGRAM",
+        "program": "TI",
+        "programLabel": "TEKNOLOGI_INFORMASI",
+        "programMode": null,
+        "wave": null,
+        "waveGroup": null,
+        "academicYear": null,
+        "partner": null,
+        "campus": null,
+        "jalur": null,
+        "feeType": null,
+        "category": "KARIR",
+        "pageNumber": null,
+        "academicIntent": "PROSPEK_KERJA"
+      },
+      "selectedChunkCount": 6,
+      "selectedChunks": [
+        {
+          "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+          "score": 0.46360669113009134
+        },
+        {
+          "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+          "filename": "hobi-sesuai-program-studi.docx",
+          "score": 0.49163443428767856
+        },
+        {
+          "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+          "score": 0.40061882374434116
+        },
+        {
+          "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+          "filename": "HOBY.pdf",
+          "score": 0.03689206593952575
+        },
+        {
+          "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+          "filename": "HOBY.pdf",
+          "score": 0.010746458959271463
+        },
+        {
+          "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+          "score": 0.4265438766231666
+        }
+      ],
+      "finalContextSources": [
+        "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "hobi-sesuai-program-studi.docx",
+        "HOBY.pdf"
+      ],
+      "sourceFiles": [
+        "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "hobi-sesuai-program-studi.docx",
+        "HOBY.pdf"
+      ],
+      "ragSource": "gpt-4o-mini",
+      "ragSuccess": true
+    }
+[2026-06-05 13:53:07.927 +0800] INFO: [Provider] Program retrieval audit
+    question: "Prospek kerja TI?"
+    detectedProgram: "Teknologi Informasi"
+    canonicalProgram: "Teknologi Informasi"
+    programSpecificQuestion: true
+    detectedIntent: "ACADEMIC_PROGRAM"
+    selectedRoute: "gpt-4o-mini"
+    retrievalQuery: "Program Studi: Teknologi Informasi\nProspek kerja TI?"
+    topChunks: [
+      {
+        "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+        "filename": null,
+        "trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "divisionKey": null,
+        "score": 0.46360669113009134,
+        "snippet": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 Kampus Jimbaran 31 Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali - Indonesia | Ph: (036"
+      },
+      {
+        "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "trainingId": "eee828da-6ee4-4591-a9a8-18fa2e73c822",
+        "divisionKey": null,
+        "score": 0.49163443428767856,
+        "snippet": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bi"
+      },
+      {
+        "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+        "filename": null,
+        "trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "divisionKey": null,
+        "score": 0.40061882374434116,
+        "snippet": "ran - 1 surat peraturan ini dan merupakan satu kesatuan yang tidak 

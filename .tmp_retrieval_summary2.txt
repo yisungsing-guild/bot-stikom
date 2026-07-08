@@ -1,0 +1,162 @@
+QUESTION: Apa itu Sistem Informasi?
+ queryForRetrieval: apa itu sistem informasi
+ intent: ACADEMIC_PROGRAM userIntent: DEFINISI_PRODI
+ top20 BEFORE filterRelevantChunks:
+  1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | cat=KURIKULUM score=0.4468 composite=4.4607 final=1.0000
+  2. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.2000 final=1.0000
+  3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.2000 final=1.0000
+  4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | cat=KURIKULUM score=0.5848 composite=3.8785 final=1.0000
+  5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | cat=UNKNOWN score=0.5391 composite=3.4159 final=1.0000
+  6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.3724 composite=3.3692 final=1.0000
+  7. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | cat=UNKNOWN score=0.5298 composite=3.3150 final=1.0000
+  8. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.5006 composite=3.2841 final=1.0000
+  9. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4950 composite=3.2835 final=1.0000
+  10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4725 composite=3.2813 final=1.0000
+  11. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4471 composite=3.2787 final=1.0000
+  12. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4468 composite=3.2787 final=1.0000
+  13. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4463 composite=3.2786 final=1.0000
+  14. f6fba3b8-10b8-4773-9537-ed5d368a1f62 | 1fe1697b-db27-4099-88ff-935c4495a898 | cat=BIAYA score=0.4696 composite=3.2170 final=1.0000
+  15. b48ac911-84d8-4cfe-9bd3-0109ab56a2c7 | Pedoman RPL ITB STIKOM Bali.pdf | cat=BIAYA score=0.3980 composite=3.2098 final=1.0000
+  16. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | cat=JADWAL score=0.2411 composite=3.1441 final=1.0000
+  17. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | cat=UNKNOWN score=0.4314 composite=3.1431 final=1.0000
+  18. c6c92a40-8437-4942-81aa-3003a7a6ad6f | SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf | cat=AKREDITASI score=0.4456 composite=3.1146 final=1.0000
+  19. 3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8 | HOBY.pdf | cat=UNKNOWN score=0.0000 composite=3.1000 final=1.0000
+  20. 2be1ee50-6f65-487a-b7cd-fa56701d6a4e | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | cat=BIAYA score=0.4760 composite=2.9476 final=1.0000
+ filterRelevantChunks count: 1
+ relevant IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.2000 final=1.0000
+ afterRelevant count: 1
+ afterRelevant IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.2000 final=1.0000
+ applyIntentAwareFilteringAndValidation count: 1
+ validated IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.2000 final=1.0000
+ rejected reason samples:
+  c2961b13-bd76-4f6b-9c39-1e19606b6a5d reason=no_evidence_for_intent category=None detail={'hasEvidence': False, 'confidence': 'LOW', 'reasons': ['adequate_length: 898 chars', 'no_pattern_matches']}
+ final ranking count: 1
+ final ranking top 20:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.2000 final=1.0000
+ chunk 6631dfc1 trace: {'beforeFiltering': {'found': True, 'rank': 1, 'score': 0.4467595339588613, 'compositeScore': 4.460675953395887, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}, 'afterFilterRelevant': {'found': False}, 'afterApplyIntent': {'found': False}, 'beforeFinalRanking': {'found': True, 'rank': 1, 'score': 0.4467595339588613, 'compositeScore': 4.460675953395887, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}, 'afterFinalRanking': {'found': False}}
+---
+QUESTION: Apa prospek kerja Sistem Informasi?
+ queryForRetrieval: apa prospek kerja sistem informasi
+ intent: ACADEMIC_PROGRAM userIntent: PROSPEK_KERJA
+ top20 BEFORE filterRelevantChunks:
+  1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | cat=KURIKULUM score=0.5545 composite=4.2464 final=1.0000
+  2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.9750 final=1.0000
+  3. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.9300 final=1.0000
+  4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | cat=KURIKULUM score=0.6428 composite=3.6143 final=1.0000
+  5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | cat=UNKNOWN score=0.5464 composite=3.1466 final=1.0000
+  6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.3944 composite=3.1014 final=1.0000
+  7. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | cat=UNKNOWN score=0.5378 composite=3.0458 final=1.0000
+  8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4598 composite=3.0100 final=1.0000
+  9. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4504 composite=3.0090 final=1.0000
+  10. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4502 composite=3.0090 final=1.0000
+  11. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4127 composite=3.0053 final=1.0000
+  12. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4106 composite=3.0051 final=1.0000
+  13. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4071 composite=3.0047 final=1.0000
+  14. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | cat=JADWAL score=0.2678 composite=2.9668 final=1.0000
+  15. f6fba3b8-10b8-4773-9537-ed5d368a1f62 | 1fe1697b-db27-4099-88ff-935c4495a898 | cat=BIAYA score=0.4667 composite=2.9467 final=1.0000
+  16. b48ac911-84d8-4cfe-9bd3-0109ab56a2c7 | Pedoman RPL ITB STIKOM Bali.pdf | cat=BIAYA score=0.3648 composite=2.9365 final=1.0000
+  17. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | cat=UNKNOWN score=0.5024 composite=2.8802 final=1.0000
+  18. c6c92a40-8437-4942-81aa-3003a7a6ad6f | SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf | cat=AKREDITASI score=0.4458 composite=2.8446 final=1.0000
+  19. 3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8 | HOBY.pdf | cat=UNKNOWN score=0.0000 composite=2.8300 final=1.0000
+  20. 2be1ee50-6f65-487a-b7cd-fa56701d6a4e | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | cat=BIAYA score=0.4617 composite=2.6762 final=1.0000
+ filterRelevantChunks count: 1
+ relevant IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.9300 final=1.0000
+ afterRelevant count: 1
+ afterRelevant IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.9300 final=1.0000
+ applyIntentAwareFilteringAndValidation count: 1
+ validated IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.9300 final=1.0000
+ rejected reason samples:
+  c2961b13-bd76-4f6b-9c39-1e19606b6a5d reason=no_evidence_for_intent category=None detail={'hasEvidence': False, 'confidence': 'LOW', 'reasons': ['adequate_length: 898 chars', 'no_pattern_matches']}
+ final ranking count: 1
+ final ranking top 20:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.9300 final=1.0000
+ chunk 6631dfc1 trace: {'beforeFiltering': {'found': True, 'rank': 1, 'score': 0.5544533639784639, 'compositeScore': 4.246445336397847, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}, 'afterFilterRelevant': {'found': False}, 'afterApplyIntent': {'found': False}, 'beforeFinalRanking': {'found': True, 'rank': 1, 'score': 0.5544533639784639, 'compositeScore': 4.246445336397847, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}, 'afterFinalRanking': {'found': False}}
+---
+QUESTION: Apa yang dipelajari di Sistem Informasi?
+ queryForRetrieval: apa yang dipelajari di sistem informasi
+ intent: ACADEMIC_PROGRAM userIntent: KURIKULUM_PEMBELAJARAN
+ top20 BEFORE filterRelevantChunks:
+  1. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | cat=KURIKULUM score=0.4464 composite=4.4006 final=1.0000
+  2. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.1400 final=1.0000
+  3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.1400 final=1.0000
+  4. 618a0474-969a-463f-91cd-c010a27beb48 | Penjelasan Semua Program Studi.pdf | cat=KURIKULUM score=0.5755 composite=3.8175 final=1.0000
+  5. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | cat=UNKNOWN score=0.5530 composite=3.3573 final=1.0000
+  6. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.3832 composite=3.3103 final=1.0000
+  7. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | cat=UNKNOWN score=0.5447 composite=3.2565 final=1.0000
+  8. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4977 composite=3.2238 final=1.0000
+  9. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4909 composite=3.2231 final=1.0000
+  10. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4692 composite=3.2209 final=1.0000
+  11. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4560 composite=3.2196 final=1.0000
+  12. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4515 composite=3.2191 final=1.0000
+  13. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4482 composite=3.2188 final=1.0000
+  14. f6fba3b8-10b8-4773-9537-ed5d368a1f62 | 1fe1697b-db27-4099-88ff-935c4495a898 | cat=BIAYA score=0.4771 composite=3.1577 final=1.0000
+  15. b48ac911-84d8-4cfe-9bd3-0109ab56a2c7 | Pedoman RPL ITB STIKOM Bali.pdf | cat=BIAYA score=0.4197 composite=3.1520 final=1.0000
+  16. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | cat=JADWAL score=0.2006 composite=3.1401 final=1.0000
+  17. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | cat=UNKNOWN score=0.5001 composite=3.0900 final=1.0000
+  18. c6c92a40-8437-4942-81aa-3003a7a6ad6f | SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf | cat=AKREDITASI score=0.4489 composite=3.0549 final=1.0000
+  19. 3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8 | HOBY.pdf | cat=UNKNOWN score=0.0000 composite=3.0400 final=1.0000
+  20. 2be1ee50-6f65-487a-b7cd-fa56701d6a4e | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | cat=BIAYA score=0.4554 composite=2.8855 final=1.0000
+ filterRelevantChunks count: 1
+ relevant IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.1400 final=1.0000
+ afterRelevant count: 1
+ afterRelevant IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.1400 final=1.0000
+ applyIntentAwareFilteringAndValidation count: 1
+ validated IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.1400 final=1.0000
+ rejected reason samples:
+ final ranking count: 1
+ final ranking top 20:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=4.1400 final=1.0000
+ chunk 6631dfc1 trace: {'beforeFiltering': {'found': True, 'rank': 1, 'score': 0.4463655648617254, 'compositeScore': 4.400636556486173, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}, 'afterFilterRelevant': {'found': False}, 'afterApplyIntent': {'found': False}, 'beforeFinalRanking': {'found': True, 'rank': 1, 'score': 0.4463655648617254, 'compositeScore': 4.400636556486173, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}, 'afterFinalRanking': {'found': False}}
+---
+QUESTION: Apa keunggulan Sistem Informasi?
+ queryForRetrieval: apa keunggulan sistem informasi
+ intent: PROGRAM userIntent: GENERAL
+ top20 BEFORE filterRelevantChunks:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.3000 final=1.0000
+  2. 74be5da2-8251-4417-a1de-41c3a4b70239 | HOBY.pdf | cat=UNKNOWN score=0.5278 composite=3.2548 final=1.0000
+  3. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.2400 final=1.0000
+  4. c4b537df-3774-42de-b51c-82f5a35bdee6 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4129 composite=3.1933 final=1.0000
+  5. 7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba | Kalender Pendaftaran.xlsx | cat=JADWAL score=0.2408 composite=3.1441 final=1.0000
+  6. 0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4763 composite=3.1016 final=1.0000
+  7. 3546c7cc-7dc3-4a1e-b318-79648193fb86 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4710 composite=3.1011 final=1.0000
+  8. a0f70379-20e4-493a-ace1-69d9f54f8611 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4622 composite=3.1002 final=1.0000
+  9. 37dc572d-f30d-47eb-b5ca-63fb21bba88a | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4478 composite=3.0988 final=1.0000
+  10. ce42bcfd-a809-4551-9ffa-f7af5eb695b3 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4448 composite=3.0985 final=1.0000
+  11. e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3 | smoke-sectiontitle-ok-1779082103888 | cat=BIAYA score=0.4428 composite=3.0983 final=1.0000
+  12. d45aa54b-c8a7-4a88-bf47-defbcf1f2a71 | hobi-sesuai-program-studi.docx | cat=UNKNOWN score=0.4951 composite=3.0895 final=1.0000
+  13. 3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8 | HOBY.pdf | cat=UNKNOWN score=0.0000 composite=3.0400 final=1.0000
+  14. f6fba3b8-10b8-4773-9537-ed5d368a1f62 | 1fe1697b-db27-4099-88ff-935c4495a898 | cat=BIAYA score=0.4733 composite=3.0373 final=1.0000
+  15. b48ac911-84d8-4cfe-9bd3-0109ab56a2c7 | Pedoman RPL ITB STIKOM Bali.pdf | cat=BIAYA score=0.3724 composite=3.0272 final=1.0000
+  16. c6c92a40-8437-4942-81aa-3003a7a6ad6f | SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf | cat=AKREDITASI score=0.4462 composite=2.9346 final=1.0000
+  17. 6631dfc1-b46c-4933-a340-392dfd2250d6 | Penjelasan Prodi dan Karier Masa Depan (1).xlsx | cat=KURIKULUM score=0.4545 composite=2.9315 final=1.0000
+  18. 8491b972-ee0b-4806-bd7e-8508c61ed46b | hobi_prodi_lengkap (1).xlsx | cat=UNKNOWN score=0.5369 composite=2.9057 final=1.0000
+  19. d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0 | 1fe1697b-db27-4099-88ff-935c4495a898 | cat=UNKNOWN score=0.4681 composite=2.8368 final=1.0000
+  20. 2be1ee50-6f65-487a-b7cd-fa56701d6a4e | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | cat=BIAYA score=0.4602 composite=2.7660 final=1.0000
+ filterRelevantChunks count: 2
+ relevant IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.3000 final=1.0000
+  2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.2400 final=1.0000
+ afterRelevant count: 2
+ afterRelevant IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.3000 final=1.0000
+  2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.2400 final=1.0000
+ applyIntentAwareFilteringAndValidation count: 2
+ validated IDs:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.3000 final=1.0000
+  2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.2400 final=1.0000
+ rejected reason samples:
+ final ranking count: 2
+ final ranking top 20:
+  1. c2961b13-bd76-4f6b-9c39-1e19606b6a5d | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.3000 final=1.0000
+  2. b411e939-1537-4fd5-af3d-541424f9d3a3 | CHATBOT - Double Degree (1).docx | cat=PROGRAM_KHUSUS score=0.0000 composite=3.2400 final=1.0000
+ chunk 6631dfc1 trace: {'beforeFiltering': {'found': True, 'rank': 17, 'score': 0.4545160396223332, 'compositeScore': 2.931451603962233, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}, 'afterFilterRelevant': {'found': False}, 'afterApplyIntent': {'found': False}, 'beforeFinalRanking': {'found': True, 'rank': 17, 'score': 0.4545160396223332, 'compositeScore': 2.931451603962233, 'finalScore': 1, 'docCategory': 'KURIKULUM', 'itemLabel': 'Penjelasan Prodi dan Karier Masa Depan (1).xlsx | program=SI | docCategory=KURIKULUM | chunkType=PROGRAM'}, 'afterFinalRanking': {'found': False}}
+---

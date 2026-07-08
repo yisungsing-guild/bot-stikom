@@ -1,0 +1,326 @@
+[
+  {
+    "testId": 1,
+    "chatId": "user-001",
+    "query": "Apa itu Teknologi Informasi?",
+    "isFollowup": false,
+    "isFailed": false,
+    "description": "Direct program definition - TI",
+    "source": "gpt-4o-mini",
+    "confidenceScore": "0.3916",
+    "confidenceTier": "HIGH",
+    "outboundText": "Saya belum menemukan detail yang benar-benar sesuai mengenai definisi Teknologi Informasi yang ada.\nApakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut? \n---",
+    "contextCount": 2,
+    "topContexts": [
+      {
+        "rank": 1,
+        "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "filename": "unknown",
+        "category": "unknown",
+        "score": "0.3916",
+        "preview": "19 Oktober 2023  PENERIMA PROGRAM BEASISWA RANKING KELAS DI  ITB STIKOM BALI \"  L STIKOM Bali memberikan beasiswa kepada"
+      },
+      {
+        "rank": 2,
+        "id": "f2615890-0f34-4f41-aff0-411232af57d1",
+        "filename": "unknown",
+        "category": "unknown",
+        "score": "0.3115",
+        "preview": "ja, SMKN 3 Singaraja  SMAN 1  Bangli, SMKN 1  Bangli  SMAN 1 Negara  SMAN 1  Amlapura  1.  Rangking 1,2 dan 3 di kelas X"
+      }
+    ],
+    "matchedAttributes": {
+      "programs": [
+        "TI",
+        "SI"
+      ],
+      "keywords": []
+    },
+    "rejectionReason": null,
+    "debugInfo": null
+  },
+  {
+    "testId": 2,
+    "chatId": "user-002",
+    "query": "Apa itu Sistem Informasi?",
+    "isFollowup": false,
+    "isFailed": false,
+    "description": "Direct program definition - SI",
+    "source": "gpt-4o-mini",
+    "confidenceScore": "0.5881",
+    "confidenceTier": "HIGH",
+    "outboundText": "🎓 Kamu ingin tahu tentang Sistem Informasi.\nSistem Informasi adalah bidang yang mengelola, mengolah, dan mendistribusikan informasi secara efektif dan inovatif. Ini mencakup pengembangan perangkat lunak, teknologi cloud, keamanan siber, dan pengelolaan data untuk mendukung proses bisnis, inovasi, dan riset.\nMau tahu lebih lanjut tentang program studi atau profil lulusan di bidang ini? \n---",
+    "contextCount": 2,
+    "topContexts": [
+      {
+        "rank": 1,
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "category": "unknown",
+        "score": "0.5881",
+        "preview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Anim"
+      },
+      {
+        "rank": 2,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "category": "unknown",
+        "score": "0.0353",
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhk"
+      }
+    ],
+    "matchedAttributes": {
+      "programs": [
+        "SI",
+        "SISTEM INFORMASI",
+        "TI",
+        "TEKNOLOGI\nINFORMASI",
+        "TEKNOLOGI INFORMASI"
+      ],
+      "keywords": []
+    },
+    "rejectionReason": null,
+    "debugInfo": null
+  },
+  {
+    "testId": 3,
+    "chatId": "user-003",
+    "query": "Prospek kerja Teknologi Informasi",
+    "isFollowup": false,
+    "isFailed": false,
+    "description": "Career prospects - TI (CRITICAL TEST)",
+    "source": "gpt-4o-mini",
+    "confidenceScore": "0.5443",
+    "confidenceTier": "HIGH",
+    "outboundText": "---\n💻 Kamu ingin tahu tentang prospek kerja di bidang Teknologi Informasi.\nProspek kerja untuk lulusan Teknologi Informasi sangat menjanjikan, antara lain:\n• Posisi yang tersedia: Project Manager, Business Analyst, Market Analyst, dan Product Manager.\n• Spesialisasi yang dapat dikejar: Digital Marketing Specialist dan Digital Strategist.\nApakah kamu ingin tahu lebih lanjut tentang spesialisasi tertentu atau posisi lainnya?\n---",
+    "contextCount": 8,
+    "topContexts": [
+      {
+        "rank": 1,
+        "id": "93f59730-63c1-40ec-963d-7b96808de922",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "category": "unknown",
+        "score": "0.5443",
+        "preview": "tion Technology Researcher More Info Profil Lulusan Gelar S.Kom. Teknologi Informasi @proditistikombaliti.stikom-bali.ac"
+      },
+      {
+        "rank": 2,
+        "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+        "filename": "unknown",
+        "category": "unknown",
+        "score": "0.4145",
+        "preview": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 |  Hotline : 082277389999  Kampus Jim"
+      },
+      {
+        "rank": 3,
+        "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "category": "unknown",
+        "score": "0.4910",
+        "preview": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce"
+      },
+      {
+        "rank": 4,
+        "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+        "filename": "HOBY.pdf",
+        "category": "unknown",
+        "score": "0.0411",
+        "preview": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi InformasiKomunitas IT 89 Te"
+      },
+      {
+        "rank": 5,
+        "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+        "filename": "HOBY.pdf",
+        "category": "unknown",
+        "score": "0.0120",
+        "preview": "omputer 78 Teknologi InformasiKabel LAN 79 Teknologi InformasiUI/UX design 80 Teknologi InformasiEditing video 81 Teknol"
+      }
+    ],
+    "matchedAttributes": {
+      "programs": [
+        "TEKNOLOGI\nINFORMASI",
+        "TI",
+        "TEKNOLOGI INFORMASI",
+        "BISNIS DIGITAL",
+        "BISNIS\nDIGITAL",
+        "SI"
+      ],
+      "keywords": [
+        "PROSPEK"
+      ]
+    },
+    "rejectionReason": null,
+    "debugInfo": null
+  },
+  {
+    "testId": 4,
+    "chatId": "user-004",
+    "query": "Prospek kerja Sistem Informasi",
+    "isFollowup": false,
+    "isFailed": false,
+    "description": "Career prospects - SI (CRITICAL TEST)",
+    "source": "gpt-4o-mini",
+    "confidenceScore": "0.6183",
+    "confidenceTier": "HIGH",
+    "outboundText": "🎓 Kamu ingin tahu tentang prospek kerja di bidang Sistem Informasi.\nProspek kerja untuk lulusan Sistem Informasi sangat menjanjikan, antara lain:\n• Perekayasa Sistem Informasi: Mengembangkan dan mengelola sistem informasi untuk berbagai organisasi.\n• Software Engineer: Merancang dan mengembangkan perangkat lunak yang memenuhi kebutuhan pengguna.\n• Cyber Security Analyst: Melindungi sistem informasi dari ancaman keamanan siber.\nMau tahu lebih lanjut tentang spesialisasi tertentu atau peluang ker",
+    "contextCount": 2,
+    "topContexts": [
+      {
+        "rank": 1,
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "category": "unknown",
+        "score": "0.6183",
+        "preview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Anim"
+      },
+      {
+        "rank": 2,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "category": "unknown",
+        "score": "0.0172",
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhk"
+      }
+    ],
+    "matchedAttributes": {
+      "programs": [
+        "SI",
+        "SISTEM INFORMASI",
+        "TI",
+        "TEKNOLOGI\nINFORMASI",
+        "TEKNOLOGI INFORMASI"
+      ],
+      "keywords": [
+        "PROSPEK",
+        "PELUANG"
+      ]
+    },
+    "rejectionReason": null,
+    "debugInfo": null
+  },
+  {
+    "testId": 5,
+    "chatId": "user-005",
+    "query": "Apa perbedaan TI dan SI?",
+    "isFollowup": false,
+    "isFailed": false,
+    "description": "Program comparison",
+    "source": "rag-program-comparison",
+    "confidenceScore": "N/A",
+    "confidenceTier": "UNKNOWN",
+    "outboundText": "Siap, aku bantu jawab ya.\nPerbandingan singkat: Sistem Informasi vs Teknologi Informasi\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard. Lulusan: Business Analyst, System Analyst.\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastruktur, keamanan, dan machine learning. Lulusan: Software Developer, Dev Ops, Data Engineer.\nPerbandingan cepat:\n- Bisnis Digital (BD) = lebih condong ke pemasaran digital, monetisasi, da",
+    "contextCount": 0,
+    "topContexts": [],
+    "matchedAttributes": {
+      "programs": [],
+      "keywords": [
+        "KURIKULUM",
+        "BIAYA",
+        "PROSPEK"
+      ]
+    },
+    "rejectionReason": null,
+    "debugInfo": null
+  },
+  {
+    "testId": 6,
+    "chatId": "user-001",
+    "query": "Bagaimana prospek kerjanya?",
+    "isFollowup": true,
+    "isFailed": false,
+    "description": "Follow-up with session program hint (TI)",
+    "source": "gpt-4o-mini",
+    "confidenceScore": "0.4270",
+    "confidenceTier": "HIGH",
+    "outboundText": "---\n📊 Kamu ingin tahu tentang prospek kerja di bidang Teknologi Informasi.\nSaya belum menemukan detail yang benar-benar sesuai mengenai prospek kerja di bidang Teknologi Informasi. Namun, umumnya, prospek kerja di bidang ini cukup baik dengan banyak peluang di berbagai sektor, seperti pengembangan perangkat lunak, keamanan siber, dan analisis data.\nApakah ada posisi atau sektor tertentu yang ingin kamu ketahui lebih lanjut?",
+    "contextCount": 1,
+    "topContexts": [
+      {
+        "rank": 1,
+        "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "filename": "unknown",
+        "category": "unknown",
+        "score": "0.4270",
+        "preview": "19 Oktober 2023  PENERIMA PROGRAM BEASISWA RANKING KELAS DI  ITB STIKOM BALI \"  L STIKOM Bali memberikan beasiswa kepada"
+      }
+    ],
+    "matchedAttributes": {
+      "programs": [
+        "TI"
+      ],
+      "keywords": [
+        "PROSPEK",
+        "PELUANG"
+      ]
+    },
+    "rejectionReason": null,
+    "debugInfo": null
+  },
+  {
+    "testId": 7,
+    "chatId": "user-001",
+    "query": "Berapa lama kuliahnya?",
+    "isFollowup": true,
+    "isFailed": false,
+    "description": "Follow-up - program duration",
+    "source": "gpt-4o-mini",
+    "confidenceScore": "0.4157",
+    "confidenceTier": "HIGH",
+    "outboundText": "---\n⏳ Kamu ingin tahu berapa lama kuliah di bidang Teknologi Informasi.\nSaya belum menemukan detail yang benar-benar sesuai mengenai durasi kuliah untuk program Teknologi Informasi. Namun, umumnya program sarjana di bidang ini berlangsung sekitar 4 tahun.\nMau tahu lebih lanjut tentang kurikulum atau mata kuliah yang ditawarkan?\n---",
+    "contextCount": 1,
+    "topContexts": [
+      {
+        "rank": 1,
+        "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "filename": "unknown",
+        "category": "unknown",
+        "score": "0.4157",
+        "preview": "19 Oktober 2023  PENERIMA PROGRAM BEASISWA RANKING KELAS DI  ITB STIKOM BALI \"  L STIKOM Bali memberikan beasiswa kepada"
+      }
+    ],
+    "matchedAttributes": {
+      "programs": [
+        "TI"
+      ],
+      "keywords": [
+        "KURIKULUM",
+        "MATA KULIAH"
+      ]
+    },
+    "rejectionReason": null,
+    "debugInfo": null
+  },
+  {
+    "testId": 8,
+    "chatId": "user-001",
+    "query": "Apa mata kuliah yang dipelajari?",
+    "isFollowup": true,
+    "isFailed": false,
+    "description": "Follow-up - curriculum",
+    "source": "gpt-4o-mini",
+    "confidenceScore": "0.4025",
+    "confidenceTier": "HIGH",
+    "outboundText": "---\n📚 Kamu ingin tahu tentang mata kuliah yang dipelajari di bidang Teknologi Informasi.\nSaya belum menemukan detail yang benar-benar sesuai mengenai mata kuliah spesifik dalam program Teknologi Informasi. Namun, umumnya program ini mencakup mata kuliah seperti pemrograman, jaringan komputer, dan basis data.\nMata kuliah mana yang paling menarik perhatianmu untuk dibahas lebih lanjut? \n---",
+    "contextCount": 1,
+    "topContexts": [
+      {
+        "rank": 1,
+        "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "filename": "unknown",
+        "category": "unknown",
+        "score": "0.4025",
+        "preview": "19 Oktober 2023  PENERIMA PROGRAM BEASISWA RANKING KELAS DI  ITB STIKOM BALI \"  L STIKOM Bali memberikan beasiswa kepada"
+      }
+    ],
+    "matchedAttributes": {
+      "programs": [
+        "TI"
+      ],
+      "keywords": [
+        "MATA KULIAH"
+      ]
+    },
+    "rejectionReason": null,
+    "debugInfo": null
+  }
+]

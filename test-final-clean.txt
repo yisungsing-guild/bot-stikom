@@ -1,0 +1,1681 @@
+﻿
+################################################################################
+ACADEMIC RAG VALIDATOR PATCH VERIFICATION
+################################################################################
+
+
+================================================================================
+TEST 1/6: Direct program definition query - should NOT be rejected on entity mismatch
+Query: "Apa itu Teknologi Informasi?"
+Session Hint: None
+================================================================================
+STYLE: SEMI
+QUESTION: Apa itu Teknologi Informasi?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi beasiswa, potongan, atau subsidi.
+Contoh ringkasan sumber:
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: 19 Oktober 2023 PENERIMA PROGRAM BEASISWA RANKING KELAS DI ITB STIKOM BALI " L STIKOM Bali memberikan beasiswa kepada: a. Calon mahasiswa dari : SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN╬ô├ç┬¬
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: ja, SMKN 3 Singaraja SMAN 1 Bangli, SMKN 1 Bangli SMAN 1 Negara SMAN 1 Amlapura 1. Rangking 1,2 dan 3 di kelas XII Semester 1 atau 2 2. Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 b. Calon mahasi╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+19 Oktober 2023 
+PENERIMA PROGRAM BEASISWA RANKING KELAS DI 
+ITB STIKOM BALI " 
+L STIKOM Bali memberikan beasiswa kepada: 
+a.  Calon mahasiswa dari : 
+SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali Global 
+Sebali 
+SMK Pandawa Bali Global Abiansemal, SMAN 1  Abiansemal, SMKN 1  Kuta 
+Selatan, SMAN 1 Kuta Utara, SMAN 1 Kuta 
+SMKN 1 Gianyar, SMAN 1 Gianyar, SMKN 1  Gianyar, SMAN 1 Gianyar, SMKN 
+1  Mas Ubud 
+SMAN 1  Tabanan, SMKN 3 Tabanan 
+SMAN 1 Klungkung, SMKN 1 Klungkung 
+SMAN 1  Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.
+
+---
+
+Sumber 2 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+ja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.  Calon mahasiswa dari SMA/K/MA lainnya 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1  atau 2 
+1L Bagi siswa yang berasal dari SMK TI Bali Global Sebali dan SMK Pandawa Bali 
+Global Abiansemal tidak mengikuti tes seleksi penerimaan mahasiswa baru (tes 
+akademis) hanya mengikuti tes wawancara saja. 
+IIL Siswa yang berasal dari SMA/K/MA yang mendapatkan rangking 1  s/d 15 besar di 
+kelas XII semester 1 atau 2 tidak mengikuti tes tulis hanya mengikuti tes wawancara 
+saja dengan melampirkan bukti raport yang sudah di legalisir atau Surat Kete
+ASSIST_HINTS: biaya,beasiswa
+[2026-06-03 09:16:25.357 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?" expandedQuery="apa itu teknologi informasi?" questionTokens=["apa","itu","teknologi","informasi?"] overlapTokens=["informasi?"] overlapRatio=0.25[39m
+[2026-06-03 09:16:25.360 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?" expandedQuery="apa itu teknologi informasi?" questionTokens=["apa","itu","teknologi","informasi?"] overlapTokens=["apa"] overlapRatio=0.25[39m
+[2026-06-03 09:16:25.363 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa itu teknologi informasi?"
+[2026-06-03 09:16:25.367 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-03 09:16:25.370 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 28
+    ctxLen: 2461
+    style: "SEMI"
+    assistHintsLen: 14
+    compactPrompt: false
+
+Γ£ô RESULT SUMMARY:
+  Source: gpt-4o-mini
+  Confidence Tier: HIGH
+  Confidence Score: 0.3916
+  Valid: undefined
+
+≡ƒôÜ TOP 5 CONTEXTS (2 total retrieved):
+  [1] unknown (unknown) - Score: 0.3916
+      ID: c6f6004f-9a66-4663-babc-516137904ed3
+      Preview: 19 Oktober 2023 
+PENERIMA PROGRAM BEASISWA RANKING KELAS DI 
+ITB STIKOM BALI " 
+L STIKOM Bali memberikan beasiswa kepada: 
+a.  Calon mahasiswa dari : ...
+
+  [2] unknown (unknown) - Score: 0.3115
+      ID: f2615890-0f34-4f41-aff0-411232af57d1
+      Preview: ja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Ran...
+
+
+≡ƒöì MATCHED ATTRIBUTES:
+  Programs found: TI, SI
+  Keywords found: None
+
+≡ƒÆ¼ FINAL ANSWER:
+Saya belum menemukan detail yang benar-benar sesuai mengenai definisi Teknologi Informasi yang ada.
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut? 
+---
+
+================================================================================
+TEST 2/6: Direct program definition query for SI - should NOT be rejected on entity mismatch
+Query: "Apa itu Sistem Informasi?"
+Session Hint: None
+================================================================================
+STYLE: SEMI
+QUESTION: Apa itu Sistem Informasi?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Animator Peneliti Sistem Informasi Software Engineer Cyber Security Analyst & IT For╬ô├ç┬¬
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ac.id
+sisteminformasi.stikombali
+Perekayasa Sistem Informasi
+Perekayasa Sistem Informasi
+Multimedia
+Desain Grafis & Animator
+Peneliti Sistem Informasi
+
+Software 
+Engineer
+Cyber Security
+Analyst & IT Forensic
+Specialist
+Menghasilkan lulusan yang memiliki kompetensi dalam
+penerapan teknologi komputer dan jaringan untuk
+mengelola,mengolah serta mendistribusikan informasi secara
+efektif dan inovatif mencakup pengembangan perangkat lunak,
+teknologi cloud, DevOps, Keamanan Siber, investigasi forensik,
+pengelolaan data  hingga penerapan teknologi untuk mendukung
+proses bisnis, inovasi dan riset.
+DevOps & Cloud
+Engineer
+Information
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi
+
+---
+
+Sumber 2 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya  Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China)  Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3
+ASSIST_HINTS: prodi
+[2026-06-03 09:16:28.726 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu sistem informasi?" expandedQuery="apa itu sistem informasi?" questionTokens=["apa","itu","sistem","informasi?"] overlapTokens=["apa","sistem","informasi?"] overlapRatio=0.75[39m
+[2026-06-03 09:16:28.729 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu sistem informasi?" expandedQuery="apa itu sistem informasi?" questionTokens=["apa","itu","sistem","informasi?"] overlapTokens=["apa","sistem","informasi?"] overlapRatio=0.75[39m
+[2026-06-03 09:16:28.730 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa itu sistem informasi?"
+[2026-06-03 09:16:28.732 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-03 09:16:28.733 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 25
+    ctxLen: 2488
+    style: "SEMI"
+    assistHintsLen: 5
+    compactPrompt: false
+
+Γ£ô RESULT SUMMARY:
+  Source: gpt-4o-mini
+  Confidence Tier: HIGH
+  Confidence Score: 0.5881
+  Valid: undefined
+
+≡ƒôÜ TOP 5 CONTEXTS (2 total retrieved):
+  [1] Penjelasan Semua Program Studi.pdf (unknown) - Score: 0.5881
+      ID: 618a0474-969a-463f-91cd-c010a27beb48
+      Preview: ac.id
+sisteminformasi.stikombali
+Perekayasa Sistem Informasi
+Perekayasa Sistem Informasi
+Multimedia
+Desain Grafis & Animator
+Peneliti Sistem Informasi...
+      Programs: TI, SI
+
+  [2] CHATBOT - Double Degree (1).docx (unknown) - Score: 0.0353
+      ID: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+      Preview: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP U...
+      Programs: SI
+
+
+≡ƒöì MATCHED ATTRIBUTES:
+  Programs found: TI, SI
+  Keywords found: kurikulum
+
+≡ƒÆ¼ FINAL ANSWER:
+≡ƒÄô Kamu ingin tahu tentang Sistem Informasi.
+Sistem Informasi adalah bidang yang mengintegrasikan teknologi komputer dan jaringan untuk mengelola, mengolah, serta mendistribusikan informasi secara efektif dan inovatif. Lulusan dari program ini memiliki kompetensi dalam pengembangan perangkat lunak, teknologi cloud, keamanan siber, dan riset teknologi informasi.
+Mau tahu lebih lanjut tentang profil lulusan atau program studi lainnya?
+
+================================================================================
+TEST 3/6: Career prospects query for TI - should NOT be rejected for missing category mention
+Query: "Prospek kerja Teknologi Informasi"
+Session Hint: None
+================================================================================
+STYLE: SEMI
+QUESTION: Prospek kerja Teknologi Informasi
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi jadwal pendaftaran, gelombang, atau deadline.
+- Berisi informasi beasiswa, potongan, atau subsidi.
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi biaya, DPP/UKT, atau potongan yang relevan.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: tion Technology Researcher More Info Profil Lulusan Gelar S.Kom. Teknologi Informasi @proditistikombaliti.stikom-bali.ac.id Profil Teknologi Informasi Akun Instagram bisnisdigital.stikom-bali.ac.id We╬ô├ç┬¬
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 Kampus Jimbaran 31 Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali - Indonesia | Ph: (036╬ô├ç┬¬
+- eee828da-6ee4-4591-a9a8-18fa2e73c822: at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bi╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+tion
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi
+
+Akun Instagram
+bisnisdigital.stikom-bali.ac.id
+Website bisnis digital
+Profil Bisnis
+Digital
+Gelar : S.Bns
+Bisnis Digital
+Menjadikan peserta didik memahami
+dan mampu mengimplementasikan
+pengelolaan bisnis berbasis digital
+dengan mengadopsi trend
+perkembangan terkini di sektor
+industri  E-Commerce.
+Project Manager
+Business Analyst
+Market Analyst
+Product Manager
+Profil Lulusan :
+Digital Marketing Specialist
+Digital Strategist
+@bisdi.stikombali
+
+---
+
+Sumber 2 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 |  Hotline : 082277389999 
+Kampus Jimbaran 
+31 Raya Kampus Udayana, Kuta Selatan, Jimbaran -  Bali - Indonesia | Ph: (0361) 8953534 |  Hotline : 081288778840 
+Kampus Abiansemal 
+INSTITUT TEKNOLOGI DAN BISNIS Jl Janger, Dauh Yeh Cani, Abiansemal, Badung - Bali -  Indonesia |  Ph: (0361) 4790925 |  Hotline :  082145099633 
+STIKOM BALI email: info@stikom-baliacd | website : wwwistkom-baliac.id 
+Lampiran -3 
+Peraturan Rektor ITB STIKOM BALI Nomor :  006.1/PR/ATBSTIKOM/WDS/X/23 
+Tanggal :  19 Oktober 2023 
+HAK-HAK CALON MAHASISWA PENERIMA BEASISWA 
+I.   Calon mahasiswa dari : 
+a.  SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali
+
+---
+
+Sumber 3 (eee828da-6ee4-4591-a9a8-18fa2e73c822):
+at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bisa membuat blog pribadi Suka Main Game Suka otak atik alat e lektronik Bisa benerin alat elektronik Suka menggunakan CHATGPT, Gemini dll Pernah Mengikuti kompetisi IT (hackathon, lomba coding) Pernah Belajar cybersecurity (ethical hacking dasar ) Suka Mengutak- atik jaringan komputer (setting LAN/ WiFi ) Bisa membuat kabel LAN Membuat desain UI/UX aplikasi Suka Editing video dan membuat konten digital Suka Mengolah data Suka Membeli Buka- Buku IT Pernah Mengelola server kecil (local server atau hosting) Bisa Membuat game sederhana (2D/3D) Suka Menulis blog atau konten tentang teknologi Pernah /Sedang Mengikuti kursus online IT (self-learning) Eksperimen dengan AI atau machine learning dasar
+
+---
+
+Sumber 4 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+86
+Teknologi InformasiKursus online
+87
+Teknologi InformasiAI / Machine Learning
+88
+Teknologi InformasiKomunitas IT
+89
+Teknologi InformasiStartup teknologi
+90
+Manajemen InformatikaOtak-atik komputer
+91
+Manajemen InformatikaMenggambar
+92
+Manajemen InformatikaMembaca buku IT
+93
+Manajemen InformatikaSosial media
+94
+Manajemen InformatikaKonten sosial media
+95
+Manajemen InformatikaPengolahan data
+96
+Manajemen InformatikaMenggunakan aplikasi
+97
+Manajemen InformatikaBlogging
+98
+Manajemen InformatikaJualan online
+99
+Manajemen InformatikaMengelola toko online
+100
+Manajemen InformatikaDesain branding
+101
+Manajemen InformatikaStartup
+102
+Manajemen InformatikaSeminar/webinar
+103
+Manajemen InformatikaKomunitas entrepreneur
+
+---
+
+Sumber 5 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+omputer
+78
+Teknologi InformasiKabel LAN
+79
+Teknologi InformasiUI/UX design
+80
+Teknologi InformasiEditing video
+81
+Teknologi InformasiPengolahan data
+82
+Teknologi InformasiMembaca buku IT
+83
+Teknologi InformasiServer management
+84
+Teknologi InformasiMembuat game
+85
+Teknologi InformasiBlog teknologi
+
+---
+
+Sumber 6 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+19 Oktober 2023 
+PENERIMA PROGRAM BEASISWA RANKING KELAS DI 
+ITB STIKOM BALI " 
+L STIKOM Bali memberikan beasiswa kepada: 
+a.  Calon mahasiswa dari : 
+SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali Global 
+Sebali 
+SMK Pandawa Bali Global Abiansemal, SMAN 1  Abiansemal, SMKN 1  Kuta 
+Selatan, SMAN 1 Kuta Utara, SMAN 1 Kuta 
+SMKN 1 Gianyar, SMAN 1 Gianyar, SMKN 1  Gianyar, SMAN 1 Gianyar, SMKN 
+1  Mas Ubud 
+SMAN 1  Tabanan, SMKN 3 Tabanan 
+SMAN 1 Klungkung, SMKN 1 Klungkung 
+SMAN 1  Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.
+
+---
+
+Sumber 7 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+LON MAHASISWA PENERIMA BEASISWA 
+I.   Calon mahasiswa dari : 
+a.  SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali Global 
+Sebali 
+SMK Pandawa Bali Global Abiansemal, SMAN 1 Abiansemal, SMKN 1 Kuta Selatan, 
+SMAN 1  Kuta Utara, SMAN 1  Kuta 
+SMKN 1 Gianyar, SMAN 1  Gianyar, SMKN 1 Mas Ubud 
+SMAN 1 Tabanan, SMKN 3 Tabanan 
+SMAN 1  Klungkung, SMKN 1 Klungkung 
+SMAN 1  Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1 Bangli 
+SMAN 1  Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 potongan DPP 75% 
+2.  Rangking 4 s/d 10 dikelas XII Semester 1 atau 2 potongan DPP 50%. 
+b.  Calon mahasiswa dari SMA/K/MA lainnya 
+1.  Rangking 1, 2 dan 3 dikelas XII Semester 1
+
+---
+
+Sumber 8 (75d2e0fc-2947-4779-8455-165b4fe88758):
+dai dengan 
+i@ CamScanner .
+
+INSTITUT TEKNOLOGI DAN BISNIS 
+\ (ITB) STIKOM BALI 
+Kampus Denpasar 
+L Raya Puputan No.86 Renon, Denpasar - Bali -  Indonesia |  Pt  (036T) 244445 | Fax (03671264773 |  Hotline :  082277389999 
+Kampus Jimbaran 
+3L Raya Kampus Ucayana, Kuta Selatan, Jimbaran - Ball - ndonesia | Phe (0361) 8953534 | Hotline: 081288778840 
+Kampus Abiansemal 
+3L 3anger, Ablansemal -  Dauh Yeh Canl, Badung - Bali- Indonesia | Ph (036) 4750925 | Hotline: 082145099633 
+INSTITUT TEKNOLOGI DAN BSHIS 
+STIKOM 
+BALI 
+email: 
+Infog@stikom-bai.ac.id 
+| 
+webstte 
+: 
+www.tikorm-balLacid 
+4.  Beasiswa tambahan Dana Pendidikan Pokok khusus untuk alumni SMK TI Bali Global 
+dan SMK Pandawa Bali Global sebesar : 
+a.  Gelombang Khusus :  6090 
+b.  Gelombang I :  5090 
+c.  Gelombang II :  4090 
+d.  G
+ASSIST_HINTS: biaya,jadwal,beasiswa,fasilitas
+[2026-06-03 09:16:31.586 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.587 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.587 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.587 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.587 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.587 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.588 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.588 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.588 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.588 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.588 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.588 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.589 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.589 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.589 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.590 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.591 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.591 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.591 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.591 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.591 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.591 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.592 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja","teknologi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.593 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.594 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.595 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.596 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["prospek"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.597 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja","teknologi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.598 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja","teknologi","informasi"] overlapRatio=0.75[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.599 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["informasi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.600 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.601 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["kerja","teknologi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.602 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:31.603 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.603 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi"] overlapRatio=0.25[39m
+[2026-06-03 09:16:31.604 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja teknologi informasi" expandedQuery="prospek kerja teknologi informasi" questionTokens=["prospek","kerja","teknologi","informasi"] overlapTokens=["teknologi","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:31.604 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "prospek kerja teknologi informasi"
+[2026-06-03 09:16:31.610 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-03 09:16:31.611 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 33
+    ctxLen: 7278
+    style: "SEMI"
+    assistHintsLen: 31
+    compactPrompt: false
+
+Γ£ô RESULT SUMMARY:
+  Source: gpt-4o-mini
+  Confidence Tier: HIGH
+  Confidence Score: 0.5443
+  Valid: undefined
+
+≡ƒôÜ TOP 5 CONTEXTS (8 total retrieved):
+  [1] Penjelasan Semua Program Studi.pdf (unknown) - Score: 0.5443
+      ID: 93f59730-63c1-40ec-963d-7b96808de922
+      Preview: tion
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi...
+      Programs: TI, SI
+
+  [2] unknown (unknown) - Score: 0.4145
+      ID: 4dd0e987-8fe4-4fc1-8e82-1981b3e8105c
+      Preview: an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 |  Hotline : 082277389999 
+Kampus Jimbaran 
+31 Raya Kampus Udayana,...
+
+  [3] hobi-sesuai-program-studi.docx (unknown) - Score: 0.4910
+      ID: 0566394e-a2f7-44d1-a420-52a0f72d0d7b
+      Preview: at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Tekno...
+
+  [4] HOBY.pdf (unknown) - Score: 0.0411
+      ID: 3c1f4362-5f8a-4931-90bd-61eb6a028ec2
+      Preview: 86
+Teknologi InformasiKursus online
+87
+Teknologi InformasiAI / Machine Learning
+88
+Teknologi InformasiKomunitas IT
+89
+Teknologi InformasiStartup tekno...
+      Programs: TI
+
+  [5] HOBY.pdf (unknown) - Score: 0.0120
+      ID: 07c77b5e-8388-4f2b-a846-b06d99400481
+      Preview: omputer
+78
+Teknologi InformasiKabel LAN
+79
+Teknologi InformasiUI/UX design
+80
+Teknologi InformasiEditing video
+81
+Teknologi InformasiPengolahan data
+8...
+      Programs: TI
+
+
+≡ƒöì MATCHED ATTRIBUTES:
+  Programs found: TI, SI, BD, MI
+  Keywords found: kampus
+
+≡ƒÆ¼ FINAL ANSWER:
+---
+≡ƒÆ╗ Kamu ingin tahu tentang prospek kerja di bidang Teknologi Informasi.
+Prospek kerja untuk lulusan Teknologi Informasi sangat menjanjikan, antara lain:
+ΓÇó Posisi yang tersedia: Project Manager, Business Analyst, Market Analyst, dan Product Manager.
+ΓÇó Spesialisasi yang dapat dikejar: Digital Marketing Specialist dan Digital Strategist.
+Mau tahu lebih lanjut tentang program studi atau spesialisasi tertentu di bidang ini?
+---
+
+================================================================================
+TEST 4/6: Career prospects query for SI - should NOT be rejected for missing category mention
+Query: "Prospek kerja Sistem Informasi"
+Session Hint: None
+================================================================================
+STYLE: SEMI
+QUESTION: Prospek kerja Sistem Informasi
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Animator Peneliti Sistem Informasi Software Engineer Cyber Security Analyst & IT For╬ô├ç┬¬
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ac.id
+sisteminformasi.stikombali
+Perekayasa Sistem Informasi
+Perekayasa Sistem Informasi
+Multimedia
+Desain Grafis & Animator
+Peneliti Sistem Informasi
+
+Software 
+Engineer
+Cyber Security
+Analyst & IT Forensic
+Specialist
+Menghasilkan lulusan yang memiliki kompetensi dalam
+penerapan teknologi komputer dan jaringan untuk
+mengelola,mengolah serta mendistribusikan informasi secara
+efektif dan inovatif mencakup pengembangan perangkat lunak,
+teknologi cloud, DevOps, Keamanan Siber, investigasi forensik,
+pengelolaan data  hingga penerapan teknologi untuk mendukung
+proses bisnis, inovasi dan riset.
+DevOps & Cloud
+Engineer
+Information
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi
+
+---
+
+Sumber 2 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya  Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China)  Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3
+ASSIST_HINTS: prodi
+[2026-06-03 09:16:34.663 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja sistem informasi" expandedQuery="prospek kerja sistem informasi" questionTokens=["prospek","kerja","sistem","informasi"] overlapTokens=["sistem","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:34.663 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="prospek kerja sistem informasi" expandedQuery="prospek kerja sistem informasi" questionTokens=["prospek","kerja","sistem","informasi"] overlapTokens=["sistem","informasi"] overlapRatio=0.5[39m
+[2026-06-03 09:16:34.663 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "prospek kerja sistem informasi"
+[2026-06-03 09:16:34.664 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-03 09:16:34.664 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 30
+    ctxLen: 2488
+    style: "SEMI"
+    assistHintsLen: 5
+    compactPrompt: false
+
+Γ£ô RESULT SUMMARY:
+  Source: gpt-4o-mini
+  Confidence Tier: HIGH
+  Confidence Score: 0.6183
+  Valid: undefined
+
+≡ƒôÜ TOP 5 CONTEXTS (2 total retrieved):
+  [1] Penjelasan Semua Program Studi.pdf (unknown) - Score: 0.6183
+      ID: 618a0474-969a-463f-91cd-c010a27beb48
+      Preview: ac.id
+sisteminformasi.stikombali
+Perekayasa Sistem Informasi
+Perekayasa Sistem Informasi
+Multimedia
+Desain Grafis & Animator
+Peneliti Sistem Informasi...
+      Programs: TI, SI
+
+  [2] CHATBOT - Double Degree (1).docx (unknown) - Score: 0.0172
+      ID: c2961b13-bd76-4f6b-9c39-1e19606b6a5d
+      Preview: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP U...
+      Programs: SI
+
+
+≡ƒöì MATCHED ATTRIBUTES:
+  Programs found: TI, SI
+  Keywords found: kurikulum
+
+≡ƒÆ¼ FINAL ANSWER:
+≡ƒÄô Kamu ingin tahu tentang prospek kerja di bidang Sistem Informasi.
+Lulusan Sistem Informasi memiliki berbagai peluang karir yang menjanjikan, antara lain:
+ΓÇó Perekayasa Sistem Informasi: Mengembangkan dan mengelola sistem informasi untuk organisasi.
+ΓÇó Software Engineer: Merancang dan mengembangkan perangkat lunak.
+ΓÇó Cyber Security Analyst: Melindungi sistem informasi dari ancaman keamanan.
+ΓÇó Peneliti Sistem Informasi: Melakukan riset untuk pengembangan teknologi informasi.
+Mau tahu lebih lanjut
+... (truncated)
+
+================================================================================
+TEST 5/6: Follow-up question with session program hint - should retain TI context in follow-up
+Query: "Apa itu Teknologi Informasi?
+Bagaimana prospek kerjanya?"
+Session Hint: Teknologi Informasi
+================================================================================
+STYLE: SEMI
+QUESTION: Apa itu Teknologi Informasi?
+Bagaimana prospek kerjanya?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi jadwal pendaftaran, gelombang, atau deadline.
+- Berisi informasi beasiswa, potongan, atau subsidi.
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi biaya, DPP/UKT, atau potongan yang relevan.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: tion Technology Researcher More Info Profil Lulusan Gelar S.Kom. Teknologi Informasi @proditistikombaliti.stikom-bali.ac.id Profil Teknologi Informasi Akun Instagram bisnisdigital.stikom-bali.ac.id We╬ô├ç┬¬
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 Kampus Jimbaran 31 Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali - Indonesia | Ph: (036╬ô├ç┬¬
+- eee828da-6ee4-4591-a9a8-18fa2e73c822: at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bi╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+tion
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi
+
+Akun Instagram
+bisnisdigital.stikom-bali.ac.id
+Website bisnis digital
+Profil Bisnis
+Digital
+Gelar : S.Bns
+Bisnis Digital
+Menjadikan peserta didik memahami
+dan mampu mengimplementasikan
+pengelolaan bisnis berbasis digital
+dengan mengadopsi trend
+perkembangan terkini di sektor
+industri  E-Commerce.
+Project Manager
+Business Analyst
+Market Analyst
+Product Manager
+Profil Lulusan :
+Digital Marketing Specialist
+Digital Strategist
+@bisdi.stikombali
+
+---
+
+Sumber 2 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 |  Hotline : 082277389999 
+Kampus Jimbaran 
+31 Raya Kampus Udayana, Kuta Selatan, Jimbaran -  Bali - Indonesia | Ph: (0361) 8953534 |  Hotline : 081288778840 
+Kampus Abiansemal 
+INSTITUT TEKNOLOGI DAN BISNIS Jl Janger, Dauh Yeh Cani, Abiansemal, Badung - Bali -  Indonesia |  Ph: (0361) 4790925 |  Hotline :  082145099633 
+STIKOM BALI email: info@stikom-baliacd | website : wwwistkom-baliac.id 
+Lampiran -3 
+Peraturan Rektor ITB STIKOM BALI Nomor :  006.1/PR/ATBSTIKOM/WDS/X/23 
+Tanggal :  19 Oktober 2023 
+HAK-HAK CALON MAHASISWA PENERIMA BEASISWA 
+I.   Calon mahasiswa dari : 
+a.  SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali
+
+---
+
+Sumber 3 (eee828da-6ee4-4591-a9a8-18fa2e73c822):
+at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bisa membuat blog pribadi Suka Main Game Suka otak atik alat e lektronik Bisa benerin alat elektronik Suka menggunakan CHATGPT, Gemini dll Pernah Mengikuti kompetisi IT (hackathon, lomba coding) Pernah Belajar cybersecurity (ethical hacking dasar ) Suka Mengutak- atik jaringan komputer (setting LAN/ WiFi ) Bisa membuat kabel LAN Membuat desain UI/UX aplikasi Suka Editing video dan membuat konten digital Suka Mengolah data Suka Membeli Buka- Buku IT Pernah Mengelola server kecil (local server atau hosting) Bisa Membuat game sederhana (2D/3D) Suka Menulis blog atau konten tentang teknologi Pernah /Sedang Mengikuti kursus online IT (self-learning) Eksperimen dengan AI atau machine learning dasar
+
+---
+
+Sumber 4 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+86
+Teknologi InformasiKursus online
+87
+Teknologi InformasiAI / Machine Learning
+88
+Teknologi InformasiKomunitas IT
+89
+Teknologi InformasiStartup teknologi
+90
+Manajemen InformatikaOtak-atik komputer
+91
+Manajemen InformatikaMenggambar
+92
+Manajemen InformatikaMembaca buku IT
+93
+Manajemen InformatikaSosial media
+94
+Manajemen InformatikaKonten sosial media
+95
+Manajemen InformatikaPengolahan data
+96
+Manajemen InformatikaMenggunakan aplikasi
+97
+Manajemen InformatikaBlogging
+98
+Manajemen InformatikaJualan online
+99
+Manajemen InformatikaMengelola toko online
+100
+Manajemen InformatikaDesain branding
+101
+Manajemen InformatikaStartup
+102
+Manajemen InformatikaSeminar/webinar
+103
+Manajemen InformatikaKomunitas entrepreneur
+
+---
+
+Sumber 5 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+omputer
+78
+Teknologi InformasiKabel LAN
+79
+Teknologi InformasiUI/UX design
+80
+Teknologi InformasiEditing video
+81
+Teknologi InformasiPengolahan data
+82
+Teknologi InformasiMembaca buku IT
+83
+Teknologi InformasiServer management
+84
+Teknologi InformasiMembuat game
+85
+Teknologi InformasiBlog teknologi
+
+---
+
+Sumber 6 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+ran -  1  surat peraturan ini dan merupakan satu kesatuan yang tidak 
+dapat dipisahkan dari surat peraturan ini. 
+:  Memberikan beasiswa kepada calon mahasiswa baru yang berprestasi di 
+bidang Akademik atau Non Akademik dalam rangka penerimaan 
+mahasiswa baru ITB STIKOM Bali yang kriterianya tercantum dalam 
+lampiran - 2 surat peraturan ini dan merupakan satu kesatuan yang tidak 
+dapat dipisahkan dari surat peraturan ini. 
+:  Memberikan kemudahan bagi SMK TI Bali Global Sebali dan SMK 
+Pandawa Bali Global Abiansemal untuk tidak mengikuti seleksi 
+penerimaan mahasiswa baru (tes akademis). 
+:  Hak-hak dari pada calon mahasiswa penerima besiswa tersebut adalah 
+sebagaimana tercantum dalam lampiran -  3  surat peraturan ini  dan 
+merupakan suatu kesatuan yang tidak dapat dipisahkan dari surat
+
+---
+
+Sumber 7 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+19 Oktober 2023 
+PENERIMA PROGRAM BEASISWA RANKING KELAS DI 
+ITB STIKOM BALI " 
+L STIKOM Bali memberikan beasiswa kepada: 
+a.  Calon mahasiswa dari : 
+SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali Global 
+Sebali 
+SMK Pandawa Bali Global Abiansemal, SMAN 1  Abiansemal, SMKN 1  Kuta 
+Selatan, SMAN 1 Kuta Utara, SMAN 1 Kuta 
+SMKN 1 Gianyar, SMAN 1 Gianyar, SMKN 1  Gianyar, SMAN 1 Gianyar, SMKN 
+1  Mas Ubud 
+SMAN 1  Tabanan, SMKN 3 Tabanan 
+SMAN 1 Klungkung, SMKN 1 Klungkung 
+SMAN 1  Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.
+
+---
+
+Sumber 8 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+LON MAHASISWA PENERIMA BEASISWA 
+I.   Calon mahasiswa dari : 
+a.  SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali Global 
+Sebali 
+SMK Pandawa Bali Global Abiansemal, SMAN 1 Abiansemal, SMKN 1 Kuta Selatan, 
+SMAN 1  Kuta Utara, SMAN 1  Kuta 
+SMKN 1 Gianyar, SMAN 1  Gianyar, SMKN 1 Mas Ubud 
+SMAN 1 Tabanan, SMKN 3 Tabanan 
+SMAN 1  Klungkung, SMKN 1 Klungkung 
+SMAN 1  Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1 Bangli 
+SMAN 1  Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 potongan DPP 75% 
+2.  Rangking 4 s/d 10 dikelas XII Semester 1 atau 2 potongan DPP 50%. 
+b.  Calon mahasiswa dari SMA/K/MA lainnya 
+1.  Rangking 1, 2 dan 3 dikelas XII Semester 1
+ASSIST_HINTS: biaya,jadwal,beasiswa,fasilitas
+[2026-06-03 09:16:38.383 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi","informasi?"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.383 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.384 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi","informasi?"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.384 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.384 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.384 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","bagaimana"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.384 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["informasi?"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.384 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["informasi?"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.385 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.385 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.385 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.385 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","informasi?"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","kerjanya?"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.386 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.387 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["kerjanya?"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.388 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["informasi?"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.389 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.390 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.390 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","kerjanya?"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.390 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.390 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","bagaimana","kerjanya?"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.390 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.390 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.390 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.390 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.390 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.391 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.391 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.391 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.391 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.391 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.391 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["bagaimana"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.391 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.391 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.391 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.392 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.392 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.392 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.392 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.392 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.392 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","informasi?","kerjanya?"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.392 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","bagaimana"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.392 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.392 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","bagaimana"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","prospek"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","informasi?","bagaimana"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","kerjanya?"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.393 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi","bagaimana"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.394 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.395 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.395 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","bagaimana","kerjanya?"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.395 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.395 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","informasi?"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.395 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["informasi?"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.395 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","teknologi","informasi?"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.395 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.395 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","informasi?","kerjanya?"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.396 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.396 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["informasi?"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.396 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["informasi?"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.396 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.396 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.396 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.397 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.397 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi","informasi?"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.397 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.397 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.397 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.397 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.397 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.397 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi"] overlapRatio=0.14285714285714285[39m
+[2026-06-03 09:16:38.398 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","informasi?"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.398 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","informasi?","bagaimana","kerjanya?"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.398 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","informasi?","bagaimana","kerjanya?"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.399 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","bagaimana","kerjanya?"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.399 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","informasi?","bagaimana"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.399 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.399 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.399 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.400 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","bagaimana"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.400 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","bagaimana"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.400 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","bagaimana"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.400 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.400 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.400 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","informasi?","bagaimana"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.400 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","informasi?","bagaimana"] overlapRatio=0.7142857142857143[39m
+[2026-06-03 09:16:38.400 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","informasi?"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.400 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","bagaimana"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","bagaimana"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","bagaimana"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","bagaimana"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","informasi?"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","informasi?"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.401 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","informasi?","bagaimana"] overlapRatio=0.7142857142857143[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","informasi?"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","bagaimana"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi","kerjanya?"] overlapRatio=0.42857142857142855[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=[] overlapRatio=0[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["apa","itu","teknologi","bagaimana"] overlapRatio=0.5714285714285714[39m
+[2026-06-03 09:16:38.402 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["itu","teknologi"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.403 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" expandedQuery="apa itu teknologi informasi?
+bagaimana prospek kerjanya?" questionTokens=["apa","itu","teknologi","informasi?","bagaimana","prospek","kerjanya?"] overlapTokens=["teknologi","informasi?"] overlapRatio=0.2857142857142857[39m
+[2026-06-03 09:16:38.403 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa itu teknologi informasi?\nbagaimana prospek kerjanya?"
+[2026-06-03 09:16:38.409 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-03 09:16:38.410 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 56
+    ctxLen: 7277
+    style: "SEMI"
+    assistHintsLen: 31
+    compactPrompt: false
+
+Γ£ô RESULT SUMMARY:
+  Source: gpt-4o-mini
+  Confidence Tier: HIGH
+  Confidence Score: 0.5349
+  Valid: undefined
+
+≡ƒôÜ TOP 5 CONTEXTS (8 total retrieved):
+  [1] Penjelasan Semua Program Studi.pdf (unknown) - Score: 0.5349
+      ID: 93f59730-63c1-40ec-963d-7b96808de922
+      Preview: tion
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi...
+      Programs: TI, SI
+
+  [2] unknown (unknown) - Score: 0.4066
+      ID: 4dd0e987-8fe4-4fc1-8e82-1981b3e8105c
+      Preview: an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 |  Hotline : 082277389999 
+Kampus Jimbaran 
+31 Raya Kampus Udayana,...
+
+  [3] hobi-sesuai-program-studi.docx (unknown) - Score: 0.5188
+      ID: 0566394e-a2f7-44d1-a420-52a0f72d0d7b
+      Preview: at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Tekno...
+
+  [4] HOBY.pdf (unknown) - Score: 0.0247
+      ID: 3c1f4362-5f8a-4931-90bd-61eb6a028ec2
+      Preview: 86
+Teknologi InformasiKursus online
+87
+Teknologi InformasiAI / Machine Learning
+88
+Teknologi InformasiKomunitas IT
+89
+Teknologi InformasiStartup tekno...
+      Programs: TI
+
+  [5] HOBY.pdf (unknown) - Score: 0.0142
+      ID: 07c77b5e-8388-4f2b-a846-b06d99400481
+      Preview: omputer
+78
+Teknologi InformasiKabel LAN
+79
+Teknologi InformasiUI/UX design
+80
+Teknologi InformasiEditing video
+81
+Teknologi InformasiPengolahan data
+8...
+      Programs: TI
+
+
+≡ƒöì MATCHED ATTRIBUTES:
+  Programs found: TI, SI, BD, MI
+  Keywords found: kampus
+
+≡ƒÆ¼ FINAL ANSWER:
+---
+≡ƒÆ╗ Kamu ingin tahu tentang Teknologi Informasi dan prospek kerjanya.
+Teknologi Informasi (TI) adalah bidang yang berfokus pada pengelolaan dan pengolahan informasi menggunakan teknologi komputer. Lulusan TI dapat bekerja dalam berbagai posisi, seperti:
+ΓÇó Project Manager: Mengelola proyek teknologi informasi.
+ΓÇó Digital Marketing Specialist: Mengembangkan strategi pemasaran digital.
+Prospek kerja di bidang ini sangat baik, mengingat kebutuhan akan profesional TI terus meningkat di berbagai sek
+... (truncated)
+
+================================================================================
+TEST 6/6: Follow-up for DDN partners - should retain program context
+Query: "Double Degree Nasional
+Kampus partnernya apa saja?"
+Session Hint: Double Degree Nasional
+================================================================================
+
+Γ£ô RESULT SUMMARY:
+  Source: rag-dual-degree-list
+  Confidence Tier: undefined
+  Confidence Score: N/A
+  Valid: undefined
+
+≡ƒöì MATCHED ATTRIBUTES:
+  Programs found: None
+  Keywords found: None
+
+≡ƒÆ¼ FINAL ANSWER:
+Siap, aku bantu jawab ya.
+Ada. Di data PMB, program Dual Degree yang tercantum yaitu:
+- Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) ╬ô├ç├╢ Prodi: Bisnis Digital
+- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China ╬ô├ç├╢ Prodi: Bisnis Digital
+- Dual Degree (International Class) dengan HELP University, Malaysia ╬ô├ç├╢ Prodi: Sistem Informasi
+Kakak mau info Dual Degree yang mana? Balas: UTB / DNUI / HELP.
+Mau saya jelaskan lagi bagian
+... (truncated)
+
+################################################################################
+SUMMARY
+################################################################################
+
+Γ£ô Success Rate: 6/6
+Γ£ô Query 1: Apa itu Teknologi Informasi?
+   Source: gpt-4o-mini, Confidence: 0.3916, Contexts: 2
+Γ£ô Query 2: Apa itu Sistem Informasi?
+   Source: gpt-4o-mini, Confidence: 0.5881, Contexts: 2
+Γ£ô Query 3: Prospek kerja Teknologi Informasi
+   Source: gpt-4o-mini, Confidence: 0.5443, Contexts: 8
+Γ£ô Query 4: Prospek kerja Sistem Informasi
+   Source: gpt-4o-mini, Confidence: 0.6183, Contexts: 2
+Γ£ô Query 5: Apa itu Teknologi Informasi?
+Bagaimana prospek ker...
+   Source: gpt-4o-mini, Confidence: 0.5349, Contexts: 8
+Γ£ô Query 6: Double Degree Nasional
+Kampus partnernya apa saja?
+   Source: rag-dual-degree-list, Confidence: N/A, Contexts: 0
+
+################################################################################

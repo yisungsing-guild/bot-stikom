@@ -1,0 +1,38 @@
+[
+  {
+    "query": "berapa biaya MI",
+    "result": {
+      "success": true,
+      "answer": "Berikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Manajemen Informatika (Diploma):\n\n- Pendaftaran: Rp 500.000 - Pada Saat Daftar\n- Biaya Registrasi (Jas, Topi, GMTI): Rp 10.000.000 - Dicicil per bulan s/d UTS-1\n- Biaya Pendidikan Per Semester: Rp 4.500.000 - Menjelang Perwalian Kecuali Reg. 1\n\nCatatan: Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk.\nTotal (dihitung): Rp 15.000.000\nMau saya rangkum juga skema potongan per gelombangnya?",
+      "source": "rag-fee-breakdown",
+      "contexts": []
+    }
+  },
+  {
+    "query": "berapa biaya DNUI",
+    "result": {
+      "success": true,
+      "answer": "Berikut rangkuman rincian biaya untuk Dual Degree (International Class) DNUI (China):\n\n- Pendaftaran: Rp 3.000.000 - Pada Saat Daftar\n- Dana Pendidikan Pokok: Rp 20.000.000 - Saat Registrasi I\n- Bahasa Mandarin: Rp 5.000.000 - Menjelang Semester II\n- Pendidikan Per Semester: Rp 16.000.000 - Awal Semester\n\nCatatan: Butir 1 sampai dengan 3 dibayar 1 kali saja pada awal masuk.\nTotal (dihitung): Rp 44.000.000\nMau saya rangkum juga skema potongan per gelombangnya?",
+      "source": "rag-fee-breakdown",
+      "contexts": []
+    }
+  },
+  {
+    "query": "berapa biaya HELP",
+    "result": {
+      "success": true,
+      "answer": "Berikut rangkuman rincian biaya untuk Dual Degree (International Class) HELP University (Malaysia):\n\n- Pendaftaran: Rp 3.000.000 - Pada Saat Daftar\n- Dana Pendidikan Pokok: Rp 20.000.000 - Saat Registrasi 1\n- Biaya Pendidikan per semester —: Rp 3.000.000 - Awal Semester Pendaftaran: Rp. 1.500.000, - Jika Mendaftar pada Gelombang Khusus Rp. 1.250.000, - Jika Mendaftar pada Gelombang I Rp. 1.000.000, - Jika Mendaftar pada Gelombang II Rp. 750.000, - Jika Mendaftar pada Gelombang III Rp. 500.000, - Jika Mendaftar pada 3. Beasiswa untuk Dana Pendidikan Pokok: a. Gelombang Khusus: Rp. 10.000.000 b. Gelombang I: Rp. 8.000.000 c. Gelombang II: Rp. 6.000.000 d. Gelombang III: Rp. 4.000.000 e. Gelombang IV: Rp. 2.000.000 i Dipindai dengan i@ Cam Scanner. INSTITUT TEKNOLOGI DAN BISNIS N (ITB) STIKOM BALI Kampus Denpasar Kampus Jimbaran 3 L Raya Kampus Udayana, Kuta Selatan, Jimbaran - Ball- Indonesia | Ph: (0361) 8953534 | Hotline:\n\n- Bahasa Inggris: Rp 5.000.000 - Menjelang Semester II\n\nTotal (dihitung): Rp 31.000.000\nMau saya rangkum juga skema potongan per gelombangnya?",
+      "source": "rag-fee-breakdown",
+      "contexts": []
+    }
+  },
+  {
+    "query": "berapa biaya UTB",
+    "result": {
+      "success": true,
+      "answer": "Berikut rangkuman rincian biaya untuk Dual Degree (National Class) UTB:\n\n- Apabila mahasiswa melebihi masa studi normal (10 Semester/5 Tahun), maka akan dikenakan pendidikan per semester tahun berikutnya, sedangkan apabila mahasiswa cuti, maka akan di kenakan sebesar Rp.: Rp 1.000.000 - per semester. 9. Untuk biaya sertifikasi, yudisium dan wisuda akan ditentukan kemudian. 10. Diwajibkan memiliki laptop dengan spesifikasi yang sesuai ketentuan kampus. Untuk spesifikasi laptop ini agar menghubungi PT MBC di counter AXIO Kampus Renon. Biaya yang sudah dibayar, tidak dapat dikembalikan dengan alasan apapun, kecuali diterima di PTN dibawah naungan Kementerian Pendidikan dan Kebudayaan jalur SNMPTN dan jalur SBMPTN (tidak termasuk jalur Mandiri, Politeknik, D 3 dan Eksekutif). Pengurusan pengambilan biaya yang sudah di bayar dilayani maksimal bersangkutan, (kecuali biaya pendaftaan tidak dapat dikembali Kx( 'TKOM Bali\n\nTotal (dihitung): Rp 1.000.000\nMau saya rangkum juga skema potongan per gelombangnya?",
+      "source": "rag-fee-breakdown",
+      "contexts": []
+    }
+  }
+]

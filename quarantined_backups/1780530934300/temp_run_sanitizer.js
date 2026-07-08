@@ -1,0 +1,1 @@
+const fs=require('fs'); const path=require('path'); const mod=require(path.resolve('src/utils/textSanitizer.js')); const s=mod.sanitizeWhatsappText; const input=fs.readFileSync('temp_sanitizer_input.txt','utf8'); const out=s(input); console.log('OUTPUT LINES:'); out.split('\n').forEach((l,i)=>console.log(`${i}:${JSON.stringify(l)}`)); console.log('\nJOINED OUTPUT:\n', out);

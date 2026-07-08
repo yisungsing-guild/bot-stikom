@@ -1,0 +1,605 @@
+﻿  console.log
+    WA_RUNTIME_ACTIVE
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_1] incomingIntent SCHEDULE { text: 'jadwal lengkapnya 2 a', programHint: null }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_DETAILED] {
+      detectedIntent: 'SCHEDULE',
+      confidence: 0.7,
+      routedIntent: 'SCHEDULE'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INCOMING] {
+      chatId: 'user-shorthand',
+      text: 'jadwal lengkapnya 2 a',
+      messageId: null,
+      inboundTs: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [safeSessionUpsert] called {
+      chatId: 'user-shorthand',
+      arg1Type: 'string',
+      arg2Type: 'object',
+      arg3Type: 'string',
+      state: 'root'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [SESSION UPSERT] {
+      chatId: 'user-shorthand',
+      state: 'root',
+      dataKeys: [ 'composerInputText', 'composerInputAt' ],
+      arg1Type: 'string',
+      arg2Type: 'object',
+      arg3Type: 'string',
+      existingState: null,
+      existingDataKeys: []
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG] choose_program anchored rag check {
+      chatId: 'user-shorthand',
+      stage: '',
+      degreeInFlow: '',
+      programInText: null,
+      looksSpecific: true,
+      isPureSelection: false,
+      ragReady: true,
+      text: 'jadwal lengkapnya 2 a'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_DETECT] {
+      incomingIntent: null,
+      mappedIncomingIntent: null,
+      incomingConfidence: 0,
+      candidateIntent: 'biaya',
+      messageText: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal',
+      userQuery: 'jadwal lengkapnya 2 a'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_OVERRIDE] {
+      action: 'overridden',
+      incomingIntent: null,
+      mappedIncomingIntent: null,
+      incomingConfidence: 0,
+      candidateIntent: 'biaya',
+      userQuery: 'jadwal lengkapnya 2 a',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal',
+      reason: 'candidate intent allowed to override (incoming general/low-confidence)'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_2] outgoingResponseIntent biaya {
+      userQuery: 'jadwal lengkapnya 2 a',
+      messagePreview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_DETECT] {
+      incomingIntent: 'SCHEDULE',
+      mappedIncomingIntent: 'schedule',
+      incomingConfidence: 0.7,
+      candidateIntent: 'biaya',
+      messageText: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal',
+      userQuery: 'jadwal lengkapnya 2 a'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_OVERRIDE] {
+      action: 'overridden',
+      incomingIntent: 'SCHEDULE',
+      mappedIncomingIntent: 'schedule',
+      incomingConfidence: 0.7,
+      candidateIntent: 'biaya',
+      userQuery: 'jadwal lengkapnya 2 a',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal',
+      reason: 'candidate intent allowed to override (incoming general/low-confidence)'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_FINAL_WA_INTENT] {
+      finalIntent: 'biaya',
+      chatId: 'user-shorthand',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    FINAL_WA_OUTPUT_V2 {
+      chatId: 'user-shorthand',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    === FULL_FINAL_WA_MESSAGE ===
+    Jadwal Gelombang II A:
+    - Masa pendaftaran: Sesuai kalender PMB
+    - Testing: Sesuai jadwal
+    - Pengumuman: Sesuai jadwal
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_RESPONSE] {
+      headerProgram: null,
+      bodyProgram: null,
+      finalProgram: null,
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    === FINAL WA MESSAGE === {
+      chatId: 'user-shorthand',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    WA_RUNTIME_ACTIVE
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_1] incomingIntent SCHEDULE { text: 'jadwal lengkapnya 2 a', programHint: null }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_DETAILED] {
+      detectedIntent: 'SCHEDULE',
+      confidence: 0.7,
+      routedIntent: 'SCHEDULE'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INCOMING] {
+      chatId: 'user-shorthand2',
+      text: 'jadwal lengkapnya 2 a',
+      messageId: null,
+      inboundTs: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [safeSessionUpsert] called {
+      chatId: 'user-shorthand2',
+      arg1Type: 'string',
+      arg2Type: 'object',
+      arg3Type: 'string',
+      state: 'root'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [SESSION UPSERT] {
+      chatId: 'user-shorthand2',
+      state: 'root',
+      dataKeys: [ 'composerInputText', 'composerInputAt' ],
+      arg1Type: 'string',
+      arg2Type: 'object',
+      arg3Type: 'string',
+      existingState: null,
+      existingDataKeys: []
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG] choose_program anchored rag check {
+      chatId: 'user-shorthand2',
+      stage: '',
+      degreeInFlow: '',
+      programInText: null,
+      looksSpecific: true,
+      isPureSelection: false,
+      ragReady: true,
+      text: 'jadwal lengkapnya 2 a'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_DETECT] {
+      incomingIntent: null,
+      mappedIncomingIntent: null,
+      incomingConfidence: 0,
+      candidateIntent: 'biaya',
+      messageText: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal',
+      userQuery: 'jadwal lengkapnya 2 a'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_OVERRIDE] {
+      action: 'overridden',
+      incomingIntent: null,
+      mappedIncomingIntent: null,
+      incomingConfidence: 0,
+      candidateIntent: 'biaya',
+      userQuery: 'jadwal lengkapnya 2 a',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal',
+      reason: 'candidate intent allowed to override (incoming general/low-confidence)'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_2] outgoingResponseIntent biaya {
+      userQuery: 'jadwal lengkapnya 2 a',
+      messagePreview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_DETECT] {
+      incomingIntent: 'SCHEDULE',
+      mappedIncomingIntent: 'schedule',
+      incomingConfidence: 0.7,
+      candidateIntent: 'biaya',
+      messageText: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal',
+      userQuery: 'jadwal lengkapnya 2 a'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_INTENT_OVERRIDE] {
+      action: 'overridden',
+      incomingIntent: 'SCHEDULE',
+      mappedIncomingIntent: 'schedule',
+      incomingConfidence: 0.7,
+      candidateIntent: 'biaya',
+      userQuery: 'jadwal lengkapnya 2 a',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal',
+      reason: 'candidate intent allowed to override (incoming general/low-confidence)'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_FINAL_WA_INTENT] {
+      finalIntent: 'biaya',
+      chatId: 'user-shorthand2',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    FINAL_WA_OUTPUT_V2 {
+      chatId: 'user-shorthand2',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    === FULL_FINAL_WA_MESSAGE ===
+    Jadwal Gelombang II A:
+    - Masa pendaftaran: Sesuai kalender PMB
+    - Testing: Sesuai jadwal
+    - Pengumuman: Sesuai jadwal
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_RESPONSE] {
+      headerProgram: null,
+      bodyProgram: null,
+      finalProgram: null,
+      preview: 'Jadwal Gelombang II A:\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    === FINAL WA MESSAGE === {
+      chatId: 'user-shorthand2',
+      preview: 'Jadwal Gelombang II A:\n' +
+        '\n' +
+        '- Masa pendaftaran: Sesuai kalender PMB\n' +
+        '- Testing: Sesuai jadwal\n' +
+        '- Pengumuman: Sesuai jadwal'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+FAIL tests/providerWebhook.test.js
+  Provider webhook
+    ├ù schedule shorthand: "jadwal lengkapnya 2 a" is answered deterministically (Gelombang II A) (1044 ms)
+    ΓêÜ schedule shorthand no-answer: still returns a deterministic schedule (not a format prompt) (282 ms)
+    Γùï skipped with BOT_INTRO_MESSAGE enabled: greeting-only sends intro first, then welcome
+    Γùï skipped intro reply persists composer telemetry and is sent through outbound.reply
+    Γùï skipped with BOT_INTRO_MESSAGE enabled: intro is not re-sent within threshold when already sent
+    Γùï skipped short follow-ups reuse TI context and set contextReused telemetry
+    Γùï skipped reflection cooldown resets after greeting reuse and clears stale reflection timestamp
+    Γùï skipped ambiguous short follow-up without topic returns a clarification prompt
+    Γùï skipped greeting mid-conversation preserves topic memory and allows follow-up reuse
+    Γùï skipped explicit program switch updates topic memory for subsequent follow-ups
+    Γùï skipped latest explicit topic wins and sets previousProgramHint history
+    Γùï skipped semantic curriculum+career question about SI answered directly (no menu hijack)
+    Γùï skipped semantic career question about TI answered directly (no menu hijack)
+    Γùï skipped semantic short TI difficulty question answered directly (no menu hijack)
+    Γùï skipped semantic short follow-up uses prior SI context and answers directly
+    Γùï skipped semantic follow-up "kerjanya nanti jadi apa?" reuses TI context and answers directly
+    Γùï skipped semantic follow-up "mata kuliahnya apa?" uses prior SI context and answers directly
+    Γùï skipped semantic short follow-up "gampang dipelajari?" uses prior context and answers directly
+    Γùï skipped context inheritance: TI -> follow-up -> still TI
+    Γùï skipped mixed-intent continuity: TI -> SI -> "kalau codingnya?" references SI
+    Γùï skipped cross-topic recovery: unrelated RAG reply then ambiguous follow-up returns TI
+    Γùï skipped temporary interruption handling: brief ack does not clear TI context
+    Γùï skipped follow-up reference resolution: pronoun "yang itu" resolves to last topic SI
+    Γùï skipped topic switching: explicit SI mention replaces TI context
+    Γùï skipped context decay: stale program context is cleared before ambiguous follow-up handling
+    Γùï skipped ambiguity safety: new generic follow-up does NOT auto-switch program
+    Γùï skipped greeting after topic switch resumes latest topic
+    Γùï skipped multiple topic switches preserve latest topic and allow later reuse
+    Γùï skipped stale topic does not reuse older program hint
+    Γùï skipped unhandled errors are caught and bot replies with a safe apology (not silent)
+    Γùï skipped non-marketing question offers the inferred department contact; declining shows menu and option 5 returns dummy contacts
+    Γùï skipped non-marketing dept offer: replying YA returns the specific department contact
+    Γùï skipped study-mode question (online/offline/hybrid) is answered directly
+    Γùï skipped permission-to-ask question is answered with "Boleh" and a prompt to ask
+    Γùï skipped permission-to-ask phrasing "Apakah saya boleh ..." is handled (no AI error copy)
+    Γùï skipped DKV availability question is answered (mentions UTB collaboration)
+    Γùï skipped when RAG has no answer (training exists), fallback asks user to repeat/rephrase
+    Γùï skipped outbound image marker ([[image:...]]) triggers sendImage + sends remaining text
+    Γùï skipped RAG context image marker auto-attaches and triggers sendImage
+    Γùï skipped bare image URL triggers sendImage + removes url from text
+    Γùï skipped tuition fee question without prodi -> asks program/dual degree, then answers after program pick
+    Γùï skipped fee breakdown question with HELP code is treated as Dual Degree (not non-marketing)
+    Γùï skipped HELP partner code in a per-semester fee question is recognized directly
+    Γùï skipped HELP per-semester fee answer uses the correct HELP fee label
+    Γùï skipped explicit "HELP" fee breakdown does not fall back to previous S1 prodi (session lastProgramHint)
+    Γùï skipped tuition fee prompt -> picking HELP triggers RAG anchored to Dual Degree HELP University
+    Γùï skipped fee breakdown question ("rincian biaya kuliah") without prodi -> asks program, then after pick returns full breakdown (fast)
+    Γùï skipped UKT answer offers full breakdown; replying YA returns the breakdown deterministically
+    Γùï skipped tuition fee program pick is not hijacked by active registrationFlow (session carryover)
+    Γùï skipped tuition fee/UKT question without prodi asks program again even if lastProgramHint exists (no direct answer)
+    Γùï skipped registrationFlow(done): UKT question without prodi still asks program (no auto-answer from stored prodi)
+    Γùï skipped program-pick menu: reply "syarat dan dokumen" after program_pick_prompt is handled deterministically (no fallback)
+    Γùï skipped faculty question: if RAG says "not in data", route uses website excerpt fallback when enabled
+    Γùï skipped location question: answered deterministically from bundled index (fast, no slow web/OpenAI dependency)
+    Γùï skipped dual degree location question: answers with STIKOM + partner campuses (no mojibake)
+    Γùï skipped PMB submenu numeric reply works even if last bot menu text is missing (pendingPmbMenu)
+    Γùï skipped PMB submenu numeric reply works when last bot message contains Menu PMB
+    Γùï skipped keyword rules short-circuit before RAG (starts_with match)
+    Γùï skipped first non-greeting message: sends welcome first, then main reply (2 separate messages)
+    Γùï skipped program code in cost question uses fast fee path ("biaya pendaftaran si" => Sistem Informasi)
+    Γùï skipped program list follow-up: "prodi sk" is treated as Sistem Komputer selection (not SKS confusion)
+    Γùï skipped program list question includes all core S1 programs and dual degree (no "tidak terdeteksi")
+    Γùï skipped Phase 1 WhatsApp validation: program list query
+    Γùï skipped Phase 1 WhatsApp validation: curriculum inquiry
+    Γùï skipped Phase 1 WhatsApp validation: career/prospect inquiry
+    Γùï skipped Phase 1 WhatsApp validation: tuition inquiry
+    Γùï skipped Phase 1 WhatsApp validation: requirements inquiry
+    Γùï skipped post-program follow-up: offers and handles biaya/kontak/alur keywords
+    Γùï skipped pendingFeeDetail: "daftar ulang" is treated as new topic (not biaya pendaftaran)
+    Γùï skipped pendingFeeDetail: requirements question uses formulir pendaftaran training data (not fee breakdown)
+    Γùï skipped requirements fallback: when RAG has no answer, respond using FORMULIR PENDAFTARAN training content
+    Γùï skipped requirements follow-up: reply "mahasiswa baru" after bot asks applicant type is handled (no generic fallback)
+    Γùï skipped hobby clarification follow-up: short activity reply is treated as continuation (no generic fallback)
+    Γùï skipped comparison question (TI vs SK) is prioritized over pending hobby follow-up
+    Γùï skipped comparison question recognizes Teknik Informatika as Teknologi Informasi alias
+    Γùï skipped comparison question supports non-S1 programs (D3 vs S2)
+    Γùï skipped formal comparison sentence is recognized and answered as program comparison intent
+    Γùï skipped slang comparison sentence is recognized and answered as program comparison intent
+    Γùï skipped post-program follow-up: "hitung total" triggers anchored RAG calculation
+    Γùï skipped outbound sanitizer: strips markdown headings (##) from bot reply
+    Γùï skipped outbound sanitizer: normalizes bullets, numbering, blockquotes, and markdown links
+    Γùï skipped choose program + total question: answers directly without mini-menu
+    Γùï skipped total-cost follow-up: replying with gelombang computes total (no loop)
+    Γùï skipped pending total-cost follow-up: discount table is not treated as butir 1ΓÇô4 costs
+    Γùï skipped must-pay question still uses deterministic total even when pendingTotalCost exists
+    Γùï skipped wave-only follow-up: uses last-bot intent (discount) instead of asking "info apa"
+    Γùï skipped normal inbound queries route through composer and persist composer telemetry
+    Γùï skipped timeout fallback does not race with composer success
+    Γùï skipped fee responder sanitizes raw OCR/training snippets before outbound
+    Γùï skipped one inbound request sends exactly one outbound reply
+    Γùï skipped outbound telemetry fields are always present for normal composer replies
+    Γùï skipped composer bypass prevention is enforced for normal inbound replies
+    Γùï skipped outbound path consistency uses composer reply funnel for normal messages
+    Γùï skipped alumni SMK TI discount question is answered deterministically (no fallback)
+    Γùï skipped must-pay phrasing with SI + gelombang 2B computes total (not clarify-wave)
+    Γùï skipped must-pay phrasing with SI + gelombang 2B (compact) computes total
+    Γùï skipped deterministic UTB mapping: potongan pendaftaran dan DPP sesuai gelombang I/IV
+    Γùï skipped choose program + specific question: skips mini-menu and answers via anchored RAG
+    Γùï skipped ack-only "siap" after scholarship category prompt asks category (no cost drift)
+    Γùï skipped ack-only "siap" after payment-plan follow-up closes (does not elaborate)
+    Γùï skipped anchors ultra-short affirmation to prior program context (TI)
+    Γùï skipped anchors short continue request variant (oke jelasin) to prior program context (TI)
+    Γùï skipped replies politely to gratitude without triggering RAG
+    Γùï skipped does not answer with fees for acknowledgement-only "siap" when no follow-up was asked
+    Γùï skipped pendaftaran answer offers the full fee breakdown (YA/TIDAK)
+    Γùï skipped pendaftaran question without explicit prodi does not mention a prodi; still offers breakdown
+    Γùï skipped breakdown request with explicit SK overrides prior TI hint (answers SK)
+    Γùï skipped semester fee answer for DNUI uses per semester label, not Ujian/Subject
+    Γùï skipped DNUI breakdown answer does not use Ujian/Subject label in detailed fee list
+    Γùï skipped breakdown offer: pendaftaran without prodi -> YA -> pick TI -> returns full breakdown (fast)
+    Γùï skipped registrationFlow pendingFeeDetail: pendaftaran answer does not mention prodi unless user types it; still offers breakdown
+    Γùï skipped total pembayaran request computes from last bot breakdown (butir 1ΓÇô4 + extras)
+    Γùï skipped registration intent asks degree (S1 vs S2)
+    Γùï skipped replying "mau daftar s1" asks program choice (SI/TI/BD/SK) instead of defaulting
+    Γùï skipped registration flow: after prodi pick, sends requirements/docs first and offers biaya; short "iya" triggers biaya follow-up
+    Γùï skipped once FINAL_SEND occurs in registration flow, fallback never overrides the response
+    Γùï skipped registration flow: does not repeat docs list if it was just sent recently
+    Γùï skipped registration flow: stage choose_degree accepts "S1" reply even if lastBot context is missing (race-safe)
+    Γùï skipped returns 400 when chatId missing
+    Γùï skipped handles basic message flow
+    Γùï skipped dedupes late retries by text+timestamp when messageId missing
+    Γùï skipped allows a repeated same-text inbound after the bot already replied
+    Γùï skipped sends welcome only for simple greeting
+    Γùï skipped treats custom greeting alias as greeting-only and sends welcome only
+    Γùï skipped treats "selamat sang" as greeting (typo for siang) and sends welcome only
+    Γùï skipped treats common greeting variant "pagi kak" as greeting-only
+    Γùï skipped treats common greeting variant "siang min" as greeting-only
+    Γùï skipped treats common greeting variant "malem kak" as greeting-only
+    Γùï skipped treats common greeting variant "selamat malem kak" as greeting-only
+    Γùï skipped treats common greeting variant "halo selamat pagi" as greeting-only
+    Γùï skipped treats common greeting variant "halo selamat pagi kak" as greeting-only
+    Γùï skipped treats common greeting variant "met pagi" as greeting-only
+    Γùï skipped treats common greeting variant "met siang kak" as greeting-only
+    Γùï skipped treats common greeting variant "halo pak" as greeting-only
+    Γùï skipped treats common greeting variant "halo bu" as greeting-only
+    Γùï skipped treats common greeting variant "halo bang" as greeting-only
+    Γùï skipped pure greeting "Halo" restarts session and re-sends welcome even if previously welcomed
+    Γùï skipped pure greeting "Halo selamat pagi" restarts session and re-sends welcome even if previously welcomed
+    Γùï skipped pure greeting "Halo selamat pagi kak" restarts session and re-sends welcome even if previously welcomed
+    Γùï skipped typing "menu" resets session and re-sends welcome_message (preferred)
+    Γùï skipped greeting + question is not hijacked by welcome-only
+    Γùï skipped greeting + addressee + question is not hijacked by welcome-only
+    Γùï skipped greeting-only (no welcome setting) is answered with a prompt (no RAG)
+    Γùï skipped custom greeting alias (no welcome setting) is answered with a prompt (no RAG)
+    Γùï skipped double degree HELP process question returns daily Monday-Friday class answer
+    Γùï skipped double degree DNUI process question returns Bali-online-China study path
+    Γùï skipped follow-up "boleh, coba hitung" sums butir 1-4 deterministically (no RPL/SKS clarifier)
+    Γùï skipped follow-up compute ignores per-semester line when initial entry is only butir 1-3
+    Γùï skipped follow-up "ya boleh" after dual offer (total awal masuk vs potongan gelombang) asks 1/2 choice
+    Γùï skipped follow-up "iya tolong jelaskan" after biaya pendaftaran offer anchors to rincian biaya (not campus)
+    Γùï skipped pending dual-offer choice "1" computes total (overrides numeric menu)
+    Γùï skipped pending dual-offer: unclear reply triggers reprompt and keeps pending so next choice works
+    Γùï skipped pending dual-offer choice does not hijack a new explicit question (clears pending and answers deterministically)
+    Γùï skipped numeric welcome menu: custom "5 Lokasi Kampus" routes to location answer (label-driven)
+    Γùï skipped numeric welcome menu: custom "6 Konsultasi Admin" offers handover (label-driven)
+    Γùï skipped numeric welcome menu: custom "3) Cara Daftar" routes by label (no biaya mismatch)
+    Γùï skipped anchors short follow-up total request to Bisnis Digital (no prodi drift)
+    Γùï skipped anchors follow-up to session lastProgramHint when lastBot has no program name
+    Γùï skipped persists lastProgramHint from RAG answer when unambiguous
+    Γùï skipped handles numeric welcome-menu selection when active
+    Γùï skipped accepts numeric menu selection with punctuation
+    Γùï skipped does not force numeric menu for non-numeric questions
+    Γùï skipped PMB submenu numeric reply routes to info (RAG) instead of registration flow
+    Γùï skipped menu 3 (Biaya Pendidikan): prompts for prodi and persists pendingMenuCost
+    Γùï skipped menu 2 (Program Studi): responds fast without calling RAG
+    Γùï skipped welcome numeric selection prefers DB menuItem root.<digit> when available
+    Γùï skipped menu 3 follow-up: program reply returns semester fee and clears pendingMenuCost
+    Γùï skipped menu 4 (Beasiswa): returns scholarship overview and persists pendingScholarshipChoice
+    Γùï skipped scholarship follow-up still works after delayed reply (within 2 hours)
+    Γùï skipped schedule wave follow-up: accepts arabic input like "2 b" and rewrites to gelombang II B
+    Γùï skipped schedule wave follow-up: reply "semua gelombang" returns the calendar overview (all waves)
+    Γùï skipped schedule rule follow-up prompt persists pendingScheduleWave so reply like "1c" is understood
+    Γùï skipped pendingScheduleWave does not hijack unrelated questions (e.g., alur pendaftaran)
+    Γùï skipped pendingScheduleWave does not hijack main welcome menu selection (digit 1-7)
+    Γùï skipped scholarship overview persists pendingScholarshipChoice; follow-up "ranking" is expanded and answered
+    Γùï skipped handles numeric menu option 7 by offering handover
+    Γùï skipped in HUMAN mode, sends a one-time notice explaining bot will not auto-reply
+    Γùï skipped allows user to return from HUMAN handover to BOT mode via keyword
+System.Management.Automation.RemoteException
+  ΓùÅ Provider webhook ΓÇ║ schedule shorthand: "jadwal lengkapnya 2 a" is answered deterministically (Gelombang II A)
+System.Management.Automation.RemoteException
+    expect(jest.fn()).not.toHaveBeenCalled()
+System.Management.Automation.RemoteException
+    Expected number of calls: 0
+    Received number of calls: 1
+System.Management.Automation.RemoteException
+    1: "jadwal lengkapnya 2 a"
+System.Management.Automation.RemoteException
+    [0m [90m 2723 |[39m       [33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m 2724 |[39m
+    [31m[1m>[22m[39m[90m 2725 |[39m     expect(rag[33m.[39mquery)[33m.[39mnot[33m.[39mtoHaveBeenCalled()[33m;[39m
+     [90m      |[39m                           [31m[1m^[22m[39m
+     [90m 2726 |[39m     [36mconst[39m sent [33m=[39m provider[33m.[39msendMessage[33m.[39mmock[33m.[39mcalls[33m.[39mmap(c [33m=>[39m [33mString[39m(c[[35m1[39m] [33m||[39m [32m''[39m))[33m.[39mjoin([32m'\n'[39m)[33m;[39m
+     [90m 2727 |[39m     expect(sent)[33m.[39mtoMatch([35m/Jadwal\s+Gelombang\s+II\s*A/i[39m)[33m;[39m
+     [90m 2728 |[39m     expect(sent)[33m.[39mtoMatch([35m/Masa\s+pendaftaran/i[39m)[33m;[39m[0m
+System.Management.Automation.RemoteException
+      at Object.toHaveBeenCalled (tests/providerWebhook.test.js:2725:27)
+System.Management.Automation.RemoteException
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 176 skipped, 1 passed, 178 total
+Snapshots:   0 total
+Time:        3.223 s
+Ran all test suites matching /tests\\providerWebhook.test.js/i with tests matching "schedule shorthand".

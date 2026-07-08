@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>WhatsApp Bot Admin</title>
+    <link rel="icon" href="/img/icon-light-32x32.png" />
+
+    <link rel="stylesheet" href="/css/admin-panel.css" />
+  </head>
+  <body class="font-sans antialiased">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-background pt-20">
+      <div class="flex h-full flex-col px-4 py-6">
+        <nav class="flex-1 space-y-2">
+          <a
+            href="/dashboard"
+            aria-current="page"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary text-primary-foreground"
+          >
+            <i data-lucide="layout-dashboard" class="h-5 w-5 flex-shrink-0"></i>
+            <span>Dashboard</span>
+            <i data-lucide="chevron-right" class="absolute right-3 h-4 w-4"></i>
+          </a>
+
+          <a
+            href="/keyword"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <i data-lucide="key-round" class="h-5 w-5 flex-shrink-0"></i>
+            <span>Keyword</span>
+          </a>
+
+          <a
+            href="/menu"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <i data-lucide="menu" class="h-5 w-5 flex-shrink-0"></i>
+            <span>Menu</span>
+          </a>
+
+          <a
+            href="/setting"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <i data-lucide="settings" class="h-5 w-5 flex-shrink-0"></i>
+            <span>Setting</span>
+          </a>
+
+          <a
+            href="/broadcast"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <i data-lucide="megaphone" class="h-5 w-5 flex-shrink-0"></i>
+            <span>Broadcast</span>
+          </a>
+
+          <a
+            href="/live-chat"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <i data-lucide="message-circle" class="h-5 w-5 flex-shrink-0"></i>
+            <span>Live Chat</span>
+          </a>
+
+          <a
+            href="/history"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <i data-lucide="history" class="h-5 w-5 flex-shrink-0"></i>
+            <span>History</span>
+          </a>
+
+          <a
+            href="/training-data"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <i data-lucide="database" class="h-5 w-5 flex-shrink-0"></i>
+            <span>Training Data</span>
+          </a>
+
+          <a
+            href="/whatsapp"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <i data-lucide="message-square" class="h-5 w-5 flex-shrink-0"></i>
+            <span>WhatsApp</span>
+          </a>
+
+          <a
+            href="/testing"
+            data-nav-link
+            class="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <i data-lucide="test-tube" class="h-5 w-5 flex-shrink-0"></i>
+            <span>Testing</span>
+          </a>
+        </nav>
+
+        <div class="border-t border-border pt-4">
+          <button
+            type="button"
+            id="v0LogoutBtn"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive w-full justify-start gap-3 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-accent"
+          >
+            <i data-lucide="log-out" class="h-5 w-5"></i>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="fixed left-64 right-0 top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div class="flex h-16 items-center justify-between gap-4 px-6">
+        <div class="flex flex-1 items-center gap-4">
+          <div class="relative hidden md:flex flex-1 max-w-md">
+            <i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>
+            <input
+              placeholder="Cari..."
+              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-9 bg-muted border-0"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-9 w-9 hover:bg-accent hover:text-accent-foreground"
+            aria-label="Notifications"
+          >
+            <i data-lucide="bell" class="h-5 w-5"></i>
+            <span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary"></span>
+          </button>
+
+          <!-- User dropdown (simple JS, no Radix) -->
+          <div class="relative" data-dropdown>
+            <button
+              type="button"
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-9 w-9 hover:bg-accent hover:text-accent-foreground"
+              aria-label="User menu"
+              data-dropdown-trigger
+            >
+              <span class="relative flex size-8 shrink-0 overflow-hidden rounded-full">
+                <span class="flex size-full items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">AD</span>
+              </span>
+            </button>
+
+            <div
+              class="absolute right-0 mt-2 w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-sm p-1 hidden"
+              data-dropdown-menu
+              role="menu"
+            >
+              <div class="px-2 py-1.5">
+                <div class="flex flex-col space-y-1">
+                  <p class="text-sm font-medium leading-none">Admin User</p>
+                  <p class="text-xs leading-none text-muted-foreground">admin@whatsappbot.com</p>
+                </div>
+              </div>
+              <div class="my-1 h-px bg-border"></div>
+              <button type="button" class="w-full text-left rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2" role="menuitem">
+                <i data-lucide="user" class="h-4 w-4"></i>
+                <span>Profile</span>
+              </button>
+              <button type="button" class="w-full text-left rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground" role="menuitem">
+                <span>Settings</span>
+              </button>
+              <div class="my-1 h-px bg-border"></div>
+              <button type="button" class="w-full text-left rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground" role="menuitem">
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="ml-64 pt-16 min-h-screen bg-background">
+      <iframe
+        id="adminContentFrame"
+        title="Admin Content"
+        class="w-full h-[calc(100vh-4rem)] border-0"
+        src="/legacy-admin?tab=analytics"
+      ></iframe>
+    </main>
+
+    <!-- Icons (Lucide) -->
+    <script src="https://unpkg.com/lucide@0.564.0/dist/umd/lucide.min.js"></script>
+    <script src="/js/admin-panel.js"></script>
+  </body>
+</html>

@@ -1,0 +1,51 @@
+[
+  {
+    "chatId": "r1",
+    "text": "Apa itu PMB di STIKOM Bali?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "rag-pmb-info"
+    }
+  },
+  {
+    "chatId": "r2",
+    "text": "Jurusan apa saja yang ada di STIKOM Bali?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "program_list",
+      "ragUsed": false
+    }
+  },
+  {
+    "chatId": "r3",
+    "text": "Berapa biaya TI gelombang 2C?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "fast_fee_breakdown_with_gelombang",
+      "program": "Teknologi Informasi",
+      "choice": "breakdown",
+      "gelombang": "IIC"
+    }
+  },
+  {
+    "chatId": "r4",
+    "text": "Apa perbedaan Sistem Informasi dan Teknik Informatika?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "rag-program-comparison"
+    }
+  },
+  {
+    "chatId": "r5",
+    "text": "Lokasi kampus dimana?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  }
+]

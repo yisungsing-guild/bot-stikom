@@ -1,0 +1,66 @@
+[
+  {
+    "chatId": "user-program-switch",
+    "raw": "{\n      chatId: 'user-program-switch',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'berapa biaya pendaftaran?'\n    }"
+  },
+  {
+    "chatId": "fee-help-switch",
+    "raw": "{\n      chatId: 'fee-help-switch',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'rincian biaya prodi TI'\n    }"
+  },
+  {
+    "chatId": "fee-breakdown-chat",
+    "raw": "{\n      chatId: 'fee-breakdown-chat',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'berapa rincian biaya kuliah di STIKOM Bali?'\n    }"
+  },
+  {
+    "chatId": "fee-breakdown-chat",
+    "raw": "{\n      chatId: 'fee-breakdown-chat',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'berapa rincian biaya kuliah di STIKOM Bali?'\n    }"
+  },
+  {
+    "chatId": "fee-breakdown-offer",
+    "raw": "{\n      chatId: 'fee-breakdown-offer',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'berapa biaya ukt TI?'\n    }"
+  },
+  {
+    "chatId": "user1",
+    "raw": "{\n      chatId: 'user1',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'berapa biaya pendaftaran?'\n    }"
+  },
+  {
+    "chatId": "user1",
+    "raw": "{\n      chatId: 'user1',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'saya ingin bertanya berapa biaya pendaftaran si?'\n    }"
+  },
+  {
+    "chatId": "user-specific",
+    "raw": "{\n      chatId: 'user-specific',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'Program Studi: Sistem Informasi\\n' +\n        'saya mau nanya min untuk rincian biaya sistem informasi gelombang 1 berapa ya'\n    }"
+  },
+  {
+    "chatId": "user-fee-offer",
+    "raw": "{\n      chatId: 'user-fee-offer',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'berapa biaya pendaftaran prodi TI?'\n    }"
+  },
+  {
+    "chatId": "user-fee-pendaftaran-noprodi",
+    "raw": "{\n      chatId: 'user-fee-pendaftaran-noprodi',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'berapa biaya pendaftaran di stikom?'\n    }"
+  },
+  {
+    "chatId": "fee-breakdown-program-override-sk",
+    "raw": "{\n      chatId: 'fee-breakdown-program-override-sk',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'berapa rincian biaya sk?'\n    }"
+  },
+  {
+    "chatId": "user-regflow-fee-detail-fast",
+    "raw": "{\n      chatId: 'user-regflow-fee-detail-fast',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'biaya pendaftaran di stikom?'\n    }"
+  },
+  {
+    "chatId": "user1",
+    "raw": "{\n      chatId: 'user1',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'Halo mau tanya biaya pendaftaran'\n    }"
+  },
+  {
+    "chatId": "user1",
+    "raw": "{\n      chatId: 'user1',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'Halo pak mau tanya biaya pendaftaran'\n    }"
+  },
+  {
+    "chatId": "user1",
+    "raw": "{\n      chatId: 'user1',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'berapa biaya pendaftaran prodi si?'\n    }"
+  },
+  {
+    "chatId": "user1",
+    "raw": "{\n      chatId: 'user1',\n      allowBundledIndex: true,\n      allowFast: true,\n      hasBundleData: true,\n      fastAnswerFound: false,\n      routeText: 'Saya mau tanya biaya pendaftaran'\n    }"
+  }
+]

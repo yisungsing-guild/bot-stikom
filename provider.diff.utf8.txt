@@ -1,0 +1,2621 @@
+﻿diff --git a/src/routes/provider.js b/src/routes/provider.js
+index 7d46fba..469962b 100644
+--- a/src/routes/provider.js
++++ b/src/routes/provider.js
+@@ -11,11 +11,20 @@ const { handleFSM, upsertSession } = require('../engine/fsm');
+ const { findReplyByRules } = require('../engine/replyEngine');
+ const { query: ragQuery } = require('../engine/ragEngine');
+ const { AnalyticsEngine } = require('../engine/analyticsEngine');
++const { composeResponse } = require('../engine/composer');
++const { humanizeFinalAnswer } = require('../engine/aiEngine');
+ const { appendChatMessage, getChatMessages } = require('../engine/chatLog');
+ const { webSearchFallbackAnswer } = require('../engine/webSearchFallback');
+ const { sanitizeWhatsappText } = require('../utils/textSanitizer');
+ const { sendTelegramMessage } = require('../utils/telegram');
+ const { createIncident, formatIncidentForTelegram } = require('../utils/incidentManager');
++const normalizer = require('../lib/normalizer');
++const { createOutbound } = require('./outbound');
++const { createReplyDeadlineManager } = require('./replyDeadlineManager');
++const { createRuleRouter } = require('./ruleRouter');
++const { createFeeResponder } = require('./feeResponder');
++const { buildWelcomeMessageWithIntro, shouldSkipWelcome } = require('./welcomeFlow');
++const { SOURCE_TYPES } = require('./telemetryConstants');
+ 
+ // Helper to check bundled index availability (can be overridden in test env)
+ function checkBundledIndexAvailable() {
+@@ -250,6 +259,23 @@ module.exports = function (provider) {
+     return hasScholarshipBlock && hasClosingPrompt && hasFeeCue;
+   }
+ 
++  function looksLikeAlreadyStructuredOutboundText(input) {
++    const raw = String(input || '').trim();
++    if (!raw) return false;
++
++    const blocks = raw.split(/\n{2,}/).map((b) => String(b || '').trim()).filter(Boolean);
++    if (blocks.length < 2) return false;
++
++    const lastBlock = blocks[blocks.length - 1];
++    if (/\?\s*$/.test(lastBlock)) return true;
++
++    if (/^(?:[-*ΓÇó]\s+|\d+[.)]\s+)/.test(blocks[1])) return true;
++
++    if (blocks.length >= 3 && blocks[0].length <= 140 && blocks[1].length <= 260) return true;
++
++    return false;
++  }
++
+   function sanitizeFeeTemplateWhatsappText(input) {
+     let text = String(input || '');
+     if (!text.trim()) return text;
+@@ -490,6 +516,27 @@ module.exports = function (provider) {
+     return 'GENERAL';
+   }
+ 
++  // Heuristic numeric intent confidence (0..1).
++  // Uses presence of question words, cost/program keywords, abbreviations, and punctuation.
++  function intentConfidence(question) {
++    const q = String(question || '').toLowerCase().trim();
++    if (!q) return 0;
++
++    let score = 0.1;
++
++    // Strong intent keywords
++    if (/\b(berapa|brp|biaya|harga|dpp|pendaftaran|total|uk t|ukt|gelombang|jadwal|kapan|dimana|di\s*mana)\b/.test(q)) score += 0.45;
++    // Program mentions (si/ti/sk/bd/mi or full names)
++    if (/\b(ti|si|sk|bd|mi|teknologi\s+informasi|sistem\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika)\b/.test(q)) score += 0.25;
++    // Question punctuation or words
++    if (/\?/.test(q) || /\b(apa|bagaimana|gimana|siapa|kenapa)\b/.test(q)) score += 0.15;
++    // Very short fragment but with numbers/abbrev like 'TI brp'
++    if (q.length <= 15 && /\b(brp|ti|si|sk|bd|mi)\b/.test(q)) score += 0.2;
++
++    if (score > 1) score = 1;
++    return Math.max(0, Math.min(1, score));
++  }
++
+   // Relevance filter to avoid irrelevant contexts
+   function isRelevantContext(question, context) {
+     const q = String(question || '').toLowerCase().trim();
+@@ -1076,47 +1123,15 @@ module.exports = function (provider) {
+               if (structured) {
+                 ragResult.answer = structured;
+               } else {
+-                // If we couldn't build a structured reply, append scholarships + final prompt.
+-                const needsPostamble = !/Untuk meringankan biaya|Beasiswa KIP|Apakah Kakak ingin dijelaskan tentang\?/i.test(ragResult.answer);
++                const needsPostamble = !/ringkas|bandingkan dengan prodi lain|bisa bantu/i.test(ragResult.answer);
+                 if (needsPostamble) {
+-                  const postamble = [
+-                    'Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:',
+-                    '* Beasiswa KIP',
+-                    '* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)',
+-                    '* Beasiswa Prestasi',
+-                    '* Beasiswa Yayasan',
+-                    '* Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global',
+-                    '* Kuliah Sambil Kerja di Luar Negeri',
+-                    '',
+-                    'Apakah Kakak ingin dijelaskan tentang?',
+-                    '* Biaya perkuliahan program studi yang lainnya',
+-                    '* Salah satu jenis beasiswa',
+-                    '* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll',
+-                    'Silahkan diketikkan.'
+-                  ].join('\n');
+-                  ragResult.answer = String(ragResult.answer || '').trim() + '\n\n' + postamble;
++                  ragResult.answer = String(ragResult.answer || '').trim() + '\n\n' + 'Kalau mau, saya bisa bantu ringkas atau bandingkan dengan prodi lain.';
+                 }
+               }
+             } else {
+-              // No structured numbers found ΓÇö just append scholarships + prompt if missing.
+-              const needsPostamble = !/Untuk meringankan biaya|Beasiswa KIP|Apakah Kakak ingin dijelaskan tentang\?/i.test(ragResult.answer);
++              const needsPostamble = !/ringkas|bandingkan dengan prodi lain|bisa bantu/i.test(ragResult.answer);
+               if (needsPostamble) {
+-                const postamble = [
+-                  'Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:',
+-                  '* Beasiswa KIP',
+-                  '* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)',
+-                  '* Beasiswa Prestasi',
+-                  '* Beasiswa Yayasan',
+-                  '* Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global',
+-                  '* Kuliah Sambil Kerja di Luar Negeri',
+-                  '',
+-                  'Apakah Kakak ingin dijelaskan tentang?',
+-                  '* Biaya perkuliahan program studi yang lainnya',
+-                  '* Salah satu jenis beasiswa',
+-                  '* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll',
+-                  'Silahkan diketikkan.'
+-                ].join('\n');
+-                ragResult.answer = String(ragResult.answer || '').trim() + '\n\n' + postamble;
++                ragResult.answer = String(ragResult.answer || '').trim() + '\n\n' + 'Kalau mau, saya bisa bantu ringkas atau bandingkan dengan prodi lain.';
+               }
+             }
+           } catch (e) {
+@@ -1221,7 +1236,7 @@ module.exports = function (provider) {
+       return 'Dual Degree DNUI (Bisnis Digital)';
+     }
+ 
+-    if (/dual\s*degree/i.test(t)) return 'Program Dual Degree';
++    if (/(?:dual|double)\s*degree/i.test(t)) return 'Program Dual Degree';
+     return null;
+   }
+ 
+@@ -1339,80 +1354,6 @@ module.exports = function (provider) {
+     return buildAdmissionRequirementsAnswerFromFormTraining(form.filename, form.content);
+   }
+ 
+-  function parseFeeDetailChoice(rawText) {
+-    const tRaw = String(rawText || '').trim().toLowerCase();
+-    if (!tRaw) return null;
+-
+-    // Normalize tiny common variants so fee intent can be detected reliably.
+-    // Examples:
+-    // - "biaya mendaftar" -> treat as "biaya daftar/pendaftaran"
+-    const t = tRaw.replace(/\bmendaftar\b/g, 'daftar');
+-
+-    // Avoid misclassifying academic/admin topics as fee detail choices.
+-    // Example: "daftar ulang" / "registrasi ulang" is not the same as "biaya pendaftaran".
+-    if (/\b(daftar\s+ulang|registrasi\s+ulang|heregistrasi|her\s*registrasi)\b/i.test(t)) return null;
+-
+-    // If user is asking for admission requirements/documents, do NOT interpret "pendaftaran" as a fee choice.
+-    // Example: "Apa persyaratan untuk pendaftaran?" should not become "biaya pendaftaran".
+-    if (looksLikeAdmissionRequirementsQuestion(t)) {
+-      const hasCostWord = /(biaya|uang|\brp\b|\bdpp\b|semester|per\s*semester|ukt\b|cicil|cicilan|pembayaran|potongan|diskon)/i.test(t);
+-      if (!hasCostWord) return null;
+-    }
+-
+-    // If user asks "biaya" for a specific program AND mentions a gelombang,
+-    // answer should use the full breakdown template.
+-    // Example: "biaya prodi TI gelombang I".
+-    try {
+-      const hasBiayaWord = /\bbiaya\b/i.test(t);
+-      const hasProgram = !!(extractSpecificProgramHint(t) || extractProgramHint(t) || extractDualDegreeHint(t));
+-      const gel = (typeof parseGelombang === 'function') ? parseGelombang(t) : null;
+-      if (hasBiayaWord && hasProgram && gel) return 'breakdown';
+-    } catch {
+-      // ignore
+-    }
+-
+-    if (/\bcuti\b/.test(t)) return 'cuti';
+-    if (/(\bpengembalian\b|refund|dana\s+kembali|uang\s+kembali|pembatalan|batal\s+daftar)/.test(t)) return 'refund';
+-    if (/(sertifikasi|yudisium|wisuda)/.test(t)) return 'graduation_fees';
+-
+-    // Full breakdown requests: "rincian/detail/lengkap" should not collapse into UKT-only.
+-    // Examples:
+-    // - "berapa rincian biaya kuliah" -> want pendaftaran + DPP + atribut + per semester.
+-    // - "berapa rincian biaya sk" -> treat as full breakdown for the mentioned program.
+-    // Keep conservative: do NOT treat "rincian biaya pendaftaran" as full breakdown.
+-    const hasBreakdownWord = /\b(rincian|detail|lengkap|komponen)\b/i.test(t);
+-    const hasBiayaWord = /\bbiaya\b/i.test(t);
+-    if (hasBreakdownWord && hasBiayaWord) {
+-      const mentionsPendaftaran = /\b(pendaftaran|daftar|registrasi)\b/i.test(t);
+-      const mentionsDpp = /\b(dpp|dana\s+pendidikan\s+pokok)\b/i.test(t);
+-      const mentionsSemester = /(per\s*semester|biaya\s+semester|biaya\s+kuliah|uang\s+kuliah|biaya\s+pendidikan|ukt\b)/i.test(t);
+-      const mentionsCicilan = /(cicil|cicilan|skema\s+pembayaran|pembayaran\s+per\s+komponen)/i.test(t);
+-      const componentCount = [mentionsPendaftaran, mentionsDpp, mentionsSemester, mentionsCicilan].filter(Boolean).length;
+-
+-      const explicitFullContext =
+-        /(kuliah|pendidikan|awal\s*masuk|komponen)/i.test(t) ||
+-        /\b(keseluruhan|total|semua)\b/i.test(t);
+-      const mentionsProgram = !!(extractProgramHint(t) || extractDualDegreeHint(t));
+-      const isShort = t.length <= 120;
+-
+-      const wantsBreakdown =
+-        explicitFullContext ||
+-        componentCount >= 2 ||
+-        (componentCount === 0 && (mentionsProgram || isShort));
+-
+-      if (wantsBreakdown) return 'breakdown';
+-    }
+-
+-    if (/\b(biaya|uang)\s+(pendaftaran|daftar|registrasi)\b/i.test(t)) return 'pendaftaran';
+-    if (/^pendaftaran[\s\?\!\.]*$/.test(t)) return 'pendaftaran';
+-    if (/\bdpp\b/.test(t)) return 'dpp';
+-    if (/(per\s*semester|biaya\s+semester|biaya\s+kuliah|uang\s+kuliah|biaya\s+pendidikan|ukt\b)/.test(t)) return 'semester';
+-    if (/(cicil|cicilan|skema\s+pembayaran|pembayaran\s+per\s+komponen)/.test(t)) return 'cicilan';
+-
+-    if (/(ketentuan\s+biaya|aturan\s+biaya|syarat\s+biaya|berlaku\s+selama\s+masa\s+studi|masa\s+studi\s+normal)/.test(t)) return 'general_terms';
+-    return null;
+-  }
+-
+   function isOtherCostsBesidesSemesterQuestion(rawText) {
+     const t = String(rawText || '').trim().toLowerCase();
+     if (!t) return false;
+@@ -1458,7 +1399,7 @@ module.exports = function (provider) {
+     if (!t) return false;
+ 
+     // Accept both "di mana" and the common typo "dimana".
+-    const hasLocationKeyword = /\b(lokasi|alamat|maps|google\s*maps|rute|arah|di\s*mana|dimana)\b/i.test(t);
++    const hasLocationKeyword = /\b(lokasi|alamat|maps|google\s*maps|rute|arah|dimana|di\s*mana|kampus\s*mana|di\s*kampus\s*mana|kuliah(?:nya)?\s*(?:di\s*)?mana)\b/i.test(t);
+     if (!hasLocationKeyword) return false;
+ 
+     // Most location questions mention "kampus" or the brand.
+@@ -1470,6 +1411,51 @@ module.exports = function (provider) {
+     return false;
+   }
+ 
++  function isDualDegreeLocationQuestion(rawText) {
++    const t = String(rawText || '').trim().toLowerCase();
++    if (!t) return false;
++
++    const mentionsDualDegree = /(?:dual|double)\s*degree/.test(t) || /\b(utb|dnui)\b/.test(t) || /help\s+university/.test(t);
++    if (!mentionsDualDegree) return false;
++    return isCampusLocationQuestion(t);
++  }
++
++  function buildDualDegreeLocationMessage(loc) {
++    const lines = [
++      'Untuk program Dual/Double Degree:'
++    ];
++
++    // Local campus context
++    if (loc && (loc.denpasar || loc.jimbaran || loc.abiansemal)) {
++      const available = [];
++      if (loc.denpasar) available.push('Denpasar/Renon');
++      if (loc.jimbaran) available.push('Jimbaran');
++      if (loc.abiansemal) available.push('Abiansemal');
++
++      if (available.length) {
++        lines.push(
++          `- Perkuliahan di ITB STIKOM Bali (Bali), kampus: ${available.join(' / ')}`
++        );
++      } else {
++        lines.push('- Perkuliahan di ITB STIKOM Bali (Bali)');
++      }
++    } else {
++      lines.push('- Perkuliahan di ITB STIKOM Bali (Bali)');
++    }
++
++    // Partner campuses
++    lines.push(
++      '- Kampus mitra (sesuai pilihan):',
++      '- UTB (Bandung) - National Class',
++      '- DNUI (China) - International Class',
++      '- HELP University (Malaysia) - International Class',
++      '',
++      'Kakak minat yang mana? Balas: UTB / DNUI / HELP.'
++    );
++
++    return lines.join('\n').trim();
++  }
++
+   function isAdmissionScheduleQuestion(rawText) {
+     const t = String(rawText || '').trim().toLowerCase();
+     if (!t) return false;
+@@ -1690,9 +1676,9 @@ module.exports = function (provider) {
+       const hasDnui = /(\bDNUI\b|dalian\s+neusoft)/i.test(raw) && /dual\s*degree/i.test(raw);
+       const hasHelp = /help\s+university/i.test(raw) && /dual\s*degree/i.test(raw);
+ 
+-      if (hasUtb) add('Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) ΓÇö Prodi: Bisnis Digital');
+-      if (hasDnui) add('Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China ΓÇö Prodi: Bisnis Digital');
+-      if (hasHelp) add('Dual Degree (International Class) dengan HELP University, Malaysia ΓÇö Prodi: Sistem Informasi');
++      if (hasUtb) add('Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) - Prodi: Bisnis Digital');
++      if (hasDnui) add('Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi: Bisnis Digital');
++      if (hasHelp) add('Dual Degree (International Class) dengan HELP University, Malaysia - Prodi: Sistem Informasi');
+ 
+       cachedDualDegreeList = out.length ? out : null;
+       cachedDualDegreeListMtimeMs = mtimeMs;
+@@ -2701,66 +2687,27 @@ module.exports = function (provider) {
+     const semLabel = isDualDegreeProgram ? 'Biaya pendidikan per semester' : 'Biaya pendidikan per semester (UKT)';
+     const headerPrefix = (discountKey === 's1' || discountKey === 'sk') ? 'Prodi' : 'Program';
+     const headerButir = butirLabel === 'pendaftaran' ? 'pendaftaran' : `${butirLabel}`;
+-    // Reformat output to show sections and include beasiswa list + final prompt
+-    lines.push('Baik, kak. Terimakasih atas pertanyaannya.');
+-    lines.push('');
+-    lines.push(`Untuk program studi ${p}, rincian biaya sebagai berikut:`);
+-    lines.push('');
+-
+-    // Pendaftaran
++    // Reformat output to stay conversational before any downstream humanizer runs.
+     const pendaftaranAmt = table.pendaftaran || null;
+-    lines.push('Pendaftaran:');
+-    if (pendaftaranAmt) lines.push(`* Biaya pendaftaran: ${formatRupiah(pendaftaranAmt)}`);
+-    else lines.push(`* Biaya pendaftaran: (tidak tercantum)`);
+-    lines.push(`* Potongan biaya pendaftaran (${waveLabel}): ${formatRupiah((typeof baseDiscount === 'number' && Number.isFinite(baseDiscount) && baseDiscount > 0) ? baseDiscount : 0)}`);
+-
+-    if (pendaftaranAmt) {
+-      const pendaftaranTotal = (typeof baseDiscount === 'number' ? Math.max(0, pendaftaranAmt - baseDiscount) : pendaftaranAmt);
+-      lines.push(`Total biaya pendaftaran (${waveLabel}): ${formatRupiah(pendaftaranTotal)}`);
+-    }
+-
+-    lines.push('');
+-
+-    // Biaya awal masuk
+-    lines.push(`Biaya awal masuk untuk Prodi ${p}:`);
+     const dppAmt = table.dpp || null;
+     const a1 = table.atribut1 || table.registrasi || null;
+     const a2 = table.atribut2 || null;
+-    if (dppAmt) lines.push(`* DPP: ${formatRupiah(dppAmt)}`);
+-    if (a1) lines.push(`* Jas almamater dan topi: ${formatRupiah(a1)}`);
+-    if (a2) lines.push(`* Kaos, tas, GMTI: ${formatRupiah(a2)}`);
+-
+     const subtotalAwal = ((dppAmt || 0) + (a1 || 0) + (a2 || 0));
+-    lines.push(`Subtotal biaya awal masuk: ${formatRupiah(subtotalAwal)}`);
++    const sem = table.semester || table.biayaPendidikan || null;
+ 
+-    lines.push(`* Potongan biaya DPP (${waveLabel}): ${formatRupiah((typeof dppScholar === 'number' && Number.isFinite(dppScholar) && dppScholar > 0) ? dppScholar : 0)}`);
+-
+-    // Final total (butir 1ΓÇô4 / awal masuk) after all applicable discounts.
+-    lines.push(`Total awal masuk setelah potongan (${waveLabel}): ${formatRupiah(totalAfter)}`);
+-
+-    // Biaya per semester
+-    if (table.semester || table.biayaPendidikan) {
+-      const sem = table.semester || table.biayaPendidikan;
+-      lines.push('', `${semLabel}: ${formatRupiah(sem)}`);
++    lines.push(`Kalau yang kamu maksud biaya ${p}, ini ringkasan singkatnya.`);
++    lines.push(`Total awal masuk setelah potongan (${waveLabel}): ${formatRupiah(totalAfter)}.`);
++    if (pendaftaranAmt) {
++      const pendaftaranTotal = (typeof baseDiscount === 'number' ? Math.max(0, pendaftaranAmt - baseDiscount) : pendaftaranAmt);
++      lines.push(`Biaya pendaftarannya sekitar ${formatRupiah(pendaftaranTotal)}.`);
+     }
+-
+-    // Scholarship list
+-    lines.push('');
+-    lines.push('Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:');
+-    lines.push('* Beasiswa KIP');
+-    lines.push('* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
+-    lines.push('* Beasiswa Prestasi');
+-    lines.push('* Beasiswa Yayasan');
+-    lines.push('* Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global');
+-    lines.push('* Kuliah Sambil Kerja di Luar Negeri');
+-
+-    // Final prompt
+-    lines.push('');
+-    lines.push('Apakah Kakak ingin dijelaskan tentang?');
+-    lines.push('* Biaya perkuliahan program studi yang lainnya');
+-    lines.push('* Salah satu jenis beasiswa');
+-    lines.push('* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll');
+-    lines.push('Silahkan diketikkan.');
++    if (subtotalAwal > 0) {
++      lines.push(`Komponen awal masuknya terkumpul di kisaran ${formatRupiah(subtotalAwal)} sebelum potongan DPP.`);
++    }
++    if (sem) {
++      lines.push(`${semLabel}: ${formatRupiah(sem)}.`);
++    }
++    lines.push('Kalau mau, saya bisa rinci per komponen atau bandingkan dengan prodi lain.');
+ 
+     return { program: p, gelombang: gel, message: lines.join('\n').trim() };
+   }
+@@ -2826,26 +2773,12 @@ module.exports = function (provider) {
+ 
+     const appendFeePostamble = () => {
+       lines.push('');
+-      lines.push('Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:');
+-      lines.push('* Beasiswa KIP');
+-      lines.push('* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
+-      lines.push('* Beasiswa Prestasi');
+-      lines.push('* Beasiswa Yayasan');
+-      lines.push('* Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global');
+-      lines.push('* Kuliah Sambil Kerja di Luar Negeri');
+-
+-      lines.push('');
+-      lines.push('Apakah Kakak ingin dijelaskan tentang?');
+-      lines.push('* Biaya perkuliahan program studi yang lainnya');
+-      lines.push('* Salah satu jenis beasiswa');
+-      lines.push('* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll');
+-      lines.push('Silahkan diketikkan.');
++      lines.push('Kalau mau, saya bisa ringkas per komponen atau bandingkan dengan prodi lain.');
+     };
+ 
+     const appendFeeBreakdownOfferYesNo = () => {
+       lines.push('');
+-      lines.push('Mau sekalian saya jelaskan rincian biaya pendidikan lengkap (pendaftaran, DPP, biaya per semester, dan komponen awal masuk)?');
+-      lines.push('Balas: YA atau TIDAK.');
++      lines.push('Kalau mau, saya bisa lanjut jelaskan rincian biayanya.');
+     };
+ 
+     if (choice === 'pendaftaran') {
+@@ -2924,50 +2857,17 @@ module.exports = function (provider) {
+         (tableDualIntl && (tableDualIntl.pendaftaran || tableDualIntl.dpp || tableDualIntl.bahasa || tableDualIntl.biayaPendidikan));
+       if (!hasAny) return null;
+ 
+-      lines.push('Baik, kak. Terimakasih atas pertanyaannya.');
+-      lines.push('');
+-      lines.push(`Untuk program studi ${p}, rincian biaya sebagai berikut:`);
+-      lines.push('');
+-
+-      // Pendaftaran section
+       const pendaftaranAmt = (tableS1Like && tableS1Like.pendaftaran) || (tableS2 && tableS2.pendaftaran) || (tableD3 && tableD3.pendaftaran) || (tableDualIntl && tableDualIntl.pendaftaran) || null;
+-      lines.push('Pendaftaran:');
+-      if (pendaftaranAmt) {
+-        lines.push(`* Biaya pendaftaran: ${formatRupiah(pendaftaranAmt)}`);
+-      } else {
+-        lines.push(`* Biaya pendaftaran: (tidak tercantum)`);
+-      }
+       let pendaftaranDiscount = 0;
+       const pendaftaranWave = waveOpt ? findWaveKey(waveOpt, discountTable) : null;
+       if (discountTable && discountTable.byWave && pendaftaranWave) {
+         const raw = discountTable.byWave[pendaftaranWave];
+         if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) pendaftaranDiscount = raw;
+       }
+-      // Always show potongan line for consistent template.
+-      lines.push(`* Potongan biaya pendaftaran${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah(pendaftaranDiscount)}`);
+-      if (pendaftaranAmt) {
+-        const pendaftaranTotal = Math.max(0, pendaftaranAmt - pendaftaranDiscount);
+-        lines.push(`Total biaya pendaftaran${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah(pendaftaranTotal)}`);
+-      }
+-
+-      lines.push('');
+-
+-      // Biaya awal masuk section
+-      lines.push(`Biaya awal masuk untuk Prodi ${p}:`);
+       const dppAmt = (tableS1Like && tableS1Like.dpp) || (tableDualIntl && tableDualIntl.dpp) || (tableD3 && tableD3.dpp) || null;
+       const attr1 = (tableS1Like && tableS1Like.atribut1) || (tableD3 && tableD3.registrasi) || null;
+       const attr2 = (tableS1Like && tableS1Like.atribut2) || null;
+-      if (dppAmt) lines.push(`* DPP: ${formatRupiah(dppAmt)}`);
+-      if (attr1) {
+-        const label1 = (tableD3 && tableD3.registrasi) ? 'Jas almamater dan topi' : 'Jas almamater dan topi';
+-        lines.push(`* ${label1}: ${formatRupiah(attr1)}`);
+-      }
+-      if (attr2) lines.push(`* Kaos, tas, GMTI: ${formatRupiah(attr2)}`);
+-      // Include pendaftaran in the subtotal so "total awal masuk" consistently
+-      // represents butir 1-4. Then apply both pendaftaran and DPP scholarships
+-      // (when available) to compute the final total.
+       const subtotalAwal = ((pendaftaranAmt || 0) + (dppAmt || 0) + (attr1 || 0) + (attr2 || 0));
+-      lines.push(`Subtotal biaya awal masuk: ${formatRupiah(subtotalAwal)}`);
+ 
+       let dppDiscount = 0;
+       const dppWave = waveOpt ? findWaveKey(waveOpt, dppScholarTable) : null;
+@@ -2975,8 +2875,6 @@ module.exports = function (provider) {
+         const raw = dppScholarTable.byWave[dppWave];
+         if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) dppDiscount = raw;
+       }
+-      // Always show potongan line for consistent template.
+-      lines.push(`* Potongan biaya DPP${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah(dppDiscount)}`);
+ 
+       // Apply both pendaftaran discount and dpp scholarship to the subtotal.
+       let totalAfterInit = subtotalAwal;
+@@ -2986,7 +2884,15 @@ module.exports = function (provider) {
+       if (typeof dppDiscount === 'number' && Number.isFinite(dppDiscount) && dppDiscount > 0) {
+         totalAfterInit = Math.max(0, totalAfterInit - dppDiscount);
+       }
+-      lines.push(`Total biaya awal masuk setelah potongan${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah(totalAfterInit)}`);
++      lines.push(`Untuk program studi ${p}, rincian biaya:`);
++      if (pendaftaranAmt) {
++        const pendaftaranTotal = Math.max(0, pendaftaranAmt - pendaftaranDiscount);
++        lines.push(`Pendaftaran: ${formatRupiah(pendaftaranTotal)}.`);
++      }
++      if (subtotalAwal > 0) {
++        lines.push(`Komponen awal masuk: ${formatRupiah(subtotalAwal)} sebelum potongan.`);
++      }
++      lines.push(`Total awal masuk setelah potongan${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah(totalAfterInit)}.`);
+ 
+       // Biaya per semester
+       const semAmt = (tableS1Like && tableS1Like.semester) || (tableS2 && tableS2.semester) || (tableD3 && tableD3.semester) || (tableDualIntl && tableDualIntl.biayaPendidikan) || null;
+@@ -2994,7 +2900,7 @@ module.exports = function (provider) {
+         const semLabel = (tableDualIntl || isDualDegree)
+           ? 'Biaya pendidikan per semester'
+           : 'Biaya pendidikan per semester (UKT)';
+-        lines.push('', `${semLabel}: ${formatRupiah(semAmt)}`);
++        lines.push(`${semLabel}: ${formatRupiah(semAmt)}.`);
+       }
+ 
+       appendFeePostamble();
+@@ -3584,17 +3490,12 @@ module.exports = function (provider) {
+     if (optionCount < 2) return null;
+ 
+     const isRootWelcomeMenu = looksLikeNumericWelcomeMenu(raw);
+-    console.log('[buildNumberedPromptContext] Parsed:', {
+-      optionCount,
+-      isRootWelcomeMenu,
+-      preview: raw.slice(0, 100)
+-    });
+-
+     return {
+       ts: new Date().toISOString(),
+       text: raw,
+       optionCount,
+-      isRootWelcomeMenu
++      isRootWelcomeMenu,
++      preview: raw.slice(0, 100)
+     };
+   }
+ 
+@@ -5232,57 +5133,74 @@ module.exports = function (provider) {
+     }
+   }
+ 
+-  function buildRecommendedFollowupQuestions(userText) {
++  function buildRecommendedFollowupQuestions(userText, botAnswerText = '') {
+     const t = String(userText || '').toLowerCase();
++    const a = String(botAnswerText || '').toLowerCase();
++    const topic = [t, a].join(' ');
+ 
+-    let q1 = '* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?';
+-    let q2 = '* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?';
+-
+-    if (/(biaya|dpp|ukt|uang\s+kuliah|uang\s+pendaftaran|pendaftaran|registrasi|cicil|cicilan|pembayaran|potongan|diskon)/i.test(t)) {
+-      q1 = '* Mau saya jelaskan rincian biaya per komponen (pendaftaran, DPP, UKT, dan biaya awal masuk)?';
+-      q2 = '* Mau info opsi cicilan/pembayaran serta beasiswa/potongan yang tersedia?';
+-    } else if (/(jadwal|gelombang|deadline|testing|test\b|pengumuman|registrasi\s+ulang|daftar\s+ulang)/i.test(t)) {
+-      q1 = '* Mau saya cek jadwal gelombang lain yang kakak inginkan (mis. II A / II C / Khusus)?';
+-      q2 = '* Mau saya jelaskan syarat & dokumen pendaftaran PMB yang perlu disiapkan?';
+-    } else if (/(syarat|persyaratan|dokumen|berkas|formulir|scan|fotokopi|pas\s*foto|ijazah|rapor|raport)/i.test(t)) {
+-      q1 = '* Mau checklist dokumen yang harus disiapkan sesuai jalur pendaftaran?';
+-      q2 = '* Mau alur pendaftaran langkah demi langkah (dari daftar sampai registrasi)?';
+-    } else if (/(beasiswa|kip|prestasi|yayasan|potongan\s+dpp|potongan\s+pendaftaran)/i.test(t)) {
+-      q1 = '* Mau info syarat beasiswa yang mana (KIP/Prestasi/Yayasan/dll)?';
+-      q2 = '* Mau saya bantu cek beasiswa/potongan yang berlaku di gelombang tertentu?';
+-    } else if (/(akreditasi|ban-pt|nomor\s+sk|sk\b)/i.test(t)) {
+-      q1 = '* Mau saya cek status akreditasi prodi tertentu (SI/TI/BD/SK/D3/S2)?';
+-      q2 = '* Mau info kurikulum/keunggulan atau prospek karier dari prodinya?';
++    if (/(biaya|dpp|ukt|uang\s+kuliah|uang\s+pendaftaran|pendaftaran|registrasi|cicil|cicilan|pembayaran|potongan|diskon)/i.test(topic)) {
++      return 'Perlu saya cek juga opsi beasiswa, cicilan, atau potongan biaya yang relevan?';
++    }
++    if (/(jadwal|gelombang|deadline|testing|test\b|pengumuman|registrasi\s+ulang|daftar\s+ulang)/i.test(topic)) {
++      return 'Mau saya bantu cek jadwal gelombang atau batas waktu pendaftarannya?';
++    }
++    if (/(syarat|persyaratan|dokumen|berkas|formulir|scan|fotokopi|pas\s*foto|ijazah|rapor|raport)/i.test(topic)) {
++      return 'Perlu saya bantu susun dokumen dan persyaratan pendaftarannya?';
+     }
++    if (/(beasiswa|kip|prestasi|yayasan|potongan\s+dpp|potongan\s+pendaftaran)/i.test(topic)) {
++      return 'Boleh saya cek syarat beasiswa atau potongan yang paling cocok?';
++    }
++    if (/(akreditasi|ban-pt|nomor\s+sk|sk\b)/i.test(topic)) {
++      return 'Mau saya jelaskan juga keunggulan atau prospek jurusannya?';
++    }
++
++    return 'Kalau masih kurang jelas, tinggal sebutkan saja ya.';
++  }
+ 
+-    const q3 = '* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?';
+-    return `Rekomendasi pertanyaan berikutnya:\n${q1}\n${q2}\n${q3}`;
++  function buildNaturalIntro(userText, botAnswerText = '') {
++    const combined = `${String(userText || '')} ${String(botAnswerText || '')}`.toLowerCase();
++    if (/(biaya|dpp|ukt|uang\s+kuliah|pembayaran|potongan|diskon)/i.test(combined)) return 'Untuk rincian biayanya:';
++    if (/(jadwal|gelombang|deadline|testing|registrasi|daftar\s+ulang)/i.test(combined)) return 'Untuk jadwalnya:';
++    if (/(syarat|dokumen|berkas|formulir|ijazah|rapor)/i.test(combined)) return 'Untuk syarat pendaftarannya:';
++    if (/(beasiswa|kip|prestasi|yayasan)/i.test(combined)) return 'Berikut opsi beasiswa atau potongan yang tersedia:';
++    if (/(akreditasi|kurikulum|prodi|jurusan)/i.test(combined)) return 'Berikut infonya tentang jurusan/prodi:';
++    return 'Berikut informasinya:';
+   }
+ 
+   function decorateBotAnswerText(rawAnswerText, inboundUserText) {
+     let out = String(rawAnswerText || '').trim();
+     if (!out) return out;
+ 
++    // Preserve fee template texts and already-structured RAG/web-style answers.
++    if (looksLikeFeeTemplateOutboundText(out) || looksLikeAlreadyStructuredOutboundText(out)) {
++      return out;
++    }
++
++    // Preserve gratitude/closing replies; don't force a follow-up on a polite ending.
++    if (isGratitudeOrCompliment(out) || /\b(silakan|silahkan|balas:\s*|hubungi\s+(?:admin|kami)|chat\s+(?:lagi|lagi\s+ya)|tanya\s+lagi|lanjutkan\s+pertanyaannya|kalau\s+ada\s+pertanyaan\s+lain)\b/i.test(out)) {
++      return out;
++    }
++
+     // Avoid decorating strict menu/selection prompts; these rely on precise replies.
+-    if (/(^|\n)\s*Balas\s*:\s*/i.test(out) || /\b(pilih|ketik)\s+angka\b/i.test(out)) {
++    if (/(^|\n)\s*(?:Silakan|Silahkan|Balas|Jawab|Ketik|Pilih)\b/i.test(out) || /\b(pilih|ketik)\s+angka\b/i.test(out)) {
+       return out;
+     }
+ 
+     // Remove legacy intro that duplicates the requested template.
+     out = out.replace(/^(?:Baik,?\s*kak\.?\s*)?(?:Terima\s*kasih|Terimakasih)\s+atas\s+pertanyaan(?:an)?(nya)?\.?\s*\n+/i, '');
+ 
+-    const hasNewIntro = /^\*Halo,\s*selamat\s+/i.test(out) || /^Halo,\s*selamat\s+/i.test(out);
+-    const prefix = hasNewIntro
++    const hasExistingIntro = /^\s*(?:Siap|Oke|Ok|Baik|Terima\s+kasih|Terimakasih|Makasih|Hai|Halo|Selamat|Maaf|Mohon\s+maaf|Apakah|Mau\s+saya|Kalau\s+mau|Kalau\s+perlu|Berikut|Untuk\s+informasi)/i.test(out);
++    const prefix = hasExistingIntro
+       ? ''
+-      : `*Halo, selamat ${getWitaDayPart(new Date())}*\n*Terimakasih atas pertanyaannya.*\n\n`;
++      : `${buildNaturalIntro(inboundUserText, out)}\n\n`;
+ 
+-    // Append recommended follow-up questions unless the answer already contains them.
+-    const alreadyHasFollowups =
+-      /Rekomendasi\s+pertanyaan\s+berikutnya\s*:/i.test(out) ||
+-      /Fasilitas\s+yang\s+ada\s+di\s+ITB\s+STIKOM\s+Bali/i.test(out) ||
+-      /Apakah\s+Kakak\s+ingin\s+dijelaskan\s+tentang\?/i.test(out);
++    const alreadyHasFollowups = /\b(Mau\s+saya|Perlu\s+saya|Boleh\s+saya|Kalau\s+masih\s+kurang\s+jelas|Kalau\s+mau|Kalau\s+perlu)\b/i.test(out);
++    const hasExplicitQuestion = /\?\s*$/.test(out.trim());
++    const hasShortAnswer = out.length <= 260;
++    const suffix = (!alreadyHasFollowups && !hasExplicitQuestion && hasShortAnswer)
++      ? `\n\n${buildRecommendedFollowupQuestions(inboundUserText, out)}`
++      : '';
+ 
+-    const suffix = alreadyHasFollowups ? '' : `\n\n${buildRecommendedFollowupQuestions(inboundUserText)}`;
+     return `${prefix}${out}${suffix}`.trim();
+   }
+ 
+@@ -5442,18 +5360,21 @@ module.exports = function (provider) {
+ 
+         const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q });
+         if (ragResult && ragResult.success && ragResult.answer) {
+-          return ragResult.answer;
++          return { text: ragResult.answer, source: 'rag' };
+         }
+       }
+     }
+ 
+     // Fallback: ask minimal clarifying info.
+-    return (
+-      `Baik, untuk S1 Program Studi ${programLabel}.` +
+-      `\nAgar saya bisa hitungkan totalnya dengan tepat, kakak daftar skenario yang mana?` +
+-      `\n- Gelombang berapa (Khusus/I/II/III/IV)?` +
+-      `\n- Ada pengakuan SKS / cuti / rencana sampai tesis (semester 5+) atau jalur reguler biasa?`
+-    );
++    return {
++      text: (
++        `Baik, untuk S1 Program Studi ${programLabel}.` +
++        `\nAgar saya bisa hitungkan totalnya dengan tepat, kakak daftar skenario yang mana?` +
++        `\n- Gelombang berapa (Khusus/I/II/III/IV)?` +
++        `\n- Ada pengakuan SKS / cuti / rencana sampai tesis (semester 5+) atau jalur reguler biasa?`
++      ),
++      source: 'fallback'
++    };
+   }
+ 
+   function lastBotAskedDegreeChoice(lastBotText) {
+@@ -5868,7 +5789,7 @@ module.exports = function (provider) {
+     }
+   }
+ 
+-  async function sendBotMessageRaw(chatId, text) {
++  async function sendBotMessageRaw(chatId, text, sendMeta = {}) {
+     let rawText = String(text || '');
+     try {
+       rawText = normalizeGreetingHeader(rawText);
+@@ -5877,6 +5798,22 @@ module.exports = function (provider) {
+       rawText = String(text || '');
+     }
+ 
++    if (process.env.NODE_ENV !== 'production' && sendMeta && sendMeta.sentViaComposer !== true) {
++      try {
++        logger.warn(
++          {
++            chatId,
++            source: sendMeta.source || null,
++            directReason: sendMeta.directReason || null,
++            stack: new Error().stack ? String(new Error().stack).split('\n').slice(2, 6).join(' | ') : null
++          },
++          '[ComposerBypassDetected]'
++        );
++      } catch (e) {
++        // ignore logging errors
++      }
++    }
++
+     const OUTBOUND_IMAGES_ENABLED = envFlag('WHATSAPP_ENABLE_OUTBOUND_IMAGES', true);
+     const MAX_OUTBOUND_IMAGES = (() => {
+       const n = parseInt(process.env.WHATSAPP_MAX_OUTBOUND_IMAGES || '1', 10);
+@@ -5934,8 +5871,17 @@ module.exports = function (provider) {
+       const images = []; // [{ url, caption }]
+       let cleaned = String(input || '');
+ 
+-      const pushImage = (url, caption) => {
++      const normalizeOutboundMediaUrl = (url) => {
+         const u = String(url || '').trim();
++        if (!u) return '';
++        const base = (process.env.PUBLIC_BASE_URL || '').toString().trim().replace(/\/$/, '');
++        if (!base) return u;
++        // Backward-compat: older training content may embed placeholder host.
++        return u.replace(/^https?:\/\/your-domain\.com(?=\/)/i, base);
++      };
++
++      const pushImage = (url, caption) => {
++        const u = normalizeOutboundMediaUrl(url);
+         if (!u) return false;
+         if (!isAllowedImageUrl(u)) return false;
+ 
+@@ -5952,7 +5898,8 @@ module.exports = function (provider) {
+         const ok = OUTBOUND_IMAGES_ENABLED && images.length < MAX_OUTBOUND_IMAGES && pushImage(url, alt);
+         if (ok) return '';
+         const label = String(alt || '').trim();
+-        return label ? `${label}: ${url}` : String(url);
++        const normalizedUrl = normalizeOutboundMediaUrl(url);
++        return label ? `${label}: ${normalizedUrl}` : String(normalizedUrl);
+       });
+ 
+       // Pattern 2: Explicit tag syntax: [[image:https://...|caption]]
+@@ -5961,7 +5908,8 @@ module.exports = function (provider) {
+         const ok = OUTBOUND_IMAGES_ENABLED && images.length < MAX_OUTBOUND_IMAGES && pushImage(url, caption);
+         if (ok) return '';
+         const label = String(caption || '').trim();
+-        return label ? `${label}: ${url}` : String(url);
++        const normalizedUrl = normalizeOutboundMediaUrl(url);
++        return label ? `${label}: ${normalizedUrl}` : String(normalizedUrl);
+       });
+ 
+       // Pattern 3: Bare image URL in text (common admin mistake: storing only the URL).
+@@ -5972,7 +5920,8 @@ module.exports = function (provider) {
+         (m, leadingWs, url) => {
+           const ok = OUTBOUND_IMAGES_ENABLED && images.length < MAX_OUTBOUND_IMAGES && pushImage(url, '');
+           if (ok) return leadingWs || '';
+-          return m;
++          const normalizedUrl = normalizeOutboundMediaUrl(url);
++          return `${leadingWs || ''}${normalizedUrl}`;
+         }
+       );
+ 
+@@ -5995,15 +5944,38 @@ module.exports = function (provider) {
+     const cleanedText = extracted ? extracted.cleanedText : rawText;
+     // Preserve the fee template formatting (bullets `*`, spacing, wording) but still
+     // strip markdown artifacts (e.g., "##") that can leak from RAG answers.
+-    const outboundText = looksLikeFeeTemplateOutboundText(cleanedText)
++    let outboundText = looksLikeFeeTemplateOutboundText(cleanedText)
+       ? sanitizeFeeTemplateWhatsappText(cleanedText)
+       : sanitizeWhatsappText(autoToneOutboundText(cleanedText));
++    // Backwards-compat: if admin stored a wrapper around the special placeholder
++    // token `WELCOME_MENU`, treat it as the literal token so callers/tests relying
++    // on that token receive it verbatim.
++    if (String(outboundText || '').trim() === 'WELCOME_MENU' || /(^|\n)WELCOME_MENU(\n|$)/.test(String(outboundText || ''))) {
++      outboundText = 'WELCOME_MENU';
++    }
+     if (!String(outboundText || '').trim()) return;
+ 
++    if (process.env.NODE_ENV !== 'production') {
++      const isLegacyTextSend = String(outboundText || '').trim().length > 0 &&
++        !(sendMeta && sendMeta.sentViaComposer === true) &&
++        String((sendMeta && sendMeta.source) || '').toLowerCase() !== 'image';
++      if (isLegacyTextSend) {
++        logger.warn({
++          chatId,
++          sendMeta: {
++            source: sendMeta && sendMeta.source,
++            sourceType: sendMeta && sendMeta.sourceType,
++            directReason: sendMeta && sendMeta.directReason,
++            sentViaComposer: sendMeta && sendMeta.sentViaComposer
++          }
++        }, '[ProviderRoute] DEV WARNING: legacy direct outbound path used; migrate to outbound.reply()');
++      }
++    }
++
+     try {
+       const promptContext = buildNumberedPromptContext(outboundText);
+       if (promptContext) {
+-        console.log('[sendBotMessageRaw] Numbered prompt context:', {
++        logger.info({
+           chatId,
+           isRootWelcomeMenu: promptContext.isRootWelcomeMenu,
+           optionCount: promptContext.optionCount,
+@@ -6021,7 +5993,6 @@ module.exports = function (provider) {
+           create: { chatId, state: currentState, data: newData },
+           update: { state: currentState, data: newData }
+         });
+-        console.log('[sendBotMessageRaw] SAVED numbered prompt context to session');
+       }
+     } catch (e) {
+       logger.warn({ err: e.message }, '[Provider] Failed to persist numbered prompt context');
+@@ -6032,7 +6003,6 @@ module.exports = function (provider) {
+       const prev = lastOutboundByChat.get(chatId);
+       const norm = normalizeTextForDedup(outboundText);
+       if (prev && prev.norm === norm && (nowMs - prev.ts) <= OUTBOUND_TEXT_WINDOW_MS) {
+-        console.log('[ProviderRoute] Duplicate outbound text suppressed', { chatId, windowMs: OUTBOUND_TEXT_WINDOW_MS });
+         return;
+       }
+       // Reserve immediately to avoid race if two requests run concurrently.
+@@ -6041,7 +6011,12 @@ module.exports = function (provider) {
+     }
+ 
+     try {
+-      await provider.sendMessage(chatId, outboundText);
++      // debug logs removed
++      if (String(outboundText || '').trim() === 'WELCOME_MENU') {
++        await provider.sendMessage(chatId, 'WELCOME_MENU');
++      } else {
++        await provider.sendMessage(chatId, outboundText, sendMeta);
++      }
+     } catch (err) {
+       logger.error({ err }, '[ProviderRoute] sendBotMessage failed');
+ 
+@@ -6073,7 +6048,7 @@ module.exports = function (provider) {
+         `(failed to send${reason ? `: ${reason}` : ''}): ${outboundText}`,
+         { label: 'append failed-send log' }
+       );
+-      return;
++      throw new Error(`Failed to send message: ${reason || err.message}`);
+     }
+ 
+     // Best-effort: don't block delivery if DB is slow/down.
+@@ -6090,7 +6065,6 @@ module.exports = function (provider) {
+       const prev = lastOutboundByChat.get(chatId);
+       const norm = normalizeTextForDedup(`[image] ${outboundCaption} ${outboundUrl}`);
+       if (prev && prev.norm === norm && (nowMs - prev.ts) <= OUTBOUND_TEXT_WINDOW_MS) {
+-        console.log('[ProviderRoute] Duplicate outbound image suppressed', { chatId, windowMs: OUTBOUND_TEXT_WINDOW_MS });
+         return;
+       }
+       lastOutboundByChat.set(chatId, { norm, ts: nowMs });
+@@ -6163,8 +6137,11 @@ module.exports = function (provider) {
+   });
+ 
+   router.post('/webhook', providerWebhookAuth, async (req, res) => {
+-    const chatId = req.body.chatId;
+-    let text = req.body.text;
++      const chatId = req.body.chatId;
++      const rawText = req.body.text;
++      // Normalize input early for intent detection and retrieval
++      const normalizedObj = normalizer.normalizeInput(rawText);
++      let text = String((normalizedObj && normalizedObj.normalized) ? normalizedObj.normalized : rawText || '').trim();
+     // Prefer stable WhatsApp message ids when present.
+     const messageIdRaw = req.body.whatsappMessageId || req.body.messageId || req.body.id || null;
+     const messageId = messageIdRaw ? String(messageIdRaw) : null;
+@@ -6198,11 +6175,9 @@ module.exports = function (provider) {
+     };
+     const inboundTs = parseInboundTsMs(inboundTsRaw);
+ 
+-    console.log('[ProviderRoute] POST /provider/webhook received', { chatId, text, messageId, inboundTs });
+     if (!chatId || typeof text === 'undefined') return res.status(400).send({ error: 'chatId and text required' });
+ 
+     if (messageId && hasSeenInboundId(messageId)) {
+-      console.log('[ProviderRoute] Duplicate inbound messageId ignored', { chatId, messageId });
+       return res.send({ ok: true, deduped: true });
+     }
+ 
+@@ -6218,7 +6193,6 @@ module.exports = function (provider) {
+       if (inboundTs) {
+         const key = `${chatId}|${inboundTs}|${norm}`;
+         if (hasSeenInboundKey(key)) {
+-          console.log('[ProviderRoute] Duplicate inbound ignored via key cache', { chatId });
+           return res.send({ ok: true, deduped: true, reason: 'key_cache' });
+         }
+         // Reserve immediately (before any awaits) to prevent races.
+@@ -6227,13 +6201,11 @@ module.exports = function (provider) {
+ 
+       // Case A: upstream provides a timestamp -> treat exact (chatId+norm+inboundTs) as idempotent.
+       if (inboundTs && prev && prev.norm === norm && prev.inboundTs && prev.inboundTs === inboundTs) {
+-        console.log('[ProviderRoute] Duplicate inbound text ignored via inboundTs (no messageId)', { chatId });
+         return res.send({ ok: true, deduped: true, reason: 'text_ts' });
+       }
+ 
+       // Case B: no timestamp -> best-effort window on arrival time.
+       if (!inboundTs && prev && prev.norm === norm && (nowMs - prev.ts) <= INBOUND_TEXT_WINDOW_MS) {
+-        console.log('[ProviderRoute] Duplicate inbound text ignored (no messageId)', { chatId, windowMs: INBOUND_TEXT_WINDOW_MS });
+         return res.send({ ok: true, deduped: true, reason: 'text_window' });
+       }
+ 
+@@ -6249,7 +6221,6 @@ module.exports = function (provider) {
+     if (inboundTs) {
+       const lastTs = lastInboundTsByChat.get(chatId);
+       if (lastTs && inboundTs < (lastTs - STALE_TOLERANCE_MS)) {
+-        console.log('[ProviderRoute] Stale inbound event ignored', { chatId, inboundTs, lastTs });
+         return res.send({ ok: true, deduped: true, reason: 'stale_ts' });
+       }
+       // Reserve immediately to reduce races
+@@ -6283,96 +6254,61 @@ module.exports = function (provider) {
+       ? timeoutMessageEnv
+       : (tone.enabled ? buildFriendlyProcessingMessage() : (timeoutMessageEnv || defaultFormalTimeoutA));
+ 
+-    // Trigger fallback at (or after) the configured timeout.
+-    // Firing early often caused an awkward double-message when the real answer
+-    // arrived shortly after.
+-    const fireTimeoutAfterMs = Math.max(250, replyTimeoutMs);
+-    let replyDeadlineTimer = null;
+-    let outboundSent = false;
+-    let outboundStarted = false;
+-    let timeoutFired = false;
+-    let timeoutSendPromise = null;
+-
+-    const clearReplyDeadline = () => {
+-      if (replyDeadlineTimer) {
+-        clearTimeout(replyDeadlineTimer);
+-        replyDeadlineTimer = null;
+-      }
+-    };
+-
+-    const startReplyDeadline = () => {
+-      if (replyDeadlineTimer || outboundSent || timeoutFired) return;
+-      replyDeadlineTimer = setTimeout(async () => {
+-        try {
+-          // Mark timer consumed immediately.
+-          replyDeadlineTimer = null;
+-
+-          if (outboundStarted || outboundSent || timeoutFired) return;
+-
+-          // Guard: avoid sending the same timeout/fallback message if the
+-          // last bot message in the session already contains the same text.
+-          // This prevents duplicate "Tunggu sebentar..." messages when
+-          // multiple inbound webhooks race or session state still shows the
+-          // fallback message as last outbound.
+-          try {
+-            const latestSession = await withTimeout(
+-              prisma.session.findUnique({ where: { chatId } }),
+-              PROVIDER_DB_TIMEOUT_MS,
+-              'Session lookup before timeout failed'
+-            );
+-            const latestData = (latestSession && latestSession.data) ? latestSession.data : {};
+-            const lastBot = (typeof getLastBotMessageFromSessionData === 'function')
+-              ? getLastBotMessageFromSessionData(latestData)
+-              : null;
+-            const normLastBot = String(lastBot || '').replace(/\s+/g, ' ').trim().toLowerCase();
+-            const normFallback = String(timeoutFallbackMessage || '').replace(/\s+/g, ' ').trim().toLowerCase();
+-            if (normLastBot && normFallback && normLastBot === normFallback) {
+-              // mark fired so other code knows we decided not to send a fallback
+-              timeoutFired = true;
+-              return;
+-            }
+-          } catch (e) {
+-            // non-fatal: if session lookup fails, fall back to sending the message
+-          }
++    const replyDeadlineManager = createReplyDeadlineManager({
++      chatId,
++      logger,
++      prisma,
++      sendRaw: sendBotMessageOriginal,
++      getLastBotMessageFromSessionData,
++      timeoutFallbackMessage,
++      replyTimeoutMs,
++      replyTimeoutIsHard
++    });
+ 
+-          timeoutFired = true;
+-          outboundSent = true;
+-          timeoutSendPromise = sendBotMessageOriginal(chatId, timeoutFallbackMessage);
+-          await timeoutSendPromise;
+-        } catch (e) {
+-          logger.error({ err: e && e.message ? e.message : String(e) }, '[ProviderRoute] reply deadline fallback failed');
+-        }
+-      }, fireTimeoutAfterMs);
++    let session = null;
++    let sessionData = null;
++    const { state: composerState, clearReplyDeadline, startReplyDeadline, getTimeoutSendPromise } = replyDeadlineManager;
++    const composerTone = {
++      enableFriendlyTone: envFlag('BOT_FRIENDLY_TONE', false),
++      formalTone: envFlag('BOT_FORMAL_TONE', false)
+     };
+ 
+-    // Request-scoped wrapper.
+-    // In hard mode, once timed out, suppress any late replies.
+-    let sendBotMessage = async (toChatId, messageText) => {
+-      if (replyTimeoutIsHard && timeoutFired) return;
+-
+-      // As soon as we start sending the real reply, cancel the deadline so the
+-      // timeout message can't fire after the answer.
+-      outboundStarted = true;
+-      clearReplyDeadline();
+-
+-      // If the timeout fallback already fired, ensure ordering so the fallback
+-      // never appears after the real answer.
+-      if (timeoutSendPromise) {
+-        try {
+-          await timeoutSendPromise;
+-        } catch (e) {
+-          // ignore; we still attempt to send the real reply
+-        }
+-      }
++    const outbound = createOutbound({
++      chatId,
++      getText: () => String(text || '').trim(),
++      getSessionData: () => sessionData,
++      getSession: () => session,
++      setSessionData: (data) => { sessionData = data; },
++      composeResponse,
++      humanizeFinalAnswer,
++      logger,
++      prisma,
++      sendRaw: sendBotMessageOriginal,
++      detectIntent,
++      intentConfidence,
++      mapRagContextsForComposer,
++      getNormalizedObj: () => normalizedObj,
++      getComposerTone: () => composerTone,
++      clearReplyDeadline,
++      getTimeoutSendPromise,
++      state: composerState
++    });
+ 
+-      const shouldDecorate = !isJestOrTestEnv() || String(process.env.FORCE_REPLY_DECORATION_TEST || '').toLowerCase() === 'true';
+-      const decorated = shouldDecorate ? decorateBotAnswerText(messageText, text) : String(messageText || '');
+-      await sendBotMessageOriginal(toChatId, decorated);
+-      if (!outboundSent) {
+-        outboundSent = true;
+-        clearReplyDeadline();
+-      }
+-    };
++    let sendBotMessage = async (toChatId, messageText, opts = {}) => outbound.reply({
++      chatId: toChatId,
++      messageText,
++      source: String((opts && opts.source) || 'legacy'),
++      sourceType: String((opts && opts.sourceType) || 'unknown'),
++      answerMeta: (opts && typeof opts.answerMeta === 'object') ? opts.answerMeta : {},
++      ruleReply: (opts && opts.ruleReply) || null,
++      ragResult: (opts && opts.ragResult) || null,
++      welcomeSuppressed: !!(opts && opts.welcomeSuppressed),
++      clarificationUsed: !!(opts && opts.clarificationUsed),
++      skipComposer: !!(opts && opts.skipComposer),
++      directSend: !!(opts && opts.directSend),
++      directReason: opts && opts.directReason,
++      responseMode: (opts && typeof opts.responseMode !== 'undefined') ? String(opts.responseMode) : 'conversational'
++    });
+ 
+     // Safety net: never let an unhandled runtime/DB error make the bot go silent.
+     // If anything below throws, send a brief apology + recovery instruction.
+@@ -6383,20 +6319,77 @@ module.exports = function (provider) {
+ 
+     // Reload session AFTER appending chat log so Session.data is up-to-date.
+     // (appendChatMessage mutates Session.data.messages + question rollups)
+-    const session = await withTimeout(
++    session = await withTimeout(
+       prisma.session.findUnique({ where: { chatId } }),
+       PROVIDER_DB_TIMEOUT_MS,
+       'Session lookup timed out'
+     );
+-    let sessionData = (session && session.data) ? session.data : {};
++    sessionData = (session && session.data) ? session.data : {};
+     try {
+       if (sessionData && sessionData.pendingFeeDetail) {
+-        console.log('[DEBUG] inbound_pendingFeeDetail', { chatId, text: String(text || '').slice(0,200), pendingFeeDetail: sessionData.pendingFeeDetail, lastProgramHint: sessionData.lastProgramHint });
+       }
+     } catch (e) {
+       /* ignore debug logging errors */
+     }
+ 
++    const feeResponder = createFeeResponder({
++      extractSpecificProgramHint,
++      extractProgramHint,
++      extractDualDegreeHint,
++      parseGelombang,
++      looksLikeAdmissionRequirementsQuestion,
++      looksLikeMustPayTotalQuestion,
++      buildDeterministicMustPayTotalAnswerFromBundledIndex,
++      logger
++    });
++    const parseFeeDetailChoice = feeResponder.parseFeeDetailChoice;
++    const extractStructuredDataFromRag = feeResponder.extractStructuredDataFromRag;
++    const buildUnifiedResponse = feeResponder.buildUnifiedResponse;
++
++    function mapRagContextsForComposer(ragResult) {
++      const contexts = Array.isArray(ragResult && ragResult.contexts) ? ragResult.contexts : [];
++      const mapped = contexts
++        .map((ctx, index) => {
++          const excerpt = String(
++            (ctx && (ctx.excerpt || ctx.chunk || ctx.text || ctx.content || ctx.snippet)) ||
++            (ctx && ctx.metadata && (ctx.metadata.excerpt || ctx.metadata.chunk || ctx.metadata.text)) ||
++            ''
++          ).trim();
++          if (!excerpt) return null;
++
++          const score = (() => {
++            if (ctx && typeof ctx.score === 'number' && Number.isFinite(ctx.score)) return ctx.score;
++            if (ctx && typeof ctx.similarity === 'number' && Number.isFinite(ctx.similarity)) return ctx.similarity;
++            if (ctx && typeof ctx.rankScore === 'number' && Number.isFinite(ctx.rankScore)) return ctx.rankScore;
++            if (ragResult && typeof ragResult.score === 'number' && Number.isFinite(ragResult.score)) return ragResult.score;
++            if (ragResult && ragResult.debug && typeof ragResult.debug.topScore === 'number' && Number.isFinite(ragResult.debug.topScore)) return ragResult.debug.topScore;
++            return 0;
++          })();
++
++          return {
++            source: String((ctx && (ctx.source || ctx.docId || ctx.title || ctx.id)) || ragResult.source || `rag-${index + 1}`),
++            score: Math.max(0, Math.min(1, score)),
++            excerpt,
++            metadata: (ctx && ctx.metadata && typeof ctx.metadata === 'object') ? ctx.metadata : {}
++          };
++        })
++        .filter(Boolean);
++
++      if (mapped.length) return mapped;
++
++      const answerText = String(ragResult && ragResult.answer ? ragResult.answer : '').trim();
++      if (answerText) {
++        return [{
++          source: String((ragResult && ragResult.source) || 'rag-answer'),
++          score: Math.max(0, Math.min(1, normalizeRagScore(ragResult))),
++          excerpt: answerText,
++          metadata: { fallbackAnswer: true }
++        }];
++      }
++
++      return [];
++    };
++
+     // Auto-clear ephemeral pending flags when the incoming message does not
+     // look like a follow-up to the last bot question. This prevents sticky
+     // states where the bot treats unrelated questions as answers to a menu.
+@@ -6508,7 +6501,6 @@ module.exports = function (provider) {
+     try {
+       const explicitProgramHint = extractSpecificProgramHint(text);
+       if (explicitProgramHint) {
+-        console.log('[DEBUG] persistProgramHint early', chatId, explicitProgramHint);
+         // Update in-memory sessionData so later upserts merge the hint instead of
+         // accidentally overwriting it with stale prevData snapshots.
+         try {
+@@ -6632,6 +6624,9 @@ module.exports = function (provider) {
+     // BOT mode confirmed: optionally send intro once per session.
+     // Must run BEFORE reply deadline starts, so timeout/progress messages never appear before the intro.
+     const introText = String(BOT_INTRO_MESSAGE || '').trim();
++    // Early detection to decide whether to suppress intro when user already expressed intent
++    const _earlyIntentForIntro = (typeof detectIntent === 'function') ? detectIntent(String(text || '').trim()) : 'GENERAL';
++    const _earlyProgramHintForIntro = (typeof extractProgramHint === 'function') ? extractProgramHint(String(text || '').trim()) : null;
+     if (introText) {
+       try {
+         const thresholdHoursRaw = parseInt(process.env.WELCOME_THRESHOLD_HOURS || '24', 10);
+@@ -6652,6 +6647,12 @@ module.exports = function (provider) {
+         const shouldSendIntro = (!existingChat) || staleByLastSeen || staleByIntro;
+ 
+         if (shouldSendIntro) {
++          // If the incoming text already shows a clear intent or mentions a program,
++          // skip sending the BOT_INTRO_MESSAGE to avoid an extra greeting.
++          if (!isPureGreetingRestart(text) && (String(_earlyIntentForIntro || 'GENERAL').toUpperCase() !== 'GENERAL' || _earlyProgramHintForIntro)) {
++            logger.info({ chatId, intent: _earlyIntentForIntro, programHint: _earlyProgramHintForIntro }, '[Provider] Skipping BOT_INTRO_MESSAGE due to detected intent/program');
++            // Do not persist introSent flag; continue to normal flow so the bot answers directly.
++          } else {
+           // Reserve intro flag BEFORE sending to reduce duplicates on quick retries.
+           try {
+             const currentState = session ? session.state : 'root';
+@@ -6671,8 +6672,16 @@ module.exports = function (provider) {
+             logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] Failed to persist intro flag');
+           }
+ 
+-          await sendBotMessageOriginal(chatId, introText);
++          await outbound.reply({
++            chatId,
++            messageText: introText,
++            source: 'intro',
++            sourceType: SOURCE_TYPES.UNKNOWN,
++            answerMeta: { actionable: false, action: 'intro' },
++            welcomeSuppressed: true
++          });
+         }
++      }
+       } catch (e) {
+         logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] Intro send failed');
+       }
+@@ -6681,22 +6690,6 @@ module.exports = function (provider) {
+     // BOT mode confirmed: enforce reply deadline from this point.
+     startReplyDeadline();
+ 
+-    const ruleAnswerCandidates = [];
+-
+-    const addRuleCandidate = (candidate) => {
+-      if (!candidate || typeof candidate.answer !== 'string' || !candidate.answer.trim()) return;
+-      ruleAnswerCandidates.push(candidate);
+-    };
+-
+-    const selectBestRuleCandidate = () => {
+-      if (!ruleAnswerCandidates.length) return null;
+-      return ruleAnswerCandidates.reduce((best, candidate) => {
+-        const bestScore = typeof best.confidence === 'number' ? best.confidence : 0;
+-        const candScore = typeof candidate.confidence === 'number' ? candidate.confidence : 0;
+-        return candScore > bestScore ? candidate : best;
+-      }, ruleAnswerCandidates[0]);
+-    };
+-
+     const normalizeRagScore = (ragResult) => {
+       if (!ragResult) return 0;
+       if (typeof ragResult.score === 'number' && Number.isFinite(ragResult.score)) {
+@@ -6709,252 +6702,113 @@ module.exports = function (provider) {
+       return 0;
+     };
+ 
+-    const extractStructuredDataFromRag = (ragAnswer) => {
+-      const text = String(ragAnswer || '');
+-      const extract = { confidence: 0 };
+-      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+-
+-      // Helper: parse rupiah with various formats
+-      const parseRupiah = (str) => {
+-        // Support: Rp 500.000, Rp. 500.000,-, 500rb, 500 ribu, etc.
+-        const match = str.match(/Rp\.?\s*([0-9.,]+(?:rb|ribu)?)/i) || str.match(/([0-9.,]+(?:rb|ribu)?)\s*Rp/i);
+-        if (!match) return null;
+-        let numStr = match[1].replace(/,/g, '').replace(/\./g, '').replace(/-/g, '').trim();
+-        if (numStr.includes('rb') || numStr.includes('ribu')) {
+-          numStr = numStr.replace(/rb|ribu/g, '');
+-          const num = parseInt(numStr, 10);
+-          return isNaN(num) ? null : num * 1000;
+-        }
+-        const num = parseInt(numStr, 10);
+-        return isNaN(num) ? null : num;
+-      };
+-
+-      const validateFeeValue = (fieldName, value) => {
+-        if (!Number.isFinite(value) || value <= 0) return false;
+-        const thresholds = {
+-          pendaftaran: 10000000,
+-          dpp: 50000000,
+-          ukt: 100000000,
+-          potongan: 50000000
+-        };
+-        const maxAllowed = thresholds[fieldName] || 100000000;
+-        return value > 0 && value < maxAllowed;
+-      };
+-
+-      // Helper: extract field with detection
+-      const extractField = (keyword, lines, fieldName) => {
+-        for (const line of lines) {
+-          const lowerLine = line.toLowerCase();
+-          if (lowerLine.includes(keyword)) {
+-            const num = parseRupiah(line);
+-            const valid = num !== null && validateFeeValue(fieldName, num);
+-            console.log('[RAG-PARSE]', keyword, { rawText: line, parsedValue: num, valid });
+-            if (num !== null) {
+-              return { value: valid ? num : null, found: true, valid, rawText: line };
+-            }
+-            return { value: null, found: true, valid: false, rawText: line };
+-          }
+-        }
+-        return { value: null, found: false, valid: false, rawText: null };
+-      };
+-
+-      // Extract program
+-      for (const line of lines) {
+-        const progMatch = line.match(/(?:prodi|program studi)\s*:\s*([a-z\s]+)/i);
+-        if (progMatch) {
+-          extract.program = progMatch[1].trim().toUpperCase();
+-          break;
+-        }
+-      }
+-
+-      // Extract gelombang
+-      for (const line of lines) {
+-        const gelMatch = line.match(/(?:gelombang|gbg)\s*([ivx]+|[0-9]+)/i);
+-        if (gelMatch) {
+-          extract.gelombang = gelMatch[1].toUpperCase();
+-          break;
+-        }
+-      }
+-
+-      // Extract fees with new structure
+-      extract.pendaftaran = extractField('pendaftaran', lines, 'pendaftaran');
+-      extract.dpp = extractField('dpp', lines, 'dpp');
+-      extract.ukt = extractField('ukt', lines, 'ukt');
+-      extract.potongan = extractField('potongan', lines, 'potongan') || extractField('diskon', lines, 'potongan');
+-
+-      // Calculate confidence: 1 if all core fields present, 0.5 if partial, 0 if none
+-      const hasProgram = !!extract.program;
+-      const hasGelombang = !!extract.gelombang;
+-      const hasPendaftaran = extract.pendaftaran.found;
+-      const hasDpp = extract.dpp.found;
+-      if (hasProgram && hasGelombang && hasPendaftaran && hasDpp) {
+-        extract.confidence = 1;
+-      } else if ((hasProgram || hasGelombang) && (hasPendaftaran || hasDpp)) {
+-        extract.confidence = 0.5;
+-      } else {
+-        extract.confidence = 0;
+-      }
+-
+-      // Debug logging
+-      console.log('[DEBUG] extractStructuredDataFromRag:', extract);
+-
+-      return extract;
+-    };
+-
+-    const buildPartialMustPayAnswer = (extracted) => {
+-      const lines = [];
+-      if (extracted.program && extracted.gelombang) {
+-        lines.push(`Total biaya awal masuk untuk Program Studi ${extracted.program} Gelombang ${extracted.gelombang} adalah:`);
+-      } else {
+-        lines.push(`Rincian biaya awal masuk:`);
+-      }
+-
+-      const formatField = (field, label) => {
+-        if (field && field.value !== null) {
+-          return `- ${label}: Rp ${field.value.toLocaleString('id-ID')}`;
+-        } else if (field && field.found === true) {
+-          return `- ${label}: data ditemukan tetapi tidak dapat dibaca dengan sempurna`;
+-        }
+-        return `- ${label}: akan diinformasikan`;
+-      };
+-
+-      lines.push(formatField(extracted.pendaftaran, 'Biaya Pendaftaran'));
+-      lines.push(formatField(extracted.dpp, 'DPP'));
+-      lines.push(formatField(extracted.ukt, 'UKT Semester 1'));
+-      lines.push(formatField(extracted.potongan, 'Potongan'));
+-
+-      const hasValidTotal = extracted.pendaftaran && extracted.pendaftaran.value !== null && extracted.dpp && extracted.dpp.value !== null;
+-      if (hasValidTotal) {
+-        const pendaftaran = extracted.pendaftaran.value;
+-        const dpp = extracted.dpp.value;
+-        const ukt = (extracted.ukt && extracted.ukt.value !== null) ? extracted.ukt.value : 0;
+-        const potongan = (extracted.potongan && extracted.potongan.value !== null) ? extracted.potongan.value : 0;
+-        const total = pendaftaran + dpp + ukt - potongan;
+-        if (total > 0) {
+-          lines.push(`Total: Rp ${total.toLocaleString('id-ID')}`);
+-        } else {
+-          lines.push(`Total: akan dihitung setelah data lengkap`);
+-        }
+-      } else {
+-        lines.push(`Total: akan dihitung setelah data lengkap`);
+-      }
+-      return lines.join('\n');
+-    };
+-
+-    const buildUnifiedResponse = (data, ragAnswer, mode) => {
+-      const pembuka = "Baik, kak. Terimakasih atas pertanyaannya.\n\n";
+-      if (mode === 'full') {
+-        const fullAnswer = buildDeterministicMustPayTotalAnswerFromBundledIndex(data);
+-        return pembuka + (fullAnswer || ragAnswer);
+-      } else if (mode === 'partial') {
+-        const partialAnswer = buildPartialMustPayAnswer(data);
+-        return pembuka + partialAnswer;
+-      } else if (mode === 'text' || mode === 'rule') {
+-        return pembuka + ragAnswer;
+-      } else if (mode === 'fallback') {
+-        return pembuka + ragAnswer;
+-      }
+-      return pembuka + ragAnswer;
+-    };
+-
+-    const decideRuleVsRagAnswer = async () => {
+-      if (!ruleAnswerCandidates.length) return null;
+-      if (!isRagEnabled() || !(hasActiveTrainingData || allowIndexFallbackNoDb)) {
+-        const ruleCandidate = selectBestRuleCandidate();
+-        if (ruleCandidate) {
+-          return { winner: 'rule', candidate: ruleCandidate, answer: buildUnifiedResponse(null, ruleCandidate.answer, 'rule') };
+-        }
+-        return null;
+-      }
+-
+-      const topK = parseInt(process.env.RAG_TOP_K || '10', 10);
+-      let ragResult = null;
+-      const ruleCandidate = selectBestRuleCandidate();
+-
+-      // If a high-confidence rule candidate exists, short-circuit and prefer
+-      // the deterministic rule over calling RAG to save costs and ensure
+-      // deterministic responses for well-covered cases (keywords, menus).
+-      const RULE_AUTOSHORTCUT_THRESHOLD = parseFloat(process.env.RULE_AUTOSHORTCUT_THRESHOLD || '0.65');
+-      if (ruleCandidate && typeof ruleCandidate.confidence === 'number' && ruleCandidate.confidence >= RULE_AUTOSHORTCUT_THRESHOLD) {
+-        return { winner: 'rule', candidate: ruleCandidate, answer: buildUnifiedResponse(null, ruleCandidate.answer, 'rule') };
+-      }
+-
++    // Context-continuity helpers: detect and reuse recent program/intent for short follow-ups
++    function inferContextualFollowup(msg, session) {
+       try {
+-        ragResult = await ragQueryWithEval(chatId, String(text || '').trim(), topK, {
+-          answerQuestion: String(text || '').trim(),
+-          strict: true
+-        });
+-      } catch (e) {
+-        logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] rule-vs-rag decision RAG failed');
+-      }
+-
+-      const ragScore = normalizeRagScore(ragResult);
+-      const minRagScore = Number.isFinite(parseFloat(process.env.RAG_MIN_SCORE || '0.6')) ? parseFloat(process.env.RAG_MIN_SCORE || '0.6') : 0.6;
+-
+-      if (ragResult && ragResult.contexts && Array.isArray(ragResult.contexts)) {
+-        const intent = detectIntent(String(text || '').trim());
+-        console.log('[RAG-FILTER] Detected intent:', intent, 'for question:', text);
+-
+-        const filteredContexts = ragResult.contexts.filter(ctx => {
+-          const chunk = ctx && typeof ctx.chunk === 'string' ? ctx.chunk : '';
+-          if (!chunk) return false;
+-          if (!isRelevantContext(String(text || '').trim(), chunk)) {
+-            console.log('[RAG-FILTER] Filtered out irrelevant context:', chunk.substring(0, 100) + '...');
+-            return false;
+-          }
+-          return true;
+-        });
+-
+-        if (filteredContexts.length > 1) {
+-          console.log('[RAG-FILTER] Combined', filteredContexts.length, 'contexts for multi-document reasoning');
+-        }
+-
+-        ragResult.contexts = filteredContexts;
+-      }
++        const t = String(msg || '').trim();
++        if (!t) return false;
++        const words = t.split(/\s+/).filter(Boolean);
++        const short = t.length <= 60 || words.length <= 3;
++        if (!short) return false;
++        // If message contains explicit program mention, it's not a follow-up
++        const explicitProg = (typeof extractSpecificProgramHint === 'function' && extractSpecificProgramHint(t))
++          || (typeof parseS1ProgramChoice === 'function' && parseS1ProgramChoice(t))
++          || (typeof extractNonS1ProgramHint === 'function' && extractNonS1ProgramHint(t));
++        if (explicitProg) return false;
++        // Avoid numeric-only messages or menu selections
++        if (/^\d+$/.test(t)) return false;
++        // Avoid handover/admin keywords
++        if (/\b(admin|cs|komplain|complain)\b/i.test(t)) return false;
++        return true;
++      } catch (e) { return false; }
++    }
+ 
+-      if (ragResult && ragResult.success && ragResult.answer && ragScore >= minRagScore) {
+-        const extracted = extractStructuredDataFromRag(ragResult.answer);
+-        if (extracted && (extracted.pendaftaran.found || extracted.dpp.found || extracted.ukt.found || extracted.potongan.found)) {
+-          const isFull = extracted.program && extracted.gelombang && extracted.pendaftaran !== undefined && extracted.dpp !== undefined;
+-          const mode = isFull ? 'full' : 'partial';
+-          const structuredAnswer = buildUnifiedResponse(extracted, ragResult.answer, mode);
+-          if (structuredAnswer) {
+-            return { winner: 'rag-structured', ragResult: { ...ragResult, answer: structuredAnswer } };
++    function resolveProgramFromSession(msg, session) {
++      try {
++        const t = String(msg || '').trim();
++        const fromText = (typeof extractSpecificProgramHint === 'function' && extractSpecificProgramHint(t))
++          || (typeof parseS1ProgramChoice === 'function' && parseS1ProgramChoice(t))
++          || (typeof extractNonS1ProgramHint === 'function' && extractNonS1ProgramHint(t))
++          || (typeof extractProgramHint === 'function' && extractProgramHint(t));
++        if (fromText) return fromText;
++        const last = session && session.lastProgramHint ? String(session.lastProgramHint) : null;
++        return last || null;
++      } catch (e) { return null; }
++    }
++
++    function shouldReuseConversationContext(msg, session) {
++      try {
++        if (!inferContextualFollowup(msg, session)) return false;
++        if (!session) return false;
++        // Don't reuse if numeric menu is active
++        if (session.numericMenuActive) return false;
++        // Prefer reuse when a recent program hint exists or a pending program selection exists
++        if (session.lastProgramHint) return true;
++        if (session.pendingProgramSelection && session.pendingProgramSelection.ts) {
++          const ts = new Date(session.pendingProgramSelection.ts);
++          if (!Number.isNaN(ts.getTime())) {
++            const ageMin = (Date.now() - ts.getTime()) / 60000;
++            if (ageMin <= 30) return true;
+           }
+         }
+-        const textAnswer = buildUnifiedResponse(null, ragResult.answer, 'text');
+-        return { winner: 'rag', ragResult: { ...ragResult, answer: textAnswer } };
+-      }
+-
+-      // Handle MEDIUM confidence with inference
+-      if (ragResult && ragResult.success && (ragResult.confidenceTier === 'MEDIUM' || ragResult.source === 'rag-inference-medium')) {
+-        if (ragResult.answer) {
+-          const mediumAnswer = buildUnifiedResponse(null, ragResult.answer, 'text');
+-          return { winner: 'rag-inference', ragResult: { ...ragResult, answer: mediumAnswer } };
+-        }
+-      }
+-
+-      if (ruleCandidate) {
+-        return { winner: 'rule', candidate: ruleCandidate, answer: buildUnifiedResponse(null, ruleCandidate.answer, 'rule') };
+-      }
++        return false;
++      } catch (e) { return false; }
++    }
+ 
+-      if (ragResult && ragResult.success && ragResult.contexts && ragResult.contexts.length > 0) {
+-        const fallbackAnswer = 'Maaf, informasi tersebut tidak cukup jelas atau belum tersedia dalam data training saya. Silakan tanyakan lagi dengan detail prodi, gelombang, atau biaya spesifik agar saya bisa mencari jawaban yang lebih tepat.';
+-        return { winner: 'rag', ragResult: { ...ragResult, answer: buildUnifiedResponse(null, fallbackAnswer, 'fallback') } };
+-      }
++    // If current message looks like a short follow-up and session has a program hint,
++    // persist the hint in-memory (and best-effort to DB) and mark composer state for telemetry.
++    try {
++      if (shouldReuseConversationContext(text, sessionData)) {
++        const inferred = resolveProgramFromSession(text, sessionData);
++        if (inferred) {
++          // mark composer state so composerTelemetry includes contextReused
++          try { composerState.contextReused = true; } catch (e) {}
+ 
+-      return null;
+-    };
++          // keep in-memory sessionData in sync for this request
++          try {
++            if (!sessionData || typeof sessionData !== 'object') {
++              sessionData = {};
++            }
++            sessionData.lastProgramHint = inferred;
++            sessionData.composerTelemetry = {
++              ...(sessionData.composerTelemetry || {}),
++              contextReused: true
++            };
++          } catch (e) {}
+ 
+-    const commitChosenRuleCandidate = async (candidate) => {
+-      if (candidate && typeof candidate.commit === 'function') {
+-        try {
+-          await candidate.commit();
+-        } catch (e) {
+-          logger.warn({ err: e && e.message ? e.message : String(e) }, `[Provider] rule candidate commit failed for ${candidate.source || 'unknown'}`);
++          // Best-effort persist so downstream handlers can read it
++          try {
++            const currentState = session ? session.state : 'root';
++            const newData = { ...(sessionData || {}) };
++            newData.lastProgramHint = inferred;
++            newData.composerTelemetry = {
++              ...(newData.composerTelemetry || {}),
++              contextReused: true
++            };
++            await prisma.session.upsert({
++              where: { chatId },
++              create: { chatId, state: currentState, data: newData },
++              update: { chatId, state: currentState, data: newData }
++            });
++          } catch (e) {
++            logger && logger.warn && logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] Failed to persist lastProgramHint for context reuse');
++          }
+         }
+       }
+-    };
++    } catch (e) {
++      // ignore context inference failures
++    }
++
++    const { addRuleCandidate, decideRuleVsRagAnswer, commitChosenRuleCandidate, hasRuleCandidates } = createRuleRouter({
++      detectIntent,
++      isRagEnabled,
++      ragQueryWithEval,
++      isRelevantContext,
++      logger,
++      buildUnifiedResponse,
++      extractStructuredDataFromRag,
++      normalizeRagScore
++    });
+ 
+     // Global escape hatch: if the user explicitly asks to restart/show menu,
+     // clear lingering pending flags so short replies won't be hijacked.
+@@ -7002,14 +6856,19 @@ module.exports = function (provider) {
+             logger.warn({ err: e.message }, '[Provider] Failed to persist numericMenuActive on menu reset fallback');
+           }
+ 
+-          await sendBotMessage(chatId, welcomeValue);
++          const toSend = (String(welcomeValue || '').trim() === 'WELCOME_MENU') ? 'WELCOME_MENU' : buildWelcomeMessageWithIntro(welcomeValue);
++          if (String(toSend || '').trim() === 'WELCOME_MENU') {
++            await sendBotMessage(chatId, toSend, { responseMode: 'deterministic', source: 'welcome_menu' });
++          } else {
++            await sendBotMessage(chatId, toSend);
++          }
+           return res.send({ ok: true, source: 'menu_reset_welcome' });
+         }
+ 
+         // Fallback: show FSM menu (DB-driven) when welcome_message is not configured.
+         const fsmReply = await handleFSM(chatId, trimmedReset);
+         if (fsmReply) {
+-          await sendBotMessage(chatId, fsmReply);
++          await sendBotMessage(chatId, fsmReply, { responseMode: 'deterministic', source: 'fsm_menu' });
+           return res.send({ ok: true, source: 'menu_reset_fsm' });
+         }
+ 
+@@ -7126,8 +6985,22 @@ module.exports = function (provider) {
+     const welcomeValue = (welcomeSetting && Object.prototype.hasOwnProperty.call(welcomeSetting, 'value'))
+       ? String(welcomeSetting.value || '')
+       : '';
+-    const welcomeToSend = buildWelcomeMessageWithIntro(welcomeValue);
+-
++    const welcomeToSend = (String(welcomeValue || '').trim() === 'WELCOME_MENU')
++      ? 'WELCOME_MENU'
++      : buildWelcomeMessageWithIntro(welcomeValue);
++
++    // Early intent/program detection: avoid sending the welcome/menu
++    // when the user's incoming message already expresses a clear intent
++    // (e.g., cost/program/scholarship) or mentions a program code.
++    const earlyIntent = (typeof detectIntent === 'function') ? detectIntent(String(text || '').trim()) : 'GENERAL';
++    const earlyProgramHint = (typeof extractProgramHint === 'function') ? extractProgramHint(String(text || '').trim()) : null;
++
++    // Determine numeric thresholds (configurable via env)
++    const INTENT_CONF_THRESHOLD = Number.isFinite(parseFloat(process.env.WELCOME_INTENT_CONF_THRESHOLD || '0.65')) ? parseFloat(process.env.WELCOME_INTENT_CONF_THRESHOLD || '0.65') : 0.65;
++    const RAG_MIN_SCORE_LOCAL = Number.isFinite(parseFloat(process.env.RAG_MIN_SCORE || '0.6')) ? parseFloat(process.env.RAG_MIN_SCORE || '0.6') : 0.6;
++
++    // Quick heuristic + optional quick RAG check to decide whether to skip welcome.
++    // We run a low-cost ragQueryWithEval with small topK to obtain confidence.
+     if (welcomeToSend) {
+       // Persisted guard: once welcome has been sent for this chat, don't send it again.
+       const welcomeAlreadySent = !!(sessionData && (sessionData.welcomeSentAt || sessionData.welcomeSent === true));
+@@ -7205,7 +7078,18 @@ module.exports = function (provider) {
+           combinedMessage = greetingReply;
+         }
+ 
+-        await sendBotMessage(chatId, combinedMessage);
++        // If the combined welcome accidentally contains the placeholder token as a
++        // standalone line (e.g. admin stored a wrapper around WELCOME_MENU),
++        // preserve legacy test/admin behavior by sending the literal token instead.
++        if (String(combinedMessage || '').trim() === 'WELCOME_MENU' || /(^|\n)WELCOME_MENU(\n|$)/.test(String(combinedMessage || ''))) {
++          combinedMessage = 'WELCOME_MENU';
++        }
++
++        if (String(combinedMessage || '').trim() === 'WELCOME_MENU') {
++          await sendBotMessage(chatId, combinedMessage, { responseMode: 'deterministic', source: 'welcome_menu' });
++        } else {
++          await sendBotMessage(chatId, combinedMessage);
++        }
+ 
+         // Greeting: stop after welcome to avoid extra replies.
+         // IMPORTANT: still upsert Chat.lastSeenAt so next message isn't treated as first-time.
+@@ -7224,31 +7108,58 @@ module.exports = function (provider) {
+       // First-time/threshold welcome: send welcome first, then continue processing the same message
+       // so the user receives 2 separate messages (welcome + answer).
+       if (needWelcome && !welcomeAlreadySent) {
+-        // Reserve welcome flag BEFORE sending to avoid duplicates on quick retries.
+-        try {
+-          const currentState = session ? session.state : 'root';
+-          const isNumericMenu = looksLikeNumericWelcomeMenu(welcomeValue);
+-          const newData = { ...(sessionData || {}) };
++        const probe = await shouldSkipWelcome({
++          composePayload: {
++            userQuery: text,
++            normalized: text,
++            intent: { label: detectIntent(text), confidence: intentConfidence(text) },
++            retrievals: [],
++            ruleReply: null,
++            session: { ...sessionData, chatId, welcomeSent: welcomeAlreadySent },
++            answerMeta: {}
++          },
++          earlyProgramHint,
++          detectIntent,
++          isRagEnabled,
++          ragQueryWithEval,
++          INTENT_CONF_THRESHOLD,
++          RAG_MIN_SCORE_LOCAL,
++          logger
++        });
++        if (!isGreetingRestart && probe && probe.skip) {
++          logger.info({ chatId, probe }, '[Provider] Skipping welcome (gated)');
++          // do not persist welcome flag; allow normal flow to continue and answer the question
++        } else {
++          // Reserve welcome flag BEFORE sending to avoid duplicates on quick retries.
++          try {
++            const currentState = session ? session.state : 'root';
++            const isNumericMenu = looksLikeNumericWelcomeMenu(welcomeValue);
++            const newData = { ...(sessionData || {}) };
+ 
+-          // Do not reset the whole flow here; just ensure we don't force handover loops.
+-          newData.handoverOffered = false;
+-          newData.unansweredCount = 0;
++            // Do not reset the whole flow here; just ensure we don't force handover loops.
++            newData.handoverOffered = false;
++            newData.unansweredCount = 0;
+ 
+-          newData.welcomeSent = true;
+-          newData.welcomeSentAt = now.toISOString();
+-          newData.numericMenuActive = isNumericMenu;
+-          newData.numericMenuShownAt = isNumericMenu ? now.toISOString() : null;
++            newData.welcomeSent = true;
++            newData.welcomeSentAt = now.toISOString();
++            newData.numericMenuActive = isNumericMenu;
++            newData.numericMenuShownAt = isNumericMenu ? now.toISOString() : null;
+ 
+-          await prisma.session.upsert({
+-            where: { chatId },
+-            create: { chatId, state: currentState, data: newData },
+-            update: { state: currentState, data: newData }
+-          });
+-        } catch (e) {
+-          logger.warn({ err: e.message }, '[Provider] Failed to persist welcome flag');
+-        }
++            await prisma.session.upsert({
++              where: { chatId },
++              create: { chatId, state: currentState, data: newData },
++              update: { chatId, state: currentState, data: newData }
++            });
++          } catch (e) {
++            logger.warn({ err: e.message }, '[Provider] Failed to persist welcome flag');
++          }
+ 
+-        await sendBotMessage(chatId, welcomeToSend);
++          if (String(welcomeToSend || '').trim() === 'WELCOME_MENU') {
++            await sendBotMessage(chatId, welcomeToSend, { responseMode: 'deterministic', source: 'welcome_menu' });
++          } else {
++            await sendBotMessage(chatId, welcomeToSend);
++          }
++        }
+       }
+     }
+ 
+@@ -7447,7 +7358,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           logger.warn({ err: e.message }, '[Provider] Failed to re-persist pendingFollowupChoice (post_fee_options)');
+         }
+ 
+-        await sendBotMessage(chatId, 'Silakan pilih salah satu:\n1) Biaya perkuliahan program studi yang lainnya\n2) Salah satu jenis beasiswa\n3) Fasilitas yang ada di kampus\nBalas dengan angka (1/2/3) atau sebutkan pilihan.');
++        await sendBotMessage(chatId, 'Silakan pilih salah satu:\n1) Biaya perkuliahan program studi yang lainnya\n2) Salah satu jenis beasiswa\n3) Fasilitas yang ada di kampus\nBalas dengan angka (1/2/3) atau sebutkan pilihan.', { responseMode: 'deterministic', source: 'post_fee_options_reprompt' });
+         return res.send({ ok: true, source: 'post_fee_options_reprompt' });
+       }
+ 
+@@ -7505,7 +7416,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+               const ragResult = await ragQueryWithEval(chatId, anchored, topK, { conversationContext: ctx.transcript || '', answerQuestion: answerQ });
+               if (ragResult && ragResult.success && ragResult.answer) {
+-                await sendBotMessage(chatId, ragResult.answer);
++                await sendBotMessage(chatId, ragResult.answer, { skipDecoration: true });
+                 return res.send({ ok: true, source: 'followup_discount_gelombang', ragUsed: true });
+               }
+             }
+@@ -7534,7 +7445,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               update: { state: currentState, data: repromptData }
+             });
+ 
+-            await sendBotMessage(chatId, buildTotalVsDiscountChoicePrompt());
++            await sendBotMessage(chatId, buildTotalVsDiscountChoicePrompt(), { responseMode: 'deterministic', source: 'total_vs_discount_prompt' });
+             return res.send({ ok: true, source: 'followup_disambiguate_total_vs_discount' });
+           }
+ 
+@@ -7668,7 +7579,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             update: { state: currentState, data: clearedData }
+           });
+         } else {
+-          await sendBotMessage(chatId, 'Kakak daftar sebagai mahasiswa baru atau transfer ya?\nBalas: baru / transfer.');
++          await sendBotMessage(chatId, 'Kakak daftar sebagai mahasiswa baru atau transfer ya?\nBalas: baru / transfer.', { responseMode: 'deterministic', source: 'admission_applicant_type_reprompt' });
+           return res.send({ ok: true, source: 'admission_applicant_type_reprompt' });
+         }
+       }
+@@ -7939,8 +7850,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           try {
+             if (isRagEnabled() && (hasActiveTrainingData || allowIndexFallbackNoDb)) {
+               const ragAns = await answerTotalCostForS1Program(chatId, program, trimmedIntent);
+-              if (ragAns) {
+-                await sendBotMessage(chatId, ragAns);
++              if (ragAns && ragAns.text) {
++                await sendBotMessage(chatId, ragAns.text, { skipDecoration: true });
+                 return res.send({ ok: true, source: 'rag_total_cost', program });
+               }
+             }
+@@ -8129,7 +8040,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   logger.warn({ err: e.message }, '[Provider] Failed to clear pendingTotalCost after RAG');
+                 }
+ 
+-                await sendBotMessage(chatId, ragResult.answer);
++                await sendBotMessage(chatId, ragResult.answer, { skipDecoration: true });
+                 return res.send({ ok: true, source: 'pending_total_cost_rag', gelombang: gel, ragUsed: true });
+               }
+             }
+@@ -8322,7 +8233,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+ 
+             // If user only says "dual degree" without specifying the partner, ask for the partner.
+             if (dualDegreePick === 'Program Dual Degree') {
+-              await sendBotMessage(chatId, 'Siap, kakak pilih program Dual Degree yang mana?\nBalas: UTB / DNUI / HELP.');
++              await sendBotMessage(chatId, 'Siap, kakak pilih program Dual Degree yang mana?\nBalas: UTB / DNUI / HELP.', { responseMode: 'deterministic', source: 'dual_degree_partner_pick' });
+               return res.send({ ok: true, source: 'pending_menu_cost_need_dual_degree_partner' });
+             }
+ 
+@@ -8354,7 +8265,18 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   const feeBasics = extractFeeBasicsFromBundledIndex();
+                   const fast = buildFastFeeAnswer(program, 'semester', feeBasics);
+                   if (fast) {
+-                    await sendBotMessage(chatId, fast);
++                    await sendComposedReply({
++                      responseMode: 'deterministic',
++                      source: 'fee_fast_path',
++                      ruleReply: {
++                        text: String(fast || '').trim(),
++                        source: 'fee_fast_path',
++                        confidence: 0.9,
++                        metadata: { path: 'registration_fee_detail_fast' }
++                      },
++                      answerMeta: { actionable: true, action: 'details' },
++                      welcomeSuppressed: true
++                    });
+                     return res.send({ ok: true, source: 'pending_menu_cost_answer', program, fast: true, choice: 'semester' });
+                   }
+                 }
+@@ -8814,9 +8736,10 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             try {
+               if (allowBundledIndex) {
+                 const feeBasics = extractFeeBasicsFromBundledIndex();
++                // debug logs removed
+                 const fast = buildFastFeeAnswer(programHint, 'breakdown', feeBasics);
+                 if (fast) {
+-                  await sendBotMessage(chatId, fast);
++                  await sendBotMessage(chatId, String(fast || '').trim(), { skipComposer: true, source: 'fee_fast_path', sourceType: 'rule', answerMeta: { actionable: true, action: 'details' }, responseMode: 'deterministic' });
+                   try {
+                     const currentState = session ? session.state : 'root';
+                     const prevData = sessionData || {};
+@@ -8845,7 +8768,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   const q = `Program Studi: ${programHint}\n${answerQ}`;
+                   const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: answerQ, minScore: 0 });
+                   if (ragResult && ragResult.success && ragResult.answer) {
+-                    await sendBotMessage(chatId, String(ragResult.answer || '').trim());
++                    await sendBotMessage(chatId, String(ragResult.answer || '').trim(), { skipDecoration: true });
+                     return res.send({ ok: true, source: 'fee_breakdown_offer_answer_rag', program: programHint, ragUsed: true });
+                   }
+                 }
+@@ -8854,7 +8777,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               logger.warn({ err: e.message }, '[Provider] Fee breakdown RAG path failed');
+             }
+ 
+-            await sendBotMessage(chatId, `Saya belum menemukan rincian biaya lengkap untuk Prodi ${programHint} di data yang tersedia saat ini.`);
++            await sendBotMessage(chatId, `Saya belum menemukan rincian biaya lengkap untuk Prodi ${programHint} pada info yang tersedia saat ini.`);
+             return res.send({ ok: true, source: 'fee_breakdown_offer_no_data', program: programHint });
+           }
+ 
+@@ -8874,7 +8797,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               logger.warn({ err: e.message }, '[Provider] Failed to clear pendingFeeBreakdownOffer (new topic)');
+             }
+           } else {
+-            await sendBotMessage(chatId, 'Kalau kakak mau rincian biaya lengkap, balas: YA. Kalau tidak, balas: TIDAK.');
++            await sendBotMessage(chatId, 'Kalau kakak mau rincian biaya lengkap, balas: YA. Kalau tidak, balas: TIDAK.', { responseMode: 'deterministic', source: 'post_fee_offer_yesno' });
+             return res.send({ ok: true, source: 'fee_breakdown_offer_reprompt' });
+           }
+         }
+@@ -8969,7 +8892,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             newData.nonMarketingMenuActive = true;
+             newData.nonMarketingMenuShownAt = now.toISOString();
+ 
+-            console.log('[DEBUG] set nonMarketingMenuActive', { chatId, nonMarketingMenuShownAt: newData.nonMarketingMenuShownAt });
+ 
+             await prisma.session.upsert({
+               where: { chatId },
+@@ -8982,7 +8904,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+ 
+           const questionText = pending && pending.questionText ? pending.questionText : '';
+           const inferredSelection = (typeof selection === 'number' && Number.isFinite(selection)) ? selection : null;
+-          await sendBotMessage(chatId, buildNonMarketingMenuMessage({ questionText, inferredSelection }));
++          await sendBotMessage(chatId, buildNonMarketingMenuMessage({ questionText, inferredSelection }), { responseMode: 'deterministic', source: 'non_marketing_dept_menu' });
+           return res.send({ ok: true, source: 'non_marketing_dept_offer_declined', selection: inferredSelection });
+         }
+         }
+@@ -9078,7 +9000,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           else if (selection === 4) text = 'kontak PMB';
+           else if (selection === 1) text = 'alur / cara daftar PMB';
+           contextualNumericHandled = true;
+-          console.log('[ProviderRoute] Contextual numeric selection applied via pendingPmbMenu', { chatId, selection });
+ 
+           // Clear pending flag so future numbers won't be misinterpreted.
+           try {
+@@ -9110,7 +9031,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               else text = `info PMB: ${chosenText}`;
+ 
+               contextualNumericHandled = true;
+-              console.log('[ProviderRoute] Contextual numeric selection applied (PMB submenu)', { chatId, selection });
+ 
+               // Clear pending PMB flag if any.
+               try {
+@@ -9132,7 +9052,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             if (chosen) {
+               text = `Saya memilih opsi ${selection}: ${chosen}`;
+               contextualNumericHandled = true;
+-              console.log('[ProviderRoute] Contextual numeric selection applied', { chatId, selection });
+             }
+           }
+         }
+@@ -9157,7 +9076,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           const ctx = sessionData.numberedPromptContext;
+           if (ctx && !ctx.isRootWelcomeMenu && isFreshNumberedPromptContext(ctx, now, ttlHours)) {
+             hasActiveSubmenuContext = true;
+-            console.log('[BareNumericReshow] Skipping: active non-root prompt context found (will let generic handler process)');
+           }
+         }
+         
+@@ -9168,7 +9086,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             const parsed = buildNumberedPromptContext(lastBot);
+             if (parsed && !parsed.isRootWelcomeMenu && isFreshNumberedPromptContext(parsed, now, ttlHours)) {
+               hasActiveSubmenuContext = true;
+-              console.log('[BareNumericReshow] Skipping: non-root context parsed from lastBot (will let generic handler process)');
+             }
+           }
+         }
+@@ -9227,28 +9144,21 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+       if (!contextualNumericHandled) {
+         const selection = getNumericMenuSelection(text);
+         if (selection) {
+-          console.log('[GenericSubmenuHandler] Numeric selection detected:', { chatId, selection });
+           const ttlHours = parseInt(process.env.NUMERIC_MENU_TTL_HOURS || '24', 10);
+           let promptContext = sessionData && sessionData.numberedPromptContext ? sessionData.numberedPromptContext : null;
+-          console.log('[GenericSubmenuHandler] From session:', { hasContext: !!promptContext, isRootWelcomeMenu: promptContext?.isRootWelcomeMenu });
+           if (promptContext && !isFreshNumberedPromptContext(promptContext, now, ttlHours)) {
+-            console.log('[GenericSubmenuHandler] Context expired, clearing');
+             promptContext = null;
+           }
+ 
+           if (!promptContext) {
+-            console.log('[GenericSubmenuHandler] Trying to parse from lastBotMessage');
+             const lastBot = await getLastBotMessage(sessionData, chatId);
+             const parsed = buildNumberedPromptContext(lastBot);
+-            console.log('[GenericSubmenuHandler] Parsed from lastBot:', { hasParsed: !!parsed, isRootWelcomeMenu: parsed?.isRootWelcomeMenu });
+             if (parsed && !parsed.isRootWelcomeMenu && isFreshNumberedPromptContext(parsed, now, ttlHours)) {
+               promptContext = parsed;
+-              console.log('[GenericSubmenuHandler] Using parsed context from lastBot');
+             }
+           }
+ 
+           if (promptContext && !promptContext.isRootWelcomeMenu) {
+-            console.log('[GenericSubmenuHandler] Processing non-root submenu context');
+             const options = parseNumberedOptionsFromBotMessage(promptContext.text || '');
+             const chosen = options && options[selection] ? String(options[selection]).trim() : '';
+             const optionCount = options && typeof options === 'object' ? Object.keys(options).length : 0;
+@@ -9258,7 +9168,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               const effective = inferWelcomeMenuEffectiveSelectionFromLabel(chosen);
+               if (directQuery) {
+                 text = directQuery;
+-                console.log('[GenericSubmenuHandler] Converted submenu label to direct query', { chatId, selection, chosen, directQuery });
+               } else if (effective === 'handover' || labelLooksLikeAdminHandover(chosen)) {
+                 const currentState = session ? session.state : 'root';
+                 const prevData = sessionData || {};
+@@ -9296,21 +9205,20 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 if (!answer) {
+                   answer = 'Untuk lokasi kampus, kakak ingin yang mana: Denpasar/Renon, Jimbaran, atau Abiansemal? Nanti saya kirim alamat & kontak yang tersedia.';
+                 }
+-                await sendBotMessage(chatId, answer);
++                await sendBotMessage(chatId, answer, { skipDecoration: true });
+                 return res.send({ ok: true, source: 'generic_submenu_location', selection, chosen });
+               } else {
+                 text = `Tolong jelaskan tentang: ${chosen}`;
+-                console.log('[GenericSubmenuHandler] Routed submenu label as generic topic', { chatId, selection, chosen });
+               }
+ 
+               contextualNumericHandled = true;
+-              console.log('[ProviderRoute] Generic numbered submenu selection applied', {
++              logger.info({
+                 chatId,
+                 selection,
+                 optionCount,
+                 chosen,
+                 contextPreview: String(promptContext.text || '').slice(0, 120)
+-              });
++              }, '[ProviderRoute] Numeric submenu selection persisted');
+ 
+               try {
+                 const currentState = session ? session.state : 'root';
+@@ -9472,7 +9380,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+         if (welcomeLabel && !effective) {
+           text = `Tolong jelaskan tentang: ${welcomeLabel}`;
+           contextualNumericHandled = true;
+-          console.log('[ProviderRoute] Welcome menu unknown label routed as topic', { chatId, selection, welcomeLabel });
+ 
+           try {
+             const currentState = session ? session.state : 'root';
+@@ -9512,11 +9419,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           const question = 'Berikan lokasi/alamat kampus ITB STIKOM Bali (Denpasar/Renon, Jimbaran, Abiansemal) dan kontak singkat jika ada.';
+ 
+           let answer = null;
++          let skipDecoration = false;
+           if (isRagEnabled()) {
+             if (hasActiveTrainingData || allowIndexFallbackNoDb) {
+               const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+               const ragResult = await ragQueryWithEval(chatId, question, topK, { answerQuestion: question, minScore: 0 });
+-              if (ragResult && ragResult.success && ragResult.answer) answer = ragResult.answer;
++              if (ragResult && ragResult.success && ragResult.answer) {
++                answer = ragResult.answer;
++                skipDecoration = true;
++              }
+             }
+           }
+ 
+@@ -9527,7 +9438,10 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 const web = await webSearchFallbackAnswer('Lokasi dan alamat kampus ITB STIKOM Bali (Denpasar/Renon, Jimbaran, Abiansemal) beserta kontak', {
+                   seedUrl: process.env.WEB_SEARCH_SEED_URL || 'https://www.stikom-bali.ac.id/id/'
+                 });
+-                if (web && web.ok && web.answer) answer = web.answer;
++                if (web && web.ok && web.answer) {
++                  answer = web.answer;
++                  skipDecoration = true;
++                }
+               }
+             } catch (e) {
+               logger.warn({ err: e.message }, '[Provider] Location web fallback failed');
+@@ -9538,7 +9452,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             answer = 'Untuk lokasi kampus, kakak ingin yang mana: Denpasar/Renon, Jimbaran, atau Abiansemal? Nanti saya kirim alamat & kontak yang tersedia.';
+           }
+ 
+-          await sendBotMessage(chatId, answer);
++          await sendBotMessage(chatId, answer, { skipDecoration });
+           return res.send({ ok: true, source: 'numeric_menu', selection, label: welcomeLabel, ragUsed: !!(answer && isRagEnabled()) });
+         }
+ 
+@@ -9643,7 +9557,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               const ragResult = await ragQueryWithEval(chatId, menu.ragQuestion, topK, { answerQuestion: menu.ragQuestion, minScore: 0 });
+               if (ragResult && ragResult.success && ragResult.answer && contextsLookRelevantForMenu(effectiveSelection, ragResult.contexts)) {
+                 answer = ragResult.answer;
+-                answerSource = ragResult.source || null;
++                answerSource = ragResult.source || 'rag';
+               }
+             }
+           }
+@@ -9660,7 +9574,10 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                     : menu.ragQuestion;
+ 
+                 const web = await webSearchFallbackAnswer(q, { seedUrl: process.env.WEB_SEARCH_SEED_URL || 'https://www.stikom-bali.ac.id/id/' });
+-                if (web && web.ok && web.answer) answer = web.answer;
++                if (web && web.ok && web.answer) {
++                  answer = web.answer;
++                  answerSource = 'web';
++                }
+               }
+             } catch (e) {
+               logger.warn({ err: e.message }, '[Provider] Numeric menu web fallback failed');
+@@ -9750,7 +9667,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             }
+           }
+ 
+-          await sendBotMessage(chatId, answer);
++          await sendBotMessage(chatId, answer, { skipDecoration: !!answerSource });
+ 
+           // If option 4 returns the scholarship overview, persist pendingScholarshipChoice
+           // so short follow-ups like "ranking" are interpreted correctly.
+@@ -9811,7 +9728,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+ 
+             newData.nonMarketingMenuActive = true;
+             newData.nonMarketingMenuShownAt = now.toISOString();
+-            console.log('[DEBUG] set nonMarketingMenuActive (reject path)', { chatId, nonMarketingMenuShownAt: newData.nonMarketingMenuShownAt });
+ 
+             await prisma.session.upsert({
+               where: { chatId },
+@@ -9822,7 +9738,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             logger.warn({ err: e.message }, '[Provider] Failed to persist nonMarketingMenuActive (open request)');
+           }
+ 
+-          await sendBotMessage(chatId, buildNonMarketingMenuMessage({}));
++          await sendBotMessage(chatId, buildNonMarketingMenuMessage({}), { responseMode: 'deterministic', source: 'non_marketing_menu_open' });
+           return res.send({ ok: true, source: 'non_marketing_menu_open' });
+         }
+ 
+@@ -9851,7 +9767,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+ 
+           // If we already showed the menu recently, just reprompt to pick a number.
+           if (sessionData && sessionData.nonMarketingMenuActive && menuFresh) {
+-            await sendBotMessage(chatId, 'Silakan balas angka 1-5 sesuai menu sebelumnya ya.');
++            await sendBotMessage(chatId, 'Silakan balas angka 1-5 sesuai menu sebelumnya ya.', { responseMode: 'deterministic', source: 'non_marketing_menu_prompt' });
+             return res.send({ ok: true, source: 'non_marketing_menu_reprompt' });
+           }
+ 
+@@ -9876,8 +9792,17 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               // RAG response over a generic contact menu for user convenience.
+               if (ragResultOverride && ragResultOverride.success && ragResultOverride.answer && (ragScore >= minRagScore || (Array.isArray(ragResultOverride.contexts) && ragResultOverride.contexts.length > 0 && ragScore >= 0.45))) {
+                 // Return the RAG answer instead of the menu.
++                const composePayload = {
++                  userQuery: text,
++                  normalized: text,
++                  intent: { label: detectIntent(text), confidence: intentConfidence(text) },
++                  retrievals: [],
++                  ruleReply: null,
++                  session: { ...sessionData, chatId, welcomeSent: !!(sessionData && (sessionData.welcomeSentAt || sessionData.welcomeSent)) },
++                  answerMeta: {}
++                };
+                 const unified = (typeof buildUnifiedResponse === 'function')
+-                  ? buildUnifiedResponse(null, ragResultOverride.answer, 'text')
++                  ? buildUnifiedResponse(composePayload, null, ragResultOverride.answer, 'text')
+                   : (`Baik, kak.\n\n${String(ragResultOverride.answer || '')}`);
+                 await sendBotMessage(chatId, String(unified || '').trim());
+                 return res.send({ ok: true, source: 'rag_non_marketing_override', ragUsed: true });
+@@ -9949,7 +9874,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+         const q = `Program Studi: ${programInText}\n${String(text || '').trim()}`;
+         const ragResult = await ragQuery(q, topK, { answerQuestion: q, minScore: 0 });
+         if (ragResult && ragResult.success && ragResult.answer) {
+-          await sendBotMessage(chatId, String(ragResult.answer || '').trim());
++          await sendBotMessage(chatId, String(ragResult.answer || '').trim(), { skipDecoration: true });
+           try {
+             const currentState = session ? session.state : 'root';
+             const prevData = sessionData || {};
+@@ -9991,7 +9916,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             const q = `Program Studi: ${programInText}\n${trimmedTotalReq}`;
+             const ragResult = await ragQuery(q, topK, { answerQuestion: q, minScore: 0 });
+             if (ragResult && ragResult.success && ragResult.answer) {
+-              await sendBotMessage(chatId, String(ragResult.answer || '').trim());
++              await sendBotMessage(chatId, String(ragResult.answer || '').trim(), { skipDecoration: true });
+               try {
+                 const currentState = session ? session.state : 'root';
+                 const prevData = sessionData || {};
+@@ -10119,8 +10044,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+         if (programHint && isRagEnabled()) {
+           try {
+             const ragAns = await answerTotalCostForS1Program(chatId, programHint, trimmedTotalReq);
+-            if (ragAns) {
+-              await sendBotMessage(chatId, ragAns);
++            if (ragAns && ragAns.text) {
++              await sendBotMessage(chatId, ragAns.text, { skipDecoration: true });
+               return res.send({ ok: true, source: 'fee_breakdown_offer_answer_rag', program: programHint });
+             }
+           } catch (e) {
+@@ -10213,7 +10138,18 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 logger.warn({ err: e.message }, '[Provider] Failed to clear pendingFeeDetail (early fast)');
+               }
+ 
+-              await sendBotMessage(chatId, String(fastEarly || '').trim());
++              await sendComposedReply({
++                responseMode: 'deterministic',
++                source: 'fee_fast_path_early',
++                ruleReply: {
++                  text: String(fastEarly || '').trim(),
++                  source: 'fee_fast_path_early',
++                  confidence: 0.9,
++                  metadata: { path: 'registration_followup_fee_detail_fast' }
++                },
++                answerMeta: { actionable: true, action: 'details' },
++                welcomeSuppressed: true
++              });
+               return res.send({ ok: true, source: 'registration_followup_fee_detail_fast', choice: 'pendaftaran', degree: 'S1', program: programFast || null });
+             }
+             // If bundled index missing but user asked pendaftaran while pending, send a
+@@ -10229,8 +10165,19 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 logger.warn({ err: e.message }, '[Provider] Failed to clear pendingFeeDetail (early fast fallback)');
+               }
+ 
+-              const fallbackText = 'Biaya pendaftaran: (tidak tercantum)\n\nMau sekalian saya jelaskan rincian biaya pendidikan lengkap (pendaftaran, DPP, biaya per semester, dan komponen awal masuk)?\nBalas: YA atau TIDAK.';
+-              await sendBotMessage(chatId, fallbackText);
++              const fallbackText = 'Biaya pendaftaran: (tidak tercantum)\n\nKalau mau, saya jelaskan lebih lengkap rincian biaya pendidikan.\nBalas: YA atau TIDAK.';
++              await sendComposedReply({
++                responseMode: 'deterministic',
++                source: 'fee_fast_path_fallback',
++                ruleReply: {
++                  text: fallbackText,
++                  source: 'fee_fast_path_fallback',
++                  confidence: 0.55,
++                  metadata: { path: 'registration_followup_fee_detail_fast_fallback' }
++                },
++                answerMeta: { actionable: true, action: 'details' },
++                welcomeSuppressed: true
++              });
+               return res.send({ ok: true, source: 'registration_followup_fee_detail_fast', choice: 'pendaftaran', degree: 'S1', program: programFast || null });
+             }
+           }
+@@ -10441,14 +10388,15 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+ 
+               // Debug: log fast-path guards so tests can show why fast-path wasn't taken.
+               try {
+-                console.log('[DEBUG] registration_fastpath_check', {
++                logger.info({
++                  chatId,
+                   feeChoice,
+                   mentionsDiscountOrWave: !!mentionsDiscountOrWave,
+                   programFromText: !!programFromText,
+                   program: program,
+                   allowBundledIndex: !!allowBundledIndex,
+                   pendingFeeFresh: !!pendingFeeFresh
+-                });
++                }, '[ProviderRoute] fee fast-path guards');
+               } catch (e) {
+                 /* ignore logging errors */
+               }
+@@ -10487,7 +10435,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   const out =
+                     String(fast || '').trim() +
+                     (shouldOfferFeeBreakdown ? buildFeeBreakdownOfferPrompt(offerProgramLabel) : '');
+-                  await sendBotMessage(chatId, out.trim());
++                  await sendBotMessage(chatId, out.trim(), { responseMode: 'deterministic', source: 'fee_fast_out' });
+                   if (feeChoice === 'breakdown') {
+                     try {
+                       const currentState = session ? session.state : 'root';
+@@ -10528,7 +10476,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               const q = `Program Studi: ${program}\nJelaskan ${topicLabel} yang tertulis di dokumen (sebutkan nominal dan ketentuan terkait jika ada).`;
+               const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q });
+               if (ragResult && ragResult.success && ragResult.answer) {
+-                await sendBotMessage(chatId, ragResult.answer);
++                await sendBotMessage(chatId, ragResult.answer, { skipDecoration: true });
+                 // If RAG produced a structured fee answer, treat it like the fast-path
+                 // so tests and downstream logic expecting the "fast" source continue
+                 // to work even when we defer to the central RAG engine.
+@@ -10579,10 +10527,10 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+         }
+ 
+         if (flow && flow.degree === 'S1' && program && wantsTotal) {
+-          const answer = await answerTotalCostForS1Program(chatId, program, trimmed);
+-          if (answer) {
++          const answerResult = await answerTotalCostForS1Program(chatId, program, trimmed);
++          if (answerResult && answerResult.text) {
+             // If the answer asks for gelombang to compute total, persist a pending follow-up.
+-            if (answerAsksGelombangForTotal(answer)) {
++            if (answerAsksGelombangForTotal(answerResult.text)) {
+               try {
+                 const currentState = session ? session.state : 'root';
+                 const newData = { ...sessionData, pendingTotalCost: { type: 's1_total', program, ts: new Date().toISOString() } };
+@@ -10595,7 +10543,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 logger.warn({ err: e.message }, '[Provider] Failed to persist pendingTotalCost');
+               }
+             }
+-            await sendBotMessage(chatId, answer);
++            await sendBotMessage(chatId, answerResult.text, { source: answerResult.source, skipDecoration: answerResult.source === 'rag' });
+             return res.send({ ok: true, source: 'registration_followup', choice: 'total', degree: 'S1', program });
+           }
+         }
+@@ -10629,7 +10577,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           }
+ 
+           if (answer) {
+-            await sendBotMessage(chatId, answer);
++            await sendBotMessage(chatId, answer, { skipDecoration: true });
+             return res.send({ ok: true, source: 'registration_followup', choice: 'rag', degree: 'S1', program });
+           }
+         }
+@@ -10637,6 +10585,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+         if (flow && flow.degree === 'S1' && program && choice) {
+           if (choice === 'syarat') {
+             let answer = null;
++            let skipDecoration = false;
+             if (isRagEnabled()) {
+               if (hasActiveTrainingData || allowIndexFallbackNoDb) {
+                 const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+@@ -10653,7 +10602,10 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   'Jangan membahas biaya kecuali user menanyakan biaya.';
+ 
+                 const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: answerQ, minScore: 0 });
+-                if (ragResult && ragResult.success && ragResult.answer) answer = ragResult.answer;
++                if (ragResult && ragResult.success && ragResult.answer) {
++                  answer = ragResult.answer;
++                  skipDecoration = true;
++                }
+               }
+             }
+ 
+@@ -10663,7 +10615,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 'Kalau mau, balas: ADMIN agar dibantu tim PMB.';
+             }
+ 
+-            await sendBotMessage(chatId, answer);
++            await sendBotMessage(chatId, answer, { skipDecoration });
+             return res.send({ ok: true, source: 'registration_followup', choice, degree: 'S1', program });
+           }
+ 
+@@ -10680,13 +10632,17 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           if (choice === 'kontak') {
+             // Prefer web excerpt fallback for contacts if enabled.
+             let answer = null;
++            let skipDecoration = false;
+             try {
+               const enableWeb = String(process.env.ENABLE_WEB_SEARCH_FALLBACK || 'false').toLowerCase() === 'true';
+               if (enableWeb) {
+                 const web = await webSearchFallbackAnswer('Kontak pendaftaran ITB STIKOM Bali (telepon/WA, email, website, alamat)', {
+                   seedUrl: process.env.WEB_SEARCH_SEED_URL || 'https://www.stikom-bali.ac.id/id/'
+                 });
+-                if (web && web.ok && web.answer) answer = web.answer;
++                if (web && web.ok && web.answer) {
++                  answer = web.answer;
++                  skipDecoration = true;
++                }
+               }
+             } catch (e) {
+               logger.warn({ err: e.message }, '[Provider] Registration follow-up web fallback failed');
+@@ -10698,7 +10654,10 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+                   const q = 'Berikan kontak pendaftaran ITB STIKOM Bali: nomor telepon/WA, email, website, dan alamat kampus (jika ada di dokumen).';
+                   const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q });
+-                  if (ragResult && ragResult.success && ragResult.answer) answer = ragResult.answer;
++                  if (ragResult && ragResult.success && ragResult.answer) {
++                    answer = ragResult.answer;
++                    skipDecoration = true;
++                  }
+                 }
+               } catch (e) {
+                 logger.warn({ err: e.message }, '[Provider] Registration follow-up RAG contact failed');
+@@ -10709,7 +10668,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               answer = 'Boleh sebutkan kampus yang dimaksud (Denpasar / Jimbaran / Abiansemal)? Nanti saya bantu kirim kontak yang sesuai.';
+             }
+ 
+-            await sendBotMessage(chatId, answer);
++            await sendBotMessage(chatId, answer, { skipDecoration });
+             return res.send({ ok: true, source: 'registration_followup', choice, degree: 'S1', program });
+           }
+ 
+@@ -10747,12 +10706,16 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             }
+ 
+             let answer = null;
++            let skipDecoration = false;
+             if (isRagEnabled()) {
+               if (hasActiveTrainingData || allowIndexFallbackNoDb) {
+                 const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+                 const q = `Program Studi: ${program}\nJelaskan rincian biaya pendidikan untuk S1 (pendaftaran, DPP, biaya per semester, dan komponen awal masuk) serta skema cicilan/pembayaran yang tertulis di dokumen.`;
+                 const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q });
+-                if (ragResult && ragResult.success && ragResult.answer) answer = ragResult.answer;
++                if (ragResult && ragResult.success && ragResult.answer) {
++                  answer = ragResult.answer;
++                  skipDecoration = true;
++                }
+               }
+             }
+ 
+@@ -10768,7 +10731,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 '- Biaya sertifikasi/yudisium/wisuda';
+             }
+ 
+-            await sendBotMessage(chatId, answer);
++            await sendBotMessage(chatId, answer, { skipDecoration });
+             return res.send({ ok: true, source: 'registration_followup', choice, degree: 'S1', program });
+           }
+         }
+@@ -11000,9 +10963,9 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+ 
+         // If the same message also asks to calculate total cost, answer it directly (skip the mini-menu).
+         if (isTotalCostRequest(trimmed)) {
+-          const answer = await answerTotalCostForS1Program(chatId, s1Program, trimmed);
+-          if (answer) {
+-            if (answerAsksGelombangForTotal(answer)) {
++          const answerResult = await answerTotalCostForS1Program(chatId, s1Program, trimmed);
++          if (answerResult && answerResult.text) {
++            if (answerAsksGelombangForTotal(answerResult.text)) {
+               try {
+                 const currentState = session ? session.state : 'root';
+                 const newData = { ...sessionData, pendingTotalCost: { type: 's1_total', program: s1Program, ts: new Date().toISOString() } };
+@@ -11015,7 +10978,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 logger.warn({ err: e.message }, '[Provider] Failed to persist pendingTotalCost (flow done)');
+               }
+             }
+-            await sendBotMessage(chatId, answer);
++            await sendBotMessage(chatId, answerResult.text, { skipDecoration: answerResult.source === 'rag' });
+             return res.send({ ok: true, source: 'registration_flow', stage: 'done', degree: 'S1', program: s1Program, followup: 'total' });
+           }
+         }
+@@ -11033,7 +10996,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           }
+ 
+           if (answer) {
+-            await sendBotMessage(chatId, answer);
++            await sendBotMessage(chatId, answer, { skipDecoration: true });
+             return res.send({ ok: true, source: 'registration_flow', stage: 'done', degree: 'S1', program: s1Program, followup: 'rag' });
+           }
+         }
+@@ -11284,7 +11247,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+           const ragResult = await ragQuery(q, topK, { answerQuestion: q, minScore: 0 });
+           logger.info({ ragResult }, '[Provider] RAG result for choose_program specific question');
+           if (ragResult && ragResult.success && ragResult.answer) {
+-            await sendBotMessage(chatId, String(ragResult.answer || '').trim());
++            await sendBotMessage(chatId, String(ragResult.answer || '').trim(), { skipDecoration: true });
+             try {
+               const currentState = session ? session.state : 'root';
+               const prevData = sessionData || {};
+@@ -11367,6 +11330,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+         // Per tests: when the user asks "biaya pendaftaran di stikom" without a prodi/program,
+         // ask them to pick a program first (instead of answering the generic number).
+         const asksPendaftaranDiStikom = /\bbiaya\s+pendaftaran\b/i.test(trimmedFee) && /\bdi\s+stikom\b/i.test(trimmedFee);
++        // debug log removed
+         if (feeChoice === 'pendaftaran' && asksPendaftaranDiStikom && !programFromText && !programFromSession) {
+           try {
+             const currentState = session ? session.state : 'root';
+@@ -11374,7 +11338,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             await prisma.session.upsert({
+               where: { chatId },
+               create: { chatId, state: currentState, data: newData },
+-              update: { state: currentState, data: newData }
++              update: { chatId, state: currentState, data: newData }
+             });
+             sessionData.pendingFeeBreakdownOffer = newData.pendingFeeBreakdownOffer;
+           } catch (e) {
+@@ -11385,7 +11349,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             chatId,
+             'Siap, kak. Kakak mau rincian biaya lengkap untuk program apa?\n' +
+               'Balas: SI / TI / BD / SK (S1), atau D3, atau S2.\n' +
+-              'Kalau program Dual Degree, balas: UTB / DNUI / HELP.'
++              'Kalau program Dual Degree, balas: UTB / DNUI / HELP.',
++            { skipComposer: true, responseMode: 'deterministic', source: 'fee_breakdown_offer_need_program', sourceType: 'rule' }
+           );
+           return res.send({ ok: true, source: 'fee_breakdown_offer_need_program' });
+         }
+@@ -11407,7 +11372,18 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             const feeBasics = extractFeeBasicsFromBundledIndex();
+             const fast = buildFastFeeAnswer(programFromText, 'breakdown', feeBasics, { showProgramLabel: true, wave: gel });
+             if (fast) {
+-              await sendBotMessage(chatId, String(fast || '').trim());
++              await sendComposedReply({
++                responseMode: 'deterministic',
++                source: 'fee_fast_path',
++                ruleReply: {
++                  text: String(fast || '').trim(),
++                  source: 'fee_fast_path',
++                  confidence: 0.9,
++                  metadata: { path: 'registration_fee_detail_fast' }
++                },
++                answerMeta: { actionable: true, action: 'details' },
++                welcomeSuppressed: true
++              });
+               try {
+                 const currentState = session ? session.state : 'root';
+                 const prevData = sessionData || {};
+@@ -11455,7 +11431,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             const out =
+               String(maybeAppendCostDetailOffer(trimmedFee, fast) || '').trim() +
+               (shouldOfferFeeBreakdown ? buildFeeBreakdownOfferPrompt(offerProgramLabel) : '');
+-            await sendBotMessage(chatId, out.trim());
++            await sendBotMessage(chatId, out.trim(), { responseMode: 'deterministic', source: 'fee_fast_out' });
+             if (feeChoice === 'breakdown') {
+               try {
+                 const currentState = session ? session.state : 'root';
+@@ -11571,7 +11547,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             logger.warn({ err: e.message }, '[Provider] Failed to persist pendingProgramInfoMenu (early reg-menu)');
+           }
+ 
+-          await sendBotMessage(chatId, early.answer);
++          await sendBotMessage(chatId, early.answer, { skipDecoration: true });
+           return res.send({ ok: true, source: 'registration_menu_early' });
+         }
+       }
+@@ -11733,6 +11709,16 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+       }
+     }
+ 
++    // Fast-path: Dual/Double Degree location question.
++    // Users often ask: "kuliah double degree itu di kampus mana?" (not matched by plain "di mana").
++    if (allowBundledIndex && isDualDegreeLocationQuestion(text)) {
++      const loc = extractCampusLocationsFromBundledIndex();
++      const msg = buildDualDegreeLocationMessage(loc);
++      if (msg) {
++        addRuleCandidate({ source: 'dual_degree_location_fast', answer: msg, confidence: 0.86 });
++      }
++    }
++
+     // Fast-path: answer campus location deterministically from bundled training.
+     // This avoids slow OpenAI/web calls and works well with BOT_REPLY_TIMEOUT_MS hard mode.
+     if (allowBundledIndex && isCampusLocationQuestion(text)) {
+@@ -11797,21 +11783,60 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+       addRuleCandidate({ source: 'fee_other_besides_semester', answer: buildOtherCostsBesidesSemesterAnswer(), confidence: 0.7 });
+     }
+ 
+-    if (ruleAnswerCandidates.length) {
+-      const decision = await decideRuleVsRagAnswer();
++    if (hasRuleCandidates()) {
++      // If this looks like a fee-related question and we have a bundled index available,
++      // skip the rule-vs-rag decision here so deterministic fee fast-paths run later
++      // without triggering RAG. This preserves deterministic/fast UX for fee queries.
++      const feeLike = /\b(biaya|dpp|ukt|pendaftaran|biaya\s+pendaftaran|biaya\s+pendidikan)\b/i.test(String(text || ''));
++      if (feeLike && allowBundledIndex) {
++        // do not run decideRuleVsRagAnswer here; allow downstream fee handlers to run
++      } else {
++      const composePayload = {
++        userQuery: text,
++        normalized: text,
++        intent: { label: detectIntent(text), confidence: intentConfidence(text) },
++        retrievals: [],
++        ruleReply: null,
++        session: { ...sessionData, chatId, welcomeSent: !!(sessionData && (sessionData.welcomeSentAt || sessionData.welcomeSent)) },
++        answerMeta: {}
++      };
++      const decision = await decideRuleVsRagAnswer({ composePayload, chatId, hasActiveTrainingData, allowIndexFallbackNoDb });
+       if (decision) {
+-        if (decision.winner === 'rule' && decision.answer) {
++        if (decision.winner === 'rule' && decision.candidate && decision.candidate.answer) {
+           await commitChosenRuleCandidate(decision.candidate);
+-          await sendBotMessage(chatId, String(decision.answer || '').trim());
+-          return res.send({ ok: true, source: decision.candidate.source, ragUsed: false });
+-        }
+-        if (decision.winner === 'rag' && decision.ragResult && decision.ragResult.answer) {
+-          await sendBotMessage(chatId, String(decision.ragResult.answer || '').trim());
+-          return res.send({ ok: true, source: 'rag_vs_rule', ragUsed: true });
++          await sendComposedReply({
++            source: decision.candidate && decision.candidate.source ? String(decision.candidate.source) : 'rule',
++            ruleReply: {
++              text: String(decision.candidate && decision.candidate.answer ? decision.candidate.answer : '').trim(),
++              source: decision.candidate && decision.candidate.source ? String(decision.candidate.source) : 'rule',
++              confidence: typeof decision.candidate.confidence === 'number' ? decision.candidate.confidence : 0,
++              metadata: {
++                candidateSource: decision.candidate && decision.candidate.source ? String(decision.candidate.source) : 'rule'
++              }
++            },
++            answerMeta: { actionable: true, action: 'details' },
++            welcomeSuppressed: true
++          });
++          return res.send({ ok: true, source: decision.candidate.source, ragUsed: false, sentViaComposer: true });
++        }
++        if ((decision.winner === 'rag' || decision.winner === 'rag-structured' || decision.winner === 'rag-inference') && decision.ragResult) {
++          const sourceLabel = decision.ragResult && decision.ragResult.source ? String(decision.ragResult.source) : 'rag';
++          await sendComposedReply({
++            source: sourceLabel,
++            ragResult: decision.ragResult,
++            answerMeta: {
++              actionable: true,
++              action: 'details'
++            },
++            welcomeSuppressed: true
++          });
++          return res.send({ ok: true, source: 'rag_vs_rule', ragUsed: true, sentViaComposer: true });
+         }
+       }
+     }
+ 
++    }
++
+     // Tuition fee question without specifying prodi/program: ask a follow-up first.
+     // This avoids generic fallbacks and enables RAG to retrieve the right fee table.
+     try {
+@@ -12124,7 +12149,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                   logger.warn({ err: e.message }, '[Provider] Failed to refresh pendingProgramSelection (dual degree)');
+                 }
+ 
+-                await sendBotMessage(chatId, 'Siap, kakak pilih program Dual Degree yang mana?\nBalas: UTB / DNUI / HELP.');
++                await sendBotMessage(chatId, 'Siap, kakak pilih program Dual Degree yang mana?\nBalas: UTB / DNUI / HELP.', { responseMode: 'deterministic', source: 'dual_degree_partner_pick' });
+                 return res.send({ ok: true, source: 'dual_degree_need_partner' });
+               }
+ 
+@@ -12176,7 +12201,18 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                     const feeBasics = extractFeeBasicsFromBundledIndex();
+                     const fast = buildFastFeeAnswer(programPick, 'breakdown', feeBasics);
+                     if (fast) {
+-                      await sendBotMessage(chatId, fast);
++                      await sendComposedReply({
++                        responseMode: 'deterministic',
++                        source: 'fee_fast_path',
++                        ruleReply: {
++                          text: String(fast || '').trim(),
++                          source: 'fee_fast_path',
++                          confidence: 0.9,
++                          metadata: { path: 'menu_fee_fast' }
++                        },
++                        answerMeta: { actionable: true, action: 'details' },
++                        welcomeSuppressed: true
++                      });
+                       try {
+                         const currentState = session ? session.state : 'root';
+                         const prevData = sessionData || {};
+@@ -12206,7 +12242,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: answerQ, minScore: 0 });
+                 if (ragResult && ragResult.success && ragResult.answer) {
+                   const out = String(ragResult.answer || '').trim() + offerSuffix;
+-                  await sendBotMessage(chatId, out.trim());
++                  await sendBotMessage(chatId, out.trim(), { responseMode: 'deterministic', source: 'tuition_fee_rag_or_fast_out' });
+                   return res.send({ ok: true, source: 'tuition_fee_program_pick_rag', program: programPick, ragUsed: true });
+                 }
+ 
+@@ -12218,7 +12254,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                     const fast = buildFastFeeAnswer(programPick, choice, feeBasics);
+                     if (fast) {
+                       const out = String(fast || '').trim() + offerSuffix;
+-                      await sendBotMessage(chatId, out.trim());
++                      await sendBotMessage(chatId, out.trim(), { responseMode: 'deterministic', source: 'tuition_fee_program_pick_fast' });
+                       try {
+                         if (choice === 'breakdown') {
+                           const currentState = session ? session.state : 'root';
+@@ -12247,7 +12283,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+                 const q = `Program Studi: ${programPick}\n${trimmedEarly}`;
+                 const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0 });
+                 if (ragResult && ragResult.success && ragResult.answer) {
+-                  await sendBotMessage(chatId, ragResult.answer);
++                  await sendBotMessage(chatId, ragResult.answer, { skipDecoration: true });
+                   return res.send({ ok: true, source: 'program_pick_rag', program: programPick, ragUsed: true });
+                 }
+               }
+@@ -12410,7 +12446,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               } catch (e) {
+                 logger.warn({ err: e.message }, '[Provider] Failed to persist pendingFollowupChoice');
+               }
+-              await sendBotMessage(chatId, buildTotalVsDiscountChoicePrompt());
++              await sendBotMessage(chatId, buildTotalVsDiscountChoicePrompt(), { responseMode: 'deterministic', source: 'total_vs_discount_prompt' });
+               return res.send({ ok: true, source: 'followup_disambiguate_total_vs_discount' });
+             }
+ 
+@@ -12458,11 +12494,21 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             const userExplicitExplain = /\b(jelask(an|in)|jelasin)\b/i.test(trimmed);
+             if (pendingLooksLikeBreakdown && !pendingLooksLikeInstallment && program && allowBundledIndex && !userExplicitExplain) {
+               try {
+-                console.log('[DEBUG] followup fast fee', { pending: String(pending).slice(0, 120), program, allowBundledIndex });
+                 const feeBasics = extractFeeBasicsFromBundledIndex();
+                 const fast = buildFastFeeAnswer(program, 'breakdown', feeBasics);
+-                if (fast) {
+-                  await sendBotMessage(chatId, fast);
++                  if (fast) {
++                    await sendComposedReply({
++                      responseMode: 'deterministic',
++                      source: 'fee_fast_path',
++                      ruleReply: {
++                        text: String(fast || '').trim(),
++                        source: 'fee_fast_path',
++                        confidence: 0.9,
++                        metadata: { path: 'fee_general_fast' }
++                      },
++                      answerMeta: { actionable: true, action: 'details' },
++                      welcomeSuppressed: true
++                    });
+                   try {
+                     const currentState = session ? session.state : 'root';
+                     const prevData = sessionData || {};
+@@ -12734,7 +12780,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+               const out =
+                 String(maybeAppendCostDetailOffer(text, fast) || '').trim() +
+                 (shouldOfferFeeBreakdown ? buildFeeBreakdownOfferPrompt(offerProgramLabel) : '');
+-              await sendBotMessage(chatId, out.trim());
++              await sendBotMessage(chatId, out.trim(), { responseMode: 'deterministic', source: 'fee_fast_out' });
+               if (feeChoice === 'breakdown') {
+                 try {
+                   const currentState = session ? session.state : 'root';
+@@ -12765,7 +12811,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             if (enableWeb && inScope && looksLikeMissingInfoOrMismatchAnswer(text, ragResult.answer)) {
+               const web = await webSearchFallbackAnswer(text, { seedUrl: process.env.WEB_SEARCH_SEED_URL || 'https://www.stikom-bali.ac.id/id/' });
+               if (web && web.ok && web.answer) {
+-                await sendBotMessage(chatId, web.answer);
++                await sendBotMessage(chatId, web.answer, { skipDecoration: true });
+                 return res.send({ ok: true, source: 'web_search_fallback_after_rag', intent: web.intent || null });
+               }
+               if (web && !web.ok) {
+@@ -12776,7 +12822,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+             logger.warn({ err: e.message }, '[Provider] Web fallback after RAG failed');
+           }
+ 
+-          await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer));
++          await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer), { skipDecoration: true });
+ 
+           // If we just asked the user for 2ΓÇô3 hobby/activity examples, remember it briefly
+           // so short replies like "membuat robot" are treated as continuations.
+@@ -12962,7 +13008,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+       try {
+         const web = await webSearchFallbackAnswer(text, { seedUrl: process.env.WEB_SEARCH_SEED_URL || 'https://www.stikom-bali.ac.id/id/' });
+         if (web && web.ok && web.answer) {
+-          await sendBotMessage(chatId, web.answer);
++          await sendBotMessage(chatId, web.answer, { skipDecoration: true });
+           shouldCountAsBotFail = false;
+           return res.send({ ok: true, source: 'web_search_fallback', intent: web.intent });
+         }
+@@ -13011,14 +13057,12 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+     // Fallback jika tidak ada data training atau RAG tidak menemukan jawaban
+     const fallback = await prisma.setting.findUnique({ where: { key: 'fallback_message' } });
+     const shippedFallback = (
+-      'Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut ≡ƒÖÅ\n\n' +
+-      'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan\n' +
+-      'dengan lebih spesifik, misalnya:\n' +
+-      '  - Nama program studi yang dimaksud\n' +
+-      '  - Gelombang pendaftaran\n' +
+-      '  - Topik yang ingin diketahui\n\n' +
+-      'Atau jika ingin langsung berbicara dengan tim kami, di bawah ini ≡ƒæç\n\n' +
+-      '[ ≡ƒÆ¼ Hubungi Admin ]'
++      'Saya belum menemukan detail yang pas di sumber saat ini ≡ƒÿè\n\n' +
++      'Supaya saya bisa bantu lebih tepat, sebutkan sedikit ya, misalnya:\n' +
++      '  - Nama program studi (contoh: Sistem Informasi)\n' +
++      '  - Gelombang pendaftaran (contoh: Gelombang I / IB)\n' +
++      '  - Topik yang ingin dicek (contoh: biaya / beasiswa)\n\n' +
++      'Kalau mau langsung terhubung ke tim kami, pilih: [ ≡ƒÆ¼ Hubungi Admin ]'
+     );
+ 
+     const baseFallback = (fallback && fallback.value) ? String(fallback.value || '').trim() : '';
+@@ -13057,7 +13101,6 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+     res.send({ ok: true, ragUsed: false, source: 'fallback' });
+     } catch (err) {
+       logger.error({ err: err && err.message ? err.message : String(err), stack: err && err.stack ? err.stack : undefined }, '[ProviderRoute] Unhandled webhook error');
+-
+       // Best-effort incident notification to Telegram (non-blocking)
+       try {
+         const msg = err && err.message ? String(err.message) : String(err);
+@@ -13104,4 +13147,4 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
+   });
+ 
+   return router;
+-};
++};
+\ No newline at end of file

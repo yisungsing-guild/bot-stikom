@@ -1,0 +1,390 @@
+{
+  "TRACE_PROGRAM_QUERY": [
+    {
+      "timestamp": "2026-07-06T05:38:34.673Z",
+      "userQuery": "Berapa biaya TI?",
+      "programExtracted": "TI",
+      "confidence": "HIGH"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.756Z",
+      "userQuery": "Apa itu beasiswa KIP?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.785Z",
+      "userQuery": "Apa itu beasiswa Prestasi?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.803Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.826Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.853Z",
+      "userQuery": "Berapa biaya TI?",
+      "programExtracted": "TI",
+      "confidence": "HIGH"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.883Z",
+      "userQuery": "Berapa biaya TI gelombang 3A?",
+      "programExtracted": "TI",
+      "confidence": "HIGH"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.899Z",
+      "userQuery": "Apa itu beasiswa KIP?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.916Z",
+      "userQuery": "Apa itu beasiswa Prestasi?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.930Z",
+      "userQuery": "Apa itu beasiswa Yayasan?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.944Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.968Z",
+      "userQuery": "Kalau mau jadi Data Analyst cocok jurusan apa?",
+      "programExtracted": null,
+      "confidence": "NONE"
+    }
+  ],
+  "TRACE_PROGRAM_RAG": [
+    {
+      "timestamp": "2026-07-06T05:38:34.706Z",
+      "userQuery": "Berapa biaya TI?",
+      "programExtracted": "TEKNOLOGI_INFORMASI",
+      "source": "rag_mock"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.855Z",
+      "userQuery": "Berapa biaya TI?",
+      "programExtracted": "TEKNOLOGI_INFORMASI",
+      "source": "rag_mock"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.886Z",
+      "userQuery": "Berapa biaya TI gelombang 3A?",
+      "programExtracted": "TEKNOLOGI_INFORMASI",
+      "source": "rag_mock"
+    }
+  ],
+  "TRACE_PROGRAM_FINAL": [
+    {
+      "timestamp": "2026-07-06T05:38:34.720Z",
+      "userQuery": "Berapa biaya TI?",
+      "extractedProgram": "TI",
+      "finalAnswer": "Biaya untuk Program Studi Teknologi Informasi:\n- Biaya Pendaftaran: Rp 500.000\n- DPP: Rp 25.000.000\n",
+      "ragSource": "rag-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.761Z",
+      "userQuery": "Apa itu beasiswa KIP?",
+      "extractedProgram": null,
+      "finalAnswer": "Beasiswa KIP (Kartu Indonesia Pintar) adalah program bantuan pendidikan dari pemerintah untuk siswa ",
+      "ragSource": "rag-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.788Z",
+      "userQuery": "Apa itu beasiswa Prestasi?",
+      "extractedProgram": null,
+      "finalAnswer": "",
+      "ragSource": "rag-no-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.807Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "extractedProgram": null,
+      "finalAnswer": "Untuk seseorang yang suka coding, saya rekomendasikan program studi berikut di ITB STIKOM Bali:\n\n1. ",
+      "ragSource": "rag-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.837Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "extractedProgram": null,
+      "finalAnswer": "Untuk seseorang yang suka coding, saya rekomendasikan program studi berikut di ITB STIKOM Bali:\n\n1. ",
+      "ragSource": "rag-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.858Z",
+      "userQuery": "Berapa biaya TI?",
+      "extractedProgram": "TI",
+      "finalAnswer": "Biaya untuk Program Studi Teknologi Informasi:\n- Biaya Pendaftaran: Rp 500.000\n- DPP: Rp 25.000.000\n",
+      "ragSource": "rag-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.887Z",
+      "userQuery": "Berapa biaya TI gelombang 3A?",
+      "extractedProgram": "TI",
+      "finalAnswer": "Biaya untuk Program Studi Teknologi Informasi:\n- Biaya Pendaftaran: Rp 500.000\n- DPP: Rp 25.000.000\n",
+      "ragSource": "rag-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.902Z",
+      "userQuery": "Apa itu beasiswa KIP?",
+      "extractedProgram": null,
+      "finalAnswer": "Beasiswa KIP (Kartu Indonesia Pintar) adalah program bantuan pendidikan dari pemerintah untuk siswa ",
+      "ragSource": "rag-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.918Z",
+      "userQuery": "Apa itu beasiswa Prestasi?",
+      "extractedProgram": null,
+      "finalAnswer": "",
+      "ragSource": "rag-no-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.932Z",
+      "userQuery": "Apa itu beasiswa Yayasan?",
+      "extractedProgram": null,
+      "finalAnswer": "",
+      "ragSource": "rag-no-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.956Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "extractedProgram": null,
+      "finalAnswer": "Untuk seseorang yang suka coding, saya rekomendasikan program studi berikut di ITB STIKOM Bali:\n\n1. ",
+      "ragSource": "rag-match"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.972Z",
+      "userQuery": "Kalau mau jadi Data Analyst cocok jurusan apa?",
+      "extractedProgram": null,
+      "finalAnswer": "Untuk seseorang yang suka coding, saya rekomendasikan program studi berikut di ITB STIKOM Bali:\n\n1. ",
+      "ragSource": "rag-match"
+    }
+  ],
+  "TRACE_SCHOLARSHIP_INTENT": [
+    {
+      "timestamp": "2026-07-06T05:38:34.759Z",
+      "userQuery": "Apa itu beasiswa KIP?",
+      "intent": "SPECIFIC_SCHOLARSHIP_DETAIL",
+      "targetScholarship": "KIP",
+      "source": "rag_mock"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.901Z",
+      "userQuery": "Apa itu beasiswa KIP?",
+      "intent": "SPECIFIC_SCHOLARSHIP_DETAIL",
+      "targetScholarship": "KIP",
+      "source": "rag_mock"
+    }
+  ],
+  "TRACE_CAREER_INTENT": [
+    {
+      "timestamp": "2026-07-06T05:38:34.805Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "intent": "CAREER_GUIDANCE_RECOMMENDATION",
+      "recommendedPrograms": [
+        "TEKNOLOGI_INFORMASI",
+        "SISTEM_INFORMASI",
+        "SISTEM_KOMPUTER"
+      ],
+      "source": "rag_mock"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.832Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "intent": "CAREER_GUIDANCE_RECOMMENDATION",
+      "recommendedPrograms": [
+        "TEKNOLOGI_INFORMASI",
+        "SISTEM_INFORMASI",
+        "SISTEM_KOMPUTER"
+      ],
+      "source": "rag_mock"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.953Z",
+      "userQuery": "Saya suka coding cocok jurusan apa?",
+      "intent": "CAREER_GUIDANCE_RECOMMENDATION",
+      "recommendedPrograms": [
+        "TEKNOLOGI_INFORMASI",
+        "SISTEM_INFORMASI",
+        "SISTEM_KOMPUTER"
+      ],
+      "source": "rag_mock"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.971Z",
+      "userQuery": "Kalau mau jadi Data Analyst cocok jurusan apa?",
+      "intent": "CAREER_GUIDANCE_RECOMMENDATION",
+      "recommendedPrograms": [
+        "TEKNOLOGI_INFORMASI",
+        "SISTEM_INFORMASI",
+        "SISTEM_KOMPUTER"
+      ],
+      "source": "rag_mock"
+    }
+  ],
+  "TRACE_FULL_FLOW": [
+    {
+      "timestamp": "2026-07-06T05:38:34.651Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "test-user-1",
+      "userQuery": "Berapa biaya TI?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.675Z",
+      "step": "RAG_QUERY_START",
+      "input": "Berapa biaya TI?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.755Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "test-user-2",
+      "userQuery": "Apa itu beasiswa KIP?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.758Z",
+      "step": "RAG_QUERY_START",
+      "input": "Apa itu beasiswa KIP?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.783Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "test-user-3",
+      "userQuery": "Apa itu beasiswa Prestasi?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.786Z",
+      "step": "RAG_QUERY_START",
+      "input": "Apa itu beasiswa Prestasi?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.801Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "test-user-4",
+      "userQuery": "Saya suka coding cocok jurusan apa?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.804Z",
+      "step": "RAG_QUERY_START",
+      "input": "Saya suka coding cocok jurusan apa?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.826Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "test-user-5",
+      "userQuery": "Saya suka coding cocok jurusan apa?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.828Z",
+      "step": "RAG_QUERY_START",
+      "input": "Saya suka coding cocok jurusan apa?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.852Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "scenario-1",
+      "userQuery": "Berapa biaya TI?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.854Z",
+      "step": "RAG_QUERY_START",
+      "input": "Berapa biaya TI?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.881Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "scenario-2",
+      "userQuery": "Berapa biaya TI gelombang 3A?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.884Z",
+      "step": "RAG_QUERY_START",
+      "input": "Berapa biaya TI gelombang 3A?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.898Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "scenario-3",
+      "userQuery": "Apa itu beasiswa KIP?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.900Z",
+      "step": "RAG_QUERY_START",
+      "input": "Apa itu beasiswa KIP?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.914Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "scenario-4",
+      "userQuery": "Apa itu beasiswa Prestasi?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.917Z",
+      "step": "RAG_QUERY_START",
+      "input": "Apa itu beasiswa Prestasi?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.929Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "scenario-5",
+      "userQuery": "Apa itu beasiswa Yayasan?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.931Z",
+      "step": "RAG_QUERY_START",
+      "input": "Apa itu beasiswa Yayasan?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.943Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "scenario-6",
+      "userQuery": "Saya suka coding cocok jurusan apa?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.950Z",
+      "step": "RAG_QUERY_START",
+      "input": "Saya suka coding cocok jurusan apa?",
+      "options": {}
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.967Z",
+      "step": "WEBHOOK_RECEIVED",
+      "chatId": "scenario-7",
+      "userQuery": "Kalau mau jadi Data Analyst cocok jurusan apa?"
+    },
+    {
+      "timestamp": "2026-07-06T05:38:34.969Z",
+      "step": "RAG_QUERY_START",
+      "input": "Kalau mau jadi Data Analyst cocok jurusan apa?",
+      "options": {}
+    }
+  ]
+}

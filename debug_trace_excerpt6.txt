@@ -1,0 +1,101 @@
+}
+[
+  {
+    "key": "TI",
+    "question": "berapa biaya prodi ti gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.",
+      "source": "rag-answer-rejected",
+      "contexts": [
+        {
+          "id": "program_studi-29",
+          "chunk": "Program Studi Teknologi Informasi - Apa Yang Dipelajari\n# Apa Yang Dipelajari\n\nPembelajaran mencakup pemrograman, pengembangan aplikasi web dan mobile, jaringan komputer, cloud computing, keamanan siber, integrasi API, serta operasi sistem. Mahasiswa juga mempelajari praktik deployment agar aplikasi siap digunakan pada lingkungan produksi. Kalau ada pertanyaan seperti \"Di Teknologi Informasi belajar apa saja?\", bagian ini adalah ringkasan utamanya: coding, aplikasi web/mobile, jaringan, cloud, keamanan siber, integrasi API, dan operasi sistem.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "apa_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "apa_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-31",
+          "chunk": "Program Studi Teknologi Informasi - Skill Yang Dipelajari\n# Skill Yang Dipelajari\n\nSkill yang dibangun meliputi coding standar industri, debugging, version control, desain arsitektur aplikasi, otomasi deployment, pengamanan aplikasi dasar, dan troubleshooting infrastruktur. Mahasiswa juga berlatih menyusun dokumentasi teknis yang mudah digunakan tim lain.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "skill_yang_dipelajari",
+            "type": "curriculum",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "skill_yang_dipelajari",
+              "curriculum"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-32",
+          "chunk": "Program Studi Teknologi Informasi - Prospek Kerja\n# Prospek Kerja\n\nProspek kerja lulusan mencakup software engineer, web developer, mobile developer, DevOps engineer, cloud engineer, network engineer, cybersecurity analyst, serta QA engineer. Kebutuhan profesi ini tinggi di software house, startup produk digital, e-commerce, dan perusahaan lintas sektor yang mengembangkan sistem internal. Kalau ditanya \"Prospek kerja TI bagaimana?\", fokus kariernya ada di pengembangan perangkat lunak, infrastruktur, deployment, pengujian, dan keamanan sistem.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "prospek_kerja",
+            "type": "career",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "prospek_kerja",
+              "career"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-33",
+          "chunk": "Program Studi Teknologi Informasi - Career Path\n# Career Path\n\nCareer path biasanya dimulai dari junior developer atau IT support engineer, meningkat ke mid-level engineer, lalu senior engineer atau technical lead. Jalur lanjutan dapat mengarah ke solution architect, engineering manager, platform lead, atau security specialist sesuai minat dan portofolio. Kalau ditanya \"lulusan TI kerja dimana?\" atau \"kerjanya nanti jadi apa?\", jawabannya mengarah ke software engineer, web/mobile developer, DevOps, cloud engineer, network engineer, cybersecurity, dan QA.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "career_path",
+            "type": "career",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "career_path",
+              "career"
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "program_studi-34",
+          "chunk": "Program Studi Teknologi Informasi - Contoh Pekerjaan\n# Contoh Pekerjaan\n\nContoh pekerjaan sehari-hari meliputi membangun modul aplikasi, memperbaiki bug produksi, membuat endpoint API, menyiapkan pipeline CI/CD, memonitor performa server, dan menerapkan kontrol keamanan dasar agar sistem tetap stabil dan aman.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "program_studi",
+            "topic": "contoh_pekerjaan",
+            "type": "career",
+            "audience": "prospective_student",
+            "tags": [
+              "program_studi",
+              "teknologi_informasi",
+              "contoh_pekerjaan",
+              "career"

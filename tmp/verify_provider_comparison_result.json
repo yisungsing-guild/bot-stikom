@@ -1,0 +1,18 @@
+{
+  "query": "mana yang lebih mahal s1 sistem informasi atau s1 bisnis digital?",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "source": "rag-program-comparison"
+  },
+  "sent": [
+    {
+      "chatId": "verify-user-compare",
+      "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+    },
+    {
+      "chatId": "verify-user-compare",
+      "text": "Perbandingan biaya singkat: Bisnis Digital vs Sistem Informasi\n\n- Sistem Informasi: biasanya memiliki biaya pendaftaran dan DPP yang lebih rendah dibandingkan Bisnis Digital.\n- Bisnis Digital: biasanya memiliki biaya pendaftaran dan DPP yang lebih tinggi dibandingkan Sistem Informasi.\n\nCatatan: Dari kedua prodi ini, Bisnis Digital biasanya lebih mahal daripada Sistem Informasi. Harga akhir masih bergantung pada gelombang, potongan, dan komponen UKT/DPP masing-masing.\nMau perbandingan lebih mendetail (kurikulum / akreditasi / biaya / prospek kerja)? Sebutkan aspek yang mau dibandingkan atau prodi mana yang ingin dibandingkan lebih rinci.\n\nMau saya bantu jelaskan detail gelombang atau jadwalnya?"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  chunkId: 'program_studi-34',
+  parsed: null
+}
+[TRACE_PARSE_FEE_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  chunkId: 'tuition_fee-37',
+  queryEntities: {
+    intent: 'COST',
+    program: 'TI',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2025',
+    campus: 'BALI'
+  },
+  chunkPreview: 'Program Studi Tuition Fee - tuition fee\n' +
+    'Tuition Fee knowledge\n' +
+    '\n' +
+    'Pertanyaan cepat:\n' +
+    '- Biaya kuliah berapa? - Biaya pendaftaran dan DPP berapa? - Ada potongan atau beasiswa biaya kuliah? Jawaban ringkas:\n',
+  academicYear: '2025'
+}
+[TRACE_PARSE_CHUNK_1_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  chunkId: 'tuition_fee-37',
+  isGlobalDiscount: true,
+  queryProgram: 'TI',
+  entProgram: null,
+  queryWave: '1A',
+  entWave: null,
+  queryWaveGroup: '1',
+  entWaveGroup: null,
+  queryAcademicYear: '2025',
+  entAcademicYear: null,
+  chunkPreview: 'Program Studi Tuition Fee - tuition fee\n' +
+    'Tuition Fee knowledge\n' +
+    '\n' +
+    'Pertanyaan cepat:\n' +
+    '- Biaya kuliah bera'
+}
+[TRACE_PARSE_CHUNK_2_MONEY] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  registrationFee: null,
+  dpp: null,
+  dppDiscount: null,
+  registrationDiscount: null,
+  ukt: null,
+  scholarship: null
+}
+[TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  registrationFee: false,
+  dpp: false,
+  dppDiscount: false,
+  registrationDiscount: false,
+  ukt: false,
+  scholarship: false,
+  hasAnyCost: null
+}
+[TRACE_PARSE_CHUNK_4_EXIT] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  reason: 'no_money_fields_found'
+}
+[TRACE_PARSE_FEE_REJECT_REASON] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  chunkId: 'tuition_fee-37',
+  reason: 'no_money_fields_found',
+  queryProgram: 'TI',
+  entProgram: null,

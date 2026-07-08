@@ -1,0 +1,4739 @@
+[
+  {
+    "title": "with BOT_INTRO_MESSAGE enabled: greeting-only sends intro first, then welcome",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"welcome_only\"\nReceived: \"intro_only\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:256:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "welcome_only",
+    "received": "intro_only",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "intro reply persists composer telemetry and is sent through outbound.reply",
+    "chatId": "user-context-reuse",
+    "failureMessages": [
+      "Error: expect(received).toMatchObject(expected)\n\nMatcher error: received value must be a non-null object\n\nReceived has value: undefined\n    at Object.toMatchObject (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:297:46)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [],
+    "first_trace_tag": null,
+    "first_trace_ts": null
+  },
+  {
+    "title": "short follow-ups reuse TI context and set contextReused telemetry",
+    "chatId": "user-context-reuse",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"Teknologi Informasi\"\nReceived: undefined\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:357:60)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [],
+    "first_trace_tag": null,
+    "first_trace_ts": null
+  },
+  {
+    "title": "reflection cooldown resets after greeting reuse and clears stale reflection timestamp",
+    "chatId": "user-reflection-reset-after-reuse",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:417:58)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [],
+    "first_trace_tag": null,
+    "first_trace_ts": null
+  },
+  {
+    "title": "greeting mid-conversation preserves topic memory and allows follow-up reuse",
+    "chatId": "user-greeting-preserves-topic",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"Teknologi Informasi\"\nReceived: undefined\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:445:60)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [],
+    "first_trace_tag": null,
+    "first_trace_ts": null
+  },
+  {
+    "title": "explicit program switch updates topic memory for subsequent follow-ups",
+    "chatId": "user-program-switch",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: undefined\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:495:111)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:18:46.565Z",
+        "data": {
+          "ts": "2026-06-22T13:18:46.565Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-program-switch",
+          "routeTextEarly": "berapa biaya pendaftaran?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:22:07.099Z",
+        "data": {
+          "ts": "2026-06-22T13:22:07.099Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-program-switch",
+          "routeTextEarly": "berapa biaya pendaftaran?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:50:09.292Z",
+        "data": {
+          "ts": "2026-06-22T14:50:09.292Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-program-switch",
+          "routeTextEarly": "berapa biaya pendaftaran?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:52:04.197Z",
+        "data": {
+          "ts": "2026-06-22T14:52:04.197Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-program-switch",
+          "routeTextEarly": "berapa biaya pendaftaran?"
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+    "first_trace_ts": "2026-06-22T13:18:46.565Z"
+  },
+  {
+    "title": "latest explicit topic wins and sets previousProgramHint history",
+    "chatId": "user-topic-prioritization",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"Sistem Informasi\"\nReceived: undefined\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:517:63)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [],
+    "first_trace_tag": null,
+    "first_trace_ts": null
+  },
+  {
+    "title": "semantic curriculum+career question about SI answered directly (no menu hijack)",
+    "chatId": "user-topic-prioritization",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:549:72)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [],
+    "first_trace_tag": null,
+    "first_trace_ts": null
+  },
+  {
+    "title": "semantic career question about TI answered directly (no menu hijack)",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:571:72)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "semantic short TI difficulty question answered directly (no menu hijack)",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:593:72)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "semantic short follow-up uses prior SI context and answers directly",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:628:72)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "semantic follow-up \"kerjanya nanti jadi apa?\" reuses TI context and answers directly",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:663:72)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "semantic follow-up \"mata kuliahnya apa?\" uses prior SI context and answers directly",
+    "chatId": "test-inherit-ti",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:698:72)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:00.586Z",
+        "data": {
+          "ts": "2026-06-22T10:40:00.586Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-inherit-ti",
+          "question": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:00.593Z",
+        "data": {
+          "ts": "2026-06-22T10:40:00.593Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-inherit-ti",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:00.596Z",
+        "data": {
+          "ts": "2026-06-22T10:40:00.596Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-inherit-ti",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:34.935Z",
+        "data": {
+          "ts": "2026-06-22T10:53:34.935Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-inherit-ti",
+          "question": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:34.941Z",
+        "data": {
+          "ts": "2026-06-22T10:53:34.941Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-inherit-ti",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:34.945Z",
+        "data": {
+          "ts": "2026-06-22T10:53:34.945Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-inherit-ti",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:00.586Z"
+  },
+  {
+    "title": "semantic short follow-up \"gampang dipelajari?\" uses prior context and answers directly",
+    "chatId": "test-inherit-ti",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:733:72)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:00.586Z",
+        "data": {
+          "ts": "2026-06-22T10:40:00.586Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-inherit-ti",
+          "question": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:00.593Z",
+        "data": {
+          "ts": "2026-06-22T10:40:00.593Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-inherit-ti",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:00.596Z",
+        "data": {
+          "ts": "2026-06-22T10:40:00.596Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-inherit-ti",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:34.935Z",
+        "data": {
+          "ts": "2026-06-22T10:53:34.935Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-inherit-ti",
+          "question": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:34.941Z",
+        "data": {
+          "ts": "2026-06-22T10:53:34.941Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-inherit-ti",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:34.945Z",
+        "data": {
+          "ts": "2026-06-22T10:53:34.945Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-inherit-ti",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:00.586Z"
+  },
+  {
+    "title": "context inheritance: TI -> follow-up -> still TI",
+    "chatId": "test-inherit-ti",
+    "failureMessages": [
+      "Error: expect(received).toContain(expected) // indexOf\n\nExpected value: undefined\nReceived array: [\"pending_rag_candidate\", \"pending_semantic_suggestion\"]\n    at Object.toContain (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:749:70)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:00.586Z",
+        "data": {
+          "ts": "2026-06-22T10:40:00.586Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-inherit-ti",
+          "question": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:00.593Z",
+        "data": {
+          "ts": "2026-06-22T10:40:00.593Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-inherit-ti",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:00.596Z",
+        "data": {
+          "ts": "2026-06-22T10:40:00.596Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-inherit-ti",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:34.935Z",
+        "data": {
+          "ts": "2026-06-22T10:53:34.935Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-inherit-ti",
+          "question": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:34.941Z",
+        "data": {
+          "ts": "2026-06-22T10:53:34.941Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-inherit-ti",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:34.945Z",
+        "data": {
+          "ts": "2026-06-22T10:53:34.945Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-inherit-ti",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:00.586Z"
+  },
+  {
+    "title": "cross-topic recovery: unrelated RAG reply then ambiguous follow-up returns TI",
+    "chatId": "ct-recover",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"pending_rag_candidate\"\nReceived: undefined\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:819:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:01.114Z",
+        "data": {
+          "ts": "2026-06-22T10:40:01.114Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "ct-recover",
+          "question": "Program Studi: Teknologi Informasi\nsemester awal susah?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:01.119Z",
+        "data": {
+          "ts": "2026-06-22T10:40:01.119Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "ct-recover",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nsemester awal susah?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:01.123Z",
+        "data": {
+          "ts": "2026-06-22T10:40:01.123Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "ct-recover",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:35.514Z",
+        "data": {
+          "ts": "2026-06-22T10:53:35.514Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "ct-recover",
+          "question": "Program Studi: Teknologi Informasi\nsemester awal susah?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:35.522Z",
+        "data": {
+          "ts": "2026-06-22T10:53:35.522Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "ct-recover",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nsemester awal susah?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:35.524Z",
+        "data": {
+          "ts": "2026-06-22T10:53:35.524Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "ct-recover",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:01.114Z"
+  },
+  {
+    "title": "context decay: stale program context is cleared before ambiguous follow-up handling",
+    "chatId": "test-context-decay-stale",
+    "failureMessages": [
+      "Error: expect(received).toBeUndefined()\n\nReceived: {\"program\": \"Teknologi Informasi\", \"ts\": \"2026-06-22T12:52:10.165Z\"}\n    at Object.toBeUndefined (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:922:63)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "{\"program\"",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:02.231Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.231Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-context-decay-stale",
+          "question": "Program Studi: Teknologi Informasi\nsemester awal susah?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:02.240Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.240Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-context-decay-stale",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nsemester awal susah?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:02.243Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.243Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-context-decay-stale",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:36.588Z",
+        "data": {
+          "ts": "2026-06-22T10:53:36.588Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-context-decay-stale",
+          "question": "Program Studi: Teknologi Informasi\nsemester awal susah?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:36.602Z",
+        "data": {
+          "ts": "2026-06-22T10:53:36.602Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-context-decay-stale",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nsemester awal susah?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:36.606Z",
+        "data": {
+          "ts": "2026-06-22T10:53:36.606Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-context-decay-stale",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:02.231Z"
+  },
+  {
+    "title": "ambiguity safety: new generic follow-up does NOT auto-switch program",
+    "chatId": "test-ambig-no-switch",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"Teknologi Informasi\"\nReceived: undefined\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:949:108)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:02.541Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.541Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-ambig-no-switch",
+          "question": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:02.547Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.547Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-ambig-no-switch",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nTI banyak coding?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:02.549Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.549Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-ambig-no-switch",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:02.588Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.588Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "test-ambig-no-switch",
+          "question": "Program Studi: Teknologi Informasi\nsistemnya gimana?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:02.593Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.593Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "test-ambig-no-switch",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nsistemnya gimana?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:02.595Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.595Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "test-ambig-no-switch",
+          "rag": {
+            "success": true,
+            "source": "test-mock",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:02.541Z"
+  },
+  {
+    "title": "greeting after topic switch resumes latest topic",
+    "chatId": "user-topic-greeting-resume",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"Sistem Informasi\"\nReceived: undefined\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:981:63)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:02.886Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.886Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-topic-greeting-resume",
+          "question": "TI brp",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:02.893Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.893Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-topic-greeting-resume",
+          "effectiveQuestion": "TI brp",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:02.896Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.896Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-topic-greeting-resume",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:02.944Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.944Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-topic-greeting-resume",
+          "question": "Program Studi: Sistem Informasi\nbeasiswa SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:02.949Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.949Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-topic-greeting-resume",
+          "effectiveQuestion": "Program Studi: Sistem Informasi\nbeasiswa SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:02.952Z",
+        "data": {
+          "ts": "2026-06-22T10:40:02.952Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-topic-greeting-resume",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:02.886Z"
+  },
+  {
+    "title": "multiple topic switches preserve latest topic and allow later reuse",
+    "chatId": "user-multi-topic-switch",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"Teknologi Informasi\"\nReceived: undefined\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:1009:63)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:03.269Z",
+        "data": {
+          "ts": "2026-06-22T10:40:03.269Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-multi-topic-switch",
+          "question": "TI brp",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:03.275Z",
+        "data": {
+          "ts": "2026-06-22T10:40:03.275Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-multi-topic-switch",
+          "effectiveQuestion": "TI brp",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:03.278Z",
+        "data": {
+          "ts": "2026-06-22T10:40:03.278Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-multi-topic-switch",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:03.327Z",
+        "data": {
+          "ts": "2026-06-22T10:40:03.327Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-multi-topic-switch",
+          "question": "Program Studi: Sistem Informasi\nbeasiswa SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:03.332Z",
+        "data": {
+          "ts": "2026-06-22T10:40:03.332Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-multi-topic-switch",
+          "effectiveQuestion": "Program Studi: Sistem Informasi\nbeasiswa SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:03.334Z",
+        "data": {
+          "ts": "2026-06-22T10:40:03.334Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-multi-topic-switch",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:03.269Z"
+  },
+  {
+    "title": "stale topic does not reuse older program hint",
+    "chatId": "user-stale-topic",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:1049:62)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:03.644Z",
+        "data": {
+          "ts": "2026-06-22T10:40:03.644Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-stale-topic",
+          "question": "Program Studi: Teknologi Informasi\nkelas malam?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:03.649Z",
+        "data": {
+          "ts": "2026-06-22T10:40:03.649Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-stale-topic",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nkelas malam?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:03.651Z",
+        "data": {
+          "ts": "2026-06-22T10:40:03.651Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-stale-topic",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:37.841Z",
+        "data": {
+          "ts": "2026-06-22T10:53:37.841Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-stale-topic",
+          "question": "Program Studi: Teknologi Informasi\nkelas malam?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:37.847Z",
+        "data": {
+          "ts": "2026-06-22T10:53:37.847Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-stale-topic",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nkelas malam?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:37.849Z",
+        "data": {
+          "ts": "2026-06-22T10:53:37.849Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-stale-topic",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:03.644Z"
+  },
+  {
+    "title": "fee breakdown question (\"rincian biaya kuliah\") without prodi -> asks program, then after pick returns full breakdown (fast)",
+    "chatId": "fee-breakdown-chat",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"tuition_fee_program_pick_fast\"\nReceived: \"program_pick_prompt\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:1579:30)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "tuition_fee_program_pick_fast",
+    "received": "program_pick_prompt",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:09.542Z",
+        "data": {
+          "ts": "2026-06-22T10:40:09.542Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "fee-breakdown-chat",
+          "question": "Program Studi: Teknologi Informasi\nJelaskan rincian biaya pendidikan untuk program studi ini (minimal: biaya pendaftaran, DPP, atribut/registrasi awal, biaya per semester, dan komponen awal masuk) yan",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:09.547Z",
+        "data": {
+          "ts": "2026-06-22T10:40:09.547Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "fee-breakdown-chat",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nJelaskan rincian biaya pendidikan untuk program studi ini (minimal: biaya pendaftaran, DPP, atribut/registrasi awal, biaya per semester, dan komponen awal masuk) yan",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:09.550Z",
+        "data": {
+          "ts": "2026-06-22T10:40:09.550Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "fee-breakdown-chat",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:43.693Z",
+        "data": {
+          "ts": "2026-06-22T10:53:43.693Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "fee-breakdown-chat",
+          "question": "Program Studi: Teknologi Informasi\nJelaskan rincian biaya pendidikan untuk program studi ini (minimal: biaya pendaftaran, DPP, atribut/registrasi awal, biaya per semester, dan komponen awal masuk) yan",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:43.699Z",
+        "data": {
+          "ts": "2026-06-22T10:53:43.699Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "fee-breakdown-chat",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nJelaskan rincian biaya pendidikan untuk program studi ini (minimal: biaya pendaftaran, DPP, atribut/registrasi awal, biaya per semester, dan komponen awal masuk) yan",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:43.701Z",
+        "data": {
+          "ts": "2026-06-22T10:53:43.701Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "fee-breakdown-chat",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:09.542Z"
+  },
+  {
+    "title": "UKT answer offers full breakdown; replying YA returns the breakdown deterministically",
+    "chatId": "fee-breakdown-offer",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"fast_fee\"\nReceived: \"fallback\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:1607:30)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "fast_fee",
+    "received": "fallback",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:09.996Z",
+        "data": {
+          "ts": "2026-06-22T10:40:09.996Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "fee-breakdown-offer",
+          "question": "Program Studi: Teknologi Informasi\nberapa biaya ukt TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:10.002Z",
+        "data": {
+          "ts": "2026-06-22T10:40:10.002Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "fee-breakdown-offer",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nberapa biaya ukt TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:10.005Z",
+        "data": {
+          "ts": "2026-06-22T10:40:10.005Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "fee-breakdown-offer",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:44.162Z",
+        "data": {
+          "ts": "2026-06-22T10:53:44.162Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "fee-breakdown-offer",
+          "question": "Program Studi: Teknologi Informasi\nberapa biaya ukt TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:44.168Z",
+        "data": {
+          "ts": "2026-06-22T10:53:44.168Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "fee-breakdown-offer",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nberapa biaya ukt TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:44.171Z",
+        "data": {
+          "ts": "2026-06-22T10:53:44.171Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "fee-breakdown-offer",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:09.996Z"
+  },
+  {
+    "title": "location question: answered deterministically from bundled index (fast, no slow web/OpenAI dependency)",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"campus_location_fast\"\nReceived: \"fallback\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:1868:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "campus_location_fast",
+    "received": "fallback",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "dual degree location question: answers with STIKOM + partner campuses (no mojibake)",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"dual_degree_location_fast\"\nReceived: \"fallback\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:1887:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "dual_degree_location_fast",
+    "received": "fallback",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "first non-greeting message: sends welcome first, then main reply (2 separate messages)",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toMatch(expected)\n\nExpected pattern: /Biaya\\s+pendaftaran/i\nReceived string:  \"WELCOME_FIRST\nMAIN_ANSWER\"\n    at Object.toMatch (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2013:34)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "program code in cost question uses fast fee path (\"biaya pendaftaran si\" => Sistem Informasi)",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(jest.fn()).not.toHaveBeenCalled()\n\nExpected number of calls: 0\nReceived number of calls: 1\n\n1: \"Program Studi: Sistem Informasi\nsaya ingin bertanya berapa biaya pendaftaran si?\", 6, {\"divisionKey\": \"keuangan\", \"includeGlobal\": true}\n    at Object.toHaveBeenCalled (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2030:27)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: program list query",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n    at toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2222:96)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "false",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: curriculum inquiry",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toMatch(expected)\n\nExpected pattern: /^(program_pick_detail_rag|academic_detail_clarify|registration_flow|outbound)$/i\nReceived string:  \"choose_program_specific_rag\"\n    at toMatch (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2218:43)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: career/prospect inquiry",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toMatch(expected)\n\nExpected pattern: /^(program_pick_detail_rag|academic_detail_clarify|registration_flow|outbound)$/i\nReceived string:  \"choose_program_specific_rag\"\n    at toMatch (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2218:43)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: tuition inquiry",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n    at toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2222:96)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "false",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: requirements inquiry",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n    at toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2222:96)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "false",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "hobby clarification follow-up: short activity reply is treated as continuation (no generic fallback)",
+    "chatId": "user-hobby-followup",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2548:53)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:19.457Z",
+        "data": {
+          "ts": "2026-06-22T10:40:19.457Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-hobby-followup",
+          "question": "Anak saya suka hobi random, cocok jurusan apa ya?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:19.463Z",
+        "data": {
+          "ts": "2026-06-22T10:40:19.463Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-hobby-followup",
+          "effectiveQuestion": "Anak saya suka hobi random, cocok jurusan apa ya?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:19.466Z",
+        "data": {
+          "ts": "2026-06-22T10:40:19.466Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-hobby-followup",
+          "rag": {
+            "success": true,
+            "source": "rag-major-recommendation",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:19.507Z",
+        "data": {
+          "ts": "2026-06-22T10:40:19.507Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-hobby-followup",
+          "question": "Hobi/aktivitas: membuat robot\nPertanyaan: jurusan/prodi apa yang paling cocok (BD/SI/TI/SK)?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:19.512Z",
+        "data": {
+          "ts": "2026-06-22T10:40:19.512Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-hobby-followup",
+          "effectiveQuestion": "Hobi/aktivitas: membuat robot\nPertanyaan: jurusan/prodi apa yang paling cocok (BD/SI/TI/SK)?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:19.515Z",
+        "data": {
+          "ts": "2026-06-22T10:40:19.515Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-hobby-followup",
+          "rag": {
+            "success": true,
+            "source": "rag-major-recommendation",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:19.457Z"
+  },
+  {
+    "title": "post-program follow-up: \"hitung total\" triggers anchored RAG calculation",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2747:18)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "choose program + total question: answers directly without mini-menu",
+    "chatId": "628555555555",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2845:18)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:19:13.485Z",
+        "data": {
+          "ts": "2026-06-22T13:19:13.485Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "628555555555",
+          "routeTextEarly": "tolong hitungkan total yang perlu saya bayar untuk daftar"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:22:38.153Z",
+        "data": {
+          "ts": "2026-06-22T13:22:38.153Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "628555555555",
+          "routeTextEarly": "tolong hitungkan total yang perlu saya bayar untuk daftar"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:50:43.440Z",
+        "data": {
+          "ts": "2026-06-22T14:50:43.440Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "628555555555",
+          "routeTextEarly": "tolong hitungkan total yang perlu saya bayar untuk daftar"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:52:33.835Z",
+        "data": {
+          "ts": "2026-06-22T14:52:33.835Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "628555555555",
+          "routeTextEarly": "tolong hitungkan total yang perlu saya bayar untuk daftar"
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+    "first_trace_ts": "2026-06-22T13:19:13.485Z"
+  },
+  {
+    "title": "total-cost follow-up: replying with gelombang computes total (no loop)",
+    "chatId": "628555555555",
+    "failureMessages": [
+      "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"Total biaya awal masuk setelah potongan: Rp 5.600.000\"\nReceived string:    \"Siap, kak (Gelombang I). Untuk menghitung totalnya, saya perlu rincian komponen biaya awal masuk (butir 1–4) yang kakak maksud.\nBoleh kirimkan daftar biayanya (pendaftaran, DPP, biaya semester awal, dll) atau screenshot/teks rincian tersebut?\"\n    at Object.toContain (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2918:22)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:19:13.485Z",
+        "data": {
+          "ts": "2026-06-22T13:19:13.485Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "628555555555",
+          "routeTextEarly": "tolong hitungkan total yang perlu saya bayar untuk daftar"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:22:38.153Z",
+        "data": {
+          "ts": "2026-06-22T13:22:38.153Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "628555555555",
+          "routeTextEarly": "tolong hitungkan total yang perlu saya bayar untuk daftar"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:50:43.440Z",
+        "data": {
+          "ts": "2026-06-22T14:50:43.440Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "628555555555",
+          "routeTextEarly": "tolong hitungkan total yang perlu saya bayar untuk daftar"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:52:33.835Z",
+        "data": {
+          "ts": "2026-06-22T14:52:33.835Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "628555555555",
+          "routeTextEarly": "tolong hitungkan total yang perlu saya bayar untuk daftar"
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+    "first_trace_ts": "2026-06-22T13:19:13.485Z"
+  },
+  {
+    "title": "pending total-cost follow-up: discount table is not treated as butir 1–4 costs",
+    "chatId": "user-pending-discount-only",
+    "failureMessages": [
+      "Error: expect(received).toMatch(expected)\n\nExpected pattern: /Rinciannya\\s+yang\\s+mana|rincian\\s+biaya/i\nReceived string:  \"Siap, kak (Gelombang II). Untuk menghitung totalnya, saya perlu rincian komponen biaya awal masuk (butir 1–4) yang kakak maksud.\nBoleh kirimkan daftar biayanya (pendaftaran, DPP, biaya semester awal, dll) atau screenshot/teks rincian tersebut?\"\n    at Object.toMatch (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:2962:22)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [],
+    "first_trace_tag": null,
+    "first_trace_ts": null
+  },
+  {
+    "title": "must-pay question still uses deterministic total even when pendingTotalCost exists",
+    "chatId": "user-pending-must-pay",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"deterministic_total_must_pay\"\nReceived: \"pending_total_cost_need_breakdown\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3006:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "deterministic_total_must_pay",
+    "received": "pending_total_cost_need_breakdown",
+    "trace_sample": [
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:19:14.060Z",
+        "data": {
+          "ts": "2026-06-22T13:19:14.060Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-pending-must-pay",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2 b jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:22:38.701Z",
+        "data": {
+          "ts": "2026-06-22T13:22:38.701Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-pending-must-pay",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2 b jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:50:44.011Z",
+        "data": {
+          "ts": "2026-06-22T14:50:44.011Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-pending-must-pay",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2 b jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:52:34.275Z",
+        "data": {
+          "ts": "2026-06-22T14:52:34.275Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-pending-must-pay",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2 b jadi berapa saya harus bayar?"
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+    "first_trace_ts": "2026-06-22T13:19:14.060Z"
+  },
+  {
+    "title": "normal inbound queries route through composer and persist composer telemetry",
+    "chatId": "timeout-race-1",
+    "failureMessages": [
+      "Error: expect(received).toEqual(expected) // deep equality\n\nExpected: ObjectContaining {\"clarificationUsed\": Any<Boolean>, \"duplicateSendPrevented\": Any<Boolean>, \"finalPipeline\": StringContaining \"composer->humanizer\", \"followupUsed\": Any<Boolean>, \"reflectionUsed\": Any<Boolean>, \"sentViaComposer\": true, \"sourceType\": Any<String>}\nReceived: undefined\n    at Object.toEqual (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3099:48)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:23.958Z",
+        "data": {
+          "ts": "2026-06-22T10:40:23.958Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "timeout-race-1",
+          "question": "Program Studi: Sistem Informasi\nberapa biaya SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:23.958Z",
+        "data": {
+          "ts": "2026-06-22T10:40:23.958Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "timeout-race-1",
+          "effectiveQuestion": "Program Studi: Sistem Informasi\nberapa biaya SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:23.958Z",
+        "data": {
+          "ts": "2026-06-22T10:40:23.958Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "timeout-race-1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:58.862Z",
+        "data": {
+          "ts": "2026-06-22T10:53:58.862Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "timeout-race-1",
+          "question": "Program Studi: Sistem Informasi\nberapa biaya SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:58.862Z",
+        "data": {
+          "ts": "2026-06-22T10:53:58.862Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "timeout-race-1",
+          "effectiveQuestion": "Program Studi: Sistem Informasi\nberapa biaya SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:58.862Z",
+        "data": {
+          "ts": "2026-06-22T10:53:58.862Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "timeout-race-1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:23.958Z"
+  },
+  {
+    "title": "outbound telemetry fields are always present for normal composer replies",
+    "chatId": "telemetry-fields-1",
+    "failureMessages": [
+      "Error: expect(received).toEqual(expected) // deep equality\n\nExpected: ObjectContaining {\"duplicateSendPrevented\": Any<Boolean>, \"finalPipeline\": StringContaining \"composer->humanizer\", \"sentViaComposer\": true, \"sourceType\": Any<String>, \"timeoutTriggered\": Any<Boolean>}\nReceived: undefined\n    at Object.toEqual (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3201:46)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:24.690Z",
+        "data": {
+          "ts": "2026-06-22T10:40:24.690Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "telemetry-fields-1",
+          "question": "Program Studi: Sistem Informasi\nbiaya SI berapa?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:24.696Z",
+        "data": {
+          "ts": "2026-06-22T10:40:24.696Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "telemetry-fields-1",
+          "effectiveQuestion": "Program Studi: Sistem Informasi\nbiaya SI berapa?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:24.699Z",
+        "data": {
+          "ts": "2026-06-22T10:40:24.699Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "telemetry-fields-1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:59.723Z",
+        "data": {
+          "ts": "2026-06-22T10:53:59.723Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "telemetry-fields-1",
+          "question": "Program Studi: Sistem Informasi\nbiaya SI berapa?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:59.730Z",
+        "data": {
+          "ts": "2026-06-22T10:53:59.730Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "telemetry-fields-1",
+          "effectiveQuestion": "Program Studi: Sistem Informasi\nbiaya SI berapa?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:53:59.733Z",
+        "data": {
+          "ts": "2026-06-22T10:53:59.733Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "telemetry-fields-1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:24.690Z"
+  },
+  {
+    "title": "composer bypass prevention is enforced for normal inbound replies",
+    "chatId": "composer-bypass-1",
+    "failureMessages": [
+      "TypeError: Cannot read properties of undefined (reading 'sentViaComposer')\n    at Object.sentViaComposer (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3233:45)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:24.949Z",
+        "data": {
+          "ts": "2026-06-22T10:40:24.949Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "composer-bypass-1",
+          "question": "syarat beasiswa",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:24.955Z",
+        "data": {
+          "ts": "2026-06-22T10:40:24.955Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "composer-bypass-1",
+          "effectiveQuestion": "syarat beasiswa",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:24.957Z",
+        "data": {
+          "ts": "2026-06-22T10:40:24.957Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "composer-bypass-1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:53:59.986Z",
+        "data": {
+          "ts": "2026-06-22T10:53:59.986Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "composer-bypass-1",
+          "question": "syarat beasiswa",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:53:59.993Z",
+        "data": {
+          "ts": "2026-06-22T10:53:59.993Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "composer-bypass-1",
+          "effectiveQuestion": "syarat beasiswa",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:00.044Z",
+        "data": {
+          "ts": "2026-06-22T10:54:00.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "composer-bypass-1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:24.949Z"
+  },
+  {
+    "title": "outbound path consistency uses composer reply funnel for normal messages",
+    "chatId": "outbound-path-1",
+    "failureMessages": [
+      "TypeError: Cannot read properties of undefined (reading 'sentViaComposer')\n    at Object.sentViaComposer (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3257:45)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:25.239Z",
+        "data": {
+          "ts": "2026-06-22T10:40:25.239Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "outbound-path-1",
+          "question": "Program Studi: Sistem Informasi\napa program SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:25.244Z",
+        "data": {
+          "ts": "2026-06-22T10:40:25.244Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "outbound-path-1",
+          "effectiveQuestion": "Program Studi: Sistem Informasi\napa program SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:25.248Z",
+        "data": {
+          "ts": "2026-06-22T10:40:25.248Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "outbound-path-1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:00.338Z",
+        "data": {
+          "ts": "2026-06-22T10:54:00.338Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "outbound-path-1",
+          "question": "Program Studi: Sistem Informasi\napa program SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:00.342Z",
+        "data": {
+          "ts": "2026-06-22T10:54:00.342Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "outbound-path-1",
+          "effectiveQuestion": "Program Studi: Sistem Informasi\napa program SI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:00.344Z",
+        "data": {
+          "ts": "2026-06-22T10:54:00.344Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "outbound-path-1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:25.239Z"
+  },
+  {
+    "title": "must-pay phrasing with SI + gelombang 2B computes total (not clarify-wave)",
+    "chatId": "user-must-pay",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"deterministic_total_must_pay\"\nReceived: \"total_need_wave\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3291:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "deterministic_total_must_pay",
+    "received": "total_need_wave",
+    "trace_sample": [
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:19:17.131Z",
+        "data": {
+          "ts": "2026-06-22T13:19:17.131Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-must-pay",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2 b jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:22:41.645Z",
+        "data": {
+          "ts": "2026-06-22T13:22:41.645Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-must-pay",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2 b jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:50:47.172Z",
+        "data": {
+          "ts": "2026-06-22T14:50:47.172Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-must-pay",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2 b jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:52:38.066Z",
+        "data": {
+          "ts": "2026-06-22T14:52:38.066Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-must-pay",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2 b jadi berapa saya harus bayar?"
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+    "first_trace_ts": "2026-06-22T13:19:17.131Z"
+  },
+  {
+    "title": "must-pay phrasing with SI + gelombang 2B (compact) computes total",
+    "chatId": "user-must-pay-compact",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"deterministic_total_must_pay\"\nReceived: \"total_need_wave\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3312:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "deterministic_total_must_pay",
+    "received": "total_need_wave",
+    "trace_sample": [
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:19:17.613Z",
+        "data": {
+          "ts": "2026-06-22T13:19:17.613Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-must-pay-compact",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2b jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:22:42.088Z",
+        "data": {
+          "ts": "2026-06-22T13:22:42.088Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-must-pay-compact",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2b jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:50:47.595Z",
+        "data": {
+          "ts": "2026-06-22T14:50:47.595Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-must-pay-compact",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2b jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:52:38.716Z",
+        "data": {
+          "ts": "2026-06-22T14:52:38.716Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-must-pay-compact",
+          "routeTextEarly": "saya dari smk ti ingin mendaftar prodi si gelombang 2b jadi berapa saya harus bayar?"
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+    "first_trace_ts": "2026-06-22T13:19:17.613Z"
+  },
+  {
+    "title": "deterministic UTB mapping: potongan pendaftaran dan DPP sesuai gelombang I/IV",
+    "chatId": "user-utb-wave-check",
+    "failureMessages": [
+      "Error: expect(received).toMatch(expected)\n\nExpected pattern: /Potongan\\s+biaya\\s+pendaftaran\\s*\\(Gelombang\\s+IV\\)\\s*:\\s*Rp\\s*100\\.000/i\nReceived string:  \"Jadi Kakak ingin tahu biaya kuliah untuk Program Studi Dual Degree UTB (Bisnis Digital). Saya jelaskan sekarang ya.·\nUntuk program studi Dual Degree UTB (Bisnis Digital), rincian biaya sebagai berikut:·\nPendaftaran:\nBiaya pendaftaran: Rp 500.000\nPotongan biaya pendaftaran: Rp 0\nTotal biaya pendaftaran: Rp 500.000·\nBiaya awal masuk untuk Prodi Dual Degree UTB (Bisnis Digital):\nSubtotal biaya awal masuk: Rp 14.000.000\nPotongan biaya DPP: Rp 0\nTotal biaya awal masuk setelah potongan: Rp 14.500.000·\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n* Beasiswa KIP\n* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n* Beasiswa Prestasi\n* Beasiswa Yayasan\nSilakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus.\n* Kuliah Sambil Kerja di Luar Negeri·\nApakah Kakak ingin dijelaskan tentang?\n* Biaya perkuliahan program studi yang lainnya\n* Salah satu jenis beasiswa\n* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll\nSilahkan diketikkan.\"\n    at Object.toMatch (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3349:22)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:19:18.038Z",
+        "data": {
+          "ts": "2026-06-22T13:19:18.038Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-utb-wave-check",
+          "routeTextEarly": "saya mau daftar dual degree utb gelombang 1 jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:19:18.265Z",
+        "data": {
+          "ts": "2026-06-22T13:19:18.265Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-utb-wave-check",
+          "routeTextEarly": "saya mau daftar dual degree utb gelombang 4 jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:22:42.535Z",
+        "data": {
+          "ts": "2026-06-22T13:22:42.535Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-utb-wave-check",
+          "routeTextEarly": "saya mau daftar dual degree utb gelombang 1 jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T13:22:42.744Z",
+        "data": {
+          "ts": "2026-06-22T13:22:42.744Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-utb-wave-check",
+          "routeTextEarly": "saya mau daftar dual degree utb gelombang 4 jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:50:47.986Z",
+        "data": {
+          "ts": "2026-06-22T14:50:47.986Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-utb-wave-check",
+          "routeTextEarly": "saya mau daftar dual degree utb gelombang 1 jadi berapa saya harus bayar?"
+        }
+      },
+      {
+        "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+        "ts": "2026-06-22T14:50:48.179Z",
+        "data": {
+          "ts": "2026-06-22T14:50:48.179Z",
+          "tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+          "chatId": "user-utb-wave-check",
+          "routeTextEarly": "saya mau daftar dual degree utb gelombang 4 jadi berapa saya harus bayar?"
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_SESSION_SKIP_RAG_FOR_FAST_FEE",
+    "first_trace_ts": "2026-06-22T13:19:18.038Z"
+  },
+  {
+    "title": "replies politely to gratitude without triggering RAG",
+    "chatId": "user-fee-offer",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:69:37)\n    at Object.expectHintsPersisted (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3546:5)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:29.681Z",
+        "data": {
+          "ts": "2026-06-22T10:40:29.681Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-offer",
+          "question": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:29.688Z",
+        "data": {
+          "ts": "2026-06-22T10:40:29.688Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-offer",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:29.690Z",
+        "data": {
+          "ts": "2026-06-22T10:40:29.690Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-offer",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:04.526Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.526Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-offer",
+          "question": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:04.533Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.533Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-offer",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:04.536Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.536Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-offer",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:29.681Z"
+  },
+  {
+    "title": "does not answer with fees for acknowledgement-only \"siap\" when no follow-up was asked",
+    "chatId": "user-fee-offer",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:69:37)\n    at Object.expectHintsPersisted (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3570:5)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:29.681Z",
+        "data": {
+          "ts": "2026-06-22T10:40:29.681Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-offer",
+          "question": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:29.688Z",
+        "data": {
+          "ts": "2026-06-22T10:40:29.688Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-offer",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:29.690Z",
+        "data": {
+          "ts": "2026-06-22T10:40:29.690Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-offer",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:04.526Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.526Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-offer",
+          "question": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:04.533Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.533Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-offer",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:04.536Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.536Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-offer",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:29.681Z"
+  },
+  {
+    "title": "pendaftaran answer offers the full fee breakdown (YA/TIDAK)",
+    "chatId": "user-fee-offer",
+    "failureMessages": [
+      "Error: expect(jest.fn()).not.toHaveBeenCalled()\n\nExpected number of calls: 0\nReceived number of calls: 2\n\n1: \"Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?\", 6, {\"divisionKey\": \"keuangan\", \"includeGlobal\": true}\n2: \"Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?\", 6, {\"divisionKey\": null, \"includeGlobal\": true}\n    at Object.toHaveBeenCalled (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3588:27)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:29.681Z",
+        "data": {
+          "ts": "2026-06-22T10:40:29.681Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-offer",
+          "question": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:29.688Z",
+        "data": {
+          "ts": "2026-06-22T10:40:29.688Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-offer",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:29.690Z",
+        "data": {
+          "ts": "2026-06-22T10:40:29.690Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-offer",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:04.526Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.526Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-offer",
+          "question": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:04.533Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.533Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-offer",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nberapa biaya pendaftaran prodi TI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:04.536Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.536Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-offer",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:29.681Z"
+  },
+  {
+    "title": "pendaftaran question without explicit prodi does not mention a prodi; still offers breakdown",
+    "chatId": "user-fee-pendaftaran-noprodi",
+    "failureMessages": [
+      "Error: expect(jest.fn()).not.toHaveBeenCalled()\n\nExpected number of calls: 0\nReceived number of calls: 2\n\n1: \"Program Studi: Sistem Komputer\nberapa biaya pendaftaran di stikom?\", 6, {\"divisionKey\": \"keuangan\", \"includeGlobal\": true}\n2: \"Program Studi: Sistem Komputer\nberapa biaya pendaftaran di stikom?\", 6, {\"divisionKey\": null, \"includeGlobal\": true}\n    at Object.toHaveBeenCalled (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3610:27)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:30.126Z",
+        "data": {
+          "ts": "2026-06-22T10:40:30.126Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-pendaftaran-noprodi",
+          "question": "Program Studi: Sistem Komputer\nberapa biaya pendaftaran di stikom?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:30.131Z",
+        "data": {
+          "ts": "2026-06-22T10:40:30.131Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-pendaftaran-noprodi",
+          "effectiveQuestion": "Program Studi: Sistem Komputer\nberapa biaya pendaftaran di stikom?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:30.134Z",
+        "data": {
+          "ts": "2026-06-22T10:40:30.134Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-pendaftaran-noprodi",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:04.981Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.981Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-pendaftaran-noprodi",
+          "question": "Program Studi: Sistem Komputer\nberapa biaya pendaftaran di stikom?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:04.986Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.986Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-pendaftaran-noprodi",
+          "effectiveQuestion": "Program Studi: Sistem Komputer\nberapa biaya pendaftaran di stikom?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:04.989Z",
+        "data": {
+          "ts": "2026-06-22T10:54:04.989Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-pendaftaran-noprodi",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:30.126Z"
+  },
+  {
+    "title": "breakdown request with explicit SK overrides prior TI hint (answers SK)",
+    "chatId": "fee-breakdown-program-override-sk",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"fast_fee\"\nReceived: \"fallback\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3652:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "fast_fee",
+    "received": "fallback",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:30.629Z",
+        "data": {
+          "ts": "2026-06-22T10:40:30.629Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "fee-breakdown-program-override-sk",
+          "question": "Program Studi: Sistem Komputer\nTolong jelaskan lebih detail sesuai pembahasan sebelumnya.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:30.637Z",
+        "data": {
+          "ts": "2026-06-22T10:40:30.637Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "fee-breakdown-program-override-sk",
+          "effectiveQuestion": "Program Studi: Sistem Komputer\nTolong jelaskan lebih detail sesuai pembahasan sebelumnya.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:30.640Z",
+        "data": {
+          "ts": "2026-06-22T10:40:30.640Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "fee-breakdown-program-override-sk",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:05.459Z",
+        "data": {
+          "ts": "2026-06-22T10:54:05.459Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "fee-breakdown-program-override-sk",
+          "question": "Program Studi: Sistem Komputer\nTolong jelaskan lebih detail sesuai pembahasan sebelumnya.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:05.465Z",
+        "data": {
+          "ts": "2026-06-22T10:54:05.465Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "fee-breakdown-program-override-sk",
+          "effectiveQuestion": "Program Studi: Sistem Komputer\nTolong jelaskan lebih detail sesuai pembahasan sebelumnya.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:05.468Z",
+        "data": {
+          "ts": "2026-06-22T10:54:05.468Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "fee-breakdown-program-override-sk",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:30.629Z"
+  },
+  {
+    "title": "DNUI breakdown answer does not use Ujian/Subject label in detailed fee list",
+    "chatId": "dnui-breakdown-detail",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"fee_breakdown_offer_answer_fast\"\nReceived: \"fallback\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3716:30)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "fee_breakdown_offer_answer_fast",
+    "received": "fallback",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:31.599Z",
+        "data": {
+          "ts": "2026-06-22T10:40:31.599Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "dnui-breakdown-detail",
+          "question": "Program Studi: Dual Degree DNUI (Bisnis Digital)\nberapa biaya ukt DNUI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:31.604Z",
+        "data": {
+          "ts": "2026-06-22T10:40:31.604Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "dnui-breakdown-detail",
+          "effectiveQuestion": "Program Studi: Dual Degree DNUI (Bisnis Digital)\nberapa biaya ukt DNUI?",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:31.607Z",
+        "data": {
+          "ts": "2026-06-22T10:40:31.607Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "dnui-breakdown-detail",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:06.373Z",
+        "data": {
+          "ts": "2026-06-22T10:54:06.373Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "dnui-breakdown-detail",
+          "question": "Program Studi: Bisnis Digital\nJelaskan rincian biaya pendidikan/biaya lainnya untuk program studi yang dibahas (minimal: biaya pendaftaran, DPP, atribut/registrasi awal, biaya pendidikan per semester,",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:06.378Z",
+        "data": {
+          "ts": "2026-06-22T10:54:06.378Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "dnui-breakdown-detail",
+          "effectiveQuestion": "Program Studi: Bisnis Digital\nJelaskan rincian biaya pendidikan/biaya lainnya untuk program studi yang dibahas (minimal: biaya pendaftaran, DPP, atribut/registrasi awal, biaya pendidikan per semester,",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:06.381Z",
+        "data": {
+          "ts": "2026-06-22T10:54:06.381Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "dnui-breakdown-detail",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:31.599Z"
+  },
+  {
+    "title": "breakdown offer: pendaftaran without prodi -> YA -> pick TI -> returns full breakdown (fast)",
+    "chatId": "user-fee-breakdown-need-program",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"fee_breakdown_offer_answer_fast\"\nReceived: \"fee_breakdown_offer_no_data\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3756:30)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "fee_breakdown_offer_answer_fast",
+    "received": "fee_breakdown_offer_no_data",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:32.065Z",
+        "data": {
+          "ts": "2026-06-22T10:40:32.065Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-breakdown-need-program",
+          "question": "Program Studi: Teknologi Informasi\nJelaskan rincian biaya pendidikan (minimal: pendaftaran, DPP, atribut/registrasi awal, biaya per semester, dan komponen awal masuk) untuk program studi ini.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:32.072Z",
+        "data": {
+          "ts": "2026-06-22T10:40:32.072Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-breakdown-need-program",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nJelaskan rincian biaya pendidikan (minimal: pendaftaran, DPP, atribut/registrasi awal, biaya per semester, dan komponen awal masuk) untuk program studi ini.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:32.074Z",
+        "data": {
+          "ts": "2026-06-22T10:40:32.074Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-breakdown-need-program",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:06.835Z",
+        "data": {
+          "ts": "2026-06-22T10:54:06.835Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-fee-breakdown-need-program",
+          "question": "Program Studi: Teknologi Informasi\nJelaskan rincian biaya pendidikan (minimal: pendaftaran, DPP, atribut/registrasi awal, biaya per semester, dan komponen awal masuk) untuk program studi ini.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:06.841Z",
+        "data": {
+          "ts": "2026-06-22T10:54:06.841Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-fee-breakdown-need-program",
+          "effectiveQuestion": "Program Studi: Teknologi Informasi\nJelaskan rincian biaya pendidikan (minimal: pendaftaran, DPP, atribut/registrasi awal, biaya per semester, dan komponen awal masuk) untuk program studi ini.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:06.843Z",
+        "data": {
+          "ts": "2026-06-22T10:54:06.843Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-fee-breakdown-need-program",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:32.065Z"
+  },
+  {
+    "title": "once FINAL_SEND occurs in registration flow, fallback never overrides the response",
+    "chatId": "user-final-send-guard",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:3975:29)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "false",
+    "trace_sample": [],
+    "first_trace_tag": null,
+    "first_trace_ts": null
+  },
+  {
+    "title": "pure greeting \"Halo\" restarts session and re-sends welcome even if previously welcomed",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBeUndefined()\n\nReceived: {\"degree\": \"S1\", \"program\": \"Teknologi Informasi\", \"stage\": \"done\"}\n    at toBeUndefined (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4211:50)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "{\"degree\"",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "pure greeting \"Halo selamat pagi\" restarts session and re-sends welcome even if previously welcomed",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBeUndefined()\n\nReceived: {\"degree\": \"S1\", \"program\": \"Teknologi Informasi\", \"stage\": \"done\"}\n    at toBeUndefined (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4211:50)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "{\"degree\"",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "pure greeting \"Halo selamat pagi kak\" restarts session and re-sends welcome even if previously welcomed",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBeUndefined()\n\nReceived: {\"degree\": \"S1\", \"program\": \"Teknologi Informasi\", \"stage\": \"done\"}\n    at toBeUndefined (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4211:50)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "{\"degree\"",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "greeting-only (no welcome setting) is answered with a prompt (no RAG)",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toMatch(expected)\n\nExpected pattern: /tanya|tanyakan|pertanyaan/i\nReceived string:  \"Halo kak. Selamat pagi.\"\n    at Object.toMatch (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4316:22)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "custom greeting alias (no welcome setting) is answered with a prompt (no RAG)",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toMatch(expected)\n\nExpected pattern: /tanya|tanyakan|pertanyaan/i\nReceived string:  \"Halo kak. Selamat malam.\"\n    at Object.toMatch (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4338:22)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "follow-up \"ya boleh\" after dual offer (total awal masuk vs potongan gelombang) asks 1/2 choice",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBeTruthy()\n\nReceived: undefined\n    at Object.toBeTruthy (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4468:61)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "undefined",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "pending dual-offer: unclear reply triggers reprompt and keeps pending so next choice works",
+    "chatId": "user-followup-reprompt",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"followup_discount_gelombang\"\nReceived: \"pending_rag_candidate\"\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4605:30)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": "followup_discount_gelombang",
+    "received": "pending_rag_candidate",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:43.532Z",
+        "data": {
+          "ts": "2026-06-22T10:40:43.532Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-followup-reprompt",
+          "question": "Jelaskan skema potongan/diskon biaya pendaftaran per gelombang (jika ada), termasuk syarat singkat bila tertulis.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:43.537Z",
+        "data": {
+          "ts": "2026-06-22T10:40:43.537Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-followup-reprompt",
+          "effectiveQuestion": "Jelaskan skema potongan/diskon biaya pendaftaran per gelombang (jika ada), termasuk syarat singkat bila tertulis.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:43.539Z",
+        "data": {
+          "ts": "2026-06-22T10:40:43.539Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-followup-reprompt",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:18.441Z",
+        "data": {
+          "ts": "2026-06-22T10:54:18.441Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user-followup-reprompt",
+          "question": "Jelaskan skema potongan/diskon biaya pendaftaran per gelombang (jika ada), termasuk syarat singkat bila tertulis.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:18.447Z",
+        "data": {
+          "ts": "2026-06-22T10:54:18.447Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user-followup-reprompt",
+          "effectiveQuestion": "Jelaskan skema potongan/diskon biaya pendaftaran per gelombang (jika ada), termasuk syarat singkat bila tertulis.",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:18.450Z",
+        "data": {
+          "ts": "2026-06-22T10:54:18.450Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user-followup-reprompt",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:43.532Z"
+  },
+  {
+    "title": "pending dual-offer choice does not hijack a new explicit question (clears pending and answers deterministically)",
+    "chatId": "628999999999",
+    "failureMessages": [
+      "Error: expect(jest.fn()).not.toHaveBeenCalled()\n\nExpected number of calls: 0\nReceived number of calls: 1\n\n1: \"Program Studi: Sistem Informasi\nberapa biaya pendaftaran prodi si?\", 6, {\"divisionKey\": \"keuangan\", \"includeGlobal\": true}\n    at Object.toHaveBeenCalled (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4650:27)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:44.276Z",
+        "data": {
+          "ts": "2026-06-22T10:40:44.276Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "628999999999",
+          "question": "5",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:44.285Z",
+        "data": {
+          "ts": "2026-06-22T10:40:44.285Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "628999999999",
+          "effectiveQuestion": "5",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:44.287Z",
+        "data": {
+          "ts": "2026-06-22T10:40:44.287Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "628999999999",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:19.163Z",
+        "data": {
+          "ts": "2026-06-22T10:54:19.163Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "628999999999",
+          "question": "5",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:19.168Z",
+        "data": {
+          "ts": "2026-06-22T10:54:19.168Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "628999999999",
+          "effectiveQuestion": "5",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:19.170Z",
+        "data": {
+          "ts": "2026-06-22T10:54:19.170Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "628999999999",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:44.276Z"
+  },
+  {
+    "title": "numeric welcome menu: custom \"5 Lokasi Kampus\" routes to location answer (label-driven)",
+    "chatId": "628999999999",
+    "failureMessages": [
+      "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"lokasi\"\nReceived string:    \"5\"\n    at Object.toContain (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4719:15)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:44.276Z",
+        "data": {
+          "ts": "2026-06-22T10:40:44.276Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "628999999999",
+          "question": "5",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:44.285Z",
+        "data": {
+          "ts": "2026-06-22T10:40:44.285Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "628999999999",
+          "effectiveQuestion": "5",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:44.287Z",
+        "data": {
+          "ts": "2026-06-22T10:40:44.287Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "628999999999",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:19.163Z",
+        "data": {
+          "ts": "2026-06-22T10:54:19.163Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "628999999999",
+          "question": "5",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:19.168Z",
+        "data": {
+          "ts": "2026-06-22T10:54:19.168Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "628999999999",
+          "effectiveQuestion": "5",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:19.170Z",
+        "data": {
+          "ts": "2026-06-22T10:54:19.170Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "628999999999",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:44.276Z"
+  },
+  {
+    "title": "numeric welcome menu: custom \"6 Konsultasi Admin\" offers handover (label-driven)",
+    "chatId": "628888888888",
+    "failureMessages": [
+      "Error: expect(jest.fn()).not.toHaveBeenCalled()\n\nExpected number of calls: 0\nReceived number of calls: 2\n\n1: \"6\", 6, {\"divisionKey\": \"lainnya\", \"includeGlobal\": true}\n2: \"6\", 6, {\"divisionKey\": null, \"includeGlobal\": true}\n    at Object.toHaveBeenCalled (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:4777:27)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:44.589Z",
+        "data": {
+          "ts": "2026-06-22T10:40:44.589Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "628888888888",
+          "question": "6",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:44.595Z",
+        "data": {
+          "ts": "2026-06-22T10:40:44.595Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "628888888888",
+          "effectiveQuestion": "6",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:44.597Z",
+        "data": {
+          "ts": "2026-06-22T10:40:44.597Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "628888888888",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:54:19.466Z",
+        "data": {
+          "ts": "2026-06-22T10:54:19.466Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "628888888888",
+          "question": "6",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:54:19.472Z",
+        "data": {
+          "ts": "2026-06-22T10:54:19.472Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "628888888888",
+          "effectiveQuestion": "6",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:54:19.475Z",
+        "data": {
+          "ts": "2026-06-22T10:54:19.475Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "628888888888",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:44.589Z"
+  },
+  {
+    "title": "menu 3 follow-up: program reply returns semester fee and clears pendingMenuCost",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(jest.fn()).not.toHaveBeenCalled()\n\nExpected number of calls: 0\nReceived number of calls: 2\n\n1: \"Program Studi: Teknologi Informasi\nBerapa biaya pendidikan per semester (UKT) untuk program studi ini? Jawab hanya biaya per semester. Jika tidak tercantum, tulis: \\\"tidak tercantum\\\".\", 6, {\"answerQuestion\": \"Berapa biaya pendidikan per semester (UKT) untuk program studi ini? Jawab hanya biaya per semester. Jika tidak tercantum, tulis: \\\"tidak tercantum\\\".\", \"divisionKey\": \"akademik\", \"includeGlobal\": true, \"minScore\": 0}\n2: \"Program Studi: Teknologi Informasi\nBerapa biaya pendidikan per semester (UKT) untuk program studi ini? Jawab hanya biaya per semester. Jika tidak tercantum, tulis: \\\"tidak tercantum\\\".\", 6, {\"answerQuestion\": \"Berapa biaya pendidikan per semester (UKT) untuk program studi ini? Jawab hanya biaya per semester. Jika tidak tercantum, tulis: \\\"tidak tercantum\\\".\", \"divisionKey\": null, \"includeGlobal\": true, \"minScore\": 0}\n    at Object.toHaveBeenCalled (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:5196:27)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": null,
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  },
+  {
+    "title": "pendingScheduleWave does not hijack unrelated questions (e.g., alur pendaftaran)",
+    "chatId": "user1",
+    "failureMessages": [
+      "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: false\nReceived: true\n    at Object.toBe (C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tests\\providerWebhook.test.js:5478:97)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"
+    ],
+    "expected": null,
+    "received": "true",
+    "trace_sample": [
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:05.785Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.785Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:05.792Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.792Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "pertanyaan yang tidak ada jawabannya",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:05.794Z",
+        "data": {
+          "ts": "2026-06-22T10:40:05.794Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag-no-match",
+            "contexts": 0
+          }
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_ENTER",
+        "ts": "2026-06-22T10:40:06.036Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.036Z",
+          "tag": "TRACE_PROVIDER_ENTER",
+          "chatId": "user1",
+          "question": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_BEFORE_RAG",
+        "ts": "2026-06-22T10:40:06.041Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.041Z",
+          "tag": "TRACE_PROVIDER_BEFORE_RAG",
+          "chatId": "user1",
+          "effectiveQuestion": "tolong kirim brosur stikom bali",
+          "topK": 6
+        }
+      },
+      {
+        "tag": "TRACE_PROVIDER_AFTER_RAG",
+        "ts": "2026-06-22T10:40:06.044Z",
+        "data": {
+          "ts": "2026-06-22T10:40:06.044Z",
+          "tag": "TRACE_PROVIDER_AFTER_RAG",
+          "chatId": "user1",
+          "rag": {
+            "success": true,
+            "source": "rag",
+            "contexts": 0
+          }
+        }
+      }
+    ],
+    "first_trace_tag": "TRACE_PROVIDER_ENTER",
+    "first_trace_ts": "2026-06-22T10:40:05.785Z"
+  }
+]

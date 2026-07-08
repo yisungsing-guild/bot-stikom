@@ -1,0 +1,263 @@
+[
+  {
+    "alias": "SI",
+    "query": "apa itu si",
+    "answer": "Program studi Sistem Informasi adalah pendidikan yang menghasilkan lulusan dengan kompetensi dalam merancang, mengembangkan, dan mengimplementasikan sistem informasi. Lulusan dapat berkarier sebagai Perekayasa Sistem Informasi, Business Analyst, atau IT Consultant, dengan fokus pada analisis sistem, database, dan manajemen proyek IT.\nApa ada aspek tertentu dari program ini yang ingin kamu ketahui lebih lanjut?",
+    "source": "gpt-4o-mini",
+    "confidence": 0.49023763640671963,
+    "contexts": [
+      {
+        "id": "4d95b75d-49ce-4138-9d73-3bc48e2a2d80",
+        "score": 0.49023763640671963,
+        "compositeScore": 6.338559,
+        "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "chunk": "ecialist | Brand Manager | Business Development | Startup Founder\"\nManajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bidang Web Developer | Database Administrator | dan IT Entrepreneur yang menghadapi dunia usaha dan industri\" | \"Pengelolaan database | arsip digital | administrasi sistem informasi | data processing | dokumentasi digital\" | \"Teliti | rapi | dan suka mengelola data\" | \"Data Administrator | Database Staff | Information Management Staff | IT Administration | Document Controller | Digital Archive Staff\""
+      },
+      {
+        "id": "409b807e-1dd9-4387-83ec-671921579ff6",
+        "score": 0.5998187734999283,
+        "compositeScore": 3.015955,
+        "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "chunk": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems | sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi | Perekayasa Sistem Informasi Multimedia | Desainer Grafis | Animator | serta Peneliti Sistem Informasi.\" | \"Analisis sistem | database | business intelligence | manajemen proyek IT | sistem enterprise | digital business\" | Suka teknologi sekaligus bisnis dan manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer"
+      }
+    ]
+  },
+  {
+    "alias": "TI",
+    "query": "apa itu ti",
+    "answer": "Program Studi Teknologi Informasi (TI) adalah salah satu program sarjana yang ditawarkan di Institut Teknologi dan Bisnis STIKOM Bali. Program ini mencakup aspek internasional dan kerja sama internasional, memberikan kesempatan bagi mahasiswa untuk mendapatkan pengalaman global dalam bidang teknologi informasi.\n\n- Program ini terakreditasi, dengan sertifikat akreditasi yang berlaku sejak 6 September 2022.\n- Mahasiswa diharapkan memenuhi syarat peringkat untuk dapat mengikuti program ini.\n\nApakah ada informasi lain yang ingin kamu ketahui tentang Program Studi Teknologi Informasi?",
+    "source": "gpt-4o-mini",
+    "confidence": 0.39816267153706847,
+    "contexts": [
+      {
+        "id": "e73dd65c-7490-40fe-a610-a0f9779d531d",
+        "score": 0.39816267153706847,
+        "compositeScore": 3.565541,
+        "trainingId": "d7cb3406-660e-4b40-9506-066e7aa686ab",
+        "filename": "SERTIFIKAT AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+        "chunk": "Sertifikat akreditasi program studi ini berlaku\nJakarta, 6 - September - 2022"
+      },
+      {
+        "id": "b8c3c321-76d6-4b61-afbc-3b5b31e52b74",
+        "score": 0.5272673125820283,
+        "compositeScore": 3.513817,
+        "trainingId": "d7cb3406-660e-4b40-9506-066e7aa686ab",
+        "filename": "SERTIFIKAT AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+        "chunk": "Ringkasan dokumen:\nProgram studi terlihat: Program Studi Teknologi Informasi, Pada Program Sarjana Institut Teknologi dan Bisnis STIKOM Bali, Kota\nProgram internasional / kerja sama internasional: Program Studi Teknologi Informasi, Pada Program Sarjana Institut Teknologi dan Bisnis STIKOM Bali, Kota\nSyarat/dokumen: memenuhi syarat peringkat"
+      }
+    ]
+  },
+  {
+    "alias": "BD",
+    "query": "apa itu bd",
+    "answer": "Bisnis Digital (BD) adalah program studi yang fokus pada pengelolaan bisnis berbasis digital. Program ini mengajarkan peserta didik untuk memahami dan mengimplementasikan tren terkini di sektor industri E-commerce.\n\n- Lulusan Bisnis Digital memiliki peluang profesi sebagai Digital Marketing Specialist, Digital Strategist, Project Manager, Business Analyst, Market Analyst, dan Product Manager.\n- Program ini juga mencakup berbagai aspek seperti digital marketing, e-commerce, branding, dan strategi pemasaran.\n\nApakah ada aspek tertentu dari program Bisnis Digital yang ingin kamu ketahui lebih lanjut?",
+    "source": "gpt-4o-mini",
+    "confidence": 0.3633809157928953,
+    "contexts": [
+      {
+        "id": "5d4496c9-523f-46be-80aa-60e8986f10bb",
+        "score": 0.3633809157928953,
+        "compositeScore": 3.376845,
+        "trainingId": "496ef40f-b570-461c-a337-cf4e558af940",
+        "filename": "SERTIFIKAT AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf",
+        "chunk": "Sertifikat akreditasi program studi ini berlaku\nJakarta, 5 - Oktober - 2022"
+      },
+      {
+        "id": "e8021e16-b1fc-408b-a017-b1529836b069",
+        "score": 0.6636246780393603,
+        "compositeScore": 6.201906,
+        "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "chunk": "knis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"Program studi ini menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital dengan mengadopsi trend perkembangan terkini di sektor industri E-commerce. Lulusan Bisnis Digital memiliki peluang profesi sebagai Digital Marketing Specialist | Digital Strategist | Project Manager | Business Analyst | Market Analyst dan Product Manager.\" | \"Digital marketing | e-commerce | branding | social media strategy | startup business | entrepreneurship\" | \"Suka bisnis | media sosial | dan strategi pemasaran\" | \"Digital Marketing Specialist | Content Strategist | SEO Specialist | Brand Manager | Business Development | Startup Founder\"\nManajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamka"
+      },
+      {
+        "id": "f3a488e3-3a2a-49b7-99a7-fc1fad9eb466",
+        "score": 0.6633579398556941,
+        "compositeScore": 4.381839,
+        "trainingId": "a4834fc1-bb66-4146-8774-88b321fba707",
+        "filename": "hobi_prodi_lengkap (1).xlsx",
+        "chunk": "No | Program Studi | Hobi / Aktivitas\n1 | Bisnis Digital & DKV | Membuat konten media sosial\n2 | Bisnis Digital & DKV | Memiliki sosial media\n3 | Bisnis Digital & DKV | Menulis blog/artikel\n4 | Bisnis Digital & DKV | Desain grafis\n5 | Bisnis Digital & DKV | Editing video\n6 | Bisnis Digital & DKV | Fotografi produk\n7 | Bisnis Digital & DKV | Belajar digital marketing\n8 | Bisnis Digital & DKV | Mengelola toko online/offline\n9 | Bisnis Digital & DKV | Dropshipper/reseller\n11 | Bisnis Digital & DKV | Analisis tren pasar\n12 | Bisnis Digital & DKV | Mengikuti webinar bisnis\n13 | Bisnis Digital & DKV | Membuat podcast\n14 | Bisnis Digital & DKV | Trading saham/crypto\n15 | Bisnis Digital & DKV | Komunitas bisnis/startup\n16 | Bisnis Digital & DKV | Kompetisi bisnis\n17 | Bisnis Digital & DKV | Tawar-menawar\n18 | Bisnis Digital & DKV | Influencer\n19 | Bisnis Digital & DKV | Blogger\n20 | Bisnis Digit"
+      },
+      {
+        "id": "bdcb45b2-881d-42c2-9f0e-30ab920a4c1a",
+        "score": 0.6367887022433043,
+        "compositeScore": 3.925197,
+        "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+        "filename": "HOBY.pdf",
+        "chunk": "HOBI DAN KECOCOKAN PRODI\nnoprodihobi\n1\nBisnis Digital & DKVMembuat konten media sosial\n2\nBisnis Digital & DKVMemiliki sosial media\n3\nBisnis Digital & DKVMenulis blog/artikel\n4\nBisnis Digital & DKVDesain grafis\n5\nBisnis Digital & DKVEditing video\n6\nBisnis Digital & DKVFotografi produk\n7\nBisnis Digital & DKVBelajar digital marketing\n8\nBisnis Digital & DKVMengelola toko online/offline\n9\nBisnis Digital & DKVDropshipper/reseller\n10\n11\nBisnis Digital & DKVAnalisis tren pasar\n12\nBisnis Digital & DKVMengikuti webinar bisnis\n13\nBisnis Digital & DKVMembuat podcast\n14\nBisnis Digital & DKVTrading saham/crypto\n15\nBisnis Digital & DKVKomunitas bisnis/startup\n16\nBisnis Digital & DKVKompetisi bisnis\n17\nBisnis Digital & DKVTawar-menawar\n18\nBisnis Digital & DKVInfluencer\n19\nBisnis Digital & DKVBlogger\n20\nBisnis Digital & DKVVlogger\n21\nBisnis Digital & DKVYouTuber\n22\nBisnis Digital & DKVStorytelling visual"
+      }
+    ]
+  },
+  {
+    "alias": "SK",
+    "query": "apa itu sk",
+    "answer": "SK adalah singkatan dari \"Satuan Kredit Semester, \" yang merupakan ukuran beban studi mahasiswa dalam satu semester. Satu SK biasanya setara dengan 1 jam pertemuan tatap muka dalam seminggu selama satu semester, ditambah dengan waktu yang dihabiskan untuk belajar mandiri.\nApa ada yang ingin kamu ketahui lebih lanjut tentang SK?\nMau saya jelaskan prospek kerja atau kurikulum program studi ini?",
+    "source": "gpt-4o-mini",
+    "confidence": 0.5172763339075971,
+    "contexts": [
+      {
+        "id": "2cb3b5d8-806d-4914-ad0f-47f857a6c993",
+        "score": 0.5172763339075971,
+        "compositeScore": 7.375319,
+        "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+        "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+        "chunk": "BAB I DESKRIPSI PROGRAM STUDI ................................................................................................. 1\nA. PROFIL LULUSAN .................................................................................................................... 1\nB. CAPAIAN PEMBELAJARAN LULUSAN ................................................................................ 1"
+      },
+      {
+        "id": "8456df6b-85d3-4aa7-bac3-667303412a7e",
+        "score": 0.655747286054685,
+        "compositeScore": 7.229937,
+        "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+        "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+        "chunk": "Program Studi Sistem Komputer degan profil lulusan sebagai berikut:\n1. Profil lulusan yang memiliki kemampuan dan ketrampilan dalam menganalisis, merancang,\ndan menerapkan sistem tertanam dan Internet of Things (IoTs) dengan mengintegrasikan\nperangkat lunak, komponen elektrik, mekanik, perangkat komunikasi, protokol IoTs, dan\nalgoritma sistem cerdas untuk tujuan yang spesifik, serta mampu mengidentifikasi dan\nmengembangkan potensi bisnis di bidang yang ditekuninya.\n2. Profil lulusan yang memiliki kemampuan dan ketrampilan dalam menganalisis, merancang,\nmenerapkan, mengelola jaringan komputer maupun jaringan Internet of Things (IoT)\nmenggunakan prinsip-prinsip keamanan jaringan untuk keperluan organisasi, serta mampu\nmengidentifikasi dan mengembangkan potensi bisnis di bidang yang ditekuninya.\nKeterampilan yang dapat dim"
+      },
+      {
+        "id": "cee37f1c-01de-4427-b96d-3db5c14972be",
+        "score": 0.5349959038020858,
+        "compositeScore": 4.279749,
+        "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+        "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+        "chunk": "Daftar Mata Kuliah Program Studi Sistem Komputer\nNo\nKode Mata\nKuliah\nNama Mata Kuliah\nsks Mengajukan\nRPL\nKeterangan\n(Isikan:Transfer\nsks/Perolehan sks)\n1\nYa Tidak\n2\nYa Tidak\n3\nYa Tidak\ndst\nYa Tidak\nBersama ini saya mengajukan permohonan untuk dapat mengikuti Rekognisi Pembelajaran"
+      },
+      {
+        "id": "1447e848-efd0-48fd-bb4d-685909cf0e80",
+        "score": 0.5231499398446948,
+        "compositeScore": 3.896787,
+        "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+        "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+        "chunk": "Program Studi :"
+      },
+      {
+        "id": "71031ba8-003e-4fa1-9e64-9240608340f4",
+        "score": 0.5097283443252323,
+        "compositeScore": 3.893432,
+        "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+        "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+        "chunk": "PROGRAM STUDI SARJANA"
+      }
+    ]
+  },
+  {
+    "alias": "MI",
+    "query": "apa itu mi",
+    "answer": "Program Studi Manajemen Informatika (MI) adalah pendidikan vokasi yang menanamkan kompetensi untuk siap kerja di bidang teknologi informasi. Lulusan program ini akan mahir dalam berbagai aspek seperti pengelolaan database, administrasi sistem informasi, dan pengembangan aplikasi.\nApakah ada aspek tertentu dari Program Studi Manajemen Informatika yang ingin kamu ketahui lebih lanjut?",
+    "source": "gpt-4o-mini",
+    "confidence": 0.41381580940703255,
+    "contexts": [
+      {
+        "id": "d841899a-1d76-40f5-ae62-beb135f216b3",
+        "score": 0.41381580940703255,
+        "compositeScore": 3.389454,
+        "trainingId": "865ee469-8ded-4753-896f-a70d827ccf1d",
+        "filename": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "chunk": "Sertifikat akreditasi program studi ini berlaku\nJakarta, 17 - November - 2021"
+      },
+      {
+        "id": "6dfe15a5-698e-4a21-9d6c-81f4fdd42724",
+        "score": 0.5590902364440239,
+        "compositeScore": 3.341773,
+        "trainingId": "865ee469-8ded-4753-896f-a70d827ccf1d",
+        "filename": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "chunk": "Ringkasan dokumen:\nProgram studi terlihat: Program Studi Manajemen Informatika, Pada Program Diploma-III Institut Teknologi dan Bisnis STIKOM Bali,\nProgram internasional / kerja sama internasional: Program Studi Manajemen Informatika, Pada Program Diploma-III Institut Teknologi dan Bisnis STIKOM Bali,\nSyarat/dokumen: memenuhi syarat peringkat"
+      },
+      {
+        "id": "ee83577f-e7e3-4471-9ffd-f2010e7a8f1c",
+        "score": 0.5439284290047584,
+        "compositeScore": 0.421982,
+        "trainingId": "865ee469-8ded-4753-896f-a70d827ccf1d",
+        "filename": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "chunk": "Badan Akreditasi Nasional Perguruan Tinggi\nberdasarkan Keputusan BAN-PT No. 12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021, menyatakan bahwa\nProgram Studi Manajemen Informatika, Pada Program Diploma-III Institut Teknologi dan Bisnis STIKOM Bali,\nKota Denpasar"
+      },
+      {
+        "id": "e8021e16-b1fc-408b-a017-b1529836b069",
+        "score": 0.5553737104007826,
+        "compositeScore": 3.354843,
+        "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "chunk": "knis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"Program studi ini menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital dengan mengadopsi trend perkembangan terkini di sektor industri E-commerce. Lulusan Bisnis Digital memiliki peluang profesi sebagai Digital Marketing Specialist | Digital Strategist | Project Manager | Business Analyst | Market Analyst dan Product Manager.\" | \"Digital marketing | e-commerce | branding | social media strategy | startup business | entrepreneurship\" | \"Suka bisnis | media sosial | dan strategi pemasaran\" | \"Digital Marketing Specialist | Content Strategist | SEO Specialist | Brand Manager | Business Development | Startup Founder\"\nManajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamka"
+      },
+      {
+        "id": "4d95b75d-49ce-4138-9d73-3bc48e2a2d80",
+        "score": 0.5446271735259829,
+        "compositeScore": 3.352157,
+        "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "chunk": "ecialist | Brand Manager | Business Development | Startup Founder\"\nManajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bidang Web Developer | Database Administrator | dan IT Entrepreneur yang menghadapi dunia usaha dan industri\" | \"Pengelolaan database | arsip digital | administrasi sistem informasi | data processing | dokumentasi digital\" | \"Teliti | rapi | dan suka mengelola data\" | \"Data Administrator | Database Staff | Information Management Staff | IT Administration | Document Controller | Digital Archive Staff\""
+      }
+    ]
+  },
+  {
+    "alias": "DG",
+    "query": "apa itu dg",
+    "answer": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\nPROGRAM S2 / MAGISTER (PASCASARJANA)\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\nPROGRAM S1 (SARJANA)\n\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\n\nPROGRAM D3 (DIPLOMA 3)\nProgram D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.\nPROGRAM DUAL DEGREE (KERJASAMA INTERNASIONAL)\nTersedia program dengan mitra universitas di luar negeri (UTB, DNUI, HELP, dan mitra lainnya) di mana mahasiswa bisa mendapatkan gelar dari dua institusi. Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional dan wawasan global.\nPROGRAM INTERNATIONAL CLASS\nProgram S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.\nMau info lebih detail?\n\n- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK\n- Program D3: Balas \"D3\"\n- Program Dual Degree: Balas \"Dual Degree\" atau mitra yang dituju (UTB/DNUI/HELP)\n- International Class: Balas \"International Class\"\n- Biaya & pendaftaran: Balas \"Biaya\"\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-prodi-overview",
+    "confidence": null,
+    "contexts": []
+  },
+  {
+    "alias": "DKV",
+    "query": "apa itu dkv",
+    "answer": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\nPROGRAM S2 / MAGISTER (PASCASARJANA)\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\nPROGRAM S1 (SARJANA)\n\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\n\nPROGRAM D3 (DIPLOMA 3)\nProgram D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.\nPROGRAM DUAL DEGREE (KERJASAMA INTERNASIONAL)\nTersedia program dengan mitra universitas di luar negeri (UTB, DNUI, HELP, dan mitra lainnya) di mana mahasiswa bisa mendapatkan gelar dari dua institusi. Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional dan wawasan global.\nPROGRAM INTERNATIONAL CLASS\nProgram S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.\nMau info lebih detail?\n\n- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK\n- Program D3: Balas \"D3\"\n- Program Dual Degree: Balas \"Dual Degree\" atau mitra yang dituju (UTB/DNUI/HELP)\n- International Class: Balas \"International Class\"\n- Biaya & pendaftaran: Balas \"Biaya\"\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-prodi-overview",
+    "confidence": null,
+    "contexts": []
+  },
+  {
+    "alias": "MM",
+    "query": "apa itu mm",
+    "answer": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\nPROGRAM S2 / MAGISTER (PASCASARJANA)\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\nPROGRAM S1 (SARJANA)\n\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\n\nPROGRAM D3 (DIPLOMA 3)\nProgram D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.\nPROGRAM DUAL DEGREE (KERJASAMA INTERNASIONAL)\nTersedia program dengan mitra universitas di luar negeri (UTB, DNUI, HELP, dan mitra lainnya) di mana mahasiswa bisa mendapatkan gelar dari dua institusi. Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional dan wawasan global.\nPROGRAM INTERNATIONAL CLASS\nProgram S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.\nMau info lebih detail?\n\n- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK\n- Program D3: Balas \"D3\"\n- Program Dual Degree: Balas \"Dual Degree\" atau mitra yang dituju (UTB/DNUI/HELP)\n- International Class: Balas \"International Class\"\n- Biaya & pendaftaran: Balas \"Biaya\"\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-prodi-overview",
+    "confidence": null,
+    "contexts": []
+  },
+  {
+    "alias": "AN",
+    "query": "apa itu an",
+    "answer": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\nPROGRAM S2 / MAGISTER (PASCASARJANA)\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\nPROGRAM S1 (SARJANA)\n\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\n\nPROGRAM D3 (DIPLOMA 3)\nProgram D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.\nPROGRAM DUAL DEGREE (KERJASAMA INTERNASIONAL)\nTersedia program dengan mitra universitas di luar negeri (UTB, DNUI, HELP, dan mitra lainnya) di mana mahasiswa bisa mendapatkan gelar dari dua institusi. Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional dan wawasan global.\nPROGRAM INTERNATIONAL CLASS\nProgram S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.\nMau info lebih detail?\n\n- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK\n- Program D3: Balas \"D3\"\n- Program Dual Degree: Balas \"Dual Degree\" atau mitra yang dituju (UTB/DNUI/HELP)\n- International Class: Balas \"International Class\"\n- Biaya & pendaftaran: Balas \"Biaya\"\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-prodi-overview",
+    "confidence": null,
+    "contexts": []
+  },
+  {
+    "alias": "TRPL",
+    "query": "apa itu trpl",
+    "answer": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\nPROGRAM S2 / MAGISTER (PASCASARJANA)\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\nPROGRAM S1 (SARJANA)\n\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\n\nPROGRAM D3 (DIPLOMA 3)\nProgram D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.\nPROGRAM DUAL DEGREE (KERJASAMA INTERNASIONAL)\nTersedia program dengan mitra universitas di luar negeri (UTB, DNUI, HELP, dan mitra lainnya) di mana mahasiswa bisa mendapatkan gelar dari dua institusi. Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional dan wawasan global.\nPROGRAM INTERNATIONAL CLASS\nProgram S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.\nMau info lebih detail?\n\n- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK\n- Program D3: Balas \"D3\"\n- Program Dual Degree: Balas \"Dual Degree\" atau mitra yang dituju (UTB/DNUI/HELP)\n- International Class: Balas \"International Class\"\n- Biaya & pendaftaran: Balas \"Biaya\"\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-prodi-overview",
+    "confidence": null,
+    "contexts": []
+  },
+  {
+    "alias": "TK",
+    "query": "apa itu tk",
+    "answer": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\nPROGRAM S2 / MAGISTER (PASCASARJANA)\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\nPROGRAM S1 (SARJANA)\n\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\n\nPROGRAM D3 (DIPLOMA 3)\nProgram D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.\nPROGRAM DUAL DEGREE (KERJASAMA INTERNASIONAL)\nTersedia program dengan mitra universitas di luar negeri (UTB, DNUI, HELP, dan mitra lainnya) di mana mahasiswa bisa mendapatkan gelar dari dua institusi. Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional dan wawasan global.\nPROGRAM INTERNATIONAL CLASS\nProgram S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.\nMau info lebih detail?\n\n- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK\n- Program D3: Balas \"D3\"\n- Program Dual Degree: Balas \"Dual Degree\" atau mitra yang dituju (UTB/DNUI/HELP)\n- International Class: Balas \"International Class\"\n- Biaya & pendaftaran: Balas \"Biaya\"\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-prodi-overview",
+    "confidence": null,
+    "contexts": []
+  },
+  {
+    "alias": "HELP",
+    "query": "apa itu help",
+    "answer": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\nPROGRAM S2 / MAGISTER (PASCASARJANA)\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\nPROGRAM S1 (SARJANA)\n\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\n\nPROGRAM D3 (DIPLOMA 3)\nProgram D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.\nPROGRAM DUAL DEGREE (KERJASAMA INTERNASIONAL)\nTersedia program dengan mitra universitas di luar negeri (UTB, DNUI, HELP, dan mitra lainnya) di mana mahasiswa bisa mendapatkan gelar dari dua institusi. Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional dan wawasan global.\nPROGRAM INTERNATIONAL CLASS\nProgram S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.\nMau info lebih detail?\n\n- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK\n- Program D3: Balas \"D3\"\n- Program Dual Degree: Balas \"Dual Degree\" atau mitra yang dituju (UTB/DNUI/HELP)\n- International Class: Balas \"International Class\"\n- Biaya & pendaftaran: Balas \"Biaya\"\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-prodi-overview",
+    "confidence": null,
+    "contexts": []
+  },
+  {
+    "alias": "UTB",
+    "query": "apa itu utb",
+    "answer": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\nPROGRAM S2 / MAGISTER (PASCASARJANA)\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\nPROGRAM S1 (SARJANA)\n\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\n\nPROGRAM D3 (DIPLOMA 3)\nProgram D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.\nPROGRAM DUAL DEGREE (KERJASAMA INTERNASIONAL)\nTersedia program dengan mitra universitas di luar negeri (UTB, DNUI, HELP, dan mitra lainnya) di mana mahasiswa bisa mendapatkan gelar dari dua institusi. Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional dan wawasan global.\nPROGRAM INTERNATIONAL CLASS\nProgram S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.\nMau info lebih detail?\n\n- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK\n- Program D3: Balas \"D3\"\n- Program Dual Degree: Balas \"Dual Degree\" atau mitra yang dituju (UTB/DNUI/HELP)\n- International Class: Balas \"International Class\"\n- Biaya & pendaftaran: Balas \"Biaya\"\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-prodi-overview",
+    "confidence": null,
+    "contexts": []
+  },
+  {
+    "alias": "DNUI",
+    "query": "apa itu dnui",
+    "answer": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\nPROGRAM S2 / MAGISTER (PASCASARJANA)\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\nPROGRAM S1 (SARJANA)\n\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\n\nPROGRAM D3 (DIPLOMA 3)\nProgram D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.\nPROGRAM DUAL DEGREE (KERJASAMA INTERNASIONAL)\nTersedia program dengan mitra universitas di luar negeri (UTB, DNUI, HELP, dan mitra lainnya) di mana mahasiswa bisa mendapatkan gelar dari dua institusi. Mahasiswa berkesempatan memperoleh pengalaman pendidikan internasional dan wawasan global.\nPROGRAM INTERNATIONAL CLASS\nProgram S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.\nMau info lebih detail?\n\n- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK\n- Program D3: Balas \"D3\"\n- Program Dual Degree: Balas \"Dual Degree\" atau mitra yang dituju (UTB/DNUI/HELP)\n- International Class: Balas \"International Class\"\n- Biaya & pendaftaran: Balas \"Biaya\"\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-prodi-overview",
+    "confidence": null,
+    "contexts": []
+  }
+]

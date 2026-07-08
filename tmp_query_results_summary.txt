@@ -1,0 +1,948 @@
+TOTAL QUESTIONS: 48
+SOURCE COUNTS:
+- gpt-4o-mini: 6
+- rag-pmb-info: 1
+- rag-accreditation-campus-doc: 1
+- rag-scholarship-overview: 1
+- rag-answer-rejected: 1
+- rag-fee-structured: 33
+- rag-fee-structure: 2
+- rag-program-comparison: 1
+- rag-no-match: 1
+- rag-major-recommendation: 1
+
+QUESTION: Alamat kampus dimana?
+SOURCE: gpt-4o-mini
+ANSWER:
+Saya belum menemukan detail yang benar-benar sesuai mengenai alamat kampus.
+Apakah ada informasi lain yang ingin kamu ketahui tentang kampus?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+---
+QUESTION: Nomor PMB berapa?
+SOURCE: rag-pmb-info
+ANSWER:
+PMB (Penerimaan Mahasiswa Baru) adalah proses pendaftaran calon mahasiswa baru di ITB STIKOM Bali, mulai dari memilih jalur masuk, memilih program studi, melengkapi berkas, sampai mengikuti tahapan seleksi/registrasi sesuai jadwal.
+
+Ringkasan yang biasanya perlu Kakak cek:
+
+- Jalur Pendaftaran: jalur reguler, prestasi, RPL/transfer, atau jalur lain yang sedang dibuka sesuai ketentuan PMB.
+- Program Studi: pilihan prodi seperti TI, SI, SK, BD, MI, serta program lain yang tersedia.
+- Jadwal PMB: periode pendaftaran, gelombang, testing/seleksi, pengumuman, dan registrasi ulang.
+- Rincian Biaya: biaya pendaftaran, DPP, biaya awal masuk, biaya per semester, serta potongan sesuai gelombang atau skema yang berlaku.
+- Syarat/Dokumen: data diri dan berkas akademik/administratif yang perlu disiapkan saat mendaftar.
+
+Kakak bisa lanjut tanya salah satu ini:
+
+- Jalur pendaftaran apa saja yang tersedia?
+- Program studi apa saja yang dibuka?
+- Jadwal PMB atau gelombang yang sedang berjalan kapan?
+- Rincian biaya prodi tertentu di gelombang tertentu berapa?
+- Syarat dan dokumen pendaftaran apa saja?
+---
+QUESTION: Akreditasi kampus apa?
+SOURCE: rag-accreditation-campus-doc
+ANSWER:
+Akreditasi kampus: A.
+Nomor SK: 3033/SK/BAN-PT/Ak. KP/PT/XII/2025.
+Sumber: dokumen SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign. pdf (dokumen akreditasi kampus). Untuk kepastian resmi, verifikasi ke admin atau dokumen resmi.
+Mau saya jelaskan lagi bagian lain?
+---
+QUESTION: Akreditasi TI apa?
+SOURCE: gpt-4o-mini
+ANSWER:
+Program Studi Teknologi Informasi di Institut Teknologi dan Bisnis STIKOM Bali telah mendapatkan sertifikat akreditasi yang berlaku sejak 6 September 2022.
+
+- Sertifikat akreditasi: Berlaku untuk program studi Teknologi Informasi.
+- Institusi: Institut Teknologi dan Bisnis STIKOM Bali.
+
+Apakah ada informasi lain yang ingin kamu ketahui tentang program ini?
+---
+QUESTION: Akreditasi SI apa?
+SOURCE: gpt-4o-mini
+ANSWER:
+Program studi Sistem Informasi di Institut Teknologi dan Bisnis STIKOM Bali memiliki akreditasi nasional.
+
+- Akreditasi ini menunjukkan bahwa program tersebut telah memenuhi standar kualitas pendidikan yang ditetapkan oleh badan akreditasi nasional.
+- Informasi lebih lanjut mengenai peringkat akreditasi dapat ditemukan dalam dokumen konversi peringkat akreditasi perguruan tinggi.
+
+Apakah ada informasi lain yang ingin kamu ketahui tentang program studi ini?
+---
+QUESTION: Apakah ada kelas malam?
+SOURCE: gpt-4o-mini
+ANSWER:
+Saya belum menemukan detail yang benar-benar sesuai mengenai kelas malam.
+Apakah ada informasi lain yang ingin kamu ketahui?
+---
+QUESTION: Apakah bisa transfer kampus?
+SOURCE: gpt-4o-mini
+ANSWER:
+Saya belum menemukan detail yang benar-benar sesuai mengenai transfer kampus yang ada.
+Apakah ada informasi lain yang ingin kamu ketahui tentang pendaftaran atau beasiswa?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+---
+QUESTION: Apakah ada beasiswa?
+SOURCE: rag-scholarship-overview
+ANSWER:
+Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:
+
+- Beasiswa ranking kelas
+- Beasiswa prestasi (lokal/nasional/internasional)
+- Beasiswa KIP
+- Beasiswa 1K1S
+- Beasiswa Yayasan
+
+Kakak mau tanya yang mana? Balas saja: "ranking" / "prestasi" / "KIP" / "1K1S" / "Yayasan".
+Perlu saya cek opsi beasiswa atau potongan biaya yang relevan?
+---
+QUESTION: Kak kalau mau daftar TI habis berapa?
+SOURCE: rag-answer-rejected
+ANSWER:
+Data tidak ditemukan secara pasti pada dokumen.
+---
+QUESTION: Mas biaya masuk TI gelombang 2A berapa ya?
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 2A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2A): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2A): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Kalau SI total sampai semester pertama berapa?
+SOURCE: rag-fee-structure
+ANSWER:
+Berikut rincian biaya yang tersedia:
+
+- No. Jenis Biaya Rp ‘Waktu Pembayaran 1. Pendaftaran 500.000 Pada Saat Daftar 2. Dana Pendidikan Pokok 14.000.000 Dicicil Per Bln s. d UTS-1 3. Jas Alamater, Topi 750.000 Saat Registrasi I 4. Kaos, Tas, GMTI 750.000 Saat Registrasi I 5. Biaya Pendidikan Per Semester 6.500.000 Menjelang Perwalian Kecuali Reg 1 Dicicil 2 Kali s/d UTS 3. a. Beasiswa untuk Dana Pendidikan Pokok (DPP): Rp 3.000.000,
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+---
+QUESTION: Ada cicilan nggak?
+SOURCE: rag-fee-structure
+ANSWER:
+Berikut rincian biaya yang tersedia:
+
+- No. Jenis Biaya Rp ‘Waktu Pembayaran 1. Pendaftaran 500.000 Pada Saat Daftar 2. Dana Pendidikan Pokok 14.000.000 Dicicil Per Bln s. d UTS-1 3. Jas Alamater, Topi 750.000 Saat Registrasi I 4. Kaos, Tas, GMTI 750.000 Saat Registrasi I 5. Biaya Pendidikan Per Semester 6.500.000 Menjelang Perwalian Kecuali Reg 1 Dicicil 2 Kali s/d UTS 1. Pendaftaran 500.000 Pada Saat Daftar 2. Biaya Registrasi (Jas, Topi, GMTI) 10.000.000 Dicicil Per Bln s. d UTS-1 3. Biaya Pendidikan Per Semester 4.500.000 Menjelang Perwalian Kecuali Reg. 1 Dicicil 2 Kali s/d UTS No. Jenis Biaya Rp ‘Waktu Pembayaran 1. Pendaftaran 700.000 Pada Saat Daftar 2. Biaya Pendidikan Per Semester 10.000.000 Per Semester 3. Pembayaran Secara Lunas Selama 2 Tahun — 40.000.000 Pada Saat Registrasi (Umum) 1. Pendaftaran 500.000 Pada Saat Daftar 2. Dana Pendidikan Pokok Pendaftaran 3.000.000 Pada Saat Daftar 2. Dana Pendidikan Pokok 20.000.000 Saat Registrasi 1 3. Bahasa Inggris 5.000.000 Menjelang Semester II 4. Pendaftaran 3.000.000 Pada Saat Daftar 2. Dana Pendidikan Pokok 20.000.000 Saat Registrasi I 3. Bahasa Mandarin 5.000.000 Menjelang Semester II 4. 1. Potongan Biaya Pendaftaran: Rp 200.000,
+- Rp. 100.000, - Jika Mendaftar pada Gelombang II Ditambah Rp. 200.000, - Jika Alumni ITB STIKOM Bali 2. Beasiswa Semester untuk Alumni Rp. 2.000.000, - Potongan alumni untuk 4 semester (jika memilih pembayaran dimuka) Rp. 500.000, - / semester Potongan alumni untuk tiap semester (jika memilih pembayaran cicil tiap semester ) Pembayaran semster bisa dipilih salah satu, dibayar dimuka atau dicicil 3. Biaya Semester 5 dan selanjutnya jika hanya mengambil tesis adalah Rp. 6.000.000 4. Biaya sudah termasuk martikulasi, ujian dan bimbingan (bel wisuda) T Dr. Dadang Hermawan & Dipindai dengan Cam Scanner 2. Potongan Biaya Pendaftaran: Rp 300.000,
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+---
+QUESTION: Kalau saya kerja bisa kuliah malam?
+SOURCE: gpt-4o-mini
+ANSWER:
+Saya belum menemukan detail yang benar-benar sesuai mengenai jadwal kuliah malam yang ada.
+Apakah ada informasi lain yang ingin kamu ketahui tentang pendaftaran atau beasiswa?
+---
+QUESTION: Bedanya TI dan SI apa?
+SOURCE: rag-program-comparison
+ANSWER:
+Perbandingan singkat: Teknologi Informasi vs Sistem Informasi
+
+- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastruktur, keamanan, dan machine learning. Lulusan: Software Developer, Dev Ops, Data Engineer.
+- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard. Lulusan: Business Analyst, System Analyst.
+
+Perbandingan cepat:
+
+- Bisnis Digital (BD) = lebih condong ke pemasaran digital, monetisasi, dan insight pasar.
+- Sistem Informasi (SI) = jembatan bisnis Γåö teknologi; cocok untuk yang suka analisis proses dan dashboard.
+- Teknologi Informasi (TI) = fokus teknis pengembangan software, infrastruktur, dan data engineering/ML.
+- Sistem Komputer (SK) = fokus hardware, embedded, dan sistem tertanam/IoT.
+
+Mau perbandingan lebih mendetail (kurikulum / akreditasi / biaya / prospek kerja)? Sebutkan aspek yang mau dibandingkan atau prodi mana yang ingin dibandingkan lebih rinci.
+Mau saya jelaskan lagi bagian lain?
+---
+QUESTION: Prospek kerja TI gimana?
+SOURCE: rag-no-match
+ANSWER:
+{"success":true,"answer":null,"source":"rag-no-match","contexts":[],"confidenceScore":0.43817114824204817,"debug":{"divisionKey":null,"includeGlobal":true,"usedGlobalFallback":false,"minScoreUsed":0.6,"topScore":0.43817114824204817}}
+---
+QUESTION: Jurusan paling favorit apa?
+SOURCE: rag-major-recommendation
+ANSWER:
+Biar aku bisa cocokin jurusan yang paling pas, hobinya lebih sering ngapain ya? Cukup balas 2-3 contoh aktivitas spesifik (mis. "jualan online", "edit video", "ngoding", "analisis data", "merakit elektronik").
+Mau saya jelaskan lagi bagian lain?
+---
+QUESTION: Biaya Sistem Informasi gelombang 2A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 2A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2A): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2A): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 2A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 2A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2A): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2A): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Biaya Teknologi Informasi gelombang 2A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 2A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2A): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2A): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 2A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 2A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2A): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2A): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Biaya TI kelas malam
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: Khusus
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Total Pendaftaran: Rp 500.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (Khusus): Rp 3.000.000
+- DPP Setelah Potongan: Rp 11.000.000
+
+Perlengkapan
+• Jas Almamater: -
+• Topi: -
+• Kaos: -
+• Tas: -
+• GMTI: -
+
+Total Awal Masuk: Rp 11.500.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Biaya SI kelas reguler
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: Khusus
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Total Pendaftaran: Rp 500.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (Khusus): Rp 2.000.000
+- DPP Setelah Potongan: Rp 12.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.000.000
+Biaya Pendidikan per Semester (UKT): Rp 300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Biaya D3 Manajemen Informatika
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Manajemen Informatika
+Gelombang: Khusus
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Total Pendaftaran: Rp 500.000
+
+DPP
+
+- Potongan DPP (Khusus): Rp 1.000.000
+- DPP Setelah Potongan: Rp 0
+
+Perlengkapan
+
+- Jas Almamater + Topi + GMTI: Rp 10.000.000
+
+Total Awal Masuk: Rp 10.500.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Biaya S2 Sistem Informasi
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: Khusus
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Total Pendaftaran: Rp 500.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (Khusus): Rp 2.000.000
+- DPP Setelah Potongan: Rp 12.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.000.000
+Biaya Pendidikan per Semester (UKT): Rp 300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 1A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 1A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (1A): Rp 250.000
+- Total Pendaftaran: Rp 250.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (1A): Rp 2.000.000
+- DPP Setelah Potongan: Rp 12.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 13.750.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 1B
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 1B
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (1B): Rp 250.000
+- Total Pendaftaran: Rp 250.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (1B): Rp 2.000.000
+- DPP Setelah Potongan: Rp 12.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 13.750.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 1C
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 1C
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (1C): Rp 250.000
+- Total Pendaftaran: Rp 250.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (1C): Rp 2.000.000
+- DPP Setelah Potongan: Rp 12.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 13.750.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 2A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 2A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2A): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2A): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 2B
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 2B
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2B): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2B): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 2C
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 2C
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2C): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2C): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 3A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 3A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (3A): Rp 150.000
+- Total Pendaftaran: Rp 350.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (3A): Rp 1.000.000
+- DPP Setelah Potongan: Rp 13.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.850.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 3B
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 3B
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (3B): Rp 150.000
+- Total Pendaftaran: Rp 350.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (3B): Rp 1.000.000
+- DPP Setelah Potongan: Rp 13.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.850.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 3C
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 3C
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (3C): Rp 150.000
+- Total Pendaftaran: Rp 350.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (3C): Rp 1.000.000
+- DPP Setelah Potongan: Rp 13.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.850.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 4A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 4A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (4A): Rp 100.000
+- Total Pendaftaran: Rp 400.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (4A): Rp 500.000
+- DPP Setelah Potongan: Rp 13.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 15.400.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 4B
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 4B
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (4B): Rp 100.000
+- Total Pendaftaran: Rp 400.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (4B): Rp 500.000
+- DPP Setelah Potongan: Rp 13.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 15.400.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Sistem Informasi gelombang 4C
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Sistem Informasi
+Gelombang: 4C
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (4C): Rp 100.000
+- Total Pendaftaran: Rp 400.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (4C): Rp 500.000
+- DPP Setelah Potongan: Rp 13.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 15.400.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 1A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 1A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (1A): Rp 250.000
+- Total Pendaftaran: Rp 250.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (1A): Rp 2.000.000
+- DPP Setelah Potongan: Rp 12.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 13.750.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 1B
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 1B
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (1B): Rp 250.000
+- Total Pendaftaran: Rp 250.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (1B): Rp 2.000.000
+- DPP Setelah Potongan: Rp 12.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 13.750.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 1C
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 1C
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (1C): Rp 250.000
+- Total Pendaftaran: Rp 250.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (1C): Rp 2.000.000
+- DPP Setelah Potongan: Rp 12.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 13.750.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 2A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 2A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2A): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2A): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 2B
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 2B
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2B): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2B): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 2C
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 2C
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (2C): Rp 200.000
+- Total Pendaftaran: Rp 300.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (2C): Rp 1.500.000
+- DPP Setelah Potongan: Rp 12.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.300.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 3A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 3A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (3A): Rp 150.000
+- Total Pendaftaran: Rp 350.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (3A): Rp 1.000.000
+- DPP Setelah Potongan: Rp 13.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.850.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 3B
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 3B
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (3B): Rp 150.000
+- Total Pendaftaran: Rp 350.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (3B): Rp 1.000.000
+- DPP Setelah Potongan: Rp 13.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.850.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 3C
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 3C
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (3C): Rp 150.000
+- Total Pendaftaran: Rp 350.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (3C): Rp 1.000.000
+- DPP Setelah Potongan: Rp 13.000.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 14.850.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 4A
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 4A
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (4A): Rp 100.000
+- Total Pendaftaran: Rp 400.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (4A): Rp 500.000
+- DPP Setelah Potongan: Rp 13.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 15.400.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 4B
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 4B
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (4B): Rp 100.000
+- Total Pendaftaran: Rp 400.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (4B): Rp 500.000
+- DPP Setelah Potongan: Rp 13.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 15.400.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---
+QUESTION: Rincian biaya Teknologi Informasi gelombang 4C
+SOURCE: rag-fee-structured
+ANSWER:
+Program Studi: Teknologi Informasi
+Gelombang: 4C
+Tahun: 2026-2027
+Biaya Pendaftaran
+
+- Biaya Pendaftaran: Rp 500.000
+- Potongan Pendaftaran (4C): Rp 100.000
+- Total Pendaftaran: Rp 400.000
+
+DPP
+• DPP: Rp 14.000.000
+- Potongan DPP (4C): Rp 500.000
+- DPP Setelah Potongan: Rp 13.500.000
+
+Perlengkapan
+• Jas Almamater + Topi: Rp 750.000
+• Kaos + Tas + GMTI: Rp 750.000
+
+Total Awal Masuk: Rp 15.400.000
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+---

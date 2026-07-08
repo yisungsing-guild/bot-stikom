@@ -1,0 +1,202 @@
+
+=== Q1: Tentang jurusan apa saja yang ada di STIKOM Bali ===
+source: program_list | ragUsed: false
+
+--- bot message 1 ---
+Terima kasih, saya bantu jawab ya. Program studi yang tersedia di ITB STIKOM Bali:
+S2 (Pascasarjana):
+- S2 Sistem Informasi (SI)
+S1 (Sarjana):
+- Sistem Informasi
+- Teknologi Informasi
+- Bisnis Digital
+- Sistem Komputer
+D3 (Diploma):
+- D3 Manajemen Informatika
+Program International / Dual Degree:
+- Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) - Prodi: Bisnis Digital
+- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi: Bisnis Digital
+- Dual Degree (International Class) dengan HELP University, Malaysia - Prodi: Sistem Informasi
+Kalau kakak mau, sebutkan prodi + gelombang (jika relevan), nanti saya bantu jelaskan rincian biaya/jadwal yang tertulis.
+
+=== Q2: Menanyakan tentang seperti apa itu program Dual Degree ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jawab ya.
+Ada, berikut program Dual Degree yang tersedia:
+- Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) - Prodi: Bisnis Digital
+- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi: Bisnis Digital
+- Dual Degree (International Class) dengan HELP University, Malaysia - Prodi: Sistem Informasi
+Kakak mau info Dual Degree yang mana? Balas: UTB / DNUI / HELP.
+Mau saya jelaskan lagi bagian lain?
+
+=== Q3: Apa perbedaan mendasar dari program studi Sistem Informasi dengan Sistem Komputer? ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jawab ya.
+Perbandingan singkat: Sistem Informasi vs Sistem Komputer
+- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard. Lulusan: Business Analyst, System Analyst.
+- Sistem Komputer: Fokus pada arsitektur komputer, embedded/IOT, perangkat keras dan optimasi sistem. Lulusan: Embedded Engineer, Hardware Engineer.
+Perbandingan cepat:
+- Bisnis Digital (BD) = lebih condong ke pemasaran digital, monetisasi, dan insight pasar.
+- Sistem Informasi (SI) = jembatan bisnis & teknologi; cocok untuk yang suka analisis proses dan dashboard.
+- Teknologi Informasi (TI) = fokus teknis pengembangan software, infrastruktur, dan data engineering/ML.
+- Sistem Komputer (SK) = fokus hardware, embedded, dan sistem tertanam/IoT.
+Mau perbandingan lebih mendetail (kurikulum / akreditasi / biaya / prospek kerja)? Sebutkan aspek yang mau dibandingkan atau prodi mana yang ingin dibandingkan lebih rinci.
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+
+=== Q4: Jurusan apa yang cocok buat anak saya jika anak saya suka sosial media dan sering live di tiktok ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jawab ya.
+Prodi yang paling cocok untuk hobi tersebut adalah Bisnis Digital (BD).
+Alasan: hobi berkaitan dengan pemasaran digital, pembuatan konten, dan pemahaman perilaku pasar - kompetensi yang lebih ditekankan di Bisnis Digital.
+Mau saya jelaskan lagi bagian lain?
+
+=== Q5: Berikan detail tentang masing-masing prodi ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jawab ya.
+Berikut ringkasan singkat masing-masing prodi:
+- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.
+- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.
+- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.
+- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.
+Kalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+
+=== Q6: apakah tersedia beasiswa ? ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jelaskan soal biaya.
+Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:
+- Beasiswa ranking kelas
+- Beasiswa prestasi (lokal/nasional/internasional)
+- Beasiswa KIP
+- Beasiswa 1K1S
+Kakak mau tanya yang mana? Balas saja: "ranking" / "prestasi" / "KIP" / "1K1S".
+Mau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?
+
+=== Q7: Bagaimana cara mengurus Izin Belajar dan Visa Study? ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Maaf kak, saat ini fitur jawaban otomatis belum aktif. Ketik ADMIN kalau mau disambungkan ke admin PMB.
+
+=== Q8: Apakah tersedia organisasi mahasiswa yang bisa mendukung minat mahasiswa di luar dari pembelajaran formal? ===
+source: rag_non_marketing_override | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jawab ya.
+Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026):
+BADAN LEGISLATIF DAN EKSEKUTIF:
+- Badan Eksekutif Mahasiswa
+- Dewan Perwakilan Mahasiswa
+LAINNYA:
+- Athena Esports
+- Basket
+- Bos
+- D.o. s
+- Futsal
+- Ghost
+- Himaprodi BD
+- Himaprodi SI
+- Himaprodi SK
+- Himaprodi TI
+- Himas Jimbaran
+- Himatography
+- Jcos
+- Kmhd
+- Ksl
+- Ksr
+- Mapala Kompas
+- Mcos
+- Multimedia
+- Musik
+- Paskamras
+- Pmk
+- Progress
+- Rade
+- Syntax
+- Tabuh
+- Tari
+- Teater Biner
+- U2M
+- Vos
+Mau saya tampilkan kontak pembina atau detail lain?
+
+=== Q9: Apakah akreditasi dari kampus ITB STIKOM Bali ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jawab ya.
+Akreditasi kampus: A.
+Nomor SK: 3033/SK/BAN-PT/Ak. KP/PT/XII/2025.
+Sumber: dokumen SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign. pdf (dokumen akreditasi kampus). Untuk kepastian resmi, verifikasi ke admin atau dokumen resmi.
+Mau saya jelaskan lagi bagian lain?
+
+=== Q10: kalau biaya untuk double degree apakah ada potongan biaya ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jelaskan soal biaya.
+Informasi Potongan DPP (Dana Pendidikan Pokok) untuk Program Double/Dual Degree
+Potongan diberikan berdasarkan gelombang saat registrasi:
+- Gelombang Khusus: Rp. 3.000.000, -
+- Gelombang I: Rp. 2.000.000, -
+- Gelombang II: Rp. 1.500.000, -
+- Gelombang III: Rp. 1.000.000, -
+- Gelombang IV: Rp. 500.000, -
+Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:
+* Beasiswa KIP
+* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)
+* Beasiswa Prestasi
+* Beasiswa Yayasan
+* Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global
+* Kuliah Sambil Kerja di Luar Negeri
+Apakah Kakak ingin dijelaskan tentang?
+* Biaya perkuliahan program studi yang lainnya
+* Salah satu jenis beasiswa
+* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll
+Silahkan diketikkan.
+Mau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?
+
+=== Q11: perlu koreksi terhadap informasi awal, supaya kesan nya singkat dan informatif ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Maaf kak, saat ini fitur jawaban otomatis belum aktif. Ketik ADMIN kalau mau disambungkan ke admin PMB.
+
+=== Q12: Saya Prodi Sistem Informasi, kapan saya mulai kuliah sepester genap tahun akademik 2025/2026? ===
+source: rag_non_marketing_override | ragUsed: true
+
+--- bot message 1 ---
+Maaf kak, saat ini fitur jawaban otomatis belum aktif. Ketik ADMIN kalau mau disambungkan ke admin PMB.
+
+=== Q13: Apakah ITB STIKOM Bali sudah terakreditasi oleh BAN-PT? Apa peringkat akreditasinya? ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jawab ya.
+Akreditasi kampus: A.
+Nomor SK: 3033/SK/BAN-PT/Ak. KP/PT/XII/2025.
+Sumber: dokumen SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign. pdf (dokumen akreditasi kampus). Untuk kepastian resmi, verifikasi ke admin atau dokumen resmi.
+Mau saya jelaskan lagi bagian lain?
+
+=== Q14: Aku pengen tau informasi tentang kuliah tapi jalur RPL ===
+source: (unknown) | ragUsed: true
+
+--- bot message 1 ---
+Siap, aku bantu jelaskan info akademik.
+Jalur RPL (Rekognisi Pembelajaran Lampau) adalah mekanisme pengakuan kompetensi atau pengalaman sebelumnya sehingga beberapa mata kuliah dapat diakui.
+Biasanya langkah umum:
+- Siapkan bukti pengalaman atau sertifikat (sertifikat pelatihan, surat keterangan kerja, portofolio, transkrip nilai jika ada).
+- Ajukan permohonan RPL ke bagian PMB/akademik dengan melampirkan dokumen pendukung.
+- Tim akademik akan menilai kelayakan; bisa ada tes/penilaian tambahan atau wawancara.
+Untuk ketentuan dan persyaratan pasti di ITB STIKOM Bali, minta saya sambungkan ke admin (balas: ADMIN), atau sebutkan apakah kakak punya pengalaman kerja/sertifikat tertentu agar saya bantu arahkan dokumen yang perlu disiapkan.
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?

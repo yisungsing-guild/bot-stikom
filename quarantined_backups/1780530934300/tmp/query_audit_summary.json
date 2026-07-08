@@ -1,0 +1,2819 @@
+[
+  {
+    "question": "Apa itu Sistem Informasi",
+    "userIntent": "DEFINISI_PRODI",
+    "detectIntent": "ACADEMIC_PROGRAM",
+    "academicIntent": "DEFINISI_PRODI",
+    "normalizedQuestion": "apa itu sistem informasi",
+    "queryForRetrieval": "apa itu sistem informasi program studi sistem informasi profil sistem informasi",
+    "beforeFilteringCount": 528,
+    "afterFilteringCount": 0,
+    "beforeFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "score": 0.5881,
+        "compositeScore": -997.8,
+        "preview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia "
+      },
+      {
+        "rank": 2,
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "score": 0.4861,
+        "compositeScore": -997.8,
+        "preview": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program st"
+      },
+      {
+        "rank": 3,
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "docCategory": "UNKNOWN",
+        "score": 0.4924,
+        "compositeScore": -999,
+        "preview": "INSTITUTTEKNOLOGIDANBISNIS STIKOM BALI INSTITUTTEKNOLOGI DAN BISNIS.. (ITB)STIKOM BALI KampusDenpasa"
+      },
+      {
+        "rank": 4,
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "score": 0.2573,
+        "compositeScore": -999,
+        "preview": "8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026 II C | 19 APRIL 2026 s/d"
+      },
+      {
+        "rank": 5,
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "score": 0.4501,
+        "compositeScore": -999,
+        "preview": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi tekno"
+      },
+      {
+        "rank": 6,
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0384,
+        "compositeScore": -999,
+        "preview": "iAnalisis data & bisnis 50 Sistem InformasiDesain grafis 51 Sistem InformasiFotografi 52 Sistem Info"
+      },
+      {
+        "rank": 7,
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0353,
+        "compositeScore": -999,
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih inform"
+      },
+      {
+        "rank": 8,
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0182,
+        "compositeScore": -999,
+        "preview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MAL"
+      },
+      {
+        "rank": 9,
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "score": 0.51,
+        "compositeScore": -999.8,
+        "preview": "MEMUTUSKAN Menetapkan: KEPUTUSAN    LEMBAGA    AKREDITASI    MANDIRI    INFORMATIKA    DAN KOMPUTER "
+      },
+      {
+        "rank": 10,
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0592,
+        "compositeScore": -1000.6,
+        "preview": "NO. ORMAWA PEMBINA KOORDINATOR  1 BADAN EKSEKUTIF  MAHASISWA  IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KO"
+      },
+      {
+        "rank": 11,
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0332,
+        "compositeScore": -1000.6,
+        "preview": "AMPING   ORGANISASI MAHASISWA   INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI  NO ORMAWA PEMBINA PENDAMP"
+      },
+      {
+        "rank": 12,
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0093,
+        "compositeScore": -1000.6,
+        "preview": "I MADE BUDI ADNYANA, S.KOM., M.T.  14 TARI  KADEK SIDIK ARYAWAN, S.SN., M.SN  NI MADE DEWI KANSA PUT"
+      },
+      {
+        "rank": 13,
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "docCategory": "BIAYA",
+        "score": 0.5257,
+        "compositeScore": -1000.8,
+        "preview": "DIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI,TEKNOLOGIINFORMASI,DAN BISNISDIGITAL T."
+      },
+      {
+        "rank": 14,
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.5047,
+        "compositeScore": -1000.8,
+        "preview": "INSTITUT TEKNOLOGI DAN BISNI5..  (ITB)  STIKOM  BALI  T  K  nw............-u-...:mm...ln—...l...:m;;"
+      },
+      {
+        "rank": 15,
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.483,
+        "compositeScore": -1000.8,
+        "preview": "ai tatacara penilaian preolehan kredit.  ITB STIKOM Bali menetapkan daftar mata kuliah  dan  jumlah "
+      },
+      {
+        "rank": 16,
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.505,
+        "compositeScore": -1000.8,
+        "preview": "Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Infor"
+      },
+      {
+        "rank": 17,
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.5044,
+        "compositeScore": -1000.8,
+        "preview": "lir, daftar ulang, dan jadwal pembayaran. Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memil"
+      },
+      {
+        "rank": 18,
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.5462,
+        "compositeScore": -1000.8,
+        "preview": "tem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembayaran. Biaya pendaftara"
+      },
+      {
+        "rank": 19,
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.567,
+        "compositeScore": -1000.8,
+        "preview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulan"
+      },
+      {
+        "rank": 20,
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.5456,
+        "compositeScore": -1000.8,
+        "preview": "ru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Informatika dan Sistem Informasi me"
+      }
+    ],
+    "afterFiltering": [],
+    "filterDecisions": [
+      {
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "sourceFile": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "sourceFile": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "sourceFile": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "sourceFile": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "sourceFile": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "sourceFile": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "sourceFile": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      }
+    ]
+  },
+  {
+    "question": "Sistem Informasi belajar apa saja",
+    "userIntent": "KURIKULUM_PEMBELAJARAN",
+    "detectIntent": "ACADEMIC_PROGRAM",
+    "academicIntent": "MATA_KULIAH",
+    "normalizedQuestion": "sistem informasi belajar apa saja",
+    "queryForRetrieval": "sistem informasi belajar apa saja program studi sistem informasi profil sistem informasi",
+    "beforeFilteringCount": 528,
+    "afterFilteringCount": 0,
+    "beforeFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "score": 0.5915,
+        "compositeScore": -997.8,
+        "preview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia "
+      },
+      {
+        "rank": 2,
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "score": 0.5033,
+        "compositeScore": -997.8,
+        "preview": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program st"
+      },
+      {
+        "rank": 3,
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "docCategory": "UNKNOWN",
+        "score": 0.4686,
+        "compositeScore": -999,
+        "preview": "INSTITUTTEKNOLOGIDANBISNIS STIKOM BALI INSTITUTTEKNOLOGI DAN BISNIS.. (ITB)STIKOM BALI KampusDenpasa"
+      },
+      {
+        "rank": 4,
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "score": 0.2168,
+        "compositeScore": -999,
+        "preview": "8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026 II C | 19 APRIL 2026 s/d"
+      },
+      {
+        "rank": 5,
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "score": 0.4778,
+        "compositeScore": -999,
+        "preview": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi tekno"
+      },
+      {
+        "rank": 6,
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0334,
+        "compositeScore": -999,
+        "preview": "iAnalisis data & bisnis 50 Sistem InformasiDesain grafis 51 Sistem InformasiFotografi 52 Sistem Info"
+      },
+      {
+        "rank": 7,
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0354,
+        "compositeScore": -999,
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih inform"
+      },
+      {
+        "rank": 8,
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0006,
+        "compositeScore": -999,
+        "preview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MAL"
+      },
+      {
+        "rank": 9,
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "score": 0.4796,
+        "compositeScore": -999.8,
+        "preview": "MEMUTUSKAN Menetapkan: KEPUTUSAN    LEMBAGA    AKREDITASI    MANDIRI    INFORMATIKA    DAN KOMPUTER "
+      },
+      {
+        "rank": 10,
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0483,
+        "compositeScore": -1000.6,
+        "preview": "NO. ORMAWA PEMBINA KOORDINATOR  1 BADAN EKSEKUTIF  MAHASISWA  IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KO"
+      },
+      {
+        "rank": 11,
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0314,
+        "compositeScore": -1000.6,
+        "preview": "AMPING   ORGANISASI MAHASISWA   INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI  NO ORMAWA PEMBINA PENDAMP"
+      },
+      {
+        "rank": 12,
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0067,
+        "compositeScore": -1000.6,
+        "preview": "I MADE BUDI ADNYANA, S.KOM., M.T.  14 TARI  KADEK SIDIK ARYAWAN, S.SN., M.SN  NI MADE DEWI KANSA PUT"
+      },
+      {
+        "rank": 13,
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "docCategory": "BIAYA",
+        "score": 0.5271,
+        "compositeScore": -1000.8,
+        "preview": "DIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI,TEKNOLOGIINFORMASI,DAN BISNISDIGITAL T."
+      },
+      {
+        "rank": 14,
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.4658,
+        "compositeScore": -1000.8,
+        "preview": "INSTITUT TEKNOLOGI DAN BISNI5..  (ITB)  STIKOM  BALI  T  K  nw............-u-...:mm...ln—...l...:m;;"
+      },
+      {
+        "rank": 15,
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.4548,
+        "compositeScore": -1000.8,
+        "preview": "ai tatacara penilaian preolehan kredit.  ITB STIKOM Bali menetapkan daftar mata kuliah  dan  jumlah "
+      },
+      {
+        "rank": 16,
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4696,
+        "compositeScore": -1000.8,
+        "preview": "Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Infor"
+      },
+      {
+        "rank": 17,
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4792,
+        "compositeScore": -1000.8,
+        "preview": "lir, daftar ulang, dan jadwal pembayaran. Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memil"
+      },
+      {
+        "rank": 18,
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.5136,
+        "compositeScore": -1000.8,
+        "preview": "tem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembayaran. Biaya pendaftara"
+      },
+      {
+        "rank": 19,
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.533,
+        "compositeScore": -1000.8,
+        "preview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulan"
+      },
+      {
+        "rank": 20,
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.5109,
+        "compositeScore": -1000.8,
+        "preview": "ru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Informatika dan Sistem Informasi me"
+      }
+    ],
+    "afterFiltering": [],
+    "filterDecisions": [
+      {
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "sourceFile": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "no_evidence_for_intent"
+      },
+      {
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "sourceFile": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "no_evidence_for_intent"
+      },
+      {
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "sourceFile": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "sourceFile": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "sourceFile": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "sourceFile": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "sourceFile": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      }
+    ]
+  },
+  {
+    "question": "Mata kuliah Sistem Informasi",
+    "userIntent": "KURIKULUM_PEMBELAJARAN",
+    "detectIntent": "ACADEMIC_PROGRAM",
+    "academicIntent": "MATA_KULIAH",
+    "normalizedQuestion": "mata kuliah sistem informasi",
+    "queryForRetrieval": "mata kuliah sistem informasi program studi sistem informasi profil sistem informasi",
+    "beforeFilteringCount": 528,
+    "afterFilteringCount": 1,
+    "beforeFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "score": 0.5786,
+        "compositeScore": -997.8,
+        "preview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia "
+      },
+      {
+        "rank": 2,
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "score": 0.4443,
+        "compositeScore": -997.8,
+        "preview": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program st"
+      },
+      {
+        "rank": 3,
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "docCategory": "UNKNOWN",
+        "score": 0.4853,
+        "compositeScore": -999,
+        "preview": "INSTITUTTEKNOLOGIDANBISNIS STIKOM BALI INSTITUTTEKNOLOGI DAN BISNIS.. (ITB)STIKOM BALI KampusDenpasa"
+      },
+      {
+        "rank": 4,
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "score": 0.2165,
+        "compositeScore": -999,
+        "preview": "8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026 II C | 19 APRIL 2026 s/d"
+      },
+      {
+        "rank": 5,
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "score": 0.4437,
+        "compositeScore": -999,
+        "preview": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi tekno"
+      },
+      {
+        "rank": 6,
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0412,
+        "compositeScore": -999,
+        "preview": "iAnalisis data & bisnis 50 Sistem InformasiDesain grafis 51 Sistem InformasiFotografi 52 Sistem Info"
+      },
+      {
+        "rank": 7,
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0394,
+        "compositeScore": -999,
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih inform"
+      },
+      {
+        "rank": 8,
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0226,
+        "compositeScore": -999,
+        "preview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MAL"
+      },
+      {
+        "rank": 9,
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "score": 0.5168,
+        "compositeScore": -999.8,
+        "preview": "MEMUTUSKAN Menetapkan: KEPUTUSAN    LEMBAGA    AKREDITASI    MANDIRI    INFORMATIKA    DAN KOMPUTER "
+      },
+      {
+        "rank": 10,
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0585,
+        "compositeScore": -1000.6,
+        "preview": "NO. ORMAWA PEMBINA KOORDINATOR  1 BADAN EKSEKUTIF  MAHASISWA  IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KO"
+      },
+      {
+        "rank": 11,
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.036,
+        "compositeScore": -1000.6,
+        "preview": "AMPING   ORGANISASI MAHASISWA   INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI  NO ORMAWA PEMBINA PENDAMP"
+      },
+      {
+        "rank": 12,
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0204,
+        "compositeScore": -1000.6,
+        "preview": "I MADE BUDI ADNYANA, S.KOM., M.T.  14 TARI  KADEK SIDIK ARYAWAN, S.SN., M.SN  NI MADE DEWI KANSA PUT"
+      },
+      {
+        "rank": 13,
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "docCategory": "BIAYA",
+        "score": 0.4972,
+        "compositeScore": -1000.8,
+        "preview": "DIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI,TEKNOLOGIINFORMASI,DAN BISNISDIGITAL T."
+      },
+      {
+        "rank": 14,
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.5165,
+        "compositeScore": -1000.8,
+        "preview": "INSTITUT TEKNOLOGI DAN BISNI5..  (ITB)  STIKOM  BALI  T  K  nw............-u-...:mm...ln—...l...:m;;"
+      },
+      {
+        "rank": 15,
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.4749,
+        "compositeScore": -1000.8,
+        "preview": "ai tatacara penilaian preolehan kredit.  ITB STIKOM Bali menetapkan daftar mata kuliah  dan  jumlah "
+      },
+      {
+        "rank": 16,
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4564,
+        "compositeScore": -1000.8,
+        "preview": "Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Infor"
+      },
+      {
+        "rank": 17,
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4487,
+        "compositeScore": -1000.8,
+        "preview": "lir, daftar ulang, dan jadwal pembayaran. Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memil"
+      },
+      {
+        "rank": 18,
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4927,
+        "compositeScore": -1000.8,
+        "preview": "tem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembayaran. Biaya pendaftara"
+      },
+      {
+        "rank": 19,
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.5076,
+        "compositeScore": -1000.8,
+        "preview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulan"
+      },
+      {
+        "rank": 20,
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4856,
+        "compositeScore": -1000.8,
+        "preview": "ru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Informatika dan Sistem Informasi me"
+      }
+    ],
+    "afterFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "0f43704f-2143-44a3-912f-e3a877faf680",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "MATA_KULIAH",
+        "score": 0.5608,
+        "compositeScore": -999,
+        "preview": "Tabel 1: Daftar Mata Kuliah Program Studi 1 NO. KODE MATA KULIAH NAMA MATA KULIAH sks RPL TIDAK"
+      }
+    ],
+    "filterDecisions": [
+      {
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "sourceFile": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "no_evidence_for_intent"
+      },
+      {
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "sourceFile": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "no_evidence_for_intent"
+      },
+      {
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "sourceFile": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "sourceFile": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "sourceFile": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "sourceFile": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "sourceFile": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      }
+    ]
+  },
+  {
+    "question": "Prospek kerja Sistem Informasi",
+    "userIntent": "PROSPEK_KERJA",
+    "detectIntent": "ACADEMIC_PROGRAM",
+    "academicIntent": "PROSPEK_KERJA",
+    "normalizedQuestion": "prospek kerja sistem informasi",
+    "queryForRetrieval": "prospek kerja sistem informasi program studi sistem informasi profil sistem informasi",
+    "beforeFilteringCount": 528,
+    "afterFilteringCount": 0,
+    "beforeFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "score": 0.6183,
+        "compositeScore": -997.8,
+        "preview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia "
+      },
+      {
+        "rank": 2,
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "score": 0.5473,
+        "compositeScore": -997.8,
+        "preview": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program st"
+      },
+      {
+        "rank": 3,
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "docCategory": "UNKNOWN",
+        "score": 0.4618,
+        "compositeScore": -999,
+        "preview": "INSTITUTTEKNOLOGIDANBISNIS STIKOM BALI INSTITUTTEKNOLOGI DAN BISNIS.. (ITB)STIKOM BALI KampusDenpasa"
+      },
+      {
+        "rank": 4,
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "score": 0.2813,
+        "compositeScore": -999,
+        "preview": "8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026 II C | 19 APRIL 2026 s/d"
+      },
+      {
+        "rank": 5,
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "score": 0.4759,
+        "compositeScore": -999,
+        "preview": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi tekno"
+      },
+      {
+        "rank": 6,
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0331,
+        "compositeScore": -999,
+        "preview": "iAnalisis data & bisnis 50 Sistem InformasiDesain grafis 51 Sistem InformasiFotografi 52 Sistem Info"
+      },
+      {
+        "rank": 7,
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0172,
+        "compositeScore": -999,
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih inform"
+      },
+      {
+        "rank": 8,
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0171,
+        "compositeScore": -999,
+        "preview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MAL"
+      },
+      {
+        "rank": 9,
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "score": 0.4563,
+        "compositeScore": -999.8,
+        "preview": "MEMUTUSKAN Menetapkan: KEPUTUSAN    LEMBAGA    AKREDITASI    MANDIRI    INFORMATIKA    DAN KOMPUTER "
+      },
+      {
+        "rank": 10,
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0425,
+        "compositeScore": -1000.6,
+        "preview": "NO. ORMAWA PEMBINA KOORDINATOR  1 BADAN EKSEKUTIF  MAHASISWA  IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KO"
+      },
+      {
+        "rank": 11,
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0208,
+        "compositeScore": -1000.6,
+        "preview": "AMPING   ORGANISASI MAHASISWA   INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI  NO ORMAWA PEMBINA PENDAMP"
+      },
+      {
+        "rank": 12,
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0014,
+        "compositeScore": -1000.6,
+        "preview": "I MADE BUDI ADNYANA, S.KOM., M.T.  14 TARI  KADEK SIDIK ARYAWAN, S.SN., M.SN  NI MADE DEWI KANSA PUT"
+      },
+      {
+        "rank": 13,
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "docCategory": "BIAYA",
+        "score": 0.4761,
+        "compositeScore": -1000.8,
+        "preview": "DIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI,TEKNOLOGIINFORMASI,DAN BISNISDIGITAL T."
+      },
+      {
+        "rank": 14,
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.4578,
+        "compositeScore": -1000.8,
+        "preview": "INSTITUT TEKNOLOGI DAN BISNI5..  (ITB)  STIKOM  BALI  T  K  nw............-u-...:mm...ln—...l...:m;;"
+      },
+      {
+        "rank": 15,
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.4058,
+        "compositeScore": -1000.8,
+        "preview": "ai tatacara penilaian preolehan kredit.  ITB STIKOM Bali menetapkan daftar mata kuliah  dan  jumlah "
+      },
+      {
+        "rank": 16,
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4534,
+        "compositeScore": -1000.8,
+        "preview": "Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Infor"
+      },
+      {
+        "rank": 17,
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4493,
+        "compositeScore": -1000.8,
+        "preview": "lir, daftar ulang, dan jadwal pembayaran. Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memil"
+      },
+      {
+        "rank": 18,
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4903,
+        "compositeScore": -1000.8,
+        "preview": "tem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembayaran. Biaya pendaftara"
+      },
+      {
+        "rank": 19,
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.508,
+        "compositeScore": -1000.8,
+        "preview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulan"
+      },
+      {
+        "rank": 20,
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4951,
+        "compositeScore": -1000.8,
+        "preview": "ru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Informatika dan Sistem Informasi me"
+      }
+    ],
+    "afterFiltering": [],
+    "filterDecisions": [
+      {
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "sourceFile": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "sourceFile": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "sourceFile": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "sourceFile": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "sourceFile": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "sourceFile": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "sourceFile": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      }
+    ]
+  },
+  {
+    "question": "Lulusan Sistem Informasi bisa kerja dimana",
+    "userIntent": "GENERAL",
+    "detectIntent": "PROGRAM",
+    "academicIntent": "ACADEMIC_PROGRAM",
+    "normalizedQuestion": "lulusan sistem informasi bisa kerja dimana",
+    "queryForRetrieval": "lulusan sistem informasi bisa kerja dimana program studi sistem informasi profil sistem informasi",
+    "beforeFilteringCount": 528,
+    "afterFilteringCount": 205,
+    "beforeFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "docCategory": "UNKNOWN",
+        "score": 0.4491,
+        "compositeScore": -999,
+        "preview": "INSTITUTTEKNOLOGIDANBISNIS STIKOM BALI INSTITUTTEKNOLOGI DAN BISNIS.. (ITB)STIKOM BALI KampusDenpasa"
+      },
+      {
+        "rank": 2,
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "score": 0.2135,
+        "compositeScore": -999,
+        "preview": "8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026 II C | 19 APRIL 2026 s/d"
+      },
+      {
+        "rank": 3,
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "score": 0.4501,
+        "compositeScore": -999,
+        "preview": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi tekno"
+      },
+      {
+        "rank": 4,
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "score": 0.582,
+        "compositeScore": -999,
+        "preview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia "
+      },
+      {
+        "rank": 5,
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0138,
+        "compositeScore": -999,
+        "preview": "iAnalisis data & bisnis 50 Sistem InformasiDesain grafis 51 Sistem InformasiFotografi 52 Sistem Info"
+      },
+      {
+        "rank": 6,
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0186,
+        "compositeScore": -999,
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih inform"
+      },
+      {
+        "rank": 7,
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": -0.0249,
+        "compositeScore": -999,
+        "preview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MAL"
+      },
+      {
+        "rank": 8,
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "score": 0.4821,
+        "compositeScore": -999,
+        "preview": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program st"
+      },
+      {
+        "rank": 9,
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "score": 0.4891,
+        "compositeScore": -999.8,
+        "preview": "MEMUTUSKAN Menetapkan: KEPUTUSAN    LEMBAGA    AKREDITASI    MANDIRI    INFORMATIKA    DAN KOMPUTER "
+      },
+      {
+        "rank": 10,
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.032,
+        "compositeScore": -1000.6,
+        "preview": "NO. ORMAWA PEMBINA KOORDINATOR  1 BADAN EKSEKUTIF  MAHASISWA  IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KO"
+      },
+      {
+        "rank": 11,
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0021,
+        "compositeScore": -1000.6,
+        "preview": "AMPING   ORGANISASI MAHASISWA   INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI  NO ORMAWA PEMBINA PENDAMP"
+      },
+      {
+        "rank": 12,
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": -0.0039,
+        "compositeScore": -1000.6,
+        "preview": "I MADE BUDI ADNYANA, S.KOM., M.T.  14 TARI  KADEK SIDIK ARYAWAN, S.SN., M.SN  NI MADE DEWI KANSA PUT"
+      },
+      {
+        "rank": 13,
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "docCategory": "BIAYA",
+        "score": 0.4651,
+        "compositeScore": -1000.8,
+        "preview": "DIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI,TEKNOLOGIINFORMASI,DAN BISNISDIGITAL T."
+      },
+      {
+        "rank": 14,
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.446,
+        "compositeScore": -1000.8,
+        "preview": "INSTITUT TEKNOLOGI DAN BISNI5..  (ITB)  STIKOM  BALI  T  K  nw............-u-...:mm...ln—...l...:m;;"
+      },
+      {
+        "rank": 15,
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.4222,
+        "compositeScore": -1000.8,
+        "preview": "ai tatacara penilaian preolehan kredit.  ITB STIKOM Bali menetapkan daftar mata kuliah  dan  jumlah "
+      },
+      {
+        "rank": 16,
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4237,
+        "compositeScore": -1000.8,
+        "preview": "Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Infor"
+      },
+      {
+        "rank": 17,
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4363,
+        "compositeScore": -1000.8,
+        "preview": "lir, daftar ulang, dan jadwal pembayaran. Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memil"
+      },
+      {
+        "rank": 18,
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4636,
+        "compositeScore": -1000.8,
+        "preview": "tem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembayaran. Biaya pendaftara"
+      },
+      {
+        "rank": 19,
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4808,
+        "compositeScore": -1000.8,
+        "preview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulan"
+      },
+      {
+        "rank": 20,
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4651,
+        "compositeScore": -1000.8,
+        "preview": "ru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Informatika dan Sistem Informasi me"
+      }
+    ],
+    "afterFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "docCategory": "UNKNOWN",
+        "score": 0.4491,
+        "compositeScore": -999,
+        "preview": "INSTITUTTEKNOLOGIDANBISNIS STIKOM BALI INSTITUTTEKNOLOGI DAN BISNIS.. (ITB)STIKOM BALI KampusDenpasa"
+      },
+      {
+        "rank": 2,
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "score": 0.4501,
+        "compositeScore": -999,
+        "preview": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi tekno"
+      },
+      {
+        "rank": 3,
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "score": 0.582,
+        "compositeScore": -999,
+        "preview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia "
+      },
+      {
+        "rank": 4,
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0138,
+        "compositeScore": -999,
+        "preview": "iAnalisis data & bisnis 50 Sistem InformasiDesain grafis 51 Sistem InformasiFotografi 52 Sistem Info"
+      },
+      {
+        "rank": 5,
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": 0.0186,
+        "compositeScore": -999,
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih inform"
+      },
+      {
+        "rank": 6,
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "score": -0.0249,
+        "compositeScore": -999,
+        "preview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MAL"
+      },
+      {
+        "rank": 7,
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "score": 0.4821,
+        "compositeScore": -999,
+        "preview": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program st"
+      },
+      {
+        "rank": 8,
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "filename": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "score": 0.4891,
+        "compositeScore": -999.8,
+        "preview": "MEMUTUSKAN Menetapkan: KEPUTUSAN    LEMBAGA    AKREDITASI    MANDIRI    INFORMATIKA    DAN KOMPUTER "
+      },
+      {
+        "rank": 9,
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "docCategory": "BIAYA",
+        "score": 0.4651,
+        "compositeScore": -1000.8,
+        "preview": "DIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI,TEKNOLOGIINFORMASI,DAN BISNISDIGITAL T."
+      },
+      {
+        "rank": 10,
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.446,
+        "compositeScore": -1000.8,
+        "preview": "INSTITUT TEKNOLOGI DAN BISNI5..  (ITB)  STIKOM  BALI  T  K  nw............-u-...:mm...ln—...l...:m;;"
+      },
+      {
+        "rank": 11,
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.4222,
+        "compositeScore": -1000.8,
+        "preview": "ai tatacara penilaian preolehan kredit.  ITB STIKOM Bali menetapkan daftar mata kuliah  dan  jumlah "
+      },
+      {
+        "rank": 12,
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4237,
+        "compositeScore": -1000.8,
+        "preview": "Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Infor"
+      },
+      {
+        "rank": 13,
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4363,
+        "compositeScore": -1000.8,
+        "preview": "lir, daftar ulang, dan jadwal pembayaran. Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memil"
+      },
+      {
+        "rank": 14,
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4636,
+        "compositeScore": -1000.8,
+        "preview": "tem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembayaran. Biaya pendaftara"
+      },
+      {
+        "rank": 15,
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4808,
+        "compositeScore": -1000.8,
+        "preview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulan"
+      },
+      {
+        "rank": 16,
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4651,
+        "compositeScore": -1000.8,
+        "preview": "ru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Informatika dan Sistem Informasi me"
+      },
+      {
+        "rank": 17,
+        "chunkId": "37dc572d-f30d-47eb-b5ca-63fb21bba88a",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4127,
+        "compositeScore": -1000.8,
+        "preview": "pembayaran. Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan tertentu. Program"
+      },
+      {
+        "rank": 18,
+        "chunkId": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+        "filename": null,
+        "docCategory": "BIAYA",
+        "score": 0.4012,
+        "compositeScore": -1000.8,
+        "preview": "Ringkasan dokumen: Program studi terlihat: Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memi"
+      },
+      {
+        "rank": 19,
+        "chunkId": "0bcb31ca-4b9e-46b4-a319-45f47bb35a41",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.4287,
+        "compositeScore": -1000.8,
+        "preview": "pendaftaran, sistem informasi dan  perangkat penilaian untuk pelaksanaan RPL. Pemohon/Calon  mendaft"
+      },
+      {
+        "rank": 20,
+        "chunkId": "b78f8a67-9a51-4a0e-99e2-abfcf2692c4f",
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "score": 0.3171,
+        "compositeScore": -1000.8,
+        "preview": "Biaya yang sudah dibayar, tidak dapat dikembalikan dengan alasan apapun, kecuali  diterima di  PTN d"
+      }
+    ],
+    "filterDecisions": [
+      {
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "sourceFile": "Kalender Pendaftaran.xlsx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "a55d0dff-7767-41c1-8a57-1acfadbdc0b3",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "b43febf7-af1d-4176-a61c-e68e2cfdd8c6",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "03c1a04d-a7e8-494b-889c-d6e4dcee33a9",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "36fa07a8-05b5-497e-94b0-405fb16870e4",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "142bb6ee-9216-4ffa-a69e-a1013f32cca7",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "f6a451ed-babd-4faf-bbc5-e1701401c71f",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "b45de948-8f16-4125-9fdc-a51b29b96e2c",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "3c64374f-d0ab-43fa-8c9a-13502b6a312a",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "1c7b21a7-1889-4e0c-8f65-7967c3642fb5",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "e8c163ce-9ce6-444f-a5a3-27be7fa42e29",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "cc87868f-6692-4cad-bce8-f6584ebea86f",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "652df7f1-37ca-4b73-915b-51ac999fb8a6",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "12766d5d-f83b-4334-ab91-33396e0df157",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "65da0ffe-11bf-4d6f-b72f-82f1521d8858",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "f1b4878a-a97a-43f2-8b4f-04e85e80b13d",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      },
+      {
+        "chunkId": "d3644dc5-9aa3-4f8b-9bc8-a1b9ea868155",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_relevant_to_question"
+      }
+    ]
+  },
+  {
+    "question": "Apa itu Teknologi Informasi",
+    "userIntent": "DEFINISI_PRODI",
+    "detectIntent": "ACADEMIC_PROGRAM",
+    "academicIntent": "DEFINISI_PRODI",
+    "normalizedQuestion": "apa itu teknologi informasi",
+    "queryForRetrieval": "apa itu teknologi informasi program studi teknologi informasi profil teknologi informasi",
+    "beforeFilteringCount": 528,
+    "afterFilteringCount": 0,
+    "beforeFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "93f59730-63c1-40ec-963d-7b96808de922",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "score": 0.5348,
+        "compositeScore": -997.8,
+        "preview": "tion Technology Researcher More Info Profil Lulusan Gelar S.Kom. Teknologi Informasi @proditistikomb"
+      },
+      {
+        "rank": 2,
+        "chunkId": "035e5603-2e9f-4571-bb6a-44123b9ee79f",
+        "docCategory": "UNKNOWN",
+        "score": 0.4639,
+        "compositeScore": -999,
+        "preview": "dai dengan  i@ CamScanner .  INSTITUT TEKNOLOGI DAN BISNIS  \\ (ITB) STIKOM BALI  Kampus Denpasar  L "
+      },
+      {
+        "rank": 3,
+        "chunkId": "393619c6-7b49-4620-894f-863bf1123f43",
+        "docCategory": "UNKNOWN",
+        "score": 0.4015,
+        "compositeScore": -999,
+        "preview": "Puputan Na.86 Renon, Denpasar - Ball - Indonesia |  Pt  (036T) 244445 |  Fax (03611264773 | Hotline "
+      },
+      {
+        "rank": 4,
+        "chunkId": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+        "docCategory": "UNKNOWN",
+        "score": 0.382,
+        "compositeScore": -999,
+        "preview": "ran -  1  surat peraturan ini dan merupakan satu kesatuan yang tidak  dapat dipisahkan dari surat pe"
+      },
+      {
+        "rank": 5,
+        "chunkId": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "docCategory": "BEASISWA",
+        "score": 0.3916,
+        "compositeScore": -999,
+        "preview": "19 Oktober 2023  PENERIMA PROGRAM BEASISWA RANKING KELAS DI  ITB STIKOM BALI \"  L STIKOM Bali member"
+      },
+      {
+        "rank": 6,
+        "chunkId": "f2615890-0f34-4f41-aff0-411232af57d1",
+        "docCategory": "UNKNOWN",
+        "score": 0.3115,
+        "compositeScore": -999,
+        "preview": "ja, SMKN 3 Singaraja  SMAN 1  Bangli, SMKN 1  Bangli  SMAN 1 Negara  SMAN 1  Amlapura  1.  Rangking "
+      },
+      {
+        "rank": 7,
+        "chunkId": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+        "docCategory": "BEASISWA",
+        "score": 0.4383,
+        "compositeScore": -999,
+        "preview": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 |  Hotline : 0822"
+      },
+      {
+        "rank": 8,
+        "chunkId": "57133696-2e84-4e4b-96b9-6500af3a01b2",
+        "docCategory": "BEASISWA",
+        "score": 0.285,
+        "compositeScore": -999,
+        "preview": "LON MAHASISWA PENERIMA BEASISWA  I.   Calon mahasiswa dari :  a.  SMAN 1  Denpasar, SMAN 2 Denpasar,"
+      },
+      {
+        "rank": 9,
+        "chunkId": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "score": 0.4997,
+        "compositeScore": -999,
+        "preview": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau "
+      },
+      {
+        "rank": 10,
+        "chunkId": "07c77b5e-8388-4f2b-a846-b06d99400481",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0193,
+        "compositeScore": -999,
+        "preview": "omputer 78 Teknologi InformasiKabel LAN 79 Teknologi InformasiUI/UX design 80 Teknologi InformasiEdi"
+      },
+      {
+        "rank": 11,
+        "chunkId": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.039,
+        "compositeScore": -999,
+        "preview": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi Informa"
+      },
+      {
+        "rank": 12,
+        "chunkId": "afd5ba58-ebfa-4818-9b49-df3e895ad998",
+        "filename": "SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+        "docCategory": "AKREDITASI",
+        "score": 0.4661,
+        "compositeScore": -999.8,
+        "preview": "Memperhatikan:1.Ketentuan  Pasal  4  Peraturan  Menteri  Pendidikan  dan Kebudayaan  Nomor  5  Tahun"
+      },
+      {
+        "rank": 13,
+        "chunkId": "30de4303-a936-445f-b20f-0a12fd9001ab",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0372,
+        "compositeScore": -1000.6,
+        "preview": "GAUTAMA, S.TI., M.KOM  15 UKM FUTSAL PANDE PUTU GEDE PUTRA PERTAMA, ST., MT  16 UKM KSR I MADE ARYA "
+      },
+      {
+        "rank": 14,
+        "chunkId": "24d0850c-334f-4e9d-8a42-9a83a3868f6c",
+        "docCategory": "BIAYA",
+        "score": 0.4113,
+        "compositeScore": -1000.8,
+        "preview": "Lampiran -6    Surat Keputusan ITB STIKOM Bali Nomor : 629/ITBSTIKOM/WDS/X/25  Tanggal 08 Oktober 20"
+      },
+      {
+        "rank": 15,
+        "chunkId": "faa7492b-b672-42cc-9121-fdb8ca19a5b5",
+        "docCategory": "BIAYA",
+        "score": 0.3029,
+        "compositeScore": -1000.8,
+        "preview": "September  - Biaya Pendidikan Per Semester   6.500.000 Dicicil 2 Kali s/d September (Khusus         "
+      },
+      {
+        "rank": 16,
+        "chunkId": "c49b1692-d7d9-4f82-bb10-1430ea327e92",
+        "docCategory": "BIAYA",
+        "score": 0.3152,
+        "compositeScore": -1000.8,
+        "preview": "aftar pada Gelombang  III  Rp. 100.000,- Jika Mendaftar pada Gelombang  IV  Ditambah  Rp. 50.000,- J"
+      },
+      {
+        "rank": 17,
+        "chunkId": "206c0be0-43cd-4c2b-aa82-b73a3b0afc7d",
+        "docCategory": "BIAYA",
+        "score": 0.3516,
+        "compositeScore": -1000.8,
+        "preview": "Penjelasan Tambahan :  1.   Butir 1  sampai dengan 4  dibayar 1  kali  saja  pada awal masuk  2.   P"
+      },
+      {
+        "rank": 18,
+        "chunkId": "32b0526e-e1e5-46ff-9cd5-e844a5410e52",
+        "docCategory": "BIAYA",
+        "score": 0.4566,
+        "compositeScore": -1000.8,
+        "preview": "h  Yeh  Canl,  Badung -  Ball  -  Indonesia |  Pk  (0361)  4790925 |  Hotline :  082145099633  INSTI"
+      },
+      {
+        "rank": 19,
+        "chunkId": "56d195ca-0577-445d-bc41-531feb64da64",
+        "docCategory": "BIAYA",
+        "score": 0.3901,
+        "compositeScore": -1000.8,
+        "preview": "ersen).  4.   Khusus Alumni SMK TI  mendapatkan potongan 20% Biaya Pendidikan Per  Semester selama 4"
+      },
+      {
+        "rank": 20,
+        "chunkId": "c412f7ba-8d34-440d-9c96-ba2fe558092c",
+        "docCategory": "BIAYA",
+        "score": 0.442,
+        "compositeScore": -1000.8,
+        "preview": "otongan  Biaya  Pendaftaran  :  Rp. 1.500.000,- Jika Mendaftar pada Gelombang Khusus  Rp. 1.250.000,"
+      }
+    ],
+    "afterFiltering": [],
+    "filterDecisions": [
+      {
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "sourceFile": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "sourceFile": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "sourceFile": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "sourceFile": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "sourceFile": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "sourceFile": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "sourceFile": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      }
+    ]
+  },
+  {
+    "question": "Teknologi Informasi belajar apa saja",
+    "userIntent": "KURIKULUM_PEMBELAJARAN",
+    "detectIntent": "ACADEMIC_PROGRAM",
+    "academicIntent": "MATA_KULIAH",
+    "normalizedQuestion": "teknologi informasi belajar apa saja",
+    "queryForRetrieval": "teknologi informasi belajar apa saja program studi teknologi informasi profil teknologi informasi",
+    "beforeFilteringCount": 528,
+    "afterFilteringCount": 0,
+    "beforeFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "93f59730-63c1-40ec-963d-7b96808de922",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "score": 0.5186,
+        "compositeScore": -997.8,
+        "preview": "tion Technology Researcher More Info Profil Lulusan Gelar S.Kom. Teknologi Informasi @proditistikomb"
+      },
+      {
+        "rank": 2,
+        "chunkId": "035e5603-2e9f-4571-bb6a-44123b9ee79f",
+        "docCategory": "UNKNOWN",
+        "score": 0.4329,
+        "compositeScore": -999,
+        "preview": "dai dengan  i@ CamScanner .  INSTITUT TEKNOLOGI DAN BISNIS  \\ (ITB) STIKOM BALI  Kampus Denpasar  L "
+      },
+      {
+        "rank": 3,
+        "chunkId": "393619c6-7b49-4620-894f-863bf1123f43",
+        "docCategory": "UNKNOWN",
+        "score": 0.3796,
+        "compositeScore": -999,
+        "preview": "Puputan Na.86 Renon, Denpasar - Ball - Indonesia |  Pt  (036T) 244445 |  Fax (03611264773 | Hotline "
+      },
+      {
+        "rank": 4,
+        "chunkId": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+        "docCategory": "UNKNOWN",
+        "score": 0.3494,
+        "compositeScore": -999,
+        "preview": "ran -  1  surat peraturan ini dan merupakan satu kesatuan yang tidak  dapat dipisahkan dari surat pe"
+      },
+      {
+        "rank": 5,
+        "chunkId": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "docCategory": "BEASISWA",
+        "score": 0.383,
+        "compositeScore": -999,
+        "preview": "19 Oktober 2023  PENERIMA PROGRAM BEASISWA RANKING KELAS DI  ITB STIKOM BALI \"  L STIKOM Bali member"
+      },
+      {
+        "rank": 6,
+        "chunkId": "f2615890-0f34-4f41-aff0-411232af57d1",
+        "docCategory": "UNKNOWN",
+        "score": 0.3208,
+        "compositeScore": -999,
+        "preview": "ja, SMKN 3 Singaraja  SMAN 1  Bangli, SMKN 1  Bangli  SMAN 1 Negara  SMAN 1  Amlapura  1.  Rangking "
+      },
+      {
+        "rank": 7,
+        "chunkId": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+        "docCategory": "BEASISWA",
+        "score": 0.3951,
+        "compositeScore": -999,
+        "preview": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 |  Hotline : 0822"
+      },
+      {
+        "rank": 8,
+        "chunkId": "57133696-2e84-4e4b-96b9-6500af3a01b2",
+        "docCategory": "BEASISWA",
+        "score": 0.2962,
+        "compositeScore": -999,
+        "preview": "LON MAHASISWA PENERIMA BEASISWA  I.   Calon mahasiswa dari :  a.  SMAN 1  Denpasar, SMAN 2 Denpasar,"
+      },
+      {
+        "rank": 9,
+        "chunkId": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "score": 0.4967,
+        "compositeScore": -999,
+        "preview": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau "
+      },
+      {
+        "rank": 10,
+        "chunkId": "07c77b5e-8388-4f2b-a846-b06d99400481",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0208,
+        "compositeScore": -999,
+        "preview": "omputer 78 Teknologi InformasiKabel LAN 79 Teknologi InformasiUI/UX design 80 Teknologi InformasiEdi"
+      },
+      {
+        "rank": 11,
+        "chunkId": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0365,
+        "compositeScore": -999,
+        "preview": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi Informa"
+      },
+      {
+        "rank": 12,
+        "chunkId": "afd5ba58-ebfa-4818-9b49-df3e895ad998",
+        "filename": "SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+        "docCategory": "AKREDITASI",
+        "score": 0.4527,
+        "compositeScore": -999.8,
+        "preview": "Memperhatikan:1.Ketentuan  Pasal  4  Peraturan  Menteri  Pendidikan  dan Kebudayaan  Nomor  5  Tahun"
+      },
+      {
+        "rank": 13,
+        "chunkId": "30de4303-a936-445f-b20f-0a12fd9001ab",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0408,
+        "compositeScore": -1000.6,
+        "preview": "GAUTAMA, S.TI., M.KOM  15 UKM FUTSAL PANDE PUTU GEDE PUTRA PERTAMA, ST., MT  16 UKM KSR I MADE ARYA "
+      },
+      {
+        "rank": 14,
+        "chunkId": "24d0850c-334f-4e9d-8a42-9a83a3868f6c",
+        "docCategory": "BIAYA",
+        "score": 0.4107,
+        "compositeScore": -1000.8,
+        "preview": "Lampiran -6    Surat Keputusan ITB STIKOM Bali Nomor : 629/ITBSTIKOM/WDS/X/25  Tanggal 08 Oktober 20"
+      },
+      {
+        "rank": 15,
+        "chunkId": "faa7492b-b672-42cc-9121-fdb8ca19a5b5",
+        "docCategory": "BIAYA",
+        "score": 0.3125,
+        "compositeScore": -1000.8,
+        "preview": "September  - Biaya Pendidikan Per Semester   6.500.000 Dicicil 2 Kali s/d September (Khusus         "
+      },
+      {
+        "rank": 16,
+        "chunkId": "c49b1692-d7d9-4f82-bb10-1430ea327e92",
+        "docCategory": "BIAYA",
+        "score": 0.3137,
+        "compositeScore": -1000.8,
+        "preview": "aftar pada Gelombang  III  Rp. 100.000,- Jika Mendaftar pada Gelombang  IV  Ditambah  Rp. 50.000,- J"
+      },
+      {
+        "rank": 17,
+        "chunkId": "206c0be0-43cd-4c2b-aa82-b73a3b0afc7d",
+        "docCategory": "BIAYA",
+        "score": 0.3478,
+        "compositeScore": -1000.8,
+        "preview": "Penjelasan Tambahan :  1.   Butir 1  sampai dengan 4  dibayar 1  kali  saja  pada awal masuk  2.   P"
+      },
+      {
+        "rank": 18,
+        "chunkId": "32b0526e-e1e5-46ff-9cd5-e844a5410e52",
+        "docCategory": "BIAYA",
+        "score": 0.4462,
+        "compositeScore": -1000.8,
+        "preview": "h  Yeh  Canl,  Badung -  Ball  -  Indonesia |  Pk  (0361)  4790925 |  Hotline :  082145099633  INSTI"
+      },
+      {
+        "rank": 19,
+        "chunkId": "56d195ca-0577-445d-bc41-531feb64da64",
+        "docCategory": "BIAYA",
+        "score": 0.397,
+        "compositeScore": -1000.8,
+        "preview": "ersen).  4.   Khusus Alumni SMK TI  mendapatkan potongan 20% Biaya Pendidikan Per  Semester selama 4"
+      },
+      {
+        "rank": 20,
+        "chunkId": "c412f7ba-8d34-440d-9c96-ba2fe558092c",
+        "docCategory": "BIAYA",
+        "score": 0.4233,
+        "compositeScore": -1000.8,
+        "preview": "otongan  Biaya  Pendaftaran  :  Rp. 1.500.000,- Jika Mendaftar pada Gelombang Khusus  Rp. 1.250.000,"
+      }
+    ],
+    "afterFiltering": [],
+    "filterDecisions": [
+      {
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "sourceFile": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "no_evidence_for_intent"
+      },
+      {
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "sourceFile": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "no_evidence_for_intent"
+      },
+      {
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "sourceFile": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "sourceFile": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "sourceFile": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "sourceFile": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "sourceFile": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      }
+    ]
+  },
+  {
+    "question": "Prospek kerja Teknologi Informasi",
+    "userIntent": "PROSPEK_KERJA",
+    "detectIntent": "ACADEMIC_PROGRAM",
+    "academicIntent": "PROSPEK_KERJA",
+    "normalizedQuestion": "prospek kerja teknologi informasi",
+    "queryForRetrieval": "prospek kerja teknologi informasi program studi teknologi informasi profil teknologi informasi",
+    "beforeFilteringCount": 528,
+    "afterFilteringCount": 0,
+    "beforeFiltering": [
+      {
+        "rank": 1,
+        "chunkId": "93f59730-63c1-40ec-963d-7b96808de922",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "score": 0.5443,
+        "compositeScore": -997.8,
+        "preview": "tion Technology Researcher More Info Profil Lulusan Gelar S.Kom. Teknologi Informasi @proditistikomb"
+      },
+      {
+        "rank": 2,
+        "chunkId": "035e5603-2e9f-4571-bb6a-44123b9ee79f",
+        "docCategory": "UNKNOWN",
+        "score": 0.4189,
+        "compositeScore": -999,
+        "preview": "dai dengan  i@ CamScanner .  INSTITUT TEKNOLOGI DAN BISNIS  \\ (ITB) STIKOM BALI  Kampus Denpasar  L "
+      },
+      {
+        "rank": 3,
+        "chunkId": "393619c6-7b49-4620-894f-863bf1123f43",
+        "docCategory": "UNKNOWN",
+        "score": 0.3717,
+        "compositeScore": -999,
+        "preview": "Puputan Na.86 Renon, Denpasar - Ball - Indonesia |  Pt  (036T) 244445 |  Fax (03611264773 | Hotline "
+      },
+      {
+        "rank": 4,
+        "chunkId": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+        "docCategory": "UNKNOWN",
+        "score": 0.3498,
+        "compositeScore": -999,
+        "preview": "ran -  1  surat peraturan ini dan merupakan satu kesatuan yang tidak  dapat dipisahkan dari surat pe"
+      },
+      {
+        "rank": 5,
+        "chunkId": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "docCategory": "BEASISWA",
+        "score": 0.3801,
+        "compositeScore": -999,
+        "preview": "19 Oktober 2023  PENERIMA PROGRAM BEASISWA RANKING KELAS DI  ITB STIKOM BALI \"  L STIKOM Bali member"
+      },
+      {
+        "rank": 6,
+        "chunkId": "f2615890-0f34-4f41-aff0-411232af57d1",
+        "docCategory": "UNKNOWN",
+        "score": 0.2998,
+        "compositeScore": -999,
+        "preview": "ja, SMKN 3 Singaraja  SMAN 1  Bangli, SMKN 1  Bangli  SMAN 1 Negara  SMAN 1  Amlapura  1.  Rangking "
+      },
+      {
+        "rank": 7,
+        "chunkId": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+        "docCategory": "BEASISWA",
+        "score": 0.4145,
+        "compositeScore": -999,
+        "preview": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 |  Hotline : 0822"
+      },
+      {
+        "rank": 8,
+        "chunkId": "57133696-2e84-4e4b-96b9-6500af3a01b2",
+        "docCategory": "BEASISWA",
+        "score": 0.2878,
+        "compositeScore": -999,
+        "preview": "LON MAHASISWA PENERIMA BEASISWA  I.   Calon mahasiswa dari :  a.  SMAN 1  Denpasar, SMAN 2 Denpasar,"
+      },
+      {
+        "rank": 9,
+        "chunkId": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "score": 0.491,
+        "compositeScore": -999,
+        "preview": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau "
+      },
+      {
+        "rank": 10,
+        "chunkId": "07c77b5e-8388-4f2b-a846-b06d99400481",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.012,
+        "compositeScore": -999,
+        "preview": "omputer 78 Teknologi InformasiKabel LAN 79 Teknologi InformasiUI/UX design 80 Teknologi InformasiEdi"
+      },
+      {
+        "rank": 11,
+        "chunkId": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+        "filename": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "score": 0.0411,
+        "compositeScore": -999,
+        "preview": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi Informa"
+      },
+      {
+        "rank": 12,
+        "chunkId": "afd5ba58-ebfa-4818-9b49-df3e895ad998",
+        "filename": "SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+        "docCategory": "AKREDITASI",
+        "score": 0.4444,
+        "compositeScore": -999.8,
+        "preview": "Memperhatikan:1.Ketentuan  Pasal  4  Peraturan  Menteri  Pendidikan  dan Kebudayaan  Nomor  5  Tahun"
+      },
+      {
+        "rank": 13,
+        "chunkId": "30de4303-a936-445f-b20f-0a12fd9001ab",
+        "filename": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "score": 0.0229,
+        "compositeScore": -1000.6,
+        "preview": "GAUTAMA, S.TI., M.KOM  15 UKM FUTSAL PANDE PUTU GEDE PUTRA PERTAMA, ST., MT  16 UKM KSR I MADE ARYA "
+      },
+      {
+        "rank": 14,
+        "chunkId": "24d0850c-334f-4e9d-8a42-9a83a3868f6c",
+        "docCategory": "BIAYA",
+        "score": 0.3829,
+        "compositeScore": -1000.8,
+        "preview": "Lampiran -6    Surat Keputusan ITB STIKOM Bali Nomor : 629/ITBSTIKOM/WDS/X/25  Tanggal 08 Oktober 20"
+      },
+      {
+        "rank": 15,
+        "chunkId": "faa7492b-b672-42cc-9121-fdb8ca19a5b5",
+        "docCategory": "BIAYA",
+        "score": 0.2809,
+        "compositeScore": -1000.8,
+        "preview": "September  - Biaya Pendidikan Per Semester   6.500.000 Dicicil 2 Kali s/d September (Khusus         "
+      },
+      {
+        "rank": 16,
+        "chunkId": "c49b1692-d7d9-4f82-bb10-1430ea327e92",
+        "docCategory": "BIAYA",
+        "score": 0.2828,
+        "compositeScore": -1000.8,
+        "preview": "aftar pada Gelombang  III  Rp. 100.000,- Jika Mendaftar pada Gelombang  IV  Ditambah  Rp. 50.000,- J"
+      },
+      {
+        "rank": 17,
+        "chunkId": "206c0be0-43cd-4c2b-aa82-b73a3b0afc7d",
+        "docCategory": "BIAYA",
+        "score": 0.3128,
+        "compositeScore": -1000.8,
+        "preview": "Penjelasan Tambahan :  1.   Butir 1  sampai dengan 4  dibayar 1  kali  saja  pada awal masuk  2.   P"
+      },
+      {
+        "rank": 18,
+        "chunkId": "32b0526e-e1e5-46ff-9cd5-e844a5410e52",
+        "docCategory": "BIAYA",
+        "score": 0.4161,
+        "compositeScore": -1000.8,
+        "preview": "h  Yeh  Canl,  Badung -  Ball  -  Indonesia |  Pk  (0361)  4790925 |  Hotline :  082145099633  INSTI"
+      },
+      {
+        "rank": 19,
+        "chunkId": "56d195ca-0577-445d-bc41-531feb64da64",
+        "docCategory": "BIAYA",
+        "score": 0.3717,
+        "compositeScore": -1000.8,
+        "preview": "ersen).  4.   Khusus Alumni SMK TI  mendapatkan potongan 20% Biaya Pendidikan Per  Semester selama 4"
+      },
+      {
+        "rank": 20,
+        "chunkId": "c412f7ba-8d34-440d-9c96-ba2fe558092c",
+        "docCategory": "BIAYA",
+        "score": 0.4018,
+        "compositeScore": -1000.8,
+        "preview": "otongan  Biaya  Pendaftaran  :  Rp. 1.500.000,- Jika Mendaftar pada Gelombang Khusus  Rp. 1.250.000,"
+      }
+    ],
+    "afterFiltering": [],
+    "filterDecisions": [
+      {
+        "chunkId": "618a0474-969a-463f-91cd-c010a27beb48",
+        "sourceFile": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "sourceFile": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "KURIKULUM",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d5e1ddb8-6ef2-4c7e-81a7-654e2b6477c0",
+        "sourceFile": "unknown",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "sourceFile": "Kalender Pendaftaran.xlsx",
+        "docCategory": "JADWAL",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "sourceFile": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8",
+        "sourceFile": "HOBY.pdf",
+        "docCategory": "UNKNOWN",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "sourceFile": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "c6c92a40-8437-4942-81aa-3003a7a6ad6f",
+        "sourceFile": "SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf",
+        "docCategory": "AKREDITASI",
+        "decision": "REJECT",
+        "reason": "not_in_allowed_categories"
+      },
+      {
+        "chunkId": "0bfcc496-e685-48df-b451-5a55c58e9ee3",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3d903276-efe5-4ee9-807a-aa3ebcb828e6",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "be8ac37d-b7f4-4eb9-9271-3a19889b7cca",
+        "sourceFile": "SK PEMBINA ORMAWA 2026.pdf",
+        "docCategory": "SK",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+        "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+        "sourceFile": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      },
+      {
+        "chunkId": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "sourceFile": "unknown",
+        "docCategory": "BIAYA",
+        "decision": "REJECT",
+        "reason": "forbidden_category"
+      }
+    ]
+  }
+]

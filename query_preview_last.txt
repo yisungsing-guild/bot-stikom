@@ -1,0 +1,60 @@
+﻿    assistHintsLen: 24
+    compactPrompt: false
+{
+  "source": "gpt-4o-mini",
+  "answer": "≡ƒÄô Ini informasi mengenai program studi Teknologi Informasi.\n\nProgram studi Teknologi Informasi mencakup berbagai materi, antara lain:\n\n- Pemrograman: Belajar bahasa pemrograman dan pengembangan perangkat lunak.\n- Jaringan Komputer: Memahami konsep jaringan, pengaturan LAN/Wi Fi, dan keamanan jaringan.\n- Desain UI/UX: Mempelajari cara mendesain antarmuka pengguna yang efektif.\n- Pengolahan Data: Mengolah dan menganalisis data untuk pengambilan keputusan.\n\nLulusan dapat bekerja di berbagai bidang, seperti:\n\n- Pengembang perangkat lunak\n- Analis sistem\n- Spesialis jaringan\n- Desainer UI/UX\n\nMau ",
+  "confidenceTier": "HIGH",
+  "contexts": [
+    {
+      "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+      "filename": "hobi-sesuai-program-studi.docx",
+      "score": 0.5322338573368733
+    },
+    {
+      "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+      "score": 0.3854115989803329
+    },
+    {
+      "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+      "filename": "HOBY.pdf",
+      "score": 0.017603469079909492
+    },
+    {
+      "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+      "filename": "HOBY.pdf",
+      "score": -0.005160328760152995
+    },
+    {
+      "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+      "score": 0.43317128435866165
+    },
+    {
+      "id": "57133696-2e84-4e4b-96b9-6500af3a01b2",
+      "score": 0.3356524768810733
+    },
+    {
+      "id": "f2615890-0f34-4f41-aff0-411232af57d1",
+      "score": 0.36817665556400536
+    },
+    {
+      "id": "30de4303-a936-445f-b20f-0a12fd9001ab",
+      "filename": "SK PEMBINA ORMAWA 2026.pdf",
+      "score": 0.025667522052013166
+    }
+  ],
+  "debugQueryEntities": {
+    "intent": "ACADEMIC_PROGRAM",
+    "program": "TI",
+    "programMode": null,
+    "wave": null,
+    "waveGroup": null,
+    "academicYear": null,
+    "partner": null,
+    "campus": null,
+    "jalur": null,
+    "feeType": null,
+    "category": "PROGRAM_STUDI",
+    "pageNumber": null,
+    "academicIntent": "MATA_KULIAH"
+  }
+}

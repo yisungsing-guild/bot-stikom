@@ -1,0 +1,26 @@
+[
+  {
+    "username": "direktur",
+    "password": "ZKUcFmJBocDZh2hl",
+    "role": "superadmin",
+    "displayName": "DIR PEMASARAN DAN HUMAS"
+  },
+  {
+    "username": "international",
+    "password": "ITGWbCB3Lf3YSh3n",
+    "role": "admin",
+    "displayName": "DIR URUSAN INTERNASIONAL"
+  },
+  {
+    "username": "kerjasama",
+    "password": "ivsH2GcgMAoEAlY0",
+    "role": "admin",
+    "displayName": "DIR KERJASAMA, LAYANAN INDUSTRI, dan INKUBATOR BISNIS (KLINBIS)"
+  },
+  {
+    "username": "kemahasiswaan",
+    "password": "rsLI29mnecmbd461",
+    "role": "admin",
+    "displayName": "DIR KEMAHASISWAAN, KARIER, DAN ALUMNI (KKA)"
+  }
+]

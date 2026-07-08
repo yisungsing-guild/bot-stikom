@@ -1,0 +1,107 @@
+QUERY: berapa biaya TI gelombang 1A
+   1. SERTIFIKAT AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027). | AKREDITASI | GENERAL  | comp=3.414
+   2. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | COST     | comp=3.238
+   3. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | COST     | comp=3.235
+   4. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | COST     | comp=3.226
+   5. HOBY.pdf                                                | UNKNOWN   | GENERAL  | comp=3.093
+   6. hobi_prodi_lengkap (1).xlsx                             | UNKNOWN   | GENERAL  | comp=3.089
+   7. CamScanner 12-02-2026 14.39 (1).pdf                     | BIAYA     | GENERAL  | comp=1.715
+   8. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.666
+   9. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.661
+  10. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.654
+
+QUERY: berapa biaya TI gelombang 2C
+   1. SERTIFIKAT AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027). | AKREDITASI | GENERAL  | comp=3.414
+   2. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | COST     | comp=3.235
+   3. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | COST     | comp=3.234
+   4. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | COST     | comp=3.227
+   5. HOBY.pdf                                                | UNKNOWN   | GENERAL  | comp=3.086
+   6. hobi_prodi_lengkap (1).xlsx                             | UNKNOWN   | GENERAL  | comp=3.083
+   7. Kalender Pendaftaran TA 2026-2027 (1).xls               | JADWAL    | GENERAL  | comp=1.751
+   8. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.662
+   9. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.657
+  10. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.649
+
+QUERY: berapa biaya SI gelombang 2C
+   1. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=4.222
+   2. HOBY.pdf                                                | UNKNOWN   | GENERAL  | comp=3.092
+   3. HOBY.pdf                                                | UNKNOWN   | GENERAL  | comp=3.080
+   4. Penjelasan Prodi dan Karier Masa Depan (1).xlsx         | KURIKULUM | PROGRAM  | comp=2.872
+   5. hobi_prodi_lengkap (1).xlsx                             | UNKNOWN   | GENERAL  | comp=2.733
+   6. Kalender Pendaftaran TA 2026-2027 (1).xls               | JADWAL    | GENERAL  | comp=1.758
+   7. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | SCHEDULE | comp=1.644
+   8. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | SCHEDULE | comp=1.630
+   9. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | SCHEDULE | comp=1.626
+  10. rincian Biaya UTB Tahun Ajaran 2026-2027.pdf            | BIAYA     | SCHEDULE | comp=1.587
+
+QUERY: berapa biaya SK gelombang 1A
+   1. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=4.523
+   2. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | PROGRAM  | comp=4.445
+   3. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | PROGRAM  | comp=4.420
+   4. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | PROGRAM  | comp=4.398
+   5. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | GENERAL  | comp=4.333
+   6. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | GENERAL  | comp=4.308
+   7. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | GENERAL  | comp=4.304
+   8. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | PROGRAM  | comp=4.230
+   9. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | GENERAL  | comp=3.970
+  10. SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pd | AKREDITASI | PROGRAM  | comp=3.457
+
+QUERY: berapa biaya MI
+   1. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=4.526
+   2. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | GENERAL  | comp=4.280
+   3. SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pd | AKREDITASI | GENERAL  | comp=3.360
+   4. hobi_prodi_lengkap (1).xlsx                             | UNKNOWN   | GENERAL  | comp=3.129
+   5. HOBY.pdf                                                | UNKNOWN   | GENERAL  | comp=3.127
+   6. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.478
+   7. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.468
+   8. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | PROGRAM  | comp=1.465
+   9. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.465
+  10. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | GENERAL  | comp=1.465
+
+QUERY: berapa biaya S2 SI
+   1. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=4.216
+   2. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | GENERAL  | comp=3.949
+   3. HOBY.pdf                                                | UNKNOWN   | GENERAL  | comp=3.084
+   4. HOBY.pdf                                                | UNKNOWN   | GENERAL  | comp=3.071
+   5. Penjelasan Prodi dan Karier Masa Depan (1).xlsx         | KURIKULUM | PROGRAM  | comp=2.864
+   6. hobi_prodi_lengkap (1).xlsx                             | UNKNOWN   | GENERAL  | comp=2.726
+   7. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.541
+   8. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.528
+   9. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.526
+  10. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.525
+
+QUERY: berapa biaya DNUI
+   1. rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf           | BIAYA     | COST     | comp=2.428
+   2. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | COST     | comp=1.896
+   3. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | COST     | comp=1.895
+   4. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.456
+   5. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.451
+   6. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.451
+   7. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.443
+   8. rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf           | BIAYA     | GENERAL  | comp=1.400
+   9. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | GENERAL  | comp=1.392
+  10. PEDOMAN-RPL-SK Sistem Komputer.pdf                      | BIAYA     | PROGRAM  | comp=1.391
+
+QUERY: berapa biaya HELP
+   1. rincian Biaya HELP Tahun Ajaran 2026-2027.pdf           | BIAYA     | COST     | comp=2.278
+   2. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | COST     | comp=1.516
+   3. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | COST     | comp=1.514
+   4. rincian Biaya UTB Tahun Ajaran 2026-2027.pdf            | BIAYA     | COST     | comp=1.511
+   5. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | COST     | comp=1.510
+   6. rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf           | BIAYA     | COST     | comp=1.509
+   7. rincian Biaya UTB Tahun Ajaran 2026-2027.pdf            | BIAYA     | COST     | comp=1.508
+   8. rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf           | BIAYA     | COST     | comp=1.508
+   9. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | COST     | comp=1.507
+  10. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | COST     | comp=1.507
+
+QUERY: berapa biaya UTB
+   1. rincian Biaya UTB Tahun Ajaran 2026-2027.pdf            | BIAYA     | COST     | comp=1.916
+   2. rincian Biaya SK Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.485
+   3. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.473
+   4. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.470
+   5. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.469
+   6. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.469
+   7. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.468
+   8. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.466
+   9. rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf   | BIAYA     | PROGRAM  | comp=1.461
+  10. rincian Biaya D3 Tahun Ajaran 2026-2027.pdf             | BIAYA     | PROGRAM  | comp=1.456

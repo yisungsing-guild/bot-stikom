@@ -1,0 +1,27 @@
+[
+  {
+    "question": "Kalau dibandingkan biaya per semester, prodi mana yang lebih murah: Sistem Komputer atau Bisnis Digital?",
+    "answer": "Untuk Sistem Komputer, biaya pendidikan per semester (UKT): Rp 213225.\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-fee-semester-only"
+  },
+  {
+    "question": "Saya pilih BD, lalu apakah SI lebih murah per semester?",
+    "answer": "Untuk Bisnis Digital, biaya pendidikan per semester (UKT): Rp 6.500.000.\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-fee-semester-only"
+  },
+  {
+    "question": "Apa beda Sistem Komputer dan Bisnis Digital?",
+    "answer": "Sistem Komputer dan Bisnis Digital memiliki fokus yang berbeda dalam bidang studi.\n\n- Sistem Komputer: Berfokus pada analisis, perancangan, dan penerapan sistem tertanam, jaringan komputer, serta Internet of Things (IoT). Lulusan memiliki keterampilan teknis dalam pengembangan perangkat lunak dan manajemen jaringan.\n- Bisnis Digital: Menekankan pada penerapan teknologi digital dalam strategi bisnis, pemasaran, dan manajemen. Lulusan diharapkan mampu mengelola dan mengembangkan bisnis dengan memanfaatkan teknologi informasi.\n\nApa aspek tertentu dari kedua program yang ingin kamu ketahui lebih lanjut?",
+    "source": "gpt-4o-mini"
+  },
+  {
+    "question": "Biaya Bisnis Digital per semester?",
+    "answer": "Untuk Bisnis Digital, biaya pendidikan per semester (UKT): Rp 6.500.000.\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-fee-semester-only"
+  },
+  {
+    "question": "Biaya Sistem Komputer per semester?",
+    "answer": "Untuk Sistem Komputer, biaya pendidikan per semester (UKT): Rp 213225.\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "source": "rag-fee-semester-only"
+  }
+]

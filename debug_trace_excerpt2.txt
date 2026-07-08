@@ -1,0 +1,61 @@
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  registrationFee: false,
+  dpp: false,
+  dppDiscount: false,
+  registrationDiscount: false,
+  ukt: false,
+  scholarship: false,
+  hasAnyCost: null
+}
+[TRACE_PARSE_CHUNK_4_EXIT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  reason: 'no_money_fields_found'
+}
+[TRACE_PARSE_FEE_REJECT_REASON] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  chunkId: 'program_studi-29',
+  reason: 'no_money_fields_found',
+  queryProgram: 'TI',
+  entProgram: 'TI',
+  queryWave: '1A',
+  entWave: null,
+  queryWaveGroup: '1',
+  entWaveGroup: null,
+  queryAcademicYear: '2025',
+  entAcademicYear: null,
+  isGlobalDiscount: false,
+  chunkPreview: 'Program Studi Teknologi Informasi - Apa Yang Dipelajari\n' +
+    '# Apa Yang Dipelajari\n' +
+    '\n' +
+    'Pembelajaran mencakup'
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  chunkId: 'program_studi-29',
+  parsed: null
+}
+[TRACE_PARSE_FEE_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  chunkId: 'program_studi-31',
+  queryEntities: {
+    intent: 'COST',
+    program: 'TI',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2025',
+    campus: 'BALI'
+  },
+  chunkPreview: 'Program Studi Teknologi Informasi - Skill Yang Dipelajari\n' +
+    '# Skill Yang Dipelajari\n' +
+    '\n' +
+    'Skill yang dibangun meliputi coding standar industri, debugging, version control, desain arsitektur aplikasi, otomasi',
+  academicYear: '2025'
+}
+[TRACE_PARSE_CHUNK_1_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+  chunkId: 'program_studi-31',
+  isGlobalDiscount: false,
+  queryProgram: 'TI',
+  entProgram: 'TI',
+  queryWave: '1A',
+  entWave: null,

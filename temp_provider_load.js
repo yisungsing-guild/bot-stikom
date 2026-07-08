@@ -1,0 +1,16 @@
+﻿const fs = require('fs');
+const path = require('path');
+const Module = require('module');
+const file = path.resolve('src/routes/provider.js');
+let code = fs.readFileSync(file, 'utf8');
+const marker = '  return router;';
+const idx = code.lastIndexOf(marker);
+if (idx < 0) throw new Error('marker not found');
+code = code.slice(0, idx) + "  global.__providerInternals = { getActiveProgram, ragQueryWithEval, detectProgram, extractProgramHint, extractSpecificProgramHint, extractNonS1ProgramHint };\n" + code.slice(idx);
+const m = new Module(file, module.parent);
+m.filename = file;
+m.paths = Module._nodeModulePaths(path.dirname(file));
+m._compile(code, file);
+const providerFactory = m.exports;
+providerFactory({});
+console.log(Object.keys(global.__providerInternals));

@@ -1,0 +1,105 @@
+ +
+    '\n' +
+    'Apakah ada posisi tertentu di bidang TI yang ingin kamu ketahui lebih lanjut?\n' +
+    'B'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Prospek kerja di bidang Teknologi Informasi (TI) sangat luas dan menjanjikan. - Posisi yang umum: Pengembang perangkat l…'
+}
+[2026-06-05 13:53:07.795 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug: {
+      "query": "Program Studi: Teknologi Informasi\nMata kuliah TI?",
+      "detectedIntent": "ACADEMIC_PROGRAM",
+      "programHint": "TI",
+      "queryEntities": {
+        "intent": "ACADEMIC_PROGRAM",
+        "program": "TI",
+        "programLabel": "TEKNOLOGI_INFORMASI",
+        "programMode": null,
+        "wave": null,
+        "waveGroup": null,
+        "academicYear": null,
+        "partner": null,
+        "campus": null,
+        "jalur": null,
+        "feeType": null,
+        "category": "KURIKULUM",
+        "pageNumber": null,
+        "academicIntent": "MATA_KULIAH"
+      },
+      "selectedChunkCount": 6,
+      "selectedChunks": [
+        {
+          "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+          "filename": "hobi-sesuai-program-studi.docx",
+          "score": 0.4405209287988315
+        },
+        {
+          "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+          "filename": "HOBY.pdf",
+          "score": 0.0469596102449573
+        },
+        {
+          "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+          "score": 0.39551788234372387
+        },
+        {
+          "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+          "filename": "HOBY.pdf",
+          "score": 0.013490729946505773
+        },
+        {
+          "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+          "score": 0.44457955908526087
+        },
+        {
+          "id": "57133696-2e84-4e4b-96b9-6500af3a01b2",
+          "score": 0.3709316315800084
+        }
+      ],
+      "finalContextSources": [
+        "hobi-sesuai-program-studi.docx",
+        "HOBY.pdf",
+        "614dbde8-6a43-4f06-84da-3fab41c3538b"
+      ],
+      "sourceFiles": [
+        "hobi-sesuai-program-studi.docx",
+        "HOBY.pdf",
+        "614dbde8-6a43-4f06-84da-3fab41c3538b"
+      ],
+      "ragSource": "gpt-4o-mini",
+      "ragSuccess": true
+    }
+[2026-06-05 13:53:07.799 +0800] INFO: [Provider] Program retrieval audit
+    question: "Mata kuliah TI?"
+    detectedProgram: "Teknologi Informasi"
+    canonicalProgram: "Teknologi Informasi"
+    programSpecificQuestion: true
+    detectedIntent: "ACADEMIC_PROGRAM"
+    selectedRoute: "gpt-4o-mini"
+    retrievalQuery: "Program Studi: Teknologi Informasi\nMata kuliah TI?"
+    topChunks: [
+      {
+        "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "trainingId": "eee828da-6ee4-4591-a9a8-18fa2e73c822",
+        "divisionKey": null,
+        "score": 0.4405209287988315,
+        "snippet": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bi"
+      },
+      {
+        "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+        "filename": "HOBY.pdf",
+        "trainingId": "66bcaec6-88a7-4ac2-8ae4-660bd3084393",
+        "divisionKey": null,
+        "score": 0.0469596102449573,
+        "snippet": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi InformasiKomunitas IT 89 Teknologi InformasiStartup teknologi 90 Manajemen InformatikaOtak-atik komputer 91"
+      },
+      {
+        "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+        "filename": null,
+        "trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "divisionKey": null,
+        "score": 0.39551788234372387,
+        "snippet": "ran - 1 surat peraturan ini dan merupakan satu kesatuan yang tidak da

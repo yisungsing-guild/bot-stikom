@@ -1,0 +1,1543 @@
+{
+  "timestamp": "2026-06-29T00:36:47.283Z",
+  "botUrl": "http://localhost:4002",
+  "summary": {
+    "total": 55,
+    "passed": 4,
+    "failed": 51
+  },
+  "results": [
+    {
+      "id": 1,
+      "question": "Halo",
+      "expectedIntent": "GREETING",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 1,
+        "messageId": "75b5fca2-9c63-4c8a-80f7-4642c27871f6",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Jadi Kakak ingin tahu rincian biaya lengkap untuk Program Studi Manajemen Informatika. Saya jelaskan sekarang ya.\nBerikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Manajemen Informatika (Diploma):\n- Pendaftaran: Rp 500.000 - Pada Saat Daftar\n- Biaya Registrasi (Jas, Topi, GMTI): Rp 10.000.000 - Dicicil per bulan s/d UTS-1\n- Biaya Pendidikan Per Semester: Rp 4.500.000 - Menjelang Perwalian Kecuali Reg. 1\nTotal (dihitung): Rp 15.000.000\nMau saya rangkum juga skema potongan per ge",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:04.148Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "A",
+      "scenarioName": "Menu PMB - Greeting & Menu"
+    },
+    {
+      "id": 2,
+      "question": "Menu",
+      "expectedIntent": "MENU",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 2,
+        "messageId": "4bce70aa-7151-496d-9baf-af0eb890d1e5",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan mengenai Program Studi Teknologi Informasi.\nTeknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi komputer dan sistem informasi untuk mengelola, memproses, dan menyimpan data. TI mencakup berbagai aspek, termasuk perangkat keras, perangkat lunak, jaringan, dan pengelolaan informasi.\n- Fokus utama TI: pengembangan dan penerapan sistem informasi untuk mendukung pengambilan keputusan.\n- Bidang aplikasi: bisnis, pendidikan, kesehatan, dan ban",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:06.079Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "A",
+      "scenarioName": "Menu PMB - Greeting & Menu"
+    },
+    {
+      "id": 3,
+      "question": "Apa itu SI?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 3,
+        "messageId": "e64b1724-6447-4fb2-80f3-b4dc10f71209",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan mengenai Program Studi Teknologi Informasi.\nTeknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi komputer dan sistem informasi untuk mengelola, memproses, dan menyimpan data. TI mencakup berbagai aspek, termasuk perangkat keras, perangkat lunak, jaringan, dan pengelolaan informasi.\n- Fokus utama TI: pengembangan dan penerapan sistem informasi untuk mendukung pengambilan keputusan.\n- Bidang aplikasi: bisnis, pendidikan, kesehatan, dan ban",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:07.985Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "B",
+      "scenarioName": "Program Definition"
+    },
+    {
+      "id": 4,
+      "question": "Definisi TI",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 4,
+        "messageId": "347bedb2-a3ae-447b-8220-9d45198b948a",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan mengenai Program Studi Teknologi Informasi.\nTeknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi komputer dan sistem informasi untuk mengelola, memproses, dan menyimpan data. TI mencakup berbagai aspek, termasuk perangkat keras, perangkat lunak, jaringan, dan pengelolaan informasi.\n- Fokus utama TI: pengembangan dan penerapan sistem informasi untuk mendukung pengambilan keputusan.\n- Bidang aplikasi: bisnis, pendidikan, kesehatan, dan ban",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:10.270Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "B",
+      "scenarioName": "Program Definition"
+    },
+    {
+      "id": 5,
+      "question": "Jelaskan BD",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 5,
+        "messageId": "0e9af0f4-2caa-4ebd-bc6f-beff0e3811e8",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan mengenai Program Studi Teknologi Informasi.\nTeknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi komputer dan sistem informasi untuk mengelola, memproses, dan menyimpan data. TI mencakup berbagai aspek, termasuk perangkat keras, perangkat lunak, jaringan, dan pengelolaan informasi.\n- Fokus utama TI: pengembangan dan penerapan sistem informasi untuk mendukung pengambilan keputusan.\n- Bidang aplikasi: bisnis, pendidikan, kesehatan, dan ban",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:12.169Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "B",
+      "scenarioName": "Program Definition"
+    },
+    {
+      "id": 6,
+      "question": "SK apa sih?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 6,
+        "messageId": "d772ad7b-531c-44c6-bd92-acabe7c9439a",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan mengenai Program Studi Teknologi Informasi.\nTeknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi komputer dan sistem informasi untuk mengelola, memproses, dan menyimpan data. TI mencakup berbagai aspek, termasuk perangkat keras, perangkat lunak, jaringan, dan pengelolaan informasi.\n- Fokus utama TI: pengembangan dan penerapan sistem informasi untuk mendukung pengambilan keputusan.\n- Bidang aplikasi: bisnis, pendidikan, kesehatan, dan ban",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:14.058Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "B",
+      "scenarioName": "Program Definition"
+    },
+    {
+      "id": 7,
+      "question": "Program MI?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 7,
+        "messageId": "aecd22ab-338f-4f8b-b86e-4da44f1c0c0e",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Jadi Kakak ingin tahu biaya kuliah untuk Program Studi biasanya dapat bervariasi tergantung pada kebijakan kampus. Saya jelaskan sekarang ya.\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya Program Studi Teknologi Informasi.\nBiaya untuk program studi biasanya dapat bervariasi tergantung pada kebijakan kampus dan jenis program yang diambil. Untuk informasi akurat, sebaiknya Kakak menghubungi pihak administrasi kampus atau mengunjungi situs resmi mereka.\nKalau Kakak ingin tahu l",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:15.968Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "B",
+      "scenarioName": "Program Definition"
+    },
+    {
+      "id": 8,
+      "question": "SI prospeknya?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 8,
+        "messageId": "f6869de6-2d7f-4bfe-80b7-8dd7403d26c9",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\nAku nemu info yang relevan di data training:\nPROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada informasi lain yang Kakak butuhkan?\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\n- Adakah pertanyaan lain tentang pendaftaran atau pro",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:17.869Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "C",
+      "scenarioName": "Program & Prospect"
+    },
+    {
+      "id": 9,
+      "question": "TI dan karir?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 9,
+        "messageId": "40c24e26-a8cc-44c3-94dc-c38be7bf1fca",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\nAku nemu info yang relevan di data training:\nPROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada informasi lain yang Kakak butuhkan?\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\n- Adakah pertanyaan lain tentang pendaftaran atau pro",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:19.775Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "C",
+      "scenarioName": "Program & Prospect"
+    },
+    {
+      "id": 10,
+      "question": "BD peluang kerja?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 10,
+        "messageId": "5c592633-cacf-4257-9e7f-ee6d55d6f1f5",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\nAku nemu info yang relevan di data training:\nPROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada informasi lain yang Kakak butuhkan?\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\n- Adakah pertanyaan lain tentang pendaftaran atau pro",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:21.696Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "C",
+      "scenarioName": "Program & Prospect"
+    },
+    {
+      "id": 11,
+      "question": "SK jenjang?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 11,
+        "messageId": "1cd0265b-81f1-4b60-9162-7675011c2459",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan prospek karier lulusan ITB STIKOM Bali.\nProspek kerja untuk lulusan Program Studi Sistem Informasi umumnya cukup baik. Lulusan dapat bekerja di berbagai bidang, seperti:\n- Analis Sistem: Bertanggung jawab untuk menganalisis dan merancang sistem informasi yang efisien.\n- Pengembang Perangkat Lunak: Mengembangkan aplikasi dan perangkat lunak sesuai kebutuhan pengguna.\n- Manajer Proyek IT: Mengelola proyek teknologi informasi dari awal hingga akhir.\nLulusan juga memili",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:23.595Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "C",
+      "scenarioName": "Program & Prospect"
+    },
+    {
+      "id": 12,
+      "question": "MI arah karir?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 12,
+        "messageId": "981e8c52-d75f-46cf-84e0-8f295434ff96",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan prospek karier lulusan ITB STIKOM Bali.\nProspek kerja untuk lulusan Program Studi Sistem Informasi umumnya cukup baik. Lulusan dapat bekerja di berbagai bidang, seperti:\n- Analis Sistem: Bertanggung jawab untuk menganalisis dan merancang sistem informasi yang efisien.\n- Pengembang Perangkat Lunak: Mengembangkan aplikasi dan perangkat lunak sesuai kebutuhan pengguna.\n- Manajer Proyek IT: Mengelola proyek teknologi informasi dari awal hingga akhir.\nLulusan juga memili",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:25.503Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "C",
+      "scenarioName": "Program & Prospect"
+    },
+    {
+      "id": 13,
+      "question": "Biaya TI gelombang 1A?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 13,
+        "messageId": "f3615c4f-18a9-4067-9e75-a1a0c7638570",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan prospek karier lulusan ITB STIKOM Bali.\nProspek kerja untuk lulusan Program Studi Sistem Informasi umumnya cukup baik. Lulusan dapat bekerja di berbagai bidang, seperti:\n- Analis Sistem: Bertanggung jawab untuk menganalisis dan merancang sistem informasi yang efisien.\n- Pengembang Perangkat Lunak: Mengembangkan aplikasi dan perangkat lunak sesuai kebutuhan pengguna.\n- Manajer Proyek IT: Mengelola proyek teknologi informasi dari awal hingga akhir.\nLulusan juga memili",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:27.409Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "D",
+      "scenarioName": "Fee Inquiry - All Waves"
+    },
+    {
+      "id": 14,
+      "question": "Harga SI 2C?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 14,
+        "messageId": "cab16f65-5c04-4a27-8d01-e4484fb30266",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut penjelasan mengenai rincian biaya lengkap di ITB STIKOM Bali.\nSaya belum menemukan detail yang benar-benar sesuai mengenai rincian gelombang 2 pendaftaran di ITB STIKOM Bali.\nNamun, informasi yang ada menyebutkan bahwa terdapat beberapa gelombang pendaftaran, termasuk Gelombang III.\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada beasiswa atau potongan biaya?\n- Berapa cicilan biaya per bulannya?\n- Apakah ada skema pembayaran yang",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:29.409Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "D",
+      "scenarioName": "Fee Inquiry - All Waves"
+    },
+    {
+      "id": 15,
+      "question": "Biaya SK 1B?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 15,
+        "messageId": "3d9994d2-75e0-4b17-8e57-7a2ca11ec792",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut penjelasan mengenai biaya kuliah di ITB STIKOM Bali.\nProgram Studi: UTB\nGelombang: 3\nGelombang 3\nTahun Akademik: 2026\nPendaftaran:\nBiaya Pendaftaran:\nRp 1.000.000\nPotongan Pendaftaran Gelombang 3:\nRp 1.000.000\nTotal Pendaftaran:\nRp 0\nSubtotal Awal Masuk: Rp 0\nTotal Biaya Masuk:\nRp 0\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada beasiswa atau potongan biaya?\n- Berapa cicilan biaya per bulannya?\n- Apakah ada skema pembayaran yang",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:31.560Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "D",
+      "scenarioName": "Fee Inquiry - All Waves"
+    },
+    {
+      "id": 16,
+      "question": "MI gelombang 3?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 16,
+        "messageId": "45d8e7aa-6149-4791-89e9-5a903843c192",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut penjelasan mengenai biaya kuliah di ITB STIKOM Bali.\nProgram Studi: UTB\nGelombang: 3\nGelombang 3\nTahun Akademik: 2026\nPendaftaran:\nBiaya Pendaftaran:\nRp 1.000.000\nPotongan Pendaftaran Gelombang 3:\nRp 1.000.000\nTotal Pendaftaran:\nRp 0\nSubtotal Awal Masuk: Rp 0\nTotal Biaya Masuk:\nRp 0\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada beasiswa atau potongan biaya?\n- Berapa cicilan biaya per bulannya?\n- Apakah ada skema pembayaran yang",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:33.471Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "D",
+      "scenarioName": "Fee Inquiry - All Waves"
+    },
+    {
+      "id": 17,
+      "question": "BD Khusus?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 17,
+        "messageId": "662e1b03-16ce-44b2-8589-34bde79f58ea",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut penjelasan mengenai biaya kuliah di ITB STIKOM Bali.\nProgram Studi: UTB\nGelombang: 3\nGelombang 3\nTahun Akademik: 2026\nPendaftaran:\nBiaya Pendaftaran:\nRp 1.000.000\nPotongan Pendaftaran Gelombang 3:\nRp 1.000.000\nTotal Pendaftaran:\nRp 0\nSubtotal Awal Masuk: Rp 0\nTotal Biaya Masuk:\nRp 0\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada beasiswa atau potongan biaya?\n- Berapa cicilan biaya per bulannya?\n- Apakah ada skema pembayaran yang",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:35.358Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "D",
+      "scenarioName": "Fee Inquiry - All Waves"
+    },
+    {
+      "id": 18,
+      "question": "Biaya masuk TI?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 18,
+        "messageId": "f9e0f97b-f150-44b9-84a0-baf42aa934b0",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan prospek karier lulusan Bisnis Digital.\n- Posisi di bidang pemasaran digital: Lulusan dapat bekerja sebagai digital marketer, social media manager, atau content creator.\n- Kewirausahaan: Banyak lulusan yang memilih untuk memulai bisnis sendiri, seperti toko online atau agensi pemasaran.\n- Analisis data: Lulusan juga dapat berkarir sebagai data analyst untuk membantu perusahaan memahami tren pasar.\nApa bidang spesifik yang kamu minati dalam prospek kerja ini?\nKalau Ka",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:37.249Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "D",
+      "scenarioName": "Fee Inquiry - All Waves"
+    },
+    {
+      "id": 19,
+      "question": "DPP SI?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 19,
+        "messageId": "e26c5897-97b8-4ac5-875d-962fd67ca421",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\nProgram Studi Sistem Komputer memiliki beberapa profil lulusan yang diharapkan.\n- Profil lulusan pertama memiliki kemampuan dalam menganalisis, merancang, dan menerapkan sistem tertanam serta Internet of Things (Io Ts). Mereka juga diharapkan mampu mengintegrasikan perangkat lunak, komponen elektrik, dan algoritma sistem cerdas untuk tujuan spesifik.\n- Profil lulusan kedua fokus pada kemampuan dalam mengelola jaringan komput",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:39.152Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "D",
+      "scenarioName": "Fee Inquiry - All Waves"
+    },
+    {
+      "id": 20,
+      "question": "Uang kuliah BD?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 20,
+        "messageId": "47fc6e34-0203-4a90-a7b3-fe27cf1c6c82",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\nProgram Studi Sistem Komputer memiliki beberapa profil lulusan yang diharapkan.\n- Profil lulusan pertama memiliki kemampuan dalam menganalisis, merancang, dan menerapkan sistem tertanam serta Internet of Things (Io Ts). Mereka juga diharapkan mampu mengintegrasikan perangkat lunak, komponen elektrik, dan algoritma sistem cerdas untuk tujuan spesifik.\n- Profil lulusan kedua fokus pada kemampuan dalam mengelola jaringan komput",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:41.041Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "D",
+      "scenarioName": "Fee Inquiry - All Waves"
+    },
+    {
+      "id": 21,
+      "question": "Rincian biaya TI 1A lengkap?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 21,
+        "messageId": "04f2dbd6-62eb-402c-9e08-a024fab61099",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan mengenai Program Studi Sistem Komputer.\nProgram Studi Sistem Komputer memiliki dua profil lulusan utama yang diharapkan.\n- Profil lulusan pertama: Mampu menganalisis, merancang, dan menerapkan sistem tertanam serta Internet of Things (IoT), dengan kemampuan mengintegrasikan perangkat lunak, komponen elektrik, dan algoritma sistem cerdas untuk tujuan spesifik.\n- Profil lulusan kedua: Fokus pada pengelolaan jaringan komputer dan IoT dengan prinsip-prinsip keamanan jar",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:42.930Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 22,
+      "question": "Detail SI 2C?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 22,
+        "messageId": "22b4f4a5-254b-4449-8a04-23fc05c780e0",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya Program Studi Sistem Komputer.\nBiaya untuk program studi biasanya dapat bervariasi tergantung pada kebijakan institusi dan tahun ajaran.\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada informasi lain yang Kakak butuhkan?\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\n- Adakah pertanyaan lain tenta",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:44.825Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 23,
+      "question": "Breakdown SK 1B?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 23,
+        "messageId": "4dc5fe1b-147b-4f11-abe0-418d07d2d206",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya Program Studi Sistem Komputer.\nBiaya untuk program studi biasanya dapat bervariasi tergantung pada kebijakan institusi dan tahun ajaran.\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada informasi lain yang Kakak butuhkan?\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\n- Adakah pertanyaan lain tenta",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:46.728Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 24,
+      "question": "Komposisi MI 3?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 24,
+        "messageId": "93e47a62-4c57-4b06-9090-4a746e887ab9",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya Program Studi Sistem Komputer.\nBiaya untuk program studi biasanya dapat bervariasi tergantung pada kebijakan institusi dan tahun ajaran.\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada informasi lain yang Kakak butuhkan?\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\n- Adakah pertanyaan lain tenta",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:48.606Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 25,
+      "question": "Rincian BD Khusus?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 25,
+        "messageId": "686ef50a-86ca-4f4e-86f3-136545841ed3",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya Program Studi Sistem Komputer.\nBiaya untuk program studi biasanya dapat bervariasi tergantung pada kebijakan institusi dan tahun ajaran.\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n- Apakah ada informasi lain yang Kakak butuhkan?\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\n- Adakah pertanyaan lain tenta",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:50.519Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 26,
+      "question": "DPP TI 1A detil?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 26,
+        "messageId": "5f4c157d-3419-4c3b-983c-e4c15dd020bb",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan prospek karier lulusan Sistem Komputer.\nProgram Studi Sistem Komputer memiliki prospek kerja yang cukup luas dan menjanjikan.\n- Lulusan dapat bekerja di bidang teknologi informasi, seperti pengembang perangkat lunak, analis sistem, dan insinyur jaringan.\n- Selain itu, lulusan juga dapat berkarir di sektor Internet of Things (IoT) dan keamanan jaringan, mengingat keterampilan yang diperoleh dalam program studi ini.\nApa ada bidang tertentu yang ingin kamu ketahui lebi",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:52.407Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 27,
+      "question": "SI 2C apa saja?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 27,
+        "messageId": "cd53335c-2da9-4247-b0b6-74121bfe098a",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan prospek karier lulusan Sistem Komputer.\nProgram Studi Sistem Komputer memiliki prospek kerja yang cukup luas dan menjanjikan.\n- Lulusan dapat bekerja di bidang teknologi informasi, seperti pengembang perangkat lunak, analis sistem, dan insinyur jaringan.\n- Selain itu, lulusan juga dapat berkarir di sektor Internet of Things (IoT) dan keamanan jaringan, mengingat keterampilan yang diperoleh dalam program studi ini.\nApa ada bidang tertentu yang ingin kamu ketahui lebi",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:54.306Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 28,
+      "question": "SK 1B cicilan?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 28,
+        "messageId": "4ac25e68-df78-483a-8ca6-ae0aba766d21",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan prospek karier lulusan Sistem Komputer.\nProgram Studi Sistem Komputer memiliki prospek kerja yang cukup luas dan menjanjikan.\n- Lulusan dapat bekerja di bidang teknologi informasi, seperti pengembang perangkat lunak, analis sistem, dan insinyur jaringan.\n- Selain itu, lulusan juga dapat berkarir di sektor Internet of Things (IoT) dan keamanan jaringan, mengingat keterampilan yang diperoleh dalam program studi ini.\nApa ada bidang tertentu yang ingin kamu ketahui lebi",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:56.223Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 29,
+      "question": "MI 3 DPP?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 29,
+        "messageId": "28c3db3a-f1a0-4475-9c0e-b84dc4041d45",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Baik Kak, saya bantu jelaskan mengenai Program Studi Sistem Komputer.\nProgram Studi Sistem Komputer adalah program yang mempersiapkan mahasiswa untuk memahami dan mengembangkan sistem komputer serta aplikasi teknologi informasi.\n- Fokus utama program ini mencakup pengembangan perangkat lunak, analisis sistem, dan jaringan komputer.\n- Lulusan juga dilatih untuk berkarir di bidang Internet of Things (IoT) dan keamanan jaringan.\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga b",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:58.108Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 30,
+      "question": "BD biaya apa aja?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 30,
+        "messageId": "c06fb815-bc91-4825-9266-047604826fd8",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Ditemukan beberapa data berbeda pada dokumen.\n{\"ts\":\"2026-06-29T00:35:12.743Z\",\"tag\":\"detectIntentFromAnswerFromText\",\"data\":{\"answer\":\"Definisi Teknologi Informasi (TI) mencakup penggunaan sistem komputer dan perangkat lunak untuk mengelola, memproses, dan menyimpan informasi. TI mencakup berbagai aspek, termasuk:\\n\\n- Infrastruktur TI: perangkat keras, perangkat lunak, jaringan, dan data.\\n- Aplikasi TI: program dan sistem yang digunakan untuk mendukung operasi bisnis dan pengambilan keputusan",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:35:59.992Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 31,
+      "question": "TI cicilan?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 31,
+        "messageId": "587c4900-233d-4bb7-9fdb-3b7990a4e777",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Ditemukan beberapa data berbeda pada dokumen.\n{\"ts\":\"2026-06-29T00:35:12.743Z\",\"tag\":\"detectIntentFromAnswerFromText\",\"data\":{\"answer\":\"Definisi Teknologi Informasi (TI) mencakup penggunaan sistem komputer dan perangkat lunak untuk mengelola, memproses, dan menyimpan informasi. TI mencakup berbagai aspek, termasuk:\\n\\n- Infrastruktur TI: perangkat keras, perangkat lunak, jaringan, dan data.\\n- Aplikasi TI: program dan sistem yang digunakan untuk mendukung operasi bisnis dan pengambilan keputusan",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:01.872Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 32,
+      "question": "Biaya admin SI?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 32,
+        "messageId": "c1dd4ef6-b193-4f07-be70-58a8bacc7722",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Ditemukan beberapa data berbeda pada dokumen.\n{\"ts\":\"2026-06-29T00:35:12.743Z\",\"tag\":\"detectIntentFromAnswerFromText\",\"data\":{\"answer\":\"Definisi Teknologi Informasi (TI) mencakup penggunaan sistem komputer dan perangkat lunak untuk mengelola, memproses, dan menyimpan informasi. TI mencakup berbagai aspek, termasuk:\\n\\n- Infrastruktur TI: perangkat keras, perangkat lunak, jaringan, dan data.\\n- Aplikasi TI: program dan sistem yang digunakan untuk mendukung operasi bisnis dan pengambilan keputusan",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:03.744Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 33,
+      "question": "SPP SK?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 33,
+        "messageId": "c4306829-bb34-4e68-9b73-d5af6936ad70",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program studi Bisnis Digital & DKV mencakup berbagai aktivitas yang relevan dengan dunia digital dan pemasaran. Beberapa hobi atau aktivitas yang dapat dilakukan dalam program ini antara lain:\n- Membuat konten media sosial: Menghasilkan dan mengelola konten untuk platform media sosial.\n- Desain grafis: Menciptakan visual yang menarik untuk berbagai keperluan pemasaran.\nProgram ini juga mencakup aktivitas lain seperti editing video, fotografi produk, dan belajar digital marketing.\nApa ada aspek t",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:05.622Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 34,
+      "question": "Total MI?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 34,
+        "messageId": "91af7507-469d-46c7-a355-f495792f961a",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program studi Bisnis Digital & DKV mencakup berbagai aktivitas yang relevan dengan dunia digital dan pemasaran. Beberapa hobi atau aktivitas yang dapat dilakukan dalam program ini antara lain:\n- Membuat konten media sosial: Menghasilkan dan mengelola konten untuk platform media sosial.\n- Desain grafis: Menciptakan visual yang menarik untuk berbagai keperluan pemasaran.\nProgram ini juga mencakup aktivitas lain seperti editing video, fotografi produk, dan belajar digital marketing.\nApa ada aspek t",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:07.503Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "E",
+      "scenarioName": "Fee Breakdown - Detail"
+    },
+    {
+      "id": 35,
+      "question": "TI apa?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 35,
+        "messageId": "17e54f33-c953-43b9-96bb-b8206c4105f6",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program studi Bisnis Digital & DKV mencakup berbagai aktivitas yang relevan dengan dunia digital dan pemasaran. Beberapa hobi atau aktivitas yang dapat dilakukan dalam program ini antara lain:\n- Membuat konten media sosial: Menghasilkan dan mengelola konten untuk platform media sosial.\n- Desain grafis: Menciptakan visual yang menarik untuk berbagai keperluan pemasaran.\nProgram ini juga mencakup aktivitas lain seperti editing video, fotografi produk, dan belajar digital marketing.\nApa ada aspek t",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:09.392Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "F",
+      "scenarioName": "Multi-turn Conversation"
+    },
+    {
+      "id": 36,
+      "question": "Prospeknya?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 36,
+        "messageId": "d786c3be-91f3-4874-b2f3-bc65b40c6220",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Berikut rincian biaya yang tersedia:\n- 39 Sistem Komputer Proyek otomatisasi 40 Sistem Komputer Komunitas IT 41 Sistem Komputer Blog teknologi 42 Sistem Komputer Troubleshooting 43 Sistem Komputer Simulasi jaringan 44 Sistem Komputer Membuat game 45 Sistem Komputer Kursus teknologi 46 Sistem Informasi Bermain game 47 Sistem Informasi Menggambar 48 Sistem Informasi Animasi/drama 49 Sistem Informasi Analisis data & bisnis 50 Sistem Informasi Desain grafis 51 Sistem Informasi Fotografi 52 Sistem In",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:11.268Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "F",
+      "scenarioName": "Multi-turn Conversation"
+    },
+    {
+      "id": 37,
+      "question": "Biaya?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 37,
+        "messageId": "e50e584d-fb77-4e70-8113-7f118942dc88",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program studi Teknologi Informasi menawarkan berbagai peluang karir yang menjanjikan.\n- Pengembang Perangkat Lunak: Bertanggung jawab untuk merancang, mengembangkan, dan memelihara aplikasi perangkat lunak.\n- Analis Sistem: Menganalisis dan merancang sistem informasi untuk memenuhi kebutuhan bisnis.\nApa aspek karir di bidang Teknologi Informasi yang paling menarik bagi kamu?\n{\"ts\":\"2026-06-29T00:35:22.936Z\",\"tag\":\"detectIntentFromAnswerFromText\",\"data\":{\"answer\":\"Peluang kerja untuk lulusan Prog",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:13.144Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "F",
+      "scenarioName": "Multi-turn Conversation"
+    },
+    {
+      "id": 38,
+      "question": "Gelombang 1A",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 38,
+        "messageId": "a9382dee-cfb6-40c2-b76c-3609d7f09151",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program Studi: TI\nGelombang: 1A\nGelombang 1A\nTahun Akademik: 2026\nPendaftaran:\nBiaya Pendaftaran:\nRp 500.000\nPotongan Pendaftaran Gelombang 1:\nRp 2.000.000\nTotal Pendaftaran:\nRp 0\nDPP:\nRp 14.000.000\nBiaya Perlengkapan:\n- Jas Alamater, Topi: 750.000\n- Kaos, Tas, GMTI: 750.000\nSubtotal Awal Masuk: Rp 15.500.000\nTotal Biaya Masuk:\nRp 15.500.000\nSumber:\n- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\n{\"ts\":\"2026-0",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:15.022Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "F",
+      "scenarioName": "Multi-turn Conversation"
+    },
+    {
+      "id": 39,
+      "question": "Rincian?",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 39,
+        "messageId": "5c05a010-9611-4f96-83fe-cdd7d55e4a02",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Lulusan Program Studi Bisnis Digital memiliki berbagai arah karir yang menarik.\n- Pemasaran Digital: Mengembangkan strategi pemasaran online untuk meningkatkan visibilitas dan penjualan produk.\n- Manajemen Media Sosial: Mengelola akun media sosial untuk membangun brand dan berinteraksi dengan pelanggan.\n- Analisis Data: Menggunakan data untuk membuat keputusan bisnis yang lebih baik.\n- E-commerce: Mengelola platform penjualan online dan strategi pemasaran terkait.\nApakah ada arah karir tertentu ",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:16.894Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "F",
+      "scenarioName": "Multi-turn Conversation"
+    },
+    {
+      "id": 40,
+      "question": "TI vs SI?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 40,
+        "messageId": "3e1afe0c-18c1-472e-9068-1585919e0c44",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Lulusan Program Studi Bisnis Digital memiliki berbagai arah karir yang menarik.\n- Pemasaran Digital: Mengembangkan strategi pemasaran online untuk meningkatkan visibilitas dan penjualan produk.\n- Manajemen Media Sosial: Mengelola akun media sosial untuk membangun brand dan berinteraksi dengan pelanggan.\n- Analisis Data: Menggunakan data untuk membuat keputusan bisnis yang lebih baik.\n- E-commerce: Mengelola platform penjualan online dan strategi pemasaran terkait.\nApakah ada arah karir tertentu ",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:18.791Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 41,
+      "question": "BD biaya",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 41,
+        "messageId": "a7347c71-4f59-42b8-9506-fefc41a38506",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Lulusan Program Studi Bisnis Digital memiliki berbagai arah karir yang menarik.\n- Pemasaran Digital: Mengembangkan strategi pemasaran online untuk meningkatkan visibilitas dan penjualan produk.\n- Manajemen Media Sosial: Mengelola akun media sosial untuk membangun brand dan berinteraksi dengan pelanggan.\n- Analisis Data: Menggunakan data untuk membuat keputusan bisnis yang lebih baik.\n- E-commerce: Mengelola platform penjualan online dan strategi pemasaran terkait.\nApakah ada arah karir tertentu ",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:20.664Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 42,
+      "question": "Balik SI",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 42,
+        "messageId": "84dda86d-5699-4cf8-93ff-9b45e69492ef",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program Studi: SK\nGelombang: KHUSUS\nGelombang KHUSUS\nTahun Akademik: 2026\nPendaftaran:\nPotongan Pendaftaran:\nRp 300.000,\nSumber:\n- rincian Biaya SK Tahun Ajaran 2026-2027.pdf\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\n{\"ts\":\"2026-06-29T00:35:33.183Z\",\"tag\":\"detectIntentFromAnswer\",\"data\":{\"mainAnswer\":\"Program Studi: SK\\nGelombang: 2\\nGelombang 2\\nTahun Akademik: 2026\\n\\nPendaftaran:\\n\\nBiaya Pendaftaran:\\nRp 750.000\\n\\nPotongan Pendaftaran Gelombang 2:\\nRp 750",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:22.557Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 43,
+      "question": "SK vs MI?",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 43,
+        "messageId": "bdfc52c1-f6a9-4329-89d6-b75ae0b138b2",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program Studi: SK\nGelombang: KHUSUS\nGelombang KHUSUS\nTahun Akademik: 2026\nPendaftaran:\nPotongan Pendaftaran:\nRp 300.000,\nSumber:\n- rincian Biaya SK Tahun Ajaran 2026-2027.pdf\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\n{\"ts\":\"2026-06-29T00:35:33.183Z\",\"tag\":\"detectIntentFromAnswer\",\"data\":{\"mainAnswer\":\"Program Studi: SK\\nGelombang: 2\\nGelombang 2\\nTahun Akademik: 2026\\n\\nPendaftaran:\\n\\nBiaya Pendaftaran:\\nRp 750.000\\n\\nPotongan Pendaftaran Gelombang 2:\\nRp 750",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:24.434Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 44,
+      "question": "SK info",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 44,
+        "messageId": "badc2a1e-2525-47d3-b7e0-bd6f2cac592b",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program Studi: SK\nGelombang: KHUSUS\nGelombang KHUSUS\nTahun Akademik: 2026\nPendaftaran:\nPotongan Pendaftaran:\nRp 300.000,\nSumber:\n- rincian Biaya SK Tahun Ajaran 2026-2027.pdf\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\n{\"ts\":\"2026-06-29T00:35:33.183Z\",\"tag\":\"detectIntentFromAnswer\",\"data\":{\"mainAnswer\":\"Program Studi: SK\\nGelombang: 2\\nGelombang 2\\nTahun Akademik: 2026\\n\\nPendaftaran:\\n\\nBiaya Pendaftaran:\\nRp 750.000\\n\\nPotongan Pendaftaran Gelombang 2:\\nRp 750",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:26.308Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 45,
+      "question": "SI",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 45,
+        "messageId": "a576cb03-d0ff-4f88-95ec-7bc08d1063e4",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program Studi: SK\nGelombang: KHUSUS\nGelombang KHUSUS\nTahun Akademik: 2026\nPendaftaran:\nPotongan Pendaftaran:\nRp 300.000,\nSumber:\n- rincian Biaya SK Tahun Ajaran 2026-2027.pdf\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\n{\"ts\":\"2026-06-29T00:35:33.183Z\",\"tag\":\"detectIntentFromAnswer\",\"data\":{\"mainAnswer\":\"Program Studi: SK\\nGelombang: 2\\nGelombang 2\\nTahun Akademik: 2026\\n\\nPendaftaran:\\n\\nBiaya Pendaftaran:\\nRp 750.000\\n\\nPotongan Pendaftaran Gelombang 2:\\nRp 750",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:28.188Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 46,
+      "question": "SI biaya 1A",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 46,
+        "messageId": "36bf36a7-2758-4240-8a18-42399cf3b597",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program Studi: TI (MM)\nGelombang: Gelombang\nGelombang Gelombang\nTahun Akademik: 2026\nPendaftaran:\nPotongan Pendaftaran:\nRp 1.000.000\nSumber:\n- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\n{\"ts\":\"2026-06-29T00:35:36.968Z\",\"tag\":\"detectIntentFromAnswerFromText\",\"data\":{\"answer\":\"Program studi Bisnis Digital memiliki beberapa kegiatan khusus yang dapat diikuti oleh mahasiswa.\\n\\n- Kegiatan yang relevan:\\n\\n- Mem",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:30.062Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 47,
+      "question": "TI 2C",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 47,
+        "messageId": "e3a57116-4093-4418-ac08-c4de19b40e6d",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program studi Bisnis Digital memiliki beberapa kegiatan khusus yang dapat diikuti oleh mahasiswa.\n- Kegiatan yang relevan:\n- Membuat konten media sosial\n- Mengelola toko online/offline\n- Belajar digital marketing\n- Mengikuti webinar bisnis\nKegiatan ini dirancang untuk meningkatkan keterampilan praktis dan pengetahuan di bidang bisnis digital.\nApakah ada kegiatan khusus lain yang ingin kamu ketahui lebih lanjut?\n{\"ts\":\"2026-06-29T00:35:38.916Z\",\"tag\":\"detectIntentFromAnswer\",\"data\":{\"mainAnswer\":",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:31.941Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 48,
+      "question": "MI juga",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 48,
+        "messageId": "f2a10d57-0668-42ef-84db-b852a808d426",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program studi Bisnis Digital memiliki beberapa kegiatan khusus yang dapat diikuti oleh mahasiswa.\n- Kegiatan yang relevan:\n- Membuat konten media sosial\n- Mengelola toko online/offline\n- Belajar digital marketing\n- Mengikuti webinar bisnis\nKegiatan ini dirancang untuk meningkatkan keterampilan praktis dan pengetahuan di bidang bisnis digital.\nApakah ada kegiatan khusus lain yang ingin kamu ketahui lebih lanjut?\n{\"ts\":\"2026-06-29T00:35:38.916Z\",\"tag\":\"detectIntentFromAnswer\",\"data\":{\"mainAnswer\":",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:33.816Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 49,
+      "question": "BD",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 49,
+        "messageId": "9cfa380b-3a8a-4e91-bb4d-dd8406c96d48",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program studi Bisnis Digital memiliki beberapa kegiatan khusus yang dapat diikuti oleh mahasiswa.\n- Kegiatan yang relevan:\n- Membuat konten media sosial\n- Mengelola toko online/offline\n- Belajar digital marketing\n- Mengikuti webinar bisnis\nKegiatan ini dirancang untuk meningkatkan keterampilan praktis dan pengetahuan di bidang bisnis digital.\nApakah ada kegiatan khusus lain yang ingin kamu ketahui lebih lanjut?\n{\"ts\":\"2026-06-29T00:35:38.916Z\",\"tag\":\"detectIntentFromAnswer\",\"data\":{\"mainAnswer\":",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:35.691Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 50,
+      "question": "BD semua biaya",
+      "expectedIntent": "COST",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 50,
+        "messageId": "d257c4e2-03ce-4c8e-8929-a468d12f72cd",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Untuk Prodi Bisnis Digital, biaya pendidikan per semester: Rp 4.500.000.\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n* Beasiswa KIP\n* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n* Beasiswa Prestasi\n* Beasiswa Yayasan\n* Beasiswa khusus untuk alumni — silakan hubungi PMB untuk detail\n* Kuliah Sambil Kerja di Luar Negeri\nApakah Kakak ingin dijelaskan tentang?\n* Biaya perkuliahan program studi yang lainnya\n* Salah",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:37.574Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 51,
+      "question": "SK lagi",
+      "expectedIntent": "ACADEMIC_PROGRAM",
+      "detectedIntent": null,
+      "status": "FAIL",
+      "flow": {
+        "testId": 51,
+        "messageId": "88ee8f5d-24a7-41e9-8577-0fe957af4afe",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Untuk Prodi Bisnis Digital, biaya pendidikan per semester: Rp 4.500.000.\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n* Beasiswa KIP\n* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n* Beasiswa Prestasi\n* Beasiswa Yayasan\n* Beasiswa khusus untuk alumni — silakan hubungi PMB untuk detail\n* Kuliah Sambil Kerja di Luar Negeri\nApakah Kakak ingin dijelaskan tentang?\n* Biaya perkuliahan program studi yang lainnya\n* Salah",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:39.459Z",
+      "reason": "INTENT_MISMATCH",
+      "scenario": "G",
+      "scenarioName": "Program Switching"
+    },
+    {
+      "id": 52,
+      "question": "Berapa?",
+      "detectedIntent": null,
+      "status": "PASS",
+      "flow": {
+        "testId": 52,
+        "messageId": "9163434b-ad8c-453a-9e02-53ea3d725d37",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program Studi: TI (MM)\nGelombang: Gelombang\nGelombang Gelombang\nTahun Akademik: 2026\nPendaftaran:\nPotongan Pendaftaran:\nRp 1.000.000\nSumber:\n- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n{\"ts\":\"2026-06-29T00:35:43.492Z\",\"tag\":\"detectIntentFromAnswerFromText\",\"data\":{\"answer\":\"Perbandingan singkat: Sistem Informasi vs Teknologi Informasi\\n\\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sis",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:41.340Z",
+      "scenario": "H",
+      "scenarioName": "Edge Cases - Ambiguous"
+    },
+    {
+      "id": 53,
+      "question": "Apa?",
+      "detectedIntent": null,
+      "status": "PASS",
+      "flow": {
+        "testId": 53,
+        "messageId": "9f564c14-72a4-4c5d-8d95-b35ea0e4d547",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program Studi: TI (MM)\nGelombang: Gelombang\nGelombang Gelombang\nTahun Akademik: 2026\nPendaftaran:\nPotongan Pendaftaran:\nRp 1.000.000\nSumber:\n- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n{\"ts\":\"2026-06-29T00:35:43.492Z\",\"tag\":\"detectIntentFromAnswerFromText\",\"data\":{\"answer\":\"Perbandingan singkat: Sistem Informasi vs Teknologi Informasi\\n\\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sis",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:43.220Z",
+      "scenario": "H",
+      "scenarioName": "Edge Cases - Ambiguous"
+    },
+    {
+      "id": 54,
+      "question": "Gimana?",
+      "detectedIntent": null,
+      "status": "PASS",
+      "flow": {
+        "testId": 54,
+        "messageId": "7d5eb4f2-111a-4809-999f-38467e56b270",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Program Studi: TI (MM)\nGelombang: Gelombang\nGelombang Gelombang\nTahun Akademik: 2026\nPendaftaran:\nPotongan Pendaftaran:\nRp 1.000.000\nSumber:\n- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n{\"ts\":\"2026-06-29T00:35:43.492Z\",\"tag\":\"detectIntentFromAnswerFromText\",\"data\":{\"answer\":\"Perbandingan singkat: Sistem Informasi vs Teknologi Informasi\\n\\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sis",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:45.097Z",
+      "scenario": "H",
+      "scenarioName": "Edge Cases - Ambiguous"
+    },
+    {
+      "id": 55,
+      "question": "Bisa?",
+      "detectedIntent": null,
+      "status": "PASS",
+      "flow": {
+        "testId": 55,
+        "messageId": "ed60a428-8c0b-4b39-8d03-be92fceed784",
+        "intent": null,
+        "ruleMatched": null,
+        "ragUsed": false,
+        "ragScore": null,
+        "humanized": false,
+        "formatted": false,
+        "finalMessage": "Perbandingan singkat: Sistem Informasi vs Teknologi Informasi\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard. Lulusan: Business Analyst, System Analyst.\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastruktur, keamanan, dan machine learning. Lulusan: Software Developer, Dev Ops, Data Engineer.\nPerbandingan cepat:\n- Bisnis Digital (BD) = lebih condong ke pemasaran digital, monetisasi, dan insight pasar.\n- Sistem ",
+        "events": [
+          {
+            "type": "FINAL_MESSAGE",
+            "length": 500
+          }
+        ]
+      },
+      "timestamp": "2026-06-29T00:36:46.975Z",
+      "scenario": "H",
+      "scenarioName": "Edge Cases - Ambiguous"
+    }
+  ]
+}

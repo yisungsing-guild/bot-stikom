@@ -1,0 +1,618 @@
+[
+  {
+    "query": "Apa syarat beasiswa KIP di STIKOM Bali?",
+    "incomingIntent": "PROGRAM",
+    "routedIntent": "PROGRAM",
+    "humanizerIntent": "beasiswa",
+    "finalIntent": "beasiswa",
+    "ragUsed": true,
+    "rawRAG": "Beasiswa KIP adalah program bantuan biaya pendidikan untuk siswa tidak mampu dengan persyaratan khusus pemerintah. Biasanya mencakup keringanan biaya DPP/UKT sesuai ketentuan, dan informasi detail dapat ditanyakan ke admin PMB untuk status KIP terbaru.\\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?\\n[TRACE_INTENT_OVER",
+    "finalMessage": "Baik Kak, saya bantu jelaskan mengenai beasiswa KIP.\\n\\nBeasiswa KIP adalah program bantuan biaya pendidikan untuk siswa tidak mampu dengan persyaratan khusus pemerintah. Biasanya mencakup keringanan biaya DPP/UKT sesuai ketentuan, dan informasi detail dapat ditanyakan ke admin PMB untuk status KIP terbaru.\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apa syarat KIP?\\n- Bagaimana cara daftar KIP?\\n- ",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Bagaimana cara daftar beasiswa KIP?",
+    "incomingIntent": "SCHEDULE",
+    "routedIntent": "SCHEDULE",
+    "humanizerIntent": "beasiswa",
+    "finalIntent": "beasiswa",
+    "ragUsed": true,
+    "rawRAG": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n\\n- Beasiswa ranking kelas\\n- Beasiswa prestasi (lokal/nasional/internasional)\\n- Beasiswa KIP\\n- Beasiswa 1K1S\\n- Beasiswa Yayasan\\n\\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\\nMau saya jelaskan lebih lanjut piliha",
+    "finalMessage": "Baik Kak, saya bantu jelaskan mengenai beasiswa KIP.\\n\\nAda beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n- Beasiswa ranking kelas\\n- Beasiswa prestasi (lokal/nasional/internasional)\\n- Beasiswa KIP\\n- Beasiswa 1K1S\\n- Beasiswa Yayasan\\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\\n\\nSingkatnya, Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\\n\\nKal",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Kapan pendaftaran beasiswa KIP dibuka?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": null,
+    "finalIntent": "COST",
+    "ragUsed": false,
+    "rawRAG": "Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut 🙏\\n\\nAgar saya bisa membantu lebih baik, coba tuliskan pertanyaan\\ndengan lebih spesifik, misalnya:\\n  - Nama program studi yang dimaksud\\n  - Gelombang pendaftaran\\n  - Topik yang ingin diketahui\\n\\nAtau jika ingin langsung berbicara dengan tim kami, di bawah ini 👇\\n\\n",
+    "finalMessage": "Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut\\n\\nAgar saya bisa membantu lebih baik, coba tuliskan pertanyaan\\ndengan lebih spesifik, misalnya:\\n- Nama program studi yang dimaksud\\n- Gelombang pendaftaran\\n- Topik yang ingin diketahui\\n\\nAtau jika ingin langsung berbicara dengan tim kami, di bawah ini\\n\\n[ Hubungi Admin ]",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": false,
+      "source": "fallback"
+    }
+  },
+  {
+    "query": "Apa saja persyaratan beasiswa 1K1S?",
+    "incomingIntent": "SCHOLARSHIP",
+    "routedIntent": "SCHOLARSHIP",
+    "humanizerIntent": "SCHOLARSHIP",
+    "finalIntent": "SCHOLARSHIP",
+    "ragUsed": true,
+    "rawRAG": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n\\n- Beasiswa ranking kelas\\n- Beasiswa prestasi (lokal/nasional/internasional)\\n- Beasiswa KIP\\n- Beasiswa 1K1S\\n- Beasiswa Yayasan\\n\\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\\nMau saya jelaskan lebih lanjut piliha",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nAda beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n- Beasiswa ranking kelas\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Bagaimana proses seleksi 1K1S?",
+    "incomingIntent": "GENERAL",
+    "routedIntent": "GENERAL",
+    "humanizerIntent": "beasiswa",
+    "finalIntent": "beasiswa",
+    "ragUsed": true,
+    "rawRAG": "Beasiswa 1K1S adalah beasiswa untuk keluarga dengan satu anak yang menyelesaikan pendidikan sarjana. Biasanya memberikan potongan biaya DPP/UKT bagi calon mahasiswa yang memenuhi syarat keluarga, namun ketentuan final perlu dikonfirmasi ke bagian PMB.\\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?\\n[TRACE_INTENT_OVERR",
+    "finalMessage": "Baik Kak, saya bantu jelaskan mengenai beasiswa KIP 1K1S.\\n\\nBeasiswa 1K1S adalah beasiswa untuk keluarga dengan satu anak yang menyelesaikan pendidikan sarjana. Biasanya memberikan potongan biaya DPP/UKT bagi calon mahasiswa yang memenuhi syarat keluarga, namun ketentuan final perlu dikonfirmasi ke bagian PMB.\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apa syarat 1K1S?\\n- Bagaimana proses seleksi ",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apakah beasiswa 1K1S tersedia untuk TI?",
+    "incomingIntent": "SCHOLARSHIP",
+    "routedIntent": "SCHOLARSHIP",
+    "humanizerIntent": "SCHOLARSHIP",
+    "finalIntent": "SCHOLARSHIP",
+    "ragUsed": true,
+    "rawRAG": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n\\n- Beasiswa ranking kelas\\n- Beasiswa prestasi (lokal/nasional/internasional)\\n- Beasiswa KIP\\n- Beasiswa 1K1S\\n- Beasiswa Yayasan\\n\\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\\n[TRACE_INTENT_OVERRIDE] {\"action\":\"pr",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nAda beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n- Beasiswa ranking kelas\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apa syarat beasiswa prestasi?",
+    "incomingIntent": "SCHOLARSHIP",
+    "routedIntent": "SCHOLARSHIP",
+    "humanizerIntent": "SCHOLARSHIP",
+    "finalIntent": "SCHOLARSHIP",
+    "ragUsed": true,
+    "rawRAG": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?\\n[TRACE_INTENT_OVERRIDE] {\"action\":\"preserved\",\"incomingIntent\":\"SCHOLARSHIP\",\"incomingConfidence\":0.85,\"candidateIntent\":\"beas",
+    "finalMessage": "Maaf Kak, saat ini saya belum menemukan informasi tersebut pada basis pengetahuan saya. Silakan hubungi Admin PMB atau ajukan pertanyaan lain terkait PMB ITB STIKOM Bali.\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Bagaimana mengajukan beasiswa prestasi?",
+    "incomingIntent": "SCHOLARSHIP",
+    "routedIntent": "SCHOLARSHIP",
+    "humanizerIntent": "SCHOLARSHIP",
+    "finalIntent": "SCHOLARSHIP",
+    "ragUsed": true,
+    "rawRAG": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?\\n[TRACE_INTENT_OVERRIDE] {\"action\":\"preserved\",\"incomingIntent\":\"SCHOLARSHIP\",\"incomingConfidence\":0.85,\"candidateIntent\":\"beas",
+    "finalMessage": "Maaf Kak, saat ini saya belum menemukan informasi tersebut pada basis pengetahuan saya. Silakan hubungi Admin PMB atau ajukan pertanyaan lain terkait PMB ITB STIKOM Bali.\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi?\\n[ProviderRo",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Berapa besar potongan beasiswa prestasi?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": true,
+    "rawRAG": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?\\n\\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku te",
+    "finalMessage": "Maaf Kak, saat ini saya belum menemukan informasi tersebut pada basis pengetahuan saya untuk Program Studi Teknologi Informasi. Silakan hubungi Admin PMB atau ajukan pertanyaan lain terkait PMB ITB STIKOM Bali.\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pend",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Coba jelaskan beasiswa yayasan yang ada di STIKOM Bali.",
+    "incomingIntent": "PROGRAM",
+    "routedIntent": "PROGRAM",
+    "humanizerIntent": "beasiswa",
+    "finalIntent": "beasiswa",
+    "ragUsed": true,
+    "rawRAG": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n\\n- Beasiswa ranking kelas\\n- Beasiswa prestasi (lokal/nasional/internasional)\\n- Beasiswa KIP\\n- Beasiswa 1K1S\\n- Beasiswa Yayasan\\n\\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\\nMau saya jelaskan lebih lanjut piliha",
+    "finalMessage": "Baik Kak, saya bantu jelaskan mengenai beasiswa kemitraan/yayasan.\\n\\nAda beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n- Beasiswa ranking kelas\\n- Beasiswa prestasi (lokal/nasional/internasional)\\n- Beasiswa KIP\\n- Beasiswa 1K1S\\n- Beasiswa Yayasan\\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\\n\\nSingkatnya, Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Ya",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apa saja kriteria beasiswa yayasan?",
+    "incomingIntent": "SCHOLARSHIP",
+    "routedIntent": "SCHOLARSHIP",
+    "humanizerIntent": "SCHOLARSHIP",
+    "finalIntent": "SCHOLARSHIP",
+    "ragUsed": true,
+    "rawRAG": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n\\n- Beasiswa ranking kelas\\n- Beasiswa prestasi (lokal/nasional/internasional)\\n- Beasiswa KIP\\n- Beasiswa 1K1S\\n- Beasiswa Yayasan\\n\\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\\nMau saya jelaskan lebih lanjut piliha",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nAda beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n- Beasiswa ranking kelas\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Bagaimana mendaftar beasiswa yayasan?",
+    "incomingIntent": "SCHOLARSHIP",
+    "routedIntent": "SCHOLARSHIP",
+    "humanizerIntent": "SCHOLARSHIP",
+    "finalIntent": "SCHOLARSHIP",
+    "ragUsed": true,
+    "rawRAG": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n\\n- Beasiswa ranking kelas\\n- Beasiswa prestasi (lokal/nasional/internasional)\\n- Beasiswa KIP\\n- Beasiswa 1K1S\\n- Beasiswa Yayasan\\n\\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\\nMau saya jelaskan lebih lanjut piliha",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nAda beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\\n- Beasiswa ranking kelas\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Berapa biaya masuk TI?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": false,
+    "rawRAG": "Baik, untuk S1 Program Studi Teknologi Informasi.\\nAgar saya bisa hitungkan totalnya dengan tepat, kakak daftar skenario yang mana?\\n- Gelombang berapa (Khusus/I/II/III/IV)?\\n- Ada pengakuan SKS / cuti / rencana sampai tesis (semester 5+) atau jalur reguler biasa?\\n[TRACE_INTENT_OVERRIDE] {\"action\":\"preserved\",\"incomingIntent\":\"COST\",\"incomingConfi",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nBaik, untuk S1 Program Studi Teknologi Informasi.\\nAgar saya bisa hitungkan totalnya dengan tepat, kakak daftar skenario yang mana?\\n- Gelombang berapa (Khusus/I/II/III/IV)?\\n- Ada pengakuan SKS / cuti / rencana sampai tesis (semester 5+) atau jalur reguler biasa?\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informa",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "rag_total_cost",
+      "program": "Teknologi Informasi"
+    }
+  },
+  {
+    "query": "Berapa biaya kuliah Sistem Informasi per semester?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": false,
+    "rawRAG": "Untuk Prodi Sistem Informasi, biaya pendidikan per semester: Rp 6.500.000.\\n\\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\\n* Beasiswa KIP\\n* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\\n* Beasiswa Prestasi\\n* Beasiswa Yayasan\\n* Beasiswa khusus untuk alumni — sil",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nUntuk Prodi Sistem Informasi,\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "fast_fee",
+      "program": "Sistem Informasi",
+      "choice": "semester",
+      "offerBreakdown": true
+    }
+  },
+  {
+    "query": "Biaya Bisnis Digital berapa?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": true,
+    "rawRAG": "Baik, kak. Terimakasih atas pertanyaannya.\\n\\nUntuk program studi Bisnis Digital, rincian biaya sebagai berikut:\\n\\nPendaftaran:\\n* Biaya pendaftaran: Rp 500.000\\n* Potongan biaya pendaftaran: Rp 0\\nTotal biaya pendaftaran: Rp 500.000\\n\\nBiaya awal masuk untuk Prodi Bisnis Digital:\\n* Jas almamater dan topi: Rp 750.000\\n* Kaos, tas, GMTI: Rp 750.00",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nUntuk program studi Bisnis Digital, rincian biaya sebagai berikut:\\nPendaftaran:\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Berapa biaya Sistem Komputer di ITB STIKOM Bali?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": true,
+    "rawRAG": "Baik, kak. Terimakasih atas pertanyaannya.\\n\\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\\n\\nPendaftaran:\\n* Biaya pendaftaran: Rp 500.000\\n* Potongan biaya pendaftaran: Rp 0\\nTotal biaya pendaftaran: Rp 500.000\\n\\nBiaya awal masuk untuk Prodi Sistem Komputer:\\n* Jas almamater dan topi: Rp 750.000\\n* Kaos, tas, GMTI: Rp 750.",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\\nPendaftaran:\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Berapa DPP untuk TI?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": false,
+    "rawRAG": "Untuk Prodi Teknologi Informasi, Dana Pendidikan Pokok (DPP): Rp 14.000.000.\\n\\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\\n* Beasiswa KIP\\n* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\\n* Beasiswa Prestasi\\n* Beasiswa Yayasan\\n* Beasiswa khusus untuk alumni — s",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nUntuk Prodi Teknologi Informasi,\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "fast_fee",
+      "program": "Teknologi Informasi",
+      "choice": "dpp",
+      "offerBreakdown": true
+    }
+  },
+  {
+    "query": "Berapa biaya pendaftaran untuk SI?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": false,
+    "rawRAG": "Untuk Prodi Sistem Informasi, biaya pendaftaran: Rp 500.000 (dibayar saat daftar).\\n\\nMau sekalian saya jelaskan rincian biaya pendidikan lengkap (pendaftaran, DPP, biaya per semester, dan komponen awal masuk)?\\nBalas: YA atau TIDAK.\\n[TRACE_INTENT_OVERRIDE] {\"action\":\"preserved\",\"incomingIntent\":\"COST\",\"incomingConfidence\":0.95,\"candidateIntent\":\"",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nUntuk Prodi Sistem Informasi,\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "fast_fee",
+      "program": "Sistem Informasi",
+      "choice": "pendaftaran",
+      "offerBreakdown": true
+    }
+  },
+  {
+    "query": "Bandingkan TI dan SI.",
+    "incomingIntent": "GENERAL",
+    "routedIntent": "GENERAL",
+    "humanizerIntent": "perbandingan_prodi",
+    "finalIntent": "perbandingan_prodi",
+    "ragUsed": true,
+    "rawRAG": "Perbandingan singkat: Sistem Informasi vs Teknologi Informasi\\n\\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard. Lulusan: Business Analyst, System Analyst.\\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastruktur, keamanan, dan machine learning. Lulusan: Software D",
+    "finalMessage": "Baik Kak, saya bandingkan kedua program studi tersebut: Sistem Informasi dan Teknologi Informasi.\\n\\nPerbandingan singkat: Sistem Informasi vs Teknologi Informasi\\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastr\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Program mana yang lebih cocok untuk saya?\\n- Mana yang lebih mudah?\\n- Mana yang lebih menguntungkan secara karier?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apa bedanya TI dengan Sistem Komputer?",
+    "incomingIntent": "GENERAL",
+    "routedIntent": "GENERAL",
+    "humanizerIntent": "perbandingan_prodi",
+    "finalIntent": "perbandingan_prodi",
+    "ragUsed": true,
+    "rawRAG": "Perbandingan singkat: Teknologi Informasi vs Sistem Komputer\\n\\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastruktur, keamanan, dan machine learning. Lulusan: Software Developer, Dev Ops, Data Engineer.\\n- Sistem Komputer: Fokus pada arsitektur komputer, embedded/IOT, perangkat keras dan optimasi sistem. Lulusan: Embedd",
+    "finalMessage": "Baik Kak, saya bandingkan kedua program studi tersebut: Teknologi Informasi dan Sistem Komputer.\\n\\nPerbandingan singkat: Teknologi Informasi vs Sistem Komputer\\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastr\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Program mana yang lebih cocok untuk saya?\\n- Mana yang lebih mudah?\\n- Mana yang lebih menguntungkan secara karier?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Mana yang lebih cocok untuk yang suka bisnis, TI atau Bisnis Digital?",
+    "incomingIntent": "GENERAL",
+    "routedIntent": "GENERAL",
+    "humanizerIntent": "perbandingan_prodi",
+    "finalIntent": "perbandingan_prodi",
+    "ragUsed": true,
+    "rawRAG": "Perbandingan singkat: Bisnis Digital vs Teknologi Informasi\\n\\n- Bisnis Digital: Fokus pada strategi bisnis digital, pemasaran digital, e-commerce, monetisasi konten. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastruktur, keamanan, dan machine learning. ",
+    "finalMessage": "Baik Kak, saya bandingkan kedua program studi tersebut: Teknologi Informasi dan Bisnis Digital.\\n\\nPerbandingan singkat: Bisnis Digital vs Teknologi Informasi\\n- Bisnis Digital: Fokus pada strategi bisnis digital, pemasaran digital, e-commerce, monetisasi konten. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastr\\n\\nKalau Kakak ingin tahu lebih lanjut, m",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Jurusan apa yang cocok untuk saya yang suka coding?",
+    "incomingIntent": "ACADEMIC_PROGRAM",
+    "routedIntent": "CAREER_GUIDANCE",
+    "humanizerIntent": null,
+    "finalIntent": "program_studi",
+    "ragUsed": true,
+    "rawRAG": "Prodi yang paling cocok untuk hobi tersebut adalah Teknologi Informasi.\\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Teknologi Informasi.\\n\\n Contoh yang sejalan: Teknologi Informasi Coding.",
+    "finalMessage": "Prodi yang paling cocok untuk hobi tersebut adalah Teknologi Informasi.\\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Teknologi Informasi.\\n\\n Contoh yang sejalan: Teknologi Informasi Coding.",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Saya ingin jadi data analyst, prodi apa yang cocok?",
+    "incomingIntent": "ACADEMIC_PROGRAM",
+    "routedIntent": "CAREER_GUIDANCE",
+    "humanizerIntent": null,
+    "finalIntent": "program_studi",
+    "ragUsed": true,
+    "rawRAG": "Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.\\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.\\n\\n Contoh yang sejalan: Sistem Informasi Analisis data & bisnis.",
+    "finalMessage": "Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.\\nAlasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.\\n\\n Contoh yang sejalan: Sistem Informasi Analisis data & bisnis.",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Bagaimana cara daftar PMB?",
+    "incomingIntent": "SCHEDULE",
+    "routedIntent": "SCHEDULE",
+    "humanizerIntent": "pendaftaran",
+    "finalIntent": "pendaftaran",
+    "ragUsed": true,
+    "rawRAG": "Aku nemu info yang relevan di data training:\\n...meneliti berkas-berkas prestasi mahasiswa baru dan mengajukan daftar besaran beasiswa ke Rektor atau Wakil Rektor II secara berkala.: Apabila dikemudian hari terdapat kekeliruan dalam surat peraturan ini akan ditinjau kembali sebagaimana mestinya.: Keputusan ini mulai berlaku surat per tanggal 02 Nov",
+    "finalMessage": "Baik Kak, saya jelaskan tentang cara/langkah pendaftaran di ITB STIKOM Bali.\\n\\nAku nemu info yang relevan di data training:\\n...meneliti berkas-berkas prestasi mahasiswa baru dan mengajukan daftar besaran beasiswa ke Rektor atau Wakil Rektor II secara berkala.: Kalau dikemudian hari terdapat kekeliruan dalam surat peraturan ini akan ditinjau kembali sebagaimana mestinya.: Keputusan ini mulai berlaku surat per tanggal 02 November 2023 sam\\nKalau ",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apa persyaratan pendaftaran?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": true,
+    "rawRAG": "[[image:https://your-domain.com/media/WhatsApp%20Image%202026-04-24%20at%2010.26.32-1776999193034.jpeg|Alur enrollment - Mahasiswa Asing]]\\n\\nPersyaratan dan dokumen yang dibutuhkan untuk pendaftaran kuliah (PMB) di ITB STIKOM Bali adalah sebagai berikut:\\n\\n- Fotokopi ijazah terakhir: Ijazah SMA/SMK atau yang setara.\\n- Fotokopi transkrip nilai: T",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\n- Fotokopi ijazah terakhir: Ijazah SMA/SMK atau yang setara.\\n- Fotokopi transkrip nilai: Transkrip nilai dari sekolah.\\n- Pas foto terbaru: Ukuran 3x4 cm, latar belakang merah.\\n- Kartu identitas: Fotokopi KTP atau identitas resmi lainnya.\\n- Surat keterangan sehat: Dari dokter atau puskesmas.\\n- Formulir pendaftaran: Diisi dengan lengkap dan benar.\\n\\nKalau Kakak ingin t",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Dokumen apa saja yang harus disiapkan untuk daftar?",
+    "incomingIntent": "SCHEDULE",
+    "routedIntent": "SCHEDULE",
+    "humanizerIntent": "pendaftaran",
+    "finalIntent": "pendaftaran",
+    "ragUsed": true,
+    "rawRAG": "[[image:https://your-domain.com/media/WhatsApp%20Image%202026-04-24%20at%2010.26.32-1776999193034.jpeg|Alur enrollment - Mahasiswa Asing]]\\n\\nPersyaratan dan dokumen yang dibutuhkan untuk pendaftaran kuliah (PMB) di ITB STIKOM Bali adalah sebagai berikut:\\n\\n- Fotokopi KTP: Kartu Tanda Penduduk yang masih berlaku.\\n- Fotokopi Ijazah: Ijazah terakhi",
+    "finalMessage": "Baik Kak, saya jelaskan tentang persyaratan dan dokumen di ITB STIKOM Bali.\\n\\n- Fotokopi KTP: Kartu Tanda Penduduk yang masih berlaku.\\n- Fotokopi Ijazah: Ijazah terakhir yang telah dilegalisir.\\n- Pas foto: Ukuran 3x4 cm, latar belakang merah, sebanyak 2 lembar.\\n- Formulir pendaftaran: Diisi dengan lengkap dan benar.\\n- Bukti pembayaran: Bukti pembayaran biaya pendaftaran (Kalau ada).\\nKetentuan format/ukuran:\\n- Pas foto harus berukuran 3x4 c",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Kapan tanggal pendaftaran gelombang 1?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": false,
+    "rawRAG": "Kalender pendaftaran PMB (TA 2026/2027):\\n\\nMasa pendaftaran per gelombang:\\n- Khusus: 28 OKTOBER 2025 s/d 27 DESEMBER 2025\\n- I A: 28 DESEMBER 2025 s/d 31 JANUARI 2026\\n- I B: 1 FEBRUARI 2026 s/d 14 FEBRUARI 2026\\n- I C: 15 FEBRUARI 2026 s/d 7 MARET 2026\\n- II A: 8 MARET 2026 s/d 28 MARET 2026\\n- II B: 29 MARET 2026 s/d 18 APRIL 2026\\n- II C: 19 A",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nKalender pendaftaran PMB (TA 2026/2027):\\nMasa pendaftaran per gelombang:\\n- Khusus: 28 OKTOBER 2025 s/d 27 DESEMBER 2025\\n- I A: 28 DESEMBER 2025 s/d 31 JANUARI 2026\\n- I B: 1 FEBRUARI 2026 s/d 14 FEBRUARI 2026\\n- I C: 15 FEBRUARI 2026 s/d 7 MARET 2026\\n- II A: 8 MARET 2026 s/d 28 MARET 2026\\n- II B: 29 MARET 2026 s/d 18 APRIL 2026\\n- II C: 19 APRIL 2026 s/d 2 MEI 2026\\n-",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "pmb_schedule_fast_overview_pre_keyword",
+      "ragUsed": false
+    }
+  },
+  {
+    "query": "Apa saja gelombang pendaftaran?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": false,
+    "rawRAG": "Kalender pendaftaran PMB (TA 2026/2027):\\n\\nMasa pendaftaran per gelombang:\\n- Khusus: 28 OKTOBER 2025 s/d 27 DESEMBER 2025\\n- I A: 28 DESEMBER 2025 s/d 31 JANUARI 2026\\n- I B: 1 FEBRUARI 2026 s/d 14 FEBRUARI 2026\\n- I C: 15 FEBRUARI 2026 s/d 7 MARET 2026\\n- II A: 8 MARET 2026 s/d 28 MARET 2026\\n- II B: 29 MARET 2026 s/d 18 APRIL 2026\\n- II C: 19 A",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nKalender pendaftaran PMB (TA 2026/2027):\\nMasa pendaftaran per gelombang:\\n- Khusus: 28 OKTOBER 2025 s/d 27 DESEMBER 2025\\n- I A: 28 DESEMBER 2025 s/d 31 JANUARI 2026\\n- I B: 1 FEBRUARI 2026 s/d 14 FEBRUARI 2026\\n- I C: 15 FEBRUARI 2026 s/d 7 MARET 2026\\n- II A: 8 MARET 2026 s/d 28 MARET 2026\\n- II B: 29 MARET 2026 s/d 18 APRIL 2026\\n- II C: 19 APRIL 2026 s/d 2 MEI 2026\\n-",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "pmb_schedule_fast_overview_pre_keyword",
+      "ragUsed": false
+    }
+  },
+  {
+    "query": "Kapan deadline pendaftaran terakhir?",
+    "incomingIntent": "COST",
+    "routedIntent": "COST",
+    "humanizerIntent": "COST",
+    "finalIntent": "COST",
+    "ragUsed": false,
+    "rawRAG": "Kalender pendaftaran PMB (TA 2026/2027):\\n\\nMasa pendaftaran per gelombang:\\n- Khusus: 28 OKTOBER 2025 s/d 27 DESEMBER 2025\\n- I A: 28 DESEMBER 2025 s/d 31 JANUARI 2026\\n- I B: 1 FEBRUARI 2026 s/d 14 FEBRUARI 2026\\n- I C: 15 FEBRUARI 2026 s/d 7 MARET 2026\\n- II A: 8 MARET 2026 s/d 28 MARET 2026\\n- II B: 29 MARET 2026 s/d 18 APRIL 2026\\n- II C: 19 A",
+    "finalMessage": "Baik Kak, berikut informasi yang saya temukan terkait pertanyaan Kakak.\\n\\nKalender pendaftaran PMB (TA 2026/2027):\\nMasa pendaftaran per gelombang:\\n- Khusus: 28 OKTOBER 2025 s/d 27 DESEMBER 2025\\n- I A: 28 DESEMBER 2025 s/d 31 JANUARI 2026\\n- I B: 1 FEBRUARI 2026 s/d 14 FEBRUARI 2026\\n- I C: 15 FEBRUARI 2026 s/d 7 MARET 2026\\n- II A: 8 MARET 2026 s/d 28 MARET 2026\\n- II B: 29 MARET 2026 s/d 18 APRIL 2026\\n- II C: 19 APRIL 2026 s/d 2 MEI 2026\\n-",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "pmb_schedule_fast_overview_pre_keyword",
+      "ragUsed": false
+    }
+  },
+  {
+    "query": "Apakah semua prodi di STIKOM Bali terakreditasi?",
+    "incomingIntent": "PROGRAM",
+    "routedIntent": "PROGRAM",
+    "humanizerIntent": "program_studi",
+    "finalIntent": "program_studi",
+    "ragUsed": true,
+    "rawRAG": "ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\\nPROGRAM S2 / MAGISTER (PASCASARJANA)\\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\\nPROGRAM S1 (SARJANA)\\n\\n- ",
+    "finalMessage": "Saya bantu jelaskan mengenai Program Studi Sistem Informasi ya Kak.\\n\\nITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:\\nPROGRAM S2 / MAGISTER (PASCASARJANA)\\nProgram magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.\\nPROGRAM S1 (SARJANA)\\n- Bisnis Digital (BD): fokus pada",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Bagaimana akreditasi TI?",
+    "incomingIntent": "ACADEMIC_PROGRAM",
+    "routedIntent": "ACADEMIC_PROGRAM",
+    "humanizerIntent": "akreditasi",
+    "finalIntent": "akreditasi",
+    "ragUsed": true,
+    "rawRAG": "Akreditasi Prodi Teknologi Informasi: Baik.\\nNomor SK: /BAN-PT/Ak/S/IX/2022.\\nMau saya jelaskan lagi bagian lain?\\n[TRACE_INTENT_OVERRIDE] {\"action\":\"overridden\",\"incomingIntent\":\"ACADEMIC_PROGRAM\",\"incomingConfidence\":0.75,\"candidateIntent\":\"akreditasi\",\"userQuery\":\"Bagaimana akreditasi TI?\",\"preview\":\"Akreditasi Prodi Teknologi Informasi: Baik.\\n",
+    "finalMessage": "Saya bantu jelaskan tentang akreditasi program studi ITB STIKOM Bali.\\n\\nAkreditasi Prodi Teknologi Informasi: Baik.\\nNomor SK: /BAN-PT/Ak/S/IX/2022.\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada informasi lain yang Kakak butuhkan?\\n- Mau saya jelaskan tentang aspek lain dari ITB STIKOM Bali?\\n- Adakah pertanyaan lain tentang pendaftaran atau program studi?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apa perbedaan akreditasi SI dengan TI?",
+    "incomingIntent": "ACADEMIC_PROGRAM",
+    "routedIntent": "ACADEMIC_PROGRAM",
+    "humanizerIntent": "akreditasi",
+    "finalIntent": "akreditasi",
+    "ragUsed": true,
+    "rawRAG": "Perbandingan singkat: Sistem Informasi vs Teknologi Informasi\\n\\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard. Lulusan: Business Analyst, System Analyst.\\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastruktur, keamanan, dan machine learning. Lulusan: Software D",
+    "finalMessage": "Saya bantu jelaskan tentang akreditasi program studi ITB STIKOM Bali.\\n\\nPerbandingan singkat: Sistem Informasi vs Teknologi Informasi\\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard. Lulusan: Business Analyst, System Analyst.\\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastr\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apa fasilitas kampus yang tersedia?",
+    "incomingIntent": "GENERAL",
+    "routedIntent": "GENERAL",
+    "humanizerIntent": null,
+    "finalIntent": "lokasi",
+    "ragUsed": true,
+    "rawRAG": "Data tidak ditemukan secara pasti pada dokumen.",
+    "finalMessage": "Data tidak ditemukan secara pasti pada dokumen.",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apakah ada laboratorium komputer di kampus?",
+    "incomingIntent": "GENERAL",
+    "routedIntent": "GENERAL",
+    "humanizerIntent": "lokasi",
+    "finalIntent": "lokasi",
+    "ragUsed": true,
+    "rawRAG": "Aku nemu info yang relevan di data training:\\n...SISWABARU KELASREGULER PROGRAM STUDISISTEMKOMPUTER T.A2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1.Pendaftaran 500.000 Pada Saat Daftar 2.Dana Pendidikan Pokok(DPP)11.000.000 Dicicil Per Blns. d UTS\\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\\n\\nMau saya bantu j",
+    "finalMessage": "Saya bantu jelaskan lokasi kampus ITB STIKOM Bali dan cara menjangkaunya ya Kak.\\n\\nAku nemu info yang relevan di data training:\\n...SISWABARU KELASREGULER PROGRAM STUDISISTEMKOMPUTER T.A2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1.Pendaftaran 500.000 Pada Saat Daftar 2.\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\\n\\n- Apakah ada beberapa lokasi kampus?\\n- Bagaimana cara ke lokasi kampus dengan transp",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Bagaimana akses kantin dan fasilitas olahraga?",
+    "incomingIntent": "GENERAL",
+    "routedIntent": "GENERAL",
+    "humanizerIntent": null,
+    "finalIntent": "pendaftaran",
+    "ragUsed": true,
+    "rawRAG": "Data tidak ditemukan secara pasti pada dokumen.",
+    "finalMessage": "Data tidak ditemukan secara pasti pada dokumen.",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Di mana lokasi kampus ITB STIKOM Bali?",
+    "incomingIntent": "PROGRAM",
+    "routedIntent": "PROGRAM",
+    "humanizerIntent": "lokasi",
+    "finalIntent": "lokasi",
+    "ragUsed": false,
+    "rawRAG": "Lokasi kampus ITB STIKOM Bali:\\n- Denpasar/Renon: Jl. Raya Puputan No. 86 Renon, Denpasar-Bali-Indonesia — Telp: (0361)244445 | Hotline: 08227738999 | Fax: (0361) 264773\\n- Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran-Bali-Indonesia — Telp: (0361)8953534 | Hotline: 081288778840\\n- Abiansemal: Jl. Janger, Abiansemal-Dauh Yeh Cani, Badun",
+    "finalMessage": "Saya bantu jelaskan lokasi kampus ITB STIKOM Bali dan cara menjangkaunya ya Kak.\\n\\nLokasi kampus ITB STIKOM Bali:\\n- Denpasar/Renon: Jl. Raya Puputan No. 86 Renon, Denpasar-Bali-Indonesia — Telp: (0361)244445 | Hotline: 08227738999 | Fax: (0361) 264773\\n- Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran-Bali-Indonesia — Telp: (0361)8953534 | Hotline: 081288778840\\n- Abiansemal: Jl. Janger, Abiansemal-Dauh Yeh Cani, Badung-Bali-Indonesia",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "campus_location_fast",
+      "ragUsed": false
+    }
+  },
+  {
+    "query": "Bagaimana cara menuju kampus dengan transportasi umum?",
+    "incomingIntent": "GENERAL",
+    "routedIntent": "GENERAL",
+    "humanizerIntent": null,
+    "finalIntent": "lokasi",
+    "ragUsed": false,
+    "rawRAG": "Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut 🙏\\n\\nAgar saya bisa membantu lebih baik, coba tuliskan pertanyaan\\ndengan lebih spesifik, misalnya:\\n  - Nama program studi yang dimaksud\\n  - Gelombang pendaftaran\\n  - Topik yang ingin diketahui\\n\\nAtau jika ingin langsung berbicara dengan tim kami, di bawah ini 👇\\n\\n",
+    "finalMessage": "Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut\\n\\nAgar saya bisa membantu lebih baik, coba tuliskan pertanyaan\\ndengan lebih spesifik, misalnya:\\n- Nama program studi yang dimaksud\\n- Gelombang pendaftaran\\n- Topik yang ingin diketahui\\n\\nAtau jika ingin langsung berbicara dengan tim kami, di bawah ini\\n\\n[ Hubungi Admin ]",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": false,
+      "source": "fallback"
+    }
+  },
+  {
+    "query": "Bagaimana prospek kerja lulusan TI?",
+    "incomingIntent": "ACADEMIC_PROGRAM",
+    "routedIntent": "ACADEMIC_PROGRAM",
+    "humanizerIntent": "prospek_kerja",
+    "finalIntent": "prospek_kerja",
+    "ragUsed": true,
+    "rawRAG": "Prospek kerja lulusan Teknologi Informasi (TI) sangat menjanjikan.\\n\\n- Permintaan tinggi: Lulusan TI banyak dicari di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.\\n- Beragam posisi: Lulusan dapat bekerja sebagai pengembang perangkat lunak, analis sistem, spesialis keamanan siber, dan banyak lagi.\\n\\nApakah a",
+    "finalMessage": "Baik Kak, saya bantu jelaskan prospek karier lulusan Teknologi Informasi.\\n\\nProspek kerja lulusan Teknologi Informasi (TI) sangat menjanjikan.\\n- Permintaan tinggi: Lulusan TI banyak dicari di berbagai sektor, termasuk perusahaan teknologi, keuangan, kesehatan, dan pendidikan.\\n- Beragam posisi: Lulusan dapat bekerja sebagai pengembang perangkat lunak, analis sistem, spesialis keamanan siber, dan banyak lagi.\\n\\nKalau Kakak ingin tahu lebih lanj",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apa prospek kerja Sistem Informasi?",
+    "incomingIntent": "ACADEMIC_PROGRAM",
+    "routedIntent": "ACADEMIC_PROGRAM",
+    "humanizerIntent": "prospek_kerja",
+    "finalIntent": "prospek_kerja",
+    "ragUsed": true,
+    "rawRAG": "Prospek kerja untuk lulusan Program Studi Sistem Informasi sangat menjanjikan.\\n\\n- Lulusan dapat bekerja sebagai Web Developer, Database Administrator, dan IT Entrepreneur, yang siap menghadapi dunia usaha dan industri.\\n- Selain itu, mereka juga dapat berkarir dalam pengelolaan database, administrasi sistem informasi, dan digital marketing.\\n\\nAp",
+    "finalMessage": "Baik Kak, saya bantu jelaskan prospek karier lulusan Sistem Informasi.\\n\\nProspek kerja untuk lulusan Program Studi Sistem Informasi sangat menjanjikan.\\n- Lulusan dapat bekerja sebagai Web Developer, Database Administrator, dan IT Entrepreneur, yang siap menghadapi dunia usaha dan industri.\\nApa bidang spesifik yang paling menarik bagi kamu dalam Sistem Informasi?\\n\\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa memba",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  },
+  {
+    "query": "Apa peluang karier bagi lulusannya?",
+    "incomingIntent": "GENERAL",
+    "routedIntent": "GENERAL",
+    "humanizerIntent": "program_studi",
+    "finalIntent": "perbandingan_prodi",
+    "ragUsed": true,
+    "rawRAG": "Aku nemu info yang relevan di data training:\\nPenjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimplementasikan sistem informasi termasuk Governm",
+    "finalMessage": "Saya bantu jelaskan mengenai Program Studi Sistem Informasi ya Kak.\\n\\nAku nemu info yang relevan di data training:\\nPenjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems | ",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    }
+  }
+]

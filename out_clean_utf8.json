@@ -1,0 +1,205 @@
+﻿[
+  {
+    "key": "TI",
+    "question": "berapa biaya prodi ti gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia. Data tidak ditemukan pada dokumen resmi untuk kombinasi entitas yang diminta.",
+      "source": "rag-answer-rejected",
+      "contexts": [],
+      "confidenceScore": 0,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "TI",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_exact_entity_candidate"
+      }
+    }
+  },
+  {
+    "key": "SI",
+    "question": "berapa biaya prodi si gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia. Data tidak ditemukan pada dokumen resmi untuk kombinasi entitas yang diminta.",
+      "source": "rag-answer-rejected",
+      "contexts": [],
+      "confidenceScore": 0,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "SI",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_exact_entity_candidate"
+      }
+    }
+  },
+  {
+    "key": "BD",
+    "question": "berapa biaya prodi bd gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia. Data tidak ditemukan pada dokumen resmi untuk kombinasi entitas yang diminta.",
+      "source": "rag-answer-rejected",
+      "contexts": [],
+      "confidenceScore": 0,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "BD",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_exact_entity_candidate"
+      }
+    }
+  },
+  {
+    "key": "MI",
+    "question": "berapa biaya prodi mi gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia. Data tidak ditemukan pada dokumen resmi untuk kombinasi entitas yang diminta.",
+      "source": "rag-answer-rejected",
+      "contexts": [],
+      "confidenceScore": 0,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "MI",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_exact_entity_candidate"
+      }
+    }
+  },
+  {
+    "key": "SK",
+    "question": "berapa biaya prodi sk gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia. Data tidak ditemukan pada dokumen resmi untuk kombinasi entitas yang diminta.",
+      "source": "rag-answer-rejected",
+      "contexts": [],
+      "confidenceScore": 0,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "SK",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_exact_entity_candidate"
+      }
+    }
+  },
+  {
+    "key": "UTB",
+    "question": "berapa biaya prodi dengan partner utb gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia. Data tidak ditemukan pada dokumen resmi untuk kombinasi entitas yang diminta.",
+      "source": "rag-answer-rejected",
+      "contexts": [],
+      "confidenceScore": 0,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": null,
+          "partner": "UTB",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_exact_entity_candidate"
+      }
+    }
+  },
+  {
+    "key": "DNUI",
+    "question": "berapa biaya prodi dengan partner dnui gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia. Data tidak ditemukan pada dokumen resmi untuk kombinasi entitas yang diminta.",
+      "source": "rag-answer-rejected",
+      "contexts": [],
+      "confidenceScore": 0,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": null,
+          "partner": "DNUI",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_exact_entity_candidate"
+      }
+    }
+  },
+  {
+    "key": "HELP",
+    "question": "berapa biaya prodi dengan partner help gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia. Data tidak ditemukan pada dokumen resmi untuk kombinasi entitas yang diminta.",
+      "source": "rag-answer-rejected",
+      "contexts": [],
+      "confidenceScore": 0,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": null,
+          "partner": "HELP",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_exact_entity_candidate"
+      }
+    }
+  }
+][2026-06-20 13:30:31.537 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "berapa biaya prodi ti gelombang 1a?"
+[2026-06-20 13:30:31.757 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "berapa biaya prodi si gelombang 1a?"
+[2026-06-20 13:30:31.967 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "berapa biaya prodi bd gelombang 1a?"
+[2026-06-20 13:30:32.166 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "berapa biaya prodi mi gelombang 1a?"
+[2026-06-20 13:30:32.375 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "berapa biaya prodi sk gelombang 1a?"
+[2026-06-20 13:30:32.612 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "berapa biaya prodi dengan partner utb gelombang 1a?"
+[2026-06-20 13:30:32.807 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "berapa biaya prodi dengan partner dnui gelombang 1a?"
+[2026-06-20 13:30:33.007 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "berapa biaya prodi dengan partner help gelombang 1a?"
+

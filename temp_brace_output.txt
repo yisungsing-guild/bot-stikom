@@ -1,0 +1,331 @@
+11590 count=8 |             };
+11591 count=9 |             await prisma.session.upsert({
+11592 count=9 |               where: { chatId },
+11593 count=9 |               create: { chatId, state: currentState, data: newData },
+11594 count=9 |               update: { state: currentState, data: newData }
+11595 count=8 |             });
+11596 count=8 |           } catch (e) {
+11597 count=8 |             logger.warn({ err: e.message }, '[Provider] Failed to persist welcome-menu direct routing state');
+11598 count=7 |           }
+11599 count=7 |         } else {
+11600 count=7 |           const effective = welcomeLabel ? inferWelcomeMenuEffectiveSelectionFromLabel(welcomeLabel) : null;
+11601 count=7 | 
+11602 count=7 |           // If we can parse the welcome-menu label but can't map it to our built-in numeric menu,
+11603 count=7 |           // DO NOT fall back to the hardcoded selection number (it may mismatch the shown menu).
+11604 count=7 |           // Instead, treat the label as the user's intended topic.
+11605 count=8 |           if (welcomeLabel && !effective) {
+11606 count=8 |             text = `Tolong jelaskan tentang: ${welcomeLabel}`;
+11607 count=8 |             contextualNumericHandled = true;
+11608 count=8 |             console.log('[ProviderRoute] Welcome menu unknown label routed as topic', { chatId, selection, welcomeLabel });
+11609 count=8 | 
+11610 count=9 |             try {
+11611 count=9 |               const currentState = session ? session.state : 'root';
+11612 count=10 |               const newData = {
+11613 count=10 |                 ...(sessionData || {}),
+11614 count=10 |                 lastNumericMenuSelection: selection,
+11615 count=10 |                 lastNumericMenuLabel: welcomeLabel
+11616 count=9 |               };
+11617 count=10 |               await prisma.session.upsert({
+11618 count=10 |                 where: { chatId },
+11619 count=10 |                 create: { chatId, state: currentState, data: newData },
+11620 count=10 |                 update: { state: currentState, data: newData }
+11621 count=9 |               });
+11622 count=9 |             } catch (e) {
+11623 count=9 |               logger.warn({ err: e.message }, '[Provider] Failed to persist welcome-menu label routing state');
+11624 count=8 |             }
+11625 count=8 |           } else if (welcomeLabel && (effective === 'handover' || labelLooksLikeAdminHandover(welcomeLabel))) {
+11626 count=8 |             // Offer handover (do not switch immediately), consistent with existing behavior.
+11627 count=8 |             const currentState = session ? session.state : 'root';
+11628 count=8 |             const prevData = sessionData || {};
+11629 count=8 |             const newData = { ...prevData, handoverOffered: true, handoverOfferedAt: now.toISOString() };
+11630 count=9 |             await prisma.session.upsert({
+11631 count=9 |               where: { chatId },
+11632 count=9 |               create: { chatId, state: currentState, data: newData },
+11633 count=9 |               update: { chatId, state: currentState, data: newData }
+11634 count=8 |             });
+11635 count=8 | 
+11636 count=8 |             await sendBotMessage(
+11637 count=8 |               chatId,
+11638 count=8 |               buildHandoverOfferMessage()
+11639 count=8 |             );
+11640 count=8 |             return res.send({ ok: true, source: 'numeric_menu', selection });
+11641 count=8 |           } else if (welcomeLabel && (effective === 'location' || labelLooksLikeCampusLocation(welcomeLabel))) {
+11642 count=8 |             const question = 'Berikan lokasi/alamat kampus ITB STIKOM Bali (Denpasar/Renon, Jimbaran, Abiansemal) dan kontak singkat jika ada.';
+11643 count=8 | 
+11644 count=8 |             let answer = null;
+11645 count=9 |             if (isRagEnabled()) {
+11646 count=10 |               if (hasActiveTrainingData || allowIndexFallbackNoDb) {
+11647 count=10 |                 const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+11648 count=10 |                 const ragResult = await ragQueryWithEval(chatId, question, topK, { answerQuestion: question, minScore: 0 });
+11649 count=10 |                 if (ragResult && ragResult.success && ragResult.answer) answer = ragResult.answer;
+11650 count=9 |               }
+11651 count=8 |             }
+11652 count=8 | 
+11653 count=9 |             if (!answer) {
+11654 count=10 |               try {
+11655 count=10 |                 const enableWeb = String(process.env.ENABLE_WEB_SEARCH_FALLBACK || 'false').toLowerCase() === 'true';
+11656 count=11 |                 if (enableWeb) {
+11657 count=12 |                   const web = await webSearchFallbackAnswer('Lokasi dan alamat kampus ITB STIKOM Bali (Denpasar/Renon, Jimbaran, Abiansemal) beserta kontak', {
+11658 count=12 |                     seedUrl: process.env.WEB_SEARCH_SEED_URL || 'https://www.stikom-bali.ac.id/id/'
+11659 count=11 |                   });
+11660 count=11 |                   if (web && web.ok && web.answer) answer = web.answer;
+11661 count=10 |                 }
+11662 count=10 |               } catch (e) {
+11663 count=10 |                 logger.warn({ err: e.message }, '[Provider] Location web fallback failed');
+11664 count=9 |               }
+11665 count=8 |             }
+11666 count=8 | 
+11667 count=9 |             if (!answer) {
+11668 count=9 |               answer = 'Untuk lokasi kampus, kakak ingin yang mana: Denpasar/Renon, Jimbaran, atau Abiansemal? Nanti saya kirim alamat & kontak yang tersedia.';
+11669 count=8 |             }
+11670 count=8 | 
+11671 count=8 |             await sendBotMessage(chatId, answer);
+11672 count=8 |             return res.send({ ok: true, source: 'numeric_menu', selection, label: welcomeLabel, ragUsed: !!(answer && isRagEnabled()) });
+11673 count=8 |           } else {
+11674 count=8 |             const effectiveSelection = (typeof effective === 'number' && Number.isFinite(effective)) ? effective : selection;
+11675 count=8 | 
+11676 count=8 |             const menu = NUMERIC_MENU_MAP[effectiveSelection];
+11677 count=9 |             if (menu) {
+11678 count=9 |           // Persist last selection so future follow-ups can be interpreted.
+11679 count=10 |           try {
+11680 count=10 |             const currentState = session ? session.state : 'root';
+11681 count=11 |             const newData = {
+11682 count=11 |               ...sessionData,
+11683 count=11 |               lastNumericMenuSelection: selection,
+11684 count=11 |               lastNumericMenuLabel: welcomeLabel || menu.label,
+11685 count=11 |               lastNumericMenuEffectiveSelection: effectiveSelection
+11686 count=10 |             };
+11687 count=11 |             await prisma.session.upsert({
+11688 count=11 |               where: { chatId },
+11689 count=11 |               create: { chatId, state: currentState, data: newData },
+11690 count=11 |               update: { state: currentState, data: newData }
+11691 count=10 |             });
+11692 count=10 |           } catch (e) {
+11693 count=10 |             logger.warn({ err: e.message }, '[Provider] Failed to persist numeric menu selection');
+11694 count=9 |           }
+11695 count=9 | 
+11696 count=9 |           // Menu 2 (Program Studi): answer deterministically (avoid slow RAG call).
+11697 count=9 |           // This menu is frequently used and the core content is stable.
+11698 count=10 |           if (effectiveSelection === 2) {
+11699 count=10 |             let answer = null;
+11700 count=11 |               try {
+11701 count=12 |               if (allowBundledIndex) {
+11702 count=12 |                 const programs = extractProgramListFromBundledIndex();
+11703 count=13 |                 if (programs && programs.length) {
+11704 count=13 |                   const dualDegreeLines = extractDualDegreeListFromBundledIndex();
+11705 count=13 |                   const footer =
+11706 count=13 |                     'Kalau kakak mau, sebutkan prodi + gelombang (jika relevan), nanti saya bantu jelaskan rincian biaya/jadwal yang tertulis.';
+11707 count=13 |                   const msg = buildProgramListMessage(programs, footer, dualDegreeLines);
+11708 count=13 |                   try { console.log('[FAST_AUDIT]', { chatId, allowBundledIndex: !!allowBundledIndex, allowFast: null, hasPrograms: !!(programs && programs.length), hasDualDegreeLines: !!dualDegreeLines }); } catch(e) {}
+11709 count=13 |                   // Some indices may not include the core S1 list; avoid sending an incomplete menu answer.
+11710 count=13 |                   const hasCoreS1 = msg && /(Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer)/i.test(msg);
+11711 count=13 |                   if (msg && hasCoreS1 && !/\(tidak\s+terdeteksi\)/i.test(msg)) answer = msg;
+11712 count=12 |                 }
+11713 count=11 |               }
+11714 count=11 |             } catch (e) {
+11715 count=11 |               logger.warn({ err: e.message }, '[Provider] Deterministic program list failed');
+11716 count=10 |             }
+11717 count=10 | 
+11718 count=11 |             if (!answer) {
+11719 count=11 |               const footer =
+11720 count=11 |                 'Kalau kakak mau, sebutkan prodi + gelombang (jika relevan), nanti saya bantu jelaskan rincian biaya/jadwal yang tertulis.';
+11721 count=11 |               answer = buildProgramListMessage(
+11722 count=11 |                 [
+11723 count=11 |                   'Sistem Informasi (SI)',
+11724 count=11 |                   'Teknologi Informasi (TI)',
+11725 count=11 |                   'Bisnis Digital (BD)',
+11726 count=11 |                   'Sistem Komputer (SK)'
+11727 count=11 |                 ],
+11728 count=11 |                 footer
+11729 count=11 |               );
+11730 count=10 |             }
+11731 count=10 | 
+11732 count=10 |             await sendBotMessage(chatId, answer);
+11733 count=10 |             return res.send({ ok: true, source: 'numeric_menu', selection, label: welcomeLabel || menu.label, fast: true });
+11734 count=9 |           }
+11735 count=9 | 
+11736 count=9 |           // Menu 3 (Biaya Pendidikan & Skema Pembayaran): always ask for prodi first.
+11737 count=9 |           // This avoids generic replies and yields more accurate RAG queries.
+11738 count=10 |           if (effectiveSelection === 3) {
+11739 count=11 |             try {
+11740 count=11 |               const currentState = session ? session.state : 'root';
+11741 count=12 |               const newData = {
+11742 count=12 |                 ...(sessionData || {}),
+11743 count=12 |                 lastNumericMenuSelection: selection,
+11744 count=12 |                 lastNumericMenuLabel: welcomeLabel || menu.label,
+11745 count=12 |                 lastNumericMenuEffectiveSelection: effectiveSelection,
+11746 count=12 |                 pendingMenuCost: { ts: new Date().toISOString() }
+11747 count=11 |               };
+11748 count=12 |               await prisma.session.upsert({
+11749 count=12 |                 where: { chatId },
+11750 count=12 |                 create: { chatId, state: currentState, data: newData },
+11751 count=12 |                 update: { state: currentState, data: newData }
+11752 count=11 |               });
+11753 count=11 |             } catch (e) {
+11754 count=11 |               logger.warn({ err: e.message }, '[Provider] Failed to persist pendingMenuCost');
+11755 count=10 |             }
+11756 count=10 | 
+11757 count=10 |             await sendBotMessage(
+11758 count=10 |               chatId,
+11759 count=10 |               `Baik, Anda memilih: ${menu.label}.\n` +
+11760 count=10 |                 'Untuk biaya pendidikan per semester (UKT), kakak mau untuk program apa?\n' +
+11761 count=10 |                 'Balas: SI / TI / BD / SK (S1), atau D3, atau S2.\n' +
+11762 count=10 |                 'Kalau program Dual Degree, balas: UTB / DNUI / HELP.'
+11763 count=10 |             );
+11764 count=10 |             return res.send({ ok: true, source: 'numeric_menu', selection });
+11765 count=9 |           }
+11766 count=9 | 
+11767 count=9 |           // Prefer RAG if enabled/training exists.
+11768 count=9 |           let answer = null;
+11769 count=9 |           let answerSource = null;
+11770 count=10 |           if (isRagEnabled()) {
+11771 count=11 |             if (hasActiveTrainingData || allowIndexFallbackNoDb) {
+11772 count=11 |               const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+11773 count=11 |               const ragResult = await ragQueryWithEval(chatId, menu.ragQuestion, topK, { answerQuestion: menu.ragQuestion, minScore: 0 });
+11774 count=12 |               if (ragResult && ragResult.success && ragResult.answer && contextsLookRelevantForMenu(effectiveSelection, ragResult.contexts)) {
+11775 count=12 |                 answer = ragResult.answer;
+11776 count=12 |                 answerSource = ragResult.source || null;
+11777 count=11 |               }
+11778 count=10 |             }
+11779 count=9 |           }
+11780 count=9 | 
+11781 count=9 |           // If RAG doesn't have relevant context (common for Facilities/Career), try web excerpt fallback.
+11782 count=10 |           if (!answer && (effectiveSelection === 5 || effectiveSelection === 6)) {
+11783 count=11 |             try {
+11784 count=11 |               const enableWeb = String(process.env.ENABLE_WEB_SEARCH_FALLBACK || 'false').toLowerCase() === 'true';
+11785 count=12 |               if (enableWeb) {
+11786 count=12 |                 const q = effectiveSelection === 5
+11787 count=12 |                   ? 'Fasilitas kampus ITB STIKOM Bali'
+11788 count=12 |                   : effectiveSelection === 6
+11789 count=12 |                     ? 'Prospek karier lulusan ITB STIKOM Bali'
+11790 count=12 |                     : menu.ragQuestion;
+11791 count=12 | 
+11792 count=12 |                 const web = await webSearchFallbackAnswer(q, { seedUrl: process.env.WEB_SEARCH_SEED_URL || 'https://www.stikom-bali.ac.id/id/' });
+11793 count=12 |                 if (web && web.ok && web.answer) answer = web.answer;
+11794 count=11 |               }
+11795 count=11 |             } catch (e) {
+11796 count=11 |               logger.warn({ err: e.message }, '[Provider] Numeric menu web fallback failed');
+11797 count=10 |             }
+11798 count=9 |           }
+11799 count=9 | 
+11800 count=10 |           if (!answer) {
+11801 count=11 |             if (effectiveSelection === 1) {
+11802 count=11 |               // Important: avoid wording that looks like the main welcome menu.
+11803 count=11 |               // We want contextual numeric selection to pick up the next reply (1-4)
+11804 count=11 |               // without being hijacked by the welcome menu handler.
+11805 count=11 |               answer =
+11806 count=11 |                 `Baik, Anda memilih: ${menu.label}.\n\n` +
+11807 count=11 |                 'Menu PMB:\n' +
+11808 count=11 |                 '1) Alur / cara daftar\n' +
+11809 count=11 |                 '2) Syarat & dokumen\n' +
+11810 count=11 |                 '3) Jadwal PMB\n' +
+11811 count=11 |                 '4) Kontak PMB\n\n' +
+11812 count=11 |                 'Balas angka 1-4.';
+11813 count=11 | 
+11814 count=11 |               // Persist a short-lived flag so a fast user reply (race) can still be interpreted.
+11815 count=12 |               try {
+11816 count=12 |                 const currentState = session ? session.state : 'root';
+11817 count=12 |                 const newData = { ...(sessionData || {}), pendingPmbMenu: { ts: new Date().toISOString() } };
+11818 count=13 |                 await prisma.session.upsert({
+11819 count=13 |                   where: { chatId },
+11820 count=13 |                   create: { chatId, state: currentState, data: newData },
+11821 count=13 |                   update: { state: currentState, data: newData }
+11822 count=12 |                 });
+11823 count=12 |               } catch (e) {
+11824 count=12 |                 logger.warn({ err: e.message }, '[Provider] Failed to persist pendingPmbMenu');
+11825 count=11 |               }
+11826 count=11 |             } else if (effectiveSelection === 5) {
+11827 count=11 |               // Facilities often needs a campus context.
+11828 count=11 |               answer =
+11829 count=11 |                 `Baik, Anda memilih: ${menu.label}.\n` +
+11830 count=11 |                 'Kakak ingin info fasilitas untuk kampus yang mana? (Denpasar/Renon, Jimbaran, atau Abiansemal)\n' +
+11831 count=11 |                 'Atau kakak cari fasilitas tertentu (mis. lab, perpustakaan, wifi, parkir)?';
+11832 count=11 |             } else {
+11833 count=11 |               answer =
+11834 count=11 |                 `Baik, Anda memilih: ${menu.label}.\n` +
+11835 count=11 |                 `Agar saya jawab tepat, boleh tulis pertanyaan spesifiknya?\n` +
+11836 count=11 |                 `Contoh: "jadwal pendaftaran", "syarat pendaftaran", "biaya gelombang 1", atau "program studi yang tersedia".`;
+11837 count=10 |             }
+11838 count=9 |           }
+11839 count=9 | 
+11840 count=10 |           if (effectiveSelection === 2) {
+11841 count=10 |             const base = String(answer || '');
+11842 count=10 |             const saysSkNotListed = /sistem\s*komputer[\s\S]{0,40}tidak\s*tercantum|\bsk\b[\s\S]{0,20}tidak\s*tercantum/i.test(base);
+11843 count=10 |             const mentionsSk = /(sistem\s*komputer|\bsk\b)/i.test(base);
+11844 count=10 | 
+11845 count=10 |             // If the model says SK is not listed (or simply omits it), double-check directly from training chunks.
+11846 count=11 |             if (isRagEnabled() && (hasActiveTrainingData || allowIndexFallbackNoDb)) {
+11847 count=11 |               // Prefer deterministic list from bundled index when available (stable, complete).
+11848 count=12 |               if (allowBundledIndex) {
+11849 count=12 |                 const programs = extractProgramListFromBundledIndex();
+11850 count=13 |                 if (programs && programs.length) {
+11851 count=13 |                   const dualDegreeLines = extractDualDegreeListFromBundledIndex();
+11852 count=13 |                   const footer =
+11853 count=13 |                     'Kalau kakak mau, sebutkan prodi + gelombang (jika relevan), nanti saya bantu jelaskan rincian biaya/jadwal yang tertulis.';
+11854 count=13 |                   const msg = buildProgramListMessage(programs, footer, dualDegreeLines);
+11855 count=13 |                   if (msg) answer = msg;
+11856 count=12 |                 }
+11857 count=11 |               }
+11858 count=11 | 
+11859 count=11 |               const detectedS1 = await detectProgramsFromTrainingViaProbes(ragQuery);
+11860 count=11 |               const detectedNonS1 = await detectNonS1ProgramsFromTrainingViaProbes(ragQuery);
+11861 count=11 | 
+11862 count=11 |               // If the model is omitting SK or claiming it's not listed, prefer deterministic lists.
+11863 count=12 |               if ((!mentionsSk || saysSkNotListed) && detectedS1 && detectedS1.found && detectedS1.found.length > 0) {
+11864 count=12 |                 const footer =
+11865 count=12 |                   'Kalau kakak mau, sebutkan prodi + gelombang (jika relevan), nanti saya bantu jelaskan rincian biaya/jadwal yang tertulis.';
+11866 count=12 |                 const programsRaw = [
+11867 count=12 |                   ...(detectedNonS1 && detectedNonS1.found ? detectedNonS1.found.map((p) => p.label) : []),
+11868 count=12 |                   ...(detectedS1 && detectedS1.found ? detectedS1.found.map((p) => p.label) : [])
+11869 count=12 |                 ];
+11870 count=12 | 
+11871 count=12 |                 const dd = allowBundledIndex ? extractDualDegreeListFromBundledIndex() : null;
+11872 count=12 |                 const built = buildProgramListMessage(programsRaw, footer, dd);
+11873 count=12 |                 if (built) answer = built;
+11874 count=12 |               } else if (answer) {
+11875 count=12 |                 // Keep existing answer, but ensure the operational list is visible and avoid misleading omissions.
+11876 count=12 |                 answer = augmentProgramStudyAnswer(answer);
+11877 count=11 |               }
+11878 count=11 |             } else if (answer) {
+11879 count=11 |               answer = augmentProgramStudyAnswer(answer);
+11880 count=10 |             }
+11881 count=9 |           }
+11882 count=9 | 
+11883 count=9 |           await sendBotMessage(chatId, answer);
+11884 count=9 | 
+11885 count=9 |           // If option 4 returns the scholarship overview, persist pendingScholarshipChoice
+11886 count=9 |           // so short follow-ups like "ranking" are interpreted correctly.
+11887 count=9 |           const looksLikeScholarshipOverview = /ada\s+beberapa\s+jenis\s+beasiswa/i.test(String(answer || ''));
+11888 count=10 |           if (effectiveSelection === 4 && (answerSource === 'rag-scholarship-overview' || looksLikeScholarshipOverview)) {
+11889 count=11 |             try {
+11890 count=11 |               const currentState = session ? session.state : 'root';
+11891 count=11 |               const prevData = sessionData || {};
+11892 count=12 |               const newData = {
+11893 count=12 |                 ...prevData,
+11894 count=12 |                 lastNumericMenuSelection: selection,
+11895 count=12 |                 lastNumericMenuLabel: welcomeLabel || (menu && menu.label ? menu.label : 'Beasiswa yang Tersedia'),
+11896 count=12 |                 lastNumericMenuEffectiveSelection: effectiveSelection,
+11897 count=12 |                 pendingScholarshipChoice: { ts: new Date().toISOString() }
+11898 count=11 |               };
+11899 count=12 |               await prisma.session.upsert({
+11900 count=12 |                 where: { chatId },
+11901 count=12 |                 create: { chatId, state: currentState, data: newData },
+11902 count=12 |                 update: { state: currentState, data: newData }
+11903 count=11 |               });
+11904 count=11 |             } catch (e) {
+11905 count=11 |               logger.warn({ err: e.message }, '[Provider] Failed to persist pendingScholarshipChoice (numeric menu)');
+11906 count=10 |             }
+11907 count=9 |           }
+11908 count=9 | 
+11909 count=9 |           return res.send({ ok: true, source: 'numeric_menu', selection });
+11910 count=8 |         }
+11911 count=7 |         }
+11912 count=6 |         }
+11913 count=5 |       }
+11914 count=5 |     } catch (e) {
+11915 count=5 |       logger.warn({ err: e.message }, '[Provider] Numeric menu handler failed');
+11916 count=4 |     }
+11917 count=4 | 
+11918 count=4 |     // Non-marketing department menu prompt:
+11919 count=4 |     // If the user asks about topics outside marketing/PMB (e.g. akademik/keuangan/internasional/kerjasama),
+11920 count=4 |     // show a deterministic menu so the user can pick where to go.

@@ -1,0 +1,233 @@
+MARKER:=== BEFORE DECORATE ===
+ resolvedModel: "gpt-4o-mini"
+[2026-06-05 13:53:05.540 +0800] INFO: [AI RAG] Sending updated RAG prompt
+    qLen: 61
+    ctxLen: 6032
+    style: "SEMI"
+    assistHintsLen: 24
+    compactPrompt: false
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan 
+MARKER:=== FULL_BEFORE_DECORATE ===
+van dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, In
+MARKER:=== AFTER DECORATE ===
+Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tert
+MARKER:FINAL_WA_OUTPUT_V2
+van dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- A'
+}
+FINAL_WA_OUTPUT_V2 {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?\n' +
+    'Butu'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yan…'
+}
+=== BEFORE DECORATE === {
+  c
+MARKER:=== FULL_FINAL_WA_MESSAGE ===
+ dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan '
+}
+=== FULL_FINAL_WA_MESSAGE ===
+Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:
+
+- Kursus online: Mengajarkan keterampilan TI melalui platform digital.
+- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.
+
+Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+
+Rekomendasi pertanyaan berikutnya:
+* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?
+* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?\n' +
+    'Butu'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yan…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+=== FULL_BEFORE_DECORATE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan pen
+MARKER:=== FINAL WA MESSAGE ===
+aya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?
+* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?
+=== FINAL WA MESSAGE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yang mungkin ada dalam program ini antara lain:\n' +
+    '\n' +
+    '- Kursus online: Mengajarkan keterampilan TI melalui platform digital.\n' +    '- AI / Machine Learning: Fokus pada pengembangan algoritma dan aplikasi kecerdasan buatan.\n' +
+    '\n' +
+    'Apa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?\n' +
+    'Butu'
+}
+[WhatsAppBusiness] Skipping send in non-production mode: invalid WhatsApp target {
+  chatId: 'test-chat',
+  message: 'Program studi Teknologi Informasi mencakup berbagai mata kuliah yang relevan dengan bidang ini. Beberapa mata kuliah yan…'
+}
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+=== FULL_BEFORE_DECORATE ===
+Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:
+
+- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang membantu dalam pengolahan data.
+- Jaringan komputer: Fokus pada pengaturan dan pengelolaan jaringan untuk komunikasi data yang efisien.
+
+Apakah ada aspek tertentu dari Teknologi Informasi yang ingin kamu ketahui lebih lanjut?
+Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?
+=== AFTER DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Teknologi Informasi (TI) adalah bidang yang berkaitan dengan penggunaan teknologi untuk mengelola dan memproses informasi. TI mencakup berbagai aspek, seperti:\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mencakup pembuatan aplikasi dan sistem yang mem'
+}
+FINAL_WA_OUTPUT_V2 {
+  ch

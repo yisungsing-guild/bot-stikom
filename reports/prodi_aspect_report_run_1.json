@@ -1,0 +1,654 @@
+[
+  {
+    "alias": "SI",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di si",
+        "answer": "Program Studi Sistem Informasi mempelajari berbagai aspek terkait teknologi dan manajemen informasi.\n\n- Analisis sistem: Mempelajari cara merancang dan menganalisis sistem informasi.\n- Database: Fokus pada pengelolaan dan pengembangan database.\n- Business intelligence: Menggunakan data untuk mendukung keputusan bisnis.\n- Manajemen proyek IT: Mengelola proyek teknologi informasi secara efektif.\n- Sistem enterprise: Memahami sistem yang digunakan dalam organisasi besar.\n\nApa ada aspek tertentu dari program ini yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.4444444444444444,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "4d95b75d-49ce-4138-9d73-3bc48e2a2d80",
+            "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "chunk": "ecialist | Brand Manager | Business Development | Startup Founder\"\nManajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bidang Web Developer | Database Administrator | dan IT Entrepreneur yang menghadapi dunia usaha dan industri\" | \"Pengelolaan database | arsip digital | administrasi sistem informasi | data processing | dokumentasi digital\" | \"Teliti | rapi | dan suka mengelola data\" | \"Data Administrator | Database Staff | Information Management Staff | IT Administration | Document Controller | Digital Archive Staff\""
+          },
+          {
+            "id": "0dd928eb-d96d-4b58-9290-56022598b7bc",
+            "trainingId": "file-842336211fcd",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+            "chunk": "[Sheet: Sheet1]\nPenjelasan Prodi dan Karier Masa Depan : Prodi | col2 : Penjelasan prodi | col3 : Yang Dipelajari | col4 : Cocok Untuk | col5 : Peluang Kerja\nPenjelasan Prodi dan Karier Masa Depan : Sistem Informasi | col2 : Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan, serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems, sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi, Perekayasa Sistem Informasi Multimedia, Desainer Grafis, Animator, serta Peneliti Sistem Informasi. | col3 : Analisis sistem, database, business intelligence, manajemen proyek IT, sistem enterprise, digital business | col4 : Suka teknologi sekaligus bisnis dan manajemen | col5 : Business Analyst, System Analyst, I"
+          },
+          {
+            "id": "afc3bd81-e270-4f0d-a4a9-9ea734bde58a",
+            "trainingId": "file-842336211fcd",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+            "chunk": "social media strategy, startup business, entrepreneurship | col4 : Suka bisnis, media sosial, dan strategi pemasaran | col5 : Digital Marketing Specialist, Content Strategist, SEO Specialist, Brand Manager, Business Development, Startup Founder\nPenjelasan Prodi dan Karier Masa Depan : Manajemen Informasi | col2 : Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bidang Web Developer, Database Administrator, dan IT Entrepreneur yang menghadapi dunia usaha dan industri | col3 : Pengelolaan database, arsip digital, administrasi sistem informasi, data processing, dokumentasi digital | col4 : Teliti, rapi, dan suka mengelola data | col5 : Data Administrator, Database Staff, Information Management Staff, IT Administration, Document Controller, Digital Archive Staff"
+          },
+          {
+            "id": "6c1aa226-5043-4e68-ad7d-b006f6be7768",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "Aktivitas : Bermain game\nNo : 47 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Menggambar\nNo : 48 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Animasi/drama\nNo : 49 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Analisis data & bisnis\nNo : 50 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Desain grafis\nNo : 51 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Fotografi\nNo : 52 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Membaca buku IT\nNo : 53 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Konten media sosial\nNo : 54 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Memiliki sosial media\nNo : 55 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Digital marketing\nNo : 56 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Pemrograman aplikasi\nNo : 58 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Ed"
+          },
+          {
+            "id": "27e2d879-4569-4542-87b0-810113c0e157",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "o : 56 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Pemrograman aplikasi\nNo : 58 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Editing video\nNo : 59 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Hackathon\nNo : 60 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Blogging\nNo : 61 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Admin media sosial\nNo : 62 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Startup/bisnis digital\nNo : 63 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Kursus online\nNo : 64 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Membuat game\nNo : 65 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Freelancer IT/desain\nNo : 66 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Komunitas developer\nNo : 67 | Program Studi : Sistem Informasi | Hobi / Aktivitas : E-commerce\nNo : 68 | Program Stud"
+          }
+        ]
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi si cocok untuk siapa",
+        "answer": "Program Studi Sistem Informasi cocok untuk individu yang memiliki minat dalam teknologi, bisnis, dan manajemen.\n\n- Cocok untuk: Seseorang yang suka teknologi sekaligus bisnis dan manajemen.\n- Peluang kerja: Lulusan dapat berkarir sebagai Business Analyst, System Analyst, dan berbagai posisi lainnya di bidang sistem informasi.\n\nApa ada aspek tertentu dari program studi ini yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.5526315789473685,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "0d40f1ae-0554-4f7a-9f28-a6083d02dab6",
+            "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+            "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "chunk": "INSTITUT TEKNOLOGI DAN BISNIS\n(ITB) STIKOM BALI\nDenpasar\nJimbaran\nKampus\n3L Raya Kampus Udayana, Kuta Setatan, Jimbaran - Bal - Indonesia | Pfx (0367 8953534 | Hotline : 081289778840\nKampus Ablansemal\n3L Janger, Ablanseral - Dauh Yeh Canl, Badung - Ball - Indonesia | Pfr (0367 4790925 | Hotfine : 08245099633\nB STIXOA | RALL\nDr. Dadang Hermawan\ni Dipindai dengan |\ni@ CamScanner ."
+          },
+          {
+            "id": "3b0c07f2-a480-4bf7-939e-ff5a9bfc010e",
+            "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+            "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "chunk": "INSTITUT TEKNOLOGI DAN BISNIS\n\\ (ITB) STIKOM BALI\nKampus Denpasar\nKampus Jimbaran\n3L Raya Kampus Udayana, Kuta Selatan, Jimbaran - Ball - Indonesia | P (0361) 8953534 | Hotline: 061288778840\nKampus Abiansemal\nT TEXNOLOGI DANBISHIS 3L3anger. Ablansemal - Dauh Yeh Canl, Backing - Bal Indonesia | P (0361 4790525 | Hotline: 082145099633"
+          },
+          {
+            "id": "ad06a625-545a-442d-b22e-58b1ebe33ce0",
+            "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+            "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "chunk": "INSTITUT TEKNOLOGI DAN BISNIS\n\\ (ITB) STIKOM BALI\nKamj\nnwr:ummnmn-_-u-m-filmmmlmmmm:m\nKampus Jimbaran\n3L Raya Kampus Udayana, Kuta Selatan, Jimbaran - Ball - Indonesia | P (0361 8353534 | Hotline:: 081288778840\nKampus Ablansemal\nINSTITUT TEXNOLOGI DAN BISNIS 3L3anger, Ablansemal - Dauh Yeh Canl, Bacung - Bail- Indonesia | Phe (0367) 4790925 | Hotline : 082145089653\nSTIKOM BALI 'email: Info@stikom ballacid | webshe : wwstkom-balLacld"
+          },
+          {
+            "id": "6c1aa226-5043-4e68-ad7d-b006f6be7768",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "Aktivitas : Bermain game\nNo : 47 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Menggambar\nNo : 48 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Animasi/drama\nNo : 49 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Analisis data & bisnis\nNo : 50 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Desain grafis\nNo : 51 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Fotografi\nNo : 52 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Membaca buku IT\nNo : 53 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Konten media sosial\nNo : 54 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Memiliki sosial media\nNo : 55 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Digital marketing\nNo : 56 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Pemrograman aplikasi\nNo : 58 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Ed"
+          },
+          {
+            "id": "0dd928eb-d96d-4b58-9290-56022598b7bc",
+            "trainingId": "file-842336211fcd",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+            "chunk": "[Sheet: Sheet1]\nPenjelasan Prodi dan Karier Masa Depan : Prodi | col2 : Penjelasan prodi | col3 : Yang Dipelajari | col4 : Cocok Untuk | col5 : Peluang Kerja\nPenjelasan Prodi dan Karier Masa Depan : Sistem Informasi | col2 : Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan, serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems, sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi, Perekayasa Sistem Informasi Multimedia, Desainer Grafis, Animator, serta Peneliti Sistem Informasi. | col3 : Analisis sistem, database, business intelligence, manajemen proyek IT, sistem enterprise, digital business | col4 : Suka teknologi sekaligus bisnis dan manajemen | col5 : Business Analyst, System Analyst, I"
+          }
+        ]
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi si",
+        "answer": "Peluang kerja untuk lulusan Program Studi Sistem Informasi cukup beragam.\n\n- Business Analyst: Menganalisis kebutuhan bisnis dan sistem informasi.\n- System Analyst: Merancang dan mengembangkan sistem informasi.\n- Perekayasa Sistem Informasi Multimedia: Mengembangkan aplikasi multimedia.\n- Desainer Grafis: Membuat desain visual untuk berbagai media.\n- Animator: Menghasilkan konten animasi.\n- Peneliti Sistem Informasi: Melakukan penelitian di bidang sistem informasi.\n\nLulusan juga dapat berkarir di bidang digital marketing, pemrograman aplikasi, dan manajemen proyek IT.\nApakah ada informasi lain yang ingin kamu ketahui tentang prodi ini?",
+        "overlapRatio": 0.5769230769230769,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "0dd928eb-d96d-4b58-9290-56022598b7bc",
+            "trainingId": "file-842336211fcd",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+            "chunk": "[Sheet: Sheet1]\nPenjelasan Prodi dan Karier Masa Depan : Prodi | col2 : Penjelasan prodi | col3 : Yang Dipelajari | col4 : Cocok Untuk | col5 : Peluang Kerja\nPenjelasan Prodi dan Karier Masa Depan : Sistem Informasi | col2 : Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan, serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems, sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi, Perekayasa Sistem Informasi Multimedia, Desainer Grafis, Animator, serta Peneliti Sistem Informasi. | col3 : Analisis sistem, database, business intelligence, manajemen proyek IT, sistem enterprise, digital business | col4 : Suka teknologi sekaligus bisnis dan manajemen | col5 : Business Analyst, System Analyst, I"
+          },
+          {
+            "id": "6c1aa226-5043-4e68-ad7d-b006f6be7768",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "Aktivitas : Bermain game\nNo : 47 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Menggambar\nNo : 48 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Animasi/drama\nNo : 49 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Analisis data & bisnis\nNo : 50 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Desain grafis\nNo : 51 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Fotografi\nNo : 52 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Membaca buku IT\nNo : 53 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Konten media sosial\nNo : 54 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Memiliki sosial media\nNo : 55 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Digital marketing\nNo : 56 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Pemrograman aplikasi\nNo : 58 | Program Studi : Sistem Informasi | Hobi / Aktivitas : Ed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "alias": "TI",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di ti",
+        "answer": "Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang relevan dengan perkembangan teknologi saat ini.\n\n- Cybersecurity: Fokus pada perlindungan sistem dan data dari ancaman digital.\n- Jaringan komputer: Mempelajari cara menghubungkan dan mengelola jaringan.\n- AI / Machine Learning: Mengembangkan algoritma dan sistem yang dapat belajar dari data.\n- UI/UX design: Mendesain antarmuka pengguna yang intuitif dan menarik.\n\nApa ada aspek tertentu dari program TI yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.26666666666666666,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "dda14be9-d4ad-4e49-88d3-76ae21761164",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "asi | Hobi / Aktivitas : Cybersecurity\nNo : 77 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Jaringan komputer\nNo : 78 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Kabel LAN\nNo : 79 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : UI/UX design\nNo : 80 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Editing video\nNo : 81 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Pengolahan data\nNo : 82 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Membaca buku IT\nNo : 83 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Server management\nNo : 84 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Membuat game\nNo : 85 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Blog teknologi\nNo : 86 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Kursus online\nNo : 87 | Program Studi : Teknologi Informas"
+          },
+          {
+            "id": "39329770-0255-47b4-a3d2-1e6a14827b17",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "tivitas : Blog teknologi\nNo : 86 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Kursus online\nNo : 87 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : AI / Machine Learning\nNo : 88 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Komunitas IT\nNo : 89 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Startup teknologi\nNo : 90 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Otak-atik komputer\nNo : 91 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Menggambar\nNo : 92 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Membaca buku IT\nNo : 93 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Sosial media\nNo : 94 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Konten sosial media\nNo : 95 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Pengolahan data\nNo : 96 | Program Studi : Manaj"
+          },
+          {
+            "id": "a95f6492-1dc8-44c6-b8a7-56bc97e67286",
+            "trainingId": "file-eac56d61b316",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan-1779845893949.xlsx",
+            "chunk": "Ringkasan dokumen:\nProgram studi terlihat: Penjelasan Prodi dan Karier Masa Depan : Prodi | col2 : Yang Dipelajari | col3 : Cocok Untuk | col4 : Peluang Kerja"
+          }
+        ]
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi ti cocok untuk siapa",
+        "answer": "Program studi Teknologi Informasi (TI) cocok untuk:\n\n- Siswa yang memiliki minat dalam bidang teknologi dan komputer.\n- Mereka yang ingin mengembangkan keterampilan dalam pemrograman, jaringan, dan pengolahan data.\n\nApakah ada aspek tertentu dari program TI yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.27586206896551724,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "e73dd65c-7490-40fe-a610-a0f9779d531d",
+            "trainingId": "d7cb3406-660e-4b40-9506-066e7aa686ab",
+            "filename": "SERTIFIKAT AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+            "chunk": "Sertifikat akreditasi program studi ini berlaku\nJakarta, 6 - September - 2022"
+          },
+          {
+            "id": "22e4abb3-d38b-4356-b7da-c90eefc778be",
+            "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+            "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "chunk": "INSTITUT TEKNOLOGI DAN B\nSTIKOM BALI"
+          },
+          {
+            "id": "0d40f1ae-0554-4f7a-9f28-a6083d02dab6",
+            "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+            "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "chunk": "INSTITUT TEKNOLOGI DAN BISNIS\n(ITB) STIKOM BALI\nDenpasar\nJimbaran\nKampus\n3L Raya Kampus Udayana, Kuta Setatan, Jimbaran - Bal - Indonesia | Pfx (0367 8953534 | Hotline : 081289778840\nKampus Ablansemal\n3L Janger, Ablanseral - Dauh Yeh Canl, Badung - Ball - Indonesia | Pfr (0367 4790925 | Hotfine : 08245099633\nB STIXOA | RALL\nDr. Dadang Hermawan\ni Dipindai dengan |\ni@ CamScanner ."
+          },
+          {
+            "id": "3b0c07f2-a480-4bf7-939e-ff5a9bfc010e",
+            "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+            "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "chunk": "INSTITUT TEKNOLOGI DAN BISNIS\n\\ (ITB) STIKOM BALI\nKampus Denpasar\nKampus Jimbaran\n3L Raya Kampus Udayana, Kuta Selatan, Jimbaran - Ball - Indonesia | P (0361) 8953534 | Hotline: 061288778840\nKampus Abiansemal\nT TEXNOLOGI DANBISHIS 3L3anger. Ablansemal - Dauh Yeh Canl, Backing - Bal Indonesia | P (0361 4790525 | Hotline: 082145099633"
+          },
+          {
+            "id": "ad06a625-545a-442d-b22e-58b1ebe33ce0",
+            "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+            "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "chunk": "INSTITUT TEKNOLOGI DAN BISNIS\n\\ (ITB) STIKOM BALI\nKamj\nnwr:ummnmn-_-u-m-filmmmlmmmm:m\nKampus Jimbaran\n3L Raya Kampus Udayana, Kuta Selatan, Jimbaran - Ball - Indonesia | P (0361 8353534 | Hotline:: 081288778840\nKampus Ablansemal\nINSTITUT TEXNOLOGI DAN BISNIS 3L3anger, Ablansemal - Dauh Yeh Canl, Bacung - Bail- Indonesia | Phe (0367) 4790925 | Hotline : 082145089653\nSTIKOM BALI 'email: Info@stikom ballacid | webshe : wwstkom-balLacld"
+          }
+        ]
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi ti",
+        "answer": "Peluang kerja untuk program studi Teknologi Informasi (TI) cukup luas dan beragam.\n\n- Bidang Cybersecurity: Permintaan untuk profesional yang mampu melindungi data dan sistem dari ancaman siber terus meningkat.\n- Jaringan Komputer: Spesialis dalam jaringan sangat dibutuhkan untuk merancang dan mengelola infrastruktur jaringan.\n- UI/UX Design: Desainer yang memahami pengalaman pengguna sangat dicari untuk meningkatkan interaksi pengguna dengan produk digital.\n- Pengolahan Data: Analis data dan ilmuwan data memiliki peran penting dalam pengambilan keputusan berbasis data.\n\nApakah ada bidang tertentu dalam Teknologi Informasi yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.18333333333333332,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "e73dd65c-7490-40fe-a610-a0f9779d531d",
+            "trainingId": "d7cb3406-660e-4b40-9506-066e7aa686ab",
+            "filename": "SERTIFIKAT AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+            "chunk": "Sertifikat akreditasi program studi ini berlaku\nJakarta, 6 - September - 2022"
+          },
+          {
+            "id": "dda14be9-d4ad-4e49-88d3-76ae21761164",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "asi | Hobi / Aktivitas : Cybersecurity\nNo : 77 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Jaringan komputer\nNo : 78 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Kabel LAN\nNo : 79 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : UI/UX design\nNo : 80 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Editing video\nNo : 81 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Pengolahan data\nNo : 82 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Membaca buku IT\nNo : 83 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Server management\nNo : 84 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Membuat game\nNo : 85 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Blog teknologi\nNo : 86 | Program Studi : Teknologi Informasi | Hobi / Aktivitas : Kursus online\nNo : 87 | Program Studi : Teknologi Informas"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "alias": "BD",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di bd",
+        "answer": "Program studi Bisnis Digital & DKV mencakup berbagai aspek yang relevan dengan dunia digital saat ini.\n\n- Materi yang dipelajari meliputi pembuatan konten media sosial, desain grafis, dan digital marketing.\n- Selain itu, mahasiswa juga belajar tentang pengelolaan toko online/offline dan analisis tren pasar.\n\nApa ada aspek tertentu dari program ini yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.4878048780487805,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "f3a488e3-3a2a-49b7-99a7-fc1fad9eb466",
+            "trainingId": "a4834fc1-bb66-4146-8774-88b321fba707",
+            "filename": "hobi_prodi_lengkap (1).xlsx",
+            "chunk": "No | Program Studi | Hobi / Aktivitas\n1 | Bisnis Digital & DKV | Membuat konten media sosial\n2 | Bisnis Digital & DKV | Memiliki sosial media\n3 | Bisnis Digital & DKV | Menulis blog/artikel\n4 | Bisnis Digital & DKV | Desain grafis\n5 | Bisnis Digital & DKV | Editing video\n6 | Bisnis Digital & DKV | Fotografi produk\n7 | Bisnis Digital & DKV | Belajar digital marketing\n8 | Bisnis Digital & DKV | Mengelola toko online/offline\n9 | Bisnis Digital & DKV | Dropshipper/reseller\n11 | Bisnis Digital & DKV | Analisis tren pasar\n12 | Bisnis Digital & DKV | Mengikuti webinar bisnis\n13 | Bisnis Digital & DKV | Membuat podcast\n14 | Bisnis Digital & DKV | Trading saham/crypto\n15 | Bisnis Digital & DKV | Komunitas bisnis/startup\n16 | Bisnis Digital & DKV | Kompetisi bisnis\n17 | Bisnis Digital & DKV | Tawar-menawar\n18 | Bisnis Digital & DKV | Influencer\n19 | Bisnis Digital & DKV | Blogger\n20 | Bisnis Digit"
+          },
+          {
+            "id": "20f598ef-94d1-4788-bb34-99f1619ba6b4",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": ": Bisnis Digital & DKV | Hobi / Aktivitas : Dropshipper/reseller\nNo : 11 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Analisis tren pasar\nNo : 12 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Mengikuti webinar bisnis\nNo : 13 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Membuat podcast\nNo : 14 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Trading saham/crypto\nNo : 15 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Komunitas bisnis/startup\nNo : 16 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Kompetisi bisnis\nNo : 17 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Tawar-menawar\nNo : 18 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Influencer\nNo : 19 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Blogger\nNo : 20 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas"
+          },
+          {
+            "id": "7ef67f8b-80cd-4987-8a60-57239ee9e93c",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "[Sheet: Hobi Prodi]\nNo : 1 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Membuat konten media sosial\nNo : 2 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Memiliki sosial media\nNo : 3 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Menulis blog/artikel\nNo : 4 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Desain grafis\nNo : 5 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Editing video\nNo : 6 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Fotografi produk\nNo : 7 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Belajar digital marketing\nNo : 8 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Mengelola toko online/offline\nNo : 9 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Dropshipper/reseller\nNo : 11 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Analisis tren pa"
+          },
+          {
+            "id": "bdcb45b2-881d-42c2-9f0e-30ab920a4c1a",
+            "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+            "filename": "HOBY.pdf",
+            "chunk": "HOBI DAN KECOCOKAN PRODI\nnoprodihobi\n1\nBisnis Digital & DKVMembuat konten media sosial\n2\nBisnis Digital & DKVMemiliki sosial media\n3\nBisnis Digital & DKVMenulis blog/artikel\n4\nBisnis Digital & DKVDesain grafis\n5\nBisnis Digital & DKVEditing video\n6\nBisnis Digital & DKVFotografi produk\n7\nBisnis Digital & DKVBelajar digital marketing\n8\nBisnis Digital & DKVMengelola toko online/offline\n9\nBisnis Digital & DKVDropshipper/reseller\n10\n11\nBisnis Digital & DKVAnalisis tren pasar\n12\nBisnis Digital & DKVMengikuti webinar bisnis\n13\nBisnis Digital & DKVMembuat podcast\n14\nBisnis Digital & DKVTrading saham/crypto\n15\nBisnis Digital & DKVKomunitas bisnis/startup\n16\nBisnis Digital & DKVKompetisi bisnis\n17\nBisnis Digital & DKVTawar-menawar\n18\nBisnis Digital & DKVInfluencer\n19\nBisnis Digital & DKVBlogger\n20\nBisnis Digital & DKVVlogger\n21\nBisnis Digital & DKVYouTuber\n22\nBisnis Digital & DKVStorytelling visual"
+          },
+          {
+            "id": "a809429d-86f2-4cc7-8e20-ea8e9adedaa4",
+            "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "chunk": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer | \"Program Studi Sistem Komputer menghasilkan lulusan yang memiliki kompetensi dalam merancang. mengimplementasikan sistem Internet of Things (IoT) | pada sistem Internet of Things (IoT) | sistem tertanam | sistem kontrol | dan jaringan komputer dengan menerapkan prinsip keamanan jaringan. Profil lulusan yaitu Perekayasa Sistem Tertanam dan IoT | Perekayasa Jaringan Komputer dan Keamanan Sistem | serta Peneliti di bidang Sistem Komputer.\" | \"Hardware | mikrocontroller | embedded system | IoT | robotika | jaringan komputer | sistem digital\" | \"Suka perangkat elektronik | robot | dan praktik teknis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"P"
+          }
+        ]
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi bd cocok untuk siapa",
+        "answer": "Program studi Bisnis Digital cocok untuk individu yang memiliki minat dan hobi dalam bidang digital dan pemasaran. Beberapa kecocokan yang dapat diidentifikasi adalah:\n\n- Suka membuat konten media sosial dan memiliki sosial media.\n- Tertarik dalam analisis tren pasar, digital marketing, dan mengelola toko online/offline.\n\nLulusan dari program ini dapat berkarir sebagai Digital Marketing Specialist, Business Analyst, atau Project Manager.\nApakah ada hobi atau minat tertentu yang ingin kamu ketahui lebih lanjut terkait prodi ini?",
+        "overlapRatio": 0.5576923076923077,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "bdcb45b2-881d-42c2-9f0e-30ab920a4c1a",
+            "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+            "filename": "HOBY.pdf",
+            "chunk": "HOBI DAN KECOCOKAN PRODI\nnoprodihobi\n1\nBisnis Digital & DKVMembuat konten media sosial\n2\nBisnis Digital & DKVMemiliki sosial media\n3\nBisnis Digital & DKVMenulis blog/artikel\n4\nBisnis Digital & DKVDesain grafis\n5\nBisnis Digital & DKVEditing video\n6\nBisnis Digital & DKVFotografi produk\n7\nBisnis Digital & DKVBelajar digital marketing\n8\nBisnis Digital & DKVMengelola toko online/offline\n9\nBisnis Digital & DKVDropshipper/reseller\n10\n11\nBisnis Digital & DKVAnalisis tren pasar\n12\nBisnis Digital & DKVMengikuti webinar bisnis\n13\nBisnis Digital & DKVMembuat podcast\n14\nBisnis Digital & DKVTrading saham/crypto\n15\nBisnis Digital & DKVKomunitas bisnis/startup\n16\nBisnis Digital & DKVKompetisi bisnis\n17\nBisnis Digital & DKVTawar-menawar\n18\nBisnis Digital & DKVInfluencer\n19\nBisnis Digital & DKVBlogger\n20\nBisnis Digital & DKVVlogger\n21\nBisnis Digital & DKVYouTuber\n22\nBisnis Digital & DKVStorytelling visual"
+          },
+          {
+            "id": "7ef67f8b-80cd-4987-8a60-57239ee9e93c",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "[Sheet: Hobi Prodi]\nNo : 1 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Membuat konten media sosial\nNo : 2 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Memiliki sosial media\nNo : 3 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Menulis blog/artikel\nNo : 4 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Desain grafis\nNo : 5 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Editing video\nNo : 6 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Fotografi produk\nNo : 7 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Belajar digital marketing\nNo : 8 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Mengelola toko online/offline\nNo : 9 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Dropshipper/reseller\nNo : 11 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Analisis tren pa"
+          },
+          {
+            "id": "eef5369c-ee4e-4053-bd4d-2c4a7406557d",
+            "trainingId": "file-842336211fcd",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+            "chunk": "controller, embedded system, IoT, robotika, jaringan komputer, sistem digital | col4 : Suka perangkat elektronik, robot, dan praktik teknis | col5 : IoT Engineer, Hardware Engineer, Robotics Engineer, Network Engineer, Automation Engineer, Embedded System Engineer\nPenjelasan Prodi dan Karier Masa Depan : Bisnis Digital | col2 : Program studi ini menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital dengan mengadopsi trend perkembangan terkini di sektor industri E-commerce. Lulusan Bisnis Digital memiliki peluang profesi sebagai Digital Marketing Specialist, Digital Strategist, Project Manager, Business Analyst, Market Analyst dan Product Manager. | col3 : Digital marketing, e-commerce, branding, social media strategy, startup business, entrepreneurship | col4 : Suka bisnis, media sosial, dan strategi pemasaran | col5 : Digital Marketing Speci"
+          }
+        ]
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi bd",
+        "answer": "Program studi Bisnis Digital menawarkan berbagai peluang kerja yang menjanjikan. Lulusan dapat berkarir sebagai:\n\n- Digital Marketing Specialist: Mengelola strategi pemasaran digital.\n- Project Manager: Mengawasi proyek bisnis berbasis digital.\n- Business Analyst: Menganalisis data untuk pengambilan keputusan bisnis.\n- Market Analyst: Meneliti dan menganalisis pasar.\n- Product Manager: Mengelola pengembangan produk digital.\n\nPeluang ini mencerminkan kebutuhan industri yang terus berkembang di sektor e-commerce dan digital marketing.\nApakah ada posisi tertentu yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.4807692307692308,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "eef5369c-ee4e-4053-bd4d-2c4a7406557d",
+            "trainingId": "file-842336211fcd",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+            "chunk": "controller, embedded system, IoT, robotika, jaringan komputer, sistem digital | col4 : Suka perangkat elektronik, robot, dan praktik teknis | col5 : IoT Engineer, Hardware Engineer, Robotics Engineer, Network Engineer, Automation Engineer, Embedded System Engineer\nPenjelasan Prodi dan Karier Masa Depan : Bisnis Digital | col2 : Program studi ini menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital dengan mengadopsi trend perkembangan terkini di sektor industri E-commerce. Lulusan Bisnis Digital memiliki peluang profesi sebagai Digital Marketing Specialist, Digital Strategist, Project Manager, Business Analyst, Market Analyst dan Product Manager. | col3 : Digital marketing, e-commerce, branding, social media strategy, startup business, entrepreneurship | col4 : Suka bisnis, media sosial, dan strategi pemasaran | col5 : Digital Marketing Speci"
+          },
+          {
+            "id": "7ef67f8b-80cd-4987-8a60-57239ee9e93c",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "[Sheet: Hobi Prodi]\nNo : 1 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Membuat konten media sosial\nNo : 2 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Memiliki sosial media\nNo : 3 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Menulis blog/artikel\nNo : 4 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Desain grafis\nNo : 5 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Editing video\nNo : 6 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Fotografi produk\nNo : 7 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Belajar digital marketing\nNo : 8 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Mengelola toko online/offline\nNo : 9 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Dropshipper/reseller\nNo : 11 | Program Studi : Bisnis Digital & DKV | Hobi / Aktivitas : Analisis tren pa"
+          },
+          {
+            "id": "bdcb45b2-881d-42c2-9f0e-30ab920a4c1a",
+            "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc",
+            "filename": "HOBY.pdf",
+            "chunk": "HOBI DAN KECOCOKAN PRODI\nnoprodihobi\n1\nBisnis Digital & DKVMembuat konten media sosial\n2\nBisnis Digital & DKVMemiliki sosial media\n3\nBisnis Digital & DKVMenulis blog/artikel\n4\nBisnis Digital & DKVDesain grafis\n5\nBisnis Digital & DKVEditing video\n6\nBisnis Digital & DKVFotografi produk\n7\nBisnis Digital & DKVBelajar digital marketing\n8\nBisnis Digital & DKVMengelola toko online/offline\n9\nBisnis Digital & DKVDropshipper/reseller\n10\n11\nBisnis Digital & DKVAnalisis tren pasar\n12\nBisnis Digital & DKVMengikuti webinar bisnis\n13\nBisnis Digital & DKVMembuat podcast\n14\nBisnis Digital & DKVTrading saham/crypto\n15\nBisnis Digital & DKVKomunitas bisnis/startup\n16\nBisnis Digital & DKVKompetisi bisnis\n17\nBisnis Digital & DKVTawar-menawar\n18\nBisnis Digital & DKVInfluencer\n19\nBisnis Digital & DKVBlogger\n20\nBisnis Digital & DKVVlogger\n21\nBisnis Digital & DKVYouTuber\n22\nBisnis Digital & DKVStorytelling visual"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "alias": "SK",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di sk",
+        "answer": "Program Studi Sistem Komputer mencakup berbagai mata kuliah yang dirancang untuk membekali mahasiswa dengan keterampilan dan pengetahuan yang relevan.\n\n- Kemampuan analisis dan perancangan sistem tertanam serta Internet of Things (Io Ts).\n- Pengelolaan jaringan komputer dan penerapan prinsip keamanan jaringan.\n\nApa ada mata kuliah tertentu yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.5142857142857142,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "2cb3b5d8-806d-4914-ad0f-47f857a6c993",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "BAB I DESKRIPSI PROGRAM STUDI ................................................................................................. 1\nA. PROFIL LULUSAN .................................................................................................................... 1\nB. CAPAIAN PEMBELAJARAN LULUSAN ................................................................................ 1"
+          },
+          {
+            "id": "8456df6b-85d3-4aa7-bac3-667303412a7e",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "Program Studi Sistem Komputer degan profil lulusan sebagai berikut:\n1. Profil lulusan yang memiliki kemampuan dan ketrampilan dalam menganalisis, merancang,\ndan menerapkan sistem tertanam dan Internet of Things (IoTs) dengan mengintegrasikan\nperangkat lunak, komponen elektrik, mekanik, perangkat komunikasi, protokol IoTs, dan\nalgoritma sistem cerdas untuk tujuan yang spesifik, serta mampu mengidentifikasi dan\nmengembangkan potensi bisnis di bidang yang ditekuninya.\n2. Profil lulusan yang memiliki kemampuan dan ketrampilan dalam menganalisis, merancang,\nmenerapkan, mengelola jaringan komputer maupun jaringan Internet of Things (IoT)\nmenggunakan prinsip-prinsip keamanan jaringan untuk keperluan organisasi, serta mampu\nmengidentifikasi dan mengembangkan potensi bisnis di bidang yang ditekuninya.\nKeterampilan yang dapat dim"
+          },
+          {
+            "id": "cee37f1c-01de-4427-b96d-3db5c14972be",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "Daftar Mata Kuliah Program Studi Sistem Komputer\nNo\nKode Mata\nKuliah\nNama Mata Kuliah\nsks Mengajukan\nRPL\nKeterangan\n(Isikan:Transfer\nsks/Perolehan sks)\n1\nYa Tidak\n2\nYa Tidak\n3\nYa Tidak\ndst\nYa Tidak\nBersama ini saya mengajukan permohonan untuk dapat mengikuti Rekognisi Pembelajaran"
+          },
+          {
+            "id": "1447e848-efd0-48fd-bb4d-685909cf0e80",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "Program Studi :"
+          },
+          {
+            "id": "71031ba8-003e-4fa1-9e64-9240608340f4",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "PROGRAM STUDI SARJANA"
+          }
+        ]
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi sk cocok untuk siapa",
+        "answer": "Program studi Sistem Komputer cocok untuk:\n\n- Siswa yang memiliki minat dalam teknologi informasi dan komputer.\n- Mereka yang ingin mengembangkan keterampilan dalam pemrograman, jaringan, dan pengembangan perangkat lunak.\n\nApakah ada aspek tertentu dari program studi ini yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.4666666666666667,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "cee37f1c-01de-4427-b96d-3db5c14972be",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "Daftar Mata Kuliah Program Studi Sistem Komputer\nNo\nKode Mata\nKuliah\nNama Mata Kuliah\nsks Mengajukan\nRPL\nKeterangan\n(Isikan:Transfer\nsks/Perolehan sks)\n1\nYa Tidak\n2\nYa Tidak\n3\nYa Tidak\ndst\nYa Tidak\nBersama ini saya mengajukan permohonan untuk dapat mengikuti Rekognisi Pembelajaran"
+          },
+          {
+            "id": "2cb3b5d8-806d-4914-ad0f-47f857a6c993",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "BAB I DESKRIPSI PROGRAM STUDI ................................................................................................. 1\nA. PROFIL LULUSAN .................................................................................................................... 1\nB. CAPAIAN PEMBELAJARAN LULUSAN ................................................................................ 1"
+          },
+          {
+            "id": "1472d07e-aeb6-4b26-870f-434559afeb4a",
+            "trainingId": "748958d9-e5e8-4306-a689-c39c15967e45",
+            "filename": "SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf",
+            "chunk": "tidak memenuhi syarat Peringkat Akreditasi.\nKEEMPAT:Pada saat Keputusan Badan Akreditasi Nasional Perguruan\nTinggi ini mulai berlaku, Keputusan Badan Akreditasi Nasional\nPerguruan Tinggi Nomor 837/SK/BAN-PT/Ak.Ppj/PT/X/2023\nmengenai Peringkat Akreditasi Perguruan Tinggi Institut\nTeknologi dan Bisnis STIKOM Bali, Kota Denpasar, dicabut\ndan dinyatakan tidak berlaku.\nKELIMA:Keputusan Badan Akreditasi Nasional Perguruan Tinggi ini\nDitetapkan di Jakarta"
+          },
+          {
+            "id": "0db9bbde-0c65-4783-830f-d35d2d680643",
+            "trainingId": "748958d9-e5e8-4306-a689-c39c15967e45",
+            "filename": "SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf",
+            "chunk": "BADAN AKREDITASI NASIONAL PERGURUAN TINGGI\nNOMOR : 3033/SK/BAN-PT/Ak.KP/PT/XII/2025\nTENTANG"
+          },
+          {
+            "id": "f21e86a7-37a7-46c2-b51e-dd038ddb63c8",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "BUKU 1: DESKRIPSI PRODI DAN FORMULIR"
+          }
+        ]
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi sk",
+        "answer": "Peluang kerja untuk lulusan program studi Sistem Komputer cukup beragam.\n\n- Bidang Teknologi Informasi: Lulusan dapat bekerja sebagai programmer, sistem analis, atau pengembang perangkat lunak.\n- Jaringan dan Keamanan: Ada juga peluang di bidang jaringan komputer dan keamanan siber, seperti administrator jaringan atau analis keamanan.\n\nApakah ada bidang tertentu yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.4166666666666667,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "2cb3b5d8-806d-4914-ad0f-47f857a6c993",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "BAB I DESKRIPSI PROGRAM STUDI ................................................................................................. 1\nA. PROFIL LULUSAN .................................................................................................................... 1\nB. CAPAIAN PEMBELAJARAN LULUSAN ................................................................................ 1"
+          },
+          {
+            "id": "cee37f1c-01de-4427-b96d-3db5c14972be",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "Daftar Mata Kuliah Program Studi Sistem Komputer\nNo\nKode Mata\nKuliah\nNama Mata Kuliah\nsks Mengajukan\nRPL\nKeterangan\n(Isikan:Transfer\nsks/Perolehan sks)\n1\nYa Tidak\n2\nYa Tidak\n3\nYa Tidak\ndst\nYa Tidak\nBersama ini saya mengajukan permohonan untuk dapat mengikuti Rekognisi Pembelajaran"
+          },
+          {
+            "id": "f4c43aee-9295-4bf4-9aa5-a3806cf1c610",
+            "trainingId": "2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae",
+            "filename": "PEDOMAN-RPL-SK Sistem Komputer.pdf",
+            "chunk": "Pekerjaan :"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "alias": "MI",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di mi",
+        "answer": "Program studi Manajemen Informatika (MI) fokus pada pendidikan vokasi yang menanamkan kompetensi untuk siap kerja.\n\n- Yang dipelajari mencakup pengelolaan database, arsip digital, administrasi sistem informasi, dan data processing.\n- Lulusan akan mahir dalam bidang Web Developer, Database Administrator, dan IT Entrepreneur yang siap menghadapi dunia usaha dan industri.\n\nApa ada aspek tertentu dari program ini yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.7555555555555555,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "421f7337-ea4a-4e13-85d1-2d265354dae8",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "/ Aktivitas : Konten sosial media\nNo : 95 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Pengolahan data\nNo : 96 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Menggunakan aplikasi\nNo : 97 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Blogging\nNo : 98 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Jualan online\nNo : 99 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Mengelola toko online\nNo : 100 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Desain branding\nNo : 101 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Startup\nNo : 102 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Seminar/webinar\nNo : 103 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Komunitas entrepreneur"
+          },
+          {
+            "id": "4d95b75d-49ce-4138-9d73-3bc48e2a2d80",
+            "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "chunk": "ecialist | Brand Manager | Business Development | Startup Founder\"\nManajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bidang Web Developer | Database Administrator | dan IT Entrepreneur yang menghadapi dunia usaha dan industri\" | \"Pengelolaan database | arsip digital | administrasi sistem informasi | data processing | dokumentasi digital\" | \"Teliti | rapi | dan suka mengelola data\" | \"Data Administrator | Database Staff | Information Management Staff | IT Administration | Document Controller | Digital Archive Staff\""
+          },
+          {
+            "id": "afc3bd81-e270-4f0d-a4a9-9ea734bde58a",
+            "trainingId": "file-842336211fcd",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+            "chunk": "social media strategy, startup business, entrepreneurship | col4 : Suka bisnis, media sosial, dan strategi pemasaran | col5 : Digital Marketing Specialist, Content Strategist, SEO Specialist, Brand Manager, Business Development, Startup Founder\nPenjelasan Prodi dan Karier Masa Depan : Manajemen Informasi | col2 : Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bidang Web Developer, Database Administrator, dan IT Entrepreneur yang menghadapi dunia usaha dan industri | col3 : Pengelolaan database, arsip digital, administrasi sistem informasi, data processing, dokumentasi digital | col4 : Teliti, rapi, dan suka mengelola data | col5 : Data Administrator, Database Staff, Information Management Staff, IT Administration, Document Controller, Digital Archive Staff"
+          },
+          {
+            "id": "a95f6492-1dc8-44c6-b8a7-56bc97e67286",
+            "trainingId": "file-eac56d61b316",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan-1779845893949.xlsx",
+            "chunk": "Ringkasan dokumen:\nProgram studi terlihat: Penjelasan Prodi dan Karier Masa Depan : Prodi | col2 : Yang Dipelajari | col3 : Cocok Untuk | col4 : Peluang Kerja"
+          },
+          {
+            "id": "76ec5b61-7c3f-4d79-a890-84616095298e",
+            "trainingId": "file-842336211fcd",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1)-1780371122234.xlsx",
+            "chunk": "Staff, Information Management Staff, IT Administration, Document Controller, Digital Archive Staff"
+          }
+        ]
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi mi cocok untuk siapa",
+        "answer": "Program studi Manajemen Informatika cocok untuk individu yang memiliki minat dalam teknologi dan manajemen.\n\n- Siswa yang tertarik dengan pengolahan data dan aplikasi teknologi.\n- Mereka yang ingin mengembangkan keterampilan dalam desain branding, jualan online, dan manajemen toko online.\n\nApa aspek tertentu dari program ini yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.5294117647058824,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "421f7337-ea4a-4e13-85d1-2d265354dae8",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "/ Aktivitas : Konten sosial media\nNo : 95 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Pengolahan data\nNo : 96 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Menggunakan aplikasi\nNo : 97 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Blogging\nNo : 98 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Jualan online\nNo : 99 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Mengelola toko online\nNo : 100 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Desain branding\nNo : 101 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Startup\nNo : 102 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Seminar/webinar\nNo : 103 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Komunitas entrepreneur"
+          }
+        ]
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi mi",
+        "answer": "Peluang kerja untuk program studi Manajemen Informatika cukup beragam dan menjanjikan.\n\n- Posisi di bidang IT: Lulusan dapat bekerja sebagai analis sistem, pengembang perangkat lunak, atau administrator jaringan.\n- Kewirausahaan: Banyak lulusan yang memilih untuk memulai bisnis sendiri, seperti startup teknologi atau layanan digital.\n\nApakah ada posisi tertentu yang ingin kamu ketahui lebih lanjut?",
+        "overlapRatio": 0.3953488372093023,
+        "pass": true,
+        "contexts": [
+          {
+            "id": "421f7337-ea4a-4e13-85d1-2d265354dae8",
+            "trainingId": "file-6467e454a2de",
+            "filename": "hobi_prodi_lengkap (1)-1780534126531.xlsx",
+            "chunk": "/ Aktivitas : Konten sosial media\nNo : 95 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Pengolahan data\nNo : 96 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Menggunakan aplikasi\nNo : 97 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Blogging\nNo : 98 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Jualan online\nNo : 99 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Mengelola toko online\nNo : 100 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Desain branding\nNo : 101 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Startup\nNo : 102 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Seminar/webinar\nNo : 103 | Program Studi : Manajemen Informatika | Hobi / Aktivitas : Komunitas entrepreneur"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "alias": "DG",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di dg",
+        "answer": "Maaf, program studi \"DG\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi dg cocok untuk siapa",
+        "answer": "Maaf, program studi \"DG\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi dg",
+        "answer": "Maaf, program studi \"DG\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      }
+    ]
+  },
+  {
+    "alias": "DKV",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di dkv",
+        "answer": "Maaf, program studi \"DKV\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi dkv cocok untuk siapa",
+        "answer": "Maaf, program studi \"DKV\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi dkv",
+        "answer": "Maaf, program studi \"DKV\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      }
+    ]
+  },
+  {
+    "alias": "MM",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di mm",
+        "answer": "Maaf, program studi \"MM\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi mm cocok untuk siapa",
+        "answer": "Maaf, program studi \"MM\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi mm",
+        "answer": "Maaf, program studi \"MM\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      }
+    ]
+  },
+  {
+    "alias": "AN",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di an",
+        "answer": "Maaf, program studi \"AN\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi an cocok untuk siapa",
+        "answer": "Maaf, program studi \"AN\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi an",
+        "answer": "Maaf, program studi \"AN\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      }
+    ]
+  },
+  {
+    "alias": "TRPL",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di trpl",
+        "answer": "Maaf, program studi \"TRPL\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi trpl cocok untuk siapa",
+        "answer": "Maaf, program studi \"TRPL\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi trpl",
+        "answer": "Maaf, program studi \"TRPL\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      }
+    ]
+  },
+  {
+    "alias": "TK",
+    "aspects": [
+      {
+        "aspect": "yang_dipelajari",
+        "query": "apa yang dipelajari di tk",
+        "answer": "Maaf, program studi \"TK\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "cocok_untuk",
+        "query": "prodi tk cocok untuk siapa",
+        "answer": "Maaf, program studi \"TK\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      },
+      {
+        "aspect": "peluang_kerja",
+        "query": "peluang kerja prodi tk",
+        "answer": "Maaf, program studi \"TK\" tidak tersedia dalam data kami.",
+        "overlapRatio": 0,
+        "pass": false,
+        "contexts": []
+      }
+    ]
+  }
+]

@@ -1,0 +1,15 @@
+QUERY:Mata kuliah TI? MARKER_COUNT:0
+QUERY:Apa itu TI? MARKER_COUNT:0
+QUERY:Prospek kerja TI? MARKER_COUNT:1
+SNIPPET:
+=== BEFORE DECORATE === {
+  chatId: 'test-chat',
+  preview: 'Program studi Teknologi Informasi (TI) mencakup berbagai aspek yang berkaitan dengan teknologi dan pengolahan informasi.\n' +
+    '\n' +
+    '- Pengembangan perangkat lunak: Mempelajari cara merancang, mengembangkan, dan mengelola aplikasi perangkat lunak.\n' +
+    '- J'
+}
+=== FULL_BEFORE_DECORATE ===
+Program studi Teknologi Informasi (T
+---
+QUERY:Apa yang dipelajari di TI? MARKER_COUNT:0

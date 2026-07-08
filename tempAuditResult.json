@@ -1,0 +1,106 @@
+[
+  {
+    "query": "Apa itu Sistem Informasi",
+    "queryEntities": {
+      "intent": "ACADEMIC_PROGRAM",
+      "program": "SI",
+      "programMode": null,
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": "PROGRAM_STUDI",
+      "pageNumber": null,
+      "academicIntent": "DEFINISI_PRODI"
+    },
+    "rows": [
+      {
+        "rank": 1,
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "file": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "finalScore": 1,
+        "semanticScore": 0.5881,
+        "attributeScore": 1,
+        "metadataBoost": 1.94,
+        "matchedAttributes": [
+          "program"
+        ],
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "SI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_STUDI",
+          "pageNumber": null,
+          "academicIntent": "DEFINISI_PRODI"
+        },
+        "chunkEntities": {
+          "program": "SI",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": null
+        },
+        "text": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Animator Peneliti Sistem Informasi"
+      }
+    ],
+    "debugPresent": true
+  },
+  {
+    "query": "Apa itu Teknologi Informasi",
+    "queryEntities": {},
+    "rows": [],
+    "debugPresent": true
+  },
+  {
+    "query": "Prospek kerja Sistem Informasi",
+    "queryEntities": {},
+    "rows": [],
+    "debugPresent": true
+  },
+  {
+    "query": "Prospek kerja Teknologi Informasi",
+    "queryEntities": {},
+    "rows": [],
+    "debugPresent": true
+  },
+  {
+    "query": "Biaya kuliah Sistem Informasi",
+    "queryEntities": {},
+    "rows": [],
+    "debugPresent": false
+  },
+  {
+    "query": "Biaya pendaftaran Sistem Informasi",
+    "queryEntities": {},
+    "rows": [],
+    "debugPresent": false
+  },
+  {
+    "query": "Double Degree Internasional",
+    "queryEntities": {},
+    "rows": [],
+    "debugPresent": false
+  },
+  {
+    "query": "Double Degree Nasional",
+    "queryEntities": {},
+    "rows": [],
+    "debugPresent": false
+  }
+]

@@ -1,0 +1,476 @@
+{
+  "targetFilename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+  "indexPath": "C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\src\\data\\rag_index.json",
+  "totalChunksForFile": 29,
+  "fileHas": {
+    "gelombang": true,
+    "1A_literal_or_variants": false
+  },
+  "gelombang1a_snippet": "ecuali dari ITB\nSTIKOM Bali dan Group ada potongan DPP sebesar Rp. 1.000.000\n- Ketentuan pendaftaran dan registrasi per gelombang berlaku\n11. Untuk Mahasiswa renim dikenakan biaya per semester sesuai dengan tahun yang\nbersangkutan\n\n12. Untu",
+  "chunks": [
+    {
+      "id": "8102b0f7-9116-44b7-acb4-845b657daa83",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "PROGRAM",
+      "pageNumber": null,
+      "chunkPreview": "INSTITUT TEKNOLOGI DAN BISNI5..\n(ITB)\nSTIKOM\nBALI\nT\nK\nnw............-u-...:mm...ln—...l...:m;;_\nKampus\nJimbaran\nbe\nPA\n30\nRaya\nKampus\nUdayana,\nKuta\nSelatan,\nJimbaran\n-\nBall\n-\nIndonesia\n|\nP\n(G351\n8353534\n|\nHotline\n:\n081288778840\nKampus\nAbiansemal\nINSTITUT\nTEKNOLOGI\nDAN\nBISIS\n3L3anger,\nAblansemal\n-\nDauh\nYeh\nCani,\nBadung\n-\nBall\n-\nIndonesia\n|\nPh\n(4361\n4790925\n|\nHotline\n:\n082145089613\nSTIKOM\nBALI",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "41ce879a-1f69-4d4c-8c56-f338142e6247",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "email",
+      "chunkType": "PROGRAM",
+      "pageNumber": null,
+      "chunkPreview": "email:\nInfo@stikom-baiacid\n|\nwebslte\n:\nwwwitikom-ba.acid\nLampiran\n-1\nSurat Keputusan ITB STIKOM Bali Nomor : 629/ITBSTIKOM/WDS/X/25",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "58ecb4e1-d7fa-44a3-99fb-16fb17d88456",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "PROGRAM",
+      "pageNumber": null,
+      "chunkPreview": "PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "2f31651e-b99c-40a2-b119-ee7bb597dae1",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "BISNIS DIGITAL",
+      "chunkType": "GENERAL",
+      "pageNumber": null,
+      "chunkPreview": "BISNIS DIGITAL\nT.A 2026/2027",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "caabea12-6ff4-4938-84be-ecbaf28d7288",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "No. Jenis Biaya Rp ‘Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok 14.000.000 Dicicil Per Bln s.d UTS-1\n3. Jas Alamater, Topi 750.000 Saat Registrasi I\n4. Kaos, Tas, GMTI 750.000 Saat Registrasi I\n5. Biaya Pendidikan Per Semester 6.500.000 Menjelang Perwalian Kecuali\nReg 1 Dicicil 2 Kali s/d UTS",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": true,
+        "dpp": true,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "7372c1ff-a288-42d2-83e4-3137a1adec14",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "6. Biaya Pengalaman Industri\n- Internasional 5.000.000\n- Nasional 2.500.000\n- Lokal 1.500.000\nDapat dicicil 5 kali per semester dan dimulai dari semester 3",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "784597e2-07ab-4391-847b-ad17d23f4c3d",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "2.   Potongan Biaya Pendaftaran",
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "2. Potongan Biaya Pendaftaran :",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": true,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "3b0c07f2-a480-4bf7-939e-ff5a9bfc010e",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "INSTITUT TEKNOLOGI DAN  BISNIS",
+      "chunkType": "PROGRAM",
+      "pageNumber": null,
+      "chunkPreview": "INSTITUT TEKNOLOGI DAN BISNIS\n\\ (ITB) STIKOM BALI\nKampus Denpasar\nKampus Jimbaran\n3L Raya Kampus Udayana, Kuta Selatan, Jimbaran - Ball - Indonesia | P (0361) 8953534 | Hotline: 061288778840\nKampus Abiansemal\nT TEXNOLOGI DANBISHIS 3L3anger. Ablansemal - Dauh Yeh Canl, Backing - Bal Indonesia | P (0361 4790525 | Hotline: 082145099633",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "ee2bfc90-3fbd-4eed-b93f-301cc2d704ff",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "3.   a.  Beasiswa untuk Dana Pendidikan Pokok (DPP)",
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "3. a. Beasiswa untuk Dana Pendidikan Pokok (DPP) :\nRp. 3.000.000,- Jika Registrasi pada Gelombang Khusus",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": true,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "9fb44de0-a82a-44ba-bd55-086c72243698",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "SCHEDULE",
+      "pageNumber": null,
+      "chunkPreview": "Rp. 2.000.000,- Jika Registrasi pada Gelombang I",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "f675714e-5e78-435a-af23-f32fbe23d159",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "SCHEDULE",
+      "pageNumber": null,
+      "chunkPreview": "Rp. 1.500.000,- Jika Registrasi pada Gelombang II",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "70b1eff4-29ea-4c75-9739-194870fceee3",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "diberikan tambahan beasiswa dari  DPP untuk semua Program Studi sebesar",
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "diberikan tambahan beasiswa dari DPP untuk semua Program Studi sebesar :",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": true,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "4e33c2dd-5e54-4dbd-adf8-1a2238a2b540",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "SCHEDULE",
+      "pageNumber": null,
+      "chunkPreview": "Gelombang Khusus : 60%",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "2a88a613-ef53-4eeb-b2da-6170b504b26f",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "SCHEDULE",
+      "pageNumber": null,
+      "chunkPreview": "Gelombang I : 5090",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "aac87e30-d78e-48b5-ac4f-8cb61ecdde51",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "SCHEDULE",
+      "pageNumber": null,
+      "chunkPreview": "Gelombang II : 4090",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "546bc060-81cd-43d9-b41c-f700743429aa",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "SCHEDULE",
+      "pageNumber": null,
+      "chunkPreview": "Gelombang III : 3096",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "1ba4c54a-c870-485e-b488-dbaefdc21ca2",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "SCHEDULE",
+      "pageNumber": null,
+      "chunkPreview": "Gelombang IV :20%",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "f4e14c27-ce75-4f9a-abae-1359a6ae4473",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "Gelombang Sisipan : 10%\nc. Apabila DPP dibayar tunai potongan ditambah 10% (sepuluh persen).\n4. Khusus Alumni SMK TI mendapatkan potongan 20% Biaya Pendidikan Per Semester\nselama 4 tahun.\n5. Untuk biaya pendidikan (butir 5) berlaku selama masa studi normal S1 (4 tahun) D3\n(3 tahun ) dan tidak berubah kecuali ada kejadian luar biasa dibidang moneter.\n6. Untuk biaya pengalaman industri (butir 6) belum termasuk tiket, passport, dan visa.\n7. Apabila mahasiswa melebihi masa studi normal S1 (8 Semester/4 Tahun) dan D3 (6\nSemester/3 Tahun) maka akan dikenakan biaya pendidikan per semester tahun\nberikutnya, sedangkan apabila mahasiswa cuti, maka akan di kenakan biaya sebesar\nRp.1.000.000 Per Semester\n8. Untuk biaya sertifikasi, yudisium dan wisuda akan ditentukan kemudian\n9. Diwajibkan memiliki la",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": true,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "953ecfce-3c03-4645-9d93-1a806fe6d4d9",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "GENERAL",
+      "pageNumber": null,
+      "chunkPreview": "rtifikasi, yudisium dan wisuda akan ditentukan kemudian\n9. Diwajibkan memiliki laptop dengan spesifikasi yang sesuai ketentuan kampus. Untuk\nspesifikasi laptop ini agar menghubungi PT MBC di counter AXIO Kampus Renon.\ni Dipindai dengan\ni@ CamScanner .",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "ad06a625-545a-442d-b22e-58b1ebe33ce0",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "INSTITUT TEKNOLOGI DAN  BISNIS",
+      "chunkType": "PROGRAM",
+      "pageNumber": null,
+      "chunkPreview": "INSTITUT TEKNOLOGI DAN BISNIS\n\\ (ITB) STIKOM BALI\nKamj\nnwr:ummnmn-_-u-m-filmmmlmmmm:m\nKampus Jimbaran\n3L Raya Kampus Udayana, Kuta Selatan, Jimbaran - Ball - Indonesia | P (0361 8353534 | Hotline:: 081288778840\nKampus Ablansemal\nINSTITUT TEXNOLOGI DAN BISNIS 3L3anger, Ablansemal - Dauh Yeh Canl, Bacung - Bail- Indonesia | Phe (0367) 4790925 | Hotline : 082145089653\nSTIKOM BALI 'email: Info@stikom ballacid | webshe : wwstkom-balLacld",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "77cc68db-57a3-4d53-92c1-ce3d9d1654cc",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "10.  Untuk mahasiswa pindahan/alih transfer",
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "10. Untuk mahasiswa pindahan/alih transfer :\na. Biaya Transfer: Dari ITB STIKOM Bali dan grup bebas biaya transfer,\nsedangkan dari PT lainnya Rp. 100.000,- per sks",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "de0c842b-0051-4c45-b7c3-883d16aea288",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "b.   Dana Pendidikan Pokok (DPP)",
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "b. Dana Pendidikan Pokok (DPP):\n- Bagi Mahasiswa Renim/aktif kembali tidak dikenakan biaya DPP, Jas\nAlmamater dan GMTI.\n-\nD3,\ndari\nITB\nSTIKOM\nBali\ndikenakan\nRp.\n3.000.000,\nsedangkan\ndari\nPT lain Rp. 4.500.000\n-\nD2,\ndari\nGroup\nITB\nSTIKOM\nBALI\n(BISMA,\nLPBA,\nLPBAI,\nPOLTEK GANESHA, POLNAS DENPASAR) Rp. 4.000.000\nsedangkan dari PT lain Rp. 5.000.000\n-\nDI,\ndari\nITB\nSTIKOM\nBali\nGroup\n(BISMA,\nLPBA,\nLPBAI,\nPOLTEK\nGANESHA, POLNAS) Rp. 5.000.000 sedangkan dari PT lain Rp.\n7.000.000\nCatatan\npenentuan\nD1,\nD2\ndan\nD3\ntergantung\ndari\njumlah\nSKS\nyang\ndiakui\ndi\nITB",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": true,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "3c5b4175-a9d4-48c2-9b75-b05ebe46dbbf",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "STIKOM Bali dengan ketentuan",
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "STIKOM Bali dengan ketentuan :\n- D3 : antara 85 s/d 100 SKS\n- D2 :antara 44 s/d 84 SKS\n- D1 : antara 20 s/d 43 SKS\n- Di bawah 20 SKS, DPP sama dengan dari SMA, kecuali dari ITB\nSTIKOM Bali dan Group ada potongan DPP sebesar Rp. 1.000.000\n- Ketentuan pendaftaran dan registrasi per gelombang berlaku\n11. Untuk Mahasiswa renim dikenakan biaya per semester sesuai dengan tahun yang\nbersangkutan",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": true,
+        "dpp": true,
+        "gelombang_1A_co_located": true
+      }
+    },
+    {
+      "id": "d443904f-4b3b-4969-a989-be2bff67d5c8",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "12.  Untuk mahasiswa program Rekognisi Pembelajaran Lampau (RPL)",
+      "chunkType": "PROGRAM",
+      "pageNumber": null,
+      "chunkPreview": "12. Untuk mahasiswa program Rekognisi Pembelajaran Lampau (RPL) :",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "0e2f1b54-9317-49c3-a4b8-9adc9e3f596e",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "a. Dana Pendidikan Pokok (DPP)\n- Jumlah pengakuan SKS antara 85 s/d 100 SKS dikenakan biaya DPP\nsebesar Rp. 4.500.000\n- Jumlah pengakuan SKS antara 44 s/d 84 SKS dikenakan biaya DPP\nsebesar Rp. 5.000.000\n- Jumlah pengakuan SKS antara 20 s/d 43 SKS dikenakan biaya DPP\nsebesar Rp. 7.000.000\n- Dibawah 20 SKS, biaya DPP sama dengan dari SMA / akan masuk ke\njalur regular.\n- Ketentuan pendaftaran dan registrasi per gelombang berlaku.\n13. Biaya yang sudah dibayar, tidak dapat dikembalikan dengan alasan apapun, kecuali\nditerima di PTN dibawah naungan Kementerian Pendidikan dan Kebudayaan jalur\nSNMPTN dan jalur SBMPTN (tidak termasuk jalur Mandiri, Politeknik, D3 dan\nEksekutif). Pengurusan pengambilan biaya yang sudah di bayar dilayani maksimal 21",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": true,
+        "dpp": true,
+        "gelombang_1A_co_located": true
+      }
+    },
+    {
+      "id": "a1d6666a-0625-4a07-aded-8a8c53acaa2d",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": null,
+      "chunkType": "COST",
+      "pageNumber": null,
+      "chunkPreview": "(kecuali biaya pendaftaan tidak dapat dikembalikan)\nN—\ni Dipindai dengan\n: & CamScanner\nW",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "22e4abb3-d38b-4356-b7da-c90eefc778be",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "INSTITUT TEKNOLOGI DAN  B",
+      "chunkType": "PROGRAM",
+      "pageNumber": null,
+      "chunkPreview": "INSTITUT TEKNOLOGI DAN B\nSTIKOM BALI",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "0d40f1ae-0554-4f7a-9f28-a6083d02dab6",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "INSTITUT TEKNOLOGI DAN  BISNIS",
+      "chunkType": "PROGRAM",
+      "pageNumber": null,
+      "chunkPreview": "INSTITUT TEKNOLOGI DAN BISNIS\n(ITB) STIKOM BALI\nDenpasar\nJimbaran\nKampus\n3L Raya Kampus Udayana, Kuta Setatan, Jimbaran - Bal - Indonesia | Pfx (0367 8953534 | Hotline : 081289778840\nKampus Ablansemal\n3L Janger, Ablanseral - Dauh Yeh Canl, Badung - Ball - Indonesia | Pfr (0367 4790925 | Hotfine : 08245099633\nB STIXOA | RALL\nDr. Dadang Hermawan\ni Dipindai dengan |\ni@ CamScanner .",
+      "contains": {
+        "gelombang": false,
+        "1A_literal_or_variants": false,
+        "pendaftaran": false,
+        "dpp": false,
+        "gelombang_1A_co_located": false
+      }
+    },
+    {
+      "id": "e1167772-990a-4c1f-b46a-ad8d8da61e6c",
+      "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "sectionTitle": "Ringkasan dokumen",
+      "chunkType": "GENERAL",
+      "pageNumber": null,
+      "chunkPreview": "Ringkasan dokumen:\nProgram studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN\nProgram internasional / kerja sama internasional: BALI\nBiaya pendaftaran: 1. Pendaftaran 500.000 Pada Saat Daftar\nDPP: 2. Dana Pendidikan Pokok 14.000.000 Dicicil Per Bln s.d UTS-1\nUKT / biaya per semester: 11. Untuk Mahasiswa renim dikenakan biaya per semester sesuai dengan tahun yang\nJadwal/gelombang: Rp. 300.000,- Jika Mendaftar pada Gelombang Khusus",
+      "contains": {
+        "gelombang": true,
+        "1A_literal_or_variants": false,
+        "pendaftaran": true,
+        "dpp": true,
+        "gelombang_1A_co_located": false
+      }
+    }
+  ]
+}

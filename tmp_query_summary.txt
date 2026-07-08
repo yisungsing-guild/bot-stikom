@@ -1,0 +1,234 @@
+--- berapa biaya TI gelombang 1A
+Final:
+Program Studi: TI
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+Rp 300.000
+
+Potongan Pendaftaran Gelombang 1:
+Rp 200.000
+
+DPP:
+Rp 13.800.000
+
+Potongan DPP Gelombang 1:
+Rp 200.000
+
+Biaya awal masuk untuk Prodi TI:
+Jas Alamater, Topi: Rp 750.000
+Kaos, Tas, GMTI: Rp 750.000
+Subtotal biaya awal masuk: Rp 1.500.000
+Potongan biaya DPP: Rp 200.000
+Total biaya awal masuk setelah potongan: Rp 1.300.000
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+- Cam Scanner 12-02-2026 14.39 (1).pdf
+
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+
+FeeStruct:
+- registrationFee: Rp 500.000
+- registrationDiscount: Rp 200.000,
+- dpp: Rp 14.000.000
+- dppDiscount: Rp 200.000,
+- programName: (none)
+- onboarding items detected: (none)
+
+--- berapa biaya TI gelombang 2C
+Final:
+Program Studi: TI
+Gelombang: 2C
+Gelombang 2C
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+Rp 500.000
+
+DPP:
+Rp 14.000.000
+
+Biaya awal masuk untuk Prodi TI:
+Jas Alamater, Topi: Rp 750.000
+Kaos, Tas, GMTI: Rp 750.000
+Subtotal biaya awal masuk: Rp 1.500.000
+Total biaya awal masuk setelah potongan: Rp 1.500.000
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+
+FeeStruct:
+- registrationFee: Rp 500.000
+- registrationDiscount: (none)
+- dpp: Rp 14.000.000
+- dppDiscount: (none)
+- programName: (none)
+- onboarding items detected: (none)
+
+--- berapa biaya SI gelombang 2C
+Final:
+Program Studi: SI
+Gelombang: 2C
+Gelombang 2C
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+Rp 500.000
+
+DPP:
+Rp 14.000.000
+
+Biaya awal masuk untuk Prodi SI:
+Jas Alamater, Topi: Rp 750.000
+Kaos, Tas, GMTI: Rp 750.000
+Subtotal biaya awal masuk: Rp 1.500.000
+Total biaya awal masuk setelah potongan: Rp 1.500.000
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+
+FeeStruct:
+- registrationFee: Rp 500.000
+- registrationDiscount: (none)
+- dpp: Rp 14.000.000
+- dppDiscount: (none)
+- programName: (none)
+- onboarding items detected: (none)
+
+--- berapa biaya SK gelombang 1A
+Final:
+Program Studi: SK
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+Rp 200.000
+
+Potongan Pendaftaran Gelombang 1:
+Rp 300.000
+
+DPP:
+Rp 13.700.000
+
+Potongan DPP Gelombang 1:
+Rp 300.000
+
+Biaya awal masuk untuk Prodi SK:
+Jas Alamater, Topi: Rp 750.000
+Kaos, Tas, GMTI: Rp 750.000
+Subtotal biaya awal masuk: Rp 1.500.000
+Potongan biaya DPP: Rp 300.000
+Total biaya awal masuk setelah potongan: Rp 1.200.000
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+- rincian Biaya SK Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+
+FeeStruct:
+- registrationFee: Rp 500.000
+- registrationDiscount: Rp 300.000, 
+- dpp: Rp 14.000.000
+- dppDiscount: Rp 300.000, 
+- programName: (none)
+- onboarding items detected: (none)
+
+--- berapa biaya MI
+Final:
+Berikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Manajemen Informatika (Diploma):
+
+- Pendaftaran: Rp 500.000 - Pada Saat Daftar
+- Biaya Registrasi (Jas, Topi, GMTI): Rp 10.000.000 - Dicicil per bulan s/d UTS-1
+- Biaya Pendidikan Per Semester: Rp 4.500.000 - Menjelang Perwalian Kecuali Reg. 1
+
+Catatan: Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk.
+Total (dihitung): Rp 15.000.000
+Mau saya rangkum juga skema potongan per gelombangnya?
+
+FeeStruct: NO feeStruct
+Parsed amounts (from answer): Rp 500.000, Rp 10.000.000, Rp 4.500.000, Rp 15.000.000
+
+--- berapa biaya S2 SI
+Final:
+Program Studi: SI
+Gelombang: KHUSUS
+Gelombang KHUSUS
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+DPP:
+Rp 3.000.000
+
+Beasiswa / potongan:
+Rp 3.000.000
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+
+FeeStruct:
+- registrationFee: (none)
+- registrationDiscount: (none)
+- dpp: Rp 3.000.000
+- dppDiscount: (none)
+- programName: (none)
+- onboarding items detected: (none)
+
+--- berapa biaya DD DNUI
+Final:
+Berikut rangkuman rincian biaya untuk Dual Degree (International Class) DNUI (China):
+
+- Pendaftaran: Rp 3.000.000 - Pada Saat Daftar
+- Dana Pendidikan Pokok: Rp 20.000.000 - Saat Registrasi I
+- Bahasa Mandarin: Rp 5.000.000 - Menjelang Semester II
+- Pendidikan Per Semester: Rp 16.000.000 - Awal Semester
+
+Catatan: Butir 1 sampai dengan 3 dibayar 1 kali saja pada awal masuk.
+Total (dihitung): Rp 44.000.000
+Mau saya rangkum juga skema potongan per gelombangnya?
+
+FeeStruct: NO feeStruct
+Parsed amounts (from answer): Rp 3.000.000, Rp 20.000.000, Rp 5.000.000, Rp 16.000.000, Rp 44.000.000
+
+--- berapa biaya HELP
+Final:
+Berikut rangkuman rincian biaya untuk Dual Degree (International Class) HELP University (Malaysia):
+
+- Pendaftaran: Rp 3.000.000 - Pada Saat Daftar
+- Dana Pendidikan Pokok: Rp 20.000.000 - Saat Registrasi 1
+- Biaya Pendidikan per semester —: Rp 3.000.000 - Awal Semester Pendaftaran: Rp. 1.500.000, - Jika Mendaftar pada Gelombang Khusus Rp. 1.250.000, - Jika Mendaftar pada Gelombang I Rp. 1.000.000, - Jika Mendaftar pada Gelombang II Rp. 750.000, - Jika Mendaftar pada Gelombang III Rp. 500.000, - Jika Mendaftar pada 3. Beasiswa untuk Dana Pendidikan Pokok: a. Gelombang Khusus: Rp. 10.000.000 b. Gelombang I: Rp. 8.000.000 c. Gelombang II: Rp. 6.000.000 d. Gelombang III: Rp. 4.000.000 e. Gelombang IV: Rp. 2.000.000 i Dipindai dengan i@ Cam Scanner. INSTITUT TEKNOLOGI DAN BISNIS N (ITB) STIKOM BALI Kampus Denpasar Kampus Jimbaran 3 L Raya Kampus Udayana, Kuta Selatan, Jimbaran - Ball- Indonesia | Ph: (0361) 8953534 | Hotline:
+
+- Bahasa Inggris: Rp 5.000.000 - Menjelang Semester II
+
+Total (dihitung): Rp 31.000.000
+Mau saya rangkum juga skema potongan per gelombangnya?
+
+FeeStruct: NO feeStruct
+Parsed amounts (from answer): Rp 3.000.000, Rp 20.000.000, Rp 3.000.000, Rp 5.000.000, Rp 31.000.000
+
+--- berapa biaya UTB
+Final:
+Berikut rangkuman rincian biaya untuk Dual Degree (National Class) UTB:
+
+- Apabila mahasiswa melebihi masa studi normal (10 Semester/5 Tahun), maka akan dikenakan pendidikan per semester tahun berikutnya, sedangkan apabila mahasiswa cuti, maka akan di kenakan sebesar Rp.: Rp 1.000.000 - per semester. 9. Untuk biaya sertifikasi, yudisium dan wisuda akan ditentukan kemudian. 10. Diwajibkan memiliki laptop dengan spesifikasi yang sesuai ketentuan kampus. Untuk spesifikasi laptop ini agar menghubungi PT MBC di counter AXIO Kampus Renon. Biaya yang sudah dibayar, tidak dapat dikembalikan dengan alasan apapun, kecuali diterima di PTN dibawah naungan Kementerian Pendidikan dan Kebudayaan jalur SNMPTN dan jalur SBMPTN (tidak termasuk jalur Mandiri, Politeknik, D 3 dan Eksekutif). Pengurusan pengambilan biaya yang sudah di bayar dilayani maksimal bersangkutan, (kecuali biaya pendaftaan tidak dapat dikembali Kx( 'TKOM Bali
+
+Total (dihitung): Rp 1.000.000
+Mau saya rangkum juga skema potongan per gelombangnya?
+
+FeeStruct: NO feeStruct
+Parsed amounts (from answer): Rp 1.000.000, Rp 1.000.000
+

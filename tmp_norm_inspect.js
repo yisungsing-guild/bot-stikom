@@ -1,0 +1,1 @@
+const normalizer=require('./src/lib/normalizer'); const src = require('fs').readFileSync('./src/lib/normalizer.js','utf8'); console.log('normalizeInput source:\n', normalizer.normalizeInput.toString()); console.log('normalizeWhitespace text', src.match(/function normalizeWhitespace\([\s\S]*?\}/)[0]);

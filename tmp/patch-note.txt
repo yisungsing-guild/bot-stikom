@@ -1,0 +1,1 @@
+Patching provider greeting to call ragQuery and return ragEngine result instead of local template.

@@ -1,0 +1,1 @@
+﻿const acorn=require('acorn'); const fs=require('fs'); const code=fs.readFileSync('tmp/provider_syntax_wrapper4.js','utf8'); const it=acorn.tokenizer(code,{ecmaVersion:2024,locations:true}); let t; while((t=it.getToken()).type.label!=='eof'){ if(t.type.label==='try') console.log(t.loc.start.line, t.loc.start.column, t.type.label); }

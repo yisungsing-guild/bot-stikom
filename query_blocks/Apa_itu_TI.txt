@@ -1,0 +1,102 @@
+trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "divisionKey": null,
+        "score": 0.3709316315800084,
+        "snippet": "LON MAHASISWA PENERIMA BEASISWA I. Calon mahasiswa dari : a. SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1 Denpasar, silakan hubungi PMB "
+      }
+    ]
+[2026-06-05 13:53:07.821 +0800] INFO: [Provider] RAG selection debug
+    providerRagDebug: {
+      "query": "Program Studi: Teknologi Informasi\nApa itu TI?",
+      "detectedIntent": "ACADEMIC_PROGRAM",
+      "programHint": "TI",
+      "queryEntities": {
+        "intent": "ACADEMIC_PROGRAM",
+        "program": "TI",
+        "programLabel": "TEKNOLOGI_INFORMASI",
+        "programMode": null,
+        "wave": null,
+        "waveGroup": null,
+        "academicYear": null,
+        "partner": null,
+        "campus": null,
+        "jalur": null,
+        "feeType": null,
+        "category": "PROGRAM_STUDI",
+        "pageNumber": null,
+        "academicIntent": "DEFINISI_PRODI"
+      },
+      "selectedChunkCount": 6,
+      "selectedChunks": [
+        {
+          "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+          "score": 0.43113935274218335
+        },
+        {
+          "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+          "filename": "hobi-sesuai-program-studi.docx",
+          "score": 0.4447212145612893
+        },
+        {
+          "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+          "filename": "HOBY.pdf",
+          "score": 0.0397364432443137
+        },
+        {
+          "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+          "filename": "HOBY.pdf",
+          "score": 0.002636862959840033
+        },
+        {
+          "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+          "score": 0.3861447500416064
+        },
+        {
+          "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+          "score": 0.403980292442926
+        }
+      ],
+      "finalContextSources": [
+        "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "hobi-sesuai-program-studi.docx",
+        "HOBY.pdf"
+      ],
+      "sourceFiles": [
+        "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "hobi-sesuai-program-studi.docx",
+        "HOBY.pdf"
+      ],
+      "ragSource": "gpt-4o-mini",
+      "ragSuccess": true
+    }
+[2026-06-05 13:53:07.822 +0800] INFO: [Provider] Program retrieval audit
+    question: "Apa itu TI?"
+    detectedProgram: "Teknologi Informasi"
+    canonicalProgram: "Teknologi Informasi"
+    programSpecificQuestion: true
+    detectedIntent: "ACADEMIC_PROGRAM"
+    selectedRoute: "gpt-4o-mini"
+    retrievalQuery: "Program Studi: Teknologi Informasi\nApa itu TI?"
+    topChunks: [
+      {
+        "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+        "filename": null,
+        "trainingId": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "divisionKey": null,
+        "score": 0.43113935274218335,
+        "snippet": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 Kampus Jimbaran 31 Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali - Indonesia | Ph: (036"
+      },
+      {
+        "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "trainingId": "eee828da-6ee4-4591-a9a8-18fa2e73c822",
+        "divisionKey": null,
+        "score": 0.4447212145612893,
+        "snippet": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bi"
+      },
+      {
+        "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+        "filename": "HOBY.pdf",
+        "trainingId": "66bcaec6-88a7-4ac2-8ae4-660bd3084393",
+        "divisionKey": null,
+        "score": 0.0397364432443137,
+        "snippet": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learn

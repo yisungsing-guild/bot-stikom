@@ -1,0 +1,53 @@
+Scenario	Query	Top1Changed	Top1Id	HighSemanticRank	HighSemanticMovedUp	Top10Moves
+Current	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x0.25, Metadata 100%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x0.50, Metadata 100%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x1.00, Metadata 100%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	2	true	10
+Semantic x0.25, Metadata 75%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x0.50, Metadata 75%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x1.00, Metadata 75%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	2	true	10
+Semantic x0.25, Metadata 50%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	13	false	10
+Semantic x0.50, Metadata 50%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	13	false	10
+Semantic x1.00, Metadata 50%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	7	false	10
+Semantic x0.25, Metadata 25%	Apa itu Sistem Informasi?	true	b411e939-1537-4fd5-af3d-541424f9d3a3	20	false	10
+Semantic x0.50, Metadata 25%	Apa itu Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	20	false	10
+Semantic x1.00, Metadata 25%	Apa itu Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	18	false	10
+Current	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x0.25, Metadata 100%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x0.50, Metadata 100%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x1.00, Metadata 100%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	2	true	10
+Semantic x0.25, Metadata 75%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x0.50, Metadata 75%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x1.00, Metadata 75%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	2	true	10
+Semantic x0.25, Metadata 50%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	14	false	10
+Semantic x0.50, Metadata 50%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	7	false	10
+Semantic x1.00, Metadata 50%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	5	false	10
+Semantic x0.25, Metadata 25%	Apa prospek kerja Sistem Informasi?	true	b411e939-1537-4fd5-af3d-541424f9d3a3	20	false	10
+Semantic x0.50, Metadata 25%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	20	false	10
+Semantic x1.00, Metadata 25%	Apa prospek kerja Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	18	false	10
+Current	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x0.25, Metadata 100%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x0.50, Metadata 100%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x1.00, Metadata 100%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	2	true	10
+Semantic x0.25, Metadata 75%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x0.50, Metadata 75%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	4	false	10
+Semantic x1.00, Metadata 75%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	2	true	10
+Semantic x0.25, Metadata 50%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	15	false	10
+Semantic x0.50, Metadata 50%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	13	false	10
+Semantic x1.00, Metadata 50%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	8	false	10
+Semantic x0.25, Metadata 25%	Apa yang dipelajari di Sistem Informasi?	true	b411e939-1537-4fd5-af3d-541424f9d3a3	20	false	10
+Semantic x0.50, Metadata 25%	Apa yang dipelajari di Sistem Informasi?	false	6631dfc1-b46c-4933-a340-392dfd2250d6	20	false	10
+Semantic x1.00, Metadata 25%	Apa yang dipelajari di Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	18	false	10
+Current	Apa keunggulan Sistem Informasi?	false	c2961b13-bd76-4f6b-9c39-1e19606b6a5d	18	false	10
+Semantic x0.25, Metadata 100%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	18	false	10
+Semantic x0.50, Metadata 100%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	15	true	10
+Semantic x1.00, Metadata 100%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	11	true	10
+Semantic x0.25, Metadata 75%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	18	false	10
+Semantic x0.50, Metadata 75%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	15	true	10
+Semantic x1.00, Metadata 75%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	11	true	10
+Semantic x0.25, Metadata 50%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	18	false	10
+Semantic x0.50, Metadata 50%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	15	true	10
+Semantic x1.00, Metadata 50%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	11	true	10
+Semantic x0.25, Metadata 25%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	18	false	10
+Semantic x0.50, Metadata 25%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	15	true	10
+Semantic x1.00, Metadata 25%	Apa keunggulan Sistem Informasi?	true	74be5da2-8251-4417-a1de-41c3a4b70239	11	true	10

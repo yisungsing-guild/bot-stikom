@@ -1,0 +1,1 @@
+﻿const rag = require("./src/engine/ragEngine.js"); (async () => { const resp = await rag.query("Apa itu Sistem Informasi", 8, { returnDebug: true, minScore: 0.0 }); console.log(JSON.stringify(resp.debug && resp.debug.validatedScored ? { validatedScored: resp.debug.validatedScored.slice(0,3), queryEntities: resp.debug.queryEntities } : resp.debug, null, 2)); })()

@@ -1,0 +1,178 @@
+ragEngine helpers formatRagAnswer does not insert explicit Follow-up label
+Error: expect(received).toContain(expected) // indexOf
+
+Expected substring: "Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?"
+Received string:    "Biaya pendaftaran: Rp 500.000.
+Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?"
+    at Object.toContain (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:29:20)
+    at Promise.then.completed (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:444:34)
+----
+ragEngine helpers formatRagAnswer uses context-specific follow-up for scholarship answers
+Error: expect(received).toContain(expected) // indexOf
+
+Expected substring: "Perlu saya cek opsi beasiswa atau potongan biaya yang relevan?"
+Received string:    "Ada beberapa jenis beasiswa/potongan yang tersedia.
+Mau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?"
+    at Object.toContain (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:36:20)
+    at Promise.then.completed (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:444:34)
+----
+ragEngine helpers filterRelevantChunks removes off-topic academic chunks for program definition queries
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 1
+Received: 0
+    at Object.toBe (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:154:29)
+    at Promise.then.completed (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:444:34)
+----
+ragEngine helpers tryStructuredExactCostAnswer merges global wave 1 discounts into SK 1A cost output
+Error: expect(received).toContain(expected) // indexOf
+
+Expected substring: "Program Studi:"
+Received string:    "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia."
+    at Object.toContain (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:206:27)
+    at Promise.then.completed (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:316:40)
+    at _runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:444:34)
+----
+ragEngine helpers query returns enrollment discount output with requested wave formatting for 1A
+Error: expect(received).toMatch(expected)
+
+Expected pattern: /Gelombang\s*1A/i
+Received string:  "Berikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Sistem Informasi:·
+- Pendaftaran: Rp 500.000
+- Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1
+- Jas Almamater, Topi: Rp 750.000 - Saat Registrasi I
+- Kaos, Tas, GMTI: Rp 750.000 - Saat Registrasi I
+- Biaya Pendidikan Per Semester: Rp 6.500.000 - Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS
+- Biaya Pengalaman Industri (Internasional): Rp 5.000.000 - Dicicil 5 kali per semester
+- Biaya Pengalaman Industri (Nasional): Rp 2.500.000 - Dicicil 5 kali per semester
+- Biaya Pengalaman Industri (Lokal): Rp 1.500.000 - Dicicil 5 kali per semester·
+Catatan: Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk.
+Total (dihitung): Rp 31.500.000
+Mau saya rangkum juga skema potongan per gelombangnya?"
+    at Object.toMatch (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:215:38)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+----
+ragEngine helpers tryStructuredExactCostAnswer prioritizes latest academic year when year not specified
+Error: expect(received).toContain(expected) // indexOf
+
+Expected substring: "2025"
+Received string:    "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia."
+    at Object.toContain (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:255:27)
+    at Promise.then.completed (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\node_modules\jest-runner\build\runTest.js:444:34)
+----
+ragEngine helpers program recommendation heuristic does not trigger on curriculum detail questions
+Error: expect(received).toBeNull()
+
+Received: {"answer": "Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.·
+Alasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.\\n\\nContoh yang sejalan: Sistem InformasiBermain game; Sistem InformasiMenggambar; Sistem InformasiAnimasi/drama.", "confidenceTier": "HIGH", "contexts": [{"filename": "HOBY.pdf", "id": "c77215f5-268b-4c2a-972a-7a4911b8798d", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "c708d640-e197-437e-99ed-c0f65ac2859b", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "d86e4e25-7a40-4150-97e6-f455eab643df", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "74be5da2-8251-4417-a1de-41c3a4b70239", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "cc656970-e1f1-425e-83a6-e2b86c79c8c4", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "4b7e28ec-7919-4cca-8db3-a7d813314f2b", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "a52866e5-b9da-4dd8-8b59-06829099b644", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}], "debug": {"items": [{"filename": "HOBY.pdf", "id": "c77215f5-268b-4c2a-972a-7a4911b8798d", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "c708d640-e197-437e-99ed-c0f65ac2859b", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "d86e4e25-7a40-4150-97e6-f455eab643df", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "74be5da2-8251-4417-a1de-41c3a4b70239", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "cc656970-e1f1-425e-83a6-e2b86c79c8c4", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "4b7e28ec-7919-4cca-8db3-a7d813314f2b", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}, {"filename": "HOBY.pdf", "id": "a52866e5-b9da-4dd8-8b59-06829099b644", "trainingId": "a4b4fba8-bc5a-40ce-b08a-122c729999cc"}], "method": "hobby-doc", "rejected": [], "retrieved": true, "validatedScored": []}, "source": "rag-major-recommendation-hoby-doc-lines"}
+    at Object.toBeNull (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:332:20)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+----
+ragEngine schedule overview guard schedule for roman-only wave is grouped and deduped (no repeated IV A/B/C blocks)
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 1
+Received: 0
+    at Object.toBe (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:629:38)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+----
+ragEngine schedule overview guard follow-up question about "sekolah tertentu" is answered (no web fallback)
+Error: expect(received).toMatch(expected)
+
+Expected pattern: /Maksud\s+"sekolah tertentu"/i
+Received string:  "Silakan hubungi PMB untuk informasi detail mengenai daftar sekolah yang berhak mendapatkan potongan atau beasiswa.·
+Potongan DPP (Dana Pendidikan Pokok):·
+- Ranking 1-3: potongan DPP 75%; Ranking 4-10: potongan DPP 50%·
+Keterangan: silakan hubungi PMB untuk informasi lengkap mengenai sekolah yang berhak mendapat potongan atau beasiswa.
+Boleh info asal sekolah dan ranking berapa di kelas, kak? Nanti saya bantu cek masuk kategori yang mana.
+Mau saya jelaskan lagi bagian lain?"
+    at Object.toMatch (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:674:38)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+----
+ragEngine schedule overview guard asking which schools are in the lampiran does not return a misleading short list
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
+    at Object.toBe (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:679:32)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+----
+ragEngine schedule overview guard DNUI follow-up "rangkum biaya lainnya" returns main fee components (no semester-5 drift)
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: "rag-fee-breakdown"
+Received: "rag-no-ai"
+    at Object.toBe (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:709:24)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+----
+ragEngine schedule overview guard UTB fee breakdown works even for short query
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: "rag-fee-breakdown"
+Received: "rag-no-ai"
+    at Object.toBe (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:727:24)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+----
+ragEngine schedule overview guard follow-up asking HELP after DNUI returns HELP breakdown (not DNUI)
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: "rag-fee-breakdown"
+Received: "rag-answer-rejected"
+    at Object.toBe (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tests\ragEngine.test.js:737:24)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+----

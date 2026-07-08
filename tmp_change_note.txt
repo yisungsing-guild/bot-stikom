@@ -1,0 +1,1 @@
+Applying patch to provider.js to persist pendingSemanticSuggestion and pendingRagCandidate in RAG-success block.

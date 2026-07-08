@@ -1,0 +1,16 @@
+const hf = require('../src/engine/humanizer');
+const raw = 'Teknologi Informasi adalah program studi yang mempelajari perangkat lunak, jaringan, dan infrastruktur TI.';
+console.log('raw len', raw.length, raw);
+const s1 = hf.removeRetrievalArtifacts(raw);
+console.log('\nafter removeRetrievalArtifacts len', s1.length, s1);
+const s2 = hf.removeIrrelevantMarketingSections(s1, 'program_definition');
+console.log('\nafter removeIrrelevantMarketingSections len', s2.length, s2);
+const s3 = hf.removeRetoricalQuestions(s2);
+console.log('\nafter removeRetoricalQuestions len', s3.length, s3);
+const s4 = hf.convertRawQuotesToNatural(s3);
+console.log('\nafter convertRawQuotesToNatural len', s4.length, s4);
+const s5 = hf.filterNonStikomPrograms(s4);
+console.log('\nafter filterNonStikomPrograms len', s5.length, s5);
+const s6 = hf.normalizeWhitespace ? hf.normalizeWhitespace(s5) : s5;
+console.log('\nafter normalizeWhitespace len', s6.length, s6);
+console.log('\ncleanMainAnswer', hf.cleanMainAnswer(raw, 'program_definition'));

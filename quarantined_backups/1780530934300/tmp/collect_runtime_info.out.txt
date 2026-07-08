@@ -1,0 +1,136 @@
+﻿NODE_ENV 
+
+-- File timestamps --
+provider.js: {
+  path: 'C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\src\\routes\\provider.js',
+  mtime: '2026-05-30T01:53:21.145Z',
+  size: 643446
+}
+ragEngine.js: {
+  path: 'C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\src\\engine\\ragEngine.js',
+  mtime: '2026-05-30T02:23:58.537Z',
+  size: 320339
+}
+
+-- RAG index --
+RAG_INDEX_PATH (env): 
+RAG_DATA_DIR (env): 
+Resolved INDEX_PATH: C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\src\data\rag_index.json
+INDEX stat: {
+  path: 'C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\src\\data\\rag_index.json',
+  mtime: '2026-05-29T06:05:52.437Z',
+  size: 15474704
+}
+
+-- Env flags --
+OPENAI_API_KEY set? true
+RAG_INDEX_PATH: 
+RAG_DATA_DIR: 
+
+-- Provider webhook runs --
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-a',
+  text: 'apa itu SI?',
+  messageId: 'msg-a',
+  inboundTs: 1780198836048
+}
+[findReplyByRules] No keyword match found
+[2026-05-31 11:40:36.860 +0800] [32mINFO[39m: [36m[Provider] Skipping choose_program RAG - conditions not met[39m
+    stage: ""
+    programInText: "Sistem Informasi"
+    looksSpecific: true
+    isPureSelection: false
+    ragEnabled: true
+    hasData: true
+
+RESULT a {
+  "originalQuery": "apa itu SI?",
+  "ragSource": null,
+  "outbound": [
+    "Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.",
+    "Siap, aku bantu jawab ya.\nBerikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Sistem Informasi:\n- Pendaftaran: Rp 500.000\n- Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1\n- Jas Almamater, Topi: Rp 750.000 - Saat Registrasi I\n- Kaos, Tas, GMTI: Rp 750.000 - Saat Registrasi I\n- Biaya Pendidikan Per Semester: Rp 6.500.000 - Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS\n- Biaya Pengalaman Industri (Internasional): Rp 5.000.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Nasional): Rp 2.500.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Lokal): Rp 1.500.000 - Dicicil 5 kali per semester\nCatatan: Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk.\nTotal (dihitung): Rp 31.500.000\nMau saya rangkum juga skema potongan per gelombangnya?\nRekomendasi pertanyaan berikutnya:\n- Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?\n- Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?\n- Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?"
+  ]
+}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-b',
+  text: 'di SI belajar apa?',
+  messageId: 'msg-b',
+  inboundTs: 1780198837808
+}
+[findReplyByRules] No keyword match found
+[2026-05-31 11:40:37.859 +0800] [32mINFO[39m: [36m[Provider] Skipping choose_program RAG - conditions not met[39m
+    stage: ""
+    programInText: "Sistem Informasi"
+    looksSpecific: true
+    isPureSelection: false
+    ragEnabled: true
+    hasData: true
+
+RESULT b {
+  "originalQuery": "di SI belajar apa?",
+  "ragSource": null,
+  "outbound": [
+    "Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.",
+    "Siap, aku bantu jawab ya.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n- Beasiswa KIP\n- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n- Beasiswa Prestasi\n- Beasiswa Yayasan\n- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global\n- Kuliah Sambil Kerja di Luar Negeri\nApakah Kakak ingin dijelaskan tentang?\n- Biaya perkuliahan program studi yang lainnya\n- Salah satu jenis beasiswa\n- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll\nSilahkan diketikkan."
+  ]
+}
+[ProviderRoute] POST /provider/webhook received {
+  chatId: 'test-c',
+  text: 'lulusan TI bekerja dimana?',
+  messageId: 'msg-c',
+  inboundTs: 1780198838502
+}
+[findReplyByRules] No keyword match found
+[2026-05-31 11:40:38.537 +0800] [32mINFO[39m: [36m[Provider] Skipping choose_program RAG - conditions not met[39m
+    stage: ""
+    programInText: "Sistem Informasi"
+    looksSpecific: true
+    isPureSelection: false
+    ragEnabled: true
+    hasData: true
+
+RESULT c {
+  "originalQuery": "lulusan TI bekerja dimana?",
+  "ragSource": null,
+  "outbound": [
+    "Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.",
+    "Siap, aku bantu jawab ya.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n- Beasiswa KIP\n- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n- Beasiswa Prestasi\n- Beasiswa Yayasan\n- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global\n- Kuliah Sambil Kerja di Luar Negeri\nApakah Kakak ingin dijelaskan tentang?\n- Biaya perkuliahan program studi yang lainnya\n- Salah satu jenis beasiswa\n- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll\nSilahkan diketikkan."
+  ]
+}
+
+=== RAG LOG SUMMARY ===
+[]
+
+=== SENT RECORDS ===
+[
+  {
+    "chatId": "test-a",
+    "text": "Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.",
+    "type": "text"
+  },
+  {
+    "chatId": "test-a",
+    "text": "Siap, aku bantu jawab ya.\nBerikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Sistem Informasi:\n- Pendaftaran: Rp 500.000\n- Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1\n- Jas Almamater, Topi: Rp 750.000 - Saat Registrasi I\n- Kaos, Tas, GMTI: Rp 750.000 - Saat Registrasi I\n- Biaya Pendidikan Per Semester: Rp 6.500.000 - Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS\n- Biaya Pengalaman Industri (Internasional): Rp 5.000.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Nasional): Rp 2.500.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Lokal): Rp 1.500.000 - Dicicil 5 kali per semester\nCatatan: Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk.\nTotal (dihitung): Rp 31.500.000\nMau saya rangkum juga skema potongan per gelombangnya?\nRekomendasi pertanyaan berikutnya:\n- Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?\n- Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?\n- Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?",
+    "type": "text"
+  },
+  {
+    "chatId": "test-b",
+    "text": "Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.",
+    "type": "text"
+  },
+  {
+    "chatId": "test-b",
+    "text": "Siap, aku bantu jawab ya.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n- Beasiswa KIP\n- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n- Beasiswa Prestasi\n- Beasiswa Yayasan\n- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global\n- Kuliah Sambil Kerja di Luar Negeri\nApakah Kakak ingin dijelaskan tentang?\n- Biaya perkuliahan program studi yang lainnya\n- Salah satu jenis beasiswa\n- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll\nSilahkan diketikkan.",
+    "type": "text"
+  },
+  {
+    "chatId": "test-c",
+    "text": "Halo, perkenalkan saya Tiko, asisten dari STIKOM Bali. Saya siap membantu kamu seputar PMB, biaya, prodi, jadwal, dan info kampus.",
+    "type": "text"
+  },
+  {
+    "chatId": "test-c",
+    "text": "Siap, aku bantu jawab ya.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n- Beasiswa KIP\n- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n- Beasiswa Prestasi\n- Beasiswa Yayasan\n- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global\n- Kuliah Sambil Kerja di Luar Negeri\nApakah Kakak ingin dijelaskan tentang?\n- Biaya perkuliahan program studi yang lainnya\n- Salah satu jenis beasiswa\n- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll\nSilahkan diketikkan.",
+    "type": "text"
+  }
+]

@@ -1,0 +1,39 @@
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  chunkId: 'tuition_fee-37',
+  reason: 'no_money_fields_found',
+  queryProgram: 'SI',
+  entProgram: null,
+  queryWave: '1A',
+  entWave: null,
+  queryWaveGroup: '1',
+  entWaveGroup: null,
+  queryAcademicYear: '2025',
+  entAcademicYear: null,
+  isGlobalDiscount: true,
+  chunkPreview: 'Program Studi Tuition Fee - tuition fee\n' +
+    'Tuition Fee knowledge\n' +
+    '\n' +
+    'Pertanyaan cepat:\n' +
+    '- Biaya kuliah bera'
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  chunkId: 'tuition_fee-37',
+  parsed: null
+}
+[TRACE_FEE_STRUCT] {
+  costCandidatesCount: 0,
+  globalDiscountCandidatesCount: 0,
+  costCandidates: [],
+  globalDiscounts: []
+}
+[TRACE_COST_PARSE_5_FEE_STRUCT] {
+  feeStructExists: false,
+  feeStruct: null,
+  queryEntitiesRequested: {
+    intent: 'COST',
+    program: 'SI',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2025',
+    campus: 'BALI'

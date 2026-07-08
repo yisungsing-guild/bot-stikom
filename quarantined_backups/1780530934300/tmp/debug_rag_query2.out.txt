@@ -1,0 +1,56 @@
+﻿=== QUERY ===
+query: apa itu SI?
+rewrite: apa itu SI?
+intent: GENERAL
+source: rag-prodi-overview
+success: true
+finalText: Siap, aku bantu jawab ya.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+=== QUERY ===
+query: di SI belajar apa?
+rewrite: di SI belajar apa?
+intent: GENERAL
+source: rag-prodi-overview
+success: true
+finalText: Siap, aku bantu jawab ya.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+=== QUERY ===
+query: lulusan TI bekerja dimana?
+rewrite: lulusan TI bekerja dimana?
+intent: GENERAL
+source: rag-prodi-overview
+success: true
+finalText: Siap, aku bantu jawab ya.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?
+=== QUERY ===
+query: berapa uang semester SI?
+rewrite: berapa uang semester SI?
+intent: GENERAL
+source: rag-fee-semester-only
+success: true
+finalText: Siap, aku bantu jelaskan info akademik.\nUntuk Kelas Reguler - Program Studi Sistem Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+=== QUERY ===
+query: beasiswa KIP
+rewrite: beasiswa KIP
+intent: SCHOLARSHIP
+source: rag-scholarship-kip
+success: true
+finalText: Siap, aku bantu jelaskan soal biaya.\nBeasiswa KIP adalah program bantuan biaya pendidikan untuk siswa tidak mampu dengan persyaratan khusus pemerintah. Biasanya mencakup keringanan biaya DPP/UKT sesuai ketentuan, dan informasi detail dapat ditanyakan ke admin PMB untuk status KIP terbaru.\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?
+=== QUERY ===
+query: beasiswa 1K1S
+rewrite: beasiswa 1K1S
+intent: SCHOLARSHIP
+source: rag-scholarship-1k1s
+success: true
+finalText: Siap, aku bantu jelaskan soal biaya.\nBeasiswa 1K1S adalah beasiswa untuk keluarga dengan satu anak yang menyelesaikan pendidikan sarjana. Biasanya memberikan potongan biaya DPP/UKT bagi calon mahasiswa yang memenuhi syarat keluarga, namun ketentuan final perlu dikonfirmasi ke bagian PMB.\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?
+=== QUERY ===
+query: kapan gelombang berikutnya?
+rewrite: kapan gelombang berikutnya?
+intent: SCHEDULE
+source: rag-current-open-waves
+success: true
+finalText: Siap, aku bantu jelaskan soal jadwal.\nPer 30 Mei 2026 (WITA), gelombang yang sedang buka pendaftaran:\n- Gelombang III B (17 Mei 2026 - 30 Mei 2026)\nBalas gelombangnya (mis. "II B" / "III A" / "Khusus"), nanti saya kirim jadwal detailnya.\nMau saya bantu jelaskan detail gelombang atau jadwalnya?
+=== QUERY ===
+query: masih buka pendaftaran?
+rewrite: masih buka pendaftaran?
+intent: COST
+source: rag-lexical-fallback
+success: true
+finalText: Siap, aku bantu jelaskan soal jadwal.\nAku nemu info yang relevan di data training:\n...administrasi, dan ketentuan lain yang berlaku. 5. Kapan mahasiswa bisa mendaftar program Double Degree? Pendaftaran dibuka sesuai periode seleksi yang ditentukan kampus. Silakan hubungi bagian International Office untuk informasi terbaru. 6.\nApakah program Double Degree resmi? Ya, program ini dijalankan melalui kerja sama resmi antara ITB STIKOM Bali de...\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?

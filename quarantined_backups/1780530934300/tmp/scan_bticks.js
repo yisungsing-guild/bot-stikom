@@ -1,0 +1,1 @@
+const fs=require("fs"); const text=fs.readFileSync("src/routes/provider.js","utf8"); const bt=String.fromCharCode(96); const lines=text.split("\n"); let total=0; for(let i=0;i<lines.length;i++){ const count=(lines[i].split(bt).length-1); if(count) console.log((i+1)+": "+count+" "+lines[i]); total+=count; } console.log("TOTAL:", total);

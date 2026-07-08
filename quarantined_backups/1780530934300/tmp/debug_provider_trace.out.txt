@@ -1,0 +1,17 @@
+﻿evalmachine.<anonymous>:13091
+ return { buildProgramComparisonRewrite, detectIntent, ragQueryWithEval, autoToneOutboundText, sanitizeWhatsappText, cleanAnswerLanguage };})
+          ^
+System.Management.Automation.RemoteException
+ReferenceError: buildProgramComparisonRewrite is not defined
+    at evalmachine.<anonymous>:13091:11
+    at Object.<anonymous> (C:\Users\TSC-AKA\Videos\MARKETING\BOTAI\system_wa\tmp\debug_provider_trace.js:26:18)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+System.Management.Automation.RemoteException
+Node.js v22.22.0

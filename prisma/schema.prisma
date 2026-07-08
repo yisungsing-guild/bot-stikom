@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// For local development fallback we can use SQLite.
+// In production this file normally targets PostgreSQL. Switch back after testing.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model KeywordReply {
+  id        String  @id @default(uuid())
+  keyword   String
+  matchType String  // "exact" | "contains" | "regex"
+  response  String
+  priority  Int     @default(0)
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+}
+
+model MenuItem {
+  id        String @id @default(uuid())
+  key       String
+  text      String
+  parentId  String?
+  order     Int     @default(0)
+  followupPrompt String? // instruksi untuk explore menu lain, misal "untuk lebih tahu, ketik 3"
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  chatId    String   @unique
+  state     String
+  data      Json?
+  updatedAt DateTime @updatedAt
+}
+
+model Chat {
+  id           String   @id @default(uuid())
+  chatId       String   @unique
+  status       String   @default("BOT")
+  lastSeenAt   DateTime @default(now())
+  optIn        Boolean  @default(true)
+}
+
+model Broadcast {
+  id           String   @id @default(uuid())
+  title        String
+  body         String
+  status       String   @default("queued") // "queued", "scheduled", "in_progress", "completed", "failed"
+  recipientList Json? // JSON array of chatIds or "all_opted_in"
+  scheduledAt  DateTime? // waktu kapan broadcast akan dikirim
+  sentCount    Int      @default(0)
+  failedCount  Int      @default(0)
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  logs         BroadcastLog[]
+}
+
+model BroadcastLog {
+  id          String   @id @default(uuid())
+  broadcastId String
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  chatId      String
+  status      String   // "sent", "failed"
+  error       String?
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model TrainingData {
+  id        String   @id @default(uuid())
+  filename  String
+  storedFilename String?
+  content   String   // extracted text content
+  source    String   // "upload", "url", "manual"
+  divisionKey String?
+  ragIngestStatus String @default("unknown") // "unknown", "processing", "success", "failed", "rejected"
+  ragIngestError String?
+  ragIngestedAt DateTime?
+  ragChunkCount Int?
+  active    Boolean  @default(true)
+  uploadedById String?
+  uploadedBy   AdminUser? @relation("TrainingDataUploadedBy", fields: [uploadedById], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  displayName  String?
+  role         String   @default("admin") // e.g. "admin", "viewer"
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  logs         AdminAuditLog[]
+  uploadedTrainingData TrainingData[] @relation("TrainingDataUploadedBy")
+  resolvedRagEvalItems RagEvalItem[] @relation("RagEvalResolvedBy")
+}
+
+model AdminAuditLog {
+  id        String   @id @default(uuid())
+  adminId   String?
+  admin     AdminUser? @relation(fields: [adminId], references: [id])
+  username  String?
+  action    String
+  resource  String?
+  details   Json?
+  ip        String?
+  createdAt DateTime @default(now())
+}
+
+model RagEvalItem {
+  id           String   @id @default(uuid())
+  key          String   @unique
+  question     String
+  normalized   String
+  divisionKey  String?
+  reason       String
+  minScore     Float?
+  topScore     Float?
+  contexts     Json?
+  occurrences  Int      @default(1)
+  resolvedAt   DateTime?
+  resolvedById String?
+  resolvedBy   AdminUser? @relation("RagEvalResolvedBy", fields: [resolvedById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([divisionKey])
+  @@index([resolvedAt])
+}

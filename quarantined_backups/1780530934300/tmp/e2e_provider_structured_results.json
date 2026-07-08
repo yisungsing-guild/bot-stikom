@@ -1,0 +1,847 @@
+{
+  "queries": [
+    {
+      "question": "Apa itu Teknologi Informasi?",
+      "status": 200,
+      "responseBody": {
+        "ok": true,
+        "ragUsed": true
+      },
+      "source": "rag-answer-rejected",
+      "confidenceScore": 0.5347979621766592,
+      "topChunks": [
+        {
+          "id": "93f59730-63c1-40ec-963d-7b96808de922",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "rawScore": 2.343479796217666,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "tion Technology Researcher More Info Profil Lulusan Gelar S.Kom. Teknologi Informasi @proditistikombaliti.stikom-bali.ac.id Profil Teknologi Informasi Akun Instagram bisnisdigital.stikom-bali.ac.id Website bisnis digita"
+        },
+        {
+          "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+          "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+          "rawScore": 3.073829817008062,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "BEASISWA",
+            "pageNumber": null
+          },
+          "excerpt": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 Kampus Jimbaran 31 Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali - Indonesia | Ph: (0361) 8953534 | Ho"
+        },
+        {
+          "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+          "filename": "hobi-sesuai-program-studi.docx",
+          "rawScore": 2.969965995352175,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bisa membuat blog prib"
+        },
+        {
+          "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+          "filename": "HOBY.pdf",
+          "rawScore": 2.9238992763430502,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi InformasiKomunitas IT 89 Teknologi InformasiStartup teknologi 90 Manajemen InformatikaOtak-atik komputer 91 Manajemen Informati"
+        },
+        {
+          "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+          "filename": "HOBY.pdf",
+          "rawScore": 2.921930110401249,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "omputer 78 Teknologi InformasiKabel LAN 79 Teknologi InformasiUI/UX design 80 Teknologi InformasiEditing video 81 Teknologi InformasiPengolahan data 82 Teknologi InformasiMembaca buku IT 83 Teknologi InformasiServer mana"
+        }
+      ],
+      "finalText": "Data tidak ditemukan secara pasti pada dokumen."
+    },
+    {
+      "question": "Apa itu Sistem Informasi?",
+      "status": 200,
+      "responseBody": {
+        "ok": true,
+        "ragUsed": true
+      },
+      "source": "gpt-4o-mini",
+      "confidenceScore": 0.5880798824963989,
+      "topChunks": [
+        {
+          "id": "618a0474-969a-463f-91cd-c010a27beb48",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "rawScore": 2.3488079882496398,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "SI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Animator Peneliti Sistem Informasi Software Engineer Cyber Security Analyst & IT Forensic Specialist M"
+        }
+      ],
+      "finalText": "- --\n💡 Kamu ingin tahu tentang Sistem Informasi ya.\nSistem Informasi adalah program studi yang menghasilkan lulusan dengan kompetensi dalam penerapan teknologi komputer dan jaringan. Lulusan mampu mengelola, mengolah, dan mendistribusikan informasi secara efektif dan inovatif, mencakup pengembangan perangkat lunak, teknologi cloud, Dev Ops, dan keamanan siber.\nMau tahu lebih lanjut tentang profil lulusan atau mata kuliah yang diajarkan di program ini?\n- --"
+    },
+    {
+      "question": "Prospek kerja Teknologi Informasi",
+      "status": 200,
+      "responseBody": {
+        "ok": true,
+        "ragUsed": false,
+        "source": "fallback"
+      },
+      "source": "rag-no-relevant-academic-context",
+      "confidenceScore": 0.5443243326240934,
+      "topChunks": [
+        {
+          "id": "93f59730-63c1-40ec-963d-7b96808de922",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "rawScore": 2.2544324332624095,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "tion Technology Researcher More Info Profil Lulusan Gelar S.Kom. Teknologi Informasi @proditistikombaliti.stikom-bali.ac.id Profil Teknologi Informasi Akun Instagram bisnisdigital.stikom-bali.ac.id Website bisnis digita"
+        },
+        {
+          "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+          "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+          "rawScore": 3.02645138644521,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "BEASISWA",
+            "pageNumber": null
+          },
+          "excerpt": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 Kampus Jimbaran 31 Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali - Indonesia | Ph: (0361) 8953534 | Ho"
+        },
+        {
+          "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+          "filename": "hobi-sesuai-program-studi.docx",
+          "rawScore": 2.8790961848684127,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bisa membuat blog prib"
+        },
+        {
+          "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+          "filename": "HOBY.pdf",
+          "rawScore": 2.8341095891475416,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi InformasiKomunitas IT 89 Teknologi InformasiStartup teknologi 90 Manajemen InformatikaOtak-atik komputer 91 Manajemen Informati"
+        },
+        {
+          "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+          "filename": "HOBY.pdf",
+          "rawScore": 2.8311980450422696,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "TI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "omputer 78 Teknologi InformasiKabel LAN 79 Teknologi InformasiUI/UX design 80 Teknologi InformasiEditing video 81 Teknologi InformasiPengolahan data 82 Teknologi InformasiMembaca buku IT 83 Teknologi InformasiServer mana"
+        }
+      ],
+      "finalText": "Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut 🙏\nAgar saya bisa membantu lebih baik, coba tuliskan pertanyaan\ndengan lebih spesifik, misalnya:\n- Nama program studi yang dimaksud\n- Gelombang pendaftaran\n- Topik yang ingin diketahui\nAtau jika ingin langsung berbicara dengan tim kami, di bawah ini 👇\n[ 💬 Hubungi Admin ]"
+    },
+    {
+      "question": "Prospek kerja Sistem Informasi",
+      "status": 200,
+      "responseBody": {
+        "ok": true,
+        "ragUsed": false,
+        "source": "fallback"
+      },
+      "source": "rag-no-relevant-academic-context",
+      "confidenceScore": 0.5472855897599679,
+      "topChunks": [
+        {
+          "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "rawScore": 2.8957285589759967,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "SI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "SK",
+            "pageNumber": null
+          },
+          "excerpt": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bi"
+        },
+        {
+          "id": "618a0474-969a-463f-91cd-c010a27beb48",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "rawScore": 2.2618315498010713,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "SI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Animator Peneliti Sistem Informasi Software Engineer Cyber Security Analyst & IT Forensic Specialist M"
+        },
+        {
+          "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+          "filename": "CHATBOT - Double Degree (1).docx",
+          "rawScore": 3.076707111311484,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "SI",
+            "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": "HELP",
+            "campus": "BALI",
+            "jalur": "KERJASAMA",
+            "feeType": null,
+            "category": "PROGRAM_KHUSUS",
+            "pageNumber": null
+          },
+          "excerpt": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki program Double Degree ber"
+        },
+        {
+          "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+          "filename": "CHATBOT - Double Degree (1).docx",
+          "rawScore": 3.031715450333749,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "SI",
+            "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": "DNUI",
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "PROGRAM_KHUSUS",
+            "pageNumber": null
+          },
+          "excerpt": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree – Dalian Neusoft University of I"
+        },
+        {
+          "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+          "filename": "hobi-sesuai-program-studi.docx",
+          "rawScore": 2.8775903687338986,
+          "finalScore": 1,
+          "matchedAttributes": [
+            "program"
+          ],
+          "chunkEntities": {
+            "program": "SI",
+            "programMode": null,
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": null,
+            "campus": null,
+            "jalur": null,
+            "feeType": null,
+            "category": "UNKNOWN",
+            "pageNumber": null
+          },
+          "excerpt": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi teknologi sepert i robotik, coding, IoT Suka Membaca buku atau artikel tentang teknologi terbaru Bisa Membuat robot sederhana"
+        }
+      ],
+      "finalText": "Maaf, saya belum dapat menemukan jawaban yang tepat untuk pertanyaan tersebut 🙏\nAgar saya bisa membantu lebih baik, coba tuliskan pertanyaan\ndengan lebih spesifik, misalnya:\n- Nama program studi yang dimaksud\n- Gelombang pendaftaran\n- Topik yang ingin diketahui\nAtau jika ingin langsung berbicara dengan tim kami, di bawah ini 👇\n[ 💬 Hubungi Admin ]"
+    },
+    {
+      "question": "Biaya kuliah Sistem Informasi",
+      "status": 200,
+      "responseBody": {
+        "ok": true,
+        "source": "fast_fee",
+        "program": "Sistem Informasi",
+        "choice": "semester",
+        "offerBreakdown": true
+      },
+      "source": "rag-fee-semester-only",
+      "confidenceScore": null,
+      "topChunks": [],
+      "finalText": "Untuk Prodi Sistem Informasi, biaya pendidikan per semester: Rp 6.500.000.\n\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n* Beasiswa KIP\n* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n* Beasiswa Prestasi\n* Beasiswa Yayasan\n* Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global\n* Kuliah Sambil Kerja di Luar Negeri\n\nApakah Kakak ingin dijelaskan tentang?\n* Biaya perkuliahan program studi yang lainnya\n* Salah satu jenis beasiswa\n* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll\nSilahkan diketikkan."
+    },
+    {
+      "question": "Biaya pendaftaran Sistem Informasi",
+      "status": 200,
+      "responseBody": {
+        "ok": true,
+        "source": "fast_fee",
+        "program": "Sistem Informasi",
+        "choice": "pendaftaran",
+        "offerBreakdown": true
+      },
+      "source": "rag-program-fee-registration",
+      "confidenceScore": null,
+      "topChunks": [],
+      "finalText": "Untuk Prodi Sistem Informasi, biaya pendaftaran: Rp 500.000 (dibayar saat daftar).\nMau sekalian saya jelaskan rincian biaya pendidikan lengkap (pendaftaran, DPP, biaya per semester, dan komponen awal masuk)?\nBalas: YA atau TIDAK."
+    },
+    {
+      "question": "Double Degree Internasional",
+      "status": 200,
+      "responseBody": {
+        "ok": true,
+        "ragUsed": true
+      },
+      "source": "rag-dual-degree-list",
+      "confidenceScore": null,
+      "topChunks": [],
+      "finalText": "Siap, aku bantu jawab ya.\nAda. Di data PMB, program Dual Degree yang tercantum yaitu:\n- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi: Bisnis Digital\n- Dual Degree (International Class) dengan HELP University, Malaysia - Prodi: Sistem Informasi\nKakak mau info Dual Degree yang mana? Balas: DNUI / HELP.\nMau saya jelaskan lagi bagian lain?"
+    },
+    {
+      "question": "Double Degree Nasional",
+      "status": 200,
+      "responseBody": {
+        "ok": true,
+        "ragUsed": true
+      },
+      "source": "rag-dual-degree-list",
+      "confidenceScore": null,
+      "topChunks": [],
+      "finalText": "Siap, aku bantu jawab ya.\nAda. Di data PMB, program Dual Degree yang tercantum yaitu:\n- Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) - Prodi: Bisnis Digital\n- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi: Bisnis Digital\n- Dual Degree (International Class) dengan HELP University, Malaysia - Prodi: Sistem Informasi\nKakak mau info Dual Degree yang mana? Balas: UTB / DNUI / HELP.\nMau saya jelaskan lagi bagian lain?"
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Skenario 1",
+      "messages": [
+        {
+          "question": "Apa itu Teknologi Informasi?",
+          "previousContext": null,
+          "responseBody": {
+            "ok": true,
+            "ragUsed": true
+          },
+          "source": "rag-answer-rejected",
+          "confidenceScore": 0.5347979621766592,
+          "topChunks": [
+            {
+              "id": "93f59730-63c1-40ec-963d-7b96808de922",
+              "filename": "Penjelasan Semua Program Studi.pdf",
+              "rawScore": 2.343479796217666,
+              "finalScore": 1,
+              "matchedAttributes": [
+                "program"
+              ],
+              "chunkEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "excerpt": "tion Technology Researcher More Info Profil Lulusan Gelar S.Kom. Teknologi Informasi @proditistikombaliti.stikom-bali.ac.id Profil Teknologi Informasi Akun Instagram bisnisdigital.stikom-bali.ac.id Website bisnis digita"
+            },
+            {
+              "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+              "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+              "rawScore": 3.073829817008062,
+              "finalScore": 1,
+              "matchedAttributes": [
+                "program"
+              ],
+              "chunkEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "BEASISWA",
+                "pageNumber": null
+              },
+              "excerpt": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 Kampus Jimbaran 31 Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali - Indonesia | Ph: (0361) 8953534 | Ho"
+            },
+            {
+              "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+              "filename": "hobi-sesuai-program-studi.docx",
+              "rawScore": 2.969965995352175,
+              "finalScore": 1,
+              "matchedAttributes": [
+                "program"
+              ],
+              "chunkEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "excerpt": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bisa membuat blog prib"
+            },
+            {
+              "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+              "filename": "HOBY.pdf",
+              "rawScore": 2.9238992763430502,
+              "finalScore": 1,
+              "matchedAttributes": [
+                "program"
+              ],
+              "chunkEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "excerpt": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi InformasiKomunitas IT 89 Teknologi InformasiStartup teknologi 90 Manajemen InformatikaOtak-atik komputer 91 Manajemen Informati"
+            },
+            {
+              "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+              "filename": "HOBY.pdf",
+              "rawScore": 2.921930110401249,
+              "finalScore": 1,
+              "matchedAttributes": [
+                "program"
+              ],
+              "chunkEntities": {
+                "program": "TI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "excerpt": "omputer 78 Teknologi InformasiKabel LAN 79 Teknologi InformasiUI/UX design 80 Teknologi InformasiEditing video 81 Teknologi InformasiPengolahan data 82 Teknologi InformasiMembaca buku IT 83 Teknologi InformasiServer mana"
+            }
+          ],
+          "finalText": "Data tidak ditemukan secara pasti pada dokumen."
+        },
+        {
+          "question": "Bagaimana prospek kerjanya?",
+          "previousContext": {
+            "chatId": "e2e-s1-1780446628101",
+            "lastQuestion": "Apa itu Teknologi Informasi?"
+          },
+          "responseBody": {
+            "ok": true,
+            "ragUsed": true
+          },
+          "source": "gpt-4o-mini",
+          "confidenceScore": 0.4731040574484596,
+          "topChunks": [
+            {
+              "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+              "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+              "rawScore": 0.06331040574484596,
+              "finalScore": 0.06331040574484596,
+              "matchedAttributes": [],
+              "chunkEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "excerpt": "Penjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam meran"
+            }
+          ],
+          "finalText": "Data tidak ditemukan secara pasti pada dokumen."
+        }
+      ]
+    },
+    {
+      "name": "Skenario 2",
+      "messages": [
+        {
+          "question": "Biaya kuliah Sistem Informasi",
+          "previousContext": null,
+          "responseBody": {
+            "ok": true,
+            "source": "fast_fee",
+            "program": "Sistem Informasi",
+            "choice": "semester",
+            "offerBreakdown": true
+          },
+          "source": "rag-fee-semester-only",
+          "confidenceScore": null,
+          "topChunks": [],
+          "finalText": "Untuk Prodi Sistem Informasi, biaya pendidikan per semester: Rp 6.500.000.\n\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n* Beasiswa KIP\n* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n* Beasiswa Prestasi\n* Beasiswa Yayasan\n* Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global\n* Kuliah Sambil Kerja di Luar Negeri\n\nApakah Kakak ingin dijelaskan tentang?\n* Biaya perkuliahan program studi yang lainnya\n* Salah satu jenis beasiswa\n* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll\nSilahkan diketikkan."
+        },
+        {
+          "question": "Apakah ada cicilan?",
+          "previousContext": {
+            "chatId": "e2e-s2-1780446628101",
+            "lastQuestion": "Biaya kuliah Sistem Informasi"
+          },
+          "responseBody": {
+            "ok": true,
+            "ragUsed": true
+          },
+          "source": "rag-fee-breakdown",
+          "confidenceScore": 0.01714842654508643,
+          "topChunks": [
+            {
+              "id": "b89701ea-f7ae-462d-b0cf-b5bf33f0cd89",
+              "filename": "CHATBOT - Double Degree (1).docx",
+              "rawScore": 0.12171484265450863,
+              "finalScore": 0.12171484265450863,
+              "matchedAttributes": [],
+              "chunkEntities": {
+                "program": null,
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "PROGRAM_KHUSUS",
+                "pageNumber": null
+              },
+              "excerpt": "GREE 1. Apa itu program Double Degree di ITB STIKOM Bali? Program Double Degree adalah program kuliah yang memungkinkan mahasiswa memperoleh dua gelar akademik sekaligus , yaitu dari ITB STIKOM Bali dan universitas mitra"
+            },
+            {
+              "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+              "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+              "rawScore": 0.10210214571630889,
+              "finalScore": 0.10210214571630889,
+              "matchedAttributes": [],
+              "chunkEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "excerpt": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\" Sistem Komputer | \"Program Studi Sistem Komputer menghasilkan lulusan yang memiliki k"
+            },
+            {
+              "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+              "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+              "rawScore": 0.10077199973243661,
+              "finalScore": 0.10077199973243661,
+              "matchedAttributes": [],
+              "chunkEntities": {
+                "program": "SI",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "SK",
+                "pageNumber": null
+              },
+              "excerpt": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bi"
+            },
+            {
+              "id": "9c9be26e-95cf-4b34-80d0-58bc55c1e9b6",
+              "filename": "134f76e4-8365-4bb4-afdf-3f7370ecdb7e",
+              "rawScore": 0.09512817344632969,
+              "finalScore": 0.09512817344632969,
+              "matchedAttributes": [],
+              "chunkEntities": {
+                "program": null,
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "excerpt": "ahnaunganKementerianPendidikandanKebudayaanjalur SNMPTNdanjalurSBMPTN(tidaktermasukjalurMandiri,Politeknik,D3dan Eksekutif ).Pengurusanpengambilanbiayayang sudahdibayardilayanimaksimal 21(duapuluhsatu)harikerjadaritangga"
+            },
+            {
+              "id": "86711253-c048-440b-8bb6-3f3c1f97d115",
+              "filename": "adf4dce8-718f-4b93-a45e-503a97fd4b36",
+              "rawScore": 0.09447173549271085,
+              "finalScore": 0.09447173549271085,
+              "matchedAttributes": [],
+              "chunkEntities": {
+                "program": null,
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "excerpt": "blarsemal - Dauh Yeh Cani, Badung - Baii- Indonesia | PHe 0557 750525 | Hotiine : CETASCS96SS STIKOM BALI email: InfoGstikom-balLacid | websits : wwistiom-batLacid / ITB STIKOS ' \"AL Dr. Da"
+            }
+          ],
+          "finalText": "Baik, kak. Terimakasih atas pertanyaannya.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n* Biaya pendaftaran: Rp 500.000\n* Potongan biaya pendaftaran: Rp 0\nTotal biaya pendaftaran: Rp 500.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n* Jas almamater dan topi: Rp 750.000\n* Kaos, tas, GMTI: Rp 750.000\nSubtotal biaya awal masuk: Rp 2.000.000\n* Potongan biaya DPP: Rp 0\nTotal biaya awal masuk setelah potongan: Rp 2.000.000\n\nUntuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:\n* Beasiswa KIP\n* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n* Beasiswa Prestasi\n* Beasiswa Yayasan\n* Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global\n* Kuliah Sambil Kerja di Luar Negeri\n\nApakah Kakak ingin dijelaskan tentang?\n* Biaya perkuliahan program studi yang lainnya\n* Salah satu jenis beasiswa\n* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll\nSilahkan diketikkan."
+        }
+      ]
+    },
+    {
+      "name": "Skenario 3",
+      "messages": [
+        {
+          "question": "Double Degree Nasional",
+          "previousContext": null,
+          "responseBody": {
+            "ok": true,
+            "ragUsed": true
+          },
+          "source": "rag-dual-degree-list",
+          "confidenceScore": null,
+          "topChunks": [],
+          "finalText": "Siap, aku bantu jawab ya.\nAda. Di data PMB, program Dual Degree yang tercantum yaitu:\n- Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) - Prodi: Bisnis Digital\n- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi: Bisnis Digital\n- Dual Degree (International Class) dengan HELP University, Malaysia - Prodi: Sistem Informasi\nKakak mau info Dual Degree yang mana? Balas: UTB / DNUI / HELP.\nMau saya jelaskan lagi bagian lain?"
+        },
+        {
+          "question": "Kampus partnernya apa saja?",
+          "previousContext": {
+            "chatId": "e2e-s3-1780446628101",
+            "lastQuestion": "Double Degree Nasional"
+          },
+          "responseBody": {
+            "ok": true,
+            "ragUsed": true
+          },
+          "source": "gpt-4o-mini",
+          "confidenceScore": 0.03740392984464861,
+          "topChunks": [
+            {
+              "id": "f55fe74b-aae6-49bf-b339-c3bd8ef94f4b",
+              "filename": "CHATBOT - Double Degree (1).docx",
+              "rawScore": -0.11625960701553513,
+              "finalScore": -0.11625960701553513,
+              "matchedAttributes": [],
+              "chunkEntities": {
+                "program": "BD",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": "DNUI",
+                "campus": "BALI",
+                "jalur": "KERJASAMA",
+                "feeType": null,
+                "category": "PROGRAM_KHUSUS",
+                "pageNumber": null
+              },
+              "excerpt": "a pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Office. 14. Apa keunggulan program HELP University? Mahasiswa memperoleh p"
+            }
+          ],
+          "finalText": "Ditemukan beberapa data berbeda pada dokumen."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,240 @@
+total_null=279
+CATEGORY: Dokumen administrasi count=51
+  filenames sample=001 TEMPLATE MoU - STIKOMBALI - 2025.docx, 002 TEMPLATE PKS - STIKOMBALI - 2025.docx, 003 TEMPLATE IA Implementation Agreement - STIKOMBALI - 2025.docx, 004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx, 20260209202540Undangan FKP RKPD Prov Bali 2027.pdf, Pedoman RPL ITB STIKOM Bali.pdf, SK PEMBINA ORMAWA 2026.pdf, SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf, UNKNOWN
+CATEGORY: Dokumen akreditasi count=17
+  filenames sample=SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf, SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf, SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf, SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf, SK AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf, SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf
+CATEGORY: Dokumen biaya count=91
+  filenames sample=002 TEMPLATE PKS - STIKOMBALI - 2025.docx, CHATBOT - Double Degree (1).docx, CamScanner 12-02-2026 14.39 (1).pdf, Kalender Pendaftaran TA 2026-2027 (1).xls, Kalender Pendaftaran.xlsx, Pedoman RPL ITB STIKOM Bali.pdf, SK PEMBINA ORMAWA 2026.pdf, UNKNOWN, rincian Biaya D3 Tahun Ajaran 2026-2027.pdf, rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf
+CATEGORY: Dokumen program studi count=20
+  filenames sample=003 TEMPLATE IA Implementation Agreement - STIKOMBALI - 2025.docx, 004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx, 20260209202540Undangan FKP RKPD Prov Bali 2027.pdf, CHATBOT - Double Degree (1).docx, Pedoman RPL ITB STIKOM Bali.pdf, Penjelasan Prodi dan Karier Masa Depan.xlsx, SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf, SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf, SK AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf, SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf
+CATEGORY: Dokumen RPL count=1
+  filenames sample=rincian Biaya SK Tahun Ajaran 2026-2027.pdf
+CATEGORY: Dokumen formulir count=11
+  filenames sample=20260209202540Undangan FKP RKPD Prov Bali 2027.pdf, Pedoman RPL ITB STIKOM Bali.pdf, SK PEMBINA ORMAWA 2026.pdf
+CATEGORY: Dokumen lain count=88
+  filenames sample=002 TEMPLATE PKS - STIKOMBALI - 2025.docx, 20260209202540Undangan FKP RKPD Prov Bali 2027.pdf, CHATBOT - Double Degree (1).docx, FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx, Kalender Pendaftaran TA 2026-2027 (1).xls, Kalender Pendaftaran.xlsx, Pedoman RPL ITB STIKOM Bali.pdf, Penjelasan Prodi dan Karier Masa Depan.xlsx, SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf, SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf
+
+SAMPLES 100 NULL CHUNKS:
+--- 1 id=1c7b21a7-1889-4e0c-8f65-7967c3642fb5 filename=UNKNOWN category=Dokumen biaya
+  snippet=[Sheet: Sheet1]\nKALENDER PENDAFTARAN MAHASISWA BARU\nTAHUN AJARAN 2026/2027\nGELOMBANG | MASA PENDAFTARAN | TESTING | PENGUMUMAN | MASA REGISTRASI ULANG\nKHUSUS | 28 OKTOBER 2025 s/d 27 DESEMBER 2025 | 28 DESEMBER 2025 | 30 DESEMBER 2025 | 30 DESEMBER 2025 s/d 19 JANUARI 2026\nI A | 28 DESEMBER 202
+--- 2 id=e8c163ce-9ce6-444f-a5a3-27be7fa42e29 filename=UNKNOWN category=Dokumen lain
+  snippet=6 s/d 24 MARET 2026\nII A | 8 MARET 2026 s/d 28 MARET 2026 | 29 MARET 2026 | 31 MARET 2026 | 31 MARET 2026 s/d 10 APRIL 2026\nII B | 29 MARET 2026 s/d 18 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026\nII C | 19 APRIL 2026 s/d 2 MEI 2026 | 3 MEI 2026 | 5 MEI 2026 | 5 MEI 2
+--- 3 id=cc87868f-6692-4cad-bce8-f6584ebea86f filename=UNKNOWN category=Dokumen lain
+  snippet=IV A | 5 JULI 2026 s/d 18 JULI 2026 | 19 JULI 2026 | 21 JULI 2026 | 21 JULI 2026 s/d 31 JULI 2026\nIV B | 19 JULI 2026 s/d 1 AGUSTUS 2026 | 2 AGUSTUS 2026 | 4 AGUSTUS 2026 | 4 AGUSTUS 2026 s/d 14 AGUSTUS 2026\nIV C | 2 AGUSTUS 2026 s/d 15 AGUSTUS 2026 | 16 AGUSTUS 2026 | 18 AGUSTUS 2026 | 18 AGUSTUS
+--- 4 id=652df7f1-37ca-4b73-915b-51ac999fb8a6 filename=UNKNOWN category=Dokumen biaya
+  snippet=[Sheet: Sheet1]\nKALENDER PENDAFTARAN MAHASISWA BARU\nTAHUN AJARAN 2026/2027\nGELOMBANG | MASA PENDAFTARAN | TESTING | PENGUMUMAN | MASA REGISTRASI ULANG\nKHUSUS | 28 OKTOBER 2025 s/d 27 DESEMBER 2025 | 28 DESEMBER 2025 | 30 DESEMBER 2025 | 30 DESEMBER 2025 s/d 19 JANUARI 2026\nI A | 28 DESEMBER 202
+--- 5 id=12766d5d-f83b-4334-ab91-33396e0df157 filename=UNKNOWN category=Dokumen lain
+  snippet=6 s/d 24 MARET 2026\nII A | 8 MARET 2026 s/d 28 MARET 2026 | 29 MARET 2026 | 31 MARET 2026 | 31 MARET 2026 s/d 10 APRIL 2026\nII B | 29 MARET 2026 s/d 18 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026\nII C | 19 APRIL 2026 s/d 2 MEI 2026 | 3 MEI 2026 | 5 MEI 2026 | 5 MEI 2
+--- 6 id=65da0ffe-11bf-4d6f-b72f-82f1521d8858 filename=UNKNOWN category=Dokumen lain
+  snippet=IV A | 5 JULI 2026 s/d 18 JULI 2026 | 19 JULI 2026 | 21 JULI 2026 | 21 JULI 2026 s/d 31 JULI 2026\nIV B | 19 JULI 2026 s/d 1 AGUSTUS 2026 | 2 AGUSTUS 2026 | 4 AGUSTUS 2026 | 4 AGUSTUS 2026 s/d 14 AGUSTUS 2026\nIV C | 2 AGUSTUS 2026 s/d 15 AGUSTUS 2026 | 16 AGUSTUS 2026 | 18 AGUSTUS 2026 | 18 AGUSTUS
+--- 7 id=f1b4878a-a97a-43f2-8b4f-04e85e80b13d filename=UNKNOWN category=Dokumen biaya
+  snippet=[Sheet: Sheet1]\nKALENDER PENDAFTARAN MAHASISWA BARU\nTAHUN AJARAN 2026/2027\nGELOMBANG | MASA PENDAFTARAN | TESTING | PENGUMUMAN | MASA REGISTRASI ULANG\nKHUSUS | 28 OKTOBER 2025 s/d 27 DESEMBER 2025 | 28 DESEMBER 2025 | 30 DESEMBER 2025 | 30 DESEMBER 2025 s/d 19 JANUARI 2026\nI A | 28 DESEMBER 202
+--- 8 id=d3644dc5-9aa3-4f8b-9bc8-a1b9ea868155 filename=UNKNOWN category=Dokumen lain
+  snippet=6 s/d 24 MARET 2026\nII A | 8 MARET 2026 s/d 28 MARET 2026 | 29 MARET 2026 | 31 MARET 2026 | 31 MARET 2026 s/d 10 APRIL 2026\nII B | 29 MARET 2026 s/d 18 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026\nII C | 19 APRIL 2026 s/d 2 MEI 2026 | 3 MEI 2026 | 5 MEI 2026 | 5 MEI 2
+--- 9 id=3a696211-ab90-419d-815b-7359a1167129 filename=UNKNOWN category=Dokumen lain
+  snippet=IV A | 5 JULI 2026 s/d 18 JULI 2026 | 19 JULI 2026 | 21 JULI 2026 | 21 JULI 2026 s/d 31 JULI 2026\nIV B | 19 JULI 2026 s/d 1 AGUSTUS 2026 | 2 AGUSTUS 2026 | 4 AGUSTUS 2026 | 4 AGUSTUS 2026 s/d 14 AGUSTUS 2026\nIV C | 2 AGUSTUS 2026 s/d 15 AGUSTUS 2026 | 16 AGUSTUS 2026 | 18 AGUSTUS 2026 | 18 AGUSTUS
+--- 10 id=72deeaa2-03e8-435e-ad40-b2085a1d52aa filename=UNKNOWN category=Dokumen lain
+  snippet=223740 0 223196 0 226930 0 257899 0
+--- 11 id=73b17567-b245-49be-910c-892f8149f6ca filename=UNKNOWN category=Dokumen biaya
+  snippet=an4dibayar1kalisajapada\nawalmasuk\n2.Potongan\nBiayaPendaftaran\n:\nRp.300.000,-JikaMendaftarpadaGelombangKhusus\nRp.250.000,-JikamendaftarpadaGelombangI\nRp.200.000,-JikamendaftarpadaGelombangII\nRp.150.000,-JikamendaftarpadaGelombangIII\nRp.100.000,-Jikamendaftarpada\nGelombangIV\nDitambahRp.50.0
+--- 12 id=535c45b6-8cba-4a2d-9a39-f6bf339abb1e filename=UNKNOWN category=Dokumen biaya
+  snippet=pusJimbaran\nJLRayaKampusUdayana,KutaSelatan,Jimbaran-Ball-Indonesia|Ph:(0361\n)8953534|Hotline:081288778840\nKampus\nAbiansemal\nJL.Janger,Abiansemal-DauhYehCani,Badung-Bali-Indonesia|Ph:(0361)4790925|Hotline:082145099633\nemail:Info@stikom-ball.ac.id|website\n:\nwww.stikom-ball.ac.id\n3.a.Beasiswa
+--- 13 id=37d19265-88eb-475f-86d5-5c66a06f99b9 filename=UNKNOWN category=Dokumen biaya
+  snippet=l\ndiberikantambahanbeasiswadariDPPuntuksemuaProgramStudisebesar:\nGelombang\nKhusus:60%\nGelombang\nI\n:50%\nGelombang\nII:40%\nGelombang\nIII\n:30%\nGelombang\nIV\n:20%\nGelombang\nSisipan:10%\nc.ApabilaDPPdibayartunaipotonganditambah10%(sepuluhpersen).\n4.KhususAlumniSMKTImendapatkanpotongan20%Bi
+--- 14 id=3dddad36-1fe3-4219-915f-8f27d88815f3 filename=UNKNOWN category=Dokumen biaya
+  snippet=nD3(6\nSemester/3Tahun)makaakandikenakanbiayapendidikanpersemestertahun\nberikutnya,sedangkanapabilamahasiswa\ncuti,makaakandikenakanbiayasebesar\nRp.1.000.000\nPerSemester\n8.Untukbiayasertifikasi\n,yudisiumdanwisudaakanditentukan\nkemudian\n9.Diwajibkanmemilikilaptopdenganspesifikasiyangsesuaikete
+--- 15 id=15f5e89d-90ce-4c4e-b2d2-7628f95d2f78 filename=UNKNOWN category=Dokumen biaya
+  snippet=64773|Hotline:082277389999\nKampus\nJimbaran\nJLRayaKampusUdayana,KutaSelatan,Jimbaran-Ball\n-Indonesia|Ph:(0361)8953534|Hotline:081288778840\nKampusAbiansemal\nJL.Janger,Abiansemal-\nDauhYehCani,Badung-Ball-Indonesia|Ph:\n(0361)4790925|Hotline:082145099633\nemail:info@stikom-ball.ac.id|website:www.
+--- 16 id=7472c883-913a-41ac-bd70-7a6d72127d77 filename=UNKNOWN category=Dokumen biaya
+  snippet=awahnaunganKementerianPendidikandanKebudayaanjalur\nSNMPTNdanjalurSBMPTN(tidaktermasukjalurMandiri,Politeknik,D3dan\nEksekutif).Pengurusanpengambilanbiayayangsudahdibayardilayanimaksimal21\n(duapuluhsatu)harikerjadaritanggalsuratketerangandariPTNyangbersangkutan,\n(kecualibiayapendaftaantidakdapatdi
+--- 17 id=4d11ef64-fdae-45ec-a5b4-2a6817af8114 filename=UNKNOWN category=Dokumen administrasi
+  snippet=tan,Jimbaran-Ball-Indonesia|Ph:(0361)8953534|Hotline:081288778840\nKampus\nAbiansemal\nJLJanger,Abiansemal-DauhYehCanl,Badung-Ball-Indonesia|Ph:(0361)4790925|Hotline:082145099633\nemail\n:\nInfo@stikom-ball.ac.id\n|website:www.stikom-ball.ac.id\nRektorITBSTIKOMBali\nBSTIKOM\nBALI\nDr.\nDadangHermawa
+--- 18 id=dd63fdc1-7523-4dc2-a1ec-1784fae2d5f4 filename=UNKNOWN category=Dokumen biaya
+  snippet=aawalmasuk\n2.Potongan\nBiayaPendaftaran\n:\nRp.300.000,JikaMendaftarpadaGelombang\nKhusus\nRp.250.000,-JikaMendaftarpadaGelombangI\nRp.200.000,-JikaMendaftarpadaGelombangII\nRp.150.000,-JikaMendaftarpadaGelombangIII\nRp\n.100.000,-JikaMendaftarpadaGelombangIV\nDitambahRp.50.000,-JikaAlumniSMK\nTIBa
+--- 19 id=771a8708-9c6d-4a41-bc12-9d53a1aee80e filename=UNKNOWN category=Dokumen biaya
+  snippet=OGIDANBISNIS\n(ITB\n)STIKOM\nBALI\nKampusDenpasar\nJl.RayaPuputanNo.86Renon,Denpasar-Bali-Indonesia|Ph:(0361)244445|Fax(0361)264773|Hotline:082277389999\nKampusJimbaran\nJLRayaKampusUdayana,KutaSelatan,Jimbaran-Ball-Indonesia|Ph:(0361)8953534|Hotline:081288778840\nKampusAbiansemal\nJL.Janger,Abianse
+--- 20 id=0a40052f-53b9-40c3-af2e-7df5c0b221aa filename=UNKNOWN category=Dokumen biaya
+  snippet=naPendidikanPokok(DPP)sebesar:\nGelombang\nKhusus:60%\nGelombang\nI:50\n%\nGelombang\nII\n:40%\nGelombang\nIII:\n30%\nGelombang\nIV\n:20%\nGelombangSisipan\n:10%\nc.ApabilaDPPdibayartunaipotonganditambah10%(sepuluhpersen).\n4.KhususAlumniSMKTImendapatkanpotongan20%BiayaPendidikanPer\nSemesterselama\
+--- 21 id=a0fee5a5-f0d5-4e72-9f32-b596bb0e30a7 filename=UNKNOWN category=Dokumen biaya
+  snippet=0Semester\n/5Tahun),makaakan\ndikenakanbiayapendidikanpersemestertahunberikutnya,sedangkanapabila\nmahasiswacuti,makaakandikenakanbiayasebesarRp.1.000.000persemester.\n9.\nUntukbiayasertifikasi,yudisiumdan\nwisudaakanditentukankemudian.\n10.Untukmahasiswapindahan/alihtransfer:\na.BiayaTransfer:DariI
+--- 22 id=a324d36f-7c1e-4fc2-8b4e-e595452931c7 filename=UNKNOWN category=Dokumen lain
+  snippet=PBAI,\nPOLTEKGANESHA,POLNASDENPASAR)Rp.4.000.000\nsedangkandariPTlainRp.5.000.000\n·\nAlways\nThe\nFrist\nDipindaidengan\nCS\nCamScanner\n·\n\nINSTITUT\nTEKNOLOGIDANBISNIS\nSTIKOMBALI\nINSTITUTTEKNOLOGIDANBISNIS\n(ITB)STIKOM\nBALI\nKampusDenpasar\nJLRayaPuputanNo.86Renon,Denpasar-Bali-Indonesia|Ph:(
+--- 23 id=2a62e052-d5c0-4e85-8c4b-1003b610b8b7 filename=UNKNOWN category=Dokumen biaya
+  snippet=Pokok(DPP)\nJumlahpengakuan\nSKSantara85s/d\n100SKSdikenakanbiaya\nDPP\nsebesarRp.4.500.000\nJumlahpengakuan\nSKSantara44s/\nd84SKSdikenakanbiaya\nDPP\nsebesar\nRp.5.000.000\nJumlahpengakuan\nSKSantara\n20s/d43SKSdikenakan\nbiayaDPP\nsebesarRp.7.000.000\nDibawah20SKS,biaya\nDPPsamadengandariSMA\n/ak
+--- 24 id=9c9be26e-95cf-4b34-80d0-58bc55c1e9b6 filename=UNKNOWN category=Dokumen biaya
+  snippet=ahnaunganKementerianPendidikandanKebudayaanjalur\nSNMPTNdanjalurSBMPTN(tidaktermasukjalurMandiri,Politeknik,D3dan\nEksekutif\n).Pengurusanpengambilanbiayayang\nsudahdibayardilayanimaksimal\n21(duapuluhsatu)harikerjadaritanggalsuratketerangandariPTNyang\nbersangkutan,(kecuali\nbiayapendaftaantidakdap
+--- 25 id=b9ca5653-13e8-43f4-abf6-57ec4965709f filename=UNKNOWN category=Dokumen biaya
+  snippet=1.000.000,- \nJika \nRegistrasi \npada \nGelombang \nI \nRp. \n750.000,- \nJika \nRegistrasi \npada \nGelombang \nII \nRp. \n500.000,- \nJika \nRegistrasi \npada \nGelombang \nIII \ni   Dipindai dengan \ni@  CamScanner .\n\nINSTITUT \nTEKNOLOGI \nDAN  \nBISNIS \n\ \n(ITB) \nSTIKOM \nBALI \nKampus De
+--- 26 id=6e815265-c182-457d-b296-6aa68e1164b8 filename=UNKNOWN category=Dokumen biaya
+  snippet=iswa cuti, maka akan di  kenakan biaya sebesar Rp.  1.000.000 per  semester. \n9.   Untuk biaya sertifikasi, yudisium dan  wisuda akan ditentukan kemudian. \n10.  Diwajibkan memiliki laptop dengan spesifikasi yang sesuai ketentuan kampus. \nUntuk spesifikasi laptop ini  agar menghubungi PT  MBC di  
+--- 27 id=85b158c1-a202-4086-96a2-40e21ebb8fff filename=UNKNOWN category=Dokumen biaya
+  snippet=lan biaya yang sudah di  bayar dilayani maksimal \n21  (dua puluh satu) hari kerja dari  tanggal surat keterangan dari PTN yang \nbersangkutan, (kecuali biaya pendaftaan tidak dapat dikembalikan) \npi g \ni@  CamScanner . \n\nINSTITUT TEKNOLOGI DAN BISNIS \n« (ITB) STIKOM BALI \nKampus Denpasar \n3L
+--- 28 id=86711253-c048-440b-8bb6-3f3c1f97d115 filename=UNKNOWN category=Dokumen lain
+  snippet=blarsemal \n- \nDauh \nYeh \nCani, \nBadung \n- \nBaii- \nIndonesia \n| \nPHe \n0557 \n750525 \n| \nHotiine \n: \nCETASCS96SS \nSTIKOM \nBALI \nemail: \nInfoGstikom-balLacid \n| \nwebsits \n: \nwwistiom-batLacid \n/ \nITB   STIKOS '  "AL \nDr.  Dadang Hermawan \nCamScanner’|
+--- 29 id=83c9b2a6-3ad3-492d-8291-3bc1f8d4e04f filename=UNKNOWN category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN BISNIS \n\ (ITB) STIKOM BALI \nKampus Denpasar \n3L Raya Puputan Na.86 Renon, Denpasar - Bal - Indonesia | Ph (O361) 244445 | Fax (0361264773 |  Hotline : 082277385999 \nKampus Jimbaran \n3L Raya Kampus Udayara, Kuta Selatan, Jimbaran - Bal - Indonesia | Pf (G361) 8953534 | Ho
+--- 30 id=f34a946b-c897-480f-8800-5660c22e706d filename=UNKNOWN category=Dokumen biaya
+  snippet=Nomor :  629/ITBSTIKOM/WDS/X/25 \nTanggal 08 Oktober 2025 \nRINCIAN BIAYA PENDIDIKAN MAHASISWA BARU \nDUAL DEGREE (INTERNATIONAL CLASS) dengan DALIAN NEUSOFT \nUNIVERSITY \nOF \nINFORMATION \n(DNUI) \nCHINA \nT.A \n2026/2027 \nNo. \nJenis \nBiaya \nRp \n‘Waktu \nPembayaran \n1. \nPendaftaran \n3.000
+--- 31 id=efdb008a-b628-4a8a-b8c7-444ff3b441d1 filename=UNKNOWN category=Dokumen biaya
+  snippet=rlaku \nselama \nmasa \nstudi \nnormal \n(4 \ntahun) \ndan \ntidak \nberubah \nkecuali \nada \nkejadian \nluar \nbiasa \ndi \nbidang \nmoneter. \nJika \nmelebihi \nmasa \nstudi \nnormal \nmaka \nberlaku \nbiaya \ntahun \nberikutnya. \n8.  \nUntuk \nbiaya \nsertifikasi, \nyudisium \ndan \nwisuda \nak
+--- 32 id=4b059fc9-4eba-4a1d-870a-2fd63259be0e filename=UNKNOWN category=Dokumen biaya
+  snippet=n Kebudayaan jalur \nSNMPTN dan jalur SBMPTN (tidak termasuk jalur Mandiri, Politeknik, D3 dan \nEksekutif). Pengurusan pengambilan biaya yang sudah di bayar dilayani maksimal 21 \n(dua puluh satu) hari kerja dari tanggal surat keterangan dari PTN yang bersangkutan, \n(kecuali biaya pendaftaan tidak
+--- 33 id=196949ff-814c-42b3-b318-80ef45edf9fb filename=UNKNOWN category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN BISNIS \n' (ITB) STIKOM BALI \nKampus Denpasar \n3L Raya Puputan No.86 Renon, Denpasar - Ball - Indonesia | Phe (0361) 244445 |  Fax (0361264773 |  Hotline : 082277389999 \nKampus Jimbaran \n3L Raya Kampus Udayana, Kuta Selatan, Jimbaran - Ball- Indonesia |  Phx  (0361) 895353
+--- 34 id=7a3f01db-7bd8-4e74-8847-2c7d5dfe6644 filename=UNKNOWN category=Dokumen biaya
+  snippet=DUAL DEGREE (INTERNATIONAL CLASS) dengan HELP UNIVERSITY \nMALAYSIA T.A 2026/2027 \nNo. Jenis Biaya Rp Waktu Pembayaran \n1. \nPendaftaran \n3.000.000 \nPada \nSaat \nDaftar \n2. \nDana \nPendidikan \nPokok \n20.000.000 \nSaat \nRegistrasi \n1 \n3. \nBahasa \nInggris \n5.000.000 \nMenjelang \nSemest
+--- 35 id=bf3cb4bc-3840-44da-b275-6b22ec7757e7 filename=UNKNOWN category=Dokumen biaya
+  snippet=maka berlaku biaya tahun berikutnya. \n8.  Untuk biaya sertifikasi, yudisium dan wisuda akan ditentukan kemudian. \n9.  Diwajibkan memiliki laptop dengan spesifikasi yang sesuai ketentuan kampus. Untuk \nspesifikasi laptop ini agar menghubungi PT MBC di counter AXIO Kampus Renon. \n10. Biaya yang su
+--- 36 id=b3e9bfd4-350a-48b0-bb29-4852cc03741f filename=UNKNOWN category=Dokumen biaya
+  snippet=(dua puluh satu) hari kerja dari tanggal surat keterangan dari PTN yang bersangkutan, \n(kecuali biaya pendaftaan tidak dapat dikembalikan). \nRektor I TIKOM Bali \nITH  \nSTIKO \n"ALL \nDr. \nDadang \nHermawan \ni   Dipindai dengan \ni@ CamScanner .
+--- 37 id=6f40738c-a651-4fc4-8f8b-961888f760f5 filename=UNKNOWN category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN  BISNIS \n\ (ITB) STIKOM BALI \nDenpasar \n1 \nPaya \nPuputan \nNo.86 \nPenon, \nDenpasar \n- \nBal \n- \nndonesia \n| \nP \n(O61) \n244445 \n| \nFax \n(0361264773 \n| \nHotllne \n: \n0RZZ \n739999 \nKampus Jimbaran \n0 \nPaya \nKempun \nUdayana. \nKuts \nSelatan, \nJimbaran \
+--- 38 id=e1371df2-d20f-4836-bd5c-da29851561e7 filename=UNKNOWN category=Dokumen biaya
+  snippet=STIKOM Bali  Nomor :  629/ITBSTIKOM/WDS/X/25 \nTanggal 08  Oktober 2025 \nBIAYA PENDIDIKAN MAHASISWA BARU PASCASARJANA \nNo. Jenis Biaya Rp ‘Waktu Pembayaran \n1.   Pendaftaran 700.000  Pada Saat  Daftar \n2.   Biaya Pendidikan Per  Semester 10.000.000  Per  Semester \n3.   Pembayaran Secara Lunas S
+--- 39 id=9c092c28-1a97-4262-856a-57c36e2ca589 filename=UNKNOWN category=Dokumen biaya
+  snippet=i \nRp.  2.000.000,- Potongan alumni untuk 4  semester (jika memilih pembayaran \ndimuka) \nRp.  500.000,- /  semester Potongan alumni untuk tiap  semester (jika memilih \npembayaran cicil  tiap  semester ) \nPembayaran semster bisa  dipilih salah satu, dibayar dimuka atau  dicicil \n3.   Biaya Seme
+--- 40 id=6c7fa0fe-0b26-49ec-9735-f9d0d6732e56 filename=UNKNOWN category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN BISNIS \n\ (ITB) STIKOM BALI \nKampus \nDenpasar \n) \nJl \nRaya \nPuputan \nNo.86 \nRenon, \nDenpasar \n- \nBali \n- \nIndonesia \n| \nPh: \n(0361) \n244445 \n| \nFax \n(0361)264773 \n| \nHotline \n: \n082277389999 \nKampus Jimbaran \nJl. Raya Kampus Udayana, Kuta Selatan, Ji
+--- 41 id=a7f8b591-0737-4fb0-8115-6d38d9a965ee filename=UNKNOWN category=Dokumen biaya
+  snippet=MENIMBANG : \na. \nBahwa \nuntuk \nmeningkatkan \nkualitas \nmahasiswa \nbaru \nITB \nSTIKOM \nBali \nperlu \nmemberikan \nbeasiswa \nkepada \ncalon \nmahasiswa \nbaru \nyang \nmemiliki \nrangking \ndi kelas serta berprestasi di bidang Akademik atau Non Akademik. \nb. \nBahwa \ndirasakan \nkeinginan
+--- 42 id=946ffd78-1fd4-4f28-a19e-9a97c463e6eb filename=UNKNOWN category=Dokumen administrasi
+  snippet=raturan \nPemerintah \nRI \nNomor \n4 \nTahun \n2014 \ntentang \npenyelenggaraan \nPendidikan Tinggi dan Pengelolaan Perguruan Tinggi. \n4. \nPeraturan \nMenteri \nPendidikan, \nKebudayaan, \nRiset \ndan \nTeknologi \nRepublik \nIndonesia \nNomor \n53 \nTahun \n2023 \nTentang \nPenjaminan \nMutu \nP
+--- 43 id=72ae9957-fc0d-44cd-b563-b1da0f849b6c filename=UNKNOWN category=Dokumen administrasi
+  snippet=san \nYayasan \nWidya \nDharma \nShanti \nDenpasar \nNomor \n: \n018/Y.WDS/V/2023 \nTanggal \n5 \nMei \n2023 \nTentang \nPengangkatan \nRektor \nInstitut \nTeknologi dan Bisnis (ITB) STIKOM Bali. \n~ \no \nk- \n\n\ \nINSTITUT TEKNOLOGI DAN BISNIS \nSTIKOM BALI \nINSTITUT TEKNOLOGI DAN BISNIS \n(ITB)
+--- 44 id=1bb90d91-897c-4aea-a3f4-30a6e399870d filename=UNKNOWN category=Dokumen biaya
+  snippet=Yeh Cani, Abiansemal, Badung - Bali - Indonesia | Ph: (0361) 4790925 | Hotline : 082145099633 \nemail : info@stikom-baliac.d |  website : wwiwstikom-bali.ac.id \nMEMUTUSKAN \nMenetapkan : PERATURAN REKTOR TENTANG PEMBERIAN BEASISWA \nPertama \nKedua \nKetiga \nKeempat \nKelima \nKeenam \nKetujuh \nK
+--- 45 id=ab4847b9-9868-4e8c-beff-5ebd56aca298 filename=UNKNOWN category=Dokumen biaya
+  snippet=ak-hak dari pada calon mahasiswa penerima besiswa tersebut adalah \nsebagaimana tercantum dalam lampiran -  3  surat peraturan ini  dan \nmerupakan suatu kesatuan yang tidak dapat dipisahkan dari surat \nperaturan ini. \n:  Segala biaya yang ditimbulkan akibat surat peraturan ini  dibebankan \nkepad
+--- 46 id=e6a8ea05-7569-4604-80a6-b0c88abae3a2 filename=UNKNOWN category=Dokumen administrasi
+  snippet=berkala. \n:  Apabila dikemudian hari terdapat kekeliruan dalam surat peraturan ini \nakan ditinjau kembali sebagaimana mestinya. \n:  Keputusan ini mulai berlaku surat per tanggal 02 November 2023 sampai \ndengan adanya keputusan lain dari Rektor ITB STIKOM Bali. \n& \n\nINSTITUT TEKNOLOGI DAN BISN
+--- 47 id=eb0cb688-4647-4d61-8db9-fcd36b9c49c5 filename=UNKNOWN category=Dokumen administrasi
+  snippet=us Abiansemal \nINSTITUT TEKNOLOGI DAN BISNIS 31.Janger, Dauh Yeh Cani, Abiansemal, Badung - Bali - Indonesia | Ph: (0361) 4790925 |  Hotline : 082145099633 \nSTIKOM BALI email : info@stikom-ballac.id | website : wwwistikom-ballac.id \nDitetapkan — :  di Denpasar \nTanggal :  19 Oktober 2023 \nDr.Da
+--- 48 id=42940b00-9454-4713-9bf9-c1bba27d3d4e filename=UNKNOWN category=Dokumen biaya
+  snippet=asar \nJl. Raya Puputan No.86 Renon, Denpasar -  Bali -  Indonesia |  Ph: (0361) 244445 | Fax (0361)264773 | Hotline :  082277389999 \nKampus Jimbaran \nJl Raya Kampus Udayana, Kuta Selatan, Jimbaran -  Bali -  Indonesia |  Ph: (0361) 8953534 |  Hotline : 081288778840 \nKampus Abiansemal \nINSTITUT 
+--- 49 id=e6b6c18e-a2e4-4cf9-ab32-19a598952145 filename=UNKNOWN category=Dokumen biaya
+  snippet=ndapatkan rangking 1  s/d 15 besar di \nkelas XII semester 1 atau 2 tidak mengikuti tes tulis hanya mengikuti tes wawancara \nsaja dengan melampirkan bukti raport yang sudah di legalisir atau Surat Keterangan \ndari sekolah yang ditanda tangani pejabat yang berwenang. \nIV.  Siswa yang tidak mendapa
+--- 50 id=86ad627b-6fda-4509-81e6-81b2485399e3 filename=UNKNOWN category=Dokumen biaya
+  snippet=TIKOM Bali tidak \nmengikuti tes akademis hanya mengikuti tes wawancara saja dengan melampirkan \nsurat keterangan perpindahan dan transkrip nilai dari kampus yang bersangkutan. \nVL. Jenis Beasiswa yang diberikan dapat dilihat pada lampiran - 3 surat peraturan ini. \n& \n\nINSTITUT TEKNOLOGI DAN BI
+--- 51 id=96482e69-1e71-431b-b3de-bab68ac43136 filename=UNKNOWN category=Dokumen lain
+  snippet=Yeh Cani, Ablansemal, Badung - Bali - Indonesia | Ph: (0361) 4790925 |  Hotline : 082145099633 \nSTIKOM BALI email : info@stikom-ballacid | website : www.stikom-baliac.id \nDenpasar, \nIndonesia |  Ph: (0361) 8953534 | Hotline : 081288778840 \ntober 2023 \nSTIKOM \nBALI \nDr. Dadang Hermawan £ \n\nI
+--- 52 id=bb819f63-6826-46ca-a82d-b6d24236d386 filename=UNKNOWN category=Dokumen biaya
+  snippet=ne :  081288778840 \nKampus Abiansemal \nINSTITUT TEKNOLOGI DAN BISNIS. Jl Janger, Dauh Yeh Cani, Abiansemal, Badung -  Bali -  Indonesia |  Ph: (0361) 4790925 |  Hotline :  082145099633 \nSTIKOM BALI email:info@stikom-ballac.id | website : wwwstikom-bal.acid \nLampiran -2 \nPeraturan Rektor ITB STI
+--- 53 id=9ff6e27f-ba2e-4e91-ba04-ef2ce64d8602 filename=UNKNOWN category=Dokumen biaya
+  snippet=I Semester 1  atau 2 potongan DPP 75% \n2.  Rangking 4 s/d 10 dikelas XII Semester 1 atau 2 potongan DPP 50%. \nb.  Calon mahasiswa dari SMA/K/MA lainnya \n1.  Rangking 1, 2 dan 3 dikelas XII Semester 1 atau 2 potongan DPP 50% \n2.  Rangking 4 s/d 10 dikelas XII Semester 1  atau 2 potongan DPP 25% \
+--- 54 id=21d6aa00-9cb6-4de0-a0f5-445cd5c41bab filename=UNKNOWN category=Dokumen biaya
+  snippet=(Provinsi/Kabupaten/Kota) potongan DPP 75% \nJuara 1,2 dan 3 ditingkat sekolah /antar sekolah potongan DPP 50% \nJuara lainnya (harapan 1, 2, 3 /favorit) ditingkat Internasional potongan DPP 100% \nJuara lainnya (harapan 1, 2, 3 /favorit) ditingkat Nasional potongan DPP 75%. \nJuara lainnya (harapan
+--- 55 id=95cf90de-57fa-45c4-86b7-a4c9ec2b1378 filename=UNKNOWN category=Dokumen lain
+  snippet=S \n\ (ITB) STIKOM BALI \nKampus Denpasar \nl. Raya Puputan No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 \nKampus Jimbaran \nl. Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali - Indonesia | Ph: (036) 8953534 | Hotline : 081288778840 \nKa
+--- 56 id=b0b65b8f-c09e-4e1c-a38e-1ad72705f880 filename=UNKNOWN category=Dokumen lain
+  snippet=test upload 03/16/2026 18:39:33
+--- 57 id=a55d0dff-7767-41c1-8a57-1acfadbdc0b3 filename=rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=T.A 2026/2027 \nNo.  Jenis Biaya Rp ‘Waktu Pembayaran \n1.  Pendaftaran 500.000  Pada Saat  Daftar \n2.  Dana Pendidikan Pokok 14.000.000  Dicicil Per  Bln  s.d  UTS-1 \n3.  Jas  Alamater, Topi 750.000  Saat Registrasi I \n4.  Kaos, Tas,  GMTI 750.000  Saat  Registrasi I \n5.  Biaya Pendidikan Per  
+--- 58 id=03c1a04d-a7e8-494b-889c-d6e4dcee33a9 filename=rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN  BISNIS \n\ (ITB) STIKOM BALI \nKampus Denpasar \n3L  Raya  Puputan Na86  Renon,  Denpasar -  Bali-Indonesia |  Pe (1361)  244445  |  Fax  O361264773 |  Hotline: 082277385959 \nKampus Jimbaran \n3L  Raya  Kampus Udayana, Kuta  Selatan,  Jimbaran -  Ball -  Indonesia |  P  (036
+--- 59 id=36fa07a8-05b5-497e-94b0-405fb16870e4 filename=rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=biasa dibidang moneter. \n6.   Untuk biaya pengalaman industri (butir 6)  belum termasuk tiket, passport, dan  visa. \n7.   Apabila mahasiswa melebihi masa studi normal S1  (8  Semester/4 Tahun) dan  D3  (6 \nSemester/3 Tahun) maka akan dikenakan biaya pendidikan per semester tahun \nberikutnya, sed
+--- 60 id=142bb6ee-9216-4ffa-a69e-a1013f32cca7 filename=rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN  BISNIS \n\ (ITB) STIKOM BALI \nKamj \nnwr:ummnmn-_-u-m-filmmmlmmmm:m \nKampus Jimbaran \n3L  Raya  Kampus Udayana, Kuta  Selatan, Jimbaran -  Ball -  Indonesia |  P  (0361  8353534 |  Hotline:: 081288778840 \nKampus Ablansemal \nINSTITUT TEXNOLOGI DAN  BISNIS 3L3anger, Ablans
+--- 61 id=f6a451ed-babd-4faf-bbc5-e1701401c71f filename=rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=Almamater dan  GMTI. \n- \nD3, \ndari \nITB \nSTIKOM \nBali \ndikenakan \nRp. \n3.000.000, \nsedangkan \ndari \nPT  lain  Rp.  4.500.000 \n- \nD2, \ndari \nGroup \nITB \nSTIKOM \nBALI \n(BISMA, \nLPBA, \nLPBAI, \nPOLTEK GANESHA, POLNAS DENPASAR) Rp. 4.000.000 \nsedangkan dari  PT  lain  Rp.  5.000.0
+--- 62 id=b78f8a67-9a51-4a0e-99e2-abfcf2692c4f filename=rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=Biaya yang sudah dibayar, tidak dapat dikembalikan dengan alasan apapun, kecuali \nditerima di  PTN dibawah naungan Kementerian Pendidikan dan  Kebudayaan jalur \nSNMPTN dan  jalur SBMPTN (tidak termasuk jalur Mandiri, Politeknik, D3  dan \nEksekutif). Pengurusan pengambilan biaya yang sudah di  bay
+--- 63 id=3c64374f-d0ab-43fa-8c9a-13502b6a312a filename=rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf category=Dokumen lain
+  snippet=W \nINSTITUT TEKNOLOGI DAN  B \nSTIKOM BALI \nINSTITUT TEKNOLOGI DAN  BISNIS \n(ITB) STIKOM BALI \nDenpasar \n'Jl  Raya Puputan Na.86 Renon, Denpasar -  Ball  -  Indonesia |  Phe  {0351) 244445 |  Fax  (O561254773 |  Hotline :  082277389999 \nJimbaran \nKampus \n3L  Raya Kampus Udayana, Kuta Setatan
+--- 64 id=24f877b8-d579-4e3e-a47b-1e294213da8a filename=rincian Biaya SK Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=di normal (10  Semester/5 Tahun), maka akan \ndikenakan biaya pendidikan per  semester tahun berikutnya, sedangkan apabila \nmahasiswa cuti, maka akan di  kenakan biaya sebesar Rp.  1.000.000 per  semester. \n9.   Untuk biaya sertifikasi, yudisium dan  wisuda akan ditentukan kemudian. \n10.  Untuk m
+--- 65 id=706c7aac-34bb-40ff-ad88-fb2e5b4abb68 filename=rincian Biaya SK Tahun Ajaran 2026-2027.pdf category=Dokumen lain
+  snippet=EK GANESHA, POLNAS DENPASAR) Rp. 4.000.000 \nsedangkan dari  PT  lain  Rp.  5.000.000 \ni   Dipindai dengan \ni@  CamScanner .
+--- 66 id=c3dc21e8-e00e-4183-bcd5-6dca242651c6 filename=rincian Biaya SK Tahun Ajaran 2026-2027.pdf category=Dokumen lain
+  snippet=INSTITUT TEKNOLOGI DAN  BISNIS \n\ (ITB) STIKOM BALI \nKampus Denpasar \n3L  Raya Puputan No.86  Renon,  Denpasar -  Bali -Indonesia |  Pf  (036T)  244445  |  Fax  [SSGT2S4773 |  Hotiine :  082277389999 \nKampus Jimbaran \n3L  Raya  Kampus Udayana, Kuta  Selatan, Jimbaran -  Bail-  Indonesia |  P  (
+--- 67 id=b0cc2c62-b926-4b3f-b59d-7e6456cdb410 filename=rincian Biaya SK Tahun Ajaran 2026-2027.pdf category=Dokumen RPL
+  snippet=kenakan biaya DPP \nsebesar Rp.  5.000.000 \n-    Jumlah pengakuan SKS antara 20  s/d  43  SKS dikenakan biaya DPP \nsebesar Rp.  7.000.000 \n-    Di  bawah 20  SKS, biaya DPP sama dengan dari SMA /  akan masuk ke \njalur regular. \n-   Ketentuan pendaftaran dan  registrasi per  gelombang berlaku \n
+--- 68 id=b5a5c058-2481-475a-b6b6-fab4866688ec filename=rincian Biaya D3 Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=n), maka akan \ndikenakan biaya pendidikan per  semester tahun berikutnya, sedangkan apabila \nmahasiswa cuti, maka akan di  kenakan biaya sebesar Rp.  1.000.000 per  semester. \n9.   Untuk biaya sertifikasi, yudisium dan  wisuda akan ditentukan kemudian. \n10.  Diwajibkan memiliki laptop dengan spe
+--- 69 id=5ea53643-5e0a-422b-a30a-5d35fe7decaa filename=rincian Biaya D3 Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=(dua puluh satu) hari kerja dari  tanggal surat keterangan dari PTN yang \nbersangkutan, (kecuali biaya pendaftaan tidak dapat dikembalikan) \npi g \ni@  CamScanner .
+--- 70 id=c296b48c-4b93-45fc-a62a-20eff49e538a filename=rincian Biaya D3 Tahun Ajaran 2026-2027.pdf category=Dokumen lain
+  snippet=INSTITUT TEKNOLOGI DAN BISNIS \n« (ITB) STIKOM BALI \nKampus Denpasar \n3L  Raya  Puputan NG.86  Renon, Denpasar -  Bal -  Indonesia |  Pf  (0351  244445 |  Fax  (0361264773 |  Hotine  :  082277389999 \nKampus Jimbaran \n3L  Raya  Kampus  Udayaria, Kuta  Selatan,  Jimbaran -  Ball-  Indonesia |  Ph 
+--- 71 id=075f3250-9cd9-40dc-83b4-bf75ecc55cdb filename=CamScanner 12-02-2026 14.39 (1).pdf category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN  BISNIS \n\ (ITB) STIKOM BALI \nDenpasar \n1 \nPaya \nPuputan \nNo.86 \nPenon, \nDenpasar \n- \nBal \n- \nndonesia \n| \nP \n(O61) \n244445 \n| \nFax \n(0361264773 \n| \nHotllne \n: \n0RZZ \n739999 \nKampus Jimbaran \n0 \nPaya \nKempun \nUdayana. \nKuts \nSelatan, \nJimbaran \
+--- 72 id=b786116a-3d52-49e4-b8db-51b2a7d6dbf5 filename=CamScanner 12-02-2026 14.39 (1).pdf category=Dokumen biaya
+  snippet=dan  selanjutnya jika  hanya mengambil tesis  adalah Rp. \n6.000.000 \n4.   Biaya sudah termasuk martikulasi, ujian dan  bimbingan (bel \nwisuda) \nT \nDr.  Dadang Hermawan \n&  Dipindai dengan CamScanner
+--- 73 id=c5c8b9a7-1c57-4a89-9550-7845230396c9 filename=rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN BISNIS \n\ (ITB) STIKOM BALI \nKampus Denpasar \n3L Raya Puputan Na.86 Renon, Denpasar - Bal - Indonesia | Ph (O361) 244445 | Fax (0361264773 |  Hotline : 082277385999 \nKampus Jimbaran \n3L Raya Kampus Udayara, Kuta Selatan, Jimbaran - Bal - Indonesia | Pf (G361) 8953534 | Ho
+--- 74 id=e87e0433-813b-4130-a6fe-370347ccf3f6 filename=rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=spesifikasi yang sesuai ketentuan kampus. Untuk \nspesifikasi laptop ini agar menghubungi PT MBC di counter AXIO Kampus Renon. \n10. Biaya yang sudah dibayar, tidak dapat dikembalikan dengan alasan apapun, kecuali \nditerima di PTN dibawah naungan Kementerian Pendidikan dan Kebudayaan jalur \nSNMPTN
+--- 75 id=266439b9-5e7f-41fc-b654-517cbde181b2 filename=rincian Biaya HELP Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN BISNIS \n' (ITB) STIKOM BALI \nKampus Denpasar \n3L  Raya Puputan No.86 Renon, Denpasar -  Ball  -  Indonesia |  Phe  (0361) 244445 |  Fax  (0361264773 |  Hotline :  082277389999 \nKampus Jimbaran \n3L  Raya Kampus Udayana, Kuta Selatan, Jimbaran -  Ball- Indonesia |  Phx  (03
+--- 76 id=7156cb42-f778-475a-b105-3da603f35504 filename=rincian Biaya HELP Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=ntuk Dana Pendidikan Pokok : \na.   Gelombang Khusus :  Rp.  10.000.000 \nb.   Gelombang I :  Rp.  8.000.000 \nc.   Gelombang II :  Rp.  6.000.000 \nd.   Gelombang III :  Rp.  4.000.000 \ne.   Gelombang IV :  Rp.  2.000.000 \ni   Dipindai dengan \ni@  CamScanner .
+--- 77 id=536cc7b3-325b-4cb0-8b3f-3f543566d62e filename=rincian Biaya HELP Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=sesuai ketentuan kampus. Untuk \nspesifikasi laptop ini  agar  menghubungi PT  MBC di  counter AXIO Kampus Renon. \n10.  Biaya yang sudah dibayar, tidak dapat dikembalikan dengan alasan apapun, kecuali \nditerima di  PTN dibawah naungan Kementerian Pendidikan dan Kebudayaan jalur \nSNMPTN dan  jalur
+--- 78 id=e060163f-cc1b-4ebf-b249-0e842bd8d34a filename=rincian Biaya UTB Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=INSTITUT TEKNOLOGI DAN  BISNIS \n\ (ITB) STIKOM BALI \nKampus Denpasar \nJl  Raya  Puputan No.86  Renon, Denpasar -  Bali -  Indonesia |  Ph:  (0361)  244445 |  Fax  (03611264773 |  Hotline :  082277389999 \nKampus Jimbaran \n1.  Raya Kampus Udayana, Kuta Selatan, Jimbaran -  Bali  -  Indonesia |  P
+--- 79 id=a914fc6d-9222-42f4-9c11-f9b0262ef2a0 filename=rincian Biaya UTB Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=abila \nmahasiswa \ncuti, \nmaka \nakan \ndi \nkenakan \nbiaya \nsebesar \nRp. \n1.000.000 \nper \nsemester. \n9.   Untuk biaya sertifikasi, yudisium dan  wisuda akan ditentukan kemudian. \n10.  Diwajibkan memiliki laptop dengan spesifikasi yang sesuai ketentuan kampus. \nUntuk spesifikasi laptop in
+--- 80 id=a6a735b6-94b6-43ed-a368-2dc6c29b6fca filename=rincian Biaya UTB Tahun Ajaran 2026-2027.pdf category=Dokumen biaya
+  snippet=kutan, (kecuali biaya pendaftaan tidak dapat dikembali Kx( \n'TKOM Bali \n11. \nRektor ITBST] \nY \n1B STIKAY SALI \nDr.  Dadang Hermawan \ni@  CamScanner .
+--- 81 id=3a8c768b-1142-41a7-b80d-e6d4aa244b46 filename=Kalender Pendaftaran.xlsx category=Dokumen biaya
+  snippet=[Sheet: Sheet1]\nKALENDER PENDAFTARAN MAHASISWA BARU\nTAHUN AJARAN 2026/2027\nGELOMBANG | MASA PENDAFTARAN | TESTING | PENGUMUMAN | MASA REGISTRASI ULANG\nKHUSUS | 28 OKTOBER 2025 s/d 27 DESEMBER 2025 | 28 DESEMBER 2025 | 30 DESEMBER 2025 | 30 DESEMBER 2025 s/d 19 JANUARI 2026\nI A | 28 DESEMBER 202
+--- 82 id=22ed198f-2c4e-4479-bf4d-974037d328f5 filename=Kalender Pendaftaran.xlsx category=Dokumen lain
+  snippet=026 s/d 28 AGUSTUS 2026\nSISIPAN 1 | 16 AGUSTUS 2026 s/d 29 AGUSTUS 2026 | 30 AGUSTUS 2026 | 31 AGUSTUS 2026 | 31 AGUSTUS 2026 s/d 11 SEPTEMBER 2026\nSISIPAN 2 | 30 AGUSTUS 2026 s/d 11 SEPTEMBER 2026 | 12 SEPTEMBER 2026 | 14 SEPTEMBER 2026 | 14 SEPTEMBER 2026 s/d 25 SEPTEMBER 2026
+--- 83 id=cf56c0cf-1012-4c06-965e-6e4d82496365 filename=FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx category=Dokumen lain
+  snippet=[Sheet: Sheet2]\n\n[Sheet: Sheet3]
+--- 84 id=b1a36c72-6ef9-4a92-ad7f-8e93c5ecb04c filename=media-WhatsApp Image 2026-04-24 at 10.26.32.jpeg category=Dokumen lain
+  snippet=[[image:https://your-domain.com/media/WhatsApp%20Image%202026-04-24%20at%2010.26.32-1776999193034.jpeg|Alur enrollment - Mahasiswa Asing]]\n\nIni adalah alur untuk proses daftar / enroll untuk Mahasiswa Asing di ITB STIKOM Bali
+--- 85 id=a9cb9dad-8f8b-46a5-865b-3ab7eddf6b35 filename=001 TEMPLATE MoU - STIKOMBALI - 2025.docx category=Dokumen administrasi
+  snippet=AMA ; … ….[ nama pimpinan ] , … ….[ jabatan ] , dalam hal ini bertindak untuk dan atas nama … ….. [nama perusahaan ] yang berkedudukan di … ….[ alamat perusahaan ] , selanjutnya dalam Nota Kesephaman ini disebut sebagai PIHAK KEDUA . Bersepakat untuk menandatangani Nota Kesepahaman tentang kerja sam
+--- 86 id=e3a25e31-81b8-4c07-aafb-7a81b6891574 filename=001 TEMPLATE MoU - STIKOMBALI - 2025.docx category=Dokumen administrasi
+  snippet=dapat diperpanjang berdasarkan kesepakatan tertulis bersama. Demikian Nota Kesepahaman ini dibuat dalam 2 (dua) rangkap , ditandatangani oleh kedua belah pihak pada hari, tanggal, bulan dan tahun sebagaimana tersebut di atas, dan 1 (satu) di antaranya dipegang oleh masing-masing Pihak. PIHAK KEDUA …
+--- 87 id=d69618a9-b282-4a97-b0fb-55029359a378 filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen lain
+  snippet=left 8255 Logo Mitra 0 0 Logo Mitra right -83820 PERJANJIAN KERJA SAMA ANTARA INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI DAN (NAMA MITRA) TENTANG ..................................................................... Nomor : ............................................... Nomor : .....................
+--- 88 id=4078bef2-c3a4-4098-b69b-b821d37af55c filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen administrasi
+  snippet=nya tersebut bertindak untuk dan atas nama Institut Teknologi dan Bisnis STIKOM Bali yang berkedudukan di Jl Raya Puputan No. 86 Renon, Denpasar, Bali, selanjutnya dalam Perjanjian Kerjasama ini disebut PIHAK KESATU . .................................. : ...........................………, dalam hal ini
+--- 89 id=232a0ec2-5a59-4fba-92be-16b6046f8fce filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen administrasi
+  snippet=n Tinggi; Bahwa Perjanjian Kerja Sama ini merupakan tindak lanjut Nota Kesepahaman Bersama antara Institut Teknologi dan Bisnis STIKOM Bali dengan (nama mitra) Nomor: ........................................ dan nomor ………………… tentang ………………………….. tanggal ...................... PARA PIHAK dengan ini 
+--- 90 id=dfefbb3b-e3e8-4f90-a5cf-9f86e359237a filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen administrasi
+  snippet=........; dan ..................................... Pasal 1 MAKSUD DAN TUJUAN 1. Maksud dari Perjanjian ini adalah untuk menetapkan landasan kemitraan strategis antara PARA PIHAK dalam kegiatan ....................... . 2. Tujuan dilakukan perjanjian ini adalah sebagai landasan bagi PARA PIHAK dalam
+--- 91 id=cd5aad7a-ca49-46bb-a8ef-d8e241cafedb filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen biaya
+  snippet=akan ................................ . ........................ .; Tim Pelaksana Kerja Sama akan ......................................; Teknis pelaksanaan setiap kegiatan .............................. ...; Tim Pelaksana Kerja Sama secara berkala melaporkan kemajuan pelaksanaan kegiatan kepada pim
+--- 92 id=db3540b0-8878-43ba-a2d6-3b28fb8807de filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen biaya
+  snippet=mber biaya selain sebagaimana dimaksud pada ayat (2), dapat berasal dari pihak lain yang sifatnya sah dan tidak mengikat sesuai peraturan perundang-undangan . Pasal 5 KEWAJIBAN PARA PIHAK Kewajiban PIHAK KESATU : .................................................; ....................................
+--- 93 id=6b2abbf6-2568-45ff-8d52-16e2b7d1cb65 filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen lain
+  snippet=...; .................................................; ............................................. ....; dan ................................................. 2 . Hak PIHAK KEDUA ..................................................; ...................................................; .............
+--- 94 id=58eb6782-554e-4a4f-8acf-45c191ae0f8e filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen administrasi
+  snippet=ulis kepada pihak lainnya paling lambat 3 (tiga) bulan sebelumnya. Pasal 8 HAK KEKAYAAN INTELEKTUAL Setiap HKI yang dibawa oleh para pihak (HKI bawaan) dalam melaksanakan kegiatan menurut perjanjian ini tetap milik pihak yang bersangkutan. Namun demikian , pihak tersebut harus memastikan bahwa HKI b
+--- 95 id=4a324a4c-078d-4234-b930-6c036755ea5e filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen biaya
+  snippet=pentingan komersial maupun nonn komersial , akan diatur secara tersendiri . Setiap publikasi data dan informasi hasil kegiatan menurut perjanjian ini harus dilaksanakan bersama-sama atau dengan mekanisme lain yang diatur tersendiri yang merupakan bagian tidak terpisahkan dari perjanjian ini . Publik
+--- 96 id=ab6c1c7b-4d9d-4be3-94f1-ec2753a022da filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen lain
+  snippet=i tidak serta merta menghentikan segala hak dan/ atau kewajiban para pihak yang diatur dalam pasal ini . Pasal 9 FORCE MAJEURE Masing-masing pihak dibebaskan dari tanggung jawab atas keterlambatan atau kegagalan dalam memenuhi kewajiban yang tercantum dalam Perjanjian ini , yang disebabkan atau diak
+--- 97 id=215c967a-49ee-4688-97eb-d3f577f78f09 filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen administrasi
+  snippet=rjanjian ini . Apabila terjadi Force Majeure maka pihak yang lebih dahulu mengetahui wajib memberitahukan kepada pihak lainnya selambat-lambatnya dalam waktu 14 ( empat belas hari ) setelah terjadinya Force Majeure . Keadaan Kahar/ Force Majeure sebagaimana dimaksud Ayat (2) perjanjian ini tidak men
+--- 98 id=d7160ec8-9552-4d2b-a719-21761d2de79b filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen administrasi
+  snippet=ndapat , akan diselesaikan dengan musyawarah untuk mufakat . 2. Apabila tidak tercapai penyelesaian secara musyawarah untuk mufakat maka PARA PIHAK sepakat untuk menyelesaikan perselisihan sesuai dengan ketentuan Peraturan Perundang-undangan . Pasal 11 PENGAKHIRAN PERJANJIAN KERJA SAMA Perjanjian Ke
+--- 99 id=dfb90190-f659-4127-bc26-14df9fb4a66e filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen administrasi
+  snippet=intah yang tidak memungkinkan berlangsungnya Perjanjian Kerja Sama ini tanpa terikat jangka waktu sebagaimana dimaksud pada ayat (1) dan ayat (2). Pengakhiran Kerja Sama ini tidak menghapuskan hak dan kewajiban PARA PIHAK yang masih terhutang dan telah timbul sebelum berakhirnya Perjanjian Kerja Sam
+--- 100 id=d5c6bdc2-47ff-4f06-8a23-c0c953b6131b filename=002 TEMPLATE PKS - STIKOMBALI - 2025.docx category=Dokumen lain
+  snippet=il : : : Jalan Raya Puputan Nomor 86 Renon, Denpasar, Bali (0362) 244445 info@stikom-bali.ac.id PIHAK KEDUA : (Nama Mitra) Alamat Telepon E - mail : : : ................................... ........................... … …………………... Bila terjadi perubahan terhadap alamat dari salah satu pihak , pihak y
+
+SUSPICIOUS KEYWORD NULL CHUNKS:
+id=859852c9-866f-4cca-963b-bb4e61813843 filename=003 TEMPLATE IA Implementation Agreement - STIKOMBALI - 2025.docx program=undefined normalize=null
+id=3cab78d6-e010-4cc1-8091-e80167e1c48d filename=004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx program=null normalize=null
+id=abcd877f-1378-448c-94dd-e7ef6dde5d6a filename=20260209202540Undangan FKP RKPD Prov Bali 2027.pdf program=null normalize=null
+id=76eac90a-5f85-4350-b5fd-89f51ce0eccb filename=SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf program=null normalize=null
+id=af57cc78-8247-41d8-815a-ffda6cd059c2 filename=SK AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf program=null normalize=null
+id=5052471d-54e9-4248-8c5c-ad8cd79c2807 filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=1737b507-f4b6-46c5-ba53-9e867fe7bd58 filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 filename=CHATBOT - Double Degree (1).docx program=null normalize=null
+id=b5c4e64e-065b-4774-8d06-d10436d41ab0 filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=690600e1-cd44-4413-940a-003cd96115d9 filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=087c5d32-5fea-4c3e-be19-c1c89f425b72 filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=99e9d183-2bfc-4f8a-8abe-b9e744db01a5 filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=c17741ab-fb70-4f81-9fc3-bc84724685ff filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=ae04514f-fc94-47c3-a262-9bb534f5a271 filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=5f09dce7-4b0e-42fa-ad9d-eb5496ce615b filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=6598aa8f-67e6-49c7-9221-122b7aaa1236 filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=73f6a572-8f2c-40d0-b2e4-32241a65756c filename=Pedoman RPL ITB STIKOM Bali.pdf program=null normalize=null
+id=9e15f89c-e877-4a9b-b3f9-6af6d46a238a filename=SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf program=null normalize=null
+id=7ce71480-d0bb-4cc7-956f-d8fa3da6ab29 filename=SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf program=null normalize=null
+id=bcbb1b15-62ea-460a-940a-8fbe5eea33d2 filename=Penjelasan Prodi dan Karier Masa Depan.xlsx program=null normalize=null
+total suspicious count=20

@@ -1,0 +1,92 @@
+{
+  "timestamp": "2026-06-12T03:26:19.924Z",
+  "comparisons": [
+    {
+      "question": "Apa itu Sistem Informasi?",
+      "before": {
+        "exists": true,
+        "count": 1,
+        "top10": [
+          {
+            "rank": 1,
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "composite": "4.2000"
+          }
+        ]
+      },
+      "after": {
+        "exists": true,
+        "count": 1,
+        "top10": [
+          {
+            "rank": 1,
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "composite": "4.2000"
+          }
+        ]
+      }
+    },
+    {
+      "question": "Apa prospek kerja Sistem Informasi?",
+      "before": {
+        "exists": true,
+        "count": 1,
+        "top10": [
+          {
+            "rank": 1,
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "composite": "3.9300"
+          }
+        ]
+      },
+      "after": {
+        "exists": true,
+        "count": 1,
+        "top10": [
+          {
+            "rank": 1,
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "composite": "3.9300"
+          }
+        ]
+      }
+    },
+    {
+      "question": "Apa yang dipelajari di Sistem Informasi?",
+      "before": {
+        "exists": true,
+        "count": 1,
+        "top10": [
+          {
+            "rank": 1,
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "composite": "4.1400"
+          }
+        ]
+      },
+      "after": {
+        "exists": true,
+        "count": 1,
+        "top10": [
+          {
+            "rank": 1,
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "docCategory": "PROGRAM_KHUSUS",
+            "composite": "4.1400"
+          }
+        ]
+      }
+    }
+  ]
+}

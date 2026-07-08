@@ -1,0 +1,219 @@
+[
+  {
+    "query": "prodi apa saja yang ada di stikom bali?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "program_list",
+      "ragUsed": false
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-1",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-1",
+        "text": "Program studi yang tersedia di ITB STIKOM Bali:\n\nS2 (Pascasarjana):\n\n- S2 Sistem Informasi (SI)\n\nS1 (Sarjana):\n\n- Sistem Informasi\n- Teknologi Informasi\n- Bisnis Digital\n- Sistem Komputer\n\nD3 (Diploma):\n\n- D3 Manajemen Informatika\n\nDouble Degree:\n\n- Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) — Prodi: Bisnis Digital\n- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China — Prodi: Bisnis Digital\n- Dual Degree (International Class) dengan HELP University, Malaysia — Prodi: Sistem Informasi\n\nKalau kakak mau, sebutkan prodi + gelombang (jika relevan), nanti saya bantu jelaskan rincian biaya/jadwal yang tertulis."
+      }
+    ],
+    "logs": []
+  },
+  {
+    "query": "berapa biaya pendaftaran prodi si gelombang 1A?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "fast_fee_breakdown_with_gelombang",
+      "program": "Sistem Informasi",
+      "choice": "breakdown",
+      "gelombang": "IA"
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-2",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-2",
+        "text": "Untuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nBiaya Pendaftaran:\n\n- Biaya Pendaftaran: Rp 500.000\n- Potongan Pendaftaran (Gelombang I A): Rp 250.000\n- Total Pendaftaran (Gelombang I A): Rp 250.000\n\nDPP:\n\n- DPP: Rp 14.000.000\n- Potongan DPP (Gelombang I A): Rp 2.000.000\n\nBiaya Perlengkapan:\n\n- Jas Almamater & Topi: Rp 750.000\n- Kaos, tas, GMTI: Rp 750.000\n\nSubtotal Awal Masuk: Rp 18.250.000\nSubtotal Awal Masuk Setelah Potongan (Gelombang I A): Rp 16.000.000\n\nTotal Biaya Masuk (Gelombang I A): Rp 16.000.000\n\nBiaya Pendidikan per Semester (UKT): Rp 6.500.000"
+      }
+    ],
+    "logs": []
+  },
+  {
+    "query": "berapa biaya dpp si gelombang 1A?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "fast_fee_breakdown_with_gelombang",
+      "program": "Sistem Informasi",
+      "choice": "breakdown",
+      "gelombang": "IA"
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-3",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-3",
+        "text": "Untuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nBiaya Pendaftaran:\n\n- Biaya Pendaftaran: Rp 500.000\n- Potongan Pendaftaran (Gelombang I A): Rp 250.000\n- Total Pendaftaran (Gelombang I A): Rp 250.000\n\nDPP:\n\n- DPP: Rp 14.000.000\n- Potongan DPP (Gelombang I A): Rp 2.000.000\n\nBiaya Perlengkapan:\n\n- Jas Almamater & Topi: Rp 750.000\n- Kaos, tas, GMTI: Rp 750.000\n\nSubtotal Awal Masuk: Rp 18.250.000\nSubtotal Awal Masuk Setelah Potongan (Gelombang I A): Rp 16.000.000\n\nTotal Biaya Masuk (Gelombang I A): Rp 16.000.000\n\nBiaya Pendidikan per Semester (UKT): Rp 6.500.000"
+      }
+    ],
+    "logs": []
+  },
+  {
+    "query": "berapa total biaya kuliah si gelombang 1A?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "web_search_fallback",
+      "intent": "general"
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-4",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-4",
+        "text": "Baik kak, saya cek dulu ya."
+      },
+      {
+        "chatId": "verify-user-4",
+        "text": "Saya menemukan kutipan berikut di website resmi STIKOM Bali (tanpa ringkasan AI):\n\nSumber: Halaman Utama - ITB STIKOM Bali — https://www.stikom-bali.ac.id/id/\n\"Kuliah di Kampus ICT Terbaik di Bali Nusra yang semua Program Studinya sudah Terakreditasi B-BAN PT\"\n\nSumber: Halaman Utama - ITB STIKOM Bali — https://www.stikom-bali.ac.id/id/\n\"Saat ini, Institut Teknologi dan Bisnis (ITB) STIKOM Bali sudah menjadi perguruan tinggi bertaraf internasional yang sangat dipercaya oleh masyarakat, terbukti dengan jumlah mahasiswa yang sedang kuliah tidak kurang dari 6.000 orang dan alumni yang mencapai hampir 4.000 orang (tahun 2015). Selain itu berbagai kerjasama dalam bidang tri dharma pe...\"\n\nSumber: Sejarah - ITB STIKOM Bali — https://www.stikom-bali.ac.id/id/sejarah-institut-teknologi-dan-bisnis-itb-stikom-bali/\n\"Saat ini, Institut Teknologi dan Bisnis (ITB) STIKOM Bali sudah menjadi perguruan tinggi bertaraf internasional yang sangat dipercaya oleh masyarakat, terbukti dengan jumlah mahasiswa yang sedang kuliah tidak kurang dari 6.000 orang dan alumni yang mencapai hampir 4.000 orang (tahun 2015). Selain itu berbagai kerjasama dalam bidang tri dharma pe...\""
+      }
+    ],
+    "logs": []
+  },
+  {
+    "query": "jadwal pendaftaran si gelombang 1A",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "pmb_schedule_fast_pre_keyword",
+      "ragUsed": false
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-5",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-5",
+        "text": "Jadwal Gelombang I A:\n\n- Masa pendaftaran: 28 DESEMBER 2025 s/d 31 JANUARI 2026\n- Testing: 1 FEBRUARI 2026\n- Pengumuman: 3 FEBRUARI 2026\n- Masa registrasi ulang: 3 FEBRUARI 2026 s/d 12 FEBRUARI 2026\n\nMau saya bantu cek jadwal gelombang lain? (contoh: II A / II C)"
+      }
+    ],
+    "logs": []
+  },
+  {
+    "query": "apa syarat masuk prodi si?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-6",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-6",
+        "text": "Baik kak, saya cek dulu ya."
+      },
+      {
+        "chatId": "verify-user-6",
+        "text": "Saya belum menemukan detail yang benar-benar sesuai mengenai syarat masuk untuk Program Studi Sistem Informasi.\nNamun, informasi terkait program studi lain di Institut Teknologi dan Bisnis STIKOM Bali menunjukkan bahwa umumnya syarat masuk mencakup memenuhi syarat peringkat.\nApakah ada informasi lain yang ingin kamu ketahui tentang program studi ini?"
+      }
+    ],
+    "logs": []
+  },
+  {
+    "query": "apakah ada beasiswa untuk si?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-7",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-7",
+        "text": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\n\n- Beasiswa ranking kelas\n- Beasiswa prestasi (lokal/nasional/internasional)\n- Beasiswa KIP\n- Beasiswa 1K1S\n- Beasiswa Yayasan\n\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\nPerlu saya cek opsi beasiswa atau potongan biaya yang relevan?"
+      }
+    ],
+    "logs": []
+  },
+  {
+    "query": "berapa biaya pendaftaran prodi bisnis digital gelombang 2?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "fast_fee_breakdown_with_gelombang",
+      "program": "Bisnis Digital",
+      "choice": "breakdown",
+      "gelombang": "II"
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-8",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-8",
+        "text": "Untuk program studi Bisnis Digital, rincian biaya sebagai berikut:\n\nBiaya Pendaftaran:\n\n- Biaya Pendaftaran: Rp 500.000\n- Potongan Pendaftaran (Gelombang II): Rp 200.000\n- Total Pendaftaran (Gelombang II): Rp 300.000\n\nDPP:\n\n- DPP: Rp 14.000.000\n- Potongan DPP (Gelombang II): Rp 1.500.000\n\nBiaya Perlengkapan:\n\n- Jas Almamater & Topi: Rp 750.000\n- Kaos, tas, GMTI: Rp 750.000\n\nSubtotal Awal Masuk: Rp 18.250.000\nSubtotal Awal Masuk Setelah Potongan (Gelombang II): Rp 16.550.000\n\nTotal Biaya Masuk (Gelombang II): Rp 16.550.000\n\nBiaya Pendidikan per Semester (UKT): Rp 6.500.000"
+      }
+    ],
+    "logs": []
+  },
+  {
+    "query": "lokasi kampus stikom bali?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "ragUsed": true
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-9",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-9",
+        "text": "Baik kak, saya cek dulu ya."
+      },
+      {
+        "chatId": "verify-user-9",
+        "text": "Kampus ITB STIKOM Bali memiliki beberapa lokasi:\n\n- Kampus Denpasar: JL Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.\n- Kampus Abiansemal: Jl 3anger, Ablansemal, Dauh Yeh Canl, Badung, Bali.\n\nApakah ada informasi lain yang ingin kamu ketahui tentang kampus ini?"
+      }
+    ],
+    "logs": []
+  },
+  {
+    "query": "berapa biaya kuliah per semester di teknologi informasi?",
+    "status": 200,
+    "body": {
+      "ok": true,
+      "source": "fast_fee",
+      "program": "Teknologi Informasi",
+      "choice": "semester",
+      "offerBreakdown": true
+    },
+    "sent": [
+      {
+        "chatId": "verify-user-10",
+        "text": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus."
+      },
+      {
+        "chatId": "verify-user-10",
+        "text": "Untuk Prodi Teknologi Informasi, biaya pendidikan per semester: Rp 6.500.000."
+      }
+    ],
+    "logs": []
+  }
+]

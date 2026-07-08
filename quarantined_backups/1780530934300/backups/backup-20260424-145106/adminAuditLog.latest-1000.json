@@ -1,0 +1,1562 @@
+{
+  "count": 128,
+  "rows": [
+    {
+      "id": "77aaed83-194d-465c-82fe-120f9bfede39",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_auto_response"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:30.152Z"
+    },
+    {
+      "id": "e05fc125-199b-418c-a158-d241a8a5e014",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_typing_indicator"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:25.242Z"
+    },
+    {
+      "id": "d9d990b7-8f68-48b1-92a1-cf773eda32aa",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_analytics"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:25.230Z"
+    },
+    {
+      "id": "e71bc43f-9210-4c26-89cc-a52c52b05ae8",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_human_handoff"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:25.216Z"
+    },
+    {
+      "id": "5c7f0d30-24f0-40ae-8e01-d17849af1aef",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "welcome_message"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:21.185Z"
+    },
+    {
+      "id": "b926f805-7f80-43ae-b879-126c1e503604",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "webhook_url"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:16.345Z"
+    },
+    {
+      "id": "7a871417-2615-445b-9609-ff4749937983",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_name"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:16.345Z"
+    },
+    {
+      "id": "68df4b84-c2ea-4e93-82fc-0cb45a71a717",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "default_language"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:16.312Z"
+    },
+    {
+      "id": "1193a231-b2b6-4419-b2a4-1aeee5a637d1",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "api_endpoint"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:16.312Z"
+    },
+    {
+      "id": "24e10652-6692-4feb-9f2d-a077ee6157b8",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_description"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:24:16.217Z"
+    },
+    {
+      "id": "cda6fffc-8a1c-4ba7-8317-666cc351e831",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_analytics"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:36.724Z"
+    },
+    {
+      "id": "113164e7-bcdf-4d56-8209-5d601cfa5efd",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_typing_indicator"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:32.073Z"
+    },
+    {
+      "id": "3c5c8da3-07c9-452f-8254-35e7e0fa9df0",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_human_handoff"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:32.025Z"
+    },
+    {
+      "id": "6bceec06-497b-40f9-8d5f-e8537ff5597b",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_auto_response"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:31.552Z"
+    },
+    {
+      "id": "00fe2a98-cae1-4d54-a176-875d7fa7a587",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "api_endpoint"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:23.283Z"
+    },
+    {
+      "id": "a26238de-049a-4ff6-871f-52f6951b11a1",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "default_language"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:23.194Z"
+    },
+    {
+      "id": "74094a5f-6574-4d6f-a5da-9ef293114099",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_description"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:23.034Z"
+    },
+    {
+      "id": "13f0a855-01bb-4450-b452-28e5580eed5d",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "welcome_message"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:23.034Z"
+    },
+    {
+      "id": "b6704fc3-36c2-4521-ade5-eaf58b50e45e",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_name"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:22.779Z"
+    },
+    {
+      "id": "8cd535c7-937a-4ca7-b3bb-ca9398d0361a",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "webhook_url"
+      },
+      "ip": "103.203.68.5",
+      "createdAt": "2026-04-24T00:23:22.496Z"
+    },
+    {
+      "id": "fa72da3a-3709-481a-a3fe-c17ede74b213",
+      "adminId": null,
+      "username": "admin",
+      "action": "update_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "86e57a1d-55a3-44c1-90f2-59528f43f84b"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:47:10.852Z"
+    },
+    {
+      "id": "a8b08889-f4e9-4a82-94ce-c4ce12dd0311",
+      "adminId": null,
+      "username": "admin",
+      "action": "update_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "86e57a1d-55a3-44c1-90f2-59528f43f84b"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:45:59.974Z"
+    },
+    {
+      "id": "89f64b72-9a08-4934-afe7-c8f20a1860a9",
+      "adminId": null,
+      "username": "admin",
+      "action": "delete_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "29c5392c-bd47-4e2d-b095-82f1fa0f7a95"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:44:03.851Z"
+    },
+    {
+      "id": "6fa8b824-cbd6-4adf-8ebe-5ed07767bc08",
+      "adminId": null,
+      "username": "admin",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "29c5392c-bd47-4e2d-b095-82f1fa0f7a95",
+        "keyword": "ITB STIKOM BALI"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:39:31.972Z"
+    },
+    {
+      "id": "6b3e11ee-c4cf-48e8-b0e7-0fb2968eb291",
+      "adminId": null,
+      "username": "admin",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "6146b554-43a6-4c8e-89cd-7bd10ab93183",
+        "keyword": "Sistem Komputer"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:34:45.071Z"
+    },
+    {
+      "id": "6d3aba0b-fea2-4470-9333-203970d02f43",
+      "adminId": null,
+      "username": "admin",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "7e34a52f-cb0c-42b9-ac43-6f942fb1427b",
+        "keyword": "Teknologi Informasi"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:33:53.996Z"
+    },
+    {
+      "id": "b90e83c5-acab-41ef-b47d-09a18bf7a213",
+      "adminId": null,
+      "username": "admin",
+      "action": "update_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "a53647e3-dd05-4df4-8895-35b8559c3806"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:30:03.259Z"
+    },
+    {
+      "id": "754821f1-b03c-4e59-baa2-a6fd7b08e677",
+      "adminId": null,
+      "username": "admin",
+      "action": "update_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "627f5c1e-8976-457d-8512-c7bb2bf8a7f2"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:29:02.375Z"
+    },
+    {
+      "id": "59621220-cc2a-49f4-bd29-42fd78b21144",
+      "adminId": null,
+      "username": "admin",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "86e57a1d-55a3-44c1-90f2-59528f43f84b",
+        "keyword": "berapakah biaya mendaftar di kampus ITB STIKOM Bali?"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:28:36.452Z"
+    },
+    {
+      "id": "e412f14f-6f79-4a75-9048-82261643325a",
+      "adminId": null,
+      "username": "admin",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "627f5c1e-8976-457d-8512-c7bb2bf8a7f2",
+        "keyword": "sistem informasi?"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T05:23:06.105Z"
+    },
+    {
+      "id": "869e98d7-800d-4448-bb62-cf824f0a54bb",
+      "adminId": null,
+      "username": "admin",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "8a7cdb71-6a7a-42d2-9965-cec440e4d4f3",
+        "keyword": "siapa kamu?"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T03:47:59.324Z"
+    },
+    {
+      "id": "84b7db2f-fdc5-42f5-8f09-3323fcda632a",
+      "adminId": null,
+      "username": "admin",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "de8d35ec-ad22-456c-b6ef-8713aeae58af",
+        "keyword": "kamu siapa?"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-22T03:47:19.445Z"
+    },
+    {
+      "id": "27fef3e4-173c-4968-a62c-c8867e8ffe25",
+      "adminId": null,
+      "username": "admin",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "6c20c2b3-d354-45de-bbaa-5f720a43f9d9",
+        "keyword": "kalau tempat kuliah dual degree itu di kampus mana ya?"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-20T00:13:02.089Z"
+    },
+    {
+      "id": "b9ff1a54-245f-4b2c-97f8-3bf332e4392b",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_typing_indicator"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:46.216Z"
+    },
+    {
+      "id": "5f2acc96-3290-4209-90a1-ef8628070a7b",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_human_handoff"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:46.171Z"
+    },
+    {
+      "id": "32f53bf5-7794-412b-af0b-fee958f25c1e",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_analytics"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:45.915Z"
+    },
+    {
+      "id": "b14edf8e-1ee3-41d2-8ac4-53a7198db1ba",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_auto_response"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:45.112Z"
+    },
+    {
+      "id": "dec1081c-4c22-4ac3-a85d-39b43ac52cf1",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_name"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:41.241Z"
+    },
+    {
+      "id": "0ff3caff-baa7-4333-afde-801a8217e79f",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "webhook_url"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:37.253Z"
+    },
+    {
+      "id": "6346feb5-c2d3-4914-ae8d-c3c8b2554b8d",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "api_endpoint"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:37.214Z"
+    },
+    {
+      "id": "6701b3fb-cedd-42e3-81ee-206984f6b29f",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "welcome_message"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:37.140Z"
+    },
+    {
+      "id": "6e6b0b3f-c0f1-4af8-a82c-57126967860f",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "default_language"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:36.916Z"
+    },
+    {
+      "id": "a53e8c9e-a50a-4747-ae87-d4bbfdda232d",
+      "adminId": null,
+      "username": "admin",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_description"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:56:36.198Z"
+    },
+    {
+      "id": "752d8f74-4859-44ca-9fdf-41aecdfd3959",
+      "adminId": null,
+      "username": "admin",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "8914a6d3-b3cc-4a8a-872e-c7aaea001bd4"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-11T05:55:20.387Z"
+    },
+    {
+      "id": "ad9473a1-ed62-4b5f-9d93-8712a8a6adf3",
+      "adminId": null,
+      "username": "admin",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "8914a6d3-b3cc-4a8a-872e-c7aaea001bd4"
+      },
+      "ip": "59.153.130.65",
+      "createdAt": "2026-04-10T11:19:56.246Z"
+    },
+    {
+      "id": "8d608a03-3927-4137-9bc7-475e477a4c1d",
+      "adminId": null,
+      "username": "admin",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "dcd53afe-9fc9-47a8-9841-8abbf5ad73b5"
+      },
+      "ip": "59.153.130.65",
+      "createdAt": "2026-04-10T11:19:33.189Z"
+    },
+    {
+      "id": "76c1c1db-c347-41b2-a81b-a368d2901e18",
+      "adminId": null,
+      "username": "admin",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "dcd53afe-9fc9-47a8-9841-8abbf5ad73b5"
+      },
+      "ip": "59.153.130.65",
+      "createdAt": "2026-04-10T11:19:00.139Z"
+    },
+    {
+      "id": "9a372363-7b4e-4c01-9104-bf5cef2d48e3",
+      "adminId": null,
+      "username": "direktur",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "dcd53afe-9fc9-47a8-9841-8abbf5ad73b5"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:58:23.590Z"
+    },
+    {
+      "id": "3339a5b8-0c1a-492c-8451-c086284281a0",
+      "adminId": null,
+      "username": "direktur",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "4cbc03cb-2667-407d-8fd3-ebe7ff27856c"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:57:56.577Z"
+    },
+    {
+      "id": "f912a807-09b6-40cd-94f6-340825d07ea5",
+      "adminId": null,
+      "username": "direktur",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "29d2b960-4804-4303-b1da-1e347388d433"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:57:37.537Z"
+    },
+    {
+      "id": "1ada1c55-b749-4613-8f36-1306151f490c",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "4d4a53cd-cde2-4a50-a81d-e318f7ee0e9e",
+        "key": "root.5"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:53:03.688Z"
+    },
+    {
+      "id": "8c76735a-cb2a-418f-8b18-18a5be81486b",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "29d2b960-4804-4303-b1da-1e347388d433",
+        "key": "root.4"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:50:11.771Z"
+    },
+    {
+      "id": "e69e7751-43e9-4995-a2c5-c124af2540ba",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "4cbc03cb-2667-407d-8fd3-ebe7ff27856c",
+        "key": "root.3"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:45:53.532Z"
+    },
+    {
+      "id": "1a6f2893-8a08-4a4c-9517-f06d50a37e7a",
+      "adminId": null,
+      "username": "direktur",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "dcd53afe-9fc9-47a8-9841-8abbf5ad73b5"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:40:32.205Z"
+    },
+    {
+      "id": "866c82f7-0e80-4a04-ae6e-7a7a677d48ca",
+      "adminId": null,
+      "username": "direktur",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "8914a6d3-b3cc-4a8a-872e-c7aaea001bd4"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:38:22.863Z"
+    },
+    {
+      "id": "9a8eecce-f0fc-49d2-a9ee-26d032a4e365",
+      "adminId": null,
+      "username": "direktur",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "8914a6d3-b3cc-4a8a-872e-c7aaea001bd4"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:20:06.267Z"
+    },
+    {
+      "id": "6e9e8d0d-a144-42ac-8a1c-f2a653fc716b",
+      "adminId": null,
+      "username": "direktur",
+      "action": "update_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "8914a6d3-b3cc-4a8a-872e-c7aaea001bd4"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:18:39.074Z"
+    },
+    {
+      "id": "425c733e-a7da-44b6-8e2c-9c42b9eddeef",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "dcd53afe-9fc9-47a8-9841-8abbf5ad73b5",
+        "key": "root.1"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T03:10:30.952Z"
+    },
+    {
+      "id": "a5856b57-e1aa-40ef-b4ad-c2bf587f5be7",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "8914a6d3-b3cc-4a8a-872e-c7aaea001bd4",
+        "key": "root.2"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-09T02:54:09.267Z"
+    },
+    {
+      "id": "0e64b264-c56c-4b0e-93c4-861d1bf1c6e8",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "a53647e3-dd05-4df4-8895-35b8559c3806",
+        "keyword": "kip"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-07T02:34:46.115Z"
+    },
+    {
+      "id": "8c595a98-2773-4c05-a237-c3fc112814d8",
+      "adminId": null,
+      "username": "direktur",
+      "action": "delete_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "a51f1b75-c832-43c8-a50d-ff2f840fffd3"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-07T02:26:27.076Z"
+    },
+    {
+      "id": "c458fd52-8027-4dfe-82fd-9aba8ab9b537",
+      "adminId": null,
+      "username": "direktur",
+      "action": "delete_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "5ccefef3-b0a5-48b8-ad40-8ecf2bccd5b3"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-07T02:26:19.928Z"
+    },
+    {
+      "id": "99e3b78e-c58b-4ac1-9d10-11ca0cdc670b",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "a51f1b75-c832-43c8-a50d-ff2f840fffd3",
+        "keyword": "KIP"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-07T02:20:57.240Z"
+    },
+    {
+      "id": "8b563e95-175b-48a4-b98b-c869791bfb97",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "5ccefef3-b0a5-48b8-ad40-8ecf2bccd5b3",
+        "keyword": "KIP / kip / BEASISWA KIP"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-07T02:05:56.808Z"
+    },
+    {
+      "id": "25eecc12-b169-413a-8bd5-4d60188ffbae",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_keyword",
+      "resource": "KeywordReply",
+      "details": {
+        "id": "ff38746b-6875-4cd7-ab76-9c1954baa0c5",
+        "keyword": "GMTI"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-06T07:31:33.363Z"
+    },
+    {
+      "id": "289fb9d4-bb68-4eeb-8061-98e17a1114a7",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_human_handoff"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:27.910Z"
+    },
+    {
+      "id": "41553fe8-ccc9-439b-9eb0-aa6e4d5bbfa2",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_typing_indicator"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:27.902Z"
+    },
+    {
+      "id": "862c5a06-9087-4020-b85f-17a6217e0f4d",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_analytics"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:27.892Z"
+    },
+    {
+      "id": "eae33eaf-eeb8-4278-bd42-5c2ef5289b3c",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_auto_response"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:27.873Z"
+    },
+    {
+      "id": "d927328e-4a84-4f2d-8ee5-3e6b1c995d54",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "api_endpoint"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:19.064Z"
+    },
+    {
+      "id": "954c740e-cd9e-406e-957c-8954c5c0be71",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "welcome_message"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:19.020Z"
+    },
+    {
+      "id": "f84599d3-5efc-4dd0-810a-1b3fdc887079",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "default_language"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:19.015Z"
+    },
+    {
+      "id": "305d8e0b-1aaf-4896-9ac9-9c1e541bb53c",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "webhook_url"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:19.014Z"
+    },
+    {
+      "id": "ff5933eb-a462-4d02-8abf-c6225dc186f1",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_name"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:18.980Z"
+    },
+    {
+      "id": "c043145e-583d-4e9f-8b90-bf137da09bb4",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_description"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:44:18.973Z"
+    },
+    {
+      "id": "219ede39-841b-40dd-9eea-a2682ff75a18",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_typing_indicator"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:51.754Z"
+    },
+    {
+      "id": "210962f6-e376-48e7-a27d-6160e82198c2",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_human_handoff"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:51.707Z"
+    },
+    {
+      "id": "d7501607-456a-4cee-b968-75b36d26ee69",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_analytics"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:51.698Z"
+    },
+    {
+      "id": "ba21b598-4d03-45b2-950c-59d89e2fc922",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_auto_response"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:51.698Z"
+    },
+    {
+      "id": "3ddf0c56-3d49-458e-a606-c26036ffa82e",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_name"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:43.328Z"
+    },
+    {
+      "id": "f4594c65-fba1-48c4-afb1-1b222bc2c021",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "webhook_url"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:42.885Z"
+    },
+    {
+      "id": "811d58cf-f45f-4293-96cd-09ce95a7083d",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "default_language"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:42.831Z"
+    },
+    {
+      "id": "460c4ef4-b0d3-4940-8e63-f5bcdf4c41fc",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "welcome_message"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:42.815Z"
+    },
+    {
+      "id": "50f2af76-42f4-475b-b792-574c9829a4f2",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_description"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:42.814Z"
+    },
+    {
+      "id": "9d2d2921-c115-46a8-a38f-7c53e4c1df6a",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "api_endpoint"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:43:42.797Z"
+    },
+    {
+      "id": "f8e5148b-75b6-4340-8db9-04dcdf47d193",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_typing_indicator"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:53.253Z"
+    },
+    {
+      "id": "ce2bc177-1a90-4c05-aadc-a2e1cd8c1044",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_human_handoff"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:53.165Z"
+    },
+    {
+      "id": "aad2574a-2b0a-490f-b01b-65bdce8e3418",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_analytics"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:53.154Z"
+    },
+    {
+      "id": "d8175117-f5be-401a-b8e9-ef5a55e7c4b1",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_auto_response"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:53.081Z"
+    },
+    {
+      "id": "4876cedd-b300-4640-936f-3bb0ccf59d31",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "webhook_url"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:44.861Z"
+    },
+    {
+      "id": "529c7714-53d6-47c0-94c0-3a3c8dd667ac",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "default_language"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:44.803Z"
+    },
+    {
+      "id": "7deb47e8-13fa-4ca3-a202-3d959be12e71",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "api_endpoint"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:44.299Z"
+    },
+    {
+      "id": "bb2bd22f-1ac5-4a7a-b688-4447d5573ebd",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_description"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:44.212Z"
+    },
+    {
+      "id": "646cb23d-ebbd-4622-a39b-74f9f3f6eae0",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "welcome_message"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:44.211Z"
+    },
+    {
+      "id": "a9e316a1-9b58-4996-807d-854c03b8ae99",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_name"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T07:42:44.113Z"
+    },
+    {
+      "id": "8d965c03-a2d6-4039-97f7-804cf6f3d103",
+      "adminId": null,
+      "username": "direktur",
+      "action": "set_feature_flag_validation_file",
+      "resource": "Setting",
+      "details": {
+        "key": "feature.validationFileUpload.enabled",
+        "enabled": true,
+        "settingId": "3eeabdb8-3664-4e15-8f72-15cc03b0ef1e"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T00:14:45.312Z"
+    },
+    {
+      "id": "dfae4866-d0e2-4646-b76e-ecd075a63888",
+      "adminId": null,
+      "username": "direktur",
+      "action": "delete_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "501db581-78ee-4d25-ae89-8a3141d029df",
+        "deletedCount": 1
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-04-01T00:02:37.932Z"
+    },
+    {
+      "id": "ace5fad2-5402-4b94-bd63-87a9e76f40ba",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_typing_indicator"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:52:03.470Z"
+    },
+    {
+      "id": "3a96d09e-5619-4a1b-b94e-52705ac3a4d5",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_human_handoff"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:52:03.036Z"
+    },
+    {
+      "id": "39e683ba-c1c2-4375-9a63-48df70eb2ded",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_analytics"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:52:02.999Z"
+    },
+    {
+      "id": "9229da6f-724d-4d2e-95a3-409608e10f90",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_auto_response"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:52:02.990Z"
+    },
+    {
+      "id": "407cf2a2-f074-42ec-bf2b-c98d88e71411",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_description"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:51:54.577Z"
+    },
+    {
+      "id": "0a5e1754-2a5b-41bd-b743-a51193134f0b",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "default_language"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:51:54.576Z"
+    },
+    {
+      "id": "38bc203c-a814-423b-9322-c95e81babde1",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "api_endpoint"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:51:54.538Z"
+    },
+    {
+      "id": "7520e4f1-450a-47c4-8a11-fe8fff0d7f72",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "welcome_message"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:51:54.046Z"
+    },
+    {
+      "id": "000e367e-a578-4269-8b04-f3be04205b1d",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "webhook_url"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:51:54.002Z"
+    },
+    {
+      "id": "72c3ac70-9fd0-4365-b10b-3fde28b81b47",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_name"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T23:51:53.916Z"
+    },
+    {
+      "id": "7f5ef8d7-30bf-43b0-a9d5-5d3f2a57180b",
+      "adminId": null,
+      "username": "direktur",
+      "action": "create_menu_item",
+      "resource": "MenuItem",
+      "details": {
+        "id": "501db581-78ee-4d25-ae89-8a3141d029df",
+        "key": "Akademik & Kemahasiswaan"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:57:30.268Z"
+    },
+    {
+      "id": "0bab10de-349c-4a2e-801b-18b2219d9d0e",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_typing_indicator"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:28.751Z"
+    },
+    {
+      "id": "b292c191-4c42-4933-927b-be298a99d0c2",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_human_handoff"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:28.700Z"
+    },
+    {
+      "id": "748ad9e2-46fd-4680-8363-1e9d3dbfc521",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_auto_response"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:28.683Z"
+    },
+    {
+      "id": "2d252899-3160-4ed8-bc98-f30846d0f49e",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_analytics"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:28.666Z"
+    },
+    {
+      "id": "c3404146-76a8-421f-af51-8e38841ab567",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "default_language"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:19.865Z"
+    },
+    {
+      "id": "661697b1-1378-422a-9db6-6f6dce7e6509",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "welcome_message"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:19.855Z"
+    },
+    {
+      "id": "e70e2170-ba8e-4fff-9c23-09d38999ff96",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "webhook_url"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:19.838Z"
+    },
+    {
+      "id": "d195a395-8eba-4e9e-b479-9e2cf16de653",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "api_endpoint"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:19.777Z"
+    },
+    {
+      "id": "43c39c43-1595-47d1-9b41-0645c9d59e8d",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_description"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:19.748Z"
+    },
+    {
+      "id": "d7a2db18-a686-46f4-85aa-94b994b23d72",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_name"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:46:19.687Z"
+    },
+    {
+      "id": "e980cde0-168f-4f1b-be61-54c467eb1bb4",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_human_handoff"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:50.023Z"
+    },
+    {
+      "id": "6a0bc1a4-b232-49a2-9217-2ab4a7f45f66",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_analytics"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:50.013Z"
+    },
+    {
+      "id": "e5e17da5-8ba7-435b-a09a-34723669a93c",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_typing_indicator"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:50.010Z"
+    },
+    {
+      "id": "2c4867c7-ec68-4773-962f-afc65d5b496d",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "feature_auto_response"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:49.989Z"
+    },
+    {
+      "id": "02ffff1c-d762-4522-a510-3e02e2d070d9",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "api_endpoint"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:41.044Z"
+    },
+    {
+      "id": "cd4b1e28-c49e-41f8-9f32-d902a9eb4b35",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "webhook_url"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:41.035Z"
+    },
+    {
+      "id": "306c0f0f-1c10-418a-91bb-b453fc4cea32",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "default_language"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:41.034Z"
+    },
+    {
+      "id": "4fcbca9b-8329-4efb-ab03-c278ccf7b824",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "welcome_message"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:41.030Z"
+    },
+    {
+      "id": "dd3de5ac-177a-4090-8afa-702494c95679",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_description"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:41.020Z"
+    },
+    {
+      "id": "7b6aa380-36fe-4cb9-a019-14680dfed80b",
+      "adminId": null,
+      "username": "direktur",
+      "action": "upsert_setting",
+      "resource": "Setting",
+      "details": {
+        "key": "bot_name"
+      },
+      "ip": "103.203.68.3",
+      "createdAt": "2026-03-31T06:45:40.950Z"
+    }
+  ]
+}

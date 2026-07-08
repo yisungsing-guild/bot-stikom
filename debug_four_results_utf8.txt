@@ -1,0 +1,1749 @@
+﻿
+=== QUERY: Apa itu Sistem Informasi?
+[TRACE_DEF_QUERY] {
+  question: 'apa itu sistem informasi program studi sistem informasi profil sistem informasi',
+  normalizedQuery: 'apa itu sistem informasi program studi sistem informasi profil sistem informasi'
+}
+[TRACE_DEF_NORMALIZED_PROGRAM] {
+  raw: 'apa itu sistem informasi program studi sistem informasi profil sistem informasi',
+  normalized: 'apa itu sistem informasi program studi sistem informasi profil sistem informasi',
+  programAlias: 'SI',
+  programLabel: 'SISTEM_INFORMASI'
+}
+[TRACE_DEF_ENTITY] {
+  question: 'apa itu sistem informasi program studi sistem informasi profil sistem informasi',
+  intent: 'ACADEMIC_PROGRAM',
+  programAlias: 'SI',
+  programLabel: 'SISTEM_INFORMASI',
+  wave: null,
+  academicIntent: 'DEFINISI_PRODI'
+}
+[TRACE_RAG_QUERY_ENTITIES] {
+  queryForRetrieval: 'apa itu sistem informasi program studi sistem informasi profil sistem informasi',
+  normalizedUserQ: 'apa itu sistem informasi',
+  currentUserQ: 'Apa itu Sistem Informasi?',
+  queryEntities: {
+    intent: 'ACADEMIC_PROGRAM',
+    program: 'SI',
+    programLabel: 'SISTEM_INFORMASI',
+    programMode: null,
+    wave: null,
+    waveGroup: null,
+    academicYear: null,
+    partner: null,
+    campus: null,
+    jalur: null,
+    feeType: null,
+    category: 'PROGRAM_STUDI',
+    pageNumber: null,
+    academicIntent: 'DEFINISI_PRODI'
+  }
+}
+STYLE: SEMI
+QUESTION: Apa itu Sistem Informasi?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China) Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3
+ASSIST_HINTS: prodi
+[2026-06-12 07:55:05.239 +0800] [32mINFO[39m: [36m[RAG] chunk scoring debug[39m
+    query: "apa itu sistem informasi program studi sistem informasi profil sistem informasi"
+    intent: "ACADEMIC_PROGRAM"
+    topChunks: [
+      {
+        "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "chunkType": "PROGRAM",
+        "category": "SK",
+        "score": 0.4861,
+        "rawScore": 4.2846,
+        "finalScore": 1,
+        "semanticBoost": 0.0486,
+        "evidenceScore": 0.18,
+        "attributeScore": 1,
+        "metadataBoost": 3.29,
+        "otherBoosts": -0.234,
+        "chunkPreview": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program studi ini merupakan pe"
+      },
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "chunkType": null,
+        "category": "PROGRAM_KHUSUS",
+        "score": 0.0353,
+        "rawScore": 4.0235,
+        "finalScore": 1,
+        "semanticBoost": 0.0035,
+        "evidenceScore": 0.18,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "otherBoosts": 0.12,
+        "chunkPreview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhk"
+      },
+      {
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "chunkType": null,
+        "category": "PROGRAM_KHUSUS",
+        "score": 0.0182,
+        "rawScore": 4.0218,
+        "finalScore": 1,
+        "semanticBoost": 0.0018,
+        "evidenceScore": 0.18,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "otherBoosts": 0.12,
+        "chunkPreview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM"
+      },
+      {
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "chunkType": null,
+        "category": "UNKNOWN",
+        "score": 0.5881,
+        "rawScore": 3.6988,
+        "finalScore": 1,
+        "semanticBoost": 0.0588,
+        "evidenceScore": 0.18,
+        "attributeScore": 1,
+        "metadataBoost": 3.29,
+        "otherBoosts": -0.83,
+        "chunkPreview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Anim"
+      },
+      {
+        "id": "8491b972-ee0b-4806-bd7e-8508c61ed46b",
+        "filename": "hobi_prodi_lengkap (1).xlsx",
+        "chunkType": "GENERAL",
+        "category": "UNKNOWN",
+        "score": 0.5126,
+        "rawScore": 3.2333,
+        "finalScore": 1,
+        "semanticBoost": 0.0513,
+        "evidenceScore": 0.18,
+        "attributeScore": 1,
+        "metadataBoost": 2.27,
+        "otherBoosts": -0.268,
+        "chunkPreview": "| Konten media sosial 54 | Sistem Informasi | Memiliki sosial media 55 | Sistem Informasi | Digital marketing 56 | Siste"
+      },
+      {
+        "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+        "filename": null,
+        "chunkType": "GENERAL",
+        "category": "BIAYA",
+        "score": 0.4651,
+        "rawScore": 3.1985,
+        "finalScore": 1,
+        "semanticBoost": 0.0465,
+        "evidenceScore": 0.18,
+        "attributeScore": 1,
+        "metadataBoost": 1.94,
+        "otherBoosts": 0.032,
+        "chunkPreview": "Ringkasan dokumen: Program studi terlihat: Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan terten"
+      },
+      {
+        "id": "74be5da2-8251-4417-a1de-41c3a4b70239",
+        "filename": "HOBY.pdf",
+        "chunkType": "GENERAL",
+        "category": "UNKNOWN",
+        "score": 0.478,
+        "rawScore": 3.1298,
+        "finalScore": 1,
+        "semanticBoost": 0.0478,
+        "evidenceScore": 0.18,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": 0.082,
+        "chunkPreview": "ing 61 Sistem InformasiAdmin media sosial 62 Sistem InformasiStartup/bisnis digital 63 Sistem InformasiKursus online 64"
+      },
+      {
+        "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "chunkType": "COST",
+        "category": "SCHEDULE",
+        "score": 0.567,
+        "rawScore": 3.1107,
+        "finalScore": 1,
+        "semanticBoost": 0.0567,
+        "evidenceScore": 0.18,
+        "attributeScore": 1,
+        "metadataBoost": 1.94,
+        "otherBoosts": -0.066,
+        "chunkPreview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembay"
+      }
+    ]
+[2026-06-12 07:55:05.324 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa itu sistem informasi?" expandedQuery="apa itu sistem informasi?" questionTokens=["apa","itu","sistem","informasi?"] overlapTokens=["apa","sistem","informasi?"] overlapRatio=0.75[39m
+[2026-06-12 07:55:05.325 +0800] [32mINFO[39m: [36m[RAG] Intent-aware filtering stats[39m
+    intent: "DEFINISI_PRODI"
+    question: "Apa itu Sistem Informasi?"
+    totalChunks: 1
+    validated: 1
+    rejected: 0
+    rejectionReasons: []
+    sampleRejected: []
+[2026-06-12 07:55:05.325 +0800] [32mINFO[39m: [36m[RAG AUDIT] Query retrieval before/after filtering[39m
+    question: "Apa itu Sistem Informasi?"
+    detectedIntent: "DEFINISI_PRODI"
+    topBefore: [
+      {
+        "rank": 1,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0353,
+        "rawScore": 4.0235,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali "
+      }
+    ]
+    topAfter: [
+      {
+        "rank": 1,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0353,
+        "rawScore": 4.0235,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali "
+      }
+    ]
+    filterStats: {
+      "before": 1,
+      "after": 1,
+      "filtered": 0
+    }
+[2026-06-12 07:55:05.328 +0800] [32mINFO[39m: [36m[RAG] Intent validation applied[39m
+    userIntent: "DEFINISI_PRODI"
+    totalChunksAfterRelevance: 1
+    validatedChunks: 1
+    filtered: 0
+[2026-06-12 07:55:05.332 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa itu sistem informasi?"
+[2026-06-12 07:55:05.335 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-12 07:55:05.337 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 25
+    ctxLen: 1409
+    style: "SEMI"
+    assistHintsLen: 5
+    compactPrompt: false
+[TRACE_AFTER_AI_ENGINE] {
+  kind: 'rag',
+  question: 'Apa itu Sistem Informasi?',
+  reply: 'Sistem Informasi adalah suatu disiplin ilmu yang mempelajari bagaimana mengelola, mengolah, dan menyajikan informasi menggunakan teknologi. \n' +
+    '\n' +
+    'ΓÇó Fokus utama: Mengintegrasikan teknologi informasi dengan proses bisnis untuk mendukung pengambilan keputusan.\n' +
+    'ΓÇó Bidang aplikasi: Dapat digunakan dalam berbagai sektor, termasuk'
+}
+{
+  "success": true,
+  "answer": "Sistem Informasi adalah suatu disiplin ilmu yang mempelajari bagaimana mengelola, mengolah, dan menyajikan informasi menggunakan teknologi.\n\n- Fokus utama: Mengintegrasikan teknologi informasi dengan proses bisnis untuk mendukung pengambilan keputusan.\n- Bidang aplikasi: Dapat digunakan dalam berbagai sektor, termasuk bisnis, kesehatan, pendidikan, dan pemerintahan.\n\nApa aspek lain dari Sistem Informasi yang ingin kamu ketahui?\nMau saya jelaskan prospek kerja atau kurikulum program studi ini?",
+  "source": "gpt-4o-mini",
+  "contexts": [
+    {
+      "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+      "score": 0.03531720181398346,
+      "compositeScore": 4.023532,
+      "semanticScore": 0.03531720181398346,
+      "attributeScore": 1,
+      "metadataBoost": 2.72,
+      "scoreComponents": {
+        "rawSemanticScore": 0.03531720181398346,
+        "semanticBoost": 0.0035317201813983463,
+        "evidenceScore": 0.18,
+        "keywordScore": 1,
+        "attributeScore": 1,
+        "exactBoost": 1,
+        "metadataBoost": 2.72,
+        "rawScore": 4.023531720181398,
+        "finalScore": 1,
+        "categorySignal": 0.2,
+        "trustBoost": 0,
+        "otherBoosts": 0.12000000000000001,
+        "legalPenalty": 0,
+        "headerPenalty": 0,
+        "lowOcrPenalty": 0,
+        "feeKeywordPenalty": 0,
+        "programOverviewPenalty": 0,
+        "multiProgramPenalty": 0,
+        "itemEntities": {
+          "program": "SI",
+          "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": "DNUI",
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_KHUSUS",
+          "pageNumber": null
+        },
+        "itemCategory": "PROGRAM_KHUSUS",
+        "queryCategory": "PROGRAM_STUDI",
+        "exactMatch": {
+          "score": 100,
+          "rejected": false,
+          "meta": {
+            "waveGroupMatched": false
+          }
+        }
+      },
+      "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China) Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3",
+      "trainingId": "ca79325a-566e-47f2-97d0-18e96d0dbd9c",
+      "filename": "CHATBOT - Double Degree (1).docx",
+      "divisionKey": "international",
+      "updatedAt": null,
+      "createdAt": "2026-05-02T10:52:54.870Z"
+    }
+  ],
+  "contextSummary": "Ringkasan konteks dari dokumen relevan:\n- Berisi informasi program internasional / dual degree / kelas khusus.\nContoh ringkasan sumber:\n- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬\nGunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.",
+  "confidenceScore": 0.99,
+  "confidenceTier": "HIGH",
+  "debug": {
+    "queryEntities": {
+      "intent": "ACADEMIC_PROGRAM",
+      "program": "SI",
+      "programLabel": "SISTEM_INFORMASI",
+      "programMode": null,
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": "PROGRAM_STUDI",
+      "pageNumber": null,
+      "academicIntent": "DEFINISI_PRODI"
+    },
+    "initialCandidatesCount": 436,
+    "afterRelevantCount": 1,
+    "afterIntentValidationCount": 1,
+    "rejected": [
+      {
+        "reason": "no_evidence_for_intent",
+        "intent": "DEFINISI_PRODI",
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "detail": {
+          "hasEvidence": false,
+          "confidence": "LOW",
+          "reasons": [
+            "adequate_length: 898 chars",
+            "no_pattern_matches"
+          ]
+        }
+      }
+    ],
+    "validatedScored": [
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "text": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP U",
+        "score": 0.03531720181398346,
+        "semanticScore": 0.03531720181398346,
+        "rawScore": 4.023532,
+        "finalScore": 1,
+        "compositeScore": 4.023532,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "scoreComponents": {
+          "rawSemanticScore": 0.03531720181398346,
+          "semanticBoost": 0.0035317201813983463,
+          "evidenceScore": 0.18,
+          "keywordScore": 1,
+          "attributeScore": 1,
+          "exactBoost": 1,
+          "metadataBoost": 2.72,
+          "rawScore": 4.023531720181398,
+          "finalScore": 1,
+          "categorySignal": 0.2,
+          "trustBoost": 0,
+          "otherBoosts": 0.12000000000000001,
+          "legalPenalty": 0,
+          "headerPenalty": 0,
+          "lowOcrPenalty": 0,
+          "feeKeywordPenalty": 0,
+          "programOverviewPenalty": 0,
+          "multiProgramPenalty": 0,
+          "itemEntities": {
+            "program": "SI",
+            "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": "DNUI",
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "PROGRAM_KHUSUS",
+            "pageNumber": null
+          },
+          "itemCategory": "PROGRAM_KHUSUS",
+          "queryCategory": "PROGRAM_STUDI",
+          "exactMatch": {
+            "score": 100,
+            "rejected": false,
+            "meta": {
+              "waveGroupMatched": false
+            }
+          }
+        },
+        "validationMetadata": {
+          "category": "PROGRAM_KHUSUS",
+          "categoryMismatch": true,
+          "allowedCategories": [
+            "PRODI_PROFILE"
+          ],
+          "evidenceConfidence": "LOW",
+          "matchesIntent": true,
+          "intent": "DEFINISI_PRODI"
+        }
+      }
+    ]
+  }
+}
+
+=== QUERY: Apa prospek kerja Sistem Informasi?
+[TRACE_RAG_QUERY_ENTITIES] {
+  queryForRetrieval: 'apa prospek kerja sistem informasi program studi sistem informasi profil sistem informasi',
+  normalizedUserQ: 'apa prospek kerja sistem informasi',
+  currentUserQ: 'Apa prospek kerja Sistem Informasi?',
+  queryEntities: {
+    intent: 'ACADEMIC_PROGRAM',
+    program: 'SI',
+    programLabel: 'SISTEM_INFORMASI',
+    programMode: null,
+    wave: null,
+    waveGroup: null,
+    academicYear: null,
+    partner: null,
+    campus: null,
+    jalur: null,
+    feeType: null,
+    category: 'KARIR',
+    pageNumber: null,
+    academicIntent: 'PROSPEK_KERJA'
+  }
+}
+STYLE: SEMI
+QUESTION: Apa prospek kerja Sistem Informasi?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China) Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3
+ASSIST_HINTS: prodi
+[2026-06-12 07:55:09.152 +0800] [32mINFO[39m: [36m[RAG] chunk scoring debug[39m
+    query: "apa prospek kerja sistem informasi program studi sistem informasi profil sistem informasi"
+    intent: "ACADEMIC_PROGRAM"
+    topChunks: [
+      {
+        "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "chunkType": "PROGRAM",
+        "category": "SK",
+        "score": 0.5461,
+        "rawScore": 4.2456,
+        "finalScore": 1,
+        "semanticBoost": 0.0546,
+        "evidenceScore": 0.135,
+        "attributeScore": 1,
+        "metadataBoost": 3.29,
+        "otherBoosts": -0.234,
+        "chunkPreview": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program studi ini merupakan pe"
+      },
+      {
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "chunkType": null,
+        "category": "PROGRAM_KHUSUS",
+        "score": 0.0251,
+        "rawScore": 3.9775,
+        "finalScore": 1,
+        "semanticBoost": 0.0025,
+        "evidenceScore": 0.135,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "otherBoosts": 0.12,
+        "chunkPreview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM"
+      },
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "chunkType": null,
+        "category": "PROGRAM_KHUSUS",
+        "score": 0.0252,
+        "rawScore": 3.9325,
+        "finalScore": 1,
+        "semanticBoost": 0.0025,
+        "evidenceScore": 0.09,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "otherBoosts": 0.12,
+        "chunkPreview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhk"
+      },
+      {
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "chunkType": null,
+        "category": "UNKNOWN",
+        "score": 0.6294,
+        "rawScore": 3.6129,
+        "finalScore": 1,
+        "semanticBoost": 0.0629,
+        "evidenceScore": 0.09,
+        "attributeScore": 1,
+        "metadataBoost": 3.29,
+        "otherBoosts": -0.83,
+        "chunkPreview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Anim"
+      },
+      {
+        "id": "8491b972-ee0b-4806-bd7e-8508c61ed46b",
+        "filename": "hobi_prodi_lengkap (1).xlsx",
+        "chunkType": "GENERAL",
+        "category": "UNKNOWN",
+        "score": 0.5227,
+        "rawScore": 3.1443,
+        "finalScore": 1,
+        "semanticBoost": 0.0523,
+        "evidenceScore": 0.09,
+        "attributeScore": 1,
+        "metadataBoost": 2.27,
+        "otherBoosts": -0.268,
+        "chunkPreview": "| Konten media sosial 54 | Sistem Informasi | Memiliki sosial media 55 | Sistem Informasi | Digital marketing 56 | Siste"
+      },
+      {
+        "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+        "filename": null,
+        "chunkType": "GENERAL",
+        "category": "BIAYA",
+        "score": 0.4377,
+        "rawScore": 3.1058,
+        "finalScore": 1,
+        "semanticBoost": 0.0438,
+        "evidenceScore": 0.09,
+        "attributeScore": 1,
+        "metadataBoost": 1.94,
+        "otherBoosts": 0.032,
+        "chunkPreview": "Ringkasan dokumen: Program studi terlihat: Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan terten"
+      },
+      {
+        "id": "74be5da2-8251-4417-a1de-41c3a4b70239",
+        "filename": "HOBY.pdf",
+        "chunkType": "GENERAL",
+        "category": "UNKNOWN",
+        "score": 0.504,
+        "rawScore": 3.0424,
+        "finalScore": 1,
+        "semanticBoost": 0.0504,
+        "evidenceScore": 0.09,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": 0.082,
+        "chunkPreview": "ing 61 Sistem InformasiAdmin media sosial 62 Sistem InformasiStartup/bisnis digital 63 Sistem InformasiKursus online 64"
+      },
+      {
+        "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "chunkType": "COST",
+        "category": "SCHEDULE",
+        "score": 0.5021,
+        "rawScore": 3.0142,
+        "finalScore": 1,
+        "semanticBoost": 0.0502,
+        "evidenceScore": 0.09,
+        "attributeScore": 1,
+        "metadataBoost": 1.94,
+        "otherBoosts": -0.066,
+        "chunkPreview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembay"
+      }
+    ]
+[2026-06-12 07:55:09.240 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa prospek kerja sistem informasi?" expandedQuery="apa prospek kerja sistem informasi?" questionTokens=["apa","prospek","kerja","sistem","informasi?"] overlapTokens=["apa","sistem","informasi?"] overlapRatio=0.6[39m
+[2026-06-12 07:55:09.240 +0800] [32mINFO[39m: [36m[RAG] Intent-aware filtering stats[39m
+    intent: "PROSPEK_KERJA"
+    question: "Apa prospek kerja Sistem Informasi?"
+    totalChunks: 1
+    validated: 1
+    rejected: 0
+    rejectionReasons: []
+    sampleRejected: []
+[2026-06-12 07:55:09.240 +0800] [32mINFO[39m: [36m[RAG AUDIT] Query retrieval before/after filtering[39m
+    question: "Apa prospek kerja Sistem Informasi?"
+    detectedIntent: "PROSPEK_KERJA"
+    topBefore: [
+      {
+        "rank": 1,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0252,
+        "rawScore": 3.9325,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali "
+      }
+    ]
+    topAfter: [
+      {
+        "rank": 1,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0252,
+        "rawScore": 3.9325,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali "
+      }
+    ]
+    filterStats: {
+      "before": 1,
+      "after": 1,
+      "filtered": 0
+    }
+[2026-06-12 07:55:09.241 +0800] [32mINFO[39m: [36m[RAG] Intent validation applied[39m
+    userIntent: "PROSPEK_KERJA"
+    totalChunksAfterRelevance: 1
+    validatedChunks: 1
+    filtered: 0
+[2026-06-12 07:55:09.243 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa prospek kerja sistem informasi?"
+[2026-06-12 07:55:09.244 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-12 07:55:09.246 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 35
+    ctxLen: 1409
+    style: "SEMI"
+    assistHintsLen: 5
+    compactPrompt: false
+[TRACE_AFTER_AI_ENGINE] {
+  kind: 'rag',
+  question: 'Apa prospek kerja Sistem Informasi?',
+  reply: 'Saya belum menemukan detail yang benar-benar sesuai mengenai prospek kerja Sistem Informasi dalam konteks yang diberikan. Namun, secara umum, prospek kerja di bidang Sistem Informasi cukup baik, dengan banyak peluang di berbagai sektor seperti teknologi, bisnis, dan pemerintahan.\n' +
+    '\n' +
+    'Apakah ada aspek tertentu dari prospek'
+}
+{
+  "success": true,
+  "answer": "Saya belum menemukan detail yang benar-benar sesuai mengenai prospek kerja Sistem Informasi yang diberikan. Namun, secara umum, prospek kerja di bidang Sistem Informasi cukup baik, dengan banyak peluang di berbagai sektor seperti teknologi, bisnis, dan pemerintahan.\nApakah ada aspek tertentu dari prospek kerja yang ingin kamu ketahui lebih lanjut?\nMau saya jelaskan prospek kerja atau kurikulum program studi ini?",
+  "source": "gpt-4o-mini",
+  "contexts": [
+    {
+      "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+      "score": 0.02522335653786799,
+      "compositeScore": 3.932522,
+      "semanticScore": 0.02522335653786799,
+      "attributeScore": 1,
+      "metadataBoost": 2.72,
+      "scoreComponents": {
+        "rawSemanticScore": 0.02522335653786799,
+        "semanticBoost": 0.002522335653786799,
+        "evidenceScore": 0.09,
+        "keywordScore": 0.5,
+        "attributeScore": 1,
+        "exactBoost": 1,
+        "metadataBoost": 2.72,
+        "rawScore": 3.932522335653787,
+        "finalScore": 1,
+        "categorySignal": 0.2,
+        "trustBoost": 0,
+        "otherBoosts": 0.12000000000000001,
+        "legalPenalty": 0,
+        "headerPenalty": 0,
+        "lowOcrPenalty": 0,
+        "feeKeywordPenalty": 0,
+        "programOverviewPenalty": 0,
+        "multiProgramPenalty": 0,
+        "itemEntities": {
+          "program": "SI",
+          "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": "DNUI",
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_KHUSUS",
+          "pageNumber": null
+        },
+        "itemCategory": "PROGRAM_KHUSUS",
+        "queryCategory": "KARIR",
+        "exactMatch": {
+          "score": 100,
+          "rejected": false,
+          "meta": {
+            "waveGroupMatched": false
+          }
+        }
+      },
+      "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China) Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3",
+      "trainingId": "ca79325a-566e-47f2-97d0-18e96d0dbd9c",
+      "filename": "CHATBOT - Double Degree (1).docx",
+      "divisionKey": "international",
+      "updatedAt": null,
+      "createdAt": "2026-05-02T10:52:54.870Z"
+    }
+  ],
+  "contextSummary": "Ringkasan konteks dari dokumen relevan:\n- Berisi informasi program internasional / dual degree / kelas khusus.\nContoh ringkasan sumber:\n- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬\nGunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.",
+  "confidenceScore": 0.9831305,
+  "confidenceTier": "HIGH",
+  "debug": {
+    "queryEntities": {
+      "intent": "ACADEMIC_PROGRAM",
+      "program": "SI",
+      "programLabel": "SISTEM_INFORMASI",
+      "programMode": null,
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": "KARIR",
+      "pageNumber": null,
+      "academicIntent": "PROSPEK_KERJA"
+    },
+    "initialCandidatesCount": 436,
+    "afterRelevantCount": 1,
+    "afterIntentValidationCount": 1,
+    "rejected": [
+      {
+        "reason": "no_evidence_for_intent",
+        "intent": "PROSPEK_KERJA",
+        "chunkId": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "detail": {
+          "hasEvidence": false,
+          "confidence": "LOW",
+          "reasons": [
+            "adequate_length: 898 chars",
+            "no_pattern_matches"
+          ]
+        }
+      }
+    ],
+    "validatedScored": [
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "text": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP U",
+        "score": 0.02522335653786799,
+        "semanticScore": 0.02522335653786799,
+        "rawScore": 3.932522,
+        "finalScore": 1,
+        "compositeScore": 3.932522,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "scoreComponents": {
+          "rawSemanticScore": 0.02522335653786799,
+          "semanticBoost": 0.002522335653786799,
+          "evidenceScore": 0.09,
+          "keywordScore": 0.5,
+          "attributeScore": 1,
+          "exactBoost": 1,
+          "metadataBoost": 2.72,
+          "rawScore": 3.932522335653787,
+          "finalScore": 1,
+          "categorySignal": 0.2,
+          "trustBoost": 0,
+          "otherBoosts": 0.12000000000000001,
+          "legalPenalty": 0,
+          "headerPenalty": 0,
+          "lowOcrPenalty": 0,
+          "feeKeywordPenalty": 0,
+          "programOverviewPenalty": 0,
+          "multiProgramPenalty": 0,
+          "itemEntities": {
+            "program": "SI",
+            "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": "DNUI",
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "PROGRAM_KHUSUS",
+            "pageNumber": null
+          },
+          "itemCategory": "PROGRAM_KHUSUS",
+          "queryCategory": "KARIR",
+          "exactMatch": {
+            "score": 100,
+            "rejected": false,
+            "meta": {
+              "waveGroupMatched": false
+            }
+          }
+        },
+        "validationMetadata": {
+          "category": "PROGRAM_KHUSUS",
+          "categoryMismatch": true,
+          "allowedCategories": [
+            "PROSPEK_KERJA"
+          ],
+          "evidenceConfidence": "LOW",
+          "matchesIntent": true,
+          "intent": "PROSPEK_KERJA"
+        }
+      }
+    ]
+  }
+}
+
+=== QUERY: Apa yang dipelajari di Sistem Informasi?
+[TRACE_RAG_QUERY_ENTITIES] {
+  queryForRetrieval: 'apa yang dipelajari di sistem informasi program studi sistem informasi profil sistem informasi',
+  normalizedUserQ: 'apa yang dipelajari di sistem informasi',
+  currentUserQ: 'Apa yang dipelajari di Sistem Informasi?',
+  queryEntities: {
+    intent: 'ACADEMIC_PROGRAM',
+    program: 'SI',
+    programLabel: 'SISTEM_INFORMASI',
+    programMode: null,
+    wave: null,
+    waveGroup: null,
+    academicYear: null,
+    partner: null,
+    campus: null,
+    jalur: null,
+    feeType: null,
+    category: 'PROGRAM_STUDI',
+    pageNumber: null,
+    academicIntent: 'MATA_KULIAH'
+  }
+}
+STYLE: SEMI
+QUESTION: Apa yang dipelajari di Sistem Informasi?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China) Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3
+ASSIST_HINTS: prodi
+[2026-06-12 07:55:12.002 +0800] [32mINFO[39m: [36m[RAG] chunk scoring debug[39m
+    query: "apa yang dipelajari di sistem informasi program studi sistem informasi profil sistem informasi"
+    intent: "ACADEMIC_PROGRAM"
+    topChunks: [
+      {
+        "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "chunkType": "PROGRAM",
+        "category": "SK",
+        "score": 0.493,
+        "rawScore": 4.2253,
+        "finalScore": 1,
+        "semanticBoost": 0.0493,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 3.29,
+        "otherBoosts": -0.234,
+        "chunkPreview": "ecialist | Brand Manager | Business Development | Startup Founder\" Manajemen Informasi | \"Program studi ini merupakan pe"
+      },
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "chunkType": null,
+        "category": "PROGRAM_KHUSUS",
+        "score": 0.0551,
+        "rawScore": 3.9655,
+        "finalScore": 1,
+        "semanticBoost": 0.0055,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "otherBoosts": 0.12,
+        "chunkPreview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhk"
+      },
+      {
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "chunkType": null,
+        "category": "PROGRAM_KHUSUS",
+        "score": 0.0392,
+        "rawScore": 3.9639,
+        "finalScore": 1,
+        "semanticBoost": 0.0039,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "otherBoosts": 0.12,
+        "chunkPreview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM"
+      },
+      {
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "chunkType": null,
+        "category": "UNKNOWN",
+        "score": 0.5878,
+        "rawScore": 3.6388,
+        "finalScore": 1,
+        "semanticBoost": 0.0588,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 3.29,
+        "otherBoosts": -0.83,
+        "chunkPreview": "ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Anim"
+      },
+      {
+        "id": "8491b972-ee0b-4806-bd7e-8508c61ed46b",
+        "filename": "hobi_prodi_lengkap (1).xlsx",
+        "chunkType": "GENERAL",
+        "category": "UNKNOWN",
+        "score": 0.5392,
+        "rawScore": 3.1759,
+        "finalScore": 1,
+        "semanticBoost": 0.0539,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 2.27,
+        "otherBoosts": -0.268,
+        "chunkPreview": "| Konten media sosial 54 | Sistem Informasi | Memiliki sosial media 55 | Sistem Informasi | Digital marketing 56 | Siste"
+      },
+      {
+        "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+        "filename": null,
+        "chunkType": "GENERAL",
+        "category": "BIAYA",
+        "score": 0.4353,
+        "rawScore": 3.1355,
+        "finalScore": 1,
+        "semanticBoost": 0.0435,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 1.94,
+        "otherBoosts": 0.032,
+        "chunkPreview": "Ringkasan dokumen: Program studi terlihat: Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan terten"
+      },
+      {
+        "id": "74be5da2-8251-4417-a1de-41c3a4b70239",
+        "filename": "HOBY.pdf",
+        "chunkType": "GENERAL",
+        "category": "UNKNOWN",
+        "score": 0.5142,
+        "rawScore": 3.0734,
+        "finalScore": 1,
+        "semanticBoost": 0.0514,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": 0.082,
+        "chunkPreview": "ing 61 Sistem InformasiAdmin media sosial 62 Sistem InformasiStartup/bisnis digital 63 Sistem InformasiKursus online 64"
+      },
+      {
+        "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "chunkType": "COST",
+        "category": "SCHEDULE",
+        "score": 0.5485,
+        "rawScore": 3.0489,
+        "finalScore": 1,
+        "semanticBoost": 0.0549,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 1.94,
+        "otherBoosts": -0.066,
+        "chunkPreview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembay"
+      }
+    ]
+[2026-06-12 07:55:12.083 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa yang dipelajari di sistem informasi?" expandedQuery="apa yang dipelajari di sistem informasi?" questionTokens=["apa","yang","dipelajari","sistem","informasi?"] overlapTokens=["apa","yang","sistem","informasi?"] overlapRatio=0.8[39m
+[2026-06-12 07:55:12.083 +0800] [32mINFO[39m: [36m[RAG] Intent-aware filtering stats[39m
+    intent: "KURIKULUM_PEMBELAJARAN"
+    question: "Apa yang dipelajari di Sistem Informasi?"
+    totalChunks: 1
+    validated: 1
+    rejected: 0
+    rejectionReasons: []
+    sampleRejected: []
+[2026-06-12 07:55:12.083 +0800] [32mINFO[39m: [36m[RAG AUDIT] Query retrieval before/after filtering[39m
+    question: "Apa yang dipelajari di Sistem Informasi?"
+    detectedIntent: "KURIKULUM_PEMBELAJARAN"
+    topBefore: [
+      {
+        "rank": 1,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0551,
+        "rawScore": 3.9655,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali "
+      }
+    ]
+    topAfter: [
+      {
+        "rank": 1,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0551,
+        "rawScore": 3.9655,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali "
+      }
+    ]
+    filterStats: {
+      "before": 1,
+      "after": 1,
+      "filtered": 0
+    }
+[2026-06-12 07:55:12.084 +0800] [32mINFO[39m: [36m[RAG] Intent validation applied[39m
+    userIntent: "KURIKULUM_PEMBELAJARAN"
+    totalChunksAfterRelevance: 1
+    validatedChunks: 1
+    filtered: 0
+[2026-06-12 07:55:12.085 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa yang dipelajari di sistem informasi?"
+[2026-06-12 07:55:12.085 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-12 07:55:12.086 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 40
+    ctxLen: 1409
+    style: "SEMI"
+    assistHintsLen: 5
+    compactPrompt: false
+[TRACE_AFTER_AI_ENGINE] {
+  kind: 'rag',
+  question: 'Apa yang dipelajari di Sistem Informasi?',
+  reply: 'Program Sistem Informasi di ITB STIKOM Bali mencakup berbagai aspek yang relevan dengan teknologi informasi dan manajemen.\n' +
+    '\n' +
+    'ΓÇó Kurikulum: Menggabungkan teori dan praktik dalam pengembangan sistem informasi, analisis data, dan manajemen proyek.\n' +
+    'ΓÇó Gelar: Lulusan akan mendapatkan gelar S.Kom (Indonesia) dan Bachelor of IT '
+}
+{
+  "success": true,
+  "answer": "Program Sistem Informasi di ITB STIKOM Bali mencakup berbagai aspek yang relevan dengan teknologi informasi dan manajemen.\n\n- Kurikulum: Menggabungkan teori dan praktik dalam pengembangan sistem informasi, analisis data, dan manajemen proyek.\n- Gelar: Lulusan akan mendapatkan gelar S.Kom (Indonesia) dan Bachelor of IT (Malaysia) jika mengikuti program Double Degree.\n\nApa ada aspek tertentu dari Sistem Informasi yang ingin kamu ketahui lebih lanjut?",
+  "source": "gpt-4o-mini",
+  "contexts": [
+    {
+      "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+      "score": 0.05508165380883772,
+      "compositeScore": 3.965508,
+      "semanticScore": 0.05508165380883772,
+      "attributeScore": 1,
+      "metadataBoost": 2.72,
+      "scoreComponents": {
+        "rawSemanticScore": 0.05508165380883772,
+        "semanticBoost": 0.005508165380883772,
+        "evidenceScore": 0.12,
+        "keywordScore": 0.6666666666666666,
+        "attributeScore": 1,
+        "exactBoost": 1,
+        "metadataBoost": 2.72,
+        "rawScore": 3.965508165380884,
+        "finalScore": 1,
+        "categorySignal": 0.2,
+        "trustBoost": 0,
+        "otherBoosts": 0.12000000000000001,
+        "legalPenalty": 0,
+        "headerPenalty": 0,
+        "lowOcrPenalty": 0,
+        "feeKeywordPenalty": 0,
+        "programOverviewPenalty": 0,
+        "multiProgramPenalty": 0,
+        "itemEntities": {
+          "program": "SI",
+          "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": "DNUI",
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_KHUSUS",
+          "pageNumber": null
+        },
+        "itemCategory": "PROGRAM_KHUSUS",
+        "queryCategory": "PROGRAM_STUDI",
+        "exactMatch": {
+          "score": 100,
+          "rejected": false,
+          "meta": {
+            "waveGroupMatched": false
+          }
+        }
+      },
+      "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China) Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3",
+      "trainingId": "ca79325a-566e-47f2-97d0-18e96d0dbd9c",
+      "filename": "CHATBOT - Double Degree (1).docx",
+      "divisionKey": "international",
+      "updatedAt": null,
+      "createdAt": "2026-05-02T10:52:54.870Z"
+    }
+  ],
+  "contextSummary": "Ringkasan konteks dari dokumen relevan:\n- Berisi informasi program internasional / dual degree / kelas khusus.\nContoh ringkasan sumber:\n- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬\nGunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.",
+  "confidenceScore": 0.99,
+  "confidenceTier": "HIGH",
+  "debug": {
+    "queryEntities": {
+      "intent": "ACADEMIC_PROGRAM",
+      "program": "SI",
+      "programLabel": "SISTEM_INFORMASI",
+      "programMode": null,
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": "PROGRAM_STUDI",
+      "pageNumber": null,
+      "academicIntent": "MATA_KULIAH"
+    },
+    "initialCandidatesCount": 436,
+    "afterRelevantCount": 1,
+    "afterIntentValidationCount": 1,
+    "rejected": [],
+    "validatedScored": [
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "text": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP U",
+        "score": 0.05508165380883772,
+        "semanticScore": 0.05508165380883772,
+        "rawScore": 3.965508,
+        "finalScore": 1,
+        "compositeScore": 3.965508,
+        "attributeScore": 1,
+        "metadataBoost": 2.72,
+        "scoreComponents": {
+          "rawSemanticScore": 0.05508165380883772,
+          "semanticBoost": 0.005508165380883772,
+          "evidenceScore": 0.12,
+          "keywordScore": 0.6666666666666666,
+          "attributeScore": 1,
+          "exactBoost": 1,
+          "metadataBoost": 2.72,
+          "rawScore": 3.965508165380884,
+          "finalScore": 1,
+          "categorySignal": 0.2,
+          "trustBoost": 0,
+          "otherBoosts": 0.12000000000000001,
+          "legalPenalty": 0,
+          "headerPenalty": 0,
+          "lowOcrPenalty": 0,
+          "feeKeywordPenalty": 0,
+          "programOverviewPenalty": 0,
+          "multiProgramPenalty": 0,
+          "itemEntities": {
+            "program": "SI",
+            "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": "DNUI",
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "PROGRAM_KHUSUS",
+            "pageNumber": null
+          },
+          "itemCategory": "PROGRAM_KHUSUS",
+          "queryCategory": "PROGRAM_STUDI",
+          "exactMatch": {
+            "score": 100,
+            "rejected": false,
+            "meta": {
+              "waveGroupMatched": false
+            }
+          }
+        },
+        "validationMetadata": {
+          "category": "PROGRAM_KHUSUS",
+          "categoryMismatch": true,
+          "allowedCategories": [
+            "KURIKULUM",
+            "MATA_KULIAH"
+          ],
+          "evidenceConfidence": "MEDIUM",
+          "matchesIntent": true,
+          "intent": "KURIKULUM_PEMBELAJARAN"
+        }
+      }
+    ]
+  }
+}
+
+=== QUERY: Apa keunggulan Sistem Informasi?
+[TRACE_RAG_QUERY_ENTITIES] {
+  queryForRetrieval: 'apa keunggulan sistem informasi program studi sistem informasi profil sistem informasi',
+  normalizedUserQ: 'apa keunggulan sistem informasi',
+  currentUserQ: 'Apa keunggulan Sistem Informasi?',
+  queryEntities: {
+    intent: 'PROGRAM',
+    program: 'SI',
+    programLabel: 'SISTEM_INFORMASI',
+    programMode: null,
+    wave: null,
+    waveGroup: null,
+    academicYear: null,
+    partner: null,
+    campus: null,
+    jalur: null,
+    feeType: null,
+    category: 'PROGRAM_STUDI',
+    pageNumber: null,
+    academicIntent: 'ACADEMIC_PROGRAM'
+  }
+}
+STYLE: SEMI
+QUESTION: Apa keunggulan Sistem Informasi?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki progr╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China) Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3
+
+---
+
+Sumber 2 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki program Double Degree bersama HELP University, Malaysia. 10. Program studi apa yang ditawarkan dalam skema HELP University? Program ini untuk mahasiswa Program Studi Sistem Informasi . 11. Apa gelar yang diperoleh dari program HELP University? Mahasiswa berkesempatan memperoleh : Sarjana Komputer ( S.Kom ) dari ITB STIKOM Bali Bachelor of Information Technology (BIT) dari HELP University 12. Berapa lama studi pada program HELP University? Durasi studi umumnya sekitar 4 tahun sesuai kurikulum yang berlaku . 13. Di mana perkuliahan dilaksanakan ? Skema pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Offi
+ASSIST_HINTS: prodi
+[2026-06-12 07:55:15.794 +0800] [32mINFO[39m: [36m[RAG] chunk scoring debug[39m
+    query: "apa keunggulan sistem informasi program studi sistem informasi profil sistem informasi"
+    intent: "PROGRAM"
+    topChunks: [
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "chunkType": null,
+        "category": "PROGRAM_KHUSUS",
+        "score": 0.0286,
+        "rawScore": 3.1229,
+        "finalScore": 1,
+        "semanticBoost": 0.0029,
+        "evidenceScore": 0.18,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": 0.12,
+        "chunkPreview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhk"
+      },
+      {
+        "id": "74be5da2-8251-4417-a1de-41c3a4b70239",
+        "filename": "HOBY.pdf",
+        "chunkType": "GENERAL",
+        "category": "UNKNOWN",
+        "score": 0.5072,
+        "rawScore": 3.0727,
+        "finalScore": 1,
+        "semanticBoost": 0.0507,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": 0.082,
+        "chunkPreview": "ing 61 Sistem InformasiAdmin media sosial 62 Sistem InformasiStartup/bisnis digital 63 Sistem InformasiKursus online 64"
+      },
+      {
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "chunkType": null,
+        "category": "PROGRAM_KHUSUS",
+        "score": 0.0177,
+        "rawScore": 3.0618,
+        "finalScore": 1,
+        "semanticBoost": 0.0018,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": 0.12,
+        "chunkPreview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM"
+      },
+      {
+        "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+        "filename": null,
+        "chunkType": "GENERAL",
+        "category": "BIAYA",
+        "score": 0.4881,
+        "rawScore": 3.0208,
+        "finalScore": 1,
+        "semanticBoost": 0.0488,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": 0.032,
+        "chunkPreview": "Ringkasan dokumen: Program studi terlihat: Biaya pendaftaran mahasiswa baru STIKOM. Gelombang 1 memiliki potongan terten"
+      },
+      {
+        "id": "7f5139fa-bf4f-42ee-8dcd-f75bd6de29ba",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "chunkType": null,
+        "category": "JADWAL",
+        "score": 0.2638,
+        "rawScore": 2.9664,
+        "finalScore": 1,
+        "semanticBoost": 0.0264,
+        "evidenceScore": 0,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": 0.12,
+        "chunkPreview": "8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026 II C | 19 APRIL 2026 s/d 2 MEI 2026 | 3 MEI"
+      },
+      {
+        "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+        "filename": null,
+        "chunkType": "COST",
+        "category": "SCHEDULE",
+        "score": 0.5642,
+        "rawScore": 2.9304,
+        "finalScore": 1,
+        "semanticBoost": 0.0564,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": -0.066,
+        "chunkPreview": "ertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembay"
+      },
+      {
+        "id": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+        "filename": null,
+        "chunkType": "COST",
+        "category": "SCHEDULE",
+        "score": 0.5453,
+        "rawScore": 2.9285,
+        "finalScore": 1,
+        "semanticBoost": 0.0545,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": -0.066,
+        "chunkPreview": "ru STIKOM. Gelombang 1 memiliki potongan tertentu. Program studi Informatika dan Sistem Informasi memiliki rincian biaya"
+      },
+      {
+        "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+        "filename": null,
+        "chunkType": "COST",
+        "category": "SCHEDULE",
+        "score": 0.5402,
+        "rawScore": 2.928,
+        "finalScore": 1,
+        "semanticBoost": 0.054,
+        "evidenceScore": 0.12,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "otherBoosts": -0.066,
+        "chunkPreview": "tem Informasi memiliki rincian biaya formulir, daftar ulang, dan jadwal pembayaran. Biaya pendaftaran mahasiswa baru STI"
+      }
+    ]
+[2026-06-12 07:55:15.874 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa keunggulan sistem informasi?" expandedQuery="apa keunggulan sistem informasi?" questionTokens=["apa","keunggulan","sistem","informasi?"] overlapTokens=["apa","keunggulan","sistem","informasi?"] overlapRatio=1[39m
+[2026-06-12 07:55:15.875 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="apa keunggulan sistem informasi?" expandedQuery="apa keunggulan sistem informasi?" questionTokens=["apa","keunggulan","sistem","informasi?"] overlapTokens=["apa","sistem","informasi?"] overlapRatio=0.75[39m
+[2026-06-12 07:55:15.875 +0800] [32mINFO[39m: [36m[RAG] Intent-aware filtering stats[39m
+    intent: "GENERAL"
+    question: "Apa keunggulan Sistem Informasi?"
+    totalChunks: 2
+    validated: 2
+    rejected: 0
+    rejectionReasons: []
+    sampleRejected: []
+[2026-06-12 07:55:15.875 +0800] [32mINFO[39m: [36m[RAG AUDIT] Query retrieval before/after filtering[39m
+    question: "Apa keunggulan Sistem Informasi?"
+    detectedIntent: "GENERAL"
+    topBefore: [
+      {
+        "rank": 1,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0286,
+        "rawScore": 3.1229,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali "
+      },
+      {
+        "rank": 2,
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0177,
+        "rawScore": 3.0618,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "chunk": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - "
+      }
+    ]
+    topAfter: [
+      {
+        "rank": 1,
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0286,
+        "rawScore": 3.1229,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali "
+      },
+      {
+        "rank": 2,
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "file": "CHATBOT - Double Degree (1).docx",
+        "docCat": "PROGRAM_KHUSUS",
+        "semanticScore": 0.0177,
+        "rawScore": 3.0618,
+        "finalScore": 1,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "chunk": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - "
+      }
+    ]
+    filterStats: {
+      "before": 2,
+      "after": 2,
+      "filtered": 0
+    }
+[2026-06-12 07:55:15.875 +0800] [32mINFO[39m: [36m[RAG] Intent validation applied[39m
+    userIntent: "GENERAL"
+    totalChunksAfterRelevance: 2
+    validatedChunks: 2
+    filtered: 0
+[2026-06-12 07:55:15.876 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa keunggulan sistem informasi?"
+[2026-06-12 07:55:15.878 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-12 07:55:15.879 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 32
+    ctxLen: 2609
+    style: "SEMI"
+    assistHintsLen: 5
+    compactPrompt: false
+[TRACE_AFTER_AI_ENGINE] {
+  kind: 'rag',
+  question: 'Apa keunggulan Sistem Informasi?',
+  reply: 'Saya belum menemukan detail yang benar-benar sesuai mengenai keunggulan Sistem Informasi dalam konteks yang ada.\n' +
+    '\n' +
+    'Apakah ada aspek tertentu dari Sistem Informasi yang ingin kamu ketahui lebih lanjut?\n' +
+    '\n' +
+    'Mau saya bantu jelaskan detail gelombang atau jadwal pendaftaran?'
+}
+{
+  "success": true,
+  "answer": "Saya belum menemukan detail yang benar-benar sesuai mengenai keunggulan Sistem Informasi yang ada.\nApakah ada aspek tertentu dari Sistem Informasi yang ingin kamu ketahui lebih lanjut?\n\nMau saya bantu jelaskan detail gelombang atau jadwal pendaftaran?",
+  "source": "gpt-4o-mini",
+  "contexts": [
+    {
+      "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+      "score": 0.02855598323531583,
+      "compositeScore": 3.122856,
+      "semanticScore": 0.02855598323531583,
+      "attributeScore": 1,
+      "metadataBoost": 1.82,
+      "scoreComponents": {
+        "rawSemanticScore": 0.02855598323531583,
+        "semanticBoost": 0.002855598323531583,
+        "evidenceScore": 0.18,
+        "keywordScore": 1,
+        "attributeScore": 1,
+        "exactBoost": 1,
+        "metadataBoost": 1.82,
+        "rawScore": 3.1228555983235315,
+        "finalScore": 1,
+        "categorySignal": 0.2,
+        "trustBoost": 0,
+        "otherBoosts": 0.12000000000000001,
+        "legalPenalty": 0,
+        "headerPenalty": 0,
+        "lowOcrPenalty": 0,
+        "feeKeywordPenalty": 0,
+        "programOverviewPenalty": 0,
+        "multiProgramPenalty": 0,
+        "itemEntities": {
+          "program": "SI",
+          "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": "DNUI",
+          "campus": "BALI",
+          "jalur": null,
+          "feeType": null,
+          "category": "PROGRAM_KHUSUS",
+          "pageNumber": null
+        },
+        "itemCategory": "PROGRAM_KHUSUS",
+        "queryCategory": "PROGRAM_STUDI",
+        "exactMatch": {
+          "score": 100,
+          "rejected": false,
+          "meta": {
+            "waveGroupMatched": false
+          }
+        }
+      },
+      "chunk": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China) Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3",
+      "trainingId": "ca79325a-566e-47f2-97d0-18e96d0dbd9c",
+      "filename": "CHATBOT - Double Degree (1).docx",
+      "divisionKey": "international",
+      "updatedAt": null,
+      "createdAt": "2026-05-02T10:52:54.870Z"
+    },
+    {
+      "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+      "score": 0.01769325641553553,
+      "compositeScore": 3.061769,
+      "semanticScore": 0.01769325641553553,
+      "attributeScore": 1,
+      "metadataBoost": 1.82,
+      "scoreComponents": {
+        "rawSemanticScore": 0.01769325641553553,
+        "semanticBoost": 0.001769325641553553,
+        "evidenceScore": 0.12,
+        "keywordScore": 0.6666666666666666,
+        "attributeScore": 1,
+        "exactBoost": 1,
+        "metadataBoost": 1.82,
+        "rawScore": 3.0617693256415537,
+        "finalScore": 1,
+        "categorySignal": 0.2,
+        "trustBoost": 0,
+        "otherBoosts": 0.12000000000000001,
+        "legalPenalty": 0,
+        "headerPenalty": 0,
+        "lowOcrPenalty": 0,
+        "feeKeywordPenalty": 0,
+        "programOverviewPenalty": 0,
+        "multiProgramPenalty": 0,
+        "itemEntities": {
+          "program": "SI",
+          "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": "HELP",
+          "campus": "BALI",
+          "jalur": "KERJASAMA",
+          "feeType": null,
+          "category": "PROGRAM_KHUSUS",
+          "pageNumber": null
+        },
+        "itemCategory": "PROGRAM_KHUSUS",
+        "queryCategory": "PROGRAM_STUDI",
+        "exactMatch": {
+          "score": 100,
+          "rejected": false,
+          "meta": {
+            "waveGroupMatched": false
+          }
+        }
+      },
+      "chunk": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki program Double Degree bersama HELP University, Malaysia. 10. Program studi apa yang ditawarkan dalam skema HELP University? Program ini untuk mahasiswa Program Studi Sistem Informasi . 11. Apa gelar yang diperoleh dari program HELP University? Mahasiswa berkesempatan memperoleh : Sarjana Komputer ( S.Kom ) dari ITB STIKOM Bali Bachelor of Information Technology (BIT) dari HELP University 12. Berapa lama studi pada program HELP University? Durasi studi umumnya sekitar 4 tahun sesuai kurikulum yang berlaku . 13. Di mana perkuliahan dilaksanakan ? Skema pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Offi",
+      "trainingId": "ca79325a-566e-47f2-97d0-18e96d0dbd9c",
+      "filename": "CHATBOT - Double Degree (1).docx",
+      "divisionKey": "international",
+      "updatedAt": null,
+      "createdAt": "2026-05-02T10:52:55.705Z"
+    }
+  ],
+  "contextSummary": "Ringkasan konteks dari dokumen relevan:\n- Berisi informasi program internasional / dual degree / kelas khusus.\nContoh ringkasan sumber:\n- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬\n- ca79325a-566e-47f2-97d0-18e96d0dbd9c: usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki progr╬ô├ç┬¬\nGunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.",
+  "confidenceScore": 0.780714,
+  "confidenceTier": "HIGH",
+  "debug": {
+    "queryEntities": {
+      "intent": "PROGRAM",
+      "program": "SI",
+      "programLabel": "SISTEM_INFORMASI",
+      "programMode": null,
+      "wave": null,
+      "waveGroup": null,
+      "academicYear": null,
+      "partner": null,
+      "campus": null,
+      "jalur": null,
+      "feeType": null,
+      "category": "PROGRAM_STUDI",
+      "pageNumber": null,
+      "academicIntent": "ACADEMIC_PROGRAM"
+    },
+    "initialCandidatesCount": 436,
+    "afterRelevantCount": 2,
+    "afterIntentValidationCount": 2,
+    "rejected": [],
+    "validatedScored": [
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "text": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP U",
+        "score": 0.02855598323531583,
+        "semanticScore": 0.02855598323531583,
+        "rawScore": 3.122856,
+        "finalScore": 1,
+        "compositeScore": 3.122856,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "scoreComponents": {
+          "rawSemanticScore": 0.02855598323531583,
+          "semanticBoost": 0.002855598323531583,
+          "evidenceScore": 0.18,
+          "keywordScore": 1,
+          "attributeScore": 1,
+          "exactBoost": 1,
+          "metadataBoost": 1.82,
+          "rawScore": 3.1228555983235315,
+          "finalScore": 1,
+          "categorySignal": 0.2,
+          "trustBoost": 0,
+          "otherBoosts": 0.12000000000000001,
+          "legalPenalty": 0,
+          "headerPenalty": 0,
+          "lowOcrPenalty": 0,
+          "feeKeywordPenalty": 0,
+          "programOverviewPenalty": 0,
+          "multiProgramPenalty": 0,
+          "itemEntities": {
+            "program": "SI",
+            "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": "DNUI",
+            "campus": "BALI",
+            "jalur": null,
+            "feeType": null,
+            "category": "PROGRAM_KHUSUS",
+            "pageNumber": null
+          },
+          "itemCategory": "PROGRAM_KHUSUS",
+          "queryCategory": "PROGRAM_STUDI",
+          "exactMatch": {
+            "score": 100,
+            "rejected": false,
+            "meta": {
+              "waveGroupMatched": false
+            }
+          }
+        },
+        "validationMetadata": {
+          "category": "PROGRAM_KHUSUS",
+          "categoryMismatch": false,
+          "allowedCategories": [
+            "PRODI_PROFILE",
+            "KURIKULUM",
+            "MATA_KULIAH",
+            "PROSPEK_KERJA",
+            "BIAYA",
+            "AKREDITASI",
+            "JADWAL",
+            "BEASISWA",
+            "LOKASI",
+            "PROGRAM_KHUSUS"
+          ],
+          "evidenceConfidence": "MEDIUM",
+          "matchesIntent": true,
+          "intent": "GENERAL"
+        }
+      },
+      {
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "PROGRAM_KHUSUS",
+        "text": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampu",
+        "score": 0.01769325641553553,
+        "semanticScore": 0.01769325641553553,
+        "rawScore": 3.061769,
+        "finalScore": 1,
+        "compositeScore": 3.061769,
+        "attributeScore": 1,
+        "metadataBoost": 1.82,
+        "scoreComponents": {
+          "rawSemanticScore": 0.01769325641553553,
+          "semanticBoost": 0.001769325641553553,
+          "evidenceScore": 0.12,
+          "keywordScore": 0.6666666666666666,
+          "attributeScore": 1,
+          "exactBoost": 1,
+          "metadataBoost": 1.82,
+          "rawScore": 3.0617693256415537,
+          "finalScore": 1,
+          "categorySignal": 0.2,
+          "trustBoost": 0,
+          "otherBoosts": 0.12000000000000001,
+          "legalPenalty": 0,
+          "headerPenalty": 0,
+          "lowOcrPenalty": 0,
+          "feeKeywordPenalty": 0,
+          "programOverviewPenalty": 0,
+          "multiProgramPenalty": 0,
+          "itemEntities": {
+            "program": "SI",
+            "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+            "wave": null,
+            "waveGroup": null,
+            "academicYear": null,
+            "partner": "HELP",
+            "campus": "BALI",
+            "jalur": "KERJASAMA",
+            "feeType": null,
+            "category": "PROGRAM_KHUSUS",
+            "pageNumber": null
+          },
+          "itemCategory": "PROGRAM_KHUSUS",
+          "queryCategory": "PROGRAM_STUDI",
+          "exactMatch": {
+            "score": 100,
+            "rejected": false,
+            "meta": {
+              "waveGroupMatched": false
+            }
+          }
+        },
+        "validationMetadata": {
+          "category": "PROGRAM_KHUSUS",
+          "categoryMismatch": false,
+          "allowedCategories": [
+            "PRODI_PROFILE",
+            "KURIKULUM",
+            "MATA_KULIAH",
+            "PROSPEK_KERJA",
+            "BIAYA",
+            "AKREDITASI",
+            "JADWAL",
+            "BEASISWA",
+            "LOKASI",
+            "PROGRAM_KHUSUS"
+          ],
+          "evidenceConfidence": "MEDIUM",
+          "matchesIntent": true,
+          "intent": "GENERAL"
+        }
+      }
+    ]
+  }
+}

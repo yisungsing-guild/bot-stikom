@@ -1,0 +1,2624 @@
+﻿[TRACE_FEE_ROUTE] {
+  route: 'tryStructuredExactCostAnswer',
+  question: 'berapa biaya SI gelombang 1A',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  indexCount: 46,
+  topK: 3
+}
+[TRACE_COST_INPUT_1_PARAMS] {
+  question: 'berapa biaya SI gelombang 1A',
+  queryEntities: '{"intent":"COST","academicIntent":"BIAYA","program":"SI","wave":"1A"}',
+  indexCount: 46,
+  topK: 3
+}
+[TRACE_COST_ALLOWED_TRAINING_IDS] {
+  programRequested: 'si',
+  count: 4,
+  trainingIds: [
+    'd540ae42-ca48-4750-b5dd-5a1fbdbc05a0',
+    '3c8b0b47-7c88-479c-967d-3fc1a956ee50',
+    'a4834fc1-bb66-4146-8774-88b321fba707',
+    'a4b4fba8-bc5a-40ce-b08a-122c729999cc'
+  ]
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  id: 'tuition_fee-38',
+  score: 0,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: null,
+  id: '1c7b21a7-1889-4e0c-8f65-7967c3642fb5',
+  score: 0,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  id: 'added-from-backup-1',
+  score: 50,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  id: 'added-from-backup-3',
+  score: 50,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  id: 'added-from-backup-4',
+  score: 50,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: 'rincian Biaya HELP Tahun Ajaran 2026-2027.pdf',
+  id: 'added-from-backup-5',
+  score: 50,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: 'rincian Biaya UTB Tahun Ajaran 2026-2027.pdf',
+  id: 'added-from-backup-6',
+  score: 50,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_COST_INPUT_2_INDEX_SCAN] {
+  totalItemsScanned: 45,
+  items: [
+    {
+      id: 'double_degree-1',
+      filename: 'docs/retrieval/knowledge_domains/double_degree.md',
+      updatedAt: undefined,
+      itemProgram: null,
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi Double Degree - double degree\n' +
+        'Double Degree docs guidance\n' +
+        '\n' +
+        'Purpose'
+    },
+    {
+      id: 'international_program-2',
+      filename: 'docs/retrieval/knowledge_domains/international_program.md',
+      updatedAt: undefined,
+      itemProgram: null,
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi International Program - international program\n' +
+        'International Progra'
+    },
+    {
+      id: 'international_program-3',
+      filename: 'docs/retrieval/knowledge_domains/international_program.md',
+      updatedAt: undefined,
+      itemProgram: null,
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi International Program - international program\n' +
+        'Gunakan kategori ini'
+    },
+    {
+      id: 'program_studi-4',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      updatedAt: undefined,
+      itemProgram: 'BD',
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi Bisnis Digital - Ringkasan Program\n' +
+        '# Ringkasan Program\n' +
+        '\n' +
+        'Program St'
+    },
+    {
+      id: 'program_studi-5',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      updatedAt: undefined,
+      itemProgram: 'BD',
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi Bisnis Digital - Apa Yang Dipelajari\n' +
+        '# Apa Yang Dipelajari\n' +
+        '\n' +
+        'Mahasi'
+    },
+    {
+      id: 'program_studi-6',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      updatedAt: undefined,
+      itemProgram: 'BD',
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi Bisnis Digital - Mata Kuliah Utama\n' +
+        '# Mata Kuliah Utama\n' +
+        '\n' +
+        'Mata kulia'
+    },
+    {
+      id: 'program_studi-7',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      updatedAt: undefined,
+      itemProgram: 'BD',
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi Bisnis Digital - Skill Yang Dipelajari\n' +
+        '# Skill Yang Dipelajari\n' +
+        '\n' +
+        'Sk'
+    },
+    {
+      id: 'program_studi-8',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      updatedAt: undefined,
+      itemProgram: 'BD',
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi Bisnis Digital - Prospek Kerja\n' +
+        '# Prospek Kerja\n' +
+        '\n' +
+        'Prospek kerja meli'
+    },
+    {
+      id: 'program_studi-9',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      updatedAt: undefined,
+      itemProgram: 'BD',
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi Bisnis Digital - Career Path\n' +
+        '# Career Path\n' +
+        '\n' +
+        'Career path umum dimul'
+    },
+    {
+      id: 'program_studi-10',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      updatedAt: undefined,
+      itemProgram: 'BD',
+      itemWave: null,
+      itemWaveGroup: null,
+      chunkPreview: 'Program Studi Bisnis Digital - Contoh Pekerjaan\n' +
+        '# Contoh Pekerjaan\n' +
+        '\n' +
+        'Contoh peker'
+    }
+  ]
+}
+[TRACE_COST_MATCH_3_CANDIDATES] {
+  question: 'berapa biaya SI gelombang 1A',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  exactCandidateCount: 15,
+  exactCandidates: [
+    {
+      id: 'program_studi-12',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      updatedAt: null,
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-13',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      updatedAt: null,
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-14',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      updatedAt: null,
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-15',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      updatedAt: null,
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-16',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      updatedAt: null,
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    }
+  ],
+  candidateRejectionCount: 35
+}
+[TRACE_COST_MATCH_3_ALL_CANDIDATES] {
+  question: 'berapa biaya SI gelombang 1A',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  allCandidates: [
+    {
+      id: 'program_studi-12',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-13',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-14',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-15',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-16',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-17',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-18',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'program_studi-19',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      program: 'SI',
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 106.66666666666667,
+      exactMatchScore: 100,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'tuition_fee-37',
+      filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+      program: null,
+      wave: null,
+      waveGroup: null,
+      academicYear: null,
+      totalScore: 160,
+      exactMatchScore: 0,
+      keywordScore: 20,
+      semanticScore: 0,
+      isGlobalDiscount: true,
+      matchMeta: [Object]
+    },
+    {
+      id: 'added-from-backup-2',
+      filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+      program: 'SK',
+      wave: '1',
+      waveGroup: '1',
+      academicYear: '2026',
+      totalScore: 180,
+      exactMatchScore: 20,
+      keywordScore: 20,
+      semanticScore: 0,
+      isGlobalDiscount: true,
+      matchMeta: [Object]
+    },
+    {
+      id: 'added-from-backup-1',
+      filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+      program: 'SI',
+      wave: 'KHUSUS',
+      waveGroup: 'KHUSUS',
+      academicYear: '2026',
+      totalScore: 20,
+      exactMatchScore: 1,
+      keywordScore: 10,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'added-from-backup-3',
+      filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+      program: null,
+      wave: 'KHUSUS',
+      waveGroup: 'KHUSUS',
+      academicYear: '2026',
+      totalScore: 20,
+      exactMatchScore: 1,
+      keywordScore: 10,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'added-from-backup-4',
+      filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+      program: null,
+      wave: 'KHUSUS',
+      waveGroup: 'KHUSUS',
+      academicYear: '2026',
+      totalScore: 16.666666666666664,
+      exactMatchScore: 1,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'added-from-backup-5',
+      filename: 'rincian Biaya HELP Tahun Ajaran 2026-2027.pdf',
+      program: null,
+      wave: 'KHUSUS',
+      waveGroup: 'KHUSUS',
+      academicYear: '2026',
+      totalScore: 16.666666666666664,
+      exactMatchScore: 1,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    },
+    {
+      id: 'added-from-backup-6',
+      filename: 'rincian Biaya UTB Tahun Ajaran 2026-2027.pdf',
+      program: null,
+      wave: 'KHUSUS',
+      waveGroup: 'KHUSUS',
+      academicYear: '2026',
+      totalScore: 16.666666666666664,
+      exactMatchScore: 1,
+      keywordScore: 6.666666666666666,
+      semanticScore: 0,
+      isGlobalDiscount: false,
+      matchMeta: [Object]
+    }
+  ]
+}
+[TRACE_COST_MATCH_3_REJECTED] {
+  question: 'berapa biaya SI gelombang 1A',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  rejectedCandidateCount: 35,
+  rejectedCandidateReasons: [
+    {
+      itemId: 'double_degree-1',
+      filename: 'docs/retrieval/knowledge_domains/double_degree.md',
+      reason: 'low_score',
+      score: 0,
+      exactMatchMeta: [Object],
+      isGlobalDiscount: false,
+      isProgramTrainingMatch: null,
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Double Degree - double degree\n' +
+        'Double Degree docs guidance\n' +
+        '\n' +
+        'Purpose:\n' +
+        '- Dedicated `double_degree.md` for pro'
+    },
+    {
+      itemId: 'international_program-2',
+      filename: 'docs/retrieval/knowledge_domains/international_program.md',
+      reason: 'low_score',
+      score: 0,
+      exactMatchMeta: [Object],
+      isGlobalDiscount: false,
+      isProgramTrainingMatch: null,
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi International Program - international program\n' +
+        'International Program knowledge\n' +
+        '\n' +
+        'Pertanyaan cepat:\n' +
+        '- Kelas i'
+    },
+    {
+      itemId: 'international_program-3',
+      filename: 'docs/retrieval/knowledge_domains/international_program.md',
+      reason: 'low_score',
+      score: 0,
+      exactMatchMeta: [Object],
+      isGlobalDiscount: false,
+      isProgramTrainingMatch: null,
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi International Program - international program\n' +
+        'Gunakan kategori ini untuk pertanyaan tentang:\n' +
+        '- kelas inter'
+    },
+    {
+      itemId: 'program_studi-4',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Bisnis Digital - Ringkasan Program\n' +
+        '# Ringkasan Program\n' +
+        '\n' +
+        'Program Studi Bisnis Digital memadukan strategi bi'
+    },
+    {
+      itemId: 'program_studi-5',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Bisnis Digital - Apa Yang Dipelajari\n' +
+        '# Apa Yang Dipelajari\n' +
+        '\n' +
+        'Mahasiswa mempelajari dasar manajemen, digital'
+    },
+    {
+      itemId: 'program_studi-6',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Bisnis Digital - Mata Kuliah Utama\n' +
+        '# Mata Kuliah Utama\n' +
+        '\n' +
+        'Mata kuliah utama biasanya meliputi manajemen pema'
+    },
+    {
+      itemId: 'program_studi-7',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Bisnis Digital - Skill Yang Dipelajari\n' +
+        '# Skill Yang Dipelajari\n' +
+        '\n' +
+        'Skill yang dikembangkan mencakup riset pas'
+    },
+    {
+      itemId: 'program_studi-8',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Bisnis Digital - Prospek Kerja\n' +
+        '# Prospek Kerja\n' +
+        '\n' +
+        'Prospek kerja meliputi digital marketing specialist, growt'
+    },
+    {
+      itemId: 'program_studi-9',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Bisnis Digital - Career Path\n' +
+        '# Career Path\n' +
+        '\n' +
+        'Career path umum dimulai dari digital marketing atau business '
+    },
+    {
+      itemId: 'program_studi-10',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Bisnis Digital - Contoh Pekerjaan\n' +
+        '# Contoh Pekerjaan\n' +
+        '\n' +
+        'Contoh pekerjaan meliputi menyusun strategi akuisisi'
+    },
+    {
+      itemId: 'program_studi-11',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Bisnis Digital - Output Lulusan\n' +
+        '# Output Lulusan\n' +
+        '\n' +
+        'Output lulusan adalah profesional bisnis yang data-drive'
+    },
+    {
+      itemId: 'program_studi-20',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Sistem Komputer - Ringkasan Program\n' +
+        '# Ringkasan Program\n' +
+        '\n' +
+        'Program Studi Sistem Komputer berfokus pada integ'
+    },
+    {
+      itemId: 'program_studi-21',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Sistem Komputer - Apa Yang Dipelajari\n' +
+        '# Apa Yang Dipelajari\n' +
+        '\n' +
+        'Mahasiswa mempelajari arsitektur komputer, el'
+    },
+    {
+      itemId: 'program_studi-22',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Sistem Komputer - Mata Kuliah Utama\n' +
+        '# Mata Kuliah Utama\n' +
+        '\n' +
+        'Mata kuliah utama umumnya mencakup organisasi dan'
+    },
+    {
+      itemId: 'program_studi-23',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Sistem Komputer - Skill Yang Dipelajari\n' +
+        '# Skill Yang Dipelajari\n' +
+        '\n' +
+        'Skill inti meliputi perancangan sistem em'
+    },
+    {
+      itemId: 'program_studi-24',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Sistem Komputer - Prospek Kerja\n' +
+        '# Prospek Kerja\n' +
+        '\n' +
+        'Prospek kerja mencakup embedded system engineer, IoT engi'
+    },
+    {
+      itemId: 'program_studi-25',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Sistem Komputer - Career Path\n' +
+        '# Career Path\n' +
+        '\n' +
+        'Career path biasanya dimulai dari junior engineer atau techni'
+    },
+    {
+      itemId: 'program_studi-26',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Sistem Komputer - Contoh Pekerjaan\n' +
+        '# Contoh Pekerjaan\n' +
+        '\n' +
+        'Contoh pekerjaan meliputi merancang prototipe peran'
+    },
+    {
+      itemId: 'program_studi-27',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Sistem Komputer - Output Lulusan\n' +
+        '# Output Lulusan\n' +
+        '\n' +
+        'Output lulusan adalah engineer yang memahami keterkaita'
+    },
+    {
+      itemId: 'program_studi-28',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Teknologi Informasi - Ringkasan Program\n' +
+        '# Ringkasan Program\n' +
+        '\n' +
+        'Program Studi Teknologi Informasi menekankan '
+    },
+    {
+      itemId: 'program_studi-29',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Teknologi Informasi - Apa Yang Dipelajari\n' +
+        '# Apa Yang Dipelajari\n' +
+        '\n' +
+        'Pembelajaran mencakup pemrograman, pengem'
+    },
+    {
+      itemId: 'program_studi-30',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Teknologi Informasi - Mata Kuliah Utama\n' +
+        '# Mata Kuliah Utama\n' +
+        '\n' +
+        'Mata kuliah utama umumnya mencakup algoritma '
+    },
+    {
+      itemId: 'program_studi-31',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Teknologi Informasi - Skill Yang Dipelajari\n' +
+        '# Skill Yang Dipelajari\n' +
+        '\n' +
+        'Skill yang dibangun meliputi coding s'
+    },
+    {
+      itemId: 'program_studi-32',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Teknologi Informasi - Prospek Kerja\n' +
+        '# Prospek Kerja\n' +
+        '\n' +
+        'Prospek kerja lulusan mencakup software engineer, web'
+    },
+    {
+      itemId: 'program_studi-33',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Teknologi Informasi - Career Path\n' +
+        '# Career Path\n' +
+        '\n' +
+        'Career path biasanya dimulai dari junior developer atau I'
+    },
+    {
+      itemId: 'program_studi-34',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Teknologi Informasi - Contoh Pekerjaan\n' +
+        '# Contoh Pekerjaan\n' +
+        '\n' +
+        'Contoh pekerjaan sehari-hari meliputi membangun'
+    },
+    {
+      itemId: 'program_studi-35',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md',
+      reason: 'entity_mismatch',
+      queryEntities: [Object],
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Teknologi Informasi - Output Lulusan\n' +
+        '# Output Lulusan\n' +
+        '\n' +
+        'Output lulusan adalah talenta teknis yang mampu men'
+    },
+    {
+      itemId: 'scholarship-36',
+      filename: 'docs/retrieval/knowledge_domains/scholarship.md',
+      reason: 'low_score',
+      score: 0,
+      exactMatchMeta: [Object],
+      isGlobalDiscount: false,
+      isProgramTrainingMatch: null,
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Scholarship - scholarship\n' +
+        'Scholarship docs guidance\n' +
+        '\n' +
+        'Purpose:\n' +
+        '- Keep scholarship-related content in dedica'
+    },
+    {
+      itemId: 'tuition_fee-38',
+      filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+      reason: 'low_score',
+      score: 0,
+      exactMatchMeta: [Object],
+      isGlobalDiscount: false,
+      isProgramTrainingMatch: null,
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Tuition Fee - tuition fee\n' +
+        '- Metadata: `category=tuition`, `topic=fee_breakdown`. Chunking:\n' +
+        '- Split per pro'
+    },
+    {
+      itemId: 'exchange_program-39',
+      filename: 'docs/retrieval/knowledge_domains/exchange_program.md',
+      reason: 'low_score',
+      score: 0,
+      exactMatchMeta: [Object],
+      isGlobalDiscount: false,
+      isProgramTrainingMatch: null,
+      itemEntities: [Object],
+      chunkPreview: 'Program Studi Exchange Program - exchange program\n' +
+        'Exchange Program docs guidance\n' +
+        '\n' +
+        'Purpose:\n' +
+        '- Specific guidance for stude'
+    }
+  ]
+}
+[TRACE_COST_BEST_EXACT_CANDIDATE] {
+  id: 'program_studi-12',
+  filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+  exactMatchScore: 100,
+  matchMeta: { waveGroupMatched: false },
+  itemEntities: {
+    program: 'SI',
+    programMode: null,
+    wave: null,
+    waveGroup: null,
+    academicYear: null,
+    partner: null,
+    campus: null,
+    jalur: null,
+    feeType: null,
+    category: 'PROGRAM_STUDI',
+    pageNumber: null
+  },
+  chunkPreview: 'Program Studi Sistem Informasi - Ringkasan Program\n' +
+    '# Ringkasan Program\n' +
+    '\n' +
+    'Program Studi Sistem Informasi berfokus pada car'
+}
+[TRACE_COST_INCLUDE_EXTRA_FEE_SIGNAL_CANDIDATES] {
+  addedCount: 3,
+  addedCandidateIds: [
+    'added-from-backup-1',
+    'added-from-backup-3',
+    'added-from-backup-4'
+  ],
+  reason: 'include_high_priority_fee_signal_candidates_beyond_topK'
+}
+[TRACE_COST_SELECT_3_5_EXPAND_SAME_FILE] {
+  topChunksCount: 6,
+  uniqueTrainingIds: [],
+  reason: 'expand_to_include_all_chunks_from_same_file_for_fee_table_completeness'
+}
+[TRACE_COST_SELECT_4_TOP_CHUNKS] {
+  selectedCount: 6,
+  topChunks: [
+    {
+      id: 'added-from-backup-2',
+      trainingId: null,
+      filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+      sourceFile: null,
+      chunkType: 'COST',
+      programName: 'SK',
+      wave: '1',
+      updatedAt: undefined,
+      source: undefined,
+      category: undefined,
+      chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n' +
+        '1. Pendaftaran 500.000\n' +
+        '2. Dana Pendidikan ',
+      entities: [Object]
+    },
+    {
+      id: 'tuition_fee-37',
+      trainingId: null,
+      filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+      sourceFile: null,
+      chunkType: 'COST',
+      programName: null,
+      wave: null,
+      updatedAt: undefined,
+      source: undefined,
+      category: undefined,
+      chunkPreview: 'Program Studi Tuition Fee - tuition fee\n' +
+        'Tuition Fee knowledge\n' +
+        '\n' +
+        'Pertanyaan cepat:\n' +
+        '- Biaya kuliah bera',
+      entities: [Object]
+    },
+    {
+      id: 'program_studi-12',
+      trainingId: null,
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      sourceFile: null,
+      chunkType: 'PROGRAM',
+      programName: 'SI',
+      wave: null,
+      updatedAt: undefined,
+      source: undefined,
+      category: undefined,
+      chunkPreview: 'Program Studi Sistem Informasi - Ringkasan Program\n' +
+        '# Ringkasan Program\n' +
+        '\n' +
+        'Program Studi Sistem Informa',
+      entities: [Object]
+    },
+    {
+      id: 'added-from-backup-1',
+      trainingId: null,
+      filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+      sourceFile: null,
+      chunkType: 'COST',
+      programName: 'SI',
+      wave: 'KHUSUS',
+      updatedAt: undefined,
+      source: undefined,
+      category: undefined,
+      chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\n' +
+        'No. Jenis Biaya Rp Waktu Pembayaran\n' +
+        '1.',
+      entities: [Object]
+    },
+    {
+      id: 'added-from-backup-3',
+      trainingId: null,
+      filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+      sourceFile: null,
+      chunkType: 'COST',
+      programName: null,
+      wave: 'KHUSUS',
+      updatedAt: undefined,
+      source: undefined,
+      category: undefined,
+      chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n' +
+        '1. Pendaftaran 500.000\n' +
+        '2. Biaya Registrasi 10.000.000\n' +
+        '3',
+      entities: [Object]
+    },
+    {
+      id: 'added-from-backup-4',
+      trainingId: null,
+      filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+      sourceFile: null,
+      chunkType: 'COST',
+      programName: null,
+      wave: 'KHUSUS',
+      updatedAt: undefined,
+      source: undefined,
+      category: undefined,
+      chunkPreview: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n' +
+        '1. Pendaftaran 3.000.000\n' +
+        '2. Dana Pendidikan Pok',
+      entities: [Object]
+    }
+  ]
+}
+[TRACE_PARSE_6a_ALL_CHUNKS] {
+  inputChunksCount: 6,
+  inputChunks: [
+    {
+      id: 'added-from-backup-2',
+      filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+      updatedAt: undefined,
+      chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n' +
+        '1. Pendaftaran 500.000\n' +
+        '2. Dana Pendidikan '
+    },
+    {
+      id: 'tuition_fee-37',
+      filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+      updatedAt: undefined,
+      chunkPreview: 'Program Studi Tuition Fee - tuition fee\n' +
+        'Tuition Fee knowledge\n' +
+        '\n' +
+        'Pertanyaan cepat:\n' +
+        '- Biaya kuliah bera'
+    },
+    {
+      id: 'program_studi-12',
+      filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+      updatedAt: undefined,
+      chunkPreview: 'Program Studi Sistem Informasi - Ringkasan Program\n' +
+        '# Ringkasan Program\n' +
+        '\n' +
+        'Program Studi Sistem Informa'
+    },
+    {
+      id: 'added-from-backup-1',
+      filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+      updatedAt: undefined,
+      chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\n' +
+        'No. Jenis Biaya Rp Waktu Pembayaran\n' +
+        '1.'
+    },
+    {
+      id: 'added-from-backup-3',
+      filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+      updatedAt: undefined,
+      chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n' +
+        '1. Pendaftaran 500.000\n' +
+        '2. Biaya Registrasi 10.000.000\n' +
+        '3'
+    },
+    {
+      id: 'added-from-backup-4',
+      filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+      updatedAt: undefined,
+      chunkPreview: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n' +
+        '1. Pendaftaran 3.000.000\n' +
+        '2. Dana Pendidikan Pok'
+    }
+  ]
+}
+[TRACE_PARSE_FEE_INPUT] {
+  filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-2',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n' +
+    '1. Pendaftaran 500.000\n' +
+    '2. Dana Pendidikan Pokok (DPP) 11.000.000\n' +
+    'Penjelasan Tambahan : Potongan Biaya Pendaftaran : Rp. 250.000,- Gelombang I;',
+  academicYear: null
+}
+[TRACE_PARSE_CHUNK_1_INPUT] {
+  filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-2',
+  isGlobalDiscount: true,
+  queryProgram: 'SI',
+  entProgram: 'SK',
+  queryWave: '1A',
+  entWave: '1',
+  queryWaveGroup: undefined,
+  entWaveGroup: '1',
+  queryAcademicYear: undefined,
+  entAcademicYear: '2026',
+  chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n' +
+    '1. Pendaftaran 500.000\n' +
+    '2. Dana Pendidikan '
+}
+[TRACE_PARSE_CHUNK_2_MONEY] {
+  filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  registrationFee: null,
+  dpp: null,
+  dppDiscount: 'Rp 250.000,',
+  registrationDiscount: 'Rp 250.000',
+  ukt: null,
+  scholarship: null
+}
+[TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+  filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  registrationFee: false,
+  dpp: false,
+  dppDiscount: true,
+  registrationDiscount: true,
+  ukt: false,
+  scholarship: false,
+  hasAnyCost: 'Rp 250.000,'
+}
+[VALIDATE_PARSED_FEE_STRUCT_INPUT] {
+  chunkObjKeys: [ 'id', 'filename', 'chunk', 'trainingId', 'metadata' ],
+  chunkObjOcrQualityScore: undefined,
+  chunkObjFilename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  chunkObjSource: undefined
+}
+[VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+  field: 'dppDiscount',
+  sourceChunkForValidation: {
+    chunk: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n' +
+      '1. Pendaftaran 500.000\n' +
+      '2. Dana Pendidikan Pokok (DPP) 11.000.000\n' +
+      'Penjelasan Tambahan : Potongan Biaya Pendaftaran : Rp. 250.000,- Gelombang I; Rp.200.000 Gelombang II\n',
+    filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+    sourceFile: null,
+    ocrQualityScore: null,
+    source: null,
+    lowConfidence: null
+  }
+}
+[NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '250000', sourceChunksLength: 1, context: '' }
+[NUMERIC_AUDIT] chunk {
+  textPreview: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n' +
+    '1. Pendaftaran 500.000',
+  repairedPreview: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026 2027 1. Pendaftaran 500.000',
+  digitsOnly: '202620271500000211000000250000200000',
+  digitsOnlyRepaired: '202620271500000211000000250000200000',
+  fname: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  sourceFile: null,
+  isOfficialDoc: true,
+  ocrQuality: null
+}
+[NUMERIC_AUDIT] parseAttempts {
+  tokens: [
+    'Rp. 250.000,',
+    'Rp.200.000 ',
+    '2026 2027 1. ',
+    '500.000 2. ',
+    '11.000.000 ',
+    '250.000,',
+    '200.000 '
+  ],
+  parsedAttempts: [
+       250000,  200000,
+    202620271, 5000002,
+     11000000,  250000,
+       200000
+  ]
+}
+[NUMERIC_AUDIT] matchedFoundIn-parse {
+  fname: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  token: 'Rp. 250.000,',
+  numericNormalized: 250000
+}
+[NUMERIC_AUDIT] finalDecision {
+  foundInCount: 1,
+  officialSourcesCount: 1,
+  firstFoundInOcrQuality: null,
+  firstFoundInIsOfficial: true
+}
+[NUMERIC_AUDIT] returnReason found_in_official
+[VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+  field: 'registrationDiscount',
+  sourceChunkForValidation: {
+    chunk: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n' +
+      '1. Pendaftaran 500.000\n' +
+      '2. Dana Pendidikan Pokok (DPP) 11.000.000\n' +
+      'Penjelasan Tambahan : Potongan Biaya Pendaftaran : Rp. 250.000,- Gelombang I; Rp.200.000 Gelombang II\n',
+    filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+    sourceFile: null,
+    ocrQualityScore: null,
+    source: null,
+    lowConfidence: null
+  }
+}
+[NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '250000', sourceChunksLength: 1, context: '' }
+[NUMERIC_AUDIT] chunk {
+  textPreview: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n' +
+    '1. Pendaftaran 500.000',
+  repairedPreview: 'RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026 2027 1. Pendaftaran 500.000',
+  digitsOnly: '202620271500000211000000250000200000',
+  digitsOnlyRepaired: '202620271500000211000000250000200000',
+  fname: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  sourceFile: null,
+  isOfficialDoc: true,
+  ocrQuality: null
+}
+[NUMERIC_AUDIT] parseAttempts {
+  tokens: [
+    'Rp. 250.000,',
+    'Rp.200.000 ',
+    '2026 2027 1. ',
+    '500.000 2. ',
+    '11.000.000 ',
+    '250.000,',
+    '200.000 '
+  ],
+  parsedAttempts: [
+       250000,  200000,
+    202620271, 5000002,
+     11000000,  250000,
+       200000
+  ]
+}
+[NUMERIC_AUDIT] matchedFoundIn-parse {
+  fname: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  token: 'Rp. 250.000,',
+  numericNormalized: 250000
+}
+[NUMERIC_AUDIT] finalDecision {
+  foundInCount: 1,
+  officialSourcesCount: 1,
+  firstFoundInOcrQuality: null,
+  firstFoundInIsOfficial: true
+}
+[NUMERIC_AUDIT] returnReason found_in_official
+[TRACE_PARSE_CHUNK_3_VALIDATION] {
+  filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-2',
+  isValid: true,
+  feeStruct: {
+    program: 'SK',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    dppDiscount: 'Rp 250.000,',
+    registrationDiscount: 'Rp 250.000',
+    ukt: null,
+    scholarship: null,
+    isGlobalDiscount: true
+  }
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-2',
+  feeStruct: {
+    program: 'SK',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    registrationDiscount: 'Rp 250.000',
+    dppDiscount: 'Rp 250.000,',
+    ukt: null,
+    scholarship: null,
+    isGlobalDiscount: true
+  }
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-2',
+  parsed: {
+    program: 'SK',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    registrationDiscount: 'Rp 250.000',
+    dppDiscount: 'Rp 250.000,',
+    ukt: null,
+    scholarship: null
+  }
+}
+[TRACE_PARSE_FEE_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  chunkId: 'tuition_fee-37',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  chunkPreview: 'Program Studi Tuition Fee - tuition fee\n' +
+    'Tuition Fee knowledge\n' +
+    '\n' +
+    'Pertanyaan cepat:\n' +
+    '- Biaya kuliah berapa? - Biaya pendaftaran dan DPP berapa? - Ada potongan atau beasiswa biaya kuliah? Jawaban ringkas:\n',
+  academicYear: null
+}
+[TRACE_PARSE_CHUNK_1_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  chunkId: 'tuition_fee-37',
+  isGlobalDiscount: true,
+  queryProgram: 'SI',
+  entProgram: null,
+  queryWave: '1A',
+  entWave: null,
+  queryWaveGroup: undefined,
+  entWaveGroup: null,
+  queryAcademicYear: undefined,
+  entAcademicYear: null,
+  chunkPreview: 'Program Studi Tuition Fee - tuition fee\n' +
+    'Tuition Fee knowledge\n' +
+    '\n' +
+    'Pertanyaan cepat:\n' +
+    '- Biaya kuliah bera'
+}
+[TRACE_PARSE_CHUNK_2_MONEY] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  registrationFee: null,
+  dpp: null,
+  dppDiscount: null,
+  registrationDiscount: null,
+  ukt: null,
+  scholarship: null
+}
+[TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  registrationFee: false,
+  dpp: false,
+  dppDiscount: false,
+  registrationDiscount: false,
+  ukt: false,
+  scholarship: false,
+  hasAnyCost: null
+}
+[TRACE_PARSE_CHUNK_4_EXIT] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  reason: 'no_money_fields_found'
+}
+[TRACE_PARSE_FEE_REJECT_REASON] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  chunkId: 'tuition_fee-37',
+  reason: 'no_money_fields_found',
+  queryProgram: 'SI',
+  entProgram: null,
+  queryWave: '1A',
+  entWave: null,
+  queryWaveGroup: undefined,
+  entWaveGroup: null,
+  queryAcademicYear: undefined,
+  entAcademicYear: null,
+  isGlobalDiscount: true,
+  chunkPreview: 'Program Studi Tuition Fee - tuition fee\n' +
+    'Tuition Fee knowledge\n' +
+    '\n' +
+    'Pertanyaan cepat:\n' +
+    '- Biaya kuliah bera'
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+  chunkId: 'tuition_fee-37',
+  parsed: null
+}
+[TRACE_PARSE_FEE_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+  chunkId: 'program_studi-12',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  chunkPreview: 'Program Studi Sistem Informasi - Ringkasan Program\n' +
+    '# Ringkasan Program\n' +
+    '\n' +
+    'Program Studi Sistem Informasi berfokus pada cara merancang solusi digital yang menghubungkan kebutuhan bisnis, proses organisas',
+  academicYear: null
+}
+[TRACE_PARSE_CHUNK_1_INPUT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+  chunkId: 'program_studi-12',
+  isGlobalDiscount: false,
+  queryProgram: 'SI',
+  entProgram: 'SI',
+  queryWave: '1A',
+  entWave: null,
+  queryWaveGroup: undefined,
+  entWaveGroup: null,
+  queryAcademicYear: undefined,
+  entAcademicYear: null,
+  chunkPreview: 'Program Studi Sistem Informasi - Ringkasan Program\n' +
+    '# Ringkasan Program\n' +
+    '\n' +
+    'Program Studi Sistem Informa'
+}
+[TRACE_PARSE_CHUNK_2_MONEY] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+  registrationFee: null,
+  dpp: null,
+  dppDiscount: null,
+  registrationDiscount: null,
+  ukt: null,
+  scholarship: null
+}
+[TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+  registrationFee: false,
+  dpp: false,
+  dppDiscount: false,
+  registrationDiscount: false,
+  ukt: false,
+  scholarship: false,
+  hasAnyCost: null
+}
+[TRACE_PARSE_CHUNK_4_EXIT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+  reason: 'no_money_fields_found'
+}
+[TRACE_PARSE_FEE_REJECT_REASON] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+  chunkId: 'program_studi-12',
+  reason: 'no_money_fields_found',
+  queryProgram: 'SI',
+  entProgram: 'SI',
+  queryWave: '1A',
+  entWave: null,
+  queryWaveGroup: undefined,
+  entWaveGroup: null,
+  queryAcademicYear: undefined,
+  entAcademicYear: null,
+  isGlobalDiscount: false,
+  chunkPreview: 'Program Studi Sistem Informasi - Ringkasan Program\n' +
+    '# Ringkasan Program\n' +
+    '\n' +
+    'Program Studi Sistem Informa'
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md',
+  chunkId: 'program_studi-12',
+  parsed: null
+}
+[TRACE_PARSE_FEE_INPUT] {
+  filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-1',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\n' +
+    'No. Jenis Biaya Rp Waktu Pembayaran\n' +
+    '1. Pendaftaran 500.000 Pada Saat Daftar\n' +
+    '2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d S',
+  academicYear: null
+}
+[TRACE_PARSE_CHUNK_1_INPUT] {
+  filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-1',
+  isGlobalDiscount: true,
+  queryProgram: 'SI',
+  entProgram: 'SI',
+  queryWave: '1A',
+  entWave: 'KHUSUS',
+  queryWaveGroup: undefined,
+  entWaveGroup: 'KHUSUS',
+  queryAcademicYear: undefined,
+  entAcademicYear: '2026',
+  chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\n' +
+    'No. Jenis Biaya Rp Waktu Pembayaran\n' +
+    '1.'
+}
+[TRACE_PARSE_CHUNK_2_MONEY] {
+  filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  registrationFee: null,
+  dpp: null,
+  dppDiscount: 'Rp 250.000,',
+  registrationDiscount: 'Rp 300.000',
+  ukt: null,
+  scholarship: null
+}
+[TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+  filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  registrationFee: false,
+  dpp: false,
+  dppDiscount: true,
+  registrationDiscount: true,
+  ukt: false,
+  scholarship: false,
+  hasAnyCost: 'Rp 250.000,'
+}
+[VALIDATE_PARSED_FEE_STRUCT_INPUT] {
+  chunkObjKeys: [ 'id', 'filename', 'chunk', 'trainingId', 'metadata' ],
+  chunkObjOcrQualityScore: undefined,
+  chunkObjFilename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  chunkObjSource: undefined
+}
+[VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+  field: 'dppDiscount',
+  sourceChunkForValidation: {
+    chunk: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\n' +
+      'No. Jenis Biaya Rp Waktu Pembayaran\n' +
+      '1. Pendaftaran 500.000 Pada Saat Daftar\n' +
+      '2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\n' +
+      'Penjelasan Tambahan :\n' +
+      'Potongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\n' +
+      'Rp. 250.000,- Jika Mendaftar pada Gelombang I\n' +
+      'Rp. 200.000,- Jika Mendaftar pada Gelombang II\n',
+    filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+    sourceFile: null,
+    ocrQualityScore: null,
+    source: null,
+    lowConfidence: null
+  }
+}
+[NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '250000', sourceChunksLength: 1, context: '' }
+[NUMERIC_AUDIT] chunk {
+  textPreview: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\n' +
+    'No. Jenis Biaya Rp',
+  repairedPreview: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026 2027 No. Jenis Biaya Rp',
+  digitsOnly: '2026202715000002140000002300000250000200000',
+  digitsOnlyRepaired: '2026202715000002140000002300000250000200000',
+  fname: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  sourceFile: null,
+  isOfficialDoc: true,
+  ocrQuality: null
+}
+[NUMERIC_AUDIT] parseAttempts {
+  tokens: [
+    'Rp ',          'Rp. 300.000, ',
+    'Rp. 250.000,', 'Rp. 200.000,',
+    '2026 2027 ',   '1. ',
+    '500.000 ',     '2. ',
+    '14.000.000 ',  '2 ',
+    '300.000, ',    '250.000,',
+    '200.000,'
+  ],
+  parsedAttempts: [
+    null,     300000,
+    250000,   200000,
+    20262027, 1,
+    500000,   2,
+    14000000, 2,
+    300000,   250000,
+    200000
+  ]
+}
+[NUMERIC_AUDIT] matchedFoundIn-parse {
+  fname: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  token: 'Rp. 250.000,',
+  numericNormalized: 250000
+}
+[NUMERIC_AUDIT] finalDecision {
+  foundInCount: 1,
+  officialSourcesCount: 1,
+  firstFoundInOcrQuality: null,
+  firstFoundInIsOfficial: true
+}
+[NUMERIC_AUDIT] returnReason found_in_official
+[VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+  field: 'registrationDiscount',
+  sourceChunkForValidation: {
+    chunk: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\n' +
+      'No. Jenis Biaya Rp Waktu Pembayaran\n' +
+      '1. Pendaftaran 500.000 Pada Saat Daftar\n' +
+      '2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\n' +
+      'Penjelasan Tambahan :\n' +
+      'Potongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\n' +
+      'Rp. 250.000,- Jika Mendaftar pada Gelombang I\n' +
+      'Rp. 200.000,- Jika Mendaftar pada Gelombang II\n',
+    filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+    sourceFile: null,
+    ocrQualityScore: null,
+    source: null,
+    lowConfidence: null
+  }
+}
+[NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '300000', sourceChunksLength: 1, context: '' }
+[NUMERIC_AUDIT] chunk {
+  textPreview: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\n' +
+    'No. Jenis Biaya Rp',
+  repairedPreview: 'RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026 2027 No. Jenis Biaya Rp',
+  digitsOnly: '2026202715000002140000002300000250000200000',
+  digitsOnlyRepaired: '2026202715000002140000002300000250000200000',
+  fname: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  sourceFile: null,
+  isOfficialDoc: true,
+  ocrQuality: null
+}
+[NUMERIC_AUDIT] parseAttempts {
+  tokens: [
+    'Rp ',          'Rp. 300.000, ',
+    'Rp. 250.000,', 'Rp. 200.000,',
+    '2026 2027 ',   '1. ',
+    '500.000 ',     '2. ',
+    '14.000.000 ',  '2 ',
+    '300.000, ',    '250.000,',
+    '200.000,'
+  ],
+  parsedAttempts: [
+    null,     300000,
+    250000,   200000,
+    20262027, 1,
+    500000,   2,
+    14000000, 2,
+    300000,   250000,
+    200000
+  ]
+}
+[NUMERIC_AUDIT] matchedFoundIn-parse {
+  fname: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  token: 'Rp. 300.000, ',
+  numericNormalized: 300000
+}
+[NUMERIC_AUDIT] finalDecision {
+  foundInCount: 1,
+  officialSourcesCount: 1,
+  firstFoundInOcrQuality: null,
+  firstFoundInIsOfficial: true
+}
+[NUMERIC_AUDIT] returnReason found_in_official
+[TRACE_PARSE_CHUNK_3_VALIDATION] {
+  filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-1',
+  isValid: true,
+  feeStruct: {
+    program: 'SI',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    dppDiscount: 'Rp 250.000,',
+    registrationDiscount: 'Rp 300.000',
+    ukt: null,
+    scholarship: null,
+    isGlobalDiscount: true
+  }
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-1',
+  feeStruct: {
+    program: 'SI',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    registrationDiscount: 'Rp 300.000',
+    dppDiscount: 'Rp 250.000,',
+    ukt: null,
+    scholarship: null,
+    isGlobalDiscount: true
+  }
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-1',
+  parsed: {
+    program: 'SI',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    registrationDiscount: 'Rp 300.000',
+    dppDiscount: 'Rp 250.000,',
+    ukt: null,
+    scholarship: null
+  }
+}
+[TRACE_PARSE_FEE_INPUT] {
+  filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-3',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n' +
+    '1. Pendaftaran 500.000\n' +
+    '2. Biaya Registrasi 10.000.000\n' +
+    '3. Biaya Pendidikan Per Semester 4.500.000\n' +
+    'Penjelasan Tambahan : Potongan Biaya Pendaftaran : Rp.300.',
+  academicYear: null
+}
+[TRACE_PARSE_CHUNK_1_INPUT] {
+  filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-3',
+  isGlobalDiscount: true,
+  queryProgram: 'SI',
+  entProgram: null,
+  queryWave: '1A',
+  entWave: 'KHUSUS',
+  queryWaveGroup: undefined,
+  entWaveGroup: 'KHUSUS',
+  queryAcademicYear: undefined,
+  entAcademicYear: '2026',
+  chunkPreview: 'RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n' +
+    '1. Pendaftaran 500.000\n' +
+    '2. Biaya Registrasi 10.000.000\n' +
+    '3'
+}
+[TRACE_PARSE_CHUNK_2_MONEY] {
+  filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  registrationFee: null,
+  dpp: null,
+  dppDiscount: null,
+  registrationDiscount: 'Rp 300.000',
+  ukt: null,
+  scholarship: null
+}
+[TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+  filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  registrationFee: false,
+  dpp: false,
+  dppDiscount: false,
+  registrationDiscount: true,
+  ukt: false,
+  scholarship: false,
+  hasAnyCost: 'Rp 300.000'
+}
+[VALIDATE_PARSED_FEE_STRUCT_INPUT] {
+  chunkObjKeys: [ 'id', 'filename', 'chunk', 'trainingId', 'metadata' ],
+  chunkObjOcrQualityScore: undefined,
+  chunkObjFilename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  chunkObjSource: undefined
+}
+[VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+  field: 'registrationDiscount',
+  sourceChunkForValidation: {
+    chunk: 'RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n' +
+      '1. Pendaftaran 500.000\n' +
+      '2. Biaya Registrasi 10.000.000\n' +
+      '3. Biaya Pendidikan Per Semester 4.500.000\n' +
+      'Penjelasan Tambahan : Potongan Biaya Pendaftaran : Rp.300.000 Gelombang Khusus\n',
+    filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+    sourceFile: null,
+    ocrQualityScore: null,
+    source: null,
+    lowConfidence: null
+  }
+}
+[NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '300000', sourceChunksLength: 1, context: '' }
+[NUMERIC_AUDIT] chunk {
+  textPreview: 'RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n' +
+    '1. Pendaftaran 500.000\n' +
+    '2. Biaya Reg',
+  repairedPreview: 'RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026 2027 1. Pendaftaran 500.000 2. Biaya Reg',
+  digitsOnly: '320262027150000021000000034500000300000',
+  digitsOnlyRepaired: '320262027150000021000000034500000300000',
+  fname: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  sourceFile: null,
+  isOfficialDoc: true,
+  ocrQuality: null
+}
+[NUMERIC_AUDIT] parseAttempts {
+  tokens: [
+    'Rp.300.000 ',
+    '3 ',
+    '2026 2027 1. ',
+    '500.000 2. ',
+    '10.000.000 3. ',
+    '4.500.000 ',
+    '300.000 '
+  ],
+  parsedAttempts: [
+       300000,       3,
+    202620271, 5000002,
+    100000003, 4500000,
+       300000
+  ]
+}
+[NUMERIC_AUDIT] matchedFoundIn-parse {
+  fname: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  token: 'Rp.300.000 ',
+  numericNormalized: 300000
+}
+[NUMERIC_AUDIT] finalDecision {
+  foundInCount: 1,
+  officialSourcesCount: 1,
+  firstFoundInOcrQuality: null,
+  firstFoundInIsOfficial: true
+}
+[NUMERIC_AUDIT] returnReason found_in_official
+[TRACE_PARSE_CHUNK_3_VALIDATION] {
+  filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-3',
+  isValid: true,
+  feeStruct: {
+    program: null,
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    dppDiscount: null,
+    registrationDiscount: 'Rp 300.000',
+    ukt: null,
+    scholarship: null,
+    isGlobalDiscount: true
+  }
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-3',
+  feeStruct: {
+    program: null,
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    registrationDiscount: 'Rp 300.000',
+    dppDiscount: null,
+    ukt: null,
+    scholarship: null,
+    isGlobalDiscount: true
+  }
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-3',
+  parsed: {
+    program: null,
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    registrationDiscount: 'Rp 300.000',
+    dppDiscount: null,
+    ukt: null,
+    scholarship: null
+  }
+}
+[TRACE_PARSE_FEE_INPUT] {
+  filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-4',
+  queryEntities: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  },
+  chunkPreview: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n' +
+    '1. Pendaftaran 3.000.000\n' +
+    '2. Dana Pendidikan Pokok 20.000.000\n' +
+    'Penjelasan Potongan : Rp.1.500.000 Gelombang Khusus, Rp.1.250.000 Gelombang I\n',
+  academicYear: null
+}
+[TRACE_PARSE_CHUNK_1_INPUT] {
+  filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-4',
+  isGlobalDiscount: true,
+  queryProgram: 'SI',
+  entProgram: null,
+  queryWave: '1A',
+  entWave: 'KHUSUS',
+  queryWaveGroup: undefined,
+  entWaveGroup: 'KHUSUS',
+  queryAcademicYear: undefined,
+  entAcademicYear: '2026',
+  chunkPreview: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n' +
+    '1. Pendaftaran 3.000.000\n' +
+    '2. Dana Pendidikan Pok'
+}
+[TRACE_PARSE_CHUNK_2_MONEY] {
+  filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  registrationFee: null,
+  dpp: null,
+  dppDiscount: 'Rp 1.250.000 ',
+  registrationDiscount: 'Rp 1.500.000',
+  ukt: null,
+  scholarship: null
+}
+[TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+  filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  registrationFee: false,
+  dpp: false,
+  dppDiscount: true,
+  registrationDiscount: true,
+  ukt: false,
+  scholarship: false,
+  hasAnyCost: 'Rp 1.250.000 '
+}
+[VALIDATE_PARSED_FEE_STRUCT_INPUT] {
+  chunkObjKeys: [ 'id', 'filename', 'chunk', 'trainingId', 'metadata' ],
+  chunkObjOcrQualityScore: undefined,
+  chunkObjFilename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  chunkObjSource: undefined
+}
+[VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+  field: 'dppDiscount',
+  sourceChunkForValidation: {
+    chunk: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n' +
+      '1. Pendaftaran 3.000.000\n' +
+      '2. Dana Pendidikan Pokok 20.000.000\n' +
+      'Penjelasan Potongan : Rp.1.500.000 Gelombang Khusus, Rp.1.250.000 Gelombang I\n',
+    filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+    sourceFile: null,
+    ocrQualityScore: null,
+    source: null,
+    lowConfidence: null
+  }
+}
+[NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '1250000', sourceChunksLength: 1, context: '' }
+[NUMERIC_AUDIT] chunk {
+  textPreview: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n' +
+    '1. Pendaftaran 3.000.000\n' +
+    '2.',
+  repairedPreview: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026 2027 1. Pendaftaran 3.000.000 2.',
+  digitsOnly: '202620271300000022000000015000001250000',
+  digitsOnlyRepaired: '202620271300000022000000015000001250000',
+  fname: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  sourceFile: null,
+  isOfficialDoc: true,
+  ocrQuality: null
+}
+[NUMERIC_AUDIT] parseAttempts {
+  tokens: [
+    'Rp.1.500.000 ',
+    'Rp.1.250.000 ',
+    '2026 2027 1. ',
+    '3.000.000 2. ',
+    '20.000.000 ',
+    '1.500.000 ',
+    '1.250.000 '
+  ],
+  parsedAttempts: [
+      1500000,  1250000,
+    202620271, 30000002,
+     20000000,  1500000,
+      1250000
+  ]
+}
+[NUMERIC_AUDIT] matchedFoundIn-parse {
+  fname: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  token: 'Rp.1.250.000 ',
+  numericNormalized: 1250000
+}
+[NUMERIC_AUDIT] finalDecision {
+  foundInCount: 1,
+  officialSourcesCount: 1,
+  firstFoundInOcrQuality: null,
+  firstFoundInIsOfficial: true
+}
+[NUMERIC_AUDIT] returnReason found_in_official
+[VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+  field: 'registrationDiscount',
+  sourceChunkForValidation: {
+    chunk: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n' +
+      '1. Pendaftaran 3.000.000\n' +
+      '2. Dana Pendidikan Pokok 20.000.000\n' +
+      'Penjelasan Potongan : Rp.1.500.000 Gelombang Khusus, Rp.1.250.000 Gelombang I\n',
+    filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+    sourceFile: null,
+    ocrQualityScore: null,
+    source: null,
+    lowConfidence: null
+  }
+}
+[NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '1500000', sourceChunksLength: 1, context: '' }
+[NUMERIC_AUDIT] chunk {
+  textPreview: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n' +
+    '1. Pendaftaran 3.000.000\n' +
+    '2.',
+  repairedPreview: 'RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026 2027 1. Pendaftaran 3.000.000 2.',
+  digitsOnly: '202620271300000022000000015000001250000',
+  digitsOnlyRepaired: '202620271300000022000000015000001250000',
+  fname: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  sourceFile: null,
+  isOfficialDoc: true,
+  ocrQuality: null
+}
+[NUMERIC_AUDIT] parseAttempts {
+  tokens: [
+    'Rp.1.500.000 ',
+    'Rp.1.250.000 ',
+    '2026 2027 1. ',
+    '3.000.000 2. ',
+    '20.000.000 ',
+    '1.500.000 ',
+    '1.250.000 '
+  ],
+  parsedAttempts: [
+      1500000,  1250000,
+    202620271, 30000002,
+     20000000,  1500000,
+      1250000
+  ]
+}
+[NUMERIC_AUDIT] matchedFoundIn-parse {
+  fname: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  token: 'Rp.1.500.000 ',
+  numericNormalized: 1500000
+}
+[NUMERIC_AUDIT] finalDecision {
+  foundInCount: 1,
+  officialSourcesCount: 1,
+  firstFoundInOcrQuality: null,
+  firstFoundInIsOfficial: true
+}
+[NUMERIC_AUDIT] returnReason found_in_official
+[TRACE_PARSE_CHUNK_3_VALIDATION] {
+  filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-4',
+  isValid: true,
+  feeStruct: {
+    program: null,
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    dppDiscount: 'Rp 1.250.000 ',
+    registrationDiscount: 'Rp 1.500.000',
+    ukt: null,
+    scholarship: null,
+    isGlobalDiscount: true
+  }
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-4',
+  feeStruct: {
+    program: null,
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    registrationDiscount: 'Rp 1.500.000',
+    dppDiscount: 'Rp 1.250.000 ',
+    ukt: null,
+    scholarship: null,
+    isGlobalDiscount: true
+  }
+}
+[TRACE_PARSE_FEE_RESULT] {
+  filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  chunkId: 'added-from-backup-4',
+  parsed: {
+    program: null,
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    registrationFee: null,
+    dpp: null,
+    registrationDiscount: 'Rp 1.500.000',
+    dppDiscount: 'Rp 1.250.000 ',
+    ukt: null,
+    scholarship: null
+  }
+}
+[TRACE_PARSE_6b_DISCOUNT_ONLY_BASE] {
+  message: 'No explicit cost candidates were found; using discount-only chunks as base candidates',
+  discountOnlyBaseCount: 4,
+  selectedType: 'discount_only_fallback'
+}
+[TRACE_FEE_STRUCT] {
+  costCandidatesCount: 4,
+  globalDiscountCandidatesCount: 4,
+  costCandidates: [
+    {
+      trainingId: null,
+      filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+      chunkType: 'COST',
+      programName: 'SK',
+      wave: '1A',
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationFee: null,
+      dpp: null,
+      sourceChunk: [Object]
+    },
+    {
+      trainingId: null,
+      filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+      chunkType: 'COST',
+      programName: 'SI',
+      wave: '1A',
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationFee: null,
+      dpp: null,
+      sourceChunk: [Object]
+    },
+    {
+      trainingId: null,
+      filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+      chunkType: 'COST',
+      programName: null,
+      wave: '1A',
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationFee: null,
+      dpp: null,
+      sourceChunk: [Object]
+    },
+    {
+      trainingId: null,
+      filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+      chunkType: 'COST',
+      programName: null,
+      wave: '1A',
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationFee: null,
+      dpp: null,
+      sourceChunk: [Object]
+    }
+  ],
+  globalDiscounts: [
+    {
+      trainingId: null,
+      filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+      chunkType: 'COST',
+      programName: 'SK',
+      wave: '1A',
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationDiscount: 'Rp 250.000',
+      dppDiscount: 'Rp 250.000,',
+      sourceChunk: [Object]
+    },
+    {
+      trainingId: null,
+      filename: 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+      chunkType: 'COST',
+      programName: 'SI',
+      wave: '1A',
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationDiscount: 'Rp 300.000',
+      dppDiscount: 'Rp 250.000,',
+      sourceChunk: [Object]
+    },
+    {
+      trainingId: null,
+      filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+      chunkType: 'COST',
+      programName: null,
+      wave: '1A',
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationDiscount: 'Rp 300.000',
+      dppDiscount: null,
+      sourceChunk: [Object]
+    },
+    {
+      trainingId: null,
+      filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+      chunkType: 'COST',
+      programName: null,
+      wave: '1A',
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationDiscount: 'Rp 1.500.000',
+      dppDiscount: 'Rp 1.250.000 ',
+      sourceChunk: [Object]
+    }
+  ]
+}
+[TRACE_PARSE_6c_BEFORE_YEAR_SELECT] {
+  queryEntitiesAcademicYear: null,
+  baseCandidatesCount: 4,
+  baseCandidates: [
+    {
+      program: 'SK',
+      wave: '1A',
+      academicYear: '2026',
+      parseYearKey: 2026,
+      updatedAt: null
+    },
+    {
+      program: 'SI',
+      wave: '1A',
+      academicYear: '2026',
+      parseYearKey: 2026,
+      updatedAt: null
+    },
+    {
+      program: null,
+      wave: '1A',
+      academicYear: '2026',
+      parseYearKey: 2026,
+      updatedAt: null
+    },
+    {
+      program: null,
+      wave: '1A',
+      academicYear: '2026',
+      parseYearKey: 2026,
+      updatedAt: null
+    }
+  ]
+}
+[TRACE_PARSE_6c1_YEAR_SELECTION] {
+  method: 'MAX_YEAR_NO_REQUESTED_YEAR',
+  allYears: [ 2026, 2026, 2026, 2026 ],
+  bestYear: 2026,
+  beforeCount: 4,
+  candidatesWithYear: 4,
+  applyYearFilter: true
+}
+[TRACE_PARSE_6d_AFTER_YEAR_SELECT] {
+  baseCandidatesCountAfterYearFilter: 4,
+  baseCandidates: [
+    {
+      program: 'SK',
+      wave: '1A',
+      academicYear: '2026',
+      updatedAt: null
+    },
+    {
+      program: 'SI',
+      wave: '1A',
+      academicYear: '2026',
+      updatedAt: null
+    },
+    {
+      program: null,
+      wave: '1A',
+      academicYear: '2026',
+      updatedAt: null
+    },
+    {
+      program: null,
+      wave: '1A',
+      academicYear: '2026',
+      updatedAt: null
+    }
+  ]
+}
+[TRACE_PARSE_6e_BASE_SELECTED] {
+  baseSelected: {
+    program: 'SK',
+    wave: '1A',
+    waveGroup: '1',
+    academicYear: '2026',
+    updatedAt: null,
+    registrationFee: null,
+    dpp: null
+  },
+  globalDiscountCandidatesCount: 4,
+  globalDiscounts: [
+    {
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationDiscount: 'Rp 250.000',
+      dppDiscount: 'Rp 250.000,',
+      updatedAt: null,
+      sourceChunk: [Object]
+    },
+    {
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationDiscount: 'Rp 300.000',
+      dppDiscount: 'Rp 250.000,',
+      updatedAt: null,
+      sourceChunk: [Object]
+    },
+    {
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationDiscount: 'Rp 300.000',
+      dppDiscount: null,
+      updatedAt: null,
+      sourceChunk: [Object]
+    },
+    {
+      waveGroup: '1',
+      academicYear: '2026',
+      registrationDiscount: 'Rp 1.500.000',
+      dppDiscount: 'Rp 1.250.000 ',
+      updatedAt: null,
+      sourceChunk: [Object]
+    }
+  ]
+}
+[TRACE_PARSE_6f_DISCOUNT_FILTER] {
+  baseWaveGroup: '1',
+  globalDiscountCandidatesCount: 4,
+  eligibleDiscountsAfterFilter: 2,
+  discountFilterResults: [
+    {
+      waveGroup: '1',
+      academicYear: '2026',
+      canMerge: true,
+      waveGroupMatch: true,
+      willBeIncluded: false
+    },
+    {
+      waveGroup: '1',
+      academicYear: '2026',
+      canMerge: true,
+      waveGroupMatch: true,
+      willBeIncluded: false
+    },
+    {
+      waveGroup: '1',
+      academicYear: '2026',
+      canMerge: true,
+      waveGroupMatch: true,
+      willBeIncluded: true
+    },
+    {
+      waveGroup: '1',
+      academicYear: '2026',
+      canMerge: true,
+      waveGroupMatch: true,
+      willBeIncluded: true
+    }
+  ]
+}
+[TRACE_PARSE_6g_BEST_DISCOUNTS] {
+  registrationDiscountFound: true,
+  registrationDiscountValue: 'Rp 300.000',
+  dppDiscountFound: true,
+  dppDiscountValue: 'Rp 1.250.000 ',
+  bestRegistrationDiscountSource: {
+    id: 'added-from-backup-3',
+    filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf'
+  },
+  bestDppDiscountSource: {
+    id: 'added-from-backup-4',
+    filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf'
+  }
+}
+[TRACE_PARSE_6f_CONFLICTS_DETECTED] {
+  conflictDetails: {
+    registrationFee: { rawValues: [], normalized: [], plausibleSample: [] },
+    dpp: { rawValues: [], normalized: [], plausibleSample: [] },
+    dppDiscount: {
+      rawValues: [Array],
+      normalized: [Array],
+      plausibleSample: [Array]
+    },
+    registrationDiscount: {
+      rawValues: [Array],
+      normalized: [Array],
+      plausibleSample: [Array]
+    },
+    ukt: { rawValues: [], normalized: [], plausibleSample: [] },
+    scholarship: { rawValues: [], normalized: [], plausibleSample: [] }
+  }
+}
+[TRACE_PARSE_6h_FINAL_MERGED] {
+  merged: {
+    program: 'SK',
+    wave: '1A',
+    academicYear: '2026',
+    registrationFee: null,
+    registrationDiscount: 'Rp 300.000',
+    dpp: null,
+    dppDiscount: 'Rp 1.250.000 ',
+    sourceChunksCount: 3
+  }
+}
+[TRACE_COST_PARSE_5_FEE_STRUCT] {
+  feeStructExists: true,
+  feeStruct: {
+    registrationFee: null,
+    dppFee: undefined,
+    dppDiscountAmount: undefined,
+    registrationDiscountAmount: undefined,
+    semester: undefined,
+    totalAwalMasuk: undefined,
+    academicYear: '2026',
+    wave: '1A',
+    waveGroup: '1',
+    program: 'SK',
+    sourceChunksCount: 3,
+    sourceChunks: [ [Object], [Object], [Object] ]
+  },
+  queryEntitiesRequested: {
+    intent: 'COST',
+    academicIntent: 'BIAYA',
+    program: 'SI',
+    wave: '1A'
+  }
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: 'rincian Biaya SK Tahun Ajaran 2026-2027.pdf',
+  id: 'added-from-backup-2',
+  score: 50,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: 'rincian Biaya D3 Tahun Ajaran 2026-2027.pdf',
+  id: 'added-from-backup-3',
+  score: 50,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_VALIDATE_SOURCE_TRUST] {
+  filename: 'rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf',
+  id: 'added-from-backup-4',
+  score: 50,
+  minScore: 30,
+  chunkType: null,
+  ocrQualityScore: null,
+  updatedAt: null,
+  lowConfidence: false
+}
+[TRACE_COST_SOURCE_TRUST_RESULTS] {
+  trustResults: [
+    {
+      chunkId: 'added-from-backup-2',
+      score: 50,
+      trusted: true,
+      metadata: [Object]
+    },
+    {
+      chunkId: 'added-from-backup-3',
+      score: 50,
+      trusted: true,
+      metadata: [Object]
+    },
+    {
+      chunkId: 'added-from-backup-4',
+      score: 50,
+      trusted: true,
+      metadata: [Object]
+    }
+  ]
+}
+--- QUERY ---
+berapa biaya SI gelombang 1A
+--- QUERY ENTITIES ---
+{
+  "intent": "COST",
+  "academicIntent": "BIAYA",
+  "program": "SI",
+  "wave": "1A"
+}
+--- RESULT SUMMARY ---
+{
+  "success": true,
+  "source": "rag-fee-structured",
+  "confidenceTier": "HIGH",
+  "confidenceScore": 180
+}
+--- CONTEXT CHUNKS ---
+CONTEXT 1
+{
+  "id": "added-from-backup-2",
+  "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+  "isGlobalDiscount": null
+}
+chunk preview: RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027 1. Pendaftaran 500.000 2. Dana Pendidikan Pokok (DPP) 11.000.000 Penjelasan Tambahan : Potongan Biaya Pendaftaran : Rp. 250.000,- Gelombang I; Rp.200.000 Gelombang II 
+CONTEXT 2
+{
+  "id": "added-from-backup-3",
+  "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+  "isGlobalDiscount": null
+}
+chunk preview: RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027 1. Pendaftaran 500.000 2. Biaya Registrasi 10.000.000 3. Biaya Pendidikan Per Semester 4.500.000 Penjelasan Tambahan : Potongan Biaya Pendaftaran : Rp.300.000 Gelombang Khusus 
+CONTEXT 3
+{
+  "id": "added-from-backup-4",
+  "filename": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+  "isGlobalDiscount": null
+}
+chunk preview: RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027 1. Pendaftaran 3.000.000 2. Dana Pendidikan Pokok 20.000.000 Penjelasan Potongan : Rp.1.500.000 Gelombang Khusus, Rp.1.250.000 Gelombang I 
+--- ANSWER ---
+Program Studi: SI
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: 2026
+
+
+Pendaftaran:
+Potongan Pendaftaran Gelombang 1:
+Rp 300.000
+Total Pendaftaran:
+Rp 0
+
+DPP:
+Potongan DPP Gelombang 1:
+Rp 1.250.000 
+
+Biaya Perlengkapan:
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Subtotal Awal Masuk: Rp 0
+
+Total Biaya Masuk:
+Rp 0
+Sumber:
+- rincian Biaya SK Tahun Ajaran 2026-2027.pdf
+- rincian Biaya D3 Tahun Ajaran 2026-2027.pdf
+- rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf
+--- DEBUG ---
+{
+  "entity": {
+    "intent": "COST",
+    "academicIntent": "BIAYA",
+    "program": "SI",
+    "wave": "1A"
+  },
+  "feeStruct": {
+    "program": "SK",
+    "programName": null,
+    "wave": "1A",
+    "waveGroup": "1",
+    "academicYear": "2026",
+    "partner": null,
+    "campus": null,
+    "sourceFile": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+    "updatedAt": null,
+    "registrationFee": null,
+    "dpp": null,
+    "dppDiscount": "Rp 1.250.000 ",
+    "registrationDiscount": "Rp 300.000",
+    "ukt": null,
+    "scholarship": null,
+    "isGlobalDiscount": true,
+    "rawChunk": "RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n1. Pendaftaran 500.000\n2. Dana Pendidikan Pokok (DPP) 11.000.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp. 250.000,- Gelombang I; Rp.200.000 Gelombang II\n",
+    "sourceChunk": {
+      "id": "added-from-backup-2",
+      "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n1. Pendaftaran 500.000\n2. Dana Pendidikan Pokok (DPP) 11.000.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp. 250.000,- Gelombang I; Rp.200.000 Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SK Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    "sourceChunks": [
+      {
+        "id": "added-from-backup-2",
+        "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+        "chunk": "RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n1. Pendaftaran 500.000\n2. Dana Pendidikan Pokok (DPP) 11.000.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp. 250.000,- Gelombang I; Rp.200.000 Gelombang II\n",
+        "trainingId": null,
+        "metadata": {
+          "category": "tuition_fee",
+          "source": "pdf/rincian Biaya SK Tahun Ajaran 2026-2027.pdf"
+        }
+      },
+      {
+        "id": "added-from-backup-3",
+        "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+        "chunk": "RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n1. Pendaftaran 500.000\n2. Biaya Registrasi 10.000.000\n3. Biaya Pendidikan Per Semester 4.500.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp.300.000 Gelombang Khusus\n",
+        "trainingId": null,
+        "metadata": {
+          "category": "tuition_fee",
+          "source": "pdf/rincian Biaya D3 Tahun Ajaran 2026-2027.pdf"
+        }
+      },
+      {
+        "id": "added-from-backup-4",
+        "filename": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+        "chunk": "RINCIAN BIAYA PROGRAM DUAL DEGREE DNUI T.A 2026/2027\n1. Pendaftaran 3.000.000\n2. Dana Pendidikan Pokok 20.000.000\nPenjelasan Potongan : Rp.1.500.000 Gelombang Khusus, Rp.1.250.000 Gelombang I\n",
+        "trainingId": null,
+        "metadata": {
+          "category": "tuition_fee",
+          "source": "pdf/rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf"
+        }
+      }
+    ],
+    "initialCostItems": [],
+    "registrationTotal": "Rp 0",
+    "uniformFee": "Rp 0",
+    "capFee": "Rp 0",
+    "shirtFee": "Rp 0",
+    "gmtiFee": "Rp 0",
+    "bagFee": "Rp 0",
+    "subtotalAwalMasuk": "Rp 0",
+    "totalBiayaMasuk": "Rp 0"
+  },
+  "topChunks": [
+    {
+      "id": "added-from-backup-2",
+      "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf"
+    },
+    {
+      "id": "added-from-backup-3",
+      "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf"
+    },
+    {
+      "id": "added-from-backup-4",
+      "filename": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf"
+    }
+  ]
+}

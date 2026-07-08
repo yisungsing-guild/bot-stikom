@@ -1,0 +1,484 @@
+﻿
+=== QUERY (original) : Apa itu TI 
+expanded: Apa itu TI 
+intent: DEFINISI_PRODI ===
+
+-- Top 20 BEFORE filtering --
+ 1. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 score:0.176260 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 2. id:de645d97-25a4-4eae-ba98-3f6d3b845483 score:0.168035 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 3. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b score:0.140362 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 4. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 score:0.131366 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 5. id:8238a078-9bf1-45c2-81bd-aae3301296e4 score:0.102768 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 6. id:32b0526e-e1e5-46ff-9cd5-e844a5410e52 score:0.098811 file:N/A docCategory:BIAYA
+ 7. id:b411e939-1537-4fd5-af3d-541424f9d3a3 score:0.097461 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 8. id:b82485a7-d10b-4e4b-a7c8-f6a72ebf4ede score:0.071862 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 9. id:a7138ef0-668b-419e-81cc-a700296b8fee score:0.070655 file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx docCategory:PROSPEK_KERJA
+10. id:58eb6782-554e-4a4f-8acf-45c191ae0f8e score:0.066941 file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx docCategory:TEMPLATE
+11. id:393619c6-7b49-4620-894f-863bf1123f43 score:0.066784 file:N/A docCategory:UNKNOWN
+12. id:c7ba5e28-eebb-4c26-8c3c-2691f1528d06 score:0.064532 file:N/A docCategory:BIAYA
+13. id:90824850-27be-45b9-89ab-e6a04082f1c1 score:0.063256 file:rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf docCategory:BIAYA
+14. id:a7f8b591-0737-4fb0-8115-6d38d9a965ee score:0.058950 file:N/A docCategory:UNKNOWN
+15. id:819735b6-8692-4ce5-9861-9f42ec753231 score:0.057301 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+16. id:52685d3b-5d65-4bcd-b311-e1b8e20a2bac score:0.056070 file:rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf docCategory:BIAYA
+17. id:faa7492b-b672-42cc-9121-fdb8ca19a5b5 score:0.055551 file:N/A docCategory:BIAYA
+18. id:a9908d4a-5a5d-4844-b62e-8daeaa1165b8 score:0.055532 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+19. id:a07977f5-08a2-4bfd-ac86-203bd6d015de score:0.052343 file:CHATBOT - Double Degree (1).docx docCategory:LOKASI
+20. id:3f1ac313-7554-4517-ae65-5e3e691f77c1 score:0.052129 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+
+-- Top 20 AFTER filtering (accepted) --
+No accepted chunks
+
+-- Rejected chunks with reasons --
+ 1. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.176260 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 2. id:de645d97-25a4-4eae-ba98-3f6d3b845483 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.168035 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 3. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.140362 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 4. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.131366 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","contains_forbidden_pattern: \\badministrasi\\b"]}
+ 5. id:8238a078-9bf1-45c2-81bd-aae3301296e4 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.102768 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 6. id:32b0526e-e1e5-46ff-9cd5-e844a5410e52 file:N/A cat:BIAYA score:0.098811 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 7. id:b411e939-1537-4fd5-af3d-541424f9d3a3 file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.097461 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 8. id:b82485a7-d10b-4e4b-a7c8-f6a72ebf4ede file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.071862 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 9. id:a7138ef0-668b-419e-81cc-a700296b8fee file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx cat:PROSPEK_KERJA score:0.070655 reason:category_reject
+   detail: {"allowed":false,"reason":"no_evidence_in_allowed_alt_category","evidenceDetail":{"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 459 chars","no_pattern_matches"]}}
+10. id:58eb6782-554e-4a4f-8acf-45c191ae0f8e file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx cat:TEMPLATE score:0.066941 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"TEMPLATE"}}
+11. id:393619c6-7b49-4620-894f-863bf1123f43 file:N/A cat:UNKNOWN score:0.066784 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 800 chars","no_pattern_matches"]}
+12. id:c7ba5e28-eebb-4c26-8c3c-2691f1528d06 file:N/A cat:BIAYA score:0.064532 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+13. id:90824850-27be-45b9-89ab-e6a04082f1c1 file:rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf cat:BIAYA score:0.063256 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+14. id:a7f8b591-0737-4fb0-8115-6d38d9a965ee file:N/A cat:UNKNOWN score:0.058950 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 798 chars","no_pattern_matches"]}
+15. id:819735b6-8692-4ce5-9861-9f42ec753231 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.057301 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+16. id:52685d3b-5d65-4bcd-b311-e1b8e20a2bac file:rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf cat:BIAYA score:0.056070 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+17. id:faa7492b-b672-42cc-9121-fdb8ca19a5b5 file:N/A cat:BIAYA score:0.055551 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+18. id:a9908d4a-5a5d-4844-b62e-8daeaa1165b8 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.055532 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+19. id:a07977f5-08a2-4bfd-ac86-203bd6d015de file:CHATBOT - Double Degree (1).docx cat:LOKASI score:0.052343 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+20. id:3f1ac313-7554-4517-ae65-5e3e691f77c1 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.052129 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+
+=== QUERY (original) : Apa itu Teknologi Informasi 
+expanded: Apa itu Teknologi Informasi 
+intent: DEFINISI_PRODI ===
+
+-- Top 20 BEFORE filtering --
+ 1. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 score:0.224724 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 2. id:de645d97-25a4-4eae-ba98-3f6d3b845483 score:0.214237 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 3. id:618a0474-969a-463f-91cd-c010a27beb48 score:0.203790 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM
+ 4. id:07c77b5e-8388-4f2b-a846-b06d99400481 score:0.164120 file:HOBY.pdf docCategory:UNKNOWN
+ 5. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b score:0.155525 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 6. id:1ea21dbf-def4-4600-87ab-9f0d22a0c2e5 score:0.150947 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM
+ 7. id:8238a078-9bf1-45c2-81bd-aae3301296e4 score:0.149442 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 8. id:81881ff1-d3cc-48dd-a812-e530565be8c5 score:0.141109 file:Penjelasan Prodi dan Karier Masa Depan (1).xlsx docCategory:KURIKULUM
+ 9. id:b411e939-1537-4fd5-af3d-541424f9d3a3 score:0.134377 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+10. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 score:0.127772 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+11. id:bd55bff9-23d7-4670-9da6-2a5d16b5a2bf score:0.124986 file:FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx docCategory:JADWAL
+12. id:bbde344f-8514-4416-bcf3-932f17b215e3 score:0.124179 file:HOBY.pdf docCategory:UNKNOWN
+13. id:ccb99d70-d300-4147-a167-81b6ef51fe05 score:0.119278 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+14. id:299f3edd-c18a-47a3-a295-bc6837516858 score:0.106955 file:CHATBOT - Double Degree (1).docx docCategory:UNKNOWN
+15. id:c6c92a40-8437-4942-81aa-3003a7a6ad6f score:0.106515 file:SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf docCategory:AKREDITASI
+16. id:ae536d74-4ca6-4904-a732-d3ddb7cd3ce7 score:0.102828 file:SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf docCategory:AKREDITASI
+17. id:2be1ee50-6f65-487a-b7cd-fa56701d6a4e score:0.099187 file:rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf docCategory:BIAYA
+18. id:58eb6782-554e-4a4f-8acf-45c191ae0f8e score:0.097343 file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx docCategory:TEMPLATE
+19. id:afd5ba58-ebfa-4818-9b49-df3e895ad998 score:0.096462 file:SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf docCategory:AKREDITASI
+20. id:6efc895e-9cb4-4a8b-987f-f481dca0a78f score:0.095229 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+
+-- Top 20 AFTER filtering (accepted) --
+ 1. id:1ea21dbf-def4-4600-87ab-9f0d22a0c2e5 score:0.150947 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM evidence:MEDIUM
+ 2. id:afd5ba58-ebfa-4818-9b49-df3e895ad998 score:0.096462 file:SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf docCategory:AKREDITASI evidence:MEDIUM
+
+-- Rejected chunks with reasons --
+ 1. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.224724 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 2. id:de645d97-25a4-4eae-ba98-3f6d3b845483 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.214237 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 3. id:618a0474-969a-463f-91cd-c010a27beb48 file:Penjelasan Semua Program Studi.pdf cat:KURIKULUM score:0.203790 reason:category_reject
+   detail: {"allowed":false,"reason":"no_evidence_in_allowed_alt_category","evidenceDetail":{"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 777 chars","no_pattern_matches"]}}
+ 4. id:07c77b5e-8388-4f2b-a846-b06d99400481 file:HOBY.pdf cat:UNKNOWN score:0.164120 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 298 chars","no_pattern_matches"]}
+ 5. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.155525 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 6. id:8238a078-9bf1-45c2-81bd-aae3301296e4 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.149442 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 7. id:81881ff1-d3cc-48dd-a812-e530565be8c5 file:Penjelasan Prodi dan Karier Masa Depan (1).xlsx cat:KURIKULUM score:0.141109 reason:category_reject
+   detail: {"allowed":false,"reason":"no_evidence_in_allowed_alt_category","evidenceDetail":{"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}}
+ 8. id:b411e939-1537-4fd5-af3d-541424f9d3a3 file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.134377 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 9. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.127772 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","contains_forbidden_pattern: \\badministrasi\\b"]}
+10. id:bd55bff9-23d7-4670-9da6-2a5d16b5a2bf file:FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx cat:JADWAL score:0.124986 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 616 chars","no_pattern_matches"]}
+11. id:bbde344f-8514-4416-bcf3-932f17b215e3 file:HOBY.pdf cat:UNKNOWN score:0.124179 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+12. id:ccb99d70-d300-4147-a167-81b6ef51fe05 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.119278 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+13. id:299f3edd-c18a-47a3-a295-bc6837516858 file:CHATBOT - Double Degree (1).docx cat:UNKNOWN score:0.106955 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 216 chars","no_pattern_matches"]}
+14. id:c6c92a40-8437-4942-81aa-3003a7a6ad6f file:SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf cat:AKREDITASI score:0.106515 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 899 chars","no_pattern_matches"]}
+15. id:ae536d74-4ca6-4904-a732-d3ddb7cd3ce7 file:SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf cat:AKREDITASI score:0.102828 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 823 chars","no_pattern_matches"]}
+16. id:2be1ee50-6f65-487a-b7cd-fa56701d6a4e file:rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf cat:BIAYA score:0.099187 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+17. id:58eb6782-554e-4a4f-8acf-45c191ae0f8e file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx cat:TEMPLATE score:0.097343 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"TEMPLATE"}}
+18. id:6efc895e-9cb4-4a8b-987f-f481dca0a78f file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.095229 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+
+=== QUERY (original) : Apa itu SI 
+expanded: Apa itu SI 
+intent: DEFINISI_PRODI ===
+
+-- Top 20 BEFORE filtering --
+ 1. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 score:0.154011 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 2. id:de645d97-25a4-4eae-ba98-3f6d3b845483 score:0.146824 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 3. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b score:0.122645 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 4. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 score:0.114783 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 5. id:8238a078-9bf1-45c2-81bd-aae3301296e4 score:0.089795 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 6. id:b411e939-1537-4fd5-af3d-541424f9d3a3 score:0.085158 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 7. id:3d903276-efe5-4ee9-807a-aa3ebcb828e6 score:0.069156 file:SK PEMBINA ORMAWA 2026.pdf docCategory:SK
+ 8. id:b82485a7-d10b-4e4b-a7c8-f6a72ebf4ede score:0.062791 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 9. id:a7138ef0-668b-419e-81cc-a700296b8fee score:0.061736 file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx docCategory:PROSPEK_KERJA
+10. id:58eb6782-554e-4a4f-8acf-45c191ae0f8e score:0.058491 file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx docCategory:TEMPLATE
+11. id:1ea21dbf-def4-4600-87ab-9f0d22a0c2e5 score:0.056422 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM
+12. id:a7f8b591-0737-4fb0-8115-6d38d9a965ee score:0.051509 file:N/A docCategory:UNKNOWN
+13. id:819735b6-8692-4ce5-9861-9f42ec753231 score:0.050068 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+14. id:a9908d4a-5a5d-4844-b62e-8daeaa1165b8 score:0.048522 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+15. id:a07977f5-08a2-4bfd-ac86-203bd6d015de score:0.045736 file:CHATBOT - Double Degree (1).docx docCategory:LOKASI
+16. id:3f1ac313-7554-4517-ae65-5e3e691f77c1 score:0.045549 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+17. id:37c725f4-4703-4196-b745-4b914e8a1326 score:0.045259 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+18. id:5754e450-efe8-4060-a1eb-1deff9291ba1 score:0.044753 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+19. id:7af14b02-fc14-4ac6-929a-3ab9b0f4f96d score:0.042785 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+20. id:3cab78d6-e010-4cc1-8091-e80167e1c48d score:0.038870 file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx docCategory:MOU
+
+-- Top 20 AFTER filtering (accepted) --
+No accepted chunks
+
+-- Rejected chunks with reasons --
+ 1. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.154011 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 2. id:de645d97-25a4-4eae-ba98-3f6d3b845483 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.146824 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 3. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.122645 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 4. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.114783 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","contains_forbidden_pattern: \\badministrasi\\b"]}
+ 5. id:8238a078-9bf1-45c2-81bd-aae3301296e4 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.089795 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 6. id:b411e939-1537-4fd5-af3d-541424f9d3a3 file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.085158 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 7. id:3d903276-efe5-4ee9-807a-aa3ebcb828e6 file:SK PEMBINA ORMAWA 2026.pdf cat:SK score:0.069156 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"SK"}}
+ 8. id:b82485a7-d10b-4e4b-a7c8-f6a72ebf4ede file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.062791 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 9. id:a7138ef0-668b-419e-81cc-a700296b8fee file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx cat:PROSPEK_KERJA score:0.061736 reason:category_reject
+   detail: {"allowed":false,"reason":"no_evidence_in_allowed_alt_category","evidenceDetail":{"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 459 chars","no_pattern_matches"]}}
+10. id:58eb6782-554e-4a4f-8acf-45c191ae0f8e file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx cat:TEMPLATE score:0.058491 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"TEMPLATE"}}
+11. id:1ea21dbf-def4-4600-87ab-9f0d22a0c2e5 file:Penjelasan Semua Program Studi.pdf cat:KURIKULUM score:0.056422 reason:not_relevant_to_question
+   detail: {"relevant":false,"reason":"low_semantic_overlap","overlapRatio":0}
+12. id:a7f8b591-0737-4fb0-8115-6d38d9a965ee file:N/A cat:UNKNOWN score:0.051509 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 798 chars","no_pattern_matches"]}
+13. id:819735b6-8692-4ce5-9861-9f42ec753231 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.050068 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+14. id:a9908d4a-5a5d-4844-b62e-8daeaa1165b8 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.048522 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+15. id:a07977f5-08a2-4bfd-ac86-203bd6d015de file:CHATBOT - Double Degree (1).docx cat:LOKASI score:0.045736 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+16. id:3f1ac313-7554-4517-ae65-5e3e691f77c1 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.045549 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+17. id:37c725f4-4703-4196-b745-4b914e8a1326 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.045259 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+18. id:5754e450-efe8-4060-a1eb-1deff9291ba1 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.044753 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+19. id:7af14b02-fc14-4ac6-929a-3ab9b0f4f96d file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.042785 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+20. id:3cab78d6-e010-4cc1-8091-e80167e1c48d file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx cat:MOU score:0.038870 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"MOU"}}
+
+=== QUERY (original) : Apa itu Sistem Informasi 
+expanded: Apa itu Sistem Informasi 
+intent: DEFINISI_PRODI ===
+
+-- Top 20 BEFORE filtering --
+ 1. id:1ea21dbf-def4-4600-87ab-9f0d22a0c2e5 score:0.371181 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM
+ 2. id:4c7648cd-57e3-44cc-8974-f2f4b78abf49 score:0.351162 file:HOBY.pdf docCategory:UNKNOWN
+ 3. id:81881ff1-d3cc-48dd-a812-e530565be8c5 score:0.343767 file:Penjelasan Prodi dan Karier Masa Depan (1).xlsx docCategory:KURIKULUM
+ 4. id:3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8 score:0.259554 file:HOBY.pdf docCategory:UNKNOWN
+ 5. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 score:0.213973 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 6. id:618a0474-969a-463f-91cd-c010a27beb48 score:0.213011 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM
+ 7. id:bbde344f-8514-4416-bcf3-932f17b215e3 score:0.206406 file:HOBY.pdf docCategory:UNKNOWN
+ 8. id:de645d97-25a4-4eae-ba98-3f6d3b845483 score:0.203987 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 9. id:0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8 score:0.188451 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM
+10. id:bd55bff9-23d7-4670-9da6-2a5d16b5a2bf score:0.187149 file:FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx docCategory:JADWAL
+11. id:59ad2190-d335-48d1-afe6-1725687fdac6 score:0.169358 file:Penjelasan Prodi dan Karier Masa Depan (1).xlsx docCategory:KURIKULUM
+12. id:a0f70379-20e4-493a-ace1-69d9f54f8611 score:0.166948 file:N/A docCategory:BIAYA
+13. id:0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 score:0.165139 file:N/A docCategory:BIAYA
+14. id:9dc1e354-7530-4d36-8456-276cc034ef95 score:0.156800 file:HOBY.pdf docCategory:UNKNOWN
+15. id:c4b537df-3774-42de-b51c-82f5a35bdee6 score:0.150157 file:N/A docCategory:BIAYA
+16. id:b411e939-1537-4fd5-af3d-541424f9d3a3 score:0.148824 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+17. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b score:0.148084 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+18. id:666fcfbf-1176-4b59-8260-159df8473e57 score:0.146485 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+19. id:3546c7cc-7dc3-4a1e-b318-79648193fb86 score:0.145221 file:N/A docCategory:BIAYA
+20. id:c6c92a40-8437-4942-81aa-3003a7a6ad6f score:0.142646 file:SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf docCategory:AKREDITASI
+
+-- Top 20 AFTER filtering (accepted) --
+ 1. id:1ea21dbf-def4-4600-87ab-9f0d22a0c2e5 score:0.371181 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM evidence:MEDIUM
+ 2. id:0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8 score:0.188451 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM evidence:MEDIUM
+
+-- Rejected chunks with reasons --
+ 1. id:4c7648cd-57e3-44cc-8974-f2f4b78abf49 file:HOBY.pdf cat:UNKNOWN score:0.351162 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 2. id:81881ff1-d3cc-48dd-a812-e530565be8c5 file:Penjelasan Prodi dan Karier Masa Depan (1).xlsx cat:KURIKULUM score:0.343767 reason:category_reject
+   detail: {"allowed":false,"reason":"no_evidence_in_allowed_alt_category","evidenceDetail":{"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}}
+ 3. id:3a4d44e4-c6a0-445e-9c8b-7933f4fc21d8 file:HOBY.pdf cat:UNKNOWN score:0.259554 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 277 chars","no_pattern_matches"]}
+ 4. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.213973 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 5. id:618a0474-969a-463f-91cd-c010a27beb48 file:Penjelasan Semua Program Studi.pdf cat:KURIKULUM score:0.213011 reason:category_reject
+   detail: {"allowed":false,"reason":"no_evidence_in_allowed_alt_category","evidenceDetail":{"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 777 chars","no_pattern_matches"]}}
+ 6. id:bbde344f-8514-4416-bcf3-932f17b215e3 file:HOBY.pdf cat:UNKNOWN score:0.206406 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 7. id:de645d97-25a4-4eae-ba98-3f6d3b845483 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.203987 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 8. id:bd55bff9-23d7-4670-9da6-2a5d16b5a2bf file:FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx cat:JADWAL score:0.187149 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 616 chars","no_pattern_matches"]}
+ 9. id:59ad2190-d335-48d1-afe6-1725687fdac6 file:Penjelasan Prodi dan Karier Masa Depan (1).xlsx cat:KURIKULUM score:0.169358 reason:category_reject
+   detail: {"allowed":false,"reason":"no_evidence_in_allowed_alt_category","evidenceDetail":{"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}}
+10. id:a0f70379-20e4-493a-ace1-69d9f54f8611 file:N/A cat:BIAYA score:0.166948 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+11. id:0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5 file:N/A cat:BIAYA score:0.165139 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+12. id:9dc1e354-7530-4d36-8456-276cc034ef95 file:HOBY.pdf cat:UNKNOWN score:0.156800 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 386 chars","no_pattern_matches"]}
+13. id:c4b537df-3774-42de-b51c-82f5a35bdee6 file:N/A cat:BIAYA score:0.150157 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+14. id:b411e939-1537-4fd5-af3d-541424f9d3a3 file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.148824 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+15. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.148084 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+16. id:666fcfbf-1176-4b59-8260-159df8473e57 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.146485 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+17. id:3546c7cc-7dc3-4a1e-b318-79648193fb86 file:N/A cat:BIAYA score:0.145221 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+18. id:c6c92a40-8437-4942-81aa-3003a7a6ad6f file:SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf cat:AKREDITASI score:0.142646 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 899 chars","no_pattern_matches"]}
+
+=== QUERY (original) : TI belajar apa saja 
+expanded: TI belajar apa saja 
+intent: KURIKULUM_PEMBELAJARAN ===
+
+-- Top 20 BEFORE filtering --
+ 1. id:1801ce0d-333a-42a4-97fb-292e69500e11 score:0.170685 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 2. id:690600e1-cd44-4413-940a-003cd96115d9 score:0.128520 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 3. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b score:0.127084 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 4. id:61062081-df13-4237-85eb-c9936cef223c score:0.119613 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 5. id:a7138ef0-668b-419e-81cc-a700296b8fee score:0.115007 file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx docCategory:PROSPEK_KERJA
+ 6. id:e6b6c18e-a2e4-4cf9-ab32-19a598952145 score:0.101697 file:N/A docCategory:UNKNOWN
+ 7. id:a07977f5-08a2-4bfd-ac86-203bd6d015de score:0.100403 file:CHATBOT - Double Degree (1).docx docCategory:LOKASI
+ 8. id:ae04514f-fc94-47c3-a262-9bb534f5a271 score:0.097222 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 9. id:3c7a3b91-5ff3-4a1d-a859-2c22e75af27c score:0.097182 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+10. id:faa7492b-b672-42cc-9121-fdb8ca19a5b5 score:0.091032 file:N/A docCategory:BIAYA
+11. id:32b0526e-e1e5-46ff-9cd5-e844a5410e52 score:0.089463 file:N/A docCategory:BIAYA
+12. id:b411e939-1537-4fd5-af3d-541424f9d3a3 score:0.088241 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+13. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 score:0.083658 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+14. id:891d0c01-c702-4ee5-a457-e1e6fc770efd score:0.075667 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+15. id:f2615890-0f34-4f41-aff0-411232af57d1 score:0.074464 file:N/A docCategory:UNKNOWN
+16. id:72e9fa79-3fc2-424e-b907-bab365d59a53 score:0.074381 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+17. id:3cab78d6-e010-4cc1-8091-e80167e1c48d score:0.072411 file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx docCategory:MOU
+18. id:6349b504-67fb-48b2-ad98-ced4fa66ad56 score:0.066560 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+19. id:7a6ce715-f931-4cfc-98d0-e19a2f281775 score:0.064926 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+20. id:393619c6-7b49-4620-894f-863bf1123f43 score:0.060466 file:N/A docCategory:UNKNOWN
+
+-- Top 20 AFTER filtering (accepted) --
+ 1. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b score:0.127084 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS evidence:MEDIUM
+ 2. id:e6b6c18e-a2e4-4cf9-ab32-19a598952145 score:0.101697 file:N/A docCategory:UNKNOWN evidence:MEDIUM
+ 3. id:b411e939-1537-4fd5-af3d-541424f9d3a3 score:0.088241 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS evidence:MEDIUM
+ 4. id:f2615890-0f34-4f41-aff0-411232af57d1 score:0.074464 file:N/A docCategory:UNKNOWN evidence:MEDIUM
+
+-- Rejected chunks with reasons --
+ 1. id:1801ce0d-333a-42a4-97fb-292e69500e11 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.170685 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 2. id:690600e1-cd44-4413-940a-003cd96115d9 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.128520 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 3. id:61062081-df13-4237-85eb-c9936cef223c file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.119613 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 4. id:a7138ef0-668b-419e-81cc-a700296b8fee file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx cat:PROSPEK_KERJA score:0.115007 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 459 chars","no_pattern_matches"]}
+ 5. id:a07977f5-08a2-4bfd-ac86-203bd6d015de file:CHATBOT - Double Degree (1).docx cat:LOKASI score:0.100403 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 6. id:ae04514f-fc94-47c3-a262-9bb534f5a271 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.097222 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 7. id:3c7a3b91-5ff3-4a1d-a859-2c22e75af27c file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.097182 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 8. id:faa7492b-b672-42cc-9121-fdb8ca19a5b5 file:N/A cat:BIAYA score:0.091032 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 9. id:32b0526e-e1e5-46ff-9cd5-e844a5410e52 file:N/A cat:BIAYA score:0.089463 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+10. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.083658 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","contains_forbidden_pattern: \\badministrasi\\b"]}
+11. id:891d0c01-c702-4ee5-a457-e1e6fc770efd file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.075667 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+12. id:72e9fa79-3fc2-424e-b907-bab365d59a53 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.074381 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+13. id:3cab78d6-e010-4cc1-8091-e80167e1c48d file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx cat:MOU score:0.072411 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"MOU"}}
+14. id:6349b504-67fb-48b2-ad98-ced4fa66ad56 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.066560 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+15. id:7a6ce715-f931-4cfc-98d0-e19a2f281775 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.064926 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+16. id:393619c6-7b49-4620-894f-863bf1123f43 file:N/A cat:UNKNOWN score:0.060466 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 800 chars","no_pattern_matches"]}
+
+=== QUERY (original) : SI belajar apa saja 
+expanded: SI belajar apa saja 
+intent: KURIKULUM_PEMBELAJARAN ===
+
+-- Top 20 BEFORE filtering --
+ 1. id:1801ce0d-333a-42a4-97fb-292e69500e11 score:0.152424 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 2. id:690600e1-cd44-4413-940a-003cd96115d9 score:0.114771 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 3. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b score:0.113488 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+ 4. id:61062081-df13-4237-85eb-c9936cef223c score:0.106816 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 5. id:a7138ef0-668b-419e-81cc-a700296b8fee score:0.102703 file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx docCategory:PROSPEK_KERJA
+ 6. id:e6b6c18e-a2e4-4cf9-ab32-19a598952145 score:0.090817 file:N/A docCategory:UNKNOWN
+ 7. id:a07977f5-08a2-4bfd-ac86-203bd6d015de score:0.089661 file:CHATBOT - Double Degree (1).docx docCategory:LOKASI
+ 8. id:ae04514f-fc94-47c3-a262-9bb534f5a271 score:0.086821 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 9. id:3c7a3b91-5ff3-4a1d-a859-2c22e75af27c score:0.086785 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+10. id:b411e939-1537-4fd5-af3d-541424f9d3a3 score:0.078800 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+11. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 score:0.074708 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS
+12. id:891d0c01-c702-4ee5-a457-e1e6fc770efd score:0.067572 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+13. id:72e9fa79-3fc2-424e-b907-bab365d59a53 score:0.066423 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+14. id:3cab78d6-e010-4cc1-8091-e80167e1c48d score:0.064664 file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx docCategory:MOU
+15. id:3d903276-efe5-4ee9-807a-aa3ebcb828e6 score:0.063993 file:SK PEMBINA ORMAWA 2026.pdf docCategory:SK
+16. id:6349b504-67fb-48b2-ad98-ced4fa66ad56 score:0.059439 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+17. id:7a6ce715-f931-4cfc-98d0-e19a2f281775 score:0.057980 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+18. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 score:0.053040 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+19. id:1ea21dbf-def4-4600-87ab-9f0d22a0c2e5 score:0.052210 file:Penjelasan Semua Program Studi.pdf docCategory:KURIKULUM
+20. id:f2615890-0f34-4f41-aff0-411232af57d1 score:0.050813 file:N/A docCategory:UNKNOWN
+
+-- Top 20 AFTER filtering (accepted) --
+ 1. id:f55fe74b-aae6-49bf-b339-c3bd8ef94f4b score:0.113488 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS evidence:MEDIUM
+ 2. id:e6b6c18e-a2e4-4cf9-ab32-19a598952145 score:0.090817 file:N/A docCategory:UNKNOWN evidence:MEDIUM
+ 3. id:b411e939-1537-4fd5-af3d-541424f9d3a3 score:0.078800 file:CHATBOT - Double Degree (1).docx docCategory:PROGRAM_KHUSUS evidence:MEDIUM
+ 4. id:f2615890-0f34-4f41-aff0-411232af57d1 score:0.050813 file:N/A docCategory:UNKNOWN evidence:MEDIUM
+
+-- Rejected chunks with reasons --
+ 1. id:1801ce0d-333a-42a4-97fb-292e69500e11 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.152424 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 2. id:690600e1-cd44-4413-940a-003cd96115d9 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.114771 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 3. id:61062081-df13-4237-85eb-c9936cef223c file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.106816 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 4. id:a7138ef0-668b-419e-81cc-a700296b8fee file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx cat:PROSPEK_KERJA score:0.102703 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 459 chars","no_pattern_matches"]}
+ 5. id:a07977f5-08a2-4bfd-ac86-203bd6d015de file:CHATBOT - Double Degree (1).docx cat:LOKASI score:0.089661 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","no_pattern_matches"]}
+ 6. id:ae04514f-fc94-47c3-a262-9bb534f5a271 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.086821 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 7. id:3c7a3b91-5ff3-4a1d-a859-2c22e75af27c file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.086785 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 8. id:b89701ea-f7ae-462d-b0cf-b5bf33f0cd89 file:CHATBOT - Double Degree (1).docx cat:PROGRAM_KHUSUS score:0.074708 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 900 chars","contains_forbidden_pattern: \\badministrasi\\b"]}
+ 9. id:891d0c01-c702-4ee5-a457-e1e6fc770efd file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.067572 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+10. id:72e9fa79-3fc2-424e-b907-bab365d59a53 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.066423 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+11. id:3cab78d6-e010-4cc1-8091-e80167e1c48d file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx cat:MOU score:0.064664 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"MOU"}}
+12. id:3d903276-efe5-4ee9-807a-aa3ebcb828e6 file:SK PEMBINA ORMAWA 2026.pdf cat:SK score:0.063993 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"SK"}}
+13. id:6349b504-67fb-48b2-ad98-ced4fa66ad56 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.059439 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+14. id:7a6ce715-f931-4cfc-98d0-e19a2f281775 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.057980 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+15. id:258263d9-ed5f-4fe4-8c16-df4c9c01b7b2 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.053040 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+16. id:1ea21dbf-def4-4600-87ab-9f0d22a0c2e5 file:Penjelasan Semua Program Studi.pdf cat:KURIKULUM score:0.052210 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 664 chars","no_pattern_matches"]}
+
+=== QUERY (original) : Prospek kerja TI 
+expanded: Prospek kerja TI 
+intent: PROSPEK_KERJA ===
+
+-- Top 20 BEFORE filtering --
+ 1. id:bcf56fdf-d7ec-438a-807a-ae8d4e39ed39 score:0.106634 file:20260209202540Undangan FKP RKPD Prov Bali 2027.pdf docCategory:SURAT
+ 2. id:32b0526e-e1e5-46ff-9cd5-e844a5410e52 score:0.099890 file:N/A docCategory:BIAYA
+ 3. id:93b51619-5524-471c-9d20-5354fb5c2ca1 score:0.082661 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 4. id:6058ab5d-c472-4cc4-8be2-81076ef76297 score:0.077776 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+ 5. id:cd5aad7a-ca49-46bb-a8ef-d8e241cafedb score:0.070908 file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx docCategory:TEMPLATE
+ 6. id:232a0ec2-5a59-4fba-92be-16b6046f8fce score:0.068249 file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx docCategory:TEMPLATE
+ 7. id:393619c6-7b49-4620-894f-863bf1123f43 score:0.067513 file:N/A docCategory:UNKNOWN
+ 8. id:3cab78d6-e010-4cc1-8091-e80167e1c48d score:0.067420 file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx docCategory:MOU
+ 9. id:5bebeaa1-ca54-47d9-a603-cdce05c9d046 score:0.066756 file:20260209202540Undangan FKP RKPD Prov Bali 2027.pdf docCategory:UNKNOWN
+10. id:c7ba5e28-eebb-4c26-8c3c-2691f1528d06 score:0.065237 file:N/A docCategory:BIAYA
+11. id:90824850-27be-45b9-89ab-e6a04082f1c1 score:0.063947 file:rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf docCategory:BIAYA
+12. id:d7160ec8-9552-4d2b-a719-21761d2de79b score:0.061718 file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx docCategory:TEMPLATE
+13. id:892554a9-4328-44a3-86b0-571bc8bb1961 score:0.057769 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+14. id:52685d3b-5d65-4bcd-b311-e1b8e20a2bac score:0.056683 file:rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf docCategory:BIAYA
+15. id:faa7492b-b672-42cc-9121-fdb8ca19a5b5 score:0.056158 file:N/A docCategory:BIAYA
+16. id:e1d03aac-d97d-4520-9d64-6a1f1acd16ec score:0.049204 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+17. id:59f3bb65-4483-4dd5-b743-842d11f0b860 score:0.047079 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+18. id:e9793db4-c09a-4e72-a49d-0a5ebda0e2cc score:0.046819 file:Pedoman RPL ITB STIKOM Bali.pdf docCategory:BIAYA
+19. id:5ea53643-5e0a-422b-a30a-5d35fe7decaa score:0.046236 file:rincian Biaya D3 Tahun Ajaran 2026-2027.pdf docCategory:BIAYA
+20. id:b43febf7-af1d-4176-a61c-e68e2cfdd8c6 score:0.044323 file:rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf docCategory:BIAYA
+
+-- Top 20 AFTER filtering (accepted) --
+No accepted chunks
+
+-- Rejected chunks with reasons --
+ 1. id:bcf56fdf-d7ec-438a-807a-ae8d4e39ed39 file:20260209202540Undangan FKP RKPD Prov Bali 2027.pdf cat:SURAT score:0.106634 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"SURAT"}}
+ 2. id:32b0526e-e1e5-46ff-9cd5-e844a5410e52 file:N/A cat:BIAYA score:0.099890 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 3. id:93b51619-5524-471c-9d20-5354fb5c2ca1 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.082661 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 4. id:6058ab5d-c472-4cc4-8be2-81076ef76297 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.077776 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+ 5. id:cd5aad7a-ca49-46bb-a8ef-d8e241cafedb file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx cat:TEMPLATE score:0.070908 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"TEMPLATE"}}
+ 6. id:232a0ec2-5a59-4fba-92be-16b6046f8fce file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx cat:TEMPLATE score:0.068249 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"TEMPLATE"}}
+ 7. id:393619c6-7b49-4620-894f-863bf1123f43 file:N/A cat:UNKNOWN score:0.067513 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 800 chars","no_pattern_matches"]}
+ 8. id:3cab78d6-e010-4cc1-8091-e80167e1c48d file:004 TEMPLATE Laporan Kegiatan Kerjasama - STIKOMBALI - 2025.docx cat:MOU score:0.067420 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"MOU"}}
+ 9. id:5bebeaa1-ca54-47d9-a603-cdce05c9d046 file:20260209202540Undangan FKP RKPD Prov Bali 2027.pdf cat:UNKNOWN score:0.066756 reason:no_evidence
+   detail: {"hasEvidence":false,"confidence":"LOW","reasons":["adequate_length: 887 chars","no_pattern_matches"]}
+10. id:c7ba5e28-eebb-4c26-8c3c-2691f1528d06 file:N/A cat:BIAYA score:0.065237 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+11. id:90824850-27be-45b9-89ab-e6a04082f1c1 file:rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf cat:BIAYA score:0.063947 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+12. id:d7160ec8-9552-4d2b-a719-21761d2de79b file:002 TEMPLATE PKS - STIKOMBALI - 2025.docx cat:TEMPLATE score:0.061718 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"TEMPLATE"}}
+13. id:892554a9-4328-44a3-86b0-571bc8bb1961 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.057769 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+14. id:52685d3b-5d65-4bcd-b311-e1b8e20a2bac file:rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf cat:BIAYA score:0.056683 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+15. id:faa7492b-b672-42cc-9121-fdb8ca19a5b5 file:N/A cat:BIAYA score:0.056158 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+16. id:e1d03aac-d97d-4520-9d64-6a1f1acd16ec file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.049204 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+17. id:59f3bb65-4483-4dd5-b743-842d11f0b860 file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.047079 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+18. id:e9793db4-c09a-4e72-a49d-0a5ebda0e2cc file:Pedoman RPL ITB STIKOM Bali.pdf cat:BIAYA score:0.046819 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+19. id:5ea53643-5e0a-422b-a30a-5d35fe7decaa file:rincian Biaya D3 Tahun Ajaran 2026-2027.pdf cat:BIAYA score:0.046236 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+20. id:b43febf7-af1d-4176-a61c-e68e2cfdd8c6 file:rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf cat:BIAYA score:0.044323 reason:category_reject
+   detail: {"allowed":false,"reason":"forbidden_category","detail":{"allowed":false,"reason":"forbidden_category","category":"BIAYA"}}
+
+Audit complete
+

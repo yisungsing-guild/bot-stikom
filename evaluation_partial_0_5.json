@@ -1,0 +1,43 @@
+[
+  {
+    "prompt": "halo",
+    "source": "rag-greeting",
+    "answer": "Halo Kak. Saya siap membantu seputar ITB STIKOM Bali. | Mau tanya apa?",
+    "contexts": []
+  },
+  {
+    "prompt": "saya mau daftar, gimana caranya? (PMB)",
+    "source": "rag-pmb-info",
+    "answer": "Informasi Penerimaan Mahasiswa Baru (PMB): |  | - Jalur Pendaftaran: (Jalur reguler, jalur beasiswa, jalur transfer) | - Program Studi: (TI, SI, BD, SK, MI, DKV, MM, AK) | - Jadwal: (cek gelombang dan tanggal penting di laman PMB) | - Syarat & Dokumen: (identitas, ijazah/transkrip, formulir pendaftaran) | - Kontak/kanal pendaftaran: (email PMB / formulir online / kantor pendaftaran) |  | Mau bagian mana yang mau dijelaskan lebih detail?",
+    "contexts": []
+  },
+  {
+    "prompt": "rincian biaya TI gelombang 1A",
+    "source": "rag-fee-structured",
+    "answer": "Program Studi: Teknologi Informasi | Gelombang: 1A | Tahun Akademik: Tahun Akademik tidak tersedia |  | Biaya Pendaftaran: |  | Potongan Pendaftaran (Gel 1): | Rp 2.000.000 |  | Total Pendaftaran: | Rp 0 |  | DPP: | Rp 8 |  | Biaya Perlengkapan: |  | - Jas almamater: Rp 0 | - Topi: Rp 0 | - Kaos: Rp 0 | - GMTI: Rp 0 | - Tas: Rp 0 |  | Subtotal Awal Masuk: Rp 8 | Total Biaya Masuk: Rp 8 |  | Sumber: |  | - rincian Biaya SK Tahun Ajaran 2026-2027.pdf | - rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf |  | Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?",
+    "contexts": [
+      {
+        "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "5dd6cc3e-eab8-4c04-97b4-1aa28bf0f1d9",
+        "preview": "Gelombang Sisipan :10%\nc. Apabila DPP dibayar tunai potongan ditambah 10% (sepuluh persen).\n4. Khusus Alumni SMK TI mendapatkan potongan 20% Biaya Pendidikan Per\nSemester selama 4 tahun.\n5. Untuk biay"
+      },
+      {
+        "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+        "trainingId": "d540ae42-ca48-4750-b5dd-5a1fbdbc05a0",
+        "preview": "Rp. 2.000.000,- Jika Registrasi pada Gelombang I"
+      }
+    ]
+  },
+  {
+    "prompt": "untuk biaya, jurusan s1 mana yang paling murah?",
+    "source": "rag-program-comparison",
+    "answer": "PMB, ringkasan yang relevan untuk Bisnis Digital, Sistem Informasi, Teknologi Informasi, Sistem Komputer, Manajemen Informatika adalah: |  | - Bisnis Digital: an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\" Sistem Komputer | \"Program Studi Sistem Komputer menghasilkan lulusan yang memiliki kompetensi dalam merancang. | - Sistem Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1. | - Teknologi Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1. | Mau saya jelaskan lebih detail untuk salah satu prodi atau bandingkan dari sisi biaya, kurikulum, atau prospek kerja?",
+    "contexts": []
+  },
+  {
+    "prompt": "kalau jurusan bisni digital itu bisa bekerja sebagai apa ya?",
+    "source": "rag-program-career-role",
+    "answer": "PMB, jurusan Bisnis Digital terkait dengan Lulusan Bisnis Digital memiliki peluang profesi sebagai Digital Marketing Specialist, Digital Strategist, Project Manager, Business Analyst, Market Analyst dan Product Manager. | Saya bisa bantu lanjutkan dengan contoh peran atau bidang kerja yang paling dekat dengan minat kamu. | Mau saya jelaskan lagi bagian lain?",
+    "contexts": []
+  }
+]

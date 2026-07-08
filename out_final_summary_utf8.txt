@@ -1,0 +1,975 @@
+﻿=== TI ===
+1. success: true
+2. source: rag-fee-structured
+3. feeStruct: {
+  "program": "SI",
+  "programName": null,
+  "wave": "1A",
+  "waveGroup": "1",
+  "academicYear": "2026",
+  "partner": null,
+  "campus": null,
+  "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+  "updatedAt": null,
+  "registrationFee": null,
+  "dpp": null,
+  "dppDiscount": "Rp 250.000,",
+  "registrationDiscount": "Rp 300.000",
+  "ukt": null,
+  "scholarship": null,
+  "isGlobalDiscount": true,
+  "rawChunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+  "sourceChunk": {
+    "id": "added-from-backup-1",
+    "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+    "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+    "trainingId": null,
+    "metadata": {
+      "category": "tuition_fee",
+      "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+    }
+  },
+  "sourceChunks": [
+    {
+      "id": "added-from-backup-1",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    {
+      "id": "added-from-backup-3",
+      "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n1. Pendaftaran 500.000\n2. Biaya Registrasi 10.000.000\n3. Biaya Pendidikan Per Semester 4.500.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp.300.000 Gelombang Khusus\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya D3 Tahun Ajaran 2026-2027.pdf"
+      }
+    }
+  ],
+  "initialCostItems": [
+    {
+      "label": "Pendaftaran",
+      "amount": "500.000",
+      "timing": "Pada Saat Daftar"
+    },
+    {
+      "label": "Dana Pendidikan Pokok (DPP)",
+      "amount": "14.000.000",
+      "timing": "Dicicil 2 Kali s/d September"
+    }
+  ],
+  "registrationTotal": "Rp 0",
+  "uniformFee": "Rp 0",
+  "capFee": "Rp 0",
+  "shirtFee": "Rp 0",
+  "gmtiFee": "Rp 0",
+  "bagFee": "Rp 0",
+  "subtotalAwalMasuk": "Rp 0",
+  "totalBiayaMasuk": "Rp 0",
+  "classifiedInitialCostItems": {
+    "registrationItems": [
+      {
+        "label": "Pendaftaran",
+        "amount": "500.000",
+        "timing": "Pada Saat Daftar"
+      }
+    ],
+    "dppItems": [
+      {
+        "label": "Dana Pendidikan Pokok (DPP)",
+        "amount": "14.000.000",
+        "timing": "Dicicil 2 Kali s/d September"
+      }
+    ],
+    "semesterItems": [],
+    "onboardingItems": []
+  }
+}
+4. registrationFee: null
+5. dpp: null
+6. registrationDiscount: Rp 300.000
+7. answer:
+Program Studi: TI
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: 2026
+
+
+Pendaftaran:
+Potongan Pendaftaran Gelombang 1:
+Rp 300.000
+Total Pendaftaran:
+Rp 0
+
+DPP:
+Potongan DPP Gelombang 1:
+Rp 250.000,
+
+Biaya Perlengkapan:
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Subtotal Awal Masuk: Rp 0
+
+Total Biaya Masuk:
+Rp 0
+Sumber:
+- rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf
+- rincian Biaya D3 Tahun Ajaran 2026-2027.pdf
+8. filename sumber yang digunakan: rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya D3 Tahun Ajaran 2026-2027.pdf
+
+=== SI ===
+1. success: true
+2. source: rag-fee-structured
+3. feeStruct: {
+  "program": "SI",
+  "programName": null,
+  "wave": "1A",
+  "waveGroup": "1",
+  "academicYear": "2026",
+  "partner": null,
+  "campus": null,
+  "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+  "updatedAt": null,
+  "registrationFee": null,
+  "dpp": null,
+  "dppDiscount": "Rp 250.000,",
+  "registrationDiscount": "Rp 300.000",
+  "ukt": null,
+  "scholarship": null,
+  "isGlobalDiscount": true,
+  "rawChunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+  "sourceChunk": {
+    "id": "added-from-backup-1",
+    "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+    "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+    "trainingId": null,
+    "metadata": {
+      "category": "tuition_fee",
+      "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+    }
+  },
+  "sourceChunks": [
+    {
+      "id": "added-from-backup-1",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    {
+      "id": "added-from-backup-1",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+      }
+    }
+  ],
+  "initialCostItems": [
+    {
+      "label": "Pendaftaran",
+      "amount": "500.000",
+      "timing": "Pada Saat Daftar"
+    },
+    {
+      "label": "Dana Pendidikan Pokok (DPP)",
+      "amount": "14.000.000",
+      "timing": "Dicicil 2 Kali s/d September"
+    }
+  ],
+  "registrationTotal": "Rp 0",
+  "uniformFee": "Rp 0",
+  "capFee": "Rp 0",
+  "shirtFee": "Rp 0",
+  "gmtiFee": "Rp 0",
+  "bagFee": "Rp 0",
+  "subtotalAwalMasuk": "Rp 0",
+  "totalBiayaMasuk": "Rp 0",
+  "classifiedInitialCostItems": {
+    "registrationItems": [
+      {
+        "label": "Pendaftaran",
+        "amount": "500.000",
+        "timing": "Pada Saat Daftar"
+      }
+    ],
+    "dppItems": [
+      {
+        "label": "Dana Pendidikan Pokok (DPP)",
+        "amount": "14.000.000",
+        "timing": "Dicicil 2 Kali s/d September"
+      }
+    ],
+    "semesterItems": [],
+    "onboardingItems": []
+  }
+}
+4. registrationFee: null
+5. dpp: null
+6. registrationDiscount: Rp 300.000
+7. answer:
+Program Studi: SI
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: 2026
+
+
+Pendaftaran:
+Potongan Pendaftaran Gelombang 1:
+Rp 300.000
+Total Pendaftaran:
+Rp 0
+
+DPP:
+Potongan DPP Gelombang 1:
+Rp 250.000,
+
+Biaya Perlengkapan:
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Subtotal Awal Masuk: Rp 0
+
+Total Biaya Masuk:
+Rp 0
+Sumber:
+- rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf
+8. filename sumber yang digunakan: rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf
+
+=== BD ===
+1. success: true
+2. source: rag-fee-structured
+3. feeStruct: {
+  "program": "SI",
+  "programName": null,
+  "wave": "1A",
+  "waveGroup": "1",
+  "academicYear": "2026",
+  "partner": null,
+  "campus": null,
+  "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+  "updatedAt": null,
+  "registrationFee": null,
+  "dpp": null,
+  "dppDiscount": "Rp 250.000,",
+  "registrationDiscount": "Rp 300.000",
+  "ukt": null,
+  "scholarship": null,
+  "isGlobalDiscount": true,
+  "rawChunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+  "sourceChunk": {
+    "id": "added-from-backup-1",
+    "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+    "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+    "trainingId": null,
+    "metadata": {
+      "category": "tuition_fee",
+      "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+    }
+  },
+  "sourceChunks": [
+    {
+      "id": "added-from-backup-1",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    {
+      "id": "added-from-backup-3",
+      "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n1. Pendaftaran 500.000\n2. Biaya Registrasi 10.000.000\n3. Biaya Pendidikan Per Semester 4.500.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp.300.000 Gelombang Khusus\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya D3 Tahun Ajaran 2026-2027.pdf"
+      }
+    }
+  ],
+  "initialCostItems": [
+    {
+      "label": "Pendaftaran",
+      "amount": "500.000",
+      "timing": "Pada Saat Daftar"
+    },
+    {
+      "label": "Dana Pendidikan Pokok (DPP)",
+      "amount": "14.000.000",
+      "timing": "Dicicil 2 Kali s/d September"
+    }
+  ],
+  "registrationTotal": "Rp 0",
+  "uniformFee": "Rp 0",
+  "capFee": "Rp 0",
+  "shirtFee": "Rp 0",
+  "gmtiFee": "Rp 0",
+  "bagFee": "Rp 0",
+  "subtotalAwalMasuk": "Rp 0",
+  "totalBiayaMasuk": "Rp 0",
+  "classifiedInitialCostItems": {
+    "registrationItems": [
+      {
+        "label": "Pendaftaran",
+        "amount": "500.000",
+        "timing": "Pada Saat Daftar"
+      }
+    ],
+    "dppItems": [
+      {
+        "label": "Dana Pendidikan Pokok (DPP)",
+        "amount": "14.000.000",
+        "timing": "Dicicil 2 Kali s/d September"
+      }
+    ],
+    "semesterItems": [],
+    "onboardingItems": []
+  }
+}
+4. registrationFee: null
+5. dpp: null
+6. registrationDiscount: Rp 300.000
+7. answer:
+Program Studi: BD
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: 2026
+
+
+Pendaftaran:
+Potongan Pendaftaran Gelombang 1:
+Rp 300.000
+Total Pendaftaran:
+Rp 0
+
+DPP:
+Potongan DPP Gelombang 1:
+Rp 250.000,
+
+Biaya Perlengkapan:
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Subtotal Awal Masuk: Rp 0
+
+Total Biaya Masuk:
+Rp 0
+Sumber:
+- rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf
+- rincian Biaya D3 Tahun Ajaran 2026-2027.pdf
+8. filename sumber yang digunakan: rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya D3 Tahun Ajaran 2026-2027.pdf
+
+=== MI ===
+1. success: true
+2. source: rag-fee-structured
+3. feeStruct: {
+  "program": "SI",
+  "programName": null,
+  "wave": "1A",
+  "waveGroup": "1",
+  "academicYear": "2026",
+  "partner": null,
+  "campus": null,
+  "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+  "updatedAt": null,
+  "registrationFee": null,
+  "dpp": null,
+  "dppDiscount": "Rp 1.250.000 ",
+  "registrationDiscount": "Rp 300.000",
+  "ukt": null,
+  "scholarship": null,
+  "isGlobalDiscount": true,
+  "rawChunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+  "sourceChunk": {
+    "id": "added-from-backup-1",
+    "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+    "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+    "trainingId": null,
+    "metadata": {
+      "category": "tuition_fee",
+      "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+    }
+  },
+  "sourceChunks": [
+    {
+      "id": "added-from-backup-1",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    {
+      "id": "added-from-backup-3",
+      "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n1. Pendaftaran 500.000\n2. Biaya Registrasi 10.000.000\n3. Biaya Pendidikan Per Semester 4.500.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp.300.000 Gelombang Khusus\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya D3 Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    {
+      "id": "added-from-backup-5",
+      "filename": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM DUAL DEGREE HELP T.A 2026/2027\n1. Pendaftaran 3.000.000\n2. Dana Pendidikan Pokok 20.000.000\nPotongan: Rp.1.500.000 Gelombang Khusus; Rp.1.250.000 Gelombang I\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya HELP Tahun Ajaran 2026-2027.pdf"
+      }
+    }
+  ],
+  "initialCostItems": [
+    {
+      "label": "Pendaftaran",
+      "amount": "500.000",
+      "timing": "Pada Saat Daftar"
+    },
+    {
+      "label": "Dana Pendidikan Pokok (DPP)",
+      "amount": "14.000.000",
+      "timing": "Dicicil 2 Kali s/d September"
+    }
+  ],
+  "registrationTotal": "Rp 0",
+  "uniformFee": "Rp 0",
+  "capFee": "Rp 0",
+  "shirtFee": "Rp 0",
+  "gmtiFee": "Rp 0",
+  "bagFee": "Rp 0",
+  "subtotalAwalMasuk": "Rp 0",
+  "totalBiayaMasuk": "Rp 0",
+  "classifiedInitialCostItems": {
+    "registrationItems": [
+      {
+        "label": "Pendaftaran",
+        "amount": "500.000",
+        "timing": "Pada Saat Daftar"
+      }
+    ],
+    "dppItems": [
+      {
+        "label": "Dana Pendidikan Pokok (DPP)",
+        "amount": "14.000.000",
+        "timing": "Dicicil 2 Kali s/d September"
+      }
+    ],
+    "semesterItems": [],
+    "onboardingItems": []
+  }
+}
+4. registrationFee: null
+5. dpp: null
+6. registrationDiscount: Rp 300.000
+7. answer:
+Program Studi: MI
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: 2026
+
+
+Pendaftaran:
+Potongan Pendaftaran Gelombang 1:
+Rp 300.000
+Total Pendaftaran:
+Rp 0
+
+DPP:
+Potongan DPP Gelombang 1:
+Rp 1.250.000 
+
+Biaya Perlengkapan:
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Subtotal Awal Masuk: Rp 0
+
+Total Biaya Masuk:
+Rp 0
+Sumber:
+- rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf
+- rincian Biaya D3 Tahun Ajaran 2026-2027.pdf
+- rincian Biaya HELP Tahun Ajaran 2026-2027.pdf
+8. filename sumber yang digunakan: rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya D3 Tahun Ajaran 2026-2027.pdf | rincian Biaya HELP Tahun Ajaran 2026-2027.pdf
+
+=== SK ===
+1. success: true
+2. source: rag-fee-structured
+3. feeStruct: {
+  "program": "SI",
+  "programName": null,
+  "wave": "1A",
+  "waveGroup": "1",
+  "academicYear": "2026",
+  "partner": null,
+  "campus": null,
+  "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+  "updatedAt": null,
+  "registrationFee": null,
+  "dpp": null,
+  "dppDiscount": "Rp 250.000,",
+  "registrationDiscount": "Rp 300.000",
+  "ukt": null,
+  "scholarship": null,
+  "isGlobalDiscount": true,
+  "rawChunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+  "sourceChunk": {
+    "id": "added-from-backup-1",
+    "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+    "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+    "trainingId": null,
+    "metadata": {
+      "category": "tuition_fee",
+      "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+    }
+  },
+  "sourceChunks": [
+    {
+      "id": "added-from-backup-1",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    {
+      "id": "added-from-backup-3",
+      "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI D3 T.A 2026/2027\n1. Pendaftaran 500.000\n2. Biaya Registrasi 10.000.000\n3. Biaya Pendidikan Per Semester 4.500.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp.300.000 Gelombang Khusus\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya D3 Tahun Ajaran 2026-2027.pdf"
+      }
+    }
+  ],
+  "initialCostItems": [
+    {
+      "label": "Pendaftaran",
+      "amount": "500.000",
+      "timing": "Pada Saat Daftar"
+    },
+    {
+      "label": "Dana Pendidikan Pokok (DPP)",
+      "amount": "14.000.000",
+      "timing": "Dicicil 2 Kali s/d September"
+    }
+  ],
+  "registrationTotal": "Rp 0",
+  "uniformFee": "Rp 0",
+  "capFee": "Rp 0",
+  "shirtFee": "Rp 0",
+  "gmtiFee": "Rp 0",
+  "bagFee": "Rp 0",
+  "subtotalAwalMasuk": "Rp 0",
+  "totalBiayaMasuk": "Rp 0",
+  "classifiedInitialCostItems": {
+    "registrationItems": [
+      {
+        "label": "Pendaftaran",
+        "amount": "500.000",
+        "timing": "Pada Saat Daftar"
+      }
+    ],
+    "dppItems": [
+      {
+        "label": "Dana Pendidikan Pokok (DPP)",
+        "amount": "14.000.000",
+        "timing": "Dicicil 2 Kali s/d September"
+      }
+    ],
+    "semesterItems": [],
+    "onboardingItems": []
+  }
+}
+4. registrationFee: null
+5. dpp: null
+6. registrationDiscount: Rp 300.000
+7. answer:
+Program Studi: SK
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: 2026
+
+
+Pendaftaran:
+Potongan Pendaftaran Gelombang 1:
+Rp 300.000
+Total Pendaftaran:
+Rp 0
+
+DPP:
+Potongan DPP Gelombang 1:
+Rp 250.000,
+
+Biaya Perlengkapan:
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Subtotal Awal Masuk: Rp 0
+
+Total Biaya Masuk:
+Rp 0
+Sumber:
+- rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf
+- rincian Biaya D3 Tahun Ajaran 2026-2027.pdf
+8. filename sumber yang digunakan: rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya D3 Tahun Ajaran 2026-2027.pdf
+
+=== UTB ===
+1. success: true
+2. source: rag-fee-structured
+3. feeStruct: {
+  "program": null,
+  "programName": null,
+  "wave": "1A",
+  "waveGroup": "1",
+  "academicYear": "2026",
+  "partner": "UTB",
+  "campus": null,
+  "sourceFile": "rincian Biaya UTB Tahun Ajaran 2026-2027.pdf",
+  "updatedAt": null,
+  "registrationFee": null,
+  "dpp": null,
+  "dppDiscount": "Rp 300.000 ",
+  "registrationDiscount": "Rp 250.000",
+  "ukt": null,
+  "scholarship": null,
+  "isGlobalDiscount": true,
+  "rawChunk": "RINCIAN BIAYA DUAL DEGREE UTB T.A 2026/2027\n1. Pendaftaran 500.000\n2. DPP 14.000.000\nPotongan pendaftaran: Rp.300.000 Khusus; Rp.250.000 Gelombang I\n",
+  "sourceChunk": {
+    "id": "added-from-backup-6",
+    "filename": "rincian Biaya UTB Tahun Ajaran 2026-2027.pdf",
+    "chunk": "RINCIAN BIAYA DUAL DEGREE UTB T.A 2026/2027\n1. Pendaftaran 500.000\n2. DPP 14.000.000\nPotongan pendaftaran: Rp.300.000 Khusus; Rp.250.000 Gelombang I\n",
+    "trainingId": null,
+    "metadata": {
+      "category": "tuition_fee",
+      "source": "pdf/rincian Biaya UTB Tahun Ajaran 2026-2027.pdf"
+    }
+  },
+  "sourceChunks": [
+    {
+      "id": "added-from-backup-6",
+      "filename": "rincian Biaya UTB Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA DUAL DEGREE UTB T.A 2026/2027\n1. Pendaftaran 500.000\n2. DPP 14.000.000\nPotongan pendaftaran: Rp.300.000 Khusus; Rp.250.000 Gelombang I\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya UTB Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    {
+      "id": "added-from-backup-2",
+      "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n1. Pendaftaran 500.000\n2. Dana Pendidikan Pokok (DPP) 11.000.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp. 250.000,- Gelombang I; Rp.200.000 Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SK Tahun Ajaran 2026-2027.pdf"
+      }
+    }
+  ],
+  "initialCostItems": [],
+  "registrationTotal": "Rp 0",
+  "uniformFee": "Rp 0",
+  "capFee": "Rp 0",
+  "shirtFee": "Rp 0",
+  "gmtiFee": "Rp 0",
+  "bagFee": "Rp 0",
+  "subtotalAwalMasuk": "Rp 0",
+  "totalBiayaMasuk": "Rp 0"
+}
+4. registrationFee: null
+5. dpp: null
+6. registrationDiscount: Rp 250.000
+7. answer:
+Program Studi: Program Studi
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: 2026
+
+
+Pendaftaran:
+Potongan Pendaftaran Gelombang 1:
+Rp 250.000
+Total Pendaftaran:
+Rp 0
+
+DPP:
+Potongan DPP Gelombang 1:
+Rp 300.000 
+
+Biaya Perlengkapan:
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Subtotal Awal Masuk: Rp 0
+
+Total Biaya Masuk:
+Rp 0
+Sumber:
+- rincian Biaya UTB Tahun Ajaran 2026-2027.pdf
+- rincian Biaya SK Tahun Ajaran 2026-2027.pdf
+8. filename sumber yang digunakan: rincian Biaya UTB Tahun Ajaran 2026-2027.pdf | rincian Biaya UTB Tahun Ajaran 2026-2027.pdf | rincian Biaya SK Tahun Ajaran 2026-2027.pdf
+
+=== DNUI ===
+1. success: true
+2. source: rag-fee-structured
+3. feeStruct: {
+  "program": "SI",
+  "programName": null,
+  "wave": "1A",
+  "waveGroup": "1",
+  "academicYear": "2026",
+  "partner": null,
+  "campus": null,
+  "sourceFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+  "updatedAt": null,
+  "registrationFee": null,
+  "dpp": null,
+  "dppDiscount": "Rp 250.000,",
+  "registrationDiscount": "Rp 300.000",
+  "ukt": null,
+  "scholarship": null,
+  "isGlobalDiscount": true,
+  "rawChunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+  "sourceChunk": {
+    "id": "added-from-backup-1",
+    "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+    "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+    "trainingId": null,
+    "metadata": {
+      "category": "tuition_fee",
+      "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+    }
+  },
+  "sourceChunks": [
+    {
+      "id": "added-from-backup-1",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    {
+      "id": "added-from-backup-1",
+      "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SI, TI, BD TAHUN AJARAN 2026/2027\nNo. Jenis Biaya Rp Waktu Pembayaran\n1. Pendaftaran 500.000 Pada Saat Daftar\n2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September\nPenjelasan Tambahan :\nPotongan Biaya Pendaftaran : Rp. 300.000, Jika Mendaftar pada Gelombang Khusus\nRp. 250.000,- Jika Mendaftar pada Gelombang I\nRp. 200.000,- Jika Mendaftar pada Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf"
+      }
+    }
+  ],
+  "initialCostItems": [
+    {
+      "label": "Pendaftaran",
+      "amount": "500.000",
+      "timing": "Pada Saat Daftar"
+    },
+    {
+      "label": "Dana Pendidikan Pokok (DPP)",
+      "amount": "14.000.000",
+      "timing": "Dicicil 2 Kali s/d September"
+    }
+  ],
+  "registrationTotal": "Rp 0",
+  "uniformFee": "Rp 0",
+  "capFee": "Rp 0",
+  "shirtFee": "Rp 0",
+  "gmtiFee": "Rp 0",
+  "bagFee": "Rp 0",
+  "subtotalAwalMasuk": "Rp 0",
+  "totalBiayaMasuk": "Rp 0",
+  "classifiedInitialCostItems": {
+    "registrationItems": [
+      {
+        "label": "Pendaftaran",
+        "amount": "500.000",
+        "timing": "Pada Saat Daftar"
+      }
+    ],
+    "dppItems": [
+      {
+        "label": "Dana Pendidikan Pokok (DPP)",
+        "amount": "14.000.000",
+        "timing": "Dicicil 2 Kali s/d September"
+      }
+    ],
+    "semesterItems": [],
+    "onboardingItems": []
+  }
+}
+4. registrationFee: null
+5. dpp: null
+6. registrationDiscount: Rp 300.000
+7. answer:
+Program Studi: SI
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: 2026
+
+
+Pendaftaran:
+Potongan Pendaftaran Gelombang 1:
+Rp 300.000
+Total Pendaftaran:
+Rp 0
+
+DPP:
+Potongan DPP Gelombang 1:
+Rp 250.000,
+
+Biaya Perlengkapan:
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Subtotal Awal Masuk: Rp 0
+
+Total Biaya Masuk:
+Rp 0
+Sumber:
+- rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf
+8. filename sumber yang digunakan: rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf | rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf
+
+=== HELP ===
+1. success: true
+2. source: rag-fee-structured
+3. feeStruct: {
+  "program": null,
+  "programName": null,
+  "wave": "1A",
+  "waveGroup": "1",
+  "academicYear": "2026",
+  "partner": "HELP",
+  "campus": null,
+  "sourceFile": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+  "updatedAt": null,
+  "registrationFee": null,
+  "dpp": null,
+  "dppDiscount": "Rp 1.250.000 ",
+  "registrationDiscount": "Rp 250.000",
+  "ukt": null,
+  "scholarship": null,
+  "isGlobalDiscount": true,
+  "rawChunk": "RINCIAN BIAYA PROGRAM DUAL DEGREE HELP T.A 2026/2027\n1. Pendaftaran 3.000.000\n2. Dana Pendidikan Pokok 20.000.000\nPotongan: Rp.1.500.000 Gelombang Khusus; Rp.1.250.000 Gelombang I\n",
+  "sourceChunk": {
+    "id": "added-from-backup-5",
+    "filename": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+    "chunk": "RINCIAN BIAYA PROGRAM DUAL DEGREE HELP T.A 2026/2027\n1. Pendaftaran 3.000.000\n2. Dana Pendidikan Pokok 20.000.000\nPotongan: Rp.1.500.000 Gelombang Khusus; Rp.1.250.000 Gelombang I\n",
+    "trainingId": null,
+    "metadata": {
+      "category": "tuition_fee",
+      "source": "pdf/rincian Biaya HELP Tahun Ajaran 2026-2027.pdf"
+    }
+  },
+  "sourceChunks": [
+    {
+      "id": "added-from-backup-5",
+      "filename": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM DUAL DEGREE HELP T.A 2026/2027\n1. Pendaftaran 3.000.000\n2. Dana Pendidikan Pokok 20.000.000\nPotongan: Rp.1.500.000 Gelombang Khusus; Rp.1.250.000 Gelombang I\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya HELP Tahun Ajaran 2026-2027.pdf"
+      }
+    },
+    {
+      "id": "added-from-backup-2",
+      "filename": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+      "chunk": "RINCIAN BIAYA PROGRAM STUDI SISTEM KOMPUTER T.A 2026/2027\n1. Pendaftaran 500.000\n2. Dana Pendidikan Pokok (DPP) 11.000.000\nPenjelasan Tambahan : Potongan Biaya Pendaftaran : Rp. 250.000,- Gelombang I; Rp.200.000 Gelombang II\n",
+      "trainingId": null,
+      "metadata": {
+        "category": "tuition_fee",
+        "source": "pdf/rincian Biaya SK Tahun Ajaran 2026-2027.pdf"
+      }
+    }
+  ],
+  "initialCostItems": [],
+  "registrationTotal": "Rp 0",
+  "uniformFee": "Rp 0",
+  "capFee": "Rp 0",
+  "shirtFee": "Rp 0",
+  "gmtiFee": "Rp 0",
+  "bagFee": "Rp 0",
+  "subtotalAwalMasuk": "Rp 0",
+  "totalBiayaMasuk": "Rp 0"
+}
+4. registrationFee: null
+5. dpp: null
+6. registrationDiscount: Rp 250.000
+7. answer:
+Program Studi: Program Studi
+Gelombang: 1A
+Gelombang 1A
+Tahun Akademik: 2026
+
+
+Pendaftaran:
+Potongan Pendaftaran Gelombang 1:
+Rp 250.000
+Total Pendaftaran:
+Rp 0
+
+DPP:
+Potongan DPP Gelombang 1:
+Rp 1.250.000 
+
+Biaya Perlengkapan:
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Subtotal Awal Masuk: Rp 0
+
+Total Biaya Masuk:
+Rp 0
+Sumber:
+- rincian Biaya HELP Tahun Ajaran 2026-2027.pdf
+- rincian Biaya SK Tahun Ajaran 2026-2027.pdf
+8. filename sumber yang digunakan: rincian Biaya HELP Tahun Ajaran 2026-2027.pdf | rincian Biaya HELP Tahun Ajaran 2026-2027.pdf | rincian Biaya SK Tahun Ajaran 2026-2027.pdf
+

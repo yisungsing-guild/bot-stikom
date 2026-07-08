@@ -1,0 +1,1266 @@
+﻿[dotenv@17.2.4] injecting env (85) from .env.production.local -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+=== Program: Sistem Informasi (SI) ===
+{"level":40,"time":1780463900564,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Jelaskan apa itu program studi Sistem Informasi di ITB STIKOM Bali
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Animator Peneliti Sistem Informasi Software Engineer Cyber Security Analyst & IT For╬ô├ç┬¬
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ac.id
+sisteminformasi.stikombali
+Perekayasa Sistem Informasi
+Perekayasa Sistem Informasi
+Multimedia
+Desain Grafis & Animator
+Peneliti Sistem Informasi
+
+Software 
+Engineer
+Cyber Security
+Analyst & IT Forensic
+Specialist
+Menghasilkan lulusan yang memiliki kompetensi dalam
+penerapan teknologi komputer dan jaringan untuk
+mengelola,mengolah serta mendistribusikan informasi secara
+efektif dan inovatif mencakup pengembangan perangkat lunak,
+teknologi cloud, DevOps, Keamanan Siber, investigasi forensik,
+pengelolaan data  hingga penerapan teknologi untuk mendukung
+proses bisnis, inovasi dan riset.
+DevOps & Cloud
+Engineer
+Information
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi
+
+---
+
+Sumber 2 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya  Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China)  Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3
+ASSIST_HINTS: prodi
+{"level":30,"time":1780463901091,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi sistem informasi di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi sistem informasi di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"sistem\",\"informasi\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"apa\",\"sistem\",\"informasi\",\"stikom\",\"bali\"] overlapRatio=0.5"}
+{"level":30,"time":1780463901093,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi sistem informasi di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi sistem informasi di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"sistem\",\"informasi\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"apa\",\"program\",\"sistem\",\"informasi\",\"itb\",\"stikom\",\"bali\"] overlapRatio=0.7"}
+{"level":30,"time":1780463901097,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"jelaskan apa itu program studi sistem informasi di itb stikom bali","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463901102,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463901105,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":66,"ctxLen":2488,"style":"SANTAI","assistHintsLen":5,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463901574,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Definisi
+Question: Jelaskan apa itu program studi Sistem Informasi di ITB STIKOM Bali
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬tusanITBSTIKOM Bali Nomor:629/ITBSTIKOM /WDS/X/25 Tanggal 08 Oktober 2025 RINCIANBIAYAPENDIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI, TEKNOLOGIINFORMASI, DAN BISNISDIGITAL T.A 2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1.Pendaftaran 500.000 2.Dana Pendidikan Pokok14.000.000 P
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya jelaskan lagi bagian lain?
+Top contexts:
+  1. [N/A] INSTITUTTEKNOLOGIDANBISNIS STIKOM BALI INSTITUTTEKNOLOGI DAN BISNIS.. (ITB)STIKOM BALI KampusDenpasar JL.RayaPuputan No.86Renon,Denpasar-Ball-Indonesia|Ph :(0361)244445|Fax(0361)264773 |Hotline:082277
+
+{"level":40,"time":1780463902051,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Apa saja yang dipelajari di Sistem Informasi? Jelaskan kurikulumnya.
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki progr╬ô├ç┬¬
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: ecialist | Brand Manager | Business Development | Startup Founder" Manajemen Informasi | "Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya  Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China)  Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3
+
+---
+
+Sumber 2 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki program Double Degree bersama HELP University, Malaysia. 10. Program studi apa yang ditawarkan dalam skema HELP University? Program ini untuk mahasiswa Program Studi Sistem Informasi . 11. Apa gelar yang diperoleh dari program HELP University? Mahasiswa berkesempatan memperoleh : Sarjana Komputer ( S.Kom ) dari ITB STIKOM Bali Bachelor of Information Technology (BIT) dari HELP University 12. Berapa lama studi pada program HELP University? Durasi studi umumnya sekitar 4 tahun sesuai kurikulum yang berlaku . 13. Di mana perkuliahan dilaksanakan ? Skema pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Offi
+
+---
+
+Sumber 3 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+ecialist | Brand Manager | Business Development | Startup Founder"
+Manajemen Informasi | "Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini akan mahir dalam bidang Web Developer | Database Administrator | dan IT Entrepreneur yang menghadapi dunia usaha dan industri" | "Pengelolaan database | arsip digital | administrasi sistem informasi | data processing | dokumentasi digital" | "Teliti | rapi | dan suka mengelola data" | "Data Administrator | Database Staff | Information Management Staff | IT Administration | Document Controller | Digital Archive Staff"
+
+---
+
+Sumber 4 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ac.id
+sisteminformasi.stikombali
+Perekayasa Sistem Informasi
+Perekayasa Sistem Informasi
+Multimedia
+Desain Grafis & Animator
+Peneliti Sistem Informasi
+
+Software 
+Engineer
+Cyber Security
+Analyst & IT Forensic
+Specialist
+Menghasilkan lulusan yang memiliki kompetensi dalam
+penerapan teknologi komputer dan jaringan untuk
+mengelola,mengolah serta mendistribusikan informasi secara
+efektif dan inovatif mencakup pengembangan perangkat lunak,
+teknologi cloud, DevOps, Keamanan Siber, investigasi forensik,
+pengelolaan data  hingga penerapan teknologi untuk mendukung
+proses bisnis, inovasi dan riset.
+DevOps & Cloud
+Engineer
+Information
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi
+ASSIST_HINTS: prodi
+{"level":30,"time":1780463902352,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem informasi? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem informasi? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"informasi?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"apa\",\"yang\",\"sistem\",\"informasi?\",\"kurikulumnya.\"] overlapRatio=0.625"}
+{"level":30,"time":1780463902355,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem informasi? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem informasi? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"informasi?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"apa\",\"yang\",\"sistem\",\"informasi?\",\"kurikulumnya.\"] overlapRatio=0.625"}
+{"level":30,"time":1780463902356,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem informasi? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem informasi? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"informasi?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"yang\",\"sistem\",\"informasi?\"] overlapRatio=0.375"}
+{"level":30,"time":1780463902356,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem informasi? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem informasi? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"informasi?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"apa\",\"yang\",\"sistem\",\"informasi?\"] overlapRatio=0.5"}
+{"level":30,"time":1780463902359,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"apa saja yang dipelajari di sistem informasi? jelaskan kurikulumnya.","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463902364,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463902368,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":68,"ctxLen":4365,"style":"SANTAI","assistHintsLen":5,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463902639,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Kurikulum
+Question: Apa saja yang dipelajari di Sistem Informasi? Jelaskan kurikulumnya.
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬nal Lokal Dapat dicicil5kalipersemesterdandimulai darisemester3 Penjelasan Tambahan: 1. Butir1sampaidengan4dibayar1kalisajapada awalmasuk 2.Potongan Biaya Pendaftaran: Rp.300.000, -Jika Mendaftarpada Gelombang Khusus Rp.250.000, -Jikamendaftarpada GelombangI Rp.200.000, -Jikamendaftarpada GelombangII Rp.150.000
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+Top contexts:
+  1. [N/A] DIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI,TEKNOLOGIINFORMASI,DAN BISNISDIGITAL T.A 2026/2027 No.Jenis BiayaRp WaktuPembayaran 1.Pendaftaran 500.000 2.DanaPendidikanPokok14.000.000 P
+
+{"level":40,"time":1780463903157,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Prospek kerja lulusan Sistem Informasi di ITB STIKOM Bali seperti apa?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Animator Peneliti Sistem Informasi Software Engineer Cyber Security Analyst & IT For╬ô├ç┬¬
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neu╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ac.id
+sisteminformasi.stikombali
+Perekayasa Sistem Informasi
+Perekayasa Sistem Informasi
+Multimedia
+Desain Grafis & Animator
+Peneliti Sistem Informasi
+
+Software 
+Engineer
+Cyber Security
+Analyst & IT Forensic
+Specialist
+Menghasilkan lulusan yang memiliki kompetensi dalam
+penerapan teknologi komputer dan jaringan untuk
+mengelola,mengolah serta mendistribusikan informasi secara
+efektif dan inovatif mencakup pengembangan perangkat lunak,
+teknologi cloud, DevOps, Keamanan Siber, investigasi forensik,
+pengelolaan data  hingga penerapan teknologi untuk mendukung
+proses bisnis, inovasi dan riset.
+DevOps & Cloud
+Engineer
+Information
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi
+
+---
+
+Sumber 2 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree ΓÇô Dalian Neusoft University of Information, China 3. Keunggulan Program 4. Cara Daftar Ketik angka ya Double Degree HELP University User: 1 Bot: Program Double Degree dengan HELP University (Malaysia) Info singkat : Durasi : 4 tahun Kuliah: 100% di ITB STIKOM Bali Jurusan : Sistem Informasi Gelar yang didapat : S.Kom (Indonesia) Bachelor of IT (Malaysia) Mau tahu keunggulannya ? ketik 3 ya  Double Degree China (DNUI) User: 2 Bot: Program Double Degree dengan Dalian Neusoft University (China)  Skema kuliah : Tahun 1ΓÇô2: Indonesia Tahun 3: Online ( kurikulum China) Tahun 4: Kuliah di China Gelar: S.Bns (Indonesia) Bachelor of Management (China) Bonus: Dormitory GRATIS di China Mau tahu benefitnya ? ketik 3
+ASSIST_HINTS: prodi
+{"level":30,"time":1780463903407,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan sistem informasi di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan sistem informasi di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"sistem\",\"informasi\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"lulusan\",\"sistem\",\"informasi\",\"stikom\",\"bali\"] overlapRatio=0.5"}
+{"level":30,"time":1780463903408,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan sistem informasi di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan sistem informasi di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"sistem\",\"informasi\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"sistem\",\"informasi\",\"itb\",\"stikom\",\"bali\"] overlapRatio=0.5"}
+{"level":30,"time":1780463903409,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"prospek kerja lulusan sistem informasi di itb stikom bali seperti apa?","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463903410,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463903410,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":70,"ctxLen":2488,"style":"SANTAI","assistHintsLen":5,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463903650,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Prospek kerja
+Question: Prospek kerja lulusan Sistem Informasi di ITB STIKOM Bali seperti apa?
+Detected intent: PROSPEK_KERJA
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬p mengenai program studi yang menyelenggarakan RPL, persyaratan khusus, komponen biaya, deskripsi program studi, profil lulusan, capaian pembelajaran lulusan, daftar mata kuliah yang dapat diklaim, serta daftar kompetensi yang dibutuhkan untuk masing-masing mata kuliah di program studi, dapat dilihat pada suplemen Pedoman RPL berupa buku prodi masing-masing. ╬ô├ç┬¬
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+Top contexts:
+  1. [N/A] 12 Tabel 1. Daftar Program Studi Penyelenggara RPL No Kode Program Studi Jenjang Akreditasi 1 56201 Sistem Komputer S1 B 2 57201 Sistem Informasi S1 Baik Sekali Informasi lebih lengkap mengenai progra
+
+
+- Biaya
+Question: Berapa biaya kuliah untuk program Sistem Informasi?
+Detected intent: BIAYA_PENDIDIKAN
+Answer source: rag-fee-semester-only
+Answer:
+Siap, aku bantu jelaskan soal biaya.
+Untuk Kelas Reguler ╬ô├ç├╢ Program Studi Sistem Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+
+- Akreditasi
+Question: Apa akreditasi program Sistem Informasi di ITB STIKOM Bali?
+Detected intent: AKREDITASI_PERINGKAT
+Answer source: rag-accreditation
+Answer:
+Siap, aku bantu jawab ya.
+Akreditasi Prodi Sistem Informasi: Baik Sekali.
+Nomor SK: /LAM-INFOKOM/Ak/S/XII/2023.
+Mau saya jelaskan lagi bagian lain?
+
+=== Program: Teknologi Informasi (TI) ===
+{"level":40,"time":1780463905506,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Jelaskan apa itu program studi Teknologi Informasi di ITB STIKOM Bali
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi beasiswa, potongan, atau subsidi.
+Contoh ringkasan sumber:
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: 19 Oktober 2023 PENERIMA PROGRAM BEASISWA RANKING KELAS DI ITB STIKOM BALI " L STIKOM Bali memberikan beasiswa kepada: a. Calon mahasiswa dari : SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN╬ô├ç┬¬
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: ja, SMKN 3 Singaraja SMAN 1 Bangli, SMKN 1 Bangli SMAN 1 Negara SMAN 1 Amlapura 1. Rangking 1,2 dan 3 di kelas XII Semester 1 atau 2 2. Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 b. Calon mahasi╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+19 Oktober 2023 
+PENERIMA PROGRAM BEASISWA RANKING KELAS DI 
+ITB STIKOM BALI " 
+L STIKOM Bali memberikan beasiswa kepada: 
+a.  Calon mahasiswa dari : 
+SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali Global 
+Sebali 
+SMK Pandawa Bali Global Abiansemal, SMAN 1  Abiansemal, SMKN 1  Kuta 
+Selatan, SMAN 1 Kuta Utara, SMAN 1 Kuta 
+SMKN 1 Gianyar, SMAN 1 Gianyar, SMKN 1  Gianyar, SMAN 1 Gianyar, SMKN 
+1  Mas Ubud 
+SMAN 1  Tabanan, SMKN 3 Tabanan 
+SMAN 1 Klungkung, SMKN 1 Klungkung 
+SMAN 1  Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.
+
+---
+
+Sumber 2 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+ja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.  Calon mahasiswa dari SMA/K/MA lainnya 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1  atau 2 
+1L Bagi siswa yang berasal dari SMK TI Bali Global Sebali dan SMK Pandawa Bali 
+Global Abiansemal tidak mengikuti tes seleksi penerimaan mahasiswa baru (tes 
+akademis) hanya mengikuti tes wawancara saja. 
+IIL Siswa yang berasal dari SMA/K/MA yang mendapatkan rangking 1  s/d 15 besar di 
+kelas XII semester 1 atau 2 tidak mengikuti tes tulis hanya mengikuti tes wawancara 
+saja dengan melampirkan bukti raport yang sudah di legalisir atau Surat Kete
+ASSIST_HINTS: biaya,beasiswa
+{"level":30,"time":1780463905765,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi teknologi informasi di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi teknologi informasi di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"teknologi\",\"informasi\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"program\",\"informasi\",\"itb\",\"stikom\",\"bali\"] overlapRatio=0.5"}
+{"level":30,"time":1780463905766,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi teknologi informasi di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi teknologi informasi di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"teknologi\",\"informasi\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"apa\",\"bali\"] overlapRatio=0.2"}
+{"level":30,"time":1780463905767,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"jelaskan apa itu program studi teknologi informasi di itb stikom bali","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463905768,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463905768,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":69,"ctxLen":2461,"style":"SANTAI","assistHintsLen":14,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463906011,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Definisi
+Question: Jelaskan apa itu program studi Teknologi Informasi di ITB STIKOM Bali
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬tusanITBSTIKOM Bali Nomor:629/ITBSTIKOM /WDS/X/25 Tanggal 08 Oktober 2025 RINCIANBIAYAPENDIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI, TEKNOLOGIINFORMASI, DAN BISNISDIGITAL T.A 2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1.Pendaftaran 500.000 2.Dana Pendidikan Pokok14.000.000 P
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya jelaskan lagi bagian lain?
+Top contexts:
+  1. [N/A] INSTITUTTEKNOLOGIDANBISNIS STIKOM BALI INSTITUTTEKNOLOGI DAN BISNIS.. (ITB)STIKOM BALI KampusDenpasar JL.RayaPuputan No.86Renon,Denpasar-Ball-Indonesia|Ph :(0361)244445|Fax(0361)264773 |Hotline:082277
+
+{"level":40,"time":1780463906486,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Apa saja yang dipelajari di Teknologi Informasi? Jelaskan kurikulumnya.
+CONTEXT: Sumber 1 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+ja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.  Calon mahasiswa dari SMA/K/MA lainnya 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1  atau 2 
+1L Bagi siswa yang berasal dari SMK TI Bali Global Sebali dan SMK Pandawa Bali 
+Global Abiansemal tidak mengikuti tes seleksi penerimaan mahasiswa baru (tes 
+akademis) hanya mengikuti tes wawancara saja. 
+IIL Siswa yang berasal dari SMA/K/MA yang mendapatkan rangking 1  s/d 15 besar di 
+kelas XII semester 1 atau 2 tidak mengikuti tes tulis hanya mengikuti tes wawancara 
+saja dengan melampirkan bukti raport yang sudah di legalisir atau Surat Kete
+ASSIST_HINTS: 
+{"level":30,"time":1780463906801,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di teknologi informasi? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di teknologi informasi? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"teknologi\",\"informasi?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"apa\",\"saja\",\"yang\"] overlapRatio=0.375"}
+{"level":30,"time":1780463906802,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"apa saja yang dipelajari di teknologi informasi? jelaskan kurikulumnya.","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463906802,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463906804,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":71,"ctxLen":849,"style":"SANTAI","assistHintsLen":0,"compactPrompt":true,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463907077,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Kurikulum
+Question: Apa saja yang dipelajari di Teknologi Informasi? Jelaskan kurikulumnya.
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬nal Lokal Dapat dicicil5kalipersemesterdandimulai darisemester3 Penjelasan Tambahan: 1. Butir1sampaidengan4dibayar1kalisajapada awalmasuk 2.Potongan Biaya Pendaftaran: Rp.300.000, -Jika Mendaftarpada Gelombang Khusus Rp.250.000, -Jikamendaftarpada GelombangI Rp.200.000, -Jikamendaftarpada GelombangII Rp.150.000
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+Top contexts:
+  1. [N/A] DIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI,TEKNOLOGIINFORMASI,DAN BISNISDIGITAL T.A 2026/2027 No.Jenis BiayaRp WaktuPembayaran 1.Pendaftaran 500.000 2.DanaPendidikanPokok14.000.000 P
+
+{"level":40,"time":1780463907553,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Prospek kerja lulusan Teknologi Informasi di ITB STIKOM Bali seperti apa?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi beasiswa, potongan, atau subsidi.
+Contoh ringkasan sumber:
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: 19 Oktober 2023 PENERIMA PROGRAM BEASISWA RANKING KELAS DI ITB STIKOM BALI " L STIKOM Bali memberikan beasiswa kepada: a. Calon mahasiswa dari : SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN╬ô├ç┬¬
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: ja, SMKN 3 Singaraja SMAN 1 Bangli, SMKN 1 Bangli SMAN 1 Negara SMAN 1 Amlapura 1. Rangking 1,2 dan 3 di kelas XII Semester 1 atau 2 2. Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 b. Calon mahasi╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+19 Oktober 2023 
+PENERIMA PROGRAM BEASISWA RANKING KELAS DI 
+ITB STIKOM BALI " 
+L STIKOM Bali memberikan beasiswa kepada: 
+a.  Calon mahasiswa dari : 
+SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali Global 
+Sebali 
+SMK Pandawa Bali Global Abiansemal, SMAN 1  Abiansemal, SMKN 1  Kuta 
+Selatan, SMAN 1 Kuta Utara, SMAN 1 Kuta 
+SMKN 1 Gianyar, SMAN 1 Gianyar, SMKN 1  Gianyar, SMAN 1 Gianyar, SMKN 
+1  Mas Ubud 
+SMAN 1  Tabanan, SMKN 3 Tabanan 
+SMAN 1 Klungkung, SMKN 1 Klungkung 
+SMAN 1  Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.
+
+---
+
+Sumber 2 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+ja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.  Calon mahasiswa dari SMA/K/MA lainnya 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1  atau 2 
+1L Bagi siswa yang berasal dari SMK TI Bali Global Sebali dan SMK Pandawa Bali 
+Global Abiansemal tidak mengikuti tes seleksi penerimaan mahasiswa baru (tes 
+akademis) hanya mengikuti tes wawancara saja. 
+IIL Siswa yang berasal dari SMA/K/MA yang mendapatkan rangking 1  s/d 15 besar di 
+kelas XII semester 1 atau 2 tidak mengikuti tes tulis hanya mengikuti tes wawancara 
+saja dengan melampirkan bukti raport yang sudah di legalisir atau Surat Kete
+ASSIST_HINTS: biaya,beasiswa
+{"level":30,"time":1780463907844,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan teknologi informasi di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan teknologi informasi di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"teknologi\",\"informasi\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"informasi\",\"itb\",\"stikom\",\"bali\"] overlapRatio=0.4"}
+{"level":30,"time":1780463907844,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan teknologi informasi di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan teknologi informasi di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"teknologi\",\"informasi\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"bali\"] overlapRatio=0.1"}
+{"level":30,"time":1780463907845,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"prospek kerja lulusan teknologi informasi di itb stikom bali seperti apa?","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463907846,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463907846,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":73,"ctxLen":2461,"style":"SANTAI","assistHintsLen":14,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463908190,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Prospek kerja
+Question: Prospek kerja lulusan Teknologi Informasi di ITB STIKOM Bali seperti apa?
+Detected intent: PROSPEK_KERJA
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬2. Konselor RPL Konselor membantu peserta dalam menilai capaian pembelajaran yang sudah dimiliki, baik dari pengalaman kerja╬ô├ç┬¬
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya jelaskan lagi bagian lain?
+Top contexts:
+  1. [N/A] 13 Tugas utama organisasi ini meliputi penyusunan pedoman pelaksanaan RPL, pengelolaan proses penilaian dan penilaian, serta memastikan prinsip- prinsip seperti asesibilitas, kesetaraan, transparansi,
+
+
+- Biaya
+Question: Berapa biaya kuliah untuk program Teknologi Informasi?
+Detected intent: BIAYA_PENDIDIKAN
+Answer source: rag-fee-semester-only
+Answer:
+Siap, aku bantu jelaskan soal biaya.
+Untuk Kelas Reguler ╬ô├ç├╢ Program Studi Teknologi Informasi, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+
+- Akreditasi
+Question: Apa akreditasi program Teknologi Informasi di ITB STIKOM Bali?
+Detected intent: AKREDITASI_PERINGKAT
+Answer source: rag-accreditation
+Answer:
+Siap, aku bantu jawab ya.
+Akreditasi Prodi Teknologi Informasi: Baik.
+Nomor SK: /BAN-PT/Ak/S/IX/2022.
+Mau saya jelaskan lagi bagian lain?
+
+=== Program: Sistem Komputer (SK) ===
+{"level":40,"time":1780463909539,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Jelaskan apa itu program studi Sistem Komputer di ITB STIKOM Bali
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi akreditasi program atau kampus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: SISTEMSISTEM KOMPUTERKOMPUTER GELAR S.KOM. Menghasilkan lulusan yang memiliki kompetensi dalam merancang, mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, sistem kontrol, dan jari╬ô├ç┬¬
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: an manajemen | "Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst" Sistem Komputer | "Program Studi Sistem Komputer menghasilkan lul╬ô├ç┬¬
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: Penjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | "Program Studi Sistem Informasi menghasilkan lulusan yang memiliki ko╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+SISTEMSISTEM
+KOMPUTERKOMPUTER
+GELAR S.KOM.
+Menghasilkan lulusan yang memiliki kompetensi dalam
+merancang, mengimplementasikan sistem Internet of Things
+(IoT), sistem tertanam, sistem kontrol, dan jaringan komputer
+dengan menerapakan prinsip keamanan jaringan 
+Profil
+Program Studi
+MORE INFO
+Perekayasa sistem
+tertanam dan IoT
+Perekayasa Jaringan
+komputer
+Keamanan 
+Sistem
+Peneliti di bidang
+sistem komputer
+sk.stikom-bali.ac.id
+sistemkomputer.stikombali
+
+---
+
+Sumber 2 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+an manajemen | "Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst"
+Sistem Komputer | "Program Studi Sistem Komputer menghasilkan lulusan yang memiliki kompetensi dalam merancang. mengimplementasikan sistem Internet of Things (IoT) | pada sistem Internet of Things (IoT) | sistem tertanam | sistem kontrol | dan jaringan komputer dengan menerapkan prinsip keamanan jaringan. Profil lulusan yaitu Perekayasa Sistem Tertanam dan IoT | Perekayasa Jaringan Komputer dan Keamanan Sistem | serta Peneliti di bidang Sistem Komputer." | "Hardware | mikrocontroller | embedded system | IoT | robotika | jaringan komputer | sistem digital" | "Suka perangkat elektronik | robot | dan praktik teknis" | "IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer"
+Bisnis Digital | "P
+
+---
+
+Sumber 3 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+Penjelasan Prodi dan Karier Masa Depan
+Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja
+Sistem Informasi | "Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems | sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi | Perekayasa Sistem Informasi Multimedia | Desainer Grafis | Animator | serta Peneliti Sistem Informasi." | "Analisis sistem | database | business intelligence | manajemen proyek IT | sistem enterprise | digital business" | Suka teknologi sekaligus bisnis dan manajemen | "Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst"
+Sistem Komputer
+
+---
+
+Sumber 4 (865ee469-8ded-4753-896f-a70d827ccf1d):
+Badan Akreditasi Nasional Perguruan Tinggi
+berdasarkan Keputusan BAN-PT No. 12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021, menyatakan bahwa
+Program Studi Manajemen Informatika, Pada Program Diploma-III Institut Teknologi dan Bisnis STIKOM Bali,
+Kota Denpasar
+
+---
+
+Sumber 5 (303d14ce-a80a-49b8-90c1-61072a1f36fa):
+ULUS | : | NEM :
+FACEBOOK/INSTAGRAM | :
+PROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)
+BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)
+KELAS PAGI / SIANG | KELAS SORE/MALAM
+KARYAWAN | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)
+BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)
+DOUBLE DEGREE | INTERNASIONAL PROGRAM (S.KOM B.IT) | NATIONAL PROGRAM (S.KOM-S.M)
+INTERNASIONAL PROGRAM (S.BNS B.M)
+TEMPAT KULIAH | : | KAMPUS  RENON | KAMPUS JIMBARAN | KAMPUS ABIANSEMAL
+SUMBER INFORMASI
+:
+PRESENTER | COSTUMER SERVICE | PENDAFTAR
+ASSIST_HINTS: prodi
+{"level":30,"time":1780463909754,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"apa\",\"program\",\"studi\",\"sistem\",\"komputer\",\"stikom\",\"bali\"] overlapRatio=0.7"}
+{"level":30,"time":1780463909755,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"itu\",\"program\",\"studi\",\"sistem\",\"komputer\"] overlapRatio=0.5"}
+{"level":30,"time":1780463909755,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"itu\",\"program\",\"studi\",\"sistem\",\"komputer\"] overlapRatio=0.5"}
+{"level":30,"time":1780463909755,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"itu\",\"program\",\"studi\",\"stikom\",\"bali\"] overlapRatio=0.5"}
+{"level":30,"time":1780463909755,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi sistem komputer di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"program\",\"sistem\",\"komputer\"] overlapRatio=0.3"}
+{"level":30,"time":1780463909756,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"jelaskan apa itu program studi sistem komputer di itb stikom bali","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463909757,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463909758,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":65,"ctxLen":4398,"style":"SANTAI","assistHintsLen":5,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463910046,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Definisi
+Question: Jelaskan apa itu program studi Sistem Komputer di ITB STIKOM Bali
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬an ITBSTIKOMBali Nomor: 629/ ITBSTIKOM /WDS/X/25 Tanggal 08 Oktober2025 RINCIAN BIAYAPENDIDIKANMAHASISWABARU KELASREGULER PROGRAM STUDISISTEMKOMPUTER T.A2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1.Pendaftaran 500.000 Pada Saat Daftar 2.Dana Pendidikan Pokok(DPP)11.000.000 Dicicil Per Blns. d UTS
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+Top contexts:
+  1. [N/A] INSTITUTTEKNOLOGIDANBISNIS STIKOMBALI INSTITUTTEKNOLOGIDANBISNIS (ITB )STIKOMBALI Kampus Denpasar JL.RayaPuputanNo.86Renon ,Denpasar-Ball-Indonesia|Ph:(0361)244445|Fax(0361)264773|Hotline : 0822773899
+
+{"level":40,"time":1780463910500,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Apa saja yang dipelajari di Sistem Komputer? Jelaskan kurikulumnya.
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi akreditasi program atau kampus.
+Contoh ringkasan sumber:
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: Penjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | "Program Studi Sistem Informasi menghasilkan lulusan yang memiliki ko╬ô├ç┬¬
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: an manajemen | "Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst" Sistem Komputer | "Program Studi Sistem Komputer menghasilkan lul╬ô├ç┬¬
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: SISTEMSISTEM KOMPUTERKOMPUTER GELAR S.KOM. Menghasilkan lulusan yang memiliki kompetensi dalam merancang, mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, sistem kontrol, dan jari╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+Penjelasan Prodi dan Karier Masa Depan
+Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja
+Sistem Informasi | "Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems | sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi | Perekayasa Sistem Informasi Multimedia | Desainer Grafis | Animator | serta Peneliti Sistem Informasi." | "Analisis sistem | database | business intelligence | manajemen proyek IT | sistem enterprise | digital business" | Suka teknologi sekaligus bisnis dan manajemen | "Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst"
+Sistem Komputer
+
+---
+
+Sumber 2 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+an manajemen | "Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst"
+Sistem Komputer | "Program Studi Sistem Komputer menghasilkan lulusan yang memiliki kompetensi dalam merancang. mengimplementasikan sistem Internet of Things (IoT) | pada sistem Internet of Things (IoT) | sistem tertanam | sistem kontrol | dan jaringan komputer dengan menerapkan prinsip keamanan jaringan. Profil lulusan yaitu Perekayasa Sistem Tertanam dan IoT | Perekayasa Jaringan Komputer dan Keamanan Sistem | serta Peneliti di bidang Sistem Komputer." | "Hardware | mikrocontroller | embedded system | IoT | robotika | jaringan komputer | sistem digital" | "Suka perangkat elektronik | robot | dan praktik teknis" | "IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer"
+Bisnis Digital | "P
+
+---
+
+Sumber 3 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+SISTEMSISTEM
+KOMPUTERKOMPUTER
+GELAR S.KOM.
+Menghasilkan lulusan yang memiliki kompetensi dalam
+merancang, mengimplementasikan sistem Internet of Things
+(IoT), sistem tertanam, sistem kontrol, dan jaringan komputer
+dengan menerapakan prinsip keamanan jaringan 
+Profil
+Program Studi
+MORE INFO
+Perekayasa sistem
+tertanam dan IoT
+Perekayasa Jaringan
+komputer
+Keamanan 
+Sistem
+Peneliti di bidang
+sistem komputer
+sk.stikom-bali.ac.id
+sistemkomputer.stikombali
+
+---
+
+Sumber 4 (166573b3-8a19-449a-9c3f-338ba9dc842d):
+KEPUTUSAN
+LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER
+Nomor:068/SK/LAM-INFOKOM/Ak/S/IV/2025
+TENTANG
+PERINGKAT AKREDITASI PROGRAM STUDI SISTEM KOMPUTER
+PADA PROGRAM SARJANA, INSTITUT TEKNOLOGI DAN BISNIS
+STIKOM BALI, KOTA DENPASAR
+LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER
+Menimbang: 
+bahwa   untuk   melaksanakan   ketentuan   Pasal   4   Peraturan   Menteri   Pendidikan   dan
+Kebudayaan  Nomor  5  Tahun  2020  tentang  Akreditasi  Program  Studi  dan  Perguruan
+Tinggi,  perlu  menetapkan  Keputusan  Lembaga  Akreditasi  Mandiri  Informatika  dan
+Komputer  tentang  Akreditasi  Program  Studi  Sistem  Komputer    pada  Institut  Teknologi
+dan Bisnis STIKOM Bali, Kota Denpasar.
+Mengingat: 1.Undang-undang Nomor 12 Tahun 2012 tentang Pendidikan Tinggi  (Lembaran Negara
+Republik  Indonesia  Tahun  2012  Nomor  158,  Tambahan  Lembaran  Negara  Republik
+Indonesia Nomor 5336);
+
+---
+
+Sumber 5 (a3513765-de58-4820-8c6b-02028e1a3c11):
+KEPUTUSAN
+LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER
+Nomor:149/SK/LAM-INFOKOM/Ak/S/XII/2023
+TENTANG
+PERINGKAT AKREDITASI PROGRAM STUDI SISTEM INFORMASI
+PADA PROGRAM SARJANA, INSTITUT TEKNOLOGI DAN BISNIS
+STIKOM BALI, KEC. DENPASAR TIMUR
+LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER
+Menimbang: 
+bahwa   untuk   melaksanakan   ketentuan   Pasal   4   Peraturan   Menteri   Pendidikan   dan
+Kebudayaan  Nomor  5  Tahun  2020  tentang  Akreditasi  Program  Studi  dan  Perguruan
+Tinggi,  perlu  menetapkan  Keputusan  Lembaga  Akreditasi  Mandiri  Informatika  dan
+Komputer  tentang  Akreditasi  Program  Studi  Sistem  Informasi    pada  Institut  Teknologi
+dan Bisnis STIKOM Bali, Kec. Denpasar Timur.
+Mengingat: 1.Undang-undang Nomor 12 Tahun 2012 tentang Pendidikan Tinggi  (Lembaran Negara
+Republik  Indonesia  Tahun  2012  Nomor  158,  Tambahan  Lembaran  Negara  Republik
+Indonesia
+
+---
+
+Sumber 6 (303d14ce-a80a-49b8-90c1-61072a1f36fa):
+ULUS | : | NEM :
+FACEBOOK/INSTAGRAM | :
+PROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)
+BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)
+KELAS PAGI / SIANG | KELAS SORE/MALAM
+KARYAWAN | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)
+BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)
+DOUBLE DEGREE | INTERNASIONAL PROGRAM (S.KOM B.IT) | NATIONAL PROGRAM (S.KOM-S.M)
+INTERNASIONAL PROGRAM (S.BNS B.M)
+TEMPAT KULIAH | : | KAMPUS  RENON | KAMPUS JIMBARAN | KAMPUS ABIANSEMAL
+SUMBER INFORMASI
+:
+PRESENTER | COSTUMER SERVICE | PENDAFTAR
+ASSIST_HINTS: prodi
+{"level":30,"time":1780463910751,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"komputer?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"yang\",\"dipelajari\",\"sistem\",\"komputer?\"] overlapRatio=0.5"}
+{"level":30,"time":1780463910751,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"komputer?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"yang\",\"sistem\",\"komputer?\"] overlapRatio=0.375"}
+{"level":30,"time":1780463910751,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"komputer?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"apa\",\"yang\",\"sistem\",\"komputer?\"] overlapRatio=0.5"}
+{"level":30,"time":1780463910751,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"komputer?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"sistem\",\"komputer?\"] overlapRatio=0.25"}
+{"level":30,"time":1780463910751,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"komputer?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"sistem\",\"komputer?\"] overlapRatio=0.25"}
+{"level":30,"time":1780463910751,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"sistem\",\"komputer?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"yang\",\"sistem\",\"komputer?\"] overlapRatio=0.375"}
+{"level":30,"time":1780463910751,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"apa saja yang dipelajari di sistem komputer? jelaskan kurikulumnya.","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463910754,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463910754,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":67,"ctxLen":5997,"style":"SANTAI","assistHintsLen":5,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463911011,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Kurikulum
+Question: Apa saja yang dipelajari di Sistem Komputer? Jelaskan kurikulumnya.
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬000 Dicicil5 Kali Per Semester 1.500.000 Dicicil5 Kali Per Semester Lokal Penjelasan Tambahan: 1.Butir1sampaidengan 4dibayar1kalisaja padaawalmasuk 2.Potongan Biaya Pendaftaran: Rp.300.000, Jika Mendaftarpada Gelombang Khusus Rp.250.000, -Jika Mendaftarpada GelombangI Rp.200.000, -Jika Mendaftarpada GelombangII Rp.150.000, -Jika Mendaftarpada Gelo
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+Top contexts:
+  1. [N/A] IKANMAHASISWABARU KELASREGULER PROGRAM STUDISISTEMKOMPUTER T.A2026/2027 No.Jenis BiayaRp WaktuPembayaran 1.Pendaftaran 500.000 PadaSaat Daftar 2.DanaPendidikanPokok(DPP)11.000.000 DicicilPerBlns.d UTS
+
+{"level":40,"time":1780463911474,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Prospek kerja lulusan Sistem Komputer di ITB STIKOM Bali seperti apa?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi akreditasi program atau kampus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: SISTEMSISTEM KOMPUTERKOMPUTER GELAR S.KOM. Menghasilkan lulusan yang memiliki kompetensi dalam merancang, mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, sistem kontrol, dan jari╬ô├ç┬¬
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: Penjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | "Program Studi Sistem Informasi menghasilkan lulusan yang memiliki ko╬ô├ç┬¬
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: an manajemen | "Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst" Sistem Komputer | "Program Studi Sistem Komputer menghasilkan lul╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+SISTEMSISTEM
+KOMPUTERKOMPUTER
+GELAR S.KOM.
+Menghasilkan lulusan yang memiliki kompetensi dalam
+merancang, mengimplementasikan sistem Internet of Things
+(IoT), sistem tertanam, sistem kontrol, dan jaringan komputer
+dengan menerapakan prinsip keamanan jaringan 
+Profil
+Program Studi
+MORE INFO
+Perekayasa sistem
+tertanam dan IoT
+Perekayasa Jaringan
+komputer
+Keamanan 
+Sistem
+Peneliti di bidang
+sistem komputer
+sk.stikom-bali.ac.id
+sistemkomputer.stikombali
+
+---
+
+Sumber 2 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+Penjelasan Prodi dan Karier Masa Depan
+Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja
+Sistem Informasi | "Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems | sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi | Perekayasa Sistem Informasi Multimedia | Desainer Grafis | Animator | serta Peneliti Sistem Informasi." | "Analisis sistem | database | business intelligence | manajemen proyek IT | sistem enterprise | digital business" | Suka teknologi sekaligus bisnis dan manajemen | "Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst"
+Sistem Komputer
+
+---
+
+Sumber 3 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+an manajemen | "Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst"
+Sistem Komputer | "Program Studi Sistem Komputer menghasilkan lulusan yang memiliki kompetensi dalam merancang. mengimplementasikan sistem Internet of Things (IoT) | pada sistem Internet of Things (IoT) | sistem tertanam | sistem kontrol | dan jaringan komputer dengan menerapkan prinsip keamanan jaringan. Profil lulusan yaitu Perekayasa Sistem Tertanam dan IoT | Perekayasa Jaringan Komputer dan Keamanan Sistem | serta Peneliti di bidang Sistem Komputer." | "Hardware | mikrocontroller | embedded system | IoT | robotika | jaringan komputer | sistem digital" | "Suka perangkat elektronik | robot | dan praktik teknis" | "IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer"
+Bisnis Digital | "P
+
+---
+
+Sumber 4 (865ee469-8ded-4753-896f-a70d827ccf1d):
+Badan Akreditasi Nasional Perguruan Tinggi
+berdasarkan Keputusan BAN-PT No. 12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021, menyatakan bahwa
+Program Studi Manajemen Informatika, Pada Program Diploma-III Institut Teknologi dan Bisnis STIKOM Bali,
+Kota Denpasar
+
+---
+
+Sumber 5 (303d14ce-a80a-49b8-90c1-61072a1f36fa):
+ULUS | : | NEM :
+FACEBOOK/INSTAGRAM | :
+PROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)
+BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)
+KELAS PAGI / SIANG | KELAS SORE/MALAM
+KARYAWAN | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)
+BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)
+DOUBLE DEGREE | INTERNASIONAL PROGRAM (S.KOM B.IT) | NATIONAL PROGRAM (S.KOM-S.M)
+INTERNASIONAL PROGRAM (S.BNS B.M)
+TEMPAT KULIAH | : | KAMPUS  RENON | KAMPUS JIMBARAN | KAMPUS ABIANSEMAL
+SUMBER INFORMASI
+:
+PRESENTER | COSTUMER SERVICE | PENDAFTAR
+ASSIST_HINTS: prodi
+{"level":30,"time":1780463911678,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"lulusan\",\"sistem\",\"komputer\",\"stikom\",\"bali\"] overlapRatio=0.5"}
+{"level":30,"time":1780463911678,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"kerja\",\"lulusan\",\"sistem\",\"komputer\"] overlapRatio=0.4"}
+{"level":30,"time":1780463911678,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"lulusan\",\"sistem\",\"komputer\"] overlapRatio=0.3"}
+{"level":30,"time":1780463911678,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"stikom\",\"bali\"] overlapRatio=0.2"}
+{"level":30,"time":1780463911679,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"sistem\",\"komputer\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"lulusan\",\"sistem\",\"komputer\"] overlapRatio=0.3"}
+{"level":30,"time":1780463911679,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"prospek kerja lulusan sistem komputer di itb stikom bali seperti apa?","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463911681,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463911682,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":69,"ctxLen":4398,"style":"SANTAI","assistHintsLen":5,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463911937,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Prospek kerja
+Question: Prospek kerja lulusan Sistem Komputer di ITB STIKOM Bali seperti apa?
+Detected intent: PROSPEK_KERJA
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬p mengenai program studi yang menyelenggarakan RPL, persyaratan khusus, komponen biaya, deskripsi program studi, profil lulusan, capaian pembelajaran lulusan, daftar mata kuliah yang dapat diklaim, serta daftar kompetensi yang dibutuhkan untuk masing-masing mata kuliah di program studi, dapat dilihat pada suplemen Pedoman RPL berupa buku prodi masing-masing. ╬ô├ç┬¬
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+Top contexts:
+  1. [N/A] 12 Tabel 1. Daftar Program Studi Penyelenggara RPL No Kode Program Studi Jenjang Akreditasi 1 56201 Sistem Komputer S1 B 2 57201 Sistem Informasi S1 Baik Sekali Informasi lebih lengkap mengenai progra
+
+
+- Biaya
+Question: Berapa biaya kuliah untuk program Sistem Komputer?
+Detected intent: BIAYA_PENDIDIKAN
+Answer source: rag-fee-semester-only
+Answer:
+Siap, aku bantu jelaskan soal biaya.
+Untuk Kelas Reguler ╬ô├ç├╢ Program Studi Sistem Komputer, biaya pendidikan per semester (UKT): Rp 6.000.000 (Menjelang Perwalian Kecuali Reg).
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+
+- Akreditasi
+Question: Apa akreditasi program Sistem Komputer di ITB STIKOM Bali?
+Detected intent: AKREDITASI_PERINGKAT
+Answer source: rag-accreditation
+Answer:
+Siap, aku bantu jawab ya.
+Akreditasi Prodi Sistem Komputer: Baik.
+Nomor SK: /BAN-PT/Ak/S/X/2022.
+Mau saya jelaskan lagi bagian lain?
+
+=== Program: Bisnis Digital (BD) ===
+{"level":40,"time":1780463913275,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Jelaskan apa itu program studi Bisnis Digital di ITB STIKOM Bali
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: knis" | "IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer" Bisnis Digital | "Program studi ini menjadikan peserta didik memahami╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+knis" | "IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer"
+Bisnis Digital | "Program studi ini menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital dengan mengadopsi trend perkembangan terkini di sektor industri E-commerce. Lulusan Bisnis Digital memiliki peluang profesi sebagai Digital Marketing Specialist | Digital Strategist | Project Manager | Business Analyst | Market Analyst dan Product Manager." | "Digital marketing | e-commerce | branding | social media strategy | startup business | entrepreneurship" | "Suka bisnis | media sosial | dan strategi pemasaran" | "Digital Marketing Specialist | Content Strategist | SEO Specialist | Brand Manager | Business Development | Startup Founder"
+Manajemen Informasi | "Program studi ini merupakan pendidikan vokasi yang menanamka
+ASSIST_HINTS: prodi
+{"level":30,"time":1780463913497,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi bisnis digital di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi bisnis digital di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"bisnis\",\"digital\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"program\",\"studi\",\"bisnis\",\"digital\"] overlapRatio=0.4"}
+{"level":30,"time":1780463913498,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"jelaskan apa itu program studi bisnis digital di itb stikom bali","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463913498,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463913499,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":64,"ctxLen":1411,"style":"SANTAI","assistHintsLen":5,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463913737,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Definisi
+Question: Jelaskan apa itu program studi Bisnis Digital di ITB STIKOM Bali
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬tusanITBSTIKOM Bali Nomor:629/ITBSTIKOM /WDS/X/25 Tanggal 08 Oktober 2025 RINCIANBIAYAPENDIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI, TEKNOLOGIINFORMASI, DAN BISNISDIGITAL T.A 2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1.Pendaftaran 500.000 2.Dana Pendidikan Pokok14.000.000 P
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya jelaskan lagi bagian lain?
+Top contexts:
+  1. [N/A] INSTITUTTEKNOLOGIDANBISNIS STIKOM BALI INSTITUTTEKNOLOGI DAN BISNIS.. (ITB)STIKOM BALI KampusDenpasar JL.RayaPuputan No.86Renon,Denpasar-Ball-Indonesia|Ph :(0361)244445|Fax(0361)264773 |Hotline:082277
+
+{"level":40,"time":1780463914639,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Apa saja yang dipelajari di Bisnis Digital? Jelaskan kurikulumnya.
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: a pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Office. 14. Apa keunggulan program HELP University? Ma╬ô├ç┬¬
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: knis" | "IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer" Bisnis Digital | "Program studi ini menjadikan peserta didik memahami╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+a pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Office. 14. Apa keunggulan program HELP University? Mahasiswa memperoleh pengalaman kurikulum internasional dan gelar dari universitas di Malaysia. C. DOUBLE DEGREE - DALIAN NEUSOFT UNIVERSITY OF INFORMATION (DNUI), CHINA 15. ITB STIKOM Bali bekerja sama dengan kampus mana di China? ITB STIKOM Bali memiliki program Double Degree bersama Dalian Neusoft University of Information (DNUI), China. 16. Program studi apa yang tersedia dalam skema DNUI? Program ini mencakup : Bisnis Digital dari ITB STIKOM Bali E-Commerce dari DNUI 17. Apa gelar yang diperoleh dari program DNUI? Mahasiswa berkesempatan memperoleh : Sarjana Bisnis ( S.Bns ) dari ITB STIKOM Bali Bachelor of Management (BM) dari DNUI 18. Bagaimana skema studi program DNUI? Skema umum perku
+
+---
+
+Sumber 2 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+knis" | "IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer"
+Bisnis Digital | "Program studi ini menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital dengan mengadopsi trend perkembangan terkini di sektor industri E-commerce. Lulusan Bisnis Digital memiliki peluang profesi sebagai Digital Marketing Specialist | Digital Strategist | Project Manager | Business Analyst | Market Analyst dan Product Manager." | "Digital marketing | e-commerce | branding | social media strategy | startup business | entrepreneurship" | "Suka bisnis | media sosial | dan strategi pemasaran" | "Digital Marketing Specialist | Content Strategist | SEO Specialist | Brand Manager | Business Development | Startup Founder"
+Manajemen Informasi | "Program studi ini merupakan pendidikan vokasi yang menanamka
+ASSIST_HINTS: prodi
+{"level":30,"time":1780463914861,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di bisnis digital? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di bisnis digital? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"bisnis\",\"digital?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"apa\",\"yang\",\"bisnis\",\"digital?\",\"kurikulumnya.\"] overlapRatio=0.625"}
+{"level":30,"time":1780463914862,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di bisnis digital? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di bisnis digital? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"bisnis\",\"digital?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"yang\",\"bisnis\",\"digital?\"] overlapRatio=0.375"}
+{"level":30,"time":1780463914862,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"apa saja yang dipelajari di bisnis digital? jelaskan kurikulumnya.","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463914863,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463914864,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":66,"ctxLen":2611,"style":"SANTAI","assistHintsLen":5,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463915116,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Kurikulum
+Question: Apa saja yang dipelajari di Bisnis Digital? Jelaskan kurikulumnya.
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬nal Lokal Dapat dicicil5kalipersemesterdandimulai darisemester3 Penjelasan Tambahan: 1. Butir1sampaidengan4dibayar1kalisajapada awalmasuk 2.Potongan Biaya Pendaftaran: Rp.300.000, -Jika Mendaftarpada Gelombang Khusus Rp.250.000, -Jikamendaftarpada GelombangI Rp.200.000, -Jikamendaftarpada GelombangII Rp.150.000
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+Top contexts:
+  1. [N/A] DIDIKANMAHASISWABARUKELASREGULER PROGRAMSTUDISISTEMINFORMASI,TEKNOLOGIINFORMASI,DAN BISNISDIGITAL T.A 2026/2027 No.Jenis BiayaRp WaktuPembayaran 1.Pendaftaran 500.000 2.DanaPendidikanPokok14.000.000 P
+
+{"level":40,"time":1780463915971,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Prospek kerja lulusan Bisnis Digital di ITB STIKOM Bali seperti apa?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: knis" | "IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer" Bisnis Digital | "Program studi ini menjadikan peserta didik memahami╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (3c8b0b47-7c88-479c-967d-3fc1a956ee50):
+knis" | "IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer"
+Bisnis Digital | "Program studi ini menjadikan peserta didik memahami dan mampu mengimplementasikan pengelolaan bisnis berbasis digital dengan mengadopsi trend perkembangan terkini di sektor industri E-commerce. Lulusan Bisnis Digital memiliki peluang profesi sebagai Digital Marketing Specialist | Digital Strategist | Project Manager | Business Analyst | Market Analyst dan Product Manager." | "Digital marketing | e-commerce | branding | social media strategy | startup business | entrepreneurship" | "Suka bisnis | media sosial | dan strategi pemasaran" | "Digital Marketing Specialist | Content Strategist | SEO Specialist | Brand Manager | Business Development | Startup Founder"
+Manajemen Informasi | "Program studi ini merupakan pendidikan vokasi yang menanamka
+ASSIST_HINTS: prodi
+{"level":30,"time":1780463916169,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan bisnis digital di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan bisnis digital di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"bisnis\",\"digital\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"lulusan\",\"bisnis\",\"digital\"] overlapRatio=0.3"}
+{"level":30,"time":1780463916169,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"prospek kerja lulusan bisnis digital di itb stikom bali seperti apa?","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463916169,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463916170,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":68,"ctxLen":1411,"style":"SANTAI","assistHintsLen":5,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463916408,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Prospek kerja
+Question: Prospek kerja lulusan Bisnis Digital di ITB STIKOM Bali seperti apa?
+Detected intent: PROSPEK_KERJA
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+a pembelajaran mengikuti ketentuan kerja sama yang berlaku. Untuk informasi detail lokasi dan teknis perkuliahan, silakan hubungi International Office. 14. Apa keunggulan program HELP University? Mahasiswa memperoleh pengalaman kurikulum internasional dan gelar dari univer╬ô├ç┬¬
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+Top contexts:
+  1. [N/A] a pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Office. 14. Apa keunggulan program HELP University? Ma
+
+
+- Biaya
+Question: Berapa biaya kuliah untuk program Bisnis Digital?
+Detected intent: BIAYA_PENDIDIKAN
+Answer source: rag-fee-semester-only
+Answer:
+Siap, aku bantu jelaskan soal biaya.
+Untuk Kelas Reguler ╬ô├ç├╢ Program Studi Bisnis Digital, biaya pendidikan per semester (UKT): Rp 6.500.000 (Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS).
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+
+- Akreditasi
+Question: Apa akreditasi program Bisnis Digital di ITB STIKOM Bali?
+Detected intent: AKREDITASI_PERINGKAT
+Answer source: rag-accreditation
+Answer:
+Siap, aku bantu jawab ya.
+Akreditasi Prodi Bisnis Digital: Baik.
+Nomor SK: /BAN-PT/Ak/S/X/2022.
+Mau saya jelaskan lagi bagian lain?
+
+=== Program: Manajemen Informatika (MI) ===
+{"level":40,"time":1780463917710,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Jelaskan apa itu program studi Manajemen Informatika di ITB STIKOM Bali
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: ce. Project Manager Business Analyst Market Analyst Product Manager Profil Lulusan : Digital Marketing Specialist Digital Strategist @bisdi.stikombali Manajemen Informatika Merupakan pendidikan vokasi╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ce.
+Project Manager
+Business Analyst
+Market Analyst
+Product Manager
+Profil Lulusan :
+Digital Marketing Specialist
+Digital Strategist
+@bisdi.stikombali
+
+Manajemen
+Informatika
+Merupakan pendidikan vokasi yang
+menanamkan kompetensi untuk siap
+kerja. Gelar Amd.Kom. 
+Web Developer
+Databese Administrator
+IT Entreprenuer
+manajemeninformatika.stikom-bali.ac.idmanajemeninformatika.stikom-bali.ac.idmanajemeninformatika.stikom-bali.ac.id
+mi.stikombali
+Program
+Diploma-3
+(D3)
+ASSIST_HINTS: 
+{"level":30,"time":1780463917916,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"jelaskan apa itu program studi manajemen informatika di itb stikom bali\" expandedQuery=\"jelaskan apa itu program studi manajemen informatika di itb stikom bali\" questionTokens=[\"jelaskan\",\"apa\",\"itu\",\"program\",\"studi\",\"manajemen\",\"informatika\",\"itb\",\"stikom\",\"bali\"] overlapTokens=[\"program\",\"manajemen\",\"informatika\",\"stikom\",\"bali\"] overlapRatio=0.5"}
+{"level":30,"time":1780463917917,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"jelaskan apa itu program studi manajemen informatika di itb stikom bali","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463917917,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463917918,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":71,"ctxLen":978,"style":"SANTAI","assistHintsLen":0,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463918158,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Definisi
+Question: Jelaskan apa itu program studi Manajemen Informatika di ITB STIKOM Bali
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬TIKOM Bali Nomor: 629/ITBSTIKOM/WDS/X/25 Tanggal 08 Oktober 2025 RINCIAN BIAYA PENDIDIKAN MAHASISWA BARU KELAS REGULER PROGRAM STUDI MANAJEMEN INFORMATIKA (INFORMATIC DIPLOMA) T.A 2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1. Pendaftaran 500.000 Pad╬ô├ç┬¬
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya jelaskan lagi bagian lain?
+Top contexts:
+  1. [N/A] INSTITUT TEKNOLOGI DAN BISNIS (ITB) STIKOM BALI Kampus Denpasar JL Raya Puputan No.86 Renon, Denpasar - Ball - Indonesia | Phe (0361) 244445 | Fax (03611264773 | Hotline : 082277389999 Kampus Jimbaran
+
+{"level":40,"time":1780463918590,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Apa saja yang dipelajari di Manajemen Informatika? Jelaskan kurikulumnya.
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi akreditasi program atau kampus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: ce. Project Manager Business Analyst Market Analyst Product Manager Profil Lulusan : Digital Marketing Specialist Digital Strategist @bisdi.stikombali Manajemen Informatika Merupakan pendidikan vokasi╬ô├ç┬¬
+- 762c5ebc-bfde-48d3-a314-85a17bc931ee: kreditasi Nasional Perguruan Tinggi tentang Akreditasi Program Studi Manajemen Informatika pada Program Diploma-IIl Institut Teknologi dan Bisnis STIKOM Bali, Kota Denpasar. Mengingat : 1. Undang-unda╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ce.
+Project Manager
+Business Analyst
+Market Analyst
+Product Manager
+Profil Lulusan :
+Digital Marketing Specialist
+Digital Strategist
+@bisdi.stikombali
+
+Manajemen
+Informatika
+Merupakan pendidikan vokasi yang
+menanamkan kompetensi untuk siap
+kerja. Gelar Amd.Kom. 
+Web Developer
+Databese Administrator
+IT Entreprenuer
+manajemeninformatika.stikom-bali.ac.idmanajemeninformatika.stikom-bali.ac.idmanajemeninformatika.stikom-bali.ac.id
+mi.stikombali
+Program
+Diploma-3
+(D3)
+
+---
+
+Sumber 2 (762c5ebc-bfde-48d3-a314-85a17bc931ee):
+kreditasi 
+Nasional 
+Perguruan 
+Tinggi 
+tentang 
+Akreditasi 
+Program 
+Studi 
+Manajemen 
+Informatika 
+pada 
+Program 
+Diploma-IIl 
+Institut 
+Teknologi 
+dan 
+Bisnis 
+STIKOM 
+Bali, 
+Kota 
+Denpasar. 
+Mengingat 
+:  
+1. 
+Undang-undang 
+Nomor 
+12 
+Tahun 
+2012 
+tentang 
+Pendidikan 
+Tinggi 
+(Lembaran 
+Negara 
+Republik 
+Indonesia 
+Tahun 
+2012 
+Nomor 
+158, 
+Tambahan 
+2. 
+Peraturan 
+Menteri 
+Pendidikan 
+dan 
+Kebudayaan 
+Nomor 
+3 
+Tahun 
+2020 
+tentang 
+Standar 
+Nasional 
+Pendidikan 
+Tinggi 
+(Berita 
+Negara 
+Republik 
+Indonesia 
+Tahun 
+2020 
+Nomor 
+47); 
+3. 
+Peraturan 
+Menteri 
+Pendidikan 
+dan 
+Kebudayaan 
+Nomor 
+5 
+Tahun 
+2020 
+tentang 
+Akreditasi 
+Program 
+Studi 
+dan 
+Perguruan 
+Tinggi 
+(Berita 
+Negara 
+Republik 
+Indonesia 
+Tahun 
+2020 
+Nomor 
+49); 
+4. 
+Peraturan 
+Menteri 
+Pendidikan 
+dan 
+Kebudayaan 
+Nomor 
+7 
+Tahun 
+2020 
+tentang 
+Pendirian, 
+Perubahan, 
+Pembubaran 
+Perguruan 
+Tinggi 
+Negeri, 
+dan
+ASSIST_HINTS: 
+{"level":30,"time":1780463918833,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di manajemen informatika? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di manajemen informatika? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"manajemen\",\"informatika?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"yang\",\"manajemen\",\"informatika?\"] overlapRatio=0.375"}
+{"level":30,"time":1780463918833,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"apa saja yang dipelajari di manajemen informatika? jelaskan kurikulumnya.\" expandedQuery=\"apa saja yang dipelajari di manajemen informatika? jelaskan kurikulumnya.\" questionTokens=[\"apa\",\"saja\",\"yang\",\"dipelajari\",\"manajemen\",\"informatika?\",\"jelaskan\",\"kurikulumnya.\"] overlapTokens=[\"manajemen\",\"informatika?\"] overlapRatio=0.25"}
+{"level":30,"time":1780463918833,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"apa saja yang dipelajari di manajemen informatika? jelaskan kurikulumnya.","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463918834,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463918834,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":73,"ctxLen":2228,"style":"SANTAI","assistHintsLen":0,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463919104,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Kurikulum
+Question: Apa saja yang dipelajari di Manajemen Informatika? Jelaskan kurikulumnya.
+Detected intent: DEFINISI_PRODI
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬Semester - Lokal 1.500.000 Dicicil 5 Kali Per Semester Penjelasan Tambahan: 1. Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk 2. Potongan Biaya Pendaftaran: Rp. 300.000, Jika Mendaftar pada Gelombang Khusus Rp. 250.000, - Ji╬ô├ç┬¬
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+Top contexts:
+  1. [N/A] 2025 RINCIAN BIAYA PENDIDIKAN MAHASISWA BARU KELAS REGULER PROGRAM STUDI MANAJEMEN INFORMATIKA (INFORMATIC DIPLOMA) T.A 2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1. Pendaftaran 500.000 Pada Saat D
+
+{"level":40,"time":1780463919535,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Prospek kerja lulusan Manajemen Informatika di ITB STIKOM Bali seperti apa?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: ce. Project Manager Business Analyst Market Analyst Product Manager Profil Lulusan : Digital Marketing Specialist Digital Strategist @bisdi.stikombali Manajemen Informatika Merupakan pendidikan vokasi╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ce.
+Project Manager
+Business Analyst
+Market Analyst
+Product Manager
+Profil Lulusan :
+Digital Marketing Specialist
+Digital Strategist
+@bisdi.stikombali
+
+Manajemen
+Informatika
+Merupakan pendidikan vokasi yang
+menanamkan kompetensi untuk siap
+kerja. Gelar Amd.Kom. 
+Web Developer
+Databese Administrator
+IT Entreprenuer
+manajemeninformatika.stikom-bali.ac.idmanajemeninformatika.stikom-bali.ac.idmanajemeninformatika.stikom-bali.ac.id
+mi.stikombali
+Program
+Diploma-3
+(D3)
+ASSIST_HINTS: 
+{"level":30,"time":1780463919741,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"prospek kerja lulusan manajemen informatika di itb stikom bali seperti apa?\" expandedQuery=\"prospek kerja lulusan manajemen informatika di itb stikom bali seperti apa?\" questionTokens=[\"prospek\",\"kerja\",\"lulusan\",\"manajemen\",\"informatika\",\"itb\",\"stikom\",\"bali\",\"seperti\",\"apa?\"] overlapTokens=[\"kerja\",\"lulusan\",\"manajemen\",\"informatika\",\"stikom\",\"bali\"] overlapRatio=0.6"}
+{"level":30,"time":1780463919741,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"prospek kerja lulusan manajemen informatika di itb stikom bali seperti apa?","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463919741,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463919742,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":75,"ctxLen":978,"style":"SANTAI","assistHintsLen":0,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463920017,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Prospek kerja
+Question: Prospek kerja lulusan Manajemen Informatika di ITB STIKOM Bali seperti apa?
+Detected intent: PROSPEK_KERJA
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jawab ya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬al Strategist @bisdi. stikombali Manajemen Informatika Merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Gelar Amd. Kom. Web Developer Databese Administrator IT Entreprenuer manajemeninformatika. stikom-bali. ac. idmanajemeninformatika. stikom-bali. ac. idmanajemeninformatika. stikom-bali. ac. id mi. stikombali Program Diploma-3 (D3)╬ô├ç┬¬
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya jelaskan lagi bagian lain?
+Top contexts:
+  1. [N/A] ce. Project Manager Business Analyst Market Analyst Product Manager Profil Lulusan : Digital Marketing Specialist Digital Strategist @bisdi.stikombali Manajemen Informatika Merupakan pendidikan vokasi
+
+{"level":40,"time":1780463921243,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[RAG] OpenAI embedding failed, falling back to mock embedding"}
+STYLE: SANTAI
+QUESTION: Berapa biaya kuliah untuk program Manajemen Informatika?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: ce. Project Manager Business Analyst Market Analyst Product Manager Profil Lulusan : Digital Marketing Specialist Digital Strategist @bisdi.stikombali Manajemen Informatika Merupakan pendidikan vokasi╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ce.
+Project Manager
+Business Analyst
+Market Analyst
+Product Manager
+Profil Lulusan :
+Digital Marketing Specialist
+Digital Strategist
+@bisdi.stikombali
+
+Manajemen
+Informatika
+Merupakan pendidikan vokasi yang
+menanamkan kompetensi untuk siap
+kerja. Gelar Amd.Kom. 
+Web Developer
+Databese Administrator
+IT Entreprenuer
+manajemeninformatika.stikom-bali.ac.idmanajemeninformatika.stikom-bali.ac.idmanajemeninformatika.stikom-bali.ac.id
+mi.stikombali
+Program
+Diploma-3
+(D3)
+ASSIST_HINTS: 
+{"level":30,"time":1780463921479,"pid":18332,"hostname":"DESKTOP-MQLDQK0","msg":"relevance_audit originalQuery=\"berapa biaya kuliah untuk program manajemen informatika?\" expandedQuery=\"berapa biaya kuliah untuk program manajemen informatika?\" questionTokens=[\"berapa\",\"biaya\",\"kuliah\",\"untuk\",\"program\",\"manajemen\",\"informatika?\"] overlapTokens=[\"untuk\",\"program\",\"manajemen\",\"informatika?\"] overlapRatio=0.5714285714285714"}
+{"level":30,"time":1780463921480,"pid":18332,"hostname":"DESKTOP-MQLDQK0","question":"berapa biaya kuliah untuk program manajemen informatika?","msg":"[RAG] enrollment discount helper called"}
+{"level":40,"time":1780463921753,"pid":18332,"hostname":"DESKTOP-MQLDQK0","requestedModel":"gpt-5.2","resolvedModel":"gpt-4o-mini","msg":"[AI] Model normalized"}
+{"level":30,"time":1780463921753,"pid":18332,"hostname":"DESKTOP-MQLDQK0","qLen":56,"ctxLen":978,"style":"SANTAI","assistHintsLen":0,"compactPrompt":false,"msg":"[AI RAG] Sending updated RAG prompt"}
+{"level":50,"time":1780463922040,"pid":18332,"hostname":"DESKTOP-MQLDQK0","err":"401 Incorrect API key provided: sk-proj-*xxxx. You can find your API key at https://platform.openai.com/account/api-keys.","msg":"[AI RAG Error]"}
+
+- Biaya
+Question: Berapa biaya kuliah untuk program Manajemen Informatika?
+Detected intent: BIAYA_PENDIDIKAN
+Answer source: rag-lexical-fallback
+Answer:
+Siap, aku bantu jelaskan soal biaya.
+Aku nemu info yang relevan di data training:
+╬ô├ç┬¬m-bal Lacid. Lampiran -3 Surat Keputusan ITB STIKOM Bali Nomor: 629/ITBSTIKOM/WDS/X/25 Tanggal 08 Oktober 2025 RINCIAN BIAYA PENDIDIKAN MAHASISWA BARU KELAS REGULER PROGRAM STUDI MANAJEMEN INFORMATIKA (INFORMATIC DIPLOMA) T.A 2026/2027 No. Jenis Biaya Rp Waktu Pembayaran 1. Pendaftaran 500.000 Pad╬ô├ç┬¬
+Kalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+Top contexts:
+  1. [N/A] INSTITUT TEKNOLOGI DAN BISNIS (ITB) STIKOM BALI Kampus Denpasar JL Raya Puputan No.86 Renon, Denpasar - Ball - Indonesia | Phe (0361) 244445 | Fax (03611264773 | Hotline : 082277389999 Kampus Jimbaran
+
+
+- Akreditasi
+Question: Apa akreditasi program Manajemen Informatika di ITB STIKOM Bali?
+Detected intent: AKREDITASI_PERINGKAT
+Answer source: rag-accreditation-campus-doc
+Answer:
+Siap, aku bantu jawab ya.
+Akreditasi kampus: A.
+Nomor SK: 3033/SK/BAN-PT/Ak. KP/PT/XII/2025.
+Sumber: dokumen SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign. pdf (dokumen akreditasi kampus). Untuk kepastian resmi, verifikasi ke admin atau dokumen resmi.
+Mau saya jelaskan lagi bagian lain?
+

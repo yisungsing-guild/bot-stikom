@@ -1,0 +1,100 @@
+﻿STYLE: SEMI
+QUESTION: program studi teknologi informasi belajar apa saja dan nanti bisa bekerja di bidang apa saja?
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi biaya, DPP/UKT, atau potongan yang relevan.
+- Berisi informasi beasiswa, potongan, atau subsidi.
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- eee828da-6ee4-4591-a9a8-18fa2e73c822: at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bi╬ô├ç┬¬
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: ran - 1 surat peraturan ini dan merupakan satu kesatuan yang tidak dapat dipisahkan dari surat peraturan ini. : Memberikan beasiswa kepada calon mahasiswa baru yang berprestasi di bidang Akademik atau╬ô├ç┬¬
+- 66bcaec6-88a7-4ac2-8ae4-660bd3084393: 86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi InformasiKomunitas IT 89 Teknologi InformasiStartup teknologi 90 Manajemen InformatikaOtak-atik komputer 91╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (eee828da-6ee4-4591-a9a8-18fa2e73c822):
+at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bisa membuat blog pribadi Suka Main Game Suka otak atik alat e lektronik Bisa benerin alat elektronik Suka menggunakan CHATGPT, Gemini dll Pernah Mengikuti kompetisi IT (hackathon, lomba coding) Pernah Belajar cybersecurity (ethical hacking dasar ) Suka Mengutak- atik jaringan komputer (setting LAN/ WiFi ) Bisa membuat kabel LAN Membuat desain UI/UX aplikasi Suka Editing video dan membuat konten digital Suka Mengolah data Suka Membeli Buka- Buku IT Pernah Mengelola server kecil (local server atau hosting) Bisa Membuat game sederhana (2D/3D) Suka Menulis blog atau konten tentang teknologi Pernah /Sedang Mengikuti kursus online IT (self-learning) Eksperimen dengan AI atau machine learning dasar
+
+---
+
+Sumber 2 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+ran - 1 surat peraturan ini dan merupakan satu kesatuan yang tidak dapat dipisahkan dari surat peraturan ini. : Memberikan beasiswa kepada calon mahasiswa baru yang berprestasi di bidang Akademik atau Non Akademik dalam rangka penerimaan mahasiswa baru ITB STIKOM Bali yang kriterianya tercantum dalam lampiran - 2 surat peraturan ini dan merupakan satu kesatuan yang tidak dapat dipisahkan dari surat peraturan ini. : Memberikan kemudahan bagi silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus Sebali dan silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus Abiansemal untuk tidak mengikuti seleksi penerimaan mahasiswa baru (tes akademis). : Hak-hak dari pada calon mahasiswa penerima besiswa tersebut adalah sebagaimana tercantum dalam lampiran - 3 surat peraturan ini dan merupakan suatu kesatuan yang tidak dapat dipisahkan dari surat
+
+---
+
+Sumber 3 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+86
+Teknologi InformasiKursus online
+87
+Teknologi InformasiAI / Machine Learning
+88
+Teknologi InformasiKomunitas IT
+89
+Teknologi InformasiStartup teknologi
+90
+Manajemen InformatikaOtak-atik komputer
+91
+Manajemen InformatikaMenggambar
+92
+Manajemen InformatikaMembaca buku IT
+93
+Manajemen InformatikaSosial media
+94
+Manajemen InformatikaKonten sosial media
+95
+Manajemen InformatikaPengolahan data
+96
+Manajemen InformatikaMenggunakan aplikasi
+97
+Manajemen InformatikaBlogging
+98
+Manajemen InformatikaJualan online
+99
+Manajemen InformatikaMengelola toko online
+100
+Manajemen InformatikaDesain branding
+101
+Manajemen InformatikaStartup
+102
+Manajemen InformatikaSeminar/webinar
+103
+Manajemen InformatikaKomunitas entrepreneur
+
+---
+
+Sumber 4 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+omputer
+78
+Teknologi InformasiKabel LAN
+79
+Teknologi InformasiUI/UX design
+80
+Teknologi InformasiEditing video
+81
+Teknologi InformasiPengolahan data
+82
+Teknologi InformasiMembaca buku IT
+83
+Teknologi InformasiServer management
+84
+Teknologi InformasiMembuat game
+85
+Teknologi InformasiBlog teknologi
+
+---
+
+Sumber 5 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+19 Oktober 2023 PENERIMA PROGRAM BEASISWA RANKING KELAS DI ITB STIKOM BALI " L STIKOM Bali memberikan beasiswa kepada: a. Calon mahasiswa dari : SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1 Denpasar, silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus Sebali silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus Abiansemal, SMAN 1 Abiansemal, SMKN 1 Kuta Selatan, SMAN 1 Kuta Utara, SMAN 1 Kuta SMKN 1 Gianyar, SMAN 1 Gianyar, SMKN 1 Gianyar, SMAN 1 Gianyar, SMKN 1 Mas Ubud SMAN 1 Tabanan, SMKN 3 Tabanan SMAN 1 Klungkung, SMKN 1 Klungkung SMAN 1 Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja SMAN 1 Bangli, SMKN 1 Bangli SMAN 1 Negara SMAN 1 Amlapura 1. Rangking 1,2 dan 3 di kelas XII Semester 1 atau 2 2. Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 b.
+
+---
+
+Sumber 6 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+LON MAHASISWA PENERIMA BEASISWA I. Calon mahasiswa dari : a. SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1 Denpasar, silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus Sebali silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus Abiansemal, SMAN 1 Abiansemal, SMKN 1 Kuta Selatan, SMAN 1 Kuta Utara, SMAN 1 Kuta SMKN 1 Gianyar, SMAN 1 Gianyar, SMKN 1 Mas Ubud SMAN 1 Tabanan, SMKN 3 Tabanan SMAN 1 Klungkung, SMKN 1 Klungkung SMAN 1 Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja SMAN 1 Bangli, SMKN 1 Bangli SMAN 1 Negara SMAN 1 Amlapura 1. Rangking 1,2 dan 3 di kelas XII Semester 1 atau 2 potongan DPP 75% 2. Rangking 4 s/d 10 dikelas XII Semester 1 atau 2 potongan DPP 50%. b. Calon mahasiswa dari SMA/K/MA lainnya 1. Rangking 1, 2 dan 3 dikelas XII Semester 1
+
+---
+
+Sumber 7 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+ja, SMKN 3 Singaraja SMAN 1 Bangli, SMKN 1 Bangli SMAN 1 Negara SMAN 1 Amlapura 1. Rangking 1,2 dan 3 di kelas XII Semester 1 atau 2 2. Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 b. Calon mahasiswa dari SMA/K/MA lainnya 1. Rangking 1,2 dan 3 di kelas XII Semester 1 atau 2 2. Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 1L Bagi siswa yang berasal dari silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus Sebali dan silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus Abiansemal tidak mengikuti tes seleksi penerimaan mahasiswa baru (tes akademis) hanya mengikuti tes wawancara saja. IIL Siswa yang berasal dari SMA/K/MA yang mendapatkan rangking 1 s/d 15 besar di kelas XII semester 1 atau 2 tidak mengikuti tes tulis hanya mengikuti tes wawancara saja dengan melampirkan bukti raport yang sudah di legalisir atau Surat Kete
+
+---
+
+Sumber 8 (a76df111-bc3f-4122-9066-3aa29d3cf22b):
+GAUTAMA, S.TI., M.KOM 15 UKM FUTSAL PANDE PUTU GEDE PUTRA PERTAMA, ST., MT 16 UKM KSR I MADE ARYA BUDHI SAPUTRA, S.KOM., M.CS 17 UKM MAPALA KOMPAS GDE SASTRAWANGSA, ST., MT 18 UKM PASKAMRAS I MADE ARYA BUDHI SAPUTRA, S.KOM., M.CS 19 UKM MULTIMEDIA I GEDE HARSEMADI, S.KOM., M.T 20 UKM PROGRESS GEDE HERDIAN SETIAWAN, S.KOM., M.T 21 UKM TABUH I GEDE PUTRA MAS YUSADARA, S.KOM., M.KOM 22 UKM VOS LILIS YUNINGSIH, SH., M.KOM 23 UKM TARI PUTU SETYARINI, S.SN., M.SN 24 UKM KSL YOHANES PRIYO ATMOJO, S.KOM., M.ENG

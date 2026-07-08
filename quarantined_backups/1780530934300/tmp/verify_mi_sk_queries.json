@@ -1,0 +1,1821 @@
+[
+  {
+    "query": "Apa itu Sistem Komputer?",
+    "result": {
+      "success": true,
+      "answer": "---\n💻 Kamu ingin tahu tentang Sistem Komputer.\nSistem Komputer adalah program studi yang menghasilkan lulusan dengan kompetensi dalam merancang dan mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, sistem kontrol, dan jaringan komputer. Lulusan memiliki profil sebagai Perekayasa Sistem Tertanam dan IoT, Perekayasa Jaringan Komputer, serta Peneliti di bidang Sistem Komputer.\nMau tahu lebih lanjut tentang peluang karier dari lulusan Sistem Komputer atau detail program studinya?\n---",
+      "source": "gpt-4o-mini",
+      "contexts": [
+        {
+          "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+          "score": 0.5422186600449374,
+          "compositeScore": 3.970222,
+          "semanticScore": 0.5422186600449374,
+          "attributeScore": 1,
+          "metadataBoost": 2.12,
+          "scoreComponents": {
+            "rawSemanticScore": 0.5422186600449374,
+            "semanticBoost": 0.05422186600449374,
+            "evidenceScore": 0.18,
+            "keywordScore": 1,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 2.12,
+            "rawScore": 2.7702218660044937,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0.016,
+            "otherBoosts": -0.584,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": -0.6,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": null,
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": null,
+              "jalur": null,
+              "feeType": null,
+              "category": "KURIKULUM",
+              "pageNumber": null
+            },
+            "itemCategory": "KURIKULUM",
+            "queryCategory": null,
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer | \"Program Studi Sistem Komputer menghasilkan lulusan yang memiliki kompetensi dalam merancang. mengimplementasikan sistem Internet of Things (IoT) | pada sistem Internet of Things (IoT) | sistem tertanam | sistem kontrol | dan jaringan komputer dengan menerapkan prinsip keamanan jaringan. Profil lulusan yaitu Perekayasa Sistem Tertanam dan IoT | Perekayasa Jaringan Komputer dan Keamanan Sistem | serta Peneliti di bidang Sistem Komputer.\" | \"Hardware | mikrocontroller | embedded system | IoT | robotika | jaringan komputer | sistem digital\" | \"Suka perangkat elektronik | robot | dan praktik teknis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"P",
+          "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "divisionKey": null,
+          "updatedAt": "2026-06-02T03:32:04.271Z",
+          "createdAt": "2026-06-02T03:32:04.271Z"
+        },
+        {
+          "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+          "score": 0.5042174270115812,
+          "compositeScore": 3.966422,
+          "semanticScore": 0.5042174270115812,
+          "attributeScore": 1,
+          "metadataBoost": 2.12,
+          "scoreComponents": {
+            "rawSemanticScore": 0.5042174270115812,
+            "semanticBoost": 0.05042174270115812,
+            "evidenceScore": 0.18,
+            "keywordScore": 1,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 2.12,
+            "rawScore": 2.766421742701158,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0.016,
+            "otherBoosts": -0.584,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": -0.6,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": null,
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": null,
+              "jalur": null,
+              "feeType": null,
+              "category": "KURIKULUM",
+              "pageNumber": null
+            },
+            "itemCategory": "KURIKULUM",
+            "queryCategory": null,
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems | sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi | Perekayasa Sistem Informasi Multimedia | Desainer Grafis | Animator | serta Peneliti Sistem Informasi.\" | \"Analisis sistem | database | business intelligence | manajemen proyek IT | sistem enterprise | digital business\" | Suka teknologi sekaligus bisnis dan manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer",
+          "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "divisionKey": null,
+          "updatedAt": "2026-06-02T03:32:04.056Z",
+          "createdAt": "2026-06-02T03:32:04.056Z"
+        },
+        {
+          "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+          "score": 0.5672484840356057,
+          "compositeScore": 3.726725,
+          "semanticScore": 0.5672484840356057,
+          "attributeScore": 1,
+          "metadataBoost": 2.12,
+          "scoreComponents": {
+            "rawSemanticScore": 0.5672484840356057,
+            "semanticBoost": 0.05672484840356057,
+            "evidenceScore": 0.18,
+            "keywordScore": 1,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 2.12,
+            "rawScore": 2.5267248484035605,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0,
+            "otherBoosts": -0.83,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": -0.6,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": null,
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": "BALI",
+              "jalur": null,
+              "feeType": null,
+              "category": "UNKNOWN",
+              "pageNumber": null
+            },
+            "itemCategory": "KURIKULUM",
+            "queryCategory": null,
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Things\n(IoT), sistem tertanam, sistem kontrol, dan jaringan komputer\ndengan menerapakan prinsip keamanan jaringan \nProfil\nProgram Studi\nMORE INFO\nPerekayasa sistem\ntertanam dan IoT\nPerekayasa Jaringan\nkomputer\nKeamanan \nSistem\nPeneliti di bidang\nsistem komputer\nsk.stikom-bali.ac.id\nsistemkomputer.stikombali",
+          "trainingId": "9358faf2-c0bf-438b-90e4-5f801f43ea0d",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "divisionKey": null,
+          "updatedAt": null,
+          "createdAt": "2026-04-27T03:54:35.825Z"
+        },
+        {
+          "id": "04de8b53-fcc5-454d-9f35-bfb6dc187e9f",
+          "score": 0.32724852873891536,
+          "compositeScore": 2.718725,
+          "semanticScore": 0.32724852873891536,
+          "attributeScore": 1,
+          "metadataBoost": 2.12,
+          "scoreComponents": {
+            "rawSemanticScore": 0.32724852873891536,
+            "semanticBoost": 0.032724852873891534,
+            "evidenceScore": 0,
+            "keywordScore": 0,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 2.12,
+            "rawScore": 3.5187248528738917,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0.016,
+            "otherBoosts": 0.366,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": 0,
+            "multiProgramPenalty": 0,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": "NATIONAL",
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": "BALI",
+              "jalur": null,
+              "feeType": null,
+              "category": "PROGRAM",
+              "pageNumber": null
+            },
+            "itemCategory": "AKREDITASI",
+            "queryCategory": null,
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "Badan Akreditasi Nasional Perguruan Tinggi\nberdasarkan Keputusan BAN-PT No. 12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021, menyatakan bahwa\nProgram Studi Manajemen Informatika, Pada Program Diploma-III Institut Teknologi dan Bisnis STIKOM Bali,\nKota Denpasar",
+          "trainingId": "865ee469-8ded-4753-896f-a70d827ccf1d",
+          "filename": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+          "divisionKey": null,
+          "updatedAt": "2026-05-20T06:26:24.558Z",
+          "createdAt": "2026-05-20T06:26:24.557Z"
+        },
+        {
+          "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+          "score": 0.4275851966880096,
+          "compositeScore": 2.092759,
+          "semanticScore": 0.4275851966880096,
+          "attributeScore": 1,
+          "metadataBoost": 2,
+          "scoreComponents": {
+            "rawSemanticScore": 0.4275851966880096,
+            "semanticBoost": 0.04275851966880096,
+            "evidenceScore": 0.18,
+            "keywordScore": 1,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 2,
+            "rawScore": 2.992758519668801,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0,
+            "otherBoosts": -0.22999999999999998,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": 0,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": null,
+              "jalur": "REGULER",
+              "feeType": null,
+              "category": "JADWAL",
+              "pageNumber": null
+            },
+            "itemCategory": "JADWAL",
+            "queryCategory": null,
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "ULUS | : | NEM :\nFACEBOOK/INSTAGRAM | :\nPROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\nBISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)\nKELAS PAGI / SIANG | KELAS SORE/MALAM\nKARYAWAN | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\nBISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)\nDOUBLE DEGREE | INTERNASIONAL PROGRAM (S.KOM B.IT) | NATIONAL PROGRAM (S.KOM-S.M)\nINTERNASIONAL PROGRAM (S.BNS B.M)\nTEMPAT KULIAH | : | KAMPUS  RENON | KAMPUS JIMBARAN | KAMPUS ABIANSEMAL\nSUMBER INFORMASI\n:\nPRESENTER | COSTUMER SERVICE | PENDAFTAR",
+          "trainingId": "303d14ce-a80a-49b8-90c1-61072a1f36fa",
+          "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+          "divisionKey": null,
+          "updatedAt": null,
+          "createdAt": "2026-04-27T03:53:30.515Z"
+        }
+      ],
+      "contextSummary": "Ringkasan konteks dari dokumen relevan:\n- Berisi informasi program internasional / dual degree / kelas khusus.\n- Berisi informasi akreditasi program atau kampus.\nContoh ringkasan sumber:\n- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\" Sistem Komputer | \"Program Studi Sistem Komputer menghasilkan lulΓÇª\n- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: Penjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki koΓÇª\n- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: SISTEMSISTEM KOMPUTERKOMPUTER GELAR S.KOM. Menghasilkan lulusan yang memiliki kompetensi dalam merancang, mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, sistem kontrol, dan jariΓÇª\nGunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.",
+      "confidenceScore": 0.5422186600449374,
+      "confidenceTier": "HIGH",
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "SK",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": null,
+          "pageNumber": null,
+          "academicIntent": "DEFINISI_PRODI"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 5,
+        "afterIntentValidationCount": 5,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "04de8b53-fcc5-454d-9f35-bfb6dc187e9f",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 255 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "DEFINISI_PRODI",
+            "chunkId": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 616 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer",
+            "score": 0.5422186600449374,
+            "semanticScore": 0.5422186600449374,
+            "rawScore": 3.970222,
+            "finalScore": 1,
+            "compositeScore": 3.970222,
+            "attributeScore": 1,
+            "metadataBoost": 2.12,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5422186600449374,
+              "semanticBoost": 0.05422186600449374,
+              "evidenceScore": 0.18,
+              "keywordScore": 1,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2.12,
+              "rawScore": 2.7702218660044937,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sist",
+            "score": 0.5042174270115812,
+            "semanticScore": 0.5042174270115812,
+            "rawScore": 3.966422,
+            "finalScore": 1,
+            "compositeScore": 3.966422,
+            "attributeScore": 1,
+            "metadataBoost": 2.12,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5042174270115812,
+              "semanticBoost": 0.05042174270115812,
+              "evidenceScore": 0.18,
+              "keywordScore": 1,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2.12,
+              "rawScore": 2.766421742701158,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Thing",
+            "score": 0.5672484840356057,
+            "semanticScore": 0.5672484840356057,
+            "rawScore": 3.726725,
+            "finalScore": 1,
+            "compositeScore": 3.726725,
+            "attributeScore": 1,
+            "metadataBoost": 2.12,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5672484840356057,
+              "semanticBoost": 0.05672484840356057,
+              "evidenceScore": 0.18,
+              "keywordScore": 1,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2.12,
+              "rawScore": 2.5267248484035605,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.83,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "04de8b53-fcc5-454d-9f35-bfb6dc187e9f",
+            "filename": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+            "docCategory": "AKREDITASI",
+            "text": "Badan Akreditasi Nasional Perguruan Tinggi\nberdasarkan Keputusan BAN-PT No. 12450/SK/BAN-PT/Akred-PMT/Dipl-III/XI/2021, menyatakan bahwa\nProgram Studi",
+            "score": 0.32724852873891536,
+            "semanticScore": 0.32724852873891536,
+            "rawScore": 2.718725,
+            "finalScore": 1,
+            "compositeScore": 2.718725,
+            "attributeScore": 1,
+            "metadataBoost": 2.12,
+            "scoreComponents": {
+              "rawSemanticScore": 0.32724852873891536,
+              "semanticBoost": 0.032724852873891534,
+              "evidenceScore": 0,
+              "keywordScore": 0,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2.12,
+              "rawScore": 3.5187248528738917,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": 0.366,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": 0,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": "NATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "PROGRAM",
+                "pageNumber": null
+              },
+              "itemCategory": "AKREDITASI",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "AKREDITASI",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          },
+          {
+            "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+            "docCategory": "JADWAL",
+            "text": "ULUS | : | NEM :\nFACEBOOK/INSTAGRAM | :\nPROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\n",
+            "score": 0.4275851966880096,
+            "semanticScore": 0.4275851966880096,
+            "rawScore": 2.092759,
+            "finalScore": 1,
+            "compositeScore": 2.092759,
+            "attributeScore": 1,
+            "metadataBoost": 2,
+            "scoreComponents": {
+              "rawSemanticScore": 0.4275851966880096,
+              "semanticBoost": 0.04275851966880096,
+              "evidenceScore": 0.18,
+              "keywordScore": 1,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2,
+              "rawScore": 2.992758519668801,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.22999999999999998,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": "REGULER",
+                "feeType": null,
+                "category": "JADWAL",
+                "pageNumber": null
+              },
+              "itemCategory": "JADWAL",
+              "queryCategory": null,
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "JADWAL",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PRODI_PROFILE"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "DEFINISI_PRODI"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "Mata kuliah Sistem Komputer?",
+    "result": {
+      "success": true,
+      "answer": "---\n💻 Kamu ingin tahu tentang mata kuliah di Program Studi Sistem Komputer.\nMata kuliah dalam Program Studi Sistem Komputer mencakup:\n• Sistem Internet of Things (IoT): Fokus pada perancangan dan implementasi sistem IoT.\n• Jaringan Komputer: Mempelajari prinsip keamanan jaringan dan penerapan dalam sistem.\n• Sistem Tertanam: Mengembangkan kompetensi dalam merancang sistem tertanam dan kontrol.\nMau tahu lebih lanjut tentang peluang karier setelah lulus dari prodi ini?\n---",
+      "source": "gpt-4o-mini",
+      "contexts": [
+        {
+          "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+          "score": 0.5629829962507078,
+          "compositeScore": 4.682298,
+          "semanticScore": 0.5629829962507078,
+          "attributeScore": 1,
+          "metadataBoost": 2.92,
+          "scoreComponents": {
+            "rawSemanticScore": 0.5629829962507078,
+            "semanticBoost": 0.05629829962507078,
+            "evidenceScore": 0.09,
+            "keywordScore": 0.5,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 2.92,
+            "rawScore": 3.482298299625071,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0.016,
+            "otherBoosts": -0.584,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": -0.6,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": null,
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": null,
+              "jalur": null,
+              "feeType": null,
+              "category": "KURIKULUM",
+              "pageNumber": null
+            },
+            "itemCategory": "KURIKULUM",
+            "queryCategory": "KURIKULUM",
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems | sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi | Perekayasa Sistem Informasi Multimedia | Desainer Grafis | Animator | serta Peneliti Sistem Informasi.\" | \"Analisis sistem | database | business intelligence | manajemen proyek IT | sistem enterprise | digital business\" | Suka teknologi sekaligus bisnis dan manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer",
+          "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "divisionKey": null,
+          "updatedAt": "2026-06-02T03:32:04.056Z",
+          "createdAt": "2026-06-02T03:32:04.056Z"
+        },
+        {
+          "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+          "score": 0.5504929294499041,
+          "compositeScore": 4.681049,
+          "semanticScore": 0.5504929294499041,
+          "attributeScore": 1,
+          "metadataBoost": 2.92,
+          "scoreComponents": {
+            "rawSemanticScore": 0.5504929294499041,
+            "semanticBoost": 0.05504929294499042,
+            "evidenceScore": 0.09,
+            "keywordScore": 0.5,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 2.92,
+            "rawScore": 3.48104929294499,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0.016,
+            "otherBoosts": -0.584,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": -0.6,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": null,
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": null,
+              "jalur": null,
+              "feeType": null,
+              "category": "KURIKULUM",
+              "pageNumber": null
+            },
+            "itemCategory": "KURIKULUM",
+            "queryCategory": "KURIKULUM",
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer | \"Program Studi Sistem Komputer menghasilkan lulusan yang memiliki kompetensi dalam merancang. mengimplementasikan sistem Internet of Things (IoT) | pada sistem Internet of Things (IoT) | sistem tertanam | sistem kontrol | dan jaringan komputer dengan menerapkan prinsip keamanan jaringan. Profil lulusan yaitu Perekayasa Sistem Tertanam dan IoT | Perekayasa Jaringan Komputer dan Keamanan Sistem | serta Peneliti di bidang Sistem Komputer.\" | \"Hardware | mikrocontroller | embedded system | IoT | robotika | jaringan komputer | sistem digital\" | \"Suka perangkat elektronik | robot | dan praktik teknis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"P",
+          "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "divisionKey": null,
+          "updatedAt": "2026-06-02T03:32:04.271Z",
+          "createdAt": "2026-06-02T03:32:04.271Z"
+        },
+        {
+          "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+          "score": 0.6091996064061648,
+          "compositeScore": 4.44092,
+          "semanticScore": 0.6091996064061648,
+          "attributeScore": 1,
+          "metadataBoost": 2.92,
+          "scoreComponents": {
+            "rawSemanticScore": 0.6091996064061648,
+            "semanticBoost": 0.06091996064061648,
+            "evidenceScore": 0.09,
+            "keywordScore": 0.5,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 2.92,
+            "rawScore": 3.240919960640616,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0,
+            "otherBoosts": -0.83,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": -0.6,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": null,
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": "BALI",
+              "jalur": null,
+              "feeType": null,
+              "category": "UNKNOWN",
+              "pageNumber": null
+            },
+            "itemCategory": "KURIKULUM",
+            "queryCategory": "KURIKULUM",
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Things\n(IoT), sistem tertanam, sistem kontrol, dan jaringan komputer\ndengan menerapakan prinsip keamanan jaringan \nProfil\nProgram Studi\nMORE INFO\nPerekayasa sistem\ntertanam dan IoT\nPerekayasa Jaringan\nkomputer\nKeamanan \nSistem\nPeneliti di bidang\nsistem komputer\nsk.stikom-bali.ac.id\nsistemkomputer.stikombali",
+          "trainingId": "9358faf2-c0bf-438b-90e4-5f801f43ea0d",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "divisionKey": null,
+          "updatedAt": null,
+          "createdAt": "2026-04-27T03:54:35.825Z"
+        },
+        {
+          "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+          "score": 0.5032223495031573,
+          "compositeScore": 1.875322,
+          "semanticScore": 0.5032223495031573,
+          "attributeScore": 1,
+          "metadataBoost": 1.82,
+          "scoreComponents": {
+            "rawSemanticScore": 0.5032223495031573,
+            "semanticBoost": 0.05032223495031573,
+            "evidenceScore": 0.135,
+            "keywordScore": 0.75,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 1.82,
+            "rawScore": 2.7753222349503157,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0,
+            "otherBoosts": -0.22999999999999998,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": 0,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": null,
+              "jalur": "REGULER",
+              "feeType": null,
+              "category": "JADWAL",
+              "pageNumber": null
+            },
+            "itemCategory": "JADWAL",
+            "queryCategory": "KURIKULUM",
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "ULUS | : | NEM :\nFACEBOOK/INSTAGRAM | :\nPROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\nBISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)\nKELAS PAGI / SIANG | KELAS SORE/MALAM\nKARYAWAN | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\nBISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)\nDOUBLE DEGREE | INTERNASIONAL PROGRAM (S.KOM B.IT) | NATIONAL PROGRAM (S.KOM-S.M)\nINTERNASIONAL PROGRAM (S.BNS B.M)\nTEMPAT KULIAH | : | KAMPUS  RENON | KAMPUS JIMBARAN | KAMPUS ABIANSEMAL\nSUMBER INFORMASI\n:\nPRESENTER | COSTUMER SERVICE | PENDAFTAR",
+          "trainingId": "303d14ce-a80a-49b8-90c1-61072a1f36fa",
+          "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+          "divisionKey": null,
+          "updatedAt": null,
+          "createdAt": "2026-04-27T03:53:30.515Z"
+        }
+      ],
+      "contextSummary": "Ringkasan konteks dari dokumen relevan:\n- Berisi informasi program internasional / dual degree / kelas khusus.\nContoh ringkasan sumber:\n- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: Penjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki koΓÇª\n- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\" Sistem Komputer | \"Program Studi Sistem Komputer menghasilkan lulΓÇª\n- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: SISTEMSISTEM KOMPUTERKOMPUTER GELAR S.KOM. Menghasilkan lulusan yang memiliki kompetensi dalam merancang, mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, sistem kontrol, dan jariΓÇª\nGunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.",
+      "confidenceScore": 0.5629829962507078,
+      "confidenceTier": "HIGH",
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "SK",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": "KURIKULUM",
+          "pageNumber": null,
+          "academicIntent": "MATA_KULIAH"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 4,
+        "afterIntentValidationCount": 4,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "KURIKULUM_PEMBELAJARAN",
+            "chunkId": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "KURIKULUM_PEMBELAJARAN",
+            "chunkId": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 900 chars",
+                "no_pattern_matches"
+              ]
+            }
+          },
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "KURIKULUM_PEMBELAJARAN",
+            "chunkId": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 453 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sist",
+            "score": 0.5629829962507078,
+            "semanticScore": 0.5629829962507078,
+            "rawScore": 4.682298,
+            "finalScore": 1,
+            "compositeScore": 4.682298,
+            "attributeScore": 1,
+            "metadataBoost": 2.92,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5629829962507078,
+              "semanticBoost": 0.05629829962507078,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2.92,
+              "rawScore": 3.482298299625071,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KURIKULUM",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": false,
+              "allowedCategories": [
+                "KURIKULUM",
+                "MATA_KULIAH"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "KURIKULUM_PEMBELAJARAN"
+            }
+          },
+          {
+            "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer",
+            "score": 0.5504929294499041,
+            "semanticScore": 0.5504929294499041,
+            "rawScore": 4.681049,
+            "finalScore": 1,
+            "compositeScore": 4.681049,
+            "attributeScore": 1,
+            "metadataBoost": 2.92,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5504929294499041,
+              "semanticBoost": 0.05504929294499042,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2.92,
+              "rawScore": 3.48104929294499,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KURIKULUM",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": false,
+              "allowedCategories": [
+                "KURIKULUM",
+                "MATA_KULIAH"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "KURIKULUM_PEMBELAJARAN"
+            }
+          },
+          {
+            "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Thing",
+            "score": 0.6091996064061648,
+            "semanticScore": 0.6091996064061648,
+            "rawScore": 4.44092,
+            "finalScore": 1,
+            "compositeScore": 4.44092,
+            "attributeScore": 1,
+            "metadataBoost": 2.92,
+            "scoreComponents": {
+              "rawSemanticScore": 0.6091996064061648,
+              "semanticBoost": 0.06091996064061648,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 2.92,
+              "rawScore": 3.240919960640616,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.83,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KURIKULUM",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": false,
+              "allowedCategories": [
+                "KURIKULUM",
+                "MATA_KULIAH"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "KURIKULUM_PEMBELAJARAN"
+            }
+          },
+          {
+            "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+            "docCategory": "JADWAL",
+            "text": "ULUS | : | NEM :\nFACEBOOK/INSTAGRAM | :\nPROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\n",
+            "score": 0.5032223495031573,
+            "semanticScore": 0.5032223495031573,
+            "rawScore": 1.875322,
+            "finalScore": 1,
+            "compositeScore": 1.875322,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5032223495031573,
+              "semanticBoost": 0.05032223495031573,
+              "evidenceScore": 0.135,
+              "keywordScore": 0.75,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 2.7753222349503157,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.22999999999999998,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": "REGULER",
+                "feeType": null,
+                "category": "JADWAL",
+                "pageNumber": null
+              },
+              "itemCategory": "JADWAL",
+              "queryCategory": "KURIKULUM",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "JADWAL",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "KURIKULUM",
+                "MATA_KULIAH"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "KURIKULUM_PEMBELAJARAN"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "Prospek kerja Sistem Komputer?",
+    "result": {
+      "success": true,
+      "answer": "🎓 Kamu ingin tahu tentang prospek kerja untuk lulusan Sistem Komputer.\nProspek kerja untuk lulusan Sistem Komputer meliputi:\n• IoT Engineer: Merancang dan mengimplementasikan sistem Internet of Things.\n• Hardware Engineer: Bekerja dengan perangkat keras dan sistem digital.\n• Robotics Engineer: Mengembangkan dan merancang sistem robotika.\n• Network Engineer: Mengelola dan merancang jaringan komputer serta keamanan sistem.\n• Automation Engineer: Mengimplementasikan solusi otomatisasi dalam sistem.\nMau tahu lebih lanjut tentang kompetensi yang dibutuhkan di bidang ini?",
+      "source": "gpt-4o-mini",
+      "contexts": [
+        {
+          "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+          "score": 0.6208718212022664,
+          "compositeScore": 3.753087,
+          "semanticScore": 0.6208718212022664,
+          "attributeScore": 1,
+          "metadataBoost": 1.94,
+          "scoreComponents": {
+            "rawSemanticScore": 0.6208718212022664,
+            "semanticBoost": 0.06208718212022664,
+            "evidenceScore": 0.135,
+            "keywordScore": 0.75,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 1.94,
+            "rawScore": 2.5530871821202266,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0.016,
+            "otherBoosts": -0.584,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": -0.6,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": null,
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": null,
+              "jalur": null,
+              "feeType": null,
+              "category": "KURIKULUM",
+              "pageNumber": null
+            },
+            "itemCategory": "KURIKULUM",
+            "queryCategory": "KARIR",
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimplementasikan sistem informasi termasuk Government dan Enterprise Systems | sistem desain grafis berbasis multimedia serta mengembangkan potensi kewirausahaan di bidang sistem informasi. Profil lulusan yaitu Perekayasa Sistem Informasi | Perekayasa Sistem Informasi Multimedia | Desainer Grafis | Animator | serta Peneliti Sistem Informasi.\" | \"Analisis sistem | database | business intelligence | manajemen proyek IT | sistem enterprise | digital business\" | Suka teknologi sekaligus bisnis dan manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer",
+          "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "divisionKey": null,
+          "updatedAt": "2026-06-02T03:32:04.056Z",
+          "createdAt": "2026-06-02T03:32:04.056Z"
+        },
+        {
+          "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+          "score": 0.597971452521348,
+          "compositeScore": 3.705797,
+          "semanticScore": 0.597971452521348,
+          "attributeScore": 1,
+          "metadataBoost": 1.94,
+          "scoreComponents": {
+            "rawSemanticScore": 0.597971452521348,
+            "semanticBoost": 0.0597971452521348,
+            "evidenceScore": 0.09,
+            "keywordScore": 0.5,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 1.94,
+            "rawScore": 2.5057971452521346,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0.016,
+            "otherBoosts": -0.584,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": -0.6,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": null,
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": null,
+              "jalur": null,
+              "feeType": null,
+              "category": "KURIKULUM",
+              "pageNumber": null
+            },
+            "itemCategory": "KURIKULUM",
+            "queryCategory": "KARIR",
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer | \"Program Studi Sistem Komputer menghasilkan lulusan yang memiliki kompetensi dalam merancang. mengimplementasikan sistem Internet of Things (IoT) | pada sistem Internet of Things (IoT) | sistem tertanam | sistem kontrol | dan jaringan komputer dengan menerapkan prinsip keamanan jaringan. Profil lulusan yaitu Perekayasa Sistem Tertanam dan IoT | Perekayasa Jaringan Komputer dan Keamanan Sistem | serta Peneliti di bidang Sistem Komputer.\" | \"Hardware | mikrocontroller | embedded system | IoT | robotika | jaringan komputer | sistem digital\" | \"Suka perangkat elektronik | robot | dan praktik teknis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"P",
+          "trainingId": "3c8b0b47-7c88-479c-967d-3fc1a956ee50",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "divisionKey": null,
+          "updatedAt": "2026-06-02T03:32:04.271Z",
+          "createdAt": "2026-06-02T03:32:04.271Z"
+        },
+        {
+          "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+          "score": 0.5407895822109903,
+          "compositeScore": 3.454079,
+          "semanticScore": 0.5407895822109903,
+          "attributeScore": 1,
+          "metadataBoost": 1.94,
+          "scoreComponents": {
+            "rawSemanticScore": 0.5407895822109903,
+            "semanticBoost": 0.05407895822109903,
+            "evidenceScore": 0.09,
+            "keywordScore": 0.5,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 1.94,
+            "rawScore": 2.2540789582210987,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0,
+            "otherBoosts": -0.83,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": -0.6,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": null,
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": "BALI",
+              "jalur": null,
+              "feeType": null,
+              "category": "UNKNOWN",
+              "pageNumber": null
+            },
+            "itemCategory": "KURIKULUM",
+            "queryCategory": "KARIR",
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Things\n(IoT), sistem tertanam, sistem kontrol, dan jaringan komputer\ndengan menerapakan prinsip keamanan jaringan \nProfil\nProgram Studi\nMORE INFO\nPerekayasa sistem\ntertanam dan IoT\nPerekayasa Jaringan\nkomputer\nKeamanan \nSistem\nPeneliti di bidang\nsistem komputer\nsk.stikom-bali.ac.id\nsistemkomputer.stikombali",
+          "trainingId": "9358faf2-c0bf-438b-90e4-5f801f43ea0d",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "divisionKey": null,
+          "updatedAt": null,
+          "createdAt": "2026-04-27T03:54:35.825Z"
+        },
+        {
+          "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+          "score": 0.42141894044226136,
+          "compositeScore": 1.822142,
+          "semanticScore": 0.42141894044226136,
+          "attributeScore": 1,
+          "metadataBoost": 1.82,
+          "scoreComponents": {
+            "rawSemanticScore": 0.42141894044226136,
+            "semanticBoost": 0.042141894044226136,
+            "evidenceScore": 0.09,
+            "keywordScore": 0.5,
+            "attributeScore": 1,
+            "exactBoost": 1,
+            "metadataBoost": 1.82,
+            "rawScore": 2.7221418940442264,
+            "finalScore": 1,
+            "categorySignal": 0.2,
+            "trustBoost": 0,
+            "otherBoosts": -0.22999999999999998,
+            "legalPenalty": 0,
+            "headerPenalty": 0,
+            "lowOcrPenalty": 0,
+            "feeKeywordPenalty": 0,
+            "programOverviewPenalty": 0,
+            "multiProgramPenalty": -0.35,
+            "itemEntities": {
+              "program": "SK",
+              "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+              "wave": null,
+              "waveGroup": null,
+              "academicYear": null,
+              "partner": null,
+              "campus": null,
+              "jalur": "REGULER",
+              "feeType": null,
+              "category": "JADWAL",
+              "pageNumber": null
+            },
+            "itemCategory": "JADWAL",
+            "queryCategory": "KARIR",
+            "exactMatch": {
+              "score": 100,
+              "rejected": false,
+              "meta": {
+                "waveGroupMatched": false
+              }
+            }
+          },
+          "chunk": "ULUS | : | NEM :\nFACEBOOK/INSTAGRAM | :\nPROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\nBISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)\nKELAS PAGI / SIANG | KELAS SORE/MALAM\nKARYAWAN | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\nBISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)\nDOUBLE DEGREE | INTERNASIONAL PROGRAM (S.KOM B.IT) | NATIONAL PROGRAM (S.KOM-S.M)\nINTERNASIONAL PROGRAM (S.BNS B.M)\nTEMPAT KULIAH | : | KAMPUS  RENON | KAMPUS JIMBARAN | KAMPUS ABIANSEMAL\nSUMBER INFORMASI\n:\nPRESENTER | COSTUMER SERVICE | PENDAFTAR",
+          "trainingId": "303d14ce-a80a-49b8-90c1-61072a1f36fa",
+          "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+          "divisionKey": null,
+          "updatedAt": null,
+          "createdAt": "2026-04-27T03:53:30.515Z"
+        }
+      ],
+      "contextSummary": "Ringkasan konteks dari dokumen relevan:\n- Berisi informasi program internasional / dual degree / kelas khusus.\nContoh ringkasan sumber:\n- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: Penjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki koΓÇª\n- 3c8b0b47-7c88-479c-967d-3fc1a956ee50: an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\" Sistem Komputer | \"Program Studi Sistem Komputer menghasilkan lulΓÇª\n- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: SISTEMSISTEM KOMPUTERKOMPUTER GELAR S.KOM. Menghasilkan lulusan yang memiliki kompetensi dalam merancang, mengimplementasikan sistem Internet of Things (IoT), sistem tertanam, sistem kontrol, dan jariΓÇª\nGunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.",
+      "confidenceScore": 0.6208718212022664,
+      "confidenceTier": "HIGH",
+      "debug": {
+        "queryEntities": {
+          "intent": "ACADEMIC_PROGRAM",
+          "program": "SK",
+          "programMode": null,
+          "wave": null,
+          "waveGroup": null,
+          "academicYear": null,
+          "partner": null,
+          "campus": null,
+          "jalur": null,
+          "feeType": null,
+          "category": "KARIR",
+          "pageNumber": null,
+          "academicIntent": "PROSPEK_KERJA"
+        },
+        "initialCandidatesCount": 528,
+        "afterRelevantCount": 4,
+        "afterIntentValidationCount": 4,
+        "rejected": [
+          {
+            "reason": "no_evidence_for_intent",
+            "intent": "PROSPEK_KERJA",
+            "chunkId": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "detail": {
+              "hasEvidence": false,
+              "confidence": "LOW",
+              "reasons": [
+                "adequate_length: 616 chars",
+                "no_pattern_matches"
+              ]
+            }
+          }
+        ],
+        "validatedScored": [
+          {
+            "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sist",
+            "score": 0.6208718212022664,
+            "semanticScore": 0.6208718212022664,
+            "rawScore": 3.753087,
+            "finalScore": 1,
+            "compositeScore": 3.753087,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.6208718212022664,
+              "semanticBoost": 0.06208718212022664,
+              "evidenceScore": 0.135,
+              "keywordScore": 0.75,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.5530871821202266,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          },
+          {
+            "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "docCategory": "KURIKULUM",
+            "text": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer",
+            "score": 0.597971452521348,
+            "semanticScore": 0.597971452521348,
+            "rawScore": 3.705797,
+            "finalScore": 1,
+            "compositeScore": 3.705797,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.597971452521348,
+              "semanticBoost": 0.0597971452521348,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.5057971452521346,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0.016,
+              "otherBoosts": -0.584,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": null,
+                "feeType": null,
+                "category": "KURIKULUM",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          },
+          {
+            "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "docCategory": "KURIKULUM",
+            "text": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Thing",
+            "score": 0.5407895822109903,
+            "semanticScore": 0.5407895822109903,
+            "rawScore": 3.454079,
+            "finalScore": 1,
+            "compositeScore": 3.454079,
+            "attributeScore": 1,
+            "metadataBoost": 1.94,
+            "scoreComponents": {
+              "rawSemanticScore": 0.5407895822109903,
+              "semanticBoost": 0.05407895822109903,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.94,
+              "rawScore": 2.2540789582210987,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.83,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": -0.6,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": null,
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": "BALI",
+                "jalur": null,
+                "feeType": null,
+                "category": "UNKNOWN",
+                "pageNumber": null
+              },
+              "itemCategory": "KURIKULUM",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "KURIKULUM",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "MEDIUM",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          },
+          {
+            "id": "bd55bff9-23d7-4670-9da6-2a5d16b5a2bf",
+            "filename": "FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx",
+            "docCategory": "JADWAL",
+            "text": "ULUS | : | NEM :\nFACEBOOK/INSTAGRAM | :\nPROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)\n",
+            "score": 0.42141894044226136,
+            "semanticScore": 0.42141894044226136,
+            "rawScore": 1.822142,
+            "finalScore": 1,
+            "compositeScore": 1.822142,
+            "attributeScore": 1,
+            "metadataBoost": 1.82,
+            "scoreComponents": {
+              "rawSemanticScore": 0.42141894044226136,
+              "semanticBoost": 0.042141894044226136,
+              "evidenceScore": 0.09,
+              "keywordScore": 0.5,
+              "attributeScore": 1,
+              "exactBoost": 1,
+              "metadataBoost": 1.82,
+              "rawScore": 2.7221418940442264,
+              "finalScore": 1,
+              "categorySignal": 0.2,
+              "trustBoost": 0,
+              "otherBoosts": -0.22999999999999998,
+              "legalPenalty": 0,
+              "headerPenalty": 0,
+              "lowOcrPenalty": 0,
+              "feeKeywordPenalty": 0,
+              "programOverviewPenalty": 0,
+              "multiProgramPenalty": -0.35,
+              "itemEntities": {
+                "program": "SK",
+                "programMode": "DOUBLE_DEGREE_INTERNATIONAL",
+                "wave": null,
+                "waveGroup": null,
+                "academicYear": null,
+                "partner": null,
+                "campus": null,
+                "jalur": "REGULER",
+                "feeType": null,
+                "category": "JADWAL",
+                "pageNumber": null
+              },
+              "itemCategory": "JADWAL",
+              "queryCategory": "KARIR",
+              "exactMatch": {
+                "score": 100,
+                "rejected": false,
+                "meta": {
+                  "waveGroupMatched": false
+                }
+              }
+            },
+            "validationMetadata": {
+              "category": "JADWAL",
+              "categoryMismatch": true,
+              "allowedCategories": [
+                "PROSPEK_KERJA"
+              ],
+              "evidenceConfidence": "LOW",
+              "matchesIntent": true,
+              "intent": "PROSPEK_KERJA"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "query": "Apa itu Manajemen Informasi?",
+    "result": {
+      "success": true,
+      "answer": "Siap, aku bantu jawab ya.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+      "source": "rag-prodi-overview",
+      "contexts": []
+    }
+  },
+  {
+    "query": "Mata kuliah Manajemen Informasi?",
+    "result": {
+      "success": true,
+      "answer": "Siap, aku bantu jelaskan info akademik.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+      "source": "rag-prodi-overview",
+      "contexts": []
+    }
+  },
+  {
+    "query": "Prospek kerja Manajemen Informasi?",
+    "result": {
+      "success": true,
+      "answer": "Siap, aku bantu jawab ya.\nBerikut ringkasan singkat masing-masing prodi:\n- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.\n- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.\n- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.\n- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.\nKalau mau detail per prodi (kurikulum, akreditasi, atau prospek kerja), sebutkan prodi yang ingin dikembangkan: BD / SI / TI / SK.\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+      "source": "rag-prodi-overview",
+      "contexts": []
+    }
+  }
+]

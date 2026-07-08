@@ -1,0 +1,338 @@
+{
+  "auditMetadata": {
+    "generatedDate": "2026-06-03",
+    "totalChunksInIndex": 528,
+    "status": "INVESTIGATION_COMPLETE",
+    "confidenceLevel": "HIGH"
+  },
+  "rootCauseAnalysis": {
+    "miRetrieval": {
+      "issue": "MI queries fallback to rag-prodi-overview instead of returning document-backed answers",
+      "rootCause": "DATA_MISSING",
+      "description": "Index contains only BIAYA and AKREDITASI chunks for MI. No DEFINISI_PRODI, KURIKULUM, or KARIR chunks exist.",
+      "affectedQueries": [
+        "Apa itu Manajemen Informasi?",
+        "Prospek kerja Manajemen Informasi?",
+        "Mata kuliah Manajemen Informasi?"
+      ],
+      "evidenceChunksInIndex": 9,
+      "evidenceChunksByCategory": {
+        "BIAYA": 3,
+        "AKREDITASI": 4,
+        "UNKNOWN": 2,
+        "DEFINISI_PRODI": 0,
+        "KURIKULUM": 0,
+        "KARIR": 0,
+        "PROSPEK_KERJA": 0,
+        "MATA_KULIAH": 0
+      },
+      "retrievalFlow": {
+        "step1": "Entity extracted correctly (program='MI')",
+        "step2": "Category detected correctly (DEFINISI_PRODI/KURIKULUM/KARIR)",
+        "step3": "Search in index: chunks WHERE program='MI' AND category='...'",
+        "step4": "Result: 0 chunks found",
+        "step5": "Fallback triggered to rag-prodi-overview"
+      },
+      "isRetrieverFaulty": false,
+      "isValidatorFaulty": false,
+      "isEntityMappingFaulty": false,
+      "resolution": "Must ingest MI-specific chunks from source documents for DEFINISI_PRODI, KURIKULUM, and KARIR categories"
+    },
+    "skCurriculum": {
+      "issue": "SK 'Mata kuliah' query returns generic profile text instead of specific course list",
+      "rootCause": "LIMITED_DATA_AND_RANKING",
+      "description": "Only 2 SK KURIKULUM chunks exist in index. Retrieval ranks DEFINISI chunks higher, resulting in profile-focused answer.",
+      "affectedQueries": [
+        "Mata kuliah Sistem Komputer"
+      ],
+      "evidenceChunksInIndex": {
+        "SK_KURIKULUM": 2,
+        "SK_AKREDITASI": 24,
+        "SK_DEFINISI": "~10+",
+        "SK_TOTAL": 44
+      },
+      "skKurikulumChunks": [
+        {
+          "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "score": 0.582,
+          "category": "KURIKULUM",
+          "chunkType": "PROGRAM"
+        },
+        {
+          "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "score": 0.558,
+          "category": "KURIKULUM",
+          "chunkType": "PROGRAM"
+        }
+      ],
+      "retrievalProblem": {
+        "issue": "KURIKULUM chunks ranked lower than DEFINISI chunks",
+        "reason": "Chunk ranking algorithm may prefer high-relevance DEFINISI chunks",
+        "result": "System selects profile text instead of curriculum text"
+      },
+      "dataQualityProblem": {
+        "issue": "Only 2 KURIKULUM chunks for entire SK program",
+        "reason": "Likely insufficient to contain detailed course list",
+        "result": "Even if ranked correctly, answer may still be generic"
+      },
+      "resolution": "1. Verify existing chunks contain course names. 2. Extract detailed course list from SK curriculum document. 3. Improve ranking for KURIKULUM > DEFINISI queries."
+    },
+    "metadataQuality": {
+      "issue": "52.5% of index chunks have unknown or missing program metadata",
+      "rootCause": "INGESTION_METADATA_EXTRACTION_FAILURE",
+      "description": "277 out of 528 chunks have program='UNKNOWN' or missing program field",
+      "chunks": {
+        "UNKNOWN": 277,
+        "percentage": 52.5
+      },
+      "impact": "Many chunks cannot be found by program-specific retrieval, even if they contain relevant content",
+      "resolution": "Re-ingest chunks and properly extract program metadata during ingestion"
+    }
+  },
+  "detailedStatistics": {
+    "chunksByProgram": {
+      "UNKNOWN": {
+        "count": 277,
+        "percentage": 52.5,
+        "status": "CRITICAL"
+      },
+      "RPL": {
+        "count": 111,
+        "percentage": 21.0
+      },
+      "TI": {
+        "count": 44,
+        "percentage": 8.3
+      },
+      "SK": {
+        "count": 44,
+        "percentage": 8.3
+      },
+      "SI": {
+        "count": 23,
+        "percentage": 4.4
+      },
+      "BD": {
+        "count": 11,
+        "percentage": 2.1
+      },
+      "MI": {
+        "count": 9,
+        "percentage": 1.7,
+        "status": "INSUFFICIENT_FOR_QUERIES"
+      },
+      "AN": {
+        "count": 6,
+        "percentage": 1.1
+      },
+      "MM": {
+        "count": 3,
+        "percentage": 0.6
+      }
+    },
+    "chunksByCategory": {
+      "BIAYA": {
+        "count": 225,
+        "percentage": 42.6
+      },
+      "UNKNOWN": {
+        "count": 99,
+        "percentage": 18.7,
+        "status": "NEEDS_REVIEW"
+      },
+      "AKREDITASI": {
+        "count": 46,
+        "percentage": 8.7
+      },
+      "PROGRAM": {
+        "count": 35,
+        "percentage": 6.6
+      },
+      "JADWAL": {
+        "count": 30,
+        "percentage": 5.7
+      },
+      "KURIKULUM": {
+        "count": 2,
+        "percentage": 0.4,
+        "status": "VERY_LOW"
+      },
+      "MATA_KULIAH": {
+        "count": 0,
+        "percentage": 0,
+        "status": "MISSING"
+      },
+      "PROSPEK_KERJA": {
+        "count": 1,
+        "percentage": 0.2,
+        "status": "CRITICALLY_LOW"
+      },
+      "KARIR": {
+        "count": 1,
+        "percentage": 0.2,
+        "status": "CRITICALLY_LOW"
+      }
+    },
+    "chunksByProgramAndCategory": {
+      "TI": {
+        "BIAYA": 31,
+        "UNKNOWN": 13
+      },
+      "SI": {
+        "BIAYA": 4,
+        "UNKNOWN": 19
+      },
+      "SK": {
+        "AKREDITASI": 24,
+        "BIAYA": 5,
+        "KURIKULUM": 2,
+        "UNKNOWN": 5,
+        "PROGRAM": 2,
+        "TEMPLATE": 1,
+        "JADWAL": 1,
+        "COST": 1,
+        "SK": 3
+      },
+      "BD": {
+        "KARIR": 1,
+        "UNKNOWN": 10
+      },
+      "MI": {
+        "BIAYA": 3,
+        "AKREDITASI": 4,
+        "UNKNOWN": 2,
+        "DEFINISI_PRODI": 0,
+        "KURIKULUM": 0,
+        "KARIR": 0
+      }
+    }
+  },
+  "miChunksDetail": {
+    "totalCount": 9,
+    "chunks": [
+      {
+        "id": "ff602b46-9998-449c-9c94-4e3694e461e6",
+        "category": "BIAYA",
+        "program": "MI",
+        "programAliases": ["MI"],
+        "filename": "NO_FILENAME",
+        "chunkType": "UNKNOWN"
+      },
+      {
+        "id": "18c006db-daf4-4877-b146-27792e1ea273",
+        "category": "BIAYA",
+        "program": "MI",
+        "programAliases": ["MI"],
+        "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+        "chunkType": "UNKNOWN"
+      },
+      {
+        "id": "530d8d16-ee37-4dee-b744-23bd4ea2c0f0",
+        "category": "UNKNOWN",
+        "program": "MI",
+        "programAliases": ["MI"],
+        "filename": "NO_FILENAME",
+        "chunkType": "UNKNOWN"
+      },
+      {
+        "id": "39e0d964-21a6-4013-89c8-91644c0793e3",
+        "category": "BIAYA",
+        "program": "MI",
+        "programAliases": ["MI"],
+        "filename": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+        "chunkType": "UNKNOWN"
+      },
+      {
+        "id": "eaf68cd9-e36b-43fe-8b58-3f958861ab38",
+        "category": "AKREDITASI",
+        "program": "MI",
+        "programAliases": ["MI"],
+        "filename": "SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "chunkType": "UNKNOWN"
+      },
+      {
+        "id": "fc0c3b22-b9f6-44ee-8eb1-7a42db22afa0",
+        "category": "AKREDITASI",
+        "program": "MI",
+        "programAliases": ["MI"],
+        "filename": "SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "chunkType": "UNKNOWN"
+      },
+      {
+        "id": "7db938ae-25cd-497f-9672-abf743a1362f",
+        "category": "AKREDITASI",
+        "program": "MI",
+        "programAliases": ["MI"],
+        "filename": "SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "chunkType": "UNKNOWN"
+      },
+      {
+        "id": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+        "category": "UNKNOWN",
+        "program": "MI",
+        "programAliases": ["MI"],
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "chunkType": "UNKNOWN"
+      },
+      {
+        "id": "798a2d13-45d5-4e46-a187-7cdddc599674",
+        "category": "AKREDITASI",
+        "program": "MI",
+        "programAliases": ["MI"],
+        "filename": "SERTIFIKAT AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf",
+        "chunkType": "GENERAL"
+      }
+    ],
+    "categoriesPresent": ["BIAYA", "AKREDITASI", "UNKNOWN"],
+    "categoriesMissing": ["DEFINISI_PRODI", "KURIKULUM", "MATA_KULIAH", "KARIR", "PROSPEK_KERJA"]
+  },
+  "skKurikulumAnalysis": {
+    "totalSkChunks": 44,
+    "kurikulumChunksCount": 2,
+    "source": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+    "problem": "Only 2 chunks and retrieval ranks DEFINISI higher",
+    "recommendation": "Verify chunk content contains actual course names; if not, extract from proper curriculum document"
+  },
+  "recommendations": {
+    "priority1_miData": {
+      "rank": "CRITICAL",
+      "action": "Add MI-specific chunks to index",
+      "required": [
+        "MI DEFINISI_PRODI chunk (e.g., 'Manajemen Informatika adalah...')",
+        "MI KURIKULUM/MATA_KULIAH chunks (e.g., course list)",
+        "MI KARIR/PROSPEK_KERJA chunks (e.g., career paths)"
+      ],
+      "source": "Extract from existing documents or create from training data",
+      "expectedOutcome": "MI queries will return document-backed answers instead of fallback overview"
+    },
+    "priority2_skCurriculum": {
+      "rank": "HIGH",
+      "action": "Improve SK curriculum data and retrieval",
+      "required": [
+        "Verify existing 2 KURIKULUM chunks contain actual course names",
+        "If not, extract detailed course list from SK curriculum document",
+        "Adjust retrieval ranking: prefer KURIKULUM > DEFINISI for mata kuliah queries"
+      ],
+      "expectedOutcome": "SK 'Mata kuliah' queries will return specific course list instead of generic profile"
+    },
+    "priority3_metadata": {
+      "rank": "MEDIUM",
+      "action": "Fix ingestion metadata quality",
+      "required": [
+        "Re-ingest 277 UNKNOWN program chunks",
+        "Properly extract program field during ingestion",
+        "Review ingestion logic for metadata extraction"
+      ],
+      "expectedOutcome": "Improved retrieval accuracy and better chunk discovery"
+    }
+  },
+  "confirmationStatus": {
+    "isRetrieverFaulty": false,
+    "isValidatorFaulty": false,
+    "isEntityMappingFaulty": false,
+    "isProblemDataIngest": true,
+    "explanation": "All system components are working correctly post-fix. The issue is missing source data in index (MI) and limited data (SK curriculum)."
+  }
+}

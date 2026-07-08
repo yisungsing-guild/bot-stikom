@@ -1,0 +1,1 @@
+const fs=require('fs'); const code = fs.readFileSync('./src/lib/normalizer.js','utf-8'); const simpleFuzzyTokenFix = new Function('token', code.split('function simpleFuzzyTokenFix(token) {')[1].split('function levenshtein')[0] + 'return simpleFuzzyTokenFix(token);'); console.log(simpleFuzzyTokenFix('pendaftaran')); console.log(simpleFuzzyTokenFix('stikom?'));

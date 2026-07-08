@@ -1,0 +1,12 @@
+diff --git a/node_modules/openai/src/tsconfig.json b/node_modules/openai/src/tsconfig.json
+index 3d3bf73..f4c1e9a 100644
+--- a/node_modules/openai/src/tsconfig.json
++++ b/node_modules/openai/src/tsconfig.json
+@@ -7,6 +7,6 @@
+   "compilerOptions": {
+     "target": "es2015",
+     "lib": ["DOM"],
+-    "moduleResolution": "node"
++    "moduleResolution": "node16"
+   }
+ }

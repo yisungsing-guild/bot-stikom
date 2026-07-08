@@ -1,0 +1,75 @@
+            ],
+            "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          }
+        },
+        {
+          "id": "tuition_fee-37",
+          "chunk": "Program Studi Tuition Fee - tuition fee\nTuition Fee knowledge\n\nPertanyaan cepat:\n- Biaya kuliah berapa? - Biaya pendaftaran dan DPP berapa? - Ada potongan atau beasiswa biaya kuliah? Jawaban ringkas:\n- Biaya kuliah biasanya terdiri dari biaya pendaftaran, DPP, dan komponen per semester atau per layanan sesuai program studi. - Besaran biaya bisa berbeda menurut program studi, jalur masuk, dan gelombang pendaftaran. - Jika kamu tanya \"biaya kuliah berapa?\", jawaban yang tepat harus mengarah ke rincian biaya program yang dimaksud, bukan angka umum yang dipaksakan ke semua prodi. Gunakan kategori ini untuk pertanyaan tentang:\n- biaya kuliah\n- pendaftaran\n- DPP\n- UKM atau pembayaran per semester\nTuition Fee docs guidance\n\nPurpose:\n- Dedicated tuition and fee descriptions, payment schedules, per-semester costs, discounts.",
+          "filename": "docs/retrieval/knowledge_domains/tuition_fee.md",
+          "trainingId": null,
+          "metadata": {
+            "category": "tuition_fee",
+            "topic": "tuition_fee",
+            "type": "program_detail",
+            "audience": "prospective_student",
+            "tags": [
+              "tuition_fee",
+              "program_detail"
+            ],
+            "source": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        }
+      ],
+      "confidenceScore": 105,
+      "confidenceTier": "LOW",
+      "debug": {
+        "entity": {
+          "intent": "COST",
+          "program": "TI",
+          "wave": "1A",
+          "waveGroup": "1",
+          "academicYear": "2025",
+          "campus": "BALI"
+        },
+        "reason": "no_trusted_source_chunks",
+        "matchedChunks": [
+          {
+            "id": "program_studi-29",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "program_studi-31",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "program_studi-32",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "program_studi-33",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "program_studi-34",
+            "filename": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+          },
+          {
+            "id": "tuition_fee-37",
+            "filename": "docs/retrieval/knowledge_domains/tuition_fee.md"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "key": "SI",
+    "question": "berapa biaya prodi si gelombang 1A?",
+    "res": {
+      "success": true,
+      "answer": "Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.",
+      "source": "rag-answer-rejected",
+      "contexts": [
+        {
+          "id": "program_studi-12",
+          "chunk": "Program Studi Sistem Informasi - Ringkasan Program\n# Ringkasan Program\n\nProgram Studi Sistem Informasi berfokus pada cara merancang solusi digital yang menghubungkan kebutuhan bisnis, proses organisasi, dan teknologi informasi. Mahasiswa belajar melihat masalah dari sisi pengguna, data, dan proses kerja agar solusi yang dibuat tidak hanya canggih secara teknis, tetapi juga efektif dipakai di dunia nyata.",
+          "filename": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md",

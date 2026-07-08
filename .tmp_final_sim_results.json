@@ -1,0 +1,916 @@
+{
+  "timestamp": "2026-06-12T03:21:18.685Z",
+  "results": [
+    {
+      "question": "Apa itu Sistem Informasi?",
+      "academicIntent": "DEFINISI_PRODI",
+      "before": {
+        "passedCount": 1,
+        "topFinal": [
+          {
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "program": "SI",
+            "category": "PROGRAM_KHUSUS",
+            "composite": "4.2000"
+          }
+        ]
+      },
+      "after": {
+        "passedCount": 13,
+        "topFinal": [
+          {
+            "rank": 1,
+            "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+            "program": "SI",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "category": "KURIKULUM",
+            "composite": 4.460675953395887,
+            "reason": "category_whitelist:KURIKULUM"
+          },
+          {
+            "rank": 3,
+            "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+            "program": "SI",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "category": "PROGRAM_KHUSUS",
+            "composite": 4.2,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 4,
+            "id": "618a0474-969a-463f-91cd-c010a27beb48",
+            "program": "SI",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "category": "KURIKULUM",
+            "composite": 3.8784790778680787,
+            "reason": "category_whitelist:KURIKULUM"
+          },
+          {
+            "rank": 6,
+            "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.3692377978441823,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 8,
+            "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.2840579417901727,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 9,
+            "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.2834976334866135,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 10,
+            "id": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.2812527622138186,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 11,
+            "id": "37dc572d-f30d-47eb-b5ca-63fb21bba88a",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.2787050331564074,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 12,
+            "id": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.278676779934366,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 13,
+            "id": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.27862730013287,
+            "reason": "fallback_program_and_academic"
+          }
+        ]
+      },
+      "changed": [
+        {
+          "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+          "rank": 1,
+          "program": "SI",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "category": "KURIKULUM",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "category_whitelist:KURIKULUM"
+        },
+        {
+          "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+          "rank": 3,
+          "program": "SI",
+          "filename": "CHATBOT - Double Degree (1).docx",
+          "category": "PROGRAM_KHUSUS",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "618a0474-969a-463f-91cd-c010a27beb48",
+          "rank": 4,
+          "program": "SI",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "category": "KURIKULUM",
+          "reasonBefore": "evidence_regex_match",
+          "reasonAfter": "category_whitelist:KURIKULUM"
+        },
+        {
+          "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+          "rank": 6,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+          "rank": 8,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+          "rank": 9,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+          "rank": 10,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "37dc572d-f30d-47eb-b5ca-63fb21bba88a",
+          "rank": 11,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+          "rank": 12,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+          "rank": 13,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "f6fba3b8-10b8-4773-9537-ed5d368a1f62",
+          "rank": 14,
+          "program": "SI",
+          "category": "BIAYA",
+          "reasonBefore": "evidence_regex_match",
+          "reasonAfter": "evidence_regex_match"
+        },
+        {
+          "id": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+          "rank": 15,
+          "program": "SI",
+          "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+          "rank": 20,
+          "program": "SI",
+          "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        }
+      ],
+      "nonSInew": [],
+      "doubleDegreeBefore": true,
+      "doubleDegreeAfter": true
+    },
+    {
+      "question": "Apa prospek kerja Sistem Informasi?",
+      "academicIntent": "PROSPEK_KERJA",
+      "before": {
+        "passedCount": 1,
+        "topFinal": [
+          {
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "program": "SI",
+            "category": "PROGRAM_KHUSUS",
+            "composite": "3.9300"
+          }
+        ]
+      },
+      "after": {
+        "passedCount": 12,
+        "topFinal": [
+          {
+            "rank": 1,
+            "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+            "program": "SI",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "category": "KURIKULUM",
+            "composite": 4.246445336397847,
+            "reason": "evidence_regex_match"
+          },
+          {
+            "rank": 2,
+            "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+            "program": "SI",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "category": "PROGRAM_KHUSUS",
+            "composite": 3.9750000000000005,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 4,
+            "id": "618a0474-969a-463f-91cd-c010a27beb48",
+            "program": "SI",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "category": "KURIKULUM",
+            "composite": 3.614278608238112,
+            "reason": "evidence_regex_match"
+          },
+          {
+            "rank": 6,
+            "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.1014375696846637,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 8,
+            "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.0099798934892927,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 9,
+            "id": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.0090448612537353,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 10,
+            "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.0090215792036257,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 11,
+            "id": "37dc572d-f30d-47eb-b5ca-63fb21bba88a",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.0052703353883277,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 12,
+            "id": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.0050614251250387,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 13,
+            "id": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.004712553053235,
+            "reason": "fallback_program_and_academic"
+          }
+        ]
+      },
+      "changed": [
+        {
+          "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+          "rank": 1,
+          "program": "SI",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "category": "KURIKULUM",
+          "reasonBefore": "evidence_regex_match",
+          "reasonAfter": "evidence_regex_match"
+        },
+        {
+          "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+          "rank": 2,
+          "program": "SI",
+          "filename": "CHATBOT - Double Degree (1).docx",
+          "category": "PROGRAM_KHUSUS",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "618a0474-969a-463f-91cd-c010a27beb48",
+          "rank": 4,
+          "program": "SI",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "category": "KURIKULUM",
+          "reasonBefore": "evidence_regex_match",
+          "reasonAfter": "evidence_regex_match"
+        },
+        {
+          "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+          "rank": 6,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+          "rank": 8,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+          "rank": 9,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+          "rank": 10,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "37dc572d-f30d-47eb-b5ca-63fb21bba88a",
+          "rank": 11,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+          "rank": 12,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+          "rank": 13,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+          "rank": 16,
+          "program": "SI",
+          "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+          "rank": 20,
+          "program": "SI",
+          "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        }
+      ],
+      "nonSInew": [],
+      "doubleDegreeBefore": true,
+      "doubleDegreeAfter": true
+    },
+    {
+      "question": "Apa yang dipelajari di Sistem Informasi?",
+      "academicIntent": "MATA_KULIAH",
+      "before": {
+        "passedCount": 1,
+        "topFinal": [
+          {
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "program": "SI",
+            "category": "PROGRAM_KHUSUS",
+            "composite": "4.1400"
+          }
+        ]
+      },
+      "after": {
+        "passedCount": 15,
+        "topFinal": [
+          {
+            "rank": 1,
+            "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+            "program": "SI",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "category": "KURIKULUM",
+            "composite": 4.400636556486173,
+            "reason": "category_whitelist:KURIKULUM"
+          },
+          {
+            "rank": 2,
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "program": "SI",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "category": "PROGRAM_KHUSUS",
+            "composite": 4.14,
+            "reason": "evidence_regex_match"
+          },
+          {
+            "rank": 3,
+            "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+            "program": "SI",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "category": "PROGRAM_KHUSUS",
+            "composite": 4.14,
+            "reason": "evidence_regex_match"
+          },
+          {
+            "rank": 4,
+            "id": "618a0474-969a-463f-91cd-c010a27beb48",
+            "program": "SI",
+            "filename": "Penjelasan Semua Program Studi.pdf",
+            "category": "KURIKULUM",
+            "composite": 3.8175466454477656,
+            "reason": "category_whitelist:KURIKULUM"
+          },
+          {
+            "rank": 5,
+            "id": "8491b972-ee0b-4806-bd7e-8508c61ed46b",
+            "program": "SI",
+            "filename": "hobi_prodi_lengkap (1).xlsx",
+            "category": "UNKNOWN",
+            "composite": 3.3572981985495174,
+            "reason": "evidence_regex_match"
+          },
+          {
+            "rank": 6,
+            "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.31031999851575,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 8,
+            "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.223772773186629,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 9,
+            "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.223085273027076,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 10,
+            "id": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.2209175357232223,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 11,
+            "id": "37dc572d-f30d-47eb-b5ca-63fb21bba88a",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.219604440794507,
+            "reason": "fallback_program_and_academic"
+          }
+        ]
+      },
+      "changed": [
+        {
+          "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+          "rank": 1,
+          "program": "SI",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "category": "KURIKULUM",
+          "reasonBefore": "category_whitelist:KURIKULUM",
+          "reasonAfter": "category_whitelist:KURIKULUM"
+        },
+        {
+          "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+          "rank": 3,
+          "program": "SI",
+          "filename": "CHATBOT - Double Degree (1).docx",
+          "category": "PROGRAM_KHUSUS",
+          "reasonBefore": "evidence_regex_match",
+          "reasonAfter": "evidence_regex_match"
+        },
+        {
+          "id": "618a0474-969a-463f-91cd-c010a27beb48",
+          "rank": 4,
+          "program": "SI",
+          "filename": "Penjelasan Semua Program Studi.pdf",
+          "category": "KURIKULUM",
+          "reasonBefore": "category_whitelist:KURIKULUM",
+          "reasonAfter": "category_whitelist:KURIKULUM"
+        },
+        {
+          "id": "8491b972-ee0b-4806-bd7e-8508c61ed46b",
+          "rank": 5,
+          "program": "SI",
+          "filename": "hobi_prodi_lengkap (1).xlsx",
+          "category": "UNKNOWN",
+          "reasonBefore": "evidence_regex_match",
+          "reasonAfter": "evidence_regex_match"
+        },
+        {
+          "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+          "rank": 6,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+          "rank": 8,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+          "rank": 9,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+          "rank": 10,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "37dc572d-f30d-47eb-b5ca-63fb21bba88a",
+          "rank": 11,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+          "rank": 12,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+          "rank": 13,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+          "rank": 15,
+          "program": "SI",
+          "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+          "category": "BIAYA",
+          "reasonBefore": "evidence_regex_match",
+          "reasonAfter": "evidence_regex_match"
+        },
+        {
+          "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+          "rank": 17,
+          "program": "SI",
+          "filename": "hobi-sesuai-program-studi.docx",
+          "category": "UNKNOWN",
+          "reasonBefore": "evidence_regex_match",
+          "reasonAfter": "evidence_regex_match"
+        },
+        {
+          "id": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+          "rank": 20,
+          "program": "SI",
+          "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        }
+      ],
+      "nonSInew": [],
+      "doubleDegreeBefore": true,
+      "doubleDegreeAfter": true
+    },
+    {
+      "question": "Apa keunggulan Sistem Informasi?",
+      "academicIntent": "ACADEMIC_PROGRAM",
+      "before": {
+        "passedCount": 2,
+        "topFinal": [
+          {
+            "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "program": "SI",
+            "category": "PROGRAM_KHUSUS",
+            "composite": "3.3000"
+          },
+          {
+            "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "program": "SI",
+            "category": "PROGRAM_KHUSUS",
+            "composite": "3.2400"
+          }
+        ]
+      },
+      "after": {
+        "passedCount": 11,
+        "topFinal": [
+          {
+            "rank": 3,
+            "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+            "program": "SI",
+            "filename": "CHATBOT - Double Degree (1).docx",
+            "category": "PROGRAM_KHUSUS",
+            "composite": 3.24,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 4,
+            "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.193285187480324,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 6,
+            "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.101628339933259,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 7,
+            "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.1011013644029175,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 8,
+            "id": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.100215911476479,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 9,
+            "id": "37dc572d-f30d-47eb-b5ca-63fb21bba88a",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.098782039006489,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 10,
+            "id": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.0984812003356668,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 11,
+            "id": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+            "program": "SI",
+            "filename": null,
+            "category": "BIAYA",
+            "composite": 3.0982755992327053,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 15,
+            "id": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+            "program": "SI",
+            "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+            "category": "BIAYA",
+            "composite": 3.02723904853092,
+            "reason": "fallback_program_and_academic"
+          },
+          {
+            "rank": 17,
+            "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+            "program": "SI",
+            "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+            "category": "KURIKULUM",
+            "composite": 2.931451603962233,
+            "reason": "fallback_program_and_academic"
+          }
+        ]
+      },
+      "changed": [
+        {
+          "id": "c4b537df-3774-42de-b51c-82f5a35bdee6",
+          "rank": 4,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "0f1c9e82-15a8-44a4-9fa8-0e9a2fd500b5",
+          "rank": 6,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "3546c7cc-7dc3-4a1e-b318-79648193fb86",
+          "rank": 7,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "a0f70379-20e4-493a-ace1-69d9f54f8611",
+          "rank": 8,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "37dc572d-f30d-47eb-b5ca-63fb21bba88a",
+          "rank": 9,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "ce42bcfd-a809-4551-9ffa-f7af5eb695b3",
+          "rank": 10,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "e2b03ce6-cf44-4bbe-8b23-8d5d0a3984c3",
+          "rank": 11,
+          "program": "SI",
+          "filename": null,
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "b48ac911-84d8-4cfe-9bd3-0109ab56a2c7",
+          "rank": 15,
+          "program": "SI",
+          "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+          "rank": 17,
+          "program": "SI",
+          "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+          "category": "KURIKULUM",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        },
+        {
+          "id": "2be1ee50-6f65-487a-b7cd-fa56701d6a4e",
+          "rank": 20,
+          "program": "SI",
+          "filename": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+          "category": "BIAYA",
+          "reasonBefore": "fallback_program_and_academic",
+          "reasonAfter": "fallback_program_and_academic"
+        }
+      ],
+      "nonSInew": [],
+      "doubleDegreeBefore": true,
+      "doubleDegreeAfter": true
+    }
+  ]
+}

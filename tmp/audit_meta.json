@@ -1,0 +1,651 @@
+[
+  {
+    "index": 1,
+    "fullName": "Provider webhook with BOT_INTRO_MESSAGE enabled: greeting-only sends intro first, then welcome",
+    "line": 256,
+    "file_ref": "tests\\providerWebhook.test.js:256:29",
+    "session_keys": [],
+    "matcher_expected": "welcome_only",
+    "matcher_actual": "intro_only"
+  },
+  {
+    "index": 2,
+    "fullName": "Provider webhook intro reply persists composer telemetry and is sent through outbound.reply",
+    "line": 297,
+    "file_ref": "tests\\providerWebhook.test.js:297:46",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 3,
+    "fullName": "Provider webhook short follow-ups reuse TI context and set contextReused telemetry",
+    "line": 357,
+    "file_ref": "tests\\providerWebhook.test.js:357:60",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": "Teknologi Informasi",
+    "matcher_actual": null
+  },
+  {
+    "index": 4,
+    "fullName": "Provider webhook reflection cooldown resets after greeting reuse and clears stale reflection timestamp",
+    "line": 417,
+    "file_ref": "tests\\providerWebhook.test.js:417:58",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 5,
+    "fullName": "Provider webhook greeting mid-conversation preserves topic memory and allows follow-up reuse",
+    "line": 445,
+    "file_ref": "tests\\providerWebhook.test.js:445:60",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": "Teknologi Informasi",
+    "matcher_actual": null
+  },
+  {
+    "index": 6,
+    "fullName": "Provider webhook explicit program switch updates topic memory for subsequent follow-ups",
+    "line": 495,
+    "file_ref": "tests\\providerWebhook.test.js:495:111",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": true,
+    "matcher_actual": null
+  },
+  {
+    "index": 7,
+    "fullName": "Provider webhook latest explicit topic wins and sets previousProgramHint history",
+    "line": 517,
+    "file_ref": "tests\\providerWebhook.test.js:517:63",
+    "session_keys": [
+      "composerTelemetry",
+      "pendingSemanticSuggestion"
+    ],
+    "matcher_expected": "Sistem Informasi",
+    "matcher_actual": null
+  },
+  {
+    "index": 8,
+    "fullName": "Provider webhook semantic curriculum+career question about SI answered directly (no menu hijack)",
+    "line": 549,
+    "file_ref": "tests\\providerWebhook.test.js:549:72",
+    "session_keys": [
+      "pendingSemanticSuggestion"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 9,
+    "fullName": "Provider webhook semantic career question about TI answered directly (no menu hijack)",
+    "line": 571,
+    "file_ref": "tests\\providerWebhook.test.js:571:72",
+    "session_keys": [
+      "pendingSemanticSuggestion"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 10,
+    "fullName": "Provider webhook semantic short TI difficulty question answered directly (no menu hijack)",
+    "line": 593,
+    "file_ref": "tests\\providerWebhook.test.js:593:72",
+    "session_keys": [
+      "pendingSemanticSuggestion"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 11,
+    "fullName": "Provider webhook semantic short follow-up uses prior SI context and answers directly",
+    "line": 628,
+    "file_ref": "tests\\providerWebhook.test.js:628:72",
+    "session_keys": [
+      "pendingSemanticSuggestion"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 12,
+    "fullName": "Provider webhook semantic follow-up \"kerjanya nanti jadi apa?\" reuses TI context and answers directly",
+    "line": 663,
+    "file_ref": "tests\\providerWebhook.test.js:663:72",
+    "session_keys": [
+      "pendingSemanticSuggestion"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 13,
+    "fullName": "Provider webhook semantic follow-up \"mata kuliahnya apa?\" uses prior SI context and answers directly",
+    "line": 698,
+    "file_ref": "tests\\providerWebhook.test.js:698:72",
+    "session_keys": [
+      "pendingSemanticSuggestion"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 14,
+    "fullName": "Provider webhook semantic short follow-up \"gampang dipelajari?\" uses prior context and answers directly",
+    "line": 733,
+    "file_ref": "tests\\providerWebhook.test.js:733:72",
+    "session_keys": [
+      "pendingSemanticSuggestion"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 15,
+    "fullName": "Provider webhook context inheritance: TI -> follow-up -> still TI",
+    "line": 749,
+    "file_ref": "tests\\providerWebhook.test.js:749:70",
+    "session_keys": [],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 16,
+    "fullName": "Provider webhook cross-topic recovery: unrelated RAG reply then ambiguous follow-up returns TI",
+    "line": 819,
+    "file_ref": "tests\\providerWebhook.test.js:819:29",
+    "session_keys": [],
+    "matcher_expected": "pending_rag_candidate",
+    "matcher_actual": null
+  },
+  {
+    "index": 17,
+    "fullName": "Provider webhook context decay: stale program context is cleared before ambiguous follow-up handling",
+    "line": 922,
+    "file_ref": "tests\\providerWebhook.test.js:922:63",
+    "session_keys": [],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 18,
+    "fullName": "Provider webhook ambiguity safety: new generic follow-up does NOT auto-switch program",
+    "line": 949,
+    "file_ref": "tests\\providerWebhook.test.js:949:108",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": "Teknologi Informasi",
+    "matcher_actual": null
+  },
+  {
+    "index": 19,
+    "fullName": "Provider webhook greeting after topic switch resumes latest topic",
+    "line": 981,
+    "file_ref": "tests\\providerWebhook.test.js:981:63",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": "Sistem Informasi",
+    "matcher_actual": null
+  },
+  {
+    "index": 20,
+    "fullName": "Provider webhook multiple topic switches preserve latest topic and allow later reuse",
+    "line": 1009,
+    "file_ref": "tests\\providerWebhook.test.js:1009:63",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": "Teknologi Informasi",
+    "matcher_actual": null
+  },
+  {
+    "index": 21,
+    "fullName": "Provider webhook stale topic does not reuse older program hint",
+    "line": 1049,
+    "file_ref": "tests\\providerWebhook.test.js:1049:62",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 22,
+    "fullName": "Provider webhook location question: answered deterministically from bundled index (fast, no slow web/OpenAI dependency)",
+    "line": 1868,
+    "file_ref": "tests\\providerWebhook.test.js:1868:29",
+    "session_keys": [
+      "numericMenuActive",
+      "pendingPmbMenu"
+    ],
+    "matcher_expected": "campus_location_fast",
+    "matcher_actual": "fallback"
+  },
+  {
+    "index": 23,
+    "fullName": "Provider webhook dual degree location question: answers with STIKOM + partner campuses (no mojibake)",
+    "line": 1887,
+    "file_ref": "tests\\providerWebhook.test.js:1887:29",
+    "session_keys": [
+      "numericMenuActive",
+      "pendingPmbMenu"
+    ],
+    "matcher_expected": "dual_degree_location_fast",
+    "matcher_actual": "fallback"
+  },
+  {
+    "index": 24,
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: program list query",
+    "line": 2222,
+    "file_ref": "tests\\providerWebhook.test.js:2222:96",
+    "session_keys": [
+      "registrationFlow"
+    ],
+    "matcher_expected": true,
+    "matcher_actual": false
+  },
+  {
+    "index": 25,
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: curriculum inquiry",
+    "line": 2218,
+    "file_ref": "tests\\providerWebhook.test.js:2218:43",
+    "session_keys": [
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 26,
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: career/prospect inquiry",
+    "line": 2218,
+    "file_ref": "tests\\providerWebhook.test.js:2218:43",
+    "session_keys": [
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 27,
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: tuition inquiry",
+    "line": 2222,
+    "file_ref": "tests\\providerWebhook.test.js:2222:96",
+    "session_keys": [
+      "registrationFlow"
+    ],
+    "matcher_expected": true,
+    "matcher_actual": false
+  },
+  {
+    "index": 28,
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: requirements inquiry",
+    "line": 2222,
+    "file_ref": "tests\\providerWebhook.test.js:2222:96",
+    "session_keys": [
+      "registrationFlow"
+    ],
+    "matcher_expected": true,
+    "matcher_actual": false
+  },
+  {
+    "index": 29,
+    "fullName": "Provider webhook hobby clarification follow-up: short activity reply is treated as continuation (no generic fallback)",
+    "line": 2548,
+    "file_ref": "tests\\providerWebhook.test.js:2548:53",
+    "session_keys": [
+      "pendingHobbyExamples"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 30,
+    "fullName": "Provider webhook post-program follow-up: \"hitung total\" triggers anchored RAG calculation",
+    "line": 2747,
+    "file_ref": "tests\\providerWebhook.test.js:2747:18",
+    "session_keys": [
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 31,
+    "fullName": "Provider webhook choose program + total question: answers directly without mini-menu",
+    "line": 2845,
+    "file_ref": "tests\\providerWebhook.test.js:2845:18",
+    "session_keys": [
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 32,
+    "fullName": "Provider webhook total-cost follow-up: replying with gelombang computes total (no loop)",
+    "line": 2918,
+    "file_ref": "tests\\providerWebhook.test.js:2918:22",
+    "session_keys": [
+      "pendingTotalCost"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 33,
+    "fullName": "Provider webhook pending total-cost follow-up: discount table is not treated as butir 1–4 costs",
+    "line": 2962,
+    "file_ref": "tests\\providerWebhook.test.js:2962:22",
+    "session_keys": [
+      "pendingTotalCost"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 34,
+    "fullName": "Provider webhook must-pay question still uses deterministic total even when pendingTotalCost exists",
+    "line": 3010,
+    "file_ref": "tests\\providerWebhook.test.js:3010:22",
+    "session_keys": [
+      "pendingTotalCost"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 35,
+    "fullName": "Provider webhook normal inbound queries route through composer and persist composer telemetry",
+    "line": 3099,
+    "file_ref": "tests\\providerWebhook.test.js:3099:48",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": {
+      "sample": {
+        "sentViaComposer": true,
+        "sourceType": {
+          "inverse": false
+        },
+        "finalPipeline": {
+          "sample": "composer->humanizer",
+          "inverse": false
+        },
+        "reflectionUsed": {
+          "inverse": false
+        },
+        "followupUsed": {
+          "inverse": false
+        },
+        "clarificationUsed": {
+          "inverse": false
+        },
+        "duplicateSendPrevented": {
+          "inverse": false
+        }
+      },
+      "inverse": false
+    },
+    "matcher_actual": null
+  },
+  {
+    "index": 36,
+    "fullName": "Provider webhook outbound telemetry fields are always present for normal composer replies",
+    "line": 3201,
+    "file_ref": "tests\\providerWebhook.test.js:3201:46",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": {
+      "sample": {
+        "sentViaComposer": true,
+        "sourceType": {
+          "inverse": false
+        },
+        "finalPipeline": {
+          "sample": "composer->humanizer",
+          "inverse": false
+        },
+        "timeoutTriggered": {
+          "inverse": false
+        },
+        "duplicateSendPrevented": {
+          "inverse": false
+        }
+      },
+      "inverse": false
+    },
+    "matcher_actual": null
+  },
+  {
+    "index": 37,
+    "fullName": "Provider webhook composer bypass prevention is enforced for normal inbound replies",
+    "line": 3233,
+    "file_ref": "tests\\providerWebhook.test.js:3233:45",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 38,
+    "fullName": "Provider webhook outbound path consistency uses composer reply funnel for normal messages",
+    "line": 3257,
+    "file_ref": "tests\\providerWebhook.test.js:3257:45",
+    "session_keys": [
+      "composerTelemetry"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 39,
+    "fullName": "Provider webhook must-pay phrasing with SI + gelombang 2B computes total (not clarify-wave)",
+    "line": 3294,
+    "file_ref": "tests\\providerWebhook.test.js:3294:22",
+    "session_keys": [],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 40,
+    "fullName": "Provider webhook deterministic UTB mapping: potongan pendaftaran dan DPP sesuai gelombang I/IV",
+    "line": 3349,
+    "file_ref": "tests\\providerWebhook.test.js:3349:22",
+    "session_keys": [
+      "pendingRagCandidate",
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 41,
+    "fullName": "Provider webhook choose program + specific question: skips mini-menu and answers via anchored RAG",
+    "line": 3375,
+    "file_ref": "tests\\providerWebhook.test.js:3375:18",
+    "session_keys": [
+      "pendingRagCandidate",
+      "pendingRuleReply",
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 42,
+    "fullName": "Provider webhook replies politely to gratitude without triggering RAG",
+    "line": 69,
+    "file_ref": "tests\\providerWebhook.test.js:69:37",
+    "session_keys": [
+      "composerTelemetry",
+      "pendingFeeBreakdownOffer",
+      "pendingFeeDetail",
+      "pendingRagCandidate",
+      "pendingRuleReply",
+      "pendingSemanticSuggestion",
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 43,
+    "fullName": "Provider webhook breakdown offer: pendaftaran without prodi -> YA -> pick TI -> returns full breakdown (fast)",
+    "line": 3756,
+    "file_ref": "tests\\providerWebhook.test.js:3756:30",
+    "session_keys": [
+      "pendingFeeDetail",
+      "registrationFlow"
+    ],
+    "matcher_expected": "fee_breakdown_offer_answer_fast",
+    "matcher_actual": "fee_breakdown_offer_no_data"
+  },
+  {
+    "index": 44,
+    "fullName": "Provider webhook once FINAL_SEND occurs in registration flow, fallback never overrides the response",
+    "line": 3975,
+    "file_ref": "tests\\providerWebhook.test.js:3975:29",
+    "session_keys": [
+      "pendingRegistrationCostOffer",
+      "registrationFlow"
+    ],
+    "matcher_expected": true,
+    "matcher_actual": false
+  },
+  {
+    "index": 45,
+    "fullName": "Provider webhook pure greeting \"Halo\" restarts session and re-sends welcome even if previously welcomed",
+    "line": 4211,
+    "file_ref": "tests\\providerWebhook.test.js:4211:50",
+    "session_keys": [
+      "numericMenuActive",
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 46,
+    "fullName": "Provider webhook pure greeting \"Halo selamat pagi\" restarts session and re-sends welcome even if previously welcomed",
+    "line": 4211,
+    "file_ref": "tests\\providerWebhook.test.js:4211:50",
+    "session_keys": [
+      "numericMenuActive",
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 47,
+    "fullName": "Provider webhook pure greeting \"Halo selamat pagi kak\" restarts session and re-sends welcome even if previously welcomed",
+    "line": 4211,
+    "file_ref": "tests\\providerWebhook.test.js:4211:50",
+    "session_keys": [
+      "numericMenuActive",
+      "registrationFlow"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 48,
+    "fullName": "Provider webhook greeting-only (no welcome setting) is answered with a prompt (no RAG)",
+    "line": 4316,
+    "file_ref": "tests\\providerWebhook.test.js:4316:22",
+    "session_keys": [],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 49,
+    "fullName": "Provider webhook custom greeting alias (no welcome setting) is answered with a prompt (no RAG)",
+    "line": 4338,
+    "file_ref": "tests\\providerWebhook.test.js:4338:22",
+    "session_keys": [],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 50,
+    "fullName": "Provider webhook follow-up \"ya boleh\" after dual offer (total awal masuk vs potongan gelombang) asks 1/2 choice",
+    "line": 4468,
+    "file_ref": "tests\\providerWebhook.test.js:4468:61",
+    "session_keys": [
+      "pendingFollowupChoice"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 51,
+    "fullName": "Provider webhook pending dual-offer: unclear reply triggers reprompt and keeps pending so next choice works",
+    "line": 4605,
+    "file_ref": "tests\\providerWebhook.test.js:4605:30",
+    "session_keys": [
+      "pendingFollowupChoice"
+    ],
+    "matcher_expected": "followup_discount_gelombang",
+    "matcher_actual": "pending_rag_candidate"
+  },
+  {
+    "index": 52,
+    "fullName": "Provider webhook pending dual-offer choice does not hijack a new explicit question (clears pending and answers deterministically)",
+    "line": 4660,
+    "file_ref": "tests\\providerWebhook.test.js:4660:61",
+    "session_keys": [
+      "pendingFollowupChoice"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 53,
+    "fullName": "Provider webhook numeric welcome menu: custom \"5 Lokasi Kampus\" routes to location answer (label-driven)",
+    "line": 4719,
+    "file_ref": "tests\\providerWebhook.test.js:4719:15",
+    "session_keys": [],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 54,
+    "fullName": "Provider webhook numeric welcome menu: custom \"6 Konsultasi Admin\" offers handover (label-driven)",
+    "line": 4777,
+    "file_ref": "tests\\providerWebhook.test.js:4777:27",
+    "session_keys": [
+      "numericMenuActive"
+    ],
+    "matcher_expected": null,
+    "matcher_actual": null
+  },
+  {
+    "index": 55,
+    "fullName": "Provider webhook pendingScheduleWave does not hijack unrelated questions (e.g., alur pendaftaran)",
+    "line": 5478,
+    "file_ref": "tests\\providerWebhook.test.js:5478:97",
+    "session_keys": [
+      "numericMenuActive",
+      "pendingScheduleWave"
+    ],
+    "matcher_expected": false,
+    "matcher_actual": true
+  }
+]

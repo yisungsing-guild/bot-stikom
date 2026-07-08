@@ -1,0 +1,32 @@
+﻿[2026-07-06 08:29:54.500 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" expandedQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" questionTokens=["kalau","jurusan","bisnis","digital","itu","bisa","bekerja","sebagai","apa","ya?"] overlapTokens=["bisnis","itu"] overlapRatio=0.2[39m
+[2026-07-06 08:29:54.501 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" expandedQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" questionTokens=["kalau","jurusan","bisnis","digital","itu","bisa","bekerja","sebagai","apa","ya?"] overlapTokens=["bisnis","itu"] overlapRatio=0.2[39m
+[2026-07-06 08:29:54.501 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" expandedQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" questionTokens=["kalau","jurusan","bisnis","digital","itu","bisa","bekerja","sebagai","apa","ya?"] overlapTokens=["bisnis","itu"] overlapRatio=0.2[39m
+[2026-07-06 08:29:54.502 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" expandedQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" questionTokens=["kalau","jurusan","bisnis","digital","itu","bisa","bekerja","sebagai","apa","ya?"] overlapTokens=["bisnis","digital"] overlapRatio=0.2[39m
+[2026-07-06 08:29:54.502 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" expandedQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" questionTokens=["kalau","jurusan","bisnis","digital","itu","bisa","bekerja","sebagai","apa","ya?"] overlapTokens=["bisnis","digital"] overlapRatio=0.2[39m
+[2026-07-06 08:29:54.502 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" expandedQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" questionTokens=["kalau","jurusan","bisnis","digital","itu","bisa","bekerja","sebagai","apa","ya?"] overlapTokens=["bisnis","digital"] overlapRatio=0.2[39m
+[2026-07-06 08:29:54.502 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" expandedQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" questionTokens=["kalau","jurusan","bisnis","digital","itu","bisa","bekerja","sebagai","apa","ya?"] overlapTokens=["bisnis","digital"] overlapRatio=0.2[39m
+[2026-07-06 08:29:54.502 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" expandedQuery="kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?" questionTokens=["kalau","jurusan","bisnis","digital","itu","bisa","bekerja","sebagai","apa","ya?"] overlapTokens=["bisnis","digital","sebagai"] overlapRatio=0.3[39m
+[2026-07-06 08:29:54.506 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "kalau jurusan bisnis digital itu bisa bekerja sebagai apa ya?"
+[2026-07-06 08:29:54.511 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-07-06 08:29:54.514 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 61
+    ctxLen: 5646
+    style: "SEMI"
+    assistHintsLen: 5
+    compactPrompt: false
+[2026-07-06 08:29:58.835 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan sistem informasi bisa jadi apa nantinya?" expandedQuery="kalau jurusan sistem informasi bisa jadi apa nantinya?" questionTokens=["kalau","jurusan","sistem","informasi","bisa","jadi","apa","nantinya?"] overlapTokens=["sistem","informasi"] overlapRatio=0.25[39m
+[2026-07-06 08:29:58.835 +0800] [32mINFO[39m: [36mrelevance_audit originalQuery="kalau jurusan sistem informasi bisa jadi apa nantinya?" expandedQuery="kalau jurusan sistem informasi bisa jadi apa nantinya?" questionTokens=["kalau","jurusan","sistem","informasi","bisa","jadi","apa","nantinya?"] overlapTokens=["sistem","informasi"] overlapRatio=0.25[39m
+[2026-07-06 08:29:58.837 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "kalau jurusan sistem informasi bisa jadi apa nantinya?"
+[2026-07-06 08:29:58.838 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-07-06 08:29:58.838 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 54
+    ctxLen: 2535
+    style: "SEMI"
+    assistHintsLen: 5
+    compactPrompt: false

@@ -1,0 +1,704 @@
+[
+  {
+    "title": "with BOT_INTRO_MESSAGE enabled: greeting-only sends intro first, then welcome",
+    "fullName": "Provider webhook with BOT_INTRO_MESSAGE enabled: greeting-only sends intro first, then welcome",
+    "expected": "welcome_only",
+    "actual": "intro_only",
+    "provider_match": true,
+    "match_term": "intro_only",
+    "match_line": 8479,
+    "match_snippet": "          await prisma.chat.upsert({\n            where: { chatId },\n            create: { chatId, lastSeenAt: now },\n            update: { lastSeenAt: now }\n          });\n\n          return res.send({ ok: true, source: 'intro_only' });\n        }\n        // Reserve welcome flag BEFORE sending to avoid duplicates on quick retries.\n        try {\n          const currentState = session ? session.state : 'root';\n          const isNumericMenu = looksLikeNumericWelcomeMenu(welcomeValue);"
+  },
+  {
+    "title": "intro reply persists composer telemetry and is sent through outbound.reply",
+    "fullName": "Provider webhook intro reply persists composer telemetry and is sent through outbound.reply",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "short follow-ups reuse TI context and set contextReused telemetry",
+    "fullName": "Provider webhook short follow-ups reuse TI context and set contextReused telemetry",
+    "expected": "Teknologi Informasi",
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "reflection cooldown resets after greeting reuse and clears stale reflection timestamp",
+    "fullName": "Provider webhook reflection cooldown resets after greeting reuse and clears stale reflection timestamp",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "greeting mid-conversation preserves topic memory and allows follow-up reuse",
+    "fullName": "Provider webhook greeting mid-conversation preserves topic memory and allows follow-up reuse",
+    "expected": "Teknologi Informasi",
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "explicit program switch updates topic memory for subsequent follow-ups",
+    "fullName": "Provider webhook explicit program switch updates topic memory for subsequent follow-ups",
+    "expected": true,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "latest explicit topic wins and sets previousProgramHint history",
+    "fullName": "Provider webhook latest explicit topic wins and sets previousProgramHint history",
+    "expected": "Sistem Informasi",
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "semantic curriculum+career question about SI answered directly (no menu hijack)",
+    "fullName": "Provider webhook semantic curriculum+career question about SI answered directly (no menu hijack)",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "semantic career question about TI answered directly (no menu hijack)",
+    "fullName": "Provider webhook semantic career question about TI answered directly (no menu hijack)",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "semantic short TI difficulty question answered directly (no menu hijack)",
+    "fullName": "Provider webhook semantic short TI difficulty question answered directly (no menu hijack)",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "semantic short follow-up uses prior SI context and answers directly",
+    "fullName": "Provider webhook semantic short follow-up uses prior SI context and answers directly",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "semantic follow-up \"kerjanya nanti jadi apa?\" reuses TI context and answers directly",
+    "fullName": "Provider webhook semantic follow-up \"kerjanya nanti jadi apa?\" reuses TI context and answers directly",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "semantic follow-up \"mata kuliahnya apa?\" uses prior SI context and answers directly",
+    "fullName": "Provider webhook semantic follow-up \"mata kuliahnya apa?\" uses prior SI context and answers directly",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "semantic short follow-up \"gampang dipelajari?\" uses prior context and answers directly",
+    "fullName": "Provider webhook semantic short follow-up \"gampang dipelajari?\" uses prior context and answers directly",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "context inheritance: TI -> follow-up -> still TI",
+    "fullName": "Provider webhook context inheritance: TI -> follow-up -> still TI",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "cross-topic recovery: unrelated RAG reply then ambiguous follow-up returns TI",
+    "fullName": "Provider webhook cross-topic recovery: unrelated RAG reply then ambiguous follow-up returns TI",
+    "expected": "pending_rag_candidate",
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "context decay: stale program context is cleared before ambiguous follow-up handling",
+    "fullName": "Provider webhook context decay: stale program context is cleared before ambiguous follow-up handling",
+    "expected": null,
+    "actual": "{",
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "ambiguity safety: new generic follow-up does NOT auto-switch program",
+    "fullName": "Provider webhook ambiguity safety: new generic follow-up does NOT auto-switch program",
+    "expected": "Teknologi Informasi",
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "greeting after topic switch resumes latest topic",
+    "fullName": "Provider webhook greeting after topic switch resumes latest topic",
+    "expected": "Sistem Informasi",
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "multiple topic switches preserve latest topic and allow later reuse",
+    "fullName": "Provider webhook multiple topic switches preserve latest topic and allow later reuse",
+    "expected": "Teknologi Informasi",
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "stale topic does not reuse older program hint",
+    "fullName": "Provider webhook stale topic does not reuse older program hint",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "fee breakdown question (\"rincian biaya kuliah\") without prodi -> asks program, then after pick returns full breakdown (fast)",
+    "fullName": "Provider webhook fee breakdown question (\"rincian biaya kuliah\") without prodi -> asks program, then after pick returns full breakdown (fast)",
+    "expected": "tuition_fee_program_pick_fast",
+    "actual": "program_pick_prompt",
+    "provider_match": true,
+    "match_term": "program_pick_prompt",
+    "match_line": 13767,
+    "match_snippet": "                  update: { state: currentState, data: newData }\n                });\n              } catch (e) {\n                logger.warn({ err: e.message }, '[Provider] Failed to persist pendingProgramInfoMenu');\n              }\n\n              return res.send({ ok: true, source: 'program_pick_prompt', program: programPick });\n            }\n          }\n        } catch (e) {\n          logger.warn({ err: e.message }, '[Provider] Program pick follow-up handler failed');\n        }"
+  },
+  {
+    "title": "UKT answer offers full breakdown; replying YA returns the breakdown deterministically",
+    "fullName": "Provider webhook UKT answer offers full breakdown; replying YA returns the breakdown deterministically",
+    "expected": "fast_fee",
+    "actual": "fallback",
+    "provider_match": true,
+    "match_term": "fallback",
+    "match_line": 180,
+    "match_snippet": "    const opening = (process.env.BOT_FRIENDLY_OPENING || 'Siap! Aku bantu ya 👍').toString().trim();\n    const closing = (process.env.BOT_FRIENDLY_CLOSING || 'Kalau masih bingung, bilang aja—aku bantu lagi 😊').toString().trim();\n    return { enabled, opening: opening || '', closing: closing || '' };\n  }\n\n  // Auto-tone: automatically rephrase outbound template texts into a more casual style.\n  // Useful when admin stored formal messages in DB (welcome/fallback/menu/keyword) but\n  // you still want the overall UX to feel consistent.\n  // - Defaults to ON when BOT_TONE/BOT_FRIENDLY_TONE is enabled.\n  // - Set BOT_AUTO_TONE=false to disable this layer.\n  function isAutoToneEnabled() {\n    const tone = getBotToneConfig();"
+  },
+  {
+    "title": "location question: answered deterministically from bundled index (fast, no slow web/OpenAI dependency)",
+    "fullName": "Provider webhook location question: answered deterministically from bundled index (fast, no slow web/OpenAI dependency)",
+    "expected": "campus_location_fast",
+    "actual": "fallback",
+    "provider_match": true,
+    "match_term": "fallback",
+    "match_line": 180,
+    "match_snippet": "    const opening = (process.env.BOT_FRIENDLY_OPENING || 'Siap! Aku bantu ya 👍').toString().trim();\n    const closing = (process.env.BOT_FRIENDLY_CLOSING || 'Kalau masih bingung, bilang aja—aku bantu lagi 😊').toString().trim();\n    return { enabled, opening: opening || '', closing: closing || '' };\n  }\n\n  // Auto-tone: automatically rephrase outbound template texts into a more casual style.\n  // Useful when admin stored formal messages in DB (welcome/fallback/menu/keyword) but\n  // you still want the overall UX to feel consistent.\n  // - Defaults to ON when BOT_TONE/BOT_FRIENDLY_TONE is enabled.\n  // - Set BOT_AUTO_TONE=false to disable this layer.\n  function isAutoToneEnabled() {\n    const tone = getBotToneConfig();"
+  },
+  {
+    "title": "dual degree location question: answers with STIKOM + partner campuses (no mojibake)",
+    "fullName": "Provider webhook dual degree location question: answers with STIKOM + partner campuses (no mojibake)",
+    "expected": "dual_degree_location_fast",
+    "actual": "fallback",
+    "provider_match": true,
+    "match_term": "fallback",
+    "match_line": 180,
+    "match_snippet": "    const opening = (process.env.BOT_FRIENDLY_OPENING || 'Siap! Aku bantu ya 👍').toString().trim();\n    const closing = (process.env.BOT_FRIENDLY_CLOSING || 'Kalau masih bingung, bilang aja—aku bantu lagi 😊').toString().trim();\n    return { enabled, opening: opening || '', closing: closing || '' };\n  }\n\n  // Auto-tone: automatically rephrase outbound template texts into a more casual style.\n  // Useful when admin stored formal messages in DB (welcome/fallback/menu/keyword) but\n  // you still want the overall UX to feel consistent.\n  // - Defaults to ON when BOT_TONE/BOT_FRIENDLY_TONE is enabled.\n  // - Set BOT_AUTO_TONE=false to disable this layer.\n  function isAutoToneEnabled() {\n    const tone = getBotToneConfig();"
+  },
+  {
+    "title": "first non-greeting message: sends welcome first, then main reply (2 separate messages)",
+    "fullName": "Provider webhook first non-greeting message: sends welcome first, then main reply (2 separate messages)",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "program code in cost question uses fast fee path (\"biaya pendaftaran si\" => Sistem Informasi)",
+    "fullName": "Provider webhook program code in cost question uses fast fee path (\"biaya pendaftaran si\" => Sistem Informasi)",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: program list query",
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: program list query",
+    "expected": true,
+    "actual": false,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: curriculum inquiry",
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: curriculum inquiry",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: career/prospect inquiry",
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: career/prospect inquiry",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: tuition inquiry",
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: tuition inquiry",
+    "expected": true,
+    "actual": false,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "Phase 1 WhatsApp validation: requirements inquiry",
+    "fullName": "Provider webhook Phase 1 WhatsApp validation: requirements inquiry",
+    "expected": true,
+    "actual": false,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "hobby clarification follow-up: short activity reply is treated as continuation (no generic fallback)",
+    "fullName": "Provider webhook hobby clarification follow-up: short activity reply is treated as continuation (no generic fallback)",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "post-program follow-up: \"hitung total\" triggers anchored RAG calculation",
+    "fullName": "Provider webhook post-program follow-up: \"hitung total\" triggers anchored RAG calculation",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "choose program + total question: answers directly without mini-menu",
+    "fullName": "Provider webhook choose program + total question: answers directly without mini-menu",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "total-cost follow-up: replying with gelombang computes total (no loop)",
+    "fullName": "Provider webhook total-cost follow-up: replying with gelombang computes total (no loop)",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "pending total-cost follow-up: discount table is not treated as butir 1–4 costs",
+    "fullName": "Provider webhook pending total-cost follow-up: discount table is not treated as butir 1–4 costs",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "must-pay question still uses deterministic total even when pendingTotalCost exists",
+    "fullName": "Provider webhook must-pay question still uses deterministic total even when pendingTotalCost exists",
+    "expected": "deterministic_total_must_pay",
+    "actual": "pending_total_cost_need_breakdown",
+    "provider_match": true,
+    "match_term": "pending_total_cost_need_breakdown",
+    "match_line": 9506,
+    "match_snippet": "          // If we cannot compute, ask for the missing breakdown explicitly.\n          await sendBotMessage(\n            chatId,\n            `Siap, kak (Gelombang ${gel}). Untuk menghitung totalnya, saya perlu rincian komponen biaya awal masuk (butir 1–4) yang kakak maksud.\\n` +\n              'Boleh kirimkan daftar biayanya (pendaftaran, DPP, biaya semester awal, dll) atau screenshot/teks rincian tersebut?'\n          );\n          return res.send({ ok: true, source: 'pending_total_cost_need_breakdown', gelombang: gel });\n        }\n      }\n    } catch (e) {\n      logger.warn({ err: e.message }, '[Provider] Pending total-cost handler failed');\n    }"
+  },
+  {
+    "title": "normal inbound queries route through composer and persist composer telemetry",
+    "fullName": "Provider webhook normal inbound queries route through composer and persist composer telemetry",
+    "expected": {
+      "sample": {
+        "sentViaComposer": true,
+        "sourceType": {
+          "inverse": false
+        },
+        "finalPipeline": {
+          "sample": "composer->humanizer",
+          "inverse": false
+        },
+        "reflectionUsed": {
+          "inverse": false
+        },
+        "followupUsed": {
+          "inverse": false
+        },
+        "clarificationUsed": {
+          "inverse": false
+        },
+        "duplicateSendPrevented": {
+          "inverse": false
+        }
+      },
+      "inverse": false
+    },
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "outbound telemetry fields are always present for normal composer replies",
+    "fullName": "Provider webhook outbound telemetry fields are always present for normal composer replies",
+    "expected": {
+      "sample": {
+        "sentViaComposer": true,
+        "sourceType": {
+          "inverse": false
+        },
+        "finalPipeline": {
+          "sample": "composer->humanizer",
+          "inverse": false
+        },
+        "timeoutTriggered": {
+          "inverse": false
+        },
+        "duplicateSendPrevented": {
+          "inverse": false
+        }
+      },
+      "inverse": false
+    },
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "composer bypass prevention is enforced for normal inbound replies",
+    "fullName": "Provider webhook composer bypass prevention is enforced for normal inbound replies",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "outbound path consistency uses composer reply funnel for normal messages",
+    "fullName": "Provider webhook outbound path consistency uses composer reply funnel for normal messages",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "must-pay phrasing with SI + gelombang 2B computes total (not clarify-wave)",
+    "fullName": "Provider webhook must-pay phrasing with SI + gelombang 2B computes total (not clarify-wave)",
+    "expected": "deterministic_total_must_pay",
+    "actual": "total_need_wave",
+    "provider_match": true,
+    "match_term": "total_need_wave",
+    "match_line": 11558,
+    "match_snippet": "\n        // Ask minimal clarification (wave/program) if we don't have deterministic or RAG answer\n        await sendBotMessage(\n          chatId,\n          'Siap, kak. Untuk menghitung totalnya, kakak masuk gelombang yang mana?\\nBalas: Khusus / I / II / III / IV (atau tulis: \"gelombang 1\").'\n        );\n        return res.send({ ok: true, source: 'total_need_wave' });\n      }\n    } catch (e) {\n      logger.warn({ err: e.message }, '[Provider] Deterministic total cost handler failed');\n    }\n"
+  },
+  {
+    "title": "must-pay phrasing with SI + gelombang 2B (compact) computes total",
+    "fullName": "Provider webhook must-pay phrasing with SI + gelombang 2B (compact) computes total",
+    "expected": "deterministic_total_must_pay",
+    "actual": "total_need_wave",
+    "provider_match": true,
+    "match_term": "total_need_wave",
+    "match_line": 11558,
+    "match_snippet": "\n        // Ask minimal clarification (wave/program) if we don't have deterministic or RAG answer\n        await sendBotMessage(\n          chatId,\n          'Siap, kak. Untuk menghitung totalnya, kakak masuk gelombang yang mana?\\nBalas: Khusus / I / II / III / IV (atau tulis: \"gelombang 1\").'\n        );\n        return res.send({ ok: true, source: 'total_need_wave' });\n      }\n    } catch (e) {\n      logger.warn({ err: e.message }, '[Provider] Deterministic total cost handler failed');\n    }\n"
+  },
+  {
+    "title": "deterministic UTB mapping: potongan pendaftaran dan DPP sesuai gelombang I/IV",
+    "fullName": "Provider webhook deterministic UTB mapping: potongan pendaftaran dan DPP sesuai gelombang I/IV",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "replies politely to gratitude without triggering RAG",
+    "fullName": "Provider webhook replies politely to gratitude without triggering RAG",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "does not answer with fees for acknowledgement-only \"siap\" when no follow-up was asked",
+    "fullName": "Provider webhook does not answer with fees for acknowledgement-only \"siap\" when no follow-up was asked",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "pendaftaran answer offers the full fee breakdown (YA/TIDAK)",
+    "fullName": "Provider webhook pendaftaran answer offers the full fee breakdown (YA/TIDAK)",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "pendaftaran question without explicit prodi does not mention a prodi; still offers breakdown",
+    "fullName": "Provider webhook pendaftaran question without explicit prodi does not mention a prodi; still offers breakdown",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "breakdown request with explicit SK overrides prior TI hint (answers SK)",
+    "fullName": "Provider webhook breakdown request with explicit SK overrides prior TI hint (answers SK)",
+    "expected": "fast_fee",
+    "actual": "fallback",
+    "provider_match": true,
+    "match_term": "fallback",
+    "match_line": 180,
+    "match_snippet": "    const opening = (process.env.BOT_FRIENDLY_OPENING || 'Siap! Aku bantu ya 👍').toString().trim();\n    const closing = (process.env.BOT_FRIENDLY_CLOSING || 'Kalau masih bingung, bilang aja—aku bantu lagi 😊').toString().trim();\n    return { enabled, opening: opening || '', closing: closing || '' };\n  }\n\n  // Auto-tone: automatically rephrase outbound template texts into a more casual style.\n  // Useful when admin stored formal messages in DB (welcome/fallback/menu/keyword) but\n  // you still want the overall UX to feel consistent.\n  // - Defaults to ON when BOT_TONE/BOT_FRIENDLY_TONE is enabled.\n  // - Set BOT_AUTO_TONE=false to disable this layer.\n  function isAutoToneEnabled() {\n    const tone = getBotToneConfig();"
+  },
+  {
+    "title": "DNUI breakdown answer does not use Ujian/Subject label in detailed fee list",
+    "fullName": "Provider webhook DNUI breakdown answer does not use Ujian/Subject label in detailed fee list",
+    "expected": "fee_breakdown_offer_answer_fast",
+    "actual": "fallback",
+    "provider_match": true,
+    "match_term": "fallback",
+    "match_line": 180,
+    "match_snippet": "    const opening = (process.env.BOT_FRIENDLY_OPENING || 'Siap! Aku bantu ya 👍').toString().trim();\n    const closing = (process.env.BOT_FRIENDLY_CLOSING || 'Kalau masih bingung, bilang aja—aku bantu lagi 😊').toString().trim();\n    return { enabled, opening: opening || '', closing: closing || '' };\n  }\n\n  // Auto-tone: automatically rephrase outbound template texts into a more casual style.\n  // Useful when admin stored formal messages in DB (welcome/fallback/menu/keyword) but\n  // you still want the overall UX to feel consistent.\n  // - Defaults to ON when BOT_TONE/BOT_FRIENDLY_TONE is enabled.\n  // - Set BOT_AUTO_TONE=false to disable this layer.\n  function isAutoToneEnabled() {\n    const tone = getBotToneConfig();"
+  },
+  {
+    "title": "breakdown offer: pendaftaran without prodi -> YA -> pick TI -> returns full breakdown (fast)",
+    "fullName": "Provider webhook breakdown offer: pendaftaran without prodi -> YA -> pick TI -> returns full breakdown (fast)",
+    "expected": "fee_breakdown_offer_answer_fast",
+    "actual": "fee_breakdown_offer_no_data",
+    "provider_match": true,
+    "match_term": "fee_breakdown_offer_no_data",
+    "match_line": 10229,
+    "match_snippet": "              }\n            } catch (e) {\n              logger.warn({ err: e.message }, '[Provider] Fee breakdown RAG path failed');\n            }\n\n            await sendBotMessage(chatId, `Saya belum menemukan rincian biaya lengkap untuk Prodi ${programHint} di data yang tersedia saat ini.`);\n            return res.send({ ok: true, source: 'fee_breakdown_offer_no_data', program: programHint });\n          }\n\n          // If user changes topic, clear pending so it won't interfere later.\n          if (looksLikeNewTopicQuestion(trimmed) && !isAcknowledgementOnly(trimmed)) {\n            try {"
+  },
+  {
+    "title": "once FINAL_SEND occurs in registration flow, fallback never overrides the response",
+    "fullName": "Provider webhook once FINAL_SEND occurs in registration flow, fallback never overrides the response",
+    "expected": true,
+    "actual": false,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "pure greeting \"Halo\" restarts session and re-sends welcome even if previously welcomed",
+    "fullName": "Provider webhook pure greeting \"Halo\" restarts session and re-sends welcome even if previously welcomed",
+    "expected": null,
+    "actual": "{",
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "pure greeting \"Halo selamat pagi\" restarts session and re-sends welcome even if previously welcomed",
+    "fullName": "Provider webhook pure greeting \"Halo selamat pagi\" restarts session and re-sends welcome even if previously welcomed",
+    "expected": null,
+    "actual": "{",
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "pure greeting \"Halo selamat pagi kak\" restarts session and re-sends welcome even if previously welcomed",
+    "fullName": "Provider webhook pure greeting \"Halo selamat pagi kak\" restarts session and re-sends welcome even if previously welcomed",
+    "expected": null,
+    "actual": "{",
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "greeting-only (no welcome setting) is answered with a prompt (no RAG)",
+    "fullName": "Provider webhook greeting-only (no welcome setting) is answered with a prompt (no RAG)",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "custom greeting alias (no welcome setting) is answered with a prompt (no RAG)",
+    "fullName": "Provider webhook custom greeting alias (no welcome setting) is answered with a prompt (no RAG)",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "follow-up \"ya boleh\" after dual offer (total awal masuk vs potongan gelombang) asks 1/2 choice",
+    "fullName": "Provider webhook follow-up \"ya boleh\" after dual offer (total awal masuk vs potongan gelombang) asks 1/2 choice",
+    "expected": null,
+    "actual": "undefined",
+    "provider_match": true,
+    "match_term": "undefined",
+    "match_line": 138,
+    "match_snippet": "      /\\bwrong\\s*(answer|reply)\\b/i.test(t)\n    );\n  }\n\n  function envFlag(name, defaultValue = false) {\n    const raw = process.env[name];\n    if (raw === undefined || raw === null) return defaultValue;\n    const v = String(raw).trim().toLowerCase();\n    if (!v) return defaultValue;\n    return v === 'true' || v === '1' || v === 'yes' || v === 'y' || v === 'on';\n  }\n"
+  },
+  {
+    "title": "pending dual-offer: unclear reply triggers reprompt and keeps pending so next choice works",
+    "fullName": "Provider webhook pending dual-offer: unclear reply triggers reprompt and keeps pending so next choice works",
+    "expected": "followup_discount_gelombang",
+    "actual": "pending_rag_candidate",
+    "provider_match": true,
+    "match_term": "pending_rag_candidate",
+    "match_line": 8869,
+    "match_snippet": "                  await safeSessionUpsert({ where: { chatId }, create: { chatId, state: currentState_local, data: newData_local }, update: { state: currentState_local, data: newData_local } });\n                  sessionData = newData_local;\n                  logger.info({ chatId }, '[Provider] persisted pendingRagCandidate for Composer (discount_gelombang)');\n                } catch (e) {\n                  logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] Failed to persist pendingRagCandidate');\n                }\n                return res.send({ ok: true, source: 'pending_rag_candidate', ragUsed: true });\n              }\n            }\n          }\n\n          // If RAG cannot answer, continue below into fallback."
+  },
+  {
+    "title": "pending dual-offer choice does not hijack a new explicit question (clears pending and answers deterministically)",
+    "fullName": "Provider webhook pending dual-offer choice does not hijack a new explicit question (clears pending and answers deterministically)",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "numeric welcome menu: custom \"5 Lokasi Kampus\" routes to location answer (label-driven)",
+    "fullName": "Provider webhook numeric welcome menu: custom \"5 Lokasi Kampus\" routes to location answer (label-driven)",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "numeric welcome menu: custom \"6 Konsultasi Admin\" offers handover (label-driven)",
+    "fullName": "Provider webhook numeric welcome menu: custom \"6 Konsultasi Admin\" offers handover (label-driven)",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "menu 3 follow-up: program reply returns semester fee and clears pendingMenuCost",
+    "fullName": "Provider webhook menu 3 follow-up: program reply returns semester fee and clears pendingMenuCost",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "menu 4 (Beasiswa): returns scholarship overview and persists pendingScholarshipChoice",
+    "fullName": "Provider webhook menu 4 (Beasiswa): returns scholarship overview and persists pendingScholarshipChoice",
+    "expected": null,
+    "actual": null,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  },
+  {
+    "title": "pendingScheduleWave does not hijack unrelated questions (e.g., alur pendaftaran)",
+    "fullName": "Provider webhook pendingScheduleWave does not hijack unrelated questions (e.g., alur pendaftaran)",
+    "expected": false,
+    "actual": true,
+    "provider_match": false,
+    "match_term": null,
+    "match_line": null,
+    "match_snippet": null
+  }
+]

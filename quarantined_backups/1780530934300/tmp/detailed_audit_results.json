@@ -1,0 +1,540 @@
+[
+  {
+    "query": "Apa itu Sistem Informasi",
+    "source": "gpt-4o-mini",
+    "contextsCount": 1,
+    "chunksProcessed": 1,
+    "top10": [
+      {
+        "rank": 1,
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "KURIKULUM",
+        "finalScore": 2.2,
+        "semanticScore": 0.5881,
+        "attributeScore": 1,
+        "metadataBoost": 0,
+        "textPreview": "ac.id\nsisteminformasi.stikombali\nPerekayasa Sistem Informasi\nPerekayasa Sistem Informasi\nMultimedia\nDesain Grafis & Animator\nPeneliti Sistem Informasi"
+      }
+    ]
+  },
+  {
+    "query": "Apa itu Teknologi Informasi",
+    "source": "rag-answer-rejected",
+    "contextsCount": 40,
+    "chunksProcessed": 40,
+    "top10": [
+      {
+        "rank": 1,
+        "id": "93f59730-63c1-40ec-963d-7b96808de922",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.5348,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "tion\nTechnology Researcher\nMore Info\nProfil Lulusan\nGelar S.Kom.\nTeknologi\nInformasi\n@proditistikombaliti.stikom-bali.ac.id\nProfil\nTeknologi Informasi\n\nAkun Instagram\nbisnisdigital.stikom-bali.ac.id\nW"
+      },
+      {
+        "rank": 2,
+        "id": "bb819f63-6826-46ca-a82d-b6d24236d386",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.511,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "ne :  081288778840 \nKampus Abiansemal \nINSTITUT TEKNOLOGI DAN BISNIS. Jl Janger, Dauh Yeh Cani, Abiansemal, Badung -  Bali -  Indonesia |  Ph: (0361) 4790925 |  Hotline :  082145099633 \nSTIKOM BALI em"
+      },
+      {
+        "rank": 3,
+        "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4997,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bi"
+      },
+      {
+        "rank": 4,
+        "id": "42940b00-9454-4713-9bf9-c1bba27d3d4e",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4918,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "asar \nJl. Raya Puputan No.86 Renon, Denpasar -  Bali -  Indonesia |  Ph: (0361) 244445 | Fax (0361)264773 | Hotline :  082277389999 \nKampus Jimbaran \nJl Raya Kampus Udayana, Kuta Selatan, Jimbaran -  "
+      },
+      {
+        "rank": 5,
+        "id": "afd5ba58-ebfa-4818-9b49-df3e895ad998",
+        "filename": "SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4661,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "Memperhatikan:1.Ketentuan  Pasal  4  Peraturan  Menteri  Pendidikan  dan\nKebudayaan  Nomor  5  Tahun  2020  tentang  Akreditasi\nProgram Studi dan Perguruan Tinggi;\n2.Keputusan  Rapat  Pleno  Dewan  Ek"
+      },
+      {
+        "rank": 6,
+        "id": "035e5603-2e9f-4571-bb6a-44123b9ee79f",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4639,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "dai dengan \ni@ CamScanner .\n\nINSTITUT TEKNOLOGI DAN BISNIS \n\\ (ITB) STIKOM BALI \nKampus Denpasar \nL Raya Puputan No.86 Renon, Denpasar - Bali -  Indonesia |  Pt  (036T) 244445 | Fax (03671264773 |  Ho"
+      },
+      {
+        "rank": 7,
+        "id": "6fcff15b-ae48-4181-bed2-20393a8b994b",
+        "filename": "SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4556,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "KONVERSI PERINGKAT AKREDITASI PERGURUAN TINGGI INSTITUT\nTEKNOLOGI DAN BISNIS STIKOM BALI,"
+      },
+      {
+        "rank": 8,
+        "id": "eb0cb688-4647-4d61-8db9-fcd36b9c49c5",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4491,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "us Abiansemal \nINSTITUT TEKNOLOGI DAN BISNIS 31.Janger, Dauh Yeh Cani, Abiansemal, Badung - Bali - Indonesia | Ph: (0361) 4790925 |  Hotline : 082145099633 \nSTIKOM BALI email : info@stikom-ballac.id |"
+      },
+      {
+        "rank": 9,
+        "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4383,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 |  Hotline : 082277389999 \nKampus Jimbaran \n31 Raya Kampus Udayana, Kuta Selatan, Jimbaran -  Bali - Indonesia | Ph: "
+      },
+      {
+        "rank": 10,
+        "id": "946ffd78-1fd4-4f28-a19e-9a97c463e6eb",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4259,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "raturan \nPemerintah \nRI \nNomor \n4 \nTahun \n2014 \ntentang \npenyelenggaraan \nPendidikan Tinggi dan Pengelolaan Perguruan Tinggi. \n4. \nPeraturan \nMenteri \nPendidikan, \nKebudayaan, \nRiset \ndan \nTeknologi \n"
+      }
+    ]
+  },
+  {
+    "query": "Prospek kerja Sistem Informasi",
+    "source": "rag-answer-rejected",
+    "contextsCount": 40,
+    "chunksProcessed": 40,
+    "top10": [
+      {
+        "rank": 1,
+        "id": "81881ff1-d3cc-48dd-a812-e530565be8c5",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.657,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "Penjelasan Prodi dan Karier Masa Depan\nProdi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja\nSistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki ko"
+      },
+      {
+        "rank": 2,
+        "id": "618a0474-969a-463f-91cd-c010a27beb48",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.6183,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "ac.id\nsisteminformasi.stikombali\nPerekayasa Sistem Informasi\nPerekayasa Sistem Informasi\nMultimedia\nDesain Grafis & Animator\nPeneliti Sistem Informasi\n\nSoftware \nEngineer\nCyber Security\nAnalyst & IT F"
+      },
+      {
+        "rank": 3,
+        "id": "1ea21dbf-def4-4600-87ab-9f0d22a0c2e5",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.602,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "istem\ntertanam dan IoT\nPerekayasa Jaringan\nkomputer\nKeamanan \nSistem\nPeneliti di bidang\nsistem komputer\nsk.stikom-bali.ac.id\nsistemkomputer.stikombali\n\nSISTEM\nINFORMASI\nPROFIL LULUSAN\nPROFIL SISTEM\nIN"
+      },
+      {
+        "rank": 4,
+        "id": "59ad2190-d335-48d1-afe6-1725687fdac6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.564,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "an manajemen | \"Business Analyst | System Analyst | IT Consultant | Project Manager | ERP Specialist | Product Manager | Data Analyst\"\nSistem Komputer | \"Program Studi Sistem Komputer menghasilkan lul"
+      },
+      {
+        "rank": 5,
+        "id": "6631dfc1-b46c-4933-a340-392dfd2250d6",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.5473,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "ecialist | Brand Manager | Business Development | Startup Founder\"\nManajemen Informasi | \"Program studi ini merupakan pendidikan vokasi yang menanamkan kompetensi untuk siap kerja. Lulusan program ini"
+      },
+      {
+        "rank": 6,
+        "id": "1d11c53c-2bdd-4623-aa09-5100316c628e",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.5462,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "ce.\nProject Manager\nBusiness Analyst\nMarket Analyst\nProduct Manager\nProfil Lulusan :\nDigital Marketing Specialist\nDigital Strategist\n@bisdi.stikombali\n\nManajemen\nInformatika\nMerupakan pendidikan vokas"
+      },
+      {
+        "rank": 7,
+        "id": "0fe2a6a0-832e-4070-b6e7-2fa14d6cabb8",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.5442,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "SISTEMSISTEM\nKOMPUTERKOMPUTER\nGELAR S.KOM.\nMenghasilkan lulusan yang memiliki kompetensi dalam\nmerancang, mengimplementasikan sistem Internet of Things\n(IoT), sistem tertanam, sistem kontrol, dan jari"
+      },
+      {
+        "rank": 8,
+        "id": "52b64e6e-5b44-48a3-9749-9ac9f61a0388",
+        "filename": "Penjelasan Prodi dan Karier Masa Depan (1).xlsx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.5281,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "knis\" | \"IoT Engineer | Hardware Engineer | Robotics Engineer | Network Engineer | Automation Engineer | Embedded System Engineer\"\nBisnis Digital | \"Program studi ini menjadikan peserta didik memahami"
+      },
+      {
+        "rank": 9,
+        "id": "93f59730-63c1-40ec-963d-7b96808de922",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4975,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "tion\nTechnology Researcher\nMore Info\nProfil Lulusan\nGelar S.Kom.\nTeknologi\nInformasi\n@proditistikombaliti.stikom-bali.ac.id\nProfil\nTeknologi Informasi\n\nAkun Instagram\nbisnisdigital.stikom-bali.ac.id\nW"
+      },
+      {
+        "rank": 10,
+        "id": "d45aa54b-c8a7-4a88-bf47-defbcf1f2a71",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4759,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi teknologi sepert i robotik, coding, IoT Suka Membaca buku atau artikel tentang teknologi terbaru Bisa Mem"
+      }
+    ]
+  },
+  {
+    "query": "Prospek kerja Teknologi Informasi",
+    "source": "rag-answer-rejected",
+    "contextsCount": 40,
+    "chunksProcessed": 40,
+    "top10": [
+      {
+        "rank": 1,
+        "id": "93f59730-63c1-40ec-963d-7b96808de922",
+        "filename": "Penjelasan Semua Program Studi.pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.5443,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "tion\nTechnology Researcher\nMore Info\nProfil Lulusan\nGelar S.Kom.\nTeknologi\nInformasi\n@proditistikombaliti.stikom-bali.ac.id\nProfil\nTeknologi Informasi\n\nAkun Instagram\nbisnisdigital.stikom-bali.ac.id\nW"
+      },
+      {
+        "rank": 2,
+        "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.491,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bi"
+      },
+      {
+        "rank": 3,
+        "id": "bb819f63-6826-46ca-a82d-b6d24236d386",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4831,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "ne :  081288778840 \nKampus Abiansemal \nINSTITUT TEKNOLOGI DAN BISNIS. Jl Janger, Dauh Yeh Cani, Abiansemal, Badung -  Bali -  Indonesia |  Ph: (0361) 4790925 |  Hotline :  082145099633 \nSTIKOM BALI em"
+      },
+      {
+        "rank": 4,
+        "id": "6c7fa0fe-0b26-49ec-9735-f9d0d6732e56",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4808,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "INSTITUT TEKNOLOGI DAN BISNIS \n\\ (ITB) STIKOM BALI \nKampus \nDenpasar \n) \nJl \nRaya \nPuputan \nNo.86 \nRenon, \nDenpasar \n- \nBali \n- \nIndonesia \n| \nPh: \n(0361) \n244445 \n| \nFax \n(0361)264773 \n| \nHotline \n: "
+      },
+      {
+        "rank": 5,
+        "id": "42940b00-9454-4713-9bf9-c1bba27d3d4e",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4594,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "asar \nJl. Raya Puputan No.86 Renon, Denpasar -  Bali -  Indonesia |  Ph: (0361) 244445 | Fax (0361)264773 | Hotline :  082277389999 \nKampus Jimbaran \nJl Raya Kampus Udayana, Kuta Selatan, Jimbaran -  "
+      },
+      {
+        "rank": 6,
+        "id": "d11b19e9-a484-467d-a2bd-841accf14de2",
+        "filename": "Kalender Pendaftaran TA 2026-2027 (1).xls",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.455,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "Ringkasan dokumen:\nProgram internasional / kerja sama internasional: Wakil Rektor III | Dir K P & H ITB STIKOM BALI\nBiaya pendaftaran: KALENDER PENDAFTARAN MAHASISWA BARU TAHUN AJARAN 2025/2026\nJadwal"
+      },
+      {
+        "rank": 7,
+        "id": "afd5ba58-ebfa-4818-9b49-df3e895ad998",
+        "filename": "SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4444,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "Memperhatikan:1.Ketentuan  Pasal  4  Peraturan  Menteri  Pendidikan  dan\nKebudayaan  Nomor  5  Tahun  2020  tentang  Akreditasi\nProgram Studi dan Perguruan Tinggi;\n2.Keputusan  Rapat  Pleno  Dewan  Ek"
+      },
+      {
+        "rank": 8,
+        "id": "83c9b2a6-3ad3-492d-8291-3bc1f8d4e04f",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4431,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "INSTITUT TEKNOLOGI DAN BISNIS \n\\ (ITB) STIKOM BALI \nKampus Denpasar \n3L Raya Puputan Na.86 Renon, Denpasar - Bal - Indonesia | Ph (O361) 244445 | Fax (0361264773 |  Hotline : 082277385999 \nKampus Jimb"
+      },
+      {
+        "rank": 9,
+        "id": "6fcff15b-ae48-4181-bed2-20393a8b994b",
+        "filename": "SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4429,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "KONVERSI PERINGKAT AKREDITASI PERGURUAN TINGGI INSTITUT\nTEKNOLOGI DAN BISNIS STIKOM BALI,"
+      },
+      {
+        "rank": 10,
+        "id": "86ad627b-6fda-4509-81e6-81b2485399e3",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4391,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "TIKOM Bali tidak \nmengikuti tes akademis hanya mengikuti tes wawancara saja dengan melampirkan \nsurat keterangan perpindahan dan transkrip nilai dari kampus yang bersangkutan. \nVL. Jenis Beasiswa yang"
+      }
+    ]
+  },
+  {
+    "query": "Apakah ada program double degree internasional",
+    "source": "rag-dual-degree-list",
+    "contextsCount": 0,
+    "chunksProcessed": 0,
+    "top10": []
+  },
+  {
+    "query": "Berapa biaya pendaftaran",
+    "source": "rag-answer-rejected",
+    "contextsCount": 10,
+    "chunksProcessed": 10,
+    "top10": [
+      {
+        "rank": 1,
+        "id": "f7a736f1-a3c8-49a9-a052-c544f5a37d7d",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.5476,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "11.UntukMahasiswarenimdikenakanbiayapersemestersesuaidengantahunyang\nbersangkutan\n12.UntukmahasiswaprogramRekognisiPembelajaranLampau(RPL):\na.DanaPendidikanPokok(DPP)\n-\nJumlahpengakuanSKSantara85s/d10"
+      },
+      {
+        "rank": 2,
+        "id": "b0038bfe-15d9-4096-af7c-76716ba3cf77",
+        "filename": "Kalender Pendaftaran TA 2026-2027 (1).xls",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.489,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "KALENDER PENDAFTARAN MAHASISWA BARU\nTAHUN AJARAN 2026/2027\nGELOMBANG | MASA PENDAFTARAN | TESTING | PENGUMUMAN | MASA REGISTRASI ULANG\nKHUSUS | 28 OKTOBER 2025 s/d 27 DESEMBER 2025 | 28 DESEMBER 2025 "
+      },
+      {
+        "rank": 3,
+        "id": "1c7b21a7-1889-4e0c-8f65-7967c3642fb5",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4766,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "[Sheet: Sheet1]\nKALENDER PENDAFTARAN MAHASISWA BARU\nTAHUN AJARAN 2026/2027\nGELOMBANG | MASA PENDAFTARAN | TESTING | PENGUMUMAN | MASA REGISTRASI ULANG\nKHUSUS | 28 OKTOBER 2025 s/d 27 DESEMBER 2025 | 2"
+      },
+      {
+        "rank": 4,
+        "id": "3a8c768b-1142-41a7-b80d-e6d4aa244b46",
+        "filename": "Kalender Pendaftaran.xlsx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4735,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "[Sheet: Sheet1]\nKALENDER PENDAFTARAN MAHASISWA BARU\nTAHUN AJARAN 2026/2027\nGELOMBANG | MASA PENDAFTARAN | TESTING | PENGUMUMAN | MASA REGISTRASI ULANG\nKHUSUS | 28 OKTOBER 2025 s/d 27 DESEMBER 2025 | 2"
+      },
+      {
+        "rank": 5,
+        "id": "eb7a59a2-ffe8-4724-b2d2-51819537f8d2",
+        "filename": "Kalender Pendaftaran TA 2026-2027 (1).xls",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4467,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "KALENDER PENDAFTARAN MAHASISWA BARU TAHUN  AJARAN 2025/2026\nGEL | MASA  PENDAFTARAN | TESTING | PENGUMUMAN | REGISTRASI\nGEL  KHUSUS | 28 OKTOBER s/d 27  DESEMBER 2025 | 28 DESEMBER 2025 | 30 DESEMBER "
+      },
+      {
+        "rank": 6,
+        "id": "652df7f1-37ca-4b73-915b-51ac999fb8a6",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.4366,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "[Sheet: Sheet1]\nKALENDER PENDAFTARAN MAHASISWA BARU\nTAHUN AJARAN 2026/2027\nGELOMBANG | MASA PENDAFTARAN | TESTING | PENGUMUMAN | MASA REGISTRASI ULANG\nKHUSUS | 28 OKTOBER 2025 s/d 27 DESEMBER 2025 | 2"
+      },
+      {
+        "rank": 7,
+        "id": "f1b4878a-a97a-43f2-8b4f-04e85e80b13d",
+        "filename": "N/A",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.3966,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "[Sheet: Sheet1]\nKALENDER PENDAFTARAN MAHASISWA BARU\nTAHUN AJARAN 2026/2027\nGELOMBANG | MASA PENDAFTARAN | TESTING | PENGUMUMAN | MASA REGISTRASI ULANG\nKHUSUS | 28 OKTOBER 2025 s/d 27 DESEMBER 2025 | 2"
+      },
+      {
+        "rank": 8,
+        "id": "c486cb4c-b6de-49be-b071-ffa9185cff54",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.046,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "g memenuhi persyaratan akademik , administrasi , dan ketentuan lain yang berlaku . 5. Kapan mahasiswa bisa mendaftar program Double Degree? Pendaftaran dibuka sesuai periode seleksi yang ditentukan ka"
+      },
+      {
+        "rank": 9,
+        "id": "ed1910ec-e128-4e5b-99a4-837a3eb84722",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.038,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "mahaman bisnis digital internasional . D. BIAYA DAN PENDAFTARAN 22. Berapa biaya mengikuti program Double Degree? Biaya mengikuti program Double Degree dapat berbeda untuk setiap program dan periode ."
+      },
+      {
+        "rank": 10,
+        "id": "a07977f5-08a2-4bfd-ac86-203bd6d015de",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": "UNKNOWN",
+        "finalScore": 0.0366,
+        "semanticScore": 0,
+        "attributeScore": 0,
+        "metadataBoost": 0,
+        "evidenceConfidence": "N/A",
+        "textPreview": "peroleh : Sarjana Bisnis ( S.Bns ) dari ITB STIKOM Bali Bachelor of Management (BM) dari DNUI 18. Bagaimana skema studi program DNUI? Skema umum perkuliahan : Tahun 1 dan 2 di Indonesia bersama ITB ST"
+      }
+    ]
+  }
+]

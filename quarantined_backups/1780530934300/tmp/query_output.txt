@@ -1,0 +1,940 @@
+﻿STYLE: SEMI
+QUESTION: apa itu SI
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi jadwal pendaftaran, gelombang, atau deadline.
+- Berisi informasi program internasional / dual degree / kelas khusus.
+Contoh ringkasan sumber:
+- f76ea84a-1b92-4125-a592-e2f15fb38117: 8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026 II C | 19 APRIL 2026 s/d 2 MEI 2026 | 3 MEI 2026 | 5 MEI 2026 | 5 MEI 2026 s/d 15 MEI 2026 III A | 3 MEI 2026 s/d 16 MEI 202╬ô├ç┬¬
+- eee828da-6ee4-4591-a9a8-18fa2e73c822: jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi teknologi sepert i robotik, coding, IoT Suka Membaca buku atau artikel tentang teknologi terbaru Bisa Mem╬ô├ç┬¬
+- 9358faf2-c0bf-438b-90e4-5f801f43ea0d: ac.id sisteminformasi.stikombali Perekayasa Sistem Informasi Perekayasa Sistem Informasi Multimedia Desain Grafis & Animator Peneliti Sistem Informasi Software Engineer Cyber Security Analyst & IT For╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (f76ea84a-1b92-4125-a592-e2f15fb38117):
+8 APRIL 2026 | 19 APRIL 2026 | 21 APRIL 2026 | 21 APRIL 2026 s/d 1 MEI 2026
+II C | 19 APRIL 2026 s/d 2 MEI 2026 | 3 MEI 2026 | 5 MEI 2026 | 5 MEI 2026 s/d 15 MEI 2026
+III A | 3 MEI 2026 s/d 16 MEI 2026 | 17 MEI 2026 | 19 MEI 2026 | 19 MEI 2026 s/d 29 MEI 2026
+III B | 17 MEI 2026 s/d 30 MEI 2026 | 31 MEI 2026 | 2 JUNI 2026 | 2 JUNI 2026 s/d 12 JUNI 2026
+III C | 31 MEI 2026 s/d 4 JULI 2026 | 5 JULI 2026 | 7 JULI 2026 | 7 JULI 2026 s/d 17 JULI 2026
+IV A | 5 JULI 2026 s/d 18 JULI 2026 | 19 JULI 2026 | 21 JULI 2026 | 21 JULI 2026 s/d 31 JULI 2026
+IV B | 19 JULI 2026 s/d 1 AGUSTUS 2026 | 2 AGUSTUS 2026 | 4 AGUSTUS 2026 | 4 AGUSTUS 2026 s/d 14 AGUSTUS 2026
+IV C | 2 AGUSTUS 2026 s/d 15 AGUSTUS 2026 | 16 AGUSTUS 2026 | 18 AGUSTUS 2026 | 18 AGUSTUS 2026 s/d 28 AGUSTUS 2026
+SISIPAN 1 | 16 AGUSTUS 2026 s/d 29 AGUSTUS 2026 | 30 AGUSTUS 2026 | 31 AGUSTUS 2026 | 31 AGUSTUS 2026 s/d 11 SEPTEMBER 2026
+SI
+
+---
+
+Sumber 2 (eee828da-6ee4-4591-a9a8-18fa2e73c822):
+jar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi teknologi sepert i robotik, coding, IoT Suka Membaca buku atau artikel tentang teknologi terbaru Bisa Membuat robot sederhana Suka Main Game Pernah Mengembangkan aplikasi berbasis hardware-software (embedded system) Pernah Membuat proyek otomatisasi (smart lampu , smart door, dll .) Mengikuti komunitas teknologi atau forum IT Memiliki blog atau konten tentang teknologi Pernah Belajar troubleshooting hardware dan jaringan Bisa melakukan Simulasi jaringan menggunakan software ( seperti Cisco Packet Tracer) Bisa Mengembangkan game sederhana Pernah Mengikuti kursus online atau workshop teknologi Hobi Siswa yang Memilih Sistem Informasi Suka Main Game Suka Menggambar Suka Animasi atau drama Suka Menganalisa data dan Bisnis Suka Desain grafis (poster, logo, konten visual) Suka Fotografi Suka Membeli
+
+---
+
+Sumber 3 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+ac.id
+sisteminformasi.stikombali
+Perekayasa Sistem Informasi
+Perekayasa Sistem Informasi
+Multimedia
+Desain Grafis & Animator
+Peneliti Sistem Informasi
+
+Software 
+Engineer
+Cyber Security
+Analyst & IT Forensic
+Specialist
+Menghasilkan lulusan yang memiliki kompetensi dalam
+penerapan teknologi komputer dan jaringan untuk
+mengelola,mengolah serta mendistribusikan informasi secara
+efektif dan inovatif mencakup pengembangan perangkat lunak,
+teknologi cloud, DevOps, Keamanan Siber, investigasi forensik,
+pengelolaan data  hingga penerapan teknologi untuk mendukung
+proses bisnis, inovasi dan riset.
+DevOps & Cloud
+Engineer
+Information
+Technology Researcher
+More Info
+Profil Lulusan
+Gelar S.Kom.
+Teknologi
+Informasi
+@proditistikombaliti.stikom-bali.ac.id
+Profil
+Teknologi Informasi
+
+---
+
+Sumber 4 (a76df111-bc3f-4122-9066-3aa29d3cf22b):
+NO. ORMAWA PEMBINA KOORDINATOR 
+1 BADAN EKSEKUTIF 
+MAHASISWA 
+IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KOM 
+2 DEWAN PERWAKILAN 
+MAHASISWA 
+IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KOM 
+3 UKM GHoST KADEK SURYA ADI SAPUTRA, S.KOM., M.KOM 
+4 UKM D.O.S AYU CHRISNIYANTI, S.KOM., M.BA 
+5 UKM TEATER BINER TRIA HIKMAH FRATIWI, S.KOM., M.T  
+6 UKM MCOS EDWAR, S.AG., M.KOM 
+7 UKM PMK 
+FATINASO DAWOLO, S.TH., M.PD.K 
+8 UKM KMHD NI KETUT DEWI ARI JAYANTI, S.T., M.KOM  
+9 UKM HIMATOGRAPHY I NYOMAN DWI ARYSNA MAHENDRA, S.KOM., 
+M.SN 
+10 HIMAPRODI SI PANDE PUTU GEDE PUTRA PERTAMA, ST., M.T 
+11 UKM SYNTAX ANAK AGUNG AYU MEITRIDWIASTITI, S.S., 
+M.HUM 
+12 UKM U2M INDRIANTO, S.KOM., M.KOM 
+13 UKM BOSS 
+PUTU ADI GUNA PERMANA, S.KOM., M.KOM 
+14 UKM MUSIK I MADE BHASKARA GAUTAMA, S.TI., M.KOM 
+15 UKM FUTSAL PANDE PUTU GEDE PUTRA PERTAMA, ST., MT 
+16 UKM KSR I MADE ARYA BUDHI SAPUTRA, S.KOM., M.CS 
+17 UKM MAPALA KOMPAS
+
+---
+
+Sumber 5 (a76df111-bc3f-4122-9066-3aa29d3cf22b):
+AMPING  
+ORGANISASI MAHASISWA  
+INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI
+
+NO ORMAWA PEMBINA PENDAMPING 
+1 BEM 
+KADEK SURYA ADI SAPUTRA, S.KOM., M.KOM
+
+I PUTU AGUS ARI MAHENDRA, S.KOM., M.KOM 
+2 
+DPM 
+I PUTU AGUS ARI MAHENDRA, S.KOM., M.KOM 
+KADEK SURYA ADI SAPUTRA, S.KOM., M.KOM 
+3 U2M 
+DEDY PANJI AGUSTINO, S.KOM., MM.SI 
+I MADE PASEK PRADNYANA WIJAYA, S.KOM., M.KOM 
+NI LUH ADE MITA RAHAYU DEWI, S.KOM., M.T 
+4 D.O.S 
+DW AYU AGUNG INDRA SWARI, S.KOM., MMSI., M.TOURISM 
+5 MCOS 
+ERMA SULISTYO RINI, SE., MM.KOM 
+M. AZMAN MARICAR, S.KOM., M.T 
+AFFAN IRFAN FAUZIAWAN, S.T., M.T 
+6 KSL 
+I MADE DARMA SUSILA, S.KOM., M.KOM 
+MUHAMMAD RIZA HILMI, S.T., M.T 
+7 GHOST 
+I PUTU AGUS ARI MAHENDRA, S.KOM., M.KOM  
+I GEDE DIAN PERMANA YOGA, S.KOM., M.KOM  
+PT GEDE ARI WIRYATAMA, S.KOM 
+8 HIMAPRODI SI 
+NI WAYAN CAHYA AYU PRATAMI, S.E., M.M 
+NI NYOMAN WULAN ANTARI, S.E., M.M 
+NI NYOMAN MURYATINI, S.H., M.H 
+9 HIMAPRODI BD 
+NI PUTU NANIK HENDAYANTI, S.SI., M.SI 
+10 KMHD 
+IDA AYU VIVIN INDAH SARI S, S.S,. M.HUM 
+I WAYAN PASEK PRASI ANA, S.Tr.Akt., M.M 
+MADE YUDI DWIPAYANA, S.KOM. 
+11 VOS 
+DRA. NI MADE ASTITI, MM.KOM 
+NI WAYAN ARI ULANDARI, S.KOM., M.KOM 
+12 JCOS 
+I MADE PASEK PRADNYANA WIJAYA, S.KOM., M.KOM
+
+---
+
+Sumber 6 (a76df111-bc3f-4122-9066-3aa29d3cf22b):
+I MADE BUDI ADNYANA, S.KOM., M.T. 
+14 TARI 
+KADEK SIDIK ARYAWAN, S.SN., M.SN 
+NI MADE DEWI KANSA PUTRI, S.E., M.M 
+PUTU TJINTIA KENCANA DEWI, SE., MM
+
+NO ORMAWA PEMBINA PENDAMPING 
+15 PMK 
+RICKY AURELIUS NURTANTO DIAZ, S.KOM., M.T. 
+PAULA DEWANTI, S.KOM., M.KOM 
+16 HIMAPRODI TI 
+ROSALIA HADI, S.KOM., M.T 
+NI MADE AYU JULI ASTARI, S.KOM., M.KOM 
+RIZA WULANDARI, S.SOS., M.SI 
+17 SYNTAX 
+NI PUTU PUTRI AYU WIJAYANTHI, S.KOM., M.M 
+DEWA AYU MIRNA WATI, S.I.KOM., M.I.KOM 
+18 TABUH 
+I WAYAN GEDE LAMOPIA, S.SOS., M.SI 
+I WAYAN ARIK WIRAWAN, S.SN., M.SN 
+19 HIMAS JIMBARAN 
+I MADE PRADIPTA, S.KOM., M.KOM 
+WAYAN ANDRIKA PUTERA, S.KOM., M.KOM    
+RIFKY LANA RAHARDIAN, S.KOM., M.T  
+20 MULTIMEDIA 
+NI WAYAN SETIASIH, S.SN., M.SN  
+I MADE SUANDANA ASTIKA PANDE, S.KOM., M.KOM 
+KADEK SURYA ADI SAPUTRA, S.KOM., M.KOM 
+21 HIMATOGRAPHY 
+I NYOMAN ADI PRATAMA PUTRA, S.KOM 
+22 TEATER BINER 
+IDA AYU MIRAH CAHYA DEWI, S.KOM., M.KOM 
+LUH GEDE CAHYA MAYKERNIA P., S.KOM., M.M 
+23 KSR 
+LUH PUTU ERSAMIYA IKA JAYANTHI, S.E., M.M 
+NI PUTU LINDA SANTIARI, S.KOM., M.KOM 
+24 PASKAMRAS 
+I WAYAN JUNIAWAN, S.KOM 
+KADEK ADIES WIRANEGARA, S.KOM 
+DR. DRS. I WAYAN SUKA ARDANA YASA, M. FIL.H 
+25 FUTSAL 
+KOMANG BUDIARTA, S.KOM., M.T   
+I KADEK WIJANEGARA, S.KOM., M.M 
+26 
+BASKET 
+I PUTU RAMAYASA, S.KOM., M.KOM  
+I NYOMAN SURYA JAYA, S.KOM., M.KOM
+
+---
+
+Sumber 7 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+iAnalisis data & bisnis
+50
+Sistem InformasiDesain grafis
+51
+Sistem InformasiFotografi
+52
+Sistem InformasiMembaca buku IT
+53
+Sistem InformasiKonten media sosial
+54
+Sistem InformasiMemiliki sosial media
+55
+Sistem InformasiDigital marketing
+56
+Sistem InformasiPemrograman aplikasi
+
+---
+
+Sumber 8 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki program Double Degree bersama HELP University, Malaysia. 10. Program studi apa yang ditawarkan dalam skema HELP University? Program ini untuk mahasiswa Program Studi Sistem Informasi . 11. Apa gelar yang diperoleh dari program HELP University? Mahasiswa berkesempatan memperoleh : Sarjana Komputer ( S.Kom ) dari ITB STIKOM Bali Bachelor of Information Technology (BIT) dari HELP University 12. Berapa lama studi pada program HELP University? Durasi studi umumnya sekitar 4 tahun sesuai kurikulum yang berlaku . 13. Di mana perkuliahan dilaksanakan ? Skema pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Offi
+
+---
+
+Sumber 9 (dc303847-58ab-45f8-a93f-97d4e425ca1b):
+branding | social media strategy | startup business | entrepreneurship" | "Suka bisnis | media sosial | dan strategi pemasaran" | "Digital Marketing Specialist | Content Strategist | SEO Specialist | Brand Manager | Business Development | Startup Founder"
+Manajemen Informasi | "Pengelolaan database | arsip digital | administrasi sistem informasi | data processing | dokumentasi digital" | "Teliti | rapi | dan suka mengelola data" | "Data Administrator | Database Staff | Information Management Staff | IT Administration | Document Controller | Digital Archive Staff"
+ASSIST_HINTS: jadwal,prodi
+[2026-06-01 21:11:02.256 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa itu si"
+[2026-06-01 21:11:02.261 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-01 21:11:02.266 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 10
+    ctxLen: 9260
+    style: "SEMI"
+    assistHintsLen: 12
+    compactPrompt: false
+QUERY: apa itu SI
+1. filename=Kalender Pendaftaran.xlsx program=SI score=0.24110370632610686 rank=1
+2. filename=hobi-sesuai-program-studi.docx program=SI score=0.43139904214449726 rank=2
+3. filename=Penjelasan Semua Program Studi.pdf program=SI score=0.5847907786807801 rank=3
+4. filename=SK PEMBINA ORMAWA 2026.pdf program=SI score=0.015700149794843722 rank=4
+5. filename=SK PEMBINA ORMAWA 2026.pdf program=SI score=0.00997067374297292 rank=5
+6. filename=SK PEMBINA ORMAWA 2026.pdf program=SI score=0.01393250980915111 rank=6
+7. filename=HOBY.pdf program=SI score=0.02514788617327209 rank=7
+8. filename=CHATBOT - Double Degree (1).docx program=SI score=0.010012983113604582 rank=8
+9. filename=Penjelasan Prodi dan Karier Masa Depan.xlsx program=SI score=0.469425094399664 rank=9
+---
+[2026-06-01 21:11:06.077 +0800] [33mWARN[39m: [36m[RAG] Answer failed entity consistency check[39m
+[2026-06-01 21:11:06.078 +0800] [33mWARN[39m: [36m[VALIDATOR] HIGH confidence answer rejected due to validation failure[39m
+STYLE: SEMI
+QUESTION: apa itu TI
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi beasiswa, potongan, atau subsidi.
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi jadwal pendaftaran, gelombang, atau deadline.
+Contoh ringkasan sumber:
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: ran - 1 surat peraturan ini dan merupakan satu kesatuan yang tidak dapat dipisahkan dari surat peraturan ini. : Memberikan beasiswa kepada calon mahasiswa baru yang berprestasi di bidang Akademik atau╬ô├ç┬¬
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: 19 Oktober 2023 PENERIMA PROGRAM BEASISWA RANKING KELAS DI ITB STIKOM BALI " L STIKOM Bali memberikan beasiswa kepada: a. Calon mahasiswa dari : SMAN 1 Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN╬ô├ç┬¬
+- 614dbde8-6a43-4f06-84da-3fab41c3538b: ja, SMKN 3 Singaraja SMAN 1 Bangli, SMKN 1 Bangli SMAN 1 Negara SMAN 1 Amlapura 1. Rangking 1,2 dan 3 di kelas XII Semester 1 atau 2 2. Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 b. Calon mahasi╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+ran -  1  surat peraturan ini dan merupakan satu kesatuan yang tidak 
+dapat dipisahkan dari surat peraturan ini. 
+:  Memberikan beasiswa kepada calon mahasiswa baru yang berprestasi di 
+bidang Akademik atau Non Akademik dalam rangka penerimaan 
+mahasiswa baru ITB STIKOM Bali yang kriterianya tercantum dalam 
+lampiran - 2 surat peraturan ini dan merupakan satu kesatuan yang tidak 
+dapat dipisahkan dari surat peraturan ini. 
+:  Memberikan kemudahan bagi SMK TI Bali Global Sebali dan SMK 
+Pandawa Bali Global Abiansemal untuk tidak mengikuti seleksi 
+penerimaan mahasiswa baru (tes akademis). 
+:  Hak-hak dari pada calon mahasiswa penerima besiswa tersebut adalah 
+sebagaimana tercantum dalam lampiran -  3  surat peraturan ini  dan 
+merupakan suatu kesatuan yang tidak dapat dipisahkan dari surat
+
+---
+
+Sumber 2 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+19 Oktober 2023 
+PENERIMA PROGRAM BEASISWA RANKING KELAS DI 
+ITB STIKOM BALI " 
+L STIKOM Bali memberikan beasiswa kepada: 
+a.  Calon mahasiswa dari : 
+SMAN 1  Denpasar, SMAN 2 Denpasar, SMAN 3 Denpasar, SMAN 5 Denpasar, 
+SMAN 7 Denpasar, SMAN 8 Denpasar, SMKN 1  Denpasar, SMK TI Bali Global 
+Sebali 
+SMK Pandawa Bali Global Abiansemal, SMAN 1  Abiansemal, SMKN 1  Kuta 
+Selatan, SMAN 1 Kuta Utara, SMAN 1 Kuta 
+SMKN 1 Gianyar, SMAN 1 Gianyar, SMKN 1  Gianyar, SMAN 1 Gianyar, SMKN 
+1  Mas Ubud 
+SMAN 1  Tabanan, SMKN 3 Tabanan 
+SMAN 1 Klungkung, SMKN 1 Klungkung 
+SMAN 1  Singaraja, SMAN 4 Singaraja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.
+
+---
+
+Sumber 3 (614dbde8-6a43-4f06-84da-3fab41c3538b):
+ja, SMKN 3 Singaraja 
+SMAN 1  Bangli, SMKN 1  Bangli 
+SMAN 1 Negara 
+SMAN 1  Amlapura 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1 atau 2 
+b.  Calon mahasiswa dari SMA/K/MA lainnya 
+1.  Rangking 1,2 dan 3 di kelas XII Semester 1  atau 2 
+2.  Rangking 4 s/d 10 di kelas XII Semester 1  atau 2 
+1L Bagi siswa yang berasal dari SMK TI Bali Global Sebali dan SMK Pandawa Bali 
+Global Abiansemal tidak mengikuti tes seleksi penerimaan mahasiswa baru (tes 
+akademis) hanya mengikuti tes wawancara saja. 
+IIL Siswa yang berasal dari SMA/K/MA yang mendapatkan rangking 1  s/d 15 besar di 
+kelas XII semester 1 atau 2 tidak mengikuti tes tulis hanya mengikuti tes wawancara 
+saja dengan melampirkan bukti raport yang sudah di legalisir atau Surat Kete
+
+---
+
+Sumber 4 (d6385d2b-c9a5-48c7-9b2f-cf69d7520f2c):
+ka  mendaftar pada Gelombang I 
+Rp.  200.000,- Jika  mendaftar pada Gelombang II 
+Rp.  150.000,- Jika  mendaftar pada Gelombang III 
+Rp.  100.000,- Jika  mendaftar pada Gelombang IV 
+Ditambah Rp. 50.000,- Jika Alumni SMK TI  Bali Global dan SMK 
+Pandawa Bali  Global 
+i   Dipindai dengan 
+i@  CamScanner .
+
+---
+
+Sumber 5 (c0da674e-bccf-4f25-b119-7d3ad9159c1f):
+,- Jika Alumni SMK TI Bali Global dan SMK Pandawa 
+Bali Global. 
+3.  Beasiswa untuk Dana Pendidikan Pokok : 
+a.  Gelombang Khusus :  Rp. 10.000.000 
+b.  Gelombang I :  Rp. 8.000.000 
+c.  Gelombang II :  Rp. 6.000.000 
+d.  Gelombang III :  Rp. 4.000.000 
+e.  Gelombang IV :  Rp. 2.000.000 
+i   Dipindai dengan 
+i@ CamScanner .
+
+---
+
+Sumber 6 (a76df111-bc3f-4122-9066-3aa29d3cf22b):
+GAUTAMA, S.TI., M.KOM 
+15 UKM FUTSAL PANDE PUTU GEDE PUTRA PERTAMA, ST., MT 
+16 UKM KSR I MADE ARYA BUDHI SAPUTRA, S.KOM., M.CS 
+17 UKM MAPALA KOMPAS GDE SASTRAWANGSA, ST., MT 
+18 UKM PASKAMRAS I MADE ARYA BUDHI SAPUTRA, S.KOM., M.CS 
+19 UKM MULTIMEDIA I GEDE HARSEMADI, S.KOM., M.T 
+20 UKM PROGRESS GEDE HERDIAN SETIAWAN, S.KOM., M.T 
+21 UKM TABUH I GEDE PUTRA MAS YUSADARA, S.KOM., M.KOM 
+22 UKM VOS LILIS YUNINGSIH, SH., M.KOM 
+23 UKM TARI PUTU SETYARINI, S.SN., M.SN 
+24 UKM KSL YOHANES PRIYO ATMOJO, S.KOM., M.ENG
+
+---
+
+Sumber 7 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+omputer
+78
+Teknologi InformasiKabel LAN
+79
+Teknologi InformasiUI/UX design
+80
+Teknologi InformasiEditing video
+81
+Teknologi InformasiPengolahan data
+82
+Teknologi InformasiMembaca buku IT
+83
+Teknologi InformasiServer management
+84
+Teknologi InformasiMembuat game
+85
+Teknologi InformasiBlog teknologi
+
+---
+
+Sumber 8 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+86
+Teknologi InformasiKursus online
+87
+Teknologi InformasiAI / Machine Learning
+88
+Teknologi InformasiKomunitas IT
+89
+Teknologi InformasiStartup teknologi
+90
+Manajemen InformatikaOtak-atik komputer
+91
+Manajemen InformatikaMenggambar
+92
+Manajemen InformatikaMembaca buku IT
+93
+Manajemen InformatikaSosial media
+94
+Manajemen InformatikaKonten sosial media
+95
+Manajemen InformatikaPengolahan data
+96
+Manajemen InformatikaMenggunakan aplikasi
+97
+Manajemen InformatikaBlogging
+98
+Manajemen InformatikaJualan online
+99
+Manajemen InformatikaMengelola toko online
+100
+Manajemen InformatikaDesain branding
+101
+Manajemen InformatikaStartup
+102
+Manajemen InformatikaSeminar/webinar
+103
+Manajemen InformatikaKomunitas entrepreneur
+
+---
+
+Sumber 9 (fb854ef7-f10c-4b3a-80be-54d3a579820f):
+INSTITUT TEKNOLOGI DAN BISNIS
+(rTBl
+sTrKoM
+BALr
+Ditetapkan
+Rektor
+Y
+ITB
+NrK.02.63.001
+di Denpasar
+29
+Jvli2024
+M RALI
+4
+DAFTAR ISI
+KATA PENGANTAR ....................................................................................................... 3
+DAFTAR ISI ................................................................................................................. 4
+BAB I PENDAHULUAN .............................................................................................. 5
+1.1. RUANG LINGKUP ..................................................................................................... 5
+1.2. DASAR HUKUM ....................................................................................................... 7
+1.3. PRINSIP PENYELENGGARAAN ..................................................................................... 7
+BAB II MEKANISME PENYELENGGARAAN RPL .......
+
+---
+
+Sumber 10 (aceb2970-c4dc-4839-874c-06ce73e16164):
+HARI2 PENTING
+ASSIST_HINTS: biaya,beasiswa
+[2026-06-01 21:11:06.950 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa itu ti"
+[2026-06-01 21:11:06.951 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-01 21:11:06.952 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 10
+    ctxLen: 7095
+    style: "SEMI"
+    assistHintsLen: 14
+    compactPrompt: false
+QUERY: apa itu TI
+1. filename=null program=TI score=0.31463942936228956 rank=1
+2. filename=null program=TI score=0.2761361909515784 rank=2
+3. filename=null program=TI score=0.22563077446068583 rank=3
+4. filename=rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf program=TI score=0.3094425014938726 rank=4
+5. filename=rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf program=TI score=0.2335281737040258 rank=5
+6. filename=SK PEMBINA ORMAWA 2026.pdf program=TI score=0.04315819784432158 rank=6
+7. filename=HOBY.pdf program=TI score=0.019762143222476714 rank=7
+8. filename=HOBY.pdf program=TI score=0.028445511222187594 rank=8
+9. filename=Pedoman RPL ITB STIKOM Bali.pdf program=null score=0.44330368839934603 rank=9
+10. filename=Kalender Pendaftaran TA 2026-2027 (1).xls program=null score=0.35406132675709273 rank=10
+---
+[2026-06-01 21:11:10.306 +0800] [33mWARN[39m: [36m[RAG] Answer failed entity consistency check[39m
+[2026-06-01 21:11:10.306 +0800] [33mWARN[39m: [36m[VALIDATOR] HIGH confidence answer rejected due to validation failure[39m
+STYLE: SEMI
+QUESTION: apa itu BD
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi akreditasi program atau kampus.
+- Berisi informasi jadwal pendaftaran, gelombang, atau deadline.
+Contoh ringkasan sumber:
+- eee828da-6ee4-4591-a9a8-18fa2e73c822: Menulis blog atau konten tentang teknologi Pernah /Sedang Mengikuti kursus online IT (self-learning) Eksperimen dengan AI atau machine learning dasar Bergabung dengan komunitas IT / forum teknologi pu╬ô├ç┬¬
+- 66bcaec6-88a7-4ac2-8ae4-660bd3084393: KVTawar-menawar 18 Bisnis Digital & DKVInfluencer 19 Bisnis Digital & DKVBlogger 20 Bisnis Digital & DKVVlogger 21 Bisnis Digital & DKVYouTuber 22 Bisnis Digital & DKVStorytelling visual 23 Bisnis Dig╬ô├ç┬¬
+- ca79325a-566e-47f2-97d0-18e96d0dbd9c: a pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Office. 14. Apa keunggulan program HELP University? Ma╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (eee828da-6ee4-4591-a9a8-18fa2e73c822):
+Menulis blog atau konten tentang teknologi Pernah /Sedang Mengikuti kursus online IT (self-learning) Eksperimen dengan AI atau machine learning dasar Bergabung dengan komunitas IT / forum teknologi punya startup atau ide bisnis berbasis teknologi Hobi Siswa yang Memilih Manajemen Informatika suka otak ΓÇô atik computer Suka menggambar Suka membeli buku ΓÇô buku yang be rhubungan dengan IT Suka bermain sosial media Suka membuat konten di s osial media Suka Mengolah data Bisa Menggunakan aplikasi di h p dan komputer Suka Blogging atau menulis artikel teknologi Suka Berjualan online (e-commerce kecil-kecilan ) Mengelola toko online di marketplace Bisa Mendesain logo atau branding bisnis digital Memiliki startup Pernah Mengikuti seminar atau webinar IT &amp; bisnis Bergabung dengan komunitas entrepreneur atau IT
+
+---
+
+Sumber 2 (66bcaec6-88a7-4ac2-8ae4-660bd3084393):
+KVTawar-menawar
+18
+Bisnis Digital & DKVInfluencer
+19
+Bisnis Digital & DKVBlogger
+20
+Bisnis Digital & DKVVlogger
+21
+Bisnis Digital & DKVYouTuber
+22
+Bisnis Digital & DKVStorytelling visual
+23
+Bisnis Digital & DKVContent creation
+24
+Sistem KomputerMerakit komputer
+25
+Sistem KomputerMembuat kabel LAN
+26
+Sistem KomputerMemperbaiki komputer/laptop
+27
+Sistem KomputerInstalasi sistem operasi
+
+---
+
+Sumber 3 (ca79325a-566e-47f2-97d0-18e96d0dbd9c):
+a pembelajaran mengikuti ketentuan kerja sama yang berlaku . Untuk informasi detail lokasi dan teknis perkuliahan , silakan hubungi International Office. 14. Apa keunggulan program HELP University? Mahasiswa memperoleh pengalaman kurikulum internasional dan gelar dari universitas di Malaysia. C. DOUBLE DEGREE - DALIAN NEUSOFT UNIVERSITY OF INFORMATION (DNUI), CHINA 15. ITB STIKOM Bali bekerja sama dengan kampus mana di China? ITB STIKOM Bali memiliki program Double Degree bersama Dalian Neusoft University of Information (DNUI), China. 16. Program studi apa yang tersedia dalam skema DNUI? Program ini mencakup : Bisnis Digital dari ITB STIKOM Bali E-Commerce dari DNUI 17. Apa gelar yang diperoleh dari program DNUI? Mahasiswa berkesempatan memperoleh : Sarjana Bisnis ( S.Bns ) dari ITB STIKOM Bali Bachelor of Management (BM) dari DNUI 18. Bagaimana skema studi program DNUI? Skema umum perku
+
+---
+
+Sumber 4 (6b969351-7ca7-4cb3-9c4a-4ea714e02670):
+i Swasta (Berita Negara
+Republik Indonesia Tahun 2020 Nomor 52);
+5.Keputusan Menteri Pendidikan, Kebudayaan, Riset, dan
+Teknologi  Republik  Indonesia  Nomor  380/P/2021
+Tentang  Anggota  Dewan  Eksekutif  Badan  Akreditasi
+Nasional  Perguruan  Tinggi  Periode  2021-2026;
+6.Peraturan  Badan  Akreditasi  Nasional  Perguruan  Tinggi
+Nomor  1  Tahun  2022  tentang  Mekanisme  Akreditasi
+untuk Akreditasi yang Dilakukan oleh Badan Akreditasi
+Nasional Perguruan Tinggi;
+
+---
+
+Sumber 5 (6b969351-7ca7-4cb3-9c4a-4ea714e02670):
+Mengingat:1.Undang-undang  Nomor  12  Tahun  2012  tentang
+Pendidikan Tinggi (Lembaran Negara Republik Indonesia
+Tahun  2012  Nomor  158,  Tambahan  Lembaran  Negara
+Republik Indonesia Nomor 5336);
+2.Peraturan Menteri Pendidikan dan Kebudayaan Nomor 3
+Tahun 2020 tentang Standar Nasional Pendidikan Tinggi
+(Berita  Negara  Republik  Indonesia  Tahun  2020  Nomor
+47);
+3.Peraturan Menteri Pendidikan dan Kebudayaan Nomor 5
+Tahun  2020  tentang  Akreditasi  Program  Studi  dan
+Perguruan  Tinggi  (Berita  Negara  Republik  Indonesia
+Tahun  2020  Nomor  49);
+4.Peraturan Menteri Pendidikan dan Kebudayaan Nomor 7
+Tahun 2020 tentang Pendirian, Perubahan, Pembubaran
+Perguruan  Tinggi  Negeri,  dan  Pendirian,  Perubahan,
+Pencabutan Izin Perguruan Tinggi Swasta (Berita Negara
+Republik Indonesia Tahun 2020 Nomor 52);
+5.Keputusan Menteri Pendidikan, Kebudayaan, Riset, dan
+Teknologi  Republik  Indonesia
+
+---
+
+Sumber 6 (6b969351-7ca7-4cb3-9c4a-4ea714e02670):
+Prof. Ari Purbayanto, Ph.D.
+
+---
+
+Sumber 7 (d6385d2b-c9a5-48c7-9b2f-cf69d7520f2c):
+ka  mendaftar pada Gelombang I 
+Rp.  200.000,- Jika  mendaftar pada Gelombang II 
+Rp.  150.000,- Jika  mendaftar pada Gelombang III 
+Rp.  100.000,- Jika  mendaftar pada Gelombang IV 
+Ditambah Rp. 50.000,- Jika Alumni SMK TI  Bali Global dan SMK 
+Pandawa Bali  Global 
+i   Dipindai dengan 
+i@  CamScanner .
+
+---
+
+Sumber 8 (8b0fa751-dff1-4972-8f65-c969e3e542a5):
+EK GANESHA, POLNAS DENPASAR) Rp. 4.000.000 
+sedangkan dari  PT  lain  Rp.  5.000.000 
+i   Dipindai dengan 
+i@  CamScanner .
+
+---
+
+Sumber 9 (aceb2970-c4dc-4839-874c-06ce73e16164):
+HARI2 PENTING
+
+---
+
+Sumber 10 (748958d9-e5e8-4306-a689-c39c15967e45):
+DIREKTUR DEWAN EKSEKUTIF
+ASSIST_HINTS: prodi
+[2026-06-01 21:11:11.154 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa itu bd"
+[2026-06-01 21:11:11.156 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-01 21:11:11.158 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 10
+    ctxLen: 5580
+    style: "SEMI"
+    assistHintsLen: 5
+    compactPrompt: false
+QUERY: apa itu BD
+1. filename=hobi-sesuai-program-studi.docx program=BD score=0.49415523947826817 rank=1
+2. filename=HOBY.pdf program=BD score=0.008723569044135045 rank=2
+3. filename=CHATBOT - Double Degree (1).docx program=BD score=0.019792383914684002 rank=3
+4. filename=SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf program=null score=0.24145839532926983 rank=4
+5. filename=SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf program=null score=0.219924309784363 rank=5
+6. filename=SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf program=null score=0.21348140171895957 rank=6
+7. filename=rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf program=TI score=0.35036462170077737 rank=7
+8. filename=rincian Biaya SK Tahun Ajaran 2026-2027.pdf program=null score=0.3671659076114259 rank=8
+9. filename=Kalender Pendaftaran TA 2026-2027 (1).xls program=null score=0.35411749116008606 rank=9
+10. filename=SSK-92951-9f1f75a748373a419b97cb544bd6b423_sign.pdf program=null score=0.3368080791502377 rank=10
+---
+STYLE: SEMI
+QUESTION: apa itu SK
+CONTEXT: Ringkasan konteks dari dokumen relevan:
+- Berisi informasi program internasional / dual degree / kelas khusus.
+- Berisi informasi jadwal pendaftaran, gelombang, atau deadline.
+- Berisi informasi akreditasi program atau kampus.
+Contoh ringkasan sumber:
+- 303d14ce-a80a-49b8-90c1-61072a1f36fa: ULUS | : | NEM : FACEBOOK/INSTAGRAM | : PROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1) BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3) K╬ô├ç┬¬
+- eee828da-6ee4-4591-a9a8-18fa2e73c822: sekolah Pernah Mengikuti kompetisi bisnis atau startup Suka Tawar Menawar Seorang Influencer Seorang Blogger Seorang Vlogger Seorang YouTuber .Storytelling Visual Content Creation Hobi Siswa yang Memi╬ô├ç┬¬
+- 6b969351-7ca7-4cb3-9c4a-4ea714e02670: SURAT KEPUTUSAN DIREKTUR DEWAN EKSEKUTIF BADAN AKREDITASI NASIONAL PERGURUAN TINGGI NOMOR : 6794/SK/BAN-PT/Ak/S/X/2022 TENTANG PERINGKAT AKREDITASI PROGRAM STUDI BISNIS DIGITAL PADA PROGRAM SARJANA IN╬ô├ç┬¬
+Gunakan informasi tersebut sebagai sumber data yang harus dijawab secara akurat.
+
+Sumber 1 (303d14ce-a80a-49b8-90c1-61072a1f36fa):
+ULUS | : | NEM :
+FACEBOOK/INSTAGRAM | :
+PROGRAM YANG DIMINATI | : | REGULER | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)
+BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)
+KELAS PAGI / SIANG | KELAS SORE/MALAM
+KARYAWAN | SISTEM INFORMASI (S1) | SISTEM KOMPUTER (S1) | TEKNOLOGI INFORMASI (S1)
+BISNIS DIGITAL (S1) | MANAJEMEN INFORMATIKA (D3)
+DOUBLE DEGREE | INTERNASIONAL PROGRAM (S.KOM B.IT) | NATIONAL PROGRAM (S.KOM-S.M)
+INTERNASIONAL PROGRAM (S.BNS B.M)
+TEMPAT KULIAH | : | KAMPUS  RENON | KAMPUS JIMBARAN | KAMPUS ABIANSEMAL
+SUMBER INFORMASI
+:
+PRESENTER | COSTUMER SERVICE | PENDAFTAR
+
+---
+
+Sumber 2 (eee828da-6ee4-4591-a9a8-18fa2e73c822):
+sekolah Pernah Mengikuti kompetisi bisnis atau startup Suka Tawar Menawar Seorang Influencer Seorang Blogger Seorang Vlogger Seorang YouTuber .Storytelling Visual Content Creation Hobi Siswa yang Memilih Sistem Komputer Suka Merakit komputer (PC building &amp; upgrade) Bisa Membuat Kabel Lan Bisa Memperbaiki dan Mensetting Komputer dan Laptop Bisa Menginstal dan mengutak-atik sistem operasi (Linux, Windows Server) Pernah / bisa ngoding Bisa merakit dan memperbaiki alat elektronik seperti Printer, Kipas angin, Kulkas dll Su ka Eksperimen dengan mikrokontroler (Arduino, ESP32, Raspberry Pi) Suka Membuat proyek Internet of Things (smart home, sensor otomatis , dll .) Suka Ngoprek jaringan (setting router, LAN, dan simulasi jaringan ) Suka Belajar keamanan jaringan (ethical hacking dasar , penetration testing) Pernah Mengikuti kompetisi teknologi sepert i robotik, coding, IoT Suka Membaca bu
+
+---
+
+Sumber 3 (6b969351-7ca7-4cb3-9c4a-4ea714e02670):
+SURAT KEPUTUSAN
+DIREKTUR DEWAN EKSEKUTIF
+BADAN AKREDITASI NASIONAL PERGURUAN TINGGI
+NOMOR : 6794/SK/BAN-PT/Ak/S/X/2022
+TENTANG
+PERINGKAT AKREDITASI PROGRAM STUDI BISNIS DIGITAL PADA PROGRAM
+SARJANA INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI, KOTA
+DENPASAR
+DIREKTUR DEWAN EKSEKUTIF
+BADAN AKREDITASI NASIONAL PERGURUAN TINGGI
+Menimbang:a.bahwa  untuk  mewujudkan  kepastian  dan  keadilan
+hukum,  maka  perlu  ditetapkan  Status  Peringkat
+Akreditasi Program Studi yang mengajukan permohonan
+akreditasi;
+b.bahwa   berdasarkan   pertimbangan   sebagaimana
+dimaksud dalam huruf a, perlu menetapkan Keputusan
+Direktur  Dewan  Eksekutif  Badan  Akreditasi  Nasional
+Perguruan Tinggi tentang Peringkat Akreditasi Program
+Studi  Bisnis  Digital  pada  program  Sarjana  Institut
+Teknologi  dan  Bisnis  STIKOM  Bali,  Kota  Denpasar.
+
+---
+
+Sumber 4 (e442be92-a25f-4e3b-a3d3-e888c0d81eab):
+SURAT KEPUTUSAN
+DIREKTUR DEWAN EKSEKUTIF
+BADAN AKREDITASI NASIONAL PERGURUAN TINGGI
+NOMOR : 5908/SK/BAN-PT/Ak/S/IX/2022
+TENTANG
+PERINGKAT AKREDITASI PROGRAM STUDI TEKNOLOGI INFORMASI PADA
+PROGRAM SARJANA INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI, KOTA
+DENPASAR
+DIREKTUR DEWAN EKSEKUTIF
+BADAN AKREDITASI NASIONAL PERGURUAN TINGGI
+Menimbang:a.bahwa  untuk  mewujudkan  kepastian  dan  keadilan
+hukum,  maka  perlu  ditetapkan  Status  Peringkat
+Akreditasi Program Studi yang mengajukan permohonan
+akreditasi;
+b.bahwa   berdasarkan   pertimbangan   sebagaimana
+dimaksud dalam huruf a, perlu menetapkan Keputusan
+Direktur  Dewan  Eksekutif  Badan  Akreditasi  Nasional
+Perguruan Tinggi tentang Peringkat Akreditasi Program
+Studi Teknologi Informasi pada program Sarjana Institut
+Teknologi dan Bisnis STIKOM Bali, Kota Denpasar.
+
+---
+
+Sumber 5 (762c5ebc-bfde-48d3-a314-85a17bc931ee):
+Y 3 Digitally signed by 
+3 T. Basaruddin 
+Basaruddi ΓÇö ou- BAN-PT 
+Date: 2021.11.25 
+BAN-PT n 08:11:13 WIB 
+KEPUTUSAN 
+BADAN 
+AKREDITASI 
+NASIONAL 
+PERGURUAN 
+TINGGI 
+NOMOR 
+:  
+12450/SK/BAN-PT/Akred-PMT/Dipl-III/X1/2021 
+ol 
+] 
+5 
+TENTANG 
+[k 
+PERINGKAT 
+AKREDITASI 
+PROGRAM 
+STUDI 
+MANAJEMEN 
+INFORMATIKA 
+PADA 
+PROGRAM 
+DIPLOMA-III 
+INSTITUT 
+TEKNOLOGI 
+DAN 
+BISNIS 
+STIKOM 
+BALI, 
+KOTA 
+DENPASAR 
+BADAN 
+AKREDITASI 
+NASIONAL 
+PERGURUAN 
+TINGGI 
+Menimbang 
+:  
+a. 
+bahwa 
+untuk 
+melaksanakan 
+ketentuan 
+Pasal 
+4, 
+Pasal 
+6 
+ayat 
+(3), 
+Pasal 
+12 
+ayat 
+(2), 
+dan 
+Pasal 
+15 
+Peraturan 
+Menteri 
+Pendidikan 
+dan 
+Kebudayaan 
+Nomor 
+5 
+Tahun 
+2020 
+tentang 
+Akreditasi 
+Program 
+Studi 
+dan 
+Perguruan 
+Tinggi, 
+perlu 
+menetapkan 
+Keputusan 
+Badan 
+Akreditasi 
+Nasional 
+Perguruan 
+Tinggi 
+tentang 
+Akreditasi 
+Program 
+Studi 
+Manajemen 
+Informatika 
+pada 
+Program 
+Diploma-IIl 
+Institut 
+Teknologi
+
+---
+
+Sumber 6 (a3513765-de58-4820-8c6b-02028e1a3c11):
+KEPUTUSAN
+LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER
+Nomor:149/SK/LAM-INFOKOM/Ak/S/XII/2023
+TENTANG
+PERINGKAT AKREDITASI PROGRAM STUDI SISTEM INFORMASI
+PADA PROGRAM SARJANA, INSTITUT TEKNOLOGI DAN BISNIS
+STIKOM BALI, KEC. DENPASAR TIMUR
+LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER
+Menimbang: 
+bahwa   untuk   melaksanakan   ketentuan   Pasal   4   Peraturan   Menteri   Pendidikan   dan
+Kebudayaan  Nomor  5  Tahun  2020  tentang  Akreditasi  Program  Studi  dan  Perguruan
+Tinggi,  perlu  menetapkan  Keputusan  Lembaga  Akreditasi  Mandiri  Informatika  dan
+Komputer  tentang  Akreditasi  Program  Studi  Sistem  Informasi    pada  Institut  Teknologi
+dan Bisnis STIKOM Bali, Kec. Denpasar Timur.
+Mengingat: 1.Undang-undang Nomor 12 Tahun 2012 tentang Pendidikan Tinggi  (Lembaran Negara
+Republik  Indonesia  Tahun  2012  Nomor  158,  Tambahan  Lembaran  Negara  Republik
+Indonesia
+
+---
+
+Sumber 7 (166573b3-8a19-449a-9c3f-338ba9dc842d):
+KEPUTUSAN
+LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER
+Nomor:068/SK/LAM-INFOKOM/Ak/S/IV/2025
+TENTANG
+PERINGKAT AKREDITASI PROGRAM STUDI SISTEM KOMPUTER
+PADA PROGRAM SARJANA, INSTITUT TEKNOLOGI DAN BISNIS
+STIKOM BALI, KOTA DENPASAR
+LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER
+Menimbang: 
+bahwa   untuk   melaksanakan   ketentuan   Pasal   4   Peraturan   Menteri   Pendidikan   dan
+Kebudayaan  Nomor  5  Tahun  2020  tentang  Akreditasi  Program  Studi  dan  Perguruan
+Tinggi,  perlu  menetapkan  Keputusan  Lembaga  Akreditasi  Mandiri  Informatika  dan
+Komputer  tentang  Akreditasi  Program  Studi  Sistem  Komputer    pada  Institut  Teknologi
+dan Bisnis STIKOM Bali, Kota Denpasar.
+Mengingat: 1.Undang-undang Nomor 12 Tahun 2012 tentang Pendidikan Tinggi  (Lembaran Negara
+Republik  Indonesia  Tahun  2012  Nomor  158,  Tambahan  Lembaran  Negara  Republik
+Indonesia Nomor 5336);
+
+---
+
+Sumber 8 (48101c2a-c775-46a1-803a-202ca01d0602):
+telah mereka peroleh sebelumnya. Program ini dirancang untuk memberikan 
+fleksibilitas dan akses yang lebih luas ke pendidikan tinggi, mematuhi regulasi 
+pemerintah, sambil tetap mempertahankan standar akademik yang tinggi. 
+2.5. Organisasi Pengelola 
+Organisasi  pengelola  Rekognisi  Pembelajaran  Lampau  (RPL)  di  ITB 
+STIKOM  Bali  dibentuk  berdasarkan  Surat  Keputusan  (SK)  Rektor,  yang 
+menetapkan  struktur,  tugas,  dan  tanggung  jawabnya.  Organisasi  ini 
+selanjutnya disebut Tim Pelaksana RPL, terdiri dari personil yang kompeten 
+dan  berpengalaman  di  bidang  pendidikan, penilaian,  dan  pengembangan 
+kurikulum, dengan mandat untuk mengelola seluruh aspek pelaksanaan RPL.
+
+---
+
+Sumber 9 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+SISTEMSISTEM
+KOMPUTERKOMPUTER
+GELAR S.KOM.
+Menghasilkan lulusan yang memiliki kompetensi dalam
+merancang, mengimplementasikan sistem Internet of Things
+(IoT), sistem tertanam, sistem kontrol, dan jaringan komputer
+dengan menerapakan prinsip keamanan jaringan 
+Profil
+Program Studi
+MORE INFO
+Perekayasa sistem
+tertanam dan IoT
+Perekayasa Jaringan
+komputer
+Keamanan 
+Sistem
+Peneliti di bidang
+sistem komputer
+sk.stikom-bali.ac.id
+sistemkomputer.stikombali
+
+---
+
+Sumber 10 (9358faf2-c0bf-438b-90e4-5f801f43ea0d):
+istem
+tertanam dan IoT
+Perekayasa Jaringan
+komputer
+Keamanan 
+Sistem
+Peneliti di bidang
+sistem komputer
+sk.stikom-bali.ac.id
+sistemkomputer.stikombali
+
+SISTEM
+INFORMASI
+PROFIL LULUSAN
+PROFIL SISTEM
+INFORMASI
+GELAR : S.KOM.
+Menghasilkan lulusanyang memiliki
+kompetensi dalam merancang dan
+mengembangkan, serta
+mengimplementasikan sistem informasi
+termasuk Government dan Enterprise
+system, sistem desain grafis berbasis
+multimedia serta mengembangkan potensi
+kewirausahaan di bidang sistem informasi
+si.stikom-bali.ac.id
+sisteminformasi.stikombali
+Perekayasa Sistem Informasi
+Perekayasa Sistem Informasi
+Multimedia
+Desain Grafis & Animator
+Peneliti Sistem Informasi
+ASSIST_HINTS: jadwal,prodi,beasiswa
+[2026-06-01 21:11:13.977 +0800] [33mWARN[39m: [36m[RAG] Answer failed entity consistency check[39m
+[2026-06-01 21:11:13.978 +0800] [33mWARN[39m: [36m[VALIDATOR] HIGH confidence answer rejected due to validation failure[39m
+[2026-06-01 21:11:15.034 +0800] [32mINFO[39m: [36m[RAG] enrollment discount helper called[39m
+    question: "apa itu sk"
+[2026-06-01 21:11:15.034 +0800] [33mWARN[39m: [36m[AI] Model normalized[39m
+    requestedModel: "gpt-5.2"
+    resolvedModel: "gpt-4o-mini"
+[2026-06-01 21:11:15.036 +0800] [32mINFO[39m: [36m[AI RAG] Sending updated RAG prompt[39m
+    qLen: 10
+    ctxLen: 9292
+    style: "SEMI"
+    assistHintsLen: 21
+    compactPrompt: false
+QUERY: apa itu SK
+1. filename=FORMULIR PENDAFTARAN - ITB STIKOM BALI.xlsx program=SK score=0.4275851966880096 rank=1
+2. filename=hobi-sesuai-program-studi.docx program=SK score=0.5004296731793743 rank=2
+3. filename=SK AKREDITASI BD (05 OKT 2022 - 05 OKT 2027).pdf program=SK score=0.31822982283367307 rank=3
+4. filename=SK AKREDITASI TI (06 SEPT 2022 - 06 SEPT 2027).pdf program=SK score=0.33136991185376413 rank=4
+5. filename=SK AKREDITASI MI (17 NOV 2021 - 17 NOV 2026).pdf program=SK score=0.3601909652288135 rank=5
+6. filename=SK AKREDITASI - SISTEM INFORMASI (14 DES 2023 - 14 DES 2028) LAM INFOKOM.pdf program=SK score=0.40268583893496285 rank=6
+7. filename=SK AKREDITASI SISTEM KOMPUTER (09 APRIL 2025 - 09 APRIL 2030).pdf program=SK score=0.4162598265389274 rank=7
+8. filename=Pedoman RPL ITB STIKOM Bali.pdf program=SK score=0.3711784101953032 rank=8
+9. filename=Penjelasan Semua Program Studi.pdf program=SK score=0.5672484840356057 rank=9
+10. filename=Penjelasan Semua Program Studi.pdf program=SK score=0.5459410724231782 rank=10
+---
+[2026-06-01 21:11:17.733 +0800] [33mWARN[39m: [36m[RAG] Answer failed entity consistency check[39m
+[2026-06-01 21:11:17.733 +0800] [33mWARN[39m: [36m[VALIDATOR] HIGH confidence answer rejected due to validation failure[39m

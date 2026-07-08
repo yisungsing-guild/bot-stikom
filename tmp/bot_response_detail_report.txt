@@ -1,0 +1,104 @@
+========================================
+QUESTION: Apa saja prodi yang ada di kampus ini?
+SUCCESS: true
+MODEL: gpt-4o-mini
+TOKENS: {"promptTokens":260,"completionTokens":133,"totalTokens":393}
+BOT_REPLY_START
+Prodi yang ada di kampus ini meliputi berbagai bidang, seperti:
+
+1. **Ilmu Komputer** - Fokus pada pengembangan perangkat lunak dan sistem informasi.
+2. **Manajemen** - Mempelajari teori dan praktik dalam pengelolaan bisnis.
+3. **Psikologi** - Menyelidiki perilaku manusia dan proses mental.
+4. **Hukum** - Mengkaji sistem hukum dan peraturan yang berlaku.
+5. **Teknik Sipil** - Berfokus pada perancangan dan konstruksi infrastruktur.
+
+Kalau ada prodi tertentu yang ingin kamu ketahui lebih lanjut, kasih tahu ya!
+BOT_REPLY_END
+
+========================================
+QUESTION: Berapa biaya kuliah untuk program SI?
+SUCCESS: true
+MODEL: gpt-4o-mini
+TOKENS: {"promptTokens":258,"completionTokens":107,"totalTokens":365}
+BOT_REPLY_START
+Biaya kuliah untuk program S1 bervariasi tergantung pada universitas dan program studi yang dipilih. Secara umum, biaya kuliah di universitas negeri biasanya lebih rendah dibandingkan dengan universitas swasta. Untuk universitas negeri, biaya bisa berkisar antara 5 juta hingga 20 juta per tahun, sedangkan di universitas swasta bisa mencapai 20 juta hingga 50 juta per tahun atau lebih. Pastikan untuk mengecek situs resmi universitas yang kamu minati untuk informasi yang lebih akurat.
+BOT_REPLY_END
+
+========================================
+QUESTION: Bandingkan biaya antara SI dan TI
+SUCCESS: true
+MODEL: gpt-4o-mini
+TOKENS: {"promptTokens":257,"completionTokens":248,"totalTokens":505}
+BOT_REPLY_START
+Biaya antara Sistem Informasi (SI) dan Teknologi Informasi (TI) bisa bervariasi tergantung pada beberapa faktor, seperti skala proyek, kebutuhan spesifik, dan sumber daya yang tersedia.
+
+1. **Sistem Informasi (SI)**: Biaya SI biasanya mencakup pengembangan perangkat lunak, pelatihan pengguna, dan pemeliharaan sistem. Proyek SI sering kali memerlukan investasi awal yang lebih besar untuk analisis kebutuhan dan desain sistem yang sesuai. Misalnya, implementasi sistem ERP bisa memerlukan biaya yang signifikan untuk konsultasi dan integrasi.
+
+2. **Teknologi Informasi (TI)**: Biaya TI lebih fokus pada infrastruktur, seperti perangkat keras, jaringan, dan perangkat lunak dasar. Ini bisa mencakup biaya pembelian server, lisensi perangkat lunak, dan biaya operasional untuk pemeliharaan sistem TI. Misalnya, biaya untuk membangun pusat data atau membeli perangkat keras baru bisa menjadi sangat tinggi.
+
+Secara umum, SI lebih berorientasi pada solusi bisnis dan proses, sedangkan TI lebih berfokus pada alat dan infrastruktur yang mendukung teknologi. Biaya total akan tergantung pada tujuan dan kebutuhan spesifik organisasi.
+BOT_REPLY_END
+
+========================================
+QUESTION: Apa itu program dual degree dan apa keuntungannya?
+SUCCESS: true
+MODEL: gpt-4o-mini
+TOKENS: {"promptTokens":261,"completionTokens":244,"totalTokens":505}
+BOT_REPLY_START
+Program dual degree adalah program pendidikan yang memungkinkan mahasiswa untuk mendapatkan dua gelar akademik sekaligus dalam waktu yang lebih singkat dibandingkan jika mengambilnya secara terpisah. Biasanya, program ini menggabungkan dua disiplin ilmu yang saling terkait, seperti bisnis dan hukum, atau teknik dan manajemen.
+
+Keuntungannya antara lain:
+
+1. **Waktu dan Efisiensi**: Mahasiswa bisa menyelesaikan dua gelar dalam waktu yang lebih singkat, seringkali hanya satu atau dua tahun tambahan dibandingkan program gelar tunggal.
+
+2. **Peluang Karir yang Lebih Luas**: Memiliki dua gelar dapat membuka lebih banyak peluang kerja dan meningkatkan daya saing di pasar kerja.
+BOT_REPLY_END
+
+========================================
+QUESTION: Apa perbedaan prodi SI dan TI?
+SUCCESS: true
+MODEL: gpt-4o-mini
+TOKENS: {"promptTokens":259,"completionTokens":196,"totalTokens":455}
+BOT_REPLY_START
+Prodi Sistem Informasi (SI) dan Teknik Informatika (TI) memiliki fokus yang berbeda meskipun keduanya berkaitan dengan teknologi informasi.
+
+Sistem Informasi (SI) lebih menekankan pada bagaimana mengelola dan memanfaatkan informasi dalam organisasi. Ini mencakup analisis kebutuhan pengguna, desain sistem, dan pengelolaan data untuk mendukung pengambilan keputusan. SI sering kali berhubungan dengan aspek bisnis dan manajemen.
+
+Sementara itu, Teknik Informatika (TI) lebih fokus pada aspek teknis dan pengembangan perangkat lunak. Ini mencakup pemrograman, algoritma, dan pengembangan sistem komputer. TI lebih mendalami aspek teknis dari teknologi informasi dan sering kali melibatkan penelitian dan pengembangan teknologi baru.
+
+Jadi, jika kamu lebih tertarik pada manajemen dan aplikasi informasi dalam konteks bisnis, SI mungkin lebih cocok. Jika kamu lebih suka coding dan pengembangan teknologi, TI bisa jadi pilihan yang lebih baik.
+BOT_REPLY_END
+
+========================================
+QUESTION: Berapa biaya kuliah untuk program SI gelombang 1A?
+SUCCESS: true
+MODEL: gpt-4o-mini
+TOKENS: {"promptTokens":264,"completionTokens":56,"totalTokens":320}
+BOT_REPLY_START
+Biaya kuliah untuk program S1 gelombang 1A bervariasi tergantung pada jurusan dan kebijakan kampus. Sebaiknya cek langsung di situs resmi kampus atau hubungi bagian administrasi untuk informasi terbaru dan detail biaya yang lebih akurat.
+BOT_REPLY_END
+
+========================================
+QUESTION: Apakah ada program dual degree di SI?
+SUCCESS: true
+MODEL: gpt-4o-mini
+TOKENS: {"promptTokens":258,"completionTokens":82,"totalTokens":340}
+BOT_REPLY_START
+Ya, di program Studi Ilmu Komputer (SI) biasanya ada opsi untuk dual degree. Ini memungkinkan mahasiswa untuk mendapatkan gelar dari dua program berbeda dalam waktu yang bersamaan. Namun, detail spesifik tentang program ini bisa bervariasi tergantung pada universitas. Sebaiknya cek langsung ke situs resmi kampus atau hubungi pihak akademik untuk informasi lebih lanjut tentang program dual degree yang tersedia.
+BOT_REPLY_END
+
+========================================
+QUESTION: Apa saja biaya yang dibutuhkan saat daftar ulang?
+SUCCESS: true
+MODEL: gpt-4o-mini
+TOKENS: {"promptTokens":259,"completionTokens":151,"totalTokens":410}
+BOT_REPLY_START
+Biaya daftar ulang biasanya meliputi beberapa komponen, seperti:
+
+1. **Biaya SPP (Sumbangan Pembinaan Pendidikan)**: Ini adalah biaya pokok yang harus dibayar setiap semester.
+2. **Biaya Administrasi**: Biaya ini untuk pengolahan data dan administrasi pendaftaran.
+3. **Biaya Uang Gedung**: Jika ada, ini adalah biaya untuk pemeliharaan fasilitas kampus.
+4. **Biaya Buku dan Alat Tulis**: Terkadang, ada biaya tambahan untuk buku atau alat tulis yang diperlukan.
+
+Pastikan untuk memeriksa informasi resmi dari kampus, karena biaya bisa bervariasi tergantung program studi dan kebijakan masing-masing institusi.
+BOT_REPLY_END

@@ -1,0 +1,1020 @@
+﻿  console.info
+    [OUTBOUND DEBUG] chat=fee-chat source=tuition_fee_need_program responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'fee-chat',
+      text: 'sistem informasi',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: 'Sistem Informasi',
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-chat source=tuition_fee_rag_or_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-help-direct source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-help-semester source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=help-semester-label source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-help-switch source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'fee-help-switch',
+      text: 'berapa rincian biaya di help',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: 'Dual Degree HELP University (Sistem Informasi)',
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: true,
+      keepEphemeralBecauseFollowupShape: false,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-help-switch source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-help-pick source=tuition_fee_need_program responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'fee-help-pick',
+      text: 'HELP',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: 'Dual Degree HELP University (Sistem Informasi)',
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: false,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-help-pick source=tuition_fee_rag_or_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-breakdown-chat source=tuition_fee_need_program responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'fee-breakdown-chat',
+      text: 'teknologi informasi',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: 'Teknologi Informasi',
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-breakdown-chat source=fee_fast_path responseMode=deterministic skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=fee-breakdown-chat source=fee_fast_path
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-breakdown-offer source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-breakdown-offer source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=fee-breakdown-offer source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-vs-registration-flow source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=fee-vs-registration-flow source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-vs-registration-flow source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=fee-vs-registration-flow source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-vs-registration-flow source=tuition_fee_need_program responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'fee-vs-registration-flow',
+      text: 'sistem informasi',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: 'Sistem Informasi',
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-vs-registration-flow source=tuition_fee_rag_or_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=fee-chat-has-hint source=tuition_fee_need_program responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [DECISION DEBUG] {
+      chatId: 'prog-pick-syarat',
+      decision: {
+        winner: 'rule',
+        candidateSource: 'program_list',
+        ragSource: undefined
+      }
+    }
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=prog-pick-syarat source=program_list responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=prog-pick-syarat source=program_list
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'prog-pick-syarat',
+      text: 'sistem komputer',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: 'Sistem Komputer',
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: false,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=prog-pick-syarat source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=prog-pick-syarat source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'prog-pick-syarat',
+      text: 'syarat dan dokumen',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: null,
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=prog-pick-syarat source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=prog-pick-syarat source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [DECISION DEBUG] {
+      chatId: 'user-loc',
+      decision: {
+        winner: 'rule',
+        candidateSource: 'campus_location_fast',
+        ragSource: undefined
+      }
+    }
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-loc source=campus_location_fast responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-loc source=campus_location_fast
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user1 source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow start] {
+      chatId: '628111111112',
+      text: 'biaya',
+      program: 'Teknologi Informasi',
+      flow: { stage: 'done', degree: 'S1', program: 'Teknologi Informasi' },
+      pendingOffer: null,
+      pendingFeeDetail: undefined,
+      lastProgramHint: 'Teknologi Informasi'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow biaya] {
+      chatId: '628111111112',
+      trimmed: 'biaya',
+      choice: 'biaya',
+      fromCostOffer: false,
+      program: 'Teknologi Informasi',
+      sessionDataKeys: [
+        'messages',
+        'registrationFlow',
+        'lastProgramHint',
+        'composerTelemetry'
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow biaya check] { isGenericBiaya: true, fromCostOffer: false }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow pendingFeeDetail upsert] {
+      chatId: '628111111112',
+      currentState: undefined,
+      newData: {
+        messages: [],
+        registrationFlow: { stage: 'done', degree: 'S1', program: 'Teknologi Informasi' },
+        lastProgramHint: 'Teknologi Informasi',
+        composerTelemetry: { contextReused: true },
+        pendingFeeDetail: { ts: '2026-05-20T02:18:10.606Z', program: 'Teknologi Informasi' }
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow pendingFeeDetail upserted] {
+      chatId: '628111111112',
+      upserted: {
+        id: 'sess-fee-1',
+        chatId: '628111111112',
+        data: {
+          messages: [],
+          registrationFlow: [Object],
+          lastProgramHint: 'Teknologi Informasi',
+          composerTelemetry: [Object],
+          pendingFeeDetail: [Object]
+        },
+        state: undefined
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=628111111112 source=registration_followup_fee_clarify responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    TEST DEBUG afterPrompt store [
+      [
+        '628111111112',
+        {
+          id: 'sess-fee-1',
+          chatId: '628111111112',
+          data: [Object],
+          state: undefined
+        }
+      ]
+    ]
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    TEST DEBUG afterPrompt {
+      id: 'sess-fee-1',
+      chatId: '628111111112',
+      data: {
+        messages: [],
+        registrationFlow: { stage: 'done', degree: 'S1', program: 'Teknologi Informasi' },
+        lastProgramHint: 'Teknologi Informasi',
+        composerTelemetry: { contextReused: true },
+        pendingFeeDetail: { ts: '2026-05-20T02:18:10.606Z', program: 'Teknologi Informasi' }
+      },
+      state: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: '628111111112',
+      text: 'daftar ulang itu kapan?',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: null,
+      numericSelection: null,
+      hasPendingFeeDetail: true,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: false,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: { ts: '2026-05-20T02:18:10.606Z', program: 'Teknologi Informasi' }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow start] {
+      chatId: '628111111112',
+      text: 'daftar ulang itu kapan?',
+      program: 'Teknologi Informasi',
+      flow: { stage: 'done', degree: 'S1', program: 'Teknologi Informasi' },
+      pendingOffer: null,
+      pendingFeeDetail: undefined,
+      lastProgramHint: 'Teknologi Informasi'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=628111111112 source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow start] {
+      chatId: '628111111113',
+      text: 'biaya',
+      program: 'Teknologi Informasi',
+      flow: { stage: 'done', degree: 'S1', program: 'Teknologi Informasi' },
+      pendingOffer: null,
+      pendingFeeDetail: undefined,
+      lastProgramHint: 'Teknologi Informasi'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow biaya] {
+      chatId: '628111111113',
+      trimmed: 'biaya',
+      choice: 'biaya',
+      fromCostOffer: false,
+      program: 'Teknologi Informasi',
+      sessionDataKeys: [
+        'messages',
+        'registrationFlow',
+        'lastProgramHint',
+        'composerTelemetry'
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow biaya check] { isGenericBiaya: true, fromCostOffer: false }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow pendingFeeDetail upsert] {
+      chatId: '628111111113',
+      currentState: undefined,
+      newData: {
+        messages: [],
+        registrationFlow: { stage: 'done', degree: 'S1', program: 'Teknologi Informasi' },
+        lastProgramHint: 'Teknologi Informasi',
+        composerTelemetry: { contextReused: true },
+        pendingFeeDetail: { ts: '2026-05-20T02:18:10.842Z', program: 'Teknologi Informasi' }
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow pendingFeeDetail upserted] {
+      chatId: '628111111113',
+      upserted: {
+        id: 'sess-req-1',
+        chatId: '628111111113',
+        data: {
+          messages: [],
+          registrationFlow: [Object],
+          lastProgramHint: 'Teknologi Informasi',
+          composerTelemetry: [Object],
+          pendingFeeDetail: [Object]
+        },
+        state: undefined
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=628111111113 source=registration_followup_fee_clarify responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: '628111111113',
+      text: 'Apa persyaratan untuk melakukan pendaftaran kuliah di STIKOM Bali?',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: null,
+      numericSelection: null,
+      hasPendingFeeDetail: true,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: false,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: { ts: '2026-05-20T02:18:10.842Z', program: 'Teknologi Informasi' }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow start] {
+      chatId: '628111111113',
+      text: 'Apa persyaratan untuk melakukan pendaftaran kuliah di STIKOM Bali?',
+      program: 'Teknologi Informasi',
+      flow: { stage: 'done', degree: 'S1', program: 'Teknologi Informasi' },
+      pendingOffer: null,
+      pendingFeeDetail: undefined,
+      lastProgramHint: 'Teknologi Informasi'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=628111111113 source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [DECISION DEBUG] {
+      chatId: 'user-shorthand',
+      decision: {
+        winner: 'rule',
+        candidateSource: 'pmb_schedule_fast_pre_keyword',
+        ragSource: undefined
+      }
+    }
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-shorthand source=pmb_schedule_fast_pre_keyword responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-shorthand source=pmb_schedule_fast_pre_keyword
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [DECISION DEBUG] {
+      chatId: 'user-shorthand2',
+      decision: {
+        winner: 'rule',
+        candidateSource: 'pmb_schedule_fast_pre_keyword',
+        ragSource: undefined
+      }
+    }
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-shorthand2 source=pmb_schedule_fast_pre_keyword responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-shorthand2 source=pmb_schedule_fast_pre_keyword
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=628222222222 source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-total source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=628555555555 source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=628555555555 source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: '628555555555',
+      text: 'Saya gelombang 1',
+      lastBot: 'Skema potongan biaya pendaftaran per gelombang:\n' +
+        '- Gelombang I: potongan pendaftaran Rp 100.000\n' +
+        '- Gelombang II: potongan pendaftaran Rp 50.000',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: null,
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: false,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=628555555555 source=pending_total_cost_computed responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'user-pending-discount-only',
+      text: 'gelombang II',
+      lastBot: 'Potongan biaya pendaftaran per gelombang:\n' +
+        '- Gelombang I: Rp 300.000\n' +
+        '- Gelombang II: Rp 250.000\n' +
+        '- Gelombang III: Rp 200.000\n' +
+        '- Gelombang IV: Rp 150.000',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: null,
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: false,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-pending-discount-only source=pending_total_cost_need_breakdown responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'user-pending-must-pay',
+      text: 'saya dari smk teknologi informasi ingin mendaftar prodi sistem informasi gelombang 2 b jadi berapa saya harus bayar?',
+      lastBot: 'Potongan biaya pendaftaran per gelombang:\n' +
+        '- Gelombang I: Rp 300.000\n' +
+        '- Gelombang II: Rp 200.000\n' +
+        '- Gelombang III: Rp 150.000\n' +
+        '- Gelombang IV: Rp 100.000',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: 'Teknologi Informasi',
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-pending-must-pay source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-pending-must-pay source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-alumni-discount source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-alumni-discount source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-must-pay source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-must-pay source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-must-pay-compact source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-must-pay-compact source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-utb-wave-check source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-utb-wave-check source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user1 source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user1 source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-fee-offer source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=dnui-semester-fee source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=dnui-breakdown-detail source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=dnui-breakdown-detail source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=dnui-breakdown-detail source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'user-regflow-fee-detail-fast',
+      text: 'biaya pendaftaran di stikom?',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: null,
+      numericSelection: null,
+      hasPendingFeeDetail: true,
+      looksLikeFeeChoicePick: true,
+      keepEphemeralBecauseFollowupShape: true,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: { ts: '2026-05-20T02:18:15.907Z', program: 'Sistem Komputer' }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG registrationFlow start] {
+      chatId: 'user-regflow-fee-detail-fast',
+      text: 'biaya pendaftaran di stikom?',
+      program: 'Sistem Komputer',
+      flow: { stage: 'done', degree: 'S1', program: 'Sistem Komputer' },
+      pendingOffer: null,
+      pendingFeeDetail: { ts: '2026-05-20T02:18:15.907Z', program: 'Sistem Komputer' },
+      lastProgramHint: 'Sistem Komputer'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-regflow-fee-detail-fast source=fee_fast_path_early responseMode=deterministic skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-regflow-fee-detail-fast source=fee_fast_path_early
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-total-breakdown source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-total-breakdown source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user1 source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user1 source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [findReplyByRules] No keyword match found
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user1 source=total_vs_discount_prompt responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'user1',
+      text: '1',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: null,
+      numericSelection: 1,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: false,
+      looksLikeNewTopic: false,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user1 source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user1 source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'user1',
+      text: 'berapa biaya pendaftaran prodi sistem informasi',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: 'Sistem Informasi',
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: true,
+      keepEphemeralBecauseFollowupShape: false,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user1 source=fee_fast_out responseMode=deterministic skipComposer=true ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user1 source=legacy responseMode=conversational skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user1 source=legacy
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.log
+    [DEBUG pending-ephemeral] {
+      chatId: 'user-biaya-followup',
+      text: 'teknologi informasi gelombang 2B',
+      lastBot: '',
+      askedFollowup: false,
+      isFollowup: false,
+      explicitProgramInText: 'Teknologi Informasi',
+      numericSelection: null,
+      hasPendingFeeDetail: false,
+      looksLikeFeeChoicePick: false,
+      keepEphemeralBecauseFollowupShape: false,
+      looksLikeNewTopic: true,
+      isAckOnly: false,
+      sessionDataPendingFeeDetail: undefined
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] chat=user-biaya-followup source=fee_fast_path responseMode=deterministic skipComposer=false ragSource=none
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+
+  console.info
+    [OUTBOUND DEBUG] composed send for chat=user-biaya-followup source=fee_fast_path
+
+      at console.fn [as info] (tests/jest.setup.js:37:12)
+

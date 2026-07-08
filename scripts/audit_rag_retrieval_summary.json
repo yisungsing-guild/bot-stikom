@@ -1,0 +1,441 @@
+[
+  {
+    "domain": "Akademik",
+    "topic": "Kurikulum Prodi",
+    "query": "TI belajar apa saja",
+    "success": true,
+    "source": "gpt-4o-mini",
+    "retrievalScore": 0.49855405303468253,
+    "topSourceDoc": "hobi-sesuai-program-studi.docx",
+    "topRetrievedContext": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce Hobi Siswa yang Memilih Teknologi Informasi Suka Coding Bisa Membuat website Bisa membuat blog pribadi Suka Main Game Suka otak a",
+    "rawAnswer": "Program studi Teknologi Informasi (TI) mencakup berbagai bidang, antara lain:\n\n- Kursus online: Mempelajari berbagai topik TI secara daring.\n- AI / Machine Learning: Fokus pada pengembangan kecerdasan buatan dan pembelajaran mesin.\n- Desain UI/UX: Mendesain antarmuka pengguna dan pengalaman pengguna yang efektif.\n- Pengolahan data: Teknik untuk mengelola dan menganalisis data.\n\nApa ada bidang tertentu dalam TI yang ingin kamu ketahui lebih lanjut?\nButuh informasi syarat dan cara mengajukan beasiswa yang relevan?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak ingin mengetahui materi dan mata kuliah yang dipelajari di Program Studi Teknologi Informasi.\n\nProgram studi Teknologi Informasi (TI) mencakup berbagai bidang, antara lain:\n\n- Kursus online: Mempelajari berbagai topik TI secara daring.\n- AI / Machine Learning: Fokus pada pengembangan kecerdasan buatan dan pembelajaran mesin.\n- Desain UI/UX: Mendesain antarmuka pengguna dan pengalaman pengguna yang efektif.\n- Pengolahan data: Teknik untuk mengelola dan menganalisis data.\n\nApa ada bidang tertentu dalam TI yang ingin kamu ketahui lebih lanjut?\n\nKesimpulannya, kurikulum Teknologi Informasi mencakup Kursus online: Mempelajari berbagai topik TI secara daring, AI / Machine Learning: Fokus pada pengembangan kecerdasan buatan dan pembelajaran mesin, Desain UI/UX: Mendesain antarmuka pengguna dan pengalaman pengguna yang efektif, dan Pengolahan data: Teknik untuk mengelola dan menganalisis data.\n\nsyarat dan cara mengajukan beasiswa yang relevan?",
+    "conclusion": "Kesimpulannya, kurikulum Teknologi Informasi mencakup Kursus online: Mempelajari berbagai topik TI secara daring, AI / Machine Learning: Fokus pada pengembangan kecerdasan buatan dan pembelajaran mesin, Desain UI/UX: Mendesain antarmuka pengguna dan pengalaman pengguna yang efektif, dan Pengolahan data: Teknik untuk mengelola dan menganalisis data.",
+    "suggestions": "Butuh informasi syarat dan cara mengajukan beasiswa yang relevan?",
+    "confidenceTier": "HIGH",
+    "contexts": [
+      {
+        "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": null,
+        "preview": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce"
+      },
+      {
+        "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+        "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "docCategory": null,
+        "preview": "ran - 1 surat peraturan ini dan merupakan satu kesatuan yang tidak dapat dipisahkan dari surat peraturan ini. : Memberik"
+      },
+      {
+        "id": "3c1f4362-5f8a-4931-90bd-61eb6a028ec2",
+        "filename": "HOBY.pdf",
+        "docCategory": null,
+        "preview": "86 Teknologi InformasiKursus online 87 Teknologi InformasiAI / Machine Learning 88 Teknologi InformasiKomunitas IT 89 Te"
+      },
+      {
+        "id": "07c77b5e-8388-4f2b-a846-b06d99400481",
+        "filename": "HOBY.pdf",
+        "docCategory": null,
+        "preview": "omputer 78 Teknologi InformasiKabel LAN 79 Teknologi InformasiUI/UX design 80 Teknologi InformasiEditing video 81 Teknol"
+      }
+    ]
+  },
+  {
+    "domain": "Beasiswa",
+    "topic": "Beasiswa Prestasi",
+    "query": "Apa syarat beasiswa prestasi untuk mahasiswa baru",
+    "success": true,
+    "source": "rag-scholarship-prestasi-clarify",
+    "retrievalScore": null,
+    "topSourceDoc": "none",
+    "topRetrievedContext": "none",
+    "rawAnswer": "Beasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan beasiswa atau potongan biaya.\n\nBeasiswa prestasi biasanya dibagi: lokal/nasional/internasional.\nKakak mau tanya yang mana? Balas saja: \"lokal\" / \"nasional\" / \"internasional\".\n\nKesimpulannya, tersedia beberapa jenis beasiswa dengan persyaratan yang berbeda.\n\nlebih lanjut pilihan beasiswa atau potongan yang tersedia?",
+    "conclusion": "Kesimpulannya, tersedia beberapa jenis beasiswa dengan persyaratan yang berbeda.",
+    "suggestions": "Mau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?",
+    "confidenceTier": null,
+    "contexts": []
+  },
+  {
+    "domain": "Pendaftaran",
+    "topic": "Status Pendaftaran",
+    "query": "Bagaimana cara cek status pendaftaran",
+    "success": true,
+    "source": "rag-lexical-fallback",
+    "retrievalScore": 0.3446627424698391,
+    "topSourceDoc": "ada8e95f-1fc6-416c-acf0-1dcbd3a1bc50",
+    "topRetrievedContext": "STIKOM Bali Nomor : 629/ITBSTIKOM/WDS/X/25 Tanggal 08 Oktober 2025 BIAYA PENDIDIKAN MAHASISWA BARU PASCASARJANA No. Jenis Biaya Rp ‘Waktu Pembayaran 1. Pendaftaran 700.000 Pada Saat Daftar 2. Biaya Pendidikan Per Semester 10.000.000 Per Semester 3. P",
+    "rawAnswer": "Aku nemu info yang relevan di data training:\n...ayaran 1. Pendaftaran 700.000 Pada Saat Daftar 2. Biaya Pendidikan Per Semester 10.000.000 Per Semester 3. Pembayaran Secara Lunas Selama 2 Tahun — 40.000.000 Pada Saat Registrasi (Umum) Penjelasan Tambahan: 1. Potongan Biaya Pendaftaran: Rp. 200.000, - Jika Mendaftar pada Gelombang I Rp. 100.000, - Jika Mendaftar pada Gelombang II Ditambah Rp. 200.000, - Jik...\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan biaya kuliah.\n\nAku nemu info yang relevan di data training:\n...ayaran 1. Pendaftaran 700.000 Pada Saat Daftar 2. Biaya Pendidikan Per Semester 10.000.000 Per Semester 3. Pembayaran Secara Lunas Selama 2 Tahun — 40.000.000 Pada Saat Registrasi (Umum) Penjelasan Tambahan: 1. Potongan Biaya Pendaftaran: Rp. 200.000, - Jika Mendaftar pada Gelombang I Rp. 100.000, - Jika Mendaftar pada Gelombang II Ditambah Rp. 200.000, - Jik...\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nKesimpulannya, Aku nemu info yang relevan di data training:\n...ayaran 1.\n\njuga komponen biaya lainnya atau potongan yang mungkin ada?",
+    "conclusion": "Kesimpulannya, Aku nemu info yang relevan di data training:\n...ayaran 1.",
+    "suggestions": "Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?",
+    "confidenceTier": null,
+    "contexts": [
+      {
+        "id": "e1371df2-d20f-4836-bd5c-da29851561e7",
+        "filename": "ada8e95f-1fc6-416c-acf0-1dcbd3a1bc50",
+        "docCategory": null,
+        "preview": "STIKOM Bali Nomor : 629/ITBSTIKOM/WDS/X/25 Tanggal 08 Oktober 2025 BIAYA PENDIDIKAN MAHASISWA BARU PASCASARJANA No. Jeni"
+      }
+    ]
+  },
+  {
+    "domain": "Biaya",
+    "topic": "Biaya Pendaftaran",
+    "query": "Biaya pendaftaran prodi SI gelombang 1",
+    "success": true,
+    "source": "gpt-4o-mini",
+    "retrievalScore": 0.030300138516312,
+    "topSourceDoc": "CHATBOT - Double Degree (1).docx",
+    "topRetrievedContext": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhkan : 1. Double Degree - HELP University , Malaysia 2. Double Degree – Dalian Neusoft University of Information, China 3. Keunggula",
+    "rawAnswer": "Saya belum menemukan detail yang benar-benar sesuai mengenai biaya pendaftaran prodi Sistem Informasi untuk gelombang 1.\nApakah ada informasi lain yang ingin kamu ketahui tentang program ini?\nMau saya jelaskan rincian komponen biaya (pendaftaran, DPP, per semester)?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang mencari informasi biaya kuliah untuk Program Studi Sistem Informasi. gelombang 1\n\nSaya belum menemukan detail yang benar-benar sesuai mengenai biaya pendaftaran prodi Sistem Informasi untuk gelombang 1.\nApakah ada informasi lain yang ingin kamu ketahui tentang program ini?\n\nKesimpulannya, Saya belum menemukan detail yang benar-benar sesuai mengenai biaya pendaftaran prodi Sistem Informasi untuk gelombang 1.\n\nrincian komponen biaya (pendaftaran, DPP, per semester)?",
+    "conclusion": "Kesimpulannya, Saya belum menemukan detail yang benar-benar sesuai mengenai biaya pendaftaran prodi Sistem Informasi untuk gelombang 1.",
+    "suggestions": "Mau saya jelaskan rincian komponen biaya (pendaftaran, DPP, per semester)?",
+    "confidenceTier": "HIGH",
+    "contexts": [
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": null,
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhk"
+      }
+    ]
+  },
+  {
+    "domain": "Laboratorium",
+    "topic": "Fasilitas Lab",
+    "query": "Apa saja fasilitas laboratorium komputer",
+    "success": true,
+    "source": "rag-lexical-fallback",
+    "retrievalScore": 0.5014341379733799,
+    "topSourceDoc": "134f76e4-8365-4bb4-afdf-3f7370ecdb7e",
+    "topRetrievedContext": "IKANMAHASISWABARU KELASREGULER PROGRAM STUDISISTEMKOMPUTER T.A2026/2027 No.Jenis BiayaRp WaktuPembayaran 1.Pendaftaran 500.000 PadaSaat Daftar 2.DanaPendidikanPokok(DPP)11.000.000 DicicilPerBlns.d UTS-1 3.Jas,TopiAlmamater 750.000 Saat Registrasi I 4",
+    "rawAnswer": "Aku nemu info yang relevan di data training:\n...000 Dicicil5 Kali Per Semester 1.500.000 Dicicil5 Kali Per Semester Lokal Penjelasan Tambahan: 1.Butir1sampaidengan 4dibayar1kalisaja padaawalmasuk 2.Potongan Biaya Pendaftaran: Rp.300.000, Jika Mendaftarpada Gelombang Khusus Rp.250.000, -Jika Mendaftarpada GelombangI Rp.200.000, -Jika Mendaftarpada GelombangII Rp.150.000, -Jika Mendaftarpada Gelo\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nMau saya bantu jelaskan detail gelombang atau jadwalnya?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan fasilitas kampus.\n\nAku nemu info yang relevan di data training:\n...000 Dicicil5 Kali Per Semester 1.500.000 Dicicil5 Kali Per Semester Lokal Penjelasan Tambahan: 1.Butir1sampaidengan 4dibayar1kalisaja padaawalmasuk 2.Potongan Biaya Pendaftaran: Rp.300.000, Jika Mendaftarpada Gelombang Khusus Rp.250.000, -Jika Mendaftarpada GelombangI Rp.200.000, -Jika Mendaftarpada GelombangII Rp.150.000, -Jika Mendaftarpada Gelo\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nMau saya bantu jelaskan detail gelombang atau jadwalnya?\n\nKesimpulannya, Aku nemu info yang relevan di data training:\n...000 Dicicil5 Kali Per Semester 1.500.000 Dicicil5 Kali Per Semester Lokal Penjelasan Tambahan: 1.Butir1sampaidengan 4dibayar1kalisaja padaawalmasuk 2.Potongan Biaya Pendaftaran: Rp.300.000, Jika Mendaftarpada Gelombang Khusus Rp.250.000, -Jika Mendaftarpada GelombangI Rp.200.000, -Jika Mendaftarpada GelombangII Rp.150.000, -Jika Mendaftarpada Gelo\nKalau kakak\n\nApakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "conclusion": "Kesimpulannya, Aku nemu info yang relevan di data training:\n...000 Dicicil5 Kali Per Semester 1.500.000 Dicicil5 Kali Per Semester Lokal Penjelasan Tambahan: 1.Butir1sampaidengan 4dibayar1kalisaja padaawalmasuk 2.Potongan Biaya Pendaftaran: Rp.300.000, Jika Mendaftarpada Gelombang Khusus Rp.250.000, -Jika Mendaftarpada GelombangI Rp.200.000, -Jika Mendaftarpada GelombangII Rp.150.000, -Jika Mendaftarpada Gelo\nKalau kakak",
+    "suggestions": "Mau saya bantu jelaskan detail gelombang atau jadwalnya?\n\nKesimpulannya, Aku nemu info yang relevan di data training:\n...000 Dicicil5 Kali Per Semester 1.500.000 Dicicil5 Kali Per Semester Lokal Penjelasan Tambahan: 1.Butir1sampaidengan 4dibayar1kalisaja padaawalmasuk 2.Potongan Biaya Pendaftaran: Rp.300.000, Jika Mendaftarpada Gelombang Khusus Rp.250.000, -Jika Mendaftarpada GelombangI Rp.200.000, -Jika Mendaftarpada GelombangII Rp.150.000, -Jika Mendaftarpada Gelo\nKalau kakak\n\nApakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "confidenceTier": null,
+    "contexts": [
+      {
+        "id": "951253be-3ee5-4039-bba6-5c433e7c6d56",
+        "filename": "134f76e4-8365-4bb4-afdf-3f7370ecdb7e",
+        "docCategory": null,
+        "preview": "IKANMAHASISWABARU KELASREGULER PROGRAM STUDISISTEMKOMPUTER T.A2026/2027 No.Jenis BiayaRp WaktuPembayaran 1.Pendaftaran 5"
+      }
+    ]
+  },
+  {
+    "domain": "Magang",
+    "topic": "Program Magang",
+    "query": "Program magang industri seperti apa untuk mahasiswa TI",
+    "success": true,
+    "source": "gpt-4o-mini",
+    "retrievalScore": 0.4580618774781328,
+    "topSourceDoc": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+    "topRetrievedContext": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 Kampus Jimbaran 31 Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali - Indonesia | Ph: (0361) 8953534 | Hotline : 081288778840 Kampus Abianse",
+    "rawAnswer": "Program magang industri untuk mahasiswa Teknologi Informasi (TI) biasanya mencakup pengalaman praktis di berbagai bidang, seperti:\n\n- Pengembangan perangkat lunak: Mahasiswa terlibat dalam proyek pengembangan aplikasi atau sistem.\n- Manajemen jaringan: Mahasiswa belajar tentang pengelolaan dan pemeliharaan infrastruktur jaringan.\n\nProgram ini dirancang untuk memberikan keterampilan praktis yang relevan dengan industri dan meningkatkan daya saing mahasiswa di pasar kerja.\nApakah ada aspek tertentu dari program magang yang ingin kamu ketahui lebih lanjut?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan tentang Program Studi Teknologi Informasi.\n\nProgram magang industri untuk mahasiswa Teknologi Informasi (TI) biasanya mencakup pengalaman praktis di berbagai bidang, seperti:\n\n- Pengembangan perangkat lunak: Mahasiswa terlibat dalam proyek pengembangan aplikasi atau sistem.\n- Manajemen jaringan: Mahasiswa belajar tentang pengelolaan dan pemeliharaan infrastruktur jaringan.\n\nProgram ini dirancang untuk memberikan keterampilan praktis yang relevan dengan industri dan meningkatkan daya saing mahasiswa di pasar kerja.\nApakah ada aspek tertentu dari program magang yang ingin kamu ketahui lebih lanjut?\n\nKesimpulannya, kurikulum Teknologi Informasi mencakup Pengembangan perangkat lunak: Mahasiswa terlibat dalam proyek pengembangan aplikasi atau sistem dan Manajemen jaringan: Mahasiswa belajar tentang pengelolaan dan pemeliharaan infrastruktur jaringan.\n\nMau tahu mata kuliah inti di Teknologi Informasi?\nCek contoh kurikulum per semester\nProspek kerja untuk lulusan terkait\nPerbandingan dengan prodi lain",
+    "conclusion": "Kesimpulannya, kurikulum Teknologi Informasi mencakup Pengembangan perangkat lunak: Mahasiswa terlibat dalam proyek pengembangan aplikasi atau sistem dan Manajemen jaringan: Mahasiswa belajar tentang pengelolaan dan pemeliharaan infrastruktur jaringan.",
+    "suggestions": "Mau tahu mata kuliah inti di Teknologi Informasi?\nCek contoh kurikulum per semester\nProspek kerja untuk lulusan terkait\nPerbandingan dengan prodi lain",
+    "confidenceTier": "HIGH",
+    "contexts": [
+      {
+        "id": "4dd0e987-8fe4-4fc1-8e82-1981b3e8105c",
+        "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "docCategory": null,
+        "preview": "an No.86 Renon, Denpasar - Bali - Indonesia | Ph: (0361) 244445 | Fax (0361)264773 | Hotline : 082277389999 Kampus Jimba"
+      },
+      {
+        "id": "e33ba8b9-2f25-4fcf-a6f1-d5b1a397ebea",
+        "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "docCategory": null,
+        "preview": "ran - 1 surat peraturan ini dan merupakan satu kesatuan yang tidak dapat dipisahkan dari surat peraturan ini. : Memberik"
+      },
+      {
+        "id": "0566394e-a2f7-44d1-a420-52a0f72d0d7b",
+        "filename": "hobi-sesuai-program-studi.docx",
+        "docCategory": null,
+        "preview": "at game sederhana Menjadi freelancer di bidang IT/ desain Bergabung dengan komunitas teknologi atau developer E-Commerce"
+      },
+      {
+        "id": "c6f6004f-9a66-4663-babc-516137904ed3",
+        "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "docCategory": null,
+        "preview": "19 Oktober 2023 PENERIMA PROGRAM BEASISWA RANKING KELAS DI ITB STIKOM BALI \" L STIKOM Bali memberikan beasiswa kepada: a"
+      }
+    ]
+  },
+  {
+    "domain": "Kerja Sama",
+    "topic": "Partnership Benefits",
+    "query": "Apa keuntungan kerja sama industri untuk mahasiswa",
+    "success": true,
+    "source": "rag-lexical-fallback",
+    "retrievalScore": 0.03360150565755697,
+    "topSourceDoc": "Pedoman RPL ITB STIKOM Bali.pdf",
+    "topRetrievedContext": "an bersama mahasiswa yang masuk lewat jalur reguler. 2.2. Persyaratan Peserta ITB STIKOM Bali menetapkan kriteria yang harus dipenuhi oleh individu yang ingin mengikuti proses RPL. Adapun persyaratannya calon peserta program RPL adalah: 1. Pendidikan",
+    "rawAnswer": "Aku nemu info yang relevan di data training:\n...aling sedikit dua tahun dari tahun mendaftar, kecuali Kejar Paket C, bisa kurang dari dua tahun. 2. Memiliki pengalaman kerja pada bidang yang relevan dengan Program Studi yang dituju paling sedikit dua tahun Persyaratan ini bertujuan untuk memastikan bahwa semua peserta memiliki latar belakang yang cukup untuk mengikuti proses pengakuan dan penyetaraan deng...\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\nMau saya jelaskan lagi bagian lain?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan tentang Apa keuntungan kerja sama industri untuk mahasiswa.\n\nAku nemu info yang relevan di data training:\n...aling sedikit dua tahun dari tahun mendaftar, kecuali Kejar Paket C, bisa kurang dari dua tahun. 2. Memiliki pengalaman kerja pada bidang yang relevan dengan Program Studi yang dituju paling sedikit dua tahun Persyaratan ini bertujuan untuk memastikan bahwa semua peserta memiliki latar belakang yang cukup untuk mengikuti proses pengakuan dan penyetaraan deng...\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nKesimpulannya, Aku nemu info yang relevan di data training:\n...aling sedikit dua tahun dari tahun mendaftar, kecuali Kejar Paket C, bisa kurang dari dua tahun.\n\nlagi bagian lain?",
+    "conclusion": "Kesimpulannya, Aku nemu info yang relevan di data training:\n...aling sedikit dua tahun dari tahun mendaftar, kecuali Kejar Paket C, bisa kurang dari dua tahun.",
+    "suggestions": "Mau saya jelaskan lagi bagian lain?",
+    "confidenceTier": null,
+    "contexts": [
+      {
+        "id": "88b077c5-7a67-4872-b582-32e62cb254de",
+        "filename": "Pedoman RPL ITB STIKOM Bali.pdf",
+        "docCategory": null,
+        "preview": "an bersama mahasiswa yang masuk lewat jalur reguler. 2.2. Persyaratan Peserta ITB STIKOM Bali menetapkan kriteria yang h"
+      }
+    ]
+  },
+  {
+    "domain": "Penelitian",
+    "topic": "Pendanaan Riset",
+    "query": "Bagaimana proses pendanaan penelitian mahasiswa",
+    "success": true,
+    "source": "rag-lexical-fallback",
+    "retrievalScore": 0.40355045034211895,
+    "topSourceDoc": "media-WhatsApp Image 2026-04-24 at 10.26.32.jpeg",
+    "topRetrievedContext": "[[image:https://your-domain.com/media/WhatsApp%20Image%202026-04-24%20at%2010.26.32-1776999193034.jpeg|Alur enrollment - Mahasiswa Asing]] Ini adalah alur untuk proses daftar / enroll untuk Mahasiswa Asing di ITB STIKOM Bali",
+    "rawAnswer": "Aku nemu info yang relevan di data training:\n...ts App%20 Image%202026-04-24%20at%2010.26.32-1776999193034.jpeg|Alur enrollment - Mahasiswa Asing]] Ini adalah alur untuk proses daftar / enroll untuk Mahasiswa Asing di ITB STIKOM Bali\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\nMau saya jelaskan lagi bagian lain?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan tentang Bagaimana proses pendanaan penelitian mahasiswa.\n\nAku nemu info yang relevan di data training:\n...ts App%20 Image%202026-04-24%20at%2010.26.32-1776999193034.jpeg|Alur enrollment - Mahasiswa Asing]] Ini adalah alur untuk proses daftar / enroll untuk Mahasiswa Asing di ITB STIKOM Bali\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nKesimpulannya, Aku nemu info yang relevan di data training: ...ts App%20 Image%202026-04-24%20at%2010.26.32-1776999193034.jpeg|Alur enrollment - Mahasiswa Asing]].\n\nlagi bagian lain?",
+    "conclusion": "Kesimpulannya, Aku nemu info yang relevan di data training: ...ts App%20 Image%202026-04-24%20at%2010.26.32-1776999193034.jpeg|Alur enrollment - Mahasiswa Asing]].",
+    "suggestions": "Mau saya jelaskan lagi bagian lain?",
+    "confidenceTier": null,
+    "contexts": [
+      {
+        "id": "b1a36c72-6ef9-4a92-ad7f-8e93c5ecb04c",
+        "filename": "media-WhatsApp Image 2026-04-24 at 10.26.32.jpeg",
+        "docCategory": null,
+        "preview": "[[image:https://your-domain.com/media/WhatsApp%20Image%202026-04-24%20at%2010.26.32-1776999193034.jpeg|Alur enrollment -"
+      }
+    ]
+  },
+  {
+    "domain": "Lokasi",
+    "topic": "Lokasi Kampus",
+    "query": "Di mana lokasi kampus STIKOM Bali",
+    "success": true,
+    "source": "rag-lexical-fallback",
+    "retrievalScore": 0.5173350640602545,
+    "topSourceDoc": "CHATBOT - Double Degree (1).docx",
+    "topRetrievedContext": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki program Double Degree bersama HELP University, Malaysia",
+    "rawAnswer": "Aku nemu info yang relevan di data training:\n...mana perkuliahan dilaksanakan? Skema pembelajaran mengikuti ketentuan kerja sama yang berlaku. Untuk informasi detail lokasi dan teknis perkuliahan, silakan hubungi International Offi\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan tentang Di mana lokasi kampus STIKOM Bali.\n\nAku nemu info yang relevan di data training:\n...mana perkuliahan dilaksanakan? Skema pembelajaran mengikuti ketentuan kerja sama yang berlaku. Untuk informasi detail lokasi dan teknis perkuliahan, silakan hubungi International Offi\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n\nKesimpulannya, Aku nemu info yang relevan di data training:\n...mana perkuliahan dilaksanakan.\n\nApakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "conclusion": "Kesimpulannya, Aku nemu info yang relevan di data training:\n...mana perkuliahan dilaksanakan.",
+    "suggestions": "Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n\nKesimpulannya, Aku nemu info yang relevan di data training:\n...mana perkuliahan dilaksanakan.\n\nApakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "confidenceTier": null,
+    "contexts": [
+      {
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": null,
+        "preview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM"
+      }
+    ]
+  },
+  {
+    "domain": "Akreditasi",
+    "topic": "Akreditasi Prodi",
+    "query": "Apa akreditasi program TI",
+    "success": true,
+    "source": "rag-accreditation",
+    "retrievalScore": null,
+    "topSourceDoc": "none",
+    "topRetrievedContext": "none",
+    "rawAnswer": "Akreditasi Prodi Teknologi Informasi: Baik.\nNomor SK: /BAN-PT/Ak/S/IX/2022.\nMau saya jelaskan lagi bagian lain?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan akreditasi untuk Program Studi Teknologi Informasi.\n\nAkreditasi Prodi Teknologi Informasi: Baik.\nNomor SK: /BAN-PT/Ak/S/IX/2022.\n\nKesimpulannya, Akreditasi Prodi Teknologi Informasi: Baik.\n\nlagi bagian lain?",
+    "conclusion": "Kesimpulannya, Akreditasi Prodi Teknologi Informasi: Baik.",
+    "suggestions": "Mau saya jelaskan lagi bagian lain?",
+    "confidenceTier": null,
+    "contexts": []
+  },
+  {
+    "domain": "Perbandingan",
+    "topic": "Perbedaan Prodi",
+    "query": "Perbedaan TI dan SI",
+    "success": true,
+    "source": "rag-program-comparison",
+    "retrievalScore": null,
+    "topSourceDoc": "none",
+    "topRetrievedContext": "none",
+    "rawAnswer": "Perbandingan singkat: Sistem Informasi vs Teknologi Informasi\n\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard. Lulusan: Business Analyst, System Analyst.\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastruktur, keamanan, dan machine learning. Lulusan: Software Developer, Dev Ops, Data Engineer.\n\nPerbandingan cepat:\n\n- Bisnis Digital (BD) = lebih condong ke pemasaran digital, monetisasi, dan insight pasar.\n- Sistem Informasi (SI) = jembatan bisnis Γåö teknologi; cocok untuk yang suka analisis proses dan dashboard.\n- Teknologi Informasi (TI) = fokus teknis pengembangan software, infrastruktur, dan data engineering/ML.\n- Sistem Komputer (SK) = fokus hardware, embedded, dan sistem tertanam/IoT.\n\nMau perbandingan lebih mendetail (kurikulum / akreditasi / biaya / prospek kerja)? Sebutkan aspek yang mau dibandingkan atau prodi mana yang ingin dibandingkan lebih rinci.\nMau saya jelaskan lagi bagian lain?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang mencari informasi perbandingan prodi untuk Program Studi Sistem Informasi.\n\nPerbandingan singkat: Sistem Informasi vs Teknologi Informasi\n\n- Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard. Lulusan: Business Analyst, System Analyst.\n- Teknologi Informasi: Penekanan pada pengembangan perangkat lunak, infrastruktur, keamanan, dan machine learning. Lulusan: Software Developer, Dev Ops, Data Engineer.\n\nPerbandingan cepat:\n\n- Bisnis Digital (BD) = lebih condong ke pemasaran digital, monetisasi, dan insight pasar.\n- Sistem Informasi (SI) = jembatan bisnis Γåö teknologi; cocok untuk yang suka analisis proses dan dashboard.\n- Teknologi Informasi (TI) = fokus teknis pengembangan software, infrastruktur, dan data engineering/ML.\n- Sistem Komputer (SK) = fokus hardware, embedded, dan sistem tertanam/IoT.\n\nMau perbandingan lebih mendetail (kurikulum / akreditasi / biaya / prospek kerja)? Sebutkan aspek yang mau dibandingkan atau prodi mana yang ingin dibandingkan lebih rinci.\n\nKesimpulannya, Perbandingan singkat: Sistem Informasi vs Teknologi Informasi - Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard.\n\nlagi bagian lain?",
+    "conclusion": "Kesimpulannya, Perbandingan singkat: Sistem Informasi vs Teknologi Informasi - Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard.",
+    "suggestions": "Mau perbandingan lebih mendetail (kurikulum / akreditasi / biaya / prospek kerja)? Sebutkan aspek yang mau dibandingkan atau prodi mana yang ingin dibandingkan lebih rinci.\n\nKesimpulannya, Perbandingan singkat: Sistem Informasi vs Teknologi Informasi - Sistem Informasi: Jembatan antara bisnis & teknologi; analisis sistem, basis data, integrasi, dashboard.\n\nlagi bagian lain?",
+    "confidenceTier": null,
+    "contexts": []
+  },
+  {
+    "domain": "Jadwal",
+    "topic": "Jadwal Pendaftaran",
+    "query": "Jadwal pendaftaran terbaru untuk PMB",
+    "success": true,
+    "source": "rag-schedule-overview",
+    "retrievalScore": 0.4759344574034426,
+    "topSourceDoc": "none",
+    "topRetrievedContext": "none",
+    "rawAnswer": "Jadwal PMB tersedia dan dibagi per gelombang (contoh: Khusus, I A/I B/I C, II A/II B/II C, dst.).\nKakak ingin cek jadwal gelombang yang mana? (Balas misalnya: \"2 B\" / \"Gelombang II B\" / \"Khusus\").\nMau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang mencari informasi biaya kuliah.\n\nJadwal PMB tersedia dan dibagi per gelombang (contoh: Khusus, I A/I B/I C, II A/II B/II C, dst.).\nKakak ingin cek jadwal gelombang yang mana? (Balas misalnya: \"2 B\" / \"Gelombang II B\" / \"Khusus\").\n\nKesimpulannya, Jadwal PMB tersedia dan dibagi per gelombang (contoh: Khusus, I A/I B/I C, II A/II B/II C, dst.).\n\njuga komponen biaya lainnya atau potongan yang mungkin ada?",
+    "conclusion": "Kesimpulannya, Jadwal PMB tersedia dan dibagi per gelombang (contoh: Khusus, I A/I B/I C, II A/II B/II C, dst.).",
+    "suggestions": "Mau saya jelaskan juga komponen biaya lainnya atau potongan yang mungkin ada?",
+    "confidenceTier": null,
+    "contexts": []
+  },
+  {
+    "domain": "UKM/Ormawa",
+    "topic": "Daftar UKM",
+    "query": "Daftar UKM dan ormawa STIKOM Bali",
+    "success": true,
+    "source": "rag-ukm-list",
+    "retrievalScore": 0.3818748098474078,
+    "topSourceDoc": "none",
+    "topRetrievedContext": "none",
+    "rawAnswer": "Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026):\n\nBADAN LEGISLATIF DAN EKSEKUTIF:\n\n- Badan Eksekutif Mahasiswa\n- Dewan Perwakilan Mahasiswa\n\nLAINNYA:\n\n- Athena Esports\n- Basket\n- Bos\n- D.o. s\n- Futsal\n- Ghost\n- Himaprodi BD\n- Himaprodi SI\n- Himaprodi SK\n- Himaprodi TI\n- Himas Jimbaran\n- Himatography\n- Jcos\n- Kmhd\n- Ksl\n- Ksr\n- Mapala Kompas\n- Mcos\n- Multimedia\n- Musik\n- Paskamras\n- Pmk\n- Progress\n- Rade\n- Syntax\n- Tabuh\n- Tari\n- Teater Biner\n- U2M\n- Vos\n\nMau saya tampilkan kontak pembina atau detail lain?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang mencari informasi pendaftaran.\n\nAda 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026):\n\nBADAN LEGISLATIF DAN EKSEKUTIF:\n\n- Badan Eksekutif Mahasiswa\n- Dewan Perwakilan Mahasiswa\n\nLAINNYA:\n\n- Athena Esports\n- Basket\n- Bos\n- D.o. s\n- Futsal\n- Ghost\n- Himaprodi BD\n- Himaprodi SI\n- Himaprodi SK\n- Himaprodi TI\n- Himas Jimbaran\n- Himatography\n- Jcos\n- Kmhd\n- Ksl\n- Ksr\n- Mapala Kompas\n- Mcos\n- Multimedia\n- Musik\n- Paskamras\n- Pmk\n- Progress\n- Rade\n- Syntax\n- Tabuh\n- Tari\n- Teater Biner\n- U2M\n- Vos\n\nMau saya tampilkan kontak pembina atau detail lain?\n\nKesimpulannya, Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026): BADAN LEGISLATIF DAN EKSEKUTIF: - Badan Eksekutif Mahasiswa\n- Dewan Perwakilan Mahasiswa LAINNYA: - Athena Esports\n- Basket\n- Bos\n- D.o.\n\nApakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "conclusion": "Kesimpulannya, Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026): BADAN LEGISLATIF DAN EKSEKUTIF: - Badan Eksekutif Mahasiswa\n- Dewan Perwakilan Mahasiswa LAINNYA: - Athena Esports\n- Basket\n- Bos\n- D.o.",
+    "suggestions": "Mau saya tampilkan kontak pembina atau detail lain?\n\nKesimpulannya, Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026): BADAN LEGISLATIF DAN EKSEKUTIF: - Badan Eksekutif Mahasiswa\n- Dewan Perwakilan Mahasiswa LAINNYA: - Athena Esports\n- Basket\n- Bos\n- D.o.\n\nApakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "confidenceTier": null,
+    "contexts": []
+  },
+  {
+    "domain": "Non-akademik",
+    "topic": "Beasiswa Pegawai",
+    "query": "Informasi beasiswa karyawan dan pegawai",
+    "success": true,
+    "source": "rag-scholarship-overview",
+    "retrievalScore": null,
+    "topSourceDoc": "none",
+    "topRetrievedContext": "none",
+    "rawAnswer": "Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\n\n- Beasiswa ranking kelas\n- Beasiswa prestasi (lokal/nasional/internasional)\n- Beasiswa KIP\n- Beasiswa 1K1S\n- Beasiswa Yayasan\n\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang mencari informasi beasiswa atau potongan biaya.\n\nAda beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:\n\n- Beasiswa ranking kelas\n- Beasiswa prestasi (lokal/nasional/internasional)\n- Beasiswa KIP\n- Beasiswa 1K1S\n- Beasiswa Yayasan\n\nKakak mau tanya yang mana? Balas saja: \"ranking\" / \"prestasi\" / \"KIP\" / \"1K1S\" / \"Yayasan\".\n\nKesimpulannya, tersedia beberapa jenis beasiswa dengan persyaratan yang berbeda.\n\nlebih lanjut pilihan beasiswa atau potongan yang tersedia?",
+    "conclusion": "Kesimpulannya, tersedia beberapa jenis beasiswa dengan persyaratan yang berbeda.",
+    "suggestions": "Mau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?",
+    "confidenceTier": null,
+    "contexts": []
+  },
+  {
+    "domain": "Keuangan",
+    "topic": "Laporan Keuangan",
+    "query": "Apa komponen laporan keuangan bulanan instansi",
+    "success": true,
+    "source": "rag-no-match",
+    "retrievalScore": 0.3918461743052838,
+    "topSourceDoc": "none",
+    "topRetrievedContext": "none",
+    "rawAnswer": "",
+    "formattedReply": "",
+    "conclusion": "",
+    "suggestions": "",
+    "confidenceTier": null,
+    "contexts": []
+  },
+  {
+    "domain": "Beasiswa",
+    "topic": "Beasiswa Kurang Mampu",
+    "query": "Bagaimana cara mengajukan beasiswa kurang mampu",
+    "success": true,
+    "source": "rag-lexical-fallback",
+    "retrievalScore": 0.42652822384823846,
+    "topSourceDoc": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+    "topRetrievedContext": "ak-hak dari pada calon mahasiswa penerima besiswa tersebut adalah sebagaimana tercantum dalam lampiran - 3 surat peraturan ini dan merupakan suatu kesatuan yang tidak dapat dipisahkan dari surat peraturan ini. : Segala biaya yang ditimbulkan akibat s",
+    "rawAnswer": "Aku nemu info yang relevan di data training:\n...meneliti berkas-berkas prestasi mahasiswa baru dan mengajukan daftar besaran beasiswa ke Rektor atau Wakil Rektor II secara berkala.: Apabila dikemudian hari terdapat kekeliruan dalam surat peraturan ini akan ditinjau kembali sebagaimana mestinya.: Keputusan ini mulai berlaku surat per tanggal 02 November 2023 sam\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\nMau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan beasiswa atau potongan biaya.\n\nAku nemu info yang relevan di data training:\n...meneliti berkas-berkas prestasi mahasiswa baru dan mengajukan daftar besaran beasiswa ke Rektor atau Wakil Rektor II secara berkala.: Apabila dikemudian hari terdapat kekeliruan dalam surat peraturan ini akan ditinjau kembali sebagaimana mestinya.: Keputusan ini mulai berlaku surat per tanggal 02 November 2023 sam\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nKesimpulannya, Aku nemu info yang relevan di data training:\n...meneliti berkas-berkas prestasi mahasiswa baru dan mengajukan daftar besaran beasiswa ke Rektor atau Wakil Rektor II secara berkala.: Apabila dikemudian hari terdapat kekeliruan dalam surat peraturan ini akan ditinjau kembali sebagaimana mestinya.: Keputusan ini mulai berlaku surat per tanggal 02 November 2023 sam\nKalau kakak\n\nlebih lanjut pilihan beasiswa atau potongan yang tersedia?",
+    "conclusion": "Kesimpulannya, Aku nemu info yang relevan di data training:\n...meneliti berkas-berkas prestasi mahasiswa baru dan mengajukan daftar besaran beasiswa ke Rektor atau Wakil Rektor II secara berkala.: Apabila dikemudian hari terdapat kekeliruan dalam surat peraturan ini akan ditinjau kembali sebagaimana mestinya.: Keputusan ini mulai berlaku surat per tanggal 02 November 2023 sam\nKalau kakak",
+    "suggestions": "Mau saya jelaskan lebih lanjut pilihan beasiswa atau potongan yang tersedia?",
+    "confidenceTier": null,
+    "contexts": [
+      {
+        "id": "ab4847b9-9868-4e8c-beff-5ebd56aca298",
+        "filename": "614dbde8-6a43-4f06-84da-3fab41c3538b",
+        "docCategory": null,
+        "preview": "ak-hak dari pada calon mahasiswa penerima besiswa tersebut adalah sebagaimana tercantum dalam lampiran - 3 surat peratur"
+      }
+    ]
+  },
+  {
+    "domain": "Kerja Sama",
+    "topic": "Double Degree",
+    "query": "Apakah ada program double degree UTB",
+    "success": true,
+    "source": "rag-lexical-fallback",
+    "retrievalScore": 0.38381811934519616,
+    "topSourceDoc": "CHATBOT - Double Degree (1).docx",
+    "topRetrievedContext": "GREE 1. Apa itu program Double Degree di ITB STIKOM Bali? Program Double Degree adalah program kuliah yang memungkinkan mahasiswa memperoleh dua gelar akademik sekaligus , yaitu dari ITB STIKOM Bali dan universitas mitra luar negeri. 2. Apa keuntunga",
+    "rawAnswer": "Aku nemu info yang relevan di data training:\n...program Double Degree adalah sekitar 4 tahun, tergantung program studi dan skema masing-masing universitas mitra. 4.\nApakah semua mahasiswa bisa mengikuti program Double Degree? Program ini terbuka bagi mahasiswa yang memenuhi persyaratan akademik, administrasi, dan ketentuan lain yang berlaku. 5. Kapan mahasiswa bisa mendaftar program Double Degree? P...\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan tentang Apakah ada program double degree UTB.\n\nAku nemu info yang relevan di data training:\n...program Double Degree adalah sekitar 4 tahun, tergantung program studi dan skema masing-masing universitas mitra. 4.\nApakah semua mahasiswa bisa mengikuti program Double Degree? Program ini terbuka bagi mahasiswa yang memenuhi persyaratan akademik, administrasi, dan ketentuan lain yang berlaku. 5. Kapan mahasiswa bisa mendaftar program Double Degree? P...\nKalau kakak mau, sebutkan prodi/kalimat lengkapnya biar aku jawab lebih tepat.\n\nMau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n\nKesimpulannya, Aku nemu info yang relevan di data training:\n...program Double Degree adalah sekitar 4 tahun, tergantung program studi dan skema masing-masing universitas mitra.\n\nApakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "conclusion": "Kesimpulannya, Aku nemu info yang relevan di data training:\n...program Double Degree adalah sekitar 4 tahun, tergantung program studi dan skema masing-masing universitas mitra.",
+    "suggestions": "Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?\n\nKesimpulannya, Aku nemu info yang relevan di data training:\n...program Double Degree adalah sekitar 4 tahun, tergantung program studi dan skema masing-masing universitas mitra.\n\nApakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "confidenceTier": null,
+    "contexts": [
+      {
+        "id": "b89701ea-f7ae-462d-b0cf-b5bf33f0cd89",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": null,
+        "preview": "GREE 1. Apa itu program Double Degree di ITB STIKOM Bali? Program Double Degree adalah program kuliah yang memungkinkan"
+      }
+    ]
+  },
+  {
+    "domain": "Biaya",
+    "topic": "Biaya Semester",
+    "query": "Rincian biaya semester TI",
+    "success": true,
+    "source": "rag-fee-breakdown",
+    "retrievalScore": null,
+    "topSourceDoc": "none",
+    "topRetrievedContext": "none",
+    "rawAnswer": "Berikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Teknologi Informasi:\n\n- Pendaftaran: Rp 500.000\n- Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1\n- Jas Almamater, Topi: Rp 750.000 - Saat Registrasi I\n- Kaos, Tas, GMTI: Rp 750.000 - Saat Registrasi I\n- Biaya Pendidikan Per Semester: Rp 6.500.000 - Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS\n- Biaya Pengalaman Industri (Internasional): Rp 5.000.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Nasional): Rp 2.500.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Lokal): Rp 1.500.000 - Dicicil 5 kali per semester\n\nCatatan: Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk.\nTotal (dihitung): Rp 31.500.000\nMau saya rangkum juga skema potongan per gelombangnya?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang mencari informasi biaya kuliah untuk Program Studi Teknologi Informasi.\n\nBerikut rangkuman rincian biaya untuk Kelas Reguler - Program Studi Teknologi Informasi:\n\n- Pendaftaran: Rp 500.000\n- Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1\n- Jas Almamater, Topi: Rp 750.000 - Saat Registrasi I\n- Kaos, Tas, GMTI: Rp 750.000 - Saat Registrasi I\n- Biaya Pendidikan Per Semester: Rp 6.500.000 - Menjelang Perwalian Kecuali Reg 1, dicicil 2 kali s/d UTS\n- Biaya Pengalaman Industri (Internasional): Rp 5.000.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Nasional): Rp 2.500.000 - Dicicil 5 kali per semester\n- Biaya Pengalaman Industri (Lokal): Rp 1.500.000 - Dicicil 5 kali per semester\n\nCatatan: Butir 1 sampai dengan 4 dibayar 1 kali saja pada awal masuk.\nTotal (dihitung): Rp 31.500.000\nMau saya rangkum juga skema potongan per gelombangnya?\n\nKesimpulannya, informasi penting mencakup Pendaftaran: Rp 500.000, Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1, Jas Almamater, Topi: Rp 750.000 - Saat Registrasi I, dan Kaos, Tas, GMTI: Rp 750.000 - Saat Registrasi I.\n\nApakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "conclusion": "Kesimpulannya, informasi penting mencakup Pendaftaran: Rp 500.000, Dana Pendidikan Pokok: Rp 14.000.000 - Pada Saat Daftar Dicicil per bulan s/d UTS-1, Jas Almamater, Topi: Rp 750.000 - Saat Registrasi I, dan Kaos, Tas, GMTI: Rp 750.000 - Saat Registrasi I.",
+    "suggestions": "Apakah ada detail tambahan yang perlu dijelaskan?\nButuh informasi lebih lanjut tentang topik ini?\nAda pertanyaan lain yang bisa saya bantu?",
+    "confidenceTier": null,
+    "contexts": []
+  },
+  {
+    "domain": "Pendaftaran",
+    "topic": "Dokumen Pendaftaran",
+    "query": "Dokumen apa yang harus disiapkan untuk daftar",
+    "success": true,
+    "source": "gpt-4o-mini",
+    "retrievalScore": 0.4792389131503732,
+    "topSourceDoc": "none",
+    "topRetrievedContext": "none",
+    "rawAnswer": "Dokumen yang harus disiapkan untuk pendaftaran mahasiswa baru di STIKOM Bali meliputi:\n\n- Bukti portofolio: Dokumen yang menunjukkan capaian pembelajaran atau pengalaman kerja peserta, penting untuk verifikasi klaim keterampilan.\n- Dokumen pendukung: Seperti foto, video, dan dokumen absensi peserta, yang dapat mendukung aplikasi pendaftaran.\n\nApa ada dokumen lain yang ingin kamu ketahui lebih lanjut?\nMau saya jelaskan rincian komponen biaya (pendaftaran, DPP, per semester)?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang mencari informasi pendaftaran.\n\nDokumen yang harus disiapkan untuk pendaftaran mahasiswa baru di STIKOM Bali meliputi:\n\n- Bukti portofolio: Dokumen yang menunjukkan capaian pembelajaran atau pengalaman kerja peserta, penting untuk verifikasi klaim keterampilan.\n- Dokumen pendukung: Seperti foto, video, dan dokumen absensi peserta, yang dapat mendukung aplikasi pendaftaran.\n\nApa ada dokumen lain yang ingin kamu ketahui lebih lanjut?\n\nKesimpulannya, Pendaftaran dilakukan dengan Dokumen yang harus disiapkan untuk pendaftaran mahasiswa baru di STIKOM Bali meliputi:, Bukti portofolio: Dokumen yang menunjukkan capaian pembelajaran atau pengalaman kerja peserta, penting untuk verifikasi klaim keterampilan, Dokumen pendukung: Seperti foto, video, dan dokumen absensi peserta, yang dapat mendukung aplikasi pendaftaran, dan Apa ada dokumen lain yang ingin kamu ketahui lebih lanjut?.\n\nrincian komponen biaya (pendaftaran, DPP, per semester)?",
+    "conclusion": "Kesimpulannya, Pendaftaran dilakukan dengan Dokumen yang harus disiapkan untuk pendaftaran mahasiswa baru di STIKOM Bali meliputi:, Bukti portofolio: Dokumen yang menunjukkan capaian pembelajaran atau pengalaman kerja peserta, penting untuk verifikasi klaim keterampilan, Dokumen pendukung: Seperti foto, video, dan dokumen absensi peserta, yang dapat mendukung aplikasi pendaftaran, dan Apa ada dokumen lain yang ingin kamu ketahui lebih lanjut?.",
+    "suggestions": "Mau saya jelaskan rincian komponen biaya (pendaftaran, DPP, per semester)?",
+    "confidenceTier": "HIGH",
+    "contexts": []
+  },
+  {
+    "domain": "Prospek Kerja",
+    "topic": "Peluang Lulusan",
+    "query": "Apa saja peluang kerja lulusan Sistem Informasi",
+    "success": true,
+    "source": "gpt-4o-mini",
+    "retrievalScore": 0.021043875607941694,
+    "topSourceDoc": "CHATBOT - Double Degree (1).docx",
+    "topRetrievedContext": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM Bali bekerja sama dengan kampus mana di Malaysia? ITB STIKOM Bali memiliki program Double Degree bersama HELP University, Malaysia",
+    "rawAnswer": "Saya belum menemukan detail yang benar-benar sesuai mengenai peluang kerja lulusan Sistem Informasi yang ada.\nNamun, secara umum, lulusan Sistem Informasi biasanya memiliki peluang kerja di bidang:\n\n- Analis Sistem: Mengidentifikasi kebutuhan sistem dan merancang solusi teknologi.\n- Pengembang Perangkat Lunak: Membangun dan memelihara aplikasi perangkat lunak.\n- Manajer Proyek TI: Mengelola proyek teknologi informasi dari awal hingga akhir.\n\nApakah ada informasi lain yang ingin kamu ketahui tentang program atau karir di bidang ini?",
+    "formattedReply": "Baik kak, saya bantu cek ya.\n\nSaya memahami kakak sedang menanyakan prospek kerja untuk Program Studi Sistem Informasi.\n\nSaya belum menemukan detail yang benar-benar sesuai mengenai peluang kerja lulusan Sistem Informasi yang ada.\nNamun, secara umum, lulusan Sistem Informasi biasanya memiliki peluang kerja di bidang:\n\n- Analis Sistem: Mengidentifikasi kebutuhan sistem dan merancang solusi teknologi.\n- Pengembang Perangkat Lunak: Membangun dan memelihara aplikasi perangkat lunak.\n- Manajer Proyek TI: Mengelola proyek teknologi informasi dari awal hingga akhir.\n\nApakah ada informasi lain yang ingin kamu ketahui tentang program atau karir di bidang ini?\n\nKesimpulannya, lulusan dapat bekerja sebagai Analis Sistem: Mengidentifikasi kebutuhan sistem dan merancang solusi teknologi, Pengembang Perangkat Lunak: Membangun dan memelihara aplikasi perangkat lunak, dan Manajer Proyek TI: Mengelola proyek teknologi informasi dari awal hingga akhir.\n\nMau contoh posisi pekerjaan dan gaji rata-rata?\nInformasi magang dan kerja sama industri\nSertifikasi yang meningkatkan peluang kerja",
+    "conclusion": "Kesimpulannya, lulusan dapat bekerja sebagai Analis Sistem: Mengidentifikasi kebutuhan sistem dan merancang solusi teknologi, Pengembang Perangkat Lunak: Membangun dan memelihara aplikasi perangkat lunak, dan Manajer Proyek TI: Mengelola proyek teknologi informasi dari awal hingga akhir.",
+    "suggestions": "Apakah ada informasi lain yang ingin kamu ketahui tentang program atau karir di bidang ini?\n\nKesimpulannya, lulusan dapat bekerja sebagai Analis Sistem: Mengidentifikasi kebutuhan sistem dan merancang solusi teknologi, Pengembang Perangkat Lunak: Membangun dan memelihara aplikasi perangkat lunak, dan Manajer Proyek TI: Mengelola proyek teknologi informasi dari awal hingga akhir.\n\nMau contoh posisi pekerjaan dan gaji rata-rata?\nInformasi magang dan kerja sama industri\nSertifikasi yang meningkatkan peluang kerja",
+    "confidenceTier": "HIGH",
+    "contexts": [
+      {
+        "id": "b411e939-1537-4fd5-af3d-541424f9d3a3",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": null,
+        "preview": "usahaan multinasional atau melanjutkan studi ke luar negeri. B. DOUBLE DEGREE - HELP UNIVERSITY, MALAYSIA 9. ITB STIKOM"
+      },
+      {
+        "id": "c2961b13-bd76-4f6b-9c39-1e19606b6a5d",
+        "filename": "CHATBOT - Double Degree (1).docx",
+        "docCategory": null,
+        "preview": "Auto Reply Pembuka Halo Selamat datang di Program Double Degree ITB STIKOM Bali Silakan pilih informasi yang kamu butuhk"
+      }
+    ]
+  }
+]

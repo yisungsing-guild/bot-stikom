@@ -1,0 +1,621 @@
+[
+  {
+    "failed_test_number": 1,
+    "name": "semantic curriculum+career question about SI answered directly (no menu hijack)",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 549,
+    "category": "semantic",
+    "pending_keys_mentioned": [
+      "pendingSemanticSuggestion"
+    ],
+    "actual_value": "pendingSemanticSuggestion is undefined in session",
+    "assertion_source_line": "expect(persisted.data && persisted.data.pendingSemanticSuggestion).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 2,
+    "name": "semantic career question about TI answered directly (no menu hijack)",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 571,
+    "category": "semantic",
+    "pending_keys_mentioned": [
+      "pendingSemanticSuggestion"
+    ],
+    "actual_value": "pendingSemanticSuggestion is undefined in session",
+    "assertion_source_line": "expect(persisted.data && persisted.data.pendingSemanticSuggestion).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 3,
+    "name": "semantic short TI difficulty question answered directly (no menu hijack)",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 593,
+    "category": "semantic",
+    "pending_keys_mentioned": [
+      "pendingSemanticSuggestion"
+    ],
+    "actual_value": "pendingSemanticSuggestion is undefined in session",
+    "assertion_source_line": "expect(persisted.data && persisted.data.pendingSemanticSuggestion).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 4,
+    "name": "semantic short follow-up uses prior SI context and answers directly",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 628,
+    "category": "semantic",
+    "pending_keys_mentioned": [
+      "pendingSemanticSuggestion"
+    ],
+    "actual_value": "pendingSemanticSuggestion is undefined in session",
+    "assertion_source_line": "expect(persisted.data && persisted.data.pendingSemanticSuggestion).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 5,
+    "name": "semantic follow-up \"kerjanya nanti jadi apa?\" reuses TI context and answers directly",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 663,
+    "category": "semantic",
+    "pending_keys_mentioned": [
+      "pendingSemanticSuggestion"
+    ],
+    "actual_value": "pendingSemanticSuggestion is undefined in session",
+    "assertion_source_line": "expect(persisted.data && persisted.data.pendingSemanticSuggestion).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 6,
+    "name": "semantic follow-up \"mata kuliahnya apa?\" uses prior SI context and answers directly",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 698,
+    "category": "semantic",
+    "pending_keys_mentioned": [
+      "pendingSemanticSuggestion"
+    ],
+    "actual_value": "pendingSemanticSuggestion is undefined in session",
+    "assertion_source_line": "expect(persisted.data && persisted.data.pendingSemanticSuggestion).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 7,
+    "name": "semantic short follow-up \"gampang dipelajari?\" uses prior context and answers directly",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 733,
+    "category": "semantic",
+    "pending_keys_mentioned": [
+      "pendingSemanticSuggestion"
+    ],
+    "actual_value": "pendingSemanticSuggestion is undefined in session",
+    "assertion_source_line": "expect(persisted.data && persisted.data.pendingSemanticSuggestion).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 8,
+    "name": "context inheritance: TI -> follow-up -> still TI",
+    "expected": "undefined",
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 749,
+    "category": "rag",
+    "pending_keys_mentioned": [
+      "pending_rag_candidate",
+      "pending_semantic_suggestion"
+    ],
+    "actual_value": null,
+    "assertion_source_line": "expect(['pending_rag_candidate', 'pending_semantic_suggestion']).toContain(q1.body.source);"
+  },
+  {
+    "failed_test_number": 9,
+    "name": "cross-topic recovery: unrelated RAG reply then ambiguous follow-up returns TI",
+    "expected": "\"pending_rag_candidate\"",
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 819,
+    "category": "rag",
+    "pending_keys_mentioned": [
+      "pending_rag_candidate"
+    ],
+    "actual_value": "undefined\n\n      817 |     const res = await request(app2).post('/provider/webhook').send({ chatId, text: 'semester awal susah?' }).expect(200);\n      818 |     expect(res.body.ok).toBe(true);\n    > 819 |     expect(res.body.source).toBe('pending_rag_candidate');\n          |                             ^\n      820 |     const session = sessionStore.get(chatId);\n      821 |     expect(session).toBeTruthy();\n      822 |     expect(session.data && ((session.data.activeProgramContext && session.data.activeProgramContext.program) || session.data.lastProgramHint)).toBe('Teknologi Informasi');\n\n      at Object.toBe (tests/providerWebhook.test.js:819:29)",
+    "assertion_source_line": "expect(res.body.source).toBe('pending_rag_candidate');"
+  },
+  {
+    "failed_test_number": 10,
+    "name": "context decay: stale program context is cleared before ambiguous follow-up handling",
+    "expected": null,
+    "received": "{\"program\": \"Teknologi Informasi\", \"ts\": \"2026-06-23T23:27:28.430Z\"}",
+    "file": "tests/providerWebhook.test.js",
+    "line": 922,
+    "category": "session persistence",
+    "pending_keys_mentioned": [
+      "activeProgramContext"
+    ],
+    "actual_value": "activeProgramContext = {\"program\": \"Teknologi Informasi\", \"ts\": \"2026-06-23T23:27:28.430Z\"} (as reported)",
+    "assertion_source_line": "expect(session.data && session.data.activeProgramContext).toBeUndefined();"
+  },
+  {
+    "failed_test_number": 11,
+    "name": "ambiguity safety: new generic follow-up does NOT auto-switch program",
+    "expected": "\"Teknologi Informasi\"",
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 949,
+    "category": "session persistence",
+    "pending_keys_mentioned": [
+      "activeProgramContext"
+    ],
+    "actual_value": "activeProgramContext is undefined in session",
+    "assertion_source_line": "expect(session.data && session.data.activeProgramContext && session.data.activeProgramContext.program).toBe('Teknologi Informasi');"
+  },
+  {
+    "failed_test_number": 12,
+    "name": "greeting after topic switch resumes latest topic",
+    "expected": "\"Sistem Informasi\"",
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 981,
+    "category": "session persistence",
+    "pending_keys_mentioned": [
+      "currentProgramHint"
+    ],
+    "actual_value": "currentProgramHint is undefined in session",
+    "assertion_source_line": "expect(session4.data && session4.data.currentProgramHint).toBe('Sistem Informasi');"
+  },
+  {
+    "failed_test_number": 13,
+    "name": "multiple topic switches preserve latest topic and allow later reuse",
+    "expected": "\"Teknologi Informasi\"",
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 1009,
+    "category": "session persistence",
+    "pending_keys_mentioned": [
+      "currentProgramHint"
+    ],
+    "actual_value": "currentProgramHint is undefined in session",
+    "assertion_source_line": "expect(session3.data && session3.data.currentProgramHint).toBe('Teknologi Informasi');"
+  },
+  {
+    "failed_test_number": 14,
+    "name": "stale topic does not reuse older program hint",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 1049,
+    "category": "telemetry",
+    "pending_keys_mentioned": [
+      "composerTelemetry"
+    ],
+    "actual_value": "composerTelemetry is undefined in session",
+    "assertion_source_line": "expect(session2.data && session2.data.composerTelemetry).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 15,
+    "name": "location question: answered deterministically from bundled index (fast, no slow web/OpenAI dependency)",
+    "expected": "\"campus_location_fast\"",
+    "received": "\"fallback\"",
+    "file": "tests/providerWebhook.test.js",
+    "line": 1868,
+    "category": "source response",
+    "pending_keys_mentioned": [],
+    "actual_value": "\"fallback\"\n\n      1866 |     expect(res.status).toBe(200);\n      1867 |     expect(res.body.ok).toBe(true);\n    > 1868 |     expect(res.body.source).toBe('campus_location_fast');\n           |                             ^\n      1869 |\n      1870 |     const sentText = provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\\n');\n      1871 |     expect(sentText).toMatch(/Lokasi\\s+kampus/i);\n\n      at Object.toBe (tests/providerWebhook.test.js:1868:29)",
+    "assertion_source_line": "expect(res.body.source).toBe('campus_location_fast');"
+  },
+  {
+    "failed_test_number": 16,
+    "name": "dual degree location question: answers with STIKOM + partner campuses (no mojibake)",
+    "expected": "\"dual_degree_location_fast\"",
+    "received": "\"fallback\"",
+    "file": "tests/providerWebhook.test.js",
+    "line": 1887,
+    "category": "source response",
+    "pending_keys_mentioned": [],
+    "actual_value": "\"fallback\"\n\n      1885 |     expect(res.status).toBe(200);\n      1886 |     expect(res.body.ok).toBe(true);\n    > 1887 |     expect(res.body.source).toBe('dual_degree_location_fast');\n           |                             ^\n      1888 |\n      1889 |     const sentText = provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\\n');\n      1890 |     expect(sentText).toMatch(/Dual\\/?Double\\s+Degree/i);\n\n      at Object.toBe (tests/providerWebhook.test.js:1887:29)",
+    "assertion_source_line": "expect(res.body.source).toBe('dual_degree_location_fast');"
+  },
+  {
+    "failed_test_number": 17,
+    "name": "Phase 1 WhatsApp validation: program list query",
+    "expected": "true",
+    "received": "false",
+    "file": "tests/providerWebhook.test.js",
+    "line": 2222,
+    "category": "telemetry",
+    "pending_keys_mentioned": [],
+    "actual_value": "false",
+    "assertion_source_line": "expect(logSpy.mock.calls.some((call) => String(call[0] || '').includes('[FINAL_SEND]'))).toBe(true);"
+  },
+  {
+    "failed_test_number": 18,
+    "name": "Phase 1 WhatsApp validation: curriculum inquiry",
+    "expected": "/^(program_pick_detail_rag|academic_detail_clarify|registration_flow|outbound)$/i",
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 2218,
+    "category": "source response",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(routeResponse.body.source).toMatch(expectedSource);"
+  },
+  {
+    "failed_test_number": 19,
+    "name": "Phase 1 WhatsApp validation: career/prospect inquiry",
+    "expected": "/^(program_pick_detail_rag|academic_detail_clarify|registration_flow|outbound)$/i",
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 2218,
+    "category": "source response",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(routeResponse.body.source).toMatch(expectedSource);"
+  },
+  {
+    "failed_test_number": 20,
+    "name": "Phase 1 WhatsApp validation: tuition inquiry",
+    "expected": "true",
+    "received": "false",
+    "file": "tests/providerWebhook.test.js",
+    "line": 2222,
+    "category": "telemetry",
+    "pending_keys_mentioned": [],
+    "actual_value": "false",
+    "assertion_source_line": "expect(logSpy.mock.calls.some((call) => String(call[0] || '').includes('[FINAL_SEND]'))).toBe(true);"
+  },
+  {
+    "failed_test_number": 21,
+    "name": "Phase 1 WhatsApp validation: requirements inquiry",
+    "expected": "true",
+    "received": "false",
+    "file": "tests/providerWebhook.test.js",
+    "line": 2222,
+    "category": "telemetry",
+    "pending_keys_mentioned": [],
+    "actual_value": "false",
+    "assertion_source_line": "expect(logSpy.mock.calls.some((call) => String(call[0] || '').includes('[FINAL_SEND]'))).toBe(true);"
+  },
+  {
+    "failed_test_number": 22,
+    "name": "hobby clarification follow-up: short activity reply is treated as continuation (no generic fallback)",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 2548,
+    "category": "session persistence",
+    "pending_keys_mentioned": [
+      "pendingHobbyExamples"
+    ],
+    "actual_value": "undefined",
+    "assertion_source_line": "expect(s2.data && s2.data.pendingHobbyExamples).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 23,
+    "name": "post-program follow-up: \"hitung total\" triggers anchored RAG calculation",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 2747,
+    "category": "rag",
+    "pending_keys_mentioned": [],
+    "actual_value": "undefined",
+    "assertion_source_line": "expect(call).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 24,
+    "name": "choose program + total question: answers directly without mini-menu",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 2845,
+    "category": "rag",
+    "pending_keys_mentioned": [],
+    "actual_value": "undefined",
+    "assertion_source_line": "expect(call).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 25,
+    "name": "total-cost follow-up: replying with gelombang computes total (no loop)",
+    "expected": null,
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 2918,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(sentText).toContain('Total biaya awal masuk setelah potongan: Rp 5.600.000');"
+  },
+  {
+    "failed_test_number": 26,
+    "name": "pending total-cost follow-up: discount table is not treated as butir 1–4 costs",
+    "expected": "/Rinciannya\\s+yang\\s+mana|rincian\\s+biaya/i",
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 2962,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(sentText).toMatch(/Rinciannya\\s+yang\\s+mana|rincian\\s+biaya/i);"
+  },
+  {
+    "failed_test_number": 27,
+    "name": "must-pay question still uses deterministic total even when pendingTotalCost exists",
+    "expected": "/Gelombang\\s+II/i",
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 3010,
+    "category": "session persistence",
+    "pending_keys_mentioned": [
+      "pendingTotalCost"
+    ],
+    "actual_value": null,
+    "assertion_source_line": "expect(sentText).toMatch(/Gelombang\\s+II/i);"
+  },
+  {
+    "failed_test_number": 28,
+    "name": "normal inbound queries route through composer and persist composer telemetry",
+    "expected": "ObjectContaining {\"clarificationUsed\": Any<Boolean>, \"duplicateSendPrevented\": Any<Boolean>, \"finalPipeline\": StringContaining \"composer->humanizer\", \"followupUsed\": Any<Boolean>, \"reflectionUsed\": Any<Boolean>, \"sentViaComposer\": true, \"sourceType\": Any<String>}",
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 3099,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": "undefined",
+    "assertion_source_line": "expect(persisted.data.composerTelemetry).toEqual("
+  },
+  {
+    "failed_test_number": 29,
+    "name": "outbound telemetry fields are always present for normal composer replies",
+    "expected": "ObjectContaining {\"duplicateSendPrevented\": Any<Boolean>, \"finalPipeline\": StringContaining \"composer->humanizer\", \"sentViaComposer\": true, \"sourceType\": Any<String>, \"timeoutTriggered\": Any<Boolean>}",
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 3201,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": "undefined",
+    "assertion_source_line": "expect(persisted.data.composerTelemetry).toEqual("
+  },
+  {
+    "failed_test_number": 30,
+    "name": "composer bypass prevention is enforced for normal inbound replies",
+    "expected": null,
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 3233,
+    "category": "source response",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(persisted.data.composerTelemetry.sentViaComposer).toBe(true);"
+  },
+  {
+    "failed_test_number": 31,
+    "name": "outbound path consistency uses composer reply funnel for normal messages",
+    "expected": null,
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 3257,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(persisted.data.composerTelemetry.sentViaComposer).toBe(true);"
+  },
+  {
+    "failed_test_number": 32,
+    "name": "must-pay phrasing with SI + gelombang 2B computes total (not clarify-wave)",
+    "expected": null,
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 3294,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(sentText).toContain('Rp 14.300.000');"
+  },
+  {
+    "failed_test_number": 33,
+    "name": "deterministic UTB mapping: potongan pendaftaran dan DPP sesuai gelombang I/IV",
+    "expected": "/Potongan\\s+biaya\\s+pendaftaran\\s*\\(Gelombang\\s+IV\\)\\s*:\\s*Rp\\s*100\\.000/i",
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 3349,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(sentGel4).toMatch(/Potongan\\s+biaya\\s+pendaftaran\\s*\\(Gelombang\\s+IV\\)\\s*:\\s*Rp\\s*100\\.000/i);"
+  },
+  {
+    "failed_test_number": 34,
+    "name": "choose program + specific question: skips mini-menu and answers via anchored RAG",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 3375,
+    "category": "rag",
+    "pending_keys_mentioned": [
+      "pendingRagCandidate"
+    ],
+    "actual_value": "undefined",
+    "assertion_source_line": "expect(call).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 35,
+    "name": "replies politely to gratitude without triggering RAG",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 69,
+    "category": "rag",
+    "pending_keys_mentioned": [],
+    "actual_value": "undefined",
+    "assertion_source_line": "expect(s.data && s.data[k]).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 36,
+    "name": "breakdown offer: pendaftaran without prodi -> YA -> pick TI -> returns full breakdown (fast)",
+    "expected": "\"fee_breakdown_offer_answer_fast\"",
+    "received": "\"fee_breakdown_offer_no_data\"",
+    "file": "tests/providerWebhook.test.js",
+    "line": 3756,
+    "category": "source response",
+    "pending_keys_mentioned": [],
+    "actual_value": "\"fee_breakdown_offer_no_data\"\n\n      3754 |     expect(res3.status).toBe(200);\n      3755 |     expect(res3.body.ok).toBe(true);\n    > 3756 |     expect(res3.body.source).toBe('fee_breakdown_offer_answer_fast');\n           |                              ^\n      3757 |\n      3758 |     expectTransportOrComposerGlobal();\n      3759 |     expectAnySessionHasPending();\n\n      at Object.toBe (tests/providerWebhook.test.js:3756:30)",
+    "assertion_source_line": "expect(res3.body.source).toBe('fee_breakdown_offer_answer_fast');"
+  },
+  {
+    "failed_test_number": 37,
+    "name": "once FINAL_SEND occurs in registration flow, fallback never overrides the response",
+    "expected": "true",
+    "received": "false",
+    "file": "tests/providerWebhook.test.js",
+    "line": 3975,
+    "category": "telemetry",
+    "pending_keys_mentioned": [],
+    "actual_value": "false",
+    "assertion_source_line": "expect(finalSendSeen).toBe(true);"
+  },
+  {
+    "failed_test_number": 38,
+    "name": "pure greeting \"Halo\" restarts session and re-sends welcome even if previously welcomed",
+    "expected": null,
+    "received": "{\"degree\": \"S1\", \"program\": \"Teknologi Informasi\", \"stage\": \"done\"}",
+    "file": "tests/providerWebhook.test.js",
+    "line": 4211,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": "{\"degree\": \"S1\", \"program\": \"Teknologi Informasi\", \"stage\": \"done\"}",
+    "assertion_source_line": "expect(payload.update.data.registrationFlow).toBeUndefined();"
+  },
+  {
+    "failed_test_number": 39,
+    "name": "pure greeting \"Halo selamat pagi\" restarts session and re-sends welcome even if previously welcomed",
+    "expected": null,
+    "received": "{\"degree\": \"S1\", \"program\": \"Teknologi Informasi\", \"stage\": \"done\"}",
+    "file": "tests/providerWebhook.test.js",
+    "line": 4211,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": "{\"degree\": \"S1\", \"program\": \"Teknologi Informasi\", \"stage\": \"done\"}",
+    "assertion_source_line": "expect(payload.update.data.registrationFlow).toBeUndefined();"
+  },
+  {
+    "failed_test_number": 40,
+    "name": "pure greeting \"Halo selamat pagi kak\" restarts session and re-sends welcome even if previously welcomed",
+    "expected": null,
+    "received": "{\"degree\": \"S1\", \"program\": \"Teknologi Informasi\", \"stage\": \"done\"}",
+    "file": "tests/providerWebhook.test.js",
+    "line": 4211,
+    "category": "lainnya",
+    "pending_keys_mentioned": [],
+    "actual_value": "{\"degree\": \"S1\", \"program\": \"Teknologi Informasi\", \"stage\": \"done\"}",
+    "assertion_source_line": "expect(payload.update.data.registrationFlow).toBeUndefined();"
+  },
+  {
+    "failed_test_number": 41,
+    "name": "greeting-only (no welcome setting) is answered with a prompt (no RAG)",
+    "expected": "/tanya|tanyakan|pertanyaan/i",
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 4316,
+    "category": "rag",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(sentText).toMatch(/tanya|tanyakan|pertanyaan/i);"
+  },
+  {
+    "failed_test_number": 42,
+    "name": "custom greeting alias (no welcome setting) is answered with a prompt (no RAG)",
+    "expected": "/tanya|tanyakan|pertanyaan/i",
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 4338,
+    "category": "rag",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(sentText).toMatch(/tanya|tanyakan|pertanyaan/i);"
+  },
+  {
+    "failed_test_number": 43,
+    "name": "follow-up \"ya boleh\" after dual offer (total awal masuk vs potongan gelombang) asks 1/2 choice",
+    "expected": null,
+    "received": "undefined",
+    "file": "tests/providerWebhook.test.js",
+    "line": 4468,
+    "category": "session persistence",
+    "pending_keys_mentioned": [
+      "pendingFollowupChoice"
+    ],
+    "actual_value": "undefined",
+    "assertion_source_line": "expect(upsertCall[0].update.data.pendingFollowupChoice).toBeTruthy();"
+  },
+  {
+    "failed_test_number": 44,
+    "name": "pending dual-offer: unclear reply triggers reprompt and keeps pending so next choice works",
+    "expected": "\"followup_discount_gelombang\"",
+    "received": "\"pending_rag_candidate\"",
+    "file": "tests/providerWebhook.test.js",
+    "line": 4605,
+    "category": "rag",
+    "pending_keys_mentioned": [
+      "pending_rag_candidate"
+    ],
+    "actual_value": "\"pending_rag_candidate\"\n\n      4603 |     expect(res2.status).toBe(200);\n      4604 |     expect(res2.body.ok).toBe(true);\n    > 4605 |     expect(res2.body.source).toBe('followup_discount_gelombang');\n           |                              ^\n      4606 |     expect(rag.query).toHaveBeenCalled();\n      4607 |\n      4608 |     const discountText = provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\\n');\n\n      at Object.toBe (tests/providerWebhook.test.js:4605:30)",
+    "assertion_source_line": "expect(res2.body.source).toBe('followup_discount_gelombang');"
+  },
+  {
+    "failed_test_number": 45,
+    "name": "pending dual-offer choice does not hijack a new explicit question (clears pending and answers deterministically)",
+    "expected": null,
+    "received": "{\"ts\": \"2026-06-24T01:28:13.159Z\", \"type\": \"total_vs_discount\"}",
+    "file": "tests/providerWebhook.test.js",
+    "line": 4660,
+    "category": "session persistence",
+    "pending_keys_mentioned": [
+      "pendingFollowupChoice"
+    ],
+    "actual_value": "{\"ts\": \"2026-06-24T01:28:13.159Z\", \"type\": \"total_vs_discount\"}",
+    "assertion_source_line": "expect(upsertCall[0].update.data.pendingFollowupChoice).toBeFalsy();"
+  },
+  {
+    "failed_test_number": 46,
+    "name": "numeric welcome menu: custom \"5 Lokasi Kampus\" routes to location answer (label-driven)",
+    "expected": null,
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 4719,
+    "category": "rag",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(q).toContain('lokasi');"
+  },
+  {
+    "failed_test_number": 47,
+    "name": "numeric welcome menu: custom \"6 Konsultasi Admin\" offers handover (label-driven)",
+    "expected": null,
+    "received": null,
+    "file": "tests/providerWebhook.test.js",
+    "line": 4777,
+    "category": "rag",
+    "pending_keys_mentioned": [],
+    "actual_value": null,
+    "assertion_source_line": "expect(rag.query).not.toHaveBeenCalled();"
+  },
+  {
+    "failed_test_number": 48,
+    "name": "pendingScheduleWave does not hijack unrelated questions (e.g., alur pendaftaran)",
+    "expected": "false",
+    "received": "true",
+    "file": "tests/providerWebhook.test.js",
+    "line": 5478,
+    "category": "session persistence",
+    "pending_keys_mentioned": [
+      "pendingScheduleWave"
+    ],
+    "actual_value": "true",
+    "assertion_source_line": "expect(upserts.some((d) => Object.prototype.hasOwnProperty.call(d, 'pendingScheduleWave'))).toBe(false);"
+  }
+]

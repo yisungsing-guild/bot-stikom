@@ -1,0 +1,4 @@
+
+> whatsapp-bot-system@0.1.0 test
+> jest --runInBand tests/registrationDiscount.regression.test.js tests/ragEngine.test.js
+

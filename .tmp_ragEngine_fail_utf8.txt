@@ -1,0 +1,2503 @@
+﻿  console.log
+    [TRACE_FEE_ROUTE] {
+      route: 'tryStructuredExactCostAnswer',
+      question: 'berapa biaya prodi sk gelombang 1A?',
+      queryEntities: {
+        intent: 'COST',
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        campus: 'BALI'
+      },
+      indexCount: 2,
+      topK: 3
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_INPUT_1_PARAMS] {
+      question: 'berapa biaya prodi sk gelombang 1A?',
+      queryEntities: '{"intent":"COST","program":"SK","wave":"1A","waveGroup":"1","academicYear":"2025","campus":"BALI"}',
+      indexCount: 2,
+      topK: 3
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [PROGRAM_REQUESTED] { programRequested: 'sk' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_REQUESTED_WAVE_LABEL] { requestedWaveLabel: '1A' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_ALLOWED_TRAINING_IDS] {
+      programRequested: 'sk',
+      count: 9,
+      trainingIds: [
+        '5dd6cc3e-eab8-4c04-97b4-1aa28bf0f1d9',
+        '2580a44c-dffa-4ccc-88b3-6dcf4c7b42ae',
+        '496ef40f-b570-461c-a337-cf4e558af940',
+        'd7cb3406-660e-4b40-9506-066e7aa686ab',
+        '865ee469-8ded-4753-896f-a70d827ccf1d',
+        '748958d9-e5e8-4306-a689-c39c15967e45',
+        '3c8b0b47-7c88-479c-967d-3fc1a956ee50',
+        'a4834fc1-bb66-4146-8774-88b321fba707',
+        'test-training-accred'
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_TOP20_CANDIDATES_RAW] {
+      totalCandidates: 2,
+      top20Detailed: [
+        {
+          rank: 1,
+          id: undefined,
+          trainingId: undefined,
+          filename: 'PMB_2025_SK.pdf',
+          totalScore: 665,
+          exactMatchScore: 240,
+          keywordScore: 5,
+          semanticScore: 0,
+          feeSignalScore: 140,
+          tableBoost: 160,
+          waveBoost: 120,
+          breakdown: [Object],
+          meta: [Object],
+          chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+            'Pendaftaran 500.000\n' +
+            'Dana Pendidikan Pokok (DPP) 11.000.000'
+        },
+        {
+          rank: 2,
+          id: undefined,
+          trainingId: undefined,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          totalScore: 330,
+          exactMatchScore: 20,
+          keywordScore: 10,
+          semanticScore: 0,
+          feeSignalScore: 140,
+          tableBoost: 160,
+          waveBoost: 0,
+          breakdown: [Object],
+          meta: [Object],
+          chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+            'Potongan DPP: Rp 1.000.000, Gelombang 1'
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_TARGET_CHUNK_MISSING_FROM_CANDIDATES] { id: '7f6efb1c-4559-438e-857b-22537be53952', rejectedReason: null }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_INPUT_2_INDEX_SCAN] {
+      totalItemsScanned: 2,
+      items: [
+        {
+          id: undefined,
+          filename: 'PMB_2025_SK.pdf',
+          updatedAt: '2026-07-01T07:51:26.095Z',
+          itemProgram: 'SK',
+          itemWave: '1A',
+          itemWaveGroup: '1',
+          chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+            'Pendaftaran 500.000\n' +
+            'Dana'
+        },
+        {
+          id: undefined,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          updatedAt: '2026-07-01T07:51:26.097Z',
+          itemProgram: null,
+          itemWave: '1',
+          itemWaveGroup: '1',
+          chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+            'Potongan'
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_MATCH_3_CANDIDATES] {
+      question: 'berapa biaya prodi sk gelombang 1A?',
+      queryEntities: {
+        intent: 'COST',
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        campus: 'BALI'
+      },
+      exactCandidateCount: 2,
+      exactCandidates: [
+        {
+          id: null,
+          filename: 'PMB_2025_SK.pdf',
+          updatedAt: '2026-07-01T07:51:26.095Z',
+          program: 'SK',
+          wave: '1A',
+          waveGroup: '1',
+          academicYear: '2025',
+          totalScore: 665,
+          exactMatchScore: 240,
+          keywordScore: 5,
+          semanticScore: 0,
+          isGlobalDiscount: false,
+          matchMeta: [Object]
+        },
+        {
+          id: null,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          updatedAt: '2026-07-01T07:51:26.097Z',
+          program: null,
+          wave: '1',
+          waveGroup: '1',
+          academicYear: null,
+          totalScore: 330,
+          exactMatchScore: 20,
+          keywordScore: 10,
+          semanticScore: 0,
+          isGlobalDiscount: true,
+          matchMeta: [Object]
+        }
+      ],
+      candidateRejectionCount: 0
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_MATCH_3_ALL_CANDIDATES] {
+      question: 'berapa biaya prodi sk gelombang 1A?',
+      queryEntities: {
+        intent: 'COST',
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        campus: 'BALI'
+      },
+      allCandidates: [
+        {
+          id: null,
+          filename: 'PMB_2025_SK.pdf',
+          program: 'SK',
+          wave: '1A',
+          waveGroup: '1',
+          academicYear: '2025',
+          totalScore: 665,
+          exactMatchScore: 240,
+          keywordScore: 5,
+          semanticScore: 0,
+          isGlobalDiscount: false,
+          matchMeta: [Object]
+        },
+        {
+          id: null,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          program: null,
+          wave: '1',
+          waveGroup: '1',
+          academicYear: null,
+          totalScore: 330,
+          exactMatchScore: 20,
+          keywordScore: 10,
+          semanticScore: 0,
+          isGlobalDiscount: true,
+          matchMeta: [Object]
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_MATCH_3_REJECTED] {
+      question: 'berapa biaya prodi sk gelombang 1A?',
+      queryEntities: {
+        intent: 'COST',
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        campus: 'BALI'
+      },
+      rejectedCandidateCount: 0,
+      rejectedCandidateReasons: []
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_BEST_EXACT_CANDIDATE] {
+      id: null,
+      filename: 'PMB_2025_SK.pdf',
+      exactMatchScore: 240,
+      matchMeta: { waveGroupMatched: false },
+      itemEntities: {
+        program: 'SK',
+        programMode: null,
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        partner: null,
+        campus: null,
+        jalur: null,
+        feeType: 'DPP',
+        category: 'PMB',
+        pageNumber: null
+      },
+      chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana Pendidikan Pokok (DPP) 11.000.000'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_TOP10_CANDIDATES] {
+      question: 'berapa biaya prodi sk gelombang 1A?',
+      queryEntities: {
+        intent: 'COST',
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        campus: 'BALI'
+      },
+      top10: [
+        {
+          rank: 1,
+          id: null,
+          filename: 'PMB_2025_SK.pdf',
+          program: 'SK',
+          wave: '1A',
+          totalScore: 665,
+          exactMatchScore: 240,
+          keywordScore: 5,
+          semanticScore: 0,
+          isGlobalDiscount: false,
+          meta: [Object],
+          chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+            'Pendaftaran 500.000\n' +
+            'Dana Pendidikan Pokok (DPP) 11.000.000'
+        },
+        {
+          rank: 2,
+          id: null,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          program: null,
+          wave: '1',
+          totalScore: 330,
+          exactMatchScore: 20,
+          keywordScore: 10,
+          semanticScore: 0,
+          isGlobalDiscount: true,
+          meta: [Object],
+          chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+            'Potongan DPP: Rp 1.000.000, Gelombang 1'
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_SELECT_3_5_EXPAND_SAME_FILE] {
+      topChunksCount: 2,
+      uniqueTrainingIds: [],
+      reason: 'expand_to_include_all_chunks_from_same_file_for_fee_table_completeness'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_SELECT_4_TOP_CHUNKS] {
+      selectedCount: 2,
+      topChunks: [
+        {
+          id: undefined,
+          trainingId: null,
+          filename: 'PMB_2025_SK.pdf',
+          sourceFile: null,
+          chunkType: 'COST',
+          programName: 'SK',
+          wave: '1A',
+          updatedAt: '2026-07-01T07:51:26.095Z',
+          source: 'upload',
+          category: undefined,
+          chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+            'Pendaftaran 500.000\n' +
+            'Dana Pendidikan Pokok (D',
+          entities: [Object]
+        },
+        {
+          id: undefined,
+          trainingId: null,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          sourceFile: null,
+          chunkType: 'COST',
+          programName: null,
+          wave: '1',
+          updatedAt: '2026-07-01T07:51:26.097Z',
+          source: 'upload',
+          category: undefined,
+          chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+            'Potongan DPP: Rp 1.000.000, ',
+          entities: [Object]
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_6a_ALL_CHUNKS] {
+      inputChunksCount: 2,
+      inputChunks: [
+        {
+          id: undefined,
+          filename: 'PMB_2025_SK.pdf',
+          updatedAt: '2026-07-01T07:51:26.095Z',
+          chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+            'Pendaftaran 500.000\n' +
+            'Dana Pendidikan Pokok (D'
+        },
+        {
+          id: undefined,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          updatedAt: '2026-07-01T07:51:26.097Z',
+          chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+            'Potongan DPP: Rp 1.000.000, '
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_FEE_INPUT] {
+      filename: 'PMB_2025_SK.pdf',
+      chunkId: undefined,
+      queryEntities: {
+        intent: 'COST',
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        campus: 'BALI'
+      },
+      chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana Pendidikan Pokok (DPP) 11.000.000',
+      academicYear: '2025'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_CHUNK_1_INPUT] {
+      filename: 'PMB_2025_SK.pdf',
+      chunkId: undefined,
+      isGlobalDiscount: false,
+      queryProgram: 'SK',
+      entProgram: 'SK',
+      queryWave: '1A',
+      entWave: '1A',
+      queryWaveGroup: '1',
+      entWaveGroup: '1',
+      queryAcademicYear: '2025',
+      entAcademicYear: '2025',
+      chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana Pendidikan Pokok (D'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    TRACE_FIND_MONEY {
+      keyword: '(?<!\\b(?:potongan|diskon)\\s+)(?:biaya\\s+pendaftaran|pendaftaran|registrasi)[^\\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})',
+      candidates: [
+        {
+          token: '500.000',
+          candParsed: 'Rp 500.000',
+          candDigits: 500000,
+          hasSeparator: true,
+          index: 12
+        }
+      ],
+      discardedPercents: [],
+      selected: 'Rp 500.000',
+      reason: 'line_level_best'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.reduce (<anonymous>)
+
+  console.log
+    [TRACE_VALIDATE_REGISTRATION_PROXIMITY_OK] { filename: 'PMB_2025_SK.pdf', registrationFee: 'Rp 500.000' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    TRACE_WAVE_SECTION_FOUND {
+      filename: 'PMB_2025_SK.pdf',
+      wavePattern: '(?:1A|1|I)',
+      sectionLinesCount: 5
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    TRACE_WAVE_SECTION_LINES {
+      filename: 'PMB_2025_SK.pdf',
+      lines: [
+        'PROGRAM STUDI SISTEM KOMPUTER TA 2025 2026 Gelombang 1A',
+        'Pendaftaran 500.000',
+        'Dana Pendidikan Pokok  DPP  11.000.000',
+        'Pendaftaran 500.000',
+        'Dana Pendidikan Pokok  DPP  11.000.000'
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    TRACE_WAVE_MONEY_SELECTED {
+      keyword: '(?<!\\b(?:potongan|diskon)\\s+)(?:dana\\s+pendidikan\\s+pokok|dpp)[^\\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})',
+      candidates: [
+        {
+          token: '11.000.000',
+          candParsed: 'Rp 11.000.000',
+          candDigits: 11000000,
+          hasSeparator: true,
+          index: 28
+        }
+      ],
+      discardedPercents: [],
+      selected: 'Rp 11.000.000',
+      reason: 'line_level_best'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    TRACE_WAVE_MONEY_CANDIDATES { filename: 'PMB_2025_SK.pdf', candidateDpp: 'Rp 11.000.000' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_CHUNK_2_MONEY] {
+      filename: 'PMB_2025_SK.pdf',
+      registrationFee: 'Rp 500.000',
+      dpp: 'Rp 11.000.000',
+      dppDiscount: null,
+      registrationDiscount: null,
+      ukt: null,
+      scholarship: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+      filename: 'PMB_2025_SK.pdf',
+      registrationFee: true,
+      dpp: true,
+      dppDiscount: false,
+      registrationDiscount: false,
+      ukt: false,
+      scholarship: false,
+      hasAnyCost: 'Rp 500.000'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    RAW_CHUNK_TEXT {
+      filename: 'PMB_2025_SK.pdf',
+      chunk: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana Pendidikan Pokok (DPP) 11.000.000'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    PARSED_FIELDS {
+      registrationFeeRaw: '11.000.000',
+      registrationFee: 'Rp 500.000',
+      registrationFeeDigits: '500000',
+      dppRaw: '11.000.000',
+      dpp: 'Rp 11.000.000',
+      dppDigits: '11000000',
+      registrationDiscountRaw: null,
+      registrationDiscount: null,
+      registrationDiscountDigits: null,
+      dppDiscountRaw: null,
+      dppDiscount: null,
+      dppDiscountDigits: null,
+      uktRaw: null,
+      ukt: null,
+      scholarshipRaw: null,
+      scholarship: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_INPUT] {
+      chunkObjKeys: [ 'chunk', 'filename', 'updatedAt', 'source', 'embedding' ],
+      chunkObjOcrQualityScore: undefined,
+      chunkObjFilename: 'PMB_2025_SK.pdf',
+      chunkObjSource: 'upload'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+      field: 'registrationFee',
+      sourceChunkForValidation: {
+        chunk: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+          'Pendaftaran 500.000\n' +
+          'Dana Pendidikan Pokok (DPP) 11.000.000',
+        filename: 'PMB_2025_SK.pdf',
+        sourceFile: null,
+        ocrQualityScore: null,
+        source: 'upload',
+        lowConfidence: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '500000', sourceChunksLength: 1, context: '' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] chunk {
+      textPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana',
+      repairedPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025 2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana',
+      digitsOnly: '20252026150000011000000',
+      digitsOnlyRepaired: '20252026150000011000000',
+      fname: 'PMB_2025_SK.pdf',
+      sourceFile: null,
+      isOfficialDoc: true,
+      ocrQuality: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] parseAttempts {
+      tokens: [ '2025 2026 ', '1', '500.000\n', '11.000.000' ],
+      parsedAttempts: [ 20252026, 1, 500000, 11000000 ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] matchedFoundIn-parse {
+      fname: 'PMB_2025_SK.pdf',
+      token: '500.000\n',
+      numericNormalized: 500000
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] finalDecision {
+      foundInCount: 1,
+      officialSourcesCount: 1,
+      firstFoundInOcrQuality: null,
+      firstFoundInIsOfficial: true
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] returnReason found_in_official
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+      field: 'dpp',
+      sourceChunkForValidation: {
+        chunk: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+          'Pendaftaran 500.000\n' +
+          'Dana Pendidikan Pokok (DPP) 11.000.000',
+        filename: 'PMB_2025_SK.pdf',
+        sourceFile: null,
+        ocrQualityScore: null,
+        source: 'upload',
+        lowConfidence: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '11000000', sourceChunksLength: 1, context: '' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] chunk {
+      textPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana',
+      repairedPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025 2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana',
+      digitsOnly: '20252026150000011000000',
+      digitsOnlyRepaired: '20252026150000011000000',
+      fname: 'PMB_2025_SK.pdf',
+      sourceFile: null,
+      isOfficialDoc: true,
+      ocrQuality: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] parseAttempts {
+      tokens: [ '2025 2026 ', '1', '500.000\n', '11.000.000' ],
+      parsedAttempts: [ 20252026, 1, 500000, 11000000 ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] matchedFoundIn-parse {
+      fname: 'PMB_2025_SK.pdf',
+      token: '11.000.000',
+      numericNormalized: 11000000
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] finalDecision {
+      foundInCount: 1,
+      officialSourcesCount: 1,
+      firstFoundInOcrQuality: null,
+      firstFoundInIsOfficial: true
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] returnReason found_in_official
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_CHUNK_3_VALIDATION] {
+      filename: 'PMB_2025_SK.pdf',
+      chunkId: undefined,
+      isValid: true,
+      feeStruct: {
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        registrationFee: 'Rp 500.000',
+        dpp: 'Rp 11.000.000',
+        dppDiscount: null,
+        registrationDiscount: null,
+        ukt: null,
+        scholarship: null,
+        isGlobalDiscount: false
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_FEE_RESULT] {
+      filename: 'PMB_2025_SK.pdf',
+      chunkId: undefined,
+      feeStruct: {
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        registrationFee: 'Rp 500.000',
+        dpp: 'Rp 11.000.000',
+        registrationDiscount: null,
+        dppDiscount: null,
+        ukt: null,
+        scholarship: null,
+        isGlobalDiscount: false
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_FEE_RESULT] {
+      filename: 'PMB_2025_SK.pdf',
+      chunkId: undefined,
+      parsed: {
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        registrationFee: 'Rp 500.000',
+        dpp: 'Rp 11.000.000',
+        registrationDiscount: null,
+        dppDiscount: null,
+        ukt: null,
+        scholarship: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_FEE_INPUT] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkId: undefined,
+      queryEntities: {
+        intent: 'COST',
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        campus: 'BALI'
+      },
+      chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan DPP: Rp 1.000.000, Gelombang 1',
+      academicYear: '2025'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_CHUNK_1_INPUT] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkId: undefined,
+      isGlobalDiscount: true,
+      queryProgram: 'SK',
+      entProgram: null,
+      queryWave: '1A',
+      entWave: '1',
+      queryWaveGroup: '1',
+      entWaveGroup: '1',
+      queryAcademicYear: '2025',
+      entAcademicYear: null,
+      chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan DPP: Rp 1.000.000, '
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    TRACE_FIND_MONEY_SKIP_DISCOUNT_LINE {
+      keyword: '(?<!\\b(?:potongan|diskon)\\s+)(?:biaya\\s+pendaftaran|pendaftaran|registrasi)[^\\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})',
+      line: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1',
+      reason: 'discount_context'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.reduce (<anonymous>)
+
+  console.log
+    TRACE_FIND_MONEY_SKIP_DISCOUNT_LINE {
+      keyword: '(?:biaya\\s+pendaftaran|pendaftaran|registrasi)[\\s:-]*Rp\\.?\\s*([0-9][0-9\\s\\.,]{1,40})',
+      line: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1',
+      reason: 'discount_context'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.reduce (<anonymous>)
+
+  console.log
+    TRACE_FIND_MONEY_SKIP_DISCOUNT_LINE {
+      keyword: '(?:dana\\s+pendidikan\\s+pokok|dpp)[\\s:-]*Rp\\.?\\s*([0-9][0-9\\s\\.,]{1,40})',
+      line: 'Potongan DPP  Rp 1.000.000, Gelombang 1',
+      reason: 'discount_context'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.reduce (<anonymous>)
+
+  console.log
+    [TRACE_PROVENANCE] {
+      field: 'registrationDiscount',
+      value: 'Rp 200.000',
+      sourceChunkId: undefined,
+      sourceText: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1',
+      window: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1 Potongan DPP  Rp 1.000.000, Gelombang 1'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_CHUNK_2_MONEY] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      registrationFee: null,
+      dpp: null,
+      dppDiscount: 'Rp 1.000.000',
+      registrationDiscount: 'Rp 200.000',
+      ukt: null,
+      scholarship: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      registrationFee: false,
+      dpp: false,
+      dppDiscount: true,
+      registrationDiscount: true,
+      ukt: false,
+      scholarship: false,
+      hasAnyCost: 'Rp 1.000.000'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    RAW_CHUNK_TEXT {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunk: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan DPP: Rp 1.000.000, Gelombang 1'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    PARSED_FIELDS {
+      registrationFeeRaw: '200.000,',
+      registrationFee: null,
+      registrationFeeDigits: null,
+      dppRaw: '200.000,',
+      dpp: null,
+      dppDigits: null,
+      registrationDiscountRaw: '200.000,',
+      registrationDiscount: 'Rp 200.000',
+      registrationDiscountDigits: '200000',
+      dppDiscountRaw: '200.000,',
+      dppDiscount: 'Rp 1.000.000',
+      dppDiscountDigits: '1000000',
+      uktRaw: null,
+      ukt: null,
+      scholarshipRaw: null,
+      scholarship: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_INPUT] {
+      chunkObjKeys: [ 'chunk', 'filename', 'updatedAt', 'source', 'embedding' ],
+      chunkObjOcrQualityScore: undefined,
+      chunkObjFilename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkObjSource: 'upload'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+      field: 'dppDiscount',
+      sourceChunkForValidation: {
+        chunk: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+          'Potongan DPP: Rp 1.000.000, Gelombang 1',
+        filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+        sourceFile: null,
+        ocrQualityScore: null,
+        source: 'upload',
+        lowConfidence: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '1000000', sourceChunksLength: 1, context: '' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] chunk {
+      textPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan',
+      repairedPreview: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan',
+      digitsOnly: '200000110000001',
+      digitsOnlyRepaired: '200000110000001',
+      fname: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      sourceFile: null,
+      isOfficialDoc: true,
+      ocrQuality: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] parseAttempts {
+      tokens: [
+        'Rp 200.000, ',
+        'Rp 1.000.000, ',
+        '200.000, ',
+        '1\n',
+        '1.000.000, ',
+        '1'
+      ],
+      parsedAttempts: [ 200000, 1000000, 200000, 1, 1000000, 1 ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] matchedFoundIn-parse {
+      fname: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      token: 'Rp 1.000.000, ',
+      numericNormalized: 1000000
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] finalDecision {
+      foundInCount: 1,
+      officialSourcesCount: 1,
+      firstFoundInOcrQuality: null,
+      firstFoundInIsOfficial: true
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] returnReason found_in_official
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+      field: 'registrationDiscount',
+      sourceChunkForValidation: {
+        chunk: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+          'Potongan DPP: Rp 1.000.000, Gelombang 1',
+        filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+        sourceFile: null,
+        ocrQualityScore: null,
+        source: 'upload',
+        lowConfidence: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '200000', sourceChunksLength: 1, context: '' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] chunk {
+      textPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan',
+      repairedPreview: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan',
+      digitsOnly: '200000110000001',
+      digitsOnlyRepaired: '200000110000001',
+      fname: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      sourceFile: null,
+      isOfficialDoc: true,
+      ocrQuality: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] parseAttempts {
+      tokens: [
+        'Rp 200.000, ',
+        'Rp 1.000.000, ',
+        '200.000, ',
+        '1\n',
+        '1.000.000, ',
+        '1'
+      ],
+      parsedAttempts: [ 200000, 1000000, 200000, 1, 1000000, 1 ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] matchedFoundIn-parse {
+      fname: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      token: 'Rp 200.000, ',
+      numericNormalized: 200000
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] finalDecision {
+      foundInCount: 1,
+      officialSourcesCount: 1,
+      firstFoundInOcrQuality: null,
+      firstFoundInIsOfficial: true
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [NUMERIC_AUDIT] returnReason found_in_official
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_CHUNK_3_VALIDATION] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkId: undefined,
+      isValid: true,
+      feeStruct: {
+        program: null,
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: null,
+        registrationFee: null,
+        dpp: null,
+        dppDiscount: 'Rp 1.000.000',
+        registrationDiscount: 'Rp 200.000',
+        ukt: null,
+        scholarship: null,
+        isGlobalDiscount: true
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_FEE_RESULT] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkId: undefined,
+      feeStruct: {
+        program: null,
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: null,
+        registrationFee: null,
+        dpp: null,
+        registrationDiscount: 'Rp 200.000',
+        dppDiscount: 'Rp 1.000.000',
+        ukt: null,
+        scholarship: null,
+        isGlobalDiscount: true
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_FEE_RESULT] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkId: undefined,
+      parsed: {
+        program: null,
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: null,
+        registrationFee: null,
+        dpp: null,
+        registrationDiscount: 'Rp 200.000',
+        dppDiscount: 'Rp 1.000.000',
+        ukt: null,
+        scholarship: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_FEE_STRUCT] {
+      costCandidatesCount: 1,
+      globalDiscountCandidatesCount: 1,
+      costCandidates: [
+        {
+          trainingId: null,
+          filename: 'PMB_2025_SK.pdf',
+          chunkType: 'COST',
+          programName: 'SK',
+          wave: '1A',
+          waveGroup: '1',
+          academicYear: '2025',
+          registrationFee: 'Rp 500.000',
+          dpp: 'Rp 11.000.000',
+          sourceChunk: [Object]
+        }
+      ],
+      globalDiscounts: [
+        {
+          trainingId: null,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          chunkType: 'COST',
+          programName: null,
+          wave: '1A',
+          waveGroup: '1',
+          academicYear: null,
+          registrationDiscount: 'Rp 200.000',
+          dppDiscount: 'Rp 1.000.000',
+          sourceChunk: [Object]
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_6b_YEAR_FILTER] {
+      queryAcademicYear: '2025',
+      selectedCandidateCount: 1,
+      selectedType: 'exact_year_match'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_6c_BEFORE_YEAR_SELECT] {
+      queryEntitiesAcademicYear: '2025',
+      baseCandidatesCount: 1,
+      baseCandidates: [
+        {
+          program: 'SK',
+          wave: '1A',
+          academicYear: '2025',
+          parseYearKey: 2025,
+          updatedAt: '2026-07-01T07:51:26.095Z'
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_6c2_YEAR_SELECTION] {
+      method: 'REQUESTED_YEAR',
+      requestedYear: '2025',
+      beforeCount: 1,
+      explicitYearCandidatesCount: 1,
+      matchingYearCandidatesCount: 1,
+      yearlessCandidatesCount: 0,
+      candidatesToFilter: [ { academicYear: '2025', matches: true } ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_6d_AFTER_YEAR_SELECT] {
+      baseCandidatesCountAfterYearFilter: 1,
+      baseCandidates: [
+        {
+          program: 'SK',
+          wave: '1A',
+          academicYear: '2025',
+          updatedAt: '2026-07-01T07:51:26.095Z'
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [PROGRAM_FILTER_APPLIED] { programRequested: 'sk', before: 'SK', after: 'SK' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_6e_BASE_SELECTED] {
+      baseSelected: {
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        updatedAt: '2026-07-01T07:51:26.095Z',
+        registrationFee: 'Rp 500.000',
+        dpp: 'Rp 11.000.000'
+      },
+      globalDiscountCandidatesCount: 1,
+      globalDiscounts: [
+        {
+          waveGroup: '1',
+          academicYear: null,
+          registrationDiscount: 'Rp 200.000',
+          dppDiscount: 'Rp 1.000.000',
+          updatedAt: '2026-07-01T07:51:26.097Z',
+          sourceChunk: [Object]
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_6f_DISCOUNT_FILTER] {
+      baseWaveGroup: '1',
+      globalDiscountCandidatesCount: 1,
+      eligibleDiscountsAfterFilter: 1,
+      discountFilterResults: [
+        {
+          waveGroup: '1',
+          academicYear: null,
+          canMerge: true,
+          waveGroupMatch: true,
+          willBeIncluded: true
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_6g_BEST_DISCOUNTS] {
+      registrationDiscountFound: true,
+      registrationDiscountValue: 'Rp 200.000',
+      dppDiscountFound: true,
+      dppDiscountValue: 'Rp 1.000.000',
+      bestRegistrationDiscountSource: { id: undefined, filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf' },
+      bestDppDiscountSource: { id: undefined, filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf' }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_BEST_REG_DISCOUNT_REJECTED] { sourceChunkId: undefined, reason: 'disallowed_context' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_6h_FINAL_MERGED] {
+      merged: {
+        program: 'SK',
+        wave: '1A',
+        academicYear: '2025',
+        registrationFee: 'Rp 500.000',
+        registrationDiscount: null,
+        dpp: 'Rp 11.000.000',
+        dppDiscount: 'Rp 1.000.000',
+        sourceChunksCount: 2
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [PROGRAM_SELECTED] { program: 'SK' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [SELECTED_FILE] {
+      files: [
+        { id: undefined, filename: 'PMB_2025_SK.pdf' },
+        { id: undefined, filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf' }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [FIELD_PROVENANCE] {
+      registrationFee: {
+        id: undefined,
+        filename: 'PMB_2025_SK.pdf',
+        sourceText: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+          'Pendaftaran 500.000\n' +
+          'Dana Pendidikan Pokok (DPP) 11.000.000'
+      },
+      dpp: {
+        id: undefined,
+        filename: 'PMB_2025_SK.pdf',
+        sourceText: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+          'Pendaftaran 500.000\n' +
+          'Dana Pendidikan Pokok (DPP) 11.000.000'
+      },
+      dppDiscount: {
+        id: undefined,
+        filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+        sourceText: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+          'Potongan DPP: Rp 1.000.000, Gelombang 1'
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    SELECTED_FEE_RECORD {
+      program: 'SK',
+      wave: '1A',
+      academicYear: '2025',
+      registrationFee: 'Rp 500.000',
+      dpp: 'Rp 11.000.000',
+      initialCostItems: [],
+      sourceChunks: [
+        {
+          id: null,
+          filename: 'PMB_2025_SK.pdf',
+          chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+            'Pendaftaran 500.000\n' +
+            'Dana Pendidikan Pokok (DPP) 11.000.000'
+        },
+        {
+          id: null,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+            'Potongan DPP: Rp 1.000.000, Gelombang 1'
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    CALCULATED_TOTAL {
+      registrationFeeAmt: 500000,
+      registrationDiscountAmt: 0,
+      registrationTotalAmt: 500000,
+      dppAmt: 11000000,
+      uniformSum: 0,
+      capSum: 0,
+      shirtSum: 0,
+      gmtiSum: 0,
+      bagSum: 0,
+      subtotalAwalMasukAmt: 11000000,
+      dppDiscountAmt: 1000000,
+      totalBiayaMasukAmt: 10500000,
+      formatted: {
+        registrationTotal: 'Rp 500.000',
+        subtotalAwalMasuk: 'Rp 11.000.000',
+        totalBiayaMasuk: 'Rp 10.500.000'
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_COST_PARSE_5_FEE_STRUCT] {
+      feeStructExists: true,
+      feeStruct: {
+        registrationFee: 'Rp 500.000',
+        dppFee: undefined,
+        dppDiscountAmount: undefined,
+        registrationDiscountAmount: undefined,
+        semester: undefined,
+        totalAwalMasuk: undefined,
+        academicYear: '2025',
+        wave: '1A',
+        waveGroup: '1',
+        program: 'SK',
+        sourceChunksCount: 2,
+        sourceChunks: [ [Object], [Object] ]
+      },
+      queryEntitiesRequested: {
+        intent: 'COST',
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        campus: 'BALI'
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_PARSE_CHUNK_1_INPUT] {
+      filename: 'PMB_2025_SK.pdf',
+      chunkId: undefined,
+      isGlobalDiscount: false,
+      queryProgram: 'SK',
+      entProgram: 'SK',
+      queryWave: '1A',
+      entWave: '1A',
+      queryWaveGroup: '1',
+      entWaveGroup: '1',
+      queryAcademicYear: '2025',
+      entAcademicYear: '2025',
+      chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana Pendidikan Pokok (D'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    TRACE_FIND_MONEY {
+      keyword: '(?<!\\b(?:potongan|diskon)\\s+)(?:biaya\\s+pendaftaran|pendaftaran|registrasi)[^\\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})',
+      candidates: [
+        {
+          token: '500.000',
+          candParsed: 'Rp 500.000',
+          candDigits: 500000,
+          hasSeparator: true,
+          index: 12
+        }
+      ],
+      discardedPercents: [],
+      selected: 'Rp 500.000',
+      reason: 'line_level_best'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.reduce (<anonymous>)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_VALIDATE_REGISTRATION_PROXIMITY_OK] { filename: 'PMB_2025_SK.pdf', registrationFee: 'Rp 500.000' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    TRACE_WAVE_SECTION_FOUND {
+      filename: 'PMB_2025_SK.pdf',
+      wavePattern: '(?:1A|1|I)',
+      sectionLinesCount: 5
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    TRACE_WAVE_SECTION_LINES {
+      filename: 'PMB_2025_SK.pdf',
+      lines: [
+        'PROGRAM STUDI SISTEM KOMPUTER TA 2025 2026 Gelombang 1A',
+        'Pendaftaran 500.000',
+        'Dana Pendidikan Pokok  DPP  11.000.000',
+        'Pendaftaran 500.000',
+        'Dana Pendidikan Pokok  DPP  11.000.000'
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    TRACE_WAVE_MONEY_SELECTED {
+      keyword: '(?<!\\b(?:potongan|diskon)\\s+)(?:dana\\s+pendidikan\\s+pokok|dpp)[^\\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})',
+      candidates: [
+        {
+          token: '11.000.000',
+          candParsed: 'Rp 11.000.000',
+          candDigits: 11000000,
+          hasSeparator: true,
+          index: 28
+        }
+      ],
+      discardedPercents: [],
+      selected: 'Rp 11.000.000',
+      reason: 'line_level_best'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    TRACE_WAVE_MONEY_CANDIDATES { filename: 'PMB_2025_SK.pdf', candidateDpp: 'Rp 11.000.000' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PARSE_CHUNK_2_MONEY] {
+      filename: 'PMB_2025_SK.pdf',
+      registrationFee: 'Rp 500.000',
+      dpp: 'Rp 11.000.000',
+      dppDiscount: null,
+      registrationDiscount: null,
+      ukt: null,
+      scholarship: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+      filename: 'PMB_2025_SK.pdf',
+      registrationFee: true,
+      dpp: true,
+      dppDiscount: false,
+      registrationDiscount: false,
+      ukt: false,
+      scholarship: false,
+      hasAnyCost: 'Rp 500.000'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    RAW_CHUNK_TEXT {
+      filename: 'PMB_2025_SK.pdf',
+      chunk: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana Pendidikan Pokok (DPP) 11.000.000'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    PARSED_FIELDS {
+      registrationFeeRaw: '11.000.000',
+      registrationFee: 'Rp 500.000',
+      registrationFeeDigits: '500000',
+      dppRaw: '11.000.000',
+      dpp: 'Rp 11.000.000',
+      dppDigits: '11000000',
+      registrationDiscountRaw: null,
+      registrationDiscount: null,
+      registrationDiscountDigits: null,
+      dppDiscountRaw: null,
+      dppDiscount: null,
+      dppDiscountDigits: null,
+      uktRaw: null,
+      ukt: null,
+      scholarshipRaw: null,
+      scholarship: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_INPUT] {
+      chunkObjKeys: [ 'chunk', 'filename', 'updatedAt', 'source', 'embedding' ],
+      chunkObjOcrQualityScore: undefined,
+      chunkObjFilename: 'PMB_2025_SK.pdf',
+      chunkObjSource: 'upload'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+      field: 'registrationFee',
+      sourceChunkForValidation: {
+        chunk: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+          'Pendaftaran 500.000\n' +
+          'Dana Pendidikan Pokok (DPP) 11.000.000',
+        filename: 'PMB_2025_SK.pdf',
+        sourceFile: null,
+        ocrQualityScore: null,
+        source: 'upload',
+        lowConfidence: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '500000', sourceChunksLength: 1, context: '' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] chunk {
+      textPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana',
+      repairedPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025 2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana',
+      digitsOnly: '20252026150000011000000',
+      digitsOnlyRepaired: '20252026150000011000000',
+      fname: 'PMB_2025_SK.pdf',
+      sourceFile: null,
+      isOfficialDoc: true,
+      ocrQuality: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] parseAttempts {
+      tokens: [ '2025 2026 ', '1', '500.000\n', '11.000.000' ],
+      parsedAttempts: [ 20252026, 1, 500000, 11000000 ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] matchedFoundIn-parse {
+      fname: 'PMB_2025_SK.pdf',
+      token: '500.000\n',
+      numericNormalized: 500000
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] finalDecision {
+      foundInCount: 1,
+      officialSourcesCount: 1,
+      firstFoundInOcrQuality: null,
+      firstFoundInIsOfficial: true
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] returnReason found_in_official
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+      field: 'dpp',
+      sourceChunkForValidation: {
+        chunk: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+          'Pendaftaran 500.000\n' +
+          'Dana Pendidikan Pokok (DPP) 11.000.000',
+        filename: 'PMB_2025_SK.pdf',
+        sourceFile: null,
+        ocrQualityScore: null,
+        source: 'upload',
+        lowConfidence: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '11000000', sourceChunksLength: 1, context: '' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] chunk {
+      textPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana',
+      repairedPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025 2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana',
+      digitsOnly: '20252026150000011000000',
+      digitsOnlyRepaired: '20252026150000011000000',
+      fname: 'PMB_2025_SK.pdf',
+      sourceFile: null,
+      isOfficialDoc: true,
+      ocrQuality: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] parseAttempts {
+      tokens: [ '2025 2026 ', '1', '500.000\n', '11.000.000' ],
+      parsedAttempts: [ 20252026, 1, 500000, 11000000 ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] matchedFoundIn-parse {
+      fname: 'PMB_2025_SK.pdf',
+      token: '11.000.000',
+      numericNormalized: 11000000
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] finalDecision {
+      foundInCount: 1,
+      officialSourcesCount: 1,
+      firstFoundInOcrQuality: null,
+      firstFoundInIsOfficial: true
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] returnReason found_in_official
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PARSE_CHUNK_3_VALIDATION] {
+      filename: 'PMB_2025_SK.pdf',
+      chunkId: undefined,
+      isValid: true,
+      feeStruct: {
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        registrationFee: 'Rp 500.000',
+        dpp: 'Rp 11.000.000',
+        dppDiscount: null,
+        registrationDiscount: null,
+        ukt: null,
+        scholarship: null,
+        isGlobalDiscount: false
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PARSE_FEE_RESULT] {
+      filename: 'PMB_2025_SK.pdf',
+      chunkId: undefined,
+      feeStruct: {
+        program: 'SK',
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: '2025',
+        registrationFee: 'Rp 500.000',
+        dpp: 'Rp 11.000.000',
+        registrationDiscount: null,
+        dppDiscount: null,
+        ukt: null,
+        scholarship: null,
+        isGlobalDiscount: false
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PARSE_CHUNK_1_INPUT] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkId: undefined,
+      isGlobalDiscount: true,
+      queryProgram: 'SK',
+      entProgram: null,
+      queryWave: '1A',
+      entWave: '1',
+      queryWaveGroup: '1',
+      entWaveGroup: '1',
+      queryAcademicYear: '2025',
+      entAcademicYear: null,
+      chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan DPP: Rp 1.000.000, '
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    TRACE_FIND_MONEY_SKIP_DISCOUNT_LINE {
+      keyword: '(?<!\\b(?:potongan|diskon)\\s+)(?:biaya\\s+pendaftaran|pendaftaran|registrasi)[^\\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})',
+      line: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1',
+      reason: 'discount_context'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.reduce (<anonymous>)
+          at Array.map (<anonymous>)
+
+  console.log
+    TRACE_FIND_MONEY_SKIP_DISCOUNT_LINE {
+      keyword: '(?:biaya\\s+pendaftaran|pendaftaran|registrasi)[\\s:-]*Rp\\.?\\s*([0-9][0-9\\s\\.,]{1,40})',
+      line: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1',
+      reason: 'discount_context'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.reduce (<anonymous>)
+          at Array.map (<anonymous>)
+
+  console.log
+    TRACE_FIND_MONEY_SKIP_DISCOUNT_LINE {
+      keyword: '(?:dana\\s+pendidikan\\s+pokok|dpp)[\\s:-]*Rp\\.?\\s*([0-9][0-9\\s\\.,]{1,40})',
+      line: 'Potongan DPP  Rp 1.000.000, Gelombang 1',
+      reason: 'discount_context'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.reduce (<anonymous>)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PROVENANCE] {
+      field: 'registrationDiscount',
+      value: 'Rp 200.000',
+      sourceChunkId: undefined,
+      sourceText: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1',
+      window: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1 Potongan DPP  Rp 1.000.000, Gelombang 1'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PARSE_CHUNK_2_MONEY] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      registrationFee: null,
+      dpp: null,
+      dppDiscount: 'Rp 1.000.000',
+      registrationDiscount: 'Rp 200.000',
+      ukt: null,
+      scholarship: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PARSE_CHUNK_4_COST_PRESENCE] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      registrationFee: false,
+      dpp: false,
+      dppDiscount: true,
+      registrationDiscount: true,
+      ukt: false,
+      scholarship: false,
+      hasAnyCost: 'Rp 1.000.000'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    RAW_CHUNK_TEXT {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunk: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan DPP: Rp 1.000.000, Gelombang 1'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    PARSED_FIELDS {
+      registrationFeeRaw: '200.000,',
+      registrationFee: null,
+      registrationFeeDigits: null,
+      dppRaw: '200.000,',
+      dpp: null,
+      dppDigits: null,
+      registrationDiscountRaw: '200.000,',
+      registrationDiscount: 'Rp 200.000',
+      registrationDiscountDigits: '200000',
+      dppDiscountRaw: '200.000,',
+      dppDiscount: 'Rp 1.000.000',
+      dppDiscountDigits: '1000000',
+      uktRaw: null,
+      ukt: null,
+      scholarshipRaw: null,
+      scholarship: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_INPUT] {
+      chunkObjKeys: [ 'chunk', 'filename', 'updatedAt', 'source', 'embedding' ],
+      chunkObjOcrQualityScore: undefined,
+      chunkObjFilename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkObjSource: 'upload'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+      field: 'dppDiscount',
+      sourceChunkForValidation: {
+        chunk: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+          'Potongan DPP: Rp 1.000.000, Gelombang 1',
+        filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+        sourceFile: null,
+        ocrQualityScore: null,
+        source: 'upload',
+        lowConfidence: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '1000000', sourceChunksLength: 1, context: '' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] chunk {
+      textPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan',
+      repairedPreview: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan',
+      digitsOnly: '200000110000001',
+      digitsOnlyRepaired: '200000110000001',
+      fname: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      sourceFile: null,
+      isOfficialDoc: true,
+      ocrQuality: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] parseAttempts {
+      tokens: [
+        'Rp 200.000, ',
+        'Rp 1.000.000, ',
+        '200.000, ',
+        '1\n',
+        '1.000.000, ',
+        '1'
+      ],
+      parsedAttempts: [ 200000, 1000000, 200000, 1, 1000000, 1 ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] matchedFoundIn-parse {
+      fname: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      token: 'Rp 1.000.000, ',
+      numericNormalized: 1000000
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] finalDecision {
+      foundInCount: 1,
+      officialSourcesCount: 1,
+      firstFoundInOcrQuality: null,
+      firstFoundInIsOfficial: true
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] returnReason found_in_official
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH] {
+      field: 'registrationDiscount',
+      sourceChunkForValidation: {
+        chunk: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+          'Potongan DPP: Rp 1.000.000, Gelombang 1',
+        filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+        sourceFile: null,
+        ocrQualityScore: null,
+        source: 'upload',
+        lowConfidence: null
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] validateNumericGrounding:start { normalizedValue: '200000', sourceChunksLength: 1, context: '' }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] chunk {
+      textPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan',
+      repairedPreview: 'Potongan Biaya Pendaftaran  Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+        'Potongan',
+      digitsOnly: '200000110000001',
+      digitsOnlyRepaired: '200000110000001',
+      fname: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      sourceFile: null,
+      isOfficialDoc: true,
+      ocrQuality: null
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] parseAttempts {
+      tokens: [
+        'Rp 200.000, ',
+        'Rp 1.000.000, ',
+        '200.000, ',
+        '1\n',
+        '1.000.000, ',
+        '1'
+      ],
+      parsedAttempts: [ 200000, 1000000, 200000, 1, 1000000, 1 ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] matchedFoundIn-parse {
+      fname: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      token: 'Rp 200.000, ',
+      numericNormalized: 200000
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] finalDecision {
+      foundInCount: 1,
+      officialSourcesCount: 1,
+      firstFoundInOcrQuality: null,
+      firstFoundInIsOfficial: true
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [NUMERIC_AUDIT] returnReason found_in_official
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PARSE_CHUNK_3_VALIDATION] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkId: undefined,
+      isValid: true,
+      feeStruct: {
+        program: null,
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: null,
+        registrationFee: null,
+        dpp: null,
+        dppDiscount: 'Rp 1.000.000',
+        registrationDiscount: 'Rp 200.000',
+        ukt: null,
+        scholarship: null,
+        isGlobalDiscount: true
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_PARSE_FEE_RESULT] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      chunkId: undefined,
+      feeStruct: {
+        program: null,
+        wave: '1A',
+        waveGroup: '1',
+        academicYear: null,
+        registrationFee: null,
+        dpp: null,
+        registrationDiscount: 'Rp 200.000',
+        dppDiscount: 'Rp 1.000.000',
+        ukt: null,
+        scholarship: null,
+        isGlobalDiscount: true
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [AUDIT_PARSE_PREVIEWS] {
+      count: 2,
+      perChunkParsePreviews: [
+        {
+          id: undefined,
+          filename: 'PMB_2025_SK.pdf',
+          program: 'SK',
+          registrationFee: 'Rp 500.000',
+          dpp: 'Rp 11.000.000',
+          registrationFeeRaw: undefined,
+          dppRaw: undefined,
+          dppDiscountRaw: undefined,
+          registrationDiscountRaw: undefined,
+          moneyCandidatesCount: 4,
+          chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+            'Pendaftaran 500.000\n' +
+            'Dana Pendidikan Pokok (DPP) 11.000.000'
+        },
+        {
+          id: undefined,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          program: null,
+          registrationFee: null,
+          dpp: null,
+          registrationFeeRaw: undefined,
+          dppRaw: undefined,
+          dppDiscountRaw: undefined,
+          registrationDiscountRaw: undefined,
+          moneyCandidatesCount: 6,
+          chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+            'Potongan DPP: Rp 1.000.000, Gelombang 1'
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    [TRACE_VALIDATE_SOURCE_TRUST] {
+      filename: 'PMB_2025_SK.pdf',
+      id: null,
+      score: 75,
+      minScore: 30,
+      chunkType: null,
+      ocrQualityScore: null,
+      updatedAt: '2026-07-01T07:51:26.095Z',
+      lowConfidence: false
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_VALIDATE_SOURCE_TRUST] {
+      filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+      id: null,
+      score: 75,
+      minScore: 30,
+      chunkType: null,
+      ocrQualityScore: null,
+      updatedAt: '2026-07-01T07:51:26.097Z',
+      lowConfidence: false
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+          at Array.map (<anonymous>)
+
+  console.log
+    [TRACE_COST_SOURCE_TRUST_RESULTS] {
+      trustResults: [
+        { chunkId: null, score: 75, trusted: true, metadata: [Object] },
+        { chunkId: null, score: 75, trusted: true, metadata: [Object] }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    SELECTED_FEE_RECORD {
+      program: 'SK',
+      wave: '1A',
+      registrationFee: 'Rp 500.000',
+      dpp: 'Rp 11.000.000',
+      sourceChunks: [
+        {
+          id: undefined,
+          filename: 'PMB_2025_SK.pdf',
+          chunkPreview: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+            'Pendaftaran 500.000\n' +
+            'Dana Pendidikan Pokok (DPP) 11.000.000'
+        },
+        {
+          id: undefined,
+          filename: 'PMB_2025_GLOBAL_DISCOUNT.pdf',
+          chunkPreview: 'Potongan Biaya Pendaftaran: Rp 200.000, Jika Mendaftar pada Gelombang 1\n' +
+            'Potongan DPP: Rp 1.000.000, Gelombang 1'
+        }
+      ]
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    RAW_FEE_TEXT {
+      rawChunk: 'PROGRAM STUDI SISTEM KOMPUTER TA 2025/2026 Gelombang 1A\n' +
+        'Pendaftaran 500.000\n' +
+        'Dana Pendidikan Pokok (DPP) 11.000.000'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    PARSED_FEE_STRUCTURE {
+      registrationFee: 'Rp 500.000',
+      registrationDiscount: null,
+      registrationTotal: 'Rp 500.000',
+      dpp: 'Rp 11.000.000',
+      dppDiscount: 'Rp 1.000.000',
+      subtotalAwalMasuk: 'Rp 11.000.000',
+      totalBiayaMasuk: 'Rp 10.500.000'
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+  console.log
+    FINAL_FEE_RESPONSE {
+      type: 'structured',
+      answer: 'Program Studi : Sistem Komputer\n' +
+        'Gelombang     : 1A\n' +
+        'Tahun         : 2025/2026\n' +
+        '\n' +
+        'Biaya Pendaftaran\n' +
+        'ΓÇó Biaya Pendaftaran: Rp 500.000\n' +
+        'ΓÇó Potongan Pendaftaran (1A): Rp 200.000\n' +
+        'ΓÇó Total Pendaftaran: Rp 300.000\n' +
+        '\n' +
+        'DPP\n' +
+        'ΓÇó DPP: Rp 11.000.000\n' +
+        'ΓÇó Potongan DPP (1A): Rp 1.000.000\n' +
+        'ΓÇó DPP Setelah Potongan: Rp 10.000.000\n' +
+        '\n' +
+        'Perlengkapan\n' +
+        'ΓÇó Jas Almamater: -\n' +
+        'ΓÇó Topi: -\n' +
+        'ΓÇó Kaos: -\n' +
+        'ΓÇó Tas: -\n' +
+        'ΓÇó GMTI: -\n' +
+        '\n' +
+        'Total Awal Masuk: Rp 10.300.000',
+      source: 'rag-fee-structured',
+      contexts: [ 'PMB_2025_SK.pdf', 'PMB_2025_GLOBAL_DISCOUNT.pdf' ],
+      feeStructPreview: {
+        program: 'SK',
+        wave: '1A',
+        registrationFee: 'Rp 500.000',
+        dpp: 'Rp 11.000.000'
+      }
+    }
+
+      at console.fn [as log] (tests/jest.setup.js:37:12)
+
+node.exe : FAIL tests/ragEngine.test.js
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL tests/ragEngine.test.js:Stri 
+   ng) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  ragEngine helpers
+    ├ù tryStructuredExactCostAnswer merges global wave 1 discounts into SK 1A 
+cost output (1640 ms)
+    Γùï skipped regression: all greeting aliases return identical 
+deterministic greeting
+    Γùï skipped regression: PMB information is not routed to biaya answer
+    Γùï skipped regression: SK in PMB/program context means Sistem Komputer, 
+not SKS
+    Γùï skipped regression: TI and SI program definitions are complete and no 
+resolver internals leak
+    Γùï skipped regression: detailed fee answer uses normalized requested 
+format without duplicate headings
+    Γùï skipped regression: cost intent wins over program profile for TI fee 
+queries
+    Γùï skipped chunkText respects size and overlap
+    Γùï skipped cleanAnswerLanguage removes confusing phrases
+    Γùï skipped formatRagAnswer does not insert explicit Follow-up label
+    Γùï skipped formatRagAnswer uses context-specific follow-up for 
+scholarship answers
+    Γùï skipped validateFinalAnswer rejects medium confidence numeric answers
+    Γùï skipped validateNumericGrounding accepts explicit numeric values from 
+official documents
+    Γùï skipped validateNumericGrounding accepts official documents via 
+sourceFile when filename is missing
+    Γùï skipped validateNumericGrounding accepts explicit numeric evidence 
+from a single chunk without OCR quality metadata
+    Γùï skipped normalizeProgramLabel derives canonical alias from full 
+program name and program abbreviation in context
+    Γùï skipped extractStructuredEntities preserves TI when the prompt 
+contains pengakuan SKS
+    Γùï skipped extractStructuredEntities recognizes program abbreviations and 
+canonical program labels
+    Γùï skipped extractStructuredEntities recognizes S.Kom program alias for 
+Sistem Komputer
+    Γùï skipped extractAcademicIntent recognizes academic program sub-intents
+    Γùï skipped regression: fee intent wins when prodi and gelombang present
+    Γùï skipped filterRelevantChunks removes off-topic academic chunks for 
+program definition queries
+    Γùï skipped validateAcademicProgramContexts rejects irrelevant academic 
+contexts
+    Γùï skipped tokenizeForRelevanceGuard preserves short program aliases like 
+BD and SI
+    Γùï skipped normalizeWaveLabel normalizes wave variants to compact 
+canonical forms
+    Γùï skipped query returns enrollment discount output with requested wave 
+formatting for 1A
+    Γùï skipped tryStructuredExactCostAnswer repairs OCR noise in numeric fee 
+values
+    Γùï skipped tryStructuredExactCostAnswer prioritizes latest academic year 
+when year not specified
+    Γùï skipped tryStructuredExactCostAnswer uses full fee formatter when fee 
+data exists in a single chunk without OCR quality metadata
+    Γùï skipped tryStructuredExactCostAnswer does not duplicate wave label in 
+full fee answer
+    Γùï skipped tryStructuredExactCostAnswer rejects inconsistent exact cost 
+queries without reliable fee evidence
+    Γùï skipped tryStructuredExactCostAnswer rejects explicit exact match cost 
+query when no matching chunk exists
+    Γùï skipped tryStructuredExactCostAnswer does not fall back to different 
+wave for explicit suffix wave
+    Γùï skipped validateFinalAnswer rejects high confidence numeric without 
+explicit source evidence
+    Γùï skipped isSafeForInference blocks numeric/temporal inference questions
+    Γùï skipped program recommendation heuristic does not trigger on 
+curriculum detail questions
+  ragEngine schedule overview guard
+    Γùï skipped accreditation question for BD is answered from index text 
+(deterministic)
+    Γùï skipped schedule-only question without wave triggers schedule overview 
+prompt
+    Γùï skipped hobby business signals: "tawar-menawar" maps to Bisnis Digital 
+(handles "cocokan" typo)
+    Γùï skipped coding hobby routes to Teknologi Informasi (TI)
+    Γùï skipped unknown hobby does not default to SK (asks for concrete 
+activity examples)
+    Γùï skipped wave list question returns available waves (no wave guessing)
+    Γùï skipped confidence threshold: below 0.65 is treated as no answer
+    Γùï skipped program registration fee question returns short answer (SI)
+    Γùï skipped fee breakdown follow-up for SI returns structured breakdown 
+(not program list)
+    Γùï skipped UKT/per-semester question for SI returns semester-only fee (no 
+full breakdown)
+    Γùï skipped fee breakdown: prior dual-degree mention does not override 
+current SI shorthand
+    Γùï skipped general dual degree question lists UTB, DNUI, and HELP
+    Γùï skipped double degree international question lists only international 
+partners
+    Γùï skipped double degree national question lists only UTB
+    Γùï skipped dual/double degree discount question returns only DPP discount 
+list (no UTB/DNUI/HELP)
+    Γùï skipped current wave question returns currently open waves (realtime 
+by date)
+    Γùï skipped current wave question before first window returns upcoming wave
+    Γùï skipped wave list phrasing variants still return wave list
+    Γùï skipped anchored follow-up still parses wave list from current 
+question only
+    Γùï skipped mentions specific wave without intent triggers clarify-wave 
+(not wave list)
+    Γùï skipped must-pay phrasing counts as intent (does not trigger 
+clarify-wave menu)
+    Γùï skipped schedule for roman-only wave is grouped and deduped (no 
+repeated IV A/B/C blocks)
+    Γùï skipped PMB overview multi-aspect question should not be hijacked by 
+schedule overview prompt
+    Γùï skipped ranking scholarship question is not misrouted to enrollment 
+discount
+    Γùï skipped ranking follow-up mentioning semesters is not misrouted to fee 
+breakdown
+    Γùï skipped follow-up question about "sekolah tertentu" is answered (no 
+web fallback)
+    Γùï skipped asking which schools are in the lampiran does not return a 
+misleading short list
+    Γùï skipped general scholarship question returns types overview first
+    Γùï skipped short reply "ranking" returns ranking scholarship explanation 
+(not generic fallback)
+    Γùï skipped DNUI follow-up "rangkum biaya lainnya" returns main fee 
+components (no semester-5 drift)
+    Γùï skipped UTB fee breakdown works even for short query
+    Γùï skipped follow-up asking HELP after DNUI returns HELP breakdown (not 
+DNUI)
+
+  ΓùÅ ragEngine helpers ΓÇ║ tryStructuredExactCostAnswer merges global wave 1 
+discounts into SK 1A cost output
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /Biaya Pendaftaran[\s\S]*Potongan 
+Pendaftaran[\s\S]*Rp\s*250\.000/i
+    Received string:  "Program Studi : Sistem Komputer
+    Gelombang     : 1A
+    Tahun         : 2025/2026┬╖
+    Biaya Pendaftaran
+    ΓÇó Biaya Pendaftaran: Rp 500.000
+    ΓÇó Potongan Pendaftaran (1A): Rp 200.000
+    ΓÇó Total Pendaftaran: Rp 300.000┬╖
+    DPP
+    ΓÇó DPP: Rp 11.000.000
+    ΓÇó Potongan DPP (1A): Rp 1.000.000
+    ΓÇó DPP Setelah Potongan: Rp 10.000.000┬╖
+    Perlengkapan
+    ΓÇó Jas Almamater: -
+    ΓÇó Topi: -
+    ΓÇó Kaos: -
+    ΓÇó Tas: -
+    ΓÇó GMTI: -┬╖
+    Total Awal Masuk: Rp 10.300.000"
+
+    [0m [90m 308 |[39m     
+expect(result[33m.[39manswer)[33m.[39mtoMatch([35m/Program 
+Studi\s*:/[39m)[33m;[39m
+     [90m 309 |[39m     expect(result[33m.[39manswer)[33m.[39mtoMatch([3
+5m/Gelombang\s*:\s*1A/[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 310 |[39m     
+expect(result[33m.[39manswer)[33m.[39mtoMatch([35m/Biaya 
+Pendaftaran[\s\S]*Potongan Pendaftaran[\s\S]*Rp\s*250\.000/i[39m)[33m;[39m
+     [90m     |[39m                           [31m[1m^[22m[39m
+     [90m 311 |[39m     
+expect(result[33m.[39manswer)[33m.[39mtoMatch([35m/Biaya 
+Pendaftaran[\s\S]*Total Pendaftaran:\s*Rp\s*250\.000/i[39m)[33m;[39m
+     [90m 312 |[39m     expect(result[33m.[39manswer)[33m.[39mnot[33m.[
+39mtoMatch([35m/Formulir|Total Pendaftaran:\s*Rp\s*0/i[39m)[33m;[39m
+     [90m 313 |[39m   })[33m;[39m[0m
+
+      at Object.toMatch (tests/ragEngine.test.js:310:27)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 67 skipped, 68 total
+Snapshots:   0 total
+Time:        3.38 s, estimated 4 s
+Ran all test suites matching /tests\\ragEngine.test.js/i with tests matching 
+"tryStructuredExactCostAnswer merges global wave 1 discounts into SK 1A cost 
+output".
