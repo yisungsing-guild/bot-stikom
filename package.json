@@ -71,5 +71,8 @@
     "patch-package": "^8.0.0",
     "supertest": "^6.3.4",
     "tailwindcss": "^4.2.2"
-  }
+  },
+  "prisma": {
+  "seed": "node prisma/seed.js"
+}
 }
