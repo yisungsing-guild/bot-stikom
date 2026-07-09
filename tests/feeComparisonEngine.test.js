@@ -363,6 +363,17 @@ describe('feeComparisonEngine', () => {
     }
   });
 
+  test('answers detailed fee from bundled tuition knowledge when RAG index is empty', () => {
+    const result = tryDetailedFeeAnswer('Rincian biaya prodi ti gelombang 1A berapa?', []);
+
+    expect(result).toBeTruthy();
+    expect(result.answer).toContain('Biaya awal masuk untuk Prodi Teknologi Informasi');
+    expect(result.answer).toContain('Total biaya pendaftaran (Gelombang I A): Rp. 250.000');
+    expect(result.answer).toContain('Potongan biaya DPP (Gelombang I A): Rp. 2.000.000');
+    expect(result.answer).toContain('Total awal masuk setelah potongan (Gelombang I A): Rp. 13.750.000');
+    expect(result.answer).toContain('Biaya pendidikan per semester (UKT): Rp. 6.500.000');
+  });
+
   test('extracts detailed S1 fee from RAG content even when uploaded filename is generic', () => {
     const genericRailwayIndex = [
       {
