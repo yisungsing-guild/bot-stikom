@@ -1,3 +1,4 @@
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
 
@@ -223,7 +224,7 @@ function buildBreakdownMessage(programLabel, programTable, opts = {}) {
 }
 
 function loadCorpus() {
-  const p = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+  const p = getRagIndexPath();
   const raw = fs.readFileSync(p, 'utf-8');
   const norm = raw.replace(/\\n/g, '\n').replace(/\\r/g, '\n');
   return norm;

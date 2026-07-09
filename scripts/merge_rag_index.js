@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const activePath = path.resolve(__dirname, '..', 'data', 'rag_index.json');
-const backupPath = path.resolve(__dirname, '..', 'quarantined_backups', '1780530934300', 'src', 'data', 'rag_index.json.bak');
-const outPath = path.resolve(__dirname, '..', 'data', 'rag_index.merged.json');
+const { getRagIndexPath, getRagMergedIndexPath, resolveFromProjectRoot } = require('../src/utils/ragPaths');
+const activePath = getRagIndexPath();
+const backupPath = process.env.RAG_MERGE_BACKUP_PATH ? resolveFromProjectRoot(process.env.RAG_MERGE_BACKUP_PATH) : path.resolve(__dirname, '..', 'quarantined_backups', '1780530934300', 'src', 'data', 'rag_index.json.bak');
+const outPath = getRagMergedIndexPath();
 
 function load(p) {
   try { return JSON.parse(fs.readFileSync(p,'utf8')); } catch(e){ console.error('ERR load',p,e.message); process.exit(2);} }

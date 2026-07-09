@@ -1,8 +1,9 @@
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 (async () => {
   try {
     const path = require('path');
     const rag = require('../src/engine/ragEngine');
-    const idxPath = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+    const idxPath = getRagIndexPath();
     const index = require(idxPath);
     const q = process.argv[2] || 'berapa biaya teknologi informasi gelombang 1A';
 

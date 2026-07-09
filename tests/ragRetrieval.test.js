@@ -1,9 +1,10 @@
 const fs = require('fs');
 const path = require('path');
+const { getRagIngestChunksPath, getRagIndexPath } = require('../src/utils/ragPaths');
 
 // Build a temporary JSON rag_index from ingest/domains_chunks.jsonl so ragEngine can use it
-const ingestPath = path.join(__dirname, '..', 'data', 'ingest', 'domains_chunks.jsonl');
-const indexPath = path.join(__dirname, '..', 'data', 'rag_index.json');
+const ingestPath = getRagIngestChunksPath('domains_chunks.jsonl');
+const indexPath = getRagIndexPath();
 
 function buildIndexFromIngest() {
   const raw = String(fs.readFileSync(ingestPath, 'utf8') || '').trim();

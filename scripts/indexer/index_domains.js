@@ -1,3 +1,4 @@
+const { getRagIngestChunksPath, getRagDomainVectorsPath } = require('../../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
 const fetch = global.fetch || require('node-fetch');
@@ -139,8 +140,8 @@ async function semanticRetrieveLocal(localFile, query, topK = 5) {
 if (require.main === module) {
   (async () => {
     try {
-      const inputFile = path.join(process.cwd(), 'data', 'ingest', 'domains_chunks.jsonl');
-      const localOut = path.join(process.cwd(), 'data', 'vec_index', 'domains_vectors.jsonl');
+      const inputFile = getRagIngestChunksPath('domains_chunks.jsonl');
+      const localOut = getRagDomainVectorsPath('domains_vectors.jsonl');
       const usePinecone = Boolean(process.env.PINECONE_API_KEY && process.env.PINECONE_BASE_URL);
       const namespace = process.env.PINECONE_NAMESPACE || 'domains_v1';
 

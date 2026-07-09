@@ -1,7 +1,8 @@
 const path = require('path');
+const { getRagDomainVectorsPath } = require('../src/utils/ragPaths');
 const { semanticRetrieveLocal } = require('../scripts/indexer/index_domains');
 
-const localOut = path.join(process.cwd(), 'data', 'vec_index', 'domains_vectors.jsonl');
+const localOut = getRagDomainVectorsPath('domains_vectors.jsonl');
 
 describe('Domain-scoped retrieval regression tests', () => {
   test('jelaskan double degree -> returns double_degree top', async () => {

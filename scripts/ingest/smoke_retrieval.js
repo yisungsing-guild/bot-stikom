@@ -1,3 +1,4 @@
+const { getRagIngestChunksPath, getRagDomainVectorsPath } = require('../../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
 const { detectKnowledgeDomain } = require('../../src/engine/domainClassifier');
@@ -40,7 +41,7 @@ function retrieve(chunks, query, topK = 5) {
 }
 
 if (require.main === module) {
-  const dataFile = path.join(process.cwd(), 'data', 'ingest', 'domains_chunks.jsonl');
+  const dataFile = getRagIngestChunksPath('domains_chunks.jsonl');
   const chunks = loadJsonl(dataFile);
   const queries = [
     'ada beasiswa?',

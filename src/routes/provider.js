@@ -12,6 +12,7 @@ const { findReplyByRules } = require('../engine/replyEngine');
 const _ragEngine = require('../engine/ragEngine');
 const extractStructuredEntities = _ragEngine.extractStructuredEntities;
 const { querySemanticRag } = require('../engine/semanticRagEngine');
+const { getRagIndexPath, getRagDataDir } = require('../utils/ragPaths');
 
 // Wrapper around ragEngine.query that records calls/results so later stages
 // can inspect any prior RAG responses (helps when multiple RAG calls occur
@@ -53,7 +54,7 @@ function checkBundledIndexAvailable() {
   if (process.env.FORCE_BUNDLED_INDEX === 'false') return false;
   
   try {
-    const p = path.join(__dirname, '..', 'data', 'rag_index.json');
+    const p = getRagIndexPath();
     const st = fs.statSync(p);
     return st && st.isFile() && st.size > 1024;
   } catch (e) {
@@ -2607,7 +2608,7 @@ module.exports = function (provider) {
 
   function extractDualDegreeListFromBundledIndex() {
     try {
-      const p = path.join(__dirname, '..', 'data', 'rag_index.json');
+      const p = getRagIndexPath();
       const st = fs.statSync(p);
       const mtimeMs = st && st.mtimeMs ? st.mtimeMs : 0;
       if (cachedDualDegreeList && cachedDualDegreeListMtimeMs === mtimeMs) return cachedDualDegreeList;
@@ -2645,7 +2646,7 @@ module.exports = function (provider) {
 
   function extractProgramListFromBundledIndex() {
     try {
-      const p = path.join(__dirname, '..', 'data', 'rag_index.json');
+      const p = getRagIndexPath();
       const st = fs.statSync(p);
       const mtimeMs = st && st.mtimeMs ? st.mtimeMs : 0;
       if (cachedProgramList && cachedProgramListMtimeMs === mtimeMs) return cachedProgramList;
@@ -2771,7 +2772,7 @@ module.exports = function (provider) {
 
   function getBundledIndexCorpus() {
     try {
-      const p = path.join(__dirname, '..', 'data', 'rag_index.json');
+      const p = getRagIndexPath();
       const st = fs.statSync(p);
       const mtimeMs = st && st.mtimeMs ? st.mtimeMs : 0;
       if (cachedBundledIndexCorpus && cachedBundledIndexCorpusMtimeMs === mtimeMs) return cachedBundledIndexCorpus;
@@ -2811,7 +2812,7 @@ module.exports = function (provider) {
     const mainCorpus = getBundledIndexCorpus();
     const parts = mainCorpus ? [mainCorpus] : [];
     try {
-      const dataDir = path.join(__dirname, '..', 'data');
+      const dataDir = getRagDataDir();
       const backupFiles = fs.readdirSync(dataDir)
         .filter((name) => /^rag_index\.json\.bak/i.test(String(name || '')))
         .sort();
@@ -3156,7 +3157,7 @@ module.exports = function (provider) {
 
   function extractFeeBasicsFromBundledIndex() {
     try {
-      const p = path.join(__dirname, '..', 'data', 'rag_index.json');
+      const p = getRagIndexPath();
       const st = fs.statSync(p);
       const mtimeMs = st && st.mtimeMs ? st.mtimeMs : 0;
       if (cachedFeeBasics && cachedFeeBasicsMtimeMs === mtimeMs) return cachedFeeBasics;
@@ -3255,7 +3256,7 @@ module.exports = function (provider) {
 
       const key = String(programKey || 's1').toLowerCase().trim() || 's1';
 
-      const p = path.join(__dirname, '..', 'data', 'rag_index.json');
+      const p = getRagIndexPath();
       const st = fs.statSync(p);
       const mtimeMs = st && st.mtimeMs ? st.mtimeMs : 0;
 
@@ -3446,7 +3447,7 @@ module.exports = function (provider) {
 
       const key = String(programKey || 's1').toLowerCase().trim() || 's1';
 
-      const p = path.join(__dirname, '..', 'data', 'rag_index.json');
+      const p = getRagIndexPath();
       const st = fs.statSync(p);
       const mtimeMs = st && st.mtimeMs ? st.mtimeMs : 0;
 
@@ -4405,7 +4406,7 @@ module.exports = function (provider) {
 
   function extractAdmissionCalendarFromBundledIndex() {
     try {
-      const p = path.join(__dirname, '..', 'data', 'rag_index.json');
+      const p = getRagIndexPath();
       const st = fs.statSync(p);
       const mtimeMs = st && st.mtimeMs ? st.mtimeMs : 0;
       if (cachedAdmissionCalendar && cachedAdmissionCalendarMtimeMs === mtimeMs) return cachedAdmissionCalendar;
@@ -4572,7 +4573,7 @@ module.exports = function (provider) {
 
   function extractCampusLocationsFromBundledIndex() {
     try {
-      const p = path.join(__dirname, '..', 'data', 'rag_index.json');
+      const p = getRagIndexPath();
       const st = fs.statSync(p);
       const mtimeMs = st && st.mtimeMs ? st.mtimeMs : 0;
       if (cachedCampusLocations && cachedCampusLocationsMtimeMs === mtimeMs) return cachedCampusLocations;

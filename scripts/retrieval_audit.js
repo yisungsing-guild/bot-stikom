@@ -1,6 +1,7 @@
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
-const idxPath = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+const idxPath = getRagIndexPath();
 const raw = fs.readFileSync(idxPath,'utf8');
 const arr = JSON.parse(raw);
 const queries = [

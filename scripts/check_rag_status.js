@@ -5,7 +5,7 @@
     const rag = require(path.join(__dirname, '..', 'src','engine','ragEngine'));
     const prisma = (()=>{try{return require(path.join(__dirname,'..','src','db'));}catch(e){return null;}})();
 
-    const indexPath = rag.getIndexPath ? rag.getIndexPath() : path.join(__dirname,'..','data','rag_index.json');
+    const indexPath = rag.getIndexPath();
     console.log('indexPath=', indexPath);
 
     let index = [];

@@ -1,3 +1,4 @@
+const { getRagIngestChunksPath, getRagDomainVectorsPath } = require('../src/utils/ragPaths');
 (async () => {
   const fs = require('fs');
   const path = require('path');
@@ -88,7 +89,7 @@
   }
 
   // Detect availability of specific program docs in corpus by scanning data/ingest/domains_chunks.jsonl
-  const corpusPath = path.join(process.cwd(), 'data', 'ingest', 'domains_chunks.jsonl');
+  const corpusPath = getRagIngestChunksPath('domains_chunks.jsonl');
   const available = { TI: false, SI: false, SK: false, BD: false, MI: false };
   try {
     if (fs.existsSync(corpusPath)) {

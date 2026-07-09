@@ -1,3 +1,4 @@
+const { getRagIngestChunksPath, getRagDomainVectorsPath } = require('../../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
 
@@ -141,7 +142,7 @@ async function ingestDomains({inputDir, outputFile, priorityFiles}) {
 
 if (require.main === module) {
   const inputDir = path.join(process.cwd(), 'docs', 'retrieval', 'knowledge_domains');
-  const outputFile = path.join(process.cwd(), 'data', 'ingest', 'domains_chunks.jsonl');
+  const outputFile = getRagIngestChunksPath('domains_chunks.jsonl');
   const priorityFiles = [
     'program_studi_sistem_informasi.md',
     'program_studi_teknologi_informasi.md',

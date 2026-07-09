@@ -9,20 +9,11 @@ const { classifyIntent, getAllowedDocCategories, getForbiddenDocCategories, shou
 const { validateChunkForAnswer, validateChunkEvidence, validateChunkRelevanceToQuestion } = require('./evidenceValidator');
 const { enrichChunkWithCategory } = require('./docCategoryClassifier');
 const { auditLogger } = require('./ragAuditLogger');
+const { getRagDataDir, getRagIndexPath, getRagBackupIndexPath } = require('../utils/ragPaths');
 
-const DEFAULT_DATA_DIR = path.join(__dirname, '..', 'data');
-// Allow overriding index location for production persistence.
-// - RAG_INDEX_PATH: absolute or relative path to rag_index.json
-// - RAG_DATA_DIR: directory that will contain rag_index.json (ignored if RAG_INDEX_PATH set)
-const DATA_DIR = process.env.RAG_DATA_DIR
-  ? path.resolve(String(process.env.RAG_DATA_DIR))
-  : DEFAULT_DATA_DIR;
-
-const INDEX_PATH = process.env.RAG_INDEX_PATH
-  ? path.resolve(String(process.env.RAG_INDEX_PATH))
-  : path.join(DATA_DIR, 'rag_index.json');
-
-const INDEX_BAK_PATH = `${INDEX_PATH}.bak`;
+const DATA_DIR = getRagDataDir();
+const INDEX_PATH = getRagIndexPath();
+const INDEX_BAK_PATH = getRagBackupIndexPath();
 
 // Limits to protect memory usage
 // Increase default to 50MB to avoid aggressive truncation on medium-sized datasets.

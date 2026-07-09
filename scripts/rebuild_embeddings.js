@@ -1,9 +1,10 @@
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { OpenAI } = require('openai');
 
-const INDEX_PATH = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+const INDEX_PATH = getRagIndexPath();
 const BAK_PATH = `${INDEX_PATH}.bak_embedding_${Date.now()}`;
 
 function mockEmbedding(text) {

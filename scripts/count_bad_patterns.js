@@ -1,6 +1,7 @@
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
-const filePath = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+const filePath = getRagIndexPath();
 const s = fs.readFileSync(filePath, 'utf8');
 const patterns = [
   'SMK TI Bali Global',

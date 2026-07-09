@@ -1,12 +1,13 @@
 // Scoped wrapper for ragEngine to support category-aware retrieval
 const ragEngine = require('./ragEngine');
 const path = require('path');
+const { getRagDomainVectorsPath } = require('../utils/ragPaths');
 const fs = require('fs');
 const logger = require('../logger');
 const { normalizeInput } = require('../lib/normalizer');
 
 // Cached domain vectors to avoid reading/parsing JSONL on every request
-const DOMAIN_VECTORS_FILE = process.env.DOMAIN_VECTORS_FILE || path.join(process.cwd(), 'data', 'vec_index', 'domains_vectors.jsonl');
+const DOMAIN_VECTORS_FILE = getRagDomainVectorsPath('domains_vectors.jsonl');
 let cachedDomainVectors = null;
 let cachedDomainVectorsMtime = null;
 

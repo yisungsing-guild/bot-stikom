@@ -1,6 +1,7 @@
 const { chunkText, cleanAnswerLanguage, query, normalizeProgramLabel, normalizeWaveLabel, tryStructuredExactCostAnswer, tryStructuredProgramComparisonAnswer, tryStructuredFeeBreakdownAnswer, tryStructuredProgramRegistrationMenuAnswer, tryStructuredAccreditationAnswer, extractAcademicIntent, extractStructuredEntities, filterRelevantChunks, validateAcademicProgramContexts } = require('../src/engine/ragEngine');
 const fs = require('fs');
 const path = require('path');
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 
 const { tryStructuredProgramRecommendationAnswer } = require('../src/engine/ragEngine');
 
@@ -676,7 +677,7 @@ describe('ragEngine schedule overview guard', () => {
   });
 
   test('accreditation question for BD is answered from index text (deterministic)', async () => {
-    const indexPath = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+    const indexPath = getRagIndexPath();
     const before = fs.readFileSync(indexPath, 'utf-8');
 
     try {

@@ -2,7 +2,7 @@
   try {
     const path = require('path');
     const rag = require('../src/engine/ragEngine');
-    const idx = require('../src/data/rag_index.json');
+    const idx = JSON.parse(fs.readFileSync(getRagIndexPath(), 'utf8') || '[]');
     const q = process.argv[2] || 'berapa biaya teknologi informasi gelombang 1A';
     const target = process.argv[3] || 'eb5a5d25-3bcb-4c6d-8a42-65aafec455c0';
 

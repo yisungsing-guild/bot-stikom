@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
 
@@ -16,7 +17,7 @@ function parseCompactRupiahNumber(raw, opts = {}) {
 }
 
 function getBundledIndexCorpus() {
-  const p = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+  const p = getRagIndexPath();
   const raw = fs.readFileSync(p, 'utf8');
   const parsed = JSON.parse(raw);
   if (!Array.isArray(parsed)) return raw;

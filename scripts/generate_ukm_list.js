@@ -1,7 +1,8 @@
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
 
-const INDEX_PATH = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+const INDEX_PATH = getRagIndexPath();
 if (!fs.existsSync(INDEX_PATH)) {
   console.error('Index not found at', INDEX_PATH);
   process.exit(2);

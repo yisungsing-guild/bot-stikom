@@ -1,9 +1,10 @@
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
 const intent = require('../src/engine/intentClassifier');
 const ev = require('../src/engine/evidenceValidator');
 
-const idxPath = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+const idxPath = getRagIndexPath();
 const raw = fs.readFileSync(idxPath,'utf8');
 const arr = JSON.parse(raw);
 

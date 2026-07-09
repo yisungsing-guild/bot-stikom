@@ -10,20 +10,19 @@ const { classifyIntent, getAllowedDocCategories, getForbiddenDocCategories, shou
 const { validateChunkForAnswer, validateChunkEvidence, validateChunkRelevanceToQuestion } = require('./evidenceValidator');
 const { enrichChunkWithCategory } = require('./docCategoryClassifier');
 const { auditLogger } = require('./ragAuditLogger');
+const {
+  getRagDataDir,
+  getRagIndexPath,
+  getRagMergedIndexPath,
+  getRagBackupIndexPath,
+  getLegacyRagIndexPath,
+  isNonEmptyJsonArrayFile
+} = require('../utils/ragPaths');
 
-const DEFAULT_DATA_DIR = path.join(__dirname, '..', 'data');
-// Allow overriding index location for production persistence.
-// - RAG_INDEX_PATH: absolute or relative path to rag_index.json
-// - RAG_DATA_DIR: directory that will contain rag_index.json (ignored if RAG_INDEX_PATH set)
-const DATA_DIR = process.env.RAG_DATA_DIR
-  ? path.resolve(String(process.env.RAG_DATA_DIR))
-  : DEFAULT_DATA_DIR;
-
-const INDEX_PATH = process.env.RAG_INDEX_PATH
-  ? path.resolve(String(process.env.RAG_INDEX_PATH))
-  : path.join(DATA_DIR, 'rag_index.json');
-
-const INDEX_BAK_PATH = `${INDEX_PATH}.bak`;
+const DATA_DIR = getRagDataDir();
+const INDEX_PATH = getRagIndexPath();
+const INDEX_BAK_PATH = getRagBackupIndexPath();
+const MERGED_INDEX_PATH = getRagMergedIndexPath();
 
 // Limits to protect memory usage
 // Increase default to 50MB to avoid aggressive truncation on medium-sized datasets.
@@ -36,6 +35,40 @@ const AUDIT_DISABLE_COST_BACKFILL = true; // don't backfill registrationFee from
 const AUDIT_DISABLE_COST_EXPAND_TOPCHUNKS = true; // don't expand topChunks to include all chunks from same trainingId
 const AUDIT_DISABLE_COST_TABLE_INJECTION = true; // don't inject table-like chunks into candidates
 const AUDIT_DISABLE_COST_FALLBACK = true; // don't run fallback parsing from other chunks
+
+let ragDataLocationWarningLogged = false;
+
+function validateRagDataLocation() {
+  if (ragDataLocationWarningLogged) return;
+  ragDataLocationWarningLogged = true;
+
+  if (!process.env.RAG_DATA_DIR && !process.env.RAG_INDEX_PATH) return;
+
+  const warnings = [];
+  const indexExists = fs.existsSync(INDEX_PATH);
+  if (!indexExists) {
+    warnings.push('rag_index.json tidak ditemukan');
+  } else if (!isNonEmptyJsonArrayFile(INDEX_PATH)) {
+    warnings.push('rag_index.json kosong atau bukan array berisi chunk');
+  }
+
+  if (process.env.RAG_DATA_DIR && !fs.existsSync(MERGED_INDEX_PATH)) {
+    warnings.push('rag_index.merged.json tidak ditemukan');
+  }
+
+  if (!warnings.length) return;
+
+  const legacyIndexPath = getLegacyRagIndexPath();
+  const legacyHasValidIndex = legacyIndexPath !== INDEX_PATH && isNonEmptyJsonArrayFile(legacyIndexPath);
+  logger.warn({
+    ragDataDir: DATA_DIR,
+    indexPath: INDEX_PATH,
+    mergedIndexPath: MERGED_INDEX_PATH,
+    legacyIndexPath,
+    legacyHasValidIndex,
+    warnings
+  }, '[RAG] WARNING: Index pada RAG_DATA_DIR belum tersedia. Periksa Railway Volume/RAG_DATA_DIR atau jalankan re-ingest. Tidak membuat rag_index.json kosong secara otomatis.');
+}
 
 const FORBIDDEN_CORPUS_PATTERNS = [
   /\bSMK\s*TI\s*Bali\s*Global\b/i,
@@ -258,12 +291,16 @@ function ensureDataDir() {
     }
   }
 
-  if (!fs.existsSync(INDEX_PATH)) fs.writeFileSync(INDEX_PATH, JSON.stringify([]));
+  validateRagDataLocation();
 }
 
 function loadIndex() {
   ensureDataDir();
   try {
+    if (!fs.existsSync(INDEX_PATH)) {
+      return [];
+    }
+
     // If index file is too large, reset it to avoid OOM
     const stat = fs.statSync(INDEX_PATH);
     if (stat.size > MAX_INDEX_BYTES) {

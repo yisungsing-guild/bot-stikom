@@ -1,6 +1,7 @@
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
-const idxPath = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+const idxPath = getRagIndexPath();
 const idx = JSON.parse(fs.readFileSync(idxPath, 'utf8'));
 console.log('items', idx.length);
 idx.slice(0, 3).forEach((i, idx) => {

@@ -1,7 +1,8 @@
+const { getRagIndexPath } = require('../src/utils/ragPaths');
 const fs = require('fs');
 const path = require('path');
 
-const FILE = path.join(__dirname, '..', 'src', 'data', 'rag_index.json');
+const FILE = getRagIndexPath();
 const BACKUP = FILE + '.bak';
 
 function readJson(p) {
