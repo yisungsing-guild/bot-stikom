@@ -26,9 +26,9 @@ async function createUser(username, password, role, displayName) {
 async function main() {
   await createUser(
     "wakil_rektor",
-    "ZKUcFmJBocDZh2hl",
+    "Fw9lflVto6qPCcpm",
     "superadmin",
-    "WAKIL REKTOR III"
+    "WAKIL REKTOR III BIDANG PEMASARAN, KEMAHASISWAAN, DAN URUSAN INTERNASIONAL"
   );
 
   await createUser(
