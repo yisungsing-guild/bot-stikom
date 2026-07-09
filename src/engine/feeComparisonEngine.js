@@ -848,6 +848,25 @@ function tryDetailedFeeAnswer(question, index) {
     };
   }
 
+  if (!wave && found && found.program && found.profile && found.program.family === 'international') {
+    const { program, profile } = found;
+    return {
+      answer: [
+        `Rincian biaya program ${program.label}:`,
+        '',
+        `* Biaya pendaftaran: ${formatRp(profile.pendaftaran)}`,
+        `* DPP / Dana Pendidikan Pokok: ${formatRp(profile.dpp || 0)}`,
+        profile.languageFee ? `* ${profile.languageLabel || 'Biaya bahasa'}: ${formatRp(profile.languageFee)} (menjelang Semester II)` : null,
+        `* Biaya pendidikan per semester (UKT): ${profile.semester ? formatRp(profile.semester) : 'belum tercantum pada data biaya'}`,
+        '',
+        'Kalau kakak sebutkan gelombangnya, misalnya Gelombang I A atau Gelombang IV A, saya bisa hitungkan total setelah potongan pendaftaran dan DPP.'
+      ].filter(Boolean).join('\n'),
+      program,
+      profile,
+      wave: null
+    };
+  }
+
   if (!wave || !found || !found.program || !found.profile) return null;
 
   const { program, profile } = found;

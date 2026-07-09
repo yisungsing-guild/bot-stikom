@@ -355,6 +355,21 @@ describe('semanticRagEngine', () => {
     expect(mainCampus.source).toBe('semantic-rag-campus-location');
     expect(mainCampus.answer).toContain('Kampus utama ITB STIKOM Bali berada di Denpasar/Renon');
     expect(mainCampus.answer).toMatch(/Jl. Raya Puputan No. 86 Renon/i);
+    const mainCampusFollowUp = await querySemanticRag('kampus utama dimana?');
+    expect(mainCampusFollowUp.success).toBe(true);
+    expect(mainCampusFollowUp.source).toBe('semantic-rag-campus-location');
+    expect(mainCampusFollowUp.answer).toContain('Kampus utama ITB STIKOM Bali berada di Denpasar/Renon');
+
+    const facilities = await querySemanticRag('fasilitas kampus apa saja?');
+    expect(facilities.success).toBe(true);
+    expect(facilities.source).toBe('semantic-rag-campus-facility');
+    expect(facilities.answer).toMatch(/Career Center|Inkubator Bisnis|Language Learning Center/i);
+    expect(String(facilities.answer || '').trim()).not.toBe('');
+
+    const careerCenter = await querySemanticRag('career center layanan apa?');
+    expect(careerCenter.success).toBe(true);
+    expect(careerCenter.source).toBe('semantic-rag-campus-facility');
+    expect(careerCenter.answer).toMatch(/Informasi lowongan kerja|konsultasi karier|dunia kerja/i);
 
     const ukm = await querySemanticRag('ukm apa saja yang ada di stikom?');
     expect(ukm.success).toBe(true);
@@ -586,6 +601,42 @@ describe('semanticRagEngine', () => {
     expect(result.answer).not.toMatch(/Saya tangkap|Kesimpulannya|Kakak bisa lanjut tanya/i);
   });
 
+  test('falls back to deterministic PMB answer when AI intent is unknown', async () => {
+    process.env.OPENAI_API_KEY = 'test-key';
+    jest.dontMock('../src/engine/ragEngine');
+
+    const createMock = jest.fn().mockResolvedValueOnce({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              canonicalQuestion: 'Apa itu PMB?',
+              searchQueries: ['apa itu pmb'],
+              intent: 'unknown',
+              entities: {},
+              confidence: 0.1,
+              needsClarification: false,
+              clarificationQuestion: ''
+            })
+          }
+        }
+      ]
+    });
+
+    jest.doMock('openai', () => ({
+      OpenAI: jest.fn().mockImplementation(() => ({
+        chat: { completions: { create: createMock } }
+      }))
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Apa itu pmb?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-pmb-info');
+    expect(result.answer).toMatch(/PMB adalah singkatan dari Penerimaan Mahasiswa Baru/i);
+    expect(createMock).toHaveBeenCalledTimes(2);
+  });
   test('does not hijack specific PMB schedule question with broad PMB overview', async () => {
     jest.dontMock('../src/engine/ragEngine');
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');

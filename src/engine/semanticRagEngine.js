@@ -444,6 +444,11 @@ function hasSemanticFeeSignal(question) {
 function refineSemanticIntent(intent, entities, question = '') {
   const current = SEMANTIC_INTENTS.has(intent) ? intent : 'unknown';
   const feeScope = entityText(entities, ['fee_scope', 'scope', 'component']).toLowerCase();
+  if (current === 'dual_degree' && hasSemanticFeeSignal(question)) {
+    return /\b(pendaftaran|daftar|application)\b/.test(feeScope) || /\bbiaya\s+pendaftaran|pendaftaran\b/i.test(String(question || ''))
+      ? 'registration_fee'
+      : 'fee_detail';
+  }
   if ((current === 'fee_detail' || current === 'fee_general') && /\b(pendaftaran|daftar|application)\b/.test(feeScope)) {
     return 'registration_fee';
   }
@@ -1206,10 +1211,56 @@ function tryRegistrationHowAnswer(question) {
   };
 }
 
+function tryCampusFacilityAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|softskill|language\s+learning|hi-?think|gccp|magang\s+berbayar|konsultasi)\b/i.test(q);
+  if (!asksFacilities) return null;
+
+  if (/\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
+    return {
+      answer: [
+        'Career Center di ITB STIKOM Bali membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja.',
+        '',
+        'Layanan yang bisa ditanyakan melalui Career Center antara lain:',
+        '',
+        '- Informasi lowongan kerja dan peluang karier.',
+        '- Bimbingan atau konsultasi karier.',
+        '- Pelatihan/pembekalan keterampilan kerja.',
+        '- Dukungan persiapan memasuki dunia profesional.',
+        '',
+        'Kalau kakak ingin info yang lebih spesifik, kakak bisa tanya tentang lowongan, magang, atau program persiapan karier yang tersedia.'
+      ].join('\n'),
+      source: 'semantic-rag-campus-facility'
+    };
+  }
+
+  return {
+    answer: [
+      'Fasilitas dan program pendukung yang tersedia di ITB STIKOM Bali antara lain:',
+      '',
+      '- Career Center',
+      '- Inkubator Bisnis',
+      '- Program Pengembangan Softskill',
+      '- Lebih dari 30 Unit Kegiatan Mahasiswa (UKM)',
+      '- Language Learning Center',
+      '- Kuliah Sambil Kerja di Luar Negeri',
+      '- Program Double Degree Nasional',
+      '- Program Double Degree Internasional',
+      '- Program Hi-Think untuk persiapan bekerja di bidang TI di Jepang',
+      '- Program GCCP atau short course di luar negeri',
+      '- Magang berbayar di luar negeri',
+      '- Program jaminan konsultasi selama 2 tahun setelah lulus',
+      '',
+      'Kalau kakak mau, saya bisa jelaskan salah satu fasilitasnya, misalnya Career Center, Inkubator Bisnis, UKM, atau Double Degree.'
+    ].join('\n'),
+    source: 'semantic-rag-campus-facility'
+  };
+}
 function tryCampusLocationAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (!/\b(lokasi|alamat|kampus|dimana|di\s*mana|where|letak|maps|rute)\b/i.test(q)) return null;
-  const mentionsStikomCampus = /\b(stikom|itb\s*stikom|stikom\s*bali|renon|denpasar|jimbaran|abiansemal)\b/i.test(q);
+  const asksMainCampus = /\b(kampus\s+utama|utama|pusat|kampus\s+pusat)\b/i.test(q);
+  const mentionsStikomCampus = /\b(stikom|itb\s*stikom|stikom\s*bali|renon|denpasar|jimbaran|abiansemal)\b/i.test(q) || asksMainCampus;
   if (!mentionsStikomCampus) return null;
   if (/\b(daftar|mendaftar|pendaftaran|registrasi|kuliah)\b/i.test(q) && /\b(dimana|di\s*mana|cara|gimana|bagaimana|mau|ingin|pengen|pengin)\b/i.test(q)) return null;
 
@@ -1439,6 +1490,18 @@ function inferFrameTopic(question, source) {
     };
   }
 
+  if (src.includes('campus-facility') || /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|inkubator|softskill)\b/.test(q)) {
+    return {
+      request: 'fasilitas atau layanan pendukung di ITB STIKOM Bali',
+      assumption: 'Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.',
+      conclusion: 'Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.',
+      followups: [
+        'Career Center memberikan layanan apa?',
+        'UKM apa saja yang ada?',
+        'Program Double Degree apa saja?'
+      ]
+    };
+  }
   if (src.includes('campus-location') || /\b(lokasi|alamat|kampus|maps|rute)\b/.test(q)) {
     return {
       request: 'lokasi kampus ITB STIKOM Bali',
@@ -2111,6 +2174,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-registration-info', tryRegistrationHowAnswer],
   ['semantic-rag-schedule-window', tryScheduleWindowAnswer],
   ['semantic-rag-campus-location', tryCampusLocationAnswer],
+  ['semantic-rag-campus-facility', tryCampusFacilityAnswer],
   ['semantic-rag-ukm-list', tryUkmAnswer],
   ['semantic-rag-registration-fee', tryRegistrationFeeAnswer],
   ['semantic-rag-fee-detail', tryDetailedFeeAnswer],
@@ -2394,6 +2458,7 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
+
   const retrieved = await retrieveSemanticContexts(rewrite.searchQueries, { topK: options.topK });
   const minScoreRaw = Number(process.env.SEMANTIC_RAG_MIN_SCORE || '0.18');
   const minScore = Number.isFinite(minScoreRaw) ? minScoreRaw : 0.18;
@@ -2402,6 +2467,15 @@ async function querySemanticRag(question, options = {}) {
     if (fallbackResult) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
       return fallbackResult;
+    }
+    const generalFallbackHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => !PRE_AI_HANDLER_SOURCES.has(source));
+    const generalFallbackResult = runDeterministicHandlers(question, generalFallbackHandlers, { ...options, semanticRewrite: rewrite }, buildSemanticRoutingQuestions(question, rewrite), {
+      routeStage: 'rag-no-context-deterministic-fallback',
+      rewrite
+    });
+    if (generalFallbackResult) {
+      setCachedSemanticResult(resultCacheKey, generalFallbackResult);
+      return generalFallbackResult;
     }
     return {
       success: true,
@@ -2424,6 +2498,15 @@ async function querySemanticRag(question, options = {}) {
         setCachedSemanticResult(resultCacheKey, fallbackResult);
         return fallbackResult;
       }
+      const generalFallbackHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => !PRE_AI_HANDLER_SOURCES.has(source));
+      const generalFallbackResult = runDeterministicHandlers(question, generalFallbackHandlers, { ...options, semanticRewrite: rewrite }, buildSemanticRoutingQuestions(question, rewrite), {
+        routeStage: 'rag-empty-answer-deterministic-fallback',
+        rewrite
+      });
+      if (generalFallbackResult) {
+        setCachedSemanticResult(resultCacheKey, generalFallbackResult);
+        return generalFallbackResult;
+      }
       return { success: true, answer: 'Maaf, saya belum bisa menemukan jawaban yang cukup dari data yang tersedia. Kakak bisa tuliskan pertanyaannya dengan lebih spesifik?', source: 'semantic-rag-empty-answer', contexts: retrieved.contexts, confidenceScore: retrieved.topScore, debug: { rewrite } };
     }
     if (rawAnswer.toUpperCase().includes('TIDAK_CUKUP_DATA')) {
@@ -2431,6 +2514,15 @@ async function querySemanticRag(question, options = {}) {
       if (fallbackResult) {
         setCachedSemanticResult(resultCacheKey, fallbackResult);
         return fallbackResult;
+      }
+      const generalFallbackHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => !PRE_AI_HANDLER_SOURCES.has(source));
+      const generalFallbackResult = runDeterministicHandlers(question, generalFallbackHandlers, { ...options, semanticRewrite: rewrite }, buildSemanticRoutingQuestions(question, rewrite), {
+        routeStage: 'rag-insufficient-context-deterministic-fallback',
+        rewrite
+      });
+      if (generalFallbackResult) {
+        setCachedSemanticResult(resultCacheKey, generalFallbackResult);
+        return generalFallbackResult;
       }
       const cleaned = rawAnswer.replace(/TIDAK_CUKUP_DATA[:\s-]*/i, '').trim();
       const allowClarifyingFallback = envFlag('SEMANTIC_RAG_RETURN_CLARIFICATION_ON_NO_DATA', true);
