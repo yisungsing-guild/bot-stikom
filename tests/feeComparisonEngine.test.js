@@ -363,6 +363,31 @@ describe('feeComparisonEngine', () => {
     }
   });
 
+  test('extracts detailed S1 fee from RAG content even when uploaded filename is generic', () => {
+    const genericRailwayIndex = [
+      {
+        filename: 'upload-9f3a2.pdf',
+        chunk: [
+          'RINCIAN BIAYA TAHUN AJARAN 2026/2027',
+          'Program Studi: Sistem Informasi, Teknologi Informasi, Bisnis Digital',
+          'Pendaftaran 500.000',
+          'Jas Alamater, Topi 750.000',
+          'Kaos, Tas, GMTI 750.000',
+          'Dana Pendidikan Pokok 14.000.000',
+          'Biaya Pendidikan Per Semester 6.500.000'
+        ].join('\n')
+      }
+    ];
+
+    const result = tryDetailedFeeAnswer('Rincian biaya prodi ti gelombang 3A berapa?', genericRailwayIndex);
+
+    expect(result).toBeTruthy();
+    expect(result.answer).toContain('Biaya awal masuk untuk Prodi Teknologi Informasi');
+    expect(result.answer).toContain('Total biaya pendaftaran (Gelombang III A): Rp. 350.000');
+    expect(result.answer).toContain('Total awal masuk setelah potongan (Gelombang III A): Rp. 14.850.000');
+    expect(result.answer).toContain('Biaya pendidikan per semester (UKT): Rp. 6.500.000');
+  });
+
   test('answers scholarship question from local fee knowledge', () => {
     const result = tryScholarshipAnswer('apakah ada beasiswa?');
     expect(result).toBeTruthy();

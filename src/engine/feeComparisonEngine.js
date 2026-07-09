@@ -1198,6 +1198,32 @@ function corpusByFilename(index, filenameRe) {
     .join('\n'));
 }
 
+function chunkText(item) {
+  return String(
+    (item && (item.chunk || item.text || item.content || item.pageContent || item.rawText)) || ''
+  );
+}
+
+function chunkFilename(item) {
+  return String(
+    (item && (item.filename || item.originalName || item.sourceFile || item.source || item.fileName || item.name)) || ''
+  );
+}
+
+function corpusBySignals(index, filenameRe, signalGroups = []) {
+  const byName = corpusByFilename(index, filenameRe);
+  if (byName) return byName;
+
+  const chunks = Array.isArray(index) ? index : [];
+  const matches = chunks.filter((item) => {
+    const text = normalizeText(`${chunkFilename(item)}\n${chunkText(item)}`);
+    if (!text) return false;
+    return signalGroups.some((group) => group.every((signal) => signal.test(text)));
+  });
+
+  return normalizeText(matches.map(chunkText).join('\n'));
+}
+
 function grab(text, patterns, opts = {}) {
   const min = Number.isFinite(opts.min) ? opts.min : 1;
   const max = Number.isFinite(opts.max) ? opts.max : Number.MAX_SAFE_INTEGER;
@@ -1253,13 +1279,34 @@ function buildProfile({ key, label, degree, source, normalSemesters, pendaftaran
 }
 
 function extractProfiles(index = ragEngine.loadIndex()) {
-  const s1Text = corpusByFilename(index, /rincian\s+biaya\s+si,ti\s+dan\s+bd/i);
-  const skText = corpusByFilename(index, /rincian\s+biaya\s+sk/i);
-  const d3Text = corpusByFilename(index, /rincian\s+biaya\s+d3/i);
-  const s2Text = corpusByFilename(index, /camscanner/i);
-  const dnuiText = corpusByFilename(index, /rincian\s+biaya\s+dnui/i);
-  const helpText = corpusByFilename(index, /rincian\s+biaya\s+help/i);
-  const utbText = corpusByFilename(index, /rincian\s+biaya\s+utb/i);
+  const s1Text = corpusBySignals(index, /rincian\s+biaya\s+si,ti\s+dan\s+bd/i, [
+    [/Sistem\s+Informasi/i, /Teknologi\s+Informasi/i, /Bisnis\s+Digital/i, /Dana\s+Pendidikan\s+Pokok/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i],
+    [/Jas\s+Al(?:a|ma)mater/i, /Kaos,?\s*Tas,?\s*GMTI/i, /6\.?500\.?000/i, /14\.?000\.?000/i]
+  ]);
+  const skText = corpusBySignals(index, /rincian\s+biaya\s+sk/i, [
+    [/Sistem\s+Komputer/i, /Dana\s+Pendidikan\s+Pokok|\(DPP\)/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i],
+    [/Sistem\s+Komputer/i, /11\.?000\.?000/i, /6\.?000\.?000/i]
+  ]);
+  const d3Text = corpusBySignals(index, /rincian\s+biaya\s+d3/i, [
+    [/Manajemen\s+Informatika/i, /Biaya\s+Registrasi/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i],
+    [/\bD3\b/i, /Manajemen\s+Informatika/i, /4\.?500\.?000/i]
+  ]);
+  const s2Text = corpusBySignals(index, /camscanner|rincian\s+biaya\s+s2|pascasarjana/i, [
+    [/S2\s+Sistem\s+Informasi|Pascasarjana/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i, /10\.?000\.?000/i],
+    [/Lunas\s+Selama\s+2\s*Tahun/i, /40\.?000\.?000|Pascasarjana|S2/i]
+  ]);
+  const dnuiText = corpusBySignals(index, /rincian\s+biaya\s+dnui|dnui|dalian/i, [
+    [/DNUI|Dalian\s+Neusoft/i, /Bahasa\s+Mandarin/i, /Biaya\s+Pendidikan|Ujian\/Subject/i],
+    [/DNUI|Dalian\s+Neusoft/i, /16\.?000\.?000/i, /Dana\s+Pendidikan\s+Pokok/i]
+  ]);
+  const helpText = corpusBySignals(index, /rincian\s+biaya\s+help|help/i, [
+    [/HELP\s+University|\bHELP\b/i, /Bahasa\s+Inggris/i, /Biaya\s+Pendidikan|Ujian\/Subject/i],
+    [/HELP\s+University|\bHELP\b/i, /3\.?000\.?000/i, /Dana\s+Pendidikan\s+Pokok/i]
+  ]);
+  const utbText = corpusBySignals(index, /rincian\s+biaya\s+utb|utb|universitas\s+teknologi\s+bandung/i, [
+    [/UTB|Universitas\s+Teknologi\s+Bandung/i, /Dana\s+Pendidikan\s+Pokok|\(DPP\)/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i],
+    [/UTB|Universitas\s+Teknologi\s+Bandung/i, /14\.?000\.?000/i, /6\.?500\.?000/i]
+  ]);
 
   const s1Common = s1Text ? {
     pendaftaran: grab(s1Text, [/\bPendaftaran\s*([0-9][0-9.]{0,20})/i], { min: 100000, max: 5000000 }),

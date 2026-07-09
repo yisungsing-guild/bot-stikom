@@ -1619,7 +1619,7 @@ function inferFrameTopic(question, source) {
     };
   }
 
-  if (src.includes('program-list') || /\b(jurusan|prodi|program\s+studi)\b/.test(q)) {
+  if ((src.includes('program-list') || /\b(jurusan|prodi|program\s+studi)\b/.test(q)) && !src.includes('fee') && !/\b(biaya|harga|bayar|ukt|dpp|pendaftaran|rincian|detail|gelombang|gel\b)\b/.test(q)) {
     return {
       request: 'daftar jurusan/program studi yang tersedia di ITB STIKOM Bali',
       assumption: 'Saya tampilkan program reguler D3/S1/S2 dan pilihan Double Degree.',
