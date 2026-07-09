@@ -1645,7 +1645,8 @@ function inferFrameTopic(question, source) {
     };
   }
 
-  if (/\bukt\b|uang\s+kuliah\s+tunggal|biaya\s+pendidikan\s+per\s+semester|biaya\s+semester/i.test(q)) {
+  const wantsFullFeeFrame = /\b(rincian|detail|dpp|awal(?:nya)?|masuk|total|semua|gelombang|gel\b)\b/i.test(q);
+  if (/\bukt\b|uang\s+kuliah\s+tunggal|biaya\s+pendidikan\s+per\s+semester|biaya\s+semester/i.test(q) && !wantsFullFeeFrame) {
     return {
       request: 'UKT atau biaya pendidikan per semester',
       assumption: 'Saya pakai angka UKT per semester yang tersedia dan tidak mencampurnya dengan DPP, pendaftaran, atau potongan gelombang.',
@@ -1810,7 +1811,8 @@ function buildHybridFrameOpeners(question, source, topic) {
 
   if (src.includes('fee')) {
     const target = programName ? ' ' + programName : '';
-    if (/\bukt\b|uang\s+kuliah\s+tunggal|biaya\s+pendidikan\s+per\s+semester|biaya\s+semester/i.test(q)) {
+    const wantsFullFeeDetail = /\b(rincian|detail|dpp|awal(?:nya)?|masuk|total|semua|gelombang|gel\b)\b/i.test(q);
+    if (/\bukt\b|uang\s+kuliah\s+tunggal|biaya\s+pendidikan\s+per\s+semester|biaya\s+semester/i.test(q) && !wantsFullFeeDetail) {
       return [
         prefix + ' Saya jawab khusus UKT' + target + ' per semester agar tidak tercampur dengan biaya awal masuk.',
         'Untuk UKT' + target + ', saya fokus ke biaya pendidikan per semester.',

@@ -282,6 +282,18 @@ describe('semanticRagEngine', () => {
     expect(s2Detail.source).toBe('semantic-rag-fee-detail');
     expect(s2Detail.answer).toContain('Biaya pendidikan per semester (UKT): Rp. 10.000.000');
     expect(s2Detail.answer).toContain('Pembayaran lunas selama 2 tahun: Rp. 40.000.000');
+
+    const fullDetailWithUkt = await querySemanticRag('rincian biaya teknologi informasi gelombang 1A, termasuk UKT per semester');
+    expect(fullDetailWithUkt.source).toBe('semantic-rag-fee-detail');
+    expect(fullDetailWithUkt.answer).toContain('Pendaftaran:');
+    expect(fullDetailWithUkt.answer).toContain('Biaya awal masuk untuk Prodi Teknologi Informasi:');
+    expect(fullDetailWithUkt.answer).toContain('Biaya pendidikan per semester (UKT): Rp. 6.500.000');
+    expect(fullDetailWithUkt.answer).not.toMatch(/UKT.*saja|khusus UKT/i);
+
+    const sisipanDetail = await querySemanticRag('rincian biaya SI gelombang sisipan');
+    expect(sisipanDetail.source).toBe('semantic-rag-fee-detail');
+    expect(sisipanDetail.answer).toContain('Gelombang Sisipan');
+    expect(sisipanDetail.answer).toContain('Total awal masuk setelah potongan (Gelombang Sisipan): Rp. 16.000.000');
   });
 
   test('answers informal STIKOM nickname and coding hobby naturally', async () => {

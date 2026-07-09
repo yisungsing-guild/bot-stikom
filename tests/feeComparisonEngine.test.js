@@ -184,6 +184,22 @@ describe('feeComparisonEngine', () => {
     expect(result.answer).not.toMatch(/50% DPP|Rp\. 9\.000\.000/);
   });
 
+  test('keeps full fee breakdown for detailed wave questions that mention UKT and Sisipan', () => {
+    const withUkt = tryDetailedFeeAnswer('rincian biaya teknologi informasi gelombang 1A, termasuk UKT per semester');
+    expect(withUkt).toBeTruthy();
+    expect(withUkt.answer).toContain('Pendaftaran:');
+    expect(withUkt.answer).toContain('Biaya awal masuk untuk Prodi Teknologi Informasi:');
+    expect(withUkt.answer).toContain('Biaya pendidikan per semester (UKT): Rp. 6.500.000');
+    expect(withUkt.answer.trim()).not.toMatch(/^Biaya pendidikan per semester/);
+
+    const sisipan = tryDetailedFeeAnswer('rincian biaya si gelombang sisipan');
+    expect(sisipan).toBeTruthy();
+    expect(sisipan.answer).toContain('* Potongan biaya pendaftaran (Gelombang Sisipan): Rp. 0');
+    expect(sisipan.answer).toContain('Total biaya pendaftaran (Gelombang Sisipan): Rp. 500.000');
+    expect(sisipan.answer).toContain('* Potongan biaya DPP (Gelombang Sisipan): Rp. 0');
+    expect(sisipan.answer).toContain('Total awal masuk setelah potongan (Gelombang Sisipan): Rp. 16.000.000');
+  });
+
   test('answers generic dual degree question with all partners', () => {
     const result = tryDualDegreeAnswer('apakah ada program double degree di stikom?');
     expect(result).toBeTruthy();
