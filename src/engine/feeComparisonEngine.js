@@ -1224,6 +1224,42 @@ function corpusBySignals(index, filenameRe, signalGroups = []) {
   return normalizeText(matches.map(chunkText).join('\n'));
 }
 
+let staticFeeKnowledgeCache = null;
+
+function loadStaticFeeKnowledgeIndex() {
+  if (staticFeeKnowledgeCache) return staticFeeKnowledgeCache;
+  const filePath = path.resolve(__dirname, '..', '..', 'docs', 'retrieval', 'knowledge_domains', 'tuition_fee.md');
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const sections = String(raw || '')
+      .split(/(?=^##\s+Fee\s+Profile:)/gim)
+      .map((part) => part.trim())
+      .filter((part) => /^##\s+Fee\s+Profile:/im.test(part));
+    staticFeeKnowledgeCache = sections.map((chunk, index) => {
+      const title = (chunk.match(/^##\s+Fee\s+Profile:\s*(.+)$/im) || [])[1] || `tuition-fee-${index + 1}`;
+      return {
+        id: `static-tuition-fee-${index + 1}`,
+        trainingId: 'static-tuition-fee',
+        filename: `tuition_fee.md#${title}`,
+        source: 'static-knowledge-domain',
+        docCategory: 'TUITION_FEE',
+        category: 'tuition',
+        chunk
+      };
+    });
+  } catch (err) {
+    staticFeeKnowledgeCache = [];
+  }
+  return staticFeeKnowledgeCache;
+}
+
+function withStaticFeeKnowledge(index) {
+  const list = Array.isArray(index) ? index : [];
+  const staticIndex = loadStaticFeeKnowledgeIndex();
+  if (!staticIndex.length) return list;
+  return [...list, ...staticIndex];
+}
+
 function grab(text, patterns, opts = {}) {
   const min = Number.isFinite(opts.min) ? opts.min : 1;
   const max = Number.isFinite(opts.max) ? opts.max : Number.MAX_SAFE_INTEGER;
@@ -1279,31 +1315,32 @@ function buildProfile({ key, label, degree, source, normalSemesters, pendaftaran
 }
 
 function extractProfiles(index = ragEngine.loadIndex()) {
-  const s1Text = corpusBySignals(index, /rincian\s+biaya\s+si,ti\s+dan\s+bd/i, [
+  const effectiveIndex = withStaticFeeKnowledge(index);
+  const s1Text = corpusBySignals(effectiveIndex, /rincian\s+biaya\s+si,ti\s+dan\s+bd|tuition_fee\.md#S1\s+Sistem\s+Informasi/i, [
     [/Sistem\s+Informasi/i, /Teknologi\s+Informasi/i, /Bisnis\s+Digital/i, /Dana\s+Pendidikan\s+Pokok/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i],
     [/Jas\s+Al(?:a|ma)mater/i, /Kaos,?\s*Tas,?\s*GMTI/i, /6\.?500\.?000/i, /14\.?000\.?000/i]
   ]);
-  const skText = corpusBySignals(index, /rincian\s+biaya\s+sk/i, [
+  const skText = corpusBySignals(effectiveIndex, /rincian\s+biaya\s+sk|tuition_fee\.md#S1\s+Sistem\s+Komputer/i, [
     [/Sistem\s+Komputer/i, /Dana\s+Pendidikan\s+Pokok|\(DPP\)/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i],
     [/Sistem\s+Komputer/i, /11\.?000\.?000/i, /6\.?000\.?000/i]
   ]);
-  const d3Text = corpusBySignals(index, /rincian\s+biaya\s+d3/i, [
+  const d3Text = corpusBySignals(effectiveIndex, /rincian\s+biaya\s+d3|tuition_fee\.md#D3\s+Manajemen\s+Informatika/i, [
     [/Manajemen\s+Informatika/i, /Biaya\s+Registrasi/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i],
     [/\bD3\b/i, /Manajemen\s+Informatika/i, /4\.?500\.?000/i]
   ]);
-  const s2Text = corpusBySignals(index, /camscanner|rincian\s+biaya\s+s2|pascasarjana/i, [
+  const s2Text = corpusBySignals(effectiveIndex, /camscanner|rincian\s+biaya\s+s2|pascasarjana|tuition_fee\.md#S2/i, [
     [/S2\s+Sistem\s+Informasi|Pascasarjana/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i, /10\.?000\.?000/i],
     [/Lunas\s+Selama\s+2\s*Tahun/i, /40\.?000\.?000|Pascasarjana|S2/i]
   ]);
-  const dnuiText = corpusBySignals(index, /rincian\s+biaya\s+dnui|dnui|dalian/i, [
+  const dnuiText = corpusBySignals(effectiveIndex, /rincian\s+biaya\s+dnui|dnui|dalian|tuition_fee\.md#Double\s+Degree\s+DNUI/i, [
     [/DNUI|Dalian\s+Neusoft/i, /Bahasa\s+Mandarin/i, /Biaya\s+Pendidikan|Ujian\/Subject/i],
     [/DNUI|Dalian\s+Neusoft/i, /16\.?000\.?000/i, /Dana\s+Pendidikan\s+Pokok/i]
   ]);
-  const helpText = corpusBySignals(index, /rincian\s+biaya\s+help|help/i, [
+  const helpText = corpusBySignals(effectiveIndex, /rincian\s+biaya\s+help|help|tuition_fee\.md#Double\s+Degree\s+HELP/i, [
     [/HELP\s+University|\bHELP\b/i, /Bahasa\s+Inggris/i, /Biaya\s+Pendidikan|Ujian\/Subject/i],
     [/HELP\s+University|\bHELP\b/i, /3\.?000\.?000/i, /Dana\s+Pendidikan\s+Pokok/i]
   ]);
-  const utbText = corpusBySignals(index, /rincian\s+biaya\s+utb|utb|universitas\s+teknologi\s+bandung/i, [
+  const utbText = corpusBySignals(effectiveIndex, /rincian\s+biaya\s+utb|utb|universitas\s+teknologi\s+bandung|tuition_fee\.md#Double\s+Degree\s+UTB/i, [
     [/UTB|Universitas\s+Teknologi\s+Bandung/i, /Dana\s+Pendidikan\s+Pokok|\(DPP\)/i, /Biaya\s+Pendidikan\s+Per\s+Semester/i],
     [/UTB|Universitas\s+Teknologi\s+Bandung/i, /14\.?000\.?000/i, /6\.?500\.?000/i]
   ]);

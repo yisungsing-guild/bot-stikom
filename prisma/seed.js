@@ -25,6 +25,13 @@ async function createUser(username, password, role, displayName) {
 
 async function main() {
   await createUser(
+    "wakil_rektor",
+    "ZKUcFmJBocDZh2hl",
+    "superadmin",
+    "WAKIL REKTOR III"
+  );
+
+  await createUser(
     "direktur",
     "ZKUcFmJBocDZh2hl",
     "superadmin",
