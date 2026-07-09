@@ -8,7 +8,10 @@ async function createUser(username, password, role, displayName) {
 
   await prisma.adminUser.upsert({
     where: { username },
-    update: {},
+    update: {
+      displayName,
+      role,
+    },
     create: {
       username,
       displayName,
@@ -24,7 +27,7 @@ async function main() {
   await createUser(
     "direktur",
     "ZKUcFmJBocDZh2hl",
-    "super_admin",
+    "superadmin",
     "DIR PEMASARAN DAN HUMAS"
   );
 
@@ -34,6 +37,13 @@ async function main() {
     "admin",
     "DIR URUSAN INTERNASIONAL"
   );
+
+   await createUser(
+    "akademik",
+    "BHpgty2Xw5glPwbp",
+    "admin",
+    "DIR AKADEMIK"
+   )
 
   await createUser(
     "kerjasama",

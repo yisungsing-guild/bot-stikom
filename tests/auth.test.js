@@ -1,5 +1,6 @@
 const express = require('express');
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 
 const { createAuthRoute } = require('../src/middleware/auth');
 
@@ -35,6 +36,19 @@ describe('Auth routes', () => {
     expect(res.status).toBe(401);
   });
 
+  test('normalizes super_admin role alias to superadmin', async () => {
+    process.env.ADMIN_USERS_JSON = JSON.stringify([
+      { username: 'direktur', password: 'direktur123', role: 'super_admin', displayName: 'DIR PEMASARAN DAN HUMAS' }
+    ]);
+
+    const res = await request(app)
+      .post('/auth/login')
+      .send({ username: 'direktur', password: 'direktur123' });
+
+    expect(res.status).toBe(200);
+    const decoded = jwt.verify(res.body.token, process.env.JWT_SECRET);
+    expect(decoded.role).toBe('superadmin');
+  });
   test('login succeeds with env multi-user (ADMIN_USERS_JSON)', async () => {
     process.env.ADMIN_USERS_JSON = JSON.stringify([
       { username: 'akademik', password: 'akademik123', role: 'akademik', displayName: 'Akademik' },

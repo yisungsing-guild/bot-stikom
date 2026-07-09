@@ -61,19 +61,25 @@ module.exports = function (provider) {
     }
   }
 
+  function normalizeAdminRole(role) {
+    const r = String(role || '').toLowerCase().trim();
+    if (r === 'superadmin' || r === 'super_admin' || r === 'super-admin') return 'superadmin';
+    return r;
+  }
+
   function isAdminRole(role) {
-    const r = String(role || '').toLowerCase();
+    const r = normalizeAdminRole(role);
     // Treat only 'superadmin' as full admin for server-side RBAC
     return r === 'superadmin';
   }
 
   function isSuperAdminRole(role) {
-    const r = String(role || '').toLowerCase();
+    const r = normalizeAdminRole(role);
     return r === 'superadmin';
   }
 
   function isMarketingRole(role) {
-    const r = String(role || '').toLowerCase();
+    const r = normalizeAdminRole(role);
     return r === 'marketing';
   }
 
@@ -90,7 +96,7 @@ module.exports = function (provider) {
   }
 
   function roleToDivisionKey(role) {
-    const r = String(role || '').toLowerCase().trim();
+    const r = normalizeAdminRole(role);
     if (!r || isAdminRole(r)) return null;
 
     // Alias: marketing team uses PMB bucket.

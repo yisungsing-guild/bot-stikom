@@ -32,6 +32,12 @@ function isSuperAdminDisplayName(displayName) {
   return list.includes(String(displayName).toLowerCase());
 }
 
+function normalizeAdminRole(role) {
+  const r = String(role || '').trim().toLowerCase();
+  if (r === 'superadmin' || r === 'super_admin' || r === 'super-admin') return 'superadmin';
+  return r || 'admin';
+}
+
 // ===== SECURITY CHECK =====
 // Warn jika masih menggunakan default credentials
 const defaultUsername = 'admin';
@@ -223,6 +229,7 @@ function verifyToken(req, res, next) {
     try {
       const decoded = jwt.verify(token, secret);
       
+      decoded.role = normalizeAdminRole(decoded.role);
       req.user = decoded;
       next();
     } catch (err) {
@@ -297,7 +304,7 @@ function createAuthRoute() {
               adminId: null,
               username: envUser.username,
               displayName: envUser.displayName || null,
-              role: envUser.role || 'admin'
+              role: normalizeAdminRole(envUser.role || 'admin')
             };
 
             // Allow overriding certain usernames to superadmin via env
@@ -352,7 +359,7 @@ function createAuthRoute() {
           adminId: dbUser.id,
           username: dbUser.username,
           displayName: dbUser.displayName,
-          role: dbUser.role
+          role: normalizeAdminRole(dbUser.role)
         };
 
         // Override role to superadmin for configured usernames
@@ -363,7 +370,7 @@ function createAuthRoute() {
         const token = generateToken({ ...identity, type: 'access' });
         const refreshToken = generateRefreshToken({ ...identity, type: 'refresh' });
 
-        logger.info({ username, role: dbUser.role }, '[Auth] Successful login (db)');
+        logger.info({ username, role: normalizeAdminRole(dbUser.role) }, '[Auth] Successful login (db)');
         return res.send({
           ok: true,
           token,
@@ -403,7 +410,7 @@ function createAuthRoute() {
               adminId: null,
               username: envUser.username,
               displayName: envUser.displayName || null,
-              role: envUser.role || 'admin'
+              role: normalizeAdminRole(envUser.role || 'admin')
             };
 
             if (isSuperAdminUsername(identity.username) || isSuperAdminDisplayName(identity.displayName)) {
@@ -459,7 +466,7 @@ function createAuthRoute() {
         adminId: null,
         username,
         displayName: null,
-        role: 'admin'
+        role: normalizeAdminRole('admin')
       };
 
       if (isSuperAdminUsername(identity.username) || isSuperAdminDisplayName(identity.displayName)) {
@@ -505,7 +512,7 @@ function createAuthRoute() {
         }
 
         // Generate access token baru
-        let newRole = decoded.role;
+        let newRole = normalizeAdminRole(decoded.role);
         if (isSuperAdminUsername(decoded.username) || isSuperAdminDisplayName(decoded.displayName)) newRole = 'superadmin';
 
         const newToken = generateToken({
