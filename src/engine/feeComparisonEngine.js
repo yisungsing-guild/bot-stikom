@@ -30,13 +30,15 @@ function normalizeWave(question) {
     .replace(/\bpertama\b/g, '1')
     .replace(/\bkedua\b/g, '2')
     .replace(/\bketiga\b/g, '3')
-    .replace(/\bkeempat\b/g, '4');
-  const m = normalized.match(/\b(?:gel(?:ombang)?\.?\s*)?((?:khusus)|(?:[1-4]|i{1,3}|iv))\s*([a-c])?\b/i);
+    .replace(/\bkeempat\b/g, '4')
+    .replace(/\bsisipan\b/g, 'sisipan');
+  const m = normalized.match(/\b(?:gel(?:ombang)?\.?\s*)?((?:khusus)|(?:sisipan)|(?:[1-4]|i{1,3}|iv))\s*([a-c])?\b/i);
   if (!m) return null;
   const raw = String(m[1] || '').toLowerCase();
   const sub = String(m[2] || '').toUpperCase();
   const groupMap = {
     khusus: 'Khusus',
+    sisipan: 'Sisipan',
     '1': 'I',
     i: 'I',
     '2': 'II',
@@ -52,7 +54,7 @@ function normalizeWave(question) {
     group,
     suffix: sub || '',
     label: sub ? `${group} ${sub}` : group,
-    display: group === 'Khusus' ? 'Gelombang Khusus' : `Gelombang ${group}${sub ? ` ${sub}` : ''}`
+    display: group === 'Khusus' ? 'Gelombang Khusus' : (group === 'Sisipan' ? 'Gelombang Sisipan' : `Gelombang ${group}${sub ? ` ${sub}` : ''}`)
   };
 }
 
@@ -77,34 +79,34 @@ function detectProgram(question) {
 
 const WAVE_DISCOUNTS = {
   s1: {
-    pendaftaran: { Khusus: 300000, I: 250000, II: 200000, III: 150000, IV: 100000 },
-    dppNominal: { Khusus: 3000000, I: 2000000, II: 1500000, III: 1000000, IV: 500000 },
-    dppPercent: { Khusus: 0.6, I: 0.5, II: 0.4, III: 0.3, IV: 0.2 }
+    pendaftaran: { Khusus: 300000, I: 250000, II: 200000, III: 150000, IV: 100000, Sisipan: 0 },
+    dppNominal: { Khusus: 3000000, I: 2000000, II: 1500000, III: 1000000, IV: 500000, Sisipan: 0 },
+    dppPercent: { Khusus: 0.6, I: 0.5, II: 0.4, III: 0.3, IV: 0.2, Sisipan: 0 }
   },
   sk: {
-    pendaftaran: { Khusus: 300000, I: 250000, II: 200000, III: 150000, IV: 100000 },
-    dppNominal: { Khusus: 2000000, I: 1000000, II: 750000, III: 0, IV: 0 },
-    dppPercent: { Khusus: 0.6, I: 0.5, II: 0.4, III: 0.3, IV: 0.2 }
+    pendaftaran: { Khusus: 300000, I: 250000, II: 200000, III: 150000, IV: 100000, Sisipan: 0 },
+    dppNominal: { Khusus: 2000000, I: 1000000, II: 750000, III: 0, IV: 0, Sisipan: 0 },
+    dppPercent: { Khusus: 0.6, I: 0.5, II: 0.4, III: 0.3, IV: 0.2, Sisipan: 0 }
   },
   d3: {
-    pendaftaran: { Khusus: 300000, I: 250000, II: 200000, III: 150000, IV: 100000 },
-    dppNominal: { Khusus: 2000000, I: 1000000, II: 750000, III: 500000, IV: 0 },
-    dppPercent: { Khusus: 0.6, I: 0.5, II: 0.4, III: 0.3, IV: 0.2 }
+    pendaftaran: { Khusus: 300000, I: 250000, II: 200000, III: 150000, IV: 100000, Sisipan: 0 },
+    dppNominal: { Khusus: 2000000, I: 1000000, II: 750000, III: 500000, IV: 0, Sisipan: 0 },
+    dppPercent: { Khusus: 0.6, I: 0.5, II: 0.4, III: 0.3, IV: 0.2, Sisipan: 0 }
   },
   international: {
-    pendaftaran: { Khusus: 1500000, I: 1250000, II: 1000000, III: 750000, IV: 500000 },
-    dppNominal: { Khusus: 10000000, I: 8000000, II: 6000000, III: 4000000, IV: 2000000 },
-    dppPercent: {}
+    pendaftaran: { Khusus: 1500000, I: 1250000, II: 1000000, III: 750000, IV: 500000, Sisipan: 0 },
+    dppNominal: { Khusus: 10000000, I: 8000000, II: 6000000, III: 4000000, IV: 2000000, Sisipan: 0 },
+    dppPercent: { Sisipan: 0 }
   },
   utb: {
-    pendaftaran: { Khusus: 300000, I: 250000, II: 200000, III: 150000, IV: 100000 },
-    dppNominal: { Khusus: 3000000, I: 2000000, II: 1500000, III: 1000000, IV: 500000 },
-    dppPercent: {}
+    pendaftaran: { Khusus: 300000, I: 250000, II: 200000, III: 150000, IV: 100000, Sisipan: 0 },
+    dppNominal: { Khusus: 3000000, I: 2000000, II: 1500000, III: 1000000, IV: 500000, Sisipan: 0 },
+    dppPercent: { Sisipan: 0 }
   },
   s2: {
-    pendaftaran: { Khusus: 0, I: 200000, II: 100000, III: 0, IV: 0 },
+    pendaftaran: { Khusus: 0, I: 200000, II: 100000, III: 0, IV: 0, Sisipan: 0 },
     dppNominal: {},
-    dppPercent: {}
+    dppPercent: { Sisipan: 0 }
   }
 };
 
@@ -662,7 +664,8 @@ function renderRegistrationDiscountLines(base, discounts) {
     '- Gelombang I: potongan ' + formatRp(discounts.pendaftaran.I || 0) + ', total ' + formatRp(Math.max(0, base - (discounts.pendaftaran.I || 0))),
     '- Gelombang II: potongan ' + formatRp(discounts.pendaftaran.II || 0) + ', total ' + formatRp(Math.max(0, base - (discounts.pendaftaran.II || 0))),
     '- Gelombang III: potongan ' + formatRp(discounts.pendaftaran.III || 0) + ', total ' + formatRp(Math.max(0, base - (discounts.pendaftaran.III || 0))),
-    '- Gelombang IV: potongan ' + formatRp(discounts.pendaftaran.IV || 0) + ', total ' + formatRp(Math.max(0, base - (discounts.pendaftaran.IV || 0)))
+    '- Gelombang IV: potongan ' + formatRp(discounts.pendaftaran.IV || 0) + ', total ' + formatRp(Math.max(0, base - (discounts.pendaftaran.IV || 0))),
+    '- Gelombang Sisipan: potongan ' + formatRp(discounts.pendaftaran.Sisipan || 0) + ', total ' + formatRp(Math.max(0, base - (discounts.pendaftaran.Sisipan || 0)))
   ];
 }
 
@@ -769,7 +772,10 @@ function tryDetailedFeeAnswer(question, index) {
     }
   }
 
-  if (/\b(ukt|uang\s+kuliah\s+tunggal|biaya\s+pendidikan\s+per\s+semester|biaya\s+semester|per\s+semester)\b/.test(q)) {
+  const wantsFullDetail = /\b(rincian|detail|dpp|awal(?:nya)?|masuk|total|semua)\b/.test(q) || (wave && found && found.program && /\b(biaya|rincian|detail|gelombang|gel\b|pendaftaran)\b/.test(q));
+  const asksOnlyUkt = /\b(ukt|uang\s+kuliah\s+tunggal|biaya\s+pendidikan\s+per\s+semester|biaya\s+semester|per\s+semester)\b/.test(q) && !wantsFullDetail;
+
+  if (asksOnlyUkt) {
     const profiles = extractProfiles(index);
     if (found && found.program && found.profile && !Number.isFinite(found.profile.semester)) {
       return {
@@ -864,6 +870,36 @@ function tryDetailedFeeAnswer(question, index) {
       program,
       profile,
       wave: null
+    };
+  }
+
+  if (wave && found && found.program && found.profile && found.program.family === 's2') {
+    const profile = found.profile;
+    const discounts = WAVE_DISCOUNTS.s2;
+    const basePendaftaran = profile.pendaftaran || 0;
+    const pendaftaranDiscount = (discounts.pendaftaran && discounts.pendaftaran[wave.group]) || 0;
+    const totalPendaftaran = Math.max(0, basePendaftaran - pendaftaranDiscount);
+    return {
+      answer: [
+        'Rincian biaya S2 Sistem Informasi/Pascasarjana:',
+        '',
+        'Pendaftaran:',
+        '* Biaya pendaftaran: ' + formatRp(basePendaftaran),
+        '* Potongan biaya pendaftaran (' + wave.display + '): ' + formatRp(pendaftaranDiscount),
+        'Total biaya pendaftaran (' + wave.display + '): ' + formatRp(totalPendaftaran),
+        '',
+        'Biaya pendidikan:',
+        '* Biaya pendidikan per semester (UKT): ' + formatRp(profile.semester),
+        profile.lunas2Tahun ? '* Pembayaran lunas selama 2 tahun: ' + formatRp(profile.lunas2Tahun) : null,
+        profile.thesisSemester ? '* Biaya semester 5 dan seterusnya jika hanya mengambil tesis: ' + formatRp(profile.thesisSemester) : null,
+        '',
+        wave.group === 'I' || wave.group === 'II'
+          ? 'Catatan: potongan pendaftaran S2 yang tercantum pada data tersedia untuk Gelombang I dan Gelombang II. Tambahan potongan alumni dapat dikonfirmasi ke admin/PMB sesuai status pendaftar.'
+          : 'Catatan: untuk gelombang ini, data potongan pendaftaran S2 belum tercantum selain ketentuan khusus/alumni yang perlu dikonfirmasi ke admin/PMB.'
+      ].filter(Boolean).join('\n'),
+      program: found.program,
+      profile,
+      wave
     };
   }
 
