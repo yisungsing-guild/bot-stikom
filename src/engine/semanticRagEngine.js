@@ -701,6 +701,127 @@ function trySmallTalkAnswer(question) {
   return null;
 }
 
+function extractOrgStructureSubject(question) {
+  const q = String(question || '').toLowerCase();
+  const known = [
+    ['Inkubator Bisnis', /\binkubator(?:\s+bisnis)?\b/i],
+    ['Career Center', /\bcareer\s*center|pusat\s+karier\b/i],
+    ['Language Learning Center', /\blanguage\s+learning\s+center|llc\b/i],
+    ['Program Pengembangan Softskill', /\bsoftskill|pengembangan\s+softskill\b/i],
+    ['Hi-Think', /\bhi-?think\b/i],
+    ['GCCP', /\bgccp\b/i],
+    ['UKM/Ormawa', /\bukm|ormawa|organisasi\s+mahasiswa\b/i],
+    ['Double Degree', /\bdouble\s+degree|dual\s+degree\b/i]
+  ];
+  for (const [label, re] of known) {
+    if (re.test(q)) return label;
+  }
+  const beforeMarker = q.match(/^(.{3,80}?)(?:\s+ini)?\s+(?:ada\s+)?(?:di\s*bawah|dibawah|berada\s+di\s+bawah|masuk\s+ke|naungan|dibawahi|dikelola|bagian|direktorat)/i);
+  if (beforeMarker && beforeMarker[1]) return beforeMarker[1].replace(/\b(kak|min|admin|mau|ingin|tanya|bertanya|tentang)\b/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  return 'bagian tersebut';
+}
+
+function normalizeOrgStructureText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function buildOrgSubjectRegex(subject) {
+  const raw = String(subject || '').trim();
+  if (!raw || /^bagian tersebut$/i.test(raw)) return null;
+  const escaped = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  return new RegExp(escaped, 'i');
+}
+
+function extractOrgStructureEvidence(question, subject) {
+  const index = getCachedSemanticIndex();
+  if (!Array.isArray(index) || !index.length) return null;
+
+  const subjectRegex = buildOrgSubjectRegex(subject);
+  if (!subjectRegex) return null;
+
+  const relationRegex = /\b(direktorat|divisi|bagian|biro|lembaga|upt|departemen|di\s*bawah|dibawah|berada\s+di\s+bawah|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+(?:kepada|ke)|kepala|koordinator)\b/i;
+  const questionNorm = normalizeOrgStructureText(question);
+  const questionTerms = questionNorm.split(/\s+/).filter((term) => term.length >= 4 && !/^(apa|yang|ada|bawah|dibawah|direktorat|bagian|divisi|unit|struktur|organisasi|stikom|bali|kampus|kakak|kak)$/i.test(term));
+
+  const scored = [];
+  for (const item of index) {
+    const chunk = String(item && item.chunk ? item.chunk : '').trim();
+    if (!chunk) continue;
+    if (!subjectRegex.test(chunk)) continue;
+    if (!relationRegex.test(chunk)) continue;
+
+    const norm = normalizeOrgStructureText(chunk);
+    let score = 10;
+    for (const term of questionTerms) {
+      if (norm.includes(term)) score += 1;
+    }
+    if (/\b(surat\s+keputusan|sk\b|struktur\s+organisasi)\b/i.test(chunk)) score += 3;
+    scored.push({ item, chunk, score });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  const best = scored[0];
+  if (!best) return null;
+
+  const lines = best.chunk
+    .split(/(?:\r?\n|(?<=[.!?])\s+)/)
+    .map((line) => line.replace(/\s{2,}/g, ' ').trim())
+    .filter(Boolean);
+  const selected = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (subjectRegex.test(line) || relationRegex.test(line)) {
+      if (i > 0 && selected.length < 1) selected.push(lines[i - 1]);
+      selected.push(line);
+      if (i + 1 < lines.length) selected.push(lines[i + 1]);
+    }
+    if (selected.join('\n').length > 900) break;
+  }
+
+  const evidence = uniqueList(selected, 8).join('\n').trim() || clampText(best.chunk.replace(/\s{2,}/g, ' ').trim(), 900);
+  if (!evidence) return null;
+
+  return {
+    evidence,
+    filename: best.item && (best.item.filename || best.item.sourceFile) ? (best.item.filename || best.item.sourceFile) : null
+  };
+}
+function tryOrganizationalStructureAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const asksOrgStructure = /\b(struktur\s+organisasi|di\s*bawah|dibawah|berada\s+di\s+bawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke|kepala\s+bagian|koordinator)\b/i.test(q);
+  if (!asksOrgStructure) return null;
+
+  const subject = extractOrgStructureSubject(question);
+  const evidence = extractOrgStructureEvidence(question, subject);
+  if (evidence && evidence.evidence) {
+    return {
+      answer: [
+        `Saya menemukan data tentang struktur/posisi ${subject} pada data training yang tersedia.`,
+        '',
+        evidence.evidence,
+        '',
+        'Jadi, jawaban di atas saya ambil dari dokumen yang tersedia. Untuk struktur terbaru atau perubahan internal, sebaiknya tetap dikonfirmasi ke admin kampus.'
+      ].join('\n'),
+      source: 'semantic-rag-org-structure-evidence'
+    };
+  }
+
+  return {
+    answer: [
+      `Untuk struktur organisasi atau posisi ${subject} di ITB STIKOM Bali, saya belum menemukan data yang menyebutkan ${subject} berada di bawah direktorat/divisi/bagian apa pada file training saat ini.`,
+      '',
+      'Agar tidak menebak, informasi ini sebaiknya dikonfirmasi ke admin kampus atau pihak internal yang memegang struktur organisasi terbaru.',
+      '',
+      'Kalau file struktur organisasi sudah ditambahkan ke data training, saya bisa bantu jawab berdasarkan dokumen tersebut.'
+    ].join('\n'),
+    source: 'semantic-rag-org-structure-unavailable'
+  };
+}
+
 function tryShortClarificationAnswer(question) {
   const raw = String(question || '').trim();
   const q = raw.toLowerCase();
@@ -1494,6 +1615,18 @@ function inferFrameTopic(question, source) {
     };
   }
 
+  if (src.includes('org-structure-unavailable') || /\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/.test(q)) {
+    return {
+      request: 'struktur organisasi atau posisi unit/bagian di ITB STIKOM Bali',
+      assumption: 'Saya cek berdasarkan data yang tersedia dan tidak menebak struktur internal yang belum tercantum.',
+      conclusion: 'Jadi, informasi struktur organisasi tersebut belum tersedia pada data training saat ini.',
+      followups: [
+        'Fasilitas kampus apa saja?',
+        'Career Center memberikan layanan apa?',
+        'Kontak kampus berapa?'
+      ]
+    };
+  }
   if (src.includes('campus-facility') || /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|inkubator|softskill)\b/.test(q)) {
     return {
       request: 'fasilitas atau layanan pendukung di ITB STIKOM Bali',
@@ -1519,7 +1652,7 @@ function inferFrameTopic(question, source) {
     };
   }
 
-  if (src.includes('campus-location') || /\b(lokasi|alamat|kampus|maps|rute)\b/.test(q)) {
+  if (!src.includes('ukm') && (src.includes('campus-location') || /\\b(lokasi|alamat|kampus|maps|rute)\\b/.test(q))) {
     return {
       request: 'lokasi kampus ITB STIKOM Bali',
       assumption: 'Berikut alamat kampus yang tersedia.',
@@ -2184,6 +2317,7 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
 
 const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-small-talk', trySmallTalkAnswer],
+  ['semantic-rag-org-structure-unavailable', tryOrganizationalStructureAnswer],
   ['semantic-rag-clarification', tryShortClarificationAnswer],
   ['semantic-rag-out-of-domain', tryOutOfDomainAnswer],
   ['semantic-rag-feedback', tryFeedbackAnswer],

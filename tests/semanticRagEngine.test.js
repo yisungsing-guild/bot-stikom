@@ -383,6 +383,12 @@ describe('semanticRagEngine', () => {
     expect(careerCenter.source).toBe('semantic-rag-campus-facility');
     expect(careerCenter.answer).toMatch(/Informasi lowongan kerja|konsultasi karier|dunia kerja/i);
 
+    const orgStructure = await querySemanticRag('inkubator bisnis ini ada di bawah direktorat apa?');
+    expect(orgStructure.success).toBe(true);
+    expect(orgStructure.source).toBe('semantic-rag-org-structure-unavailable');
+    expect(orgStructure.answer).toMatch(/belum menemukan data|belum tersedia/i);
+    expect(orgStructure.answer).toMatch(/direktorat|divisi|bagian/i);
+    expect(orgStructure.answer).not.toMatch(/Fasilitas dan program pendukung yang tersedia/i);
     const ukm = await querySemanticRag('ukm apa saja yang ada di stikom?');
     expect(ukm.success).toBe(true);
     expect(ukm.source).toBe('semantic-rag-ukm-list');
