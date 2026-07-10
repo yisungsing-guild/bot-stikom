@@ -1259,12 +1259,16 @@ function tryCampusFacilityAnswer(question) {
 function tryCampusLocationAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (!/\b(lokasi|alamat|kampus|dimana|di\s*mana|where|letak|maps|rute)\b/i.test(q)) return null;
-  const asksMainCampus = /\b(kampus\s+utama|utama|pusat|kampus\s+pusat)\b/i.test(q);
-  const mentionsStikomCampus = /\b(stikom|itb\s*stikom|stikom\s*bali|renon|denpasar|jimbaran|abiansemal)\b/i.test(q) || asksMainCampus;
+  if (/\b(fasilitas|layanan|sarana|prasarana|ukm|ormawa|organisasi|kegiatan\s+mahasiswa|komunitas|hobi|minat)\b/i.test(q)) return null;
+  const asksMainCampus = /\b(kampus\s+(?:utama|pusat)|utama(?:nya)?|pusat(?:nya)?)\b/i.test(q);
+  const asksGenericCampusLocation = /\b(kampus(?:nya)?|lokasi\s+kampus|alamat\s+kampus)\b/i.test(q);
+  const mentionsOtherCampus = /\b(udayana|unud|warmadewa|undiknas|unhi|unwar|politeknik|universitas\s+(?!teknologi\s+bandung))\b/i.test(q) && !/\b(stikom|itb\s*stikom|stikom\s*bali)\b/i.test(q);
+  if (mentionsOtherCampus) return null;
+  const mentionsStikomCampus = /\b(stikom|itb\s*stikom|stikom\s*bali|renon|denpasar|jimbaran|abiansemal)\b/i.test(q) || asksMainCampus || asksGenericCampusLocation;
   if (!mentionsStikomCampus) return null;
   if (/\b(daftar|mendaftar|pendaftaran|registrasi|kuliah)\b/i.test(q) && /\b(dimana|di\s*mana|cara|gimana|bagaimana|mau|ingin|pengen|pengin)\b/i.test(q)) return null;
 
-  if (/\b(kampus\s+utama|utama|pusat|kampus\s+pusat)\b/i.test(q)) {
+  if (/\b(kampus\s+(?:utama|pusat)|utama(?:nya)?|pusat(?:nya)?)\b/i.test(q)) {
     return {
       answer: [
         'Kampus utama ITB STIKOM Bali berada di Denpasar/Renon.',
@@ -1273,7 +1277,7 @@ function tryCampusLocationAnswer(question) {
         '',
         'Selain kampus utama, ITB STIKOM Bali juga memiliki Kampus Jimbaran dan Kampus Abiansemal.'
       ].join('\n'),
-      source: 'semantic-rag-campus-location'
+      source: 'semantic-rag-campus-main-location'
     };
   }
 
@@ -1502,10 +1506,23 @@ function inferFrameTopic(question, source) {
       ]
     };
   }
+  if (src.includes('campus-main-location') || /\b(kampus\s+(?:utama|pusat)|pusatnya|utamanya)\b/.test(q)) {
+    return {
+      request: 'lokasi kampus utama ITB STIKOM Bali',
+      assumption: 'Kampus pusat/utama yang dimaksud adalah kampus Denpasar/Renon.',
+      conclusion: 'Jadi, kampus utama atau kampus pusat ITB STIKOM Bali berada di Denpasar/Renon.',
+      followups: [
+        'Alamat lengkap kampus Renon apa?',
+        'Kampus Jimbaran di mana?',
+        'Kontak kampus berapa?'
+      ]
+    };
+  }
+
   if (src.includes('campus-location') || /\b(lokasi|alamat|kampus|maps|rute)\b/.test(q)) {
     return {
       request: 'lokasi kampus ITB STIKOM Bali',
-      assumption: 'Saya tampilkan alamat kampus yang tersedia agar kakak bisa memilih lokasi yang sesuai.',
+      assumption: 'Berikut alamat kampus yang tersedia.',
       conclusion: 'Jadi, ITB STIKOM Bali memiliki beberapa lokasi kampus, dan tujuan kunjungan sebaiknya disesuaikan dengan kebutuhan layanan kakak.',
       followups: [
         'Kampus utama di mana?',
@@ -1993,9 +2010,9 @@ function buildFrameOpeners(question, source, topic) {
 
   if (src.includes('campus-location')) {
     return [
-      'Saya pahami kakak menanyakan lokasi kampus ITB STIKOM Bali. Saya tampilkan alamat yang tersedia.',
-      'Baik, Kak. Untuk lokasi kampus, alamatnya saya rangkum seperti ini.',
-      'Kalau yang kakak cari alamat kampus, berikut lokasi yang tersedia ya.',
+      'Saya pahami kakak menanyakan lokasi kampus ITB STIKOM Bali.',
+      'Baik, Kak. Ini informasi lokasi kampus ITB STIKOM Bali.',
+      'Kalau yang kakak cari alamat kampus, saya bantu jawab ya.',
       'Saya jawab bagian lokasi kampusnya ya, Kak.'
     ];
   }
@@ -2118,7 +2135,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
 
   const followups = Array.isArray(topic.followups) ? topic.followups : [];
   if (followups.length) {
-    parts.push('', `Kalau mau lanjut, kakak bisa tanya:\n${followups.slice(0, 3).map(item => `- ${item}`).join('\n')}`);
+    parts.push('', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.slice(0, 3).map(item => `- ${item}`)].join('\n'));
   }
 
   return parts.join('\n').trim();
@@ -2175,9 +2192,9 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-pmb-requirements', tryPmbRequirementsAnswer],
   ['semantic-rag-registration-info', tryRegistrationHowAnswer],
   ['semantic-rag-schedule-window', tryScheduleWindowAnswer],
-  ['semantic-rag-campus-location', tryCampusLocationAnswer],
   ['semantic-rag-campus-facility', tryCampusFacilityAnswer],
   ['semantic-rag-ukm-list', tryUkmAnswer],
+  ['semantic-rag-campus-location', tryCampusLocationAnswer],
   ['semantic-rag-registration-fee', tryRegistrationFeeAnswer],
   ['semantic-rag-fee-detail', tryDetailedFeeAnswer],
   ['semantic-rag-contextual-fee', tryContextualMultiProgramFeeAnswer],
