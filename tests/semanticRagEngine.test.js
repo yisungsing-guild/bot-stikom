@@ -540,6 +540,23 @@ describe('semanticRagEngine', () => {
     expect(allPairs.answer).toMatch(/HELP.*Sistem Informasi.*belum tercantum/s);
   });
 
+  test('answers short double degree nationality questions directly', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const international = await querySemanticRag('Apakah ada program double degree internasional?');
+    expect(international.success).toBe(true);
+    expect(international.source).toBe('semantic-rag-dual-degree');
+    expect(international.answer).toMatch(/Ya, ada program Double Degree internasional/i);
+    expect(international.answer).toMatch(/DNUI/i);
+    expect(international.answer).toMatch(/HELP/i);
+
+    const national = await querySemanticRag('Apa ada program double degree nasional?');
+    expect(national.success).toBe(true);
+    expect(national.source).toBe('semantic-rag-dual-degree');
+    expect(national.answer).toMatch(/Ya, ada program Double Degree nasional/i);
+    expect(national.answer).toMatch(/UTB/i);
+  });
+
   test('answers UTB double degree major specifically', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 

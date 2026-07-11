@@ -890,6 +890,25 @@ describe('ragEngine schedule overview guard', () => {
     expect(answer).not.toMatch(/Malaysia/i);
   });
 
+  test('short availability questions answer directly for national or international double degree', async () => {
+    const international = await query('apakah ada program double degree internasional?');
+    expect(international && international.success).toBe(true);
+    expect(international.source).toBe('rag-dual-degree-list');
+    const internationalAnswer = String(international.answer || '');
+    expect(internationalAnswer).toMatch(/Ya, ada program Double Degree internasional/i);
+    expect(internationalAnswer).toMatch(/DNUI/i);
+    expect(internationalAnswer).toMatch(/HELP/i);
+    expect(internationalAnswer).not.toMatch(/Kakak mau info/i);
+
+    const national = await query('apa ada program double degree nasional?');
+    expect(national && national.success).toBe(true);
+    expect(national.source).toBe('rag-dual-degree-list');
+    const nationalAnswer = String(national.answer || '');
+    expect(nationalAnswer).toMatch(/Ya, ada program Double Degree nasional/i);
+    expect(nationalAnswer).toMatch(/UTB/i);
+    expect(nationalAnswer).not.toMatch(/Kakak mau info/i);
+  });
+
   test('general dual degree question lists UTB, DNUI, and HELP', async () => {
     const res = await query('apakah ada program dual degree di stikom?');
     expect(res && res.success).toBe(true);
