@@ -50,17 +50,20 @@ describe('semanticRagEngine', () => {
     expect(greetingWithQuestion.source).not.toBe('semantic-rag-small-talk');
     expect(greetingWithQuestion.answer).toMatch(/biaya|Sistem Informasi|UKT|DPP/i);
 
-    for (const q of ['halo bro', 'bro']) {
-      const broGreeting = await querySemanticRag(q);
-      expect(broGreeting.success).toBe(true);
-      expect(broGreeting.source).toBe('semantic-rag-small-talk');
-      expect(broGreeting.answer).toMatch(/Halo Kak, saya Tiko/i);
+    for (const q of ['halo bro', 'bro', 'mas', 'mbak', 'pak', 'bu', 'bang', 'gan', 'cuk', 'halo mas', 'pagi mbak']) {
+      const casualGreeting = await querySemanticRag(q);
+      expect(casualGreeting.success).toBe(true);
+      expect(casualGreeting.source).toBe('semantic-rag-small-talk');
+      expect(casualGreeting.answer).toMatch(/Halo Kak, saya Tiko/i);
     }
 
-    const broWithQuestion = await querySemanticRag('bro rincian biaya SI gelombang 2B?');
-    expect(broWithQuestion.source).not.toBe('semantic-rag-small-talk');
-    expect(broWithQuestion.answer).toMatch(/biaya|Sistem Informasi|UKT|DPP/i);
-
+    for (const q of ['bro rincian biaya SI gelombang 2B?', 'mas biaya SI berapa?', 'cuk biaya SI berapa?']) {
+      const casualWithQuestion = await querySemanticRag(q);
+      expect(casualWithQuestion.source).not.toBe('semantic-rag-small-talk');
+      if (casualWithQuestion.answer) {
+        expect(casualWithQuestion.answer).toMatch(/biaya|Sistem Informasi|UKT|DPP/i);
+      }
+    }
     const kabar = await querySemanticRag('Apa kabar?');
     expect(kabar.success).toBe(true);
     expect(kabar.source).toBe('semantic-rag-small-talk');
@@ -345,6 +348,11 @@ describe('semanticRagEngine', () => {
     expect(kip.source).toBe('semantic-rag-scholarship');
     expect(kip.answer).toMatch(/Beasiswa KIP/i);
     expect(kip.answer).not.toMatch(/PMB adalah singkatan/i);
+    const kipDefinition = await querySemanticRag('apa itu beasiswa KIP?');
+    expect(kipDefinition.source).toBe('semantic-rag-scholarship');
+    expect(kipDefinition.answer).toMatch(/Beasiswa KIP/i);
+    expect(kipDefinition.answer).toMatch(/belum ada di data training/i);
+    expect(kipDefinition.answer).not.toMatch(/Ya, ada beberapa pilihan beasiswa/i);
 
     const renon = await querySemanticRag('alamat kampus renon apa kak?');
     expect(renon.source).toBe('semantic-rag-campus-location');

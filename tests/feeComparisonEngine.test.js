@@ -409,6 +409,25 @@ describe('feeComparisonEngine', () => {
     expect(result.answer).toMatch(/Gelombang II: 40%/);
   });
 
+  test('does not explain specific scholarships when detail is not in training data', () => {
+    const cases = [
+      ['apa itu beasiswa KIP?', /Beasiswa KIP/i],
+      ['apa itu beasiswa 1K1S?', /Beasiswa 1K1S/i],
+      ['apa itu beasiswa prestasi?', /Beasiswa Prestasi/i],
+      ['apa itu beasiswa yayasan?', /Beasiswa Yayasan/i],
+      ['apa itu kuliah sambil kerja di luar negeri?', /Kuliah Sambil Kerja di Luar Negeri/i]
+    ];
+
+    for (const [question, labelPattern] of cases) {
+      const result = tryScholarshipAnswer(question);
+      expect(result).toBeTruthy();
+      expect(result.answer).toMatch(labelPattern);
+      expect(result.answer).toMatch(/belum ada di data training/i);
+      expect(result.answer).not.toMatch(/Ya, ada beberapa pilihan beasiswa/i);
+      expect(result.answer).not.toMatch(/Gelombang II: 40%/);
+    }
+  });
+
   test('answers career questions without drifting to another program', () => {
     const result = tryCareerAnswer('prospek kerja ti?');
     expect(result).toBeTruthy();

@@ -559,9 +559,49 @@ function tryProgramRecommendationAnswer(question) {
   return null;
 }
 
+function detectSpecificScholarshipTopic(question) {
+  const q = String(question || '').toLowerCase();
+  if (/\b1\s*k\s*1\s*s\b|\b1k1s\b|satu\s+keluarga\s+satu\s+sarjana/.test(q)) {
+    return 'Beasiswa 1K1S (Satu Keluarga Satu Sarjana)';
+  }
+  if (/\bkip\b|kartu\s+indonesia\s+pintar/.test(q)) return 'Beasiswa KIP';
+  if (/\bprestasi\b|berprestasi|juara|ranking|rangking/.test(q)) return 'Beasiswa Prestasi';
+  if (/\byayasan\b/.test(q)) return 'Beasiswa Yayasan';
+  if (/\bsmk\s*ti\b|\bsmkti\b|pandawa|bali\s+global/.test(q)) {
+    return 'Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global';
+  }
+  if (/kuliah\s+sambil\s+kerja|luar\s+negeri/.test(q)) return 'Kuliah Sambil Kerja di Luar Negeri';
+  return null;
+}
+
+function asksScholarshipDetail(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(apa\s+itu|pengertian|maksud|jelaskan|penjelasan|syarat|persyaratan|ketentuan|cara|bagaimana|gimana|daftar|mengajukan|prosedur|alur|seleksi|nominal|berapa|cakupan|cover|ditanggung|benefit|manfaat)\b/.test(q);
+}
+
+function buildScholarshipNoTrainingAnswer(topic) {
+  const label = topic || 'beasiswa tersebut';
+  return [
+    `Maaf Kak, penjelasan detail tentang ${label} belum ada di data training saat ini.`,
+    '',
+    'Data yang tersedia baru menyebutkan nama programnya sebagai salah satu pilihan beasiswa/program bantuan, belum menjelaskan definisi, syarat, prosedur, atau ketentuannya.',
+    '',
+    'Untuk detail yang paling akurat, silakan konfirmasi ke Admin PMB ITB STIKOM Bali.'
+  ].join('\n');
+}
+
 function tryScholarshipAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (!/\b(beasiswa|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
+
+  const specificTopic = detectSpecificScholarshipTopic(question);
+  if (specificTopic && asksScholarshipDetail(question)) {
+    return {
+      answer: buildScholarshipNoTrainingAnswer(specificTopic),
+      source: 'semantic-rag-scholarship-no-training-detail'
+    };
+  }
+
   return {
     answer: [
       'Ya, ada beberapa pilihan beasiswa/program bantuan yang bisa ditanyakan di ITB STIKOM Bali:',

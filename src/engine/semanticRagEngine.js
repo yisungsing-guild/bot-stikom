@@ -644,17 +644,29 @@ function isGreetingOnly(normalizedText) {
   const informationIntent = /\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|lokasi|alamat|ukm|ormawa|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i;
   if (informationIntent.test(text)) return false;
 
-  const allowedSuffix = new Set(['kak', 'min', 'admin', 'tiko', 'pagi', 'siang', 'sore', 'malam', 'semua', 'guys', 'gan', 'bro', 'sis']);
+  const addressWords = new Set([
+    'kak', 'kakak', 'min', 'admin', 'tiko', 'semua', 'guys',
+    'gan', 'agan', 'bro', 'sis', 'mas', 'mbak', 'pak', 'bu',
+    'bang', 'bos', 'boss', 'bli', 'mb', 'cuk'
+  ]);
+  const timeWords = new Set(['pagi', 'siang', 'sore', 'malam']);
   const words = text.split(/\s+/).filter(Boolean);
   if (!words.length || words.length > 4) return false;
 
-  const first = collapseRepeatedLetters(words[0]).replace(/[^a-z]/g, '');
-  const exactGreetings = new Set(['halo', 'hallo', 'hai', 'hay', 'hi', 'hello', 'helo', 'salam', 'bro']);
-  const roots = ['halo', 'hai', 'hi', 'hello', 'helo', 'hay', 'salam', 'bro'];
-  const firstIsGreeting = exactGreetings.has(first) || roots.some((root) => editDistance(first, root) <= (root.length <= 3 ? 1 : 2));
+  const cleanWord = (word) => collapseRepeatedLetters(word).replace(/[^a-z]/g, '');
+  const first = cleanWord(words[0]);
+  const exactGreetings = new Set(['halo', 'hallo', 'hai', 'hay', 'hi', 'hello', 'helo', 'salam']);
+  const fuzzyGreetingRoots = ['halo', 'hallo', 'hai', 'hello', 'helo', 'hay', 'salam'];
+  const firstIsGreeting = exactGreetings.has(first)
+    || addressWords.has(first)
+    || timeWords.has(first)
+    || (first.length >= 3 && fuzzyGreetingRoots.some((root) => editDistance(first, root) <= 2));
   if (!firstIsGreeting) return false;
 
-  return words.slice(1).every((word) => allowedSuffix.has(collapseRepeatedLetters(word).replace(/[^a-z]/g, '')));
+  return words.slice(1).every((word) => {
+    const cleaned = cleanWord(word);
+    return addressWords.has(cleaned) || timeWords.has(cleaned) || exactGreetings.has(cleaned);
+  });
 }
 
 function trySmallTalkAnswer(question) {

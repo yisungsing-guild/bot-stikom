@@ -1,4 +1,4 @@
-ï»¿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { OpenAI } = require('openai');
@@ -107,7 +107,7 @@ const answerTemplates = {
     'Selain pendaftaran, untuk {program} ada juga:',
   ],
   itemFormat: [
-    'â€¢ {label}: Rp {amount}',
+    '• {label}: Rp {amount}',
     '- {label}: Rp {amount}',
     '{label}: Rp {amount}',
   ],
@@ -178,7 +178,17 @@ function trySimpleGuardAnswer(question) {
     return { answer: 'Baik, ada yang bisa saya bantu?', source: 'rag-small-talk' };
   }
 
-  if (/^(halo+|hallo+|hai|hi|hello)(\s+(kak|min|admin|tiko|pagi|siang|sore|malam))*$/i.test(normalized)) {
+  const greetingInfoIntent = /\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|lokasi|alamat|ukm|ormawa|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i;
+  const greetingTokens = normalized.split(/\s+/).filter(Boolean);
+  const greetingWords = new Set(['halo', 'hallo', 'hai', 'hay', 'hi', 'hello', 'helo', 'salam', 'pagi', 'siang', 'sore', 'malam']);
+  const addressWords = new Set(['kak', 'kakak', 'min', 'admin', 'tiko', 'semua', 'guys', 'gan', 'agan', 'bro', 'sis', 'mas', 'mbak', 'pak', 'bu', 'bang', 'bos', 'boss', 'bli', 'mb', 'cuk']);
+  const cleanGreetingToken = (word) => String(word || '').toLowerCase().replace(/([a-z])\1{1,}/g, '$1').replace(/[^a-z]/g, '');
+  const onlyGreetingTokens = greetingTokens.length > 0
+    && greetingTokens.length <= 4
+    && !greetingInfoIntent.test(normalized)
+    && (greetingWords.has(cleanGreetingToken(greetingTokens[0])) || addressWords.has(cleanGreetingToken(greetingTokens[0])))
+    && greetingTokens.slice(1).every((word) => greetingWords.has(cleanGreetingToken(word)) || addressWords.has(cleanGreetingToken(word)));
+  if (onlyGreetingTokens) {
     return {
       answer: 'Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.',
       source: 'rag-greeting'
@@ -221,7 +231,7 @@ function buildPmbOverviewAnswer() {
     '* Syarat dan dokumen pendaftaran',
     '* Kontak atau bantuan admin PMB',
     '',
-    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: â€œjadwal PMB sekarang gelombang berapa?â€, â€œrincian biaya SI gelombang 2B?â€, atau â€œapa saja syarat pendaftaran?â€'
+    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: “jadwal PMB sekarang gelombang berapa?”, “rincian biaya SI gelombang 2B?”, atau “apa saja syarat pendaftaran?”'
   ].join('\n');
 }
 
@@ -898,7 +908,7 @@ function validateNumericGrounding(extractedValue, sourceChunks, context = '') {
       if (typeof parseCompactRupiahNumber === 'function') {
         // Prefer money-like tokens (Rp ... ) inside the chunk to avoid parsing the whole document text
         const tokens = [];
-        const rpMatch = repairedText.match(/Rp[\s\.\:\-â€”]*[0-9lIoO\.,\s]{1,40}/ig);
+        const rpMatch = repairedText.match(/Rp[\s\.\:\-—]*[0-9lIoO\.,\s]{1,40}/ig);
         if (rpMatch) tokens.push(...rpMatch);
 
         const explicitDigitMatches = repairedText.match(/([0-9][0-9\.,\s]{0,20})/g);
@@ -913,7 +923,7 @@ function validateNumericGrounding(extractedValue, sourceChunks, context = '') {
 
         // Also try original text tokens if none found
         if (!tokens.length) {
-          const rpMatch2 = text.match(/Rp[\s\.\:\-â€”]*[0-9lIoO\.,\s]{1,40}/i);
+          const rpMatch2 = text.match(/Rp[\s\.\:\-—]*[0-9lIoO\.,\s]{1,40}/i);
           if (rpMatch2) tokens.push(rpMatch2[0]);
           const digitMatch2 = text.match(/([0-9][0-9lIoO\.,\s]{0,20})/);
           if (digitMatch2) tokens.push(digitMatch2[0]);
@@ -1426,12 +1436,12 @@ function extractCurrentUserQuestionText(rawQuestion) {
 
   // Some contextual prompts wrap the current user text in quotes.
   // Example: Balasan user saat ini: "apa itu rpl?"
-  if ((best.startsWith('"') && best.endsWith('"')) || (best.startsWith('GÃ‡Â£') && best.endsWith('GÃ‡Â¥'))) {
+  if ((best.startsWith('"') && best.endsWith('"')) || (best.startsWith('GÇ£') && best.endsWith('GÇ¥'))) {
     best = best.slice(1, -1).trim();
   }
   // If the line starts with a quote but doesn't end with one (truncated prompt), strip leading.
-  if (best.startsWith('"') || best.startsWith('GÃ‡Â£')) best = best.slice(1).trim();
-  if (best.endsWith('"') || best.endsWith('GÃ‡Â¥')) best = best.slice(0, -1).trim();
+  if (best.startsWith('"') || best.startsWith('GÇ£')) best = best.slice(1).trim();
+  if (best.endsWith('"') || best.endsWith('GÇ¥')) best = best.slice(0, -1).trim();
 
   return best;
 }
@@ -1676,7 +1686,7 @@ function extractAccreditationFromIndex(indexForQuery, programInfo) {
     for (const re of dateRangePatterns) {
       const m = re.exec(txt);
       if (m && m[1] && m[2]) {
-        validity = `${String(m[1]).trim()} GÃ‡Ã´ ${String(m[2]).trim()}`;
+        validity = `${String(m[1]).trim()} GÇô ${String(m[2]).trim()}`;
         break;
       }
     }
@@ -1985,7 +1995,7 @@ function pickEvidenceLines(blockText, questionText) {
     if (nl >= 0) phrase = phrase.slice(0, nl);
     phrase = phrase.replace(/\s{2,}/g, ' ').trim();
     if (phrase.length < 6) continue;
-    if (phrase.length > 70) phrase = phrase.slice(0, 70).trim() + 'GÃ‡Âª';
+    if (phrase.length > 70) phrase = phrase.slice(0, 70).trim() + 'GÇª';
     phrases.push(phrase);
     if (phrases.length >= 180) break;
   }
@@ -2249,11 +2259,11 @@ async function tryStructuredProgramRecommendationAnswer(rawQuestion, indexForQue
 
   // If we got here, we can't confidently pick a major from signals or the hobby mapping.
   // Avoid throwing this to the generic/LLM layer (it can drift to the wrong major).
-  // Ask for 1GÃ‡Ã´2 concrete activity examples so we can match reliably.
+  // Ask for 1GÇô2 concrete activity examples so we can match reliably.
   return {
     answer:
       'Biar aku bisa cocokin jurusan yang paling pas, hobinya lebih sering ngapain ya? ' +
-      'Cukup balas 2GÃ‡Ã´3 contoh aktivitas spesifik (mis. "jualan online", "edit video", "ngoding", "analisis data", "merakit elektronik").',
+      'Cukup balas 2GÇô3 contoh aktivitas spesifik (mis. "jualan online", "edit video", "ngoding", "analisis data", "merakit elektronik").',
     source: 'rag-major-recommendation',
     contexts: [],
     confidenceTier: 'LOW',
@@ -2781,7 +2791,7 @@ function tryStructuredProgramComparisonAnswer(rawQuestion) {
     const mostExpensivePrice = sortedByCost[sortedByCost.length - 1].priceRangeStr || 'N/A';
     
     for (const prog of sortedByCost) {
-      lines.push(`- ${prog.label}: Total biaya Ëœ ${prog.priceRangeStr || 'N/A'}`);
+      lines.push(`- ${prog.label}: Total biaya ˜ ${prog.priceRangeStr || 'N/A'}`);
     }
     lines.push('');
     lines.push(`? Pilihan termurah: ${cheapestLabel} (${cheapestPrice})`);
@@ -2790,7 +2800,7 @@ function tryStructuredProgramComparisonAnswer(rawQuestion) {
     lines.push('Catatan: Range harga adalah estimasi total biaya awal (pendaftaran + DPP). Harga akhir bisa berbeda tergantung gelombang, potongan, dan komponen biaya lainnya.');
   } else {
     for (const d of toCompare) {
-      lines.push(`- ${d.label}: Total biaya Ëœ ${d.priceRangeStr || 'N/A'} - ${d.desc}`);
+      lines.push(`- ${d.label}: Total biaya ˜ ${d.priceRangeStr || 'N/A'} - ${d.desc}`);
     }
 
     if (wantsCostCompare) {
@@ -2867,7 +2877,7 @@ function tryStructuredCampusAccreditationAnswer(question, indexForQuery) {
         if (gradeM && gradeM[1]) outLines.push(`Akreditasi kampus: ${normalizeCampusGrade(gradeM[1])}.`);
         else outLines.push('Akreditasi kampus: dokumen ditemukan, tetapi peringkat tidak terdeteksi dengan pasti.');
         if (skM && skM[1]) outLines.push(`Nomor SK: ${String(skM[1]).trim()}.`);
-        if (validityM && validityM[1] && validityM[2]) outLines.push(`Masa berlaku: ${String(validityM[1]).trim()} GÃ‡Ã´ ${String(validityM[2]).trim()}.`);
+        if (validityM && validityM[1] && validityM[2]) outLines.push(`Masa berlaku: ${String(validityM[1]).trim()} GÇô ${String(validityM[2]).trim()}.`);
         outLines.push('');
         outLines.push(`Sumber: dokumen ${String(campusDoc.filename)} (dokumen akreditasi kampus). Untuk kepastian resmi, verifikasi ke admin atau dokumen resmi.`);
 
@@ -2915,7 +2925,7 @@ function tryStructuredDualDegreeProgramsAnswer(rawQuestion) {
   }
 
   // If query already specifies a SPECIFIC Dual Degree program partner (UTB, DNUI, HELP, Malaysia, China, Bandung),
-  // don't show the generic program list GÃ‡Ã¶ let the query proceed to RAG index lookup.
+  // don't show the generic program list GÇö let the query proceed to RAG index lookup.
   const hasSpecificPartner = /(utb|dnui|dalian|neusoft|help\s+university|malaysia|china|bandung|teknologi\s+bandung)/i.test(qLower);
   if (hasSpecificPartner) {
     return null;  // Let RAG index handle the specific query
@@ -3089,7 +3099,7 @@ function tryStructuredDualDegreeFeeAnswer(question, indexForQuery) {
   lines.push('* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
   lines.push('* Beasiswa Prestasi');
   lines.push('* Beasiswa Yayasan');
-  lines.push('* Beasiswa khusus untuk alumni â€” silakan hubungi PMB untuk detail');
+  lines.push('* Beasiswa khusus untuk alumni — silakan hubungi PMB untuk detail');
   lines.push('* Kuliah Sambil Kerja di Luar Negeri');
   lines.push('');
   lines.push('Apakah Kakak ingin dijelaskan tentang?');
@@ -3615,10 +3625,10 @@ function cleanAnswerLanguage(answer) {
   cleaned = cleaned.replace(/\s+-\s+\*\*Pengumuman/gi, '\n- **Pengumuman');
   cleaned = cleaned.replace(/\s+-\s+\*\*Masa registrasi ulang/gi, '\n- **Masa registrasi ulang');
 
-  // Versi dengan bullet "GÃ‡Ã³" jika model menggunakannya langsung
-  cleaned = cleaned.replace(/\s+GÃ‡Ã³\s+Testing/gi, '\nGÃ‡Ã³ Testing');
-  cleaned = cleaned.replace(/\s+GÃ‡Ã³\s+Pengumuman/gi, '\nGÃ‡Ã³ Pengumuman');
-  cleaned = cleaned.replace(/\s+GÃ‡Ã³\s+Masa registrasi ulang/gi, '\nGÃ‡Ã³ Masa registrasi ulang');
+  // Versi dengan bullet "GÇó" jika model menggunakannya langsung
+  cleaned = cleaned.replace(/\s+GÇó\s+Testing/gi, '\nGÇó Testing');
+  cleaned = cleaned.replace(/\s+GÇó\s+Pengumuman/gi, '\nGÇó Pengumuman');
+  cleaned = cleaned.replace(/\s+GÇó\s+Masa registrasi ulang/gi, '\nGÇó Masa registrasi ulang');
 
   // Paksa paragraf baru untuk bagian rinciannya
   cleaned = cleaned.replace(/\.\s+(Rincian [^:\n]+:)/g, '.\n\n$1');
@@ -3766,8 +3776,8 @@ function ensureThreePartFlow(answer, question, style = null) {
     // Header should be short and not a list.
     if (t.includes('\n')) return false;
     if (t.length > 170) return false;
-    if (/^\s*(?:-|GÃ‡Ã³|\d+[.)])\s+/.test(t)) return false;
-    if (/^\[\s*(?:GÂ£Ã |GÂ¥Ã®|ya|tidak)/i.test(t)) return false;
+    if (/^\s*(?:-|GÇó|\d+[.)])\s+/.test(t)) return false;
+    if (/^\[\s*(?:G£à|G¥î|ya|tidak)/i.test(t)) return false;
     return true;
   };
 
@@ -4531,7 +4541,7 @@ function getChunkScoreBreakdown(item, question, intent, semanticScore, queryEnti
       // Pendaftaran with an inline number
       feeComponentBoost += 1.8;
     } else if (/\b(?:dana\s+pendidikan\s*pokok|dpp|biaya\s*pendidikan\s*per\s*semester|biaya\s*pendidikan|biaya\s*masuk|uang\s*pangkal|biaya\s*pendaftaran)\b/i.test(chunk)) {
-      // Generic DPP/fee mention â€” smaller boost so prose/footnote DPP doesn't outrank tables
+      // Generic DPP/fee mention — smaller boost so prose/footnote DPP doesn't outrank tables
       feeComponentBoost += 0.6;
     }
     if (/\bgelombang\b/i.test(chunk)) {
@@ -4687,7 +4697,7 @@ function buildMultiDocSummary(topChunks, question) {
 
     if (examples.length < 3) {
       const snippet = chunk.replace(/\s+/g, ' ').trim().slice(0, 200);
-      examples.push(`- ${sourceLabel}: ${snippet}${snippet.length >= 200 ? 'GÃ‡Âª' : ''}`);
+      examples.push(`- ${sourceLabel}: ${snippet}${snippet.length >= 200 ? 'GÇª' : ''}`);
     }
   }
 
@@ -5218,7 +5228,7 @@ function getChunkEntities(item) {
       if (fileAliases && fileAliases.size === 1) {
         inferredProgram = Array.from(fileAliases)[0];
       } else if (!fileAliases || fileAliases.size === 0) {
-        // No explicit aliases detected in filename/source/meta â€” fall back to
+        // No explicit aliases detected in filename/source/meta — fall back to
         // best-effort normalization of filename/source/meta.
         inferredProgram = normalizeProgramLabel(filename) || normalizeProgramLabel(sourceFile) || normalizeProgramLabel(metaText) || inferredProgram;
       } else {
@@ -7007,10 +7017,10 @@ function parseFeeStructure(chunks, queryEntities) {
       const line = String(rawLine || '').replace(/\s{2,}/g, ' ').trim();
       if (!line) return null;
       const reNumbered = /^(\d+)\.?\s*[\)\.]\s*(.+?)\s+(\d{1,3}(?:\.\d{3})+(?:,\-)?|\d{6,})(?:\s+(.*))?$/;
-      const reDashed = /^(?:[-GÃ‡Ã³]+)\s*(.+?)\s+(\d{1,3}(?:\.\d{3})+(?:,\-)?|\d{6,})(?:\s+(.*))?$/;
+      const reDashed = /^(?:[-GÇó]+)\s*(.+?)\s+(\d{1,3}(?:\.\d{3})+(?:,\-)?|\d{6,})(?:\s+(.*))?$/;
       const m1 = reNumbered.exec(line);
       if (m1) {
-        const label = String(m1[2] || '').trim().replace(/^[GÃ‡Ã¶\-]+\s*/g, '').trim();
+        const label = String(m1[2] || '').trim().replace(/^[GÇö\-]+\s*/g, '').trim();
         const amount = normalizeAmount(m1[3]);
         const timing = String(m1[4] || '').trim();
         if (!label || !amount) return null;
@@ -7018,7 +7028,7 @@ function parseFeeStructure(chunks, queryEntities) {
       }
       const m2 = reDashed.exec(line);
       if (m2) {
-        const label = String(m2[1] || '').trim().replace(/^[GÃ‡Ã¶\-]+\s*/g, '').trim();
+        const label = String(m2[1] || '').trim().replace(/^[GÇö\-]+\s*/g, '').trim();
         const amount = normalizeAmount(m2[2]);
         const timing = String(m2[3] || '').trim();
         if (!label || !amount) return null;
@@ -10027,7 +10037,7 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
     };
   }
 
-  // Ranking kelas (beasiswa rangking) GÃ‡Ã¶ should be answerable without OpenAI.
+  // Ranking kelas (beasiswa rangking) GÇö should be answerable without OpenAI.
   // Also handle follow-up like "apa maksud sekolah tertentu?" as long as context indicates ranking scholarship.
   const isTypeOnlyRanking = /^(beasiswa\s+)?(rangking|ranking|peringkat)(\s+kelas)?$/.test(qTrim);
   const asksRanking =
@@ -10123,8 +10133,8 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
 
       const formatParts = (pair) => {
         const parts = [];
-        if (typeof pair.r13 === 'number') parts.push(`Ranking 1GÃ‡Ã´3: potongan DPP ${pair.r13}%`);
-        if (typeof pair.r410 === 'number') parts.push(`Ranking 4GÃ‡Ã´10: potongan DPP ${pair.r410}%`);
+        if (typeof pair.r13 === 'number') parts.push(`Ranking 1GÇô3: potongan DPP ${pair.r13}%`);
+        if (typeof pair.r410 === 'number') parts.push(`Ranking 4GÇô10: potongan DPP ${pair.r410}%`);
         return parts;
       };
 
@@ -10153,7 +10163,7 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
       lines.push('');
       lines.push('Catatan seleksi:');
       if (noWrittenTest) {
-        lines.push('- Untuk ranking 1GÃ‡Ã´15 besar kelas XII semester 1/2: tidak mengikuti tes tulis, hanya tes wawancara.');
+        lines.push('- Untuk ranking 1GÇô15 besar kelas XII semester 1/2: tidak mengikuti tes tulis, hanya tes wawancara.');
       }
       if (needsProof) {
         lines.push('- Biasanya perlu bukti rapor yang dilegalisir atau surat keterangan dari sekolah.');
@@ -10198,7 +10208,7 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
   const formatted = picked.map(l => `- ${l}`);
   return {
     answer:
-      `Ada potongan/beasiswa untuk prestasi nasional:\n\n${formatted.join('\n')}\n\nBoleh info Anda kategori yang mana (Juara 1GÃ‡Ã´3 atau Harapan/Favorit) dan bidangnya (akademik/non-akademik)?`,
+      `Ada potongan/beasiswa untuk prestasi nasional:\n\n${formatted.join('\n')}\n\nBoleh info Anda kategori yang mana (Juara 1GÇô3 atau Harapan/Favorit) dan bidangnya (akademik/non-akademik)?`,
     source: 'rag-scholarship-rule'
   };
 
@@ -10625,11 +10635,11 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
     // "2. Dana Pendidikan Pokok (DPP) 14.000.000 Dicicil 2 Kali s/d September"
     // "- Biaya Pendidikan Per Semester 6.500.000 Dicicil 2 Kali s/d September"
     const reNumbered = /^(\d+)\.?\s*[\)\.]\s*(.+?)\s+(\d{1,3}(?:\.\d{3})+(?:,\-)?|\d{6,})(?:\s+(.*))?$/;
-    const reDashed = /^(?:[-GÃ‡Ã³]+)\s*(.+?)\s+(\d{1,3}(?:\.\d{3})+(?:,\-)?|\d{6,})(?:\s+(.*))?$/;
+    const reDashed = /^(?:[-GÇó]+)\s*(.+?)\s+(\d{1,3}(?:\.\d{3})+(?:,\-)?|\d{6,})(?:\s+(.*))?$/;
 
     const m1 = reNumbered.exec(line);
     if (m1) {
-      const label = String(m1[2] || '').trim().replace(/^[GÃ‡Ã¶\-]+\s*/g, '').trim();
+      const label = String(m1[2] || '').trim().replace(/^[GÇö\-]+\s*/g, '').trim();
       const amount = normalizeAmount(m1[3]);
       const timing = String(m1[4] || '').trim();
       if (!label || !amount) return null;
@@ -10638,7 +10648,7 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
 
     const m2 = reDashed.exec(line);
     if (m2) {
-      const label = String(m2[1] || '').trim().replace(/^[GÃ‡Ã¶\-]+\s*/g, '').trim();
+      const label = String(m2[1] || '').trim().replace(/^[GÇö\-]+\s*/g, '').trim();
       const amount = normalizeAmount(m2[2]);
       const timing = String(m2[3] || '').trim();
       if (!label || !amount) return null;
@@ -10863,12 +10873,12 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
 
     const label = labelParts
       .join(' ')
-      .replace(/[GÃ‡Â£GÃ‡Â¥'GÃ‡Ã¿GÃ‡Ã–]/g, '')
+      .replace(/[GÇ£GÇ¥'GÇÿGÇÖ]/g, '')
       .replace(/\s{2,}/g, ' ')
       .trim();
 
-    // Sometimes OCR includes a dash token before amount: "GÃ‡Ã¶".
-    const cleanedLabel = normalizeFeePhrase(label.replace(/\s*[GÃ‡Ã¶-]\s*$/g, '').trim());
+    // Sometimes OCR includes a dash token before amount: "GÇö".
+    const cleanedLabel = normalizeFeePhrase(label.replace(/\s*[GÇö-]\s*$/g, '').trim());
     if (!cleanedLabel) continue;
     if (!isLikelyFeeLabel(cleanedLabel)) continue;
 
@@ -12265,7 +12275,7 @@ async function query(question, topK = 8, options = null) {
             // Remove leading numbering and the literal 'UKM'/'ORMAWA'
             let name = l.replace(/^\d+\.?\s*/,'').replace(/\bUKM\b[:\-\s]*/i,'').replace(/\bORMAWA\b[:\-\s]*/i,'').trim();
             // Trim trailing qualifications like ', S.KOM.' keeping the main name
-            name = name.split(/,|\(| - |GÃ‡Ã¶/)[0].trim();
+            name = name.split(/,|\(| - |GÇö/)[0].trim();
             if (name && !names.includes(name)) names.push(name);
           }
 
@@ -12290,8 +12300,8 @@ async function query(question, topK = 8, options = null) {
             const start = Math.max(0, idx - 120);
             const end = Math.min(snippet.length, idx + 240);
             snippet = snippet.slice(start, end).trim();
-            if (start > 0) snippet = 'GÃ‡Âª' + snippet;
-            if (end < (String(best.it.chunk || '').length)) snippet = snippet + 'GÃ‡Âª';
+            if (start > 0) snippet = 'GÇª' + snippet;
+            if (end < (String(best.it.chunk || '').length)) snippet = snippet + 'GÇª';
           }
 
           return {
@@ -12389,8 +12399,8 @@ async function query(question, topK = 8, options = null) {
               const start = Math.max(0, idx - 120);
               const end = Math.min(snippet.length, idx + 240);
               snippet = snippet.slice(start, end).trim();
-              if (start > 0) snippet = 'GÃ‡Âª' + snippet;
-              if (end < chunk.length) snippet = snippet + 'GÃ‡Âª';
+              if (start > 0) snippet = 'GÇª' + snippet;
+              if (end < chunk.length) snippet = snippet + 'GÇª';
             }
 
             return {
@@ -12920,14 +12930,14 @@ async function query(question, topK = 8, options = null) {
       } catch (e) {}
       // Extra-safe direct replacements for observed mojibake tokens
       finalAnswer = finalAnswer
-        .replace(/GÃ‡Âª/g, '...')
-        .replace(/GÃ‡Ã³/g, '-')
-        .replace(/GÃ‡â€”/g, '-')
-        .replace(/GÃ‡Ã¶/g, '-')
-        .replace(/GÃ‡Â£/g, '"')
-        .replace(/GÃ‡Â¥/g, '"')
-        .replace(/GÃ‡Ã¿/g, "'")
-        .replace(/GÃ‡Ã–/g, "'");
+        .replace(/GÇª/g, '...')
+        .replace(/GÇó/g, '-')
+        .replace(/GÇ—/g, '-')
+        .replace(/GÇö/g, '-')
+        .replace(/GÇ£/g, '"')
+        .replace(/GÇ¥/g, '"')
+        .replace(/GÇÿ/g, "'")
+        .replace(/GÇÖ/g, "'");
 
       if (containsForbidden) {
         finalAnswer = finalAnswer.trim();
@@ -13030,7 +13040,7 @@ function parseCompactRupiahNumber(raw, opts = null) {
   const digitsAndSep = s.replace(/[^0-9\.,]/g, '');
   if (!digitsAndSep) return null;
 
-  // Remove thousand separators (both '.' and ',') â€” rupiah amounts are integers
+  // Remove thousand separators (both '.' and ',') — rupiah amounts are integers
   const cleaned = digitsAndSep.replace(/[\.,]/g, '');
   if (!/^[0-9]+$/.test(cleaned)) return null;
   const n = parseInt(cleaned, 10);
