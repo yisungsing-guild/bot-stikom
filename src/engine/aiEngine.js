@@ -214,7 +214,7 @@ function inlineQuestionListBlock(input) {
     (match, leading, heading, block) => {
       const questions = extractInlineQuestions(block);
       if (!questions.length) return match;
-      return `${leading}${String(heading || '').trim()} - ${questions.join(' - ')}`;
+      return `${leading}${String(heading || '').trim()}` + '\n' + questions.map((question) => `- ${question}`).join('\n');
     }
   );
 }
