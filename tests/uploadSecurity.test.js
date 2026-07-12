@@ -19,4 +19,12 @@ describe('uploadSecurity helpers', () => {
     const res = validateFileType(`file.${sampleExt}`, 'text/plain');
     expect(res.valid).toBe(true);
   });
+  test('validateFileType allows common image extensions for OCR training', () => {
+    for (const ext of ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tif', 'tiff']) {
+      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : (ext === 'tif' || ext === 'tiff' ? 'image/tiff' : `image/${ext}`);
+      const res = validateFileType(`brosur.${ext}`, mime);
+      expect(res.valid).toBe(true);
+    }
+  });
 });
+

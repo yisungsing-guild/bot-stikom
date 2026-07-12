@@ -13,8 +13,8 @@ const enableExcelUpload = String(process.env.ENABLE_EXCEL_UPLOAD || '').toLowerC
 // - set ENABLE_EXCEL_UPLOAD=true, or
 // - explicitly set ALLOWED_FILE_TYPES to include `xls,xlsx`.
 const defaultAllowedTypes = isProduction
-  ? `txt,pdf,csv,docx,jpg,jpeg,png,gif,webp${enableExcelUpload ? ',xls,xlsx' : ''}`
-  : 'txt,pdf,csv,docx,xls,xlsx,jpg,jpeg,png,gif,webp';
+  ? `txt,pdf,csv,docx,jpg,jpeg,png,gif,webp,bmp,tif,tiff${enableExcelUpload ? ',xls,xlsx' : ''}`
+  : 'txt,pdf,csv,docx,xls,xlsx,jpg,jpeg,png,gif,webp,bmp,tif,tiff';
 const configuredAllowedTypes = (process.env.ALLOWED_FILE_TYPES || defaultAllowedTypes)
   .split(',')
   .map((t) => t.trim().toLowerCase())
@@ -48,7 +48,10 @@ const MIME_TYPES = {
   'jpeg': 'image/jpeg',
   'png': 'image/png',
   'gif': 'image/gif',
-  'webp': 'image/webp'
+  'webp': 'image/webp',
+  'bmp': 'image/bmp',
+  'tif': 'image/tiff',
+  'tiff': 'image/tiff'
 };
 
 // Sanitize filename untuk prevent directory traversal
@@ -282,3 +285,4 @@ module.exports = {
   MAX_BULK_FILES,
   ALLOWED_FILE_TYPES
 };
+

@@ -6,6 +6,40 @@ const logger = require('../logger');
 
 // File Parser - extract training data dari berbagai format file
 class FileParser {
+  static isImageExtension(ext) {
+    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tif', '.tiff'].includes(String(ext || '').toLowerCase());
+  }
+
+  static buildImageTrainingContent(originalFilename, ocrText = '', options = {}) {
+    const safeFilename = this.sanitizeFilenameForStorage(originalFilename || 'gambar-training');
+    const ext = path.extname(safeFilename).toLowerCase().replace(/^\./, '') || 'image';
+    const text = String(ocrText || '').trim();
+    const status = text
+      ? 'OCR berhasil mengekstrak teks dari gambar.'
+      : 'OCR tidak menemukan teks yang cukup jelas pada gambar ini.';
+
+    const parts = [
+      'Dokumen gambar training data: ' + safeFilename + '.',
+      'Format file: ' + ext.toUpperCase() + '.',
+      status,
+      'File ini tetap disimpan sebagai referensi visual training data supaya gambar, brosur, screenshot, poster, denah, atau materi promosi tidak otomatis ditolak oleh RAG hanya karena teks OCR pendek.',
+      'Gunakan nama file, caption, atau input manual tambahan untuk memberi konteks spesifik seperti prodi, biaya, jadwal, lokasi, fasilitas, beasiswa, kontak, atau informasi PMB yang ada pada gambar.',
+    ];
+
+    const publicUrl = options && typeof options.publicUrl === 'string' ? options.publicUrl.trim() : '';
+    if (publicUrl) {
+      parts.push('Marker gambar WhatsApp: [[image:' + publicUrl + '|' + safeFilename + ']]');
+    }
+
+    if (text) {
+      parts.push('', 'Teks hasil OCR gambar:', text);
+    } else {
+      parts.push('', 'Catatan OCR: tidak ada teks terbaca. Tambahkan input manual jika gambar berisi detail penting yang harus dijawab bot secara tekstual.');
+    }
+
+    return parts.join('\n');
+  }
+
   static limitTextToUtf8Bytes(text, maxBytes) {
     const s = String(text || '');
     const limit = Number.isFinite(maxBytes) ? Math.max(1, Math.floor(maxBytes)) : 1;
@@ -300,7 +334,25 @@ class FileParser {
         case '.png':
         case '.gif':
         case '.webp':
-          content = await this.parseImage(filePath);
+        case '.bmp':
+        case '.tif':
+        case '.tiff':
+          try {
+            content = this.buildImageTrainingContent(originalFilename, await this.parseImage(filePath));
+          } catch (imageErr) {
+            const imageMsg = imageErr && imageErr.message ? String(imageErr.message) : String(imageErr);
+            const looksLikeNoReadableText =
+              /tidak ada teks|no text|empty|kosong|kualitas terlalu rendah|could not read/i.test(imageMsg) &&
+              !/requires|butuh|install|traineddata|language data|download|dependency|tesseract/i.test(imageMsg);
+
+            if (!looksLikeNoReadableText) throw imageErr;
+
+            logger.warn(
+              { filename: originalFilename, err: imageMsg },
+              '[FileParser] Image OCR produced no readable text; storing visual fallback content'
+            );
+            content = this.buildImageTrainingContent(originalFilename, '');
+          }
           break;
         default:
           throw new Error(`Unsupported file format: ${ext}`);
@@ -1181,3 +1233,4 @@ class FileParser {
 }
 
 module.exports = { FileParser };
+
