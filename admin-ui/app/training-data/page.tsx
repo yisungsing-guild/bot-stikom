@@ -290,6 +290,9 @@ export default function TrainingDataPage() {
   const [isReviewAssetLoading, setIsReviewAssetLoading] = useState(false)
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null)
   const [downloadingTrainingId, setDownloadingTrainingId] = useState<string | null>(null)
+  const [retrainingIds, setRetrainingIds] = useState<Record<string, boolean>>({})
+  const [retrainMessage, setRetrainMessage] = useState<string | null>(null)
+  const [retrainError, setRetrainError] = useState<string | null>(null)
 
   const PAGE_SIZE = 5
 
@@ -457,11 +460,65 @@ export default function TrainingDataPage() {
     try {
       const res = await adminFetchJson<TrainingItem[]>('/admin/training')
       setItems(Array.isArray(res) ? res : [])
+      setItemsError(null)
     } catch {
       // ignore
     }
   }
 
+  async function retrainDataset(trainingId: string, options: { quiet?: boolean } = {}) {
+    const id = String(trainingId || '').trim()
+    if (!id) return
+
+    setRetrainError(null)
+    if (!options.quiet) setRetrainMessage('Retrain started. Status will refresh automatically.')
+    setRetrainingIds((prev) => ({ ...prev, [id]: true }))
+    setItems((prev) => Array.isArray(prev)
+      ? prev.map((item) => (item.id === id ? { ...item, ragIngestStatus: 'processing', ragIngestError: null } : item))
+      : prev)
+
+    try {
+      const result: any = await adminFetchJson(`/admin/rag/ingest/${encodeURIComponent(id)}`, { method: 'POST' })
+      await refresh()
+      const status = result && result.success === false
+        ? (result.status || 'failed')
+        : 'success'
+      const detail = result && result.reason ? ` (${String(result.reason)})` : ''
+      setRetrainMessage(`Retrain finished: ${status}${detail}`)
+    } catch (e: any) {
+      const msg = e && e.bodyText ? e.bodyText : (e && e.message ? e.message : 'Retrain failed')
+      setRetrainError(formatApiErrorText(msg))
+      await refresh()
+    } finally {
+      setRetrainingIds((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+    }
+  }
+
+  async function retrainProblemDatasets() {
+    const targets = rows
+      .filter((row: any) => row.status === 'active' && ['rejected', 'failed', 'unknown'].includes(String(row.ragStatus || '').toLowerCase()))
+      .map((row: any) => String(row.id))
+
+    if (!targets.length) {
+      setRetrainError(null)
+      setRetrainMessage('No rejected/failed datasets to retrain. Click Refresh Status to check latest state.')
+      await refresh()
+      return
+    }
+
+    setRetrainError(null)
+    setRetrainMessage(`Retraining ${targets.length} dataset(s). Keep this page open; status will update automatically.`)
+
+    for (const id of targets) {
+      await retrainDataset(id, { quiet: true })
+    }
+
+    setRetrainMessage('Retrain complete. Latest RAG status is shown in the table.')
+  }
   async function loadReview(trainingId: string, opts: { full?: boolean } = {}) {
     const id = String(trainingId || '').trim()
     if (!id) return
@@ -778,6 +835,19 @@ export default function TrainingDataPage() {
     const start = page * PAGE_SIZE
     return sortedRows.slice(start, start + PAGE_SIZE)
   }, [sortedRows, page])
+
+  useEffect(() => {
+    const hasProcessing = Array.isArray(items) && items.some((item) => String(item.ragIngestStatus || '').toLowerCase() === 'processing')
+    const hasRetraining = Object.keys(retrainingIds).length > 0
+    if (!hasProcessing && !hasRetraining) return
+
+    const timer = window.setInterval(() => {
+      void refresh()
+    }, 3000)
+
+    return () => window.clearInterval(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, retrainingIds])
 
   const stats = useMemo(() => {
     const total = sortedRows.length
@@ -1438,11 +1508,30 @@ export default function TrainingDataPage() {
               >
                 Sort: {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
               </Button>
-              <Button variant="ghost" size="sm">
-                Retrain Model
+              <Button variant="outline" size="sm" onClick={() => void refresh()}>
+                Refresh Status
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void retrainProblemDatasets()}
+                disabled={Object.keys(retrainingIds).length > 0}
+              >
+                {Object.keys(retrainingIds).length > 0 ? 'Retraining...' : 'Retrain Model'}
               </Button>
             </div>
           </div>
+
+          {retrainMessage ? (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              {retrainMessage}
+            </div>
+          ) : null}
+          {retrainError ? (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive whitespace-pre-wrap">
+              {retrainError}
+            </div>
+          ) : null}
 
           <div className="rounded-lg border border-border overflow-hidden">
             <Table>
@@ -1502,6 +1591,7 @@ export default function TrainingDataPage() {
                         const ragStatus = String((data as any).ragStatus || 'unknown').toLowerCase()
                         const isOk = ragStatus === 'success'
                         const isBad = ragStatus === 'failed' || ragStatus === 'rejected'
+                        const isProcessing = ragStatus === 'processing'
                         const chunkCount = (data as any).ragChunkCount
                         const title = (data as any).ragIngestError || (data as any).ragIngestedAt || ''
 
@@ -1514,6 +1604,8 @@ export default function TrainingDataPage() {
                             {isOk ? (
                               <CheckCircle className="h-3 w-3" />
                             ) : isBad ? (
+                              <AlertCircle className="h-3 w-3" />
+                            ) : isProcessing ? (
                               <AlertCircle className="h-3 w-3" />
                             ) : null}
                             {ragStatus}
@@ -1542,13 +1634,23 @@ export default function TrainingDataPage() {
                             {downloadingTrainingId === data.id ? 'Downloading...' : 'Download'}
                           </Button>
                         ) : null}
+                        {['rejected', 'failed', 'unknown'].includes(String((data as any).ragStatus || '').toLowerCase()) ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void retrainDataset(data.id)}
+                            disabled={(data as any).status !== 'active' || !!retrainingIds[data.id]}
+                          >
+                            {retrainingIds[data.id] ? 'Retraining...' : 'Retrain'}
+                          </Button>
+                        ) : null}
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => void deactivateDataset(data.id)}
                           disabled={(data as any).status !== 'active' || deactivatingId === data.id}
                         >
-                          {deactivatingId === data.id ? 'Deactivating…' : 'Deactivate'}
+                          {deactivatingId === data.id ? 'Deactivating...' : 'Deactivate'}
                         </Button>
                       </div>
                     </TableCell>
@@ -1632,3 +1734,7 @@ export default function TrainingDataPage() {
     </div>
   )
 }
+
+
+
+
