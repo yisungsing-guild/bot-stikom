@@ -417,6 +417,19 @@ module.exports = function (provider) {
     return text.trim();
   }
 
+  function inlineOutboundRecommendationQuestion(input) {
+    if (!input || typeof input !== 'string') return input;
+
+    return String(input || '').replace(
+      /\n+\s*((?:Rekomendasi pertanyaan berikutnya|Pertanyaan berikutnya|Follow[- ]?up)\s*:\s*)?([^:\n]{8,220}\?)\s*$/i,
+      (match, label, question, offset, fullText) => {
+        const body = String(fullText || '').slice(0, offset).trim();
+        const prompt = `${label || ''}${String(question || '').trim()}`.trim();
+        return body ? ` ${prompt}` : prompt;
+      }
+    );
+  }
+
   function normalizeGreetingHeader(input) {
     const raw = String(input || '');
     if (!raw.trim()) return raw;
@@ -7774,6 +7787,7 @@ module.exports = function (provider) {
     let rawText = String(text || '');
     try {
       rawText = normalizeGreetingHeader(rawText);
+      rawText = inlineOutboundRecommendationQuestion(rawText);
     } catch (e) {
       // If normalization fails for any reason, fall back to original text.
       rawText = String(text || '');

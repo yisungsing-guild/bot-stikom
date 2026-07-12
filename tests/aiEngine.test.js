@@ -37,7 +37,8 @@ describe('AIReplyEngine', () => {
 
     expect(result.success).toBe(true);
     expect(result.reply).not.toMatch(/CONFIDENCE:\s*HIGH|SOURCE_CHUNKS:/i);
-    expect(result.reply).toMatch(/(Mau saya jelaskan lagi bagian lain\?|Perlu saya cek opsi beasiswa, cicilan, atau potongan biaya yang relevan\?)/i);
+    expect(result.reply).toMatch(/(Mau saya jelaskan lagi bagian lain\?|Perlu saya cek opsi beasiswa, cicilan, atau potongan biaya yang relevan\?|Mau saya jelaskan rincian komponen biaya \(pendaftaran, DPP, per semester\)\?)/i);
+    expect(result.reply).not.toMatch(/\n+\s*(Mau saya|Perlu saya)/i);
   });
 
   test('humanizer uses reflective phrasing and avoids generic CTA for scholarship query', () => {

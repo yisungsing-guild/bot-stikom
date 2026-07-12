@@ -189,7 +189,21 @@ function normalizeAnswerFormatting(text) {
   out = out.replace(/([!?])([^\s\n])/g, '$1 $2');
   out = out.replace(/([a-zà-ÿ])\.([A-Za-zÀ-ÿ])/g, '$1. $2');
   out = out.replace(/\n[ \t]+/g, '\n');
+  out = inlineRecommendationQuestion(out);
   return out.trim();
+}
+
+function inlineRecommendationQuestion(text) {
+  if (!text || typeof text !== 'string') return text;
+
+  return String(text || '').replace(
+    /\n+\s*((?:Rekomendasi pertanyaan berikutnya|Pertanyaan berikutnya|Follow[- ]?up)\s*:\s*)?([^:\n]{8,220}\?)\s*$/i,
+    (match, label, question, offset, fullText) => {
+      const body = String(fullText || '').slice(0, offset).trim();
+      const prompt = `${label || ''}${String(question || '').trim()}`.trim();
+      return body ? ` ${prompt}` : prompt;
+    }
+  );
 }
 
 function splitSentences(text) {
@@ -276,7 +290,8 @@ function humanizeFinalAnswer(text, options = {}) {
   try {
     const raw = String(text || '').trim();
     const q = String(options && options.question ? options.question : '').toLowerCase();
-    const isGreetingQ = /\b(halo|hi|hai|pagi|siang|sore|malam|assalamualaikum|salam|menu utama pmb|menu utama|welcome)\b/i.test(q);
+    const isGreetingQ = /\b(halo|hi|hai|pagi|siang|sore|malam|assalamualaikum|salam|menu utama pmb|menu utama|welcome)\b/i.test(q)
+      && !/\bkelas\s*malam\b/i.test(q);
     const isGreetingReply = /^\s*(halo|hi|hai|pagi|siang|sore|malam|assalamualaikum|salam|welcome)\b[\s\S]*$/i.test(raw) && raw.split(/\r?\n/).length <= 3 && raw.length < 200;
     if (isGreetingQ || isGreetingReply) {
       return String(text).trim();
@@ -370,7 +385,7 @@ function cleanRagStructure(reply) {
   text = text.replace(/\n{3,}/g, '\n\n');
   text = text.replace(/ {2,}/g, ' ');
 
-  // 3. Pastikan follow-up question terpisah (pada baris terakhir)
+  // 3. Pastikan follow-up question tetap inline dengan jawaban utama.
   // Deteksi pertanyaan follow-up (akhir dengan ?)
   const lines = text.split('\n');
   let lastQuestion = -1;
@@ -387,11 +402,10 @@ function cleanRagStructure(reply) {
     const bodyLines = lines.slice(0, lastQuestion);
     const questionLines = lines.slice(lastQuestion);
 
-    // Pastikan separator \n\n sebelum pertanyaan
     let cleanBody = bodyLines.join('\n').trim();
     let cleanQuestion = questionLines.join('\n').trim();
 
-    text = cleanBody + '\n\n' + cleanQuestion;
+    text = cleanBody ? `${cleanBody} ${cleanQuestion}` : cleanQuestion;
   }
 
   if (isStructuredSections) {
@@ -430,7 +444,7 @@ function ensureRagFooter(reply, context, question = '', tone = null, confidence 
     if (followUp) {
       // Avoid duplicate follow-up insertion
       if (!text.includes(followUp) && !/Rekomendasi pertanyaan berikutnya/i.test(text)) {
-        text += `\n\n${followUp}`;
+        text += ` ${followUp}`;
       }
     }
   }
@@ -761,7 +775,7 @@ CATATAN GAYA:
 - Follow-up harus relevan dengan jawaban, bukan tawaran generik.
 
 =====================
-STRUKTUR JAWABAN (WAJIB - 3 BAGIAN TERPISAH)
+STRUKTUR JAWABAN
 =====================
 
 BAGIAN 1: HEADER PEMBUKA (1 kalimat)
@@ -781,8 +795,8 @@ BAGIAN 2: JAWABAN UTAMA (2-5 baris)
   Penjelasan singkat 1-2 baris.
 
 BAGIAN 3: FOLLOW-UP (1-2 kalimat)
-- Mulai di baris baru, terpisah dari jawaban utama
-- Gunakan separator: "\n\n" sebelumnya
+- Tulis langsung setelah jawaban utama dalam paragraf yang sama
+- Jangan beri enter/baris baru sebelum rekomendasi pertanyaan
 - Pertanyaan natural, bukan pernyataan
 - HARUS relevan dengan isi jawaban, TIDAK BOLEH generik
 
@@ -792,7 +806,7 @@ BAGIAN 3: FOLLOW-UP (1-2 kalimat)
 =====================
 ATURAN KETAT
 =====================
-- PISAHKAN dengan \n\n (double newline) antara bagian
+- Jangan pisahkan follow-up/rekomendasi pertanyaan dengan enter atau baris kosong
 - Follow-up HARUS pertanyaan (tanda ?)
 - Jangan copy literal pertanyaan user
 
