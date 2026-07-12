@@ -196,14 +196,41 @@ function normalizeAnswerFormatting(text) {
 function inlineRecommendationQuestion(text) {
   if (!text || typeof text !== 'string') return text;
 
-  return String(text || '').replace(
-    /\n+\s*((?:Rekomendasi pertanyaan berikutnya|Pertanyaan berikutnya|Follow[- ]?up)\s*:\s*)?([^:\n]{8,220}\?)\s*$/i,
-    (match, label, question, offset, fullText) => {
-      const body = String(fullText || '').slice(0, offset).trim();
-      const prompt = `${label || ''}${String(question || '').trim()}`.trim();
-      return body ? ` ${prompt}` : prompt;
+  return inlineQuestionListBlock(
+    String(text || '').replace(
+      /\n+\s*((?:Rekomendasi pertanyaan berikutnya|Pertanyaan berikutnya|Follow[- ]?up)\s*:\s*)?([^:\n]{8,220}\?)\s*$/i,
+      (match, label, question, offset, fullText) => {
+        const body = String(fullText || '').slice(0, offset).trim();
+        const prompt = `${label || ''}${String(question || '').trim()}`.trim();
+        return body ? ` ${prompt}` : prompt;
+      }
+    )
+  );
+}
+
+function inlineQuestionListBlock(input) {
+  return String(input || '').replace(
+    /(\n{1,2}\s*)((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:)\s*\n+([\s\S]*?)$/i,
+    (match, leading, heading, block) => {
+      const questions = extractInlineQuestions(block);
+      if (!questions.length) return match;
+      return `${leading}${String(heading || '').trim()} - ${questions.join(' - ')}`;
     }
   );
+}
+
+function extractInlineQuestions(block) {
+  const normalized = String(block || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\s+-\s+/g, '\n- ');
+  const questions = [];
+  const re = /(?:^|\n)\s*(?:[-•*]|\d+[.)])?\s*([^\n?]{3,220}\?)/g;
+  let match;
+  while ((match = re.exec(normalized)) !== null) {
+    const question = String(match[1] || '').replace(/\s+/g, ' ').trim();
+    if (question && !questions.includes(question)) questions.push(question);
+  }
+  return questions.slice(0, 5);
 }
 
 function splitSentences(text) {

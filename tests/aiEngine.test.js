@@ -110,4 +110,13 @@ describe('AIReplyEngine', () => {
     expect(result).toMatch(/SI|TI|Sistem Informasi|Teknologi Informasi|lebih terjangkau|yang lebih terjangkau/i);
     expect(result.length).toBeLessThan(220);
   });
+  test('humanizer keeps recommendation question list inline', () => {
+    const { humanizeFinalAnswer } = require('../src/engine/aiEngine');
+    const input = 'Jadi, PMB adalah pintu awal untuk calon mahasiswa baru.\n\nKalau mau lanjut, kakak bisa tanya:\n\n- Gelombang pendaftaran sekarang apa?\n- Rincian biaya SI gelombang 2B? - Syarat pendaftaran apa saja?';
+    const result = humanizeFinalAnswer(input, { question: 'saya ingin tau tentang pmb', tone: {} });
+
+    expect(result).toContain('Kalau mau lanjut, kakak bisa tanya: - Gelombang pendaftaran sekarang apa? - Rincian biaya SI gelombang 2B? - Syarat pendaftaran apa saja?');
+    expect(result).not.toMatch(/Kalau mau lanjut[^\n]*:\s*\n/i);
+    expect(result).not.toMatch(/\n-\s/);
+  });
 });
