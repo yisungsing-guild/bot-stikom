@@ -694,6 +694,32 @@ describe('semanticRagEngine', () => {
     expect(result.source).not.toBe('semantic-rag-pmb-info');
   }, 15000);
 
+  test('filters FAQ/QNA chunk to the matching answer only for training-specific questions', async () => {
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'faq-student-exchange',
+          chunk: 'FAQ International Office\nApa itu Student Exchange di ITB STIKOM Bali? Student Exchange adalah program pertukaran mahasiswa yang memberikan kesempatan kepada mahasiswa ITB STIKOM Bali untuk belajar di kampus luar negeri dalam periode tertentu, sekaligus mendapatkan pengalaman akademik dan budaya internasional. Apa tujuan dari program Student Exchange? Program ini bertujuan untuk memberikan pengalaman belajar di lingkungan internasional, meningkatkan kemampuan bahasa asing, dan membangun jaringan internasional. Apa saja syarat untuk mengikuti Student Exchange? Persyaratan umum meliputi mahasiswa aktif ITB STIKOM Bali, IPK sesuai ketentuan, kemampuan bahasa asing, serta lolos seleksi administrasi dan wawancara.',
+          filename: 'faq-student-exchange.pdf',
+          source: 'upload',
+          trainingId: 'training-student-exchange',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const result = await querySemanticRag('Apa itu Student Exchange di ITB STIKOM Bali?', { topK: 5 });
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-training-specific');
+    expect(result.answer).toMatch(/Student Exchange adalah program pertukaran mahasiswa/i);
+    expect(result.answer).not.toMatch(/Apa tujuan dari program Student Exchange/i);
+    expect(result.answer).not.toMatch(/Apa saja syarat untuk mengikuti Student Exchange/i);
+  });
   test('rewrites informal user question and answers from retrieved training context', async () => {
     process.env.OPENAI_API_KEY = 'test-key';
     process.env.SEMANTIC_RAG_MIN_SCORE = '0.01';

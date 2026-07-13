@@ -1390,6 +1390,54 @@ function extractTrainingSpecificTarget(question) {
   return useful.join(' ');
 }
 
+function isLikelyFaqQuestionText(text) {
+  return /^(?:q|tanya|pertanyaan)\s*[:\-.]/i.test(String(text || '').trim())
+    || /^(?:apa|apakah|bagaimana|gimana|berapa|kapan|di\s*mana|dimana|ke\s*mana|kemana|siapa|mengapa|kenapa|apa\s+saja)\b/i.test(String(text || '').trim());
+}
+
+function cleanFaqAnswerText(text) {
+  return String(text || '')
+    .replace(/^\s*(?:a|answer|jawab|jawaban)\s*[:\-.]\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractBestFaqAnswerFromChunk(chunk, target, targetTokens) {
+  const flat = String(chunk || '').replace(/\s+/g, ' ').trim();
+  if (!flat || !targetTokens.length) return '';
+
+  const markerRe = /(?:^|\s)((?:(?:q|tanya|pertanyaan)\s*[:\-.]\s*)?(?:apa\s+saja|apa|apakah|bagaimana|gimana|berapa|kapan|di\s*mana|dimana|ke\s*mana|kemana|siapa|mengapa|kenapa)\b[^?]{4,240}\?)/gi;
+  const markers = [];
+  let match;
+  while ((match = markerRe.exec(flat)) !== null) {
+    const questionText = String(match[1] || '').trim();
+    if (!isLikelyFaqQuestionText(questionText)) continue;
+    const start = match.index + match[0].indexOf(match[1]);
+    markers.push({ questionText, start, answerStart: start + questionText.length });
+    if (markers.length >= 80) break;
+  }
+
+  if (!markers.length) return '';
+
+  let best = null;
+  for (let i = 0; i < markers.length; i += 1) {
+    const current = markers[i];
+    const normalizedQuestion = normalizeFacilityTerm(current.questionText);
+    const exact = normalizedQuestion.includes(target);
+    const tokenHits = targetTokens.filter((token) => normalizedQuestion.includes(token)).length;
+    const score = (exact ? 6 : 0) + tokenHits;
+    if (!score) continue;
+    const next = markers[i + 1] ? markers[i + 1].start : flat.length;
+    const answer = cleanFaqAnswerText(flat.slice(current.answerStart, next));
+    if (!answer || answer.length < 12) continue;
+    if (!best || score > best.score || (score === best.score && answer.length < best.answer.length)) {
+      best = { score, answer };
+    }
+  }
+
+  if (!best) return '';
+  return best.answer.length > 900 ? `${best.answer.slice(0, 897).trim()}...` : best.answer;
+}
 function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
   if (isStructuredCampusQuestion(question)) return null;
   const target = extractTrainingSpecificTarget(question);
@@ -1418,6 +1466,12 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
 
   const snippets = [];
   for (const { chunk } of scored.slice(0, 4)) {
+    const faqAnswer = extractBestFaqAnswerFromChunk(chunk, target, targetTokens);
+    if (faqAnswer && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(faqAnswer))) {
+      snippets.push(faqAnswer);
+      break;
+    }
+
     const lines = chunk
       .split(/\r?\n/)
       .map((line) => line.replace(/\s+/g, ' ').trim())
@@ -1430,9 +1484,9 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
     for (const line of chosen) {
       const cleaned = line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim();
       if (cleaned && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(cleaned))) snippets.push(cleaned);
-      if (snippets.length >= 5) break;
+      if (snippets.length >= 3) break;
     }
-    if (snippets.length >= 5) break;
+    if (snippets.length >= 3) break;
   }
 
   if (!snippets.length) return null;
