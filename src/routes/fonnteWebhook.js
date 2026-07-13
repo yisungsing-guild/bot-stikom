@@ -111,7 +111,7 @@ if (shouldRequireToken) {
         if (m) bearer = m[1].trim();
       }
 
-      const body = req.body || {};
+      const body = Object.assign({}, req.query || {}, req.body || {});
       const bodyToken = (typeof body.token === 'string' && body.token.trim()) ? body.token.trim() : (
         (typeof body.verify_token === 'string' && body.verify_token.trim()) ? body.verify_token.trim() : (
           (typeof body.api_key === 'string' && body.api_key.trim()) ? body.api_key.trim() : (typeof body.key === 'string' && body.key.trim() ? body.key.trim() : null)
@@ -129,13 +129,15 @@ if (shouldRequireToken) {
   });
 }
 
-router.get(['/webhook', '/'], (req, res) => {
+router.get(['/webhook', '/'], async (req, res) => {
+  const hasInboundQuery = req.query && Object.keys(req.query).some((key) => /^(sender|from|whatsapp_number|waId|message|text|body)$/i.test(key));
+  if (hasInboundQuery) return handleFonnteWebhook(req, res);
   res.status(200).send('ok');
 });
 
 async function handleFonnteWebhook(req, res) {
   try {
-    const body = req.body || {};
+    const body = Object.assign({}, req.query || {}, req.body || {});
     const { phone, text, messageId, ts } = extractInbound(body);
 
     logger.info({ hasPhone: Boolean(phone), hasText: Boolean(text), messageId }, '[Fonnte Webhook] incoming');
@@ -172,5 +174,6 @@ async function handleFonnteWebhook(req, res) {
 }
 
 router.post(['/webhook', '/'], handleFonnteWebhook);
+router.all(['/webhook', '/'], handleFonnteWebhook);
 
 module.exports = router;

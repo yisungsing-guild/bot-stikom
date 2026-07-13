@@ -260,6 +260,8 @@ app.use(express.json({
   }
 }));
 
+app.use(express.urlencoded({ extended: true }));
+
 // 3.25. Attach a requestId for correlation (useful in production where error messages are hidden)
 app.use((req, res, next) => {
   try {
