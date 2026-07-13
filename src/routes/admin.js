@@ -1292,6 +1292,66 @@ router.post(
     return null;
   }
 
+  async function resolveOriginalTrainingFilePath(training) {
+    if (!training) return null;
+    const projectRoot = path.join(__dirname, '..', '..');
+    const searchDirs = [
+      path.join(projectRoot, 'uploads', 'validation'),
+      path.join(projectRoot, 'uploads', 'public-media'),
+      path.join(projectRoot, 'uploads')
+    ];
+
+    const stored = training.storedFilename ? String(training.storedFilename) : '';
+    if (stored && isSafeStoredFilename(stored)) {
+      for (const dir of searchDirs) {
+        const candidate = path.join(dir, stored);
+        try {
+          await fs.stat(candidate);
+          return { path: candidate, storedFilename: stored };
+        } catch {
+          // try next
+        }
+      }
+    }
+
+    const origFilename = String(training.filename || '');
+    const ext = path.extname(origFilename).toLowerCase();
+    const base = path.basename(origFilename, ext).toLowerCase();
+    const candidates = [];
+
+    for (const dir of searchDirs) {
+      try {
+        const names = await fs.readdir(dir);
+        for (const name of names) {
+          const lower = String(name || '').toLowerCase();
+          if (!lower) continue;
+          if (ext && lower.endsWith(ext) && (lower.startsWith(base + '-') || lower.startsWith(base + '_') || lower === base + ext)) {
+            candidates.push({ dir, name });
+            continue;
+          }
+          if (base && lower.includes(base) && (!ext || lower.endsWith(ext))) {
+            candidates.push({ dir, name });
+          }
+        }
+      } catch {
+        // ignore missing directories
+      }
+    }
+
+    let best = null;
+    for (const candidate of candidates) {
+      try {
+        const absPath = path.join(candidate.dir, candidate.name);
+        const stat = await fs.stat(absPath);
+        const item = { path: absPath, storedFilename: candidate.name, mtime: stat.mtimeMs || 0 };
+        if (!best || item.mtime > best.mtime) best = item;
+      } catch {
+        // ignore vanished files
+      }
+    }
+
+    return best ? { path: best.path, storedFilename: best.storedFilename } : null;
+  }
   // Super Admin: list uploaded validation files (sourced from audit logs)
   router.get('/training/validation', async (req, res, next) => {
     try {
@@ -1837,20 +1897,70 @@ router.post('/training/url', async (req, res, next) => {
     }
   });
 
-  // RAG: manual ingest from existing training data
+  // RAG: reprocess original upload when available, then ingest from current content.
   router.post('/rag/ingest/:id', async (req, res, next) => {
     try {
       const trainingId = req.params.id;
       const training = await prisma.trainingData.findUnique({ where: { id: trainingId } });
       if (!training) return res.status(404).send({ error: 'Training data not found' });
 
+      let contentForIngest = training.content || '';
+      let reprocessed = false;
+      let reprocessStoredFilename = training.storedFilename || null;
+      const source = String(training.source || '').toLowerCase();
+
+      if (source === 'upload') {
+        const original = await resolveOriginalTrainingFilePath(training);
+        if (!original || !original.path) {
+          return res.status(404).send({
+            success: false,
+            status: 'failed',
+            code: 'ORIGINAL_FILE_NOT_FOUND',
+            error: 'File asli tidak ditemukan di server storage. Upload ulang file diperlukan untuk reprocess.',
+            filename: training.filename || null,
+            storedFilename: training.storedFilename || null
+          });
+        }
+
+        const visualContext = extractVisualTrainingContext(req);
+        const reparsed = await FileParser.parseFileContentAsync(original.path, training.filename, { visualContext });
+        const sanitized = FileParser.sanitizeTextForStorage(reparsed);
+        if (!sanitized || sanitized.trim().length === 0) {
+          return res.status(400).send({
+            success: false,
+            status: 'failed',
+            code: 'REPROCESS_EMPTY_CONTENT',
+            error: 'File asli berhasil ditemukan, tetapi hasil parse/OCR kosong.'
+          });
+        }
+
+        const maxStoredBytes = parseInt(process.env.MAX_TRAINING_CONTENT_BYTES || String(15 * 1024 * 1024), 10);
+        const limited = FileParser.limitTextToUtf8Bytes(sanitized, maxStoredBytes);
+        contentForIngest = limited.text;
+        reprocessed = true;
+        reprocessStoredFilename = original.storedFilename || reprocessStoredFilename;
+
+        await prisma.trainingData.update({
+          where: { id: trainingId },
+          data: {
+            content: contentForIngest,
+            storedFilename: reprocessStoredFilename || training.storedFilename || null,
+            ragIngestStatus: 'unknown',
+            ragIngestError: null,
+            ragChunkCount: null,
+            ragIngestedAt: null
+          }
+        });
+      }
+
       const { ingestTrainingData: ragIngest } = require('../engine/ragEngine');
-      const result = await ragIngest(trainingId, training.content, training.source, {
+      const result = await ragIngest(trainingId, contentForIngest, training.source, {
         divisionKey: training.divisionKey || null,
         filename: training.filename,
+        sourceFile: training.filename,
         uploadedById: training.uploadedById || null
       });
-      res.send(result);
+      res.send({ ...result, reprocessed, storedFilename: reprocessStoredFilename || null });
     } catch (err) {
       console.error('[POST /admin/rag/ingest/:id] Error:', err.message);
       next(err);

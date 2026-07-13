@@ -479,7 +479,14 @@ export default function TrainingDataPage() {
       : prev)
 
     try {
-      const result: any = await adminFetchJson(`/admin/rag/ingest/${encodeURIComponent(id)}`, { method: 'POST' })
+      const visualContext = trainingVisualContext.trim()
+      const result: any = await adminFetchJson(`/admin/rag/ingest/${encodeURIComponent(id)}`, {
+        method: 'POST',
+        ...(visualContext ? {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visualContext })
+        } : {})
+      })
       await refresh()
       const status = result && result.success === false
         ? (result.status || 'failed')

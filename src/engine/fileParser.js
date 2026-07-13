@@ -44,6 +44,107 @@ class FileParser {
 
     return parts.join('\n');
   }
+  static async parseFileContentAsync(filePath, originalFilename, options = {}) {
+    const stats = fs.statSync(filePath);
+    const maxSize = parseInt(process.env.MAX_FILE_SIZE || String(15 * 1024 * 1024), 10);
+
+    if (stats.size > maxSize) {
+      throw new Error(`File terlalu besar (${(stats.size / 1024 / 1024).toFixed(2)}MB). Maksimal ${(maxSize / 1024 / 1024).toFixed(2)}MB`);
+    }
+
+    const ext = path.extname(originalFilename).toLowerCase();
+    let content = '';
+
+    switch (ext) {
+      case '.txt':
+        content = await this.parseTxt(filePath);
+        break;
+      case '.csv':
+        content = await this.parseCsv(filePath);
+        break;
+      case '.pdf':
+        content = await this.parsePdf(filePath);
+        break;
+      case '.doc':
+        throw new Error('File .DOC tidak didukung secara langsung. Silakan convert ke .DOCX terlebih dahulu menggunakan Microsoft Word atau LibreOffice.');
+      case '.docx':
+        content = await this.parseDocx(filePath);
+        break;
+      case '.xlsx':
+      case '.xls':
+        content = await this.parseExcel(filePath);
+        break;
+      case '.jpg':
+      case '.jpeg':
+      case '.png':
+      case '.gif':
+      case '.webp':
+      case '.bmp':
+      case '.tif':
+      case '.tiff':
+        try {
+          content = this.buildImageTrainingContent(originalFilename, await this.parseImage(filePath), options);
+        } catch (imageErr) {
+          const imageMsg = imageErr && imageErr.message ? String(imageErr.message) : String(imageErr);
+          const looksLikeNoReadableText =
+            /tidak ada teks|no text|empty|kosong|kualitas terlalu rendah|could not read/i.test(imageMsg) &&
+            !/requires|butuh|install|traineddata|language data|download|dependency|tesseract/i.test(imageMsg);
+
+          if (!looksLikeNoReadableText) throw imageErr;
+
+          logger.warn(
+            { filename: originalFilename, err: imageMsg },
+            '[FileParser] Image OCR produced no readable text; storing visual fallback content'
+          );
+          content = this.buildImageTrainingContent(originalFilename, '', options);
+        }
+        break;
+      default:
+        throw new Error(`Unsupported file format: ${ext}`);
+    }
+
+    if (!content || content.trim().length === 0) {
+      if (ext === '.pdf') {
+        throw new Error('PDF tidak memiliki teks (kemungkinan hasil scan). Silakan OCR/convert ke teks terlebih dulu.');
+      }
+      throw new Error('File is empty or could not be parsed');
+    }
+
+    return this.removeRepeatedHeaderFooterLines(content);
+  }
+
+  static removeRepeatedHeaderFooterLines(text) {
+    const raw = String(text || '');
+    const lines = raw.split(/\r?\n/);
+    if (lines.length < 12) return raw;
+
+    const normalizeLine = (line) => String(line || '')
+      .replace(/\s+/g, ' ')
+      .replace(/[-_:;,.]+$/g, '')
+      .trim()
+      .toLowerCase();
+
+    const counts = new Map();
+    for (const line of lines) {
+      const n = normalizeLine(line);
+      if (!n || n.length < 8 || n.length > 140) continue;
+      counts.set(n, (counts.get(n) || 0) + 1);
+    }
+
+    const minRepeat = Math.max(3, Math.ceil(lines.length / 45));
+    const drop = new Set();
+    for (const [line, count] of counts.entries()) {
+      if (count >= minRepeat) drop.add(line);
+    }
+
+    if (drop.size === 0) return raw;
+
+    return lines
+      .filter((line) => !drop.has(normalizeLine(line)))
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
 
   static limitTextToUtf8Bytes(text, maxBytes) {
     const s = String(text || '');
@@ -303,72 +404,7 @@ class FileParser {
   // Parse file berdasarkan extension dan simpan ke database
   static async parseAndStoreFile(filePath, originalFilename, uploadedById = null, divisionKey = null, storedFilename = null, options = {}) {
     try {
-      // Check file size first (prevent large files from causing memory issues)
-      const stats = fs.statSync(filePath);
-      const maxSize = parseInt(process.env.MAX_FILE_SIZE || String(15 * 1024 * 1024), 10); // 15MB default
-      
-      if (stats.size > maxSize) {
-        throw new Error(`File terlalu besar (${(stats.size / 1024 / 1024).toFixed(2)}MB). Maksimal ${(maxSize / 1024 / 1024).toFixed(2)}MB`);
-      }
-
-      const ext = path.extname(originalFilename).toLowerCase();
-      let content = '';
-
-      switch (ext) {
-        case '.txt':
-          content = await this.parseTxt(filePath);
-          break;
-        case '.csv':
-          content = await this.parseCsv(filePath);
-          break;
-        case '.pdf':
-          content = await this.parsePdf(filePath);
-          break;
-        case '.doc':
-          // DOC format lama membutuhkan konversi khusus
-          throw new Error('File .DOC tidak didukung secara langsung. Silakan convert ke .DOCX terlebih dahulu menggunakan Microsoft Word atau LibreOffice.');
-        case '.docx':
-          content = await this.parseDocx(filePath);
-          break;
-        case '.xlsx':
-        case '.xls':
-          content = await this.parseExcel(filePath);
-          break;
-        case '.jpg':
-        case '.jpeg':
-        case '.png':
-        case '.gif':
-        case '.webp':
-        case '.bmp':
-        case '.tif':
-        case '.tiff':
-          try {
-            content = this.buildImageTrainingContent(originalFilename, await this.parseImage(filePath), options);
-          } catch (imageErr) {
-            const imageMsg = imageErr && imageErr.message ? String(imageErr.message) : String(imageErr);
-            const looksLikeNoReadableText =
-              /tidak ada teks|no text|empty|kosong|kualitas terlalu rendah|could not read/i.test(imageMsg) &&
-              !/requires|butuh|install|traineddata|language data|download|dependency|tesseract/i.test(imageMsg);
-
-            if (!looksLikeNoReadableText) throw imageErr;
-
-            logger.warn(
-              { filename: originalFilename, err: imageMsg },
-              '[FileParser] Image OCR produced no readable text; storing visual fallback content'
-            );
-            content = this.buildImageTrainingContent(originalFilename, '', options);
-          }
-          break;
-        default:
-          throw new Error(`Unsupported file format: ${ext}`);
-      }
-
-      if (!content || content.trim().length === 0) {
-        if (ext === '.pdf') {
-          throw new Error('PDF tidak memiliki teks (kemungkinan hasil scan). Silakan OCR/convert ke teks terlebih dulu.');
-        }
-        throw new Error('File is empty or could not be parsed');
-      }
+      const content = await this.parseFileContentAsync(filePath, originalFilename, options);
 
       const safeFilename = this.sanitizeFilenameForStorage(originalFilename);
       const sanitized = this.sanitizeTextForStorage(content);
