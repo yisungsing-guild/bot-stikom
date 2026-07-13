@@ -17,14 +17,19 @@ class FileParser {
     const status = text
       ? 'OCR berhasil mengekstrak teks dari gambar.'
       : 'OCR tidak menemukan teks yang cukup jelas pada gambar ini.';
+    const visualContext = options && typeof options.visualContext === 'string' ? this.sanitizeTextForStorage(options.visualContext).slice(0, 2000) : '';
 
     const parts = [
-      'Dokumen gambar training data: ' + safeFilename + '.',
+      'Dokumen gambar/desain: ' + safeFilename + '.',
       'Format file: ' + ext.toUpperCase() + '.',
       status,
-      'File ini tetap disimpan sebagai referensi visual training data supaya gambar, brosur, screenshot, poster, denah, atau materi promosi tidak otomatis ditolak oleh RAG hanya karena teks OCR pendek.',
+      'File ini disimpan sebagai referensi visual supaya gambar, brosur, screenshot, poster, denah, kalender, atau materi promosi tetap bisa digunakan sebagai sumber informasi meskipun teks OCR pendek.',
       'Gunakan nama file, caption, atau input manual tambahan untuk memberi konteks spesifik seperti prodi, biaya, jadwal, lokasi, fasilitas, beasiswa, kontak, atau informasi PMB yang ada pada gambar.',
     ];
+
+    if (visualContext) {
+      parts.push('', 'Keterangan visual:', visualContext);
+    }
 
     const publicUrl = options && typeof options.publicUrl === 'string' ? options.publicUrl.trim() : '';
     if (publicUrl) {
@@ -296,7 +301,7 @@ class FileParser {
   }
 
   // Parse file berdasarkan extension dan simpan ke database
-  static async parseAndStoreFile(filePath, originalFilename, uploadedById = null, divisionKey = null, storedFilename = null) {
+  static async parseAndStoreFile(filePath, originalFilename, uploadedById = null, divisionKey = null, storedFilename = null, options = {}) {
     try {
       // Check file size first (prevent large files from causing memory issues)
       const stats = fs.statSync(filePath);
@@ -338,7 +343,7 @@ class FileParser {
         case '.tif':
         case '.tiff':
           try {
-            content = this.buildImageTrainingContent(originalFilename, await this.parseImage(filePath));
+            content = this.buildImageTrainingContent(originalFilename, await this.parseImage(filePath), options);
           } catch (imageErr) {
             const imageMsg = imageErr && imageErr.message ? String(imageErr.message) : String(imageErr);
             const looksLikeNoReadableText =
@@ -351,7 +356,7 @@ class FileParser {
               { filename: originalFilename, err: imageMsg },
               '[FileParser] Image OCR produced no readable text; storing visual fallback content'
             );
-            content = this.buildImageTrainingContent(originalFilename, '');
+            content = this.buildImageTrainingContent(originalFilename, '', options);
           }
           break;
         default:
@@ -1233,4 +1238,3 @@ class FileParser {
 }
 
 module.exports = { FileParser };
-

@@ -160,6 +160,7 @@ export default function TrainingDataPage() {
   const [page, setPage] = useState(0)
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
   const [lastUploadResults, setLastUploadResults] = useState<Array<{ ok: boolean; filename: string; trainingDataId?: string }> | null>(null)
+  const [trainingVisualContext, setTrainingVisualContext] = useState('')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
 
   const [mediaCaption, setMediaCaption] = useState('')
@@ -697,6 +698,8 @@ export default function TrainingDataPage() {
       if (list.length === 1) {
         const fd = new FormData()
         fd.append('file', list[0])
+        const visualContext = trainingVisualContext.trim()
+        if (visualContext) fd.append('visualContext', visualContext)
         const resp = await adminFetchJson<UploadSingleResponse>('/admin/training/upload', { method: 'POST', body: fd })
         setLastUploadResults([
           {
@@ -712,6 +715,8 @@ export default function TrainingDataPage() {
         }
       } else {
         const fd = new FormData()
+        const visualContext = trainingVisualContext.trim()
+        if (visualContext) fd.append('visualContext', visualContext)
         for (const f of list) fd.append('files', f)
         const resp = await adminFetchJson<UploadBulkResponse>('/admin/training/upload-bulk', { method: 'POST', body: fd })
 
@@ -1164,8 +1169,22 @@ export default function TrainingDataPage() {
             <h3 className="text-lg font-semibold mb-2">Upload Training Data</h3>
           </div>
           <p className="text-muted-foreground mb-6">
-            Drag and drop your CSV/XLS/XLSX/TXT/PDF/DOCX file(s) here, or click to browse
+            Drag and drop CSV/XLS/XLSX/TXT/PDF/DOCX or image files here, or click to browse
           </p>
+          <div className="mx-auto mb-5 max-w-2xl text-left">
+            <Label htmlFor="training-visual-context">Konteks visual / caption desain (opsional)</Label>
+            <Textarea
+              id="training-visual-context"
+              value={trainingVisualContext}
+              onChange={(e) => setTrainingVisualContext(e.target.value)}
+              rows={3}
+              placeholder="Contoh: Kalender akademik 2026/2027 berisi jadwal PMB, gelombang pendaftaran, dan kontak admin."
+              className="mt-2"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Berguna untuk kalender, brosur, poster, atau desain yang teksnya kecil/kurang jelas saat OCR.
+            </p>
+          </div>
           <div className="flex gap-3 justify-center">
             <Button
               onClick={() => fileInputRef.current?.click()}
@@ -1188,7 +1207,7 @@ export default function TrainingDataPage() {
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".csv,.xls,.xlsx,.txt,.pdf,.docx"
+            accept=".csv,.xls,.xlsx,.txt,.pdf,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tif,.tiff"
             className="hidden"
             onChange={(e) => {
               if (e.target.files) {

@@ -1015,6 +1015,11 @@ router.delete('/broadcast/:id', async (req, res, next) => {
   }
 });
 
+function extractVisualTrainingContext(req) {
+  const body = req && req.body ? req.body : {};
+  const raw = body.visualContext || body.caption || body.description || body.context || '';
+  return String(raw || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
+}
 // === TRAINING DATA MANAGEMENT ===
 
 // Upload dan parse training file
@@ -1043,6 +1048,7 @@ router.post(
       }
 
       const uploaderId = await resolveUploaderId(req);
+      const visualContext = extractVisualTrainingContext(req);
 
       // Parse file
       const result = await FileParser.parseAndStoreFile(
@@ -1050,7 +1056,8 @@ router.post(
         req.uploadInfo.originalname,
         uploaderId,
         divisionKey,
-        req.uploadInfo.filename
+        req.uploadInfo.filename,
+        { visualContext }
       );
       
       if (!result.success) {
@@ -1422,6 +1429,7 @@ router.post(
     }
 
     const uploaderId = await resolveUploaderId(req);
+    const visualContext = extractVisualTrainingContext(req);
 
     const results = [];
 
@@ -1438,7 +1446,8 @@ router.post(
           info.originalname,
           uploaderId,
           divisionKey,
-          info.filename
+          info.filename,
+          { visualContext }
         );
 
         if (!parsed.success) {
