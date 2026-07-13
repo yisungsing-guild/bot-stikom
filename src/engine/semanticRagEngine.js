@@ -275,6 +275,8 @@ async function rewriteQuestionWithLlm(client, question, options = {}) {
     'Jika user bertanya biaya pendaftaran, gunakan intent registration_fee, bukan fee_comparison.',
     'Jika user membandingkan harga/biaya antar prodi, gunakan intent fee_comparison. Jika membandingkan isi/fokus prodi, gunakan intent program_comparison.',
     'Jika user hanya berkata perbandingan antara beberapa prodi tanpa kata biaya/harga/tarif/UKT/DPP/uang, jangan gunakan fee_comparison; gunakan program_comparison atau needsClarification jika maksudnya belum jelas.',
+    'Untuk pertanyaan minat, hobi, personality, kekhawatiran, atau kecocokan jurusan seperti menggambar, DKV, desain, introvert, takut coding, takut matematika, bingung pilih jurusan, gunakan program_recommendation.',
+    'Untuk rekomendasi jurusan, pertimbangkan semua program resmi yang tersedia, termasuk Double Degree UTB jika user mengarah ke DKV/desain visual. Jangan mengarang jurusan partner DNUI/HELP jika tidak ada di data.',
     'Jika user bertanya PMB masih dibuka atau gelombang sekarang, gunakan current_wave atau schedule_window, bukan pmb_overview.',
     'searchQueries berisi 1-4 query pendek yang maknanya sama, bukan jawaban.',
     'Jika ada HINT SISTEM, gunakan sebagai konteks makna pertanyaan; jangan minta klarifikasi untuk singkatan yang sudah dijelaskan oleh hint.',

@@ -1,6 +1,7 @@
 const ragEngine = require('./ragEngine');
 const fs = require('fs');
 const path = require('path');
+const { buildProgramFitAnswer } = require('./programFitReasoning');
 
 function parseAmount(raw) {
   return ragEngine.parseCompactRupiahNumber(raw);
@@ -74,6 +75,7 @@ function detectProgram(question) {
   if (/\bsk\b/.test(q)) return { key: 'sk', label: 'Sistem Komputer', family: 'sk' };
   if (/\bmi\b/.test(q)) return { key: 'mi', label: 'Manajemen Informatika', family: 'd3' };
   if (/\bsi\b(?!\s+sistem)\b/.test(q)) return { key: 'si', label: 'Sistem Informasi', family: 's1' };
+
   return null;
 }
 
@@ -477,16 +479,17 @@ function formatProgramCareerFitAnswer(program, career) {
 function tryProgramRecommendationAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return null;
+  const centralFitAnswer = buildProgramFitAnswer(question);
 
   const asksRecommendation = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|jurusan\s+yang\s+mana|prodi\s+yang\s+mana|program\s+yang\s+mana|masuk\s+jurusan\s+apa|ambil\s+jurusan\s+apa)\b/.test(q);
-  const hasCareerGoal = /\b(ingin|mau|pengen|nanti|kerja|bekerja|karir|karier|perusahaan|menjadi|jadi|minat|hobi|hobby|suka|senang)\b/.test(q);
+  const hasCareerGoal = /\b(ingin|mau|pengen|nanti|kerja|bekerja|karir|karier|perusahaan|menjadi|jadi|minat|hobi|hobby|suka|senang|takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert)\b/.test(q);
   const asksMajor = /\b(jurusan|prodi|program\s+studi|kuliah)\b/.test(q);
 
   const dataInterest = /\b(mengolah\s+data|olah\s+data|analisis\s+data|menganalisa\s+data|menganalisis\s+data|data\s+analyst|data\s+analis|business\s+intelligence|bi\b|dashboard|basis\s+data|database|sql|analytics|analitik)\b/.test(q);
   const codingInterest = /\b(coding|ngoding|pemrograman|programmer|software|developer|aplikasi|backend|frontend|data\s+engineer|data\s+engineering)\b/.test(q);
   const businessInterest = /\b(bisnis|marketing|marketer|digital\s+marketer|pemasaran|jualan|e-commerce|marketplace|wirausaha|entrepreneur|konten|sosmed|social\s+media|analisis\s+pasar|riset\s+pasar)\b/.test(q);
   const hardwareInterest = /\b(hardware|perangkat\s+keras|iot|embedded|mikrokontroler|jaringan|network|robot|merakit|rakit\s+pc|komputer\s+rakitan)\b/.test(q);
-  const hasStrongInterestSignal = dataInterest || codingInterest || businessInterest || hardwareInterest;
+  const hasStrongInterestSignal = dataInterest || codingInterest || businessInterest || hardwareInterest || centralFitAnswer;
   const mentionedPrograms = detectMentionedPrograms(question);
   const asksProgramOutcome = mentionedPrograms.length === 1
     && /\b(cocoknya|nantinya|lulusannya?|jurusan|prodi|program\s+studi)\b/.test(q)
@@ -503,6 +506,10 @@ function tryProgramRecommendationAnswer(question) {
   }
 
   if (!asksRecommendation && !(hasCareerGoal && (asksMajor || hasStrongInterestSignal || careerProfile))) return null;
+
+  const centralPrimaryKey = centralFitAnswer && centralFitAnswer.candidates && centralFitAnswer.candidates[0] && centralFitAnswer.candidates[0].program ? centralFitAnswer.candidates[0].program.key : '';
+  const shouldPreferCentralFit = /\b(takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert|menggambar|gambar|ilustrasi|desain|dkv|visual)\b/.test(q);
+  if (centralPrimaryKey === 'utb' || (centralFitAnswer && shouldPreferCentralFit)) return centralFitAnswer;
 
   if (dataInterest) {
     return {
@@ -556,6 +563,9 @@ function tryProgramRecommendationAnswer(question) {
     };
   }
 
+
+  if (centralFitAnswer) return centralFitAnswer;
+
   return null;
 }
 
@@ -571,6 +581,7 @@ function detectSpecificScholarshipTopic(question) {
     return 'Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global';
   }
   if (/kuliah\s+sambil\s+kerja|luar\s+negeri/.test(q)) return 'Kuliah Sambil Kerja di Luar Negeri';
+
   return null;
 }
 
@@ -686,6 +697,7 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
       ].join('\n')
     };
   }
+
 
   return null;
 }
@@ -1313,6 +1325,7 @@ function grab(text, patterns, opts = {}) {
       if (re.lastIndex === match.index) re.lastIndex += 1;
     }
   }
+
   return null;
 }
 
