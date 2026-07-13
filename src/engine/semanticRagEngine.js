@@ -1358,6 +1358,8 @@ function normalizeFacilityTerm(value) {
 function isStructuredCampusQuestion(question) {
   const q = String(question || '').toLowerCase();
   return /\b(biaya|harga|tarif|ukt|dpp|pendaftaran|registrasi|gelombang|jadwal|deadline|pmb|beasiswa|potongan|kip|prodi|program\s+studi|jurusan|akreditasi|double\s*degree|dual\s*degree|utb|dnui|help|ukm|ormawa|organisasi\s+mahasiswa)\b/i.test(q)
+    || /\b(sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika)\b/i.test(q)
+    || /\b(cocok|rekomendasi|sebaiknya|sarankan|saran|pilih|mengambil|ambil|ingin\s+jadi|pengen\s+jadi|kerja|karier|karir|lulusan)\b/i.test(q)
     || /\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)
     || /\b(si|ti|sk|bd|mi)\b/i.test(q);
 }
@@ -1382,9 +1384,10 @@ function extractTrainingSpecificTarget(question) {
 
   const normalized = normalizeFacilityTerm(target);
   const tokens = normalized.split(/\s+/).filter(Boolean);
-  const distinctive = tokens.filter((token) => token.length >= 4 && !/^(yang|dan|atau|dari|untuk|dengan|pada|kampus|stikom|bali|itb)$/.test(token));
+  const useful = tokens.filter((token) => !/^(yang|dan|atau|dari|untuk|dengan|pada|kampus|stikom|bali|itb)$/.test(token));
+  const distinctive = useful.filter((token) => token.length >= 4);
   if (!distinctive.length) return '';
-  return distinctive.join(' ');
+  return useful.join(' ');
 }
 
 function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
@@ -1433,7 +1436,7 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
   }
 
   if (!snippets.length) return null;
-  const title = target.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  const title = target === 'hi think' ? 'Hi-Think' : target.split(/\\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   return {
     answer: [
       `Saya menemukan informasi tentang ${title} di data training.`,
@@ -1821,6 +1824,18 @@ function inferFrameTopic(question, source) {
       ]
     };
   }
+  if (src.includes('training-specific')) {
+    return {
+      request: 'informasi spesifik yang ditemukan di file training',
+      assumption: 'Saya ambil potongan data training yang paling langsung menyebut istilah tersebut.',
+      conclusion: 'Jadi, jawaban ini mengikuti isi file training yang sudah masuk index; jika detail belum ada, admin perlu menambahkan atau re-ingest dokumen yang lebih lengkap.',
+      followups: [
+        'Fasilitas kampus apa saja?',
+        'Career Center memberikan layanan apa?',
+        'Program Double Degree apa saja?'
+      ]
+    };
+  }
   if (src.includes('campus-facility-detail')) {
     return {
       request: 'detail program atau fasilitas pendukung yang kakak tanyakan',
@@ -2197,6 +2212,9 @@ function expandContextualFollowup(item, context = {}) {
   }
   if (/career\s*center|layanan/.test(q)) {
     return 'Layanan apa saja yang diberikan Career Center untuk membantu mahasiswa menyiapkan karier?';
+  }
+  if (/fasilitas|sarana|prasarana/.test(q)) {
+    return 'Fasilitas dan program pendukung apa saja yang tersedia di ITB STIKOM Bali?';
   }
   if (/kontak|hubungi|alamat|kampus/.test(q)) {
     return 'Kontak atau alamat kampus mana yang paling tepat dihubungi untuk kebutuhan informasi ini?';

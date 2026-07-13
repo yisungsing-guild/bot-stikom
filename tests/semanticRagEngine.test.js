@@ -387,7 +387,7 @@ describe('semanticRagEngine', () => {
     expect(String(facilities.answer || '').trim()).not.toBe('');
     const hiThink = await querySemanticRag('apa itu program hi-think?');
     expect(hiThink.success).toBe(true);
-    expect(hiThink.source).toBe('semantic-rag-campus-facility');
+    expect(hiThink.source).toBe('semantic-rag-training-specific');
     expect(hiThink.answer).toMatch(/Hi-Think|Persiapan Bekerja di Bidang TI di Jepang/i);
     expect(hiThink.answer).not.toMatch(/Fasilitas dan program pendukung yang tersedia di ITB STIKOM Bali antara lain/i);
 
