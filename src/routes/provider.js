@@ -433,7 +433,9 @@ module.exports = function (provider) {
   }
 
   function inlineQuestionListBlock(input) {
-    const compacted = String(input || '').replace(/((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:\s*)\n\s*\n(\s*(?:[-•*]|\d+[.)])\s*)/gi, '$1\n$2');
+    const bulletPattern = String.raw`[-\u2022\u00b7*]|\d+[.)]`;
+    const compactHeadingRe = new RegExp(`((?:Kalau\\s+(?:mau|ingin)\\s+lanjut|Kalau\\s+kakak\\s+(?:mau|ingin)\\s+lanjut|Kakak\\s+bisa\\s+lanjut\\s+tanya|Rekomendasi\\s+pertanyaan\\s+berikutnya|Pertanyaan\\s+berikutnya)[^\\n:]{0,140}:\\s*)\\n\\s*\\n(\\s*(?:${bulletPattern})\\s*)`, 'gi');
+    const compacted = String(input || '').replace(compactHeadingRe, '$1\n$2');
     return compacted.replace(
       /(\n{1,2}\s*)((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:)\s*\n+([\s\S]*?)$/i,
       (match, leading, heading, block) => {
@@ -443,13 +445,12 @@ module.exports = function (provider) {
       }
     );
   }
-
   function extractInlineQuestions(block) {
     const normalized = String(block || '')
       .replace(/\r\n/g, '\n')
-      .replace(/\s+-\s+/g, '\n- ');
+      .replace(/\s+[-\u2022\u00b7]\s+/g, '\n- ');
     const questions = [];
-    const re = /(?:^|\n)\s*(?:[-•*]|\d+[.)])?\s*([^\n?]{3,220}\?)/g;
+    const re = /(?:^|\n)\s*(?:[-\u2022\u00b7*]|\d+[.)])?\s*([^\n?]{3,220}\?)/g;
     let match;
     while ((match = re.exec(normalized)) !== null) {
       const question = String(match[1] || '').replace(/\s+/g, ' ').trim();
@@ -457,7 +458,6 @@ module.exports = function (provider) {
     }
     return questions.slice(0, 5);
   }
-
   function normalizeGreetingHeader(input) {
     const raw = String(input || '');
     if (!raw.trim()) return raw;
@@ -7968,9 +7968,10 @@ module.exports = function (provider) {
     const cleanedText = extracted ? extracted.cleanedText : rawText;
     // Preserve the fee template formatting (bullets `*`, spacing, wording) but still
     // strip markdown artifacts (e.g., "##") that can leak from RAG answers.
-    const outboundText = looksLikeFeeTemplateOutboundText(cleanedText)
+    let outboundText = looksLikeFeeTemplateOutboundText(cleanedText)
       ? sanitizeFeeTemplateWhatsappText(cleanedText)
       : sanitizeWhatsappText(autoToneOutboundText(cleanedText));
+    outboundText = inlineOutboundRecommendationQuestion(outboundText);
     if (!String(outboundText || '').trim()) return;
 
     try {

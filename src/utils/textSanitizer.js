@@ -383,6 +383,13 @@ function sanitizeWhatsappText(input) {
     .replace(/^\n+/, '')
     .replace(/\n+$/, '');
 
+  // Final pass: compact recommendation follow-up question lists.
+  // Generic list formatting above may add a blank line after any header ending in ':',
+  // but WhatsApp follow-up prompts should keep bullets directly below the prompt line.
+  text = text.replace(
+    /((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:\s*)\n\s*\n(\s*(?:[-\u2022\u00b7*]|\d+[.)])\s*)/gi,
+    '$1\n$2'
+  );
   // Final pass: normalize encoding artifacts that can show up as weird symbols in WhatsApp.
   text = normalizeMojibakePunctuationForWhatsapp(text);
 
