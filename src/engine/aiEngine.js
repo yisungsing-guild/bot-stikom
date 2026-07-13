@@ -209,7 +209,7 @@ function inlineRecommendationQuestion(text) {
 }
 
 function inlineQuestionListBlock(input) {
-  const compacted = String(input || '').replace(/((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:\s*)\n\s*\n(\s*(?:[-•*]|\d+[.)])\s*)/gi, '$1\n$2');
+  const compacted = String(input || '').replace(/((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:\s*)\n\s*\n(\s*(?:[-ï¿½*]|\d+[.)])\s*)/gi, '$1\n$2');
   return compacted.replace(
     /(\n{1,2}\s*)((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:)\s*\n+([\s\S]*?)$/i,
     (match, leading, heading, block) => {
@@ -225,7 +225,7 @@ function extractInlineQuestions(block) {
     .replace(/\r\n/g, '\n')
     .replace(/\s+-\s+/g, '\n- ');
   const questions = [];
-  const re = /(?:^|\n)\s*(?:[-•*]|\d+[.)])?\s*([^\n?]{3,220}\?)/g;
+  const re = /(?:^|\n)\s*(?:[-ï¿½*]|\d+[.)])?\s*([^\n?]{3,220}\?)/g;
   let match;
   while ((match = re.exec(normalized)) !== null) {
     const question = String(match[1] || '').replace(/\s+/g, ' ').trim();
@@ -826,6 +826,7 @@ BAGIAN 3: FOLLOW-UP (1-2 kalimat)
 - Tulis langsung setelah jawaban utama dalam paragraf yang sama
 - Jangan beri enter/baris baru sebelum rekomendasi pertanyaan
 - Pertanyaan natural, bukan pernyataan
+- Buat pertanyaan lanjutan yang cukup spesifik (sekitar 8-16 kata), menyebut topik/prodi/komponen yang baru dijawab bila ada
 - HARUS relevan dengan isi jawaban, TIDAK BOLEH generik
 
 =====================
@@ -836,6 +837,7 @@ ATURAN KETAT
 =====================
 - Jangan pisahkan follow-up/rekomendasi pertanyaan dengan enter atau baris kosong
 - Follow-up HARUS pertanyaan (tanda ?)
+- Follow-up jangan terlalu pendek seperti 'Biaya berapa?'; buat lebih lengkap sesuai konteks jawaban
 - Jangan copy literal pertanyaan user
 
 PENEGASAN GAYA (WAJIB):

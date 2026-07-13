@@ -1914,6 +1914,111 @@ function joinHumanList(items) {
   return list.slice(0, -1).join(', ') + ', dan ' + list[list.length - 1];
 }
 
+function detectFollowupProgram(question, body) {
+  const direct = detectFramePrograms(question);
+  if (direct.length === 1) return direct[0].label;
+  const combined = detectFramePrograms(`${question || ''}\n${body || ''}`);
+  if (combined.length === 1) return combined[0].label;
+  return '';
+}
+
+function humanizeProgramAliasInQuestion(text) {
+  return String(text || '')
+    .replace(/\bSI\b/g, 'Sistem Informasi')
+    .replace(/\bTI\b/g, 'Teknologi Informasi')
+    .replace(/\bSK\b/g, 'Sistem Komputer')
+    .replace(/\bBD\b/g, 'Bisnis Digital')
+    .replace(/\bMI\b/g, 'Manajemen Informatika')
+    .replace(/\bprodi ini\b/gi, 'prodi yang kakak tanyakan')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function lowerFirstWord(text) {
+  return String(text || '').replace(/^([A-Z])/, (m) => m.toLowerCase());
+}
+
+function expandContextualFollowup(item, context = {}) {
+  const raw = String(item || '').replace(/\s+/g, ' ').trim();
+  if (!raw) return '';
+  const q = raw.toLowerCase();
+  const program = String(context.program || '').trim();
+  const programTarget = program || 'prodi yang kakak tanyakan';
+  const source = String(context.source || '').toLowerCase();
+  const request = String(context.request || '').toLowerCase();
+
+  if (/ukm|ormawa|organisasi/.test(q)) {
+    if (/cara|ikut|gabung/.test(q)) return 'Bagaimana cara ikut UKM atau Ormawa, dan kapan biasanya pendaftaran anggota baru dibuka?';
+    if (/olahraga/.test(q)) return 'UKM olahraga apa saja yang tersedia, dan kegiatan rutinnya biasanya seperti apa?';
+    if (/teknologi/.test(q)) return 'UKM atau komunitas teknologi apa saja yang cocok untuk mahasiswa yang suka ngoding atau desain digital?';
+    return 'UKM atau Ormawa apa saja yang bisa dipilih sesuai minat kegiatan mahasiswa?';
+  }
+  if (/syarat|dokumen|berkas/.test(q)) {
+    return 'Apa saja syarat dan dokumen yang perlu disiapkan untuk mendaftar sebagai mahasiswa baru?';
+  }
+  if (/gelombang|jadwal|buka|deadline|berikutnya/.test(q) && !/biaya|rincian|ukt|dpp|harga/.test(q)) {
+    if (/berikutnya/.test(q)) return 'Gelombang pendaftaran berikutnya mulai kapan, dan apa yang perlu disiapkan sebelum daftar?';
+    return 'Gelombang pendaftaran yang sedang dibuka sekarang apa, dan sampai tanggal berapa berlangsung?';
+  }
+  if (/cara\s+daftar|bagaimana\s+cara|daftar\s+kuliah/.test(q) && !/ukm|ormawa|organisasi/.test(q)) {
+    return 'Bagaimana alur pendaftaran mahasiswa baru dari awal daftar sampai mendapatkan arahan berikutnya?';
+  }
+  if (/prospek|kerja|karir|karier/.test(q)) {
+    return `Prospek kerja lulusan ${programTarget} biasanya masuk ke bidang apa saja setelah lulus?`;
+  }
+  if (/mata\s+kuliah|dipelajari|kurikulum|belajar\s+apa/.test(q)) {
+    return `Mata kuliah apa saja yang dipelajari di ${programTarget}, dan skill apa yang paling ditekankan?`;
+  }
+  if (/biaya|ukt|dpp|pendaftaran|termurah|harga/.test(q)) {
+    if (/^biaya\s+pendaftaran/.test(q) && !/rincian|dpp|ukt|semester/.test(q)) {
+      return 'Berapa biaya pendaftaran PMB yang berlaku sekarang, dan potongannya mengikuti gelombang apa?';
+    }
+    if (/termurah/.test(q)) {
+      return 'Program S1 mana yang biaya kuliahnya paling terjangkau jika dibandingkan dari komponen biaya resmi dan UKT?';
+    }
+    const named = humanizeProgramAliasInQuestion(raw);
+    if (/gelombang|gel\b/i.test(raw)) {
+      return `Bagaimana ${lowerFirstWord(named.replace(/\?$/, ''))}, termasuk komponen biaya resmi dan biaya per semester?`;
+    }
+    return `Berapa rincian biaya kuliah untuk ${programTarget}, termasuk komponen biaya resmi dan biaya per semester?`;
+  }
+  if (/perbedaan|beda|bandingkan/.test(q)) {
+    return `Apa perbedaan ${programTarget} dengan prodi lain dari sisi materi kuliah dan prospek kerja?`;
+  }
+  if (/double\s*degree|dual\s*degree/.test(q)) {
+    return 'Apa saja pilihan Double Degree yang tersedia, dan kampus mitranya bekerja sama dengan prodi apa?';
+  }
+  if (/career\s*center|layanan/.test(q)) {
+    return 'Layanan apa saja yang diberikan Career Center untuk membantu mahasiswa menyiapkan karier?';
+  }
+  if (/kontak|hubungi|alamat|kampus/.test(q)) {
+    return 'Kontak atau alamat kampus mana yang paling tepat dihubungi untuk kebutuhan informasi ini?';
+  }
+  if (/beasiswa|kip|potongan|diskon/.test(q) || source.includes('scholarship')) {
+    return 'Apa saja syarat utama beasiswa atau potongan biaya yang bisa dicek saat pendaftaran PMB?';
+  }
+
+  const clean = humanizeProgramAliasInQuestion(raw).replace(/\?$/, '');
+  if (clean.length >= 48) return `${clean}?`;
+  if (request.includes('program studi') || program) return `${clean} untuk ${programTarget} secara lebih detail?`;
+  return `${clean} secara lebih detail berdasarkan informasi yang tersedia?`;
+}
+function buildContextualFollowups(followups, question, body, source, topic) {
+  const list = Array.isArray(followups) ? followups : [];
+  const context = {
+    program: detectFollowupProgram(question, body),
+    source,
+    request: topic && topic.request ? topic.request : ''
+  };
+  const out = [];
+  for (const item of list) {
+    const expanded = expandContextualFollowup(item, context);
+    if (expanded && !out.includes(expanded)) out.push(expanded);
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+
 function buildHybridFrameOpeners(question, source, topic) {
   const q = String(question || '').toLowerCase();
   const src = String(source || '').toLowerCase();
@@ -2278,9 +2383,9 @@ function formatNaturalAnswerFrame(question, answer, source) {
     parts.push('', topic.conclusion);
   }
 
-  const followups = Array.isArray(topic.followups) ? topic.followups : [];
+  const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
   if (followups.length) {
-    parts.push('', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.slice(0, 3).map(item => `- ${item}`)].join('\n'));
+    parts.push('', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.map(item => `- ${item}`)].join('\n'));
   }
 
   return parts.join('\n').trim();
