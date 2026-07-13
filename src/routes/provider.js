@@ -433,7 +433,8 @@ module.exports = function (provider) {
   }
 
   function inlineQuestionListBlock(input) {
-    return String(input || '').replace(
+    const compacted = String(input || '').replace(/((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:\s*)\n\s*\n(\s*(?:[-•*]|\d+[.)])\s*)/gi, '$1\n$2');
+    return compacted.replace(
       /(\n{1,2}\s*)((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:)\s*\n+([\s\S]*?)$/i,
       (match, leading, heading, block) => {
         const questions = extractInlineQuestions(block);
@@ -8548,7 +8549,7 @@ module.exports = function (provider) {
           return out.trim();
         };
 
-        const cleaned = finalCleanup(decorated);
+        const cleaned = inlineOutboundRecommendationQuestion(finalCleanup(decorated));
         try {
           const finalIntent = detectResponseIntent(cleaned, text, incomingIntent, intentConfidence);
           console.log('[TRACE_FINAL_WA_INTENT]', { finalIntent, chatId: toChatId, preview: String(cleaned || '').slice(0,300) });
