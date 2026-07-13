@@ -1346,10 +1346,190 @@ function tryRegistrationHowAnswer(question) {
   };
 }
 
-function tryCampusFacilityAnswer(question) {
+function normalizeFacilityTerm(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[-_]+/g, ' ')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isStructuredCampusQuestion(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(biaya|harga|tarif|ukt|dpp|pendaftaran|registrasi|gelombang|jadwal|deadline|pmb|beasiswa|potongan|kip|prodi|program\s+studi|jurusan|akreditasi|double\s*degree|dual\s*degree|utb|dnui|help|ukm|ormawa|organisasi\s+mahasiswa)\b/i.test(q)
+    || /\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)
+    || /\b(si|ti|sk|bd|mi)\b/i.test(q);
+}
+
+function extractTrainingSpecificTarget(question) {
+  const raw = String(question || '').trim();
+  if (!raw) return '';
+
+  const quoted = /["“”']([^"“”']{3,80})["“”']/.exec(raw);
+  let target = quoted ? quoted[1] : '';
+  if (!target) {
+    const m = /\b(?:apa\s+itu|apakah|jelaskan|detail(?:\s+tentang)?|tentang|info(?:rmasi)?\s+tentang|maksud(?:nya)?\s+apa)\s+(.{3,90})/i.exec(raw);
+    if (m) target = m[1];
+  }
+  if (!target) return '';
+
+  target = target
+    .replace(/[?!.?]+$/g, '')
+    .replace(/\b(?:kak|ya|dong|min|admin|itu|ini|adalah|maksudnya|program|fasilitas|layanan)\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const normalized = normalizeFacilityTerm(target);
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const distinctive = tokens.filter((token) => token.length >= 4 && !/^(yang|dan|atau|dari|untuk|dengan|pada|kampus|stikom|bali|itb)$/.test(token));
+  if (!distinctive.length) return '';
+  return distinctive.join(' ');
+}
+
+function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
+  if (isStructuredCampusQuestion(question)) return null;
+  const target = extractTrainingSpecificTarget(question);
+  if (!target || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
+
+  const targetTokens = target.split(/\s+/).filter((token) => token.length >= 4);
+  if (!targetTokens.length) return null;
+
+  const scored = [];
+  for (const item of indexForQuery) {
+    const chunk = String(item && item.chunk ? item.chunk : '').trim();
+    if (!chunk) continue;
+    const normalizedChunk = normalizeFacilityTerm(`${item.filename || ''} ${item.sourceFile || ''} ${chunk}`);
+    const exact = normalizedChunk.includes(target);
+    const tokenHits = targetTokens.filter((token) => normalizedChunk.includes(token)).length;
+    const enoughTokenMatch = targetTokens.length <= 2 ? tokenHits === targetTokens.length : tokenHits >= Math.ceil(targetTokens.length * 0.75);
+    if (!exact && !enoughTokenMatch) continue;
+    const sourceBoost = /upload/i.test(String(item && item.source ? item.source : '')) ? 2 : 0;
+    const exactBoost = exact ? 4 : 0;
+    const recencyBoost = item && item.createdAt ? 1 : 0;
+    scored.push({ item, chunk, score: exactBoost + sourceBoost + recencyBoost + tokenHits });
+  }
+
+  if (!scored.length) return null;
+  scored.sort((a, b) => b.score - a.score);
+
+  const snippets = [];
+  for (const { chunk } of scored.slice(0, 4)) {
+    const lines = chunk
+      .split(/\r?\n/)
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+    const matchedLines = lines.filter((line) => {
+      const normalizedLine = normalizeFacilityTerm(line);
+      return normalizedLine.includes(target) || targetTokens.every((token) => normalizedLine.includes(token));
+    });
+    const chosen = matchedLines.length ? matchedLines : lines.slice(0, 2);
+    for (const line of chosen) {
+      const cleaned = line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim();
+      if (cleaned && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(cleaned))) snippets.push(cleaned);
+      if (snippets.length >= 5) break;
+    }
+    if (snippets.length >= 5) break;
+  }
+
+  if (!snippets.length) return null;
+  const title = target.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  return {
+    answer: [
+      `Saya menemukan informasi tentang ${title} di data training.`,
+      '',
+      snippets.map((line) => `- ${line}`).join('\n'),
+      '',
+      'Kalau file training memuat detail tambahan seperti syarat, jadwal, atau kontak, bot akan mengambilnya dari potongan data yang paling relevan.'
+    ].join('\n'),
+    source: 'semantic-rag-training-specific',
+    frameSource: 'semantic-rag-training-specific'
+  };
+}
+
+function tryTrainingSpecificAnswer(question, indexForQuery) {
+  return buildTrainingSpecificAnswerFromIndex(question, indexForQuery);
+}
+function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
+  const q = normalizeFacilityTerm(question);
+  if (!q || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
+
+  const asksSpecificDetail = /\b(apa\s+itu|apakah|jelaskan|detail|program|layanan|kegunaan|manfaat|syarat|cara|bagaimana|gimana)\b/i.test(String(question || ''));
+  const facilityTerms = [
+    { label: 'Hi-Think', patterns: ['hi think', 'hithink'] },
+    { label: 'GCCP', patterns: ['gccp'] },
+    { label: 'Language Learning Center', patterns: ['language learning center', 'llc'] },
+    { label: 'Inkubator Bisnis', patterns: ['inkubator bisnis'] },
+    { label: 'Program Pengembangan Softskill', patterns: ['pengembangan softskill', 'softskill'] },
+    { label: 'Kuliah Sambil Kerja di Luar Negeri', patterns: ['kuliah sambil kerja di luar negeri'] },
+    { label: 'Magang Berbayar di Luar Negeri', patterns: ['magang berbayar di luar negeri'] },
+    { label: 'Program Jaminan Konsultasi', patterns: ['jaminan konsultasi'] }
+  ];
+
+  const matchedTerm = facilityTerms.find((term) => term.patterns.some((pattern) => q.includes(pattern)));
+  if (!matchedTerm || !asksSpecificDetail) return null;
+
+  const candidatePatterns = matchedTerm.patterns.map(normalizeFacilityTerm);
+  const scored = [];
+  for (const item of indexForQuery) {
+    const chunk = String(item && item.chunk ? item.chunk : '').trim();
+    if (!chunk) continue;
+    const normalizedChunk = normalizeFacilityTerm(`${item.filename || ''} ${item.sourceFile || ''} ${chunk}`);
+    const hasTerm = candidatePatterns.some((pattern) => normalizedChunk.includes(pattern));
+    if (!hasTerm) continue;
+    const sourceBoost = /upload/i.test(String(item && item.source ? item.source : '')) ? 2 : 0;
+    const recencyBoost = item && item.createdAt ? 1 : 0;
+    scored.push({ item, chunk, score: sourceBoost + recencyBoost + Math.min(chunk.length / 500, 4) });
+  }
+
+  if (!scored.length) return null;
+  scored.sort((a, b) => b.score - a.score);
+
+  const snippets = [];
+  for (const { chunk } of scored.slice(0, 3)) {
+    const lines = chunk
+      .split(/\r?\n/)
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+    const matchedLines = lines.filter((line) => {
+      const normalizedLine = normalizeFacilityTerm(line);
+      return candidatePatterns.some((pattern) => normalizedLine.includes(pattern));
+    });
+    const chosen = matchedLines.length ? matchedLines : lines.slice(0, 2);
+    for (const line of chosen) {
+      const cleaned = line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim();
+      if (cleaned && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(cleaned))) {
+        snippets.push(cleaned);
+      }
+      if (snippets.length >= 4) break;
+    }
+    if (snippets.length >= 4) break;
+  }
+
+  if (!snippets.length) return null;
+  return {
+    answer: [
+      `${matchedTerm.label} adalah salah satu program/fasilitas pendukung di ITB STIKOM Bali.`,
+      '',
+      'Berdasarkan data training yang tersedia:',
+      '',
+      snippets.map((line) => `- ${line}`).join('\n'),
+      '',
+      'Untuk detail teknis seperti jadwal, syarat peserta, atau alur pendaftaran program, kakak bisa konfirmasi ke admin kampus jika belum tercantum di data training.'
+    ].join('\n'),
+    source: 'semantic-rag-campus-facility-detail',
+    frameSource: 'semantic-rag-campus-facility-detail'
+  };
+}
+
+function tryCampusFacilityAnswer(question, indexForQuery) {
   const q = String(question || '').toLowerCase();
   const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|softskill|language\s+learning|hi-?think|gccp|magang\s+berbayar|konsultasi)\b/i.test(q);
   if (!asksFacilities) return null;
+  if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
+
+  const specificFromTraining = buildSpecificFacilityAnswerFromIndex(question, indexForQuery);
+  if (specificFromTraining) return specificFromTraining;
 
   if (/\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
     return {
@@ -1638,6 +1818,18 @@ function inferFrameTopic(question, source) {
         'Fasilitas kampus apa saja?',
         'Career Center memberikan layanan apa?',
         'Kontak kampus berapa?'
+      ]
+    };
+  }
+  if (src.includes('campus-facility-detail')) {
+    return {
+      request: 'detail program atau fasilitas pendukung yang kakak tanyakan',
+      assumption: 'Saya ambil bagian data training yang secara langsung menyebut program tersebut.',
+      conclusion: 'Jadi, jawaban detailnya mengikuti isi data training yang tersedia; kalau detail teknis belum tercantum, sebaiknya dikonfirmasi ke admin kampus.',
+      followups: [
+        'Fasilitas kampus apa saja?',
+        'Career Center memberikan layanan apa?',
+        'Program Double Degree apa saja?'
       ]
     };
   }
@@ -2516,6 +2708,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-pmb-requirements', tryPmbRequirementsAnswer],
   ['semantic-rag-registration-info', tryRegistrationHowAnswer],
   ['semantic-rag-schedule-window', tryScheduleWindowAnswer],
+  ['semantic-rag-training-specific', tryTrainingSpecificAnswer],
   ['semantic-rag-campus-facility', tryCampusFacilityAnswer],
   ['semantic-rag-ukm-list', tryUkmAnswer],
   ['semantic-rag-campus-location', tryCampusLocationAnswer],
@@ -2541,12 +2734,16 @@ const SOURCES_NEEDING_INDEX = new Set([
   'semantic-rag-fee-detail',
   'semantic-rag-fee-general',
   'semantic-rag-contextual-fee',
-  'semantic-rag-fee-comparison'
+  'semantic-rag-fee-comparison',
+  'semantic-rag-training-specific',
+  'semantic-rag-campus-facility'
 ]);
 const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-small-talk',
   'semantic-rag-out-of-domain',
-  'semantic-rag-unsupported-program'
+  'semantic-rag-unsupported-program',
+  'semantic-rag-training-specific',
+  'semantic-rag-campus-facility'
 ]);
 
 function handlersForSources(sourceNames) {
