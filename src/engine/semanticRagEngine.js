@@ -814,7 +814,7 @@ function tryOrganizationalStructureAnswer(question) {
   if (evidence && evidence.evidence) {
     return {
       answer: [
-        `Saya menemukan data tentang struktur/posisi ${subject} pada data training yang tersedia.`,
+        `Saya menemukan informasi tentang struktur/posisi ${subject} pada dokumen yang tersedia.`,
         '',
         evidence.evidence,
         '',
@@ -826,11 +826,11 @@ function tryOrganizationalStructureAnswer(question) {
 
   return {
     answer: [
-      `Untuk struktur organisasi atau posisi ${subject} di ITB STIKOM Bali, saya belum menemukan data yang menyebutkan ${subject} berada di bawah direktorat/divisi/bagian apa pada file training saat ini.`,
+      `Untuk struktur organisasi atau posisi ${subject} di ITB STIKOM Bali, saya belum menemukan informasi yang menyebutkan ${subject} berada di bawah direktorat/divisi/bagian apa pada dokumen yang tersedia saat ini.`,
       '',
       'Agar tidak menebak, informasi ini sebaiknya dikonfirmasi ke admin kampus atau pihak internal yang memegang struktur organisasi terbaru.',
       '',
-      'Kalau file struktur organisasi sudah ditambahkan ke data training, saya bisa bantu jawab berdasarkan dokumen tersebut.'
+      'Kalau dokumen struktur organisasi resmi sudah tersedia, saya bisa bantu jawab berdasarkan informasi tersebut.'
     ].join('\n'),
     source: 'semantic-rag-org-structure-unavailable'
   };
@@ -1493,11 +1493,10 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
   const title = target === 'hi think' ? 'Hi-Think' : target.split(/\\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   return {
     answer: [
-      `Saya menemukan informasi tentang ${title} di data training.`,
+      `Berikut penjelasan tentang ${title}:`,
       '',
       snippets.map((line) => `- ${line}`).join('\n'),
       '',
-      'Kalau file training memuat detail tambahan seperti syarat, jadwal, atau kontak, bot akan mengambilnya dari potongan data yang paling relevan.'
     ].join('\n'),
     source: 'semantic-rag-training-specific',
     frameSource: 'semantic-rag-training-specific'
@@ -1568,11 +1567,11 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
     answer: [
       `${matchedTerm.label} adalah salah satu program/fasilitas pendukung di ITB STIKOM Bali.`,
       '',
-      'Berdasarkan data training yang tersedia:',
+      'Berdasarkan informasi yang tersedia:',
       '',
       snippets.map((line) => `- ${line}`).join('\n'),
       '',
-      'Untuk detail teknis seperti jadwal, syarat peserta, atau alur pendaftaran program, kakak bisa konfirmasi ke admin kampus jika belum tercantum di data training.'
+      'Untuk detail teknis seperti jadwal, syarat peserta, atau alur pendaftaran program, kakak bisa konfirmasi ke admin kampus jika belum tercantum.'
     ].join('\n'),
     source: 'semantic-rag-campus-facility-detail',
     frameSource: 'semantic-rag-campus-facility-detail'
@@ -1870,7 +1869,7 @@ function inferFrameTopic(question, source) {
     return {
       request: 'struktur organisasi atau posisi unit/bagian di ITB STIKOM Bali',
       assumption: 'Saya cek berdasarkan data yang tersedia dan tidak menebak struktur internal yang belum tercantum.',
-      conclusion: 'Jadi, informasi struktur organisasi tersebut belum tersedia pada data training saat ini.',
+      conclusion: 'Jadi, informasi struktur organisasi tersebut belum tersedia pada dokumen yang ada saat ini.',
       followups: [
         'Fasilitas kampus apa saja?',
         'Career Center memberikan layanan apa?',
@@ -1880,9 +1879,9 @@ function inferFrameTopic(question, source) {
   }
   if (src.includes('training-specific')) {
     return {
-      request: 'informasi spesifik yang ditemukan di file training',
-      assumption: 'Saya ambil potongan data training yang paling langsung menyebut istilah tersebut.',
-      conclusion: 'Jadi, jawaban ini mengikuti isi file training yang sudah masuk index; jika detail belum ada, admin perlu menambahkan atau re-ingest dokumen yang lebih lengkap.',
+      request: 'informasi spesifik yang kakak tanyakan',
+      assumption: 'Saya jawab dari informasi yang tersedia dan paling relevan dengan pertanyaan kakak.',
+      conclusion: 'Jadi, informasi ini bisa kakak pahami sebagai gambaran awal. Untuk detail teknis seperti jadwal, syarat, atau pendaftaran, kakak bisa konfirmasi ke admin kampus jika belum tercantum.',
       followups: [
         'Fasilitas kampus apa saja?',
         'Career Center memberikan layanan apa?',
@@ -1893,8 +1892,8 @@ function inferFrameTopic(question, source) {
   if (src.includes('campus-facility-detail')) {
     return {
       request: 'detail program atau fasilitas pendukung yang kakak tanyakan',
-      assumption: 'Saya ambil bagian data training yang secara langsung menyebut program tersebut.',
-      conclusion: 'Jadi, jawaban detailnya mengikuti isi data training yang tersedia; kalau detail teknis belum tercantum, sebaiknya dikonfirmasi ke admin kampus.',
+      assumption: 'Saya jawab dari bagian informasi yang paling langsung membahas program tersebut.',
+      conclusion: 'Jadi, penjelasan detailnya mengikuti informasi yang tersedia. Kalau ada hal teknis seperti jadwal, syarat, atau alur pendaftaran yang belum tercantum, sebaiknya dikonfirmasi ke admin kampus.',
       followups: [
         'Fasilitas kampus apa saja?',
         'Career Center memberikan layanan apa?',
