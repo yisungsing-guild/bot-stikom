@@ -362,6 +362,39 @@ describe('feeComparisonEngine', () => {
       expect(result.answer).not.toMatch(/Maaf, data/);
     }
   });
+  test('answers program curriculum and skill questions without falling back to definition', () => {
+    const result = tryProgramDefinitionAnswer('Mata kuliah apa saja yang dipelajari di Sistem Informasi, dan skill apa yang paling ditekankan?');
+
+    expect(result).toBeTruthy();
+    expect(result.answer).toMatch(/Mata kuliah utama/i);
+    expect(result.answer).toMatch(/basis data|business intelligence|analisis dan perancangan sistem/i);
+    expect(result.answer).toMatch(/Skill yang ditekankan/i);
+    expect(result.answer).toMatch(/problem solving|requirement|dashboard analitik/i);
+    expect(result.answer).not.toMatch(/^Sistem Informasi adalah program studi yang berfokus/m);
+  });
+  test('answers recommended no-wave fee follow-up with official components and asks wave for discount total', () => {
+    const result = tryDetailedFeeAnswer('Berapa rincian biaya kuliah untuk Sistem Informasi, termasuk komponen biaya resmi dan biaya per semester?', []);
+
+    expect(result).toBeTruthy();
+    expect(result.answer).toMatch(/Rincian biaya kuliah untuk Prodi Sistem Informasi/i);
+    expect(result.answer).toMatch(/Biaya pendaftaran: Rp\. 500\.000/i);
+    expect(result.answer).toMatch(/DPP .*Rp\. 14\.000\.000/i);
+    expect(result.answer).toMatch(/Biaya pendidikan per semester \(UKT\): Rp\. 6\.500\.000/i);
+    expect(result.answer).toMatch(/sebutkan gelombangnya/i);
+  });
+
+  test('answers one-program-vs-other-programs comparison without routing to recommendation', () => {
+    const q = 'Apa perbedaan Sistem Informasi dengan prodi lain dari sisi materi kuliah dan prospek kerja?';
+    const comparison = tryProgramComparisonAnswer(q);
+    const recommendation = tryProgramRecommendationAnswer(q);
+
+    expect(comparison).toBeTruthy();
+    expect(comparison.answer).toMatch(/Sistem Informasi \(SI\)/i);
+    expect(comparison.answer).toMatch(/Sistem Komputer \(SK\)/i);
+    expect(comparison.answer).toMatch(/Teknologi Informasi \(TI\)/i);
+    expect(comparison.answer).toMatch(/Bisnis Digital \(BD\)/i);
+    expect(recommendation).toBeNull();
+  });
 
   test('answers detailed fee from bundled tuition knowledge when RAG index is empty', () => {
     const result = tryDetailedFeeAnswer('Rincian biaya prodi ti gelombang 1A berapa?', []);
@@ -436,6 +469,11 @@ describe('feeComparisonEngine', () => {
     expect(result.answer).toMatch(/cybersecurity/i);
     expect(result.answer).not.toMatch(/ERP Specialist/);
     expect(result.answer).not.toMatch(/Robotics Engineer/);
+
+    const siField = tryCareerAnswer('Prospek kerja lulusan Sistem Informasi biasanya masuk ke bidang apa saja setelah lulus?');
+    expect(siField).toBeTruthy();
+    expect(siField.answer).toMatch(/business analyst|system analyst|data analyst/i);
+    expect(tryDetailedFeeAnswer('Prospek kerja lulusan Sistem Informasi biasanya masuk ke bidang apa saja setelah lulus?', [])).toBeNull();
 
     for (const q of ['prospek kerja si?', 'prospek kerja sk?', 'prospek kerja mi?', 'prospek kerja bd?']) {
       const career = tryCareerAnswer(q);

@@ -209,6 +209,9 @@ function readProgramDomain(programKey) {
     return {
       title: raw.split(/\r?\n/).find((line) => line.trim()) || '',
       ringkasan: extractMdSection(raw, 'Ringkasan Program'),
+      apaYangDipelajari: extractMdSection(raw, 'Apa Yang Dipelajari'),
+      mataKuliah: extractMdSection(raw, 'Mata Kuliah Utama'),
+      skill: extractMdSection(raw, 'Skill Yang Dipelajari'),
       prospek: extractMdSection(raw, 'Prospek Kerja')
     };
   } catch (err) {
@@ -234,11 +237,31 @@ function cleanProgramSummary(summary, programLabel) {
 
 function tryProgramDefinitionAnswer(question) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(apa\s+itu|itu\s+apa|apaan|maksudnya|jelaskan|tentang|pengertian|belajar\s+apa|ngulik\s+apa|arahnya\s+(?:ke)?mana|kemana|tuh|sebenernya|sebenarnya)\b/.test(q)) return null;
+  const asksCurriculum = /\b(mata\s+kuliah|matkul|kurikulum|dipelajari|yang\s+dipelajari|belajar\s+apa|ngulik\s+apa|skill|kemampuan|kompetensi)\b/.test(q);
+  if (!asksCurriculum && !/\b(apa\s+itu|itu\s+apa|apaan|maksudnya|jelaskan|tentang|pengertian|arahnya\s+(?:ke)?mana|kemana|tuh|sebenernya|sebenarnya)\b/.test(q)) return null;
   const program = detectProgram(question);
   if (!program) return null;
   const domain = readProgramDomain(program.key);
   if (!domain || !domain.ringkasan) return null;
+
+  if (asksCurriculum && (domain.apaYangDipelajari || domain.mataKuliah || domain.skill)) {
+    const lines = [
+      `Di ${program.label}, materi kuliah dan skill yang ditekankan arahnya seperti ini:`
+    ];
+
+    if (domain.apaYangDipelajari) {
+      lines.push('', 'Yang dipelajari:', domain.apaYangDipelajari);
+    }
+    if (domain.mataKuliah) {
+      lines.push('', 'Mata kuliah utama:', domain.mataKuliah);
+    }
+    if (domain.skill) {
+      lines.push('', 'Skill yang ditekankan:', domain.skill);
+    }
+
+    return { answer: lines.join('\n') };
+  }
+
   const summary = cleanProgramSummary(domain.ringkasan, program.label);
   const definition = /^program\s+/i.test(summary)
     ? `${program.label} adalah ${summary}.`
@@ -259,11 +282,22 @@ function tryProgramComparisonAnswer(question) {
   if (/\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|termurah|termahal|murah|mahal|hemat)\b/.test(q)) return null;
   const mentioned = detectMentionedPrograms(question);
   const keys = new Set(mentioned.map((p) => p.key));
-  if (mentioned.length < 2) return null;
+  const asksOtherPrograms = /\b(prodi|program\s+studi|jurusan)\s+lain\b|\blainnya\b|\byang\s+lain\b/.test(q);
+  if (mentioned.length === 1 && asksOtherPrograms) {
+    ['si', 'ti', 'sk', 'bd'].forEach((key) => keys.add(key));
+  }
+  if (keys.size < 2) return null;
   const displayOrder = ['si', 'sk', 'ti', 'bd', 'mi'];
+  const programLookup = {
+    si: { key: 'si', label: 'Sistem Informasi' },
+    sk: { key: 'sk', label: 'Sistem Komputer' },
+    ti: { key: 'ti', label: 'Teknologi Informasi' },
+    bd: { key: 'bd', label: 'Bisnis Digital' },
+    mi: { key: 'mi', label: 'Manajemen Informatika' }
+  };
   const orderedMentioned = displayOrder
     .filter((key) => keys.has(key))
-    .map((key) => mentioned.find((p) => p.key === key))
+    .map((key) => mentioned.find((p) => p.key === key) || programLookup[key])
     .filter(Boolean);
 
   const lines = [
@@ -479,6 +513,7 @@ function formatProgramCareerFitAnswer(program, career) {
 function tryProgramRecommendationAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return null;
+  if (/\b(beda|bedanya|bedain|perbedaan|bandingkan|perbandingan|apa\s+yang\s+membedakan|mana\s+bedanya)\b/.test(q)) return null;
   const centralFitAnswer = buildProgramFitAnswer(question);
 
   const asksRecommendation = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|jurusan\s+yang\s+mana|prodi\s+yang\s+mana|program\s+yang\s+mana|masuk\s+jurusan\s+apa|ambil\s+jurusan\s+apa)\b/.test(q);
@@ -789,7 +824,7 @@ function tryRegistrationFeeAnswer(question, index = ragEngine.loadIndex()) {
 
 function tryDetailedFeeAnswer(question, index) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(biaya|rincian|detail|dpp|ukt|gelombang|gel\b|bayar|bayarnya|pendaftaran|registrasi|duit|uang|harga|total|awal(?:nya)?|masuk)\b/.test(q)) return null;
+  if (!/\b(biaya|rincian|detail|dpp|ukt|gelombang|gel\b|bayar|bayarnya|pendaftaran|registrasi|duit|uang|harga|total|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk)\b/.test(q)) return null;
   if (isRegistrationFeeQuestion(question) && !/\b(rincian|detail|dpp|ukt|awal(?:nya)?|masuk|total\s+(?:awal|kuliah)|semua)\b/.test(q)) return null;
   const wave = normalizeWave(question);
   const found = feeProfileByProgram(question, index);
@@ -885,6 +920,25 @@ function tryDetailedFeeAnswer(question, index) {
     }
   }
 
+  if (!wave && found && found.program && found.profile && ['si', 'ti', 'bd', 'sk'].includes(found.program.key) && wantsFullDetail) {
+    const { program, profile } = found;
+    return {
+      answer: [
+        `Rincian biaya kuliah untuk Prodi ${program.label}:`,
+        '',
+        profile.pendaftaran ? `* Biaya pendaftaran: ${formatRp(profile.pendaftaran)}` : null,
+        profile.dpp ? `* DPP / Dana Pendidikan Pokok: ${formatRp(profile.dpp)}` : null,
+        profile.atribut ? `* Atribut/perlengkapan awal: ${formatRp(profile.atribut)}` : null,
+        profile.biayaAwalLow ? `* Total komponen awal masuk sebelum potongan gelombang: ${formatRange(profile.biayaAwalLow, profile.biayaAwalHigh)}` : null,
+        profile.semester ? `* Biaya pendidikan per semester (UKT): ${formatRp(profile.semester)}` : null,
+        '',
+        'Catatan: total yang harus dibayar bisa berubah setelah potongan pendaftaran dan DPP sesuai gelombang. Kalau kakak sebutkan gelombangnya, misalnya Gelombang II B, saya bisa hitungkan total setelah potongan.'
+      ].filter(Boolean).join('\n'),
+      program,
+      profile,
+      wave: null
+    };
+  }
   if (!wave && found && found.program && found.profile && found.program.family === 's2') {
     const profile = found.profile;
     return {

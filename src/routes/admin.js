@@ -2129,7 +2129,7 @@ router.get('/training/:id/preview', async (req, res, next) => {
   }
 });
 
-// Download training data content as a text file (superadmin only)
+// Download original uploaded training file when available (superadmin only). Manual/URL data falls back to parsed text.
 router.get('/training/:id/download', async (req, res, next) => {
   try {
     const trainingId = req.params.id;
@@ -2264,7 +2264,15 @@ router.get('/training/:id/download', async (req, res, next) => {
       console.warn('[GET /admin/training/:id/download] file lookup failed:', e && e.message ? e.message : String(e));
     }
 
-    // Fallback: return parsed text content as .txt
+    if (String(training.source || '').toLowerCase() === 'upload') {
+      return res.status(404).send({
+        error: 'Original uploaded file not found on server storage',
+        code: 'ORIGINAL_FILE_NOT_FOUND',
+        filename: training.filename || null,
+        storedFilename: training.storedFilename || null
+      });
+    }
+    // Fallback: manual/URL training data has no original uploaded file, so return parsed text as .txt
     const parsedBase = path.parse(String(training.filename || `training-${training.id}`)).name || `training-${training.id}`;
     const safeBase = sanitizeDownloadName(parsedBase) || `training-${training.id}`;
     const downloadName = `${safeBase}.txt`;
@@ -2286,7 +2294,7 @@ router.get('/training/:id/raw', async (req, res, next) => {
     try {
       training = await prisma.trainingData.findUnique({
         where: { id: trainingId },
-        select: { id: true, filename: true, content: true, source: true, createdAt: true }
+        select: { id: true, filename: true, storedFilename: true, content: true, source: true, createdAt: true }
       });
     } catch (e) {
       const msg = (e && e.message) ? String(e.message) : '';

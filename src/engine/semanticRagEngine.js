@@ -1862,7 +1862,20 @@ function inferFrameTopic(question, source) {
     };
   }
 
-  if (src.includes('program-definition') || /\b(apa\s+itu|pengertian|belajar\s+apa)\b/.test(q)) {
+  if (/\b(mata\s+kuliah|matkul|kurikulum|dipelajari|yang\s+dipelajari|belajar\s+apa|skill|kemampuan|kompetensi)\b/.test(q)) {
+    return {
+      request: 'mata kuliah dan skill yang dipelajari di program studi yang kakak tanyakan',
+      assumption: 'Saya fokuskan ke materi kuliah utama dan kemampuan yang dibangun.',
+      conclusion: 'Jadi, bagian ini paling berguna untuk melihat kecocokan minat belajar kakak dengan isi prodinya.',
+      followups: [
+        'Prospek kerjanya bagaimana?',
+        'Biaya prodi ini berapa?',
+        'Apa perbedaan prodi ini dengan prodi lain?'
+      ]
+    };
+  }
+
+  if (src.includes('program-definition') || /\b(apa\s+itu|pengertian)\b/.test(q)) {
     return {
       request: 'penjelasan program studi yang kakak tanyakan',
       assumption: 'Saya jelaskan sebagai gambaran awal untuk calon mahasiswa.',
@@ -2005,6 +2018,45 @@ function expandContextualFollowup(item, context = {}) {
   if (request.includes('program studi') || program) return `${clean} untuk ${programTarget} secara lebih detail?`;
   return `${clean} secara lebih detail berdasarkan informasi yang tersedia?`;
 }
+const FOLLOWUP_VALIDATION_SKIP_SOURCES = new Set([
+  'semantic-rag-small-talk',
+  'semantic-rag-clarification',
+  'semantic-rag-out-of-domain',
+  'semantic-rag-feedback',
+  'semantic-rag-unsupported-program',
+  'semantic-rag-org-structure-unavailable'
+]);
+
+function isFollowupValidationEnabled() {
+  return envFlag('BOT_VALIDATE_FOLLOWUP_SUGGESTIONS', true);
+}
+
+function isValidFollowupHandlerResult(result) {
+  if (!result || !result.answer) return false;
+  const answer = String(result.answer || '').trim();
+  if (!answer) return false;
+  if (/TIDAK_CUKUP_DATA/i.test(answer)) return false;
+  if (/Maaf,\s*saya\s*belum\s*menemukan\s*data\s*yang\s*cukup/i.test(answer)) return false;
+  return true;
+}
+
+function canAnswerFollowupCandidate(candidate) {
+  const q = String(candidate || '').trim();
+  if (!q) return false;
+  let handlerIndex = null;
+  for (const [source, handler] of DETERMINISTIC_HANDLERS) {
+    if (FOLLOWUP_VALIDATION_SKIP_SOURCES.has(source)) continue;
+    try {
+      const indexArg = SOURCES_NEEDING_INDEX.has(source) ? (handlerIndex || (handlerIndex = getCachedSemanticIndex())) : undefined;
+      const result = handler(q, indexArg, { originalQuestion: q, followupValidation: true });
+      if (isValidFollowupHandlerResult(result)) return true;
+    } catch (e) {
+      // Ignore validator failures; the candidate simply won't be shown unless another handler can answer it.
+    }
+  }
+  return false;
+}
+
 function buildContextualFollowups(followups, question, body, source, topic) {
   const list = Array.isArray(followups) ? followups : [];
   const context = {
@@ -2012,10 +2064,13 @@ function buildContextualFollowups(followups, question, body, source, topic) {
     source,
     request: topic && topic.request ? topic.request : ''
   };
+  const validate = isFollowupValidationEnabled();
   const out = [];
   for (const item of list) {
     const expanded = expandContextualFollowup(item, context);
-    if (expanded && !out.includes(expanded)) out.push(expanded);
+    if (!expanded || out.includes(expanded)) continue;
+    if (validate && !canAnswerFollowupCandidate(expanded)) continue;
+    out.push(expanded);
     if (out.length >= 3) break;
   }
   return out;
@@ -2033,6 +2088,14 @@ function buildHybridFrameOpeners(question, source, topic) {
 
   if (src.includes('program-definition')) {
     const name = programName || 'prodi yang kakak maksud';
+    if (/\b(mata\s+kuliah|matkul|kurikulum|dipelajari|yang\s+dipelajari|belajar\s+apa|skill|kemampuan|kompetensi)\b/.test(q)) {
+      return [
+        'Saya jelaskan bagian akademik di ' + name + ' ya, Kak.',
+        prefix + ' Saya rangkum mata kuliah utama dan skill yang ditekankan di ' + name + '.',
+        'Untuk ' + name + ', saya fokus ke materi kuliah dan kemampuan yang dibangun.',
+        'Saya pahami kakak ingin tahu isi pembelajaran di ' + name + '. Berikut gambaran sederhananya.'
+      ];
+    }
     return [
       'Kalau yang kakak maksud ' + name + ', saya jelaskan gambaran prodinya dulu ya.',
       prefix + ' Saya jelaskan ' + name + ' dari fokus belajar dan kecocokan minatnya.',
@@ -2340,6 +2403,14 @@ function buildFrameOpeners(question, source, topic) {
   }
 
   if (src.includes('program-definition')) {
+    if (/\b(mata\s+kuliah|matkul|kurikulum|dipelajari|yang\s+dipelajari|belajar\s+apa|skill|kemampuan|kompetensi)\b/.test(q)) {
+      return [
+        'Bisa, Kak. Saya jelaskan dari mata kuliah utama dan skill yang ditekankan.',
+        'Untuk bagian akademiknya, saya rangkum materi kuliah dan kemampuan yang dibangun ya.',
+        'Saya fokus ke isi pembelajaran di prodi ini: mata kuliah dan skill utamanya.',
+        'Baik, Kak. Ini gambaran materi yang dipelajari dan skill yang paling ditekankan.'
+      ];
+    }
     return [
       'Bisa, Kak. Sederhananya, prodi ini bisa dipahami seperti ini.',
       `Untuk pertanyaan “apa itu”, saya jelaskan dari fokus belajar dan arah skill-nya ya.`,
