@@ -129,11 +129,11 @@ if (shouldRequireToken) {
   });
 }
 
-router.get('/webhook', (req, res) => {
+router.get(['/webhook', '/'], (req, res) => {
   res.status(200).send('ok');
 });
 
-router.post('/webhook', async (req, res) => {
+async function handleFonnteWebhook(req, res) {
   try {
     const body = req.body || {};
     const { phone, text, messageId, ts } = extractInbound(body);
@@ -169,6 +169,8 @@ router.post('/webhook', async (req, res) => {
     logger.error({ err: err?.message || err }, '[Fonnte Webhook] handler error');
     try { res.status(200).send('ok'); } catch (e) { /* ignore */ }
   }
-});
+}
+
+router.post(['/webhook', '/'], handleFonnteWebhook);
 
 module.exports = router;
