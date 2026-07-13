@@ -30,7 +30,8 @@
     "maint:run:dry": "node scripts/maintenanceScheduler.js --immediate --dry-run",
     "maint:scheduler": "node scripts/maintenanceScheduler.js",
     "maint:clean:sessions": "node scripts/clear_session_pending_flags.js --chatId=all",
-    "test": "jest"
+    "test": "jest",
+    "rag:web-sync": "node scripts/ingestWebRag.js"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -73,6 +74,6 @@
     "tailwindcss": "^4.2.2"
   },
   "prisma": {
-  "seed": "node prisma/seed.js"
-}
+    "seed": "node prisma/seed.js"
+  }
 }

@@ -1,4 +1,4 @@
-// Muat konfigurasi environment dari file env.
+﻿// Muat konfigurasi environment dari file env.
 // - Default: .env
 // - Production: .env.production
 // - Override: DOTENV_CONFIG_PATH
@@ -490,12 +490,12 @@ if (whatsappProvider === 'business' || whatsappProvider === 'wati' || whatsappPr
   if (missingCreds) {
     logger.error(
       isWhatsvaMode
-        ? '[Server] ✗ WhatsVA mode: Missing credentials (WHATSAPP_INSTANCE_KEY)'
+        ? '[Server] âœ— WhatsVA mode: Missing credentials (WHATSAPP_INSTANCE_KEY)'
         : isWatiMode
-        ? '[Server] ✗ WATI mode: Missing credentials (WHATSAPP_API_KEY)'
+        ? '[Server] âœ— WATI mode: Missing credentials (WHATSAPP_API_KEY)'
         : isFonnteMode
-        ? '[Server] ✗ Fonnte mode: Missing credentials (WHATSAPP_API_KEY)'
-        : '[Server] ✗ WhatsApp Business API: Missing credentials (API_KEY or PHONE_NUMBER_ID)'
+        ? '[Server] âœ— Fonnte mode: Missing credentials (WHATSAPP_API_KEY)'
+        : '[Server] âœ— WhatsApp Business API: Missing credentials (API_KEY or PHONE_NUMBER_ID)'
     );
     logger.warn('[Server] Falling back to Mock provider');
   } else {
@@ -520,12 +520,12 @@ if (whatsappProvider === 'business' || whatsappProvider === 'wati' || whatsappPr
     }
     
     logger.info(isWhatsvaMode
-      ? '[Server] ✓ WhatsApp Provider: WhatsVA (production)'
+      ? '[Server] âœ“ WhatsApp Provider: WhatsVA (production)'
       : isWatiMode
-      ? '[Server] ✓ WhatsApp Provider: WATI (production)'
+      ? '[Server] âœ“ WhatsApp Provider: WATI (production)'
       : isFonnteMode
-      ? '[Server] ✓ WhatsApp Provider: Fonnte (production)'
-      : '[Server] ✓ WhatsApp Provider: Business API (production)');
+      ? '[Server] âœ“ WhatsApp Provider: Fonnte (production)'
+      : '[Server] âœ“ WhatsApp Provider: Business API (production)');
   }
 } else {
   logger.info('[Server] WhatsApp Provider: Mock (development)');
@@ -653,6 +653,44 @@ app.use((err, req, res, next) => {
   });
 });
 
+
+async function maybeRunWebRagAutoSync() {
+  const enabled = String(process.env.WEB_RAG_AUTO_SYNC || '').toLowerCase() === 'true';
+  if (!enabled) return { skipped: true, reason: 'disabled' };
+
+  const key = 'web_rag_last_sync_at';
+  const intervalHoursRaw = parseFloat(process.env.WEB_RAG_AUTO_SYNC_INTERVAL_HOURS || '24');
+  const intervalHours = Number.isFinite(intervalHoursRaw) && intervalHoursRaw > 0 ? intervalHoursRaw : 24;
+  const intervalMs = intervalHours * 60 * 60 * 1000;
+
+  try {
+    const row = await prisma.setting.findUnique({ where: { key }, select: { value: true } }).catch(() => null);
+    const lastMs = row && row.value ? Date.parse(row.value) : 0;
+    if (lastMs && Date.now() - lastMs < intervalMs) {
+      return { skipped: true, reason: 'recent', lastSyncAt: row.value, intervalHours };
+    }
+
+    const { ingestWebSeedsToRag } = require('./engine/webRagIngest');
+    const result = await ingestWebSeedsToRag({
+      mode: process.env.WEB_RAG_MODE || 'sitemap',
+      maxPages: process.env.WEB_RAG_MAX_PAGES || process.env.WEB_SEARCH_MAX_PAGES || '6',
+      divisionKey: process.env.WEB_RAG_DIVISION_KEY || ''
+    });
+
+    if (result && result.ok) {
+      await prisma.setting.upsert({
+        where: { key },
+        create: { key, value: new Date().toISOString() },
+        update: { value: new Date().toISOString() }
+      }).catch(() => null);
+    }
+
+    return result;
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err) }, '[WebRAG] Auto sync failed');
+    return { ok: false, error: err && err.message ? err.message : String(err) };
+  }
+}
 // Jalankan server
 const { port: listenPort, host: listenHost } = resolveServerListenConfig(process.env);
 try { console.log('[SERVER_STARTING]', { port: listenPort, host: listenHost }); } catch (e) {}
@@ -669,6 +707,12 @@ const server = app.listen(listenPort, listenHost, async () => {
     } catch (warmErr) {
       logger.warn({ err: warmErr && warmErr.message ? warmErr.message : String(warmErr) }, '[SemanticRAG] Prewarm failed');
     }
+
+    setImmediate(async () => {
+      const result = await maybeRunWebRagAutoSync();
+      if (result && !result.skipped) logger.info(result, '[WebRAG] Auto sync complete');
+      else if (result && result.skipped) logger.info(result, '[WebRAG] Auto sync skipped');
+    });
     try { console.log('[SERVER_READY]', PORT); } catch (e) {}
   } catch (err) {
     try { console.error('[SERVER_INIT_ERROR] initializeRedis failed', err && err.message ? err.message : err); } catch (e) {}
@@ -750,4 +794,7 @@ process.on('unhandledRejection', (reason, promise) => {
     // ignore
   }
 });
+
+
+
 
