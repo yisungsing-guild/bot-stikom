@@ -343,10 +343,10 @@ export default function LiveChatPage() {
                   <button
                     key={chat.id}
                     onClick={() => setSelectedChatId(chat.id)}
-                    className={`w-full min-h-[5.5rem] rounded-3xl border p-4 text-left transition-colors ${
+                    className={`w-full min-h-[5rem] rounded-3xl border p-4 text-left transition-colors ${
                       active
                         ? 'border-slate-500/40 bg-slate-900 text-slate-100 shadow-slate-950/50'
-                        : 'border-transparent bg-slate-950/90 hover:bg-slate-900/80'
+                        : 'border-transparent bg-slate-950/90 text-slate-100 hover:bg-slate-900/80'
                     } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-600/70`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -399,7 +399,7 @@ export default function LiveChatPage() {
           </div>
 
           <ScrollArea className="min-h-0 flex-1 overflow-hidden p-3">
-            <div className="space-y-4">
+            <div className="space-y-5">
               {!selectedChatId ? <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">Pilih chat untuk melihat isi percakapan.</div> : null}
               {selectedChatId && messagesError ? <div className="rounded-xl border border-destructive/70 bg-destructive/10 p-4 text-sm text-destructive">{messagesError}</div> : null}
               {selectedChatId && !messagesError && rawMessages === null ? <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">Memuat pesan...</div> : null}
@@ -413,7 +413,7 @@ export default function LiveChatPage() {
                 const isSystem = msg.sender === 'system'
                 return (
                   <div key={msg.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[82%] min-h-[6.5rem] rounded-3xl px-5 py-4 shadow-sm ${
+                    <div className={`max-w-[82%] min-h-[8rem] rounded-3xl px-6 py-5 shadow-sm ${
                       isUser
                         ? 'bg-slate-900/95 text-slate-100 border border-slate-700/40 shadow-slate-950/20'
                         : isAgent
@@ -448,7 +448,7 @@ export default function LiveChatPage() {
                 className="min-w-0"
               />
               <Button
-                variant="ghost"
+                variant="default"
                 className="flex-none gap-2 bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700"
                 onClick={handleSend}
                 disabled={!selectedChatId || !selectedIsHuman || isSending || !inputValue.trim()}
