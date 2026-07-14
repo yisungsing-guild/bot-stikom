@@ -1381,6 +1381,60 @@ function normalizeFacilityTerm(value) {
     .replace(/\s+/g, ' ')
     .trim();
 }
+const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
+  { key: 'linkedin-career-center', label: 'program LinkedIn di Career Center', type: 'facility_program', patterns: ['linkedin career center', 'linked in career center', 'program linkedin', 'program linked in'] },
+  { key: 'career-center', label: 'Career Center', type: 'facility', patterns: ['career center', 'pusat karier', 'pusat karir'] },
+  { key: 'gccp', label: 'GCCP', type: 'international_program', patterns: ['gccp', 'global cultural exchange program'] },
+  { key: 'bccp', label: 'BCCP', type: 'international_program', patterns: ['bccp'] },
+  { key: 'student-exchange', label: 'Student Exchange', type: 'international_program', patterns: ['student exchange', 'students exchange', 'pertukaran mahasiswa', 'exchange program'] },
+  { key: 'short-course', label: 'short course', type: 'international_program', patterns: ['short course', 'shortcourse', 'kursus singkat'] },
+  { key: 'hi-think', label: 'Hi-Think', type: 'facility_program', patterns: ['hi think', 'hithink'] },
+  { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc'] },
+  { key: 'inkubator-bisnis', label: 'Inkubator Bisnis', type: 'facility', patterns: ['inkubator bisnis'] },
+  { key: 'softskill', label: 'Program Pengembangan Softskill', type: 'facility_program', patterns: ['pengembangan softskill', 'softskill'] },
+  { key: 'kuliah-sambil-kerja-ln', label: 'Kuliah Sambil Kerja di Luar Negeri', type: 'international_program', patterns: ['kuliah sambil kerja di luar negeri'] },
+  { key: 'magang-berbayar-ln', label: 'Magang Berbayar di Luar Negeri', type: 'international_program', patterns: ['magang berbayar di luar negeri'] },
+  { key: 'jaminan-konsultasi', label: 'Program Jaminan Konsultasi', type: 'facility_program', patterns: ['jaminan konsultasi'] }
+].map((item) => ({
+  ...item,
+  normalizedPatterns: item.patterns.map(normalizeFacilityTerm)
+}));
+
+function findCampusSupportEntity(text) {
+  const normalized = normalizeFacilityTerm(text);
+  if (!normalized) return null;
+  return CAMPUS_SUPPORT_ENTITY_REGISTRY.find((entity) =>
+    entity.normalizedPatterns.some((pattern) => pattern && normalized.includes(pattern))
+  ) || null;
+}
+
+function resolveCampusSupportEntity(question, options = {}) {
+  const current = findCampusSupportEntity(question);
+  if (current) return { entity: current, fromRecent: false };
+  const recent = getRecentConversation(options && options.sessionData);
+  const fromRecent = findCampusSupportEntity(recent);
+  return fromRecent ? { entity: fromRecent, fromRecent: true } : null;
+}
+
+function asksCampusSupportDetail(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(apa\s+itu|itu\s+apa|apakah|ada|jelaskan|detail|lebih\s+detail|program|layanan|kegiatan|aktivitas|kegunaan|manfaat|syarat|cara|bagaimana|gimana|ikut|mengikuti|daftar|mendaftar|pendaftaran|registrasi|info(?:rmasi)?|punya\s+info)\b/i.test(q);
+}
+
+function isShortCampusSupportFollowUp(question) {
+  const q = normalizeFacilityTerm(question);
+  if (!q) return false;
+  if (q.split(/\s+/).length <= 5 && /\b(itu|apa|iya|ya|benar|detail|daftar|mendaftar|caranya|gimana|bagaimana|syarat|program|kegiatan)\b/i.test(q)) return true;
+  return /\b(yang\s+tadi|program\s+itu|fasilitas\s+itu|cara\s+daftar(?:nya)?|lebih\s+detail(?:nya)?)\b/i.test(String(question || ''));
+}
+
+function campusSupportEntityToFacilityTerm(entity) {
+  if (!entity) return null;
+  return {
+    label: entity.label,
+    patterns: entity.normalizedPatterns
+  };
+}
 
 function isStructuredCampusQuestion(question) {
   const q = String(question || '').toLowerCase();
@@ -1540,19 +1594,11 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   if (!q || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
 
   const asksSpecificDetail = /\b(apa\s+itu|apakah|jelaskan|detail|program|layanan|kegunaan|manfaat|syarat|cara|bagaimana|gimana)\b/i.test(String(question || ''));
-  const facilityTerms = [
-    { label: 'Hi-Think', patterns: ['hi think', 'hithink'] },
-    { label: 'GCCP', patterns: ['gccp'] },
-    { label: 'Language Learning Center', patterns: ['language learning center', 'llc'] },
-    { label: 'Inkubator Bisnis', patterns: ['inkubator bisnis'] },
-    { label: 'Program Pengembangan Softskill', patterns: ['pengembangan softskill', 'softskill'] },
-    { label: 'Kuliah Sambil Kerja di Luar Negeri', patterns: ['kuliah sambil kerja di luar negeri'] },
-    { label: 'Magang Berbayar di Luar Negeri', patterns: ['magang berbayar di luar negeri'] },
-    { label: 'Program Jaminan Konsultasi', patterns: ['jaminan konsultasi'] }
-  ];
+  const facilityTerms = CAMPUS_SUPPORT_ENTITY_REGISTRY.map(campusSupportEntityToFacilityTerm);
 
   const matchedTerm = facilityTerms.find((term) => term.patterns.some((pattern) => q.includes(pattern)));
   if (!matchedTerm || !asksSpecificDetail) return null;
+  if (matchedTerm.label === 'Career Center') return null;
 
   const candidatePatterns = matchedTerm.patterns.map(normalizeFacilityTerm);
   const scored = [];
@@ -1571,7 +1617,15 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   scored.sort((a, b) => b.score - a.score);
 
   const snippets = [];
+  const targetForFaq = candidatePatterns.some((pattern) => q.includes(pattern)) ? q : (candidatePatterns[0] || normalizeFacilityTerm(matchedTerm.label));
+  const targetTokensForFaq = targetForFaq.split(/\s+/).filter((token) => token.length >= 4);
   for (const { chunk } of scored.slice(0, 3)) {
+    const faqAnswer = extractBestFaqAnswerFromChunk(chunk, targetForFaq, targetTokensForFaq);
+    if (faqAnswer && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(faqAnswer))) {
+      snippets.push(faqAnswer);
+      break;
+    }
+
     const lines = chunk
       .split(/\r?\n/)
       .map((line) => line.replace(/\s+/g, ' ').trim())
@@ -1607,6 +1661,57 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   };
 }
 
+function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
+  if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(String(question || ''))) return null;
+  const resolved = resolveCampusSupportEntity(question, options);
+  if (!resolved || !resolved.entity) return null;
+
+  const currentMentionsEntity = !resolved.fromRecent;
+  const hasFollowUpSignal = resolved.fromRecent && isShortCampusSupportFollowUp(question);
+  const asksDetail = asksCampusSupportDetail(question);
+  if (!currentMentionsEntity && !hasFollowUpSignal && !asksDetail) return null;
+  if (resolved.entity.key === 'career-center' && currentMentionsEntity) return null;
+
+  const entityQuestion = currentMentionsEntity
+    ? question
+    : `${resolved.entity.label} ${question}`;
+  const specific = buildSpecificFacilityAnswerFromIndex(entityQuestion, indexForQuery);
+  if (specific) {
+    return {
+      ...specific,
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: specific.frameSource || 'semantic-rag-campus-support-entity',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
+
+  const shouldFailClosed = asksDetail || hasFollowUpSignal || resolved.entity.type === 'international_program' || resolved.entity.key === 'linkedin-career-center';
+  if (!shouldFailClosed) return null;
+
+  return {
+    answer: buildInsufficientDataAnswer('very_low'),
+    source: 'semantic-rag-campus-support-insufficient-data',
+    frameSource: 'semantic-rag-insufficient-data',
+    matchedEntity: resolved.entity.key,
+    contextResolved: resolved.fromRecent || undefined
+  };
+}
+function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options = {}) {
+  const q = String(question || '').toLowerCase();
+  const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const hasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(`${q}\n${recent}`) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(`${q}\n${recent}`);
+  if (!hasLinkedInCareerContext) return null;
+
+  const asksLinkedInProgram = /\b(program|tentang|apa\s+itu|itu\s+apa|mengikuti|ikut|daftar|mendaftar|pendaftaran|registrasi|detail|lebih\s+detail|punya\s+info|info(?:rmasi)?|syarat|cara|bagaimana|gimana)\b/i.test(q);
+  if (!asksLinkedInProgram) return null;
+
+  return {
+    answer: buildInsufficientDataAnswer('very_low'),
+    source: 'semantic-rag-linkedin-career-insufficient-data',
+    frameSource: 'semantic-rag-insufficient-data'
+  };
+}
 function tryCampusFacilityAnswer(question, indexForQuery) {
   const q = String(question || '').toLowerCase();
   const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|softskill|language\s+learning|hi-?think|gccp|magang\s+berbayar|konsultasi)\b/i.test(q);
@@ -1820,19 +1925,23 @@ function loadUkmList() {
 function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
-  const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q);
+  const names = loadUkmNames();
+  const hasKnownUkmName = names.some((name) => {
+    const escaped = String(name || '').toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return escaped && new RegExp(`\\b${escaped}\\b`, 'i').test(q);
+  });
+  const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName;
   const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
   if (!hasUkmSignal && !hasUkmContext) return null;
 
   const recommendation = tryUkmInterestRecommendation(question, options);
   if (recommendation) return recommendation;
 
-  const names = loadUkmNames();
   const mentionedUkm = names.find((name) => {
     const escaped = String(name || '').toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return escaped && new RegExp(`\\b${escaped}\\b`, 'i').test(q);
   });
-  const asksSpecificUkmDetail = mentionedUkm && /\b(apa\s+itu|maksud(?:nya)?|kepanjangan|singkatan|kegiatan|aktivitas|program\s+kerja|proker|jadwal|latihan|tujuan|detail|tentang)\b/i.test(q);
+  const asksSpecificUkmDetail = mentionedUkm && /\b(apa\s+itu|itu\s+apa|apa\s+ya|maksud(?:nya)?|kepanjangan|singkatan|kegiatan|aktivitas|program\s+kerja|proker|jadwal|latihan|tujuan|detail|tentang)\b/i.test(q);
   if (asksSpecificUkmDetail) {
     return {
       answer: [
@@ -1844,7 +1953,7 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
     };
   }
 
-  if (!/\b(stikom|itb\s*stikom|kampus|ada|apa|daftar|list|sebutkan|mana|saja|aja|jenis|kegiatan\s+mahasiswa)\b/i.test(q) && !hasUkmContext) return null;
+  if (!/\b(stikom|itb\s*stikom|kampus|ada|apa|daftar|list|sebutkan|mana|saja|aja|jenis|kegiatan\s+mahasiswa)\b/i.test(q) && !hasUkmContext && !hasKnownUkmName) return null;
 
   const list = loadUkmList();
   if (!list || !list.text) {
@@ -2759,10 +2868,10 @@ function buildFrameOpeners(question, source, topic) {
 function formatNaturalAnswerFrame(question, answer, source) {
   const body = String(answer || '').trim();
   if (!body) return body;
-  if (/^maaf\b/i.test(body)) return body;
+  if (/^(?:mohon\s+)?maaf\b/i.test(body)) return body;
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
   const src = String(source || '').toLowerCase();
-  if (src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
+  if (src.includes('insufficient-data') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
   const q = String(question || '').toLowerCase();
   if (/\b(apa\s+kabar|apa\s+khabar|kabar\s+apa|khabar\s+apa|gimana\s+kabar|gimana\s+khabar|kabar\s+kamu|khabar\s+kamu|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|bagaimana\s+kabar|bagaimana\s+khabar)\b/i.test(q)) return body;
   if (/^\s*(halo|hallo|hai|hi|hello|haloo|halooo|assalamualaikum|assalamu\s+alaikum|om\s+swastiastu|swastiastu|shalom|namo\s+buddhaya|nammo\s+buddhaya|salam\s+kebajikan|rahayu|salam\s+rahayu|salam|selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam)\s*(kak|min|admin|tiko)?\s*$/i.test(String(question || '').trim())) return body;
@@ -2836,8 +2945,10 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-unsupported-program', tryUnsupportedProgramAnswer],
   ['semantic-rag-pmb-contact', tryPmbContactAnswer],
   ['semantic-rag-pmb-requirements', tryPmbRequirementsAnswer],
+  ['semantic-rag-campus-support-entity', tryCampusSupportEntityAnswer],
   ['semantic-rag-registration-info', tryRegistrationHowAnswer],
   ['semantic-rag-schedule-window', tryScheduleWindowAnswer],
+  ['semantic-rag-linkedin-career-insufficient-data', tryLinkedInCareerCenterNoDataAnswer],
   ['semantic-rag-training-specific', tryTrainingSpecificAnswer],
   ['semantic-rag-campus-facility', tryCampusFacilityAnswer],
   ['semantic-rag-ukm-list', tryUkmAnswer],
@@ -2865,6 +2976,7 @@ const SOURCES_NEEDING_INDEX = new Set([
   'semantic-rag-fee-general',
   'semantic-rag-contextual-fee',
   'semantic-rag-fee-comparison',
+  'semantic-rag-campus-support-entity',
   'semantic-rag-ukm-list',
   'semantic-rag-training-specific',
   'semantic-rag-campus-facility'
@@ -2873,6 +2985,8 @@ const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-small-talk',
   'semantic-rag-out-of-domain',
   'semantic-rag-dual-degree-followup',
+  'semantic-rag-campus-support-entity',
+  'semantic-rag-linkedin-career-insufficient-data',
   'semantic-rag-unsupported-program',
   'semantic-rag-ukm-list',
   'semantic-rag-training-specific',
@@ -3052,12 +3166,15 @@ function isUnsafeDeterministicFallback(question, result, rewrite = null) {
   const intent = String(rewrite && rewrite.intent ? rewrite.intent : '').toLowerCase();
   const answer = String(result.answer || '').toLowerCase();
 
+  const supportEntity = findCampusSupportEntity(q);
   const mentionsLinkedinCareer = /\b(linked\s*in|linkedin|career\s*center|karir\s*center|pusat\s*karir)\b/i.test(q);
   const asksRegistration = /\b(daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti)\b/i.test(q);
   const asksAdmissionRegistration = /\b(pmb|kuliah|calon\s+mahasiswa|mahasiswa\s+baru|camaba|siap\.stikom-bali\.ac\.id|stikom|itb\s*stikom)\b/i.test(q);
+  if (source.includes('registration-info') && asksRegistration && supportEntity && !asksAdmissionRegistration) return true;
   if (source.includes('registration-info') && asksRegistration && mentionsLinkedinCareer && !asksAdmissionRegistration) return true;
-  if (source.includes('registration-info') && /\bdaftar\s+kuliah\b/i.test(answer) && mentionsLinkedinCareer) return true;
+  if (source.includes('registration-info') && /\bdaftar\s+kuliah\b/i.test(answer) && (supportEntity || mentionsLinkedinCareer)) return true;
 
+  if (source.includes('program-list') && supportEntity && ['international_program', 'facility_program', 'facility'].includes(supportEntity.type)) return true;
   if (source.includes('program-list') && /\b(bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|pertukaran\s+mahasiswa)\b/i.test(q)) return true;
   if (source.includes('program-list') && intent && !['program_list', 'dual_degree'].includes(intent)) return true;
 

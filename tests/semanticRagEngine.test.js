@@ -401,7 +401,7 @@ describe('semanticRagEngine', () => {
     expect(String(facilities.answer || '').trim()).not.toBe('');
     const hiThink = await querySemanticRag('apa itu program hi-think?');
     expect(hiThink.success).toBe(true);
-    expect(hiThink.source).toBe('semantic-rag-training-specific');
+    expect(hiThink.source).toBe('semantic-rag-campus-support-entity');
     expect(hiThink.answer).toMatch(/Hi-Think|Persiapan Bekerja di Bidang TI di Jepang/i);
     expect(hiThink.answer).not.toMatch(/Fasilitas dan program pendukung yang tersedia di ITB STIKOM Bali antara lain/i);
 
@@ -747,7 +747,7 @@ describe('semanticRagEngine', () => {
     const result = await querySemanticRag('Apa itu Student Exchange di ITB STIKOM Bali?', { topK: 5 });
 
     expect(result.success).toBe(true);
-    expect(result.source).toBe('semantic-rag-training-specific');
+    expect(result.source).toBe('semantic-rag-campus-support-entity');
     expect(result.answer).toMatch(/Student Exchange adalah program pertukaran mahasiswa/i);
     expect(result.answer).not.toMatch(/Apa tujuan dari program Student Exchange/i);
     expect(result.answer).not.toMatch(/Apa saja syarat untuk mengikuti Student Exchange/i);
@@ -1026,11 +1026,14 @@ describe('semanticRagEngine', () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 
     const result = await querySemanticRag('Apa saja program kerja dari UKM Vos?');
+    const reversed = await querySemanticRag('Vos itu apa ya?');
 
     expect(result.success).toBe(true);
     expect(result.answer).toMatch(/belum punya informasi detail tentang kegiatan atau program kerja UKM Vos/i);
     expect(result.answer).not.toMatch(/Ada 32 UKM|Badan Eksekutif Mahasiswa|Dewan Perwakilan Mahasiswa/i);
     expect(result.answer).not.toMatch(/Kalau yang kakak cari kegiatan mahasiswa, daftar UKM/i);
+    expect(reversed.answer).toMatch(/belum punya informasi detail tentang kegiatan atau program kerja UKM Vos/i);
+    expect(reversed.answer).not.toMatch(/Sistem Komputer|Ada 32 UKM/i);
   });
 
   test('does not reroute LinkedIn Career Center registration to PMB registration', async () => {
@@ -1071,8 +1074,9 @@ describe('semanticRagEngine', () => {
     const result = await querySemanticRag('Apa yang harus saya lakukan untuk mendaftar program LinkedIn di Career Center?');
 
     expect(result.success).toBe(true);
-    expect(result.source).toBe('semantic-rag-campus-facility');
+    expect(result.source).toBe('semantic-rag-campus-support-entity');
     expect(result.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+    expect(result.answer).not.toMatch(/fasilitas kampus|layanan karier|Kalau mau lanjut/i);
     expect(result.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|datang langsung ke kampus/i);
     expect(createMock).not.toHaveBeenCalled();
   });
@@ -1115,9 +1119,47 @@ describe('semanticRagEngine', () => {
     const result = await querySemanticRag('Short course ada? Students exchange? Program BCCP ada?');
 
     expect(result.success).toBe(true);
-    expect(result.source).toBe('semantic-rag-no-context');
+    expect(result.source).toBe('semantic-rag-campus-support-entity');
     expect(result.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
     expect(result.answer).not.toMatch(/S1 \(Sarjana\)|S2 \(Pascasarjana\)|D3 \(Diploma\)/i);
+  });
+
+  test('keeps campus support program follow-ups on the same entity instead of PMB or program-list', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const linkedinQuestion = 'Boleh tahu tentang program LinkedIn di Career Center ya?';
+    const first = await querySemanticRag(linkedinQuestion);
+    expect(first.success).toBe(true);
+    expect(first.source).toBe('semantic-rag-campus-support-entity');
+    expect(first.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+    expect(first.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|S1 \(Sarjana\)|D3 \(Diploma\)/i);
+
+    const followUp = await querySemanticRag('kamu punya informasi lebih detailnya untuk saya bisa mendaftar?', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: linkedinQuestion },
+          { direction: 'bot', message: first.answer }
+        ]
+      }
+    });
+    expect(followUp.success).toBe(true);
+    expect(followUp.source).toBe('semantic-rag-campus-support-entity');
+    expect(followUp.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+    expect(followUp.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|S1 \(Sarjana\)|D3 \(Diploma\)/i);
+  });
+
+  test('does not answer campus support program variants with generic academic program list', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    for (const question of ['Apakah ada program BCCP?', 'Short course ada?', 'Students exchange?']) {
+      const result = await querySemanticRag(question);
+      expect(result.success).toBe(true);
+      expect(result.source).toBe('semantic-rag-campus-support-entity');
+      expect(result.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+      expect(result.answer).not.toMatch(/S1 \(Sarjana\)|S2 \(Pascasarjana\)|D3 \(Diploma\)|daftar jurusan\/program studi/i);
+    }
   });
 });
 
