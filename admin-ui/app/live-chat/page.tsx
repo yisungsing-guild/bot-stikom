@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { Bot, MessageCircle, RefreshCw, Send, UserCheck } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -84,6 +84,7 @@ export default function LiveChatPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [query, setQuery] = useState('')
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   const loadChats = useCallback(async (quiet = false) => {
     if (!quiet) setIsRefreshing(true)
@@ -231,6 +232,11 @@ export default function LiveChatPage() {
     })
   }, [rawMessages, selectedChat])
 
+  useEffect(() => {
+    if (!messagesEndRef.current) return
+    messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [messages])
+
   const selectedIsHuman = selectedChat?.chatStatus === 'HUMAN'
   const selectedNeedsAdmin = selectedIsHuman
 
@@ -293,7 +299,7 @@ export default function LiveChatPage() {
       : 'bg-gray-400'
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col gap-4 overflow-hidden px-6 py-4">
+    <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col gap-3 overflow-hidden px-6 py-3">
       <div className="flex shrink-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Realtime Chat</h1>
@@ -314,7 +320,7 @@ export default function LiveChatPage() {
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-4">
         <Card className="flex min-h-0 flex-col overflow-hidden p-4 lg:col-span-1">
           <div className="mb-3 shrink-0 space-y-2">
             <Input
@@ -397,11 +403,11 @@ export default function LiveChatPage() {
 
           <ScrollArea className="min-h-0 flex-1 overflow-hidden p-4">
             <div className="space-y-4">
-              {!selectedChatId ? <div className="p-3 text-sm text-muted-foreground">Pilih chat untuk melihat isi percakapan.</div> : null}
-              {selectedChatId && messagesError ? <div className="p-3 text-sm text-destructive">{messagesError}</div> : null}
-              {selectedChatId && !messagesError && rawMessages === null ? <div className="p-3 text-sm text-muted-foreground">Memuat pesan...</div> : null}
+              {!selectedChatId ? <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">Pilih chat untuk melihat isi percakapan.</div> : null}
+              {selectedChatId && messagesError ? <div className="rounded-xl border border-destructive/70 bg-destructive/10 p-4 text-sm text-destructive">{messagesError}</div> : null}
+              {selectedChatId && !messagesError && rawMessages === null ? <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">Memuat pesan...</div> : null}
               {selectedChatId && !messagesError && rawMessages !== null && messages.length === 0 ? (
-                <div className="p-3 text-sm text-muted-foreground">Belum ada pesan.</div>
+                <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">Belum ada pesan.</div>
               ) : null}
 
               {messages.map((msg) => {
@@ -410,29 +416,31 @@ export default function LiveChatPage() {
                 const isSystem = msg.sender === 'system'
                 return (
                   <div key={msg.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-md px-4 py-2 ${
+                    <div className={`max-w-[85%] rounded-3xl px-4 py-3 shadow-sm ${
                       isUser
-                        ? 'bg-primary text-primary-foreground'
+                        ? 'bg-primary text-primary-foreground shadow-primary/20'
                         : isAgent
-                          ? 'bg-emerald-100 text-emerald-950'
+                          ? 'bg-emerald-100 text-emerald-950 shadow-emerald-100/80'
                           : isSystem
-                            ? 'bg-amber-50 text-amber-900'
-                            : 'bg-muted text-foreground'
+                            ? 'bg-amber-50 text-amber-900 shadow-amber-100/80'
+                            : 'bg-slate-100 text-slate-900 shadow-slate-200/80'
                     }`}>
-                      <p className="mb-1 text-xs font-semibold opacity-80">
-                        {isUser ? 'User' : isAgent ? 'Admin' : isSystem ? 'System' : 'Bot'}
-                      </p>
-                      <p className="whitespace-pre-wrap break-words text-sm">{msg.message}</p>
-                      <p className="mt-1 text-xs opacity-70">{msg.time}</p>
+                      <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest opacity-80">
+                        <span>{isUser ? 'User' : isAgent ? 'Admin' : isSystem ? 'System' : 'Bot'}</span>
+                        <span>•</span>
+                        <span>{msg.time}</span>
+                      </div>
+                      <p className="whitespace-pre-wrap break-words text-sm leading-6">{msg.message}</p>
                     </div>
                   </div>
                 )
               })}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 
-          <div className="shrink-0 border-t border-border p-4">
-            <div className="flex gap-2">
+          <div className="shrink-0 border-t border-border/70 bg-slate-50/70 p-4 backdrop-blur-sm">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 placeholder={selectedChatId ? selectedNeedsAdmin ? 'Ketik balasan admin...' : 'Ambil alih dulu untuk membalas' : 'Pilih chat dulu untuk membalas'}
                 value={inputValue}
@@ -441,9 +449,10 @@ export default function LiveChatPage() {
                   if (e.key === 'Enter' && !e.shiftKey) handleSend()
                 }}
                 disabled={!selectedChatId || !selectedIsHuman || isSending}
+                className="min-w-0"
               />
               <Button
-                className="gap-2"
+                className="flex-none gap-2"
                 onClick={handleSend}
                 disabled={!selectedChatId || !selectedIsHuman || isSending || !inputValue.trim()}
               >
