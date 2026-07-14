@@ -293,7 +293,7 @@ export default function LiveChatPage() {
       : 'bg-gray-400'
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col gap-6 overflow-hidden p-6">
+    <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col gap-4 overflow-hidden px-6 py-4">
       <div className="flex shrink-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Realtime Chat</h1>
@@ -314,7 +314,7 @@ export default function LiveChatPage() {
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-4">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <Card className="flex min-h-0 flex-col overflow-hidden p-4 lg:col-span-1">
           <div className="mb-3 shrink-0 space-y-2">
             <Input
