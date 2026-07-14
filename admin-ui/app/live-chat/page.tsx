@@ -293,8 +293,8 @@ export default function LiveChatPage() {
       : 'bg-gray-400'
 
   return (
-    <div className="space-y-6 p-8">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col gap-6 overflow-hidden p-6">
+      <div className="flex shrink-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Realtime Chat</h1>
           <p className="text-muted-foreground mt-2">
@@ -314,9 +314,9 @@ export default function LiveChatPage() {
         </div>
       </div>
 
-      <div className="grid h-[calc(100vh-220px)] min-h-[620px] grid-cols-1 gap-6 lg:grid-cols-4">
-        <Card className="flex flex-col p-4 lg:col-span-1">
-          <div className="mb-3 space-y-2">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-4">
+        <Card className="flex min-h-0 flex-col overflow-hidden p-4 lg:col-span-1">
+          <div className="mb-3 shrink-0 space-y-2">
             <Input
               placeholder="Cari chat, status, atau pesan..."
               value={query}
@@ -327,7 +327,7 @@ export default function LiveChatPage() {
             </p>
           </div>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="min-h-0 flex-1 overflow-hidden">
             <div className="space-y-2 pr-2">
               {chatsError ? <div className="p-3 text-sm text-destructive">{chatsError}</div> : null}
               {!chatsError && rawChats === null ? <div className="p-3 text-sm text-muted-foreground">Memuat chat...</div> : null}
@@ -370,8 +370,8 @@ export default function LiveChatPage() {
           </ScrollArea>
         </Card>
 
-        <Card className="flex min-h-0 flex-col lg:col-span-3">
-          <div className="flex items-center justify-between gap-4 border-b border-border p-4">
+        <Card className="flex min-h-0 flex-col overflow-hidden lg:col-span-3">
+          <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border p-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <p className="truncate font-semibold">{selectedChat ? selectedChat.name : 'Pilih chat'}</p>
@@ -395,7 +395,7 @@ export default function LiveChatPage() {
             </div>
           </div>
 
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="min-h-0 flex-1 overflow-hidden p-4">
             <div className="space-y-4">
               {!selectedChatId ? <div className="p-3 text-sm text-muted-foreground">Pilih chat untuk melihat isi percakapan.</div> : null}
               {selectedChatId && messagesError ? <div className="p-3 text-sm text-destructive">{messagesError}</div> : null}
@@ -431,7 +431,7 @@ export default function LiveChatPage() {
             </div>
           </ScrollArea>
 
-          <div className="border-t border-border p-4">
+          <div className="shrink-0 border-t border-border p-4">
             <div className="flex gap-2">
               <Input
                 placeholder={selectedChatId ? selectedNeedsAdmin ? 'Ketik balasan admin...' : 'Ambil alih dulu untuk membalas' : 'Pilih chat dulu untuk membalas'}
