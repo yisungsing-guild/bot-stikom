@@ -94,23 +94,6 @@ type ValidationFileItem = {
   } | null
 }
 
-type MediaUploadResponse = {
-  ok?: boolean
-  url?: string
-  marker?: string
-  storedAs?: string
-  originalname?: string
-  size?: number
-  mimetype?: string
-}
-
-type ManualTrainingCreateResponse = {
-  ok?: boolean
-  trainingDataId?: string
-  filename?: string
-  contentLength?: number
-  wasTruncated?: boolean
-}
 
 function formatApiErrorText(input: unknown): string {
   const raw = input == null ? '' : String(input)
@@ -122,7 +105,7 @@ function formatApiErrorText(input: unknown): string {
     try {
       const parsed: any = JSON.parse(trimmed)
       const msg = parsed && parsed.error ? String(parsed.error) : raw
-      const suggestions = Array.isArray(parsed && parsed.suggestions)
+      const suggestions: string[] = Array.isArray(parsed && parsed.suggestions)
         ? parsed.suggestions.map((s: any) => String(s)).filter(Boolean)
         : []
       const errorCode = parsed && parsed.errorCode ? String(parsed.errorCode) : ''
@@ -163,94 +146,10 @@ export default function TrainingDataPage() {
   const [trainingVisualContext, setTrainingVisualContext] = useState('')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
 
-  const [mediaCaption, setMediaCaption] = useState('')
-  const [mediaDescription, setMediaDescription] = useState('')
-  const [mediaUploading, setMediaUploading] = useState(false)
-  const [mediaSavingTraining, setMediaSavingTraining] = useState(false)
-  const [mediaError, setMediaError] = useState<string | null>(null)
-  const [mediaUploaded, setMediaUploaded] = useState<MediaUploadResponse | null>(null)
-  const [mediaTraining, setMediaTraining] = useState<ManualTrainingCreateResponse | null>(null)
 
   const ident = getAdminIdentity()
   const role = ident && ident.role ? String(ident.role) : null
   const canUpload = !!getAdminToken()
-
-  async function uploadPublicImage(file: File) {
-    setMediaUploading(true)
-    setMediaError(null)
-    setMediaTraining(null)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const cap = mediaCaption.trim()
-      if (cap) fd.append('caption', cap)
-
-      const res = await adminFetchJson<MediaUploadResponse>('/admin/media/upload', {
-        method: 'POST',
-        body: fd,
-      })
-      setMediaUploaded(res)
-    } catch (e: any) {
-      if (e instanceof AdminApiError) {
-        setMediaError(formatApiErrorText(e.bodyText || `Upload failed (${e.status}).`))
-      } else {
-        setMediaError(formatApiErrorText(e?.message || 'Upload failed.'))
-      }
-      setMediaUploaded(null)
-    } finally {
-      setMediaUploading(false)
-    }
-  }
-
-  async function copyMediaMarker() {
-    const marker = mediaUploaded && mediaUploaded.marker ? String(mediaUploaded.marker) : ''
-    if (!marker.trim()) return
-    try {
-      await navigator.clipboard.writeText(marker)
-    } catch {
-      // ignore (clipboard may be blocked)
-    }
-  }
-
-  async function saveMediaAsTraining() {
-    const marker = mediaUploaded && mediaUploaded.marker ? String(mediaUploaded.marker).trim() : ''
-    const desc = mediaDescription.trim()
-    if (!marker || !desc) {
-      setMediaError('Upload gambar dulu dan isi deskripsi (untuk RAG).')
-      return
-    }
-
-    setMediaSavingTraining(true)
-    setMediaError(null)
-    try {
-      const titleBase = mediaUploaded && mediaUploaded.originalname
-        ? `media-${String(mediaUploaded.originalname).slice(0, 120)}`
-        : `media-${new Date().toISOString()}`
-
-      const text = `${marker}\n\n${desc}`
-      const created = await adminFetchJson<ManualTrainingCreateResponse>('/admin/training/manual', {
-        method: 'POST',
-        body: JSON.stringify({ title: titleBase, text }),
-      })
-      setMediaTraining(created)
-
-      try {
-        const refreshed = await adminFetchJson<TrainingItem[]>('/admin/training')
-        setItems(Array.isArray(refreshed) ? refreshed : [])
-      } catch {
-        // ignore refresh errors
-      }
-    } catch (e: any) {
-      if (e instanceof AdminApiError) {
-        setMediaError(formatApiErrorText(e.bodyText || `Request failed (${e.status}).`))
-      } else {
-        setMediaError(formatApiErrorText(e?.message || 'Failed to create training data.'))
-      }
-      setMediaTraining(null)
-    } finally {
-      setMediaSavingTraining(false)
-    }
-  }
 
   const isSuperAdmin = useMemo(() => {
     const r = String(role || '').toLowerCase().trim()
@@ -888,98 +787,6 @@ export default function TrainingDataPage() {
         </Button>
       </div>
 
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold">Upload Gambar untuk Bot</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Upload gambar sekali, lalu pakai marker-nya di Keyword atau Training supaya bot bisa kirim gambar + jawaban.
-            </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="media-caption">Caption (opsional)</Label>
-              <Input
-                id="media-caption"
-                value={mediaCaption}
-                onChange={(e) => setMediaCaption(e.target.value)}
-                placeholder="mis: Formulir pendaftaran"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="media-file">File gambar</Label>
-              <Input
-                id="media-file"
-                type="file"
-                accept="image/*"
-                disabled={mediaUploading || !canUpload}
-                onChange={(e) => {
-                  const f = e.target.files && e.target.files[0] ? e.target.files[0] : null
-                  if (!f) return
-                  void uploadPublicImage(f)
-                  try { e.currentTarget.value = '' } catch { /* ignore */ }
-                }}
-              />
-            </div>
-          </div>
-
-          {mediaUploaded && mediaUploaded.marker ? (
-            <div className="space-y-2">
-              <Label>Marker (auto kirim gambar)</Label>
-              <Textarea value={String(mediaUploaded.marker)} readOnly rows={2} />
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => void copyMediaMarker()}
-                  disabled={!mediaUploaded.marker}
-                >
-                  Copy Marker
-                </Button>
-                {mediaUploaded.url ? (
-                  <p className="text-xs text-muted-foreground break-all">URL: {mediaUploaded.url}</p>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="space-y-2">
-            <Label htmlFor="media-desc">Deskripsi untuk RAG (opsional)</Label>
-            <Textarea
-              id="media-desc"
-              value={mediaDescription}
-              onChange={(e) => setMediaDescription(e.target.value)}
-              placeholder="Tulis kapan gambar ini harus dikirim. Contoh: 'Ini adalah formulir pendaftaran PMB. Kirim gambar ini ketika user bilang mau daftar.'"
-              rows={3}
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                onClick={() => void saveMediaAsTraining()}
-                disabled={!canUpload || mediaSavingTraining || !String(mediaUploaded?.marker || '').trim() || mediaDescription.trim().length < 8}
-              >
-                {mediaSavingTraining ? 'Saving…' : 'Simpan jadi Training (RAG)'}
-              </Button>
-              {mediaTraining && mediaTraining.ok && mediaTraining.trainingDataId ? (
-                <p className="text-sm text-muted-foreground">
-                  Training dibuat: <span className="font-medium">{mediaTraining.trainingDataId}</span>
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          {mediaError ? (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive whitespace-pre-wrap">
-              {mediaError}
-            </div>
-          ) : null}
-
-          {!canUpload ? (
-            <p className="text-sm text-muted-foreground">Login dulu untuk upload.</p>
-          ) : null}
-        </div>
-      </Card>
 
       {validationFileEnabled === true || canManageValidationFlag ? (
         <Card className="p-6">
