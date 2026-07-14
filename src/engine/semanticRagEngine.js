@@ -1436,6 +1436,14 @@ function campusSupportEntityToFacilityTerm(entity) {
   };
 }
 
+function isExplicitNonSupportTopic(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(q)
+    || /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan|bidang\s+seni|seni|musik|tari|tabuh|teater|vos)\b/i.test(q)
+    || /\b(prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika)\b/i.test(q)
+    || /\b(pmb|mahasiswa\s+baru|biaya|harga|tarif|ukt|dpp|gelombang|jadwal|beasiswa|kip)\b/i.test(q);
+}
+
 function isStructuredCampusQuestion(question) {
   const q = String(question || '').toLowerCase();
   return /\b(biaya|harga|tarif|ukt|dpp|pendaftaran|registrasi|gelombang|jadwal|deadline|pmb|beasiswa|potongan|kip|prodi|program\s+studi|jurusan|akreditasi|double\s*degree|dual\s*degree|utb|dnui|help|ukm|ormawa|organisasi\s+mahasiswa)\b/i.test(q)
@@ -1571,7 +1579,7 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
   }
 
   if (!snippets.length) return null;
-  const title = target === 'hi think' ? 'Hi-Think' : target.split(/\\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  const title = target === 'hi think' ? 'Hi-Think' : target.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   return {
     answer: [
       `Berikut penjelasan tentang ${title}:`,
@@ -1586,7 +1594,7 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
 
 function tryTrainingSpecificAnswer(question, indexForQuery) {
   const q = String(question || '').toLowerCase();
-  if (/\\b(ukm|ormawa|kegiatan\\s+mahasiswa|organisasi\\s+mahasiswa)\\b/i.test(q)) return null;
+  if (/\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa)\b/i.test(q)) return null;
   return buildTrainingSpecificAnswerFromIndex(question, indexForQuery);
 }
 function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
@@ -1667,6 +1675,7 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   if (!resolved || !resolved.entity) return null;
 
   const currentMentionsEntity = !resolved.fromRecent;
+  if (resolved.fromRecent && isExplicitNonSupportTopic(question)) return null;
   const hasFollowUpSignal = resolved.fromRecent && isShortCampusSupportFollowUp(question);
   const asksDetail = asksCampusSupportDetail(question);
   if (!currentMentionsEntity && !hasFollowUpSignal && !asksDetail) return null;
@@ -1700,8 +1709,10 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
 function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const currentHasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q);
   const hasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(`${q}\n${recent}`) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(`${q}\n${recent}`);
   if (!hasLinkedInCareerContext) return null;
+  if (!currentHasLinkedInCareerContext && isExplicitNonSupportTopic(question)) return null;
 
   const asksLinkedInProgram = /\b(program|tentang|apa\s+itu|itu\s+apa|mengikuti|ikut|daftar|mendaftar|pendaftaran|registrasi|detail|lebih\s+detail|punya\s+info|info(?:rmasi)?|syarat|cara|bagaimana|gimana)\b/i.test(q);
   if (!asksLinkedInProgram) return null;
@@ -1853,6 +1864,7 @@ const UKM_INTEREST_PROFILES = [
 function tryUkmInterestRecommendation(question, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const currentHasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q);
   const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(`${q} ${recent}`);
   const asksUkm = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q) || hasUkmContext;
   const asksRecommendation = /\b(cocok|rekomendasi|saran|sarankan|pilih|ikut|gabung|masuk|ambil|hobi|hobby|suka|minat|ada\s+yang|apa\s+yang|bidang|jenis)\b/i.test(q);
@@ -1932,6 +1944,8 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   });
   const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName;
   const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
+  const hasExplicitDifferentTopic = /\b(double\s*degree|dual\s*degree|dnui|help\s+university|utb|bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|linked\s*in|linkedin|career\s*center|pmb|mahasiswa\s+baru|biaya|harga|tarif|ukt|dpp|gelombang|jadwal|beasiswa|kip|prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika)\b/i.test(q);
+  if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic) return null;
   if (!hasUkmSignal && !hasUkmContext) return null;
 
   const recommendation = tryUkmInterestRecommendation(question, options);
@@ -2949,9 +2963,9 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-registration-info', tryRegistrationHowAnswer],
   ['semantic-rag-schedule-window', tryScheduleWindowAnswer],
   ['semantic-rag-linkedin-career-insufficient-data', tryLinkedInCareerCenterNoDataAnswer],
+  ['semantic-rag-ukm-list', tryUkmAnswer],
   ['semantic-rag-training-specific', tryTrainingSpecificAnswer],
   ['semantic-rag-campus-facility', tryCampusFacilityAnswer],
-  ['semantic-rag-ukm-list', tryUkmAnswer],
   ['semantic-rag-campus-location', tryCampusLocationAnswer],
   ['semantic-rag-registration-fee', tryRegistrationFeeAnswer],
   ['semantic-rag-fee-detail', tryDetailedFeeAnswer],

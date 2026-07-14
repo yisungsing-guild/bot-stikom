@@ -1161,6 +1161,87 @@ describe('semanticRagEngine', () => {
       expect(result.answer).not.toMatch(/S1 \(Sarjana\)|S2 \(Pascasarjana\)|D3 \(Diploma\)|daftar jurusan\/program studi/i);
     }
   });
+
+  test('keeps explicit new topics from being hijacked by previous campus-support context', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const arts = await querySemanticRag('untuk kegiatan di bidang seni, ada apa saja?', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'oke, saya mau nanya tentang kegiatan mahasiswa stkom. Di stikom ada kegiatan mahasiswa jenis apa saja?' },
+          { direction: 'bot', message: 'Dalam GCCP, mahasiswa akan berinteraksi dengan mahasiswa internasional. Ke negara mana saja program Student Exchange tersedia?' }
+        ]
+      }
+    });
+    expect(arts.success).toBe(true);
+    expect(arts.source).toBe('semantic-rag-ukm-list');
+    expect(arts.answer).toMatch(/Musik|Tari|Tabuh|Teater Biner|Vos/i);
+    expect(arts.answer).not.toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi|GCCP|Student Exchange/i);
+
+    const vos = await querySemanticRag('vos itu apa ya?', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'untuk kegiatan di bidang seni, ada apa saja?' },
+          { direction: 'bot', message: arts.answer }
+        ]
+      }
+    });
+    expect(vos.success).toBe(true);
+    expect(vos.source).toBe('semantic-rag-ukm-list');
+    expect(vos.answer).toMatch(/UKM Vos/i);
+    expect(vos.answer).not.toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi|Sistem Komputer/i);
+
+    const doubleDegree = await querySemanticRag('apakah ada program double degree di stikom?', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'boleh tau tentang program LinkedIn di Career center?' },
+          { direction: 'bot', message: 'Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi.' }
+        ]
+      }
+    });
+    expect(doubleDegree.success).toBe(true);
+    expect(doubleDegree.source).toBe('semantic-rag-dual-degree');
+    expect(doubleDegree.answer).toMatch(/Double Degree/i);
+    expect(doubleDegree.answer).not.toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+
+    const doubleDegreeAfterUkm = await querySemanticRag('apakah ada program double degree di stikom?', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'vos itu apa ya?' },
+          { direction: 'bot', message: 'Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Vos.' }
+        ]
+      }
+    });
+    expect(doubleDegreeAfterUkm.success).toBe(true);
+    expect(doubleDegreeAfterUkm.source).toBe('semantic-rag-dual-degree');
+    expect(doubleDegreeAfterUkm.answer).toMatch(/Double Degree/i);
+    expect(doubleDegreeAfterUkm.answer).not.toMatch(/UKM\/Ormawa|Ada 32 UKM/i);
+  });
+
+  test('does not let Student Exchange training chunks hijack broad student-activity questions', async () => {
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'student-exchange-prod-like',
+          chunk: 'Apa itu Student Exchange di ITB STIKOM Bali? Student Exchange adalah program pertukaran mahasiswa. Dalam GCCP, mahasiswa akan berinteraksi dengan mahasiswa internasional dan mengikuti kegiatan akademik dan budaya.',
+          filename: 'Apa itu Student Exchange di ITB STIKOM Bali.docx',
+          source: 'upload',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('oke, saya mau nanya tentang kegiatan mahasiswa stkom. Di stikom ada kegiatan mahasiswa jenis apa saja?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-ukm-list');
+    expect(result.answer).toMatch(/UKM\/Ormawa|Ada 32 UKM/i);
+    expect(result.answer).not.toMatch(/Student Exchange|GCCP|berinteraksi dengan mahasiswa internasional/i);
+  });
 });
 
 
