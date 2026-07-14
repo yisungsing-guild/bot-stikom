@@ -1,13 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Send, Phone, MoreVertical } from 'lucide-react'
+import { Bot, MessageCircle, RefreshCw, Send, UserCheck } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Badge } from '@/components/ui/badge'
 import { AdminApiError, adminFetchJson } from '@/lib/adminApi'
+import { getAdminIdentity, isSuperAdminRole } from '@/lib/adminIdentity'
 
 type ChatMessage = {
   direction?: 'user' | 'bot' | 'agent' | 'system' | string
@@ -18,6 +20,7 @@ type ChatMessage = {
 type LiveChatItem = {
   chatId: string
   status?: string
+  updatedAt?: string
   lastSeenAt?: string
   optIn?: boolean | null
   lastMessage?: ChatMessage | null
@@ -26,16 +29,17 @@ type LiveChatItem = {
 type UiChat = {
   id: string
   name: string
-  status: 'online' | 'away' | 'offline'
-  chatStatus?: string
+  presence: 'online' | 'away' | 'offline'
+  chatStatus: string
   optIn?: boolean | null
   lastMsg: string
   time: string
+  updatedAt?: string
 }
 
 type UiMessage = {
   id: string
-  sender: 'user' | 'bot'
+  sender: 'user' | 'bot' | 'agent' | 'system'
   name: string
   message: string
   time: string
@@ -59,107 +63,146 @@ function errorToText(prefix: string, e: unknown): string {
   return prefix
 }
 
+function normalizeChatStatus(status?: string) {
+  const s = String(status || '').trim().toUpperCase()
+  if (s === 'HUMAN' || s === 'BOT') return s
+  return s || 'UNKNOWN'
+}
+
 export default function LiveChatPage() {
+  const identity = useMemo(() => getAdminIdentity(), [])
+  const isSuperAdmin = isSuperAdminRole(identity?.role)
+  const chatsEndpoint = isSuperAdmin ? '/admin/realtime-chats?limit=300' : '/admin/live-chats'
+
   const [rawChats, setRawChats] = useState<LiveChatItem[] | null>(null)
   const [chatsError, setChatsError] = useState<string | null>(null)
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null)
+  const [rawMessages, setRawMessages] = useState<ChatMessage[] | null>(null)
+  const [messagesError, setMessagesError] = useState<string | null>(null)
+  const [inputValue, setInputValue] = useState('')
+  const [isSending, setIsSending] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [query, setQuery] = useState('')
+  const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null)
+
+  const loadChats = useCallback(async (quiet = false) => {
+    if (!quiet) setIsRefreshing(true)
+    try {
+      const res = await adminFetchJson<LiveChatItem[]>(chatsEndpoint)
+      setRawChats(Array.isArray(res) ? res : [])
+      setChatsError(null)
+      setLastRefreshAt(new Date())
+    } catch (e) {
+      setChatsError(errorToText('Gagal memuat chat realtime', e))
+      setRawChats([])
+    } finally {
+      if (!quiet) setIsRefreshing(false)
+    }
+  }, [chatsEndpoint])
+
+  const loadMessages = useCallback(async (chatId: string, quiet = false) => {
+    if (!quiet) {
+      setRawMessages(null)
+      setMessagesError(null)
+    }
+
+    try {
+      const res = await adminFetchJson<ChatMessage[]>(
+        `/admin/chats/${encodeURIComponent(chatId)}/messages`
+      )
+      setRawMessages(Array.isArray(res) ? res : [])
+      setMessagesError(null)
+    } catch (e) {
+      setMessagesError(errorToText('Gagal memuat pesan', e))
+      setRawMessages([])
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function initialLoad() {
+      if (cancelled) return
+      await loadChats()
+    }
+
+    initialLoad()
+    const id = window.setInterval(() => {
+      if (!cancelled) loadChats(true)
+    }, 3000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [loadChats])
 
   const chats = useMemo<UiChat[]>(() => {
     if (!rawChats) return []
 
     return rawChats.map((c) => {
-      const lastSeen = c.lastSeenAt ? new Date(c.lastSeenAt) : null
-      const time = lastSeen && !Number.isNaN(lastSeen.getTime())
-        ? formatDistanceToNow(lastSeen, { addSuffix: true })
+      const updatedRaw = c.updatedAt || c.lastSeenAt
+      const updated = updatedRaw ? new Date(updatedRaw) : null
+      const time = updated && !Number.isNaN(updated.getTime())
+        ? formatDistanceToNow(updated, { addSuffix: true })
         : ''
 
       return {
         id: c.chatId,
         name: c.chatId,
-        status: computePresence(c.lastSeenAt),
-        chatStatus: c.status,
+        presence: computePresence(c.lastSeenAt || c.updatedAt),
+        chatStatus: normalizeChatStatus(c.status),
         optIn: typeof c.optIn === 'boolean' ? c.optIn : null,
-        lastMsg: c.lastMessage && c.lastMessage.message ? c.lastMessage.message : '',
+        lastMsg: c.lastMessage?.message || '',
         time,
+        updatedAt: updatedRaw,
       }
     })
   }, [rawChats])
 
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null)
+  const filteredChats = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return chats
+    return chats.filter((chat) => {
+      return chat.id.toLowerCase().includes(q)
+        || chat.chatStatus.toLowerCase().includes(q)
+        || chat.lastMsg.toLowerCase().includes(q)
+    })
+  }, [chats, query])
 
   const selectedChat = useMemo(() => {
     if (!selectedChatId) return null
     return chats.find((c) => c.id === selectedChatId) || null
   }, [chats, selectedChatId])
 
-  const [rawMessages, setRawMessages] = useState<ChatMessage[] | null>(null)
-  const [messagesError, setMessagesError] = useState<string | null>(null)
-  const [inputValue, setInputValue] = useState('')
-  const [isSending, setIsSending] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadChats() {
-      try {
-        const res = await adminFetchJson<LiveChatItem[]>('/admin/live-chats')
-        if (cancelled) return
-        setRawChats(Array.isArray(res) ? res : [])
-        setChatsError(null)
-      } catch (e) {
-        if (cancelled) return
-        setChatsError(errorToText('Failed to load live chats', e))
-        setRawChats([])
-      }
-    }
-
-    loadChats()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
   useEffect(() => {
     if (rawChats === null) return
-    if (chats.length === 0) {
-      setSelectedChatId(null)
+    if (filteredChats.length === 0) {
+      if (selectedChatId && !chats.some((c) => c.id === selectedChatId)) setSelectedChatId(null)
       return
     }
     if (selectedChatId && chats.some((c) => c.id === selectedChatId)) return
-    setSelectedChatId(chats[0].id)
-  }, [rawChats, chats, selectedChatId])
+    setSelectedChatId(filteredChats[0].id)
+  }, [rawChats, chats, filteredChats, selectedChatId])
 
   useEffect(() => {
-    let cancelled = false
-
-    async function loadMessages(chatId: string) {
-      setRawMessages(null)
-      setMessagesError(null)
-
-      try {
-        const res = await adminFetchJson<ChatMessage[]>(
-          `/admin/live-chats/${encodeURIComponent(chatId)}/messages`
-        )
-        if (cancelled) return
-        setRawMessages(Array.isArray(res) ? res : [])
-        setMessagesError(null)
-      } catch (e) {
-        if (cancelled) return
-        setMessagesError(errorToText('Failed to load messages', e))
-        setRawMessages([])
-      }
-    }
-
-    if (selectedChatId) {
-      loadMessages(selectedChatId)
-    } else {
+    if (!selectedChatId) {
       setRawMessages([])
       setMessagesError(null)
+      return
     }
+
+    let cancelled = false
+    loadMessages(selectedChatId)
+    const id = window.setInterval(() => {
+      if (!cancelled) loadMessages(selectedChatId, true)
+    }, 2500)
 
     return () => {
       cancelled = true
+      window.clearInterval(id)
     }
-  }, [selectedChatId])
+  }, [selectedChatId, loadMessages])
 
   const messages = useMemo<UiMessage[]>(() => {
     if (!rawMessages || !selectedChat) return []
@@ -169,8 +212,14 @@ export default function LiveChatPage() {
       const time = at && !Number.isNaN(at.getTime())
         ? at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : ''
-
-      const sender: UiMessage['sender'] = m.direction === 'user' ? 'user' : 'bot'
+      const direction = String(m.direction || '').toLowerCase()
+      const sender: UiMessage['sender'] = direction === 'user'
+        ? 'user'
+        : direction === 'agent'
+          ? 'agent'
+          : direction === 'system'
+            ? 'system'
+            : 'bot'
 
       return {
         id: `${idx}-${m.at || ''}`,
@@ -182,22 +231,43 @@ export default function LiveChatPage() {
     })
   }, [rawMessages, selectedChat])
 
-  async function refreshMessages(chatId: string) {
+  const selectedIsHuman = selectedChat?.chatStatus === 'HUMAN'
+  const selectedNeedsAdmin = selectedIsHuman
+
+  async function refreshAll() {
+    await loadChats()
+    if (selectedChatId) await loadMessages(selectedChatId, true)
+  }
+
+  async function handleStartHandover() {
+    if (!selectedChatId) return
     try {
-      const res = await adminFetchJson<ChatMessage[]>(
-        `/admin/live-chats/${encodeURIComponent(chatId)}/messages`
-      )
-      setRawMessages(Array.isArray(res) ? res : [])
-      setMessagesError(null)
+      await adminFetchJson(`/admin/live-chats/${encodeURIComponent(selectedChatId)}/handover`, {
+        method: 'POST',
+      })
+      await refreshAll()
     } catch (e) {
-      setMessagesError(errorToText('Failed to refresh messages', e))
+      setMessagesError(errorToText('Gagal mengambil alih chat', e))
+    }
+  }
+
+  async function handleEndHandover() {
+    if (!selectedChatId) return
+    if (!confirm('Kembalikan chat ini ke BOT?')) return
+
+    try {
+      await adminFetchJson(`/admin/live-chats/${encodeURIComponent(selectedChatId)}/end-handover`, {
+        method: 'POST',
+      })
+      await refreshAll()
+    } catch (e) {
+      setMessagesError(errorToText('Gagal mengembalikan chat ke BOT', e))
     }
   }
 
   async function handleSend() {
     const text = inputValue.trim()
-    if (!text) return
-    if (!selectedChatId) return
+    if (!text || !selectedChatId) return
 
     setIsSending(true)
     try {
@@ -206,201 +276,179 @@ export default function LiveChatPage() {
         body: JSON.stringify({ message: text }),
       })
       setInputValue('')
-      await refreshMessages(selectedChatId)
+      await refreshAll()
     } catch (e) {
-      setMessagesError(errorToText('Failed to send message', e))
+      setMessagesError(errorToText('Gagal mengirim pesan', e))
     } finally {
       setIsSending(false)
     }
   }
 
-  async function handleEndHandover() {
-    if (!selectedChatId) return
-    if (!confirm('Akhiri handover dan kembalikan chat ini ke BOT?')) return
-
-    try {
-      await adminFetchJson(`/admin/live-chats/${encodeURIComponent(selectedChatId)}/end-handover`, {
-        method: 'POST'
-      })
-
-      // Refresh chat list and clear selection/messages
-      try {
-        const res = await adminFetchJson<LiveChatItem[]>('/admin/live-chats')
-        setRawChats(Array.isArray(res) ? res : [])
-      } catch (e) {
-        // ignore refresh error; set an error message
-        setChatsError(errorToText('Failed to refresh live chats', e))
-      }
-
-      setSelectedChatId(null)
-      setRawMessages([])
-      setMessagesError(null)
-    } catch (e) {
-      setChatsError(errorToText('Failed to end handover', e))
-    }
-  }
-
-  const selectedStatus = selectedChat?.status
-  const selectedDotClass =
-    selectedStatus === 'online'
-      ? 'bg-green-500'
-      : selectedStatus === 'away'
-        ? 'bg-yellow-500'
-        : 'bg-gray-500'
+  const humanCount = chats.filter((chat) => chat.chatStatus === 'HUMAN').length
+  const botCount = chats.filter((chat) => chat.chatStatus === 'BOT').length
+  const selectedDotClass = selectedChat?.presence === 'online'
+    ? 'bg-green-500'
+    : selectedChat?.presence === 'away'
+      ? 'bg-yellow-500'
+      : 'bg-gray-400'
 
   return (
-    <div className="space-y-8 p-8">
-      <div>
-        <h1 className="text-3xl font-bold">Live Chat</h1>
-        <p className="text-muted-foreground mt-2">Manage live conversations with customers</p>
+    <div className="space-y-6 p-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Realtime Chat</h1>
+          <p className="text-muted-foreground mt-2">
+            {isSuperAdmin
+              ? 'Pantau semua percakapan bot dan ambil alih saat user meminta admin.'
+              : 'Pantau dan balas chat yang sudah masuk mode admin.'}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="gap-1"><MessageCircle className="h-3.5 w-3.5" /> {chats.length} chat</Badge>
+          <Badge variant="outline" className="gap-1"><UserCheck className="h-3.5 w-3.5" /> {humanCount} admin</Badge>
+          {isSuperAdmin ? <Badge variant="outline" className="gap-1"><Bot className="h-3.5 w-3.5" /> {botCount} bot</Badge> : null}
+          <Button variant="outline" size="sm" onClick={refreshAll} disabled={isRefreshing} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[600px]">
-        {/* Chat List */}
-        <Card className="lg:col-span-1 p-4 flex flex-col">
-          <div className="mb-4">
-            <Input placeholder="Cari chat (nama / chatId)..." />
+      <div className="grid h-[calc(100vh-220px)] min-h-[620px] grid-cols-1 gap-6 lg:grid-cols-4">
+        <Card className="flex flex-col p-4 lg:col-span-1">
+          <div className="mb-3 space-y-2">
+            <Input
+              placeholder="Cari chat, status, atau pesan..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Auto-refresh aktif{lastRefreshAt ? `, terakhir ${lastRefreshAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+            </p>
           </div>
 
           <ScrollArea className="flex-1">
-            <div className="space-y-2">
-              {chatsError ? (
-                <div className="text-sm text-muted-foreground p-3">{chatsError}</div>
+            <div className="space-y-2 pr-2">
+              {chatsError ? <div className="p-3 text-sm text-destructive">{chatsError}</div> : null}
+              {!chatsError && rawChats === null ? <div className="p-3 text-sm text-muted-foreground">Memuat chat...</div> : null}
+              {!chatsError && rawChats !== null && filteredChats.length === 0 ? (
+                <div className="p-3 text-sm text-muted-foreground">Belum ada chat yang cocok.</div>
               ) : null}
 
-              {!chatsError && rawChats === null ? (
-                <div className="text-sm text-muted-foreground p-3">Loading…</div>
-              ) : null}
-
-              {!chatsError && rawChats !== null && chats.length === 0 ? (
-                <div className="text-sm text-muted-foreground p-3">No live chats (HUMAN) right now.</div>
-              ) : null}
-
-              {chats.map((chat) => (
-                <button
-                  key={chat.id}
-                  onClick={() => setSelectedChatId(chat.id)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    selectedChatId === chat.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{chat.name}</p>
-                        <div
-                          className={`h-2 w-2 rounded-full ${
-                            chat.status === 'online'
-                              ? 'bg-green-500'
-                              : chat.status === 'away'
-                                ? 'bg-yellow-500'
-                                : 'bg-gray-500'
-                          }`}
-                        />
+              {filteredChats.map((chat) => {
+                const active = selectedChatId === chat.id
+                const isHuman = chat.chatStatus === 'HUMAN'
+                return (
+                  <button
+                    key={chat.id}
+                    onClick={() => setSelectedChatId(chat.id)}
+                    className={`w-full rounded-md border p-3 text-left transition-colors ${
+                      active ? 'border-primary bg-primary text-primary-foreground' : 'border-transparent hover:bg-muted'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-sm font-semibold">{chat.name}</span>
+                          <span className={`h-2 w-2 flex-shrink-0 rounded-full ${
+                            chat.presence === 'online' ? 'bg-green-500' : chat.presence === 'away' ? 'bg-yellow-500' : 'bg-gray-400'
+                          }`} />
+                        </div>
+                        <p className="mt-1 truncate text-sm opacity-75">{chat.lastMsg || 'Belum ada pesan'}</p>
+                        <div className="mt-2 flex items-center gap-2 text-xs opacity-75">
+                          <span>{isHuman ? 'Butuh admin' : chat.chatStatus}</span>
+                          <span>{chat.optIn == null ? '' : chat.optIn ? 'opt-in' : 'opt-out'}</span>
+                        </div>
+                        <p className="mt-1 text-xs opacity-60">{chat.time}</p>
                       </div>
-                      <p className="text-sm truncate opacity-75">{chat.lastMsg}</p>
-                      <p className="text-xs opacity-60">
-                        {(chat.chatStatus || 'HUMAN')}
-                        {chat.optIn == null ? '' : chat.optIn ? ' • opt-in' : ' • opt-out'}
-                      </p>
-                      <p className="text-xs opacity-60">{chat.time}</p>
+                      {isHuman ? <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">Admin</span> : null}
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                )
+              })}
             </div>
           </ScrollArea>
         </Card>
 
-        {/* Chat Area */}
-        <Card className="lg:col-span-3 flex flex-col">
-          {/* Chat Header */}
-          <div className="border-b border-border p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold">{selectedChat ? selectedChat.name : 'Select a chat'}</p>
-                  <div className={`h-2 w-2 rounded-full ${selectedDotClass}`} />
-                </div>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {selectedChat ? selectedChat.status : '—'}
-                  <span className="ml-2">
-                    {(selectedChat?.chatStatus || 'HUMAN')}
-                    {selectedChat?.optIn == null ? '' : selectedChat?.optIn ? ' • opt-in' : ' • opt-out'}
-                  </span>
-                </p>
+        <Card className="flex min-h-0 flex-col lg:col-span-3">
+          <div className="flex items-center justify-between gap-4 border-b border-border p-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="truncate font-semibold">{selectedChat ? selectedChat.name : 'Pilih chat'}</p>
+                {selectedChat ? <span className={`h-2 w-2 rounded-full ${selectedDotClass}`} /> : null}
               </div>
+              <p className="text-sm text-muted-foreground">
+                {selectedChat
+                  ? `${selectedChat.presence} - ${selectedChat.chatStatus}${selectedChat.optIn == null ? '' : selectedChat.optIn ? ' - opt-in' : ' - opt-out'}`
+                  : 'Tidak ada chat dipilih'}
+              </p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" disabled={!selectedChatId} onClick={handleEndHandover}>
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={!selectedChatId || selectedIsHuman} onClick={handleStartHandover} className="gap-2">
+                <UserCheck className="h-4 w-4" />
+                Ambil Alih
+              </Button>
+              <Button variant="ghost" size="sm" disabled={!selectedChatId || !selectedIsHuman} onClick={handleEndHandover}>
                 Kembali ke BOT
-              </Button>
-              <Button variant="ghost" size="sm" disabled={!selectedChatId}>
-                <Phone className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" disabled={!selectedChatId}>
-                <MoreVertical className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {/* Messages */}
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
-              {!selectedChatId ? (
-                <div className="text-sm text-muted-foreground p-3">Select a chat to view messages.</div>
-              ) : null}
-
-              {selectedChatId && messagesError ? (
-                <div className="text-sm text-muted-foreground p-3">{messagesError}</div>
-              ) : null}
-
-              {selectedChatId && !messagesError && rawMessages === null ? (
-                <div className="text-sm text-muted-foreground p-3">Loading messages…</div>
-              ) : null}
-
+              {!selectedChatId ? <div className="p-3 text-sm text-muted-foreground">Pilih chat untuk melihat isi percakapan.</div> : null}
+              {selectedChatId && messagesError ? <div className="p-3 text-sm text-destructive">{messagesError}</div> : null}
+              {selectedChatId && !messagesError && rawMessages === null ? <div className="p-3 text-sm text-muted-foreground">Memuat pesan...</div> : null}
               {selectedChatId && !messagesError && rawMessages !== null && messages.length === 0 ? (
-                <div className="text-sm text-muted-foreground p-3">No messages yet.</div>
+                <div className="p-3 text-sm text-muted-foreground">Belum ada pesan.</div>
               ) : null}
 
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-xs px-4 py-2 rounded-lg ${
-                      msg.sender === 'user'
+              {messages.map((msg) => {
+                const isUser = msg.sender === 'user'
+                const isAgent = msg.sender === 'agent'
+                const isSystem = msg.sender === 'system'
+                return (
+                  <div key={msg.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] rounded-md px-4 py-2 ${
+                      isUser
                         ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {msg.sender === 'user' && <p className="text-xs font-semibold mb-1">{msg.name}</p>}
-                    <p className="text-sm">{msg.message}</p>
-                    <p className="text-xs opacity-70 mt-1">{msg.time}</p>
+                        : isAgent
+                          ? 'bg-emerald-100 text-emerald-950'
+                          : isSystem
+                            ? 'bg-amber-50 text-amber-900'
+                            : 'bg-muted text-foreground'
+                    }`}>
+                      <p className="mb-1 text-xs font-semibold opacity-80">
+                        {isUser ? 'User' : isAgent ? 'Admin' : isSystem ? 'System' : 'Bot'}
+                      </p>
+                      <p className="whitespace-pre-wrap break-words text-sm">{msg.message}</p>
+                      <p className="mt-1 text-xs opacity-70">{msg.time}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </ScrollArea>
 
-          {/* Input */}
           <div className="border-t border-border p-4">
             <div className="flex gap-2">
               <Input
-                placeholder={selectedChatId ? 'Ketik balasan untuk dikirim…' : 'Pilih chat dulu untuk membalas'}
+                placeholder={selectedChatId ? selectedNeedsAdmin ? 'Ketik balasan admin...' : 'Ambil alih dulu untuk membalas' : 'Pilih chat dulu untuk membalas'}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                disabled={!selectedChatId || isSending}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) handleSend()
+                }}
+                disabled={!selectedChatId || !selectedIsHuman || isSending}
               />
               <Button
                 className="gap-2"
                 onClick={handleSend}
-                disabled={!selectedChatId || isSending || !inputValue.trim()}
+                disabled={!selectedChatId || !selectedIsHuman || isSending || !inputValue.trim()}
               >
                 <Send className="h-4 w-4" />
+                Kirim
               </Button>
             </div>
           </div>

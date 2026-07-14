@@ -2663,6 +2663,73 @@ router.post(
 
   // ============ LIVE CHAT (HUMAN HANDOVER) ============
 
+  async function buildChatListPayload(chats) {
+    if (!chats || chats.length === 0) return [];
+
+    const chatIds = chats.map(c => c.chatId);
+
+    // IMPORTANT: avoid selecting Session.data in bulk.
+    // Large/malformed JSON or DB-provider differences can cause 500s.
+    const sessions = await prisma.session.findMany({
+      where: { chatId: { in: chatIds } },
+      select: { chatId: true, updatedAt: true }
+    }).catch(() => []);
+
+    const sessionUpdatedAtMap = new Map();
+    (sessions || []).forEach(s => sessionUpdatedAtMap.set(s.chatId, s.updatedAt));
+
+    const lastMessagePairs = await Promise.all(
+      chatIds.map(async (chatId) => {
+        try {
+          const messages = await getChatMessages(chatId);
+          const lastMessage = Array.isArray(messages) && messages.length > 0 ? messages[messages.length - 1] : null;
+          return [chatId, lastMessage];
+        } catch {
+          return [chatId, null];
+        }
+      })
+    );
+    const lastMessageMap = new Map(lastMessagePairs);
+
+    return chats.map(chat => {
+      const updatedAt = sessionUpdatedAtMap.get(chat.chatId) || chat.lastSeenAt;
+      return {
+        chatId: chat.chatId,
+        status: chat.status,
+        updatedAt,
+        lastSeenAt: chat.lastSeenAt,
+        optIn: chat.optIn,
+        lastMessage: lastMessageMap.get(chat.chatId) || null
+      };
+    });
+  }
+
+  // Superadmin realtime monitor: all conversations, BOT and HUMAN.
+  router.get('/realtime-chats', async (req, res, next) => {
+    try {
+      const role = req.user && req.user.role;
+      if (!isSuperAdminRole(role)) {
+        return res.status(403).send({
+          error: 'Forbidden: realtime chat monitor is only available for superadmin',
+          role: role || null
+        });
+      }
+
+      const limitRaw = (req.query.limit || '').toString().trim();
+      const limit = Math.min(Math.max(parseInt(limitRaw || '300', 10) || 300, 1), 1000);
+
+      const chats = await prisma.chat.findMany({
+        orderBy: { lastSeenAt: 'desc' },
+        take: limit
+      });
+
+      res.send(await buildChatListPayload(chats));
+    } catch (err) {
+      console.error('[GET /admin/realtime-chats] Error:', err.message);
+      next(err);
+    }
+  });
+
   // List active human-handover chats
   router.get('/live-chats', async (req, res, next) => {
     try {
@@ -2675,44 +2742,7 @@ router.post(
         return res.send([]);
       }
 
-      const chatIds = chats.map(c => c.chatId);
-
-      // IMPORTANT: avoid selecting Session.data in bulk.
-      // Large/malformed JSON or DB-provider differences can cause 500s.
-      const sessions = await prisma.session.findMany({
-        where: { chatId: { in: chatIds } },
-        select: { chatId: true, updatedAt: true }
-      }).catch(() => []);
-
-      const sessionUpdatedAtMap = new Map();
-      (sessions || []).forEach(s => sessionUpdatedAtMap.set(s.chatId, s.updatedAt));
-
-      const lastMessagePairs = await Promise.all(
-        chatIds.map(async (chatId) => {
-          try {
-            const messages = await getChatMessages(chatId);
-            const lastMessage = Array.isArray(messages) && messages.length > 0 ? messages[messages.length - 1] : null;
-            return [chatId, lastMessage];
-          } catch {
-            return [chatId, null];
-          }
-        })
-      );
-      const lastMessageMap = new Map(lastMessagePairs);
-
-      const result = chats.map(chat => {
-        const updatedAt = sessionUpdatedAtMap.get(chat.chatId) || chat.lastSeenAt;
-        return {
-          chatId: chat.chatId,
-          status: chat.status,
-          updatedAt,
-          lastSeenAt: chat.lastSeenAt,
-          optIn: chat.optIn,
-          lastMessage: lastMessageMap.get(chat.chatId) || null
-        };
-      });
-
-      res.send(result);
+      res.send(await buildChatListPayload(chats));
     } catch (err) {
       console.error('[GET /admin/live-chats] Error:', err.message);
       next(err);

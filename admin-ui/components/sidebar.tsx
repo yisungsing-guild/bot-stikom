@@ -46,7 +46,7 @@ const navItems = [
     icon: Megaphone,
   },
   {
-    title: 'Live Chat',
+    title: 'Realtime Chat',
     href: '/live-chat',
     icon: MessageCircle,
   },
@@ -130,3 +130,4 @@ export function Sidebar() {
     </aside>
   )
 }
+
