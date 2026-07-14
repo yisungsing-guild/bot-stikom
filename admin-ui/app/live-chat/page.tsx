@@ -316,7 +316,7 @@ export default function LiveChatPage() {
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-4">
-        <Card className="flex min-h-0 flex-col overflow-hidden p-4 lg:col-span-1">
+        <Card className="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/95 p-4 shadow-lg lg:col-span-1">
           <div className="mb-3 shrink-0 space-y-2">
             <Input
               placeholder="Cari chat, status, atau pesan..."
@@ -343,21 +343,21 @@ export default function LiveChatPage() {
                   <button
                     key={chat.id}
                     onClick={() => setSelectedChatId(chat.id)}
-                    className={`w-full rounded-2xl border p-3 text-left transition-colors ${
+                    className={`w-full min-h-[5.5rem] rounded-3xl border p-4 text-left transition-colors ${
                       active
-                        ? 'border-primary/80 bg-primary/10 text-primary-foreground shadow-[0_0_0_1px_rgba(148,163,184,0.15)]'
+                        ? 'border-slate-500/40 bg-slate-900 text-slate-100 shadow-slate-950/50'
                         : 'border-transparent bg-slate-950/90 hover:bg-slate-900/80'
-                    }`}
+                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-600/70`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-start gap-2">
                           <span className="truncate text-sm font-semibold">{chat.name}</span>
-                          <span className={`h-2 w-2 flex-shrink-0 rounded-full ${
+                          <span className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${
                             chat.presence === 'online' ? 'bg-emerald-400' : chat.presence === 'away' ? 'bg-amber-400' : 'bg-slate-500'
                           }`} />
                         </div>
-                        <p className="mt-1 truncate text-sm opacity-75">{chat.lastMsg || 'Belum ada pesan'}</p>
+                        <p className="mt-3 text-sm leading-6 opacity-75">{chat.lastMsg || 'Belum ada pesan'}</p>
                         <div className="mt-2 flex items-center gap-2 text-xs opacity-75">
                           <span>{isHuman ? 'Butuh admin' : chat.chatStatus}</span>
                           <span>{chat.optIn == null ? '' : chat.optIn ? 'opt-in' : 'opt-out'}</span>
@@ -373,7 +373,7 @@ export default function LiveChatPage() {
           </ScrollArea>
         </Card>
 
-        <Card className="flex min-h-0 flex-col overflow-hidden lg:col-span-3">
+        <Card className="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/95 shadow-lg lg:col-span-3">
           <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border p-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -399,7 +399,7 @@ export default function LiveChatPage() {
           </div>
 
           <ScrollArea className="min-h-0 flex-1 overflow-hidden p-3">
-            <div className="space-y-3">
+            <div className="space-y-4">
               {!selectedChatId ? <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">Pilih chat untuk melihat isi percakapan.</div> : null}
               {selectedChatId && messagesError ? <div className="rounded-xl border border-destructive/70 bg-destructive/10 p-4 text-sm text-destructive">{messagesError}</div> : null}
               {selectedChatId && !messagesError && rawMessages === null ? <div className="rounded-xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">Memuat pesan...</div> : null}
@@ -413,14 +413,14 @@ export default function LiveChatPage() {
                 const isSystem = msg.sender === 'system'
                 return (
                   <div key={msg.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[82%] rounded-2xl px-4 py-3 shadow-sm ${
+                    <div className={`max-w-[82%] min-h-[6.5rem] rounded-3xl px-5 py-4 shadow-sm ${
                       isUser
-                        ? 'bg-sky-500/10 text-sky-100 border border-sky-400/15 shadow-sky-500/5'
+                        ? 'bg-slate-900/95 text-slate-100 border border-slate-700/40 shadow-slate-950/20'
                         : isAgent
-                          ? 'bg-emerald-500/10 text-emerald-100 border border-emerald-400/15 shadow-emerald-500/5'
+                          ? 'bg-slate-900/95 text-slate-100 border border-slate-700/40 shadow-slate-950/20'
                           : isSystem
-                            ? 'bg-amber-500/10 text-amber-100 border border-amber-400/15 shadow-amber-500/5'
-                            : 'bg-slate-900/95 text-slate-100 border border-slate-700/20 shadow-slate-950/10'
+                            ? 'bg-slate-900/95 text-slate-100 border border-slate-700/40 shadow-slate-950/20'
+                            : 'bg-slate-900/95 text-slate-100 border border-slate-700/40 shadow-slate-950/20'
                     }`}>
                       <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] opacity-70">
                         <span>{isUser ? 'USER' : isAgent ? 'ADMIN' : isSystem ? 'SYSTEM' : 'BOT'}</span>
@@ -435,7 +435,7 @@ export default function LiveChatPage() {
             </div>
           </ScrollArea>
 
-          <div className="shrink-0 border-t border-border/70 bg-slate-950/85 p-4 backdrop-blur-sm">
+          <div className="shrink-0 border-t border-border/70 bg-slate-950/95 p-4 backdrop-blur-sm">
             <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 placeholder={selectedChatId ? selectedNeedsAdmin ? 'Ketik balasan admin...' : 'Ambil alih dulu untuk membalas' : 'Pilih chat dulu untuk membalas'}
@@ -448,7 +448,8 @@ export default function LiveChatPage() {
                 className="min-w-0"
               />
               <Button
-                className="flex-none gap-2"
+                variant="ghost"
+                className="flex-none gap-2 bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700"
                 onClick={handleSend}
                 disabled={!selectedChatId || !selectedIsHuman || isSending || !inputValue.trim()}
               >
