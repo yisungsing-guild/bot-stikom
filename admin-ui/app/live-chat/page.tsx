@@ -316,7 +316,7 @@ export default function LiveChatPage() {
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-4">
-        <Card className="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/95 p-4 shadow-lg lg:col-span-1">
+        <Card className="flex min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-4 shadow-lg lg:col-span-1">
           <div className="mb-3 shrink-0 space-y-2">
             <Input
               placeholder="Cari chat, status, atau pesan..."
@@ -343,10 +343,10 @@ export default function LiveChatPage() {
                   <button
                     key={chat.id}
                     onClick={() => setSelectedChatId(chat.id)}
-                    className={`w-full min-h-[5rem] rounded-3xl border p-4 text-left transition-colors ${
+                    className={`w-full min-h-[4.5rem] rounded-3xl border p-3 text-left transition-colors ${
                       active
-                        ? 'border-slate-500/40 bg-slate-900 text-slate-100 shadow-slate-950/50'
-                        : 'border-transparent bg-slate-950/90 text-slate-100 hover:bg-slate-900/80'
+                        ? 'border-slate-700 bg-slate-950 text-slate-100 shadow-slate-950/50'
+                        : 'border-transparent bg-slate-950 text-slate-100 hover:bg-slate-900/80'
                     } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-600/70`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -357,7 +357,7 @@ export default function LiveChatPage() {
                             chat.presence === 'online' ? 'bg-emerald-400' : chat.presence === 'away' ? 'bg-amber-400' : 'bg-slate-500'
                           }`} />
                         </div>
-                        <p className="mt-3 text-sm leading-6 opacity-75">{chat.lastMsg || 'Belum ada pesan'}</p>
+                        <p className="mt-2 max-h-12 overflow-hidden text-sm leading-6 opacity-75">{chat.lastMsg || 'Belum ada pesan'}</p>
                         <div className="mt-2 flex items-center gap-2 text-xs opacity-75">
                           <span>{isHuman ? 'Butuh admin' : chat.chatStatus}</span>
                           <span>{chat.optIn == null ? '' : chat.optIn ? 'opt-in' : 'opt-out'}</span>
@@ -413,14 +413,14 @@ export default function LiveChatPage() {
                 const isSystem = msg.sender === 'system'
                 return (
                   <div key={msg.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[82%] min-h-[8rem] rounded-3xl px-6 py-5 shadow-sm ${
+                    <div className={`max-w-[80%] rounded-3xl px-4 py-3 shadow-sm ${
                       isUser
-                        ? 'bg-slate-900/95 text-slate-100 border border-slate-700/40 shadow-slate-950/20'
+                        ? 'bg-slate-950 text-slate-100 border border-slate-800/60 shadow-slate-950/10'
                         : isAgent
-                          ? 'bg-slate-900/95 text-slate-100 border border-slate-700/40 shadow-slate-950/20'
+                          ? 'bg-slate-950 text-slate-100 border border-slate-800/60 shadow-slate-950/10'
                           : isSystem
-                            ? 'bg-slate-900/95 text-slate-100 border border-slate-700/40 shadow-slate-950/20'
-                            : 'bg-slate-900/95 text-slate-100 border border-slate-700/40 shadow-slate-950/20'
+                            ? 'bg-slate-950 text-slate-100 border border-slate-800/60 shadow-slate-950/10'
+                            : 'bg-slate-950 text-slate-100 border border-slate-800/60 shadow-slate-950/10'
                     }`}>
                       <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] opacity-70">
                         <span>{isUser ? 'USER' : isAgent ? 'ADMIN' : isSystem ? 'SYSTEM' : 'BOT'}</span>
