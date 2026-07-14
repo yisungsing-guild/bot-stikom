@@ -88,6 +88,20 @@ describe('semanticRagEngine', () => {
     expect(ok.answer).toMatch(/Silakan lanjutkan/i);
   }, 15000);
 
+  test('keeps casual small-talk from falling into no-data fallback', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const music = await querySemanticRag('Kamu suka musik gak?');
+    expect(music.success).toBe(true);
+    expect(music.source).toBe('semantic-rag-small-talk');
+    expect(music.answer).toMatch(/tidak punya selera pribadi|ngobrol santai soal musik/i);
+    expect(music.answer).not.toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban/i);
+
+    const serious = await querySemanticRag('Kamu kok serius amat sih?');
+    expect(serious.source).toBe('semantic-rag-small-talk');
+    expect(serious.answer).toMatch(/terdengar terlalu serius|tetap santai/i);
+    expect(serious.answer).not.toMatch(/syarat dan dokumen|PMB|Mohon maaf, saya kemungkinan/i);
+  });
   test('answers common religious greetings with matching greeting', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
     const cases = [
@@ -981,6 +995,33 @@ describe('semanticRagEngine', () => {
     expect(createMock).toHaveBeenCalledTimes(1);
   });
 
+  test('answers student activity and arts UKM questions before training-specific routing', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const activities = await querySemanticRag('Oke, sy mau nanya tentang kegiatan mahasiswa di stikom. Di stikom ada kegiatan mahasiswa jenis apa saja?');
+    expect(activities.success).toBe(true);
+    expect(activities.source).toBe('semantic-rag-ukm-list');
+    expect(activities.answer).toMatch(/UKM\/Ormawa/i);
+    expect(activities.answer).toMatch(/Badan Eksekutif Mahasiswa|Athena Esports|Musik/i);
+    expect(activities.answer).not.toMatch(/GCCP|Student Exchange|China Thailand Malaysia Philippines/i);
+
+    const arts = await querySemanticRag('Untuk kegiatan di bidang seni, ada apa saja?', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'Di STIKOM ada kegiatan mahasiswa jenis apa saja?' },
+          { direction: 'bot', message: 'Ada 32 UKM/Ormawa yang tercatat di ITB STIKOM Bali.' }
+        ]
+      }
+    });
+    expect(arts.source).toBe('semantic-rag-ukm-list');
+    expect(arts.answer).toMatch(/Untuk minat seni/i);
+    expect(arts.answer).toMatch(/Musik/i);
+    expect(arts.answer).toMatch(/Tari/i);
+    expect(arts.answer).toMatch(/Tabuh/i);
+    expect(arts.answer).toMatch(/Teater Biner/i);
+    expect(arts.answer).toMatch(/Vos/i);
+    expect(arts.answer).not.toMatch(/Badan Eksekutif Mahasiswa|Himaprodi/i);
+  });
   test('answers specific UKM detail requests with insufficient-data message instead of generic UKM list', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 

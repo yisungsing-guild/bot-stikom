@@ -704,6 +704,17 @@ function trySmallTalkAnswer(question) {
     };
   }
 
+  if (/\b(kamu|tiko|bot|admin)\b/i.test(normalized) && /\b(suka|senang|hobi|hobby)\b/i.test(normalized) && /\b(musik|lagu|nyanyi|band)\b/i.test(normalized)) {
+    return {
+      answer: 'Kalau sebagai asisten, saya tidak punya selera pribadi seperti manusia, Kak. Tapi saya bisa ngobrol santai soal musik secukupnya. Untuk info kampus, saya juga bisa bantu soal UKM seni seperti Musik, Tari, Tabuh, Teater Biner, atau VOS kalau datanya tersedia.'
+    };
+  }
+
+  if (/\b(kok|kenapa|mengapa)\b/i.test(normalized) && /\b(serius|kaku|formal)\b/i.test(normalized)) {
+    return {
+      answer: 'Hehe iya Kak, maaf kalau terdengar terlalu serius. Saya coba tetap santai, tapi untuk informasi kampus saya juga harus jaga supaya tidak menebak di luar data.'
+    };
+  }
   const religiousGreeting = getReligiousGreetingReply(normalized);
   if (isGreetingOnly(normalized) || /^(selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam)(\s+(kak|min|admin|tiko|pagi|siang|sore|malam))*$/.test(normalized) || religiousGreeting) {
     const prefix = religiousGreeting ? `${religiousGreeting} ` : '';
@@ -1520,6 +1531,8 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
 }
 
 function tryTrainingSpecificAnswer(question, indexForQuery) {
+  const q = String(question || '').toLowerCase();
+  if (/\\b(ukm|ormawa|kegiatan\\s+mahasiswa|organisasi\\s+mahasiswa)\\b/i.test(q)) return null;
   return buildTrainingSpecificAnswerFromIndex(question, indexForQuery);
 }
 function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
@@ -1732,10 +1745,12 @@ const UKM_INTEREST_PROFILES = [
   { key: 'technology', label: 'teknologi, coding, atau komunitas IT', re: /\b(coding|ngoding|programming|programmer|teknologi|it\b|komputer|software|developer|web|aplikasi)\b/, items: ['Syntax', 'Progress'] }
 ];
 
-function tryUkmInterestRecommendation(question) {
+function tryUkmInterestRecommendation(question, options = {}) {
   const q = String(question || '').toLowerCase();
-  const asksUkm = /\b(ukm|ormawa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q);
-  const asksRecommendation = /\b(cocok|rekomendasi|saran|sarankan|pilih|ikut|gabung|masuk|ambil|hobi|hobby|suka|minat|ada\s+yang|apa\s+yang)\b/i.test(q);
+  const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(`${q} ${recent}`);
+  const asksUkm = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q) || hasUkmContext;
+  const asksRecommendation = /\b(cocok|rekomendasi|saran|sarankan|pilih|ikut|gabung|masuk|ambil|hobi|hobby|suka|minat|ada\s+yang|apa\s+yang|bidang|jenis)\b/i.test(q);
   if (!asksUkm || !asksRecommendation) return null;
 
   const profile = UKM_INTEREST_PROFILES.find((item) => item.re.test(q));
@@ -1758,7 +1773,6 @@ function tryUkmInterestRecommendation(question) {
     ].join('\n')
   };
 }
-
 function loadUkmList() {
   const categorizedPath = path.resolve(__dirname, '..', 'data', 'ukm_list_categorized.json');
   const simplePath = path.resolve(__dirname, '..', 'data', 'ukm_list.json');
@@ -1803,11 +1817,14 @@ function loadUkmList() {
   return null;
 }
 
-function tryUkmAnswer(question) {
+function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(ukm|ormawa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q)) return null;
+  const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q);
+  const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
+  if (!hasUkmSignal && !hasUkmContext) return null;
 
-  const recommendation = tryUkmInterestRecommendation(question);
+  const recommendation = tryUkmInterestRecommendation(question, options);
   if (recommendation) return recommendation;
 
   const names = loadUkmNames();
@@ -1827,7 +1844,7 @@ function tryUkmAnswer(question) {
     };
   }
 
-  if (!/\b(stikom|itb\s*stikom|kampus|ada|apa|daftar|list|sebutkan|mana|saja|aja)\b/i.test(q)) return null;
+  if (!/\b(stikom|itb\s*stikom|kampus|ada|apa|daftar|list|sebutkan|mana|saja|aja|jenis|kegiatan\s+mahasiswa)\b/i.test(q) && !hasUkmContext) return null;
 
   const list = loadUkmList();
   if (!list || !list.text) {
@@ -2848,6 +2865,7 @@ const SOURCES_NEEDING_INDEX = new Set([
   'semantic-rag-fee-general',
   'semantic-rag-contextual-fee',
   'semantic-rag-fee-comparison',
+  'semantic-rag-ukm-list',
   'semantic-rag-training-specific',
   'semantic-rag-campus-facility'
 ]);
@@ -2856,6 +2874,7 @@ const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-out-of-domain',
   'semantic-rag-dual-degree-followup',
   'semantic-rag-unsupported-program',
+  'semantic-rag-ukm-list',
   'semantic-rag-training-specific',
   'semantic-rag-campus-facility'
 ]);
