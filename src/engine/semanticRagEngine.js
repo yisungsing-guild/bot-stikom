@@ -868,6 +868,22 @@ function tryShortClarificationAnswer(question) {
 
   return null;
 }
+function tryDoubleDegreeFollowUpAnswer(question, _indexForQuery, options = {}) {
+  const raw = String(question || '').trim();
+  const q = raw.toLowerCase();
+  if (!/^(?:internasional|international|luar\s+negeri|nasional|national)$/i.test(raw)) return null;
+
+  const recent = getRecentConversation(options && options.sessionData);
+  const hint = String(options && options.intentHint ? options.intentHint : '');
+  const hasDoubleDegreeContext = /\b(double\s*degree|dual\s*degree|dd)\b/i.test(`${recent}\n${hint}`);
+  if (!hasDoubleDegreeContext) return null;
+
+  const expanded = /\b(internasional|international|luar\s+negeri)\b/i.test(q)
+    ? 'Double Degree internasional'
+    : 'Double Degree nasional';
+  const result = tryDualDegreeAnswer(expanded);
+  return result && result.answer ? { ...result, source: 'semantic-rag-dual-degree-followup' } : null;
+}
 function getReligiousGreetingReply(normalizedText) {
   const t = String(normalizedText || '').toLowerCase().trim();
   if (/\b(assalamualaikum|assalamu\s+alaikum)\b/.test(t)) return "Wa'alaikumsalam kak.";
@@ -918,7 +934,7 @@ function tryFeedbackAnswer(question) {
   const hasRealQuestion = /\b(jurusan|prodi|program\s+studi|biaya|bayar|ukt|dpp|semester|pendaftaran|beasiswa|gelombang|double\s*degree|dual\s*degree|akreditasi|prospek|apa\s+itu|berapa|kapan|dimana|bagaimana)\b/.test(q) || /\b\d{5,}\b/.test(q);
   if (!isFeedback || hasRealQuestion) return null;
   return {
-    answer: 'Terima kasih koreksinya, kak. Bisa tuliskan ulang pertanyaan yang ingin dicek? Saya akan jawab lagi berdasarkan data ITB STIKOM Bali.'
+    answer: 'Maaf ya, Kak. Kalau jawaban saya tadi tidak nyambung, berarti data yang saya pegang kemungkinan belum cukup untuk menjawab bagian itu dengan tepat. Saya tidak akan memaksakan jawaban di luar data yang tersedia.'
   };
 }
 
@@ -1587,6 +1603,14 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   const specificFromTraining = buildSpecificFacilityAnswerFromIndex(question, indexForQuery);
   if (specificFromTraining) return specificFromTraining;
 
+  if (/\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
+    return {
+      answer: buildInsufficientDataAnswer('very_low'),
+      source: 'semantic-rag-campus-facility-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data'
+    };
+  }
+
   if (/\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
     return {
       answer: [
@@ -1786,6 +1810,23 @@ function tryUkmAnswer(question) {
   const recommendation = tryUkmInterestRecommendation(question);
   if (recommendation) return recommendation;
 
+  const names = loadUkmNames();
+  const mentionedUkm = names.find((name) => {
+    const escaped = String(name || '').toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return escaped && new RegExp(`\\b${escaped}\\b`, 'i').test(q);
+  });
+  const asksSpecificUkmDetail = mentionedUkm && /\b(apa\s+itu|maksud(?:nya)?|kepanjangan|singkatan|kegiatan|aktivitas|program\s+kerja|proker|jadwal|latihan|tujuan|detail|tentang)\b/i.test(q);
+  if (asksSpecificUkmDetail) {
+    return {
+      answer: [
+        `Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM ${mentionedUkm}.`,
+        '',
+        'Data yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.'
+      ].join('\n'),
+      source: 'semantic-rag-ukm-specific-insufficient-data'
+    };
+  }
+
   if (!/\b(stikom|itb\s*stikom|kampus|ada|apa|daftar|list|sebutkan|mana|saja|aja)\b/i.test(q)) return null;
 
   const list = loadUkmList();
@@ -1807,7 +1848,6 @@ function tryUkmAnswer(question) {
     source: 'semantic-rag-ukm-list'
   };
 }
-
 function hashText(value) {
   const text = String(value || '');
   let hash = 0;
@@ -2702,6 +2742,7 @@ function buildFrameOpeners(question, source, topic) {
 function formatNaturalAnswerFrame(question, answer, source) {
   const body = String(answer || '').trim();
   if (!body) return body;
+  if (/^maaf\b/i.test(body)) return body;
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
   const src = String(source || '').toLowerCase();
   if (src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
@@ -2773,6 +2814,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-org-structure-unavailable', tryOrganizationalStructureAnswer],
   ['semantic-rag-clarification', tryShortClarificationAnswer],
   ['semantic-rag-out-of-domain', tryOutOfDomainAnswer],
+  ['semantic-rag-dual-degree-followup', tryDoubleDegreeFollowUpAnswer],
   ['semantic-rag-feedback', tryFeedbackAnswer],
   ['semantic-rag-unsupported-program', tryUnsupportedProgramAnswer],
   ['semantic-rag-pmb-contact', tryPmbContactAnswer],
@@ -2812,6 +2854,7 @@ const SOURCES_NEEDING_INDEX = new Set([
 const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-small-talk',
   'semantic-rag-out-of-domain',
+  'semantic-rag-dual-degree-followup',
   'semantic-rag-unsupported-program',
   'semantic-rag-training-specific',
   'semantic-rag-campus-facility'
@@ -2976,6 +3019,46 @@ function shouldPreferTrainingBeforeDeterministic(rewrite) {
   return envFlag('SEMANTIC_RAG_PREFER_TRAINING_FOR_DUAL_DEGREE', true);
 }
 
+function buildInsufficientDataAnswer(kind = 'very_low') {
+  if (kind === 'low') {
+    return 'Saya ragu apakah saya mempunyai cukup data untuk menjawab pertanyaan anda. Tapi akan saya coba menjawab.';
+  }
+  return 'Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi, untuk menjawab pertanyaan anda. Mungkin anda bisa mengubah pertanyaannya atau menanyakan hal lain yang ingin diketahui.';
+}
+
+function isUnsafeDeterministicFallback(question, result, rewrite = null) {
+  if (!result || !result.answer) return false;
+  const q = String(question || '').toLowerCase();
+  const source = String(result.source || '').toLowerCase();
+  const intent = String(rewrite && rewrite.intent ? rewrite.intent : '').toLowerCase();
+  const answer = String(result.answer || '').toLowerCase();
+
+  const mentionsLinkedinCareer = /\b(linked\s*in|linkedin|career\s*center|karir\s*center|pusat\s*karir)\b/i.test(q);
+  const asksRegistration = /\b(daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti)\b/i.test(q);
+  const asksAdmissionRegistration = /\b(pmb|kuliah|calon\s+mahasiswa|mahasiswa\s+baru|camaba|siap\.stikom-bali\.ac\.id|stikom|itb\s*stikom)\b/i.test(q);
+  if (source.includes('registration-info') && asksRegistration && mentionsLinkedinCareer && !asksAdmissionRegistration) return true;
+  if (source.includes('registration-info') && /\bdaftar\s+kuliah\b/i.test(answer) && mentionsLinkedinCareer) return true;
+
+  if (source.includes('program-list') && /\b(bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|pertukaran\s+mahasiswa)\b/i.test(q)) return true;
+  if (source.includes('program-list') && intent && !['program_list', 'dual_degree'].includes(intent)) return true;
+
+  if (source.includes('ukm-list') && !/^maaf\b/i.test(answer)) {
+    const asksSpecificUkmDetail = /\b(apa\s+itu|maksud(?:nya)?|kepanjangan|singkatan|kegiatan|aktivitas|program\s+kerja|proker|jadwal|latihan|tujuan|detail|tentang)\b/i.test(q);
+    if (asksSpecificUkmDetail && /\b(ukm|ormawa|vos|musik|tari|tabuh|teater|basket|futsal|syntax|progress)\b/i.test(q)) return true;
+  }
+
+  return false;
+}
+
+function runVettedDeterministicFallback(question, options, rewrite, routeStage) {
+  const generalFallbackHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => !PRE_AI_HANDLER_SOURCES.has(source));
+  const result = runDeterministicHandlers(question, generalFallbackHandlers, { ...options, semanticRewrite: rewrite }, buildSemanticRoutingQuestions(question, rewrite), {
+    routeStage,
+    rewrite
+  });
+  if (!result || isUnsafeDeterministicFallback(question, result, rewrite)) return null;
+  return result;
+}
 async function querySemanticRag(question, options = {}) {
   const resultCacheKey = buildSemanticResultCacheKey(question, options);
   const cachedResult = getCachedSemanticResult(resultCacheKey);
@@ -3054,11 +3137,13 @@ async function querySemanticRag(question, options = {}) {
     const semanticSources = getSemanticHandlerSources(rewrite.intent);
     const semanticHandlers = handlersForSources(semanticSources);
     const semanticQuestions = buildSemanticRoutingQuestions(question, rewrite);
-    return runDeterministicHandlers(question, semanticHandlers, { ...options, semanticRewrite: rewrite }, semanticQuestions, {
+    const result = runDeterministicHandlers(question, semanticHandlers, { ...options, semanticRewrite: rewrite }, semanticQuestions, {
       routeStage,
       rewrite,
       trainingFirst: preferTrainingFirst || undefined
     });
+    if (result && isUnsafeDeterministicFallback(question, result, rewrite)) return null;
+    return result;
   };
 
   if (semanticRouteEnabled && !preferTrainingFirst) {
@@ -3079,22 +3164,21 @@ async function querySemanticRag(question, options = {}) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
       return fallbackResult;
     }
-    const generalFallbackHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => !PRE_AI_HANDLER_SOURCES.has(source));
-    const generalFallbackResult = runDeterministicHandlers(question, generalFallbackHandlers, { ...options, semanticRewrite: rewrite }, buildSemanticRoutingQuestions(question, rewrite), {
-      routeStage: 'rag-no-context-deterministic-fallback',
-      rewrite
-    });
+    const generalFallbackResult = runVettedDeterministicFallback(question, options, rewrite, 'rag-no-context-deterministic-fallback');
     if (generalFallbackResult) {
       setCachedSemanticResult(resultCacheKey, generalFallbackResult);
       return generalFallbackResult;
     }
+    const veryLowThresholdRaw = Number(process.env.SEMANTIC_RAG_VERY_LOW_SCORE || '0.12');
+    const veryLowThreshold = Number.isFinite(veryLowThresholdRaw) ? veryLowThresholdRaw : 0.12;
     return {
       success: true,
-      answer: 'Maaf, saya belum menemukan data yang cukup untuk menjawab pertanyaan itu dari sumber yang tersedia. Coba tuliskan pertanyaannya lebih spesifik, misalnya topik PMB, biaya, prodi, jadwal, beasiswa, lokasi, atau UKM.',
+      answer: buildInsufficientDataAnswer(retrieved.topScore >= veryLowThreshold ? 'low' : 'very_low'),
       source: 'semantic-rag-no-context',
       contexts: retrieved.contexts,
       confidenceScore: retrieved.topScore,
-      debug: { rewrite, minScore, indexSize: retrieved.indexSize }
+      confidenceTier: retrieved.topScore >= veryLowThreshold ? 'LOW' : 'VERY_LOW',
+      debug: { rewrite, minScore, veryLowThreshold, indexSize: retrieved.indexSize }
     };
   }
 
@@ -3109,16 +3193,12 @@ async function querySemanticRag(question, options = {}) {
         setCachedSemanticResult(resultCacheKey, fallbackResult);
         return fallbackResult;
       }
-      const generalFallbackHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => !PRE_AI_HANDLER_SOURCES.has(source));
-      const generalFallbackResult = runDeterministicHandlers(question, generalFallbackHandlers, { ...options, semanticRewrite: rewrite }, buildSemanticRoutingQuestions(question, rewrite), {
-        routeStage: 'rag-empty-answer-deterministic-fallback',
-        rewrite
-      });
+      const generalFallbackResult = runVettedDeterministicFallback(question, options, rewrite, 'rag-empty-answer-deterministic-fallback');
       if (generalFallbackResult) {
         setCachedSemanticResult(resultCacheKey, generalFallbackResult);
         return generalFallbackResult;
       }
-      return { success: true, answer: 'Maaf, saya belum bisa menemukan jawaban yang cukup dari data yang tersedia. Kakak bisa tuliskan pertanyaannya dengan lebih spesifik?', source: 'semantic-rag-empty-answer', contexts: retrieved.contexts, confidenceScore: retrieved.topScore, debug: { rewrite } };
+      return { success: true, answer: buildInsufficientDataAnswer('very_low'), source: 'semantic-rag-empty-answer', contexts: retrieved.contexts, confidenceScore: retrieved.topScore, confidenceTier: 'VERY_LOW', debug: { rewrite } };
     }
     if (rawAnswer.toUpperCase().includes('TIDAK_CUKUP_DATA')) {
       const fallbackResult = preferTrainingFirst ? runSemanticDeterministicRoute('ai-intent-fallback-after-rag-insufficient-context') : null;
@@ -3126,11 +3206,7 @@ async function querySemanticRag(question, options = {}) {
         setCachedSemanticResult(resultCacheKey, fallbackResult);
         return fallbackResult;
       }
-      const generalFallbackHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => !PRE_AI_HANDLER_SOURCES.has(source));
-      const generalFallbackResult = runDeterministicHandlers(question, generalFallbackHandlers, { ...options, semanticRewrite: rewrite }, buildSemanticRoutingQuestions(question, rewrite), {
-        routeStage: 'rag-insufficient-context-deterministic-fallback',
-        rewrite
-      });
+      const generalFallbackResult = runVettedDeterministicFallback(question, options, rewrite, 'rag-insufficient-context-deterministic-fallback');
       if (generalFallbackResult) {
         setCachedSemanticResult(resultCacheKey, generalFallbackResult);
         return generalFallbackResult;
@@ -3139,7 +3215,7 @@ async function querySemanticRag(question, options = {}) {
       const allowClarifyingFallback = envFlag('SEMANTIC_RAG_RETURN_CLARIFICATION_ON_NO_DATA', true);
       return {
         success: true,
-        answer: allowClarifyingFallback && cleaned ? cleaned : 'Maaf, data yang tersedia belum cukup untuk menjawab pertanyaan itu dengan tepat.',
+        answer: allowClarifyingFallback && cleaned ? buildInsufficientDataAnswer('very_low') + ' ' + cleaned : buildInsufficientDataAnswer('very_low'),
         source: 'semantic-rag-insufficient-context',
         contexts: retrieved.contexts,
         confidenceScore: retrieved.topScore,

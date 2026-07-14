@@ -545,6 +545,24 @@ describe('semanticRagEngine', () => {
     expect(allPairs.answer).toMatch(/HELP.*Sistem Informasi.*belum tercantum/s);
   });
 
+  test('answers short Double Degree international follow-up from conversation context', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Internasional', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'Apakah ada program double degree di stikom ?' },
+          { direction: 'bot', message: 'Ya, di STIKOM Bali ada program double degree, baik nasional maupun internasional.' }
+        ]
+      }
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-dual-degree-followup');
+    expect(result.answer).toMatch(/Double Degree internasional/i);
+    expect(result.answer).toMatch(/DNUI/i);
+    expect(result.answer).toMatch(/HELP/i);
+    expect(result.answer).not.toMatch(/S1 \(Sarjana\)|S2 \(Pascasarjana\)|D3 \(Diploma\)/i);
+  });
   test('answers short double degree nationality questions directly', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 
@@ -961,6 +979,104 @@ describe('semanticRagEngine', () => {
     expect(result.answer).toMatch(/Teknologi Informasi \(TI\)/);
     expect(result.answer).not.toMatch(/biaya awal masuk|Rp\. 16\.000\.000|Rp\. 13\.000\.000/i);
     expect(createMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('answers specific UKM detail requests with insufficient-data message instead of generic UKM list', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const result = await querySemanticRag('Apa saja program kerja dari UKM Vos?');
+
+    expect(result.success).toBe(true);
+    expect(result.answer).toMatch(/belum punya informasi detail tentang kegiatan atau program kerja UKM Vos/i);
+    expect(result.answer).not.toMatch(/Ada 32 UKM|Badan Eksekutif Mahasiswa|Dewan Perwakilan Mahasiswa/i);
+    expect(result.answer).not.toMatch(/Kalau yang kakak cari kegiatan mahasiswa, daftar UKM/i);
+  });
+
+  test('does not reroute LinkedIn Career Center registration to PMB registration', async () => {
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => []),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const createMock = jest.fn().mockResolvedValueOnce({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              canonicalQuestion: 'Cara mendaftar program LinkedIn di Career Center',
+              searchQueries: ['program LinkedIn Career Center pendaftaran'],
+              intent: 'registration_how',
+              entities: { program: 'LinkedIn Career Center' },
+              confidence: 0.94,
+              needsClarification: false,
+              clarificationQuestion: ''
+            })
+          }
+        }
+      ]
+    });
+
+    jest.doMock('openai', () => ({
+      OpenAI: jest.fn().mockImplementation(() => ({
+        chat: { completions: { create: createMock } }
+      }))
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Apa yang harus saya lakukan untuk mendaftar program LinkedIn di Career Center?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-campus-facility');
+    expect(result.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+    expect(result.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|datang langsung ke kampus/i);
+    expect(createMock).not.toHaveBeenCalled();
+  });
+
+  test('does not answer unavailable international-program variants with the generic program list', async () => {
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => []),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const createMock = jest.fn().mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              canonicalQuestion: 'Apakah ada program short course atau student exchange?',
+              searchQueries: ['short course student exchange international program'],
+              intent: 'program_list',
+              entities: {},
+              confidence: 0.9,
+              needsClarification: false,
+              clarificationQuestion: ''
+            })
+          }
+        }
+      ]
+    });
+
+    jest.doMock('openai', () => ({
+      OpenAI: jest.fn().mockImplementation(() => ({
+        chat: { completions: { create: createMock } }
+      }))
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Short course ada? Students exchange? Program BCCP ada?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-no-context');
+    expect(result.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+    expect(result.answer).not.toMatch(/S1 \(Sarjana\)|S2 \(Pascasarjana\)|D3 \(Diploma\)/i);
   });
 });
 
