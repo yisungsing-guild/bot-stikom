@@ -315,39 +315,40 @@ const legacyAdminPanelCssPath = path.join(publicCssDir, 'admin-panel-legacy.css'
 
 // v0 Next.js UI (static export) output directory
 const adminUiOutDir = path.join(projectRoot, 'admin-ui', 'out');
-const hasAdminUiOut = fs.existsSync(path.join(adminUiOutDir, 'index.html'));
+const adminUiIndexPath = path.join(adminUiOutDir, 'index.html');
 
-// v0 UI uses sidebar links like /dashboard, /keyword, etc.
-if (hasAdminUiOut) {
-  // Serve exported Next.js assets (_next, icons, etc)
-  app.use(express.static(adminUiOutDir, {
-    index: false,
-    etag: true,
-    maxAge: isProduction ? '1h' : 0,
-    setHeaders: (res, filePath) => {
-      try { res.setHeader('X-Content-Type-Options', 'nosniff'); } catch (e) { /* ignore */ }
-
-      const p = String(filePath || '').replace(/\\/g, '/');
-      // Next.js hashed assets can be cached aggressively.
-      if (p.includes('/_next/static/')) {
-        try { res.setHeader('Cache-Control', isProduction ? 'public, max-age=31536000, immutable' : 'no-cache'); } catch (e) { /* ignore */ }
-        return;
-      }
-
-      // HTML should be revalidated so updates roll out cleanly.
-      if (p.endsWith('.html')) {
-        try { res.setHeader('Cache-Control', 'no-cache'); } catch (e) { /* ignore */ }
-        return;
-      }
-
-      // Other assets (icons, manifest, etc): cache shorter.
-      try { res.setHeader('Cache-Control', isProduction ? 'public, max-age=3600' : 'no-cache'); } catch (e) { /* ignore */ }
-    }
-  }));
+function hasAdminUiOut() {
+  return fs.existsSync(adminUiIndexPath);
 }
 
+// Serve exported Next.js assets (_next, icons, etc)
+app.use(express.static(adminUiOutDir, {
+  index: false,
+  etag: true,
+  maxAge: isProduction ? '1h' : 0,
+  setHeaders: (res, filePath) => {
+    try { res.setHeader('X-Content-Type-Options', 'nosniff'); } catch (e) { /* ignore */ }
+
+    const p = String(filePath || '').replace(/\\/g, '/');
+    // Next.js hashed assets can be cached aggressively.
+    if (p.includes('/_next/static/')) {
+      try { res.setHeader('Cache-Control', isProduction ? 'public, max-age=31536000, immutable' : 'no-cache'); } catch (e) { /* ignore */ }
+      return;
+    }
+
+    // HTML should be revalidated so updates roll out cleanly.
+    if (p.endsWith('.html')) {
+      try { res.setHeader('Cache-Control', 'no-cache'); } catch (e) { /* ignore */ }
+      return;
+    }
+
+    // Other assets (icons, manifest, etc): cache shorter.
+    try { res.setHeader('Cache-Control', isProduction ? 'public, max-age=3600' : 'no-cache'); } catch (e) { /* ignore */ }
+  }
+}));
+
 app.get('/', (req, res) => {
-  if (hasAdminUiOut) {
+  if (hasAdminUiOut()) {
     try { res.setHeader('Cache-Control', 'no-cache'); } catch (e) { /* ignore */ }
     return res.sendFile(path.join(adminUiOutDir, 'index.html'));
   }
@@ -384,7 +385,7 @@ function sendAdminUiRoute(res, routeFolder) {
   '/testing'
 ].forEach((routePath) => {
   const handler = (req, res) => {
-    if (hasAdminUiOut) {
+    if (hasAdminUiOut()) {
       const routeFolder = routePath.replace(/^\//, '');
       return sendAdminUiRoute(res, routeFolder);
     }
@@ -394,10 +395,6 @@ function sendAdminUiRoute(res, routeFolder) {
   // Register both with and without trailing slash.
   app.get(routePath, handler);
   app.get(`${routePath}/`, handler);
-});
-
-app.get('/admin-panel.html', (req, res) => {
-  res.sendFile(adminPanelPath);
 });
 
 app.get('/admin-panel.css', (req, res) => {
