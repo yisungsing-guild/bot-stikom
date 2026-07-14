@@ -1898,13 +1898,14 @@ function tryUkmInterestRecommendation(question, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
   const currentHasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q);
-  const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(`${q} ${recent}`);
-  const asksUkm = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q) || hasUkmContext;
-  const asksRecommendation = /\b(cocok|rekomendasi|saran|sarankan|pilih|ikut|gabung|masuk|ambil|hobi|hobby|suka|minat|ada\s+yang|ada\s+apa|apa\s+yang|apa\s+saja|bidang|jenis|kalau|yang)\b/i.test(q);
-  if (!asksUkm || !asksRecommendation) return null;
-
   const profile = UKM_INTEREST_PROFILES.find((item) => item.re.test(q));
   if (!profile) return null;
+  const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(`${q} ${recent}`);
+  const asksActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
+  const asksUkm = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q) || hasUkmContext || asksActivityByInterest;
+  const asksRecommendation = asksActivityByInterest || /\b(cocok|rekomendasi|saran|sarankan|pilih|ikut|gabung|masuk|ambil|hobi|hobby|suka|minat|ada\s+yang|ada\s+apa|apa\s+yang|apa\s+saja|bidang|dibidang|jenis|kategori|kalau|yang)\b/i.test(q);
+  if (!asksUkm || !asksRecommendation) return null;
+
 
   const available = loadUkmNames();
   const availableSet = new Set(available.map((item) => item.toLowerCase()));
@@ -1991,7 +1992,8 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const currentMentionedUkm = findMentionedUkm(q);
   const recentMentionedUkm = findMentionedUkm(recent);
   const hasKnownUkmName = !!currentMentionedUkm;
-  const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName;
+  const hasActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
+  const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
   const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
   const hasExplicitDifferentTopic = /\b(double\s*degree|dual\s*degree|dnui|help\s+university|utb|bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|linked\s*in|linkedin|career\s*center|pmb|mahasiswa\s+baru|biaya|harga|tarif|ukt|dpp|gelombang|jadwal|beasiswa|kip|prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|fasilitas|layanan|sarana|prasarana|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas|lokasi|alamat)\b/i.test(q);
   if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic) return null;
