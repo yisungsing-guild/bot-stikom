@@ -1376,6 +1376,9 @@ function tryRegistrationHowAnswer(question) {
 function normalizeFacilityTerm(value) {
   return String(value || '')
     .toLowerCase()
+    .replace(/\bstudens\s+exchange\b/g, 'student exchange')
+    .replace(/\bstudents\s+exchange\b/g, 'student exchange')
+    .replace(/\bstudent\s+exchanges\b/g, 'student exchange')
     .replace(/[-_]+/g, ' ')
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
@@ -1386,7 +1389,7 @@ const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'career-center', label: 'Career Center', type: 'facility', patterns: ['career center', 'pusat karier', 'pusat karir'] },
   { key: 'gccp', label: 'GCCP', type: 'international_program', patterns: ['gccp', 'global cultural exchange program'] },
   { key: 'bccp', label: 'BCCP', type: 'international_program', patterns: ['bccp'] },
-  { key: 'student-exchange', label: 'Student Exchange', type: 'international_program', patterns: ['student exchange', 'students exchange', 'pertukaran mahasiswa', 'exchange program'] },
+  { key: 'student-exchange', label: 'Student Exchange', type: 'international_program', patterns: ['student exchange', 'students exchange', 'studens exchange', 'pertukaran mahasiswa', 'exchange program'] },
   { key: 'short-course', label: 'short course', type: 'international_program', patterns: ['short course', 'shortcourse', 'kursus singkat'] },
   { key: 'hi-think', label: 'Hi-Think', type: 'facility_program', patterns: ['hi think', 'hithink'] },
   { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc'] },

@@ -1242,6 +1242,31 @@ describe('semanticRagEngine', () => {
     expect(result.answer).toMatch(/UKM\/Ormawa|Ada 32 UKM/i);
     expect(result.answer).not.toMatch(/Student Exchange|GCCP|berinteraksi dengan mahasiswa internasional/i);
   });
+
+  test('answers typo Student Exchange from mixed international-program chunk without switching to GCCP', async () => {
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'mixed-student-exchange-gccp',
+          chunk: 'Apa itu Student Exchange di ITB STIKOM Bali? Student Exchange adalah program pertukaran mahasiswa yang memberikan kesempatan kepada mahasiswa ITB STIKOM Bali untuk belajar di kampus luar negeri dalam periode tertentu, sekaligus mendapatkan pengalaman akademik dan budaya internasional. Apa tujuan dari program Student Exchange? Program ini bertujuan untuk memberikan pengalaman belajar di lingkungan internasional. Apa itu GCCP? Global Cross Cultural Program (GCCP) adalah program unggulan berbasis pertukaran budaya dan interaksi global.',
+          filename: 'Apa itu Student Exchange di ITB STIKOM Bali.docx',
+          source: 'upload',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Apa itu studens exchange?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-campus-support-entity');
+    expect(result.answer).toMatch(/Student Exchange adalah program pertukaran mahasiswa/i);
+    expect(result.answer).not.toMatch(/^GCCP adalah|GCCP adalah salah satu program\/fasilitas/i);
+    expect(result.answer).not.toMatch(/Global Cross Cultural Program \(GCCP\) adalah/i);
+  });
 });
 
 
