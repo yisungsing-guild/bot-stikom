@@ -92,4 +92,38 @@ describe('Admin training list ordering', () => {
       orderBy: [{ active: 'desc' }, { createdAt: 'desc' }],
     }));
   });
+  test('shows unowned training rows for env/legacy admin users without AdminUser mapping', async () => {
+    prisma.adminUser.findFirst.mockResolvedValue(null);
+    prisma.trainingData.findMany.mockResolvedValue([
+      {
+        id: 't3',
+        filename: 'legacy-env-upload.txt',
+        divisionKey: null,
+        active: true,
+        createdAt: new Date().toISOString(),
+        source: 'upload',
+        uploadedById: null,
+        uploadedBy: null,
+      },
+    ]);
+
+    app = express();
+    app.use(express.json());
+    app.use((req, _res, next) => {
+      req.user = { role: 'admin', adminId: null, username: 'env-admin' };
+      next();
+    });
+    app.use('/admin', createAdminRoute({}));
+
+    const res = await request(app).get('/admin/training');
+
+    expect(res.status).toBe(200);
+    expect(prisma.trainingData.findMany).toHaveBeenCalledTimes(1);
+    const call = prisma.trainingData.findMany.mock.calls[0][0];
+    expect(call).toEqual(expect.objectContaining({
+      select: expect.any(Object),
+      where: { uploadedById: null },
+      orderBy: [{ active: 'desc' }, { createdAt: 'desc' }],
+    }));
+  });
 });

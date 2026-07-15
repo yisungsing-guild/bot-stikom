@@ -2247,16 +2247,17 @@ router.get('/training', async (req, res, next) => {
     }
 
     // Non-superadmin roles: only see training they uploaded.
+    // Env/legacy admin logins may not map to an AdminUser row, so their uploads
+    // are stored with uploadedById=null. Keep those rows visible to authenticated
+    // non-superadmin users instead of making a successful upload disappear.
     const uploaderId = await resolveUploaderId(req);
-    if (!uploaderId) {
-      return res.send([]);
-    }
+    const ownerWhere = uploaderId ? { uploadedById: uploaderId } : { uploadedById: null };
 
     // Query directly to enforce access control even if FileParser behavior changes.
     let items = [];
     try {
       items = await prisma.trainingData.findMany({
-        where: { uploadedById: uploaderId },
+        where: ownerWhere,
         select: {
           id: true,
           filename: true,
