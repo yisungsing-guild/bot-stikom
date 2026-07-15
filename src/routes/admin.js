@@ -1020,6 +1020,18 @@ function extractVisualTrainingContext(req) {
   const raw = body.visualContext || body.caption || body.description || body.context || '';
   return String(raw || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
 }
+
+function extractTranscriptText(req) {
+  const body = req && req.body ? req.body : {};
+  const raw = body.transcriptText || body.transcript || body.videoTranscript || body.videoText || body.text || '';
+  return String(raw || '').replace(/\s+/g, ' ').trim().slice(0, 20000);
+}
+
+function extractSourceUrl(req) {
+  const body = req && req.body ? req.body : {};
+  const raw = body.sourceUrl || body.videoUrl || body.fileUrl || body.url || '';
+  return String(raw || '').trim();
+}
 // === TRAINING DATA MANAGEMENT ===
 
 // Upload dan parse training file
@@ -1049,6 +1061,8 @@ router.post(
 
       const uploaderId = await resolveUploaderId(req);
       const visualContext = extractVisualTrainingContext(req);
+      const transcriptText = extractTranscriptText(req);
+      const sourceUrl = extractSourceUrl(req);
 
       // Parse file
       const result = await FileParser.parseAndStoreFile(
@@ -1057,7 +1071,7 @@ router.post(
         uploaderId,
         divisionKey,
         req.uploadInfo.filename,
-        { visualContext }
+        { visualContext, transcriptText, sourceUrl }
       );
       
       if (!result.success) {
@@ -1490,6 +1504,8 @@ router.post(
 
     const uploaderId = await resolveUploaderId(req);
     const visualContext = extractVisualTrainingContext(req);
+    const transcriptText = extractTranscriptText(req);
+    const sourceUrl = extractSourceUrl(req);
 
     const results = [];
 
@@ -1507,7 +1523,7 @@ router.post(
           uploaderId,
           divisionKey,
           info.filename,
-          { visualContext }
+          { visualContext, transcriptText, sourceUrl }
         );
 
         if (!parsed.success) {

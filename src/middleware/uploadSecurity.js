@@ -13,8 +13,8 @@ const enableExcelUpload = String(process.env.ENABLE_EXCEL_UPLOAD || '').toLowerC
 // - set ENABLE_EXCEL_UPLOAD=true, or
 // - explicitly set ALLOWED_FILE_TYPES to include `xls,xlsx`.
 const defaultAllowedTypes = isProduction
-  ? `txt,pdf,csv,docx,jpg,jpeg,png,gif,webp,bmp,tif,tiff${enableExcelUpload ? ',xls,xlsx' : ''}`
-  : 'txt,pdf,csv,docx,xls,xlsx,jpg,jpeg,png,gif,webp,bmp,tif,tiff';
+  ? `txt,pdf,csv,docx,jpg,jpeg,png,gif,webp,bmp,tif,tiff,mp4,mov,avi,mkv,webm,m4v${enableExcelUpload ? ',xls,xlsx' : ''}`
+  : 'txt,pdf,csv,docx,xls,xlsx,jpg,jpeg,png,gif,webp,bmp,tif,tiff,mp4,mov,avi,mkv,webm,m4v';
 const configuredAllowedTypes = (process.env.ALLOWED_FILE_TYPES || defaultAllowedTypes)
   .split(',')
   .map((t) => t.trim().toLowerCase())
@@ -51,7 +51,13 @@ const MIME_TYPES = {
   'webp': 'image/webp',
   'bmp': 'image/bmp',
   'tif': 'image/tiff',
-  'tiff': 'image/tiff'
+  'tiff': 'image/tiff',
+  'mp4': 'video/mp4',
+  'mov': 'video/quicktime',
+  'avi': 'video/x-msvideo',
+  'mkv': 'video/x-matroska',
+  'webm': 'video/webm',
+  'm4v': 'video/x-m4v'
 };
 
 // Sanitize filename untuk prevent directory traversal

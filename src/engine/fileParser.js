@@ -3,11 +3,16 @@ const path = require('path');
 const os = require('os');
 const prisma = require('../db');
 const logger = require('../logger');
+const { OpenAI } = require('openai');
 
 // File Parser - extract training data dari berbagai format file
 class FileParser {
   static isImageExtension(ext) {
     return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tif', '.tiff'].includes(String(ext || '').toLowerCase());
+  }
+
+  static isVideoExtension(ext) {
+    return ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v'].includes(String(ext || '').toLowerCase());
   }
 
   static buildImageTrainingContent(originalFilename, ocrText = '', options = {}) {
@@ -44,6 +49,70 @@ class FileParser {
 
     return parts.join('\n');
   }
+  static async transcribeVideo(filePath, options = {}) {
+    const enabled = String(process.env.VIDEO_TRANSCRIPTION_ENABLED || 'true').trim().toLowerCase() === 'true';
+    if (!enabled) return '';
+
+    const apiKey = String(process.env.OPENAI_API_KEY || '').trim();
+    if (!apiKey) return '';
+
+    const model = String(process.env.OPENAI_TRANSCRIPTION_MODEL || 'whisper-1').trim();
+    const timeoutMs = parseInt(process.env.OPENAI_TRANSCRIPTION_TIMEOUT_MS || process.env.OPENAI_TIMEOUT_MS || '60000', 10);
+
+    try {
+      const client = new OpenAI({ apiKey, timeout: timeoutMs });
+      const fileStream = fs.createReadStream(filePath);
+      const response = await client.audio.transcriptions.create({
+        model,
+        file: fileStream,
+        language: String(process.env.OPENAI_TRANSCRIPTION_LANGUAGE || 'id').trim(),
+      });
+      const text = response && typeof response.text === 'string' ? response.text.trim() : '';
+      if (text) {
+        logger.info({ filename: path.basename(filePath) }, '[FileParser] Video transcription successful');
+      }
+      return text;
+    } catch (err) {
+      const msg = err && err.message ? String(err.message) : String(err);
+      logger.warn({ err: msg }, '[FileParser] Video transcription failed');
+      return '';
+    }
+  }
+
+  static buildVideoTrainingContent(originalFilename, transcriptText = '', options = {}) {
+    const safeFilename = this.sanitizeFilenameForStorage(originalFilename || 'video-training');
+    const ext = path.extname(safeFilename).toLowerCase().replace(/^\./, '') || 'video';
+    const transcript = String(transcriptText || '').trim();
+    const sourceUrl = options && typeof options.sourceUrl === 'string' ? options.sourceUrl.trim() : '';
+    const videoContext = options && typeof options.visualContext === 'string' ? this.sanitizeTextForStorage(options.visualContext).slice(0, 2000) : '';
+    const status = transcript
+      ? 'Transkrip video tersedia sehingga konten ini bisa dipakai sebagai sumber pengetahuan.'
+      : 'Tidak ada transkrip video yang disediakan. Sistem akan menyimpan metadata video dan URL sumber sebagai konteks awal untuk ingest RAG.';
+
+    const parts = [
+      'Dokumen video: ' + safeFilename + '.',
+      'Format file: ' + ext.toUpperCase() + '.',
+      status,
+      'File ini disimpan sebagai referensi multimedia. Jika video memiliki transkrip atau caption, teks tersebut akan menjadi sumber pengetahuan utama untuk RAG.',
+    ];
+
+    if (sourceUrl) {
+      parts.push('Sumber video / URL: ' + sourceUrl);
+    }
+
+    if (videoContext) {
+      parts.push('', 'Keterangan video:', videoContext);
+    }
+
+    if (transcript) {
+      parts.push('', 'Transkrip video:', transcript);
+    } else {
+      parts.push('', 'Catatan: masukkan transcriptText atau videoTranscript untuk menambahkan isi pengetahuan dari video ini.');
+    }
+
+    return parts.join('\n');
+  }
+
   static async parseFileContentAsync(filePath, originalFilename, options = {}) {
     const stats = fs.statSync(filePath);
     const maxSize = parseInt(process.env.MAX_FILE_SIZE || String(15 * 1024 * 1024), 10);
@@ -97,6 +166,18 @@ class FileParser {
             '[FileParser] Image OCR produced no readable text; storing visual fallback content'
           );
           content = this.buildImageTrainingContent(originalFilename, '', options);
+        }
+        break;
+      case '.mp4':
+      case '.mov':
+      case '.avi':
+      case '.mkv':
+      case '.webm':
+      case '.m4v':
+        {
+          const providedTranscript = options && typeof options.transcriptText === 'string' ? options.transcriptText : '';
+          const autoTranscript = providedTranscript ? providedTranscript : await this.transcribeVideo(filePath, options);
+          content = this.buildVideoTrainingContent(originalFilename, autoTranscript, options);
         }
         break;
       default:
