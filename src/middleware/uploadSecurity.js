@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const logger = require('../logger');
+const { getUploadDir } = require('../utils/ragPaths');
 
 // ===== FILE UPLOAD SECURITY CONFIGURATION =====
 
@@ -140,7 +141,7 @@ function handleMulterError(err, req, res, next) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Pastikan uploads directory exist
-    const uploadDir = path.join(__dirname, '..', '..', 'uploads');
+    const uploadDir = getUploadDir();
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }

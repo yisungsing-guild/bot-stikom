@@ -11,9 +11,22 @@ function resolveFromProjectRoot(value) {
 }
 
 function getRagDataDir() {
-  return process.env.RAG_DATA_DIR
-    ? resolveFromProjectRoot(process.env.RAG_DATA_DIR)
+  const configuredRoot = process.env.DATA_DIR || process.env.RAG_DATA_DIR || '';
+  return configuredRoot
+    ? resolveFromProjectRoot(configuredRoot)
     : DEFAULT_DATA_DIR;
+}
+
+function getUploadDir() {
+  return path.join(getRagDataDir(), 'uploads');
+}
+
+function getPublicMediaDir() {
+  return path.join(getUploadDir(), 'public-media');
+}
+
+function getValidationUploadDir() {
+  return path.join(getUploadDir(), 'validation');
 }
 
 function getRagIndexPath() {
@@ -73,6 +86,9 @@ module.exports = {
   DEFAULT_DATA_DIR,
   resolveFromProjectRoot,
   getRagDataDir,
+  getUploadDir,
+  getPublicMediaDir,
+  getValidationUploadDir,
   getRagIndexPath,
   getRagMergedIndexPath,
   getRagBackupIndexPath,

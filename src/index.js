@@ -5,6 +5,7 @@
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
+const { getPublicMediaDir } = require('./utils/ragPaths');
 const isProductionEnv = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
 const prodLocalEnvAbs = path.join(__dirname, '..', '.env.production.local');
 const prodEnvAbs = path.join(__dirname, '..', '.env.production');
@@ -421,7 +422,7 @@ app.get('/admin-panel-legacy.css', (req, res) => {
 
 // 3.6. Serve public media assets for outbound WhatsApp images.
 // NOTE: We do NOT expose the whole uploads/ folder, only uploads/public-media/.
-const publicMediaDir = path.join(projectRoot, 'uploads', 'public-media');
+const publicMediaDir = getPublicMediaDir();
 try {
   if (!fs.existsSync(publicMediaDir)) {
     fs.mkdirSync(publicMediaDir, { recursive: true });

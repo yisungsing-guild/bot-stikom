@@ -16,6 +16,7 @@ const { FileParser } = require('../engine/fileParser');
 const { AnalyticsEngine } = require('../engine/analyticsEngine');
 const { ingestTrainingData } = require('../engine/ragEngine');
 const { sendTrainingUploadNotification } = require('../utils/emailNotifier');
+const { getUploadDir, getPublicMediaDir } = require('../utils/ragPaths');
 const path = require('path');
 const { appendChatMessage, getChatMessages } = require('../engine/chatLog');
 const crypto = require('crypto');
@@ -71,7 +72,7 @@ module.exports = function (provider) {
 
   function isAdminRole(role) {
     const r = normalizeAdminRole(role);
-    // Treat only 'superadmin' as full admin for server-side RBAC
+    // Treat only 'superadmin' as full admin for server-side RBAC.
     return r === 'superadmin';
   }
 
@@ -1289,8 +1290,7 @@ router.post(
       const uploaderDivisionKey = roleToDivisionKey(uploaderRole);
 
       // Move file into uploads/validation/ for easier management
-      const projectRoot = path.join(__dirname, '..', '..');
-      const validationDir = path.join(projectRoot, 'uploads', 'validation');
+      const validationDir = path.join(getUploadDir(), 'validation');
       await fs.mkdir(validationDir, { recursive: true });
 
       const destPath = path.join(validationDir, req.uploadInfo.filename);
@@ -1301,9 +1301,11 @@ router.post(
         // If move fails, keep original path
       }
 
-      const storedUnder = uploadedPath && uploadedPath.includes(path.join('uploads', 'validation'))
+      const uploadRoot = getUploadDir();
+      const legacyUploadRoot = path.join(__dirname, '..', '..', 'uploads');
+      const storedUnder = uploadedPath && (uploadedPath.includes(path.join(uploadRoot, 'validation')) || uploadedPath.includes(path.join(legacyUploadRoot, 'validation')))
         ? 'uploads/validation'
-        : (uploadedPath && uploadedPath.includes(path.join('uploads')) ? 'uploads' : null);
+        : (uploadedPath && (uploadedPath.includes(uploadRoot) || uploadedPath.includes(legacyUploadRoot)) ? 'uploads' : null);
 
       await logAdminAction(req, 'upload_validation_file', 'ValidationFile', {
         originalname: req.uploadInfo.originalname,
@@ -1353,12 +1355,29 @@ router.post(
       .substring(0, 255);
   }
 
+  function getTrainingUploadSearchDirs() {
+    const projectRoot = path.join(__dirname, '..', '..');
+    const uploadRoot = getUploadDir();
+    const legacyUploadRoot = path.join(projectRoot, 'uploads');
+    return [
+      path.join(uploadRoot, 'validation'),
+      path.join(uploadRoot, 'public-media'),
+      uploadRoot,
+      path.join(legacyUploadRoot, 'validation'),
+      path.join(legacyUploadRoot, 'public-media'),
+      legacyUploadRoot,
+    ];
+  }
+
   async function resolveValidationFilePath(storedAs) {
     if (!isSafeStoredFilename(storedAs)) return null;
-    const projectRoot = path.join(__dirname, '..', '..');
+    const uploadRoot = getUploadDir();
+    const legacyUploadRoot = path.join(__dirname, '..', '..', 'uploads');
     const candidates = [
-      path.join(projectRoot, 'uploads', 'validation', storedAs),
-      path.join(projectRoot, 'uploads', storedAs),
+      path.join(uploadRoot, 'validation', storedAs),
+      path.join(uploadRoot, storedAs),
+      path.join(legacyUploadRoot, 'validation', storedAs),
+      path.join(legacyUploadRoot, storedAs),
     ];
 
     for (const p of candidates) {
@@ -1374,13 +1393,7 @@ router.post(
 
   async function resolveOriginalTrainingFilePath(training) {
     if (!training) return null;
-    const projectRoot = path.join(__dirname, '..', '..');
-    const uploadRoot = path.join(projectRoot, 'uploads');
-    const searchDirs = [
-      path.join(projectRoot, 'uploads', 'validation'),
-      path.join(projectRoot, 'uploads', 'public-media'),
-      uploadRoot
-    ];
+    const searchDirs = getTrainingUploadSearchDirs();
 
     const stored = training.storedFilename ? String(training.storedFilename) : '';
     if (stored && isSafeStoredFilename(stored)) {
@@ -2202,7 +2215,7 @@ router.get('/training', async (req, res, next) => {
   try {
     console.log('[GET /admin/training] Mengambil training data...');
     const role = req.user && req.user.role;
-    if (isAdminRole(role)) {
+    if (isSuperAdminRole(role)) {
       // Prefer DB ordering for consistency: newest first.
       try {
         const items = await prisma.trainingData.findMany({
@@ -2233,7 +2246,7 @@ router.get('/training', async (req, res, next) => {
       }
     }
 
-    // Non-admin roles: only see training they uploaded.
+    // Non-superadmin roles: only see training they uploaded.
     const uploaderId = await resolveUploaderId(req);
     if (!uploaderId) {
       return res.send([]);
@@ -2418,11 +2431,13 @@ router.get('/training/:id/download', async (req, res, next) => {
       try {
         const sf = training.storedFilename ? String(training.storedFilename) : '';
         if (sf && isSafeStoredFilename(sf)) {
-          const projectRoot = path.join(__dirname, '..', '..');
           const candidates = [
-            path.join(projectRoot, 'uploads', 'validation', sf),
-            path.join(projectRoot, 'uploads', 'public-media', sf),
-            path.join(projectRoot, 'uploads', sf),
+            path.join(getUploadDir(), 'validation', sf),
+            path.join(getUploadDir(), 'public-media', sf),
+            path.join(getUploadDir(), sf),
+            path.join(__dirname, '..', '..', 'uploads', 'validation', sf),
+            path.join(__dirname, '..', '..', 'uploads', 'public-media', sf),
+            path.join(__dirname, '..', '..', 'uploads', sf),
           ];
           for (const p of candidates) {
             try {
@@ -2512,12 +2527,7 @@ router.get('/training/backup', async (req, res, next) => {
       return res.status(400).send({ error: 'Specify ?all=1 or ?ids=id1,id2' });
     }
 
-    const projectRoot = path.join(__dirname, '..', '..');
-    const searchDirs = [
-      path.join(projectRoot, 'uploads', 'validation'),
-      path.join(projectRoot, 'uploads', 'public-media'),
-      path.join(projectRoot, 'uploads')
-    ];
+    const searchDirs = getTrainingUploadSearchDirs();
 
     const zip = new AdmZip();
     let filesAdded = 0;
@@ -2588,22 +2598,19 @@ router.get('/training/:id/raw', async (req, res, next) => {
     const ext = path.extname(origFilename || '').toLowerCase();
     const base = path.basename(origFilename || '', ext).toLowerCase();
 
-    const projectRoot = path.join(__dirname, '..', '..');
-    const searchDirs = [
-      path.join(projectRoot, 'uploads', 'validation'),
-      path.join(projectRoot, 'uploads', 'public-media'),
-      path.join(projectRoot, 'uploads')
-    ];
+    const searchDirs = getTrainingUploadSearchDirs();
 
     // Prefer storedFilename if available
     try {
       const sf = training.storedFilename ? String(training.storedFilename) : '';
       if (sf && isSafeStoredFilename(sf)) {
-        const projectRoot = path.join(__dirname, '..', '..');
         const possible = [
-          path.join(projectRoot, 'uploads', 'validation', sf),
-          path.join(projectRoot, 'uploads', 'public-media', sf),
-          path.join(projectRoot, 'uploads', sf)
+          path.join(getUploadDir(), 'validation', sf),
+          path.join(getUploadDir(), 'public-media', sf),
+          path.join(getUploadDir(), sf),
+          path.join(__dirname, '..', '..', 'uploads', 'validation', sf),
+          path.join(__dirname, '..', '..', 'uploads', 'public-media', sf),
+          path.join(__dirname, '..', '..', 'uploads', sf)
         ];
         for (const p of possible) {
           try {
@@ -2754,8 +2761,7 @@ router.post(
         });
       }
 
-      const projectRoot = path.join(__dirname, '..', '..');
-      const publicDir = path.join(projectRoot, 'uploads', 'public-media');
+      const publicDir = getPublicMediaDir();
       await fs.mkdir(publicDir, { recursive: true });
 
       const storedAs = req.uploadInfo.filename;
