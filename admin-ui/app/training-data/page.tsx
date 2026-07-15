@@ -776,6 +776,7 @@ export default function TrainingDataPage() {
         <div>
           <h1 className="text-3xl font-bold">Training Data</h1>
           <p className="text-muted-foreground mt-2">Manage and upload training datasets</p>
+          <p className="text-sm text-muted-foreground mt-1">Jika SMTP sudah diset, upload training akan otomatis mengirim notifikasi email ke superadmin.</p>
         </div>
         <Button
           className="gap-2"

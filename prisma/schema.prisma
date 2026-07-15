@@ -81,7 +81,7 @@ model TrainingData {
   filename  String
   storedFilename String?
   content   String   // extracted text content
-  source    String   // "upload", "url", "manual"
+  source    String   // "upload", "url", "manual", "video"
   divisionKey String?
   ragIngestStatus String @default("unknown") // "unknown", "processing", "success", "failed", "rejected"
   ragIngestError String?
@@ -90,6 +90,10 @@ model TrainingData {
   active    Boolean  @default(true)
   uploadedById String?
   uploadedBy   AdminUser? @relation("TrainingDataUploadedBy", fields: [uploadedById], references: [id])
+  sourceUrl String?
+  storageType String?
+  transcriptText String?
+  processingStatus String? @default("pending")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

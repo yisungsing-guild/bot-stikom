@@ -152,6 +152,7 @@ const { MockWhatsAppProvider } = require('./providers/whatsappProvider');
 // Router factory untuk menerima pesan dari provider dan endpoint admin
 const providerRouterFactory = require('./routes/provider');
 const adminRouterFactory = require('./routes/admin');
+const videoTrainingRoutes = require('./routes/videoTrainingRoutes');
 const watiWebhookRouter = require('./routes/watiWebhook');
 const fonnteWebhookRouter = require('./routes/fonnteWebhook');
 const { prewarmSemanticRag } = require('./engine/semanticRagEngine');
@@ -588,6 +589,7 @@ app.use('/telegram', telegramRouterFactory(provider));
 // Endpoint: /admin/* (semua admin endpoint harus punya token)
 const adminRateLimitMax = parseInt(process.env.RATE_LIMIT_ADMIN_MAX_REQUESTS || '50', 10);
 app.use('/admin', verifyToken, adminRateLimitMiddleware(adminRateLimitMax, rateLimitWindow), adminRouterFactory(provider));
+app.use('/training', videoTrainingRoutes);
 
 // Diagnostic: routers mounted
 try { console.log('[SERVER_INIT] MOUNTING_ROUTERS_DONE'); } catch (e) {}

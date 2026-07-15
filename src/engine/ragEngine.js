@@ -8790,7 +8790,21 @@ function validateIngestion(cleanedText, chunks) {
     ? chunks.filter(c => String(c || '').replace(/[^\p{L}\p{N}]/gu, '').length > 30)
     : [];
   const chunkCount = Array.isArray(chunks) ? chunks.length : 0;
+  // Allow weaker ingests when explicitly enabled via env var.
+  const allowWeak = String(process.env.RAG_ALLOW_WEAK_INGEST || '').toLowerCase() === 'true';
   if (charCount < 100 || wordCount < 20 || meaningfulChunks.length === 0) {
+    if (allowWeak && charCount >= 30 && wordCount >= 7 && meaningfulChunks.length > 0) {
+      return {
+        valid: true,
+        status: 'weak_valid',
+        reason: 'weak_allowed_by_config',
+        charCount,
+        wordCount,
+        chunkCount,
+        meaningfulChunks: meaningfulChunks.length
+      };
+    }
+
     return {
       valid: false,
       status: 'rejected',

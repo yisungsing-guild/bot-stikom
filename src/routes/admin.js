@@ -15,10 +15,12 @@ const {
 const { FileParser } = require('../engine/fileParser');
 const { AnalyticsEngine } = require('../engine/analyticsEngine');
 const { ingestTrainingData } = require('../engine/ragEngine');
+const { sendTrainingUploadNotification } = require('../utils/emailNotifier');
 const path = require('path');
 const { appendChatMessage, getChatMessages } = require('../engine/chatLog');
 const crypto = require('crypto');
 const fs = require('fs/promises');
+const AdmZip = require('adm-zip');
 
 // Helper: validasi field wajib
 function validateRequired(data, fields) {
@@ -136,6 +138,25 @@ module.exports = function (provider) {
       'international'
     ]);
     return allowed.has(k) ? k : null;
+  }
+
+  function computePublicBaseUrl(req) {
+    const baseEnv = String(process.env.PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
+    if (baseEnv) return baseEnv;
+
+    const forwardedProto = req && req.headers && req.headers['x-forwarded-proto']
+      ? String(req.headers['x-forwarded-proto']).split(',')[0].trim()
+      : '';
+    const proto = forwardedProto || (req && req.protocol) || 'http';
+    const host = req && typeof req.get === 'function' ? req.get('host') : null;
+    if (host) return `${proto}://${host}`;
+    return '';
+  }
+
+  function buildTrainingReviewLink(req, trainingId) {
+    const baseUrl = computePublicBaseUrl(req);
+    if (!baseUrl) return null;
+    return `${baseUrl}/admin/training/${encodeURIComponent(String(trainingId))}`;
   }
 
   function isTrainingOptionalFieldUnavailableError(err) {
@@ -1075,14 +1096,35 @@ router.post(
       );
       
       if (!result.success) {
-        // Cleanup file jika parsing gagal
-        await cleanupUploadedFile(uploadedPath);
-        
+        // If parsing failed, keep the uploaded file and create a training row
+        // so admin can download the original and retry later.
+        let fallbackTraining = null;
+        try {
+          fallbackTraining = await prisma.trainingData.create({
+            data: {
+              filename: req.uploadInfo.originalname,
+              storedFilename: req.uploadInfo.filename,
+              content: '',
+              source: 'upload',
+              active: true,
+              uploadedById: uploaderId || null,
+              divisionKey: divisionKey || null,
+              ragIngestStatus: 'failed',
+              ragIngestError: result.error || 'PARSE_ERROR'
+            }
+          });
+        } catch (dbErr) {
+          logger.warn({ err: dbErr && dbErr.message ? dbErr.message : String(dbErr) }, '[Upload] Fallback training DB insert failed');
+        }
+
+        // Do NOT delete uploaded file so admin can download original for inspection.
+
         // Improved error response dengan suggestions
         const errorResponse = {
           error: result.error,
           errorCode: result.errorCode || 'PARSE_ERROR',
-          suggestions: []
+          suggestions: [],
+          trainingDataId: fallbackTraining ? fallbackTraining.id : null
         };
         
         // Add helpful suggestions based on error type
@@ -1127,8 +1169,9 @@ router.post(
           ];
         }
         
-        return res.status(400).send({
+        return res.status(202).send({
           ...errorResponse,
+          message: 'File uploaded but parsing failed. Original file preserved for admin review.',
           requestId: req.requestId,
           prismaCode: result && Object.prototype.hasOwnProperty.call(result, 'prismaCode') ? (result.prismaCode || null) : null,
         });
@@ -1143,6 +1186,29 @@ router.post(
         fileSize: req.uploadInfo.size,
         contentPreview: result.content.substring(0, 200) + '...',
         wasTruncated: !!result.wasTruncated
+      });
+
+      setImmediate(async () => {
+        try {
+          const notifyResult = await sendTrainingUploadNotification({
+            filename: req.uploadInfo.originalname,
+            trainingDataId: result.trainingDataId,
+            divisionKey,
+            source: 'upload',
+            fileSize: req.uploadInfo.size,
+            uploaderDisplayName: req.user && req.user.displayName ? String(req.user.displayName) : null,
+            uploaderUsername: req.user && req.user.username ? String(req.user.username) : null,
+            uploaderRole: req.user && req.user.role ? String(req.user.role) : null,
+            createdAt: new Date().toISOString(),
+            link: buildTrainingReviewLink(req, result.trainingDataId),
+            contentPreview: result.content.substring(0, 200)
+          });
+          if (!notifyResult.ok) {
+            logger.warn({ notifyResult }, '[Upload] Training upload notification failed');
+          }
+        } catch (err) {
+          logger.warn({ err: err && err.message ? err.message : String(err) }, '[Upload] Training upload notification error');
+        }
       });
 
       // Trigger RAG ingestion in background (do not block response)
@@ -1309,10 +1375,11 @@ router.post(
   async function resolveOriginalTrainingFilePath(training) {
     if (!training) return null;
     const projectRoot = path.join(__dirname, '..', '..');
+    const uploadRoot = path.join(projectRoot, 'uploads');
     const searchDirs = [
       path.join(projectRoot, 'uploads', 'validation'),
       path.join(projectRoot, 'uploads', 'public-media'),
-      path.join(projectRoot, 'uploads')
+      uploadRoot
     ];
 
     const stored = training.storedFilename ? String(training.storedFilename) : '';
@@ -1330,7 +1397,7 @@ router.post(
 
     const origFilename = String(training.filename || '');
     const ext = path.extname(origFilename).toLowerCase();
-    const base = path.basename(origFilename, ext).toLowerCase();
+    const base = path.basename(origFilename, ext).toLowerCase().replace(/\s+/g, ' ');
     const candidates = [];
 
     for (const dir of searchDirs) {
@@ -1352,8 +1419,45 @@ router.post(
       }
     }
 
+    async function searchRecursively(dir) {
+      const results = [];
+      try {
+        const names = await fs.readdir(dir, { withFileTypes: true });
+        for (const entry of names) {
+          try {
+            const absPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+              results.push(...await searchRecursively(absPath));
+            } else {
+              const lower = String(entry.name || '').toLowerCase();
+              if (!lower) continue;
+              if (ext && lower.endsWith(ext) && (lower.includes(base) || lower.startsWith(base + '-') || lower.startsWith(base + '_'))) {
+                results.push({ path: absPath, storedFilename: entry.name });
+              } else if (base && lower.includes(base)) {
+                results.push({ path: absPath, storedFilename: entry.name });
+              }
+            }
+          } catch {
+            // ignore per-entry errors
+          }
+        }
+      } catch {
+        // ignore read errors
+      }
+      return results;
+    }
+
     let best = null;
-    for (const candidate of candidates) {
+    const allCandidates = [...candidates];
+
+    if (!allCandidates.length) {
+      const recursiveResults = await searchRecursively(uploadRoot);
+      for (const candidate of recursiveResults) {
+        allCandidates.push({ dir: path.dirname(candidate.path), name: candidate.storedFilename });
+      }
+    }
+
+    for (const candidate of allCandidates) {
       try {
         const absPath = path.join(candidate.dir, candidate.name);
         const stat = await fs.stat(absPath);
@@ -2300,10 +2404,12 @@ router.get('/training/:id/download', async (req, res, next) => {
       return res.status(404).send({ error: 'Training data not found' });
     }
 
-    // Only superadmin may download raw dataset content
+    // Allow uploader or superadmin to download the original upload file.
     const role = req.user && req.user.role;
-    if (!isSuperAdminRole(role)) {
-      return res.status(403).send({ error: 'Forbidden: only superadmin can download dataset files' });
+    const uploaderId = await resolveUploaderId(req);
+    const isUploader = training.uploadedById && uploaderId && training.uploadedById === uploaderId;
+    if (!isSuperAdminRole(role) && !isUploader) {
+      return res.status(403).send({ error: 'Forbidden: only superadmin or uploader can download dataset files' });
     }
 
     const rawContent = training.content || '';
@@ -2321,9 +2427,8 @@ router.get('/training/:id/download', async (req, res, next) => {
           for (const p of candidates) {
             try {
               await fs.stat(p);
-              const downloadName = sanitizeDownloadName(training.filename) || sf;
-              res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
-              return res.sendFile(p, (err) => { if (err) return next(err); });
+              const downloadName = sanitizeDownloadName(training.filename) || path.basename(p);
+              return res.download(p, downloadName, (err) => { if (err) return next(err); });
             } catch {
               // not found, try next
             }
@@ -2334,72 +2439,38 @@ router.get('/training/:id/download', async (req, res, next) => {
         console.warn('[GET /admin/training/:id/download] storedFilename lookup failed:', e && e.message ? e.message : String(e));
       }
 
-    // Try to locate original stored file on disk. Multer stores files under
-    // uploads/ with name: <sanitized-base>-<timestamp><ext>
-    try {
-      const projectRoot = path.join(__dirname, '..', '..');
-      const searchDirs = [
-        path.join(projectRoot, 'uploads', 'validation'),
-        path.join(projectRoot, 'uploads', 'public-media'),
-        path.join(projectRoot, 'uploads'),
-      ];
-
-      const origFilename = training.filename || '';
-      const ext = path.extname(origFilename || '').toLowerCase();
-      const base = path.basename(origFilename || '', ext).toLowerCase();
-
-      const candidates = [];
-      for (const d of searchDirs) {
-        try {
-          const names = await fs.readdir(d);
-          for (const n of names) {
-            const lower = String(n || '').toLowerCase();
-            if (!lower) continue;
-
-            // Common stored pattern: <base>-<timestamp><ext>
-            if (ext && lower.endsWith(ext) && (lower.startsWith(base + '-') || lower.startsWith(base + '_') || lower === (base + ext))) {
-              candidates.push({ dir: d, name: n });
-              continue;
-            }
-
-            // Fallback: file contains base and has same extension (loose match)
-            if (base && lower.includes(base) && (!ext || lower.endsWith(ext))) {
-              candidates.push({ dir: d, name: n });
-            }
-          }
-        } catch (e) {
-          // ignore missing dirs
-        }
-      }
-
-      if (candidates.length > 0) {
-        // Pick most recently modified candidate
-        let best = null;
-        for (const c of candidates) {
-          try {
-            const st = await fs.stat(path.join(c.dir, c.name));
-            c.mtime = st.mtimeMs || 0;
-          } catch {
-            c.mtime = 0;
-          }
-          if (!best || c.mtime > best.mtime) best = c;
-        }
-
-        if (best) {
-          const absPath = path.join(best.dir, best.name);
-          const downloadName = sanitizeDownloadName(training.filename) || `training-${training.id}${ext || ''}`;
-          res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
-          return res.sendFile(absPath, (err) => {
+      // Try to resolve original file path using storedFilename or heuristic search.
+      try {
+        const original = await resolveOriginalTrainingFilePath(training);
+        if (original && original.path) {
+          const downloadName = sanitizeDownloadName(training.filename) || path.basename(original.path);
+          return res.download(original.path, downloadName, (err) => {
             if (err) return next(err);
           });
         }
+      } catch (e) {
+        console.warn('[GET /admin/training/:id/download] original file lookup failed:', e && e.message ? e.message : String(e));
       }
-    } catch (e) {
-      // ignore file-system lookup errors and fallthrough to text download
-      console.warn('[GET /admin/training/:id/download] file lookup failed:', e && e.message ? e.message : String(e));
+
+    // If this training was created from a remote URL (video/cloud), redirect to that URL
+    const sourceUrl = training && training.sourceUrl ? String(training.sourceUrl).trim() : '';
+    if (sourceUrl) {
+      // Redirect admin to the original file URL (preserves access to cloud-hosted files)
+      return res.redirect(sourceUrl);
     }
 
     if (String(training.source || '').toLowerCase() === 'upload') {
+      // If the original uploaded file is missing, fallback to parsed text so admin can still retrieve training content.
+      if (rawContent && rawContent.trim().length > 0) {
+        const parsedBase = path.parse(String(training.filename || `training-${training.id}`)).name || `training-${training.id}`;
+        const safeBase = sanitizeDownloadName(parsedBase) || `training-${training.id}`;
+        const downloadName = `${safeBase}-parsed.txt`;
+
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+        return res.send(rawContent);
+      }
+
       return res.status(404).send({
         error: 'Original uploaded file not found on server storage',
         code: 'ORIGINAL_FILE_NOT_FOUND',
@@ -2407,6 +2478,7 @@ router.get('/training/:id/download', async (req, res, next) => {
         storedFilename: training.storedFilename || null
       });
     }
+
     // Fallback: manual/URL training data has no original uploaded file, so return parsed text as .txt
     const parsedBase = path.parse(String(training.filename || `training-${training.id}`)).name || `training-${training.id}`;
     const safeBase = sanitizeDownloadName(parsedBase) || `training-${training.id}`;
@@ -2417,6 +2489,69 @@ router.get('/training/:id/download', async (req, res, next) => {
     return res.send(rawContent);
   } catch (err) {
     console.error('[GET /admin/training/:id/download] Error:', err && err.message ? err.message : String(err));
+    next(err);
+  }
+});
+
+// Admin: create a ZIP archive of original uploaded files for backup
+// Usage: GET /admin/training/backup?all=1  OR  GET /admin/training/backup?ids=id1,id2
+router.get('/training/backup', async (req, res, next) => {
+  try {
+    const role = req.user && req.user.role ? String(req.user.role) : null;
+    if (!isSuperAdminRole(role)) return res.status(403).send({ error: 'Forbidden: superadmin only' });
+
+    const all = String(req.query.all || '').toLowerCase() === '1' || String(req.query.all || '').toLowerCase() === 'true';
+    const ids = req.query.ids ? String(req.query.ids).split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+    let trainings = [];
+    if (all) {
+      trainings = await prisma.trainingData.findMany({ where: { storedFilename: { not: null } }, select: { id: true, filename: true, storedFilename: true } });
+    } else if (ids.length) {
+      trainings = await prisma.trainingData.findMany({ where: { id: { in: ids } }, select: { id: true, filename: true, storedFilename: true } });
+    } else {
+      return res.status(400).send({ error: 'Specify ?all=1 or ?ids=id1,id2' });
+    }
+
+    const projectRoot = path.join(__dirname, '..', '..');
+    const searchDirs = [
+      path.join(projectRoot, 'uploads', 'validation'),
+      path.join(projectRoot, 'uploads', 'public-media'),
+      path.join(projectRoot, 'uploads')
+    ];
+
+    const zip = new AdmZip();
+    let filesAdded = 0;
+
+    for (const t of trainings) {
+      const sf = t && t.storedFilename ? String(t.storedFilename) : null;
+      if (!sf) continue;
+      let found = false;
+      for (const dir of searchDirs) {
+        const p = path.join(dir, sf);
+        try {
+          await fs.stat(p);
+          const buf = await fs.readFile(p);
+          const entryName = sanitizeDownloadName(t.filename) || sf;
+          zip.addFile(entryName, Buffer.from(buf));
+          filesAdded += 1;
+          found = true;
+          break;
+        } catch {
+          // try next
+        }
+      }
+    }
+
+    if (!filesAdded) {
+      return res.status(404).send({ error: 'No original uploaded files found for requested trainings' });
+    }
+
+    const outName = `training-backup-${Date.now()}.zip`;
+    const data = zip.toBuffer();
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${outName}"`);
+    return res.send(data);
+  } catch (err) {
     next(err);
   }
 });

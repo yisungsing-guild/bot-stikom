@@ -1060,6 +1060,21 @@ class FileParser {
       } catch (err) {
         console.warn('[FileParser] docx-parser not available, using fallback method');
       }
+
+      // Try using mammoth as a more robust DOCX -> text fallback
+      try {
+        const mammoth = require('mammoth');
+        try {
+          const { value } = await mammoth.extractRawText({ path: filePath });
+          if (value && String(value).trim().length > 0) {
+            return String(value).trim();
+          }
+        } catch (mErr) {
+          console.warn('[FileParser] mammoth failed to extract text from DOCX:', mErr && mErr.message ? mErr.message : String(mErr));
+        }
+      } catch (err) {
+        // mammoth not installed - continue to ZIP fallback
+      }
       
       // Fallback: DOCX is actually a ZIP, extract document.xml
       const AdmZip = require('adm-zip');
