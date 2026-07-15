@@ -444,6 +444,7 @@ function removeTrainingFromIndex(trainingId) {
 }
 
 function cosineSimilarity(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length === 0 || b.length === 0) return 0;
   const dot = a.reduce((s, v, i) => s + v * (b[i] || 0), 0);
   const na = Math.sqrt(a.reduce((s, v) => s + v * v, 0));
   const nb = Math.sqrt(b.reduce((s, v) => s + v * v, 0));
