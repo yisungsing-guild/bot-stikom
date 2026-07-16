@@ -8783,22 +8783,26 @@ function cleanDocumentText(rawText) {
   return keep.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
-function validateIngestion(cleanedText, chunks) {
+function validateIngestion(cleanedText, chunks, opts = {}) {
   const normalized = String(cleanedText || '').trim();
   const charCount = normalized.length;
   const wordCount = normalized.split(/\s+/).filter(Boolean).length;
   const meaningfulChunks = Array.isArray(chunks)
-    ? chunks.filter(c => String(c || '').replace(/[^\p{L}\p{N}]/gu, '').length > 30)
+    ? chunks.filter(c => String(c || '').replace(/[^\p{L}\p{N}]/gu, '').length > 20)
     : [];
   const chunkCount = Array.isArray(chunks) ? chunks.length : 0;
-  // Allow weaker ingests when explicitly enabled via env var.
-  const allowWeak = String(process.env.RAG_ALLOW_WEAK_INGEST || '').toLowerCase() === 'true';
+  const source = typeof opts.source === 'string' ? String(opts.source).toLowerCase().trim() : 'upload';
+  const allowWeakEnv = String(process.env.RAG_ALLOW_WEAK_INGEST || '').toLowerCase() === 'true';
+  const allowWeakForTrainingSource = ['upload', 'manual', 'url', 'video'].includes(source);
+  const allowWeak = allowWeakEnv || allowWeakForTrainingSource;
+  const weakThresholdMet = charCount >= 40 && wordCount >= 8 && meaningfulChunks.length > 0;
+
   if (charCount < 100 || wordCount < 20 || meaningfulChunks.length === 0) {
-    if (allowWeak && charCount >= 30 && wordCount >= 7 && meaningfulChunks.length > 0) {
+    if (allowWeak && weakThresholdMet) {
       return {
         valid: true,
         status: 'weak_valid',
-        reason: 'weak_allowed_by_config',
+        reason: allowWeakEnv ? 'weak_allowed_by_config' : `weak_allowed_for_source_${source}`,
         charCount,
         wordCount,
         chunkCount,
@@ -9313,8 +9317,8 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
 
     const ocrInfo = estimateOcrConfidence(safeText);
     const cleanedText = cleanDocumentText(safeText);
-    const validation = validateIngestion(cleanedText, chunkText(cleanedText, 900, 150));
-    logger.info({ trainingId, status: validation.status, ...validation, lowOcrConfidence: ocrInfo.lowConfidence }, '[RAG] Ingestion validation');
+    const validation = validateIngestion(cleanedText, chunkText(cleanedText, 900, 150), { source, sourceFile: resolvedSourceFile });
+    logger.info({ trainingId, status: validation.status, source, ...validation, lowOcrConfidence: ocrInfo.lowConfidence }, '[RAG] Ingestion validation');
     if (!validation.valid) {
       await updateTrainingRagIngestStatus(trainingId, {
         status: 'rejected',
