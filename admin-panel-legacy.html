@@ -1394,7 +1394,7 @@
           <form onsubmit="uploadTraining(event)">
             <div class="form-group">
               <label for="trainingFile" onclick="openFilePicker('trainingFile')" style="cursor: pointer;">📂 Pilih 1 File untuk Training</label>
-              <input type="file" id="trainingFile" accept=".pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" required>
+              <input type="file" id="trainingFile" accept=".mp4,.mov,.avi,.mkv,.webm,.m4v,.pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" required>
               <small style="color: #999;">Single file - pilih satu file</small>
             </div>
             <button type="submit">📤 Upload Single</button>
@@ -1413,7 +1413,7 @@
           <form onsubmit="uploadBulkTraining(event)">
             <div class="form-group">
               <label for="bulkTrainingFiles" onclick="openFilePicker('bulkTrainingFiles')" style="cursor: pointer;">📂 Upload Multiple Files Sekaligus</label>
-              <input type="file" id="bulkTrainingFiles" accept=".pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" multiple required>
+              <input type="file" id="bulkTrainingFiles" accept=".mp4,.mov,.avi,.mkv,.webm,.m4v,.pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" multiple required>
               <small style="color: #999;"><strong>Multiple files:</strong> Pilih banyak file dengan Ctrl+Click atau Shift+Click. Max 10 files per batch.</small>
             </div>
             <button type="submit">📤 Upload Bulk (Multiple Files)</button>
@@ -3187,9 +3187,10 @@
         return;
       }
 
-      // Validate file type
+      // Validate file type and choose endpoint (video -> /training/video-upload)
       const fileExt = file.name.split('.').pop().toLowerCase();
-      const validExtensions = ['txt', 'pdf', 'csv', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'webp'];
+      const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'];
+      const validExtensions = ['txt', 'pdf', 'csv', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'webp', ...videoExtensions];
       
       if (!validExtensions.includes(fileExt)) {
         console.warn('[Training] Invalid file extension:', fileExt);
@@ -3200,11 +3201,15 @@
       const formData = new FormData();
       formData.append('file', file);
 
+      // Route to video upload endpoint for video files to enable transcription flow
+      const isVideo = videoExtensions.includes(fileExt);
+      const endpoint = isVideo ? `${API_BASE}/training/video-upload` : `${API_BASE}/admin/training/upload`;
+
       try {
         console.log('[Training] Uploading file:', file.name, '(' + (file.size / 1024).toFixed(2) + 'KB)');
-        console.log('[Training] Sending POST to:', `${API_BASE}/admin/training/upload`);
+        console.log('[Training] Sending POST to:', endpoint);
         
-        const res = await fetch(`${API_BASE}/admin/training/upload`, {
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
           body: formData
@@ -3346,7 +3351,8 @@
       }
 
       const maxSize = await getServerMaxUploadBytes();
-      const validExtensions = ['txt', 'pdf', 'csv', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'webp'];
+      const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'];
+      const validExtensions = ['txt', 'pdf', 'csv', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'webp', ...videoExtensions];
 
       // Pre-validate all files before uploading
       for (const file of files) {
@@ -3383,8 +3389,11 @@
           
           const formData = new FormData();
           formData.append('file', file);
-          
-          const res = await fetch(`${API_BASE}/admin/training/upload`, {
+          const fileExt = String(file.name || '').split('.').pop().toLowerCase();
+          const isVideo = videoExtensions.includes(fileExt);
+          const endpoint = isVideo ? `${API_BASE}/training/video-upload` : `${API_BASE}/admin/training/upload`;
+
+          const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
