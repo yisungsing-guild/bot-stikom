@@ -2064,7 +2064,8 @@ router.post('/training/url', async (req, res, next) => {
         if (original && original.path) {
           try {
             const visualContext = extractVisualTrainingContext(req);
-            const reparsed = await FileParser.parseFileContentAsync(original.path, training.filename, { visualContext });
+            const parseFilename = training.filename || original.storedFilename || path.basename(original.path);
+            const reparsed = await FileParser.parseFileContentAsync(original.path, parseFilename, { visualContext });
             const sanitized = FileParser.sanitizeTextForStorage(reparsed);
             if (!sanitized || sanitized.trim().length === 0) {
               return res.status(400).send({
@@ -2117,7 +2118,7 @@ router.post('/training/url', async (req, res, next) => {
             const rawMessage = reparseErr && reparseErr.message ? String(reparseErr.message) : String(reparseErr);
             logger.warn({ trainingId, err: rawMessage }, '[RAG] Failed to reparse original upload; falling back to stored content if available');
             if (!contentForIngest || !contentForIngest.trim()) {
-              return res.status(500).send({
+              return res.status(422).send({
                 success: false,
                 status: 'failed',
                 code: 'REPROCESS_FAILED',
