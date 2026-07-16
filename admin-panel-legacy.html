@@ -3217,7 +3217,7 @@
         const data = parsed.ok ? parsed.data : null;
         console.log('[Training] Response data:', data);
         
-        if (res.ok) {
+        if (res.ok && res.status !== 202) {
           if (!data) {
             showAlert('✅ Upload berhasil, tapi response tidak terbaca (non-JSON).', 'success');
             fileInput.value = '';
@@ -3392,7 +3392,7 @@
           const parsed = await readJsonOrTextResponse(res);
           const data = parsed.ok ? parsed.data : null;
           
-          if (res.ok) {
+          if (res.ok && res.status !== 202) {
             console.log(`[Bulk Upload] ✅ ${file.name}`);
             results.push({ file: file.name, status: 'success' });
             uploaded++;

@@ -1173,7 +1173,7 @@ router.post(
           ];
         }
         
-        return res.status(202).send({
+        return res.status(422).send({
           ...errorResponse,
           message: 'File uploaded but parsing failed. Original file preserved for admin review.',
           requestId: req.requestId,
