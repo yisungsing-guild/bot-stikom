@@ -2081,17 +2081,38 @@ router.post('/training/url', async (req, res, next) => {
             reprocessed = true;
             reprocessStoredFilename = original.storedFilename || reprocessStoredFilename;
 
-            await prisma.trainingData.update({
-              where: { id: trainingId },
-              data: {
-                content: contentForIngest,
-                storedFilename: reprocessStoredFilename || training.storedFilename || null,
-                ragIngestStatus: 'unknown',
-                ragIngestError: null,
-                ragChunkCount: null,
-                ragIngestedAt: null
+            try {
+              await prisma.trainingData.update({
+                where: { id: trainingId },
+                data: {
+                  content: contentForIngest,
+                  storedFilename: reprocessStoredFilename || training.storedFilename || null,
+                  ragIngestStatus: 'unknown',
+                  ragIngestError: null,
+                  ragChunkCount: null,
+                  ragIngestedAt: null
+                }
+              });
+            } catch (updateErr) {
+              const msg = updateErr && updateErr.message ? String(updateErr.message) : '';
+              const missingOptionalRagFields =
+                /column\s+"?(ragIngestStatus|ragIngestError|ragChunkCount|ragIngestedAt)"?\s+does\s+not\s+exist/i.test(msg) ||
+                /Unknown column\s+'(ragIngestStatus|ragIngestError|ragChunkCount|ragIngestedAt)'/i.test(msg) ||
+                (msg.includes('Unknown field') && /ragIngestStatus|ragIngestError|ragChunkCount|ragIngestedAt/.test(msg));
+
+              if (missingOptionalRagFields) {
+                logger.warn({ trainingId, err: msg }, '[RAG] TrainingData update missing RAG status columns; updating content only');
+                await prisma.trainingData.update({
+                  where: { id: trainingId },
+                  data: {
+                    content: contentForIngest,
+                    storedFilename: reprocessStoredFilename || training.storedFilename || null
+                  }
+                });
+              } else {
+                throw updateErr;
               }
-            });
+            }
           } catch (reparseErr) {
             const rawMessage = reparseErr && reparseErr.message ? String(reparseErr.message) : String(reparseErr);
             logger.warn({ trainingId, err: rawMessage }, '[RAG] Failed to reparse original upload; falling back to stored content if available');
