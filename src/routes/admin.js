@@ -2047,75 +2047,109 @@ router.post('/training/url', async (req, res, next) => {
     }
   });
 
-  // RAG: reprocess original upload when available, then ingest from current content.
-  router.post('/rag/ingest/:id', async (req, res, next) => {
+  async function handleTrainingRetrain(req, res, next) {
     try {
       const trainingId = req.params.id;
       const training = await prisma.trainingData.findUnique({ where: { id: trainingId } });
       if (!training) return res.status(404).send({ error: 'Training data not found' });
 
-      let contentForIngest = training.content || '';
+      let contentForIngest = String(training.content || '');
       let reprocessed = false;
+      let usedStoredContentOnly = false;
       let reprocessStoredFilename = training.storedFilename || null;
       const source = String(training.source || '').toLowerCase();
 
       if (source === 'upload') {
         const original = await resolveOriginalTrainingFilePath(training);
-        if (!original || !original.path) {
+        if (original && original.path) {
+          try {
+            const visualContext = extractVisualTrainingContext(req);
+            const reparsed = await FileParser.parseFileContentAsync(original.path, training.filename, { visualContext });
+            const sanitized = FileParser.sanitizeTextForStorage(reparsed);
+            if (!sanitized || sanitized.trim().length === 0) {
+              return res.status(400).send({
+                success: false,
+                status: 'failed',
+                code: 'REPROCESS_EMPTY_CONTENT',
+                error: 'File asli berhasil ditemukan, tetapi hasil parse/OCR kosong.'
+              });
+            }
+
+            const maxStoredBytes = parseInt(process.env.MAX_TRAINING_CONTENT_BYTES || String(15 * 1024 * 1024), 10);
+            const limited = FileParser.limitTextToUtf8Bytes(sanitized, maxStoredBytes);
+            contentForIngest = limited.text;
+            reprocessed = true;
+            reprocessStoredFilename = original.storedFilename || reprocessStoredFilename;
+
+            await prisma.trainingData.update({
+              where: { id: trainingId },
+              data: {
+                content: contentForIngest,
+                storedFilename: reprocessStoredFilename || training.storedFilename || null,
+                ragIngestStatus: 'unknown',
+                ragIngestError: null,
+                ragChunkCount: null,
+                ragIngestedAt: null
+              }
+            });
+          } catch (reparseErr) {
+            const rawMessage = reparseErr && reparseErr.message ? String(reparseErr.message) : String(reparseErr);
+            logger.warn({ trainingId, err: rawMessage }, '[RAG] Failed to reparse original upload; falling back to stored content if available');
+            if (!contentForIngest || !contentForIngest.trim()) {
+              return res.status(500).send({
+                success: false,
+                status: 'failed',
+                code: 'REPROCESS_FAILED',
+                error: 'Gagal memproses ulang file asli dan tidak ada konten training yang tersimpan untuk digunakan.',
+                details: rawMessage
+              });
+            }
+            usedStoredContentOnly = true;
+          }
+        } else if (contentForIngest && contentForIngest.trim().length > 0) {
+          usedStoredContentOnly = true;
+        } else {
           return res.status(404).send({
             success: false,
             status: 'failed',
             code: 'ORIGINAL_FILE_NOT_FOUND',
-            error: 'File asli tidak ditemukan di server storage. Upload ulang file diperlukan untuk reprocess.',
+            error: 'File asli tidak ditemukan di server storage dan tidak ada konten training tersimpan untuk digunakan. Upload ulang file diperlukan untuk reprocess.',
             filename: training.filename || null,
             storedFilename: training.storedFilename || null
           });
         }
-
-        const visualContext = extractVisualTrainingContext(req);
-        const reparsed = await FileParser.parseFileContentAsync(original.path, training.filename, { visualContext });
-        const sanitized = FileParser.sanitizeTextForStorage(reparsed);
-        if (!sanitized || sanitized.trim().length === 0) {
-          return res.status(400).send({
-            success: false,
-            status: 'failed',
-            code: 'REPROCESS_EMPTY_CONTENT',
-            error: 'File asli berhasil ditemukan, tetapi hasil parse/OCR kosong.'
-          });
-        }
-
-        const maxStoredBytes = parseInt(process.env.MAX_TRAINING_CONTENT_BYTES || String(15 * 1024 * 1024), 10);
-        const limited = FileParser.limitTextToUtf8Bytes(sanitized, maxStoredBytes);
-        contentForIngest = limited.text;
-        reprocessed = true;
-        reprocessStoredFilename = original.storedFilename || reprocessStoredFilename;
-
-        await prisma.trainingData.update({
-          where: { id: trainingId },
-          data: {
-            content: contentForIngest,
-            storedFilename: reprocessStoredFilename || training.storedFilename || null,
-            ragIngestStatus: 'unknown',
-            ragIngestError: null,
-            ragChunkCount: null,
-            ragIngestedAt: null
-          }
+      } else if (!contentForIngest || !contentForIngest.trim()) {
+        return res.status(400).send({
+          success: false,
+          status: 'failed',
+          code: 'NO_TRAINING_CONTENT',
+          error: 'Training data tidak memiliki konten yang bisa di-ingest. Periksa baris trainingData atau upload ulang sumber data.'
         });
       }
 
       const { ingestTrainingData: ragIngest } = require('../engine/ragEngine');
-      const result = await ragIngest(trainingId, contentForIngest, training.source, {
+      const result = await ragIngest(trainingId, contentForIngest, training.source || 'upload', {
         divisionKey: training.divisionKey || null,
         filename: training.filename,
         sourceFile: training.filename,
         uploadedById: training.uploadedById || null
       });
-      res.send({ ...result, reprocessed, storedFilename: reprocessStoredFilename || null });
+
+      res.send({
+        ...result,
+        reprocessed,
+        usedStoredContentOnly,
+        storedFilename: reprocessStoredFilename || training.storedFilename || null
+      });
     } catch (err) {
       console.error('[POST /admin/rag/ingest/:id] Error:', err.message);
       next(err);
     }
-  });
+  }
+
+  // RAG: retrain existing training data without re-upload
+  router.post('/rag/ingest/:id', handleTrainingRetrain);
+  router.post('/training/retrain/:id', handleTrainingRetrain);
 
   // RAG: status endpoint - index overview and training counts
   router.get('/training/rag-status', async (req, res, next) => {

@@ -46,6 +46,7 @@ Reset/set password admin (di VPS):
 - Setelah upload, sistem memproses file dan men-trigger ingest RAG di background.
 - Query RAG: `POST /admin/rag/query` Body: `{ "question": "...", "topK": 3 }` (butuh token)
 - Manual ingest existing training: `POST /admin/rag/ingest/:id`.
+- Retrain existing stored training tanpa upload ulang: `POST /admin/training/retrain/:id`.
 
 ## Membuat Akun Admin Divisi (Multi Role)
 
