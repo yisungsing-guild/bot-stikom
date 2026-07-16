@@ -489,6 +489,13 @@ class FileParser {
 
       const safeFilename = this.sanitizeFilenameForStorage(originalFilename);
       const sanitized = this.sanitizeTextForStorage(content);
+      const safeSourceUrl = options && typeof options.sourceUrl === 'string' ? String(options.sourceUrl).trim() : null;
+      const sanitizedTranscriptText = options && typeof options.transcriptText === 'string'
+        ? this.sanitizeTextForStorage(options.transcriptText).slice(0, 20000)
+        : null;
+      const storageType = options && typeof options.storageType === 'string'
+        ? String(options.storageType).trim()
+        : 'file';
 
       if (!sanitized || sanitized.trim().length === 0) {
         throw new Error('Konten hasil parsing kosong setelah normalisasi. Coba export ulang dokumen atau gunakan input manual.');
@@ -512,6 +519,9 @@ class FileParser {
             active: true,
             uploadedById: uploadedById || null,
             divisionKey: divisionKey || null,
+            sourceUrl: safeSourceUrl || null,
+            transcriptText: sanitizedTranscriptText || null,
+            storageType,
             createdAt: now,
             updatedAt: now,
           }
@@ -548,10 +558,10 @@ class FileParser {
         const missingOptionalFields =
           // Prisma client-side validation errors (schema mismatch)
           ((msg.includes('Unknown field') || msg.includes('Unknown argument')) &&
-            (msg.includes('uploadedById') || msg.includes('uploadedBy') || msg.includes('divisionKey') || msg.includes('storedFilename'))) ||
+            (msg.includes('uploadedById') || msg.includes('uploadedBy') || msg.includes('divisionKey') || msg.includes('storedFilename') || msg.includes('sourceUrl') || msg.includes('storageType'))) ||
           // Postgres/schema mismatch errors
-          /column\s+"?(uploadedById|divisionKey|storedFilename)"?\s+does\s+not\s+exist/i.test(msg) ||
-          /Unknown column\s+'(uploadedById|divisionKey|storedFilename)'/i.test(msg);
+          /column\s+"?(uploadedById|divisionKey|storedFilename|sourceUrl|storageType)"?\s+does\s+not\s+exist/i.test(msg) ||
+          /Unknown column\s+'(uploadedById|divisionKey|storedFilename|sourceUrl|storageType)'/i.test(msg);
 
         if (missingOptionalFields) {
           logger.warn({ err: 'optional fields not available; creating training without metadata' }, '[FileParser] DB/schema fallback');

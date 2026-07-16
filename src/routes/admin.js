@@ -1110,6 +1110,9 @@ router.post(
               active: true,
               uploadedById: uploaderId || null,
               divisionKey: divisionKey || null,
+              sourceUrl: sourceUrl || null,
+              transcriptText: transcriptText || null,
+              storageType: 'file',
               ragIngestStatus: 'failed',
               ragIngestError: result.error || 'PARSE_ERROR'
             }
@@ -1225,7 +1228,9 @@ router.post(
           const ing = await ingestTrainingData(result.trainingDataId, result.content, 'upload', {
             divisionKey,
             filename: req.uploadInfo.originalname,
-            uploadedById: uploaderId
+            uploadedById: uploaderId,
+            sourceUrl,
+            storageType: 'file'
           });
           console.log('[RAG] Ingestion result:', ing);
         } catch (err) {
@@ -1678,6 +1683,8 @@ router.post(
               divisionKey,
               filename: info.originalname,
               uploadedById: uploaderId,
+              sourceUrl,
+              storageType: 'file'
             });
           } catch (err) {
             console.error('[RAG] Ingestion failed (bulk):', err && err.message ? err.message : String(err));
@@ -1746,14 +1753,15 @@ router.post('/training/manual', async (req, res, next) => {
           source: source || 'manual',
           active: true,
           uploadedById: uploaderId,
-          divisionKey
+          divisionKey,
+          storageType: 'manual'
         }
       });
     } catch (e) {
       const msg = e && e.message ? String(e.message) : '';
       const missingOptionalFields =
-        /column\s+"?(uploadedById|divisionKey)"?\s+does\s+not\s+exist/i.test(msg) ||
-        /Unknown column\s+'(uploadedById|divisionKey)'/i.test(msg);
+        /column\s+"?(uploadedById|divisionKey|storageType)"?\s+does\s+not\s+exist/i.test(msg) ||
+        /Unknown column\s+'(uploadedById|divisionKey|storageType)'/i.test(msg);
       if (!missingOptionalFields) throw e;
       training = await prisma.trainingData.create({
         data: {
@@ -1764,7 +1772,7 @@ router.post('/training/manual', async (req, res, next) => {
         }
       });
     }
-    
+
     console.log('[POST /admin/training/manual] Training created:', training.id);
     
     res.status(201).send({
@@ -1782,7 +1790,8 @@ router.post('/training/manual', async (req, res, next) => {
           const ing = await ingestTrainingData(training.id, training.content, 'manual', {
           divisionKey,
           filename: training.filename,
-          uploadedById: uploaderId
+          uploadedById: uploaderId,
+          storageType: 'manual'
         });
         console.log('[RAG] Ingestion result:', ing);
       } catch (err) {
@@ -1865,7 +1874,9 @@ router.post('/training/url', async (req, res, next) => {
             source: 'url',
             active: true,
             uploadedById: uploaderId,
-            divisionKey
+            divisionKey,
+            sourceUrl: parsed.toString(),
+            storageType: 'url'
           }
         });
       } catch (e) {
@@ -1880,6 +1891,8 @@ router.post('/training/url', async (req, res, next) => {
             content: limited.text,
             source: 'url',
             active: true,
+            sourceUrl: parsed.toString(),
+            storageType: 'url'
           }
         });
       }
@@ -1894,7 +1907,9 @@ router.post('/training/url', async (req, res, next) => {
           const ing = await ingestTrainingData(training.id, training.content, 'url', {
             divisionKey,
             filename: training.filename,
-            uploadedById: uploaderId
+            uploadedById: uploaderId,
+            sourceUrl: parsed.toString(),
+            storageType: 'url'
           });
           console.log('[RAG] Ingestion result:', ing);
         } catch (err) {
@@ -1952,7 +1967,9 @@ router.post('/training/url', async (req, res, next) => {
               source: 'url',
               active: true,
               uploadedById: uploaderId,
-              divisionKey
+              divisionKey,
+              sourceUrl: u,
+              storageType: 'url'
             }
           });
         } catch (e) {
