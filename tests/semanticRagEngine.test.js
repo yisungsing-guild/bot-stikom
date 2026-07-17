@@ -1368,7 +1368,44 @@
     expect(industry.answer || '').not.toMatch(/Ada 32 UKM|UKM\/Ormawa lainnya|Badan Eksekutif Mahasiswa/i);
   });
 
-  test('answers English application question as registration info, not UKM', async () => {
+
+
+  test('does not let prior double-degree context hijack explicit location questions', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const sessionData = {
+      messages: [
+        { message: 'What double degree programs are available?' },
+        { message: 'Double Degree HELP University and other partners are available.' }
+      ]
+    };
+
+    const result = await querySemanticRag('Where is the campus location?', { sessionData });
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-campus-location');
+    expect(result.answer).toMatch(/ITB STIKOM Bali campus locations|Denpasar\/Renon Campus/i);
+    expect(result.answer).not.toMatch(/Double Degree HELP|DNUI|UTB - Universitas Teknologi Bandung/i);
+  });  test('keeps English conversation language across short admission follow-ups', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const sessionData = {
+      messages: [
+        { message: 'I am an international student, how do I apply for studying at stikom bali?' },
+        { message: 'You can apply to ITB STIKOM Bali through the online or offline admission process.' }
+      ]
+    };
+
+    const requirements = await querySemanticRag('And the requirements?', { sessionData });
+    expect(requirements.success).toBe(true);
+    expect(requirements.source).toBe('semantic-rag-pmb-requirements');
+    expect(requirements.answer).toMatch(/I do not have a complete and final list of admission documents/i);
+    expect(requirements.answer).not.toMatch(/Untuk syarat|Kakak/i);
+
+    const fees = await querySemanticRag('And the HELP double degree fees?', { sessionData });
+    expect(fees.success).toBe(true);
+    expect(fees.source).toBe('semantic-rag-fee-detail');
+    expect(fees.answer).toMatch(/Fee breakdown for Double Degree HELP University/i);
+    expect(fees.answer).toMatch(/Application fee|Education & Exam Fee\/Subject/i);
+    expect(fees.answer).not.toMatch(/^Baik|Untuk Double Degree, saya fokus|Kakak/i);
+  });  test('answers English application question as registration info, not UKM', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
     const result = await querySemanticRag('I am an international student, how do I apply for studying at stikom bali?', {
       sessionData: { messages: [{ message: 'ukm apa saja yang ada di stikom?' }] }
@@ -1381,6 +1418,8 @@
     expect(result.answer).not.toMatch(/Ada 32 UKM|UKM\/Ormawa|Untuk daftar kuliah|Kakak/i);
   });
 });
+
+
 
 
 

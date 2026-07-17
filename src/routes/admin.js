@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const prisma = require('../db');
 const logger = require('../logger');
 const { logAdminAction } = require('../middleware/adminAudit');
@@ -1202,42 +1202,42 @@ router.post(
         // Add helpful suggestions based on error type
         if (result.errorCode === 'OCR_FAILED_LOW_QUALITY') {
           errorResponse.suggestions = [
-            '📝 Gunakan form "Input Manual Teks" untuk paste text hasil scan',
-            '📄 Convert PDF ke DOCX/TXT gunakan aplikasi lain terlebih dulu',
-            '🔄 Coba gunakan PDF berkualitas lebih tinggi (res lebih tinggi)'
+            'ðŸ“ Gunakan form "Input Manual Teks" untuk paste text hasil scan',
+            'ðŸ“„ Convert PDF ke DOCX/TXT gunakan aplikasi lain terlebih dulu',
+            'ðŸ”„ Coba gunakan PDF berkualitas lebih tinggi (res lebih tinggi)'
           ];
           errorResponse.showManualInput = true;
         } else if (result.errorCode === 'OCR_DISABLED_FOR_SCAN') {
           errorResponse.suggestions = [
-            '⚙️ OCR perlu di-enable di .env (ENABLE_OCR=true)',
-            '📝 Atau gunakan form "Input Manual Teks"'
+            'âš™ï¸ OCR perlu di-enable di .env (ENABLE_OCR=true)',
+            'ðŸ“ Atau gunakan form "Input Manual Teks"'
           ];
         } else if (result.errorCode === 'OCR_DEPS_MISSING') {
           errorResponse.suggestions = [
-            '🧩 Pastikan dependency OCR ter-install di server: ImageMagick/GraphicsMagick + Ghostscript + tesseract',
-            '🐳 Jika pakai Docker: rebuild image lalu redeploy (pastikan package OS untuk ghostscript terpasang)',
-            '📝 Alternatif cepat: gunakan form "Input Manual Teks" atau convert ke TXT/DOCX lalu upload'
+            'ðŸ§© Pastikan dependency OCR ter-install di server: ImageMagick/GraphicsMagick + Ghostscript + tesseract',
+            'ðŸ³ Jika pakai Docker: rebuild image lalu redeploy (pastikan package OS untuk ghostscript terpasang)',
+            'ðŸ“ Alternatif cepat: gunakan form "Input Manual Teks" atau convert ke TXT/DOCX lalu upload'
           ];
           errorResponse.showManualInput = true;
         } else if (result.errorCode === 'OCR_LANG_DATA_MISSING') {
           errorResponse.suggestions = [
-            '📦 Pastikan file `eng.traineddata` dan `ind.traineddata` ada di server',
-            '⚙️ Set `OCR_LANG_PATH` ke folder yang berisi `.traineddata` (mis. `/app` di Docker)',
-            '📝 Alternatif: convert dokumen ke TXT/DOCX lalu upload'
+            'ðŸ“¦ Pastikan file `eng.traineddata` dan `ind.traineddata` ada di server',
+            'âš™ï¸ Set `OCR_LANG_PATH` ke folder yang berisi `.traineddata` (mis. `/app` di Docker)',
+            'ðŸ“ Alternatif: convert dokumen ke TXT/DOCX lalu upload'
           ];
           errorResponse.showManualInput = true;
         } else if (result.errorCode === 'OCR_LANG_DOWNLOAD_FAILED') {
           errorResponse.suggestions = [
-            '🌐 Server tidak bisa download language data OCR dari internet/CDN',
-            '⚙️ Solusi: taruh `.traineddata` lokal dan set `OCR_LANG_PATH`',
-            '📝 Alternatif: upload TXT/DOCX atau paste ke Input Manual Teks'
+            'ðŸŒ Server tidak bisa download language data OCR dari internet/CDN',
+            'âš™ï¸ Solusi: taruh `.traineddata` lokal dan set `OCR_LANG_PATH`',
+            'ðŸ“ Alternatif: upload TXT/DOCX atau paste ke Input Manual Teks'
           ];
           errorResponse.showManualInput = true;
         } else if (result.errorCode === 'DB_TEXT_ENCODING' || result.errorCode === 'DB_WRITE_FAILED') {
           errorResponse.suggestions = [
-            '📄 Coba export ulang file (save as) lalu upload ulang',
-            '🧾 Jika dari PDF scan/hasil copy-paste: convert dulu ke TXT',
-            '✂️ Jika dokumen sangat panjang: pecah jadi beberapa file'
+            'ðŸ“„ Coba export ulang file (save as) lalu upload ulang',
+            'ðŸ§¾ Jika dari PDF scan/hasil copy-paste: convert dulu ke TXT',
+            'âœ‚ï¸ Jika dokumen sangat panjang: pecah jadi beberapa file'
           ];
         }
         
@@ -1303,7 +1303,7 @@ router.post(
         rawMessage.includes('prisma.trainingData.create');
       const publicMessage = looksLikeInvocationDump
         ? 'Terjadi error saat menyimpan training data. Coba upload ulang atau convert file ke TXT/CSV.'
-        : (rawMessage.length > 400 ? rawMessage.slice(0, 400) + '…' : rawMessage);
+        : (rawMessage.length > 400 ? rawMessage.slice(0, 400) + 'â€¦' : rawMessage);
 
       console.error('[POST /admin/training/upload] Error:', publicMessage);
       res.status(500).send({
@@ -1311,8 +1311,8 @@ router.post(
         errorCode: (err && err.code) ? String(err.code) : 'UNKNOWN_ERROR',
         requestId: req.requestId,
         suggestions: [
-          '📝 Coba gunakan form "Input Manual Teks" sebagai alternatif',
-          '💡 Atau hubungi administrator untuk bantuan'
+          'ðŸ“ Coba gunakan form "Input Manual Teks" sebagai alternatif',
+          'ðŸ’¡ Atau hubungi administrator untuk bantuan'
         ]
       });
     }
@@ -1771,7 +1771,7 @@ router.post(
           rawMessage.includes('prisma.trainingData.create');
         const publicMessage = looksLikeInvocationDump
           ? 'Terjadi error saat menyimpan training data. Coba upload ulang atau convert file ke TXT/CSV.'
-          : (rawMessage.length > 400 ? rawMessage.slice(0, 400) + '…' : rawMessage);
+          : (rawMessage.length > 400 ? rawMessage.slice(0, 400) + 'â€¦' : rawMessage);
         results.push({
           ok: false,
           filename: info && info.originalname ? info.originalname : null,
@@ -2256,15 +2256,26 @@ router.post('/training/url', async (req, res, next) => {
         uploadedById: training.uploadedById || null
       });
 
-      res.send({
+      const payload = {
         ...result,
         reprocessed,
         usedStoredContentOnly,
         storedFilename: reprocessStoredFilename || training.storedFilename || null
-      });
+      };
+      const statusCode = result && result.success === false ? 422 : 200;
+      res.status(statusCode).send(payload);
     } catch (err) {
-      console.error('[POST /admin/rag/ingest/:id] Error:', err.message);
-      next(err);
+      const message = err && err.message ? String(err.message) : String(err);
+      const safeMessage = message.length > 700 ? `${message.slice(0, 700)}...` : message;
+      logger.error({ err: safeMessage, trainingId: req && req.params ? req.params.id : null }, '[POST /admin/rag/ingest/:id] failed');
+      res.status(500).send({
+        success: false,
+        status: 'failed',
+        code: 'RAG_REINGEST_INTERNAL_ERROR',
+        error: safeMessage || 'Gagal memproses ulang dokumen training.',
+        requestId: req.requestId || req.id || null,
+        hint: 'Cek log server dengan requestId ini. Jika preview masih terlihat, coba reprocess lagi dari file asli/konten tersimpan; jika file asli dan konten hilang, upload ulang diperlukan.'
+      });
     }
   }
 
@@ -3604,7 +3615,7 @@ router.post('/whatsapp/config', async (req, res, next) => {
       update: { value: provider || 'mock' }
     });
 
-    console.log('[POST /admin/whatsapp/config] ✓ Configuration updated');
+    console.log('[POST /admin/whatsapp/config] âœ“ Configuration updated');
     
     res.send({ 
       success: true, 
@@ -3656,10 +3667,10 @@ router.post('/whatsapp/health', async (req, res, next) => {
     const healthCheck = await testProvider.healthCheck();
     
     if (healthCheck.healthy) {
-      console.log('[POST /admin/whatsapp/health] ✓ Connection successful');
+      console.log('[POST /admin/whatsapp/health] âœ“ Connection successful');
       res.send(healthCheck);
     } else {
-      console.error('[POST /admin/whatsapp/health] ✗ Connection failed:', healthCheck.error);
+      console.error('[POST /admin/whatsapp/health] âœ— Connection failed:', healthCheck.error);
       res.status(400).send(healthCheck);
     }
   } catch (err) {
@@ -4068,3 +4079,4 @@ router.get('/test/status', async (req, res, next) => {
 
   return router;
 };
+

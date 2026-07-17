@@ -47,7 +47,7 @@ function normalizeCacheText(value) {
 function isLikelyEnglishQuestion(question) {
   const text = String(question || '').toLowerCase();
   if (!text.trim()) return false;
-  const englishMatches = text.match(/\b(?:what|how|where|when|why|who|which|can|could|would|should|do|does|is|are|am|i\s+am|i'm|international\s+student|apply|application|admission|register|registration|enroll|study|studying|tuition|fee|major|program|scholarship|campus|location|service|services|facility|facilities)\b/g) || [];
+  const englishMatches = text.match(/\b(?:what|how|where|when|why|who|which|can|could|would|should|do|does|is|are|am|i\s+am|i'm|international\s+student|apply|application|admission|register|registration|enroll|study|studying|tuition|fee|fees|cost|costs|requirement|requirements|document|documents|major|program|scholarship|campus|location|service|services|facility|facilities)\b/g) || [];
   const indonesianMatches = text.match(/\b(?:apa|bagaimana|gimana|dimana|di\s+mana|kapan|kenapa|saya|aku|kak|daftar|pendaftaran|kuliah|biaya|jurusan|prodi|beasiswa|kampus|layanan|fasilitas)\b/g) || [];
   return englishMatches.length >= 2 && englishMatches.length >= indonesianMatches.length;
 }
@@ -93,11 +93,75 @@ function buildEnglishCampusLocationAnswer(source) {
   ].join('\n');
 }
 
-function localizeAnswerLanguage(question, answer, source = '') {
-  if (!isLikelyEnglishQuestion(question)) return answer;
+function isLikelyEnglishConversation(question, options = {}) {
+  if (isLikelyEnglishQuestion(question)) return true;
+  const q = String(question || '').toLowerCase().trim();
+  const words = q.split(/\s+/).filter(Boolean);
+  const looksLikeEnglishFollowUp = /\b(?:and|then|also|what\s+about|how\s+about|requirements?|documents?|fees?|costs?|scholarship|campus|location|services?|facilities?)\b/i.test(q);
+  if (!looksLikeEnglishFollowUp || words.length > 8) return false;
+  const recent = getRecentConversation(options && options.sessionData);
+  if (!recent) return false;
+  const snippets = recent.split(/\n+/).map(s => s.trim()).filter(Boolean).slice(-6);
+  const englishCount = snippets.filter(isLikelyEnglishQuestion).length;
+  const indonesianCount = snippets.filter(s => /\b(?:apa|bagaimana|gimana|daftar|pendaftaran|kuliah|biaya|kak|saya|aku)\b/i.test(s)).length;
+  return englishCount > 0 && englishCount >= indonesianCount;
+}
+
+function buildEnglishPmbRequirementsAnswer() {
+  return [
+    'I do not have a complete and final list of admission documents in the available data yet.',
+    '',
+    'To avoid giving the wrong document list, the safest steps are:',
+    '',
+    '- Register or check the admission flow through https://siap.stikom-bali.ac.id.',
+    '- Follow the document instructions shown during the application process.',
+    '- Or visit ITB STIKOM Bali directly so the admission team can help you.'
+  ].join('\n');
+}
+
+function buildEnglishPmbContactAnswer() {
+  return [
+    'For ITB STIKOM Bali admission support, you can use these channels:',
+    '',
+    '- Online: https://siap.stikom-bali.ac.id',
+    '- Offline: visit an ITB STIKOM Bali campus and ask the admission staff for help.',
+    '',
+    'Campus addresses:',
+    '- Denpasar/Renon Campus: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali.',
+    '- Jimbaran Campus: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.',
+    '- Abiansemal Campus: Jl. Janger, Abiansemal, Dauh Yeh Cani, Badung, Bali.'
+  ].join('\n');
+}
+
+function localizeFeeAnswerToEnglish(answer) {
+  let out = String(answer || '');
+  out = out.replace(/Saya jawab rincian biaya sesuai program yang kakak tanyakan\.[\s\S]*?di luar data\./i, 'Here is the fee breakdown for the program you asked about. I keep the components as listed in the available admission data.');
+  out = out.replace(/Rincian biaya program/gi, 'Fee breakdown for');
+  out = out.replace(/Biaya pendaftaran/gi, 'Application fee');
+  out = out.replace(/DPP \/ Dana Pendidikan Pokok/gi, 'DPP / Main Education Fund');
+  out = out.replace(/Bahasa Inggris/gi, 'English language fee');
+  out = out.replace(/menjelang Semester II/gi, 'before Semester II');
+  out = out.replace(/Biaya Pendidikan & Ujian\/Subject/gi, 'Education & Exam Fee/Subject');
+  out = out.replace(/Kalau kakak sebutkan gelombangnya,[\s\S]*$/i, 'If you mention the admission wave, I can help check the applicable discount or payment details when the data is available.');
+  out = out.replace(/kakak/gi, 'you');
+  out = out.replace(/\bKak\b/gi, '');
+  out = out.replace(/^.*?(Fee breakdown for)/is, '$1');
+  out = out.replace(/^(Double Degree HELP University:)/i, 'Fee breakdown for $1');
+  out = out.replace(/^(Double Degree DNUI[^:]*:)/i, 'Fee breakdown for $1');
+  out = out.replace(/^(Double Degree UTB[^:]*:)/i, 'Fee breakdown for $1');
+  out = out.replace(/^(?:Baik|Untuk biaya|Saya cekkan|Saya rincikan)[^\n]*\.?\s*/i, '');
+  out = out.replace(/\s+\.\s*/g, ' ');
+  return out.replace(/\s+\n/g, '\n').trim();
+}
+
+function localizeAnswerLanguage(question, answer, source = '', options = {}) {
+  if (!isLikelyEnglishConversation(question, options)) return answer;
   const src = String(source || '').toLowerCase();
   if (src.includes('registration-info')) return buildEnglishRegistrationHowAnswer();
+  if (src.includes('pmb-requirements')) return buildEnglishPmbRequirementsAnswer();
+  if (src.includes('pmb-contact')) return buildEnglishPmbContactAnswer();
   if (src.includes('campus-location')) return buildEnglishCampusLocationAnswer(src);
+  if (src.includes('fee')) return localizeFeeAnswerToEnglish(answer);
   if (src.includes('insufficient-data') || /^\s*(?:mohon maaf|saya ragu)/i.test(String(answer || ''))) return buildEnglishInsufficientDataAnswer();
   return answer;
 }
@@ -1109,10 +1173,12 @@ function tryPmbContactAnswer(question) {
   };
 }
 
-function tryPmbRequirementsAnswer(question) {
+function tryPmbRequirementsAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
-  const asksRequirement = /\b(syarat|persyaratan|dokumen|berkas|lampiran|formulir|kelengkapan)\b/.test(q);
-  const pmbContext = /\b(daftar|pendaftaran|pmb|camaba|mahasiswa\s+baru|kuliah|registrasi|stikom|itb\s*stikom)\b/.test(q);
+  const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const asksRequirement = /\b(syarat|persyaratan|dokumen|berkas|lampiran|formulir|kelengkapan|requirement|requirements|document|documents|file|files)\b/.test(q);
+  const pmbContext = /\b(daftar|pendaftaran|pmb|camaba|mahasiswa\s+baru|kuliah|registrasi|stikom|itb\s*stikom|apply|application|admission|register|registration|enroll|study|studying|international\s+student)\b/.test(q)
+    || (isLikelyEnglishConversation(question, options) && /\b(apply|application|admission|register|registration|enroll|study|studying|international\s+student|siap\.stikom-bali\.ac\.id|itb\s*stikom|stikom\s*bali)\b/i.test(recent));
   if (!asksRequirement || !pmbContext) return null;
 
   return {
@@ -2032,7 +2098,7 @@ function tryCampusLocationAnswer(question) {
   if (!/\b(lokasi|alamat|kampus|dimana|di\s*mana|where|letak|maps|rute)\b/i.test(q)) return null;
   if (/\b(fasilitas|layanan|sarana|prasarana|ukm|ormawa|organisasi|kegiatan\s+mahasiswa|komunitas|hobi|minat)\b/i.test(q)) return null;
   const asksMainCampus = /\b(kampus\s+(?:utama|pusat)|utama(?:nya)?|pusat(?:nya)?)\b/i.test(q);
-  const asksGenericCampusLocation = /\b(kampus(?:nya)?|lokasi\s+kampus|alamat\s+kampus)\b/i.test(q);
+  const asksGenericCampusLocation = /\b(kampus(?:nya)?|lokasi\s+kampus|alamat\s+kampus|campus(?:\s+location)?|campus\s+address)\b/i.test(q);
   const mentionsOtherCampus = /\b(udayana|unud|warmadewa|undiknas|unhi|unwar|politeknik|universitas\s+(?!teknologi\s+bandung))\b/i.test(q) && !/\b(stikom|itb\s*stikom|stikom\s*bali)\b/i.test(q);
   if (mentionsOtherCampus) return null;
   const mentionsStikomCampus = /\b(stikom|itb\s*stikom|stikom\s*bali|renon|denpasar|jimbaran|abiansemal)\b/i.test(q) || asksMainCampus || asksGenericCampusLocation;
@@ -3391,10 +3457,99 @@ function getSemanticHandlerSources(intent) {
   return map[intent] || [];
 }
 
-function buildDeterministicResponse(originalQuestion, source, result, debugExtra = {}) {
+function detectQuestionTopicFamilies(question) {
+  const q = String(question || '').toLowerCase();
+  const families = new Set();
+  const add = (name, re) => { if (re.test(q)) families.add(name); };
+  add('fee', /\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran\s+berapa|fee|fees|cost|costs|tuition|payment|payments)\b/i);
+  add('registration', /\b(daftar|pendaftaran|registrasi|pmb|camaba|mahasiswa\s+baru|apply|application|admission|register|registration|enroll)\b/i);
+  add('requirements', /\b(syarat|persyaratan|dokumen|berkas|lampiran|formulir|kelengkapan|requirement|requirements|document|documents|files?)\b/i);
+  add('schedule', /\b(jadwal|gelombang|tanggal|deadline|buka|dibuka|kapan|schedule|wave|date|deadline|open|opened)\b/i);
+  add('scholarship', /\b(beasiswa|kip|potongan|diskon|scholarship|discount)\b/i);
+  add('program', /\b(prodi|program\s+studi|jurusan|major|study\s+program|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika)\b/i);
+  add('career', /\b(prospek|karir|karier|kerja|pekerjaan|career|job|work)\b/i);
+  add('dual_degree', /\b(double\s*degree|dual\s*degree|dd|utb|dnui|help\s+university)\b/i);
+  add('facility', /\b(fasilitas|layanan|sarana|prasarana|inkubator|career\s*center|hi-?think|gccp|student\s*exchange|goes\s+to\s+school|facility|facilities|services?)\b/i);
+  add('ukm', /\b(ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|kegiatan\s+mahasiswa|bem|hima)\b/i);
+  add('location', /\b(lokasi|alamat|kampus\s+(?:utama|pusat)|where|location|address)\b/i);
+  add('contact', /\b(kontak|hubungi|nomor|wa\b|whatsapp|admin|cs|contact|phone|helpdesk)\b/i);
+  add('accreditation', /\b(akreditasi|ban-pt|lam\s+infokom|accreditation)\b/i);
+  return families;
+}
+
+function sourceTopicFamilies(source) {
+  const src = String(source || '').toLowerCase();
+  const families = new Set();
+  const add = (name) => families.add(name);
+  if (src.includes('fee')) add('fee');
+  if (src.includes('registration')) { add('registration'); add('fee'); }
+  if (src.includes('requirements')) { add('requirements'); add('registration'); }
+  if (src.includes('schedule') || src.includes('waves')) add('schedule');
+  if (src.includes('scholarship')) add('scholarship');
+  if (src.includes('program-definition') || src.includes('program-list') || src.includes('program-comparison') || src.includes('program-recommendation')) add('program');
+  if (src.includes('program-recommendation')) add('career');
+  if (src.includes('career')) add('career');
+  if (src.includes('dual-degree')) { add('dual_degree'); add('program'); }
+  if (src.includes('campus-facility') || src.includes('campus-support') || src.includes('training-specific') || src.includes('linkedin-career')) add('facility');
+  if (src.includes('ukm')) add('ukm');
+  if (src.includes('location')) add('location');
+  if (src.includes('contact')) add('contact');
+  if (src.includes('accreditation')) add('accreditation');
+  if (src.includes('small-talk') || src.includes('feedback') || src.includes('out-of-domain') || src.includes('insufficient-data') || src.includes('unsupported')) add('meta');
+  return families;
+}
+
+function isCompatibleDeterministicSource(question, source, result = null) {
+  const qFamilies = detectQuestionTopicFamilies(question);
+  if (!qFamilies.size) return true;
+  const sFamilies = sourceTopicFamilies(source);
+  if (!sFamilies.size || sFamilies.has('meta')) return true;
+  for (const family of qFamilies) {
+    if (sFamilies.has(family)) return true;
+  }
+  const answerSource = result && typeof result === 'object' ? String(result.source || result.frameSource || '') : '';
+  if (answerSource && answerSource !== source) return isCompatibleDeterministicSource(question, answerSource, null);
+  return false;
+}
+
+function answerHasIndonesianMarkers(answer) {
+  return /\b(kakak|Kak|saya|mohon maaf|pendaftaran|biaya|prodi|jurusan|gelombang|beasiswa|kampus|kalau|jadi|untuk)\b/i.test(String(answer || ''));
+}
+
+async function polishEnglishDeterministicAnswer(client, question, result, options = {}) {
+  if (!result || !result.answer || !client) return result;
+  if (!isLikelyEnglishConversation(question, options) || !answerHasIndonesianMarkers(result.answer)) return result;
+  try {
+    const prompt = [
+      'Translate this campus assistant answer into natural English.',
+      'Preserve all facts, numbers, URLs, names, bullet structure, and uncertainty. Do not add new information.',
+      '',
+      `Question:\n${question}`,
+      '',
+      `Answer:\n${result.answer}`
+    ].join('\n');
+    const completion = await client.chat.completions.create({
+      model: getModel(),
+      messages: [
+        { role: 'system', content: 'You translate grounded assistant answers into English without changing facts.' },
+        { role: 'user', content: prompt }
+      ],
+      max_completion_tokens: parseInt(process.env.OPENAI_SEMANTIC_RAG_MAX_OUTPUT_TOKENS || process.env.OPENAI_RAG_MAX_OUTPUT_TOKENS || '550', 10),
+      temperature: 0.1,
+      top_p: 0.8
+    });
+    const translated = String(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content || '' : '').trim();
+    if (translated) return { ...result, answer: translated, debug: { ...(result.debug || {}), englishPolished: true } };
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] English polish failed');
+  }
+  return result;
+}
+
+function buildDeterministicResponse(originalQuestion, source, result, debugExtra = {}, options = {}) {
   return {
     success: true,
-    answer: localizeAnswerLanguage(originalQuestion, formatNaturalAnswerFrame(originalQuestion, result.answer, result.frameSource || source), result.frameSource || source),
+    answer: localizeAnswerLanguage(originalQuestion, formatNaturalAnswerFrame(originalQuestion, result.answer, result.frameSource || source), result.frameSource || source, options),
     source,
     contexts: [],
     confidenceScore: 1,
@@ -3414,10 +3569,11 @@ function runDeterministicHandlers(originalQuestion, handlers, options = {}, vari
       const indexArg = SOURCES_NEEDING_INDEX.has(source) ? (handlerIndex || (handlerIndex = getCachedSemanticIndex())) : undefined;
       const result = handler(variant, indexArg, { ...options, originalQuestion });
       if (result && result.answer) {
+        if (!isCompatibleDeterministicSource(originalQuestion, source, result)) continue;
         return buildDeterministicResponse(originalQuestion, source, result, {
           ...debugExtra,
           semanticVariant: variant !== String(originalQuestion || '').trim() ? variant : undefined
-        });
+        }, options);
       }
     }
   }
@@ -3490,14 +3646,15 @@ async function querySemanticRag(question, options = {}) {
     return response;
   }
 
+  const client = getClient();
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
-  const preAiResult = runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });
+  let preAiResult = runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });
   if (preAiResult) {
+    preAiResult = await polishEnglishDeterministicAnswer(client, question, preAiResult, options);
     setCachedSemanticResult(resultCacheKey, preAiResult);
     return preAiResult;
   }
 
-  const client = getClient();
   if (!client) {
     const fallbackResult = runDeterministicHandlers(question, DETERMINISTIC_HANDLERS, options, [question], { routeStage: 'fallback-no-ai' });
     if (fallbackResult) {
@@ -3706,6 +3863,9 @@ module.exports = {
   retrieveSemanticContexts,
   cosineSimilarity
 };
+
+
+
 
 
 

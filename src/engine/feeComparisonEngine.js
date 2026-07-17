@@ -1,4 +1,4 @@
-const ragEngine = require('./ragEngine');
+﻿const ragEngine = require('./ragEngine');
 const fs = require('fs');
 const path = require('path');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
@@ -853,7 +853,7 @@ function getSessionFeeContextText(sessionData) {
 function tryDetailedFeeAnswer(question, index, options = {}) {
   const q = String(question || '').toLowerCase();
   const sessionText = getSessionFeeContextText(options && options.sessionData);
-  const hasOwnFeeSignal = /\b(biaya|rincian|detail|dpp|ukt|gelombang|gel\b|bayar|bayarnya|pendaftaran|registrasi|duit|uang|harga|total|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester)\b/.test(q);
+  const hasOwnFeeSignal = /\b(biaya|rincian|detail|dpp|ukt|gelombang|gel\b|bayar|bayarnya|pendaftaran|registrasi|duit|uang|harga|total|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester|fee|fees|cost|costs|tuition|payment|payments)\b/.test(q);
   const hasContextualFeeSignal = /\b(cek\s+lagi|coba\s+cek|itu|yang\s+(?:double|dual)\s*degree|yang\s+help)\b/i.test(q) && /\b(biaya|rincian|detail|dpp|ukt|semester|pendaftaran|registrasi|harga|bayar)\b/i.test(sessionText);
   if (!hasOwnFeeSignal && !hasContextualFeeSignal) return null;
   if (isRegistrationFeeQuestion(question) && !/\b(rincian|detail|dpp|ukt|awal(?:nya)?|masuk|total\s+(?:awal|kuliah)|semua)\b/.test(q)) return null;
@@ -1185,6 +1185,8 @@ function tryContextualMultiProgramFeeAnswer(question, index, options = {}) {
 
 function tryDualDegreeAnswer(question) {
   const q = String(question || '').toLowerCase();
+  const hasFeeSignal = /\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments)\b/.test(q);
+  if (hasFeeSignal) return null;
   const hasDoubleDegreeSignal = /\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd)\b/.test(q);
   const hasPartnerSignal = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help)\b/.test(q);
   const asksPartnerProgram = /\b(jurusan|prodi|program\s+studi|padanan|pasangan|di\s+stikom|stikom\s+bali|di\s+sana|disana|mitra|partner|yang\s+diambil|harus\s+diambil)\b/.test(q);
@@ -1767,6 +1769,8 @@ module.exports = {
   formatRp,
   formatRange
 };
+
+
 
 
 
