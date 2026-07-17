@@ -124,7 +124,7 @@ describe('feeComparisonEngine', () => {
     expect(helpDetail).toBeTruthy();
     expect(helpDetail.answer).toContain('DPP / Dana Pendidikan Pokok: Rp. 20.000.000');
     expect(helpDetail.answer).toContain('Bahasa Inggris: Rp. 5.000.000');
-    expect(helpDetail.answer).toContain('Biaya pendidikan per semester (UKT): Rp. 3.000.000');
+    expect(helpDetail.answer).toContain('Biaya Pendidikan & Ujian/Subject: Rp. 3.000.000');
 
     const helpGeneral = tryDetailedFeeAnswer('Berapa rincian biaya program double degree help?');
     expect(helpGeneral).toBeTruthy();
@@ -132,7 +132,7 @@ describe('feeComparisonEngine', () => {
     expect(helpGeneral.answer).toContain('Biaya pendaftaran: Rp. 3.000.000');
     expect(helpGeneral.answer).toContain('DPP / Dana Pendidikan Pokok: Rp. 20.000.000');
     expect(helpGeneral.answer).toContain('Bahasa Inggris: Rp. 5.000.000');
-    expect(helpGeneral.answer).toContain('Biaya pendidikan per semester (UKT): Rp. 3.000.000');
+    expect(helpGeneral.answer).toContain('Biaya Pendidikan & Ujian/Subject: Rp. 3.000.000');
 
     const utbUkt = tryDetailedFeeAnswer('UKT UTB berapa?');
     expect(utbUkt).toBeTruthy();

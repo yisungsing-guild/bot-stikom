@@ -1,10 +1,11 @@
-/*
+﻿/*
 Re-ingest all (active) TrainingData into the local RAG index with metadata.
 
 Usage:
   node scripts/reingestAllTraining.js
   node scripts/reingestAllTraining.js --onlyDivision pmb
   node scripts/reingestAllTraining.js --since 2026-03-20T00:00:00Z
+  node scripts/reingestAllTraining.js --onlyStatus rejected,failed
   node scripts/reingestAllTraining.js --limit 50 --delayMs 100
 */
 
@@ -78,12 +79,14 @@ async function main() {
   const args = parseArgs(process.argv);
   const since = parseSince(args.since);
   const onlyDivision = normalizeDivisionKey(args.onlyDivision);
+  const onlyStatuses = String(args.onlyStatus || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   const limit = args.limit ? Math.max(1, Math.min(parseInt(args.limit, 10) || 0, 5000)) : null;
   const delayMs = args.delayMs ? Math.max(0, Math.min(parseInt(args.delayMs, 10) || 0, 2000)) : 0;
 
   const where = { active: true };
   if (since) where.createdAt = { gte: since };
   if (onlyDivision) where.divisionKey = onlyDivision;
+  if (onlyStatuses.length) where.ragIngestStatus = { in: onlyStatuses };
 
   const rows = await prisma.trainingData.findMany({
     where,
@@ -96,17 +99,18 @@ async function main() {
       source: true,
       divisionKey: true,
       uploadedById: true,
+      ragIngestStatus: true,
       createdAt: true
     }
   });
 
-  console.log(JSON.stringify({ ok: true, count: rows.length, filter: { since: since ? since.toISOString() : null, onlyDivision, limit, delayMs } }, null, 2));
+  console.log(JSON.stringify({ ok: true, count: rows.length, filter: { since: since ? since.toISOString() : null, onlyDivision, onlyStatuses, limit, delayMs } }, null, 2));
 
   let ok = 0;
   let fail = 0;
   for (let i = 0; i < rows.length; i += 1) {
     const t = rows[i];
-    const label = `${i + 1}/${rows.length} ${t.id} (${t.source}) div=${t.divisionKey || 'global'} file=${t.filename}`;
+    const label = `${i + 1}/${rows.length} ${t.id} (${t.source}) status=${t.ragIngestStatus || 'unknown'} div=${t.divisionKey || 'global'} file=${t.filename}`;
     try {
       const result = await ingestTrainingData(t.id, t.content, t.source, {
         divisionKey: t.divisionKey || null,
@@ -140,3 +144,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+

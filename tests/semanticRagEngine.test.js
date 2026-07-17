@@ -1,4 +1,4 @@
-describe('semanticRagEngine', () => {
+﻿describe('semanticRagEngine', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
@@ -1347,6 +1347,41 @@ describe('semanticRagEngine', () => {
     expect(result.answer).not.toMatch(/^GCCP adalah|GCCP adalah salah satu program\/fasilitas/i);
     expect(result.answer).not.toMatch(/Global Cross Cultural Program \(GCCP\) adalah/i);
   });
+
+  test('does not let prior UKM context hijack unrelated campus questions', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const sessionData = {
+      messages: [
+        { message: 'ukm apa saja yang ada di stikom?' },
+        { message: 'Loh kok terus jawab UKM ya?' }
+      ]
+    };
+
+    const indicator = await querySemanticRag('Indikator apa saja yang dipertanggung jawabkan stikom bali sebagai institusi pendidikan ya?', { sessionData });
+    expect(indicator.success).toBe(true);
+    expect(indicator.source).not.toBe('semantic-rag-ukm-list');
+    expect(indicator.answer || '').not.toMatch(/Ada 32 UKM|UKM\/Ormawa lainnya|Badan Eksekutif Mahasiswa/i);
+
+    const industry = await querySemanticRag('Untuk inkubator bisnis stikom bali, apa saja yang menjadi layanannya?', { sessionData });
+    expect(industry.success).toBe(true);
+    expect(industry.source).not.toBe('semantic-rag-ukm-list');
+    expect(industry.answer || '').not.toMatch(/Ada 32 UKM|UKM\/Ormawa lainnya|Badan Eksekutif Mahasiswa/i);
+  });
+
+  test('answers English application question as registration info, not UKM', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('I am an international student, how do I apply for studying at stikom bali?', {
+      sessionData: { messages: [{ message: 'ukm apa saja yang ada di stikom?' }] }
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-registration-info');
+    expect(result.answer).toMatch(/You can apply to ITB STIKOM Bali|Online application|international student/i);
+    expect(result.answer).toMatch(/siap\.stikom-bali\.ac\.id/i);
+    expect(result.answer).not.toMatch(/Ada 32 UKM|UKM\/Ormawa|Untuk daftar kuliah|Kakak/i);
+  });
 });
+
+
 
 

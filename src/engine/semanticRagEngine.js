@@ -1,4 +1,4 @@
-const { OpenAI } = require('openai');
+﻿const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
@@ -44,6 +44,63 @@ function normalizeCacheText(value) {
     .trim();
 }
 
+function isLikelyEnglishQuestion(question) {
+  const text = String(question || '').toLowerCase();
+  if (!text.trim()) return false;
+  const englishMatches = text.match(/\b(?:what|how|where|when|why|who|which|can|could|would|should|do|does|is|are|am|i\s+am|i'm|international\s+student|apply|application|admission|register|registration|enroll|study|studying|tuition|fee|major|program|scholarship|campus|location|service|services|facility|facilities)\b/g) || [];
+  const indonesianMatches = text.match(/\b(?:apa|bagaimana|gimana|dimana|di\s+mana|kapan|kenapa|saya|aku|kak|daftar|pendaftaran|kuliah|biaya|jurusan|prodi|beasiswa|kampus|layanan|fasilitas)\b/g) || [];
+  return englishMatches.length >= 2 && englishMatches.length >= indonesianMatches.length;
+}
+
+function buildEnglishInsufficientDataAnswer() {
+  return 'Sorry, I do not have enough information to answer that question accurately. You may rephrase the question or ask another question about ITB STIKOM Bali.';
+}
+
+function buildEnglishRegistrationHowAnswer() {
+  return [
+    'You can apply to ITB STIKOM Bali through the online or offline admission process.',
+    '',
+    'Online application:',
+    '- Register through https://siap.stikom-bali.ac.id/.',
+    '- Fill in the admission form and choose the study program you want.',
+    '- Prepare the required documents and follow the payment/instruction steps shown by the admission system.',
+    '',
+    'Offline application:',
+    '- You can come directly to the ITB STIKOM Bali admission office for guidance with registration.',
+    '',
+    'If you are an international student, please contact the admission/admin team as well so they can confirm any additional document requirements for international applicants.'
+  ].join('\n');
+}
+
+function buildEnglishCampusLocationAnswer(source) {
+  if (String(source || '').includes('main-location')) {
+    return [
+      'The main campus of ITB STIKOM Bali is in Denpasar/Renon.',
+      '',
+      '- Denpasar/Renon Campus: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali.',
+      '',
+      'ITB STIKOM Bali also has Jimbaran and Abiansemal campuses.'
+    ].join('\n');
+  }
+  return [
+    'ITB STIKOM Bali campus locations:',
+    '',
+    '- Denpasar/Renon Campus: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali.',
+    '- Jimbaran Campus: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.',
+    '- Abiansemal Campus: Jl. Janger, Abiansemal, Dauh Yeh Cani, Badung, Bali.',
+    '',
+    'If you plan to visit, please choose the campus based on the service or study program you need.'
+  ].join('\n');
+}
+
+function localizeAnswerLanguage(question, answer, source = '') {
+  if (!isLikelyEnglishQuestion(question)) return answer;
+  const src = String(source || '').toLowerCase();
+  if (src.includes('registration-info')) return buildEnglishRegistrationHowAnswer();
+  if (src.includes('campus-location')) return buildEnglishCampusLocationAnswer(src);
+  if (src.includes('insufficient-data') || /^\s*(?:mohon maaf|saya ragu)/i.test(String(answer || ''))) return buildEnglishInsufficientDataAnswer();
+  return answer;
+}
 function getSemanticTodayYmd() {
   const forced = String(process.env.SEMANTIC_RAG_TODAY_YMD || '').trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(forced)) return forced;
@@ -1024,7 +1081,7 @@ function buildPmbInfoAnswer() {
     '* Syarat dan dokumen pendaftaran',
     '* Kontak atau bantuan admin PMB',
     '',
-    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: “jadwal PMB sekarang gelombang berapa?”, “rincian biaya SI gelombang 2B?”, atau “apa saja syarat pendaftaran?”'
+    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: â€œjadwal PMB sekarang gelombang berapa?â€, â€œrincian biaya SI gelombang 2B?â€, atau â€œapa saja syarat pendaftaran?â€'
   ].join('\n');
 }
 
@@ -1403,7 +1460,7 @@ function tryScheduleWindowAnswer(question) {
 
 function tryRegistrationHowAnswer(question) {
   const q = String(question || '').toLowerCase();
-  const asksRegister = /\b(cara|gimana|bagaimana|dimana|di\s*mana|mana|lewat|link|online|mau|ingin|pengen|pengin|bisa)\b/.test(q) && /\b(daftar(?:nya)?|mendaftar|pendaftaran|registrasi|kuliah)\b/.test(q);
+  const asksRegister = (/\b(cara|gimana|bagaimana|dimana|di\s*mana|mana|lewat|link|online|mau|ingin|pengen|pengin|bisa)\b/.test(q) && /\b(daftar(?:nya)?|mendaftar|pendaftaran|registrasi|kuliah)\b/.test(q)) || /\b(apply|application|admission|register|registration|enroll|study(?:ing)?|international\s+student)\b/i.test(q);
   if (!asksRegister) return null;
   if (/\b(biaya|bayar|harga|dpp|ukt|potongan|gelombang|jadwal|tanggal|deadline|masih\s+buka)\b/.test(q)) return null;
 
@@ -1447,6 +1504,7 @@ const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'hi-think', label: 'Hi-Think', type: 'facility_program', patterns: ['hi think', 'hithink'] },
   { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc'] },
   { key: 'inkubator-bisnis', label: 'Inkubator Bisnis', type: 'facility', patterns: ['inkubator bisnis'] },
+  { key: 'layanan-industri', label: 'Layanan Industri', type: 'facility', patterns: ['layanan industri', 'layanan untuk industri'] },
   { key: 'softskill', label: 'Program Pengembangan Softskill', type: 'facility_program', patterns: ['pengembangan softskill', 'softskill'] },
   { key: 'kuliah-sambil-kerja-ln', label: 'Kuliah Sambil Kerja di Luar Negeri', type: 'international_program', patterns: ['kuliah sambil kerja di luar negeri'] },
   { key: 'magang-berbayar-ln', label: 'Magang Berbayar di Luar Negeri', type: 'international_program', patterns: ['magang berbayar di luar negeri'] },
@@ -1514,10 +1572,14 @@ function extractTrainingSpecificTarget(question) {
   const raw = String(question || '').trim();
   if (!raw) return '';
 
-  const quoted = /["��']([^"��']{3,80})["��']/.exec(raw);
+  const quoted = /["ï¿½ï¿½']([^"ï¿½ï¿½']{3,80})["ï¿½ï¿½']/.exec(raw);
   let target = quoted ? quoted[1] : '';
   if (!target) {
     const m = /\b(?:apa\s+itu|apakah|jelaskan|detail(?:\s+tentang)?|tentang|info(?:rmasi)?\s+tentang|maksud(?:nya)?\s+apa)\s+(.{3,90})/i.exec(raw);
+    if (m) target = m[1];
+  }
+  if (!target) {
+    const m = /\bprogram\s+(.{3,90}?)(?:,?\s+(?:itu|ini))?\s+(?:program\s+)?apa\b/i.exec(raw);
     if (m) target = m[1];
   }
   if (!target) return '';
@@ -1713,7 +1775,7 @@ function cleanFacilitySnippetText(text) {
 
   out = out
     .replace(/\b(?:q|a)\s*[:\-.]\s*/gi, '')
-    .replace(/[��"]/g, '')
+    .replace(/[“”"]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -1736,6 +1798,7 @@ function scoreFacilitySnippetText(text, matchedTerm) {
 function collectFacilitySnippetCandidate(list, text, item, matchedTerm, baseScore = 0) {
   const cleaned = cleanFacilitySnippetText(String(text || '').replace(/^\s*(?:[-*]|\d+[.)])\s*/, ''));
   if (!cleaned || cleaned.length < 12) return;
+  if (/^[a-z]{2,}\b/.test(cleaned) && !/^(apa|apakah|bagaimana|gimana|program|layanan|inkubator|student|short|career|language|hi-?think|gccp|bccp)\b/i.test(cleaned)) return;
   if (isLikelyFaqQuestionText(cleaned)) return;
   if (/\?\s*(?:a|answer|jawab|jawaban)\s*[:\-.]/i.test(cleaned)) return;
   const normalized = normalizeFacilityTerm(cleaned);
@@ -1898,6 +1961,15 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
 
   const specificFromTraining = buildSpecificFacilityAnswerFromIndex(question, indexForQuery);
   if (specificFromTraining) return specificFromTraining;
+  const specificEntityWithoutDetail = findCampusSupportEntity(question);
+  if (specificEntityWithoutDetail && specificEntityWithoutDetail.key !== 'career-center' && /\b(apa\s+saja|layanan|detail|program|kegiatan|aktivitas|manfaat|syarat|cara|bagaimana|gimana)\b/i.test(q)) {
+    return {
+      answer: buildInsufficientDataAnswer('very_low'),
+      source: 'semantic-rag-campus-facility-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data'
+    };
+  }
+
 
   if (/\b(parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q)) {
     return {
@@ -2042,9 +2114,9 @@ function tryUkmInterestRecommendation(question, options = {}) {
   const currentHasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q);
   const profile = UKM_INTEREST_PROFILES.find((item) => item.re.test(q));
   if (!profile) return null;
-  const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(`${q} ${recent}`);
+  const hasCurrentUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(q);
   const asksActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
-  const asksUkm = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q) || hasUkmContext || asksActivityByInterest;
+  const asksUkm = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q) || hasCurrentUkmContext || asksActivityByInterest;
   const asksRecommendation = asksActivityByInterest || /\b(cocok|rekomendasi|saran|sarankan|pilih|ikut|gabung|masuk|ambil|hobi|hobby|suka|minat|ada\s+yang|ada\s+apa|apa\s+yang|apa\s+saja|bidang|dibidang|jenis|kategori|kalau|yang)\b/i.test(q);
   if (!asksUkm || !asksRecommendation) return null;
 
@@ -2135,11 +2207,12 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const recentMentionedUkm = findMentionedUkm(recent);
   const hasKnownUkmName = !!currentMentionedUkm;
   const hasActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
-  const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
+  const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
   const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
-  const hasExplicitDifferentTopic = /\b(double\s*degree|dual\s*degree|dnui|help\s+university|utb|bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|linked\s*in|linkedin|career\s*center|pmb|mahasiswa\s+baru|biaya|harga|tarif|ukt|dpp|gelombang|jadwal|beasiswa|kip|prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|fasilitas|layanan|sarana|prasarana|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas|lokasi|alamat)\b/i.test(q);
-  if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic) return null;
-  if (!hasUkmSignal && !hasUkmContext) return null;
+  const isUkmFollowUp = hasUkmContext && /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan|daftar(?:nya)?|list(?:nya)?)\b/i.test(q);
+  const hasExplicitDifferentTopic = /\b(indikator|institusi|akreditasi|mutu|pertanggung\s*jawaban|layanan\s+industri|inkubator\s+bisnis|stikom\s+bali\s+goes\s+to\s+school|goes\s+to\s+school|international\s+student|apply|admission|double\s*degree|dual\s*degree|dnui|help\s+university|utb|bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|linked\s*in|linkedin|career\s*center|pmb|mahasiswa\s+baru|biaya|harga|tarif|ukt|dpp|gelombang|jadwal|beasiswa|kip|prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|fasilitas|layanan|sarana|prasarana|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas|lokasi|alamat)\b/i.test(q);
+  if (!hasUkmSignal && hasUkmContext && (hasExplicitDifferentTopic || !isUkmFollowUp)) return null;
+  if (!hasUkmSignal && !isUkmFollowUp) return null;
 
   const recommendation = tryUkmInterestRecommendation(question, options);
   if (recommendation) return recommendation;
@@ -2339,7 +2412,8 @@ function inferFrameTopic(question, source) {
     };
   }
 
-  if (src.includes('dual-degree') || /\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|utb|dnui|help)\b/.test(q)) {
+  const hasFrameFeeSignal = /\b(biaya|harga|tarif|ongkos|uang|kuliah|bayar|dpp|ukt|pendaftaran|registrasi|semester|rincian|detail|total)\b/i.test(q) || src.includes('fee');
+  if ((src.includes('dual-degree') && !src.includes('fee')) || (/\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|utb|dnui|help)\b/.test(q) && !hasFrameFeeSignal)) {
     return {
       request: 'informasi program Double Degree di ITB STIKOM Bali',
       assumption: 'Saya pisahkan sisi STIKOM Bali dan sisi kampus mitra jika datanya tersedia.',
@@ -2791,8 +2865,8 @@ function buildHybridFrameOpeners(question, source, topic) {
     }
     return [
       prefix + ' Saya rincikan biaya' + target + ' dari komponen PMB yang tersedia.',
-      'Untuk biaya' + target + ', saya susun dari pendaftaran, biaya awal masuk, dan UKT bila datanya tersedia.',
-      'Saya jawab rincian biaya' + target + ' sesuai prodi dan gelombang yang kakak sebutkan.',
+      'Untuk biaya' + target + ', saya susun dari komponen PMB yang tersedia pada dokumen.',
+      'Saya jawab rincian biaya' + target + ' sesuai program yang kakak tanyakan.',
       'Saya cek bagian biaya' + target + ' dari data PMB ya.'
     ];
   }
@@ -2882,8 +2956,8 @@ function buildFrameOpeners(question, source, topic) {
     }
     return [
       'Bisa, Kak. Untuk biaya, saya hitungkan dari komponen PMB yang tersedia.',
-      'Baik, Kak. Saya rincikan biaya sesuai prodi dan gelombang yang ditanyakan.',
-      'Untuk biaya kuliah, saya susun dari pendaftaran, biaya awal masuk, dan UKT/semester ya, Kak.',
+      'Baik, Kak. Saya rincikan biaya sesuai program yang ditanyakan.',
+      'Untuk biaya kuliah, saya susun dari komponen PMB yang tersedia pada dokumen ya, Kak.',
       'Saya cekkan rincian biayanya ya, Kak.'
     ];
   }
@@ -2997,8 +3071,8 @@ function buildFrameOpeners(question, source, topic) {
   if (src.includes('fee')) {
     return [
       'Bisa, Kak. Untuk biaya, saya hitungkan dari komponen PMB yang tersedia.',
-      'Baik, Kak. Saya rincikan biaya sesuai prodi dan gelombang yang ditanyakan.',
-      'Untuk biaya kuliah, saya susun dari pendaftaran, biaya awal masuk, dan UKT/semester ya, Kak.',
+      'Baik, Kak. Saya rincikan biaya sesuai program yang ditanyakan.',
+      'Untuk biaya kuliah, saya susun dari komponen PMB yang tersedia pada dokumen ya, Kak.',
       'Saya cekkan rincian biayanya ya, Kak.'
     ];
   }
@@ -3050,7 +3124,7 @@ function buildFrameOpeners(question, source, topic) {
     }
     return [
       'Bisa, Kak. Sederhananya, prodi ini bisa dipahami seperti ini.',
-      `Untuk pertanyaan “apa itu”, saya jelaskan dari fokus belajar dan arah skill-nya ya.`,
+      `Untuk pertanyaan â€œapa ituâ€, saya jelaskan dari fokus belajar dan arah skill-nya ya.`,
       'Kalau ingin mengenal prodinya dulu, penjelasannya seperti ini, Kak.',
       'Untuk pertanyaan "apa itu", saya jelaskan dari fokus belajar dan arah skill-nya ya.'
     ];
@@ -3089,6 +3163,8 @@ function formatNaturalAnswerFrame(question, answer, source) {
   const opening = `${opener} ${topic.assumption}`.replace(/\s{2,}/g, ' ').trim();
   const parts = [opening, '', body];
 
+  if (src.includes('fee')) return parts.join('\n').trim();
+
   const bodyAlreadyHasConclusion = /\n\s*(?:Jadi|Singkatnya|Kesimpulannya),|\n\s*Kesimpulan\s*:/i.test(body);
   if (!bodyAlreadyHasConclusion && topic.conclusion) {
     parts.push('', topic.conclusion);
@@ -3116,7 +3192,7 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
     'Jika ada angka/nominal/tanggal/syarat, jangan menebak dan jangan membulatkan di luar konteks.',
     'Jika user meminta "rincian", "detail", "lengkap", atau menanyakan biaya, jangan diringkas: sebutkan semua komponen relevan yang ada di konteks.',
     'Untuk biaya, pertahankan komponen resmi seperti pendaftaran, DPP/registrasi, atribut, biaya semester, potongan/beasiswa, dan catatan pembayaran jika tersedia.',
-    'Gaya bahasa: Bahasa Indonesia percakapan sehari-hari yang sopan, halus, dan natural seperti chat admin kampus yang ramah.',
+    'Gaya bahasa: gunakan bahasa yang sama dengan pertanyaan user. Jika user bertanya dalam bahasa Inggris, jawab dalam bahasa Inggris. Jika user bertanya dalam bahasa Indonesia, jawab dalam Bahasa Indonesia percakapan sehari-hari yang sopan, halus, dan natural seperti chat admin kampus yang ramah.',
     'Jangan terdengar seperti template/formulir. Hindari pembuka berulang seperti "Saya pahami..." kalau tidak perlu.',
     'Jawab langsung ke inti, tetap rapi, dan gunakan "Kak" secara wajar.',
     '',
@@ -3132,7 +3208,7 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
   const completion = await client.chat.completions.create({
     model: getModel(),
     messages: [
-      { role: 'system', content: 'You are a grounded campus assistant. Answer warmly in natural conversational Indonesian, using only supplied context.' },
+      { role: 'system', content: 'You are a grounded campus assistant. Use only supplied context. Answer in the same language as the user question.' },
       { role: 'user', content: prompt }
     ],
     max_completion_tokens: parseInt(process.env.OPENAI_SEMANTIC_RAG_MAX_OUTPUT_TOKENS || process.env.OPENAI_RAG_MAX_OUTPUT_TOKENS || '550', 10),
@@ -3318,7 +3394,7 @@ function getSemanticHandlerSources(intent) {
 function buildDeterministicResponse(originalQuestion, source, result, debugExtra = {}) {
   return {
     success: true,
-    answer: formatNaturalAnswerFrame(originalQuestion, result.answer, result.frameSource || source),
+    answer: localizeAnswerLanguage(originalQuestion, formatNaturalAnswerFrame(originalQuestion, result.answer, result.frameSource || source), result.frameSource || source),
     source,
     contexts: [],
     confidenceScore: 1,
@@ -3630,6 +3706,7 @@ module.exports = {
   retrieveSemanticContexts,
   cosineSimilarity
 };
+
 
 
 
