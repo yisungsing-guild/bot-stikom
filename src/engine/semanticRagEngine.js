@@ -1542,10 +1542,10 @@ function isLikelyFaqQuestionText(text) {
 }
 
 function cleanFaqAnswerText(text) {
-  return String(text || '')
+  return cleanFacilitySnippetText(String(text || '')
     .replace(/^\s*(?:a|answer|jawab|jawaban)\s*[:\-.]\s*/i, '')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim());
 }
 
 function extractBestFaqAnswerFromChunk(chunk, target, targetTokens) {
@@ -1691,6 +1691,34 @@ function scoreSpecificFacilityCandidates(indexForQuery, candidatePatterns) {
   }
   return scored;
 }
+function cleanFacilitySnippetText(text) {
+  let out = String(text || '')
+    .replace(/\s+/g, ' ')
+    .replace(/^\s*(?:program\s+studi\s+terlihat|program\s+terlihat|prodi\s+terlihat)\s*:\s*/i, '')
+    .replace(/^\s*(?:a|answer|jawab|jawaban)\s*[:\-.]\s*/i, '')
+    .trim();
+
+  const stopPatterns = [
+    /\s+(?:q|tanya|pertanyaan)\s*[:\-.]\s*/i,
+    /\s+(?:apa|apakah|pakah|bagaimana|gimana|berapa|kapan|di\s*mana|dimana|ke\s*mana|kemana|siapa|mengapa|kenapa)\b[^?]{3,220}\?\s*(?:a|answer|jawab|jawaban)\s*[:\-.]/i,
+    /\s+[A-Z]\.\s+[A-Z][A-Z\s]{4,}\b/
+  ];
+
+  let stopAt = -1;
+  for (const pattern of stopPatterns) {
+    const match = pattern.exec(out);
+    if (match && match.index > 20 && (stopAt === -1 || match.index < stopAt)) stopAt = match.index;
+  }
+  if (stopAt > -1) out = out.slice(0, stopAt).trim();
+
+  out = out
+    .replace(/\b(?:q|a)\s*[:\-.]\s*/gi, '')
+    .replace(/[“”"]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return out;
+}
 function scoreFacilitySnippetText(text, matchedTerm) {
   const raw = String(text || '').trim();
   if (!raw) return 0;
@@ -1706,9 +1734,10 @@ function scoreFacilitySnippetText(text, matchedTerm) {
 }
 
 function collectFacilitySnippetCandidate(list, text, item, matchedTerm, baseScore = 0) {
-  const cleaned = String(text || '').replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').replace(/\s+/g, ' ').trim();
+  const cleaned = cleanFacilitySnippetText(String(text || '').replace(/^\s*(?:[-*]|\d+[.)])\s*/, ''));
   if (!cleaned || cleaned.length < 12) return;
   if (isLikelyFaqQuestionText(cleaned)) return;
+  if (/\?\s*(?:a|answer|jawab|jawaban)\s*[:\-.]/i.test(cleaned)) return;
   const normalized = normalizeFacilityTerm(cleaned);
   if (!normalized) return;
   if (list.some((candidate) => normalizeFacilityTerm(candidate.text) === normalized)) return;

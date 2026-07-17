@@ -1267,6 +1267,38 @@ describe('semanticRagEngine', () => {
     expect(result.answer).toMatch(/budaya kerja Jepang|kesiapan bahasa|wawancara kerja|kompetensi industri TI/i);
     expect(result.answer).not.toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban/i);
   });
+
+  test('cleans raw Q/A markers from Hi-Think narrative answers', async () => {
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'hi-think-raw-qna',
+          chunk: 'Q: Apa itu Program Hi-Think? A: Program Hi-Think adalah program kolaborasi antara ITB STIKOM Bali dengan perusahaan teknologi Hi-Think Jepang, yang menggabungkan perkuliahan dengan kurikulum industri teknologi Jepang serta peluang kerja setelah lulus. Q: Apakah program ini sulit? A: Program ini menantang karena berbasis industri, namun juga memberikan pengalaman dan peluang karier yang sangat besar.',
+          filename: 'QNA Bot - Hi-Think.docx',
+          source: 'upload',
+          embedding: [1, 0, 0]
+        },
+        {
+          id: 'hi-think-raw-narasi',
+          chunk: 'Program studi terlihat: Program Hi-Think merupakan program kolaborasi antara ITB STIKOM Bali dengan perusahaan teknologi internasional Hi-Think Jepang yang dirancang untuk mengintegrasikan pembelajaran akademik dengan kebutuhan industri global. Program ini mengusung konsep project-based dan industry-oriented learning. A. PENDAHULUAN Q: Kapan saya bisa mengikuti program ini? A: Program ini dapat diikuti mulai Semester 5.',
+          filename: 'Narasi QNA Bot - Hi-Think.docx',
+          source: 'upload',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Halo saya mau tahu program stikom yang nanya Hi-Think, itu program apa ya?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-campus-support-entity');
+    expect(result.answer).toMatch(/Program Hi-Think adalah program kolaborasi/i);
+    expect(result.answer).toMatch(/project-based dan industry-oriented learning/i);
+    expect(result.answer).not.toMatch(/\bQ\s*:|\bA\s*:|Program studi terlihat|Apakah program ini sulit|Kapan saya bisa mengikuti/i);
+  });
   test('does not let Student Exchange training chunks hijack broad student-activity questions', async () => {
     jest.doMock('../src/engine/ragEngine', () => ({
       loadIndex: jest.fn(() => [
