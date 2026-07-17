@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
 const ragEngine = require('./ragEngine');
+const { getLegacyRagIndexPath, getRagIndexPath } = require('../utils/ragPaths');
 const {
   tryFeeComparisonAnswer,
   tryDetailedFeeAnswer,
@@ -1653,9 +1654,47 @@ function tryTrainingSpecificAnswer(question, indexForQuery) {
   if (/\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa)\b/i.test(q)) return null;
   return buildTrainingSpecificAnswerFromIndex(question, indexForQuery);
 }
+
+let legacyCampusSupportIndexCache = null;
+
+function loadLegacyCampusSupportIndex() {
+  try {
+    const legacyPath = getLegacyRagIndexPath();
+    const activePath = getRagIndexPath();
+    if (!legacyPath || path.resolve(legacyPath) === path.resolve(activePath)) return [];
+    const stat = fs.statSync(legacyPath);
+    const mtimeMs = stat && stat.mtimeMs ? stat.mtimeMs : 0;
+    if (legacyCampusSupportIndexCache && legacyCampusSupportIndexCache.path === legacyPath && legacyCampusSupportIndexCache.mtimeMs === mtimeMs) {
+      return legacyCampusSupportIndexCache.index;
+    }
+    const parsed = JSON.parse(fs.readFileSync(legacyPath, 'utf8') || '[]');
+    const index = Array.isArray(parsed) ? parsed : [];
+    legacyCampusSupportIndexCache = { path: legacyPath, mtimeMs, index };
+    return index;
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to load legacy campus support index');
+    return [];
+  }
+}
+
+function scoreSpecificFacilityCandidates(indexForQuery, candidatePatterns) {
+  const scored = [];
+  for (const item of Array.isArray(indexForQuery) ? indexForQuery : []) {
+    const chunk = String(item && item.chunk ? item.chunk : '').trim();
+    if (!chunk) continue;
+    const normalizedChunk = normalizeFacilityTerm(`${item.filename || ''} ${item.sourceFile || ''} ${chunk}`);
+    const hasTerm = candidatePatterns.some((pattern) => normalizedChunk.includes(pattern));
+    if (!hasTerm) continue;
+    const sourceBoost = /upload/i.test(String(item && item.source ? item.source : '')) ? 2 : 0;
+    const recencyBoost = item && item.createdAt ? 1 : 0;
+    scored.push({ item, chunk, score: sourceBoost + recencyBoost + Math.min(chunk.length / 500, 4) });
+  }
+  return scored;
+}
 function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   const q = normalizeFacilityTerm(question);
-  if (!q || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
+  if (!q) return null;
+  const activeIndex = Array.isArray(indexForQuery) ? indexForQuery : [];
 
   const asksSpecificDetail = /\b(apa\s+itu|apakah|jelaskan|detail|program|layanan|kegunaan|manfaat|syarat|cara|bagaimana|gimana)\b/i.test(String(question || ''));
   const facilityTerms = CAMPUS_SUPPORT_ENTITY_REGISTRY.map(campusSupportEntityToFacilityTerm);
@@ -1665,16 +1704,9 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   if (matchedTerm.label === 'Career Center') return null;
 
   const candidatePatterns = matchedTerm.patterns.map(normalizeFacilityTerm);
-  const scored = [];
-  for (const item of indexForQuery) {
-    const chunk = String(item && item.chunk ? item.chunk : '').trim();
-    if (!chunk) continue;
-    const normalizedChunk = normalizeFacilityTerm(`${item.filename || ''} ${item.sourceFile || ''} ${chunk}`);
-    const hasTerm = candidatePatterns.some((pattern) => normalizedChunk.includes(pattern));
-    if (!hasTerm) continue;
-    const sourceBoost = /upload/i.test(String(item && item.source ? item.source : '')) ? 2 : 0;
-    const recencyBoost = item && item.createdAt ? 1 : 0;
-    scored.push({ item, chunk, score: sourceBoost + recencyBoost + Math.min(chunk.length / 500, 4) });
+  let scored = scoreSpecificFacilityCandidates(activeIndex, candidatePatterns);
+  if (!scored.length) {
+    scored = scoreSpecificFacilityCandidates(loadLegacyCampusSupportIndex(), candidatePatterns);
   }
 
   if (!scored.length) return null;
