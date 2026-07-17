@@ -47,9 +47,11 @@ function normalizeCacheText(value) {
 function isLikelyEnglishQuestion(question) {
   const text = String(question || '').toLowerCase();
   if (!text.trim()) return false;
-  const englishMatches = text.match(/\b(?:what|how|where|when|why|who|which|can|could|would|should|do|does|is|are|am|i\s+am|i'm|international\s+student|apply|application|admission|register|registration|enroll|study|studying|tuition|fee|fees|cost|costs|requirement|requirements|document|documents|major|program|scholarship|campus|location|service|services|facility|facilities)\b/g) || [];
-  const indonesianMatches = text.match(/\b(?:apa|bagaimana|gimana|dimana|di\s+mana|kapan|kenapa|saya|aku|kak|daftar|pendaftaran|kuliah|biaya|jurusan|prodi|beasiswa|kampus|layanan|fasilitas)\b/g) || [];
-  return englishMatches.length >= 2 && englishMatches.length >= indonesianMatches.length;
+  const strongEnglish = text.match(/\b(?:what|how|where|when|why|who|which|can|could|would|should|do|does|is|are|am|i\s+am|i'm|international\s+student|apply|application|admission|register|registration|enroll|study|studying|tuition|fee|fees|cost|costs|requirement|requirements|document|documents|major|scholarship)\b/g) || [];
+  const weakEnglish = text.match(/\b(?:program|campus|location|service|services|facility|facilities)\b/g) || [];
+  const indonesianMatches = text.match(/\b(?:apa|bagaimana|gimana|dimana|di\s+mana|kapan|kenapa|saya|aku|kak|ya|dong|mau|ingin|nanya|daftar|pendaftaran|kuliah|biaya|jurusan|prodi|beasiswa|kampus|layanan|fasilitas|itu|ini)\b/g) || [];
+  if (indonesianMatches.length >= 2 && strongEnglish.length < 2) return false;
+  return strongEnglish.length >= 2 || (strongEnglish.length >= 1 && weakEnglish.length >= 1 && indonesianMatches.length === 0);
 }
 
 function buildEnglishInsufficientDataAnswer() {
@@ -165,6 +167,13 @@ function localizeAnswerLanguage(question, answer, source = '', options = {}) {
   if (src.includes('insufficient-data') || /^\s*(?:mohon maaf|saya ragu)/i.test(String(answer || ''))) return buildEnglishInsufficientDataAnswer();
   return answer;
 }
+function stripQuestionAnswerEnvelope(text) {
+  let out = String(text || '').trim();
+  out = out.replace(/^\s*(?:Question|Pertanyaan)\s*:\s*[\s\S]*?\n\s*(?:Answer|Jawaban)\s*:\s*/i, '');
+  out = out.replace(/^\s*(?:Answer|Jawaban)\s*:\s*/i, '');
+  return out.trim();
+}
+
 function getSemanticTodayYmd() {
   const forced = String(process.env.SEMANTIC_RAG_TODAY_YMD || '').trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(forced)) return forced;
@@ -1571,6 +1580,7 @@ const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc'] },
   { key: 'inkubator-bisnis', label: 'Inkubator Bisnis', type: 'facility', patterns: ['inkubator bisnis'] },
   { key: 'layanan-industri', label: 'Layanan Industri', type: 'facility', patterns: ['layanan industri', 'layanan untuk industri'] },
+  { key: 'goes-to-school', label: 'STIKOM Bali Goes To School', type: 'facility_program', patterns: ['stikom bali goes to school', 'goes to school', 'goestoschool'] },
   { key: 'softskill', label: 'Program Pengembangan Softskill', type: 'facility_program', patterns: ['pengembangan softskill', 'softskill'] },
   { key: 'kuliah-sambil-kerja-ln', label: 'Kuliah Sambil Kerja di Luar Negeri', type: 'international_program', patterns: ['kuliah sambil kerja di luar negeri'] },
   { key: 'magang-berbayar-ln', label: 'Magang Berbayar di Luar Negeri', type: 'international_program', patterns: ['magang berbayar di luar negeri'] },
@@ -1847,6 +1857,18 @@ function cleanFacilitySnippetText(text) {
 
   return out;
 }
+function snippetMatchesFacilityTarget(text, matchedTerm) {
+  if (!matchedTerm) return true;
+  const normalized = normalizeFacilityTerm(text);
+  const labelNorm = normalizeFacilityTerm(matchedTerm.label);
+  const patterns = Array.isArray(matchedTerm.patterns) ? matchedTerm.patterns.map(normalizeFacilityTerm).filter(Boolean) : [];
+  if (patterns.some((pattern) => normalized.includes(pattern))) return true;
+  if (labelNorm && normalized.includes(labelNorm)) return true;
+  const strictLabels = /\b(layanan industri|hi think|stikom bali goes to school|student exchange|inkubator bisnis|gccp|bccp|short course)\b/i;
+  if (strictLabels.test(String(matchedTerm.label || ''))) return false;
+  return true;
+}
+
 function scoreFacilitySnippetText(text, matchedTerm) {
   const raw = String(text || '').trim();
   if (!raw) return 0;
@@ -1869,6 +1891,7 @@ function collectFacilitySnippetCandidate(list, text, item, matchedTerm, baseScor
   if (/\?\s*(?:a|answer|jawab|jawaban)\s*[:\-.]/i.test(cleaned)) return;
   const normalized = normalizeFacilityTerm(cleaned);
   if (!normalized) return;
+  if (!snippetMatchesFacilityTarget(cleaned, matchedTerm)) return;
   if (list.some((candidate) => normalizeFacilityTerm(candidate.text) === normalized)) return;
   const sourceKey = String((item && (item.filename || item.sourceFile || item.trainingId || item.id)) || '');
   list.push({
@@ -1914,11 +1937,11 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   scored.sort((a, b) => b.score - a.score);
 
   const snippetCandidates = [];
-  const targetForFaq = candidatePatterns.some((pattern) => q.includes(pattern)) ? q : (candidatePatterns[0] || normalizeFacilityTerm(matchedTerm.label));
+  const targetForFaq = candidatePatterns[0] || normalizeFacilityTerm(matchedTerm.label);
   const targetTokensForFaq = targetForFaq.split(/\s+/).filter((token) => token.length >= 4);
   for (const { item, chunk, score } of scored.slice(0, 8)) {
     const faqAnswer = extractBestFaqAnswerFromChunk(chunk, targetForFaq, targetTokensForFaq);
-    if (faqAnswer) collectFacilitySnippetCandidate(snippetCandidates, faqAnswer, item, matchedTerm, 8 + score);
+    if (faqAnswer) collectFacilitySnippetCandidate(snippetCandidates, `${matchedTerm.label}: ${faqAnswer}`, item, matchedTerm, 8 + score);
     collectFacilityNarrativeSnippets(chunk, item, candidatePatterns, matchedTerm, snippetCandidates);
 
     const lines = chunk
@@ -3261,6 +3284,7 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
     'Gaya bahasa: gunakan bahasa yang sama dengan pertanyaan user. Jika user bertanya dalam bahasa Inggris, jawab dalam bahasa Inggris. Jika user bertanya dalam bahasa Indonesia, jawab dalam Bahasa Indonesia percakapan sehari-hari yang sopan, halus, dan natural seperti chat admin kampus yang ramah.',
     'Jangan terdengar seperti template/formulir. Hindari pembuka berulang seperti "Saya pahami..." kalau tidak perlu.',
     'Jawab langsung ke inti, tetap rapi, dan gunakan "Kak" secara wajar.',
+    'Jangan menulis label "Question:", "Answer:", "Pertanyaan:", atau mengulang pertanyaan user di jawaban.',
     '',
     programHint || intentHint ? `HINT SISTEM:\n${programHint ? `Program terkait: ${programHint}` : ''}${programHint && intentHint ? '\n' : ''}${intentHint ? `Intent terkait: ${intentHint}` : ''}` : 'HINT SISTEM: -',
     '',
@@ -3282,7 +3306,7 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
     top_p: Number(process.env.OPENAI_SEMANTIC_RAG_TOP_P || '0.8')
   });
 
-  return String(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content || '' : '').trim();
+  return stripQuestionAnswerEnvelope(String(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content || '' : '').trim());
 }
 
 const DETERMINISTIC_HANDLERS = [
@@ -3521,8 +3545,8 @@ async function polishEnglishDeterministicAnswer(client, question, result, option
   if (!isLikelyEnglishConversation(question, options) || !answerHasIndonesianMarkers(result.answer)) return result;
   try {
     const prompt = [
-      'Translate this campus assistant answer into natural English.',
-      'Preserve all facts, numbers, URLs, names, bullet structure, and uncertainty. Do not add new information.',
+      'Translate only the assistant answer into natural English.',
+      'Preserve all facts, numbers, URLs, names, bullet structure, and uncertainty. Do not add new information. Do not output Question/Answer labels and do not repeat the question.',
       '',
       `Question:\n${question}`,
       '',
@@ -3539,7 +3563,7 @@ async function polishEnglishDeterministicAnswer(client, question, result, option
       top_p: 0.8
     });
     const translated = String(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content || '' : '').trim();
-    if (translated) return { ...result, answer: translated, debug: { ...(result.debug || {}), englishPolished: true } };
+    if (translated) return { ...result, answer: stripQuestionAnswerEnvelope(translated), debug: { ...(result.debug || {}), englishPolished: true } };
   } catch (err) {
     logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] English polish failed');
   }
@@ -3863,6 +3887,7 @@ module.exports = {
   retrieveSemanticContexts,
   cosineSimilarity
 };
+
 
 
 
