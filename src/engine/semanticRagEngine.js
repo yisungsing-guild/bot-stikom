@@ -1621,6 +1621,7 @@ function isShortCampusSupportFollowUp(question) {
 function campusSupportEntityToFacilityTerm(entity) {
   if (!entity) return null;
   return {
+    key: entity.key,
     label: entity.label,
     patterns: entity.normalizedPatterns
   };
@@ -1815,12 +1816,28 @@ function loadLegacyCampusSupportIndex() {
   }
 }
 
-function scoreSpecificFacilityCandidates(indexForQuery, candidatePatterns) {
+function facilityTargetConflict(text, matchedTerm) {
+  if (!matchedTerm) return false;
+  const normalized = normalizeFacilityTerm(text);
+  const currentPatterns = Array.isArray(matchedTerm.patterns) ? matchedTerm.patterns.map(normalizeFacilityTerm).filter(Boolean) : [];
+  const hasCurrent = currentPatterns.some((pattern) => pattern && normalized.includes(pattern));
+  for (const entity of CAMPUS_SUPPORT_ENTITY_REGISTRY) {
+    if (!entity || entity.key === matchedTerm.key) continue;
+    const isStrictEntity = ['layanan-industri', 'goes-to-school', 'hi-think', 'student-exchange', 'inkubator-bisnis', 'gccp', 'bccp', 'short-course'].includes(entity.key);
+    if (!isStrictEntity) continue;
+    const hasOther = entity.normalizedPatterns.some((pattern) => pattern && normalized.includes(pattern));
+    if (hasOther && !hasCurrent) return true;
+  }
+  return false;
+}
+
+function scoreSpecificFacilityCandidates(indexForQuery, candidatePatterns, matchedTerm = null) {
   const scored = [];
   for (const item of Array.isArray(indexForQuery) ? indexForQuery : []) {
     const chunk = String(item && item.chunk ? item.chunk : '').trim();
     if (!chunk) continue;
-    const normalizedChunk = normalizeFacilityTerm(`${item.filename || ''} ${item.sourceFile || ''} ${chunk}`);
+    if (facilityTargetConflict(chunk, matchedTerm)) continue;
+    const normalizedChunk = normalizeFacilityTerm(chunk);
     const hasTerm = candidatePatterns.some((pattern) => normalizedChunk.includes(pattern));
     if (!hasTerm) continue;
     const sourceBoost = /upload/i.test(String(item && item.source ? item.source : '')) ? 2 : 0;
@@ -1915,6 +1932,30 @@ function collectFacilityNarrativeSnippets(chunk, item, candidatePatterns, matche
     if (list.length >= 10) break;
   }
 }
+
+function isStudentExchangeProgramListQuestion(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(?:student\s*exchange|pertukaran\s+mahasiswa|exchange\s+program)\b/i.test(q)
+    && /\b(?:program\s+apa\s+saja|programnya\s+apa\s+saja|apa\s+saja\s+program|program\s+yang\s+tersedia|ada\s+program\s+apa|pilihan\s+program)\b/i.test(q);
+}
+
+function buildStudentExchangeProgramListAnswer() {
+  return {
+    answer: [
+      'Untuk program internasional/pertukaran yang tersedia di data ITB STIKOM Bali, pilihannya antara lain:',
+      '',
+      '- Student Exchange',
+      '- Summer Program / short course',
+      '- GCCP atau Global Cross Cultural Program',
+      '- BCCP',
+      '',
+      'Kalau yang kakak maksud adalah jadwal, negara tujuan, syarat peserta, atau alur pendaftaran untuk Student Exchange tertentu, detail itu perlu mengikuti informasi terbaru dari International Office/admin kampus.'
+    ].join('\n'),
+    source: 'semantic-rag-campus-support-entity',
+    frameSource: 'semantic-rag-direct-answer',
+    matchedEntity: 'student-exchange'
+  };
+}
 function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   const q = normalizeFacilityTerm(question);
   if (!q) return null;
@@ -1928,9 +1969,9 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   if (matchedTerm.label === 'Career Center') return null;
 
   const candidatePatterns = matchedTerm.patterns.map(normalizeFacilityTerm);
-  let scored = scoreSpecificFacilityCandidates(activeIndex, candidatePatterns);
+  let scored = scoreSpecificFacilityCandidates(activeIndex, candidatePatterns, matchedTerm);
   if (!scored.length) {
-    scored = scoreSpecificFacilityCandidates(loadLegacyCampusSupportIndex(), candidatePatterns);
+    scored = scoreSpecificFacilityCandidates(loadLegacyCampusSupportIndex(), candidatePatterns, matchedTerm);
   }
 
   if (!scored.length) return null;
@@ -1992,6 +2033,9 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(String(question || ''))) return null;
   const resolved = resolveCampusSupportEntity(question, options);
   if (!resolved || !resolved.entity) return null;
+  if (!resolved.fromRecent && resolved.entity.key === 'student-exchange' && isStudentExchangeProgramListQuestion(question)) {
+    return buildStudentExchangeProgramListAnswer();
+  }
 
   const currentMentionsEntity = !resolved.fromRecent;
   if (resolved.fromRecent && isExplicitNonSupportTopic(question)) return null;
@@ -3242,7 +3286,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (/^(?:mohon\s+)?maaf\b/i.test(body)) return body;
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
   const src = String(source || '').toLowerCase();
-  if (src.includes('insufficient-data') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
+  if (src.includes('insufficient-data') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements') || src.includes('direct-answer')) return body;
   const q = String(question || '').toLowerCase();
   if (/\b(apa\s+kabar|apa\s+khabar|kabar\s+apa|khabar\s+apa|gimana\s+kabar|gimana\s+khabar|kabar\s+kamu|khabar\s+kamu|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|bagaimana\s+kabar|bagaimana\s+khabar)\b/i.test(q)) return body;
   if (/^\s*(halo|hallo|hai|hi|hello|haloo|halooo|assalamualaikum|assalamu\s+alaikum|om\s+swastiastu|swastiastu|shalom|namo\s+buddhaya|nammo\s+buddhaya|salam\s+kebajikan|rahayu|salam\s+rahayu|salam|selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam)\s*(kak|min|admin|tiko)?\s*$/i.test(String(question || '').trim())) return body;
@@ -3887,6 +3931,9 @@ module.exports = {
   retrieveSemanticContexts,
   cosineSimilarity
 };
+
+
+
 
 
 

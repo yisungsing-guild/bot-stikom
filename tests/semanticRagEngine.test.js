@@ -1417,7 +1417,43 @@
     expect(result.answer).toMatch(/siap\.stikom-bali\.ac\.id/i);
     expect(result.answer).not.toMatch(/Ada 32 UKM|UKM\/Ormawa|Untuk daftar kuliah|Kakak/i);
   });
+  test('does not answer layanan industri from GoesToSchool chunks even when metadata matches', async () => {
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'wrong-industry-meta',
+          chunk: 'STIKOM Bali # GoesToSchool - Unlock Your Digital Potential. Program ini mendatangi sekolah dan membekali siswa SMA/SMK tentang teknologi informasi, bisnis digital, dan desain visual multimedia.',
+          filename: 'Layanan Industri.docx',
+          source: 'upload',
+          trainingId: 'training-layanan-industri',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((value) => String(value || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Kami dari industri, di stikom itu ada layanan industri apa saja ya?', { topK: 5 });
+
+    expect(result.success).toBe(true);
+    expect(result.source).toMatch(/insufficient-data|campus-support-entity/i);
+    expect(result.answer || '').not.toMatch(/GoesToSchool|Unlock Your Digital Potential|siswa SMA\/SMK/i);
+  });
+
+  test('answers student exchange program-list questions with program options, not only definition', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Saya ingin ikut student exchange dengan stikom bali, di stikom bali ada program apa saja ya?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-campus-support-entity');
+    expect(result.answer).toMatch(/Student Exchange/i);
+    expect(result.answer).toMatch(/GCCP/i);
+    expect(result.answer).toMatch(/BCCP/i);
+    expect(result.answer).not.toMatch(/Student Exchange adalah program pertukaran mahasiswa/i);
+  });
 });
+
 
 
 
