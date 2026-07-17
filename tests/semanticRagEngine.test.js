@@ -1236,6 +1236,37 @@ describe('semanticRagEngine', () => {
     expect(doubleDegreeAfterUkm.answer).not.toMatch(/UKM\/Ormawa|Ada 32 UKM/i);
   });
 
+  test('merges Hi-Think answers from QNA and richer narrative chunks', async () => {
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'hi-think-qna',
+          chunk: 'Apa itu Hi-Think? Hi-Think adalah Program Persiapan Bekerja di Bidang TI di Jepang.',
+          filename: 'QNA Hi-Think.docx',
+          source: 'upload',
+          embedding: [1, 0, 0]
+        },
+        {
+          id: 'hi-think-narasi',
+          chunk: 'Narasi QNA Hi-Think. Hi-Think merupakan program pendampingan karier untuk mempersiapkan mahasiswa bekerja di bidang teknologi informasi di Jepang. Program ini membantu mahasiswa memahami budaya kerja Jepang, kesiapan bahasa, wawancara kerja, dan gambaran kompetensi industri TI yang dibutuhkan.',
+          filename: 'Narasi QNA Hi-Think.docx',
+          source: 'upload',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('apa itu hi-think?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-campus-support-entity');
+    expect(result.answer).toMatch(/Program Persiapan Bekerja di Bidang TI di Jepang/i);
+    expect(result.answer).toMatch(/budaya kerja Jepang|kesiapan bahasa|wawancara kerja|kompetensi industri TI/i);
+    expect(result.answer).not.toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban/i);
+  });
   test('does not let Student Exchange training chunks hijack broad student-activity questions', async () => {
     jest.doMock('../src/engine/ragEngine', () => ({
       loadIndex: jest.fn(() => [

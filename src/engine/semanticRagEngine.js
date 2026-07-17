@@ -1691,6 +1691,49 @@ function scoreSpecificFacilityCandidates(indexForQuery, candidatePatterns) {
   }
   return scored;
 }
+function scoreFacilitySnippetText(text, matchedTerm) {
+  const raw = String(text || '').trim();
+  if (!raw) return 0;
+  const normalized = normalizeFacilityTerm(raw);
+  const labelNorm = normalizeFacilityTerm(matchedTerm && matchedTerm.label);
+  let score = Math.min(raw.length / 90, 8);
+  if (labelNorm && normalized.includes(labelNorm)) score += 4;
+  if (/\b(adalah|merupakan|bertujuan|tujuan|manfaat|membantu|mempersiapkan|persiapan|bekerja|bidang|jepang|industri)\b/i.test(raw)) score += 5;
+  if (/\b(syarat|jadwal|pendaftaran|alur|peserta|pelatihan|bahasa|karier|kerja)\b/i.test(raw)) score += 2;
+  if (/^\s*(?:[-*]|\d+[.)])\s*/.test(raw)) score -= 1;
+  if (raw.length < 80) score -= 2;
+  return score;
+}
+
+function collectFacilitySnippetCandidate(list, text, item, matchedTerm, baseScore = 0) {
+  const cleaned = String(text || '').replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').replace(/\s+/g, ' ').trim();
+  if (!cleaned || cleaned.length < 12) return;
+  if (isLikelyFaqQuestionText(cleaned)) return;
+  const normalized = normalizeFacilityTerm(cleaned);
+  if (!normalized) return;
+  if (list.some((candidate) => normalizeFacilityTerm(candidate.text) === normalized)) return;
+  const sourceKey = String((item && (item.filename || item.sourceFile || item.trainingId || item.id)) || '');
+  list.push({
+    text: cleaned.length > 900 ? `${cleaned.slice(0, 897).trim()}...` : cleaned,
+    sourceKey,
+    score: baseScore + scoreFacilitySnippetText(cleaned, matchedTerm)
+  });
+}
+
+function collectFacilityNarrativeSnippets(chunk, item, candidatePatterns, matchedTerm, list) {
+  const parts = String(chunk || '')
+    .split(/\r?\n|(?<=[.!?])\s+/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  for (let i = 0; i < parts.length; i += 1) {
+    const normalizedLine = normalizeFacilityTerm(parts[i]);
+    if (!candidatePatterns.some((pattern) => normalizedLine.includes(pattern))) continue;
+    const next = parts[i + 1] && !isLikelyFaqQuestionText(parts[i + 1]) ? parts[i + 1] : '';
+    const combined = next && parts[i].length < 450 ? `${parts[i]} ${next}` : parts[i];
+    collectFacilitySnippetCandidate(list, combined, item, matchedTerm, 3);
+    if (list.length >= 10) break;
+  }
+}
 function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   const q = normalizeFacilityTerm(question);
   if (!q) return null;
@@ -1712,15 +1755,13 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   if (!scored.length) return null;
   scored.sort((a, b) => b.score - a.score);
 
-  const snippets = [];
+  const snippetCandidates = [];
   const targetForFaq = candidatePatterns.some((pattern) => q.includes(pattern)) ? q : (candidatePatterns[0] || normalizeFacilityTerm(matchedTerm.label));
   const targetTokensForFaq = targetForFaq.split(/\s+/).filter((token) => token.length >= 4);
-  for (const { chunk } of scored.slice(0, 3)) {
+  for (const { item, chunk, score } of scored.slice(0, 8)) {
     const faqAnswer = extractBestFaqAnswerFromChunk(chunk, targetForFaq, targetTokensForFaq);
-    if (faqAnswer && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(faqAnswer))) {
-      snippets.push(faqAnswer);
-      break;
-    }
+    if (faqAnswer) collectFacilitySnippetCandidate(snippetCandidates, faqAnswer, item, matchedTerm, 8 + score);
+    collectFacilityNarrativeSnippets(chunk, item, candidatePatterns, matchedTerm, snippetCandidates);
 
     const lines = chunk
       .split(/\r?\n/)
@@ -1732,15 +1773,24 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
     });
     const chosen = matchedLines.length ? matchedLines : lines.slice(0, 2);
     for (const line of chosen) {
-      const cleaned = line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim();
-      if (cleaned && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(cleaned))) {
-        snippets.push(cleaned);
-      }
-      if (snippets.length >= 4) break;
+      collectFacilitySnippetCandidate(snippetCandidates, line, item, matchedTerm, score);
+      if (snippetCandidates.length >= 12) break;
     }
-    if (snippets.length >= 4) break;
   }
 
+  snippetCandidates.sort((a, b) => b.score - a.score || b.text.length - a.text.length);
+  const snippets = [];
+  const usedSources = new Set();
+  for (const candidate of snippetCandidates) {
+    const normalized = normalizeFacilityTerm(candidate.text);
+    if (snippets.some((existing) => {
+      const existingNorm = normalizeFacilityTerm(existing);
+      return existingNorm.includes(normalized) || normalized.includes(existingNorm);
+    })) continue;
+    snippets.push(candidate.text);
+    if (candidate.sourceKey) usedSources.add(candidate.sourceKey);
+    if (snippets.length >= (usedSources.size >= 2 ? 3 : 2)) break;
+  }
   if (!snippets.length) return null;
   return {
     answer: [
