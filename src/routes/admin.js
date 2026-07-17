@@ -160,6 +160,26 @@ module.exports = function (provider) {
     return `${baseUrl}/admin/training/${encodeURIComponent(String(trainingId))}`;
   }
 
+  function queueTrainingUploadNotification(req, payload = {}) {
+    setImmediate(async () => {
+      try {
+        const notifyResult = await sendTrainingUploadNotification({
+          uploaderDisplayName: req.user && req.user.displayName ? String(req.user.displayName) : null,
+          uploaderUsername: req.user && req.user.username ? String(req.user.username) : null,
+          uploaderRole: req.user && req.user.role ? String(req.user.role) : null,
+          createdAt: new Date().toISOString(),
+          link: payload.trainingDataId ? buildTrainingReviewLink(req, payload.trainingDataId) : null,
+          ...payload,
+        });
+        if (!notifyResult.ok) {
+          logger.warn({ notifyResult }, '[Upload] Training upload notification failed');
+        }
+      } catch (err) {
+        logger.warn({ err: err && err.message ? err.message : String(err) }, '[Upload] Training upload notification error');
+      }
+    });
+  }
+
   function isTrainingOptionalFieldUnavailableError(err) {
     const msg = err && err.message ? String(err.message) : String(err || '');
     const code = err && err.code ? String(err.code) : '';
@@ -1192,27 +1212,13 @@ router.post(
         wasTruncated: !!result.wasTruncated
       });
 
-      setImmediate(async () => {
-        try {
-          const notifyResult = await sendTrainingUploadNotification({
-            filename: req.uploadInfo.originalname,
-            trainingDataId: result.trainingDataId,
-            divisionKey,
-            source: 'upload',
-            fileSize: req.uploadInfo.size,
-            uploaderDisplayName: req.user && req.user.displayName ? String(req.user.displayName) : null,
-            uploaderUsername: req.user && req.user.username ? String(req.user.username) : null,
-            uploaderRole: req.user && req.user.role ? String(req.user.role) : null,
-            createdAt: new Date().toISOString(),
-            link: buildTrainingReviewLink(req, result.trainingDataId),
-            contentPreview: result.content.substring(0, 200)
-          });
-          if (!notifyResult.ok) {
-            logger.warn({ notifyResult }, '[Upload] Training upload notification failed');
-          }
-        } catch (err) {
-          logger.warn({ err: err && err.message ? err.message : String(err) }, '[Upload] Training upload notification error');
-        }
+      queueTrainingUploadNotification(req, {
+        filename: req.uploadInfo.originalname,
+        trainingDataId: result.trainingDataId,
+        divisionKey,
+        source: 'upload',
+        fileSize: req.uploadInfo.size,
+        contentPreview: result.content.substring(0, 200)
       });
 
       // Trigger RAG ingestion in background (do not block response)
@@ -1330,6 +1336,15 @@ router.post(
         storedAs: req.uploadInfo.filename,
         fileSize: req.uploadInfo.size,
         mimetype: req.uploadInfo.mimetype,
+      });
+
+      queueTrainingUploadNotification(req, {
+        filename: req.uploadInfo.originalname,
+        trainingDataId: null,
+        divisionKey: uploaderDivisionKey,
+        source: 'validation-upload',
+        fileSize: req.uploadInfo.size,
+        contentPreview: `Stored as: ${req.uploadInfo.filename}`
       });
     } catch (err) {
       if (uploadedPath) {
@@ -1670,6 +1685,15 @@ router.post(
           wasTruncated: !!parsed.wasTruncated,
         });
 
+        queueTrainingUploadNotification(req, {
+          filename: info.originalname,
+          trainingDataId: parsed.trainingDataId,
+          divisionKey,
+          source: 'bulk-upload',
+          fileSize: info.size,
+          contentPreview: parsed.content.substring(0, 200)
+        });
+
         // Trigger RAG ingestion in background (do not block response)
         setImmediate(async () => {
           try {
@@ -1781,6 +1805,15 @@ router.post('/training/manual', async (req, res, next) => {
       filename: training.filename,
       contentLength: training.content.length,
       wasTruncated: limited.wasTruncated
+    });
+
+    queueTrainingUploadNotification(req, {
+      filename: training.filename,
+      trainingDataId: training.id,
+      divisionKey,
+      source: source || 'manual',
+      fileSize: training.content.length,
+      contentPreview: training.content.substring(0, 200)
     });
     
     // Trigger RAG ingestion in background
@@ -1901,6 +1934,15 @@ router.post('/training/url', async (req, res, next) => {
 
       res.status(201).send({ ok: true, mode: 'single', created });
 
+      queueTrainingUploadNotification(req, {
+        filename: training.filename,
+        trainingDataId: training.id,
+        divisionKey,
+        source: 'url',
+        fileSize: training.content.length,
+        contentPreview: training.content.substring(0, 200)
+      });
+
       setImmediate(async () => {
         try {
           console.log('[RAG] Starting ingestion for URL training:', training.id);
@@ -1988,6 +2030,15 @@ router.post('/training/url', async (req, res, next) => {
           });
         }
         created.push({ id: training.id, url: u, title });
+
+        queueTrainingUploadNotification(req, {
+          filename: training.filename,
+          trainingDataId: training.id,
+          divisionKey,
+          source: 'sitemap-url',
+          fileSize: training.content.length,
+          contentPreview: training.content.substring(0, 200)
+        });
 
         setImmediate(async () => {
           try {
@@ -2802,6 +2853,15 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
       return res.status(400).send({ error: 'File wajib diunggah' });
     }
     res.send({ ok: true, path: req.file.path, filename: req.file.originalname });
+
+    queueTrainingUploadNotification(req, {
+      filename: req.file.originalname,
+      trainingDataId: null,
+      divisionKey: null,
+      source: 'legacy-upload',
+      fileSize: req.file.size,
+      contentPreview: req.file.path ? `Path: ${req.file.path}` : null
+    });
   } catch (err) {
     console.error('[POST /admin/upload] Error:', err.message);
     next(err);
@@ -2880,6 +2940,15 @@ router.post(
         originalname: req.uploadInfo.originalname,
         size: req.uploadInfo.size,
         mimetype: req.uploadInfo.mimetype
+      });
+
+      queueTrainingUploadNotification(req, {
+        filename: req.uploadInfo.originalname,
+        trainingDataId: null,
+        divisionKey: null,
+        source: 'media-upload',
+        fileSize: req.uploadInfo.size,
+        contentPreview: `URL: ${url}`
       });
     } catch (err) {
       if (uploadedPath) {

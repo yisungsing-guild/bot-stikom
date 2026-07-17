@@ -959,6 +959,37 @@ function tryOutOfDomainAnswer(question) {
   };
 }
 
+function isAcademicScheduleLookupQuestion(question) {
+  const q = String(question || '').toLowerCase();
+  if (!q.trim()) return false;
+  const scheduleSignal = /\b(jadwal|kalender|agenda|kapan|tanggal|tgl|hari|jam|periode|pelaksanaan|dilaksanakan|berlangsung)\b/i.test(q);
+  const examSignal = /\b(ujian|uts|uas|remedial|remidi|ujian\s+ulang|ujian\s+susulan|susulan)\b/i.test(q);
+  return scheduleSignal && examSignal;
+}
+
+function isOperationalAcademicPolicyQuestion(question) {
+  const q = String(question || '').toLowerCase();
+  if (!q.trim()) return false;
+  if (isAcademicScheduleLookupQuestion(q)) return false;
+
+  const academicPolicySignal = /\b(absensi|presensi|kehadiran|remedial|remidi|ujian\s+ulang|ujian\s+susulan|susulan|kompensasi|dispensasi|izin\s+tidak\s+masuk|sakit|alpha|alpa|bolos)\b/i.test(q);
+  if (!academicPolicySignal) return false;
+
+  // PMB/admission questions should keep using the normal PMB route.
+  if (/\b(pmb|pendaftaran|daftar\s+kuliah|gelombang|biaya|ukt|dpp|prodi|program\s+studi|jurusan|beasiswa)\b/i.test(q)) return false;
+  return true;
+}
+
+function isGenericSemanticClarification(question, clarificationQuestion) {
+  const q = String(question || '').toLowerCase();
+  const c = String(clarificationQuestion || '').toLowerCase();
+  if (!c.trim()) return false;
+
+  if (isOperationalAcademicPolicyQuestion(q)) return true;
+  if (/\b(apakah\s+anda\s+ingin|apakah\s+kamu\s+ingin|ingin\s+informasi\s+umum\s+atau\s+spesifik|kebijakan\s+remedial|hal\s+lainnya)\b/i.test(c)) return true;
+  return false;
+}
+
 function tryFeedbackAnswer(question) {
   const q = String(question || '').toLowerCase().trim();
   if (!q) return null;
@@ -3266,6 +3297,12 @@ async function querySemanticRag(question, options = {}) {
   const cachedResult = getCachedSemanticResult(resultCacheKey);
   if (cachedResult) return cachedResult;
 
+  if (isOperationalAcademicPolicyQuestion(question)) {
+    const response = { success: true, answer: null, source: 'semantic-rag-operational-academic-policy-no-answer', contexts: [] };
+    setCachedSemanticResult(resultCacheKey, response);
+    return response;
+  }
+
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
   const preAiResult = runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });
   if (preAiResult) {
@@ -3321,6 +3358,18 @@ async function querySemanticRag(question, options = {}) {
   }
 
   if (rewrite.needsClarification && rewrite.clarificationQuestion) {
+    if (isGenericSemanticClarification(question, rewrite.clarificationQuestion)) {
+      const response = {
+        success: true,
+        answer: null,
+        source: 'semantic-rag-clarify-suppressed',
+        contexts: [],
+        debug: { rewrite, reason: 'generic_or_unsupported_clarification' }
+      };
+      setCachedSemanticResult(resultCacheKey, response);
+      return response;
+    }
+
     const response = {
       success: true,
       answer: rewrite.clarificationQuestion,

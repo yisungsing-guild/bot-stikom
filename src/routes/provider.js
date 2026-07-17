@@ -3647,7 +3647,7 @@ module.exports = function (provider) {
     const t = trimmed.toLowerCase();
     if (!t) return false;
     // Akademik & Kemahasiswaan
-    if (/(akademik\b|perwalian|krs\b|khs\b|sks\b|jadwal\s*(kuliah|perkuliahan|ujian|uts|uas)|kalender\s+akademik|nilai|transkrip|cuti\s+akademik|skripsi|yudisium|wisuda|bimbingan|sidang|kemahasiswaan|ukm\b|organisasi|ormawa|bem\b|hima\b)/i.test(t)) {
+    if (/(akademik\b|perwalian|krs\b|khs\b|sks\b|jadwal\s*(kuliah|perkuliahan|ujian|uts|uas)|kalender\s+akademik|nilai|transkrip|cuti\s+akademik|skripsi|yudisium|wisuda|bimbingan|sidang|kemahasiswaan|ukm\b|organisasi|ormawa|bem\b|hima\b|absensi|presensi|kehadiran|remedial|remidi|ujian\s+ulang|ujian\s+susulan|izin\s+tidak\s+masuk|alpha|alpa)/i.test(t)) {
       // If the user is asking an informational question (contains interrogative/question words),
       // or explicitly asks for names/list of UKM, let the message fall through to RAG
       // instead of immediately prompting for admin contact.
@@ -5251,9 +5251,17 @@ module.exports = function (provider) {
     return t.slice(0, Math.max(0, maxLen - 1)).trimEnd() + '…';
   }
 
+  function isAcademicScheduleLookupQuestion(rawText) {
+    const t = String(rawText || '').toLowerCase();
+    if (!t.trim()) return false;
+    const scheduleSignal = /\b(jadwal|kalender|agenda|kapan|tanggal|tgl|hari|jam|periode|pelaksanaan|dilaksanakan|berlangsung)\b/i.test(t);
+    const examSignal = /\b(ujian|uts|uas|remedial|remidi|ujian\s+ulang|ujian\s+susulan|susulan)\b/i.test(t);
+    return scheduleSignal && examSignal;
+  }
   function inferNonMarketingDepartmentSelection(rawText) {
     const t = String(rawText || '').toLowerCase();
     if (!t.trim()) return null;
+    if (isAcademicScheduleLookupQuestion(t)) return null;
 
     // If user explicitly asks for a department contact, try to infer the specific dept.
     // This helps short commands like: "kontak akademik" / "nomor keuangan".
@@ -5269,7 +5277,7 @@ module.exports = function (provider) {
 
     // Akademik & Kemahasiswaan — treat these as non-marketing dept questions
     // (do not skip offering contact for informational phrasing).
-    if (/(\bakademik\b|perwalian|krs\b|khs\b|sks\b|jadwal\s*(kuliah|perkuliahan|ujian|uts|uas)|kalender\s+akademik|nilai|transkrip|cuti\s+akademik|skripsi|yudisium|wisuda|bimbingan|sidang|kemahasiswaan|ukm\b|organisasi|ormawa|bem\b|hima\b)/i.test(t)) {
+    if (/(\bakademik\b|perwalian|krs\b|khs\b|sks\b|jadwal\s*(kuliah|perkuliahan|ujian|uts|uas)|kalender\s+akademik|nilai|transkrip|cuti\s+akademik|skripsi|yudisium|wisuda|bimbingan|sidang|kemahasiswaan|ukm\b|organisasi|ormawa|bem\b|hima\b|absensi|presensi|kehadiran|remedial|remidi|ujian\s+ulang|ujian\s+susulan|izin\s+tidak\s+masuk|alpha|alpa)/i.test(t)) {
       return 1;
     }
 

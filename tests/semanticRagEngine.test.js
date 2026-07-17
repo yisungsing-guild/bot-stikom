@@ -25,6 +25,23 @@ describe('semanticRagEngine', () => {
     expect(result.source).toBe('semantic-rag-disabled');
   });
 
+  test('does not answer operational academic policy questions without data', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const result = await querySemanticRag('Kalau absensinya 5 kali apakah masih bisa ikut remedial ya');
+
+    expect(result.success).toBe(true);
+    expect(result.answer).toBeNull();
+    expect(result.source).toBe('semantic-rag-operational-academic-policy-no-answer');
+  });
+  test('allows remedial and exam schedule questions to reach retrieval', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const result = await querySemanticRag('Jadwal remedial kapan ya?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).not.toBe('semantic-rag-operational-academic-policy-no-answer');
+  });
   test('answers greeting and wellbeing without calling semantic RAG', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 

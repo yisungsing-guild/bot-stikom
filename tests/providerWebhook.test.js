@@ -1191,6 +1191,36 @@ describe('Provider webhook', () => {
     expect(sess3 && sess3.data).toBeTruthy();
   });
 
+  test('remedial and absence questions are routed to Akademik instead of generic RAG clarification', async () => {
+    const chatId = 'user-remedial-absence';
+
+    const res = await request(app)
+      .post('/provider/webhook')
+      .send({ chatId, text: 'Kalau absensinya 5 kali apakah masih bisa ikut remedial ya' })
+      .expect(200);
+
+    expect(res.body.ok).toBe(true);
+    expect(res.body.source).toBe('non_marketing_dept_offer');
+    expect(res.body.selection).toBe(1);
+
+    const offerText = provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\n');
+    expect(offerText).toMatch(/ranah\s*:\s*Akademik/i);
+    expect(offerText).not.toMatch(/Apakah Anda ingin|kebijakan remedial|informasi umum atau spesifik/i);
+  });
+  test('remedial schedule questions are allowed through retrieval instead of Akademik contact offer', async () => {
+    const chatId = 'user-remedial-schedule';
+
+    const res = await request(app)
+      .post('/provider/webhook')
+      .send({ chatId, text: 'Jadwal remedial kapan ya?' })
+      .expect(200);
+
+    expect(res.body.ok).toBe(true);
+    expect(res.body.source).not.toBe('non_marketing_dept_offer');
+
+    const sentText = provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\n');
+    expect(sentText).not.toMatch(/ranah\s*:\s*Akademik|arah(?:kan)?\s+ke\s+kontak\s+admin\s+Akademik/i);
+  });
   test('non-marketing dept offer: replying YA returns the specific department contact', async () => {
     const chatId = 'user-non-marketing-accept';
 

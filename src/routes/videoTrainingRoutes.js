@@ -2,6 +2,7 @@ const express = require('express');
 const prisma = require('../db');
 const { FileParser } = require('../engine/fileParser');
 const { ingestTrainingData } = require('../engine/ragEngine');
+const { sendTrainingUploadNotification } = require('../utils/emailNotifier');
 const {
   upload,
   validateUploadRequest,
@@ -11,6 +12,44 @@ const {
 } = require('../middleware/uploadSecurity');
 
 const router = express.Router();
+function computePublicBaseUrl(req) {
+  const baseEnv = String(process.env.PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
+  if (baseEnv) return baseEnv;
+
+  const forwardedProto = req && req.headers && req.headers['x-forwarded-proto']
+    ? String(req.headers['x-forwarded-proto']).split(',')[0].trim()
+    : '';
+  const proto = forwardedProto || (req && req.protocol) || 'http';
+  const host = req && typeof req.get === 'function' ? req.get('host') : null;
+  if (host) return `${proto}://${host}`;
+  return '';
+}
+
+function buildTrainingReviewLink(req, trainingId) {
+  const baseUrl = computePublicBaseUrl(req);
+  if (!baseUrl || !trainingId) return null;
+  return `${baseUrl}/admin/training/${encodeURIComponent(String(trainingId))}`;
+}
+
+function queueTrainingUploadNotification(req, payload = {}) {
+  setImmediate(async () => {
+    try {
+      const notifyResult = await sendTrainingUploadNotification({
+        uploaderDisplayName: req.user && req.user.displayName ? String(req.user.displayName) : null,
+        uploaderUsername: req.user && req.user.username ? String(req.user.username) : null,
+        uploaderRole: req.user && req.user.role ? String(req.user.role) : null,
+        createdAt: new Date().toISOString(),
+        link: payload.trainingDataId ? buildTrainingReviewLink(req, payload.trainingDataId) : null,
+        ...payload,
+      });
+      if (!notifyResult.ok) {
+        console.warn('[video-training] notification failed', notifyResult);
+      }
+    } catch (err) {
+      console.warn('[video-training] notification error', err && err.message ? err.message : err);
+    }
+  });
+}
 
 // Endpoint: accept direct video file upload (multipart/form-data field `file`)
 router.post(
@@ -66,6 +105,15 @@ router.post(
       });
 
       res.status(201).send({ ok: true, trainingDataId: result.trainingDataId, filename: originalName });
+
+      queueTrainingUploadNotification(req, {
+        filename: originalName,
+        trainingDataId: result.trainingDataId,
+        divisionKey,
+        source: 'video-upload',
+        fileSize: req.uploadInfo.size,
+        contentPreview: result.content ? result.content.substring(0, 200) : null
+      });
     } catch (err) {
       // cleanup on failure
       if (uploadedPath) {
@@ -123,6 +171,15 @@ router.post('/training/video-url', async (req, res, next) => {
     });
 
     res.status(201).send({ ok: true, trainingDataId: training.id, filename: safeTitle, sourceUrl: safeSourceUrl });
+
+    queueTrainingUploadNotification(req, {
+      filename: safeTitle,
+      trainingDataId: training.id,
+      divisionKey: divisionKeyRaw || null,
+      source: 'video-url',
+      fileSize: training.content.length,
+      contentPreview: training.content.substring(0, 200)
+    });
   } catch (err) {
     next(err);
   }
