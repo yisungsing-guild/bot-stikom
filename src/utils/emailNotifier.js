@@ -12,7 +12,7 @@ function getEmailConfig() {
   const host = String(process.env.SMTP_HOST || '').trim();
   const port = parseInt(String(process.env.SMTP_PORT || ''), 10) || null;
   const user = String(process.env.SMTP_USER || '').trim();
-  const pass = String(process.env.SMTP_PASS || '').trim();
+  const pass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '');
   const from = String(process.env.EMAIL_FROM || process.env.SMTP_FROM || '').trim();
   const recipients = parseCsvEmails(process.env.SUPERADMIN_NOTIFICATION_EMAILS || process.env.NOTIFICATION_EMAILS || '');
   const enabled = Boolean(host && port && user && pass && from && recipients.length);

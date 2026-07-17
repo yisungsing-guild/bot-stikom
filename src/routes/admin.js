@@ -15,7 +15,7 @@ const {
 const { FileParser } = require('../engine/fileParser');
 const { AnalyticsEngine } = require('../engine/analyticsEngine');
 const { ingestTrainingData } = require('../engine/ragEngine');
-const { sendTrainingUploadNotification } = require('../utils/emailNotifier');
+const { sendTrainingUploadNotification, getEmailConfig } = require('../utils/emailNotifier');
 const { getUploadDir, getPublicMediaDir } = require('../utils/ragPaths');
 const path = require('path');
 const { appendChatMessage, getChatMessages } = require('../engine/chatLog');
@@ -173,6 +173,8 @@ module.exports = function (provider) {
         });
         if (!notifyResult.ok) {
           logger.warn({ notifyResult }, '[Upload] Training upload notification failed');
+        } else {
+          logger.info({ source: payload.source || null, trainingDataId: payload.trainingDataId || null }, '[Upload] Training upload notification sent');
         }
       } catch (err) {
         logger.warn({ err: err && err.message ? err.message : String(err) }, '[Upload] Training upload notification error');
@@ -256,6 +258,52 @@ module.exports = function (provider) {
         divisionKey
       }
     });
+  });
+
+  router.post('/test/email-notification', async (req, res) => {
+    try {
+      const cfg = getEmailConfig();
+      const config = {
+        enabled: cfg.enabled,
+        hasHost: !!cfg.host,
+        hasPort: !!cfg.port,
+        secure: cfg.secure,
+        hasUser: !!(cfg.auth && cfg.auth.user),
+        hasPass: !!(cfg.auth && cfg.auth.pass),
+        hasFrom: !!cfg.from,
+        recipientCount: Array.isArray(cfg.recipients) ? cfg.recipients.length : 0,
+      };
+
+      if (!cfg.enabled) {
+        return res.status(400).send({ ok: false, error: 'Email notification is not configured', config });
+      }
+
+      const result = await sendTrainingUploadNotification({
+        filename: 'smtp-test.txt',
+        trainingDataId: 'smtp-test',
+        divisionKey: 'test',
+        source: 'smtp-test',
+        fileSize: 0,
+        uploaderDisplayName: req.user && req.user.displayName ? String(req.user.displayName) : 'Admin',
+        uploaderUsername: req.user && req.user.username ? String(req.user.username) : null,
+        uploaderRole: req.user && req.user.role ? String(req.user.role) : null,
+        createdAt: new Date().toISOString(),
+        link: computePublicBaseUrl(req) || null,
+        contentPreview: 'Email test dari admin panel. Jika email ini masuk, SMTP Gmail sudah aktif.'
+      });
+
+      if (!result.ok) {
+        logger.warn({ result }, '[EmailTest] notification failed');
+        return res.status(502).send({ ok: false, error: result.error || result.reason || 'Failed to send email', config });
+      }
+
+      logger.info({ recipientCount: config.recipientCount }, '[EmailTest] notification sent');
+      res.send({ ok: true, config });
+    } catch (err) {
+      const message = err && err.message ? String(err.message) : String(err);
+      logger.warn({ err: message }, '[EmailTest] notification error');
+      res.status(500).send({ ok: false, error: message });
+    }
   });
 
   // Feature flags (persistent via Setting)

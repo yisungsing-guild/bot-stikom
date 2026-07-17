@@ -44,6 +44,8 @@ function queueTrainingUploadNotification(req, payload = {}) {
       });
       if (!notifyResult.ok) {
         console.warn('[video-training] notification failed', notifyResult);
+      } else {
+        console.log('[video-training] notification sent', { source: payload.source || null, trainingDataId: payload.trainingDataId || null });
       }
     } catch (err) {
       console.warn('[video-training] notification error', err && err.message ? err.message : err);
