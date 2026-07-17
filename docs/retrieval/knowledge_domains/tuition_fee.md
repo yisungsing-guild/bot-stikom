@@ -1,4 +1,4 @@
-# Tuition Fee Knowledge
+﻿# Tuition Fee Knowledge
 
 Dokumen knowledge bawaan untuk biaya PMB ITB STIKOM Bali Tahun Ajaran 2026/2027.
 Dipakai sebagai fallback saat RAG index hasil upload belum tersedia/terbaca di production.
@@ -99,7 +99,7 @@ Program: Double Degree DNUI / Dalian Neusoft University of Information
 Pendaftaran 3.000.000
 Dana Pendidikan Pokok 20.000.000
 Bahasa Mandarin 5.000.000
-Biaya Pendidikan & Ujian/Subject 16.000.000
+Biaya Pendidikan Per Semester 16.000.000
 
 ## Fee Profile: Double Degree HELP University
 Program: Double Degree HELP University Malaysia
@@ -114,3 +114,7 @@ Pendaftaran 500.000
 Dana Pendidikan Pokok (DPP) 14.000.000
 Jas Almamater dan Topi 750.000
 Kaos, Tas, GMTI 750.000
+Biaya Pendidikan Per Semester 7.500.000
+Biaya Pendidikan Per Semester Khusus Alumni SMK TI Bali Global dan SMK Pandawa Bali Global 6.500.000
+
+

@@ -28,12 +28,21 @@ function educationFeeLine(profile, options = {}) {
   return `${label}: ${Number.isFinite(profile.semester) ? formatRp(profile.semester) : missingText}`;
 }
 
+function isNonSemesterEducationFee(profile) {
+  return !!(profile && profile.educationFeeLabel && !/per\s+semester|ukt/i.test(profile.educationFeeLabel));
+}
+
 function educationFeeInline(profile) {
   if (!profile || !Number.isFinite(profile.semester)) return 'tidak tercantum';
-  if (profile.educationFeeLabel && !/per\s+semester|ukt/i.test(profile.educationFeeLabel)) {
+  if (isNonSemesterEducationFee(profile)) {
     return `${formatRp(profile.semester)} (${profile.educationFeeLabel})`;
   }
   return `${formatRp(profile.semester)}/semester`;
+}
+
+function educationFeeComparableLabel(profile) {
+  if (isNonSemesterEducationFee(profile)) return profile.educationFeeLabel;
+  return 'biaya pendidikan per semester';
 }
 
 function normalizeWave(question) {
@@ -691,11 +700,19 @@ function tryScholarshipAnswer(question) {
   };
 }
 
+function hasDoubleDegreePartnerFeeTarget(question) {
+  const q = String(question || '').toLowerCase();
+  const hasFee = /\b(?:biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments)\b/i.test(q);
+  const hasDoubleDegree = /\b(?:double\s*degree|dual\s*degree|dd)\b/i.test(q);
+  const hasPartner = /\b(?:help(?:\s+(?:uni|university))?|help\s+uni(?:versity)?\s+malaysia|dnui|dalian\s+neusoft|utb|universitas\s+teknologi\s+bandung)\b/i.test(q);
+  return hasFee && hasDoubleDegree && hasPartner;
+}
 function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
   const q = String(question || '').toLowerCase().trim();
   if (!q) return null;
   const asksFee = /\b(biaya|harga|bayar|uang|ukt|dpp|pendaftaran|rincian\s+biaya|biaya\s+s1|s1)\b/.test(q);
   if (!asksFee) return null;
+  if (hasDoubleDegreePartnerFeeTarget(question)) return null;
 
   const hasProgram = !!detectProgram(question);
   const hasWave = !!normalizeWave(question);
@@ -853,7 +870,7 @@ function getSessionFeeContextText(sessionData) {
 function tryDetailedFeeAnswer(question, index, options = {}) {
   const q = String(question || '').toLowerCase();
   const sessionText = getSessionFeeContextText(options && options.sessionData);
-  const hasOwnFeeSignal = /\b(biaya|rincian|detail|dpp|ukt|gelombang|gel\b|bayar|bayarnya|pendaftaran|registrasi|duit|uang|harga|total|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester|fee|fees|cost|costs|tuition|payment|payments)\b/.test(q);
+  const hasOwnFeeSignal = /\b(biaya|rincian|detail|dpp|ukt|gelombang|gel\b|bayar|bayarnya|pendaftaran|registrasi|duit|uang|harga|total|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester|fee|fees|cost|costs|tuition|payment|payments)\b/.test(q) || hasDoubleDegreePartnerFeeTarget(question);
   const hasContextualFeeSignal = /\b(cek\s+lagi|coba\s+cek|itu|yang\s+(?:double|dual)\s*degree|yang\s+help)\b/i.test(q) && /\b(biaya|rincian|detail|dpp|ukt|semester|pendaftaran|registrasi|harga|bayar)\b/i.test(sessionText);
   if (!hasOwnFeeSignal && !hasContextualFeeSignal) return null;
   if (isRegistrationFeeQuestion(question) && !/\b(rincian|detail|dpp|ukt|awal(?:nya)?|masuk|total\s+(?:awal|kuliah)|semua)\b/.test(q)) return null;
@@ -931,9 +948,10 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
         : '';
       return {
         answer: [
-          `Biaya pendidikan per semester (UKT) untuk Prodi ${found.program.label}: ${formatRp(found.profile.semester)}.`,
+          `${educationFeeComparableLabel(found.profile)} untuk Prodi ${found.program.label}: ${formatRp(found.profile.semester)}.`,
+          found.profile.specialSemester ? `Khusus Alumni SMK TI Bali Global dan SMK Pandawa Bali Global: ${formatRp(found.profile.specialSemester)} per semester.` : null,
           '',
-          `UKT/biaya pendidikan per semester dibayarkan per semester dan tidak bergantung pada gelombang pendaftaran.${discrepancyNote}`
+          `Biaya pendidikan per semester dibayarkan per semester dan tidak bergantung pada gelombang pendaftaran.${discrepancyNote}`
         ].join('\n'),
         program: found.program,
         profile: found.profile,
@@ -1003,6 +1021,26 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
     };
   }
 
+  if (!wave && found && found.program && found.profile && found.program.family === 'utb') {
+    const { program, profile } = found;
+    return {
+      answer: [
+        `Rincian biaya program ${program.label}:`,
+        '',
+        profile.pendaftaran ? `* Biaya pendaftaran: ${formatRp(profile.pendaftaran)}` : null,
+        profile.dpp ? `* DPP / Dana Pendidikan Pokok: ${formatRp(profile.dpp)}` : null,
+        profile.atribut ? `* Atribut/perlengkapan awal: ${formatRp(profile.atribut)}` : null,
+        profile.biayaAwalLow ? `* Total komponen awal masuk sebelum potongan gelombang: ${formatRange(profile.biayaAwalLow, profile.biayaAwalHigh)}` : null,
+        `* ${educationFeeLine(profile, { missingText: 'belum tercantum pada data biaya UTB yang tersedia' })}`,
+        profile.specialSemester ? `* Biaya pendidikan per semester khusus Alumni SMK TI Bali Global dan SMK Pandawa Bali Global: ${formatRp(profile.specialSemester)}` : null,
+        '',
+        'Kalau kakak sebutkan gelombangnya, misalnya Gelombang I A atau Gelombang IV A, saya bisa hitungkan total setelah potongan pendaftaran dan DPP.'
+      ].filter(Boolean).join('\n'),
+      program,
+      profile,
+      wave: null
+    };
+  }
   if (!wave && found && found.program && found.profile && found.program.family === 'international') {
     const { program, profile } = found;
     return {
@@ -1104,6 +1142,7 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
     lines.push(`Total awal masuk setelah potongan (${wave.display}): ${formatRp(totalAwal)}`);
     lines.push('');
     lines.push(educationFeeLine(profile, { missingText: 'belum tercantum pada data biaya UTB yang tersedia' }));
+    if (profile.specialSemester) lines.push(`Biaya pendidikan per semester khusus Alumni SMK TI Bali Global dan SMK Pandawa Bali Global: ${formatRp(profile.specialSemester)}`);
     return { answer: lines.join('\n').trim(), program, profile, wave };
   }
 
@@ -1160,7 +1199,7 @@ function tryContextualMultiProgramFeeAnswer(question, index, options = {}) {
   const lines = [
     'Berikut gambaran biaya untuk program studi yang kakak tanyakan:',
     '',
-    'Saya tampilkan biaya awal masuk dan biaya pendidikan per semester. Biaya semester tidak saya kalikan menjadi total sampai lulus agar tidak menebak di luar data.'
+    'Saya tampilkan biaya awal masuk dan komponen biaya pendidikan sesuai label yang tertulis di data. Jika tertulis per semester, biaya itu tidak saya kalikan menjadi total sampai lulus agar tidak menebak di luar data.'
   ];
 
   for (const p of sorted) {
@@ -1542,7 +1581,8 @@ function extractProfiles(index = ragEngine.loadIndex()) {
     dpp: grab(utbText, [/Dana\s+Pendidikan\s+Pokok\s*(?:\(DPP\))?\s*([0-9][0-9.]{0,20})/i], { min: 1000000, max: 100000000 }),
     uniform: grab(utbText, [/Jas[^0-9]{0,80}([0-9][0-9.]{0,20})/i], { min: 100000, max: 10000000 }),
     activity: grab(utbText, [/Kaos[^0-9]{0,80}([0-9][0-9.]{0,20})/i], { min: 100000, max: 10000000 }),
-    semester: grab(utbText, [/Biaya\s+Pendidikan\s+Per\s+Semester\s*([0-9][0-9.]{0,20})/i], { min: 1000000, max: 50000000 })
+    semester: grab(utbText, [/Biaya\s+Pendidikan\s+Per\s+Semester\s*([0-9][0-9.]{0,20})/i], { min: 1000000, max: 50000000 }),
+    specialSemester: grab(utbText, [/Biaya\s+Pendidikan\s+Per\s+Semester\s+Khusus\s+Alumni[^0-9]{0,160}([0-9][0-9.]{0,20})/i], { min: 1000000, max: 50000000 })
   } : null;
 
   const profiles = [];
@@ -1614,7 +1654,8 @@ function extractProfiles(index = ragEngine.loadIndex()) {
       profile.languageFee = data.language;
       profile.languageLabel = key === 'dnui' ? 'Bahasa Mandarin' : 'Bahasa Inggris';
     }
-    if (profile) profile.educationFeeLabel = 'Biaya Pendidikan & Ujian/Subject';
+    if (profile && key === 'dnui') profile.educationFeeLabel = 'Biaya pendidikan per semester';
+    if (profile && key === 'help') profile.educationFeeLabel = 'Biaya Pendidikan & Ujian/Subject';
     if (profile) profiles.push(profile);
   }
   if (utb) {
@@ -1633,6 +1674,8 @@ function extractProfiles(index = ragEngine.loadIndex()) {
       activity: utb.activity,
       semester: utb.semester
     });
+    if (profile) profile.educationFeeLabel = 'Biaya pendidikan per semester';
+    if (profile && Number.isFinite(utb.specialSemester)) profile.specialSemester = utb.specialSemester;
     if (profile) profiles.push(profile);
   }
 
@@ -1677,8 +1720,9 @@ function selectScope(question, profiles) {
 
 function renderProfileLine(profile) {
   const awal = formatRange(profile.biayaAwalLow, profile.biayaAwalHigh);
-  const semester = profile.semester ? `${formatRp(profile.semester)}/semester` : 'tidak tercantum';
-  return `- ${profile.label} (${profile.degree}): biaya awal masuk ${awal}; biaya semester ${semester}`;
+  const feeLabel = educationFeeComparableLabel(profile);
+  const feeValue = educationFeeInline(profile);
+  return `- ${profile.label} (${profile.degree}): biaya awal masuk ${awal}; ${feeLabel} ${feeValue}`;
 }
 
 function tryFeeComparisonAnswer(question, index, options = {}) {
@@ -1704,7 +1748,7 @@ function tryFeeComparisonAnswer(question, index, options = {}) {
   const mentionsBd = /\b(bd|(?:bisnis|binis|bisinis)\s+digital)\b/.test(q);
   const bd = scoped.find((p) => p.key === 'bd');
 
-  const basis = 'Saya bandingkan dari biaya awal masuk yang tertulis di dokumen. Biaya semester saya tampilkan terpisah karena dibayar per semester, jadi tidak saya kalikan menjadi total kuliah agar tidak menebak di luar dokumen.';
+  const basis = 'Saya bandingkan dari biaya awal masuk yang tertulis di dokumen. Komponen biaya pendidikan saya tampilkan sesuai label pada data; jika tertulis per semester, tidak saya kalikan menjadi total kuliah agar tidak menebak di luar dokumen.';
   const lines = [basis, ''];
 
   if (explicitCompared.length >= 2) {
@@ -1719,7 +1763,7 @@ function tryFeeComparisonAnswer(question, index, options = {}) {
     if (sameInitialCost && sameSemesterCost) {
       lines.push(`Kesimpulan biaya: ${compared.map((p) => p.label).join(' dan ')} setara, dengan biaya awal masuk ${formatRange(cheapestExplicit.biayaAwalLow, cheapestExplicit.biayaAwalHigh)} dan biaya semester ${formatRange(cheapestExplicit.semester, cheapestExplicit.semester)}/semester.`);
     } else if (sameInitialCost) {
-      lines.push(`Kesimpulan biaya awal masuk: ${compared.map((p) => p.label).join(' dan ')} setara, yaitu ${formatRange(cheapestExplicit.biayaAwalLow, cheapestExplicit.biayaAwalHigh)}. Perbedaan bisa dilihat dari biaya semester masing-masing jika angkanya berbeda.`);
+      lines.push(`Kesimpulan biaya awal masuk: ${compared.map((p) => p.label).join(' dan ')} setara, yaitu ${formatRange(cheapestExplicit.biayaAwalLow, cheapestExplicit.biayaAwalHigh)}. Perbedaan bisa dilihat dari komponen biaya pendidikan masing-masing jika angkanya berbeda.`);
     } else {
       lines.push(`Yang lebih murah dari biaya awal masuk adalah ${cheapestExplicit.label}, yaitu ${formatRange(cheapestExplicit.biayaAwalLow, cheapestExplicit.biayaAwalHigh)}.`);
     }
@@ -1769,6 +1813,12 @@ module.exports = {
   formatRp,
   formatRange
 };
+
+
+
+
+
+
 
 
 

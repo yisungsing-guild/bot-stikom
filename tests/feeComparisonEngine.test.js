@@ -1,7 +1,8 @@
-const {
+﻿const {
   tryFeeComparisonAnswer,
   tryDetailedFeeAnswer,
   tryRegistrationFeeAnswer,
+  tryGeneralFeeQuestionAnswer,
   tryDualDegreeAnswer,
   tryProgramListAnswer,
   tryProgramRecommendationAnswer,
@@ -35,8 +36,8 @@ describe('feeComparisonEngine', () => {
     const result = tryFeeComparisonAnswer('BOleh saya dapat perbandingan biaya antara S1 sistem informasi dan S1 bisnis digital?');
     expect(result).toBeTruthy();
     expect(result.answer).toMatch(/Perbandingan biaya Sistem Informasi \(S1\) dan Bisnis Digital \(S1\)/);
-    expect(result.answer).toMatch(/Sistem Informasi \(S1\): biaya awal masuk Rp\. 16\.000\.000; biaya semester Rp\. 6\.500\.000\/semester/);
-    expect(result.answer).toMatch(/Bisnis Digital \(S1\): biaya awal masuk Rp\. 16\.000\.000; biaya semester Rp\. 6\.500\.000\/semester/);
+    expect(result.answer).toMatch(/Sistem Informasi \(S1\): biaya awal masuk Rp\. 16\.000\.000; biaya pendidikan per semester Rp\. 6\.500\.000\/semester/);
+    expect(result.answer).toMatch(/Bisnis Digital \(S1\): biaya awal masuk Rp\. 16\.000\.000; biaya pendidikan per semester Rp\. 6\.500\.000\/semester/);
     expect(result.answer).toMatch(/setara/i);
     expect(result.answer).not.toMatch(/Sistem Komputer/);
     expect(result.answer).not.toMatch(/Teknologi Informasi/);
@@ -126,6 +127,14 @@ describe('feeComparisonEngine', () => {
     expect(helpDetail.answer).toContain('Bahasa Inggris: Rp. 5.000.000');
     expect(helpDetail.answer).toContain('Biaya Pendidikan & Ujian/Subject: Rp. 3.000.000');
 
+    const helpUniMalaysia = tryDetailedFeeAnswer('Berapa ya biaya kuliah untuk double degree stikom dengan help uni malaysia?');
+    expect(helpUniMalaysia).toBeTruthy();
+    expect(helpUniMalaysia.answer).toContain('Rincian biaya program Double Degree HELP University');
+    expect(helpUniMalaysia.answer).toContain('Biaya pendaftaran: Rp. 3.000.000');
+    expect(helpUniMalaysia.answer).not.toMatch(/perlu tahu prodi|sebutkan prodi/i);
+
+    const helpGeneric = tryGeneralFeeQuestionAnswer('Berapa ya biaya kuliah untuk double degree stikom dengan help uni malaysia?');
+    expect(helpGeneric).toBeNull();
     const helpGeneral = tryDetailedFeeAnswer('Berapa rincian biaya program double degree help?');
     expect(helpGeneral).toBeTruthy();
     expect(helpGeneral.answer).toContain('Rincian biaya program Double Degree HELP University');
@@ -134,9 +143,30 @@ describe('feeComparisonEngine', () => {
     expect(helpGeneral.answer).toContain('Bahasa Inggris: Rp. 5.000.000');
     expect(helpGeneral.answer).toContain('Biaya Pendidikan & Ujian/Subject: Rp. 3.000.000');
 
+    const dnuiGeneral = tryDetailedFeeAnswer('Berapa biaya double degree DNUI?');
+    expect(dnuiGeneral).toBeTruthy();
+    expect(dnuiGeneral.answer).toContain('Rincian biaya program Double Degree DNUI');
+    expect(dnuiGeneral.answer).toContain('Biaya pendaftaran: Rp. 3.000.000');
+    expect(dnuiGeneral.answer).toContain('DPP / Dana Pendidikan Pokok: Rp. 20.000.000');
+    expect(dnuiGeneral.answer).toContain('Bahasa Mandarin: Rp. 5.000.000');
+    expect(dnuiGeneral.answer).toContain('Biaya pendidikan per semester: Rp. 16.000.000');
+    expect(tryGeneralFeeQuestionAnswer('Berapa biaya double degree DNUI?')).toBeNull();
+
+    const utbGeneral = tryDetailedFeeAnswer('Berapa biaya double degree UTB?');
+    expect(utbGeneral).toBeTruthy();
+    expect(utbGeneral.answer).toContain('Rincian biaya program Double Degree UTB');
+    expect(utbGeneral.answer).toContain('Biaya pendaftaran: Rp. 500.000');
+    expect(utbGeneral.answer).toContain('DPP / Dana Pendidikan Pokok: Rp. 14.000.000');
+    expect(utbGeneral.answer).toContain('Atribut/perlengkapan awal: Rp. 1.500.000');
+    expect(utbGeneral.answer).toContain('Total komponen awal masuk sebelum potongan gelombang: Rp. 16.000.000');
+    expect(utbGeneral.answer).toContain('Biaya pendidikan per semester: Rp. 7.500.000');
+    expect(utbGeneral.answer).toContain('Biaya pendidikan per semester khusus Alumni SMK TI Bali Global dan SMK Pandawa Bali Global: Rp. 6.500.000');
+    expect(utbGeneral.answer).not.toMatch(/perlu tahu prodi|sebutkan prodi/i);
+    expect(tryGeneralFeeQuestionAnswer('Berapa biaya double degree UTB?')).toBeNull();
     const utbUkt = tryDetailedFeeAnswer('UKT UTB berapa?');
     expect(utbUkt).toBeTruthy();
-    expect(utbUkt.answer).toMatch(/UTB belum tercantum/i);
+    expect(utbUkt.answer).toMatch(/biaya pendidikan per semester untuk Prodi Double Degree UTB: Rp\. 7\.500\.000/i);
+    expect(utbUkt.answer).toContain('Khusus Alumni SMK TI Bali Global dan SMK Pandawa Bali Global: Rp. 6.500.000 per semester');
     expect(utbUkt.answer).not.toContain('Sistem Informasi (S1): Rp. 6.500.000/semester');
   });
 
@@ -200,7 +230,15 @@ describe('feeComparisonEngine', () => {
     expect(sisipan.answer).toContain('Total awal masuk setelah potongan (Gelombang Sisipan): Rp. 16.000.000');
   });
 
-  test('answers generic dual degree question with all partners', () => {
+
+  test('labels DNUI as semester fee and HELP as subject fee in comparisons', () => {
+    const result = tryFeeComparisonAnswer('bandingkan biaya double degree DNUI dan HELP');
+    expect(result).toBeTruthy();
+    expect(result.answer).toMatch(/Double Degree DNUI.*biaya pendidikan per semester Rp\. 16\.000\.000\/semester/s);
+    expect(result.answer).toMatch(/Double Degree HELP University.*Biaya Pendidikan & Ujian\/Subject Rp\. 3\.000\.000 \(Biaya Pendidikan & Ujian\/Subject\)/s);
+    expect(result.answer).not.toMatch(/Double Degree DNUI[^\n]*Biaya Pendidikan & Ujian\/Subject/i);
+    expect(result.answer).not.toMatch(/HELP.*3\.000\.000\/semester/s);
+  });  test('answers generic dual degree question with all partners', () => {
     const result = tryDualDegreeAnswer('apakah ada program double degree di stikom?');
     expect(result).toBeTruthy();
     expect(result.answer).toMatch(/UTB/);
@@ -482,3 +520,11 @@ describe('feeComparisonEngine', () => {
     }
   });
 });
+
+
+
+
+
+
+
+

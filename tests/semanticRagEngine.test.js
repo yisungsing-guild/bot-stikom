@@ -304,7 +304,8 @@
 
     const utbUkt = await querySemanticRag('UKT UTB berapa?');
     expect(utbUkt.source).toBe('semantic-rag-fee-detail');
-    expect(utbUkt.answer).toMatch(/Double Degree UTB belum tercantum/i);
+    expect(utbUkt.answer).toMatch(/biaya pendidikan per semester untuk Prodi Double Degree UTB: Rp\. 7\.500\.000/i);
+    expect(utbUkt.answer).toContain('Khusus Alumni SMK TI Bali Global dan SMK Pandawa Bali Global: Rp. 6.500.000 per semester');
     expect(utbUkt.answer).not.toContain('Sistem Informasi (S1): Rp. 6.500.000/semester');
 
     const s2Registration = await querySemanticRag('berapa biaya pendaftaran S2?');
@@ -1452,7 +1453,21 @@
     expect(result.answer).toMatch(/BCCP/i);
     expect(result.answer).not.toMatch(/Student Exchange adalah program pertukaran mahasiswa/i);
   });
+  test('answers Double Degree HELP fee directly without asking for prodi again', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Berapa ya biaya kuliah untuk double degree stikom dengan help uni malaysia?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-fee-detail');
+    expect(result.answer).toMatch(/Rincian biaya program Double Degree HELP University/i);
+    expect(result.answer).toMatch(/Biaya pendaftaran: Rp\. 3\.000\.000/i);
+    expect(result.answer).toMatch(/Biaya Pendidikan & Ujian\/Subject: Rp\. 3\.000\.000/i);
+    expect(result.answer).not.toMatch(/perlu tahu prodi|sebutkan prodi/i);
+  });
 });
+
+
+
 
 
 
