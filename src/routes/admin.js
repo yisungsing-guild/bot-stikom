@@ -1461,6 +1461,8 @@ router.post(
 
   async function resolveOriginalTrainingFilePath(training) {
     if (!training) return null;
+    const uploadRoot = getUploadDir();
+    const legacyUploadRoot = path.resolve(__dirname, '..', '..', 'uploads');
     const searchDirs = getTrainingUploadSearchDirs();
 
     const stored = training.storedFilename ? String(training.storedFilename) : '';
