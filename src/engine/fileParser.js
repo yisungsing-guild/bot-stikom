@@ -15,6 +15,136 @@ class FileParser {
     return ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v'].includes(String(ext || '').toLowerCase());
   }
 
+  static envFlag(name, defaultValue = false) {
+    const raw = process.env[name];
+    if (raw === undefined || raw === null) return defaultValue;
+    const value = String(raw).trim().toLowerCase();
+    if (!value) return defaultValue;
+    return value === 'true' || value === '1' || value === 'yes' || value === 'y' || value === 'on';
+  }
+
+  static isCalendarLikeImageContent(originalFilename, text = '', options = {}) {
+    const haystack = [
+      originalFilename,
+      text,
+      options && options.visualContext ? options.visualContext : ''
+    ].map((v) => String(v || '').toLowerCase()).join('\n');
+
+    if (!haystack.trim()) return false;
+
+    const strongSignals = [
+      /\bkalender\b/i,
+      /\bakademik\b/i,
+      /\bsemester\b/i,
+      /\buts\b/i,
+      /\buas\b/i,
+      /\byudisium\b/i,
+      /\bperkuliahan\b/i,
+      /\bpertemuan\b/i,
+      /\bregistrasi\b/i,
+      /\bpendaftaran\b/i,
+      /\btahun\s+(?:akademik|ajaran)\b/i,
+    ];
+    const monthSignals = [
+      /\bjanuari\b/i, /\bfebruari\b/i, /\bmaret\b/i, /\bapril\b/i,
+      /\bmei\b/i, /\bjuni\b/i, /\bjuli\b/i, /\bagustus\b/i,
+      /\bseptember\b/i, /\boktober\b/i, /\bnovember\b/i, /\bdesember\b/i,
+    ];
+
+    const strongCount = strongSignals.reduce((count, re) => count + (re.test(haystack) ? 1 : 0), 0);
+    const monthCount = monthSignals.reduce((count, re) => count + (re.test(haystack) ? 1 : 0), 0);
+
+    return strongCount >= 2 || (strongCount >= 1 && monthCount >= 2);
+  }
+
+  static mimeTypeForImage(filePath) {
+    const ext = path.extname(filePath || '').toLowerCase();
+    if (ext === '.png') return 'image/png';
+    if (ext === '.webp') return 'image/webp';
+    if (ext === '.gif') return 'image/gif';
+    if (ext === '.bmp') return 'image/bmp';
+    if (ext === '.tif' || ext === '.tiff') return 'image/tiff';
+    return 'image/jpeg';
+  }
+
+  static async extractImageScheduleWithVision(filePath, originalFilename, ocrText = '', options = {}) {
+    const apiKey = String(process.env.OPENAI_API_KEY || '').trim();
+    if (!apiKey) return '';
+    if (!this.envFlag('IMAGE_VISION_EXTRACT_ENABLED', true)) return '';
+    if (!this.isCalendarLikeImageContent(originalFilename, ocrText, options)) return '';
+
+    const stat = fs.statSync(filePath);
+    const maxBytes = parseInt(process.env.IMAGE_VISION_MAX_BYTES || String(12 * 1024 * 1024), 10);
+    if (Number.isFinite(maxBytes) && maxBytes > 0 && stat.size > maxBytes) {
+      logger.warn({ filename: originalFilename, size: stat.size, maxBytes }, '[FileParser] Skipping image vision extraction: file too large');
+      return '';
+    }
+
+    try {
+      const client = new OpenAI({
+        apiKey,
+        timeout: parseInt(process.env.IMAGE_VISION_TIMEOUT_MS || process.env.OPENAI_TIMEOUT_MS || '60000', 10)
+      });
+      const model = String(process.env.IMAGE_VISION_MODEL || process.env.OPENAI_IMAGE_EXTRACTION_MODEL || 'gpt-4o-mini').trim();
+      const maxTokensRaw = parseInt(process.env.IMAGE_VISION_MAX_OUTPUT_TOKENS || '1800', 10);
+      const maxTokens = Number.isFinite(maxTokensRaw) && maxTokensRaw > 0 ? maxTokensRaw : 1800;
+      const base64 = fs.readFileSync(filePath).toString('base64');
+      const mime = this.mimeTypeForImage(filePath);
+      const visualContext = options && options.visualContext ? String(options.visualContext).trim() : '';
+
+      const response = await client.chat.completions.create({
+        model,
+        temperature: 0,
+        max_tokens: maxTokens,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You extract visible academic calendar or schedule information from Indonesian images. ' +
+              'Only use information visible in the image or explicitly provided context. Do not guess hidden dates. ' +
+              'Return concise plain text in Indonesian.'
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text:
+                  'Ekstrak isi kalender/jadwal dari gambar ini menjadi data training yang mudah dijawab bot.\n' +
+                  'Format wajib:\n' +
+                  'Judul: ...\n' +
+                  'Tahun akademik/ajaran: ...\n' +
+                  'Daftar agenda:\n' +
+                  '- DD MMM YYYY atau DD-DD MMM YYYY: nama kegiatan.\n' +
+                  'Jika tanggal/keterangan tidak terbaca jelas, tulis "tidak terbaca jelas" dan jangan mengarang.\n' +
+                  (visualContext ? `\nKonteks admin: ${visualContext}\n` : '') +
+                  (ocrText ? `\nOCR mentah awal:\n${String(ocrText).slice(0, 4000)}` : '')
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mime};base64,${base64}`,
+                  detail: 'high'
+                }
+              }
+            ]
+          }
+        ]
+      });
+
+      const text = response && response.choices && response.choices[0] && response.choices[0].message
+        ? String(response.choices[0].message.content || '').trim()
+        : '';
+
+      if (text) {
+        logger.info({ filename: originalFilename, length: text.length }, '[FileParser] Image vision schedule extraction successful');
+      }
+      return text;
+    } catch (err) {
+      logger.warn({ filename: originalFilename, err: err && err.message ? err.message : String(err) }, '[FileParser] Image vision schedule extraction failed');
+      return '';
+    }
+  }
   static buildImageTrainingContent(originalFilename, ocrText = '', options = {}) {
     const safeFilename = this.sanitizeFilenameForStorage(originalFilename || 'gambar-training');
     const ext = path.extname(safeFilename).toLowerCase().replace(/^\./, '') || 'image';
@@ -152,7 +282,7 @@ class FileParser {
       case '.tif':
       case '.tiff':
         try {
-          content = this.buildImageTrainingContent(originalFilename, await this.parseImage(filePath), options);
+          content = this.buildImageTrainingContent(originalFilename, await this.parseImage(filePath, { ...options, originalFilename }), options);
         } catch (imageErr) {
           const imageMsg = imageErr && imageErr.message ? String(imageErr.message) : String(imageErr);
           const looksLikeNoReadableText =
@@ -1206,7 +1336,7 @@ class FileParser {
   }
 
   // Parse Image file (JPG, PNG, GIF, WebP) menggunakan OCR
-  static async parseImage(filePath) {
+  static async parseImage(filePath, options = {}) {
     try {
       let createWorker;
       try {
@@ -1270,12 +1400,26 @@ class FileParser {
       
       await worker.terminate();
       
+      const originalFilename = options && options.originalFilename ? String(options.originalFilename) : path.basename(filePath);
       if (!imageText || imageText.trim().length === 0) {
+        const visionOnlySchedule = await this.extractImageScheduleWithVision(filePath, originalFilename, '', options);
+        if (visionOnlySchedule) return visionOnlySchedule;
         throw new Error('Tidak ada teks ditemukan di gambar. Gambar mungkin kosong, terbalik, atau kualitas terlalu rendah.');
       }
 
       console.log(`[FileParser] OCR completed. Extracted ${imageText.length} characters from image.`);
-      
+
+      const visionSchedule = await this.extractImageScheduleWithVision(filePath, originalFilename, imageText, options);
+      if (visionSchedule) {
+        return [
+          'Ekstraksi kalender/jadwal terstruktur dari gambar:',
+          visionSchedule,
+          '',
+          'OCR mentah gambar:',
+          imageText.trim()
+        ].join('\n');
+      }
+
       return imageText.trim();
     } catch (err) {
       console.error('[FileParser] Image OCR failed:', err.message);
