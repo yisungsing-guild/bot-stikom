@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const prisma = require('../db');
 const logger = require('../logger');
 const { logAdminAction } = require('../middleware/adminAudit');
@@ -265,6 +265,8 @@ module.exports = function (provider) {
       const cfg = getEmailConfig();
       const config = {
         enabled: cfg.enabled,
+        provider: cfg.provider,
+        hasResendApiKey: !!cfg.resendApiKey,
         hasHost: !!cfg.host,
         hasPort: !!cfg.port,
         secure: cfg.secure,
