@@ -31,7 +31,8 @@
     "maint:scheduler": "node scripts/maintenanceScheduler.js",
     "maint:clean:sessions": "node scripts/clear_session_pending_flags.js --chatId=all",
     "test": "jest",
-    "rag:web-sync": "node scripts/ingestWebRag.js"
+    "rag:web-sync": "node scripts/ingestWebRag.js",
+    "rag:audit-ingest": "node scripts/auditRagIngestCoverage.js"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -39,6 +39,7 @@ const { AnalyticsEngine } = require('../engine/analyticsEngine');
 const { appendChatMessage, getChatMessages } = require('../engine/chatLog');
 const { webSearchFallbackAnswer } = require('../engine/webSearchFallback');
 const { sanitizeWhatsappText } = require('../utils/textSanitizer');
+const { evaluateOutboundAnswer } = require('../utils/answerPreflightEvaluator');
 const { decorateBotAnswerText: decorateBotAnswerTextCore } = require('../engine/conversationalStyle');
 const { safeSessionUpsert: safeSessionUpsertBase } = require('../utils/sessionUpsert');
 const safeSessionUpsert = (...args) => safeSessionUpsertBase(prisma, ...args);
@@ -8625,14 +8626,26 @@ module.exports = function (provider) {
             console.log('[TRACE_COST_RESPONSE_ERROR]', { err: e && e.message ? e.message : String(e), preview: String(cleaned || '').slice(0, 240) });
           }
         } catch (e) {}
-        const outboundParts = splitLongWhatsappMessage(cleaned);
+        const preflight = evaluateOutboundAnswer(cleaned, text, {
+          source: ragResult && ragResult.source ? ragResult.source : null
+        });
+        if (preflight.issues && preflight.issues.length) {
+          logger.warn({ chatId: toChatId, issues: preflight.issues, meta: preflight.meta }, '[ProviderRoute] outbound answer preflight adjusted');
+        }
+        const outboundParts = splitLongWhatsappMessage(preflight.answer);
         for (let i = 0; i < outboundParts.length; i++) {
           const partMeta = i === 0 ? meta : { ...meta, splitPart: i + 1, splitTotal: outboundParts.length };
           await sendBotMessageOriginal(toChatId, outboundParts[i], partMeta);
         }
       } catch (e) {
         // Fallback: send original decorated content if cleanup fails
-        const fallbackParts = splitLongWhatsappMessage(decorated);
+        const preflight = evaluateOutboundAnswer(decorated, text, {
+          source: ragResult && ragResult.source ? ragResult.source : null
+        });
+        if (preflight.issues && preflight.issues.length) {
+          logger.warn({ chatId: toChatId, issues: preflight.issues, meta: preflight.meta }, '[ProviderRoute] outbound fallback preflight adjusted');
+        }
+        const fallbackParts = splitLongWhatsappMessage(preflight.answer);
         for (let i = 0; i < fallbackParts.length; i++) {
           const partMeta = i === 0 ? meta : { ...meta, splitPart: i + 1, splitTotal: fallbackParts.length };
           await sendBotMessageOriginal(toChatId, fallbackParts[i], partMeta);
