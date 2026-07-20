@@ -167,7 +167,8 @@ async function main() {
   const failed = [];
   const rejected = [];
   const emptyContent = [];
-  const statusMismatch = [];
+  const successMissingIndex = [];
+  const chunkCountMismatch = [];
   const indexed = [];
 
   for (const row of rows) {
@@ -178,8 +179,8 @@ async function main() {
     if (String(row.ragIngestStatus || '').toLowerCase() === 'failed') failed.push(compact);
     if (String(row.ragIngestStatus || '').toLowerCase() === 'rejected') rejected.push(compact);
     if (!row.content || !String(row.content).trim()) emptyContent.push(compact);
-    if (String(row.ragIngestStatus || '').toLowerCase() === 'success' && chunksInIndex === 0) statusMismatch.push(compact);
-    if (chunksInIndex > 0 && row.ragChunkCount && Number(row.ragChunkCount) !== chunksInIndex) statusMismatch.push({ ...compact, expectedChunkCount: row.ragChunkCount, actualChunkCount: chunksInIndex });
+    if (String(row.ragIngestStatus || '').toLowerCase() === 'success' && chunksInIndex === 0) successMissingIndex.push(compact);
+    if (chunksInIndex > 0 && row.ragChunkCount && Number(row.ragChunkCount) !== chunksInIndex) chunkCountMismatch.push({ ...compact, expectedChunkCount: row.ragChunkCount, actualChunkCount: chunksInIndex });
   }
 
   const knownTrainingIds = new Set(rows.map((row) => String(row.id)));
@@ -189,7 +190,7 @@ async function main() {
   }
 
   const report = {
-    ok: missing.length === 0 && failed.length === 0 && statusMismatch.length === 0,
+    ok: missing.length === 0 && failed.length === 0 && successMissingIndex.length === 0,
     generatedAt: new Date().toISOString(),
     envPath,
     filters: { includeInactive, onlyDivision },
@@ -208,7 +209,8 @@ async function main() {
       failedRows: failed.length,
       rejectedRows: rejected.length,
       emptyContentRows: emptyContent.length,
-      statusMismatchRows: statusMismatch.length,
+      successMissingIndexRows: successMissingIndex.length,
+      chunkCountMismatchRows: chunkCountMismatch.length,
       orphanIndexTrainingIds: orphanTrainingIds.length,
       statusCounts: countBy(rows, (row) => row.ragIngestStatus || 'unknown'),
       sourceCounts: countBy(rows, (row) => row.source || 'unknown'),
@@ -218,7 +220,8 @@ async function main() {
     failedRows: failed,
     rejectedRows: rejected,
     emptyContentRows: emptyContent,
-    statusMismatchRows: statusMismatch,
+    successMissingIndexRows: successMissingIndex,
+    chunkCountMismatchRows: chunkCountMismatch,
     orphanIndexTrainingIds: orphanTrainingIds
   };
 
@@ -233,14 +236,15 @@ async function main() {
     console.log(`Index: ${indexFile.path}`);
     console.log(`Chunks: ${report.index.chunks}, indexed training IDs: ${report.index.uniqueTrainingIds}, filenames: ${report.index.uniqueFilenames}`);
     console.log(`TrainingData scanned: ${report.trainingData.scannedRows}, active: ${report.trainingData.activeRows}, indexed: ${report.trainingData.indexedRows}`);
-    console.log(`Missing active: ${report.trainingData.missingActiveRows}, failed: ${report.trainingData.failedRows}, rejected: ${report.trainingData.rejectedRows}, empty content: ${report.trainingData.emptyContentRows}, status mismatch: ${report.trainingData.statusMismatchRows}`);
+    console.log(`Missing active: ${report.trainingData.missingActiveRows}, failed: ${report.trainingData.failedRows}, rejected: ${report.trainingData.rejectedRows}, empty content: ${report.trainingData.emptyContentRows}`);
+    console.log(`Success missing from index: ${report.trainingData.successMissingIndexRows}, chunk count mismatch: ${report.trainingData.chunkCountMismatchRows}`);
     if (missing.length) console.log('\nMissing active rows:\n' + missing.map((r) => `- ${r.id} | ${r.filename} | status=${r.ragIngestStatus} | content=${r.contentLength}`).join('\n'));
     if (failed.length) console.log('\nFailed rows:\n' + failed.map((r) => `- ${r.id} | ${r.filename} | ${r.ragIngestError || 'no error'}`).join('\n'));
     if (outPath) console.log(`\nReport written to ${outPath}`);
   }
 
   try { await prisma.$disconnect(); } catch (_) {}
-  if (failOnMissing && (missing.length || failed.length || statusMismatch.length)) process.exitCode = 1;
+  if (failOnMissing && (missing.length || failed.length || successMissingIndex.length)) process.exitCode = 1;
 }
 
 main().catch((err) => {

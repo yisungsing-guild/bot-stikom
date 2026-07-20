@@ -9369,10 +9369,46 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
     }
 
     let skippedDuplicates = 0;
+    let aliasedDuplicates = 0;
+    const allowDuplicateTrainingAlias = Boolean(opts.allowDuplicateTrainingAlias);
     for (const chunk of chunks) {
       const h = chunkHash(chunk);
       const key = hashKeyFor(divisionKey, h);
       if (existingHashes.has(key)) {
+        const existingDuplicate = allowDuplicateTrainingAlias
+          ? filteredIndex.find((item) => {
+              if (!item || !item.chunk) return false;
+              const itemDiv = item.divisionKey ? String(item.divisionKey).toLowerCase().trim() : null;
+              if ((divisionKey || null) !== (itemDiv || null)) return false;
+              const itemHash = item.chunkHash || chunkHash(item.chunk);
+              return itemHash === h;
+            })
+          : null;
+
+        if (existingDuplicate) {
+          const nowIso = new Date().toISOString();
+          const aliasChunk = {
+            ...existingDuplicate,
+            id: crypto.randomUUID(),
+            trainingId,
+            filename: resolvedFilename || existingDuplicate.filename || null,
+            sourceFile: resolvedSourceFile || resolvedFilename || existingDuplicate.sourceFile || null,
+            source,
+            createdAt: nowIso,
+            updatedAt: nowIso,
+            divisionKey: divisionKey || null,
+            fileHash: fileHash || existingDuplicate.fileHash || null,
+            trainingVersion: trainingVersion || existingDuplicate.trainingVersion || null,
+            uploadedById: uploadedById || existingDuplicate.uploadedById || null,
+            duplicateAliasOf: existingDuplicate.id || null,
+            duplicateAliasTrainingId: existingDuplicate.trainingId || null
+          };
+          filteredIndex.push(aliasChunk);
+          aliasedDuplicates++;
+          skippedDuplicates++;
+          continue;
+        }
+
         skippedDuplicates++;
         continue;
       }
@@ -9469,7 +9505,7 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
     }
 
     saveIndex(filteredIndex);
-    logger.info({ trainingId, chunks: chunks.length, skippedDuplicates, divisionKey: divisionKey || null }, '[RAG] Ingested chunks');
+    logger.info({ trainingId, chunks: chunks.length, skippedDuplicates, aliasedDuplicates, divisionKey: divisionKey || null }, '[RAG] Ingested chunks');
     
     // Audit logging: verify docCategory enrichment
     if (process.env.RAG_AUDIT_LOGGING === 'true') {
@@ -9486,14 +9522,15 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
     }
     
     const ingested = chunks.length - skippedDuplicates;
+    const indexedChunkCount = ingested + aliasedDuplicates;
     await updateTrainingRagIngestStatus(trainingId, {
       status: 'success',
       error: null,
-      chunkCount: ingested,
+      chunkCount: indexedChunkCount,
       ingestedAt: new Date()
     });
 
-    return { success: true, ingested, skippedDuplicates, totalChunks: chunks.length, cleaningFallbackUsed };
+    return { success: true, ingested, skippedDuplicates, aliasedDuplicates, indexedChunkCount, totalChunks: chunks.length, cleaningFallbackUsed };
   } catch (err) {
     logger.error({ err: err.message }, '[RAG] Ingest error');
     await updateTrainingRagIngestStatus(trainingId, {

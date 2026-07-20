@@ -168,12 +168,13 @@ async function main() {
 				divisionKey: r.divisionKey || null,
 				filename: r.filename,
 				uploadedById: r.uploadedById || null,
-				trainingCreatedAt: r.createdAt ? new Date(r.createdAt).toISOString() : null
+				trainingCreatedAt: r.createdAt ? new Date(r.createdAt).toISOString() : null,
+				allowDuplicateTrainingAlias: true
 			});
 			if (result && result.success) {
 				ingestedOk += 1;
 				indexedTrainingIds.add(String(r.id));
-				console.log('INGEST_OK', label, JSON.stringify({ ingested: result.ingested, skippedDuplicates: result.skippedDuplicates }, null, 0));
+				console.log('INGEST_OK', label, JSON.stringify({ ingested: result.ingested, skippedDuplicates: result.skippedDuplicates, aliasedDuplicates: result.aliasedDuplicates || 0, indexedChunkCount: result.indexedChunkCount || result.ingested || 0 }, null, 0));
 			} else {
 				ingestedFail += 1;
 				console.warn('INGEST_FAIL', label, result && result.error ? result.error : result);
