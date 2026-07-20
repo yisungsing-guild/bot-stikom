@@ -1,4 +1,4 @@
-﻿describe('semanticRagEngine', () => {
+describe('semanticRagEngine', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
@@ -1463,6 +1463,83 @@
     expect(result.answer).toMatch(/Biaya pendaftaran: Rp\. 3\.000\.000/i);
     expect(result.answer).toMatch(/Biaya Pendidikan & Ujian\/Subject: Rp\. 3\.000\.000/i);
     expect(result.answer).not.toMatch(/perlu tahu prodi|sebutkan prodi/i);
+  });
+  test('regression: real chats stay on topic for UKM, language facility, BCCP, and mixed intent', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const esport = await querySemanticRag('kalo esport apa ada ukmnya?');
+    expect(esport.success).toBe(true);
+    expect(esport.answer).toMatch(/Athena Esports/i);
+    expect(esport.answer).toMatch(/UKM|Ormawa/i);
+    expect(esport.answer).not.toMatch(/biaya kuliah|cicilan biaya|skema pembayaran|beasiswa atau potongan biaya/i);
+
+    const mixedMusic = await querySemanticRag('aku suka musik nih, kamu suka ga? apa di stikom ada ukm musik?');
+    expect(mixedMusic.success).toBe(true);
+    expect(mixedMusic.source).toBe('semantic-rag-mixed-intent');
+    expect(mixedMusic.answer).toMatch(/tidak punya selera pribadi|asisten/i);
+    expect(mixedMusic.answer).toMatch(/Musik/i);
+    expect(mixedMusic.answer).toMatch(/UKM|Ormawa/i);
+    expect(mixedMusic.answer).not.toMatch(/biaya kuliah|Double Degree HELP|Student Exchange adalah/i);
+
+    const language = await querySemanticRag('Baik, kalau mahasiswa ingin meningkatkan kemampuan bahasanya, apakah stikom mempunyai fasilitas untuk itu ya?');
+    expect(language.success).toBe(true);
+    expect(language.answer).toMatch(/Language Learning Center/i);
+    expect(language.answer).not.toMatch(/PIHAK PERTAMA|Pasal 13|ADDENDUM|Double Degree HELP/i);
+
+
+    const gccp = await querySemanticRag('Oke baik, kalau program GCCP itu apa ya?');
+    expect(gccp.success).toBe(true);
+    expect(gccp.answer).toMatch(/GCCP/i);
+    expect(gccp.answer).not.toMatch(/Apa itu Student Exchange|Student Exchange adalah program pertukaran mahasiswa/i);
+
+    const bccpFollowUp = await querySemanticRag('apakah karena itu hanya untuk orang asing?', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'Kalau program BCCP itu apa ya?' },
+          { direction: 'assistant', message: 'Untuk BCCP, saya belum menemukan informasi di data yang tersedia.' }
+        ]
+      }
+    });
+    expect(bccpFollowUp.success).toBe(true);
+    expect(bccpFollowUp.answer).toMatch(/Untuk BCCP|belum bisa memastikan/i);
+    expect(bccpFollowUp.answer).toMatch(/mahasiswa asing|orang asing/i);
+    const bccp = await querySemanticRag('Baik BCCP tidak ada informasinya, apakah karena itu hanya untuk orang asing?');
+    expect(bccp.success).toBe(true);
+    expect(bccp.answer).toMatch(/Untuk BCCP|belum menemukan informasi|belum bisa memastikan/i);
+    expect(bccp.answer).toMatch(/mahasiswa asing|orang asing/i);
+    expect(bccp.answer).not.toMatch(/Student Exchange adalah|Double Degree HELP|biaya kuliah/i);
+  });
+
+
+  test('regression: generic fallback names the requested topic beyond hardcoded entities', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const parking = await querySemanticRag('apakah parkiran motor buka malam?');
+    expect(parking.success).toBe(true);
+    expect(parking.answer).toMatch(/Untuk fasilitas kampus/i);
+    expect(parking.answer).not.toMatch(/^Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+
+    const ukmDetail = await querySemanticRag('jadwal latihan UKM Musik kapan?');
+    expect(ukmDetail.success).toBe(true);
+    expect(ukmDetail.answer).toMatch(/UKM Musik|UKM atau Ormawa|belum punya informasi detail/i);
+  });
+  test('regression: compound and mixed multi-intent answers are combined without topic drift', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const compound = await querySemanticRag('ada double degree apa saja dan fasilitas apa saja yang ada di kampus?');
+    expect(compound.success).toBe(true);
+    expect(compound.answer).toMatch(/Double Degree/i);
+    expect(compound.answer).toMatch(/Fasilitas kampus/i);
+    expect(compound.answer).toMatch(/Career Center|Language Learning Center/i);
+    expect(compound.answer).not.toMatch(/biaya kuliah di ITB STIKOM Bali|Apakah ada beasiswa atau potongan biaya/i);
+
+    const mixed = await querySemanticRag('halo, apa itu double degree dan fasilitas apa saja di kampus?');
+    expect(mixed.success).toBe(true);
+    expect(mixed.source).toBe('semantic-rag-mixed-intent');
+    expect(mixed.answer).toMatch(/^Halo, Kak\./i);
+    expect(mixed.answer).toMatch(/Double Degree/i);
+    expect(mixed.answer).toMatch(/Fasilitas kampus/i);
+    expect(mixed.answer).not.toMatch(/Double Degree tambahan/i);
   });
 });
 

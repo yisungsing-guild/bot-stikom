@@ -1,7 +1,8 @@
 const {
   evaluateOutboundAnswer,
   normalizeOutboundAnswerText,
-  hasLikelyRawDocumentLeak
+  hasLikelyRawDocumentLeak,
+  detectIntentConflict
 } = require('../src/utils/answerPreflightEvaluator');
 
 describe('answerPreflightEvaluator', () => {
@@ -37,6 +38,46 @@ describe('answerPreflightEvaluator', () => {
     expect(result.answer).not.toMatch(/SOURCE_CHUNKS|CONFIDENCE/);
   });
 
+
+  test('blocks answers that clearly conflict with the requested intent', () => {
+    const wrongUkm = evaluateOutboundAnswer(
+      'Baik Kak, berikut penjelasan mengenai biaya kuliah di ITB STIKOM Bali. Apakah ada beasiswa atau potongan biaya?',
+      'apakah ada ukm esport?'
+    );
+    expect(wrongUkm.blocked).toBe(true);
+    expect(wrongUkm.issues).toContain('intent_conflict');
+    expect(wrongUkm.answer).toMatch(/belum sesuai dengan pertanyaan/i);
+    expect(wrongUkm.answer).not.toMatch(/biaya kuliah|beasiswa/i);
+
+    const wrongLanguage = detectIntentConflict(
+      'Program Double Degree HELP University berlangsung selama 4 tahun.',
+      'apakah stikom mempunyai fasilitas belajar bahasa?'
+    );
+    expect(wrongLanguage.conflict).toBe(true);
+  });
+
+
+  test('uses topic-aware generic fallback for blocked answers', () => {
+    const ukm = evaluateOutboundAnswer('', 'apakah ada ukm esport?');
+    expect(ukm.answer).toMatch(/Untuk UKM atau Ormawa/i);
+
+    const fee = evaluateOutboundAnswer('SOURCE_CHUNKS: []', 'berapa biaya kuliah SI?');
+    expect(fee.answer).toMatch(/Untuk rincian biaya kuliah/i);
+
+    const language = evaluateOutboundAnswer('Pasal 1 PIHAK PERTAMA dan PIHAK KEDUA dalam perjanjian kerja sama.', 'jadwal fasilitas belajar bahasa kapan?');
+    expect(language.answer).toMatch(/fasilitas belajar bahasa|Language Learning Center/i);
+
+    const customProgram = evaluateOutboundAnswer('', 'program ABCD itu apa ya?');
+    expect(customProgram.answer).toMatch(/Untuk program ABCD/i);
+  });
+  test('allows compatible answers that mention related fee and scholarship context', () => {
+    const result = evaluateOutboundAnswer(
+      'Beasiswa yang tersedia antara lain KIP dan Prestasi. Pada data PMB juga ada potongan biaya sesuai gelombang.',
+      'ada beasiswa apa saja?'
+    );
+    expect(result.blocked).toBe(false);
+    expect(result.issues).not.toContain('intent_conflict');
+  });
   test('detects raw administrative document leaks', () => {
     const raw = 'Pasal 13 ADDENDUM\nPIHAK PERTAMA wajib memberitahukan kepada PIHAK KEDUA dalam perjanjian kerja sama.';
     expect(hasLikelyRawDocumentLeak(raw)).toBe(true);

@@ -32,7 +32,8 @@
     "maint:clean:sessions": "node scripts/clear_session_pending_flags.js --chatId=all",
     "test": "jest",
     "rag:web-sync": "node scripts/ingestWebRag.js",
-    "rag:audit-ingest": "node scripts/auditRagIngestCoverage.js"
+    "rag:audit-ingest": "node scripts/auditRagIngestCoverage.js",
+    "answer-quality:weekly": "node scripts/auditAnswerQualityWeekly.js"
   },
   "engines": {
     "node": ">=20.0.0"
