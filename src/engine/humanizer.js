@@ -874,7 +874,6 @@ function formatFollowUpSection(questions) {
   
   // Natural opening instead of "Rekomendasi pertanyaan berikutnya:"
   lines.push('Kalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:');
-  lines.push('');
   
   // Add questions with bullet points
   questions.forEach(q => {

@@ -1941,6 +1941,13 @@ function findCampusSupportEntity(text) {
 function resolveCampusSupportEntity(question, options = {}) {
   const current = findCampusSupportEntity(question);
   if (current) return { entity: current, fromRecent: false };
+
+  // Root rule: memory is opt-in, not default. A previous BCCP/GCCP/etc. entity
+  // may only be reused when the current message is clearly a short referential follow-up.
+  // New questions like "apa itu SI?", "berapa biayanya?", or "ada UKM musik?" must route on their own text.
+  if (!isShortCampusSupportFollowUp(question)) return null;
+  if (isStructuredCampusQuestion(question) || isExplicitNonSupportTopic(question)) return null;
+
   const recentUser = getRecentUserConversation(options && options.sessionData);
   const fromRecentUser = findCampusSupportEntity(recentUser);
   return fromRecentUser ? { entity: fromRecentUser, fromRecent: true, memorySource: 'recent-user' } : null;
@@ -1954,7 +1961,9 @@ function asksCampusSupportDetail(question) {
 function isShortCampusSupportFollowUp(question) {
   const q = normalizeFacilityTerm(question);
   if (!q) return false;
-  if (q.split(/\s+/).length <= 5 && /\b(itu|apa|iya|ya|benar|detail|daftar|mendaftar|caranya|gimana|bagaimana|syarat|program|kegiatan)\b/i.test(q)) return true;
+  const wordCount = q.split(/\s+/).filter(Boolean).length;
+  if (wordCount <= 5 && /\b(itu|apa|iya|ya|benar|detail|daftar|mendaftar|caranya|gimana|bagaimana|syarat|program|kegiatan)\b/i.test(q)) return true;
+  if (wordCount <= 10 && /\b(itu|tersebut)\b/i.test(q) && /\b(apakah|apa|karena|hanya|untuk|khusus|orang\s+asing|mahasiswa\s+asing|syarat|jadwal|daftar|detail)\b/i.test(q)) return true;
   return /\b(yang\s+tadi|program\s+itu|fasilitas\s+itu|cara\s+daftar(?:nya)?|lebih\s+detail(?:nya)?)\b/i.test(String(question || ''));
 }
 

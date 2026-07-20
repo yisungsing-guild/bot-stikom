@@ -473,10 +473,15 @@ module.exports = function (provider) {
 
   function inlineQuestionListBlock(input) {
     const bulletPattern = String.raw`[-\u2022\u00b7*]|\d+[.)]`;
-    const compactHeadingRe = new RegExp(`((?:Kalau\\s+(?:mau|ingin)\\s+lanjut|Kalau\\s+kakak\\s+(?:mau|ingin)\\s+lanjut|Kakak\\s+bisa\\s+lanjut\\s+tanya|Rekomendasi\\s+pertanyaan\\s+berikutnya|Pertanyaan\\s+berikutnya)[^\\n:]{0,140}:\\s*)\\n\\s*\\n(\\s*(?:${bulletPattern})\\s*)`, 'gi');
-    const compacted = String(input || '').replace(compactHeadingRe, '$1\n$2');
+    const headingPattern = String.raw`(?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kalau\s+Kakak\s+ingin\s+tahu\s+lebih\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)`;
+    const compactHeadingRe = new RegExp(`((${headingPattern})[^\n:]{0,180}:\s*)\n\s*\n(\s*(?:${bulletPattern})\s*)`, 'gi');
+    const inlineHeadingRe = new RegExp(`((${headingPattern})[^\n:]{0,180}:)\s+((?:${bulletPattern})\s+)`, 'gi');
+    const compacted = String(input || '')
+      .replace(compactHeadingRe, '$1\n$3')
+      .replace(inlineHeadingRe, '$1\n$3')
+      .replace(/\s+[-\u2022\u00b7*]\s+(?=[^\n?]{3,220}\?)/g, '\n- ');
     return compacted.replace(
-      /(\n{1,2}\s*)((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:)\s*\n+([\s\S]*?)$/i,
+      /(\n{1,2}\s*)((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kalau\s+Kakak\s+ingin\s+tahu\s+lebih\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,180}:)\s*\n+([\s\S]*?)$/i,
       (match, leading, heading, block) => {
         const questions = extractInlineQuestions(block);
         if (!questions.length) return match;

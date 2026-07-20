@@ -1514,6 +1514,18 @@ describe('semanticRagEngine', () => {
     expect(bccp.answer).toMatch(/Untuk BCCP|belum menemukan informasi|belum bisa memastikan/i);
     expect(bccp.answer).toMatch(/mahasiswa asing|orang asing/i);
     expect(bccp.answer).not.toMatch(/Student Exchange adalah|Double Degree HELP|biaya kuliah/i);
+
+    const siAfterBccp = await querySemanticRag('apa itu si?', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'Kalau program BCCP itu apa ya?' },
+          { direction: 'assistant', message: 'Untuk BCCP, saya belum menemukan informasi di data yang tersedia.' }
+        ]
+      }
+    });
+    expect(siAfterBccp.success).toBe(true);
+    expect(siAfterBccp.answer).toMatch(/Sistem Informasi/i);
+    expect(siAfterBccp.answer).not.toMatch(/Untuk BCCP|mahasiswa asing/i);
   });
 
 

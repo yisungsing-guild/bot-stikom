@@ -124,6 +124,21 @@ describe('WhatsApp reply formatter', () => {
     expect(result).not.toContain('Informasi terkait yang mungkin membantu:');
   });
 
+  test('formats enabled follow-up suggestions without blank line before bullets', () => {
+    const old = process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
+    process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'true';
+    try {
+      const result = buildHumanizedWhatsappReply({
+        mainAnswer: 'GCCP adalah Global Cross Cultural Program yang dirancang untuk memberikan pengalaman lintas budaya kepada mahasiswa.',
+        userQuery: 'Oke baik, kalau program GCCP itu apa ya?'
+      });
+      expect(result).toMatch(/membantu:\n- /i);
+      expect(result).not.toMatch(/membantu:\n\n- /i);
+    } finally {
+      if (typeof old === 'undefined') delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
+      else process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = old;
+    }
+  });
   test('detects campus support entities without wrong category headers', () => {
     const { mapProviderIntentToFormatter } = require('../src/utils/whatsappFormatter');
     expect(mapProviderIntentToFormatter('semantic-rag-campus-support-entity')).toBe('campus_support');
