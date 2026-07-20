@@ -64,6 +64,44 @@ function checkBundledIndexAvailable() {
 
 const HAS_BUNDLED_RAG_INDEX = checkBundledIndexAvailable();
 
+function getOutboundTextChunkLimit() {
+  const raw = parseInt(process.env.WHATSAPP_MAX_MESSAGE_CHARS || '1800', 10);
+  return Number.isFinite(raw) && raw >= 800 ? Math.min(raw, 3500) : 1800;
+}
+
+function cleanVisibleTruncationArtifacts(text) {
+  let out = String(text || '');
+  out = out.replace(/([A-Za-z0-9)\]])\s*(?:\u2026|\.{3})(?=\s*(?:\n|$))/g, '$1.');
+  out = out.replace(/\b(per|pendaftar|pertanyaan|informasi|program|fasilitas|dokumen|syarat|jadwal|gelombang)(?:\u2026|\.{3})\s*$/i, '$1.');
+  return out.replace(/\n{3,}/g, '\n\n').trim();
+}
+function splitLongWhatsappMessage(text, maxLen = getOutboundTextChunkLimit()) {
+  const cleaned = cleanVisibleTruncationArtifacts(text);
+  if (!cleaned || cleaned.length <= maxLen) return cleaned ? [cleaned] : [];
+
+  const chunks = [];
+  let rest = cleaned;
+  while (rest.length > maxLen) {
+    const windowText = rest.slice(0, maxLen + 1);
+    const paragraphCut = Math.max(windowText.lastIndexOf('\n\n'), windowText.lastIndexOf('\r\n\r\n'));
+    const lineCut = windowText.lastIndexOf('\n');
+    const sentenceMatches = Array.from(windowText.matchAll(/[.!?]\s+/g));
+    const sentenceCut = sentenceMatches.length ? sentenceMatches[sentenceMatches.length - 1].index + 1 : -1;
+    const commaCut = windowText.lastIndexOf(', ');
+    let cut = Math.max(paragraphCut, lineCut, sentenceCut);
+    if (cut < Math.floor(maxLen * 0.55)) cut = commaCut;
+    if (cut < Math.floor(maxLen * 0.45)) cut = maxLen;
+
+    let part = rest.slice(0, cut).trim();
+    part = cleanVisibleTruncationArtifacts(part);
+    if (part) chunks.push(part);
+    rest = rest.slice(cut).trim();
+  }
+
+  if (rest) chunks.push(cleanVisibleTruncationArtifacts(rest));
+  return chunks.filter(Boolean);
+}
+
 // Catatan:
 // - FSM (menu) diproses lebih dulu.
 // - Rule-based keyword reply diproses sebelum RAG untuk menghemat biaya,
@@ -8587,10 +8625,18 @@ module.exports = function (provider) {
             console.log('[TRACE_COST_RESPONSE_ERROR]', { err: e && e.message ? e.message : String(e), preview: String(cleaned || '').slice(0, 240) });
           }
         } catch (e) {}
-        await sendBotMessageOriginal(toChatId, cleaned, meta);
+        const outboundParts = splitLongWhatsappMessage(cleaned);
+        for (let i = 0; i < outboundParts.length; i++) {
+          const partMeta = i === 0 ? meta : { ...meta, splitPart: i + 1, splitTotal: outboundParts.length };
+          await sendBotMessageOriginal(toChatId, outboundParts[i], partMeta);
+        }
       } catch (e) {
         // Fallback: send original decorated content if cleanup fails
-        await sendBotMessageOriginal(toChatId, decorated, meta);
+        const fallbackParts = splitLongWhatsappMessage(decorated);
+        for (let i = 0; i < fallbackParts.length; i++) {
+          const partMeta = i === 0 ? meta : { ...meta, splitPart: i + 1, splitTotal: fallbackParts.length };
+          await sendBotMessageOriginal(toChatId, fallbackParts[i], partMeta);
+        }
       }
       if (!outboundSent) {
         outboundSent = true;

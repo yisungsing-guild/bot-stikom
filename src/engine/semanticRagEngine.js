@@ -3288,6 +3288,7 @@ function canAnswerFollowupCandidate(candidate) {
 }
 
 function buildContextualFollowups(followups, question, body, source, topic) {
+  if (!envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false)) return [];
   const list = Array.isArray(followups) ? followups : [];
   const context = {
     program: detectFollowupProgram(question, body),
