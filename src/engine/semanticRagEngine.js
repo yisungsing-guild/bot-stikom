@@ -44,6 +44,108 @@ function normalizeCacheText(value) {
     .trim();
 }
 
+function appendAnswerQualityLog(event = {}) {
+  if (!envFlag('BOT_ANSWER_QUALITY_LOG', true)) return;
+  try {
+    const dir = path.resolve(__dirname, '..', '..', 'tmp');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const payload = {
+      ts: new Date().toISOString(),
+      question: String(event.question || '').slice(0, 500),
+      source: event.source || null,
+      category: event.category || null,
+      confidenceTier: event.confidenceTier || null,
+      confidenceScore: Number.isFinite(Number(event.confidenceScore)) ? Number(event.confidenceScore) : null,
+      action: event.action || null,
+      reason: event.reason || null,
+      answerPreview: String(event.answer || '').replace(/\s+/g, ' ').trim().slice(0, 240)
+    };
+    fs.appendFileSync(path.join(dir, 'answer-quality.jsonl'), JSON.stringify(payload) + '\n');
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to write answer quality log');
+  }
+}
+
+function detectAnswerCategory(question, source = '') {
+  const q = String(question || '').toLowerCase();
+  const src = String(source || '').toLowerCase();
+  if (src.includes('fee') || /\b(biaya|harga|tarif|ukt|dpp|bayar|pembayaran|uang)\b/i.test(q)) return 'biaya';
+  if (src.includes('schedule') || src.includes('current-open-waves') || /\b(jadwal|tanggal|kapan|gelombang|periode)\b/i.test(q)) return 'jadwal';
+  if (src.includes('facility') || src.includes('campus-support') || /\b(fasilitas|layanan|sarana|career\s*center|softskill|bahasa|gccp|bccp|ukm)\b/i.test(q)) return 'fasilitas';
+  if (src.includes('program') || src.includes('career') || /\b(prodi|program\s+studi|jurusan|prospek|karier|kerja|apa\s+itu)\b/i.test(q)) return 'program_prodi';
+  if (src.includes('operational-academic-policy') || /\b(remedial|absensi|presensi|ujian\s+susulan|izin|dispensasi)\b/i.test(q)) return 'kebijakan_akademik';
+  if (src.includes('scholarship') || /\b(beasiswa|kip|potongan|diskon)\b/i.test(q)) return 'beasiswa';
+  return 'umum';
+}
+
+function sourceConfidenceTier({ source = '', score = 1, answer = '' } = {}) {
+  const src = String(source || '').toLowerCase();
+  const ans = String(answer || '').toLowerCase();
+  if (src.includes('insufficient') || src.includes('no-answer') || /\b(mohon maaf|belum mempunyai|belum menemukan|tidak mempunyai jawaban)\b/i.test(ans)) return 'VERY_LOW';
+  const n = Number(score);
+  if (!Number.isFinite(n)) return 'MEDIUM';
+  if (n >= 0.55 || src.includes('direct-answer') || src.includes('compound-question')) return 'HIGH';
+  if (n >= 0.3) return 'HIGH';
+  if (n >= 0.22) return 'MEDIUM';
+  if (n >= 0.14) return 'LOW';
+  return 'VERY_LOW';
+}
+
+function appendDataBoundary(answer, category, confidenceTier) {
+  let out = String(answer || '').trim();
+  if (!out || !['MEDIUM', 'LOW'].includes(String(confidenceTier || '').toUpperCase())) return out;
+  if (/\b(data yang tersedia|informasi yang tersedia|belum mempunyai informasi lengkap|perlu dikonfirmasi)\b/i.test(out)) return out;
+  const boundary = category === 'biaya' || category === 'jadwal'
+    ? 'Catatan: saya jawab berdasarkan data yang tersedia, jadi detail resmi terbaru tetap sebaiknya dikonfirmasi ke PMB/admin kampus.'
+    : 'Catatan: bagian yang belum tercantum di data sebaiknya dikonfirmasi ke admin kampus agar tidak keliru.';
+  return `${out}\n\n${boundary}`.trim();
+}
+
+function focusAnswerOnRequestedEntity(question, answer, category) {
+  let out = String(answer || '').trim();
+  const q = String(question || '').toLowerCase();
+  if (!out) return out;
+  if (/\bgccp\b/i.test(q)) {
+    out = out.replace(/\n-\s*(?:Program internasional\s*\/\s*kerja sama internasional|Student Exchange)[\s\S]*?(?=\n\n|\nUntuk detail|$)/gi, '');
+    out = out.replace(/\bApa itu Student Exchange[\s\S]*?(?=\n\n|\nUntuk detail|$)/gi, '');
+  }
+  if (/\bbccp\b/i.test(q)) {
+    out = out.replace(/\n-\s*(?:GCCP|Student Exchange)[\s\S]*?(?=\n\n|$)/gi, '');
+  }
+  return out.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function formatAnswerByCategory(question, answer, source, confidenceTier = 'HIGH') {
+  const category = detectAnswerCategory(question, source);
+  let out = focusAnswerOnRequestedEntity(question, answer, category);
+  if (!out) return out;
+  out = appendDataBoundary(out, category, confidenceTier);
+  return out.replace(/\n\s*Kalau mau lanjut, kakak bisa tanya:[\s\S]*$/i, '').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function buildSpecificInsufficientDataAnswer(question, kind = 'very_low') {
+  const q = String(question || '').toLowerCase();
+  if (/\bbccp\b/i.test(q)) {
+    return 'Untuk BCCP, saya belum menemukan informasi di data yang tersedia. Jadi saya belum bisa memastikan apakah program itu untuk mahasiswa asing atau bukan. Agar tidak keliru, bagian ini sebaiknya dikonfirmasi ke admin kampus terkait.';
+  }
+  if (/\blinked\s*in|linkedin\b/i.test(q) && /\bcareer|karier|karir|pusat\s+karier\b/i.test(q)) {
+    return 'Untuk program pengembangan karier yang bekerja sama dengan LinkedIn, saya belum menemukan detail resminya di data yang tersedia. Jadi saya belum bisa memastikan bentuk program, jadwal, atau cara mengikutinya. Kakak bisa konfirmasi ke Career Center/admin kampus untuk informasi pastinya.';
+  }
+  if (/\bsoftskill|career\s*center|pusat\s+karier|karier|karir\b/i.test(q)) {
+    return 'Untuk detail pengembangan softskill oleh Career Center, data yang saya pegang belum memuat rincian kegiatan yang lengkap. Jadi saya belum bisa menyebutkan daftar kegiatannya secara pasti. Informasi amannya, bagian ini perlu dikonfirmasi ke Career Center/admin kampus.';
+  }
+  return buildInsufficientDataAnswer(kind);
+}
+
+function maybeBuildClarificationFromLowConfidence(question, category, confidenceTier) {
+  const q = String(question || '').trim();
+  if (String(confidenceTier || '').toUpperCase() !== 'LOW') return null;
+  if (/\b(biaya|jadwal|alamat|lokasi|beasiswa|pendaftaran|double\s*degree|gccp|bccp)\b/i.test(q)) return null;
+  if (category === 'umum' || /\b(itu|programnya|fasilitasnya|yang\s+mana|apa\s+saja)\b/i.test(q)) {
+    return `Saya masih ragu menangkap maksud pertanyaannya. Apakah yang kakak maksud itu informasi tentang ${category === 'umum' ? 'program/fasilitas kampus tertentu' : category.replace('_', ' ')}?`;
+  }
+  return null;
+}
 function isLikelyEnglishQuestion(question) {
   const text = String(question || '').toLowerCase();
   if (!text.trim()) return false;
@@ -2195,7 +2297,7 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   if (!shouldFailClosed) return null;
 
   return {
-    answer: buildInsufficientDataAnswer('very_low'),
+    answer: buildSpecificInsufficientDataAnswer(question, 'very_low'),
     source: 'semantic-rag-campus-support-insufficient-data',
     frameSource: 'semantic-rag-insufficient-data',
     matchedEntity: resolved.entity.key,
@@ -2214,7 +2316,7 @@ function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options =
   if (!asksLinkedInProgram) return null;
 
   return {
-    answer: buildInsufficientDataAnswer('very_low'),
+    answer: buildSpecificInsufficientDataAnswer(question, 'very_low'),
     source: 'semantic-rag-linkedin-career-insufficient-data',
     frameSource: 'semantic-rag-insufficient-data'
   };
@@ -4005,20 +4107,27 @@ async function polishEnglishDeterministicAnswer(client, question, result, option
 }
 
 function buildDeterministicResponse(originalQuestion, source, result, debugExtra = {}, options = {}) {
+  const frameSource = result.frameSource || source;
+  const category = detectAnswerCategory(originalQuestion, frameSource);
+  const confidenceTier = sourceConfidenceTier({ source: frameSource, score: result.confidenceScore || 1, answer: result.answer });
+  const framed = formatNaturalAnswerFrame(originalQuestion, result.answer, frameSource);
+  const formatted = formatAnswerByCategory(originalQuestion, framed, frameSource, confidenceTier);
+  const answer = localizeAnswerLanguage(originalQuestion, formatted, frameSource, options);
+  appendAnswerQualityLog({ question: originalQuestion, source, category, confidenceTier, confidenceScore: confidenceTier === 'VERY_LOW' ? 0 : 1, action: confidenceTier === 'VERY_LOW' ? 'fallback' : 'answer', answer });
   return {
     success: true,
-    answer: localizeAnswerLanguage(originalQuestion, formatNaturalAnswerFrame(originalQuestion, result.answer, result.frameSource || source), result.frameSource || source, options),
+    answer,
     source,
     contexts: [],
-    confidenceScore: 1,
-    confidenceTier: 'HIGH',
+    confidenceScore: confidenceTier === 'VERY_LOW' ? 0 : 1,
+    confidenceTier,
+    answerCategory: category,
     debug: {
       ...debugExtra,
       ...(result && typeof result === 'object' ? result : {})
     }
   };
 }
-
 function runDeterministicHandlers(originalQuestion, handlers, options = {}, variants = [], debugExtra = {}) {
   const questions = uniqueList([...(Array.isArray(variants) ? variants : []), originalQuestion], 8);
   let handlerIndex = null;
@@ -4248,13 +4357,28 @@ async function querySemanticRag(question, options = {}) {
     }
     const veryLowThresholdRaw = Number(process.env.SEMANTIC_RAG_VERY_LOW_SCORE || '0.12');
     const veryLowThreshold = Number.isFinite(veryLowThresholdRaw) ? veryLowThresholdRaw : 0.12;
+    const category = detectAnswerCategory(question, 'semantic-rag-no-context');
+    const confidenceTier = retrieved.topScore >= veryLowThreshold ? 'LOW' : 'VERY_LOW';
+    const clarification = maybeBuildClarificationFromLowConfidence(question, category, confidenceTier);
+    const answer = clarification || buildSpecificInsufficientDataAnswer(question, confidenceTier === 'LOW' ? 'low' : 'very_low');
+    appendAnswerQualityLog({
+      question,
+      source: 'semantic-rag-no-context',
+      category,
+      confidenceTier,
+      confidenceScore: retrieved.topScore,
+      action: clarification ? 'clarify' : 'fallback',
+      reason: 'no_context',
+      answer
+    });
     return {
       success: true,
-      answer: buildInsufficientDataAnswer(retrieved.topScore >= veryLowThreshold ? 'low' : 'very_low'),
+      answer,
       source: 'semantic-rag-no-context',
       contexts: retrieved.contexts,
       confidenceScore: retrieved.topScore,
-      confidenceTier: retrieved.topScore >= veryLowThreshold ? 'LOW' : 'VERY_LOW',
+      confidenceTier,
+      answerCategory: category,
       debug: { rewrite, minScore, veryLowThreshold, indexSize: retrieved.indexSize, rawTopScore: retrieved.rawTopScore }
     };
   }
@@ -4275,7 +4399,19 @@ async function querySemanticRag(question, options = {}) {
         setCachedSemanticResult(resultCacheKey, generalFallbackResult);
         return generalFallbackResult;
       }
-      return { success: true, answer: buildInsufficientDataAnswer('very_low'), source: 'semantic-rag-empty-answer', contexts: retrieved.contexts, confidenceScore: retrieved.topScore, confidenceTier: 'VERY_LOW', debug: { rewrite } };
+      const category = detectAnswerCategory(question, 'semantic-rag-empty-answer');
+      const answer = buildSpecificInsufficientDataAnswer(question, 'very_low');
+      appendAnswerQualityLog({
+        question,
+        source: 'semantic-rag-empty-answer',
+        category,
+        confidenceTier: 'VERY_LOW',
+        confidenceScore: retrieved.topScore,
+        action: 'fallback',
+        reason: 'empty_answer',
+        answer
+      });
+      return { success: true, answer, source: 'semantic-rag-empty-answer', contexts: retrieved.contexts, confidenceScore: retrieved.topScore, confidenceTier: 'VERY_LOW', answerCategory: category, debug: { rewrite } };
     }
     if (rawAnswer.toUpperCase().includes('TIDAK_CUKUP_DATA')) {
       const fallbackResult = preferTrainingFirst ? runSemanticDeterministicRoute('ai-intent-fallback-after-rag-insufficient-context') : null;
@@ -4290,23 +4426,60 @@ async function querySemanticRag(question, options = {}) {
       }
       const cleaned = rawAnswer.replace(/TIDAK_CUKUP_DATA[:\s-]*/i, '').trim();
       const allowClarifyingFallback = envFlag('SEMANTIC_RAG_RETURN_CLARIFICATION_ON_NO_DATA', true);
+      const category = detectAnswerCategory(question, 'semantic-rag-insufficient-context');
+      const baseFallback = buildSpecificInsufficientDataAnswer(question, 'very_low');
+      const answer = allowClarifyingFallback && cleaned ? `${baseFallback} ${cleaned}` : baseFallback;
+      appendAnswerQualityLog({
+        question,
+        source: 'semantic-rag-insufficient-context',
+        category,
+        confidenceTier: 'VERY_LOW',
+        confidenceScore: retrieved.topScore,
+        action: 'fallback',
+        reason: 'insufficient_context',
+        answer
+      });
       return {
         success: true,
-        answer: allowClarifyingFallback && cleaned ? buildInsufficientDataAnswer('very_low') + ' ' + cleaned : buildInsufficientDataAnswer('very_low'),
+        answer,
         source: 'semantic-rag-insufficient-context',
         contexts: retrieved.contexts,
         confidenceScore: retrieved.topScore,
+        confidenceTier: 'VERY_LOW',
+        answerCategory: category,
         debug: { rewrite }
       };
     }
 
+    const cleanedAnswer = ragEngine.cleanAnswerLanguage(rawAnswer);
+    const category = detectAnswerCategory(question, 'semantic-rag');
+    const confidenceTier = sourceConfidenceTier({ source: 'semantic-rag', score: retrieved.topScore, answer: cleanedAnswer });
+    const answer = formatAnswerByCategory(
+      question,
+      formatNaturalAnswerFrame(question, cleanedAnswer, 'semantic-rag'),
+      'semantic-rag',
+      confidenceTier
+    );
+    if (confidenceTier !== 'HIGH') {
+      appendAnswerQualityLog({
+        question,
+        source: 'semantic-rag',
+        category,
+        confidenceTier,
+        confidenceScore: retrieved.topScore,
+        action: 'answer_with_boundary',
+        reason: 'non_high_confidence',
+        answer
+      });
+    }
     const response = {
       success: true,
-      answer: formatNaturalAnswerFrame(question, ragEngine.cleanAnswerLanguage(rawAnswer), 'semantic-rag'),
+      answer,
       source: 'semantic-rag',
       contexts: retrieved.contexts,
       confidenceScore: retrieved.topScore,
-      confidenceTier: retrieved.topScore >= 0.3 ? 'HIGH' : 'MEDIUM',
+      confidenceTier,
+      answerCategory: category,
       debug: { rewrite, indexSize: retrieved.indexSize, rawTopScore: retrieved.rawTopScore }
     };
     setCachedSemanticResult(resultCacheKey, response);
@@ -4318,12 +4491,26 @@ async function querySemanticRag(question, options = {}) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
       return fallbackResult;
     }
+    const category = detectAnswerCategory(question, 'semantic-rag-error');
+    const answer = 'Maaf, saya belum bisa mengambil jawaban dari data saat ini. Coba ulangi pertanyaannya sebentar lagi, atau tuliskan dengan lebih spesifik.';
+    appendAnswerQualityLog({
+      question,
+      source: 'semantic-rag-error',
+      category,
+      confidenceTier: 'VERY_LOW',
+      confidenceScore: retrieved.topScore,
+      action: 'fallback',
+      reason: 'rag_error',
+      answer
+    });
     return {
       success: true,
-      answer: 'Maaf, saya belum bisa mengambil jawaban dari data saat ini. Coba ulangi pertanyaannya sebentar lagi, atau tuliskan dengan lebih spesifik.',
+      answer,
       source: 'semantic-rag-error',
       contexts: retrieved.contexts,
       confidenceScore: retrieved.topScore,
+      confidenceTier: 'VERY_LOW',
+      answerCategory: category,
       debug: { rewrite, error: err && err.message ? err.message : String(err) }
     };
   }

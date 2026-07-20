@@ -19,6 +19,11 @@ describe('answerPreflightEvaluator', () => {
     expect(result.answer).not.toMatch(/Kalau mau lanjut/i);
   });
 
+  test('removes short optional continuation offers by default', () => {
+    delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
+    const result = evaluateOutboundAnswer('Jawaban utama.\n\nKalau kakak mau, saya bisa jelaskan detail program UTB, DNUI, atau HELP.', 'double degree apa saja?');
+    expect(result.answer).toBe('Jawaban utama.');
+  });
   test('cleans visible dangling ellipsis artifacts', () => {
     expect(normalizeOutboundAnswerText('Bagian ini terpotong per…')).toBe('Bagian ini terpotong per.');
     expect(normalizeOutboundAnswerText('Program GCCP)...')).toBe('Program GCCP).');
