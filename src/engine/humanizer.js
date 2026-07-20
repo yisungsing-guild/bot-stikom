@@ -32,6 +32,7 @@ function buildHumanizedIntentConfirmation(intent, userQuery = '', context = {}) 
     'program_studi': buildProgramStudyConfirmation,
     'international_double_degree': buildInternationalDoubleDegreeConfirmation,
     'akademik': buildAkademikConfirmation,
+    'ukm': buildUkmConfirmation,
     
     // Costs & Finance
     'biaya': buildFeeConfirmation,
@@ -80,6 +81,15 @@ function buildProgramStudyConfirmation(userQuery, context) {
   return `Baik Kak, saya bantu jelaskan program studi yang tersedia di ITB STIKOM Bali.`;
 }
 
+function buildUkmConfirmation(userQuery) {
+  if (/\b(esport|esports|athena)\b/i.test(userQuery)) {
+    return 'Baik Kak, saya bantu jawab tentang UKM esports di ITB STIKOM Bali.';
+  }
+  if (/\b(musik|band|nyanyi|vokal|vocal)\b/i.test(userQuery)) {
+    return 'Baik Kak, saya bantu jawab tentang UKM musik di ITB STIKOM Bali.';
+  }
+  return 'Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.';
+}
 function buildAkademikConfirmation(userQuery) {
   const topicMap = [
     { pattern: /\b(kurikulum|mata\s+kuliah|dipelajari|materi|belajar)\b/i, reply: 'mengenai kurikulum dan mata kuliah' },
@@ -275,6 +285,12 @@ function getIntentSpecificFollowUps(intent, context) {
       }
       break;
       
+    case 'ukm':
+      q.push('UKM apa saja yang tersedia?');
+      q.push('Bagaimana cara ikut UKM?');
+      q.push('Ada UKM olahraga atau seni apa saja?');
+      break;
+
     case 'beasiswa': {
       const scholarshipType = context.scholarshipType || '';
       if (scholarshipType === 'KIP') {

@@ -20,7 +20,7 @@ function stripOptionalFollowupSuggestions(text) {
   let out = String(text || '').trim();
   if (envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false)) return out;
   out = out.replace(/\n\s*(?:Kalau mau lanjut, kakak bisa tanya|Rekomendasi pertanyaan berikutnya):[\s\S]*$/i, '');
-  out = out.replace(/(?:^|\n)\s*Kalau kakak mau, saya bisa (?:jelaskan|bantu jelaskan)[^\n]*\.?\s*/gi, '\n');
+  out = out.replace(/(?:^|\n)\s*Kalau kakak mau, saya (?:juga )?bisa (?:tampilkan|jelaskan|bantu jelaskan)[^\n]*\.?\s*/gi, '\n');
   out = out.replace(/\n\s*Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik\.?\s*$/i, '');
   return out.trim();
 }

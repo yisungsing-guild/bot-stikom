@@ -141,9 +141,15 @@ function inferQuestionTopic(userQuery, mainAnswer) {
     return 'Lokasi kampus';
   }
 
+  if (queryIntent === 'ukm' || answerIntent === 'ukm' ||
+      /\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|athena esports|esport|esports|musik|futsal|basket|teater biner|vos)\b/i.test(normalizedQuery) ||
+      /\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|athena esports|esport|esports|musik|futsal|basket|teater biner|vos)\b/i.test(normalizedAnswer)) {
+    return 'UKM dan Ormawa';
+  }
+
   if (queryIntent === 'biaya' || answerIntent === 'biaya' ||
-      /\b(biaya|dpp|ukt|cicilan|cicil|fee|harga|pendaftaran|total biaya|biaya kuliah)\b/i.test(normalizedQuery) ||
-      /\b(biaya|dpp|ukt|cicilan|cicil|fee|harga|pendaftaran|total biaya|biaya kuliah)\b/i.test(normalizedAnswer)) {
+      /\b(biaya|dpp|ukt|cicilan|cicil|fee|harga|total biaya|biaya kuliah)\b/i.test(normalizedQuery) ||
+      /\b(biaya|dpp|ukt|cicilan|cicil|fee|harga|total biaya|biaya kuliah)\b/i.test(normalizedAnswer)) {
     return 'Biaya kuliah';
   }
 
@@ -739,7 +745,8 @@ function detectIntentFromQuery(userQuery) {
     { intent: 'akreditasi', regex: /\b(akreditasi|ban-pt|sk akreditasi|terakreditasi)\b/ },
     { intent: 'lokasi', regex: /\b(lokasi|alamat|berlokasi|letak|cabang|kampus)\b/ },
     { intent: 'jadwal_pendaftaran', regex: /\b(jadwal|gelombang|deadline|tanggal|dibuka|tutup)\b/ },
-    { intent: 'perbandingan_prodi', regex: /\b(bedanya|perbedaan|versus|vs|beda antara|dibanding|dibandingkan|lebih baik|mana (?:yang )?lebih baik|lebih cocok|lebih unggul)\b/ },
+    { intent: 'perbandingan_prodi', regex: /\\b(bedanya|perbedaan|versus|vs|beda antara|dibanding|dibandingkan|lebih baik|mana (?:yang )?lebih baik|lebih cocok|lebih unggul)\\b/ },
+    { intent: 'ukm', regex: /\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|komunitas|athena esports|esport|esports|musik|futsal|basket|teater biner|vos)\b/ },
     { intent: 'pendaftaran', regex: /\b(pendaftaran|daftar|seleksi)\b/ },
     { intent: 'biaya', regex: /\b(biaya|cicilan|dpp|ukt|fee|bayar|harga)\b/ }
   ];
@@ -773,9 +780,9 @@ function detectIntentFromAnswerFromText(mainAnswer) {
   const answer = String(mainAnswer || '');
   const normalized = answer.toLowerCase();
   const feeMarker = /\brp\s*[0-9.,]+(?:\s*(?:juta|ribu|rb|jt|rupiah))?\b/i;
-  const feeKeywords = /\b(?:rincian biaya|biaya awal masuk|biaya masuk|dana pendidikan(?: pokok)?|total biaya|biaya pendidikan|biaya semester|biaya pendaftaran|biaya kuliah|dpp|ukt|cicilan|fee|bayar|harga|pendaftaran)\b/i;
+  const feeKeywords = /\b(?:rincian biaya|biaya awal masuk|biaya masuk|dana pendidikan(?: pokok)?|total biaya|biaya pendidikan|biaya semester|biaya pendaftaran|biaya kuliah|dpp|ukt|cicilan|fee|bayar|harga)\b/i;
+  if (/\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|athena esports|esport|esports|musik|futsal|basket|teater biner|vos|pengurus ukm|kemahasiswaan)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'ukm' }); } catch (e) {} return 'ukm'; }
 
-  if (feeMarker.test(answer) || feeKeywords.test(normalized)) return 'biaya';
   if (feeMarker.test(answer) || feeKeywords.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'biaya' }); } catch (e) {} return 'biaya'; }
   if (/\b(bedanya|perbedaan|versus|vs|beda antara|dibanding|dibandingkan|lebih baik|mana (?:yang )?lebih baik|lebih cocok|lebih unggul|Perbandingan cepat|Perbandingan singkat)\b/i.test(answer)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'perbandingan_prodi' }); } catch (e) {} return 'perbandingan_prodi'; }
   if (/\b(akreditasi|ban-pt|sk akreditasi|terakreditasi)\b/.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'akreditasi' }); } catch (e) {} return 'akreditasi'; }
@@ -805,6 +812,12 @@ function suggestionsForIntent(intent, program) {
         'Mau contoh posisi pekerjaan dan gaji rata-rata?',
         'Informasi magang dan kerja sama industri',
         'Sertifikasi yang meningkatkan peluang kerja'
+      ];
+    case 'ukm':
+      return [
+        'UKM apa saja yang tersedia?',
+        'Bagaimana cara ikut UKM?',
+        'Ada UKM olahraga atau seni apa saja?'
       ];
     case 'biaya':
       return [
