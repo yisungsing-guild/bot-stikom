@@ -266,6 +266,8 @@ module.exports = function (provider) {
       const config = {
         enabled: cfg.enabled,
         provider: cfg.provider,
+        hasWebhookUrl: !!cfg.webhookUrl,
+        hasWebhookSecret: !!cfg.webhookSecret,
         hasResendApiKey: !!cfg.resendApiKey,
         hasHost: !!cfg.host,
         hasPort: !!cfg.port,
