@@ -8562,8 +8562,8 @@ module.exports = function (provider) {
             decoratorOptions.useHumanizer = true;
             decoratorOptions.intent = intent;
             decoratorOptions.context = {
-              ragSource: ragResult && ragResult.source ? ragResult.source : null,
-              source: ragResult && ragResult.source ? ragResult.source : null
+              ragSource: meta && meta.source ? meta.source : null,
+              source: meta && meta.source ? meta.source : null
             };
             console.log('[Humanizer] Using new humanizer for intent:', intent);
             console.log('[TRACE_HUMANIZER_INTENT]', { intent, chatId: toChatId, userQuery: text, preview: String(messageText || '').slice(0,240) });
@@ -8627,7 +8627,7 @@ module.exports = function (provider) {
           }
         } catch (e) {}
         const preflight = evaluateOutboundAnswer(cleaned, text, {
-          source: ragResult && ragResult.source ? ragResult.source : null
+          source: meta && meta.source ? meta.source : null
         });
         if (preflight.issues && preflight.issues.length) {
           logger.warn({ chatId: toChatId, issues: preflight.issues, meta: preflight.meta }, '[ProviderRoute] outbound answer preflight adjusted');
@@ -8640,7 +8640,7 @@ module.exports = function (provider) {
       } catch (e) {
         // Fallback: send original decorated content if cleanup fails
         const preflight = evaluateOutboundAnswer(decorated, text, {
-          source: ragResult && ragResult.source ? ragResult.source : null
+          source: meta && meta.source ? meta.source : null
         });
         if (preflight.issues && preflight.issues.length) {
           logger.warn({ chatId: toChatId, issues: preflight.issues, meta: preflight.meta }, '[ProviderRoute] outbound fallback preflight adjusted');
