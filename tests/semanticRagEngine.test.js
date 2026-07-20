@@ -1486,6 +1486,12 @@ describe('semanticRagEngine', () => {
     expect(language.answer).toMatch(/Language Learning Center/i);
     expect(language.answer).not.toMatch(/PIHAK PERTAMA|Pasal 13|ADDENDUM|Double Degree HELP/i);
 
+    const softskillCareer = await querySemanticRag('Oh belum punya informasinya ya. Kalau dalam pengembangan softskill, apa saja yang dilakukan oleh Career Center?');
+    expect(softskillCareer.success).toBe(true);
+    expect(softskillCareer.answer).toMatch(/softskill|Career Center/i);
+    expect(softskillCareer.answer).toMatch(/belum.*rincian|belum.*lengkap|perlu dikonfirmasi/i);
+    expect(softskillCareer.answer).not.toMatch(/^Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+
 
     const gccp = await querySemanticRag('Oke baik, kalau program GCCP itu apa ya?');
     expect(gccp.success).toBe(true);

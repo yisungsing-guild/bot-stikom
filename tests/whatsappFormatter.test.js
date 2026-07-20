@@ -124,6 +124,22 @@ describe('WhatsApp reply formatter', () => {
     expect(result).not.toContain('Informasi terkait yang mungkin membantu:');
   });
 
+  test('detects campus support entities without wrong category headers', () => {
+    const { mapProviderIntentToFormatter } = require('../src/utils/whatsappFormatter');
+    expect(mapProviderIntentToFormatter('semantic-rag-campus-support-entity')).toBe('campus_support');
+    expect(detectIntentFromAnswer('', 'Katanya ada program pengembangan career bekerja sama dengan LinkedIn, itu seperti apa ya programnya?')).toBe('campus_support');
+    expect(detectIntentFromAnswer('', 'Oke baik, kalau program GCCP itu apa ya?')).toBe('campus_support');
+    expect(detectIntentFromAnswer('', 'Kalau program BCCP itu apa ya?')).toBe('campus_support');
+
+    const gccp = buildHumanizedWhatsappReply({
+      mainAnswer: 'GCCP adalah Global Cross Cultural Program yang dirancang untuk memberikan pengalaman lintas budaya kepada mahasiswa.',
+      userQuery: 'Oke baik, kalau program GCCP itu apa ya?'
+    });
+
+    expect(gccp).toContain('program GCCP');
+    expect(gccp).not.toMatch(/jadwal pendaftaran|biaya kuliah|lokasi kampus|prospek karier/i);
+    expect(gccp).not.toMatch(/Kalau Kakak ingin tahu lebih lanjut/i);
+  });
   // BUG 1 Regression Tests: Program alias consistency
   test('BUG 1: resolves TI to Teknologi Informasi consistently', () => {
     expect(detectIntentFromAnswer('Program Studi Teknologi Informasi', 'Berapa biaya TI?')).toBe('biaya');

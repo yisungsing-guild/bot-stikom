@@ -75,6 +75,9 @@ function mapProviderIntentToFormatter(intent) {
   if (lowered === 'rag-pmb-info') return 'pmb';
   if (lowered === 'rag-program-profile') return 'program_definition';
   if (lowered === 'rag-fee-structured') return 'biaya';
+  if (/\b(campus[_-]?support|career[_-]?center|linked[_-]?in|linkedin|gccp|bccp|language[_-]?learning|softskill|student[_-]?exchange)\b/i.test(lowered)) {
+    return 'campus_support';
+  }
   switch (normalized) {
     case 'COST': return 'biaya';
     case 'SCHOLARSHIP': return 'beasiswa';
@@ -722,6 +725,11 @@ function detectIntentFromQuery(userQuery) {
   const q = String(userQuery || '').toLowerCase().trim();
   if (!q) return 'general';
 
+  if (/\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/i.test(q)) {
+    try { traceWhatsapp('detectIntentFromQuery', { query: userQuery, detected: 'campus_support' }); } catch (e) {}
+    return 'campus_support';
+  }
+
   if (/\b(coding|programmer|programming|software engineer|software developer|data analyst|data scientist|cyber security|cybersecurity|ui\/ux|ui ux|ux designer|ai engineer|artificial intelligence|machine learning)\b/i.test(q)) {
     if (/\b(jurusan|prodi|program studi|cocok|yang tepat|apa|terbaik|lebih cocok|sesuai|pilihan|direkomendasikan|jadi)\b/.test(q)) {
       try { traceWhatsapp('detectIntentFromQuery', { query: userQuery, detected: 'program_studi' }); } catch (e) {}
@@ -737,6 +745,7 @@ function detectIntentFromQuery(userQuery) {
   }
 
   const semanticPatterns = [
+    { intent: 'campus_support', regex: /\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/ },
     { intent: 'international_double_degree', regex: /\b(double degree|double-degree|double gelar|dual degree|program internasional|kelas internasional|exchange semester|kuliah di luar negeri)\b/ },
     { intent: 'beasiswa', regex: /\b(beasiswa|scholarship|grant|bantuan pendidikan|kip|1k1s|prestasi|yayasan|kemitraan|kurang mampu|tidak mampu)\b/ },
     { intent: 'program_definition', regex: /\b(apa itu|apa sih|definisi|arti|penjelasan tentang|jelaskan tentang)\b/ },
@@ -782,6 +791,7 @@ function detectIntentFromAnswerFromText(mainAnswer) {
   const feeMarker = /\brp\s*[0-9.,]+(?:\s*(?:juta|ribu|rb|jt|rupiah))?\b/i;
   const feeKeywords = /\b(?:rincian biaya|biaya awal masuk|biaya masuk|dana pendidikan(?: pokok)?|total biaya|biaya pendidikan|biaya semester|biaya pendaftaran|biaya kuliah|dpp|ukt|cicilan|fee|bayar|harga)\b/i;
   if (/\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|athena esports|esport|esports|musik|futsal|basket|teater biner|vos|pengurus ukm|kemahasiswaan)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'ukm' }); } catch (e) {} return 'ukm'; }
+  if (/\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'campus_support' }); } catch (e) {} return 'campus_support'; }
 
   if (feeMarker.test(answer) || feeKeywords.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'biaya' }); } catch (e) {} return 'biaya'; }
   if (/\b(bedanya|perbedaan|versus|vs|beda antara|dibanding|dibandingkan|lebih baik|mana (?:yang )?lebih baik|lebih cocok|lebih unggul|Perbandingan cepat|Perbandingan singkat)\b/i.test(answer)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'perbandingan_prodi' }); } catch (e) {} return 'perbandingan_prodi'; }
@@ -818,6 +828,12 @@ function suggestionsForIntent(intent, program) {
         'UKM apa saja yang tersedia?',
         'Bagaimana cara ikut UKM?',
         'Ada UKM olahraga atau seni apa saja?'
+      ];
+    case 'campus_support':
+      return [
+        'Apa saja fasilitas pendukung mahasiswa?',
+        'Bagaimana cara konfirmasi detail program ini?',
+        'Program internasional apa saja yang tersedia?'
       ];
     case 'biaya':
       return [

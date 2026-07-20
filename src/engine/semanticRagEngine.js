@@ -2477,7 +2477,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   const specificEntityWithoutDetail = findCampusSupportEntity(question);
   if (specificEntityWithoutDetail && specificEntityWithoutDetail.key !== 'career-center' && /\b(apa\s+saja|layanan|detail|program|kegiatan|aktivitas|manfaat|syarat|cara|bagaimana|gimana)\b/i.test(q)) {
     return {
-      answer: buildGenericTopicFallback(question, 'very_low'),
+      answer: buildSpecificInsufficientDataAnswer(question, 'very_low'),
       source: 'semantic-rag-campus-facility-insufficient-data',
       frameSource: 'semantic-rag-insufficient-data'
     };
@@ -2494,7 +2494,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
 
   if (/\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
     return {
-      answer: buildGenericTopicFallback(question, 'very_low'),
+      answer: buildSpecificInsufficientDataAnswer(question, 'very_low'),
       source: 'semantic-rag-campus-facility-insufficient-data',
       frameSource: 'semantic-rag-insufficient-data'
     };
@@ -2503,7 +2503,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   if (/\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
     if (isSpecificCampusSupportDetailQuestion(question)) {
       return {
-        answer: buildInsufficientDataAnswer('very_low'),
+        answer: buildSpecificInsufficientDataAnswer(question, 'very_low'),
         source: 'semantic-rag-campus-facility-insufficient-data',
         frameSource: 'semantic-rag-insufficient-data'
       };

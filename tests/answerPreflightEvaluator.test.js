@@ -20,6 +20,12 @@ describe('answerPreflightEvaluator', () => {
     expect(result.answer).not.toMatch(/Kalau mau lanjut/i);
   });
 
+  test('removes humanizer follow-up suggestions by default', () => {
+    delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
+    const result = evaluateOutboundAnswer('Jawaban utama.\n\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n\n- Apa saja fasilitas pendukung mahasiswa?\n- Bagaimana cara konfirmasi detail program ini?', 'apa itu GCCP?');
+    expect(result.answer).toBe('Jawaban utama.');
+    expect(result.answer).not.toMatch(/pertanyaan berikut/i);
+  });
   test('removes short optional continuation offers by default', () => {
     delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
     const result = evaluateOutboundAnswer('Jawaban utama.\n\nKalau kakak mau, saya bisa jelaskan detail program UTB, DNUI, atau HELP.', 'double degree apa saja?');

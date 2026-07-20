@@ -14,6 +14,12 @@
  * 4. Improve virtual assistant persona
  */
 
+function envFlag(name, fallback = false) {
+  const raw = process.env[name];
+  if (typeof raw === 'undefined') return fallback;
+  return /^(1|true|yes|on)$/i.test(String(raw).trim());
+}
+
 // =====================================================
 // 1. HUMANIZED INTENT CONFIRMATION
 // =====================================================
@@ -33,6 +39,7 @@ function buildHumanizedIntentConfirmation(intent, userQuery = '', context = {}) 
     'international_double_degree': buildInternationalDoubleDegreeConfirmation,
     'akademik': buildAkademikConfirmation,
     'ukm': buildUkmConfirmation,
+    'campus_support': buildCampusSupportConfirmation,
     
     // Costs & Finance
     'biaya': buildFeeConfirmation,
@@ -79,6 +86,16 @@ function buildProgramStudyConfirmation(userQuery, context) {
   }
   
   return `Baik Kak, saya bantu jelaskan program studi yang tersedia di ITB STIKOM Bali.`;
+}
+
+function buildCampusSupportConfirmation(userQuery) {
+  const q = String(userQuery || '').toLowerCase();
+  if (/\bgccp\b/i.test(q)) return 'Saya bantu jawab tentang program GCCP di ITB STIKOM Bali.';
+  if (/\bbccp\b/i.test(q)) return 'Saya bantu jawab tentang program BCCP di ITB STIKOM Bali.';
+  if (/\blinked\s*in|linkedin\b/i.test(q)) return 'Saya bantu jawab tentang program LinkedIn yang terkait Career Center di ITB STIKOM Bali.';
+  if (/\bsoftskill|career\s*center|pusat\s+karier|pusat\s+karir\b/i.test(q)) return 'Saya bantu jawab tentang Career Center dan pengembangan softskill di ITB STIKOM Bali.';
+  if (/\bbahasa|language\s+learning|llc\b/i.test(q)) return 'Saya bantu jawab tentang fasilitas belajar bahasa di ITB STIKOM Bali.';
+  return 'Saya bantu jawab tentang fasilitas atau program pendukung di ITB STIKOM Bali.';
 }
 
 function buildUkmConfirmation(userQuery) {
@@ -291,6 +308,12 @@ function getIntentSpecificFollowUps(intent, context) {
       q.push('Ada UKM olahraga atau seni apa saja?');
       break;
 
+    case 'campus_support':
+      q.push('Apa saja fasilitas pendukung mahasiswa?');
+      q.push('Bagaimana cara konfirmasi detail program ini?');
+      q.push('Program internasional atau softskill apa saja yang tersedia?');
+      break;
+
     case 'beasiswa': {
       const scholarshipType = context.scholarshipType || '';
       if (scholarshipType === 'KIP') {
@@ -442,7 +465,8 @@ function buildNoDataResponse(userQuery, intent = 'general', context = {}) {
     ? 'detail beasiswa tersebut'
     : 'informasi tersebut';
   const base = `Maaf Kak, saat ini saya belum menemukan ${noDataTopic} pada basis pengetahuan saya${programText}. Silakan hubungi Admin PMB atau ajukan pertanyaan lain terkait PMB ITB STIKOM Bali.`;
-  const followUps = generateFollowUpQuestions(intent, userQuery, context);
+  const showFollowUps = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false);
+  const followUps = showFollowUps ? generateFollowUpQuestions(intent, userQuery, context) : [];
   if (!followUps || !followUps.length) return base;
 
   return [base, '', formatFollowUpSection(followUps)].join('\n');
@@ -494,7 +518,8 @@ function formatHumanizedResponse(mainAnswer, userQuery, context = {}) {
   }
   
   // 4. Natural closing + follow-up questions (tidak label "Kesimpulan:")
-  const followUps = generateFollowUpQuestions(intent, userQuery, context);
+  const showFollowUps = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false);
+  const followUps = showFollowUps ? generateFollowUpQuestions(intent, userQuery, context) : [];
   if (followUps && followUps.length > 0) {
     lines.push('');
     lines.push(formatFollowUpSection(followUps));
@@ -853,7 +878,7 @@ function formatFollowUpSection(questions) {
   
   // Add questions with bullet points
   questions.forEach(q => {
-    lines.push(`• ${q}`);
+    lines.push(`- ${q}`);
   });
   
   return lines.join('\n');
