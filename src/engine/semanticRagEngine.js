@@ -917,7 +917,7 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
   }
 
   scored.sort((a, b) => b.score - a.score);
-  const contexts = scored.slice(0, maxCandidates).slice(0, topK).map((s) => ({
+  const contexts = scored.slice(0, maxCandidates).map((s) => ({
     id: s.item.id || null,
     score: s.score,
     chunk: s.item.chunk,
@@ -1917,7 +1917,7 @@ const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'student-exchange', label: 'Student Exchange', type: 'international_program', patterns: ['student exchange', 'students exchange', 'studens exchange', 'pertukaran mahasiswa', 'exchange program'] },
   { key: 'short-course', label: 'short course', type: 'international_program', patterns: ['short course', 'shortcourse', 'kursus singkat'] },
   { key: 'hi-think', label: 'Hi-Think', type: 'facility_program', patterns: ['hi think', 'hithink'] },
-  { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc'] },
+  { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc', 'kemampuan bahasa', 'belajar bahasa', 'fasilitas bahasa', 'peningkatan bahasa'] },
   { key: 'inkubator-bisnis', label: 'Inkubator Bisnis', type: 'facility', patterns: ['inkubator bisnis'] },
   { key: 'layanan-industri', label: 'Layanan Industri', type: 'facility', patterns: ['layanan industri', 'layanan untuk industri'] },
   { key: 'goes-to-school', label: 'STIKOM Bali Goes To School', type: 'facility_program', patterns: ['stikom bali goes to school', 'goes to school', 'goestoschool'] },
@@ -2422,6 +2422,19 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const entityQuestion = currentMentionsEntity
     ? question
     : `${resolved.entity.label} ${question}`;
+  if (resolved.entity.key === 'language-learning-center') {
+    return {
+      answer: [
+        'Ya, Kak. Untuk peningkatan kemampuan bahasa, data yang tersedia mencantumkan Language Learning Center sebagai fasilitas pendukung di ITB STIKOM Bali.',
+        '',
+        'Saya belum menemukan detail lengkap tentang bentuk kegiatan, jadwal, bahasa yang tersedia, atau cara mengikutinya. Jadi informasi amannya: fasilitasnya ada, sedangkan detail teknisnya sebaiknya dikonfirmasi ke admin kampus.'
+      ].join('\n'),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-direct-answer',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   const specific = buildSpecificFacilityAnswerFromIndex(entityQuestion, indexForQuery);
   if (specific) {
     return {
@@ -4552,7 +4565,7 @@ async function querySemanticRag(question, options = {}) {
 
 
   const rawRetrieved = await retrieveSemanticContexts(rewrite.searchQueries, { topK: options.topK });
-  const filteredContexts = filterSemanticContextsForQuestion(question, rawRetrieved.contexts);
+  const filteredContexts = filterSemanticContextsForQuestion(question, rawRetrieved.contexts).slice(0, Number.isFinite(Number(options.topK)) ? Math.max(1, Number(options.topK)) : parseInt(process.env.SEMANTIC_RAG_TOP_K || process.env.RAG_TOP_K || '8', 10));
   const retrieved = {
     ...rawRetrieved,
     contexts: filteredContexts,

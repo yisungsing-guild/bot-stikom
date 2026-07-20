@@ -82,6 +82,38 @@ function chunkContainsForbiddenCorpusPhrase(chunk) {
   return FORBIDDEN_CORPUS_PATTERNS.some((pattern) => pattern.test(text));
 }
 
+function isRawAdministrativeOrLegalChunk(chunk, filename = '') {
+  const text = String(chunk || '');
+  const file = String(filename || '');
+  if (!text.trim()) return false;
+
+  const haystack = `${file}\n${text}`;
+  const legalHits = [
+    /\bPERJANJIAN\s+KERJA\s*SAMA\b/i,
+    /\bNOTA\s+KESEPAHAMAN\b/i,
+    /\bPIHAK\s+(?:PERTAMA|KESATU|KEDUA)\b/i,
+    /\bPARA\s+PIHAK\b/i,
+    /\bPasal\s+\d+\b/i,
+    /\bFORCE\s+MAJEURE\b/i,
+    /\bHAK\s+DAN\s+KEWAJIBAN\b/i,
+    /\bPENYELESAIAN\s+PERSELISIHAN\b/i,
+    /\bADDENDUM\b/i,
+    /\bNama\s+Mitra\b/i
+  ].filter((pattern) => pattern.test(haystack)).length;
+
+  const placeholderLike = /_{5,}|\.{8,}|:{3,}|(?:\(\s*NAMA\s+MITRA\s*\))/i.test(haystack);
+  const hasStudentFacingEvidence = /\b(biaya|dpp|ukt|pendaftaran|gelombang|jadwal|program\s+studi|prodi|beasiswa|fasilitas|ukm|ormawa|career\s*center|language\s+learning|kampus)\b/i.test(text);
+
+  if (legalHits >= 2) return true;
+  if (legalHits >= 1 && placeholderLike) return true;
+  if (/\b(?:mou|moa|kontrak|kerja\s+sama|kerjasama|memorandum|mitra)\b/i.test(file) && legalHits >= 1 && !hasStudentFacingEvidence) return true;
+  return false;
+}
+
+function shouldExcludeChunkFromRagIndex(chunk, filename = '') {
+  return chunkContainsForbiddenCorpusPhrase(chunk) || isRawAdministrativeOrLegalChunk(chunk, filename);
+}
+
 // === HELPER: Flexible Answer Generation ===
 // Generate jawaban dengan gaya bahasa random/natural, mengurangi hardcode
 const answerTemplates = {
@@ -281,7 +313,7 @@ function normalizeCorpusChunkText(chunk) {
 function normalizeCorpusIndex(index) {
   if (!Array.isArray(index)) return [];
   return index
-    .filter(item => item && !chunkContainsForbiddenCorpusPhrase(item.chunk))
+    .filter(item => item && !shouldExcludeChunkFromRagIndex(item.chunk, item.filename || item.sourceFile || ''))
     .map(item => ({
       ...item,
       chunk: normalizeCorpusChunkText(item.chunk)
@@ -485,7 +517,7 @@ function isAdminInternalChunk(chunk, filename) {
   const text = String(chunk || '').toLowerCase();
   const file = String(filename || '').toLowerCase();
   const adminPattern = /\b(?:mou|moa|kerja\s+sama|kerjasama|perjanjian|kontrak|memorandum|mitra|partner|sponsor|admin|internal|manajemen|keuangan|kepegawaian|rapat|agenda|notulen|berita|news|pengumuman\s+internal)\b/i;
-  return adminPattern.test(text) || adminPattern.test(file);
+  return isRawAdministrativeOrLegalChunk(chunk, filename) || adminPattern.test(text) || adminPattern.test(file);
 }
 
 function chunkHasRequestedProgram(item, requestedProgram) {
@@ -3928,6 +3960,15 @@ function formatRagAnswer(answer, source, confidence = 'HIGH', question = null) {
   if (!answer || typeof answer !== 'string') return answer;
 
   const trimmed = answer.trim();
+
+  if (String(source || '').includes('campus-language-facility')) {
+    const cleanedLanguageAnswer = cleanAnswerLanguage(trimmed);
+    try {
+      return sanitizeWhatsappText(cleanedLanguageAnswer);
+    } catch (e) {
+      return cleanedLanguageAnswer;
+    }
+  }
   
   // Skip formatter for greetings - don't add conclusion/recommendation sections
   if (isGreetingMessage(trimmed)) {
@@ -9371,7 +9412,12 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
     let skippedDuplicates = 0;
     let aliasedDuplicates = 0;
     const allowDuplicateTrainingAlias = Boolean(opts.allowDuplicateTrainingAlias);
+    let skippedAdministrative = 0;
     for (const chunk of chunks) {
+      if (shouldExcludeChunkFromRagIndex(chunk, resolvedSourceFile || resolvedFilename || '')) {
+        skippedAdministrative++;
+        continue;
+      }
       const h = chunkHash(chunk);
       const key = hashKeyFor(divisionKey, h);
       if (existingHashes.has(key)) {
@@ -9505,7 +9551,7 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
     }
 
     saveIndex(filteredIndex);
-    logger.info({ trainingId, chunks: chunks.length, skippedDuplicates, aliasedDuplicates, divisionKey: divisionKey || null }, '[RAG] Ingested chunks');
+    logger.info({ trainingId, chunks: chunks.length, skippedDuplicates, skippedAdministrative, aliasedDuplicates, divisionKey: divisionKey || null }, '[RAG] Ingested chunks');
     
     // Audit logging: verify docCategory enrichment
     if (process.env.RAG_AUDIT_LOGGING === 'true') {
@@ -11419,6 +11465,15 @@ async function query(question, topK = 8, options = null) {
       if (/\b(pmb|penerimaan mahasiswa baru|pendaftaran|registrasi)\b/.test(simpleQLower) && !/\b(gelombang|jadwal|tanggal|kapan|pengumuman)\b/.test(simpleQLower)) {
         const pmb = buildPmbOverviewAnswer();
         return wrapRagResult(cleanAnswerLanguage(pmb), 'rag-pmb-info', 'HIGH', question);
+      }
+
+      if (/\b(kemampuan\s+bahasa(?:nya)?|belajar\s+bahasa(?:nya)?|meningkatkan\s+kemampuan\s+bahasa(?:nya)?|fasilitas\s+bahasa(?:nya)?|language\s+learning\s+center|llc)\b/i.test(simpleQLower)) {
+        const languageAnswer = [
+          'Ya, Kak. Untuk peningkatan kemampuan bahasa, data yang tersedia mencantumkan Language Learning Center sebagai fasilitas pendukung di ITB STIKOM Bali.',
+          '',
+          'Saya belum menemukan detail lengkap tentang bentuk kegiatan, jadwal, bahasa yang tersedia, atau cara mengikutinya. Jadi informasi amannya: fasilitasnya ada, sedangkan detail teknisnya sebaiknya dikonfirmasi ke admin kampus.'
+        ].join('\n');
+        return wrapRagResult(cleanAnswerLanguage(languageAnswer), 'rag-campus-language-facility', 'HIGH', question);
       }
     } catch (e) {
       /* continue into normal pipeline on detection errors */
