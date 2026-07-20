@@ -2611,6 +2611,19 @@ function detectCompoundTasks(question) {
 
 function buildCompoundTaskFallback(task) {
   const source = String(task && task.source || '');
+  const query = String(task && task.query || '').trim();
+  if (source === 'semantic-rag-fee-detail' || source === 'semantic-rag-fee-general' || source === 'semantic-rag-contextual-fee') {
+    const program = /\b(si|sistem\s+informasi)\b/i.test(query) ? 'Sistem Informasi'
+      : /\b(ti|teknologi\s+informasi)\b/i.test(query) ? 'Teknologi Informasi'
+      : /\b(bd|bisnis\s+digital)\b/i.test(query) ? 'Bisnis Digital'
+      : /\b(sk|sistem\s+komputer)\b/i.test(query) ? 'Sistem Komputer'
+      : null;
+    const target = program ? ' untuk ' + program : '';
+    return 'Untuk rincian biaya' + target + ', saya perlu detail seperti gelombang pendaftaran dan/atau kelas yang dimaksud agar nominalnya tidak keliru. Kakak bisa sebutkan misalnya: biaya ' + (program || 'SI/TI/BD/SK') + ' gelombang II B.';
+  }
+  if (source === 'semantic-rag-ukm-list') {
+    return 'Untuk UKM/Ormawa, data yang tersedia memuat daftar UKM yang tercatat. Jika kakak menyebut minat tertentu, saya bisa cocokkan dengan UKM yang paling relevan dari daftar tersebut.';
+  }
   if (source === 'semantic-rag-registration-info') {
     return 'Saya belum punya informasi lengkap tentang syarat/cara pendaftaran yang spesifik pada data yang tersedia. Kakak bisa menghubungi bagian PMB untuk memastikan dokumen, alur, dan ketentuan terbarunya.';
   }
@@ -2635,6 +2648,47 @@ function runCompoundTask(task, indexForQuery, options = {}) {
   return { ...result, answer };
 }
 
+function detectMixedIntentMeta(question) {
+  const q = String(question || '').toLowerCase();
+  const hasPersonalBotQuestion = /\b(kamu|tiko|bot|admin)\b/i.test(q) && /\b(suka|senang|hobi|hobby|apa\s+kabar|kabar|lagi\s+apa|ngapain)\b/i.test(q);
+  const hasCasualPreface = /\b(aku|saya|sy|gw|gue)\b/i.test(q) && /\b(suka|senang|hobi|hobby|minat)\b/i.test(q);
+  const hasGreeting = /^(halo|hallo|hai|hi|hello|pagi|siang|sore|malam)\b/i.test(q) && /\b(apa|apakah|berapa|kapan|dimana|bagaimana|gimana|ada|biaya|jadwal|ukm|prodi|beasiswa|fasilitas)\b/i.test(q);
+  const hasThanksWithQuestion = /\b(terima\s*kasih|makasih|thanks)\b/i.test(q) && /\b(apa|apakah|berapa|kapan|dimana|bagaimana|gimana|ada|biaya|jadwal|ukm|prodi|beasiswa|fasilitas)\b/i.test(q);
+  if (!hasPersonalBotQuestion && !hasCasualPreface && !hasGreeting && !hasThanksWithQuestion) return null;
+
+  if (/\b(apa\s+kabar|kabar\s+kamu|gimana\s+kabar|bagaimana\s+kabar)\b/i.test(q)) return 'Saya baik-baik saja, terima kasih.';
+  if (/\b(kamu|tiko|bot|admin)\b/i.test(q) && /\b(suka|senang|hobi|hobby)\b/i.test(q)) return 'Kalau sebagai asisten, saya tidak punya selera pribadi seperti manusia, Kak.';
+  if (/\b(terima\s*kasih|makasih|thanks)\b/i.test(q)) return 'Sama-sama, Kak.';
+  if (hasGreeting) return 'Halo, Kak.';
+  return 'Saya tanggapi santainya dulu ya, Kak.';
+}
+
+function tryMixedIntentQuestion(question, indexForQuery, options = {}) {
+  const metaReply = detectMixedIntentMeta(question);
+  if (!metaReply) return null;
+
+  const tasks = detectCompoundTasks(question).filter((task) => task && task.source && !String(task.source).includes('small-talk'));
+  if (!tasks.length) return null;
+
+  const parts = [];
+  const usedLabels = new Set();
+  for (const task of tasks.slice(0, 3)) {
+    const result = runCompoundTask(task, indexForQuery, options);
+    if (!result || !result.answer) continue;
+    const label = task.label || 'Informasi kampus';
+    const key = label.toLowerCase();
+    if (usedLabels.has(key)) continue;
+    usedLabels.add(key);
+    parts.push(`${label}:\n${result.answer}`.trim());
+  }
+
+  if (!parts.length) return null;
+  return {
+    answer: [metaReply, '', ...parts].join('\n').replace(/\n{3,}/g, '\n\n').trim(),
+    source: 'semantic-rag-mixed-intent',
+    frameSource: 'semantic-rag-direct-answer'
+  };
+}
 function tryCompoundCampusQuestion(question, indexForQuery, options = {}) {
   const tasks = detectCompoundTasks(question);
   if (tasks.length < 2) return null;
@@ -3854,6 +3908,7 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
 }
 
 const DETERMINISTIC_HANDLERS = [
+  ['semantic-rag-mixed-intent', tryMixedIntentQuestion],
   ['semantic-rag-compound-question', tryCompoundCampusQuestion],
   ['semantic-rag-small-talk', trySmallTalkAnswer],
   ['semantic-rag-org-structure-unavailable', tryOrganizationalStructureAnswer],
@@ -3890,6 +3945,7 @@ const DETERMINISTIC_HANDLERS = [
 
 const HANDLERS_BY_SOURCE = new Map(DETERMINISTIC_HANDLERS);
 const SOURCES_NEEDING_INDEX = new Set([
+  'semantic-rag-mixed-intent',
   'semantic-rag-compound-question',
   'semantic-rag-registration-fee',
   'semantic-rag-fee-detail',
@@ -3902,6 +3958,7 @@ const SOURCES_NEEDING_INDEX = new Set([
   'semantic-rag-campus-facility'
 ]);
 const PRE_AI_HANDLER_SOURCES = new Set([
+  'semantic-rag-mixed-intent',
   'semantic-rag-small-talk',
   'semantic-rag-out-of-domain',
   'semantic-rag-dual-degree-followup',
@@ -4234,6 +4291,13 @@ async function querySemanticRag(question, options = {}) {
   const directCompoundQuestion = /double degree/i.test(String(question || '')) && /fasilitas/i.test(String(question || ''))
     ? 'ada double degree apa saja dan fasilitas apa saja yang ada di kampus?'
     : question;
+  const directMixedResult = tryMixedIntentQuestion(question, getCachedSemanticIndex(), options);
+  if (directMixedResult && directMixedResult.answer) {
+    const response = buildDeterministicResponse(question, 'semantic-rag-mixed-intent', directMixedResult, { routeStage: 'pre-handler-mixed' }, options);
+    setCachedSemanticResult(resultCacheKey, response);
+    return response;
+  }
+
   const directCompoundResult = tryCompoundCampusQuestion(directCompoundQuestion, getCachedSemanticIndex(), options);
   if (directCompoundResult && directCompoundResult.answer) {
     const response = buildDeterministicResponse(question, 'semantic-rag-compound-question', directCompoundResult, { routeStage: 'pre-handler-compound' }, options);
