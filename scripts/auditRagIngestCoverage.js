@@ -219,7 +219,7 @@ async function main() {
     rejectedRows: rejected,
     emptyContentRows: emptyContent,
     statusMismatchRows: statusMismatch,
-    orphanIndexTrainingIds
+    orphanIndexTrainingIds: orphanTrainingIds
   };
 
   if (outPath) {
