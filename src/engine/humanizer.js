@@ -495,7 +495,7 @@ function formatHumanizedResponse(mainAnswer, userQuery, context = {}) {
     originalLength,
     preview: String(mainAnswer || '').slice(0, 240)
   });
-  const cleaned = cleanMainAnswer(mainAnswer, intent);
+  const cleaned = applyParagraphSpacing(cleanMainAnswer(mainAnswer, intent));
   console.log('[TRACE_AFTER_CLEANING]', {
     detectedIntent,
     originalLength,
@@ -583,8 +583,17 @@ function removePresentationBoilerplate(text) {
   cleaned = cleaned.replace(/\n?\s*Jadi, pilihan prodi sebaiknya disesuaikan dengan minat utama:[^\n.]*\.\s*/gi, '\n');
   cleaned = cleaned.replace(/\n?\s*Singkatnya,\s*(?:Saya fokuskan|Saya bandingkan|Saya jelaskan|Saya jawab)[^\n.]*\.\s*/gi, '\n');
   cleaned = cleaned.replace(/\badmin kampus Kalau belum tercantum\b/g, 'admin kampus jika belum tercantum');
+  cleaned = cleaned.replace(/(Berikut gambaran sederhananya\.)\n(?=\S)/gi, '$1\n\n');
+  cleaned = cleaned.replace(/([.!?])\n(Singkatnya,)/gi, '$1\n\n$2');
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
   return cleaned.trim();
+}
+function applyParagraphSpacing(text) {
+  let spaced = String(text || '').replace(/\r\n/g, '\n');
+  spaced = spaced.replace(/(Berikut gambaran sederhananya\.)\n(?=\S)/gi, '$1\n\n');
+  spaced = spaced.replace(/([.!?])\n(Singkatnya,)/gi, '$1\n\n$2');
+  spaced = spaced.replace(/\n{3,}/g, '\n\n');
+  return spaced.trim();
 }
 function cleanMainAnswer(text, intent = 'general') {
   let cleaned = String(text || '');

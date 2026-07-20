@@ -128,6 +128,21 @@ describe('Humanizer Module', () => {
     });
   });
 
+    it('should separate verification, answer, and summary paragraphs', () => {
+      const mainAnswer = [
+        'Saya pahami kakak ingin tahu apa itu Sistem Informasi. Berikut gambaran sederhananya.',
+        'Sistem Informasi adalah program studi yang berfokus pada cara merancang solusi digital yang menghubungkan kebutuhan bisnis, proses organisasi, dan teknologi informasi.',
+        'Singkatnya, prodi ini cocok untuk kakak yang tertarik pada analisis kebutuhan, proses bisnis, data, dan solusi sistem informasi.'
+      ].join('\n');
+
+      const result = formatHumanizedResponse(mainAnswer, 'apa itu si?', {
+        intent: 'program_definition',
+        program: 'Sistem Informasi'
+      });
+
+      expect(result).toMatch(/Berikut gambaran sederhananya\.\n\nSistem Informasi adalah/i);
+      expect(result).toMatch(/teknologi informasi\.\n\nSingkatnya,/i);
+    });
     it('should clean duplicated presentation boilerplate for campus support answers', () => {
       process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'true';
       const mainAnswer = [
