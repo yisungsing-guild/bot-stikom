@@ -123,10 +123,71 @@ describe('Humanizer Module', () => {
       });
       
       expect(result).toContain(mainAnswer);
-      expect(result.includes('•')).toBe(true); // Contains bullet points for follow-ups
+      expect(result).toContain(mainAnswer);
+      expect(result).not.toContain('•');
     });
   });
 
+    it('should clean duplicated presentation boilerplate for campus support answers', () => {
+      process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'true';
+      const mainAnswer = [
+        'Saya jawab bagian yang relevan dengan pertanyaan kakak ya.',
+        'Saya jawab dari bagian informasi yang paling langsung membahas program tersebut.',
+        'GCCP adalah salah satu program/fasilitas pendukung di ITB STIKOM Bali.',
+        '',
+        '- GCCP: Global Cross Cultural Program (GCCP) adalah program lintas budaya.',
+        '',
+        'Untuk detail teknis seperti jadwal, syarat peserta, atau alur pendaftaran program, kakak bisa konfirmasi ke admin kampus Kalau belum tercantum.',
+        'Jadi, penjelasan detailnya mengikuti informasi yang tersedia. Kalau ada hal teknis seperti jadwal, syarat, atau alur pendaftaran yang belum tercantum, sebaiknya dikonfirmasi ke admin kampus.'
+      ].join('\n');
+
+      const result = formatHumanizedResponse(mainAnswer, 'kalau program GCCP itu apa ya?', { intent: 'campus_support' });
+      expect(result).toContain('Saya bantu jawab tentang program GCCP');
+      expect(result).toContain('GCCP adalah salah satu program/fasilitas pendukung');
+      expect(result).not.toMatch(/Saya jawab bagian yang relevan|Saya jawab dari bagian informasi/i);
+      expect(result).not.toMatch(/Jadi, penjelasan detailnya mengikuti informasi/i);
+      expect(result).toMatch(/admin kampus jika belum tercantum/i);
+    });
+
+    it('should not add awkward mini summary or follow-ups to long career answers', () => {
+      process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'true';
+      const mainAnswer = [
+        'Untuk karier lulusan, ini gambaran yang paling relevan, Kak. Saya fokuskan ke gambaran bidang kerja setelah lulus.',
+        '',
+        'Prospek kerja lulusan Sistem Komputer:',
+        'Prospek kerja mencakup embedded system engineer, IoT engineer, network administrator, system integrator, hardware support engineer, automation technician, dan infrastruktur engineer. Posisi ini dibutuhkan pada manufaktur, telekomunikasi, smart city, energi, serta perusahaan yang mengadopsi otomasi.',
+        'Secara umum, Sistem Komputer cocok untuk kakak yang ingin membangun karier di bidang integrasi hardware-software, IoT, otomasi, jaringan, dan infrastruktur.',
+        'Jadi, prospek kerja paling tepat dilihat dari fokus skill dan bidang industri prodi tersebut.'
+      ].join('\n');
+
+      const result = formatHumanizedResponse(mainAnswer, 'Bagaimana prospek kerja lulusan Sistem Komputer?', { intent: 'prospek_kerja', program: 'Sistem Komputer' });
+      expect(result).toContain('Prospek kerja lulusan Sistem Komputer');
+      expect(result).not.toMatch(/Singkatnya, Saya fokuskan/i);
+      expect(result).not.toMatch(/Jadi, prospek kerja paling tepat/i);
+      expect(result).not.toMatch(/Kalau Kakak ingin tahu lebih lanjut/i);
+    });
+
+    it('should not append follow-ups to long comparison answers', () => {
+      process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'true';
+      const mainAnswer = [
+        'Kalau dibandingkan, perbedaan Sistem Komputer paling terlihat dari fokus belajarnya. Saya bandingkan dari fokus belajar, skill yang dibangun, dan arah kariernya.',
+        'Program S1 Sistem Informasi, Sistem Komputer, Teknologi Informasi, Bisnis Digital memiliki fokus yang berbeda.',
+        '',
+        '1) Sistem Informasi (SI)',
+        'SI fokus pada perancangan dan pengelolaan sistem informasi, analisis kebutuhan bisnis, basis data, proses organisasi, dashboard, dan solusi digital.',
+        '',
+        '2) Sistem Komputer (SK)',
+        'SK fokus pada hardware, embedded system, Internet of Things (IoT), jaringan, mikrokontroler, robotika, dan integrasi perangkat.',
+        '',
+        '3) Teknologi Informasi (TI)',
+        'TI fokus pada software, pemrograman, pengembangan aplikasi, infrastruktur IT, cloud, keamanan siber, jaringan, dan pengolahan data.'
+      ].join('\n');
+
+      const result = formatHumanizedResponse(mainAnswer, 'Apa perbedaan Sistem Komputer dengan prodi serupa?', { intent: 'perbandingan_prodi', program: 'Sistem Komputer' });
+      expect(result).toContain('1) Sistem Informasi');
+      expect(result).not.toMatch(/Singkatnya, Saya bandingkan/i);
+      expect(result).not.toMatch(/Kalau Kakak ingin tahu lebih lanjut/i);
+    });
   describe('applyVirtualAssistantPersona', () => {
     it('should improve persona with natural phrases', () => {
       const input = 'Baik kak, ini informasi tentang program studi.';
@@ -215,7 +276,7 @@ Kesimpulan: Jadi estimasi biaya awal masuknya sekitar Rp 25 juta.`;
       expect(result).not.toContain('Kesimpulan:');
       expect(result).not.toContain('Informasi Terkait:');
       expect(result).toContain('Rp');
-      expect(result).toContain('•');
+      expect(result).not.toContain('•');
     });
 
     it('should fall back honestly when no relevant data is available', () => {

@@ -478,7 +478,6 @@ function formatHumanizedResponse(mainAnswer, userQuery, context = {}) {
   const detectedIntent = intent;
   const originalLength = String(mainAnswer || '').length;
 
-  // 1. Intent confirmation (opening)
   const confirmation = buildHumanizedIntentConfirmation(intent, userQuery, context);
   console.log('[TRACE_TEMPLATE_SELECTION]', {
     function: 'formatHumanizedResponse',
@@ -491,7 +490,6 @@ function formatHumanizedResponse(mainAnswer, userQuery, context = {}) {
     lines.push('');
   }
   
-  // 2. Main answer (already from RAG, unchanged)
   console.log('[TRACE_BEFORE_CLEANING]', {
     detectedIntent,
     originalLength,
@@ -510,16 +508,18 @@ function formatHumanizedResponse(mainAnswer, userQuery, context = {}) {
   }
   lines.push(cleaned);
 
-  // 3. Mini summary closing (ringkasan 1 kalimat tanpa mengulang seluruh jawaban)
-  const miniSummary = buildMiniSummary(cleaned, intent, userQuery);
+  const miniSummary = shouldAddMiniSummary(cleaned, intent, userQuery)
+    ? buildMiniSummary(cleaned, intent, userQuery)
+    : '';
   if (miniSummary) {
     lines.push('');
     lines.push(miniSummary);
   }
   
-  // 4. Natural closing + follow-up questions (tidak label "Kesimpulan:")
   const showFollowUps = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false);
-  const followUps = showFollowUps ? generateFollowUpQuestions(intent, userQuery, context) : [];
+  const followUps = shouldAddFollowUps(cleaned, intent, userQuery)
+    ? (showFollowUps ? generateFollowUpQuestions(intent, userQuery, context) : [])
+    : [];
   if (followUps && followUps.length > 0) {
     lines.push('');
     lines.push(formatFollowUpSection(followUps));
@@ -528,6 +528,64 @@ function formatHumanizedResponse(mainAnswer, userQuery, context = {}) {
   return lines.join('\n').trim();
 }
 
+function countAnswerWords(text) {
+  return String(text || '').split(/\s+/).filter(Boolean).length;
+}
+
+function hasLongListOrComparison(text) {
+  const raw = String(text || '');
+  const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const listLines = lines.filter((line) => /^(?:[-*]|\d+[.)])\s+/.test(line));
+  if (listLines.length >= 3) return true;
+  if (/\b(?:perbandingan|dibandingkan|berbeda|bedanya|fokus belajar|arah karier|prospek kerja lulusan)\b/i.test(raw) && countAnswerWords(raw) >= 90) return true;
+  return false;
+}
+
+function shouldAddMiniSummary(text, intent = 'general', userQuery = '') {
+  const normalizedIntent = String(intent || '').toLowerCase();
+  if (['prospek_kerja', 'perbandingan_prodi', 'campus_support'].includes(normalizedIntent)) return false;
+  if (hasLongListOrComparison(text)) return false;
+  if (countAnswerWords(text) > 120) return false;
+  return true;
+}
+
+function shouldAddFollowUps(text, intent = 'general', userQuery = '') {
+  const normalizedIntent = String(intent || '').toLowerCase();
+  if (hasLongListOrComparison(text)) return false;
+  if (countAnswerWords(text) > 130) return false;
+  if (['perbandingan_prodi', 'prospek_kerja'].includes(normalizedIntent)) return false;
+  return true;
+}
+
+function removePresentationBoilerplate(text) {
+  let cleaned = String(text || '').replace(/\r\n/g, '\n');
+  const removableLinePatterns = [
+    /^\s*Saya jawab bagian yang relevan dengan pertanyaan kakak ya\.?\s*$/i,
+    /^\s*Saya jawab dari bagian informasi yang paling langsung membahas program tersebut\.?\s*$/i,
+    /^\s*Saya jelaskan sebagai gambaran awal untuk calon mahasiswa\.?\s*$/i,
+    /^\s*Saya fokuskan ke gambaran bidang kerja setelah lulus\.?\s*$/i,
+    /^\s*Saya bandingkan dari fokus belajar, skill yang dibangun, dan arah kariernya\.?\s*$/i,
+    /^\s*Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut\.?\s*$/i
+  ];
+
+  cleaned = cleaned
+    .split('\n')
+    .filter((line) => !removableLinePatterns.some((pattern) => pattern.test(line)))
+    .join('\n');
+
+  cleaned = cleaned.replace(/\n?\s*Untuk karier lulusan, ini gambaran yang paling relevan, Kak\.?\s*/gi, '\n');
+  cleaned = cleaned.replace(/\s*Saya fokuskan ke gambaran bidang kerja setelah lulus\.?/gi, '');
+  cleaned = cleaned.replace(/\s*Saya bandingkan dari fokus belajar, skill yang dibangun, dan arah kariernya\.?/gi, '');
+  cleaned = cleaned.replace(/\s*Saya jelaskan sebagai gambaran awal untuk calon mahasiswa\.?/gi, '');
+  cleaned = cleaned.replace(/\n?\s*Jadi, penjelasan detailnya mengikuti informasi yang tersedia\.\s*Kalau ada hal teknis seperti jadwal, syarat, atau alur pendaftaran yang belum tercantum, sebaiknya dikonfirmasi ke admin kampus\.\s*/gi, '\n');
+  cleaned = cleaned.replace(/\n?\s*Jadi, prospek kerja paling tepat dilihat dari fokus skill dan bidang industri prodi tersebut\.\s*/gi, '\n');
+  cleaned = cleaned.replace(/Prospek kerja lulusan ([^:\n]+):\s*\nProspek kerja mencakup/gi, (match, program) => 'Prospek kerja lulusan ' + String(program || '').trim() + ' mencakup');
+  cleaned = cleaned.replace(/\n?\s*Jadi, pilihan prodi sebaiknya disesuaikan dengan minat utama:[^\n.]*\.\s*/gi, '\n');
+  cleaned = cleaned.replace(/\n?\s*Singkatnya,\s*(?:Saya fokuskan|Saya bandingkan|Saya jelaskan|Saya jawab)[^\n.]*\.\s*/gi, '\n');
+  cleaned = cleaned.replace(/\badmin kampus Kalau belum tercantum\b/g, 'admin kampus jika belum tercantum');
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  return cleaned.trim();
+}
 function cleanMainAnswer(text, intent = 'general') {
   let cleaned = String(text || '');
   
@@ -537,7 +595,8 @@ function cleanMainAnswer(text, intent = 'general') {
   cleaned = cleaned.replace(/^\s*Kesimpulan\s*:?[\s\S]*$/im, '');
   cleaned = cleaned.replace(/(?:\n\s*)?(?:Rekomendasi pertanyaan berikutnya[:\s]*|Rekomendasi pertanyaan[:\s]*|Apakah\s+Kakak\s+ingin\s+dijelaskan[^\n]*\?|Balas(?:\s+saja)?\s*:\s*|Silakan\s+diketikkkan|Butuh\s+informasi|Coba\s+tanya|Mau\s+(?:saya\s+jelaskan|tahu|info)\b)[\s\S]*$/i, '');
   
-  // 2. Remove standalone markers
+  // 2. Remove standalone markers and presentation boilerplate
+  cleaned = removePresentationBoilerplate(cleaned);
   cleaned = cleaned.replace(/^Baik kak,\s*$/im, '');
   cleaned = cleaned.replace(/^Siap kak,\s*$/im, '');
   cleaned = cleaned.replace(/^Oke kak,\s*$/im, '');

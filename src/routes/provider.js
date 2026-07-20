@@ -84,7 +84,9 @@ function splitLongWhatsappMessage(text, maxLen = getOutboundTextChunkLimit()) {
   let rest = cleaned;
   while (rest.length > maxLen) {
     const windowText = rest.slice(0, maxLen + 1);
-    const paragraphCut = Math.max(windowText.lastIndexOf('\n\n'), windowText.lastIndexOf('\r\n\r\n'));
+    let paragraphCut = Math.max(windowText.lastIndexOf('\n\n'), windowText.lastIndexOf('\r\n\r\n'));
+    const followupStart = windowText.lastIndexOf('\n\nKalau Kakak ingin tahu lebih lanjut');
+    if (followupStart >= Math.floor(maxLen * 0.45)) paragraphCut = Math.max(paragraphCut, followupStart);
     const lineCut = windowText.lastIndexOf('\n');
     const sentenceMatches = Array.from(windowText.matchAll(/[.!?]\s+/g));
     const sentenceCut = sentenceMatches.length ? sentenceMatches[sentenceMatches.length - 1].index + 1 : -1;
