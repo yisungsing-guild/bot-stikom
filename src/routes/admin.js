@@ -229,6 +229,7 @@ module.exports = function (provider) {
         (method === 'POST' && (path === '/media/upload')) ||
         (method === 'POST' && (path === '/training/manual')) ||
         (method === 'POST' && (path === '/training/url')) ||
+        (method === 'POST' && (path === '/test/email-notification')) ||
         (method === 'POST' && (path === '/rag/query'));
 
       if (allowed) return next();

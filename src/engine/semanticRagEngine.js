@@ -1,4 +1,4 @@
-﻿const { OpenAI } = require('openai');
+const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
@@ -748,6 +748,50 @@ function buildContextText(contexts) {
   return blocks.join('\n\n');
 }
 
+function getQuestionContentTerms(question) {
+  const stopwords = new Set([
+    'apa', 'apakah', 'bagaimana', 'gimana', 'kalau', 'terkait', 'tentang', 'untuk',
+    'yang', 'dengan', 'dalam', 'oleh', 'dari', 'itu', 'ini', 'kak', 'kakak',
+    'saya', 'aku', 'mau', 'ingin', 'menanyakan', 'bertanya', 'baik', 'oke',
+    'punya', 'mempunyai', 'ada', 'saja', 'admin', 'dilakukan'
+  ]);
+  return normalizeFacilityTerm(question)
+    .split(/\s+/)
+    .filter((term) => term.length >= 4 && !stopwords.has(term));
+}
+
+function countTermHits(text, terms) {
+  const normalized = normalizeFacilityTerm(text);
+  return (Array.isArray(terms) ? terms : []).filter((term) => normalized.includes(term)).length;
+}
+
+function isLikelyRawAdministrativeDocument(text) {
+  const raw = String(text || '');
+  if (!raw.trim()) return false;
+  return /\b(PIHAK\s+PERTAMA|PIHAK\s+KEDUA|PERJANJIAN\s+KERJA\s+SAMA|Pasal\s+\d+|ADDENDUM|alamat\s+telepon\s+e\s*-?\s*mail|Nama\s+Mitra)\b/i.test(raw)
+    || /_{5,}|\.{8,}|:{3,}/.test(raw);
+}
+
+function shouldRejectSemanticContext(question, context) {
+  const chunk = String(context && context.chunk ? context.chunk : '');
+  if (!chunk.trim()) return true;
+  if (isLikelyRawAdministrativeDocument(chunk)) return true;
+
+  const terms = getQuestionContentTerms(question);
+  if (terms.length >= 2 && countTermHits(chunk, terms) === 0) return true;
+  return false;
+}
+
+function filterSemanticContextsForQuestion(question, contexts) {
+  const list = Array.isArray(contexts) ? contexts : [];
+  return list.filter((context) => !shouldRejectSemanticContext(question, context));
+}
+
+function isSpecificCampusSupportDetailQuestion(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(softskill|pengembangan\s+softskill|kemampuan\s+bahasa|belajar\s+bahasa|meningkatkan\s+kemampuan\s+bahasa|language\s+learning|career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(q)
+    && /\b(apa\s+saja|apa\s+yang|kegiatan|aktivitas|program|layanan|fasilitas|dilakukan|pengembangan|meningkatkan|detail|bagaimana|gimana)\b/i.test(q);
+}
 function collapseRepeatedLetters(value) {
   return String(value || '').toLowerCase().replace(/([a-z])\1{1,}/g, '$1');
 }
@@ -1154,7 +1198,7 @@ function buildPmbInfoAnswer() {
     '* Syarat dan dokumen pendaftaran',
     '* Kontak atau bantuan admin PMB',
     '',
-    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: â€œjadwal PMB sekarang gelombang berapa?â€, â€œrincian biaya SI gelombang 2B?â€, atau â€œapa saja syarat pendaftaran?â€'
+    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: “jadwal PMB sekarang gelombang berapa?”, “rincian biaya SI gelombang 2B?”, atau “apa saja syarat pendaftaran?”'
   ].join('\n');
 }
 
@@ -1649,7 +1693,7 @@ function extractTrainingSpecificTarget(question) {
   const raw = String(question || '').trim();
   if (!raw) return '';
 
-  const quoted = /["ï¿½ï¿½']([^"ï¿½ï¿½']{3,80})["ï¿½ï¿½']/.exec(raw);
+  const quoted = /["��']([^"��']{3,80})["��']/.exec(raw);
   let target = quoted ? quoted[1] : '';
   if (!target) {
     const m = /\b(?:apa\s+itu|apakah|jelaskan|detail(?:\s+tentang)?|tentang|info(?:rmasi)?\s+tentang|maksud(?:nya)?\s+apa)\s+(.{3,90})/i.exec(raw);
@@ -1669,10 +1713,13 @@ function extractTrainingSpecificTarget(question) {
 
   const normalized = normalizeFacilityTerm(target);
   const tokens = normalized.split(/\s+/).filter(Boolean);
-  const useful = tokens.filter((token) => !/^(yang|dan|atau|dari|untuk|dengan|pada|kampus|stikom|bali|itb)$/.test(token));
+  const useful = tokens.filter((token) => !/^(yang|dan|atau|dari|untuk|dengan|pada|kampus|stikom|bali|itb|mempunyai|punya|belajar|bahasa|kemampuan|meningkatkan|mahasiswa|terkait|dilakukan|pengembangan)$/.test(token));
   const distinctive = useful.filter((token) => token.length >= 4);
-  if (!distinctive.length) return '';
-  return useful.join(' ');
+  const knownEntity = findCampusSupportEntity(normalized);
+  if (!knownEntity && distinctive.length < 2) return '';
+  if (!knownEntity && /\b(mempunyai|punya|belajar\s+bahasa|kemampuan\s+bahasa|meningkatkan|softskill|career\s*center)\b/i.test(normalized)) return '';
+  if (!distinctive.length && !knownEntity) return '';
+  return knownEntity ? normalizeFacilityTerm(knownEntity.label) : useful.join(' ');
 }
 
 function isLikelyFaqQuestionText(text) {
@@ -1868,7 +1915,7 @@ function cleanFacilitySnippetText(text) {
 
   out = out
     .replace(/\b(?:q|a)\s*[:\-.]\s*/gi, '')
-    .replace(/[“”"]/g, '')
+    .replace(/[��"]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -2088,9 +2135,23 @@ function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options =
 }
 function tryCampusFacilityAnswer(question, indexForQuery) {
   const q = String(question || '').toLowerCase();
-  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|softskill|language\s+learning|hi-?think|gccp|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
+  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|softskill|kemampuan\s+bahasa(?:nya)?|belajar\s+bahasa(?:nya)?|bahasa(?:nya)?|language\s+learning|hi-?think|gccp|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
   if (!asksFacilities) return null;
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
+
+  if (/\b(kemampuan\s+bahasa(?:nya)?|belajar\s+bahasa(?:nya)?|meningkatkan\s+kemampuan\s+bahasa(?:nya)?|fasilitas\s+bahasa(?:nya)?)\b/i.test(q)) {
+    return {
+      answer: [
+        'Untuk fasilitas peningkatan kemampuan bahasa, data yang tersedia mencantumkan Language Learning Center di ITB STIKOM Bali.',
+        '',
+        'Namun, saya belum mempunyai informasi lengkap tentang bentuk kegiatannya, jadwal, bahasa apa saja yang tersedia, atau cara mengikutinya.',
+        '',
+        'Jadi, informasi amannya: fasilitasnya tercantum ada, tetapi detail programnya perlu dikonfirmasi ke admin kampus.'
+      ].join('\n'),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-direct-answer'
+    };
+  }
 
   const specificFromTraining = buildSpecificFacilityAnswerFromIndex(question, indexForQuery);
   if (specificFromTraining) return specificFromTraining;
@@ -2121,18 +2182,25 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   }
 
   if (/\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
+    if (isSpecificCampusSupportDetailQuestion(question)) {
+      return {
+        answer: buildInsufficientDataAnswer('very_low'),
+        source: 'semantic-rag-campus-facility-insufficient-data',
+        frameSource: 'semantic-rag-insufficient-data'
+      };
+    }
     return {
       answer: [
         'Career Center di ITB STIKOM Bali membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja.',
         '',
-        'Layanan yang bisa ditanyakan melalui Career Center antara lain:',
+        'Layanan umum yang tersedia di data saat ini:',
         '',
         '- Informasi lowongan kerja dan peluang karier.',
         '- Bimbingan atau konsultasi karier.',
         '- Pelatihan/pembekalan keterampilan kerja.',
         '- Dukungan persiapan memasuki dunia profesional.',
         '',
-        'Kalau kakak ingin info yang lebih spesifik, kakak bisa tanya tentang lowongan, magang, atau program persiapan karier yang tersedia.'
+        'Untuk rincian kegiatan softskill tertentu, saya belum mempunyai informasi lengkap pada data yang tersedia.'
       ].join('\n'),
       source: 'semantic-rag-campus-facility'
     };
@@ -3257,7 +3325,7 @@ function buildFrameOpeners(question, source, topic) {
     }
     return [
       'Bisa, Kak. Sederhananya, prodi ini bisa dipahami seperti ini.',
-      `Untuk pertanyaan â€œapa ituâ€, saya jelaskan dari fokus belajar dan arah skill-nya ya.`,
+      `Untuk pertanyaan “apa itu”, saya jelaskan dari fokus belajar dan arah skill-nya ya.`,
       'Kalau ingin mengenal prodinya dulu, penjelasannya seperti ini, Kak.',
       'Untuk pertanyaan "apa itu", saya jelaskan dari fokus belajar dan arah skill-nya ya.'
     ];
@@ -3818,7 +3886,14 @@ async function querySemanticRag(question, options = {}) {
   }
 
 
-  const retrieved = await retrieveSemanticContexts(rewrite.searchQueries, { topK: options.topK });
+  const rawRetrieved = await retrieveSemanticContexts(rewrite.searchQueries, { topK: options.topK });
+  const filteredContexts = filterSemanticContextsForQuestion(question, rawRetrieved.contexts);
+  const retrieved = {
+    ...rawRetrieved,
+    contexts: filteredContexts,
+    topScore: filteredContexts.length ? filteredContexts[0].score : 0,
+    rawTopScore: rawRetrieved.topScore
+  };
   const minScoreRaw = Number(process.env.SEMANTIC_RAG_MIN_SCORE || '0.18');
   const minScore = Number.isFinite(minScoreRaw) ? minScoreRaw : 0.18;
   if (!retrieved.contexts.length || retrieved.topScore < minScore) {
@@ -3841,7 +3916,7 @@ async function querySemanticRag(question, options = {}) {
       contexts: retrieved.contexts,
       confidenceScore: retrieved.topScore,
       confidenceTier: retrieved.topScore >= veryLowThreshold ? 'LOW' : 'VERY_LOW',
-      debug: { rewrite, minScore, veryLowThreshold, indexSize: retrieved.indexSize }
+      debug: { rewrite, minScore, veryLowThreshold, indexSize: retrieved.indexSize, rawTopScore: retrieved.rawTopScore }
     };
   }
 
@@ -3893,7 +3968,7 @@ async function querySemanticRag(question, options = {}) {
       contexts: retrieved.contexts,
       confidenceScore: retrieved.topScore,
       confidenceTier: retrieved.topScore >= 0.3 ? 'HIGH' : 'MEDIUM',
-      debug: { rewrite, indexSize: retrieved.indexSize }
+      debug: { rewrite, indexSize: retrieved.indexSize, rawTopScore: retrieved.rawTopScore }
     };
     setCachedSemanticResult(resultCacheKey, response);
     return response;
