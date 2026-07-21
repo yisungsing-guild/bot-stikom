@@ -142,7 +142,17 @@ function splitEvidenceUnits(text, question, intent) {
     .map(compactText)
     .filter(Boolean);
   const units = [];
-  for (const paragraph of paragraphs) units.push(...splitSentences(paragraph));
+  for (const paragraph of paragraphs) {
+    const lineUnits = paragraph
+      .split(/\r?\n+/)
+      .map(compactText)
+      .filter(Boolean);
+    if (lineUnits.length > 1) {
+      for (const line of lineUnits) units.push(...splitSentences(line));
+      continue;
+    }
+    units.push(...splitSentences(paragraph));
+  }
   return units.length ? units : splitSentences(source);
 }
 
@@ -205,20 +215,6 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
   const rejected = [];
 
   list.forEach((context, index) => {
-    if (context && context.isSelectedEvidence === true) {
-      candidates.push({
-        text: compactText(context.text),
-        source: context.source || getSourceLabel(context, index),
-        sourceId: context.sourceId || getSourceId(context, index),
-        relevanceScore: Number(context.relevanceScore || 1),
-        entityScore: Number(context.entityScore || 1),
-        intentScore: Number(context.intentScore || 1),
-        reason: context.reason || 'already_selected',
-        isSelectedEvidence: true
-      });
-      return;
-    }
-
     const chunk = String((context && (context.chunk || context.text || context.content)) || '');
     const units = splitEvidenceUnits(chunk, question, detectedIntent);
     units.forEach((unit) => {

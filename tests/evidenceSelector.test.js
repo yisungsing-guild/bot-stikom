@@ -131,4 +131,83 @@ describe('evidenceSelector', () => {
     expect(context).toMatch(/GCCP/);
     expect(context).not.toMatch(/Pasal 9|PIHAK KESATU|Force Majeure/i);
   });
+
+  test('semantic and legacy context builders stay consistent for the same corpus', () => {
+    const corpus = [
+      { chunk: legalTemplate, filename: 'template-pks.docx', trainingId: 'pks-1' },
+      { chunk: 'GCCP adalah program internasional yang mendukung kesiapan mahasiswa untuk pengalaman global.', filename: 'international.md', id: 'gccp' },
+      { chunk: 'BCCP adalah program internasional yang mendukung pengembangan wawasan bisnis mahasiswa.', filename: 'international.md', id: 'bccp' }
+    ];
+
+    const semanticSelected = selectEvidenceFromContexts({ question: 'Apa saja program internasional?', contexts: corpus, intent: 'international_program' });
+    const legacySelected = selectEvidenceFromContexts({ question: 'Apa saja program internasional?', contexts: corpus, intent: 'international_program' });
+    const semanticAnswerability = evaluateEvidenceAnswerability({ question: 'Apa saja program internasional?', selectedEvidence: semanticSelected, intent: 'international_program' });
+    const legacyAnswerability = evaluateEvidenceAnswerability({ question: 'Apa saja program internasional?', selectedEvidence: legacySelected, intent: 'international_program' });
+
+    expect(semanticSelected.map((item) => item.text)).toEqual(legacySelected.map((item) => item.text));
+    expect(semanticAnswerability).toEqual(legacyAnswerability);
+    expect(buildContextText(semanticSelected)).toBe(buildSelectedEvidenceContext(legacySelected));
+  });
+
+  test('rejects forced selected PKS candidate injection', () => {
+    const selected = selectEvidenceFromContexts({
+      question: 'Apa saja program internasional?',
+      contexts: [{ text: legalTemplate, source: 'forced-template-pks.docx', sourceId: 'forced-pks', isSelectedEvidence: true, relevanceScore: 1, entityScore: 1, intentScore: 1 }],
+      intent: 'international_program'
+    });
+    const answerability = evaluateEvidenceAnswerability({ question: 'Apa saja program internasional?', selectedEvidence: selected, intent: 'international_program' });
+
+    expect(selected).toHaveLength(0);
+    expect(answerability.answerable).toBe(false);
+  });
+
+  test('extracts valid evidence after boilerplate in one chunk without sending boilerplate', () => {
+    const mixedChunk = [
+      'PERJANJIAN KERJA SAMA ANTARA INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI DAN (NAMA MITRA)',
+      'Nomor: ................................',
+      'PIHAK KESATU INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI',
+      'GCCP adalah program internasional yang mendukung kesiapan mahasiswa untuk pengalaman global.',
+      'BCCP adalah program internasional yang mendukung pengembangan wawasan bisnis mahasiswa.'
+    ].join('\n');
+
+    const selected = selectEvidenceFromContexts({ question: 'Apa saja program internasional?', contexts: [{ chunk: mixedChunk, filename: 'mixed.docx' }], intent: 'international_program' });
+    const context = buildSelectedEvidenceContext(selected);
+
+    expect(context).toMatch(/GCCP/);
+    expect(context).toMatch(/BCCP/);
+    expect(context).not.toMatch(/PERJANJIAN KERJA SAMA|Nomor:|PIHAK KESATU/i);
+  });
+
+  test('international list question is not answerable from generic cooperation statement', () => {
+    const selected = selectEvidenceFromContexts({
+      question: 'Apa saja program internasional?',
+      contexts: [{ chunk: 'Kampus memiliki kerja sama internasional dengan berbagai pihak untuk mendukung pengembangan akademik.' }],
+      intent: 'international_program'
+    });
+    const answerability = evaluateEvidenceAnswerability({ question: 'Apa saja program internasional?', selectedEvidence: selected, intent: 'international_program' });
+
+    expect(answerability.answerable).toBe(false);
+    expect(answerability.missingEvidence).toContain('multiple_concrete_items');
+  });
+
+  test('international yes/no question is answerable from cooperation existence statement', () => {
+    const selected = selectEvidenceFromContexts({
+      question: 'Apakah kampus mempunyai kerja sama internasional?',
+      contexts: [{ chunk: 'Kampus memiliki kerja sama internasional dengan berbagai pihak untuk mendukung pengembangan akademik.' }],
+      intent: 'international_program'
+    });
+    const answerability = evaluateEvidenceAnswerability({ question: 'Apakah kampus mempunyai kerja sama internasional?', selectedEvidence: selected, intent: 'international_program' });
+
+    expect(selected).toHaveLength(1);
+    expect(answerability.answerable).toBe(true);
+  });
+
+  test('final selected context excludes raw chunk markers and rejected legal clauses', () => {
+    const selected = selectEvidenceFromContexts({ question: 'Apa isi Pasal 9 tentang force majeure?', contexts: [{ chunk: legalTemplate, filename: 'template-pks.docx', trainingId: 'pks-1' }], intent: 'legal' });
+    const finalContext = buildContextText(selected);
+
+    expect(finalContext).toMatch(/Pasal 9/i);
+    expect(finalContext).not.toMatch(/RAW_CHUNK|chunk\s*:|Source \(/i);
+    expect(finalContext).not.toMatch(/Pasal 1|Pasal 13|ADDENDUM|PIHAK KESATU|PIHAK KEDUA/i);
+  });
 });
