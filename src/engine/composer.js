@@ -125,7 +125,7 @@ async function composeResponse(input = {}) {
         intent: intent || {},
         session: session || {},
         retrievals: retrievals || [],
-        answer: '',
+        answer: answerPreview || '',
         answerMeta: input.answerMeta || {},
         tone: input.tone || null,
         ragMeta: input.ragMeta || null
@@ -200,6 +200,13 @@ function buildReasoningContext({ userQuery = '', normalized = '', intent = {}, s
   };
 
   const knowledgeTopics = detectKnowledgeTopics(userQuery || normalized || '', []);
+  const messages = Array.isArray(s.messages) ? s.messages : [];
+  const userMessages = messages.filter(m => String(m && m.direction || '').toLowerCase() === 'user');
+  const currentUser = userMessages.length ? String(userMessages[userMessages.length - 1].message || '') : String(userQuery || '');
+  const previousUser = userMessages.length > 1 ? String(userMessages[userMessages.length - 2].message || '') : null;
+  const emotionalDirection = /(susah|takut|cemas|khawatir|bingung|ragu)/i.test(userQuery || normalized || '')
+    ? 'concerned'
+    : 'neutral';
 
   // empathy heuristic
   let empathyLevel = 'normal';
@@ -211,6 +218,7 @@ function buildReasoningContext({ userQuery = '', normalized = '', intent = {}, s
   } catch (e) {}
 
   return {
+    userWording: userQuery,
     userQuery,
     normalized,
     intent,
@@ -221,6 +229,19 @@ function buildReasoningContext({ userQuery = '', normalized = '', intent = {}, s
     tone,
     ragMeta,
     knowledgeTopics,
+    conversationalHistory: {
+      currentUser,
+      previousUser,
+      recentMessages: messages
+    },
+    responseIntent: intent || {},
+    emotionalDirection,
+    followUpDependency: {
+      programHint: sessionSignals.programHint
+    },
+    knowledgeContext: {
+      answerPreview: answer || (retrievals[0] && (retrievals[0].excerpt || retrievals[0].text || retrievals[0].answer)) || ''
+    },
     empathyLevel
   };
 }

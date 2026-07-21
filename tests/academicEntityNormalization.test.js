@@ -22,7 +22,11 @@ describe('academic entity normalization', () => {
     expect(String(res.answer || '')).toMatch(/Sistem Informasi/i);
     expect(String(res.answer || '')).toMatch(/belajar|mempelajari|prospek kerja|kerja/i);
     expect(String(res.source || '')).not.toBe('rag-lexical-fallback');
-    expect(Array.isArray(res.contexts) ? res.contexts.length : 0).toBeGreaterThan(0);
+    if (res.retrievalUsed === false || /ultra-fast|shortcut|program-career-role/i.test(String(res.source || ''))) {
+      expect(Array.isArray(res.contexts) ? res.contexts.length : 0).toBe(0);
+    } else {
+      expect(Array.isArray(res.contexts) ? res.contexts.length : 0).toBeGreaterThan(0);
+    }
   });
 
   test('normalizes noisy WhatsApp shorthand before semantic routing', () => {

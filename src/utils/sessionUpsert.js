@@ -6,7 +6,12 @@ async function safeSessionUpsert(prisma, arg1, arg2, arg3) {
   if (arg1 && typeof arg1 === 'object' && arg1.where) {
     chatId = arg1.where && arg1.where.chatId ? String(arg1.where.chatId) : '';
     state = (arg1.update && arg1.update.state) || (arg1.create && arg1.create.state) || 'root';
-    newData = (arg1.update && arg1.update.data) || (arg1.create && arg1.create.data) || {};
+    const hasUpdateData = !!(arg1.update && Object.prototype.hasOwnProperty.call(arg1.update, 'data'));
+    const hasCreateData = !!(arg1.create && Object.prototype.hasOwnProperty.call(arg1.create, 'data'));
+    if (!hasUpdateData && !hasCreateData) {
+      return prisma.session.upsert(arg1);
+    }
+    newData = hasUpdateData ? arg1.update.data : arg1.create.data;
   } else {
     chatId = String(arg1 || '');
     newData = arg2 || {};

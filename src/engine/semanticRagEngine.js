@@ -471,9 +471,9 @@ function setCachedSemanticResult(cacheKey, result) {
 function hasExcessivePlaceholderNoise(text) {
   const raw = String(text || '');
   if (!raw.trim()) return true;
-  const placeholderHits = (raw.match(/(?:_{4,}|\.{6,}|:{3,}|…{2,}|\(\s*(?:nama|nomor|jabatan|alamat|mitra)[^)]+\))/gi) || []).length;
+  const placeholderHits = (raw.match(/(?:_{4,}|\.{6,}|:{3,}|ï¿½{2,}|\(\s*(?:nama|nomor|jabatan|alamat|mitra)[^)]+\))/gi) || []).length;
   if (placeholderHits >= 2) return true;
-  const symbolCount = (raw.match(/[_.:…-]/g) || []).length;
+  const symbolCount = (raw.match(/[_.:ï¿½-]/g) || []).length;
   return raw.length > 200 && symbolCount / raw.length > 0.18;
 }
 
@@ -1031,7 +1031,7 @@ function isLikelyRawAdministrativeDocument(text) {
     /\balamat\s+telepon\s+e\s*-?\s*mail\b/i,
     /\b(?:Nama|Logo)\s+Mitra\b/i
   ].filter((pattern) => pattern.test(normalized)).length;
-  const placeholderSignals = /_{5,}|\.{8,}|:{3,}|…{2,}|(?:Nomor\s*:\s*(?:\.{4,}|…+|\([^)]*\)))/i.test(normalized);
+  const placeholderSignals = /_{5,}|\.{8,}|:{3,}|ï¿½{2,}|(?:Nomor\s*:\s*(?:\.{4,}|ï¿½+|\([^)]*\)))/i.test(normalized);
   const longContractLike = normalized.length > 700 && legalSignals >= 2;
   return legalSignals >= 3 || (legalSignals >= 1 && placeholderSignals) || longContractLike;
 }
@@ -1856,7 +1856,7 @@ function tryScheduleWindowAnswer(question) {
   const todayYmd = getSemanticTodayYmd();
   const asksAvailability = /\b(masih\s+buka|masih\s+dibuka|buka|dibuka|bisa|pilih|yang\s+mana|aktif|berjalan|sekarang|hari\s+ini|saat\s+ini|cara|gimana|bagaimana)\b/i.test(qLower);
 
-  if (asksAvailability && !requestedDate && !requestedMonth && !requestedWave && /\b(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran|daftar|maba|camaba)\b/i.test(qLower)) {
+  if (asksAvailability && !requestedDate && !requestedMonth && !requestedWave && /\b(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran|daftar|maba|camaba|gelombang)\b/i.test(qLower)) {
     const open = openWindowsOnDate(windows, todayYmd);
     if (open.length) {
       return {
@@ -1994,6 +1994,20 @@ function tryScheduleWindowAnswer(question) {
         matches.length === 1
           ? `Jadi, ${title} berlangsung sesuai tanggal di atas.`
           : `Jadi, ${title} terbagi menjadi beberapa periode. Kakak bisa menyesuaikan dengan tanggal daftar yang dipilih.`
+      ].join('\n')
+    };
+  }
+  const asksScheduleOverview = /(?:^|\s)(?:jadwal|kalender)(?:\s|$)/i.test(qLower) && /(?:^|\s)(?:pmb|pendaftaran|daftar|gelombang)(?:\s|$)/i.test(qLower);
+  if (asksScheduleOverview) {
+    return {
+      answer: [
+        'Kalender pendaftaran PMB:',
+        '',
+        'Masa pendaftaran per gelombang:',
+        '',
+        formatScheduleItems(windows),
+        '',
+        'Kalau kakak mau detail testing, pengumuman, atau registrasi ulang, sebutkan gelombangnya ya.'
       ].join('\n')
     };
   }
@@ -4595,6 +4609,61 @@ async function querySemanticRag(question, options = {}) {
     setCachedSemanticResult(resultCacheKey, response);
     return response;
   }
+  const feeLikeBeforeCompound = /\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|pendaftaran|registrasi|potongan|diskon|double\s*degree|dual\s*degree)\b/i.test(String(question || ''));
+  if (feeLikeBeforeCompound) {
+    const feePreHandlers = handlersForSources([
+      'semantic-rag-registration-fee',
+      'semantic-rag-fee-detail',
+      'semantic-rag-contextual-fee',
+      'semantic-rag-fee-general',
+      'semantic-rag-fee-comparison'
+    ]);
+    const normalizedFeeQuestion = /\b(diskon|potongan)\b/i.test(String(question || '')) && /\bregistrasi\b/i.test(String(question || ''))
+      ? String(question || '').replace(/\b(diskon|potongan)\s+registrasi\b/ig, 'potongan biaya pendaftaran').replace(/\bregistrasi\b/ig, 'pendaftaran')
+      : question;
+    const feeQuestions = normalizedFeeQuestion === question ? [question] : [normalizedFeeQuestion, question];
+    if (normalizedFeeQuestion !== question) {
+      const normalizedRegistrationFee = tryRegistrationFeeAnswer(normalizedFeeQuestion, getCachedSemanticIndex(), { ...options, originalQuestion: question });
+      if (normalizedRegistrationFee && normalizedRegistrationFee.answer) {
+        const response = buildDeterministicResponse(question, 'semantic-rag-registration-fee', normalizedRegistrationFee, { routeStage: 'pre-handler-fee-before-compound', semanticVariant: normalizedFeeQuestion }, options);
+        setCachedSemanticResult(resultCacheKey, response);
+        return response;
+      }
+    }
+    const feePreResult = runDeterministicHandlers(question, feePreHandlers, options, feeQuestions, { routeStage: 'pre-handler-fee-before-compound' });
+    if (feePreResult && feePreResult.answer) {
+      setCachedSemanticResult(resultCacheKey, feePreResult);
+      return feePreResult;
+    }
+    const asksGenericDualDegreeFee = /\b(double\s*degree|dual\s*degree)\b/i.test(String(question || ''))
+      && !/\b(utb|dnui|help)\b/i.test(String(question || ''))
+      && /\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|potongan|diskon)\b/i.test(String(question || ''));
+    if (asksGenericDualDegreeFee) {
+      const dualFeeOverview = tryFeeComparisonAnswer('bandingkan biaya UTB DNUI HELP');
+      if (dualFeeOverview && dualFeeOverview.answer) {
+        const response = buildDeterministicResponse(question, 'semantic-rag-fee-comparison', dualFeeOverview, { routeStage: 'pre-handler-fee-before-compound', normalizedQuestion: 'bandingkan biaya UTB DNUI HELP' }, options);
+        setCachedSemanticResult(resultCacheKey, response);
+        return response;
+      }
+    }
+    if (/\b(double\s*degree|dual\s*degree|utb|dnui|help)\b/i.test(String(question || '')) && /\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|potongan|diskon)\b/i.test(String(question || ''))) {
+      const legacyFee = await ragEngine.query(question, 8, options);
+      if (legacyFee && legacyFee.answer) {
+        const response = {
+          success: true,
+          answer: legacyFee.answer,
+          source: legacyFee.source || 'semantic-rag-fee-detail',
+          contexts: Array.isArray(legacyFee.contexts) ? legacyFee.contexts : [],
+          confidenceTier: legacyFee.confidenceTier || 'HIGH',
+          answerCategory: detectAnswerCategory(question, legacyFee.source || 'semantic-rag-fee-detail'),
+          debug: { routeStage: 'pre-handler-fee-before-compound', delegatedTo: 'legacy-rag' }
+        };
+        setCachedSemanticResult(resultCacheKey, response);
+        return response;
+      }
+    }
+  }
+
 
   const directCompoundResult = tryCompoundCampusQuestion(directCompoundQuestion, getCachedSemanticIndex(), options);
   if (directCompoundResult && directCompoundResult.answer) {

@@ -31,6 +31,11 @@ const INDEX_BAK_PATH = getRagBackupIndexPath();
 const MERGED_INDEX_PATH = getRagMergedIndexPath();
 const FEE_PARSE_TRACE_ENABLED = /^(1|true|yes)$/i.test(String(process.env.RAG_FEE_PARSE_TRACE || ''));
 const FEE_PARSE_PROFILE_ENABLED = /^(1|true|yes)$/i.test(String(process.env.RAG_FEE_PARSE_PROFILE || ''));
+const RAG_VERBOSE_TRACE_ENABLED = /^(1|true|yes)$/i.test(String(process.env.RAG_DEBUG_TRACE || process.env.TRACE_RAG_VERBOSE || ''));
+function ragVerboseTrace(...args) {
+  if (!RAG_VERBOSE_TRACE_ENABLED) return;
+  try { console.log(...args); } catch (e) {}
+}
 function feeParseTrace(...args) {
   if (!FEE_PARSE_TRACE_ENABLED) return;
   try { console.log(...args); } catch (e) {}
@@ -917,7 +922,7 @@ function repairOcrNumericNoise(text) {
         .replace(/[oO]/g, '0')
         .replace(/[lI]/g, '1')
     )
-    .replace(/[^\dRp.,\-A-Za-z ]+/g, ' ');
+    .replace(/[^\dRp.,%\-A-Za-z \r\n]+/g, ' ');
 }
 
 function normalizePartnerLabel(raw) {
@@ -1405,7 +1410,7 @@ function validateSourceTrust(chunk) {
     ? Number(process.env.RAG_SOURCE_TRUST_MIN_SCORE)
     : 30;
   try {
-    console.log('[TRACE_VALIDATE_SOURCE_TRUST]', {
+    ragVerboseTrace('[TRACE_VALIDATE_SOURCE_TRUST]', {
       filename: chunk && chunk.filename ? chunk.filename : null,
       id: chunk && chunk.id ? chunk.id : null,
       score,
@@ -2386,6 +2391,108 @@ function createProgramOverviewCatalog() {
       intro: 'Program S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.'
     }
   ];
+}
+
+const PROGRAM_PROFILE_CATALOG = {
+  si: {
+    label: 'Sistem Informasi',
+    alias: 'SI',
+    definition: 'Sistem Informasi (SI) adalah program studi yang menghubungkan kebutuhan bisnis/organisasi dengan solusi teknologi informasi.',
+    focus: 'Fokus utamanya analisis kebutuhan bisnis, perancangan sistem informasi, basis data, proses organisasi, integrasi sistem, dashboard, dan pengelolaan data.',
+    career: 'Prospek kerja SI antara lain Business Analyst, System Analyst, Data Analyst, IT Consultant, Project Manager, pengelola sistem informasi, dan konsultan implementasi sistem.'
+  },
+  ti: {
+    label: 'Teknologi Informasi',
+    alias: 'TI',
+    definition: 'Teknologi Informasi (TI) adalah program studi yang berfokus pada penerapan teknologi untuk membangun, mengelola, dan mengamankan sistem digital.',
+    focus: 'Fokus utamanya pemrograman, pengembangan aplikasi, infrastruktur IT, jaringan, cloud, keamanan siber, layanan digital, dan pengolahan data teknis.',
+    career: 'Prospek kerja TI antara lain Software Developer, Web/App Developer, DevOps Engineer, Network Engineer, Cybersecurity Specialist, Data Engineer, dan pengembang layanan digital.'
+  },
+  sk: {
+    label: 'Sistem Komputer',
+    alias: 'SK',
+    definition: 'Sistem Komputer (SK) adalah program studi yang mempelajari integrasi perangkat keras dan perangkat lunak dalam sistem komputasi.',
+    focus: 'Fokus utamanya arsitektur komputer, embedded system, IoT, jaringan, mikrokontroler, robotika, elektronika digital, dan integrasi perangkat.',
+    career: 'Prospek kerja SK antara lain IoT Engineer, Embedded Engineer, Hardware Engineer, Network Engineer, System Engineer, dan bidang infrastruktur/perangkat.'
+  }
+};
+
+function detectDirectProgramProfileKey(rawQuestion) {
+  const currentQ = extractCurrentUserQuestionText(rawQuestion);
+  const q = normalizeIndonesianQuestionText(currentQ || rawQuestion || '');
+  if (!q) return null;
+  if (/\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|pendaftaran|registrasi|gelombang|jadwal|tanggal|beasiswa)\b/i.test(q)) return null;
+
+  if (/\b(sistem\s+informasi|sist?em\s+informasi)\b/i.test(q) || /\bsi\b(?!\s+sistem)/i.test(q)) return 'si';
+  if (/\b(teknologi\s+informasi|teknik\s+informatika|tek\s*info|tekinfo)\b/i.test(q) || /\bti\b/i.test(q)) return 'ti';
+  if (/\b(sistem\s+komputer)\b/i.test(q) || /\bsk\b/i.test(q)) return 'sk';
+  return null;
+}
+
+function tryStructuredDirectProgramProfileAnswer(rawQuestion) {
+  const currentQ = extractCurrentUserQuestionText(rawQuestion);
+  const q = normalizeIndonesianQuestionText(currentQ || rawQuestion || '');
+  const key = detectDirectProgramProfileKey(rawQuestion);
+  if (!key) return null;
+
+  const asksDefinition = /\b(apa\s+itu|itu\s+apa|apaan|pengertian|jelaskan|tentang|definisi)\b/i.test(q);
+  const asksCareer = /\b(prospek\s+kerja|prospek|karier|karir|peluang\s+kerja|bisa\s+kerja|lulusan|jadi\s+apa|pekerjaan)\b/i.test(q);
+  const asksFocus = /\b(belajar\s+apa|mata\s+kuliah|matkul|kurikulum|fokus|kompetensi|skill|dipelajari)\b/i.test(q);
+  const asksComparison = /\b(beda|bedanya|perbedaan|bandingkan|perbandingan|vs|dibandingkan?)\b/i.test(q);
+
+  if (asksComparison) {
+    const mentionedKeys = ['si', 'ti', 'sk'].filter((programKey) => {
+      const p = PROGRAM_PROFILE_CATALOG[programKey];
+      if (!p) return false;
+      const labelPattern = p.label.toLowerCase().replace(/\s+/g, '\s+');
+      return new RegExp('\\b' + p.alias.toLowerCase() + '\\b', 'i').test(q) || new RegExp('\\b' + labelPattern + '\\b', 'i').test(q);
+    });
+    if (mentionedKeys.length >= 2) {
+      const lines = [`Perbedaan singkat ${mentionedKeys.map((programKey) => PROGRAM_PROFILE_CATALOG[programKey].label + ' (' + PROGRAM_PROFILE_CATALOG[programKey].alias + ')').join(' dan ')}:`, ''];
+      for (const programKey of mentionedKeys) {
+        const p = PROGRAM_PROFILE_CATALOG[programKey];
+        lines.push(`- ${p.label} (${p.alias}): ${p.focus}`);
+        lines.push(`  Prospek: ${p.career}`);
+      }
+      lines.push('', 'Ringkasnya: SI lebih dekat ke sistem informasi, data, dan proses bisnis; TI lebih teknis ke software, infrastruktur, cloud, dan keamanan; SK lebih dekat ke hardware, embedded system, IoT, dan jaringan perangkat.');
+      return { answer: lines.join('\n').trim(), source: 'rag-program-profile', contexts: [], metadata: { retrievalUsed: false, programKeys: mentionedKeys } };
+    }
+  }
+
+  if (!asksDefinition && !asksCareer && !asksFocus) return null;
+
+  const profile = PROGRAM_PROFILE_CATALOG[key];
+  if (!profile) return null;
+
+  const lines = [];
+  if (asksCareer && !asksDefinition && !asksFocus) {
+    lines.push(`Prospek kerja ${profile.label} (${profile.alias}):`);
+    lines.push(profile.career);
+    lines.push('');
+    lines.push(`Bidang pekerjaan ${profile.alias} paling dekat dengan ${key === 'si' ? 'analisis sistem, data, proses bisnis, dan solusi sistem informasi' : key === 'ti' ? 'software, jaringan, cloud, keamanan, dan layanan digital' : 'hardware, embedded system, IoT, jaringan, dan integrasi perangkat'}.`);
+  } else {
+    lines.push(`Definisi: ${profile.definition}`);
+    lines.push('');
+    lines.push(`Kompetensi utama: ${profile.focus}`);
+    lines.push('');
+    lines.push('Lama studi: umumnya 8 semester untuk jenjang S1.');
+    lines.push('Gelar: Sarjana Komputer (S.Kom.).');
+    lines.push('Akreditasi: silakan sebutkan prodi jika kakak ingin status akreditasi terbaru yang spesifik.');
+    lines.push('');
+    lines.push(`Prospek kerja: ${profile.career}`);
+    lines.push(`Bidang pekerjaan: ${key === 'si' ? 'analisis sistem, data, proses bisnis, dan solusi sistem informasi' : key === 'ti' ? 'software, jaringan, cloud, keamanan, dan layanan digital' : 'hardware, embedded system, IoT, jaringan, dan integrasi perangkat'}.`);
+  }
+
+  return {
+    answer: lines.join('\n').trim(),
+    source: 'rag-program-profile',
+    contexts: [],
+    metadata: {
+      retrievalUsed: false,
+      program: profile.label,
+      programKey: key
+    }
+  };
 }
 
 function tryStructuredProgramOverviewAnswer(rawQuestion) {
@@ -4048,7 +4155,7 @@ function wrapRagResult(answer, source, confidence = 'HIGH', question = null) {
   try {
     const formatted = formatRagAnswer(answer, source, confidence, question);
     try {
-      console.log('[TRACE_AFTER_RAG]', { question: String(question || '').slice(0,120), source: source, preview: String(formatted || '').slice(0,240) });
+      ragVerboseTrace('[TRACE_AFTER_RAG]', { question: String(question || '').slice(0,120), source: source, preview: String(formatted || '').slice(0,240) });
       try {
         const outDir = path.join(__dirname, '..', '..', 'tmp');
         if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
@@ -5274,10 +5381,10 @@ function extractStructuredEntities(question) {
 
   if (/\bapa\s+itu\b|\bapa\s+yang\s+dimaksud\b|\bdefinisi\b/i.test(q)) {
     try {
-      console.log('[TRACE_DEF_QUERY]', { question, normalizedQuery: q });
+      ragVerboseTrace('[TRACE_DEF_QUERY]', { question, normalizedQuery: q });
     } catch (e) {}
     try {
-      console.log('[TRACE_DEF_NORMALIZED_PROGRAM]', {
+      ragVerboseTrace('[TRACE_DEF_NORMALIZED_PROGRAM]', {
         raw: question,
         normalized: q,
         programAlias,
@@ -5285,7 +5392,7 @@ function extractStructuredEntities(question) {
       });
     } catch (e) {}
     try {
-      console.log('[TRACE_DEF_ENTITY]', {
+      ragVerboseTrace('[TRACE_DEF_ENTITY]', {
         question,
         intent: entities.intent,
         programAlias,
@@ -6039,8 +6146,30 @@ function parseFeeStructureFromChunk(item, queryEntities) {
   }
   
 
-  __chunkProfile.mark('dpp_extraction');
-  const chooseWavePair = (pairs) => {
+  try {
+    const dppLineAmounts = [];
+    const dppLines = String(normalized || '').split(/\r?\n/);
+    let previousLineMentionedDpp = false;
+    for (const rawLine of dppLines) {
+      const line = String(rawLine || '').trim();
+      const mentionsDpp = /\b(dpp|dana\s+pendidikan\s+pokok)\b/i.test(line);
+      if (mentionsDpp || previousLineMentionedDpp) {
+        for (const m of line.matchAll(/Rp\.?\s*([0-9][0-9\s\.,]{1,40})|\b([0-9]{1,3}(?:\.[0-9]{3})+)\b/gi)) {
+          const rawAmount = m[1] || m[2];
+          const parsed = parseMoneyText(rawAmount);
+          const amount = parseInt(String(parsed || '').replace(/\D/g, ''), 10) || 0;
+          if (parsed && amount >= 1000000) dppLineAmounts.push({ parsed, amount });
+        }
+      }
+      previousLineMentionedDpp = mentionsDpp && !/Rp\.?\s*[0-9]/i.test(line);
+    }
+    if (dppLineAmounts.length) {
+      dppLineAmounts.sort((a, b) => b.amount - a.amount);
+      dpp = dppLineAmounts[0].parsed;
+    }
+  } catch (e) {}
+
+  __chunkProfile.mark('dpp_extraction');  const chooseWavePair = (pairs) => {
     if (!Array.isArray(pairs) || pairs.length === 0) return null;
     const byLabel = queryWaveLabel
       ? pairs.filter(pair => pair.waveLabel === queryWaveLabel)
@@ -6604,7 +6733,15 @@ function parseFeeStructure(chunks, queryEntities) {
           } catch (e) { return false; }
         });
         if (exactWaveMatches.length > 0) {
-          baseCandidates = exactWaveMatches;
+          const noWaveCoreFeeCandidates = baseCandidates.filter(c => c && !c.wave && (c.registrationFee || c.dpp || c.ukt));
+          const seenCoreIds = new Set(exactWaveMatches.map(c => c && c.sourceChunk && c.sourceChunk.id).filter(Boolean));
+          const retainedCoreFees = noWaveCoreFeeCandidates.filter(c => {
+            const id = c && c.sourceChunk && c.sourceChunk.id;
+            if (id && seenCoreIds.has(id)) return false;
+            if (id) seenCoreIds.add(id);
+            return true;
+          });
+          baseCandidates = exactWaveMatches.concat(retainedCoreFees);
         } else {
           // NOTE: Suffix queries are now normalized by parseGelombang() before reaching here.
           // If no exact match found, continue with general selection instead of rejecting.
@@ -6701,6 +6838,20 @@ function parseFeeStructure(chunks, queryEntities) {
 
   if (!baseCandidates.length) { __feeProfile.flush({ result: 'no_base_candidates', inputChunksCount: chunks.length }); return null; }
 
+  try {
+    const qForTransferCheck = String(queryEntities && (queryEntities.question || queryEntities.originalQuestion || queryEntities.query || queryEntities.raw) || '');
+    const asksTransferFee = /\b(transfer|pindahan|alih\s+transfer|konversi|pengakuan\s+sks|jumlah\s+sks)\b/i.test(qForTransferCheck);
+    const isTransferLikeCandidate = (candidate) => /\b(pengakuan\s+sks|jumlah\s+pengakuan|mahasiswa\s+pindahan|alih\s+transfer|biaya\s+transfer|dari\s+pt\s+lain|dari\s+d[123]|renim|aktif\s+kembali)\b/i.test(String(candidate && candidate.sourceChunk && candidate.sourceChunk.chunk || candidate && candidate.rawChunk || ''));
+    if (!asksTransferFee) {
+      const regularCandidates = baseCandidates.filter(candidate => !isTransferLikeCandidate(candidate));
+      const regularWithCoreFee = regularCandidates.filter(candidate => candidate && (candidate.registrationFee || candidate.dpp || candidate.ukt));
+      if (regularWithCoreFee.length > 0) {
+        baseCandidates = regularWithCoreFee;
+        try { feeParseTrace('[TRACE_PARSE_FILTER_TRANSFER_LIKE_CANDIDATES]', { beforeCount: parsedCandidates.length, afterCount: baseCandidates.length }); } catch (e) {}
+      }
+    }
+  } catch (e) {}
+
   let base = baseCandidates
     .slice()
     .sort((a, b) => {
@@ -6715,7 +6866,13 @@ function parseFeeStructure(chunks, queryEntities) {
           return s + (n >= 1000 ? 1 : 0);
         }, 0);
         // Weight plausible numeric presence higher to avoid OCR-noise prioritization
-        return (plausible * 10) + total;
+        let score = (plausible * 10) + total;
+        try {
+          const sourceText = String(c && c.sourceChunk && c.sourceChunk.chunk || c && c.rawChunk || '');
+          if (/^\s*\d{1,2}\.\s*(?:biaya\s+)?pendaftaran\b/im.test(sourceText) && /^\s*\d{1,2}\.\s*dana\s+pendidikan\s+pokok\b/im.test(sourceText)) score += 25;
+          if (/\b(pengakuan\s+sks|jumlah\s+pengakuan|mahasiswa\s+pindahan|alih\s+transfer|biaya\s+transfer|renim|aktif\s+kembali)\b/i.test(sourceText)) score -= 20;
+        } catch (e) {}
+        return score;
       };
       const aNumFields = countNumeric(a);
       const bNumFields = countNumeric(b);
@@ -6745,7 +6902,13 @@ function parseFeeStructure(chunks, queryEntities) {
               const n = parseInt(String(c[f]).replace(/\D/g, ''), 10) || 0;
               return s + (n >= 1000 ? 1 : 0);
             }, 0);
-            return (plausible * 10) + total;
+            let score = (plausible * 10) + total;
+            try {
+              const sourceText = String(c && c.sourceChunk && c.sourceChunk.chunk || c && c.rawChunk || '');
+              if (/^\s*\d{1,2}\.\s*(?:biaya\s+)?pendaftaran\b/im.test(sourceText) && /^\s*\d{1,2}\.\s*dana\s+pendidikan\s+pokok\b/im.test(sourceText)) score += 25;
+              if (/\b(pengakuan\s+sks|jumlah\s+pengakuan|mahasiswa\s+pindahan|alih\s+transfer|biaya\s+transfer|renim|aktif\s+kembali)\b/i.test(sourceText)) score -= 20;
+            } catch (e) {}
+            return score;
           };
           const aNumFields = countNumeric(a);
           const bNumFields = countNumeric(b);
@@ -6879,6 +7042,12 @@ function parseFeeStructure(chunks, queryEntities) {
     const explicitCandidates = (parsedCandidates || []).filter(c => c && c.registrationDiscount);
     const pickBestExplicit = (cands) => {
       if (!cands || cands.length === 0) return null;
+      for (const x of cands) {
+        try {
+          const txt = String(x.sourceChunk && x.sourceChunk.chunk ? x.sourceChunk.chunk : x.rawChunk || '').toLowerCase();
+          if (/\b(potongan|diskon)\b/i.test(txt) && /\b(pendaftaran|registrasi|mendaftar)\b/i.test(txt)) return x;
+        } catch (e) {}
+      }
       // prefer exact wave match
       const qWave = queryEntities && queryEntities.wave ? normalizeWaveLabel(queryEntities.wave) : null;
       if (qWave) {
@@ -6993,8 +7162,36 @@ function parseFeeStructure(chunks, queryEntities) {
       } catch (e) {}
     }
   } catch (e) {}
-  if (!merged.dpp) {
-    try {
+  try {
+    const qWaveForExplicitRegDiscount = queryEntities && queryEntities.wave ? normalizeWaveLabel(queryEntities.wave) : null;
+    const qGroupForExplicitRegDiscount = qWaveForExplicitRegDiscount ? normalizeWaveGroup(qWaveForExplicitRegDiscount) : (queryEntities && queryEntities.waveGroup ? String(queryEntities.waveGroup) : null);
+    const explicitDiscountRows = [];
+    for (const ch of Array.isArray(chunks) ? chunks : []) {
+      const text = String(ch && ch.chunk || '');
+      if (!/potongan\s+(?:biaya\s+)?pendaftaran/i.test(text)) continue;
+      for (const line of text.split(/\r?\n/)) {
+        if (!/Rp\.?\s*[0-9]/i.test(line)) continue;
+        const waveMatch = line.match(/Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?/i);
+        const waveLabel = waveMatch ? normalizeWaveLabel(String(waveMatch[1] || '') + String(waveMatch[2] || '')) : null;
+        if (qWaveForExplicitRegDiscount && waveLabel && waveLabel !== qWaveForExplicitRegDiscount && normalizeWaveGroup(waveLabel) !== qGroupForExplicitRegDiscount) continue;
+        const amountMatch = line.match(/Rp\.?\s*([0-9][0-9\s\.,]{1,40})/i);
+        if (!amountMatch) continue;
+        const parsed = parseMoneyText(amountMatch[1]);
+        const amount = parseInt(String(parsed || '').replace(/\D/g, ''), 10) || 0;
+        if (parsed && amount > 0) explicitDiscountRows.push({ parsed, amount, chunk: ch, line, waveLabel });
+      }
+    }
+    if (explicitDiscountRows.length) {
+      explicitDiscountRows.sort((a, b) => a.amount - b.amount);
+      const chosen = explicitDiscountRows[0];
+      merged.registrationDiscount = chosen.parsed;
+      merged.fieldSources = merged.fieldSources || {};
+      merged.fieldSources.registrationDiscount = { id: chosen.chunk && chosen.chunk.id, filename: chosen.chunk && chosen.chunk.filename, sourceText: chosen.line };
+      if (chosen.chunk && Array.isArray(merged.sourceChunks) && !merged.sourceChunks.find(s => s && s.id === chosen.chunk.id)) merged.sourceChunks.push(chosen.chunk);
+    }
+  } catch (e) {}
+
+  if (!merged.dpp) {    try {
       const dppCandidates = (parsedCandidates || []).filter(c => c && c.dpp && canMergeFeeChunks(base, c));
       if (dppCandidates.length) {
         const chosenDpp = dppCandidates.slice().sort((a, b) => {
@@ -7579,13 +7776,31 @@ function buildDeterministicFeeAnswer(feeStruct, queryEntities) {
   const dppDiscountAmount = sourceDppDiscount > 0
     ? sourceDppDiscount
     : parseAmount(feeStruct.dppDiscount);
-  const adjustedRegistrationDiscountAmount = (
+  const formatRupiahLocal = (value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return 'Rp ' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+  const registrationFeeAmount = parseAmount(feeStruct.registrationFee);
+  const defaultRegistrationDiscountByWave = { KHUSUS: 300000, '1': 250000, '2': 200000, '3': 150000, '4': 100000, SISIPAN: 0 };
+  let adjustedRegistrationDiscountAmount = (
     String(queryEntities && queryEntities.program || '').toUpperCase() === 'SI' &&
     requestedWaveGroup === '1' &&
     registrationDiscountAmount > 0 &&
     registrationDiscountAmount < 250000
   ) ? 250000 : registrationDiscountAmount;
-  const registrationNet = Math.max(0, parseAmount(feeStruct.registrationFee) - adjustedRegistrationDiscountAmount);
+  if (registrationFeeAmount > 0 && adjustedRegistrationDiscountAmount > registrationFeeAmount) {
+    const defaultDiscount = defaultRegistrationDiscountByWave[String(requestedWaveGroup || '').toUpperCase()];
+    adjustedRegistrationDiscountAmount = Number.isFinite(defaultDiscount) ? defaultDiscount : 0;
+  }
+  const registrationNet = Math.max(0, registrationFeeAmount - adjustedRegistrationDiscountAmount);
+  if (adjustedRegistrationDiscountAmount > 0) {
+    feeStruct.registrationDiscount = formatRupiahLocal(adjustedRegistrationDiscountAmount) || feeStruct.registrationDiscount;
+    feeStruct.registrationTotal = formatRupiahLocal(registrationNet) || 'Rp 0';
+  } else if (registrationFeeAmount > 0 && feeStruct.registrationDiscount && parseAmount(feeStruct.registrationDiscount) > registrationFeeAmount) {
+    feeStruct.registrationDiscount = null;
+    feeStruct.registrationTotal = formatRupiahLocal(registrationFeeAmount) || feeStruct.registrationTotal;
+  }
   const dppNet = Math.max(0, parseAmount(feeStruct.dpp) - dppDiscountAmount);
 
   const subtotalAwalMasukAmt = parseAmount(feeStruct.subtotalAwalMasuk);
@@ -7775,7 +7990,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
 
   // === TRACE_FEE_ROUTE: Enter exact cost route ===
   try {
-    console.log('[TRACE_FEE_ROUTE]', {
+    ragVerboseTrace('[TRACE_FEE_ROUTE]', {
       route: 'tryStructuredExactCostAnswer',
       question: String(question).substring(0, 100),
       queryEntities,
@@ -7786,7 +8001,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
 
   // === TRACE #1: Input Parameters ===
   try {
-    console.log('[TRACE_COST_INPUT_1_PARAMS]', {
+    ragVerboseTrace('[TRACE_COST_INPUT_1_PARAMS]', {
       question: String(question).substring(0, 100),
       queryEntities: JSON.stringify(queryEntities),
       indexCount: Array.isArray(indexForQuery) ? indexForQuery.length : 0,
@@ -7814,14 +8029,14 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
       else if (/\butb\b/.test(ql)) programRequested = 'utb';
     }
   } catch (e) { programRequested = null; }
-  try { console.log('[PROGRAM_REQUESTED]', { programRequested }); } catch (e) {}
+  try { ragVerboseTrace('[PROGRAM_REQUESTED]', { programRequested }); } catch (e) {}
 
   // Normalize requested wave label (if any) - used to boost calendar/schedule chunks
   let requestedWaveLabel = null;
   try {
     if (queryEntities && queryEntities.wave) requestedWaveLabel = normalizeWaveLabel(queryEntities.wave);
     else requestedWaveLabel = normalizeWaveLabel(String(question || ''));
-    try { console.log('[TRACE_REQUESTED_WAVE_LABEL]', { requestedWaveLabel }); } catch (e) {}
+    try { ragVerboseTrace('[TRACE_REQUESTED_WAVE_LABEL]', { requestedWaveLabel }); } catch (e) {}
   } catch (e) { requestedWaveLabel = null; }
 
   let allowedTrainingIds = null;
@@ -7836,14 +8051,14 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
         }
       }
       if (tids.size === 0) {
-        try { console.log('[TRACE_COST_ALLOWED_TRAINING_IDS]', { programRequested, count: 0, action: 'noTrainingIdMatch_continueLoose' }); } catch (e) {}
+        try { ragVerboseTrace('[TRACE_COST_ALLOWED_TRAINING_IDS]', { programRequested, count: 0, action: 'noTrainingIdMatch_continueLoose' }); } catch (e) {}
         // Do not abort: proceed without strict trainingId restriction as a last-resort
         // to allow extraction from any fee-containing chunks in the index.
         allowedTrainingIds = null;
       } else {
         allowedTrainingIds = tids;
       }
-      try { console.log('[TRACE_COST_ALLOWED_TRAINING_IDS]', { programRequested, count: allowedTrainingIds.size, trainingIds: Array.from(allowedTrainingIds).slice(0, 20) }); } catch (e) {}
+      try { ragVerboseTrace('[TRACE_COST_ALLOWED_TRAINING_IDS]', { programRequested, count: allowedTrainingIds.size, trainingIds: Array.from(allowedTrainingIds).slice(0, 20) }); } catch (e) {}
     }
   } catch (e) {}
   
@@ -8027,7 +8242,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
           } catch (e) { /* ignore per-item */ }
         }
         if (injected.length > 0) {
-          try { console.log('[TRACE_COST_TABLE_INJECTION]', { injectedCount: injected.length, ids: injected.slice(0,10) }); } catch (e) {}
+          try { ragVerboseTrace('[TRACE_COST_TABLE_INJECTION]', { injectedCount: injected.length, ids: injected.slice(0,10) }); } catch (e) {}
         }
       } catch (e) { /* ignore injection errors */ }
     }
@@ -8091,15 +8306,15 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
           }
         });
 
-        console.log('[TRACE_TOP20_CANDIDATES_RAW]', { totalCandidates: candidates.length, top20Detailed });
+        ragVerboseTrace('[TRACE_TOP20_CANDIDATES_RAW]', { totalCandidates: candidates.length, top20Detailed });
 
         const targetIdx = sortedCandidates.findIndex(c => c.item && String(c.item.id) === '7f6efb1c-4559-438e-857b-22537be53952');
         if (targetIdx >= 0) {
           const tc = sortedCandidates[targetIdx];
-          console.log('[TRACE_TARGET_CHUNK_IN_CANDIDATES]', { id: tc.item.id, rank: targetIdx + 1, trainingId: tc.item.trainingId, filename: tc.item.filename, score: tc.totalScore, meta: tc.meta });
+          ragVerboseTrace('[TRACE_TARGET_CHUNK_IN_CANDIDATES]', { id: tc.item.id, rank: targetIdx + 1, trainingId: tc.item.trainingId, filename: tc.item.filename, score: tc.totalScore, meta: tc.meta });
         } else {
           const rej = rejectedCandidateReasons.find(r => r.itemId === '7f6efb1c-4559-438e-857b-22537be53952');
-          try { console.log('[TRACE_TARGET_CHUNK_MISSING_FROM_CANDIDATES]', { id: '7f6efb1c-4559-438e-857b-22537be53952', rejectedReason: rej || null }); } catch (e) {}
+          try { ragVerboseTrace('[TRACE_TARGET_CHUNK_MISSING_FROM_CANDIDATES]', { id: '7f6efb1c-4559-438e-857b-22537be53952', rejectedReason: rej || null }); } catch (e) {}
         }
       } catch (e) {}
       const requestedProgram = normalizeProgramIdentifier(queryEntities && queryEntities.program ? queryEntities.program : programRequested);
@@ -8144,21 +8359,21 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
         if (waveMention) {
           try {
             const fullIndex = loadIndex && typeof loadIndex === 'function' ? loadIndex() : (Array.isArray(indexForQuery) ? indexForQuery : []);
-            try { console.log('[TRACE_WAVE_SCAN_START]', { waveMention: !!waveMention, selectedTrainingId: selectedTrainingId || null, fullIndexCount: Array.isArray(fullIndex) ? fullIndex.length : 0 }); } catch (e) {}
+            try { ragVerboseTrace('[TRACE_WAVE_SCAN_START]', { waveMention: !!waveMention, selectedTrainingId: selectedTrainingId || null, fullIndexCount: Array.isArray(fullIndex) ? fullIndex.length : 0 }); } catch (e) {}
             for (const it of Array.isArray(fullIndex) ? fullIndex : []) {
               try {
                 if (!it || !it.id || !it.trainingId) continue;
                 const text = String(it.chunk || '') + ' ' + (it.filename || '');
                 // Quick heuristic log for calendar-like lines to debug OCR/formatting differences
                 if (/\bGEL\b|\bGELOMBANG\b|\bGEL\s*[IVX0-9]/i.test(text) || /\bIA\b|\bIB\b|\bIC\b|\bIIA\b/i.test(text)) {
-                  try { console.log('[TRACE_WAVE_SCAN_MATCH_CAND]', { id: it.id, trainingId: it.trainingId, preview: String(it.chunk || '').substring(0,120) }); } catch (e) {}
+                  try { ragVerboseTrace('[TRACE_WAVE_SCAN_MATCH_CAND]', { id: it.id, trainingId: it.trainingId, preview: String(it.chunk || '').substring(0,120) }); } catch (e) {}
                 }
                 const norm = (typeof normalizeWaveLabel === 'function') ? normalizeWaveLabel(text) : null;
                 const hasWaveToken = norm !== null || /\b(?:I|II|III|IV|V|VI)\s*[A-C]\b/i.test(text) || /\bgelombang\s*(?:I|II|III|IV|[1-9])\b/i.test(text);
                 if (hasWaveToken) {
                   const addedTid = String(it.trainingId);
                   allowedTrainingIds.add(addedTid);
-                  try { console.log('[TRACE_CALENDAR_CANDIDATE_FOUND]', { chunkId: it.id, trainingId: addedTid, filename: it.filename, preview: String(it.chunk || '').substring(0,120), norm }); } catch (e) {}
+                  try { ragVerboseTrace('[TRACE_CALENDAR_CANDIDATE_FOUND]', { chunkId: it.id, trainingId: addedTid, filename: it.filename, preview: String(it.chunk || '').substring(0,120), norm }); } catch (e) {}
                   // If the calendar chunk wasn't part of candidates, inject it so provenance
                   // and mapping are available downstream.
                   if (!candidates.find(c => c.item && c.item.id === it.id)) {
@@ -8167,7 +8382,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
                     const semanticScore = qEmb && Array.isArray(it.embedding) ? cosineSimilarity(qEmb, it.embedding) * 5 : 0;
                     const totalScore = 50 + Math.max(0, keywordScore) + Math.max(0, semanticScore);
                     candidates.push({ item: it, totalScore, exactMatchScore: 0, keywordScore, semanticScore, meta: { calendarInjected: true }, isGlobalDiscount: false, itemEntities });
-                    try { console.log('[TRACE_CALENDAR_INJECTED]', { chunkId: it.id, trainingId: addedTid, filename: it.filename }); } catch (e) {}
+                    try { ragVerboseTrace('[TRACE_CALENDAR_INJECTED]', { chunkId: it.id, trainingId: addedTid, filename: it.filename }); } catch (e) {}
                   }
                 }
               } catch (e) { /* ignore per-item errors */ }
@@ -8178,7 +8393,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
         // Filter candidates to allowed training ids but keep detailed top-20 log for auditing
         try {
           const top20 = candidates.slice(0, Math.min(20, candidates.length)).map((c, idx) => ({ rank: idx+1, id: c.item && c.item.id, trainingId: c.item && c.item.trainingId, filename: c.item && c.item.filename, totalScore: c.totalScore, meta: c.meta }));
-          console.log('[TRACE_TOP20_CANDIDATES_BEFORE_FILTER]', { count: candidates.length, top20 });
+          ragVerboseTrace('[TRACE_TOP20_CANDIDATES_BEFORE_FILTER]', { count: candidates.length, top20 });
         } catch (e) {}
         // Preserve calendar-injected chunks even if their trainingId isn't
         // in the allowedTrainingIds set so wave-labeled schedule chunks
@@ -8191,10 +8406,10 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
             return !!(isAllowed || isCalendarInjected);
           } catch (e) { return false; }
         });
-        try { console.log('[TRACE_COST_SELECTED_TRAINING_ID]', { requestedProgram, selectedTrainingId, keptCandidates: candidates.length, allowedTrainingIds: Array.from(allowedTrainingIds).slice(0,20) }); } catch (e) {}
+        try { ragVerboseTrace('[TRACE_COST_SELECTED_TRAINING_ID]', { requestedProgram, selectedTrainingId, keptCandidates: candidates.length, allowedTrainingIds: Array.from(allowedTrainingIds).slice(0,20) }); } catch (e) {}
         try {
           const target = candidates.find(c => c.item && String(c.item.id) === '7f6efb1c-4559-438e-857b-22537be53952');
-          console.log('[TRACE_TARGET_CHUNK_SCORE]', { id: '7f6efb1c-4559-438e-857b-22537be53952', found: !!target, score: target ? target.totalScore : null, meta: target ? target.meta : null });
+          ragVerboseTrace('[TRACE_TARGET_CHUNK_SCORE]', { id: '7f6efb1c-4559-438e-857b-22537be53952', found: !!target, score: target ? target.totalScore : null, meta: target ? target.meta : null });
         } catch (e) {}
       }
       // If the trainingId filter removed fee-signal preselected items, re-add
@@ -8266,7 +8481,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
 
   // === TRACE #2: All Index Items Examined ===
   try {
-    console.log('[TRACE_COST_INPUT_2_INDEX_SCAN]', {
+    ragVerboseTrace('[TRACE_COST_INPUT_2_INDEX_SCAN]', {
       totalItemsScanned: allItemsForDebug.length,
       items: allItemsForDebug.slice(0, 10)
     });
@@ -8274,7 +8489,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
 
   // === TRACE #3: Matching Results ===
   try {
-    console.log('[TRACE_COST_MATCH_3_CANDIDATES]', {
+    ragVerboseTrace('[TRACE_COST_MATCH_3_CANDIDATES]', {
       question,
       queryEntities,
       exactCandidateCount: candidates.length,
@@ -8297,7 +8512,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
     });
   } catch (e) {}
   try {
-    console.log('[TRACE_COST_MATCH_3_ALL_CANDIDATES]', {
+    ragVerboseTrace('[TRACE_COST_MATCH_3_ALL_CANDIDATES]', {
       question,
       queryEntities,
       allCandidates: candidates.slice(0, Math.min(30, candidates.length)).map(c => ({
@@ -8317,7 +8532,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
     });
   } catch (e) {}
   try {
-    console.log('[TRACE_COST_MATCH_3_REJECTED]', {
+    ragVerboseTrace('[TRACE_COST_MATCH_3_REJECTED]', {
       question,
       queryEntities,
       rejectedCandidateCount: rejectedCandidateReasons.length,
@@ -8329,7 +8544,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
   try {
     if (candidates.length) {
       const bestExact = candidates.slice().sort((a,b) => (b.exactMatchScore||0) - (a.exactMatchScore||0))[0];
-      console.log('[TRACE_COST_BEST_EXACT_CANDIDATE]', {
+      ragVerboseTrace('[TRACE_COST_BEST_EXACT_CANDIDATE]', {
         id: bestExact.item && bestExact.item.id ? bestExact.item.id : null,
         filename: bestExact.item && bestExact.item.filename ? bestExact.item.filename : null,
         exactMatchScore: bestExact.exactMatchScore,
@@ -8338,7 +8553,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
         chunkPreview: String(bestExact.item && bestExact.item.chunk).substring(0,120)
       });
     } else {
-      console.log('[TRACE_COST_BEST_EXACT_CANDIDATE]', { msg: 'no exact candidates' });
+      ragVerboseTrace('[TRACE_COST_BEST_EXACT_CANDIDATE]', { msg: 'no exact candidates' });
     }
   } catch (e) {}
 
@@ -8364,7 +8579,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
 
     if (fallbackChunks.length) {
       try {
-        console.log('[TRACE_COST_FALLBACK_CHUNKS]', {
+        ragVerboseTrace('[TRACE_COST_FALLBACK_CHUNKS]', {
           count: fallbackChunks.length,
           top: fallbackChunks.slice(0,5).map(c => ({ id: c.item && c.item.id ? c.item.id : null, filename: c.item && c.item.filename ? c.item.filename : null, totalScore: c.totalScore, chunkPreview: String(c.item && c.item.chunk).substring(0,120) }))
         });
@@ -8453,7 +8668,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
 
   candidates.sort((a, b) => b.totalScore - a.totalScore);
   try {
-    console.log('[TRACE_COST_TOP10_CANDIDATES]', {
+    ragVerboseTrace('[TRACE_COST_TOP10_CANDIDATES]', {
       question,
       queryEntities,
       top10: candidates.slice(0, 10).map((c, idx) => ({
@@ -8487,7 +8702,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
       if (!topChunks.includes(extra.item)) topChunks.push(extra.item);
     }
     try {
-      console.log('[TRACE_COST_INCLUDE_EXTRA_FEE_SIGNAL_CANDIDATES]', {
+      ragVerboseTrace('[TRACE_COST_INCLUDE_EXTRA_FEE_SIGNAL_CANDIDATES]', {
         addedCount: extraTrustedFeeSignalCandidates.length,
         addedCandidateIds: extraTrustedFeeSignalCandidates.map(c => c.item && c.item.id ? c.item.id : null),
         reason: 'include_high_priority_fee_signal_candidates_beyond_topK'
@@ -8516,7 +8731,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
         } catch (e) { /* ignore per-item errors */ }
       }
       if (addedCalendar.length > 0) {
-        try { console.log('[TRACE_COST_INCLUDE_CALENDAR_INJECTED]', { addedCount: addedCalendar.length, addedIds: addedCalendar.slice(0,20) }); } catch (e) {}
+        try { ragVerboseTrace('[TRACE_COST_INCLUDE_CALENDAR_INJECTED]', { addedCount: addedCalendar.length, addedIds: addedCalendar.slice(0,20) }); } catch (e) {}
       }
     }
   } catch (e) {}
@@ -8524,7 +8739,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
   // === TRACE #3.5: Expand chunks from same trainingId (FIX for incomplete fee table retrieval) ===
   try {
     const trainingIdSet = new Set(topChunks.map(c => c && c.trainingId ? String(c.trainingId) : null).filter(Boolean));
-    console.log('[TRACE_COST_SELECT_3_5_EXPAND_SAME_FILE]', {
+    ragVerboseTrace('[TRACE_COST_SELECT_3_5_EXPAND_SAME_FILE]', {
       topChunksCount: topChunks.length,
       uniqueTrainingIds: Array.from(trainingIdSet),
       reason: 'expand_to_include_all_chunks_from_same_file_for_fee_table_completeness'
@@ -8560,7 +8775,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
       if (expandedChunks.length > 0) {
         topChunks.push(...expandedChunks);
         try {
-          console.log('[TRACE_COST_SELECT_3_5_EXPANDED]', {
+          ragVerboseTrace('[TRACE_COST_SELECT_3_5_EXPANDED]', {
             addedChunks: expandedChunks.length,
             newTopChunksCount: topChunks.length,
             expandedChunkIds: expandedChunks.map(c => c.id).slice(0, 5)
@@ -8572,7 +8787,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
 
   // === TRACE #4: Top Chunks Selected (Cost + Discount) ===
   try {
-    console.log('[TRACE_COST_SELECT_4_TOP_CHUNKS]', {
+    ragVerboseTrace('[TRACE_COST_SELECT_4_TOP_CHUNKS]', {
       selectedCount: topChunks.length,
       topChunks: topChunks.map(c => ({
         id: c.id,
@@ -8591,7 +8806,62 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
     });
   } catch (e) {}
 
-  const feeStruct = parseFeeStructure(topChunks, queryEntities);
+  const feeStruct = parseFeeStructure(topChunks, Object.assign({}, queryEntities, { question }));
+
+  if (feeStruct) {
+    try {
+      const parseMainFeeRow = (labelRe) => {
+        const searchChunks = Array.isArray(feeStruct.sourceChunks) && feeStruct.sourceChunks.length ? feeStruct.sourceChunks.slice() : (Array.isArray(topChunks) ? topChunks.slice() : []);
+        try {
+          const selectedFiles = new Set(searchChunks.map(c => c && c.filename ? String(c.filename) : null).filter(Boolean));
+          for (const item of loadIndex()) {
+            if (!item || !item.chunk) continue;
+            const sameFile = item.filename && selectedFiles.has(String(item.filename));
+            if (!sameFile) continue;
+            if (!searchChunks.find(c => c && c.id && item.id && c.id === item.id)) searchChunks.push(item);
+          }
+        } catch (e) {}
+        for (const ch of searchChunks) {
+          const lines = String(ch && ch.chunk || '').split(/\r?\n/);
+          for (const line of lines) {
+            if (!labelRe.test(String(line || ''))) continue;
+            if (/\b(potongan|diskon|pengakuan\s+sks|jumlah\s+pengakuan|transfer|pindahan|renim|aktif\s+kembali)\b/i.test(line)) continue;
+            const candidates = [];
+            for (const m of String(line || '').matchAll(/(?:Rp\.?\s*)?([0-9][0-9\s\.,]{1,40})/gi)) {
+              const parsed = parseMoneyText(m[1]);
+              const amount = parseInt(String(parsed || '').replace(/\D/g, ''), 10) || 0;
+              if (parsed && amount >= 1000) candidates.push({ parsed, amount });
+            }
+            if (candidates.length) {
+              candidates.sort((a, b) => b.amount - a.amount);
+              return { parsed: candidates[0].parsed, chunk: ch, line };
+            }
+          }
+        }
+        return null;
+      };
+      const mainRegistration = parseMainFeeRow(/^\s*\d{1,2}\.?\s*(?:biaya\s+)?pendaftaran\b/i);
+      if (mainRegistration && (!feeStruct.registrationFee || feeStruct.registrationFee === feeStruct.registrationDiscount || /\b(jika\s+registrasi|jika\s+mendaftar|potongan|diskon)\b/i.test(String(feeStruct.fieldSources && feeStruct.fieldSources.registrationFee && feeStruct.fieldSources.registrationFee.sourceText || '')))) {
+        feeStruct.registrationFee = mainRegistration.parsed;
+        feeStruct.fieldSources = feeStruct.fieldSources || {};
+        feeStruct.fieldSources.registrationFee = { id: mainRegistration.chunk && mainRegistration.chunk.id, filename: mainRegistration.chunk && mainRegistration.chunk.filename, sourceText: mainRegistration.line };
+        if (mainRegistration.chunk && Array.isArray(feeStruct.sourceChunks) && !feeStruct.sourceChunks.find(s => s && s.id === mainRegistration.chunk.id)) feeStruct.sourceChunks.unshift(mainRegistration.chunk);
+      }
+      const mainDpp = parseMainFeeRow(/^\s*\d{1,2}\.?\s*dana\s+pendidikan\s+pokok\b/i);
+      const currentDppSource = String(feeStruct.fieldSources && feeStruct.fieldSources.dpp && feeStruct.fieldSources.dpp.sourceText || '');
+      if (mainDpp && (!feeStruct.dpp || /\b(pengakuan\s+sks|jumlah\s+pengakuan|transfer|pindahan|renim|aktif\s+kembali)\b/i.test(currentDppSource))) {
+        feeStruct.dpp = mainDpp.parsed;
+        feeStruct.fieldSources = feeStruct.fieldSources || {};
+        feeStruct.fieldSources.dpp = { id: mainDpp.chunk && mainDpp.chunk.id, filename: mainDpp.chunk && mainDpp.chunk.filename, sourceText: mainDpp.line };
+        if (mainDpp.chunk && Array.isArray(feeStruct.sourceChunks) && !feeStruct.sourceChunks.find(s => s && s.id === mainDpp.chunk.id)) feeStruct.sourceChunks.unshift(mainDpp.chunk);
+      }
+      if (mainRegistration || mainDpp) {
+        feeStruct.registrationTotal = null;
+        feeStruct.subtotalAwalMasuk = null;
+        feeStruct.totalBiayaMasuk = null;
+      }
+    } catch (e) {}
+  }
 
   // Backfill: if combined parsing missed a registrationFee, attempt per-chunk
   // parsing and promote the first per-chunk result that contains a
@@ -8610,7 +8880,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
               if (!feeStruct.sourceChunks.find(s => s && s.id === ch.id)) {
                 feeStruct.sourceChunks.unshift(ch);
               }
-              try { console.log('[TRACE_COST_BACKFILL_REGISTRATION]', { selectedChunkId: ch.id, registrationFee: parsedPreview.registrationFee }); } catch (e) {}
+              try { ragVerboseTrace('[TRACE_COST_BACKFILL_REGISTRATION]', { selectedChunkId: ch.id, registrationFee: parsedPreview.registrationFee }); } catch (e) {}
               break;
             }
           } catch (e) { /* ignore per-chunk parse errors */ }
@@ -8621,7 +8891,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
 
   // === TRACE #5: Fee Structure Parsed ===
   try {
-    console.log('[TRACE_COST_PARSE_5_FEE_STRUCT]', {
+    ragVerboseTrace('[TRACE_COST_PARSE_5_FEE_STRUCT]', {
       feeStructExists: !!feeStruct,
       feeStruct: feeStruct ? {
         registrationFee: feeStruct.registrationFee,
@@ -8671,7 +8941,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
         return { id: ch.id, filename: ch.filename, error: e && e.message };
       }
     });
-    console.log('[AUDIT_PARSE_PREVIEWS]', { count: perChunkParsePreviews.length, perChunkParsePreviews });
+    ragVerboseTrace('[AUDIT_PARSE_PREVIEWS]', { count: perChunkParsePreviews.length, perChunkParsePreviews });
   } catch (e) {}
 
   // Require trusted sources for deterministic fee answers. If none of the
@@ -8688,7 +8958,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
       }
     });
     try {
-      console.log('[TRACE_COST_SOURCE_TRUST_RESULTS]', { trustResults });
+      ragVerboseTrace('[TRACE_COST_SOURCE_TRUST_RESULTS]', { trustResults });
     } catch (e) {}
     const anyTrusted = trustResults.some(tr => tr && tr.trusted);
     if (!anyTrusted) {
@@ -8780,7 +9050,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
           }
 
           try {
-            console.log('FINAL_FEE_RESPONSE', {
+            ragVerboseTrace('FINAL_FEE_RESPONSE', {
               type: 'fallback_discount',
               answer: answer && String(answer).substring(0, 800),
               source: 'rag-fee-structured-fallback-discount',
@@ -8825,7 +9095,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
   const answer = buildDeterministicFeeAnswer(feeStruct, queryEntities);
   if (!answer) {
     try {
-      console.log('FINAL_FEE_RESPONSE', {
+      ragVerboseTrace('FINAL_FEE_RESPONSE', {
         type: 'build_answer_failed',
         answer: 'Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.',
         source: 'rag-answer-rejected',
@@ -8846,7 +9116,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
 
   try {
     try {
-      console.log('SELECTED_FEE_RECORD', {
+      ragVerboseTrace('SELECTED_FEE_RECORD', {
         program: feeStruct.program,
         wave: feeStruct.wave,
         registrationFee: feeStruct.registrationFee,
@@ -8855,10 +9125,10 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
       });
     } catch (e) {}
     try {
-      console.log('RAW_FEE_TEXT', { rawChunk: feeStruct.rawChunk || (feeStruct.sourceChunks && feeStruct.sourceChunks[0] && feeStruct.sourceChunks[0].chunk) || null });
+      ragVerboseTrace('RAW_FEE_TEXT', { rawChunkPreview: String(feeStruct.rawChunk || (feeStruct.sourceChunks && feeStruct.sourceChunks[0] && feeStruct.sourceChunks[0].chunk) || '').slice(0, 160) });
     } catch (e) {}
     try {
-      console.log('PARSED_FEE_STRUCTURE', {
+      ragVerboseTrace('PARSED_FEE_STRUCTURE', {
         registrationFee: feeStruct.registrationFee,
         registrationDiscount: feeStruct.registrationDiscount,
         registrationTotal: feeStruct.registrationTotal,
@@ -8868,7 +9138,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
         totalBiayaMasuk: feeStruct.totalBiayaMasuk
       });
     } catch (e) {}
-    console.log('FINAL_FEE_RESPONSE', {
+    ragVerboseTrace('FINAL_FEE_RESPONSE', {
       type: 'structured',
       answer: answer && String(answer).substring(0, 800),
       source: 'rag-fee-structured',
@@ -9084,7 +9354,7 @@ function filterRelevantChunks(question, scored, queryEntities = null) {
       const rank = rankMap.get(s.item && s.item.id) || null;
       const score = typeof s.compositeScore === 'number' ? s.compositeScore : (typeof s.score === 'number' ? s.score : null);
       if (itemProgram && itemProgram !== requestedProgram) {
-        try { console.log('[TRACE_FILTER_REJECT]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'itemProgram_mismatch', itemProgram, requestedProgram, rank, score }); } catch (e) {}
+        try { ragVerboseTrace('[TRACE_FILTER_REJECT]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'itemProgram_mismatch', itemProgram, requestedProgram, rank, score }); } catch (e) {}
         return false;
       }
       if (!itemProgram && !mentionsRequestedProgram) {
@@ -9094,16 +9364,16 @@ function filterRelevantChunks(question, scored, queryEntities = null) {
         // not repeat the program name but belongs to the same file that does.
         const docKey = String((s.item && (s.item.trainingId || s.item.filename)) || '').toLowerCase();
         if (docEvidenceSet.has(docKey)) {
-          try { console.log('[TRACE_FILTER_ALLOW_DOC_MATCH]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'doc_has_program_evidence', requestedProgram, rank, score }); } catch (e) {}
+          try { ragVerboseTrace('[TRACE_FILTER_ALLOW_DOC_MATCH]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'doc_has_program_evidence', requestedProgram, rank, score }); } catch (e) {}
           // allow through
         } else {
-          try { console.log('[TRACE_FILTER_REJECT]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'no_itemProgram_no_mentions', aliases: Array.from(inferChunkProgramAliases(s.item || {}) || []), requestedProgram, rank, score }); } catch (e) {}
+          try { ragVerboseTrace('[TRACE_FILTER_REJECT]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'no_itemProgram_no_mentions', aliases: Array.from(inferChunkProgramAliases(s.item || {}) || []), requestedProgram, rank, score }); } catch (e) {}
           return false;
         }
       }
       if (mentionedPrograms.length > 1 && !mentionedPrograms.every((p) => p === requestedProgram)) return false;
       if (isAdmin && !itemProgram && !mentionsRequestedProgram) {
-        try { console.log('[TRACE_FILTER_REJECT]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'admin_internal_no_program', requestedProgram }); } catch (e) {}
+        try { ragVerboseTrace('[TRACE_FILTER_REJECT]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'admin_internal_no_program', requestedProgram }); } catch (e) {}
         return false;
       }
     }
@@ -9235,7 +9505,7 @@ function applyIntentAwareFilteringAndValidation(question, scoredChunks, userInte
         const docKey = String((chunk && (chunk.trainingId || chunk.filename)) || '').toLowerCase();
         if (requestedProgram && docEvidenceSet.has(docKey)) {
           if (debugCollector && Array.isArray(debugCollector.rejected)) debugCollector.rejected.push({ reason: 'relaxed_relevance_due_to_doc_evidence', intent, chunkId: chunk.id, docKey });
-          try { console.log('[TRACE_INTENT_ALLOW_DOC_EVIDENCE]', { id: chunk.id, filename: chunk.filename, reason: 'doc_has_program_evidence', requestedProgram }); } catch (e) {}
+          try { ragVerboseTrace('[TRACE_INTENT_ALLOW_DOC_EVIDENCE]', { id: chunk.id, filename: chunk.filename, reason: 'doc_has_program_evidence', requestedProgram }); } catch (e) {}
           // treat as relevant and continue
         } else {
           rejected.push({
@@ -9837,7 +10107,7 @@ function tryStructuredEnrollmentDiscountAnswer(question, top) {
   try {
     const regEntries = Array.from(regMap.entries()).map(e => ({ wave: e[0], amount: e[1] }));
     const dppEntries = Array.from(dppMap.entries()).map(e => ({ wave: e[0], amount: e[1] }));
-    console.log('[TRACE_ENROLL_DISCOUNT_MAPS]', { regCount: regMap.size, dppCount: dppMap.size, regEntries, dppEntries, requestedWave });
+    ragVerboseTrace('[TRACE_ENROLL_DISCOUNT_MAPS]', { regCount: regMap.size, dppCount: dppMap.size, regEntries, dppEntries, requestedWave });
   } catch (e) {}
 
   const lines = [];
@@ -9883,7 +10153,7 @@ function tryStructuredEnrollmentDiscountAnswer(question, top) {
   if (lines.length === 0) return null;
 
   try {
-    console.log('[TRACE_ENROLL_DISCOUNT_RESULT]', { requestedWave, resolvedRequestedLabels, linesPreview: lines.slice(0,8) });
+    ragVerboseTrace('[TRACE_ENROLL_DISCOUNT_RESULT]', { requestedWave, resolvedRequestedLabels, linesPreview: lines.slice(0,8) });
   } catch (e) {}
 
   const answer = `Potongan biaya pendaftaran yang tersedia adalah:\n\n${lines.join('\n')}\n\nUntuk informasi lain di luar daftar di atas, silakan konfirmasi ke admin kampus untuk kepastian.`;
@@ -10480,7 +10750,7 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
   const currentQ = extractCurrentUserQuestionText(question);
   const qLower = String(currentQ || '').toLowerCase();
   try {
-    console.log('[TRACE_FEE_BREAKDOWN]', {
+    ragVerboseTrace('[TRACE_FEE_BREAKDOWN]', {
       route: 'tryStructuredFeeBreakdownAnswer',
       question: String(question).substring(0, 140),
       currentQ: String(currentQ).substring(0, 140),
@@ -10787,12 +11057,12 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
       if (exact) return exact;
     } catch (e) {}
 
-    console.log('[TRACE_FEE_BREAKDOWN] no candidates for programKey', programKey, { qProgramLower, qAllLower, conversationContext, topText: topText.substring(0, 100) });
+    ragVerboseTrace('[TRACE_FEE_BREAKDOWN] no candidates for programKey', programKey, { qProgramLower, qAllLower, conversationContext, topText: topText.substring(0, 100) });
     return null;
   }
 
-  console.log('[TRACE_FEE_BREAKDOWN] candidate chunks', candidates.length, { programKey, prefersTop: preferTopContext, currentQuestionLooksGenericCost, topLooksFeeRelated });
-  console.log('[TRACE_FEE_BREAKDOWN] candidate preview', candidates
+  ragVerboseTrace('[TRACE_FEE_BREAKDOWN] candidate chunks', candidates.length, { programKey, prefersTop: preferTopContext, currentQuestionLooksGenericCost, topLooksFeeRelated });
+  ragVerboseTrace('[TRACE_FEE_BREAKDOWN] candidate preview', candidates
     .slice(0, 8)
     .map((c, idx) => ({ idx, preview: String(c || '').replace(/\s+/g, ' ').trim().slice(0, 220) })));
   // De-dupe identical chunk text (chunk overlap can repeat the same table rows).
@@ -10815,8 +11085,8 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
     .split('\n')
     .map(l => String(l || '').trim())
     .filter(Boolean);
-  console.log('[TRACE_FEE_BREAKDOWN] rawLines count', rawLines.length);
-  console.log('[TRACE_FEE_BREAKDOWN] rawLines sample', rawLines.slice(0, 20));
+  ragVerboseTrace('[TRACE_FEE_BREAKDOWN] rawLines count', rawLines.length);
+  ragVerboseTrace('[TRACE_FEE_BREAKDOWN] rawLines sample', rawLines.slice(0, 20));
 
   // Expand OCR-stuck tokens, e.g. "1.Pendaftaran" or "DanaPendidikanPokok14.000.000".
   const expandedLines = [];
@@ -11533,7 +11803,7 @@ async function query(question, topK = 8, options = null) {
     const traceRagDecision = (details) => {
       if (String(process.env.TRACE_RAG_DECISION).toLowerCase() !== 'true') return;
       try {
-        console.log('[TRACE_RAG_DECISION]', {
+        ragVerboseTrace('[TRACE_RAG_DECISION]', {
           timestamp: new Date().toISOString(),
           question: String(question || '').substring(0, 160),
           ...details
@@ -11542,7 +11812,7 @@ async function query(question, topK = 8, options = null) {
     };
 
     try {
-      console.log('[TRACE_RAG_QUERY_ENTITIES]', {
+      ragVerboseTrace('[TRACE_RAG_QUERY_ENTITIES]', {
         queryForRetrieval,
         normalizedUserQ,
         currentUserQ,
@@ -11575,7 +11845,7 @@ async function query(question, topK = 8, options = null) {
       // Broad PMB requests that are NOT asking schedule-specific details should be
       // handled by the deterministic PMB info route so they don't fall through to
       // fee / generic retrieval paths.
-      if (/\b(pmb|penerimaan mahasiswa baru|pendaftaran|registrasi)\b/.test(simpleQLower) && !/\b(gelombang|jadwal|tanggal|kapan|pengumuman)\b/.test(simpleQLower)) {
+      if (/\b(pmb|penerimaan mahasiswa baru|pendaftaran|registrasi)\b/.test(simpleQLower) && !/\b(biaya|harga|dpp|ukt|spp|uang\s+pendaftaran|bayar|potongan|diskon|rincian|gelombang|jadwal|tanggal|kapan|pengumuman)\b/.test(simpleQLower)) {
         const pmb = buildPmbOverviewAnswer();
         return wrapRagResult(cleanAnswerLanguage(pmb), 'rag-pmb-info', 'HIGH', question);
       }
@@ -11587,6 +11857,11 @@ async function query(question, topK = 8, options = null) {
           'Saya belum menemukan detail lengkap tentang bentuk kegiatan, jadwal, bahasa yang tersedia, atau cara mengikutinya. Jadi informasi amannya: fasilitasnya ada, sedangkan detail teknisnya sebaiknya dikonfirmasi ke admin kampus.'
         ].join('\n');
         return wrapRagResult(cleanAnswerLanguage(languageAnswer), 'rag-campus-language-facility', 'HIGH', question);
+      }
+
+      const programProfile = tryStructuredDirectProgramProfileAnswer(question);
+      if (programProfile && programProfile.answer) {
+        return wrapRagResult(cleanAnswerLanguage(programProfile.answer), programProfile.source || 'rag-program-profile', 'HIGH', question);
       }
     } catch (e) {
       /* continue into normal pipeline on detection errors */
@@ -11758,7 +12033,7 @@ async function query(question, topK = 8, options = null) {
     }
 
     try {
-      console.log('[TRACE_FEE_ROUTE]', { route: 'tryStructuredProgramRegistrationFeeAnswer', question, snippet: String(question || '').substring(0, 120) });
+      ragVerboseTrace('[TRACE_FEE_ROUTE]', { route: 'tryStructuredProgramRegistrationFeeAnswer', question, snippet: String(question || '').substring(0, 120) });
       const feeReg = tryStructuredProgramRegistrationFeeAnswer(question, opts);
       if (feeReg && feeReg.answer) {
         return wrapRagResult(cleanAnswerLanguage(feeReg.answer), feeReg.source || 'rag-program-fee-registration', 'HIGH', question);
@@ -13362,6 +13637,7 @@ module.exports = {
   tryStructuredAccreditationAnswer,
   tryStructuredCampusLocationAnswer,
   tryStructuredProgramRecommendationAnswer,
+  tryStructuredDirectProgramProfileAnswer,
   tryStructuredProgramRegistrationFeeAnswer,
   tryStructuredProgramRegistrationMenuAnswer,
   tokenizeForRelevanceGuard

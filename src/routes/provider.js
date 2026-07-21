@@ -2320,8 +2320,7 @@ module.exports = function (provider) {
   function isAdmissionScheduleQuestion(rawText) {
     const t = String(rawText || '').trim().toLowerCase();
     if (!t) return false;
-
-    const hasScheduleWord = /(jadwal|kalender|masa\s+pendaftaran|testing|test\b|pengumuman|registrasi\s+ulang|daftar\s+ulang|deadline|batas\s+waktu|penutupan|sampai\s+kapan)/i.test(t);
+    const hasScheduleWord = /(jadwal|kalender|masa\s+pendaftaran|testing|test\b|pengumuman|registrasi\s+ulang|daftar\s+ulang|deadline|batas\s+waktu|penutupan|sampai\s+kapan|masih\s+buka|masih\s+dibuka|sedang\s+berjalan|sedang\s+aktif|sekarang)/i.test(t);
     const mentionsWave = /\b(gelombang|gel\.?|gbg|khusus|sisipan)\b/i.test(t);
     const mentionsAdmission = /(pmb|pendaftaran|penerimaan\s+mahasiswa\s+baru|mahasiswa\s+baru|registrasi)/i.test(t);
 
@@ -8633,9 +8632,11 @@ module.exports = function (provider) {
             console.log('[TRACE_COST_RESPONSE_ERROR]', { err: e && e.message ? e.message : String(e), preview: String(cleaned || '').slice(0, 240) });
           }
         } catch (e) {}
-        const preflight = evaluateOutboundAnswer(cleaned, text, {
-          source: meta && meta.source ? meta.source : null
-        });
+        const preflight = String(cleaned || '').trim() === 'WELCOME_MENU'
+          ? { answer: cleaned, issues: [], action: 'send', blocked: false, meta: { source: 'welcome_literal_token' } }
+          : evaluateOutboundAnswer(cleaned, text, {
+              source: meta && meta.source ? meta.source : null
+            });
         if (preflight.issues && preflight.issues.length) {
           logger.warn({ chatId: toChatId, issues: preflight.issues, meta: preflight.meta }, '[ProviderRoute] outbound answer preflight adjusted');
         }
@@ -8646,9 +8647,11 @@ module.exports = function (provider) {
         }
       } catch (e) {
         // Fallback: send original decorated content if cleanup fails
-        const preflight = evaluateOutboundAnswer(decorated, text, {
-          source: meta && meta.source ? meta.source : null
-        });
+        const preflight = String(decorated || '').trim() === 'WELCOME_MENU'
+          ? { answer: decorated, issues: [], action: 'send', blocked: false, meta: { source: 'welcome_literal_token' } }
+          : evaluateOutboundAnswer(decorated, text, {
+              source: meta && meta.source ? meta.source : null
+            });
         if (preflight.issues && preflight.issues.length) {
           logger.warn({ chatId: toChatId, issues: preflight.issues, meta: preflight.meta }, '[ProviderRoute] outbound fallback preflight adjusted');
         }
@@ -9758,8 +9761,8 @@ module.exports = function (provider) {
       // show the welcome only for first-time/stale chats, but pending flow data stays intact.
       if (isGreetingRestart && needWelcome && !welcomeAlreadySent) {
         // Reserve welcome flag BEFORE sending to avoid duplicates on quick retries.
+        const currentState = session ? session.state : 'root';
         try {
-          const currentState = session ? session.state : 'root';
           // Re-fetch current session state to preserve any composerTelemetry that may have been
           // set by the intro send earlier in this same request
           const currentSession = await prisma.session.findUnique({ where: { chatId } });
@@ -14164,7 +14167,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
       const hasPendingProgramSelection = !!(sessionData && sessionData.pendingProgramSelection);
       const isPendingProgramSelectionReply = hasPendingProgramSelection && looksLikeProgramSelectionReply(earlyText);
 
-      if (!earlyIsExplicitFee && !earlyExplicitFeeWithoutProgram && !isPendingProgramSelectionReply) {
+      if (!earlyIsExplicitFee && !earlyExplicitFeeWithoutProgram && !isPendingProgramSelectionReply && !isAdmissionScheduleQuestion(earlyText)) {
         const isShortFollowup = isShortAffirmation(earlyText) || isShortNegation(earlyText) || isShortContinueRequest(earlyText);
         if (isShortFollowup) {
           logger.info({ chatId, earlyText }, '[Provider] skipping early RAG for short follow-up/ack');
@@ -14735,7 +14738,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           // If the inbound text explicitly looks like a fee/cost question,
           // skip adding the schedule overview candidate so downstream
           // fee fast-path / RAG post-process can produce a fee-structured reply.
-          const looksLikeFeeForSched = /\b(biaya|rincian|pendaftaran|dpp|ukt|per\s*semester|potongan|diskon|total\s+biaya)\b/i.test(String(text || '')) ||
+          const looksLikeFeeForSched = /\b(biaya|rincian|dpp|ukt|per\s*semester|potongan|diskon|total\s+biaya)\b/i.test(String(text || '')) ||
             (typeof parseFeeDetailChoice === 'function' && parseFeeDetailChoice(String(text || '')));
 
           if (!looksLikeFeeForSched) {
