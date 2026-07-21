@@ -75,6 +75,8 @@ function mapProviderIntentToFormatter(intent) {
   if (lowered === 'rag-pmb-info') return 'pmb';
   if (lowered === 'rag-program-profile') return 'program_definition';
   if (lowered === 'rag-fee-structured') return 'biaya';
+  if (/\b(ukm|ormawa|kegiatan[_-]?mahasiswa)\b/i.test(lowered)) return 'ukm';
+  if (/\b(dual[_-]?degree|double[_-]?degree)\b/i.test(lowered)) return 'international_double_degree';
   if (/\b(campus[_-]?support|career[_-]?center|linked[_-]?in|linkedin|gccp|bccp|language[_-]?learning|softskill|student[_-]?exchange)\b/i.test(lowered)) {
     return 'campus_support';
   }
@@ -746,6 +748,7 @@ function detectIntentFromQuery(userQuery) {
 
   const semanticPatterns = [
     { intent: 'campus_support', regex: /\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/ },
+    { intent: 'ukm', regex: /\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|komunitas|athena esports|esport|esports|musik|futsal|basket|teater biner|vos)\b/ },
     { intent: 'international_double_degree', regex: /\b(double degree|double-degree|double gelar|dual degree|program internasional|kelas internasional|exchange semester|kuliah di luar negeri)\b/ },
     { intent: 'beasiswa', regex: /\b(beasiswa|scholarship|grant|bantuan pendidikan|kip|1k1s|prestasi|yayasan|kemitraan|kurang mampu|tidak mampu)\b/ },
     { intent: 'program_definition', regex: /\b(apa itu|apa sih|definisi|arti|penjelasan tentang|jelaskan tentang)\b/ },
@@ -755,7 +758,6 @@ function detectIntentFromQuery(userQuery) {
     { intent: 'lokasi', regex: /\b(lokasi|alamat|berlokasi|letak|cabang|kampus)\b/ },
     { intent: 'jadwal_pendaftaran', regex: /\b(jadwal|gelombang|deadline|tanggal|dibuka|tutup)\b/ },
     { intent: 'perbandingan_prodi', regex: /\\b(bedanya|perbedaan|versus|vs|beda antara|dibanding|dibandingkan|lebih baik|mana (?:yang )?lebih baik|lebih cocok|lebih unggul)\\b/ },
-    { intent: 'ukm', regex: /\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|komunitas|athena esports|esport|esports|musik|futsal|basket|teater biner|vos)\b/ },
     { intent: 'pendaftaran', regex: /\b(pendaftaran|daftar|seleksi)\b/ },
     { intent: 'biaya', regex: /\b(biaya|cicilan|dpp|ukt|fee|bayar|harga)\b/ }
   ];

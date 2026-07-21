@@ -16,6 +16,18 @@ describe('WhatsApp reply formatter', () => {
     expect(result).not.toContain('Saya memahami');
   });
 
+  test('classifies UKM definition queries as ukm intent', () => {
+    expect(detectIntentFromAnswer('', 'apa itu ukm ksl?')).toBe('ukm');
+
+    const result = buildHumanizedWhatsappReply({
+      mainAnswer: 'UKM KSL adalah unit kegiatan mahasiswa di ITB STIKOM Bali.',
+      userQuery: 'apa itu ukm ksl?',
+      intent: 'semantic-rag-ukm-list'
+    });
+
+    expect(result).toContain('UKM/Ormawa');
+    expect(result).not.toMatch(/Program Studi yang Kakak tanyakan|Program Studi KSL/i);
+  });
   test('classifies fee+prodi queries as biaya intent', () => {
     expect(detectIntentFromAnswer('', 'berapa biaya prodi TI gelombang 3A')).toBe('biaya');
     expect(detectIntentFromAnswer('', 'berapa biaya prodi Sistem Informasi gelombang 3A')).toBe('biaya');

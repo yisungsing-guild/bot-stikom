@@ -606,13 +606,15 @@ describe('semanticRagEngine', () => {
     expect(international.answer).toMatch(/Ya, ada program Double Degree internasional/i);
     expect(international.answer).toMatch(/DNUI/i);
     expect(international.answer).toMatch(/HELP/i);
+    expect(international.answer).not.toMatch(/Double Degree tambahan|UTB - Universitas Teknologi Bandung/i);
 
     const national = await querySemanticRag('Apa ada program double degree nasional?');
     expect(national.success).toBe(true);
     expect(national.source).toBe('semantic-rag-dual-degree');
     expect(national.answer).toMatch(/Ya, ada program Double Degree nasional/i);
     expect(national.answer).toMatch(/UTB/i);
-  });
+    expect(national.answer).not.toMatch(/Double Degree tambahan|DNUI|HELP University/i);
+  }, 15000);
 
   test('answers UTB double degree major specifically', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');

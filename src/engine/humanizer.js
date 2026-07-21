@@ -74,8 +74,17 @@ function buildProgramDefinitionConfirmation(userQuery, context) {
   return `Baik Kak, berikut penjelasan mengenai Program Studi yang Kakak tanyakan.`;
 }
 
-function buildInternationalDoubleDegreeConfirmation(userQuery, context) {
-  return `Baik Kak, berikut informasi mengenai program Double Degree Internasional yang tersedia di ITB STIKOM Bali.`;
+function buildInternationalDoubleDegreeConfirmation(userQuery, context = {}) {
+  const text = `${String(userQuery || '')}\n${String(context.mainAnswer || context.answer || '')}`.toLowerCase();
+  const asksNational = /\b(nasional|national|utb|universitas\s+teknologi\s+bandung)\b/i.test(text);
+  const asksInternational = /\b(internasional|international|luar\s+negeri|dnui|dalian\s+neusoft|help\s+university|china|malaysia)\b/i.test(text);
+  if (asksNational && !asksInternational) {
+    return `Baik Kak, berikut informasi mengenai program Double Degree Nasional yang tersedia di ITB STIKOM Bali.`;
+  }
+  if (asksInternational && !asksNational) {
+    return `Baik Kak, berikut informasi mengenai program Double Degree Internasional yang tersedia di ITB STIKOM Bali.`;
+  }
+  return `Baik Kak, berikut informasi mengenai program Double Degree yang tersedia di ITB STIKOM Bali.`;
 }
 
 function buildProgramStudyConfirmation(userQuery, context) {
@@ -543,7 +552,7 @@ function hasLongListOrComparison(text) {
 
 function shouldAddMiniSummary(text, intent = 'general', userQuery = '') {
   const normalizedIntent = String(intent || '').toLowerCase();
-  if (['prospek_kerja', 'perbandingan_prodi', 'campus_support'].includes(normalizedIntent)) return false;
+  if (['prospek_kerja', 'perbandingan_prodi', 'campus_support', 'international_double_degree'].includes(normalizedIntent)) return false;
   if (hasLongListOrComparison(text)) return false;
   if (countAnswerWords(text) > 120) return false;
   return true;
@@ -983,8 +992,10 @@ function applyVirtualAssistantPersona(text) {
   
   // 4. Make language softer
   output = output.replace(/Mohon/gi, 'Tolong');
-  output = output.replace(/\bJika\b/gi, 'Kalau');
-  output = output.replace(/\bApabila\b/gi, 'Kalau');
+  output = output.replace(/\bJika\b/g, 'Kalau');
+  output = output.replace(/\bjika\b/g, 'kalau');
+  output = output.replace(/\bApabila\b/g, 'Kalau');
+  output = output.replace(/\bapabila\b/g, 'kalau');
   
   // 5. Remove excessive formality
   output = output.replace(/Dengan hormat,?/gi, '');

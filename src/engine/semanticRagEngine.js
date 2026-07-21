@@ -1028,6 +1028,70 @@ function buildSemanticRoutingQuestions(question, rewrite) {
     current
   ], 8);
 }
+function extractKeywordRetrievalTerms(searchQueries) {
+  const stopwords = new Set([
+    'apa', 'apakah', 'bagaimana', 'gimana', 'kalau', 'terkait', 'tentang', 'untuk',
+    'yang', 'dengan', 'dalam', 'oleh', 'dari', 'itu', 'ini', 'kak', 'kakak',
+    'saya', 'aku', 'mau', 'ingin', 'menanyakan', 'bertanya', 'baik', 'oke',
+    'punya', 'mempunyai', 'ada', 'saja', 'admin', 'jelaskan', 'detail', 'info',
+    'informasi', 'program', 'kegiatan', 'profil', 'profile'
+  ]);
+  const phrases = [];
+  const tokens = [];
+  for (const query of Array.isArray(searchQueries) ? searchQueries : []) {
+    const normalized = normalizeCacheText(query);
+    if (!normalized) continue;
+    if (normalized.length >= 2 && !phrases.includes(normalized)) phrases.push(normalized);
+    for (const token of normalized.split(/\s+/).filter(Boolean)) {
+      const isAcronymLike = /^[a-z0-9]{2,5}$/i.test(token);
+      if ((token.length >= 4 || isAcronymLike) && !stopwords.has(token) && !tokens.includes(token)) tokens.push(token);
+    }
+  }
+  return { phrases, tokens };
+}
+
+function scoreKeywordRetrievalCandidates(index, searchQueries, limit) {
+  const { phrases, tokens } = extractKeywordRetrievalTerms(searchQueries);
+  if ((!phrases.length && !tokens.length) || !Array.isArray(index) || !index.length) return [];
+
+  const scored = [];
+  for (const item of index) {
+    const chunk = String(item && item.chunk ? item.chunk : '').trim();
+    if (!chunk) continue;
+    const titleText = normalizeCacheText(`${item.filename || ''} ${item.sourceFile || ''} ${item.title || ''} ${item.sectionTitle || ''}`);
+    const bodyText = normalizeCacheText(chunk);
+    const combined = `${titleText} ${bodyText}`.trim();
+    if (!combined) continue;
+
+    let score = 0;
+    for (const phrase of phrases) {
+      if (phrase.length >= 2 && titleText.includes(phrase)) score += 0.55;
+      else if (phrase.length >= 2 && bodyText.includes(phrase)) score += 0.38;
+    }
+
+    let titleHits = 0;
+    let bodyHits = 0;
+    for (const token of tokens) {
+      const inTitle = titleText.includes(token);
+      const inBody = bodyText.includes(token);
+      if (inTitle) titleHits += 1;
+      if (inBody) bodyHits += 1;
+      if (inTitle) score += token.length <= 5 ? 0.24 : 0.18;
+      else if (inBody) score += token.length <= 5 ? 0.18 : 0.12;
+    }
+
+    const requiredHits = tokens.length <= 2 ? Math.max(1, tokens.length) : Math.ceil(tokens.length * 0.5);
+    if (!score || (tokens.length && (titleHits + bodyHits) < requiredHits && !phrases.some((phrase) => phrase.length >= 4 && combined.includes(phrase)))) continue;
+
+    if (item.fromTrainingDb) score += 0.08;
+    if (item.updatedAt || item.createdAt) score += 0.03;
+    scored.push({ item, score: Math.min(0.92, score), retrievalMode: 'keyword' });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, Math.max(1, limit || 24));
+}
+
 async function retrieveSemanticContexts(searchQueries, options = {}) {
   const index = Array.isArray(options.semanticIndexOverride) ? options.semanticIndexOverride : getCachedSemanticIndex();
   const topK = Number.isFinite(Number(options.topK)) ? Math.max(1, Number(options.topK)) : parseInt(process.env.SEMANTIC_RAG_TOP_K || process.env.RAG_TOP_K || '8', 10);
@@ -1046,19 +1110,33 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     }
   }
 
-  if (!queryEmbeddings.length) return { contexts: [], topScore: 0, indexSize: index.length };
-
   const scored = [];
-  for (const item of index) {
-    if (!item || !String(item.chunk || '').trim()) continue;
-    const emb = Array.isArray(item.embedding) ? item.embedding : null;
-    if (!emb) continue;
-    let bestScore = 0;
-    for (const qEmb of queryEmbeddings) {
-      bestScore = Math.max(bestScore, cosineSimilarity(qEmb, emb));
+  if (queryEmbeddings.length) {
+    for (const item of index) {
+      if (!item || !String(item.chunk || '').trim()) continue;
+      const emb = Array.isArray(item.embedding) ? item.embedding : null;
+      if (!emb) continue;
+      let bestScore = 0;
+      for (const qEmb of queryEmbeddings) {
+        bestScore = Math.max(bestScore, cosineSimilarity(qEmb, emb));
+      }
+      if (bestScore > 0) {
+        scored.push({ item, score: bestScore, retrievalMode: 'semantic' });
+      }
     }
-    if (bestScore > 0) {
-      scored.push({ item, score: bestScore });
+  }
+
+  for (const candidate of scoreKeywordRetrievalCandidates(index, queries, maxCandidates)) {
+    const key = candidate.item && (candidate.item.id || `${candidate.item.filename || candidate.item.sourceFile || ''}:${String(candidate.item.chunk || '').slice(0, 120)}`);
+    const existing = scored.find((entry) => {
+      const existingKey = entry.item && (entry.item.id || `${entry.item.filename || entry.item.sourceFile || ''}:${String(entry.item.chunk || '').slice(0, 120)}`);
+      return key && existingKey === key;
+    });
+    if (existing) {
+      existing.score = Math.max(existing.score, candidate.score);
+      existing.keywordScore = candidate.score;
+    } else {
+      scored.push(candidate);
     }
   }
 
@@ -1070,6 +1148,10 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     filename: s.item.filename || s.item.sourceFile || null,
     trainingId: s.item.trainingId || null,
     divisionKey: s.item.divisionKey || null,
+    source: s.item.source || null,
+    sourceFile: s.item.sourceFile || s.item.filename || null,
+    fromTrainingDb: Boolean(s.item.fromTrainingDb),
+    retrievalMode: s.retrievalMode || (s.keywordScore ? 'semantic+keyword' : 'semantic'),
     metadata: s.item.metadata || null
   }));
 
@@ -1079,7 +1161,6 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     indexSize: index.length
   };
 }
-
 function buildContextText(contexts) {
   const maxChars = parseInt(process.env.SEMANTIC_RAG_CONTEXT_MAX_CHARS || '9000', 10);
   return buildSelectedEvidenceContext(contexts, maxChars);
@@ -2239,6 +2320,10 @@ function extractTrainingSpecificTarget(question) {
     const m = /\bprogram\s+(.{3,90}?)(?:,?\s+(?:itu|ini))?\s+(?:program\s+)?apa\b/i.exec(raw);
     if (m) target = m[1];
   }
+  if (!target) {
+    const m = /^(.{2,90}?)\s+(?:itu\s+apa|ini\s+apa|apa|kegiatan(?:nya)?\s+apa|aktivitas(?:nya)?\s+apa|program\s+kerja(?:nya)?\s+apa|proker(?:nya)?\s+apa)\??$/i.exec(raw);
+    if (m) target = m[1];
+  }
   if (!target) return '';
 
   target = target
@@ -2251,10 +2336,11 @@ function extractTrainingSpecificTarget(question) {
   const tokens = normalized.split(/\s+/).filter(Boolean);
   const useful = tokens.filter((token) => !/^(yang|dan|atau|dari|untuk|dengan|pada|kampus|stikom|bali|itb|mempunyai|punya|belajar|bahasa|kemampuan|meningkatkan|mahasiswa|terkait|dilakukan|pengembangan)$/.test(token));
   const distinctive = useful.filter((token) => token.length >= 4);
+  const acronymLike = useful.filter((token) => /^[a-z0-9]{2,5}$/i.test(token));
   const knownEntity = findCampusSupportEntity(normalized);
-  if (!knownEntity && distinctive.length < 2) return '';
+  if (!knownEntity && distinctive.length < 2 && !acronymLike.length) return '';
   if (!knownEntity && /\b(mempunyai|punya|belajar\s+bahasa|kemampuan\s+bahasa|meningkatkan|softskill|career\s*center)\b/i.test(normalized)) return '';
-  if (!distinctive.length && !knownEntity) return '';
+  if (!distinctive.length && !acronymLike.length && !knownEntity) return '';
   return knownEntity ? normalizeFacilityTerm(knownEntity.label) : useful.join(' ');
 }
 
@@ -2842,6 +2928,7 @@ function pushCompoundTask(tasks, task) {
   if (!task || !task.key) return;
   const dedupeFamily = task.family || String(task.key).split(':')[0];
   const familyDedupeKeys = new Set([
+    'double_degree',
     'fee',
     'schedule',
     'career',
@@ -2857,6 +2944,33 @@ function pushCompoundTask(tasks, task) {
   tasks.push(task);
 }
 
+function buildDoubleDegreeCompoundTask(query) {
+  const q = String(query || '').toLowerCase();
+  const asksInternational = /\b(internasional|international|luar\s+negeri|dnui|dalian\s+neusoft|help\s+university|help|china|malaysia)\b/i.test(q);
+  const asksNational = /\b(nasional|national|utb|universitas\s+teknologi\s+bandung|bandung)\b/i.test(q);
+  const wantsList = /\b(apa\s+saja|ada\s+apa\s+saja|pilihan|daftar|tersedia)\b/i.test(q);
+  const normalizedQuery = asksInternational && !asksNational
+    ? 'Double Degree internasional'
+    : asksNational && !asksInternational
+      ? 'Double Degree nasional'
+      : wantsList
+        ? 'apa saja program double degree di ITB STIKOM Bali?'
+        : 'apa itu double degree di ITB STIKOM Bali?';
+
+  return {
+    key: asksInternational && !asksNational
+      ? 'double_degree_international'
+      : asksNational && !asksInternational
+        ? 'double_degree_national'
+        : wantsList
+          ? 'double_degree_list'
+          : 'double_degree_definition',
+    family: 'double_degree',
+    label: 'Double Degree',
+    source: 'semantic-rag-dual-degree',
+    query: normalizedQuery
+  };
+}
 function isPmbScheduleQuestion(text) {
   const q = String(text || '').toLowerCase();
   if (!/\b(jadwal|kapan|tanggal|periode|gelombang|masih\s+dibuka|dibuka|pendaftaran\s+sekarang|bulan\s+(?:ini|depan))\b/i.test(q)) return false;
@@ -2885,13 +2999,7 @@ function detectCompoundTaskFromPart(part, wholeQuestion) {
   }
 
   if (hasDoubleDegree) {
-    const wantsList = /\b(apa\s+saja|ada\s+apa\s+saja|pilihan|daftar|tersedia|program)\b/i.test(q);
-    return {
-      key: wantsList ? 'double_degree_list' : 'double_degree_definition',
-      label: 'Double Degree',
-      source: 'semantic-rag-dual-degree',
-      query: wantsList ? 'apa saja program double degree di ITB STIKOM Bali?' : 'apa itu double degree di ITB STIKOM Bali?'
-    };
+    return buildDoubleDegreeCompoundTask(query);
   }
 
   if (/\b(fasilitas|layanan|sarana|prasarana|yang\s+ada\s+di\s+kampus)\b/i.test(q)) {
@@ -2953,11 +3061,7 @@ function detectCompoundTasks(question) {
   }
 
   if (/\b(double\s*degree|dual\s*degree|dd)\b/i.test(q)) {
-    if (/\b(apa\s+saja|ada\s+apa\s+saja|pilihan|daftar|tersedia)\b/i.test(q)) {
-      pushCompoundTask(tasks, { key: 'double_degree_list', label: 'Double Degree', source: 'semantic-rag-dual-degree', query: 'apa saja program double degree di ITB STIKOM Bali?' });
-    } else {
-      pushCompoundTask(tasks, { key: 'double_degree_definition', label: 'Double Degree', source: 'semantic-rag-dual-degree', query: 'apa itu double degree di ITB STIKOM Bali?' });
-    }
+    pushCompoundTask(tasks, buildDoubleDegreeCompoundTask(raw));
   }
   if (/\b(fasilitas|layanan|sarana|prasarana|yang\s+ada\s+di\s+kampus)\b/i.test(q)) {
     pushCompoundTask(tasks, { key: 'campus_facility', label: 'Fasilitas kampus', source: 'semantic-rag-campus-facility', query: 'fasilitas kampus apa saja?' });
@@ -4403,8 +4507,6 @@ const SOURCES_NEEDING_INDEX = new Set([
   'semantic-rag-contextual-fee',
   'semantic-rag-fee-comparison',
   'semantic-rag-campus-support-entity',
-  'semantic-rag-ukm-list',
-  'semantic-rag-training-specific',
   'semantic-rag-campus-facility'
 ]);
 const PRE_AI_HANDLER_SOURCES = new Set([
@@ -4415,8 +4517,6 @@ const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-campus-support-entity',
   'semantic-rag-linkedin-career-insufficient-data',
   'semantic-rag-unsupported-program',
-  'semantic-rag-ukm-list',
-  'semantic-rag-training-specific',
   'semantic-rag-campus-facility'
 ]);
 
