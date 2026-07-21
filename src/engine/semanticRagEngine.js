@@ -37,6 +37,95 @@ function envFlag(name, defaultValue = false) {
 const semanticResultCache = new Map();
 const semanticEmbeddingCache = new Map();
 let semanticIndexCache = null; // { ts, index }
+let semanticTrainingDbIndexCache = null; // { ts, index }
+
+function getTrainingDbIndexCacheMs() {
+  const ms = parseInt(process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS || '15000', 10);
+  return Number.isFinite(ms) && ms > 0 ? ms : 15000;
+}
+
+function normalizeTrainingDbContent(text) {
+  return String(text || '').replace(/\r\n/g, '\n').trim();
+}
+
+async function loadActiveTrainingDbIndex() {
+  if (envFlag('SEMANTIC_RAG_DB_CONTENT_FALLBACK', true) === false) return [];
+  const ttlMs = getTrainingDbIndexCacheMs();
+  const now = Date.now();
+  if (ttlMs > 0 && semanticTrainingDbIndexCache && (now - semanticTrainingDbIndexCache.ts) <= ttlMs) {
+    return semanticTrainingDbIndexCache.index;
+  }
+
+  try {
+    const prisma = require('../db');
+    if (!prisma || !prisma.trainingData || typeof prisma.trainingData.findMany !== 'function') return [];
+    const rows = await prisma.trainingData.findMany({
+      where: { active: true },
+      orderBy: { createdAt: 'desc' },
+      take: Math.max(1, parseInt(process.env.SEMANTIC_RAG_DB_CONTENT_MAX_ROWS || '500', 10) || 500),
+      select: {
+        id: true,
+        filename: true,
+        content: true,
+        source: true,
+        divisionKey: true,
+        ragIngestStatus: true,
+        ragChunkCount: true,
+        createdAt: true,
+        updatedAt: true,
+        uploadedById: true
+      }
+    });
+
+    const out = [];
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const content = normalizeTrainingDbContent(row && row.content);
+      if (!content) continue;
+      const chunks = typeof ragEngine.chunkText === 'function' ? ragEngine.chunkText(content, 900, 150) : [content];
+      chunks.forEach((chunk, idx) => {
+        const text = String(chunk || '').trim();
+        if (!hasReadableSemanticContent(text)) return;
+        out.push({
+          id: `db-training:${row.id}:${idx}`,
+          trainingId: row.id,
+          chunk: text,
+          filename: row.filename || null,
+          sourceFile: row.filename || null,
+          source: row.source || 'training-db',
+          divisionKey: row.divisionKey || null,
+          uploadedById: row.uploadedById || null,
+          createdAt: row.createdAt || null,
+          updatedAt: row.updatedAt || null,
+          ragIngestStatus: row.ragIngestStatus || null,
+          ragChunkCount: row.ragChunkCount || null,
+          fromTrainingDb: true
+        });
+      });
+    }
+
+    if (ttlMs > 0) semanticTrainingDbIndexCache = { ts: now, index: out };
+    return out;
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to load active TrainingData content fallback');
+    return [];
+  }
+}
+
+async function getRuntimeSemanticIndex() {
+  const fileIndex = getCachedSemanticIndex();
+  const dbIndex = await loadActiveTrainingDbIndex();
+  if (!Array.isArray(dbIndex) || !dbIndex.length) return fileIndex;
+  const seenTrainingIds = new Set((Array.isArray(fileIndex) ? fileIndex : [])
+    .map((item) => item && item.trainingId ? String(item.trainingId) : '')
+    .filter(Boolean));
+  const merged = Array.isArray(fileIndex) ? fileIndex.slice() : [];
+  for (const item of dbIndex) {
+    const tid = item && item.trainingId ? String(item.trainingId) : '';
+    if (tid && seenTrainingIds.has(tid)) continue;
+    merged.push(item);
+  }
+  return merged;
+}
 
 function getCacheNumber(name, defaultValue) {
   const raw = Number(process.env[name]);
@@ -940,7 +1029,7 @@ function buildSemanticRoutingQuestions(question, rewrite) {
   ], 8);
 }
 async function retrieveSemanticContexts(searchQueries, options = {}) {
-  const index = getCachedSemanticIndex();
+  const index = Array.isArray(options.semanticIndexOverride) ? options.semanticIndexOverride : getCachedSemanticIndex();
   const topK = Number.isFinite(Number(options.topK)) ? Math.max(1, Number(options.topK)) : parseInt(process.env.SEMANTIC_RAG_TOP_K || process.env.RAG_TOP_K || '8', 10);
   const maxCandidates = Math.max(topK, parseInt(process.env.SEMANTIC_RAG_CANDIDATES || '24', 10));
   const queries = uniqueList(searchQueries, 4);
@@ -2283,8 +2372,6 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
 }
 
 function tryTrainingSpecificAnswer(question, indexForQuery) {
-  const q = String(question || '').toLowerCase();
-  if (/\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa)\b/i.test(q)) return null;
   return buildTrainingSpecificAnswerFromIndex(question, indexForQuery);
 }
 
@@ -3158,6 +3245,69 @@ function loadUkmList() {
   return null;
 }
 
+function buildSpecificUkmProfileAnswer(ukmName, indexForQuery) {
+  const name = String(ukmName || '').trim();
+  if (!name || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
+
+  const escapedName = name.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const nameRe = new RegExp(`\\b${escapedName}\\b`, 'i');
+  const profileRe = /\b(profil|profile|tentang|deskripsi|visi|misi|tujuan|kegiatan|aktivitas|program\s+kerja|sejarah)\b/i;
+  const ukmRe = /\b(ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i;
+
+  const candidates = indexForQuery
+    .map((item) => {
+      const chunk = String(item && item.chunk ? item.chunk : item && item.text ? item.text : '').trim();
+      if (!chunk || !nameRe.test(chunk)) return null;
+
+      const filename = String((item && (item.filename || item.sourceFile)) || '');
+      const sectionTitle = String((item && item.sectionTitle) || '');
+      const hay = `${filename}\n${sectionTitle}\n${chunk}`;
+      let score = 0;
+      if (nameRe.test(filename)) score += 4;
+      if (nameRe.test(sectionTitle)) score += 3;
+      if (/\bprofil(?:e)?\s+ukm\b/i.test(hay)) score += 4;
+      if (profileRe.test(chunk)) score += 2;
+      if (ukmRe.test(chunk)) score += 1;
+      if (chunk.replace(/[^\p{L}\p{N}]/gu, '').length >= 80) score += 1;
+      return { chunk, filename, score };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score);
+
+  const best = candidates.find((item) => item.score >= 4);
+  if (!best) return null;
+
+  const lines = best.chunk
+    .split(/\r?\n+/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .filter((line) => !/^(lampiran|surat keputusan|nomor|email|www\.|https?:\/\/)/i.test(line));
+
+  const useful = [];
+  for (const line of lines) {
+    if (!nameRe.test(line) && !profileRe.test(line) && useful.length > 0) {
+      useful.push(line);
+    } else if (nameRe.test(line) || profileRe.test(line) || ukmRe.test(line)) {
+      useful.push(line);
+    }
+    if (useful.join(' ').length >= 420 || useful.length >= 5) break;
+  }
+
+  const snippet = (useful.length ? useful : lines).join('\n').trim();
+  if (!snippet || snippet.replace(/[^\p{L}\p{N}]/gu, '').length < 60) return null;
+
+  return {
+    answer: [
+      `Berikut informasi UKM ${name} dari data training:`,
+      '',
+      snippet,
+      '',
+      'Untuk jadwal kegiatan, pendaftaran anggota, atau kontak pengurus terbaru, kakak bisa konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.'
+    ].join('\n'),
+    source: 'semantic-rag-ukm-specific-profile',
+    filename: best.filename || undefined
+  };
+}
 function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
@@ -3200,6 +3350,10 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
     || /\b(apa\s+itu|itu\s+apa|apa\s+ya|maksud(?:nya)?|kepanjangan|singkatan|kegiatan(?:nya)?|aktivitas(?:nya)?|program\s+kerja|proker|jadwal|latihan|tujuan|detail|tentang)\b/i.test(q)
   );
   if (asksSpecificUkmDetail) {
+    const profileIndex = Array.isArray(_indexForQuery) && _indexForQuery.length ? _indexForQuery : getCachedSemanticIndex();
+    const profileAnswer = buildSpecificUkmProfileAnswer(mentionedUkm, profileIndex);
+    if (profileAnswer) return profileAnswer;
+
     return {
       answer: [
         `Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM ${mentionedUkm}.`,
@@ -4219,8 +4373,8 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-registration-info', tryRegistrationHowAnswer],
   ['semantic-rag-schedule-window', tryScheduleWindowAnswer],
   ['semantic-rag-linkedin-career-insufficient-data', tryLinkedInCareerCenterNoDataAnswer],
-  ['semantic-rag-ukm-list', tryUkmAnswer],
   ['semantic-rag-training-specific', tryTrainingSpecificAnswer],
+  ['semantic-rag-ukm-list', tryUkmAnswer],
   ['semantic-rag-campus-facility', tryCampusFacilityAnswer],
   ['semantic-rag-campus-location', tryCampusLocationAnswer],
   ['semantic-rag-registration-fee', tryRegistrationFeeAnswer],
@@ -4509,7 +4663,7 @@ function runDeterministicHandlers(originalQuestion, handlers, options = {}, vari
   let handlerIndex = null;
   for (const [source, handler] of Array.isArray(handlers) ? handlers : []) {
     for (const variant of questions) {
-      const indexArg = SOURCES_NEEDING_INDEX.has(source) ? (handlerIndex || (handlerIndex = getCachedSemanticIndex())) : undefined;
+      const indexArg = SOURCES_NEEDING_INDEX.has(source) ? (handlerIndex || (handlerIndex = (Array.isArray(options.semanticIndexOverride) ? options.semanticIndexOverride : getCachedSemanticIndex()))) : undefined;
       const result = handler(variant, indexArg, { ...options, originalQuestion });
       if (result && result.answer) {
         if (!isCompatibleDeterministicSource(originalQuestion, source, result)) continue;
@@ -4569,9 +4723,9 @@ function isUnsafeDeterministicFallback(question, result, rewrite = null) {
   return false;
 }
 
-function runVettedDeterministicFallback(question, options, rewrite, routeStage) {
+function runVettedDeterministicFallback(question, runtimeOptions, rewrite, routeStage) {
   const generalFallbackHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => !PRE_AI_HANDLER_SOURCES.has(source));
-  const result = runDeterministicHandlers(question, generalFallbackHandlers, { ...options, semanticRewrite: rewrite }, buildSemanticRoutingQuestions(question, rewrite), {
+  const result = runDeterministicHandlers(question, generalFallbackHandlers, { ...runtimeOptions, semanticRewrite: rewrite }, buildSemanticRoutingQuestions(question, rewrite), {
     routeStage,
     rewrite
   });
@@ -4600,10 +4754,13 @@ async function querySemanticRag(question, options = {}) {
     return response;
   }
 
+  const runtimeSemanticIndex = await getRuntimeSemanticIndex();
+  const runtimeOptions = { ...options, semanticIndexOverride: runtimeSemanticIndex };
+
   const directCompoundQuestion = /double degree/i.test(String(question || '')) && /fasilitas/i.test(String(question || ''))
     ? 'ada double degree apa saja dan fasilitas apa saja yang ada di kampus?'
     : question;
-  const directMixedResult = tryMixedIntentQuestion(question, getCachedSemanticIndex(), options);
+  const directMixedResult = tryMixedIntentQuestion(question, runtimeSemanticIndex, runtimeOptions);
   if (directMixedResult && directMixedResult.answer) {
     const response = buildDeterministicResponse(question, 'semantic-rag-mixed-intent', directMixedResult, { routeStage: 'pre-handler-mixed' }, options);
     setCachedSemanticResult(resultCacheKey, response);
@@ -4630,7 +4787,7 @@ async function querySemanticRag(question, options = {}) {
         return response;
       }
     }
-    const feePreResult = runDeterministicHandlers(question, feePreHandlers, options, feeQuestions, { routeStage: 'pre-handler-fee-before-compound' });
+    const feePreResult = runDeterministicHandlers(question, feePreHandlers, runtimeOptions, feeQuestions, { routeStage: 'pre-handler-fee-before-compound' });
     if (feePreResult && feePreResult.answer) {
       setCachedSemanticResult(resultCacheKey, feePreResult);
       return feePreResult;
@@ -4665,7 +4822,7 @@ async function querySemanticRag(question, options = {}) {
   }
 
 
-  const directCompoundResult = tryCompoundCampusQuestion(directCompoundQuestion, getCachedSemanticIndex(), options);
+  const directCompoundResult = tryCompoundCampusQuestion(directCompoundQuestion, runtimeSemanticIndex, runtimeOptions);
   if (directCompoundResult && directCompoundResult.answer) {
     const response = buildDeterministicResponse(question, 'semantic-rag-compound-question', directCompoundResult, { routeStage: 'pre-handler-compound' }, options);
     setCachedSemanticResult(resultCacheKey, response);
@@ -4674,7 +4831,7 @@ async function querySemanticRag(question, options = {}) {
 
   const client = getClient();
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
-  let preAiResult = runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });
+  let preAiResult = runDeterministicHandlers(question, preAiHandlers, runtimeOptions, [question], { routeStage: 'pre-ai' });
   if (preAiResult) {
     preAiResult = await polishEnglishDeterministicAnswer(client, question, preAiResult, options);
     setCachedSemanticResult(resultCacheKey, preAiResult);
@@ -4682,7 +4839,7 @@ async function querySemanticRag(question, options = {}) {
   }
 
   if (!client) {
-    const fallbackResult = runDeterministicHandlers(question, DETERMINISTIC_HANDLERS, options, [question], { routeStage: 'fallback-no-ai' });
+    const fallbackResult = runDeterministicHandlers(question, DETERMINISTIC_HANDLERS, runtimeOptions, [question], { routeStage: 'fallback-no-ai' });
     if (fallbackResult) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
       return fallbackResult;
@@ -4759,7 +4916,7 @@ async function querySemanticRag(question, options = {}) {
     const semanticSources = getSemanticHandlerSources(rewrite.intent);
     const semanticHandlers = handlersForSources(semanticSources);
     const semanticQuestions = buildSemanticRoutingQuestions(question, rewrite);
-    const result = runDeterministicHandlers(question, semanticHandlers, { ...options, semanticRewrite: rewrite }, semanticQuestions, {
+    const result = runDeterministicHandlers(question, semanticHandlers, { ...runtimeOptions, semanticRewrite: rewrite }, semanticQuestions, {
       routeStage,
       rewrite,
       trainingFirst: preferTrainingFirst || undefined
@@ -4777,7 +4934,7 @@ async function querySemanticRag(question, options = {}) {
   }
 
 
-  const rawRetrieved = await retrieveSemanticContexts(rewrite.searchQueries, { topK: options.topK });
+  const rawRetrieved = await retrieveSemanticContexts(rewrite.searchQueries, { topK: options.topK, semanticIndexOverride: runtimeSemanticIndex });
   const filteredContexts = filterSemanticContextsForQuestion(question, rawRetrieved.contexts).slice(0, Number.isFinite(Number(options.topK)) ? Math.max(1, Number(options.topK)) : parseInt(process.env.SEMANTIC_RAG_TOP_K || process.env.RAG_TOP_K || '8', 10));
   const retrieved = {
     ...rawRetrieved,
@@ -4793,7 +4950,7 @@ async function querySemanticRag(question, options = {}) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
       return fallbackResult;
     }
-    const generalFallbackResult = runVettedDeterministicFallback(question, options, rewrite, 'rag-no-context-deterministic-fallback');
+    const generalFallbackResult = runVettedDeterministicFallback(question, runtimeOptions, rewrite, 'rag-no-context-deterministic-fallback');
     if (generalFallbackResult) {
       setCachedSemanticResult(resultCacheKey, generalFallbackResult);
       return generalFallbackResult;
@@ -4903,7 +5060,7 @@ async function querySemanticRag(question, options = {}) {
         setCachedSemanticResult(resultCacheKey, fallbackResult);
         return fallbackResult;
       }
-      const generalFallbackResult = runVettedDeterministicFallback(question, options, rewrite, 'rag-empty-answer-deterministic-fallback');
+      const generalFallbackResult = runVettedDeterministicFallback(question, runtimeOptions, rewrite, 'rag-empty-answer-deterministic-fallback');
       if (generalFallbackResult) {
         setCachedSemanticResult(resultCacheKey, generalFallbackResult);
         return generalFallbackResult;
@@ -4928,7 +5085,7 @@ async function querySemanticRag(question, options = {}) {
         setCachedSemanticResult(resultCacheKey, fallbackResult);
         return fallbackResult;
       }
-      const generalFallbackResult = runVettedDeterministicFallback(question, options, rewrite, 'rag-insufficient-context-deterministic-fallback');
+      const generalFallbackResult = runVettedDeterministicFallback(question, runtimeOptions, rewrite, 'rag-insufficient-context-deterministic-fallback');
       if (generalFallbackResult) {
         setCachedSemanticResult(resultCacheKey, generalFallbackResult);
         return generalFallbackResult;

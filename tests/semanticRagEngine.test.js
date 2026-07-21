@@ -7,6 +7,8 @@ describe('semanticRagEngine', () => {
     delete process.env.SEMANTIC_RAG_MIN_SCORE;
     delete process.env.SEMANTIC_RAG_TODAY_YMD;
     delete process.env.SEMANTIC_RAG_RESULT_CACHE_MS;
+    delete process.env.SEMANTIC_RAG_SANITIZE_INDEX;
+    delete process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS;
   });
 
   test('returns disabled result when OpenAI API key is missing', async () => {
@@ -1558,6 +1560,70 @@ describe('semanticRagEngine', () => {
     expect(mixed.answer).toMatch(/Double Degree/i);
     expect(mixed.answer).toMatch(/Fasilitas kampus/i);
     expect(mixed.answer).not.toMatch(/Double Degree tambahan/i);
+  });
+
+  test('answers a specific UKM profile from indexed training chunks before list fallback', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_SANITIZE_INDEX = 'false';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'ukm-ksl-profile',
+          chunk: 'Profil UKM KSL\nUKM KSL adalah unit kegiatan mahasiswa di ITB STIKOM Bali yang menjadi wadah kegiatan rohani dan pengembangan karakter mahasiswa. Kegiatan KSL meliputi pertemuan rutin, pembinaan, diskusi, dan kegiatan kebersamaan anggota. Profil ini menjelaskan tujuan dan aktivitas UKM KSL untuk mahasiswa.',
+          filename: 'Profil UKM KSL.docx',
+          source: 'upload',
+          trainingId: 'training-ksl'
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('apa itu ukm ksl?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-ukm-list');
+    expect(result.debug.source).toBe('semantic-rag-ukm-specific-profile');
+    expect(result.answer).toMatch(/UKM KSL adalah unit kegiatan mahasiswa/i);
+    expect(result.answer).not.toMatch(/belum punya informasi detail/i);
+  });
+
+  test('answers uploaded training content from DB when file index is empty', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => []),
+      chunkText: jest.fn((text) => [String(text || '')]),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+    jest.doMock('../src/db', () => ({
+      trainingData: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'training-db-ksl',
+            filename: 'Profil UKM KSL.docx',
+            content: 'Profil UKM KSL\nUKM KSL adalah unit kegiatan mahasiswa di ITB STIKOM Bali yang menjadi wadah kegiatan rohani dan pengembangan karakter mahasiswa. Kegiatan KSL meliputi pertemuan rutin, pembinaan, diskusi, dan kegiatan kebersamaan anggota.',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-07-21T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+            uploadedById: null
+          }
+        ])
+      }
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('apa itu ukm ksl?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-training-specific');
+    expect(result.answer).toMatch(/UKM KSL adalah unit kegiatan mahasiswa/i);
+    expect(result.answer).not.toMatch(/belum punya informasi detail/i);
   });
 });
 
