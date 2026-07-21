@@ -3969,8 +3969,8 @@ router.post('/test/simulate-message', async (req, res, next) => {
         aiEngine = new MockAIReplyEngine();
       }
       
-      const trainingData = await prisma.setting.findUnique({ where: { key: 'training_data' } });
-      const aiResult = await aiEngine.getReply(text, trainingData?.value || '');
+      // Do not pass raw training_data into answer-generation prompts. RAG above is the only path allowed to answer from training data.
+      const aiResult = await aiEngine.getReply(text, '');
       
       flow[5].result = { aiEnabled: true, aiReplied: aiResult.success && !!aiResult.reply };
       
@@ -4086,4 +4086,5 @@ router.get('/test/status', async (req, res, next) => {
 
   return router;
 };
+
 

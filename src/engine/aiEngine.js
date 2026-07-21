@@ -2,6 +2,8 @@ const { OpenAI } = require('openai');
 const logger = require('../logger');
 const fs = require('fs');
 const path = require('path');
+const { buildSelectedEvidenceContext } = require('./evidenceSelector');
+const { OPENAI_USAGE } = require('./openaiUsage');
 
 // Phrases that indicate the model could not find an answer in provided data
 const NOT_FOUND_PHRASES = [
@@ -735,8 +737,27 @@ Jika (trainingData) disediakan, sertakan data konteks utama setelah instruksi di
   }
 
   // RAG-specific helper: jawab pertanyaan berbasis konteks secara ketat
-  async getRagAnswer(question, context, style = 'SEMI', assistHints = '', options = {}) {
+  async getRagAnswer(request) {
     try {
+      if (!request || typeof request !== 'object' || Array.isArray(request)) {
+        throw new Error('RAG_SELECTED_EVIDENCE_REQUIRED');
+      }
+      const question = request.question || '';
+      const selectedEvidence = request.selectedEvidence;
+      const metadata = request.metadata || {};
+      const style = metadata.style || request.style || 'SEMI';
+      const assistHints = metadata.assistHints || request.assistHints || '';
+      const options = request.options || {};
+      if (!Array.isArray(selectedEvidence)) {
+        throw new Error('RAG_SELECTED_EVIDENCE_REQUIRED');
+      }
+      if (selectedEvidence.some(item => item?.isSelectedEvidence !== true || !String(item.text || '').trim())) {
+        throw new Error('UNSAFE_RAG_EVIDENCE_REJECTED');
+      }
+      const context = buildSelectedEvidenceContext(selectedEvidence, Number(process.env.RAG_CONTEXT_MAX_CHARS || '9000'));
+      if (!String(context || '').trim()) {
+        return { success: false, error: 'insufficient_evidence', status: 'insufficient_evidence', reply: buildFallbackMessage(question, mapQuestionToDepartment(question), getBotToneConfig()) };
+      }
       if (!this.apiKey) {
         throw new Error('OpenAI API key tidak dikonfigurasi');
       }
@@ -876,16 +897,18 @@ Tulis hanya jawaban untuk user. Jangan tulis CONFIDENCE, SOURCE_CHUNKS, metadata
             .replace('{assist_hints}', assistHints || '');
 
       // Debug logs (updated)
-      console.log('STYLE:', style);
-      console.log('QUESTION:', question);
-      console.log('CONTEXT:', context);
-      console.log('ASSIST_HINTS:', assistHints);
+      if (envFlag('OPENAI_PROMPT_DEBUG', false)) {
+        logger.debug({ style, qLen: String(question || '').length, ctxLen: String(context || '').length, assistHintsLen: String(assistHints || '').length }, '[AI RAG Debug] Prompt metadata');
+      }
       logger.info({
         qLen: String(question || '').length,
         ctxLen: String(context || '').length,
+        selectedEvidenceCount: selectedEvidence.length,
         style,
         assistHintsLen: String(assistHints || '').length,
-        compactPrompt
+        compactPrompt,
+        purpose: OPENAI_USAGE.ANSWER_GENERATION,
+        model: this.model
       }, '[AI RAG] Sending updated RAG prompt');
 
       // Test-mode bypass: when MOCK_RAG_REPLY=1, return a canned RAG-style reply
@@ -1084,3 +1107,5 @@ module.exports = {
   humanizeFinalAnswer,
   // Expose only core engine and humanizer; orchestration helpers deprecated.
 };
+
+

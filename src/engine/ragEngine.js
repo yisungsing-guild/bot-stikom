@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { performance } = require('perf_hooks');
 const { OpenAI } = require('openai');
 const { AIReplyEngine } = require('./aiEngine');
 const logger = require('../logger');
@@ -28,6 +29,31 @@ const DATA_DIR = getRagDataDir();
 const INDEX_PATH = getRagIndexPath();
 const INDEX_BAK_PATH = getRagBackupIndexPath();
 const MERGED_INDEX_PATH = getRagMergedIndexPath();
+const FEE_PARSE_TRACE_ENABLED = /^(1|true|yes)$/i.test(String(process.env.RAG_FEE_PARSE_TRACE || ''));
+const FEE_PARSE_PROFILE_ENABLED = /^(1|true|yes)$/i.test(String(process.env.RAG_FEE_PARSE_PROFILE || ''));
+function feeParseTrace(...args) {
+  if (!FEE_PARSE_TRACE_ENABLED) return;
+  try { console.log(...args); } catch (e) {}
+}
+function createFeeParseProfiler(label) {
+  const enabled = FEE_PARSE_PROFILE_ENABLED;
+  const marks = [];
+  let last = enabled ? performance.now() : 0;
+  return {
+    mark(stage) {
+      if (!enabled) return;
+      const now = performance.now();
+      const entry = { stage, ms: Number((now - last).toFixed(3)) };
+      marks.push(entry);
+      try { console.log('[PROFILE_FEE_PARSE_MARK]', { label, stage: entry.stage, ms: entry.ms }); } catch (e) {}
+      last = now;
+    },
+    flush(extra = {}) {
+      if (!enabled) return;
+      try { console.log('[PROFILE_FEE_PARSE]', Object.assign({ label, marks }, extra)); } catch (e) {}
+    }
+  };
+}
 
 // Limits to protect memory usage
 // Increase default to 50MB to avoid aggressive truncation on medium-sized datasets.
@@ -920,7 +946,7 @@ function validateNumericGrounding(extractedValue, sourceChunks, context = '') {
   
   const foundIn = [];
   const normalizedValue = val.replace(/[^\d]/g, '');
-  console.log('[NUMERIC_AUDIT] validateNumericGrounding:start', { normalizedValue, sourceChunksLength: sourceChunks.length, context });
+  feeParseTrace('[NUMERIC_AUDIT] validateNumericGrounding:start', { normalizedValue, sourceChunksLength: sourceChunks.length, context });
   for (const chunk of sourceChunks) {
     const text = String(chunk && chunk.chunk ? chunk.chunk : '');
     const repairedText = repairOcrNumericNoise(text);
@@ -931,7 +957,7 @@ function validateNumericGrounding(extractedValue, sourceChunks, context = '') {
     const isOfficialDoc = /(?:PMB|BIAYA|RINCIAN|OFFICIAL|REGULASI|RESMI)/i.test(fname)
       || /(?:program studi|gelombang|pendaftaran|registrasi|dpp|dana pendidikan pokok|tahun akademik|ta|biaya|sumber resmi|dokumen resmi|peraturan)/i.test(textLower);
 
-    console.log('[NUMERIC_AUDIT] chunk', {
+    feeParseTrace('[NUMERIC_AUDIT] chunk', {
       textPreview: String(text).slice(0,80),
       repairedPreview: String(repairedText).slice(0,80),
       digitsOnly,
@@ -970,25 +996,25 @@ function validateNumericGrounding(extractedValue, sourceChunks, context = '') {
         const parsedAttempts = tokens.map(t => {
           try { return parseCompactRupiahNumber(t); } catch (e) { return null; }
         });
-        console.log('[NUMERIC_AUDIT] parseAttempts', { tokens, parsedAttempts });
+        feeParseTrace('[NUMERIC_AUDIT] parseAttempts', { tokens, parsedAttempts });
         const numericNormalized = parseInt(normalizedValue, 10);
         const digitsMatch = digitsOnly === String(numericNormalized) || digitsOnlyRepaired === String(numericNormalized);
         if (digitsMatch) {
           foundIn.push({ chunk: text, filename: fname, sourceFile: chunk && chunk.sourceFile, isOfficial: isOfficialDoc, ocrQuality: chunk && chunk.ocrQualityScore, matchedBy: 'digits_match', lowConfidence: chunk && chunk.lowConfidence });
-          console.log('[NUMERIC_AUDIT] matchedFoundIn-digits', { fname, numericNormalized });
+          feeParseTrace('[NUMERIC_AUDIT] matchedFoundIn-digits', { fname, numericNormalized });
         } else {
           for (let i = 0; i < parsedAttempts.length; i++) {
             const p = parsedAttempts[i];
             if (p && p === numericNormalized) {
               foundIn.push({ chunk: text, filename: fname, sourceFile: chunk && chunk.sourceFile, isOfficial: isOfficialDoc, ocrQuality: chunk && chunk.ocrQualityScore, matchedBy: `token_parse_${i}`, lowConfidence: chunk && chunk.lowConfidence });
-              console.log('[NUMERIC_AUDIT] matchedFoundIn-parse', { fname, token: tokens[i], numericNormalized });
+              feeParseTrace('[NUMERIC_AUDIT] matchedFoundIn-parse', { fname, token: tokens[i], numericNormalized });
               break;
             }
           }
         }
       }
     } catch (e) {
-      console.log('[NUMERIC_AUDIT] parseError', e && e.message);
+      feeParseTrace('[NUMERIC_AUDIT] parseError', e && e.message);
     }
     
   }
@@ -1001,7 +1027,7 @@ function validateNumericGrounding(extractedValue, sourceChunks, context = '') {
   // TRUST HIERARCHY: official docs > good OCR > multiple sources
   const officialSources = foundIn.filter(f => f.isOfficial);
   try {
-    console.log('[NUMERIC_AUDIT] finalDecision', {
+    feeParseTrace('[NUMERIC_AUDIT] finalDecision', {
       foundInCount: foundIn.length,
       officialSourcesCount: officialSources.length,
       firstFoundInOcrQuality: foundIn[0] ? foundIn[0].ocrQuality : null,
@@ -1029,31 +1055,31 @@ function validateNumericGrounding(extractedValue, sourceChunks, context = '') {
         chunkPreview: String(c.item && c.item.chunk || '').substring(0, 300)
       };
     });
-    console.log('[AUDIT_TOP20_RETRIEVED_CHUNKS]', { count: auditTop20.length, auditTop20 });
+    feeParseTrace('[AUDIT_TOP20_RETRIEVED_CHUNKS]', { count: auditTop20.length, auditTop20 });
   } catch (e) {}
   
   if (officialSources.length > 0) {
-    try { console.log('[NUMERIC_AUDIT] returnReason', 'found_in_official'); } catch (e) {}
+    try { feeParseTrace('[NUMERIC_AUDIT] returnReason', 'found_in_official'); } catch (e) {}
     return { valid: true, reason: 'found_in_official', sources: foundIn };
   }
   
   if (foundIn.length >= 2) {
-    try { console.log('[NUMERIC_AUDIT] returnReason', 'found_in_multiple'); } catch (e) {}
+    try { feeParseTrace('[NUMERIC_AUDIT] returnReason', 'found_in_multiple'); } catch (e) {}
     return { valid: true, reason: 'found_in_multiple', sources: foundIn };
   }
   
   // Single source: must have good OCR confidence, or explicitly matched numeric evidence with unknown OCR quality.
   if (foundIn[0] && foundIn[0].ocrQuality >= 0.85) {
-    try { console.log('[NUMERIC_AUDIT] returnReason', 'found_with_good_ocr'); } catch (e) {}
+    try { feeParseTrace('[NUMERIC_AUDIT] returnReason', 'found_with_good_ocr'); } catch (e) {}
     return { valid: true, reason: 'found_with_good_ocr', sources: foundIn };
   }
 
   if (foundIn[0] && (foundIn[0].ocrQuality === null || foundIn[0].ocrQuality === undefined) && !foundIn[0].lowConfidence && foundIn[0].matchedBy) {
-    try { console.log('[NUMERIC_AUDIT] returnReason', 'single_unknown_quality_but_valid_match'); } catch (e) {}
+    try { feeParseTrace('[NUMERIC_AUDIT] returnReason', 'single_unknown_quality_but_valid_match'); } catch (e) {}
     return { valid: true, reason: 'single_unknown_quality_but_valid_match', sources: foundIn };
   }
   
-  try { console.log('[NUMERIC_AUDIT] returnReason', 'single_low_quality_source'); } catch (e) {}
+  try { feeParseTrace('[NUMERIC_AUDIT] returnReason', 'single_low_quality_source'); } catch (e) {}
   return { valid: false, reason: 'single_low_quality_source', sources: foundIn };
 }
 
@@ -4820,6 +4846,7 @@ function buildRagAnswerContext(question, top) {
     rawAnswerEvaluation: null,
     finalAction: answerability.answerable ? 'continue_to_llm' : 'fallback'
   };
+  buildRagAnswerContext.lastSelection = { selectedEvidence, answerability, audit };
   logger.info(audit, '[RAG Evidence] Legacy evidence selection');
   if (String(process.env.RAG_EVIDENCE_DEBUG || '').trim().match(/^(1|true|yes|on)$/i)) {
     logger.debug({
@@ -5543,7 +5570,7 @@ function validateParsedFeeStruct(feeStruct, chunkObj) {
   if (!feeStruct || !chunkObj) return false;
   const numericFields = ['registrationFee', 'dpp', 'dppDiscount', 'registrationDiscount', 'ukt', 'scholarship'];
   try {
-    console.log('[VALIDATE_PARSED_FEE_STRUCT_INPUT]', {
+    feeParseTrace('[VALIDATE_PARSED_FEE_STRUCT_INPUT]', {
       chunkObjKeys: typeof chunkObj === 'object' ? Object.keys(chunkObj) : null,
       chunkObjOcrQualityScore: chunkObj && chunkObj.ocrQualityScore,
       chunkObjFilename: chunkObj && chunkObj.filename,
@@ -5562,8 +5589,14 @@ function validateParsedFeeStruct(feeStruct, chunkObj) {
       // preserve original metadata when passing to numeric grounding validator
       const sourceChunkForValidation = { chunk: chunkText, filename, sourceFile, ocrQualityScore, source, lowConfidence };
       try {
-        console.log('[VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH]', { field, sourceChunkForValidation });
+        feeParseTrace('[VALIDATE_PARSED_FEE_STRUCT_PASS_THROUGH]', { field, sourceChunkForValidation });
       } catch (e) {}
+      const fieldDigitsFast = String(feeStruct[field] || '').replace(/\D/g, '');
+      const chunkDigitsFast = String(chunkText || '').replace(/\D/g, '');
+      const repairedDigitsFast = String(repairOcrNumericNoise(String(chunkText || '')) || '').replace(/\D/g, '');
+      if (fieldDigitsFast && (chunkDigitsFast.includes(fieldDigitsFast) || repairedDigitsFast.includes(fieldDigitsFast))) {
+        continue;
+      }
       const validation = validateNumericGrounding(feeStruct[field], [sourceChunkForValidation]);
       if (!validation.valid) {
         // Relaxation: if numeric grounding failed but the chunk text contains
@@ -5578,14 +5611,14 @@ function validateParsedFeeStruct(feeStruct, chunkObj) {
           const repairedDigits = String(repaired || '').replace(/\D/g, '');
           const fallbackMatch = fieldDigits && (chunkDigits.indexOf(fieldDigits) !== -1 || repairedDigits.indexOf(fieldDigits) !== -1);
           if (fallbackMatch) {
-            try { console.log('[TRACE_PARSE_CHUNK_VALIDATION_FALLBACK_ACCEPT]', { filename: chunkObj && chunkObj.filename, field, value: feeStruct[field] }); } catch (e) {}
+            try { feeParseTrace('[TRACE_PARSE_CHUNK_VALIDATION_FALLBACK_ACCEPT]', { filename: chunkObj && chunkObj.filename, field, value: feeStruct[field] }); } catch (e) {}
             // accept this numeric field despite strict validator failing
           } else {
-            try { console.log('[TRACE_PARSE_CHUNK_EXIT_VALIDATION]', { filename: chunkObj && chunkObj.filename, reason: 'numeric_grounding_validation_failed', field, value: feeStruct[field], validation }); } catch (e) {}
+            try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_VALIDATION]', { filename: chunkObj && chunkObj.filename, reason: 'numeric_grounding_validation_failed', field, value: feeStruct[field], validation }); } catch (e) {}
             return false;
           }
         } catch (e) {
-          try { console.log('[TRACE_PARSE_CHUNK_EXIT_VALIDATION_ERROR]', { filename: chunkObj && chunkObj.filename, field, error: e && e.message }); } catch (e) {}
+          try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_VALIDATION_ERROR]', { filename: chunkObj && chunkObj.filename, field, error: e && e.message }); } catch (e) {}
           return false;
         }
       }
@@ -5595,15 +5628,17 @@ function validateParsedFeeStruct(feeStruct, chunkObj) {
 }
 
 function parseFeeStructureFromChunk(item, queryEntities) {
+  const __chunkProfile = createFeeParseProfiler('parseFeeStructureFromChunk');
   if (!item || typeof item !== 'object') return null;
   const chunk = String(item.chunk || '');
   const normalized = repairOcrNumericNoise(chunk.replace(/\r\n/g, '\n'));
   const ent = getChunkEntities(item);
   const isGlobalDiscount = isGlobalWaveDiscountChunk(chunk);
+  __chunkProfile.mark('normalization_entity_detection');
 
   const reject = (reason, detail = {}) => {
     try {
-      console.log('[TRACE_PARSE_FEE_REJECT_REASON]', Object.assign({
+      feeParseTrace('[TRACE_PARSE_FEE_REJECT_REASON]', Object.assign({
         filename: item.filename,
         chunkId: item.id,
         reason,
@@ -5624,7 +5659,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
 
   // === TRACE: Input Validation ===
   try {
-    console.log('[TRACE_PARSE_CHUNK_1_INPUT]', {
+    feeParseTrace('[TRACE_PARSE_CHUNK_1_INPUT]', {
       filename: item.filename,
       chunkId: item.id,
       isGlobalDiscount,
@@ -5645,14 +5680,14 @@ function parseFeeStructureFromChunk(item, queryEntities) {
   const chunkHasFeeHeader = /\b(no\.?\s*jenis\s*biaya|jenis\s+biaya|dana\s+pendidikan\s+pokok|pendaftaran|no\.|jenis\s+biaya|dpp|dana\s+pendidikan)\b/i.test(chunk);
   // Use programMatchesChunk to account for aliases in filename/chunk
   if (queryEntities.program && !programMatchesChunk(queryEntities.program, item) && !isGlobalDiscount && !chunkHasFeeHeader) {
-    try { console.log('[TRACE_PARSE_CHUNK_EXIT_1]', { filename: item.filename, reason: 'program_mismatch', queryProgram: queryEntities.program, entProgram: ent.program }); } catch (e) {}
+    try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_1]', { filename: item.filename, reason: 'program_mismatch', queryProgram: queryEntities.program, entProgram: ent.program }); } catch (e) {}
     return null;
   }
 
   const fileProgramAliases = inferChunkProgramAliases(item);
   if (queryEntities.program && fileProgramAliases.size > 0 && !fileProgramAliases.has(queryEntities.program) && !isGlobalDiscount) {
     try {
-      console.log('[TRACE_PARSE_CHUNK_EXIT_PROGRAM_ALIAS_MISMATCH]', {
+      feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_PROGRAM_ALIAS_MISMATCH]', {
         filename: item.filename,
         queryProgram: queryEntities.program,
         inferredAliases: Array.from(fileProgramAliases)
@@ -5662,7 +5697,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
   }
 
   if (queryEntities.program && ent.program !== queryEntities.program && !isGlobalDiscount && chunkHasFeeHeader) {
-    try { console.log('[TRACE_PARSE_CHUNK_BYPASS_1]', { filename: item.filename, reason: 'program_mismatch_bypassed_due_to_fee_header', queryProgram: queryEntities.program, entProgram: ent.program }); } catch (e) {}
+    try { feeParseTrace('[TRACE_PARSE_CHUNK_BYPASS_1]', { filename: item.filename, reason: 'program_mismatch_bypassed_due_to_fee_header', queryProgram: queryEntities.program, entProgram: ent.program }); } catch (e) {}
     // continue parsing despite program mismatch because chunk looks like a fee table
   }
   if (queryEntities.wave && ent.wave && !isGlobalDiscount) {
@@ -5671,21 +5706,21 @@ function parseFeeStructureFromChunk(item, queryEntities) {
     const qWaveGroup = normalizeWaveGroup(queryEntities.wave);
     const entWaveGroup = normalizeWaveGroup(ent.wave);
     if (qWaveNorm && entWaveNorm && qWaveNorm !== entWaveNorm && qWaveGroup !== entWaveGroup) {
-      try { console.log('[TRACE_PARSE_CHUNK_EXIT_2a]', { filename: item.filename, reason: 'wave_norm_mismatch', qWaveNorm, entWaveNorm, qWaveGroup, entWaveGroup }); } catch (e) {}
+      try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_2a]', { filename: item.filename, reason: 'wave_norm_mismatch', qWaveNorm, entWaveNorm, qWaveGroup, entWaveGroup }); } catch (e) {}
       return null;
     }
     if (!qWaveNorm && entWaveNorm && qWaveGroup && entWaveGroup && qWaveGroup !== entWaveGroup) {
-      try { console.log('[TRACE_PARSE_CHUNK_EXIT_2b]', { filename: item.filename, reason: 'wave_group_mismatch_no_q_norm', qWaveNorm, entWaveNorm, qWaveGroup, entWaveGroup }); } catch (e) {}
+      try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_2b]', { filename: item.filename, reason: 'wave_group_mismatch_no_q_norm', qWaveNorm, entWaveNorm, qWaveGroup, entWaveGroup }); } catch (e) {}
       return null;
     }
     if (!entWaveNorm && qWaveNorm && qWaveGroup && entWaveGroup && qWaveGroup !== entWaveGroup) {
-      try { console.log('[TRACE_PARSE_CHUNK_EXIT_2c]', { filename: item.filename, reason: 'wave_group_mismatch_no_ent_norm', qWaveNorm, entWaveNorm, qWaveGroup, entWaveGroup }); } catch (e) {}
+      try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_2c]', { filename: item.filename, reason: 'wave_group_mismatch_no_ent_norm', qWaveNorm, entWaveNorm, qWaveGroup, entWaveGroup }); } catch (e) {}
       return null;
     }
   }
   if (queryEntities.academicYear && ent.academicYear && ent.academicYear !== queryEntities.academicYear) {
     try {
-      console.log('[TRACE_PARSE_CHUNK_YEAR_MISMATCH]', {
+      feeParseTrace('[TRACE_PARSE_CHUNK_YEAR_MISMATCH]', {
         filename: item.filename,
         chunkId: item.id,
         queryYear: queryEntities.academicYear,
@@ -5698,19 +5733,19 @@ function parseFeeStructureFromChunk(item, queryEntities) {
     // unavailable.
   }
   if (queryEntities.partner && ent.partner && ent.partner !== queryEntities.partner) {
-    try { console.log('[TRACE_PARSE_CHUNK_EXIT_4]', { filename: item.filename, reason: 'partner_mismatch', queryPartner: queryEntities.partner, entPartner: ent.partner }); } catch (e) {}
+    try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_4]', { filename: item.filename, reason: 'partner_mismatch', queryPartner: queryEntities.partner, entPartner: ent.partner }); } catch (e) {}
     return reject('partner_mismatch', { queryPartner: queryEntities.partner, entPartner: ent.partner });
   }
   if (queryEntities.campus && ent.campus && ent.campus !== queryEntities.campus) {
-    try { console.log('[TRACE_PARSE_CHUNK_EXIT_5]', { filename: item.filename, reason: 'campus_mismatch', queryCampus: queryEntities.campus, entCampus: ent.campus }); } catch (e) {}
+    try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_5]', { filename: item.filename, reason: 'campus_mismatch', queryCampus: queryEntities.campus, entCampus: ent.campus }); } catch (e) {}
     return reject('campus_mismatch', { queryCampus: queryEntities.campus, entCampus: ent.campus });
   }
   if (queryEntities.pageNumber && ent.pageNumber && Number(queryEntities.pageNumber) !== Number(ent.pageNumber)) {
-    try { console.log('[TRACE_PARSE_CHUNK_EXIT_6]', { filename: item.filename, reason: 'page_number_mismatch', queryPage: queryEntities.pageNumber, entPage: ent.pageNumber }); } catch (e) {}
+    try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_6]', { filename: item.filename, reason: 'page_number_mismatch', queryPage: queryEntities.pageNumber, entPage: ent.pageNumber }); } catch (e) {}
     return reject('page_number_mismatch', { queryPage: queryEntities.pageNumber, entPage: ent.pageNumber });
   }
   if (queryEntities.waveGroup && ent.waveGroup && queryEntities.waveGroup !== ent.waveGroup && !isGlobalDiscount) {
-    try { console.log('[TRACE_PARSE_CHUNK_EXIT_7]', { filename: item.filename, reason: 'wave_group_mismatch', queryWaveGroup: queryEntities.waveGroup, entWaveGroup: ent.waveGroup }); } catch (e) {}
+    try { feeParseTrace('[TRACE_PARSE_CHUNK_EXIT_7]', { filename: item.filename, reason: 'wave_group_mismatch', queryWaveGroup: queryEntities.waveGroup, entWaveGroup: ent.waveGroup }); } catch (e) {}
     return reject('wave_group_mismatch', { queryWaveGroup: queryEntities.waveGroup, entWaveGroup: ent.waveGroup });
   }
 
@@ -5736,7 +5771,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
         const afterChar = (afterIdx >= 0 && afterIdx < hay.length) ? hay[afterIdx] : '';
         const afterSlice = (afterIdx >= 0) ? hay.substring(afterIdx, Math.min(hay.length, afterIdx + 12)).toLowerCase() : '';
         if (afterChar === '%' || /persen/.test(afterSlice)) {
-          try { console.log((haystack ? 'TRACE_WAVE_MONEY_CANDIDATES' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates: [], discardedPercents: [raw], selected: null, reason: 'capture_percent' }); } catch (e) {}
+          try { feeParseTrace((haystack ? 'TRACE_WAVE_MONEY_CANDIDATES' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates: [], discardedPercents: [raw], selected: null, reason: 'capture_percent' }); } catch (e) {}
           continue;
         }
 
@@ -5810,12 +5845,12 @@ function parseFeeStructureFromChunk(item, queryEntities) {
         }
 
         if (best && best.candParsed) {
-          try { console.log((haystack ? 'TRACE_WAVE_MONEY_SELECTED' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates, discardedPercents, selected: best.candParsed, reason: 'line_level_best' }); } catch (e) {}
+          try { feeParseTrace((haystack ? 'TRACE_WAVE_MONEY_SELECTED' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates, discardedPercents, selected: best.candParsed, reason: 'line_level_best' }); } catch (e) {}
           return best.candParsed;
         }
 
         if (isRegistrationPattern) {
-          try { console.log((haystack ? 'TRACE_WAVE_MONEY_CANDIDATES' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates, discardedPercents, selected: null, reason: 'registration_requires_same_line' }); } catch (e) {}
+          try { feeParseTrace((haystack ? 'TRACE_WAVE_MONEY_CANDIDATES' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates, discardedPercents, selected: null, reason: 'registration_requires_same_line' }); } catch (e) {}
           continue;
         }
 
@@ -5838,7 +5873,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
         if (rpCandidates.length) {
           rpCandidates.sort((a, b) => (b.digits || 0) - (a.digits || 0));
           const selected = rpCandidates[0].parsed;
-          try { console.log((haystack ? 'TRACE_WAVE_MONEY_SELECTED' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates: [], discardedPercents: [], rpCandidates, selected, reason: 'prefer_rp_token' }); } catch (e) {}
+          try { feeParseTrace((haystack ? 'TRACE_WAVE_MONEY_SELECTED' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates: [], discardedPercents: [], rpCandidates, selected, reason: 'prefer_rp_token' }); } catch (e) {}
           return selected;
         }
 
@@ -5846,12 +5881,12 @@ function parseFeeStructureFromChunk(item, queryEntities) {
         if (!isRegistrationPattern) {
           // Direct accept if clearly >= 1000 from the initial capture
           if (parsed && parsedDigits >= 1000) {
-            try { console.log((haystack ? 'TRACE_WAVE_MONEY_SELECTED' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates: [], discardedPercents: [], selected: parsed, reason: 'direct_ge_1000', matchedRaw: raw }); } catch (e) {}
+            try { feeParseTrace((haystack ? 'TRACE_WAVE_MONEY_SELECTED' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates: [], discardedPercents: [], selected: parsed, reason: 'direct_ge_1000', matchedRaw: raw }); } catch (e) {}
             return parsed;
           }
 
           if (parsed) {
-            try { console.log((haystack ? 'TRACE_WAVE_MONEY_SELECTED' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates, discardedPercents, selected: parsed, reason: 'fallback_parsed' }); } catch (e) {}
+            try { feeParseTrace((haystack ? 'TRACE_WAVE_MONEY_SELECTED' : 'TRACE_FIND_MONEY'), { keyword: pattern, candidates, discardedPercents, selected: parsed, reason: 'fallback_parsed' }); } catch (e) {}
             return parsed;
           }
         }
@@ -5883,6 +5918,15 @@ function parseFeeStructureFromChunk(item, queryEntities) {
     'Rp\\.?\\s*([0-9][0-9\\s\\.,]{1,40})[^\\n]{0,120}?(?:biaya\\s+pendaftaran|pendaftaran|registrasi)'
   );
 
+  __chunkProfile.mark('registration_fee_extraction');
+  if (!registrationFee) {
+    try {
+      const numberedRegistration = String(normalized || '').match(/^\s*\d{1,2}\.?\s*(?:biaya\s+)?(?:pendaftaran|registrasi)\s+(?:Rp\.?\s*)?([0-9][0-9\s\.,]{1,40})/im);
+      if (numberedRegistration && numberedRegistration[1]) {
+        registrationFee = parseMoneyText(numberedRegistration[1]);
+      }
+    } catch (e) {}
+  }
   // Strict validation: only accept registrationFee if it's explicitly
   // near a registration keyword (same line or within small proximity).
   try {
@@ -5893,7 +5937,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
       let proxOk = false;
 
       // 1) Same-line check: require numeric token to be near the keyword within the line
-      const proximityChars = 12;
+      const proximityChars = 24;
       for (const rawLine of lines) {
         try {
           const line = String(rawLine || '').trim();
@@ -5903,7 +5947,8 @@ function parseFeeStructureFromChunk(item, queryEntities) {
           // collect keyword positions in this line
           const kwPositions = [];
           let kx;
-          while ((kx = /\b(biaya pendaftaran|pendaftaran|registrasi)\b/ig.exec(line)) !== null) {
+          const kwPositionRe = /\b(biaya pendaftaran|pendaftaran|registrasi)\b/ig;
+          while ((kx = kwPositionRe.exec(line)) !== null) {
             if (typeof kx.index === 'number') kwPositions.push(kx.index);
           }
           if (kwPositions.length === 0) continue;
@@ -5946,10 +5991,10 @@ function parseFeeStructureFromChunk(item, queryEntities) {
       // registrationFee.
 
       if (!proxOk) {
-        try { console.log('[TRACE_VALIDATE_REGISTRATION_PROXIMITY_FAIL]', { filename: item.filename, registrationFee }); } catch (e) {}
+        try { feeParseTrace('[TRACE_VALIDATE_REGISTRATION_PROXIMITY_FAIL]', { filename: item.filename, registrationFee }); } catch (e) {}
         registrationFee = null;
       } else {
-        try { console.log('[TRACE_VALIDATE_REGISTRATION_PROXIMITY_OK]', { filename: item.filename, registrationFee }); } catch (e) {}
+        try { feeParseTrace('[TRACE_VALIDATE_REGISTRATION_PROXIMITY_OK]', { filename: item.filename, registrationFee }); } catch (e) {}
       }
     }
   } catch (e) {}
@@ -5975,13 +6020,13 @@ function parseFeeStructureFromChunk(item, queryEntities) {
       if (sectionLines.length) {
         waveSectionFound = true;
         const sectionText = sectionLines.join('\n');
-        try { console.log('TRACE_WAVE_SECTION_FOUND', { filename: item.filename, wavePattern, sectionLinesCount: sectionLines.length }); } catch (e) {}
-        try { console.log('TRACE_WAVE_SECTION_LINES', { filename: item.filename, lines: sectionLines.slice(0, 20) }); } catch (e) {}
+        try { feeParseTrace('TRACE_WAVE_SECTION_FOUND', { filename: item.filename, wavePattern, sectionLinesCount: sectionLines.length }); } catch (e) {}
+        try { feeParseTrace('TRACE_WAVE_SECTION_LINES', { filename: item.filename, lines: sectionLines.slice(0, 20) }); } catch (e) {}
         // Use findMoney over the limited section first (wave-scoped)
         dpp = findMoney('(?<!\\b(?:potongan|diskon)\\s+)(?:dana\\s+pendidikan\\s+pokok|dpp)[^\\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})', sectionText) ||
               findMoney('(?:dana\\s+pendidikan\\s+pokok|dpp)[\\s:\-]*Rp\\.?\\s*([0-9][0-9\\s\\.,]{1,40})', sectionText) ||
               findMoney('Rp\\.?\\s*([0-9][0-9\\s\\.,]{1,40})[^\\n]{0,120}?(?:dana\\s+pendidikan\\s+pokok|dpp)', sectionText);
-        try { console.log('TRACE_WAVE_MONEY_CANDIDATES', { filename: item.filename, candidateDpp: dpp }); } catch (e) {}
+        try { feeParseTrace('TRACE_WAVE_MONEY_CANDIDATES', { filename: item.filename, candidateDpp: dpp }); } catch (e) {}
       }
     } catch (e) {}
   }
@@ -5994,6 +6039,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
   }
   
 
+  __chunkProfile.mark('dpp_extraction');
   const chooseWavePair = (pairs) => {
     if (!Array.isArray(pairs) || pairs.length === 0) return null;
     const byLabel = queryWaveLabel
@@ -6046,6 +6092,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
     dppDiscount = findMoney('(?:beasiswa\s+(?:untuk\s+)?dana\s+pendidikan\s+pokok|potongan\s+dpp|diskon\s+dpp)[^\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})');
   }
 
+  __chunkProfile.mark('dpp_discount_extraction');
   let registrationDiscount = null;
   if (wavePattern) {
     const regPairs = extractWaveAmounts(normalized, (line) => /\b(pendaftaran|registrasi|biaya\s+pendaftaran)\b/i.test(line));
@@ -6055,6 +6102,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
     registrationDiscount = findMoney('(?:potongan\s+(?:biaya\s+)?pendaftaran|diskon\s+pendaftaran|diskon\s+biaya\s+pendaftaran)[^\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})');
   }
 
+  __chunkProfile.mark('registration_discount_extraction');
   // Prefer a line-level explicit Rp token next to 'pendaftaran' if present
   const findLineLevelAmount = (text, keywordRegex) => {
     try {
@@ -6124,9 +6172,9 @@ function parseFeeStructureFromChunk(item, queryEntities) {
         if (prov && prov.sourceText && !prov.rejected) break;
       }
       if (prov && prov.sourceText && !prov.rejected) {
-        try { console.log('[TRACE_PROVENANCE]', { field: 'registrationDiscount', value: registrationDiscount, sourceChunkId: prov.sourceChunkId, sourceText: prov.sourceText, window: prov.window }); } catch (e) {}
+        try { feeParseTrace('[TRACE_PROVENANCE]', { field: 'registrationDiscount', value: registrationDiscount, sourceChunkId: prov.sourceChunkId, sourceText: prov.sourceText, window: prov.window }); } catch (e) {}
       } else {
-        try { console.log('[TRACE_PROVENANCE_REJECT]', { field: 'registrationDiscount', value: registrationDiscount, chunkId: item.id, reason: prov ? prov.reason : 'no_matching_token_in_chunk' }); } catch (e) {}
+        try { feeParseTrace('[TRACE_PROVENANCE_REJECT]', { field: 'registrationDiscount', value: registrationDiscount, chunkId: item.id, reason: prov ? prov.reason : 'no_matching_token_in_chunk' }); } catch (e) {}
         registrationDiscount = null;
       }
     }
@@ -6135,12 +6183,14 @@ function parseFeeStructureFromChunk(item, queryEntities) {
   const ukt = findMoney('(?:ukt|spp|uang\s+kuliah\s+tunggal)[^\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})');
   const scholarship = findMoney('(?:beasiswa|potongan\s+beasiswa|diskon\s+prestasi|potongan\s+prestasi)[^\n]{0,120}?([0-9][0-9\\s\\.,]{1,40})');
 
+  __chunkProfile.mark('money_discount_numeric_extraction');
+  __chunkProfile.mark('ukt_scholarship_extraction');
   const hasExplicitBaseCost = !!registrationFee || !!dpp || !!ukt || !!scholarship;
   const isDiscountOnlyChunk = isGlobalDiscount && !hasExplicitBaseCost;
 
   // === TRACE: Money Extraction ===
   try {
-    console.log('[TRACE_PARSE_CHUNK_2_MONEY]', {
+    feeParseTrace('[TRACE_PARSE_CHUNK_2_MONEY]', {
       filename: item.filename,
       registrationFee,
       dpp,
@@ -6153,7 +6203,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
 
   const hasAnyCost = registrationFee || dpp || dppDiscount || registrationDiscount || ukt || scholarship;
   try {
-    console.log('[TRACE_PARSE_CHUNK_4_COST_PRESENCE]', {
+    feeParseTrace('[TRACE_PARSE_CHUNK_4_COST_PRESENCE]', {
       filename: item.filename,
       registrationFee: !!registrationFee,
       dpp: !!dpp,
@@ -6165,11 +6215,11 @@ function parseFeeStructureFromChunk(item, queryEntities) {
     });
   } catch (e) {}
   if (!hasAnyCost) {
-    try { console.log('[TRACE_PARSE_CHUNK_4_EXIT]', { filename: item.filename, reason: 'no_money_fields_found' }); } catch (e) {}
+    try { feeParseTrace('[TRACE_PARSE_CHUNK_4_EXIT]', { filename: item.filename, reason: 'no_money_fields_found' }); } catch (e) {}
     return reject('no_money_fields_found');
   }
   if (!isGlobalDiscount && !registrationFee && !dpp && !registrationDiscount && !ukt && !scholarship) {
-    try { console.log('[TRACE_PARSE_CHUNK_4_EXIT]', { filename: item.filename, reason: 'only_discount_present_but_no_fee_or_dpp_or_ukt_or_registrationDiscount' }); } catch (e) {}
+    try { feeParseTrace('[TRACE_PARSE_CHUNK_4_EXIT]', { filename: item.filename, reason: 'only_discount_present_but_no_fee_or_dpp_or_ukt_or_registrationDiscount' }); } catch (e) {}
     return reject('only_discount_present_but_no_fee_or_dpp_or_ukt_or_registrationDiscount');
   }
 
@@ -6195,7 +6245,7 @@ function parseFeeStructureFromChunk(item, queryEntities) {
   };
 
   // AUDIT: expose raw chunk, matched raw numbers and parsed fields for debugging
-  try {
+  if (FEE_PARSE_TRACE_ENABLED) try {
     const findNumberNearKeyword = (keywords) => {
       if (!Array.isArray(keywords)) keywords = [keywords];
       for (const kw of keywords) {
@@ -6271,9 +6321,9 @@ function parseFeeStructureFromChunk(item, queryEntities) {
     const uktRaw = findNumberNearKeyword(['ukt', 'spp', 'uang kuliah tunggal']);
     const scholarshipRaw = findNumberNearKeyword(['beasiswa', 'potongan beasiswa']);
 
-    try { console.log('RAW_CHUNK_TEXT', { filename: item.filename, chunk: chunk }); } catch (e) {}
+    try { feeParseTrace('RAW_CHUNK_TEXT', { filename: item.filename, chunk: chunk }); } catch (e) {}
     try {
-      console.log('PARSED_FIELDS', {
+      feeParseTrace('PARSED_FIELDS', {
         registrationFeeRaw,
         registrationFee: registrationFee,
         registrationFeeDigits: registrationFee ? String(registrationFee).replace(/\D/g, '') : null,
@@ -6368,10 +6418,12 @@ function parseFeeStructureFromChunk(item, queryEntities) {
     } catch (e) {}
   } catch (e) {}
 
+  __chunkProfile.mark('debug_audit_block');
   // === TRACE: Validation ===
   const isValid = validateParsedFeeStruct(feeStruct, item);
+  __chunkProfile.mark('numeric_grounding_validation');
   try {
-    console.log('[TRACE_PARSE_CHUNK_3_VALIDATION]', {
+    feeParseTrace('[TRACE_PARSE_CHUNK_3_VALIDATION]', {
       filename: item.filename,
       chunkId: item.id,
       isValid,
@@ -6391,17 +6443,20 @@ function parseFeeStructureFromChunk(item, queryEntities) {
     });
   } catch (e) {}
 
-  if (!isValid) return reject('validation_failed', { feeStruct });
-  try { console.log('[TRACE_PARSE_FEE_RESULT]', { filename: item.filename, chunkId: item.id, feeStruct: { program: feeStruct.program, wave: feeStruct.wave, waveGroup: feeStruct.waveGroup, academicYear: feeStruct.academicYear, registrationFee: feeStruct.registrationFee, dpp: feeStruct.dpp, registrationDiscount: feeStruct.registrationDiscount, dppDiscount: feeStruct.dppDiscount, ukt: feeStruct.ukt, scholarship: feeStruct.scholarship, isGlobalDiscount: feeStruct.isGlobalDiscount } }); } catch (e) {}
+  if (!isValid) { __chunkProfile.flush({ result: 'validation_failed', filename: item.filename }); return reject('validation_failed', { feeStruct }); }
+  __chunkProfile.flush({ result: 'ok', filename: item.filename });
+  try { feeParseTrace('[TRACE_PARSE_FEE_RESULT]', { filename: item.filename, chunkId: item.id, feeStruct: { program: feeStruct.program, wave: feeStruct.wave, waveGroup: feeStruct.waveGroup, academicYear: feeStruct.academicYear, registrationFee: feeStruct.registrationFee, dpp: feeStruct.dpp, registrationDiscount: feeStruct.registrationDiscount, dppDiscount: feeStruct.dppDiscount, ukt: feeStruct.ukt, scholarship: feeStruct.scholarship, isGlobalDiscount: feeStruct.isGlobalDiscount } }); } catch (e) {}
   return feeStruct;
 }
 
 function parseFeeStructure(chunks, queryEntities) {
+  const __feeProfile = createFeeParseProfiler('parseFeeStructure');
   if (!Array.isArray(chunks) || chunks.length === 0) return null;
+  const allowIndexFallback = !!(queryEntities && queryEntities.allowIndexFallback === true);
 
   // === TRACE #6a: Parse All Chunks ===
   try {
-    console.log('[TRACE_PARSE_6a_ALL_CHUNKS]', {
+    feeParseTrace('[TRACE_PARSE_6a_ALL_CHUNKS]', {
       inputChunksCount: chunks.length,
       inputChunks: chunks.map(c => ({
         id: c.id,
@@ -6414,9 +6469,10 @@ function parseFeeStructure(chunks, queryEntities) {
 
   let parsedCandidates = [];
   const globalDiscountCandidates = [];
+  __feeProfile.mark('normalization_program_wave_candidate_setup');
   for (const item of chunks) {
     try {
-      console.log('[TRACE_PARSE_FEE_INPUT]', {
+      feeParseTrace('[TRACE_PARSE_FEE_INPUT]', {
         filename: item.filename,
         chunkId: item.id,
         queryEntities,
@@ -6426,10 +6482,10 @@ function parseFeeStructure(chunks, queryEntities) {
     } catch (e) {}
     const parsed = parseFeeStructureFromChunk(item, queryEntities);
     if (!parsed) {
-      try { console.log('[TRACE_PARSE_FEE_RESULT]', { filename: item.filename, chunkId: item.id, parsed: null }); } catch (e) {}
+      try { feeParseTrace('[TRACE_PARSE_FEE_RESULT]', { filename: item.filename, chunkId: item.id, parsed: null }); } catch (e) {}
       continue;
     }
-    try { console.log('[TRACE_PARSE_FEE_RESULT]', { filename: item.filename, chunkId: item.id, parsed: { program: parsed.program, wave: parsed.wave, waveGroup: parsed.waveGroup, academicYear: parsed.academicYear, registrationFee: parsed.registrationFee, dpp: parsed.dpp, registrationDiscount: parsed.registrationDiscount, dppDiscount: parsed.dppDiscount, ukt: parsed.ukt, scholarship: parsed.scholarship } }); } catch (e) {}
+    try { feeParseTrace('[TRACE_PARSE_FEE_RESULT]', { filename: item.filename, chunkId: item.id, parsed: { program: parsed.program, wave: parsed.wave, waveGroup: parsed.waveGroup, academicYear: parsed.academicYear, registrationFee: parsed.registrationFee, dpp: parsed.dpp, registrationDiscount: parsed.registrationDiscount, dppDiscount: parsed.dppDiscount, ukt: parsed.ukt, scholarship: parsed.scholarship } }); } catch (e) {}
     if (parsed.isGlobalDiscount) {
       globalDiscountCandidates.push(parsed);
     } else {
@@ -6437,10 +6493,11 @@ function parseFeeStructure(chunks, queryEntities) {
     }
   }
 
+  __feeProfile.mark('chunk_parsing');
   if (!parsedCandidates.length && globalDiscountCandidates.length > 0) {
     parsedCandidates = globalDiscountCandidates.slice();
     try {
-      console.log('[TRACE_PARSE_6b_DISCOUNT_ONLY_BASE]', {
+      feeParseTrace('[TRACE_PARSE_6b_DISCOUNT_ONLY_BASE]', {
         message: 'No explicit cost candidates were found; using discount-only chunks as base candidates',
         discountOnlyBaseCount: globalDiscountCandidates.length,
         selectedType: 'discount_only_fallback'
@@ -6450,7 +6507,7 @@ function parseFeeStructure(chunks, queryEntities) {
 
   // === TRACE_FEE_STRUCT: Parsed Results ===
   try {
-    console.log('[TRACE_FEE_STRUCT]', {
+    feeParseTrace('[TRACE_FEE_STRUCT]', {
       costCandidatesCount: parsedCandidates.length,
       globalDiscountCandidatesCount: globalDiscountCandidates.length,
       costCandidates: parsedCandidates.map(c => ({
@@ -6480,7 +6537,7 @@ function parseFeeStructure(chunks, queryEntities) {
     });
   } catch (e) {}
 
-  if (!parsedCandidates.length) return null;
+  if (!parsedCandidates.length) { __feeProfile.flush({ result: 'no_candidates', inputChunksCount: chunks.length }); return null; }
 
   if (queryEntities && queryEntities.academicYear) {
     const exactYearCandidates = [];
@@ -6497,7 +6554,7 @@ function parseFeeStructure(chunks, queryEntities) {
     if (exactYearCandidates.length > 0) {
       parsedCandidates = exactYearCandidates;
       try {
-        console.log('[TRACE_PARSE_6b_YEAR_FILTER]', {
+        feeParseTrace('[TRACE_PARSE_6b_YEAR_FILTER]', {
           queryAcademicYear: queryEntities.academicYear,
           selectedCandidateCount: parsedCandidates.length,
           selectedType: 'exact_year_match'
@@ -6506,7 +6563,7 @@ function parseFeeStructure(chunks, queryEntities) {
     } else if (yearMismatchCandidates.length > 0) {
       parsedCandidates = yearMismatchCandidates;
       try {
-        console.log('[TRACE_PARSE_6b_YEAR_FALLBACK]', {
+        feeParseTrace('[TRACE_PARSE_6b_YEAR_FALLBACK]', {
           queryAcademicYear: queryEntities.academicYear,
           usedCandidateCount: yearMismatchCandidates.length,
           usedYears: Array.from(new Set(yearMismatchCandidates.map(c => c.academicYear))).sort(),
@@ -6516,7 +6573,7 @@ function parseFeeStructure(chunks, queryEntities) {
     } else {
       parsedCandidates = yearNullCandidates;
       try {
-        console.log('[TRACE_PARSE_6b_YEAR_FILTER]', {
+        feeParseTrace('[TRACE_PARSE_6b_YEAR_FILTER]', {
           queryAcademicYear: queryEntities.academicYear,
           selectedCandidateCount: parsedCandidates.length,
           selectedType: 'year_null_candidates'
@@ -6560,7 +6617,7 @@ function parseFeeStructure(chunks, queryEntities) {
 
   // === TRACE #6c: Before Year Selection ===
   try {
-    console.log('[TRACE_PARSE_6c_BEFORE_YEAR_SELECT]', {
+    feeParseTrace('[TRACE_PARSE_6c_BEFORE_YEAR_SELECT]', {
       queryEntitiesAcademicYear: queryEntities && queryEntities.academicYear ? queryEntities.academicYear : null,
       baseCandidatesCount: baseCandidates.length,
       baseCandidates: baseCandidates.map(c => ({
@@ -6579,7 +6636,7 @@ function parseFeeStructure(chunks, queryEntities) {
     // Only apply strict year filtering if a clear majority of candidates contain year metadata.
     const candidatesWithYear = baseCandidates.filter(c => parseYearKey(c.academicYear) > 0).length;
     const applyYearFilter = baseCandidates.length > 0 && (candidatesWithYear / baseCandidates.length) >= 0.7;
-    console.log('[TRACE_PARSE_6c1_YEAR_SELECTION]', {
+    feeParseTrace('[TRACE_PARSE_6c1_YEAR_SELECTION]', {
       method: 'MAX_YEAR_NO_REQUESTED_YEAR',
       allYears,
       bestYear,
@@ -6594,7 +6651,7 @@ function parseFeeStructure(chunks, queryEntities) {
     const explicitYearCandidates = baseCandidates.filter(c => parseYearKey(c.academicYear) > 0);
     const matchingYearCandidates = explicitYearCandidates.filter(c => c.academicYear === queryEntities.academicYear);
     const yearlessCandidates = baseCandidates.filter(c => !c.academicYear);
-    console.log('[TRACE_PARSE_6c2_YEAR_SELECTION]', {
+    feeParseTrace('[TRACE_PARSE_6c2_YEAR_SELECTION]', {
       method: 'REQUESTED_YEAR',
       requestedYear: queryEntities.academicYear,
       beforeCount: baseCandidates.length,
@@ -6616,7 +6673,7 @@ function parseFeeStructure(chunks, queryEntities) {
       } else if (yearMismatchCandidates.length > 0) {
         baseCandidates = yearMismatchCandidates;
         try {
-          console.log('[TRACE_PARSE_6c_YEAR_MISMATCH_FALLBACK]', {
+          feeParseTrace('[TRACE_PARSE_6c_YEAR_MISMATCH_FALLBACK]', {
             queryAcademicYear: queryEntities.academicYear,
             fallbackCount: yearMismatchCandidates.length,
             fallbackYears: Array.from(new Set(yearMismatchCandidates.map(c => c.academicYear))).sort(),
@@ -6631,7 +6688,7 @@ function parseFeeStructure(chunks, queryEntities) {
 
   // === TRACE #6d: After Year Selection, Discount Matching ===
   try {
-    console.log('[TRACE_PARSE_6d_AFTER_YEAR_SELECT]', {
+    feeParseTrace('[TRACE_PARSE_6d_AFTER_YEAR_SELECT]', {
       baseCandidatesCountAfterYearFilter: baseCandidates.length,
       baseCandidates: baseCandidates.map(c => ({
         program: c.program,
@@ -6642,7 +6699,7 @@ function parseFeeStructure(chunks, queryEntities) {
     });
   } catch (e) {}
 
-  if (!baseCandidates.length) return null;
+  if (!baseCandidates.length) { __feeProfile.flush({ result: 'no_base_candidates', inputChunksCount: chunks.length }); return null; }
 
   let base = baseCandidates
     .slice()
@@ -6700,14 +6757,14 @@ function parseFeeStructure(chunks, queryEntities) {
           const bDate = new Date(b.updatedAt || 0).getTime();
           return bDate - aDate;
         })[0];
-        try { console.log('[PROGRAM_FILTER_APPLIED]', { programRequested, before: oldBaseProg, after: base.program }); } catch (e) {}
+        try { feeParseTrace('[PROGRAM_FILTER_APPLIED]', { programRequested, before: oldBaseProg, after: base.program }); } catch (e) {}
       }
     }
   } catch (e) {}
 
   // === TRACE #6e: Base Selection & Discount Matching ===
   try {
-    console.log('[TRACE_PARSE_6e_BASE_SELECTED]', {
+    feeParseTrace('[TRACE_PARSE_6e_BASE_SELECTED]', {
       baseSelected: {
         program: base.program,
         wave: base.wave,
@@ -6761,13 +6818,13 @@ function parseFeeStructure(chunks, queryEntities) {
           // Ensure the explicit chunk is not a DPP/pengakuan-SKS-like context
           const disallowedCtxRe_local = /\b(dpp|dana\s+pendidikan|pengakuan\s+sks|jumlah\s+sks|biaya\s+kuliah|ukt)\b/i;
           if (disallowedCtxRe_local.test(txt)) {
-            try { console.log('[TRACE_PARSE_REGISTRATION_EXPLICIT_TOPCHUNKS_REJECTED]', { chosenChunkId: ch.id, reason: 'disallowed_context_in_explicit_chunk' }); } catch (e) {}
+            try { feeParseTrace('[TRACE_PARSE_REGISTRATION_EXPLICIT_TOPCHUNKS_REJECTED]', { chosenChunkId: ch.id, reason: 'disallowed_context_in_explicit_chunk' }); } catch (e) {}
           } else {
             merged.registrationDiscount = parsed;
             merged.fieldSources = merged.fieldSources || {};
             merged.fieldSources.registrationDiscount = { id: ch.id, filename: ch.filename, sourceText: m[0] || txt };
             if (!merged.sourceChunks.find(s => s && s.id === ch.id)) merged.sourceChunks.push(ch);
-            try { console.log('[TRACE_PARSE_REGISTRATION_EXPLICIT_TOPCHUNKS]', { chosenChunkId: ch.id, registrationDiscount: merged.registrationDiscount }); } catch (e) {}
+            try { feeParseTrace('[TRACE_PARSE_REGISTRATION_EXPLICIT_TOPCHUNKS]', { chosenChunkId: ch.id, registrationDiscount: merged.registrationDiscount }); } catch (e) {}
             break;
           }
           break;
@@ -6775,7 +6832,7 @@ function parseFeeStructure(chunks, queryEntities) {
       }
 
       // 2) Fallback: scan index (restricted to same training/file where possible)
-      if (!merged.registrationDiscount) {
+      if (!merged.registrationDiscount && allowIndexFallback) {
         try {
           const idx = loadIndex();
           const baseTrainingId = base && base.sourceChunk && base.sourceChunk.trainingId ? base.sourceChunk.trainingId : null;
@@ -6798,13 +6855,13 @@ function parseFeeStructure(chunks, queryEntities) {
               const itTxt = String(it.chunk || '').toLowerCase();
               const disallowedCtxRe_it = /\b(dpp|dana\s+pendidikan|pengakuan\s+sks|jumlah\s+sks|biaya\s+kuliah|ukt)\b/i;
               if (disallowedCtxRe_it.test(itTxt)) {
-                try { console.log('[TRACE_PARSE_REGISTRATION_EXPLICIT_INDEX_REJECTED]', { chosenChunkId: it.id, reason: 'disallowed_context_in_index_chunk' }); } catch (e) {}
+                try { feeParseTrace('[TRACE_PARSE_REGISTRATION_EXPLICIT_INDEX_REJECTED]', { chosenChunkId: it.id, reason: 'disallowed_context_in_index_chunk' }); } catch (e) {}
               } else {
                 merged.registrationDiscount = parsed;
                 merged.fieldSources = merged.fieldSources || {};
                 merged.fieldSources.registrationDiscount = { id: it.id, filename: it.filename, sourceText: m[0] || it.chunk };
                 if (!merged.sourceChunks.find(s => s && s.id === it.id)) merged.sourceChunks.push({ id: it.id, filename: it.filename, chunk: it.chunk });
-                try { console.log('[TRACE_PARSE_REGISTRATION_EXPLICIT_INDEX]', { chosenChunkId: it.id, registrationDiscount: merged.registrationDiscount }); } catch (e) {}
+                try { feeParseTrace('[TRACE_PARSE_REGISTRATION_EXPLICIT_INDEX]', { chosenChunkId: it.id, registrationDiscount: merged.registrationDiscount }); } catch (e) {}
                 break;
               }
               break;
@@ -6826,7 +6883,22 @@ function parseFeeStructure(chunks, queryEntities) {
       const qWave = queryEntities && queryEntities.wave ? normalizeWaveLabel(queryEntities.wave) : null;
       if (qWave) {
         const exact = cands.filter(x => x && x.wave && normalizeWaveLabel(x.wave) === qWave);
-        if (exact.length) return exact[0];
+        if (exact.length) {
+          const exactDiscount = exact.find(x => {
+            try {
+              const txt = String(x.sourceChunk && x.sourceChunk.chunk ? x.sourceChunk.chunk : x.rawChunk || '').toLowerCase();
+              return /\b(potongan|diskon)\b/i.test(txt) && /\b(pendaftaran|registrasi|mendaftar)\b/i.test(txt);
+            } catch (e) { return false; }
+          });
+          return exactDiscount || exact[0];
+        }
+      }
+      // prefer explicit discount phrasing over generic 'Jika Registrasi' schedule amounts
+      for (const x of cands) {
+        try {
+          const txt = String(x.sourceChunk && x.sourceChunk.chunk ? x.sourceChunk.chunk : x.rawChunk || '').toLowerCase();
+          if (/\b(potongan|diskon)\b/i.test(txt) && /\b(pendaftaran|registrasi|mendaftar)\b/i.test(txt)) return x;
+        } catch (e) {}
       }
       // prefer chunks whose text explicitly mentions registrasi/pendaftaran nearby
       for (const x of cands) {
@@ -6849,17 +6921,17 @@ function parseFeeStructure(chunks, queryEntities) {
       const srcTxt_bfp = String((bestFromParsed.sourceChunk && bestFromParsed.sourceChunk.chunk) || (bestFromParsed.rawChunk || '')).toLowerCase();
       const disallowedCtxRe_bfp = /\b(dpp|dana\s+pendidikan|pengakuan\s+sks|jumlah\s+sks|biaya\s+kuliah|ukt)\b/i;
       if (disallowedCtxRe_bfp.test(srcTxt_bfp)) {
-        try { console.log('[TRACE_PARSE_REGISTRATION_FROM_PARSED_CANDIDATE_REJECTED]', { chosenChunkId: bestFromParsed.sourceChunk && bestFromParsed.sourceChunk.id, reason: 'disallowed_context_in_candidate' }); } catch (e) {}
+        try { feeParseTrace('[TRACE_PARSE_REGISTRATION_FROM_PARSED_CANDIDATE_REJECTED]', { chosenChunkId: bestFromParsed.sourceChunk && bestFromParsed.sourceChunk.id, reason: 'disallowed_context_in_candidate' }); } catch (e) {}
       } else {
         merged.registrationDiscount = bestFromParsed.registrationDiscount;
         merged.fieldSources = merged.fieldSources || {};
         merged.fieldSources.registrationDiscount = { id: (bestFromParsed.sourceChunk && bestFromParsed.sourceChunk.id) || null, filename: (bestFromParsed.sourceChunk && bestFromParsed.sourceChunk.filename) || null, sourceText: (bestFromParsed.sourceChunk && bestFromParsed.sourceChunk.chunk) || bestFromParsed.rawChunk || null };
         if (!merged.sourceChunks.find(s => s && s.id === (bestFromParsed.sourceChunk && bestFromParsed.sourceChunk.id))) merged.sourceChunks.push(bestFromParsed.sourceChunk);
-        try { console.log('[TRACE_PARSE_REGISTRATION_FROM_PARSED_CANDIDATE]', { chosenChunkId: bestFromParsed.sourceChunk && bestFromParsed.sourceChunk.id, registrationDiscount: merged.registrationDiscount }); } catch (e) {}
+        try { feeParseTrace('[TRACE_PARSE_REGISTRATION_FROM_PARSED_CANDIDATE]', { chosenChunkId: bestFromParsed.sourceChunk && bestFromParsed.sourceChunk.id, registrationDiscount: merged.registrationDiscount }); } catch (e) {}
       }
     } else {
-      // If none in parsedCandidates, scan the local index for explicit registration rows
-      try {
+      // If none in parsedCandidates, scan the local index for explicit registration rows only when explicitly allowed.
+      if (allowIndexFallback) try {
         const idx = loadIndex();
         const baseTrainingId = base && base.sourceChunk && base.sourceChunk.trainingId ? base.sourceChunk.trainingId : null;
         const baseFilename = base && base.sourceChunk && base.sourceChunk.filename ? base.sourceChunk.filename : null;
@@ -6908,19 +6980,35 @@ function parseFeeStructure(chunks, queryEntities) {
             const chosenTxt = String(chosen.sourceChunk.chunk || '').toLowerCase();
             const disallowedCtxRe_chosen = /\b(dpp|dana\s+pendidikan|pengakuan\s+sks|jumlah\s+sks|biaya\s+kuliah|ukt)\b/i;
             if (disallowedCtxRe_chosen.test(chosenTxt)) {
-              try { console.log('[TRACE_PARSE_REGISTRATION_FROM_INDEX_REJECTED]', { chosenChunkId: chosen.sourceChunk.id, reason: 'disallowed_context_in_index_choice' }); } catch (e) {}
+              try { feeParseTrace('[TRACE_PARSE_REGISTRATION_FROM_INDEX_REJECTED]', { chosenChunkId: chosen.sourceChunk.id, reason: 'disallowed_context_in_index_choice' }); } catch (e) {}
             } else {
               merged.registrationDiscount = chosen.parsed.registrationDiscount;
               merged.fieldSources = merged.fieldSources || {};
               merged.fieldSources.registrationDiscount = { id: chosen.sourceChunk.id, filename: chosen.sourceChunk.filename, sourceText: chosen.sourceChunk.chunk };
               if (!merged.sourceChunks.find(s => s && s.id === chosen.sourceChunk.id)) merged.sourceChunks.push({ id: chosen.sourceChunk.id, filename: chosen.sourceChunk.filename, chunk: chosen.sourceChunk.chunk });
-              try { console.log('[TRACE_PARSE_REGISTRATION_FROM_INDEX]', { chosenChunkId: chosen.sourceChunk.id, registrationDiscount: merged.registrationDiscount }); } catch (e) {}
+              try { feeParseTrace('[TRACE_PARSE_REGISTRATION_FROM_INDEX]', { chosenChunkId: chosen.sourceChunk.id, registrationDiscount: merged.registrationDiscount }); } catch (e) {}
             }
           }
         }
       } catch (e) {}
     }
   } catch (e) {}
+  if (!merged.dpp) {
+    try {
+      const dppCandidates = (parsedCandidates || []).filter(c => c && c.dpp && canMergeFeeChunks(base, c));
+      if (dppCandidates.length) {
+        const chosenDpp = dppCandidates.slice().sort((a, b) => {
+          const av = parseInt(String(a.dpp || '').replace(/\D/g, ''), 10) || 0;
+          const bv = parseInt(String(b.dpp || '').replace(/\D/g, ''), 10) || 0;
+          return bv - av;
+        })[0];
+        merged.dpp = chosenDpp.dpp;
+        merged.fieldSources = merged.fieldSources || {};
+        merged.fieldSources.dpp = chosenDpp.sourceChunk ? { id: chosenDpp.sourceChunk.id, filename: chosenDpp.sourceChunk.filename, sourceText: chosenDpp.sourceChunk.chunk } : null;
+        if (chosenDpp.sourceChunk && !merged.sourceChunks.find(s => s && s.id === chosenDpp.sourceChunk.id)) merged.sourceChunks.push(chosenDpp.sourceChunk);
+      }
+    } catch (e) {}
+  }
   const moneyToNumber = (value) => {
     if (!value) return 0;
     const digits = String(value).replace(/\D/g, '');
@@ -6942,7 +7030,7 @@ function parseFeeStructure(chunks, queryEntities) {
 
   // === TRACE #6f: Discount Filtering ===
   try {
-    console.log('[TRACE_PARSE_6f_DISCOUNT_FILTER]', {
+    feeParseTrace('[TRACE_PARSE_6f_DISCOUNT_FILTER]', {
       baseWaveGroup: base.waveGroup,
       globalDiscountCandidatesCount: globalDiscountCandidates.length,
       eligibleDiscountsAfterFilter: eligibleDiscounts.length,
@@ -6979,7 +7067,7 @@ function parseFeeStructure(chunks, queryEntities) {
 
   // === TRACE #6g: Best Discounts Selected ===
   try {
-    console.log('[TRACE_PARSE_6g_BEST_DISCOUNTS]', {
+    feeParseTrace('[TRACE_PARSE_6g_BEST_DISCOUNTS]', {
       registrationDiscountFound: !!bestRegistrationDiscount,
       registrationDiscountValue: bestRegistrationDiscount ? bestRegistrationDiscount.registrationDiscount : null,
       dppDiscountFound: !!bestDppDiscount,
@@ -6998,7 +7086,7 @@ function parseFeeStructure(chunks, queryEntities) {
       merged.sourceChunks.push(bestRegistrationDiscount.sourceChunk);
       try { merged.fieldSources = merged.fieldSources || {}; merged.fieldSources.registrationDiscount = { id: bestRegistrationDiscount.sourceChunk.id, filename: bestRegistrationDiscount.sourceChunk.filename, sourceText: bestRegistrationDiscount.sourceChunk.chunk }; } catch (e) {}
     } else {
-      try { console.log('[TRACE_PARSE_BEST_REG_DISCOUNT_REJECTED]', { sourceChunkId: bestRegistrationDiscount.sourceChunk && bestRegistrationDiscount.sourceChunk.id, reason: 'disallowed_context' }); } catch (e) {}
+      try { feeParseTrace('[TRACE_PARSE_BEST_REG_DISCOUNT_REJECTED]', { sourceChunkId: bestRegistrationDiscount.sourceChunk && bestRegistrationDiscount.sourceChunk.id, reason: 'disallowed_context' }); } catch (e) {}
     }
   }
 
@@ -7034,7 +7122,7 @@ function parseFeeStructure(chunks, queryEntities) {
           plausibleSample: plausible.slice(0, 6)
         };
       }
-      console.log('[TRACE_PARSE_6f_CONFLICTS_DETECTED]', { conflictDetails });
+      feeParseTrace('[TRACE_PARSE_6f_CONFLICTS_DETECTED]', { conflictDetails });
     } catch (e) {}
     // Proceed using the selected `base` candidate (prefer most recent / highest-year),
     // as strict rejection here causes fallback-only answers when documents contain
@@ -7043,7 +7131,7 @@ function parseFeeStructure(chunks, queryEntities) {
 
   // === TRACE #6h: Final Merged Result ===
   try {
-    console.log('[TRACE_PARSE_6h_FINAL_MERGED]', {
+    feeParseTrace('[TRACE_PARSE_6h_FINAL_MERGED]', {
       merged: {
         program: merged.program,
         wave: merged.wave,
@@ -7055,9 +7143,9 @@ function parseFeeStructure(chunks, queryEntities) {
         sourceChunksCount: merged.sourceChunks ? merged.sourceChunks.length : 0
       }
     });
-    try { console.log('[PROGRAM_SELECTED]', { program: merged.program }); } catch (e) {}
-    try { console.log('[SELECTED_FILE]', { files: merged.sourceChunks ? merged.sourceChunks.map(s => ({ id: s.id, filename: s.filename })) : [] }); } catch (e) {}
-    try { console.log('[FIELD_PROVENANCE]', merged.fieldSources || {}); } catch (e) {}
+    try { feeParseTrace('[PROGRAM_SELECTED]', { program: merged.program }); } catch (e) {}
+    try { feeParseTrace('[SELECTED_FILE]', { files: merged.sourceChunks ? merged.sourceChunks.map(s => ({ id: s.id, filename: s.filename })) : [] }); } catch (e) {}
+    try { feeParseTrace('[FIELD_PROVENANCE]', merged.fieldSources || {}); } catch (e) {}
   } catch (e) {}
 
   // Persist consolidated initial-cost items (e.g., jas, kaos, tas) into feeStruct
@@ -7214,7 +7302,7 @@ function parseFeeStructure(chunks, queryEntities) {
         }
       }
     } catch (e) {
-      try { console.log('[TRACE_PARSE_EXTRA_ITEMS_ERROR]', { err: e && e.message }); } catch (e2) {}
+      try { feeParseTrace('[TRACE_PARSE_EXTRA_ITEMS_ERROR]', { err: e && e.message }); } catch (e2) {}
     }
 
     if (items.length) {
@@ -7261,7 +7349,7 @@ function parseFeeStructure(chunks, queryEntities) {
       merged.initialCostItems = [];
     }
   } catch (e) {
-    try { console.log('[TRACE_PARSE_INITIAL_ITEMS_ERROR]', { err: e && e.message }); } catch (e2) {}
+    try { feeParseTrace('[TRACE_PARSE_INITIAL_ITEMS_ERROR]', { err: e && e.message }); } catch (e2) {}
     merged.initialCostItems = [];
   }
 
@@ -7340,7 +7428,7 @@ function parseFeeStructure(chunks, queryEntities) {
     // preserve existing semester/ukt field
     merged.ukt = merged.ukt || merged.semester || null;
     try {
-      console.log('SELECTED_FEE_RECORD', {
+      feeParseTrace('SELECTED_FEE_RECORD', {
         program: merged.program,
         wave: merged.wave,
         academicYear: merged.academicYear,
@@ -7351,7 +7439,7 @@ function parseFeeStructure(chunks, queryEntities) {
       });
     } catch (e) {}
     try {
-      console.log('CALCULATED_TOTAL', {
+      feeParseTrace('CALCULATED_TOTAL', {
         registrationFeeAmt,
         registrationDiscountAmt,
         registrationTotalAmt,
@@ -7372,9 +7460,11 @@ function parseFeeStructure(chunks, queryEntities) {
       });
     } catch (e) {}
   } catch (e) {
-    try { console.log('[TRACE_PARSE_COMPUTE_FIELDS_ERROR]', { err: e && e.message }); } catch (e2) {}
+    try { feeParseTrace('[TRACE_PARSE_COMPUTE_FIELDS_ERROR]', { err: e && e.message }); } catch (e2) {}
   }
 
+  __feeProfile.mark('assembly_dedup_sorting_totals');
+  __feeProfile.flush({ result: 'ok', inputChunksCount: chunks.length, parsedCandidatesCount: parsedCandidates.length, globalDiscountCandidatesCount: globalDiscountCandidates.length });
   return merged;
 }
 
@@ -7649,8 +7739,8 @@ function buildDeterministicFeeAnswer(feeStruct, queryEntities) {
   // Debug logs: expose the canonical fee record and select fields for tracing
   try {
     const record = feeStruct;
-    console.log('FEE_RECORD_RAW', JSON.stringify(record, null, 2));
-    console.log('FEE_FIELDS', {
+    feeParseTrace('FEE_RECORD_RAW', JSON.stringify(record, null, 2));
+    feeParseTrace('FEE_FIELDS', {
       registrationFee: record?.registrationFee,
       dpp: record?.dpp,
       jas: record?.uniformFee || record?.atribut1 || record?.registrasi || null,
@@ -7662,7 +7752,7 @@ function buildDeterministicFeeAnswer(feeStruct, queryEntities) {
       program: record?.program || record?.programName || null
     });
       try {
-        console.log('FEE_FIELD_SOURCES', {
+        feeParseTrace('FEE_FIELD_SOURCES', {
           registrationFee: record?.fieldSources ? (record.fieldSources.registrationFee ? { id: record.fieldSources.registrationFee.id, filename: record.fieldSources.registrationFee.filename } : null) : null,
           dpp: record?.fieldSources ? (record.fieldSources.dpp ? { id: record.fieldSources.dpp.id, filename: record.fieldSources.dpp.filename } : null) : null,
           registrationDiscount: record?.fieldSources ? (record.fieldSources.registrationDiscount ? { id: record.fieldSources.registrationDiscount.id, filename: record.fieldSources.registrationDiscount.filename } : null) : null,
@@ -7670,7 +7760,7 @@ function buildDeterministicFeeAnswer(feeStruct, queryEntities) {
         });
       } catch (e) {}
       try {
-        console.log('MONEY_CANDIDATES', Array.isArray(record?.moneyCandidates) ? record.moneyCandidates.slice(0, 30) : []);
+        feeParseTrace('MONEY_CANDIDATES', Array.isArray(record?.moneyCandidates) ? record.moneyCandidates.slice(0, 30) : []);
       } catch (e) {}
   } catch (e) {}
   return lines.join('\n').trim();
@@ -13025,7 +13115,13 @@ async function query(question, topK = 8, options = null) {
     const aiEngine = new AIReplyEngine(process.env.OPENAI_API_KEY, ragModel, { timeoutMs: ragTimeoutMs });
     const assistHints = extractHintsFromChunks(top);
     const ragStyle = getRagStyle();
-    const aiResult = await aiEngine.getRagAnswer(questionForAnswer, context, ragStyle, assistHints);
+    const ragEvidenceSelection = buildRagAnswerContext.lastSelection || {};
+    const aiResult = await aiEngine.getRagAnswer({
+      question: questionForAnswer,
+      selectedEvidence: ragEvidenceSelection.selectedEvidence || [],
+      intent: userIntent,
+      metadata: { style: ragStyle, assistHints, source: 'legacy-rag' }
+    });
 
     // If the AI call failed, do not answer from a raw lexical snippet.
     // Keyword-only snippets can look relevant but answer the wrong entity/topic.
@@ -13270,4 +13366,23 @@ module.exports = {
   tryStructuredProgramRegistrationMenuAnswer,
   tokenizeForRelevanceGuard
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

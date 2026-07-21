@@ -286,3 +286,4 @@ describe('Message examples (real WA phrasing)', () => {
     expect(sentTexts.join('\n')).toMatch(/Anda ingin informasi apa/i);
   });
 });
+

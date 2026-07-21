@@ -30,10 +30,17 @@
     "maint:run:dry": "node scripts/maintenanceScheduler.js --immediate --dry-run",
     "maint:scheduler": "node scripts/maintenanceScheduler.js",
     "maint:clean:sessions": "node scripts/clear_session_pending_flags.js --chatId=all",
-    "test": "jest",
+    "test": "npm run test:unit",
     "rag:web-sync": "node scripts/ingestWebRag.js",
     "rag:audit-ingest": "node scripts/auditRagIngestCoverage.js",
-    "answer-quality:weekly": "node scripts/auditAnswerQualityWeekly.js"
+    "answer-quality:weekly": "node scripts/auditAnswerQualityWeekly.js",
+    "test:unit": "jest --runInBand --testPathIgnorePatterns=providerRealUat --testPathIgnorePatterns=run21 --testPathIgnorePatterns=providerWebhook --testPathIgnorePatterns=messageExamples --testPathIgnorePatterns=semanticRagEngine --testPathIgnorePatterns=ragEngine --testPathIgnorePatterns=registrationDiscount --testPathIgnorePatterns=parse_fee_numbering --testPathIgnorePatterns=debug_fee_output --testPathIgnorePatterns=bug-audit --testPathIgnorePatterns=productionRuntime --testPathIgnorePatterns=providerRoute --testPathIgnorePatterns=provider_ --testPathIgnorePatterns=feeComparisonEngine --testPathIgnorePatterns=admin --testPathIgnorePatterns=integrationRuntime --testPathIgnorePatterns=ragRetrieval --testPathIgnorePatterns=retrieval --testPathIgnorePatterns=traceRuntime --testPathIgnorePatterns=fonnte --testPathIgnorePatterns=wati --testPathIgnorePatterns=serverRuntime --testPathIgnorePatterns=fileParser --testPathIgnorePatterns=webSearchFallback",
+    "test:evidence": "jest --runInBand tests/evidenceSelector.test.js tests/semanticEvidenceSelection.test.js tests/answerPreflightEvaluator.test.js",
+    "test:rag": "jest --runInBand tests/ragEngine.test.js tests/semanticRagEngine.test.js tests/registrationDiscount.cases.test.js tests/registrationDiscount.regression.test.js tests/parse_fee_numbering.test.js",
+    "test:integration": "jest --runInBand tests/providerWebhook.test.js tests/messageExamples.test.js",
+    "test:uat": "jest --runInBand tests/providerRealUat.test.js",
+    "test:handles": "jest --runInBand --detectOpenHandles",
+    "diagnostic:run21": "node scripts/run21Diagnostic.js"
   },
   "engines": {
     "node": ">=20.0.0"

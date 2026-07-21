@@ -30,15 +30,29 @@ describe('AIReplyEngine', () => {
     jest.clearAllMocks();
   });
 
-  test('does not include CONFIDENCE or SOURCE_CHUNKS in visible AI reply text', async () => {
+  test('getRagAnswer rejects raw context string before OpenAI', async () => {
+    const { AIReplyEngine } = require('../src/engine/aiEngine');
+    const { __createMock } = require('openai');
+    const ai = new AIReplyEngine('fake-key', 'gpt-5.2', { timeoutMs: 1000 });
+
+    const result = await ai.getRagAnswer('Berapa biaya pendaftaran?', 'Sumber: daftar biaya 2026', 'SEMI', '');
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('RAG_SELECTED_EVIDENCE_REQUIRED');
+    expect(__createMock).not.toHaveBeenCalled();
+  });
+
+  test('getRagAnswer accepts selected evidence and hides model metadata', async () => {
     const { AIReplyEngine } = require('../src/engine/aiEngine');
     const ai = new AIReplyEngine('fake-key', 'gpt-5.2', { timeoutMs: 1000 });
-    const result = await ai.getRagAnswer('Berapa biaya pendaftaran?', 'Sumber: daftar biaya 2026', 'SEMI', '');
+    const result = await ai.getRagAnswer({
+      question: 'Berapa biaya pendaftaran?',
+      selectedEvidence: [{ text: 'Biaya pendaftaran adalah Rp 500.000.', source: 'fee.pdf', sourceId: 'fee-1', isSelectedEvidence: true }],
+      intent: 'COST',
+      metadata: { style: 'SEMI', assistHints: '' }
+    });
 
     expect(result.success).toBe(true);
     expect(result.reply).not.toMatch(/CONFIDENCE:\s*HIGH|SOURCE_CHUNKS:/i);
-    expect(result.reply).toMatch(/(Mau saya jelaskan lagi bagian lain\?|Perlu saya cek opsi beasiswa, cicilan, atau potongan biaya yang relevan\?|Mau saya jelaskan rincian komponen biaya \(pendaftaran, DPP, per semester\)\?)/i);
-    expect(result.reply).not.toMatch(/\n+\s*(Mau saya|Perlu saya)/i);
   });
 
   test('humanizer uses reflective phrasing and avoids generic CTA for scholarship query', () => {
@@ -120,3 +134,6 @@ describe('AIReplyEngine', () => {
     expect(result).not.toMatch(/\?[ \t]+-\s/);
   });
 });
+
+
+

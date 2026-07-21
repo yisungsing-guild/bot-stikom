@@ -2,6 +2,7 @@ const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
+const { OPENAI_USAGE } = require('./openaiUsage');
 const ragEngine = require('./ragEngine');
 const { getLegacyRagIndexPath, getRagIndexPath } = require('../utils/ragPaths');
 const { evaluateOutboundAnswer } = require('../utils/answerPreflightEvaluator');
@@ -680,6 +681,8 @@ async function rewriteQuestionWithLlm(client, question, options = {}) {
   ].join('\n');
 
   try {
+    const startedOpenAi = Date.now();
+    logger.info({ purpose: OPENAI_USAGE.TRANSLATION, contentLength: String(result.answer || '').length, model: getModel() }, '[OpenAI] semantic english polish request');
     const completion = await client.chat.completions.create({
       model: getModel(),
       messages: [
@@ -4170,7 +4173,9 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
     `KONTEKS TRAINING:\n${contextText}`
   ].join('\n');
 
-  const completion = await client.chat.completions.create({
+  const startedOpenAi = Date.now();
+    logger.info({ purpose: OPENAI_USAGE.TRANSLATION, contentLength: String(result.answer || '').length, model: getModel() }, '[OpenAI] semantic english polish request');
+    const completion = await client.chat.completions.create({
     model: getModel(),
     messages: [
       { role: 'system', content: 'You are a grounded campus assistant. Use only supplied context. Answer in the same language as the user question.' },
@@ -4424,6 +4429,11 @@ function answerHasIndonesianMarkers(answer) {
 async function polishEnglishDeterministicAnswer(client, question, result, options = {}) {
   if (!result || !result.answer || !client) return result;
   if (!isLikelyEnglishConversation(question, options) || !answerHasIndonesianMarkers(result.answer)) return result;
+  const prePolish = validatePreEnglishPolishAnswer(result.answer, question);
+  if (!prePolish.ok) {
+    logger.warn({ reason: prePolish.reason, answerLength: String(result.answer || '').length }, '[SemanticRAG] English polish skipped by content guard');
+    return { ...result, debug: { ...(result.debug || {}), englishPolishSkipped: prePolish.reason } };
+  }
   try {
     const prompt = [
       'Translate only the assistant answer into natural English.',
@@ -4433,6 +4443,8 @@ async function polishEnglishDeterministicAnswer(client, question, result, option
       '',
       `Answer:\n${result.answer}`
     ].join('\n');
+    const startedOpenAi = Date.now();
+    logger.info({ purpose: OPENAI_USAGE.TRANSLATION, contentLength: String(result.answer || '').length, model: getModel() }, '[OpenAI] semantic english polish request');
     const completion = await client.chat.completions.create({
       model: getModel(),
       messages: [
@@ -4444,7 +4456,10 @@ async function polishEnglishDeterministicAnswer(client, question, result, option
       top_p: 0.8
     });
     const translated = String(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content || '' : '').trim();
-    if (translated) return { ...result, answer: stripQuestionAnswerEnvelope(translated), debug: { ...(result.debug || {}), englishPolished: true } };
+    if (translated) {
+      logger.info({ purpose: OPENAI_USAGE.TRANSLATION, duration: Date.now() - startedOpenAi, success: true, model: getModel() }, '[OpenAI] semantic english polish complete');
+      return { ...result, answer: stripQuestionAnswerEnvelope(translated), debug: { ...(result.debug || {}), englishPolished: true } };
+    }
   } catch (err) {
     logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] English polish failed');
   }
@@ -4991,6 +5006,8 @@ module.exports = {
   buildContextText,
   cosineSimilarity
 };
+
+
 
 
 
