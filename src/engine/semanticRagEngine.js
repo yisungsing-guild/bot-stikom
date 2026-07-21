@@ -462,14 +462,62 @@ function setCachedSemanticResult(cacheKey, result) {
   trimMapToMax(semanticResultCache, maxSize);
 }
 
+function hasExcessivePlaceholderNoise(text) {
+  const raw = String(text || '');
+  if (!raw.trim()) return true;
+  const placeholderHits = (raw.match(/(?:_{4,}|\.{6,}|:{3,}|…{2,}|\(\s*(?:nama|nomor|jabatan|alamat|mitra)[^)]+\))/gi) || []).length;
+  if (placeholderHits >= 2) return true;
+  const symbolCount = (raw.match(/[_.:…-]/g) || []).length;
+  return raw.length > 200 && symbolCount / raw.length > 0.18;
+}
+
+function hasReadableSemanticContent(text) {
+  const raw = String(text || '').replace(/\s+/g, ' ').trim();
+  if (raw.length < 40) return false;
+  const words = raw.split(/\s+/).filter(Boolean);
+  if (words.length < 6) return false;
+  const alphaNum = (raw.match(/[\p{L}\p{N}]/gu) || []).length;
+  if (alphaNum / Math.max(raw.length, 1) < 0.45) return false;
+  return true;
+}
+
+function isLikelySemanticCorpusJunk(item) {
+  const chunk = String(item && item.chunk ? item.chunk : '');
+  const filename = String((item && (item.filename || item.sourceFile)) || '');
+  const haystack = `${filename}\n${chunk}`;
+  if (!hasReadableSemanticContent(chunk)) return true;
+  if (isLikelyRawAdministrativeDocument(haystack)) return true;
+  if (hasExcessivePlaceholderNoise(haystack)) return true;
+  if (/\b(?:template|draft|contoh\s+surat|formulir\s+kosong)\b/i.test(filename) && hasExcessivePlaceholderNoise(haystack)) return true;
+  return false;
+}
+
+function sanitizeSemanticIndex(index) {
+  const list = Array.isArray(index) ? index : [];
+  if (!envFlag('SEMANTIC_RAG_SANITIZE_INDEX', true)) return list;
+  let rejected = 0;
+  const kept = [];
+  for (const item of list) {
+    if (isLikelySemanticCorpusJunk(item)) {
+      rejected += 1;
+      continue;
+    }
+    kept.push(item);
+  }
+  if (rejected > 0) {
+    logger.warn({ total: list.length, kept: kept.length, rejected }, '[SemanticRAG] sanitized low-quality corpus chunks before retrieval');
+  }
+  return kept;
+}
 function getCachedSemanticIndex() {
   const ttlMs = getCacheNumber('SEMANTIC_RAG_INDEX_CACHE_MS', 10000);
   const now = Date.now();
   if (ttlMs > 0 && semanticIndexCache && (now - semanticIndexCache.ts) <= ttlMs) {
     return semanticIndexCache.index;
   }
-  const index = ragEngine.loadIndex();
-  if (ttlMs > 0) semanticIndexCache = { ts: now, index };
+  const rawIndex = ragEngine.loadIndex();
+  const index = sanitizeSemanticIndex(rawIndex);
+  if (ttlMs > 0) semanticIndexCache = { ts: now, index, rawSize: Array.isArray(rawIndex) ? rawIndex.length : 0 };
   return index;
 }
 
@@ -992,14 +1040,83 @@ function isLikelyRawAdministrativeDocument(text) {
   const longContractLike = normalized.length > 700 && legalSignals >= 2;
   return legalSignals >= 3 || (legalSignals >= 1 && placeholderSignals) || longContractLike;
 }
+function getSemanticQuestionSignals(question) {
+  const q = String(question || '').toLowerCase();
+  const signals = [];
+  const rules = [
+    { key: 'fee', re: /\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|cicilan|nominal|potongan)\b/i },
+    { key: 'schedule', re: /\b(jadwal|kapan|tanggal|periode|gelombang|dibuka|pendaftaran|pmb|daftar)\b/i },
+    { key: 'ukm', re: /\b(ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|esports?|musik|futsal|basket|teater|vos)\b/i },
+    { key: 'scholarship', re: /\b(beasiswa|kip|1k1s|bantuan|diskon|potongan)\b/i },
+    { key: 'double_degree', re: /\b(double\s*degree|dual\s*degree|gelar\s+ganda|utb|dnui|help)\b/i },
+    { key: 'facility', re: /\b(fasilitas|layanan|sarana|career\s*center|inkubator|language\s+learning|softskill|gccp|bccp|bahasa)\b/i },
+    { key: 'program', re: /\b(prodi|program\s+studi|jurusan|s1|d3|s2|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i },
+    { key: 'location', re: /\b(lokasi|alamat|kampus|denpasar|renon|jimbaran|abiansemal)\b/i }
+  ];
+  for (const rule of rules) {
+    if (rule.re.test(q)) signals.push(rule.key);
+  }
+  return signals;
+}
+
+function getSemanticRequiredEntities(question) {
+  const q = String(question || '').toLowerCase();
+  const rules = [
+    { key: 'gccp', aliases: ['gccp'], re: /\bgccp\b/i },
+    { key: 'bccp', aliases: ['bccp'], re: /\bbccp\b/i },
+    { key: 'linkedin', aliases: ['linkedin', 'linked in'], re: /\blinked\s*in\b|\blinkedin\b/i },
+    { key: 'language-learning-center', aliases: ['language learning center', 'llc', 'belajar bahasa', 'kemampuan bahasa'], re: /\blanguage\s+learning\s+center\b|\bllc\b|belajar\s+bahasa|kemampuan\s+bahasa/i },
+    { key: 'career-center', aliases: ['career center', 'pusat karier', 'pusat karir'], re: /\bcareer\s*center\b|pusat\s+kar(?:ir|ier)/i },
+    { key: 'double-degree', aliases: ['double degree', 'dual degree', 'gelar ganda'], re: /double\s*degree|dual\s*degree|gelar\s+ganda/i },
+    { key: 'dnui', aliases: ['dnui', 'dalian neusoft'], re: /\bdnui\b|dalian\s+neusoft/i },
+    { key: 'utb', aliases: ['utb', 'universitas teknologi bandung'], re: /\butb\b|universitas\s+teknologi\s+bandung/i },
+    { key: 'help', aliases: ['help', 'help university'], re: /\bhelp\b|help\s+university/i },
+    { key: 'sistem-informasi', aliases: ['sistem informasi', 'si'], re: /sistem\s+informasi|\bsi\b/i },
+    { key: 'teknologi-informasi', aliases: ['teknologi informasi', 'ti'], re: /teknologi\s+informasi|\bti\b/i },
+    { key: 'bisnis-digital', aliases: ['bisnis digital', 'bd'], re: /bisnis\s+digital|\bbd\b/i },
+    { key: 'sistem-komputer', aliases: ['sistem komputer', 'sk'], re: /sistem\s+komputer|\bsk\b/i },
+    { key: 'manajemen-informatika', aliases: ['manajemen informatika', 'mi'], re: /manajemen\s+informatika|\bmi\b/i }
+  ];
+  return rules.filter((rule) => rule.re.test(q));
+}
+
+function normalizedIncludesAny(text, aliases) {
+  const normalized = normalizeFacilityTerm(text);
+  return (Array.isArray(aliases) ? aliases : []).some((alias) => normalized.includes(normalizeFacilityTerm(alias)));
+}
+
+function hasSemanticEvidenceAlignment(question, chunk) {
+  const terms = getQuestionContentTerms(question);
+  const signals = getSemanticQuestionSignals(question);
+  const entities = getSemanticRequiredEntities(question);
+  const text = String(chunk || '');
+  if (!terms.length && !signals.length && !entities.length) return false;
+  if (entities.length && !entities.every((entity) => normalizedIncludesAny(text, entity.aliases))) return false;
+  if (terms.length >= 2 && countTermHits(text, terms) === 0) return false;
+  if (terms.length === 1 && countTermHits(text, terms) === 0 && !signals.length && !entities.length) return false;
+  if (signals.length) {
+    const signalText = normalizeFacilityTerm(text);
+    const signalTerms = {
+      fee: ['biaya', 'ukt', 'dpp', 'rupiah', 'pembayaran'],
+      schedule: ['jadwal', 'tanggal', 'gelombang', 'pendaftaran', 'pmb'],
+      ukm: ['ukm', 'ormawa', 'organisasi mahasiswa', 'unit kegiatan', 'esport'],
+      scholarship: ['beasiswa', 'kip', 'potongan', 'diskon'],
+      double_degree: ['double degree', 'dual degree', 'gelar ganda', 'dnui', 'utb', 'help'],
+      facility: ['fasilitas', 'layanan', 'career center', 'language learning', 'softskill', 'gccp', 'bccp'],
+      program: ['program studi', 'prodi', 'jurusan', 'sistem informasi', 'teknologi informasi', 'bisnis digital', 'sistem komputer', 'manajemen informatika'],
+      location: ['lokasi', 'alamat', 'kampus', 'denpasar', 'renon']
+    };
+    const hasSignalHit = signals.some((signal) => (signalTerms[signal] || []).some((term) => signalText.includes(normalizeFacilityTerm(term))));
+    if (!hasSignalHit && countTermHits(text, terms) === 0 && !entities.length) return false;
+  }
+  return true;
+}
 function shouldRejectSemanticContext(question, context) {
   const chunk = String(context && context.chunk ? context.chunk : '');
   if (!chunk.trim()) return true;
+  if (isLikelySemanticCorpusJunk(context)) return true;
   if (isLikelyRawAdministrativeDocument(chunk)) return true;
-
-  const terms = getQuestionContentTerms(question);
-  if (terms.length >= 2 && countTermHits(chunk, terms) === 0) return true;
-  return false;
+  return !hasSemanticEvidenceAlignment(question, chunk);
 }
 
 function filterSemanticContextsForQuestion(question, contexts) {
@@ -4804,6 +4921,8 @@ module.exports = {
   retrieveSemanticContexts,
   filterSemanticContextsForQuestion,
   isLikelyRawAdministrativeDocument,
+  hasSemanticEvidenceAlignment,
+  sanitizeSemanticIndex,
   cosineSimilarity
 };
 
