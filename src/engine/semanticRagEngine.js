@@ -6,6 +6,11 @@ const ragEngine = require('./ragEngine');
 const { getLegacyRagIndexPath, getRagIndexPath } = require('../utils/ragPaths');
 const { evaluateOutboundAnswer } = require('../utils/answerPreflightEvaluator');
 const {
+  selectEvidenceFromContexts,
+  evaluateEvidenceAnswerability,
+  buildSelectedEvidenceContext
+} = require('./evidenceSelector');
+const {
   tryFeeComparisonAnswer,
   tryDetailedFeeAnswer,
   tryRegistrationFeeAnswer,
@@ -985,20 +990,7 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
 
 function buildContextText(contexts) {
   const maxChars = parseInt(process.env.SEMANTIC_RAG_CONTEXT_MAX_CHARS || '9000', 10);
-  let used = 0;
-  const blocks = [];
-  const list = Array.isArray(contexts) ? contexts : [];
-  for (let i = 0; i < list.length; i += 1) {
-    const c = list[i];
-    const source = [c && c.filename, c && c.trainingId].filter(Boolean).join(' | ') || `chunk-${i + 1}`;
-    const body = clampText(c && c.chunk ? c.chunk : '', 1800);
-    if (!body) continue;
-    const block = `[#${i + 1}] Sumber: ${source}\n${body}`;
-    if (used + block.length > maxChars) break;
-    blocks.push(block);
-    used += block.length;
-  }
-  return blocks.join('\n\n');
+  return buildSelectedEvidenceContext(contexts, maxChars);
 }
 
 function getQuestionContentTerms(question) {
@@ -4153,6 +4145,10 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
   const intentHint = String(options && options.intentHint ? options.intentHint : '').trim();
   const prompt = [
     'Jawab pertanyaan user berdasarkan KONTEKS TRAINING saja.',
+    'KONTEKS TRAINING berisi selected evidence terkurasi, bukan dokumen mentah. Gunakan sebagai sumber fakta, bukan teks untuk disalin.',
+    'Ambil hanya evidence yang langsung menjawab pertanyaan. Jangan menyalin paragraf mentah atau menjelaskan seluruh dokumen.',
+    'Jangan menampilkan Pasal, Ayat, PIHAK KESATU, PIHAK KEDUA, PARA PIHAK, Force Majeure, Addendum, nomor surat, alamat, kontak, tanda tangan, placeholder, atau boilerplate kecuali user eksplisit meminta isi legal tersebut.',
+    'Jika evidence tidak memuat jawaban konkret, keluarkan TIDAK_CUKUP_DATA. Jangan membuat daftar dari informasi yang tidak tersedia.',
     'Kamu boleh memahami gaya bahasa user sebebas mungkin, tetapi fakta jawaban harus berasal dari konteks.',
     'Jika KONTEKS TRAINING berbentuk FAQ atau tanya-jawab, cocokkan makna pertanyaan user dengan pertanyaan FAQ, lalu berikan hanya bagian jawabannya. Jangan menyalin atau mengirim ulang teks pertanyaan FAQ kecuali user memang meminta daftar FAQ.',
     'Jika konteks tidak memuat jawaban yang cukup, jawab persis dengan token TIDAK_CUKUP_DATA lalu beri satu kalimat klarifikasi yang dibutuhkan.',
@@ -4746,6 +4742,72 @@ async function querySemanticRag(question, options = {}) {
     };
   }
 
+  const selectedEvidence = selectEvidenceFromContexts({
+    question,
+    contexts: retrieved.contexts,
+    intent: rewrite.intent || options.intentHint || '',
+    maxEvidence: options.maxEvidence || process.env.SEMANTIC_RAG_MAX_EVIDENCE || 5
+  });
+  const answerability = evaluateEvidenceAnswerability({
+    question,
+    selectedEvidence,
+    intent: rewrite.intent || options.intentHint || ''
+  });
+  const evidenceAudit = {
+    question,
+    selectedPath: 'semantic-rag',
+    retrievedCount: Array.isArray(rawRetrieved.contexts) ? rawRetrieved.contexts.length : 0,
+    rejectedContextCount: selectedEvidence.audit ? selectedEvidence.audit.rejectedContextCount : Math.max(0, retrieved.contexts.length - selectedEvidence.length),
+    selectedEvidenceCount: selectedEvidence.length,
+    selectedEvidenceSources: selectedEvidence.map((item) => item.sourceId || item.source).filter(Boolean).slice(0, 8),
+    answerability,
+    rawAnswerEvaluation: null,
+    finalAction: answerability.answerable ? 'continue_to_llm' : 'fallback'
+  };
+  logger.info(evidenceAudit, '[RAG Evidence] Semantic evidence selection');
+  if (envFlag('RAG_EVIDENCE_DEBUG', false)) {
+    logger.debug({
+      ...evidenceAudit,
+      retrievedChunkPreview: retrieved.contexts.map((item) => ({ source: item.filename || item.trainingId || item.id, preview: String(item.chunk || '').slice(0, 220) })).slice(0, 8),
+      rejectedEvidence: selectedEvidence.audit ? selectedEvidence.audit.rejected : [],
+      selectedEvidence,
+      finalContextPreview: buildContextText(selectedEvidence).slice(0, 2000)
+    }, '[RAG Evidence Debug] Semantic final context');
+  }
+  retrieved.contexts = selectedEvidence;
+  retrieved.answerability = answerability;
+
+  if (!answerability.answerable) {
+    const fallbackResult = preferTrainingFirst ? runSemanticDeterministicRoute('ai-intent-fallback-after-rag-evidence-not-answerable') : null;
+    if (fallbackResult) {
+      setCachedSemanticResult(resultCacheKey, fallbackResult);
+      return fallbackResult;
+    }
+    const category = detectAnswerCategory(question, 'semantic-rag-evidence-not-answerable');
+    const answer = buildSpecificInsufficientDataAnswer(question, 'very_low');
+    appendAnswerQualityLog({
+      question,
+      source: 'semantic-rag-evidence-not-answerable',
+      category,
+      confidenceTier: 'VERY_LOW',
+      confidenceScore: retrieved.topScore,
+      action: 'fallback',
+      reason: answerability.reason + ':' + answerability.missingEvidence.join(','),
+      answer
+    });
+    const response = {
+      success: true,
+      answer,
+      source: 'semantic-rag-evidence-not-answerable',
+      contexts: selectedEvidence,
+      confidenceScore: retrieved.topScore,
+      confidenceTier: 'VERY_LOW',
+      answerCategory: category,
+      debug: { rewrite, minScore, indexSize: retrieved.indexSize, rawTopScore: retrieved.rawTopScore, answerability, evidenceAudit }
+    };
+    setCachedSemanticResult(resultCacheKey, response);
+    return response;
+  }
   try {
     const rawAnswer = await answerFromContexts(client, question, rewrite, retrieved.contexts, {
       programHint: options.programHint || '',
@@ -4824,6 +4886,9 @@ async function querySemanticRag(question, options = {}) {
       confidenceTier
     );
     const preflight = evaluateOutboundAnswer(answer, question, { source: 'semantic-rag' });
+    evidenceAudit.rawAnswerEvaluation = { action: preflight.action || 'send', issues: preflight.issues || [], blocked: !!preflight.blocked };
+    evidenceAudit.finalAction = preflight.action || (preflight.blocked ? 'fallback' : 'send');
+    logger.info(evidenceAudit, '[RAG Evidence] Semantic final answer evaluation');
     if (preflight.blocked) {
       appendAnswerQualityLog({
         question,
@@ -4923,6 +4988,7 @@ module.exports = {
   isLikelyRawAdministrativeDocument,
   hasSemanticEvidenceAlignment,
   sanitizeSemanticIndex,
+  buildContextText,
   cosineSimilarity
 };
 

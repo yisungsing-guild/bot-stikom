@@ -8,6 +8,11 @@ const prisma = require('../db');
 const { normalizeMojibakePunctuationForWhatsapp, sanitizeWhatsappText } = require('../utils/textSanitizer');
 const { classifyIntent, getAllowedDocCategories, getForbiddenDocCategories, shouldIncludeChunkForIntent } = require('./intentClassifier');
 const { validateChunkForAnswer, validateChunkEvidence, validateChunkRelevanceToQuestion } = require('./evidenceValidator');
+const {
+  selectEvidenceFromContexts,
+  evaluateEvidenceAnswerability,
+  buildSelectedEvidenceContext
+} = require('./evidenceSelector');
 const { enrichChunkWithCategory } = require('./docCategoryClassifier');
 const { auditLogger } = require('./ragAuditLogger');
 const {
@@ -4797,18 +4802,36 @@ function buildMultiDocSummary(topChunks, question) {
 }
 
 function buildRagAnswerContext(question, top) {
-  const summary = buildMultiDocSummary(top, question);
-  const extended = buildExtendedContextForQuestion(question, top);
-  const baseChunks = top.map((t, idx) => `Sumber ${idx + 1} (${t.trainingId || t.filename || 'dokumen'}):\n${String(t.chunk || '').trim()}`).join('\n\n---\n\n');
-  const parts = [];
-  if (summary) parts.push(summary);
-  if (extended) {
-    parts.push('Detail dokumen relevan:');
-    parts.push(extended);
-  } else {
-    parts.push(baseChunks);
+  const selectedEvidence = selectEvidenceFromContexts({
+    question,
+    contexts: Array.isArray(top) ? top : [],
+    intent: '',
+    maxEvidence: process.env.RAG_MAX_EVIDENCE || 5
+  });
+  const answerability = evaluateEvidenceAnswerability({ question, selectedEvidence, intent: '' });
+  const audit = {
+    question,
+    selectedPath: 'legacy-rag',
+    retrievedCount: Array.isArray(top) ? top.length : 0,
+    rejectedContextCount: selectedEvidence.audit ? selectedEvidence.audit.rejectedContextCount : Math.max(0, (Array.isArray(top) ? top.length : 0) - selectedEvidence.length),
+    selectedEvidenceCount: selectedEvidence.length,
+    selectedEvidenceSources: selectedEvidence.map((item) => item.sourceId || item.source).filter(Boolean).slice(0, 8),
+    answerability,
+    rawAnswerEvaluation: null,
+    finalAction: answerability.answerable ? 'continue_to_llm' : 'fallback'
+  };
+  logger.info(audit, '[RAG Evidence] Legacy evidence selection');
+  if (String(process.env.RAG_EVIDENCE_DEBUG || '').trim().match(/^(1|true|yes|on)$/i)) {
+    logger.debug({
+      ...audit,
+      retrievedChunkPreview: (Array.isArray(top) ? top : []).map((item) => ({ source: item.filename || item.trainingId || item.id, preview: String(item.chunk || '').slice(0, 220) })).slice(0, 8),
+      rejectedEvidence: selectedEvidence.audit ? selectedEvidence.audit.rejected : [],
+      selectedEvidence,
+      finalContextPreview: buildSelectedEvidenceContext(selectedEvidence, parseInt(process.env.RAG_CONTEXT_MAX_CHARS || '9000', 10)).slice(0, 2000)
+    }, '[RAG Evidence Debug] Legacy final context');
   }
-  return parts.join('\n\n');
+  if (!answerability.answerable) return '';
+  return buildSelectedEvidenceContext(selectedEvidence, parseInt(process.env.RAG_CONTEXT_MAX_CHARS || '9000', 10));
 }
 
 function assessContextConsistency(chunks, question) {

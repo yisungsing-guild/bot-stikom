@@ -252,6 +252,57 @@ function buildPreflightFallback(userQuery, reason) {
   return 'Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.';
 }
 
+function hasExcessiveRawQuotation(answer) {
+  const text = String(answer || '');
+  const longLines = text.split(/\n+/).filter((line) => line.trim().length > 220).length;
+  const quotedLines = text.split(/\n+/).filter((line) => /^\s*(?:>|"|“|')/.test(line.trim())).length;
+  return longLines >= 2 || quotedLines >= 3;
+}
+
+function hasPlaceholderOrOcrNoise(answer) {
+  const text = String(answer || '');
+  return /_{4,}|\.{6,}|:{3,}|…{2,}|\b(?:left|right)\s+-?\d{3,}\b|\blogo\s+mitra\b|\(\s*nama\s+mitra\s*\)/i.test(text);
+}
+
+function isTooLongForQuestion(answer, userQuery) {
+  const qWords = String(userQuery || '').trim().split(/\s+/).filter(Boolean).length;
+  const answerLen = String(answer || '').length;
+  if (qWords <= 3 && answerLen > 650) return true;
+  if (qWords <= 8 && answerLen > 1800) return true;
+  return false;
+}
+
+function lacksConcreteItemsForApaSaja(answer, userQuery) {
+  if (!/\bapa\s+saja\b/i.test(String(userQuery || ''))) return false;
+  const text = String(answer || '');
+  const bulletCount = (text.match(/(?:^|\n)\s*(?:[-*•]|\d+\.)\s+\S/g) || []).length;
+  const namedItems = (text.match(/\b(?:GCCP|BCCP|Double\s*Degree|Dual\s*Degree|Student\s+Exchange|UTB|DNUI|HELP|KIP|Prestasi|Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer)\b/gi) || []).length;
+  const hasListLanguage = /\b(?:antara\s+lain|meliputi|terdiri\s+dari|tersedia|pilihan|program\s+mitra|beasiswa|program)\b/i.test(text);
+  return bulletCount < 2 && namedItems < 2 && !hasListLanguage;
+}
+
+function decidePreflightAction(issues, meta = {}) {
+  const hardIssues = new Set([
+    'technical_leak',
+    'raw_document_leak',
+    'empty_answer',
+    'intent_conflict',
+    'missing_requested_entity',
+    'ambiguous_short_query',
+    'no_query_term_overlap',
+    'placeholder_or_ocr_noise',
+    'answer_query_mismatch',
+    'apa_saja_without_concrete_items'
+  ]);
+  if (issues.some((issue) => hardIssues.has(issue))) {
+    const regenerationCount = Number(meta.regenerationCount || meta.regenCount || 0);
+    return regenerationCount < 2 ? 'regenerate' : 'fallback';
+  }
+  if (issues.includes('excessive_raw_quotation') || issues.includes('too_long_for_query') || issues.includes('long_answer_split_expected')) {
+    return 'compress';
+  }
+  return 'send';
+}
 function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   const original = String(answer || '');
   let text = normalizeOutboundAnswerText(stripOptionalFollowupSuggestions(original));
@@ -269,6 +320,12 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     } else if (hasLikelyRawDocumentLeak(text)) {
       issues.push('raw_document_leak');
       text = buildPreflightFallback(userQuery, 'raw_document_leak');
+    } else if (hasPlaceholderOrOcrNoise(text)) {
+      issues.push('placeholder_or_ocr_noise');
+      text = buildPreflightFallback(userQuery, 'raw_document_leak');
+    } else if (lacksConcreteItemsForApaSaja(text, userQuery)) {
+      issues.push('apa_saja_without_concrete_items');
+      text = buildPreflightFallback(userQuery, 'intent_conflict');
     } else {
       const alignmentAudit = detectAnswerQueryMismatch(text, userQuery);
       if (alignmentAudit.mismatch) {
@@ -291,12 +348,18 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
 
   const maxSoftLen = parseInt(process.env.BOT_PREFLIGHT_SOFT_MAX_CHARS || '3200', 10);
   if (Number.isFinite(maxSoftLen) && maxSoftLen > 0 && text.length > maxSoftLen) issues.push('long_answer_split_expected');
+  if (hasExcessiveRawQuotation(original)) issues.push('excessive_raw_quotation');
+  if (isTooLongForQuestion(original, userQuery)) issues.push('too_long_for_query');
+
+  const action = decidePreflightAction(issues, meta);
+  const blocked = action === 'regenerate' || action === 'fallback';
 
   return {
     answer: text,
     changed: text !== original,
     issues,
-    blocked: issues.includes('technical_leak') || issues.includes('raw_document_leak') || issues.includes('empty_answer') || issues.includes('intent_conflict') || issues.includes('missing_requested_entity') || issues.includes('ambiguous_short_query') || issues.includes('no_query_term_overlap'),
+    action,
+    blocked,
     meta: {
       source: meta && meta.source ? meta.source : null,
       originalLength: original.length,

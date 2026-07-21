@@ -772,6 +772,10 @@ Jika (trainingData) disediakan, sertakan data konteks utama setelah instruksi di
 ATURAN RAG (WAJIB)
 =====================
 - Jawab HANYA berdasarkan CONTEXT.
+- CONTEXT adalah selected evidence terkurasi, bukan teks untuk disalin mentah.
+- Ambil hanya evidence yang langsung menjawab pertanyaan; jangan menyalin paragraf mentah atau menjelaskan seluruh dokumen.
+- Jangan menampilkan Pasal, Ayat, PIHAK KESATU, PIHAK KEDUA, PARA PIHAK, Force Majeure, Addendum, nomor surat, alamat, kontak, tanda tangan, placeholder, atau boilerplate kecuali user eksplisit meminta isi legal tersebut.
+- Jika evidence tidak memuat jawaban konkret, keluarkan TIDAK_CUKUP_DATA. Jangan membuat daftar dari informasi yang tidak tersedia.
 - DILARANG menambah info di luar CONTEXT.
 - Jika detail yang dicari belum terlihat di CONTEXT, jawab secara jujur bahwa detail belum cukup jelas dan fokus pada fakta yang ada.
 - Hindari frasa template seperti "Terima kasih atas pertanyaannya", "Halo selamat pagi", "Apakah Kakak ingin...", atau "Untuk informasi lebih lanjut..." kecuali benar-benar diperlukan.
@@ -859,15 +863,9 @@ PERTANYAAN
 {question}
 
 =====================
-OUTPUT TAMBAHAN
+OUTPUT
 =====================
-Tambahkan di akhir:
-
-CONFIDENCE: HIGH / LOW
-
-SOURCE_CHUNKS:
-- ringkasan context yang digunakan (maks 2 poin)
-`;
+Tulis hanya jawaban untuk user. Jangan tulis CONFIDENCE, SOURCE_CHUNKS, metadata, atau ringkasan sumber.`;
 
       const prompt = compactPrompt
         ? TEMPLATE
