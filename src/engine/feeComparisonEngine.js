@@ -1,4 +1,4 @@
-﻿const ragEngine = require('./ragEngine');
+const ragEngine = require('./ragEngine');
 const fs = require('fs');
 const path = require('path');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
@@ -1243,6 +1243,36 @@ function tryDualDegreeAnswer(question) {
     '* DNUI - Dalian Neusoft University of Information, China: Prodi di STIKOM Bali adalah Bisnis Digital; jurusan di DNUI belum tercantum pada data yang tersedia.',
     '* HELP University, Malaysia: Prodi di STIKOM Bali adalah Sistem Informasi; jurusan di HELP belum tercantum pada data yang tersedia.'
   ];
+  const asksDnui = /\b(dnui|dalian\s+neusoft)\b/.test(q);
+  const asksHelp = /\b(help\s+university|help\b.*malaysia|help)\b/.test(q);
+
+  if (asksDnui && !asksHelp && !asksNational) {
+    return {
+      answer: [
+        'Double Degree DNUI adalah program Double Degree internasional ITB STIKOM Bali dengan Dalian Neusoft University of Information, China.',
+        '',
+        '* Kampus mitra: DNUI - Dalian Neusoft University of Information, China',
+        '* Prodi di ITB STIKOM Bali: Bisnis Digital',
+        '* Jurusan di DNUI: belum tercantum pada data yang tersedia',
+        '',
+        'Jadi, untuk DNUI, data yang aman disebutkan adalah partner internasionalnya dan prodi STIKOM Bali yang terkait. Saya tidak menebak nama jurusan DNUI karena belum ada di data.'
+      ].join('\n')
+    };
+  }
+
+  if (asksHelp && !asksDnui && !asksNational) {
+    return {
+      answer: [
+        'Double Degree HELP University adalah program Double Degree internasional ITB STIKOM Bali dengan HELP University, Malaysia.',
+        '',
+        '* Kampus mitra: HELP University, Malaysia',
+        '* Prodi di ITB STIKOM Bali: Sistem Informasi',
+        '* Jurusan di HELP University: belum tercantum pada data yang tersedia',
+        '',
+        'Jadi, untuk HELP University, data yang aman disebutkan adalah partner internasionalnya dan prodi STIKOM Bali yang terkait. Saya tidak menebak nama jurusan HELP karena belum ada di data.'
+      ].join('\n')
+    };
+  }
 
   if (asksUtbPair) {
     return {

@@ -95,6 +95,16 @@ describe('answerPreflightEvaluator', () => {
     expect(result.answer).not.toMatch(/kekuatan hukum|rangkap dua/i);
   });
 
+  test('allows concise definitions for short program acronym questions', () => {
+    const result = evaluateOutboundAnswer(
+      'Teknologi Informasi adalah salah satu program studi di ITB STIKOM Bali yang fokus pada pengembangan sistem dan solusi digital.',
+      'apa itu ti?'
+    );
+    expect(result.blocked).toBe(false);
+    expect(result.issues).not.toContain('ambiguous_short_query');
+    expect(result.answer).toMatch(/Teknologi Informasi/i);
+  });
+
   test('blocks answers that miss the specific entity requested by the user', () => {
     const result = evaluateOutboundAnswer(
       'Career Center membantu mahasiswa melalui informasi lowongan kerja dan konsultasi karier.',

@@ -77,7 +77,7 @@ function mapProviderIntentToFormatter(intent) {
   if (lowered === 'rag-fee-structured') return 'biaya';
   if (/\b(ukm|ormawa|kegiatan[_-]?mahasiswa)\b/i.test(lowered)) return 'ukm';
   if (/\b(dual[_-]?degree|double[_-]?degree)\b/i.test(lowered)) return 'international_double_degree';
-  if (/\b(campus[_-]?support|career[_-]?center|linked[_-]?in|linkedin|gccp|bccp|language[_-]?learning|softskill|student[_-]?exchange)\b/i.test(lowered)) {
+  if (/\b(campus[_-]?support|career[_-]?center|linked[_-]?in|linkedin|gccp|bccp|language[_-]?learning|llc|softskill|student[_-]?exchange)\b/i.test(lowered)) {
     return 'campus_support';
   }
   switch (normalized) {
@@ -138,7 +138,12 @@ function inferQuestionTopic(userQuery, mainAnswer) {
   const normalizedQuery = String(userQuery || '').trim().toLowerCase();
   const normalizedAnswer = String(mainAnswer || '').trim().toLowerCase();
   const queryIntent = detectIntentFromQuery(userQuery);
-  const answerIntent = detectIntentFromAnswerFromText(mainAnswer);
+    const strongQueryIntents = ['campus_support', 'ukm'];
+  if (strongQueryIntents.includes(queryIntent) && detectedIntent !== queryIntent) {
+    console.log('[TRACE_INTENT_QUERY_OVERRIDE]', { detectedIntentBefore: detectedIntent, queryIntent, userQuery });
+    detectedIntent = queryIntent;
+  }
+const answerIntent = detectIntentFromAnswerFromText(mainAnswer);
 
   if (queryIntent === 'lokasi' || answerIntent === 'lokasi' ||
       /\b(lokasi|alamat|berlokasi|kampus|denpasar|cabang|di\s+mana|dimana)\b/i.test(normalizedQuery) ||
@@ -727,7 +732,7 @@ function detectIntentFromQuery(userQuery) {
   const q = String(userQuery || '').toLowerCase().trim();
   if (!q) return 'general';
 
-  if (/\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/i.test(q)) {
+  if (/\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|llc|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/i.test(q)) {
     try { traceWhatsapp('detectIntentFromQuery', { query: userQuery, detected: 'campus_support' }); } catch (e) {}
     return 'campus_support';
   }
@@ -747,7 +752,7 @@ function detectIntentFromQuery(userQuery) {
   }
 
   const semanticPatterns = [
-    { intent: 'campus_support', regex: /\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/ },
+    { intent: 'campus_support', regex: /\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|llc|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/ },
     { intent: 'ukm', regex: /\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|komunitas|athena esports|esport|esports|musik|futsal|basket|teater biner|vos)\b/ },
     { intent: 'international_double_degree', regex: /\b(double degree|double-degree|double gelar|dual degree|program internasional|kelas internasional|exchange semester|kuliah di luar negeri)\b/ },
     { intent: 'beasiswa', regex: /\b(beasiswa|scholarship|grant|bantuan pendidikan|kip|1k1s|prestasi|yayasan|kemitraan|kurang mampu|tidak mampu)\b/ },
@@ -782,7 +787,12 @@ function detectIntentFromAnswer(mainAnswer, userQuery) {
   }
 
   const queryIntent = detectIntentFromQuery(userQuery);
-  if (queryIntent !== 'general') return queryIntent;
+    const strongQueryIntents = ['campus_support', 'ukm'];
+  if (strongQueryIntents.includes(queryIntent) && detectedIntent !== queryIntent) {
+    console.log('[TRACE_INTENT_QUERY_OVERRIDE]', { detectedIntentBefore: detectedIntent, queryIntent, userQuery });
+    detectedIntent = queryIntent;
+  }
+if (queryIntent !== 'general') return queryIntent;
 
   return answerIntent;
 }
@@ -793,7 +803,7 @@ function detectIntentFromAnswerFromText(mainAnswer) {
   const feeMarker = /\brp\s*[0-9.,]+(?:\s*(?:juta|ribu|rb|jt|rupiah))?\b/i;
   const feeKeywords = /\b(?:rincian biaya|biaya awal masuk|biaya masuk|dana pendidikan(?: pokok)?|total biaya|biaya pendidikan|biaya semester|biaya pendaftaran|biaya kuliah|dpp|ukt|cicilan|fee|bayar|harga)\b/i;
   if (/\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|athena esports|esport|esports|musik|futsal|basket|teater biner|vos|pengurus ukm|kemahasiswaan)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'ukm' }); } catch (e) {} return 'ukm'; }
-  if (/\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'campus_support' }); } catch (e) {} return 'campus_support'; }
+  if (/\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|llc|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'campus_support' }); } catch (e) {} return 'campus_support'; }
 
   if (feeMarker.test(answer) || feeKeywords.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'biaya' }); } catch (e) {} return 'biaya'; }
   if (/\b(bedanya|perbedaan|versus|vs|beda antara|dibanding|dibandingkan|lebih baik|mana (?:yang )?lebih baik|lebih cocok|lebih unggul|Perbandingan cepat|Perbandingan singkat)\b/i.test(answer)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'perbandingan_prodi' }); } catch (e) {} return 'perbandingan_prodi'; }
@@ -1029,7 +1039,12 @@ function buildHumanizedWhatsappReply({
   console.log('[TRACE_INTENT_HUMANIZER]', { detectedIntentBeforeCostOverride: detectedIntent });
 
   const queryIntent = detectIntentFromQuery(userQuery);
-  const explicitLocationQuery = queryIntent === 'lokasi' || /\b(lokasi|alamat|berlokasi|kampus|denpasar|cabang|di\s+mana|dimana)\b/i.test(String(userQuery || ''));
+    const strongQueryIntents = ['campus_support', 'ukm'];
+  if (strongQueryIntents.includes(queryIntent) && detectedIntent !== queryIntent) {
+    console.log('[TRACE_INTENT_QUERY_OVERRIDE]', { detectedIntentBefore: detectedIntent, queryIntent, userQuery });
+    detectedIntent = queryIntent;
+  }
+const explicitLocationQuery = queryIntent === 'lokasi' || /\b(lokasi|alamat|berlokasi|kampus|denpasar|cabang|di\s+mana|dimana)\b/i.test(String(userQuery || ''));
   const answerLocationIntent = detectIntentFromAnswerFromText(normalizedAnswer) === 'lokasi';
 
   // Strong rule: treat explicit fee/biaya queries as COST/`biaya` intent and preserve it.
