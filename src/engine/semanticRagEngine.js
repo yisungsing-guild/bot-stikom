@@ -4,6 +4,7 @@ const path = require('path');
 const logger = require('../logger');
 const ragEngine = require('./ragEngine');
 const { getLegacyRagIndexPath, getRagIndexPath } = require('../utils/ragPaths');
+const { evaluateOutboundAnswer } = require('../utils/answerPreflightEvaluator');
 const {
   tryFeeComparisonAnswer,
   tryDetailedFeeAnswer,
@@ -4699,13 +4700,39 @@ async function querySemanticRag(question, options = {}) {
     const cleanedAnswer = ragEngine.cleanAnswerLanguage(rawAnswer);
     const category = detectAnswerCategory(question, 'semantic-rag');
     const confidenceTier = sourceConfidenceTier({ source: 'semantic-rag', score: retrieved.topScore, answer: cleanedAnswer });
-    const answer = formatAnswerByCategory(
+    let answer = formatAnswerByCategory(
       question,
       formatNaturalAnswerFrame(question, cleanedAnswer, 'semantic-rag'),
       'semantic-rag',
       confidenceTier
     );
-    if (confidenceTier !== 'HIGH') {
+    const preflight = evaluateOutboundAnswer(answer, question, { source: 'semantic-rag' });
+    if (preflight.blocked) {
+      appendAnswerQualityLog({
+        question,
+        source: 'semantic-rag-answer-preflight',
+        category,
+        confidenceTier: 'VERY_LOW',
+        confidenceScore: retrieved.topScore,
+        action: 'fallback',
+        reason: Array.isArray(preflight.issues) ? preflight.issues.join(',') : 'answer_preflight_blocked',
+        answer: preflight.answer
+      });
+      const response = {
+        success: true,
+        answer: preflight.answer,
+        source: 'semantic-rag-answer-preflight',
+        contexts: retrieved.contexts,
+        confidenceScore: retrieved.topScore,
+        confidenceTier: 'VERY_LOW',
+        answerCategory: category,
+        debug: { rewrite, indexSize: retrieved.indexSize, rawTopScore: retrieved.rawTopScore, preflightIssues: preflight.issues }
+      };
+      setCachedSemanticResult(resultCacheKey, response);
+      return response;
+    }
+    answer = preflight.answer;
+    if (confidenceTier !== 'HIGH' || (preflight.issues && preflight.issues.length)) {
       appendAnswerQualityLog({
         question,
         source: 'semantic-rag',

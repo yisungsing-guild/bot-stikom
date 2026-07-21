@@ -15,21 +15,21 @@ describe('answerPreflightEvaluator', () => {
 
   test('removes optional follow-up suggestions by default', () => {
     delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
-    const result = evaluateOutboundAnswer('Jawaban utama.\n\nKalau mau lanjut, kakak bisa tanya:\n- Pertanyaan lain?', 'apa itu GCCP?');
-    expect(result.answer).toBe('Jawaban utama.');
+    const result = evaluateOutboundAnswer('GCCP adalah program pendukung internasional.\n\nKalau mau lanjut, kakak bisa tanya:\n- Pertanyaan lain?', 'apa itu GCCP?');
+    expect(result.answer).toBe('GCCP adalah program pendukung internasional.');
     expect(result.answer).not.toMatch(/Kalau mau lanjut/i);
   });
 
   test('removes humanizer follow-up suggestions by default', () => {
     delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
-    const result = evaluateOutboundAnswer('Jawaban utama.\n\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n\n- Apa saja fasilitas pendukung mahasiswa?\n- Bagaimana cara konfirmasi detail program ini?', 'apa itu GCCP?');
-    expect(result.answer).toBe('Jawaban utama.');
+    const result = evaluateOutboundAnswer('GCCP adalah program pendukung internasional.\n\nKalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut juga bisa membantu:\n\n- Apa saja fasilitas pendukung mahasiswa?\n- Bagaimana cara konfirmasi detail program ini?', 'apa itu GCCP?');
+    expect(result.answer).toBe('GCCP adalah program pendukung internasional.');
     expect(result.answer).not.toMatch(/pertanyaan berikut/i);
   });
   test('removes short optional continuation offers by default', () => {
     delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
-    const result = evaluateOutboundAnswer('Jawaban utama.\n\nKalau kakak mau, saya bisa jelaskan detail program UTB, DNUI, atau HELP.', 'double degree apa saja?');
-    expect(result.answer).toBe('Jawaban utama.');
+    const result = evaluateOutboundAnswer('Double Degree tersedia melalui beberapa program mitra.\n\nKalau kakak mau, saya bisa jelaskan detail program UTB, DNUI, atau HELP.', 'double degree apa saja?');
+    expect(result.answer).toBe('Double Degree tersedia melalui beberapa program mitra.');
   });
   test('cleans visible dangling ellipsis artifacts', () => {
     expect(normalizeOutboundAnswerText('Bagian ini terpotong per…')).toBe('Bagian ini terpotong per.');
@@ -51,7 +51,7 @@ describe('answerPreflightEvaluator', () => {
       'apakah ada ukm esport?'
     );
     expect(wrongUkm.blocked).toBe(true);
-    expect(wrongUkm.issues).toContain('intent_conflict');
+    expect(wrongUkm.issues.some((issue) => ['intent_conflict', 'missing_requested_entity'].includes(issue))).toBe(true);
     expect(wrongUkm.answer).toMatch(/belum sesuai dengan pertanyaan/i);
     expect(wrongUkm.answer).not.toMatch(/biaya kuliah|beasiswa/i);
 
@@ -83,6 +83,35 @@ describe('answerPreflightEvaluator', () => {
     );
     expect(result.blocked).toBe(false);
     expect(result.issues).not.toContain('intent_conflict');
+  });
+  test('blocks vague short prompts from receiving unrelated long answers', () => {
+    const result = evaluateOutboundAnswer(
+      'Berikut penjelasan tentang Mempunyai: dokumen ini dibuat dalam rangkap dua dan mempunyai kekuatan hukum yang sama.',
+      'Mempunyai'
+    );
+    expect(result.blocked).toBe(true);
+    expect(result.issues).toContain('ambiguous_short_query');
+    expect(result.answer).toMatch(/belum mempunyai jawaban|belum sesuai|cukup aman/i);
+    expect(result.answer).not.toMatch(/kekuatan hukum|rangkap dua/i);
+  });
+
+  test('blocks answers that miss the specific entity requested by the user', () => {
+    const result = evaluateOutboundAnswer(
+      'Career Center membantu mahasiswa melalui informasi lowongan kerja dan konsultasi karier.',
+      'Bagaimana cara mendaftar program LinkedIn Career Center?'
+    );
+    expect(result.blocked).toBe(true);
+    expect(result.issues).toContain('missing_requested_entity');
+    expect(result.answer).toMatch(/LinkedIn|belum sesuai/i);
+    expect(result.answer).not.toMatch(/informasi lowongan kerja dan konsultasi karier/i);
+  });
+
+  test('blocks raw legal templates with placeholder markers even when only one legal marker appears', () => {
+    const raw = 'Nomor: ............................................... Logo Mitra PERJANJIAN KERJA SAMA TENTANG ...............................................';
+    const result = evaluateOutboundAnswer(raw, 'apa itu program internasional?');
+    expect(result.blocked).toBe(true);
+    expect(result.issues).toContain('raw_document_leak');
+    expect(result.answer).not.toMatch(/Nomor:|Logo Mitra|PERJANJIAN KERJA SAMA/i);
   });
   test('detects raw administrative document leaks', () => {
     const raw = 'Pasal 13 ADDENDUM\nPIHAK PERTAMA wajib memberitahukan kepada PIHAK KEDUA dalam perjanjian kerja sama.';

@@ -40,11 +40,17 @@ function hasLikelyRawDocumentLeak(text) {
     /\bpihak\s+kedua\b/i,
     /\baddendum\b/i,
     /\bperjanjian\s+kerja\s+sama\b/i,
-    /\bpara\s+pihak\b/i
+    /\bimplementation\s+arrangement\b/i,
+    /\bnota\s+kesepahaman\b/i,
+    /\bpara\s+pihak\b/i,
+    /\bforce\s+majeure\b/i,
+    /\bmempunyai\s+kekuatan\s+hukum\s+yang\s+sama\b/i,
+    /\b(?:nama|logo)\s+mitra\b/i
   ];
   const faqMarkerCount = (out.match(/(?:^|\n)\s*(?:FAQ|Q|A|F|Question|Answer|Pertanyaan|Jawaban)\s*[:\-.]/gi) || []).length;
   const legalMarkerCount = legalMarkers.filter((re) => re.test(out)).length;
-  return faqMarkerCount >= 3 || legalMarkerCount >= 2 || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
+  const placeholderLike = /_{5,}|\.{8,}|:{3,}|…{2,}|(?:nomor\s*:\s*(?:\.{4,}|…+|\([^)]*\)))/i.test(out);
+  return faqMarkerCount >= 3 || legalMarkerCount >= 2 || (legalMarkerCount >= 1 && placeholderLike) || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
 }
 
 
@@ -76,6 +82,99 @@ function detectIntentSet(text) {
     if (patterns.some((re) => re.test(value))) out.add(intent);
   }
   return out;
+}
+
+function normalizeForAlignment(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function getContentTerms(text) {
+  const stopwords = new Set([
+    'apa', 'apakah', 'bagaimana', 'gimana', 'kalau', 'terkait', 'tentang', 'untuk',
+    'yang', 'dengan', 'dalam', 'oleh', 'dari', 'itu', 'ini', 'kak', 'kakak', 'min',
+    'saya', 'aku', 'mau', 'ingin', 'menanyakan', 'bertanya', 'baik', 'oke', 'ok',
+    'punya', 'mempunyai', 'ada', 'saja', 'admin', 'tolong', 'jelaskan', 'info',
+    'informasi', 'detail', 'lengkap', 'dong', 'ya', 'nih', 'nya', 'dan', 'atau',
+    'di', 'ke', 'se', 'bisa', 'dapat', 'mohon'
+  ]);
+  return normalizeForAlignment(text)
+    .split(/\s+/)
+    .filter((term) => term.length >= 3 && !stopwords.has(term));
+}
+
+function detectRequiredEntities(text) {
+  const value = String(text || '').toLowerCase();
+  const entities = [];
+  const rules = [
+    { key: 'gccp', patterns: [/\bgccp\b/i] },
+    { key: 'bccp', patterns: [/\bbccp\b/i] },
+    { key: 'linkedin', patterns: [/\blinked\s*in\b/i, /\blinkedin\b/i] },
+    { key: 'language learning center', patterns: [/\blanguage\s+learning\s+center\b/i, /\bllc\b/i, /belajar\s+bahasa/i, /kemampuan\s+bahasa/i] },
+    { key: 'career center', patterns: [/\bcareer\s*center\b/i, /pusat\s+kar(?:ir|ier)/i] },
+    { key: 'softskill', patterns: [/\bsoft\s*skill\b/i, /\bsoftskill\b/i] },
+    { key: 'ukm', patterns: [/\bukm\b/i, /ormawa/i] },
+    { key: 'esport', patterns: [/\besports?\b/i, /athena\s+esports?/i] },
+    { key: 'double degree', patterns: [/double\s*degree/i, /dual\s*degree/i, /gelar\s+ganda/i] },
+    { key: 'dnui', patterns: [/\bdnui\b/i, /dalian\s+neusoft/i] },
+    { key: 'utb', patterns: [/\butb\b/i, /universitas\s+teknologi\s+bandung/i] },
+    { key: 'help', patterns: [/\bhelp\b/i, /help\s+university/i] },
+    { key: 'sistem informasi', patterns: [/sistem\s+informasi/i, /\bsi\b/i] },
+    { key: 'teknologi informasi', patterns: [/teknologi\s+informasi/i, /\bti\b/i] },
+    { key: 'bisnis digital', patterns: [/bisnis\s+digital/i, /\bbd\b/i] },
+    { key: 'sistem komputer', patterns: [/sistem\s+komputer/i, /\bsk\b/i] },
+    { key: 'manajemen informatika', patterns: [/manajemen\s+informatika/i, /\bmi\b/i] }
+  ];
+  for (const rule of rules) {
+    if (rule.patterns.some((pattern) => pattern.test(value))) entities.push(rule.key);
+  }
+  return entities;
+}
+
+function answerMentionsEntity(answer, entity) {
+  const value = normalizeForAlignment(answer);
+  const aliases = {
+    'language learning center': ['language learning center', 'llc', 'belajar bahasa', 'kemampuan bahasa'],
+    'career center': ['career center', 'pusat karier', 'pusat karir'],
+    'double degree': ['double degree', 'dual degree', 'gelar ganda'],
+    'sistem informasi': ['sistem informasi', 'si'],
+    'teknologi informasi': ['teknologi informasi', 'ti'],
+    'bisnis digital': ['bisnis digital', 'bd'],
+    'sistem komputer': ['sistem komputer', 'sk'],
+    'manajemen informatika': ['manajemen informatika', 'mi']
+  };
+  const terms = aliases[entity] || [entity];
+  return terms.some((term) => value.includes(normalizeForAlignment(term)));
+}
+
+function detectAnswerQueryMismatch(answer, userQuery = '') {
+  const queryTerms = getContentTerms(userQuery);
+  const answerNorm = normalizeForAlignment(answer);
+  const queryNorm = normalizeForAlignment(userQuery);
+  const requestedEntities = detectRequiredEntities(userQuery);
+  const missingEntities = requestedEntities.filter((entity) => !answerMentionsEntity(answer, entity));
+  if (missingEntities.length) {
+    return { mismatch: true, reason: 'missing_requested_entity', missingEntities, queryTerms };
+  }
+
+  const isVeryShortOrVague = queryNorm.length > 0 && queryTerms.length === 0 && queryNorm.split(/\s+/).filter(Boolean).length <= 3;
+  if (isVeryShortOrVague && answerNorm.length > 80 && !/\b(?:halo|terima kasih|sama sama|baik)\b/i.test(answerNorm)) {
+    return { mismatch: true, reason: 'ambiguous_short_query', missingEntities: [], queryTerms };
+  }
+
+  if (queryTerms.length >= 2) {
+    const hits = queryTerms.filter((term) => answerNorm.includes(term));
+    const hasIntentOverlap = detectIntentConflict(answer, userQuery).conflict === false
+      && hasAnyIntent(detectIntentSet(answer), Array.from(detectIntentSet(userQuery)));
+    if (!hits.length && !hasIntentOverlap) {
+      return { mismatch: true, reason: 'no_query_term_overlap', missingEntities: [], queryTerms };
+    }
+  }
+
+  return { mismatch: false, reason: null, missingEntities: [], queryTerms };
 }
 
 function hasAnyIntent(intentSet, intents) {
@@ -163,17 +262,25 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     text = buildPreflightFallback(userQuery, 'empty_answer');
   }
 
-  if (hasRawTechnicalLeak(text)) {
-    issues.push('technical_leak');
-    text = buildPreflightFallback(userQuery, 'technical_leak');
-  } else if (hasLikelyRawDocumentLeak(text)) {
-    issues.push('raw_document_leak');
-    text = buildPreflightFallback(userQuery, 'raw_document_leak');
-  } else {
-    const intentAudit = detectIntentConflict(text, userQuery);
-    if (intentAudit.conflict) {
-      issues.push('intent_conflict');
-      text = buildPreflightFallback(userQuery, 'intent_conflict');
+  if (!issues.length) {
+    if (hasRawTechnicalLeak(text)) {
+      issues.push('technical_leak');
+      text = buildPreflightFallback(userQuery, 'technical_leak');
+    } else if (hasLikelyRawDocumentLeak(text)) {
+      issues.push('raw_document_leak');
+      text = buildPreflightFallback(userQuery, 'raw_document_leak');
+    } else {
+      const alignmentAudit = detectAnswerQueryMismatch(text, userQuery);
+      if (alignmentAudit.mismatch) {
+        issues.push(alignmentAudit.reason || 'answer_query_mismatch');
+        text = buildPreflightFallback(userQuery, 'intent_conflict');
+      } else {
+        const intentAudit = detectIntentConflict(text, userQuery);
+        if (intentAudit.conflict) {
+          issues.push('intent_conflict');
+          text = buildPreflightFallback(userQuery, 'intent_conflict');
+        }
+      }
     }
   }
 
@@ -189,7 +296,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     answer: text,
     changed: text !== original,
     issues,
-    blocked: issues.includes('technical_leak') || issues.includes('raw_document_leak') || issues.includes('empty_answer') || issues.includes('intent_conflict'),
+    blocked: issues.includes('technical_leak') || issues.includes('raw_document_leak') || issues.includes('empty_answer') || issues.includes('intent_conflict') || issues.includes('missing_requested_entity') || issues.includes('ambiguous_short_query') || issues.includes('no_query_term_overlap'),
     meta: {
       source: meta && meta.source ? meta.source : null,
       originalLength: original.length,
@@ -204,5 +311,6 @@ module.exports = {
   stripOptionalFollowupSuggestions,
   hasRawTechnicalLeak,
   hasLikelyRawDocumentLeak,
-  detectIntentConflict
+  detectIntentConflict,
+  detectAnswerQueryMismatch
 };
