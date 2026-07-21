@@ -972,10 +972,25 @@ function countTermHits(text, terms) {
 function isLikelyRawAdministrativeDocument(text) {
   const raw = String(text || '');
   if (!raw.trim()) return false;
-  return /\b(PIHAK\s+PERTAMA|PIHAK\s+KEDUA|PERJANJIAN\s+KERJA\s+SAMA|Pasal\s+\d+|ADDENDUM|alamat\s+telepon\s+e\s*-?\s*mail|Nama\s+Mitra)\b/i.test(raw)
-    || /_{5,}|\.{8,}|:{3,}/.test(raw);
+  const normalized = raw.replace(/\s+/g, ' ').trim();
+  const legalSignals = [
+    /\bPIHAK\s+(?:PERTAMA|KESATU|KEDUA)\b/i,
+    /\bPARA\s+PIHAK\b/i,
+    /\bPERJANJIAN\s+KERJA\s*SAMA\b/i,
+    /\bIMPLEMENTATION\s+ARRANGEMENT\b/i,
+    /\bNOTA\s+KESEPAHAMAN\b/i,
+    /\bPasal\s+\d+\b/i,
+    /\bADDENDUM\b/i,
+    /\bFORCE\s+MAJEURE\b/i,
+    /\bPENYELESAIAN\s+PERSELISIHAN\b/i,
+    /\bmempunyai\s+kekuatan\s+hukum\s+yang\s+sama\b/i,
+    /\balamat\s+telepon\s+e\s*-?\s*mail\b/i,
+    /\b(?:Nama|Logo)\s+Mitra\b/i
+  ].filter((pattern) => pattern.test(normalized)).length;
+  const placeholderSignals = /_{5,}|\.{8,}|:{3,}|…{2,}|(?:Nomor\s*:\s*(?:\.{4,}|…+|\([^)]*\)))/i.test(normalized);
+  const longContractLike = normalized.length > 700 && legalSignals >= 2;
+  return legalSignals >= 3 || (legalSignals >= 1 && placeholderSignals) || longContractLike;
 }
-
 function shouldRejectSemanticContext(question, context) {
   const chunk = String(context && context.chunk ? context.chunk : '');
   if (!chunk.trim()) return true;
@@ -4760,6 +4775,8 @@ module.exports = {
   prewarmSemanticRag,
   rewriteQuestionWithLlm,
   retrieveSemanticContexts,
+  filterSemanticContextsForQuestion,
+  isLikelyRawAdministrativeDocument,
   cosineSimilarity
 };
 
