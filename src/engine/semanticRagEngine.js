@@ -243,7 +243,7 @@ function focusAnswerOnRequestedEntity(question, answer, category) {
   if (!out) return out;
 
   const requestedEntity = findCampusSupportEntity(q);
-  if (requestedEntity && ['gccp', 'bccp', 'student-exchange', 'short-course', 'language-learning-center', 'hi-think', 'linkedin-career-center'].includes(requestedEntity.key)) {
+  if (requestedEntity && !(requestedEntity.key === 'student-exchange' && isStudentExchangeProgramListQuestion(q)) && ['gccp', 'bccp', 'student-exchange', 'short-course', 'language-learning-center', 'hi-think', 'linkedin-career-center'].includes(requestedEntity.key)) {
     const otherEntities = CAMPUS_SUPPORT_ENTITY_REGISTRY.filter((entity) => entity && entity.key !== requestedEntity.key && ['gccp', 'bccp', 'student-exchange', 'short-course', 'hi-think', 'linkedin-career-center'].includes(entity.key));
     const lines = out.split(/\r?\n/).filter((line) => {
       const normalizedLine = normalizeFacilityTerm(line);
@@ -1202,8 +1202,17 @@ function isLikelyRawAdministrativeDocument(text) {
     /\b(?:Nama|Logo)\s+Mitra\b/i
   ].filter((pattern) => pattern.test(normalized)).length;
   const placeholderSignals = /_{5,}|\.{8,}|:{3,}|�{2,}|(?:Nomor\s*:\s*(?:\.{4,}|�+|\([^)]*\)))/i.test(normalized);
+  const decreeSignals = [
+    /\bKEPUTUSAN\b/i,
+    /\bMenimbang\s*:/i,
+    /\bMengingat\s*:/i,
+    /\bMemutuskan\s*:/i,
+    /\bDitetapkan\s+di\b/i,
+    /\bNomor\s*:\s*\d+\s*\/\s*SK\b/i
+  ].filter((pattern) => pattern.test(normalized)).length;
   const longContractLike = normalized.length > 700 && legalSignals >= 2;
-  return legalSignals >= 3 || (legalSignals >= 1 && placeholderSignals) || longContractLike;
+  const rawDecreeLike = /\bPasal\s+\d+\b/i.test(normalized) && decreeSignals >= 2;
+  return legalSignals >= 3 || (legalSignals >= 1 && placeholderSignals) || longContractLike || rawDecreeLike;
 }
 function getSemanticQuestionSignals(question) {
   const q = String(question || '').toLowerCase();
@@ -1553,6 +1562,98 @@ function tryOrganizationalStructureAnswer(question) {
   };
 }
 
+const PROGRAM_ACCREDITATION_DATA = {
+  si: {
+    aliases: /\b(si|sistem\s+informasi)\b/i,
+    label: 'Sistem Informasi',
+    degree: 'S1',
+    grade: 'Baik Sekali',
+    agency: 'LAM INFOKOM',
+    valid: '14 Desember 2023 sampai 14 Desember 2028'
+  },
+  ti: {
+    aliases: /\b(ti|teknologi\s+informasi|teknik\s+informatika)\b/i,
+    label: 'Teknologi Informasi',
+    degree: 'S1',
+    grade: 'Baik',
+    agency: 'BAN-PT',
+    valid: '6 September 2022 sampai 6 September 2027'
+  },
+  bd: {
+    aliases: /\b(bd|bisnis\s+digital|binis\s+digital|bisinis\s+digital)\b/i,
+    label: 'Bisnis Digital',
+    degree: 'S1',
+    grade: 'Baik',
+    agency: 'BAN-PT',
+    valid: '5 Oktober 2022 sampai 5 Oktober 2027'
+  },
+  sk: {
+    aliases: /\b(sk|sistem\s+komputer)\b/i,
+    label: 'Sistem Komputer',
+    degree: 'S1',
+    grade: 'Baik Sekali',
+    agency: 'LAM INFOKOM',
+    valid: '9 April 2025 sampai 9 April 2030'
+  },
+  mi: {
+    aliases: /\b(mi|manajemen\s+informatika)\b/i,
+    label: 'Manajemen Informatika',
+    degree: 'D3',
+    grade: 'Baik',
+    agency: 'BAN-PT',
+    valid: '17 November 2021 sampai 17 November 2026'
+  }
+};
+
+function findAccreditationProgram(question) {
+  const q = String(question || '');
+  for (const [key, item] of Object.entries(PROGRAM_ACCREDITATION_DATA)) {
+    if (item.aliases.test(q)) return { key, ...item };
+  }
+  return null;
+}
+
+function isAccreditationQuestion(question) {
+  return /\b(akreditasi|akredit|terakreditasi|ban\s*-?\s*pt|lam\s+infokom|peringkat\s+akreditasi)\b/i.test(String(question || ''));
+}
+
+function buildProgramAccreditationLine(item) {
+  return `Akreditasi Prodi ${item.label} (${item.degree}): ${item.grade}. Masa berlaku akreditasi: ${item.valid}. Lembaga akreditasi: ${item.agency}.`;
+}
+
+function tryProgramAccreditationAnswer(question) {
+  if (!isAccreditationQuestion(question)) return null;
+  const q = String(question || '').toLowerCase();
+  const program = findAccreditationProgram(question);
+  const asksAll = /\b(semua|daftar|apa\s+saja|prodi\s+apa\s+saja|program\s+studi\s+apa\s+saja)\b/i.test(q) || !program;
+
+  if (program && !asksAll) {
+    return {
+      answer: [
+        buildProgramAccreditationLine(program),
+        '',
+        'Saya rangkum hanya status dan masa berlaku akreditasinya agar tidak menampilkan isi dokumen legal/SK mentah.'
+      ].join('\n'),
+      source: 'semantic-rag-accreditation'
+    };
+  }
+
+  if (asksAll && /\b(akreditasi|akredit|terakreditasi)\b/i.test(q)) {
+    const lines = Object.values(PROGRAM_ACCREDITATION_DATA).map((item) => '- ' + buildProgramAccreditationLine(item));
+    return {
+      answer: [
+        'Berikut ringkasan akreditasi program studi ITB STIKOM Bali berdasarkan data akreditasi yang tersedia:',
+        '',
+        ...lines,
+        '',
+        'Untuk nomor dokumen resmi atau salinan sertifikat, kakak bisa konfirmasi ke admin kampus/PMB.'
+      ].join('\n'),
+      source: 'semantic-rag-accreditation'
+    };
+  }
+
+  return null;
+}
 function tryShortClarificationAnswer(question) {
   const raw = String(question || '').trim();
   const q = raw.toLowerCase();
@@ -2885,6 +2986,62 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   };
 }
 
+function isThinCampusSupportSpecificAnswer(result, entity) {
+  const answer = String(result && result.answer ? result.answer : '');
+  const label = String(entity && entity.label ? entity.label : '').trim();
+  if (!answer || !label) return true;
+  if (entity && entity.key === 'gccp' && !/global\\s+cross|lintas\\s+budaya|outbound|inbound|pengalaman\\s+internasional/i.test(answer)) return true;
+  if (entity && entity.key === 'student-exchange' && !/pertukaran|internasional|global|bahasa\\s+asing/i.test(answer)) return true;
+  const bullets = (answer.match(/^\s*-\s+(.+)$/gim) || []).map((line) => line.replace(/^\s*-\s+/, '').trim());
+  if (!bullets.length) return false;
+  const meaningful = bullets.filter((line) => {
+    const norm = normalizeFacilityTerm(line.replace(new RegExp('^' + escapeRegExp(label) + '\\s*:\\s*', 'i'), ''));
+    return norm && norm !== normalizeFacilityTerm(label) && norm.split(/\s+/).length >= 5;
+  });
+  return meaningful.length === 0;
+}
+
+function buildCampusSupportStaticEntityAnswer(entity, question) {
+  if (!entity) return null;
+  const key = entity.key;
+  const q = String(question || '').toLowerCase();
+  const data = {
+    'student-exchange': [
+      'Student Exchange adalah program pertukaran mahasiswa yang memberi kesempatan mahasiswa mendapatkan pengalaman belajar di lingkungan internasional.',
+      'Program ini bertujuan memperluas wawasan global, melatih kemampuan bahasa asing, membangun kemandirian, dan memperluas jaringan internasional.',
+      'Untuk jadwal, negara tujuan, syarat peserta, dan alur pendaftaran, detailnya perlu mengikuti informasi terbaru dari admin kampus atau International Office.'
+    ],
+    gccp: [
+      'GCCP atau Global Cross Cultural Program adalah program lintas budaya yang memberi pengalaman internasional kepada mahasiswa.',
+      'Kegiatannya dapat berupa short course, kegiatan outbound ke luar negeri, atau kegiatan inbound bersama mahasiswa asing sesuai program yang berjalan.',
+      'Untuk jadwal, negara tujuan, biaya, syarat peserta, dan alur pendaftaran, kakak bisa konfirmasi ke admin kampus karena detail teknis dapat berubah per periode.'
+    ],
+    'career-center': [
+      'Career Center di ITB STIKOM Bali membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja.',
+      'Layanan yang umum dicakup adalah informasi lowongan, konsultasi karier, pelatihan kesiapan kerja, pembekalan CV, persiapan wawancara, dan pengembangan softskill kerja.',
+      'Untuk jadwal kegiatan atau program spesifik seperti pelatihan tertentu, detailnya perlu dikonfirmasi ke Career Center/admin kampus.'
+    ],
+    'inkubator-bisnis': [
+      'Inkubator Bisnis adalah fasilitas pendukung untuk membantu mahasiswa mengembangkan ide usaha atau rintisan bisnis.',
+      'Fokusnya dapat mencakup pendampingan bisnis, validasi ide, mentoring, penguatan kewirausahaan, dan pengembangan usaha digital.',
+      'Untuk program berjalan, jadwal mentoring, atau syarat mengikuti inkubasi, kakak bisa konfirmasi ke admin kampus.'
+    ],
+    softskill: [
+      'Program Pengembangan Softskill membantu mahasiswa memperkuat kemampuan nonteknis yang dibutuhkan saat kuliah maupun memasuki dunia kerja.',
+      'Pengembangannya dapat berkaitan dengan komunikasi, kerja sama tim, kepemimpinan, kesiapan karier, etika kerja, dan kepercayaan diri.',
+      'Untuk rincian kegiatan yang sedang berjalan, kakak bisa konfirmasi ke Career Center/admin kampus.'
+    ]
+  };
+  const lines = data[key];
+  if (!lines) return null;
+  if (key === 'career-center' && /linked\s*in|linkedin/i.test(q)) return null;
+  return {
+    answer: lines.join('\n\n'),
+    source: 'semantic-rag-campus-support-entity',
+    frameSource: 'semantic-rag-direct-answer',
+    matchedEntity: key
+  };
+}
 function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(String(question || ''))) return null;
   const resolved = resolveCampusSupportEntity(question, options);
@@ -2915,12 +3072,20 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
   const specific = buildSpecificFacilityAnswerFromIndex(entityQuestion, indexForQuery);
-  if (specific) {
+  if (specific && !isThinCampusSupportSpecificAnswer(specific, resolved.entity)) {
     return {
       ...specific,
       source: 'semantic-rag-campus-support-entity',
       frameSource: specific.frameSource || 'semantic-rag-campus-support-entity',
       matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
+
+  const staticSpecific = buildCampusSupportStaticEntityAnswer(resolved.entity, entityQuestion);
+  if (staticSpecific && (asksDetail || hasFollowUpSignal || resolved.entity.type === 'international_program')) {
+    return {
+      ...staticSpecific,
       contextResolved: resolved.fromRecent || undefined
     };
   }
@@ -3002,6 +3167,19 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   }
 
   if (/\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
+    if (/\bsoft\s*skill|softskill|pengembangan\s+softskill|kesiapan\s+kerja|pembekalan\s+kerja\b/i.test(q)) {
+      return {
+        answer: [
+          'Career Center membantu pengembangan softskill mahasiswa terutama untuk kesiapan masuk dunia kerja.',
+          '',
+          'Bentuk pengembangan yang dapat dilakukan mencakup pelatihan kesiapan kerja, pembekalan CV, persiapan wawancara, konsultasi karier, komunikasi profesional, etika kerja, dan peningkatan kepercayaan diri.',
+          '',
+          'Untuk jadwal kegiatan atau daftar program softskill yang sedang berjalan, kakak bisa konfirmasi ke Career Center/admin kampus.'
+        ].join('\n'),
+        source: 'semantic-rag-campus-facility',
+        frameSource: 'semantic-rag-direct-answer'
+      };
+    }
     if (isSpecificCampusSupportDetailQuestion(question)) {
       return {
         answer: buildSpecificInsufficientDataAnswer(question, 'very_low'),
@@ -4725,6 +4903,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-unsupported-program', tryUnsupportedProgramAnswer],
   ['semantic-rag-pmb-contact', tryPmbContactAnswer],
   ['semantic-rag-pmb-requirements', tryPmbRequirementsAnswer],
+  ['semantic-rag-accreditation', tryProgramAccreditationAnswer],
   ['semantic-rag-campus-support-entity', tryCampusSupportEntityAnswer],
   ['semantic-rag-registration-info', tryRegistrationHowAnswer],
   ['semantic-rag-schedule-window', tryScheduleWindowAnswer],
@@ -5124,6 +5303,7 @@ async function querySemanticRag(question, options = {}) {
   if (asksDoubleDegreeBeforeIndex) {
     earlyNoIndexHandlers.push(['semantic-rag-dual-degree', tryDualDegreeAnswer]);
   }
+  earlyNoIndexHandlers.push(['semantic-rag-accreditation', tryProgramAccreditationAnswer]);
   earlyNoIndexHandlers.push(['semantic-rag-program-definition', tryProgramDefinitionAnswer]);
   const earlyNoIndexResult = runDeterministicHandlers(question, earlyNoIndexHandlers, options, [question], { routeStage: 'pre-index-deterministic' });
   if (earlyNoIndexResult && earlyNoIndexResult.answer) {

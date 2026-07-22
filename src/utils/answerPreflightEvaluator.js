@@ -32,6 +32,33 @@ function hasRawTechnicalLeak(text) {
   return /\b(?:SOURCE_CHUNKS|CONFIDENCE|CONTEXT:|ASSIST_HINTS|TRACE_|relevance_audit|trainingId|docCategory|embedding)\b/i.test(out);
 }
 
+function isExplicitLegalDocumentQuestion(userQuery) {
+  return /\b(?:isi\s+)?pasal\s+\d+|ayat\s*\(\d+\)|force\s+majeure|addendum|klausul|perjanjian|kontrak|nota\s+kesepahaman|mou|moa|pihak\s+pertama|pihak\s+kedua|dokumen\s+(?:legal|hukum|kerja\s*sama)|surat\s+keputusan|\bSK\b/i.test(String(userQuery || ''));
+}
+
+function hasUnsafeAdministrativeLeak(answer, userQuery = '') {
+  if (isExplicitLegalDocumentQuestion(userQuery)) return false;
+  const out = String(answer || '');
+  const rawMarkers = [
+    /\bPasal\s+\d+[a-z]?\b/i,
+    /\bayat\s*\(\d+\)/i,
+    /\bPIHAK\s+(?:PERTAMA|KESATU|KEDUA)\b/i,
+    /\bPARA\s+PIHAK\b/i,
+    /\bPERJANJIAN\s+KERJA\s*SAMA\b/i,
+    /\bNOTA\s+KESEPAHAMAN\b/i,
+    /\bIMPLEMENTATION\s+ARRANGEMENT\b/i,
+    /\bFORCE\s+MAJEURE\b/i,
+    /\bADDENDUM\b/i,
+    /\bMenimbang\s*:/i,
+    /\bMengingat\s*:/i,
+    /\bMemutuskan\s*:/i,
+    /\bDitetapkan\s+di\b/i,
+    /\bNomor\s*:\s*\d+\s*\/\s*SK\b/i,
+    /\b(?:tanda\s+tangan|bermeterai|stempel|tembusan|lampiran|perihal)\b/i,
+    /\bmempunyai\s+kekuatan\s+hukum\s+yang\s+sama\b/i
+  ];
+  return rawMarkers.some((pattern) => pattern.test(out));
+}
 function hasLikelyRawDocumentLeak(text) {
   const out = String(text || '');
   const lower = out.toLowerCase();
@@ -334,7 +361,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     if (hasRawTechnicalLeak(text)) {
       issues.push('technical_leak');
       text = buildPreflightFallback(userQuery, 'technical_leak');
-    } else if (hasLikelyRawDocumentLeak(text)) {
+    } else if (hasUnsafeAdministrativeLeak(text, userQuery) || hasLikelyRawDocumentLeak(text)) {
       issues.push('raw_document_leak');
       text = buildPreflightFallback(userQuery, 'raw_document_leak');
     } else if (hasPlaceholderOrOcrNoise(text)) {

@@ -38,6 +38,24 @@ describe('semantic evidence selection', () => {
     expect(sanitized.map((item) => item.id)).toEqual(['clean-fee']);
   });
 
+  test('sanitizes raw SK/accreditation decree chunks with Pasal before retrieval', () => {
+    const rawSkChunk = [
+      'KEPUTUSAN LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER',
+      'Nomor:149/SK/LAM-INFOKOM/Ak/S/XII/2023',
+      'TENTANG PERINGKAT AKREDITASI PROGRAM STUDI SISTEM INFORMASI',
+      'Menimbang: bahwa untuk melaksanakan ketentuan Pasal 4 Peraturan Menteri Pendidikan dan Kebudayaan Nomor 5 Tahun 2020.',
+      'Mengingat: Undang-undang Nomor 12 Tahun 2012 tentang Pendidikan Tinggi.'
+    ].join(' ');
+
+    expect(isLikelyRawAdministrativeDocument(rawSkChunk)).toBe(true);
+
+    const sanitized = sanitizeSemanticIndex([
+      { id: 'raw-sk', chunk: rawSkChunk, filename: 'SK Akreditasi SI.pdf', embedding: [0.1] },
+      { id: 'clean-accreditation', chunk: 'Program Studi Sistem Informasi ITB STIKOM Bali memiliki status akreditasi yang tercatat pada data kampus.', filename: 'akreditasi-ringkas.md', embedding: [0.2] }
+    ]);
+
+    expect(sanitized.map((item) => item.id)).toEqual(['clean-accreditation']);
+  });
   test('requires semantic evidence to mention requested entity or topic', () => {
     expect(hasSemanticEvidenceAlignment(
       'Bagaimana cara mendaftar program LinkedIn Career Center?',

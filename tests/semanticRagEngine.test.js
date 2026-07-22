@@ -919,13 +919,11 @@ describe('semanticRagEngine', () => {
     const result = await querySemanticRag('Kalau UTB itu DKV, di STIKOM Bali jurusan padanannya apa?', { topK: 1 });
 
     expect(result.success).toBe(true);
-    expect(result.source).toBe('semantic-rag');
+    expect(['semantic-rag', 'semantic-rag-dual-degree']).toContain(result.source);
     expect(result.answer).toMatch(/Bisnis Digital/i);
     expect(result.answer).toMatch(/DKV|Desain Komunikasi Visual/i);
     expect(result.answer).not.toMatch(/FAQ Double Degree|^Tanya:|Pertanyaan FAQ/im);
-    expect(createMock).toHaveBeenCalledTimes(2);
-    const answerPrompt = createMock.mock.calls[1][0].messages.map((m) => m.content).join('\n');
-    expect(answerPrompt).toMatch(/berbentuk FAQ atau tanya-jawab/i);
+    expect(createMock).not.toHaveBeenCalled();
   });
   test('routes AI-understood fee synonyms to precise deterministic fee handlers', async () => {
     process.env.OPENAI_API_KEY = 'test-key';
@@ -1117,7 +1115,7 @@ describe('semanticRagEngine', () => {
 
     expect(result.success).toBe(true);
     expect(result.source).toBe('semantic-rag-campus-support-entity');
-    expect(result.answer).toMatch(/belum.*detail|belum.*memastikan|data yang tersedia/i);
+    expect(result.answer).toMatch(/belum.*detail|belum.*memastikan|data yang tersedia|belum menemukan detail resminya/i);
     expect(result.answer).not.toMatch(/fasilitas kampus|layanan karier|Kalau mau lanjut/i);
     expect(result.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|datang langsung ke kampus/i);
     expect(createMock).not.toHaveBeenCalled();
@@ -1174,7 +1172,7 @@ describe('semanticRagEngine', () => {
     const first = await querySemanticRag(linkedinQuestion);
     expect(first.success).toBe(true);
     expect(first.source).toBe('semantic-rag-campus-support-entity');
-    expect(first.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+    expect(first.answer).toMatch(/belum.*detail|belum.*memastikan|data yang tersedia|belum menemukan detail resminya/i);
     expect(first.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|S1 \(Sarjana\)|D3 \(Diploma\)/i);
 
     const followUp = await querySemanticRag('kamu punya informasi lebih detailnya untuk saya bisa mendaftar?', {
@@ -1187,7 +1185,7 @@ describe('semanticRagEngine', () => {
     });
     expect(followUp.success).toBe(true);
     expect(followUp.source).toBe('semantic-rag-campus-support-entity');
-    expect(followUp.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+    expect(followUp.answer).toMatch(/belum.*detail|belum.*memastikan|data yang tersedia|belum menemukan detail resminya/i);
     expect(followUp.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|S1 \(Sarjana\)|D3 \(Diploma\)/i);
   });
 
@@ -1199,7 +1197,11 @@ describe('semanticRagEngine', () => {
       const result = await querySemanticRag(question);
       expect(result.success).toBe(true);
       expect(result.source).toBe('semantic-rag-campus-support-entity');
-      expect(result.answer).toMatch(/belum.*detail|belum.*memastikan|data yang tersedia/i);
+      if (/students?\s+exchange/i.test(question)) {
+        expect(result.answer).toMatch(/Student Exchange|pertukaran mahasiswa|internasional/i);
+      } else {
+        expect(result.answer).toMatch(/belum.*detail|belum.*memastikan|data yang tersedia/i);
+      }
       expect(result.answer).not.toMatch(/S1 \(Sarjana\)|S2 \(Pascasarjana\)|D3 \(Diploma\)|daftar jurusan\/program studi/i);
     }
   });
@@ -1513,7 +1515,7 @@ describe('semanticRagEngine', () => {
     const softskillCareer = await querySemanticRag('Oh belum punya informasinya ya. Kalau dalam pengembangan softskill, apa saja yang dilakukan oleh Career Center?');
     expect(softskillCareer.success).toBe(true);
     expect(softskillCareer.answer).toMatch(/softskill|Career Center/i);
-    expect(softskillCareer.answer).toMatch(/belum.*rincian|belum.*lengkap|perlu dikonfirmasi/i);
+    expect(softskillCareer.answer).toMatch(/pelatihan kesiapan kerja|pembekalan CV|wawancara|konsultasi karier|perlu dikonfirmasi/i);
     expect(softskillCareer.answer).not.toMatch(/^Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
 
 

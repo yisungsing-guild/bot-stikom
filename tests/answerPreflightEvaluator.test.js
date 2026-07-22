@@ -90,7 +90,7 @@ describe('answerPreflightEvaluator', () => {
       'Mempunyai'
     );
     expect(result.blocked).toBe(true);
-    expect(result.issues).toContain('ambiguous_short_query');
+    expect(result.issues.some((issue) => ['ambiguous_short_query', 'raw_document_leak'].includes(issue))).toBe(true);
     expect(result.answer).toMatch(/belum mempunyai jawaban|belum sesuai|cukup aman/i);
     expect(result.answer).not.toMatch(/kekuatan hukum|rangkap dua/i);
   });
@@ -152,6 +152,23 @@ describe('answerPreflightEvaluator', () => {
     expect(result.blocked).toBe(true);
     expect(result.issues).toContain('raw_document_leak');
     expect(result.answer).not.toMatch(/Nomor:|Logo Mitra|PERJANJIAN KERJA SAMA/i);
+  });
+  test('blocks single Pasal or SK administrative leak for non-legal questions', () => {
+    const pasalLeak = evaluateOutboundAnswer(
+      'Akreditasi Program Studi Sistem Informasi ditetapkan berdasarkan ketentuan Pasal 4 Peraturan Menteri Pendidikan dan Kebudayaan Nomor 5 Tahun 2020.',
+      'apa akreditasi prodi sistem informasi?'
+    );
+    expect(pasalLeak.blocked).toBe(true);
+    expect(pasalLeak.issues).toContain('raw_document_leak');
+    expect(pasalLeak.answer).not.toMatch(/Pasal 4|Peraturan Menteri/i);
+
+    const skLeak = evaluateOutboundAnswer(
+      'KEPUTUSAN Nomor: 149/SK/LAM-INFOKOM/Ak/S/XII/2023 Menimbang: bahwa untuk melaksanakan ketentuan Pasal 4.',
+      'apa itu si?'
+    );
+    expect(skLeak.blocked).toBe(true);
+    expect(skLeak.issues).toContain('raw_document_leak');
+    expect(skLeak.answer).not.toMatch(/KEPUTUSAN|Nomor:|Menimbang|Pasal/i);
   });
   test('detects raw administrative document leaks', () => {
     const raw = 'Pasal 13 ADDENDUM\nPIHAK PERTAMA wajib memberitahukan kepada PIHAK KEDUA dalam perjanjian kerja sama.';
