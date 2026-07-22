@@ -333,6 +333,17 @@ describe('semanticRagEngine', () => {
     expect(sisipanDetail.answer).toContain('Total awal masuk setelah potongan (Gelombang Sisipan): Rp. 16.000.000');
   });
 
+  test('routes short program-wave detail questions to fee details, not schedule', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '600000';
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const shortDetail = await querySemanticRag('berapa rincian TI gelombang 3A?');
+    expect(shortDetail.source).not.toBe('semantic-rag-schedule-window');
+    expect(shortDetail.answer).toMatch(/Teknologi Informasi/i);
+    expect(shortDetail.answer).toContain('Total biaya pendaftaran (Gelombang III A): Rp. 350.000');
+    expect(shortDetail.answer).toContain('Total awal masuk setelah potongan (Gelombang III A): Rp. 14.850.000');
+  }, 15000);
   test('answers informal STIKOM nickname and coding hobby naturally', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 

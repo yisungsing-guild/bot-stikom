@@ -3014,8 +3014,11 @@ function detectCompoundTaskFromPart(part, wholeQuestion) {
     return { key: 'scholarship', label: 'Beasiswa', source: 'semantic-rag-scholarship', query: query };
   }
 
-  if (/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|rincian\s+biaya)\b/i.test(q)) {
-    const source = /\b(si|sistem\s+informasi|sk|sistem\s+komputer|ti|teknologi\s+informasi|bd|bisnis\s+digital|dkv|desain\s+komunikasi\s+visual|gelombang|kelas|reguler|malam|karyawan)\b/i.test(q)
+  const hasProgramWaveFeeDetail = /\b(rincian|rinci|detail)\b/i.test(q)
+    && /\b(si|sistem\s+informasi|sk|sistem\s+komputer|ti|teknologi\s+informasi|bd|bisnis\s+digital|mi|manajemen\s+informatika|dkv|desain\s+komunikasi\s+visual)\b/i.test(q)
+    && /\b(gelombang|gel\b|(?:[1-4]|i{1,3}|iv)\s*[a-c])\b/i.test(q);
+  if (hasProgramWaveFeeDetail || /\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|rincian\s+biaya)\b/i.test(q)) {
+    const source = /\b(si|sistem\s+informasi|sk|sistem\s+komputer|ti|teknologi\s+informasi|bd|bisnis\s+digital|mi|manajemen\s+informatika|dkv|desain\s+komunikasi\s+visual|gelombang|kelas|reguler|malam|karyawan)\b/i.test(q)
       ? 'semantic-rag-fee-detail'
       : 'semantic-rag-fee-general';
     return { key: `fee:${source}:${q}`, label: 'Biaya', source, query };
@@ -3072,8 +3075,11 @@ function detectCompoundTasks(question) {
   if (/\b(beasiswa|kip|potongan|diskon|bantuan\s+biaya)\b/i.test(q)) {
     pushCompoundTask(tasks, { key: 'scholarship', label: 'Beasiswa', source: 'semantic-rag-scholarship', query: raw });
   }
-  if (/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|rincian\s+biaya)\b/i.test(q)) {
-    const source = /\b(si|sistem\s+informasi|sk|sistem\s+komputer|ti|teknologi\s+informasi|bd|bisnis\s+digital|dkv|desain\s+komunikasi\s+visual|gelombang|kelas|reguler|malam|karyawan)\b/i.test(q)
+  const hasProgramWaveFeeDetail = /\b(rincian|rinci|detail)\b/i.test(q)
+    && /\b(si|sistem\s+informasi|sk|sistem\s+komputer|ti|teknologi\s+informasi|bd|bisnis\s+digital|mi|manajemen\s+informatika|dkv|desain\s+komunikasi\s+visual)\b/i.test(q)
+    && /\b(gelombang|gel\b|(?:[1-4]|i{1,3}|iv)\s*[a-c])\b/i.test(q);
+  if (hasProgramWaveFeeDetail || /\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|rincian\s+biaya)\b/i.test(q)) {
+    const source = /\b(si|sistem\s+informasi|sk|sistem\s+komputer|ti|teknologi\s+informasi|bd|bisnis\s+digital|mi|manajemen\s+informatika|dkv|desain\s+komunikasi\s+visual|gelombang|kelas|reguler|malam|karyawan)\b/i.test(q)
       ? 'semantic-rag-fee-detail'
       : 'semantic-rag-fee-general';
     pushCompoundTask(tasks, { key: `fee:${source}`, label: 'Biaya', source, query: raw });
@@ -5332,6 +5338,7 @@ module.exports = {
   buildContextText,
   cosineSimilarity
 };
+
 
 
 
