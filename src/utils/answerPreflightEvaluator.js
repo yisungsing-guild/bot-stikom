@@ -325,6 +325,12 @@ function lacksConcreteItemsForApaSaja(answer, userQuery) {
   return bulletCount < 2 && namedItems < 2 && !hasListLanguage;
 }
 
+function isTrustedSemanticAlignmentSource(source) {
+  const value = String(source || '').trim().toLowerCase();
+  if (!value) return false;
+  return /^semantic-rag-(?:registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|accreditation|akreditasi)/i.test(value);
+}
+
 function decidePreflightAction(issues, meta = {}) {
   const hardIssues = new Set([
     'technical_leak',
@@ -370,7 +376,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     } else if (lacksConcreteItemsForApaSaja(text, userQuery)) {
       issues.push('apa_saja_without_concrete_items');
       text = buildPreflightFallback(userQuery, 'intent_conflict');
-    } else {
+    } else if (!isTrustedSemanticAlignmentSource(meta && meta.source)) {
       const alignmentAudit = detectAnswerQueryMismatch(text, userQuery);
       if (alignmentAudit.mismatch) {
         issues.push(alignmentAudit.reason || 'answer_query_mismatch');

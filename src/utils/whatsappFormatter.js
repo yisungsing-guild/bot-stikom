@@ -786,15 +786,30 @@ function detectIntentFromQuery(userQuery) {
 }
 
 function detectIntentFromAnswer(mainAnswer, userQuery) {
-  // Prefer strong signals in the answer (especially 'biaya') before trusting the query intent.
+  const queryIntent = detectIntentFromQuery(userQuery);
+
+  // Prefer strong fee signals only when the user is actually asking about cost.
+  // Many good PMB answers mention "biaya" as a next step; that should not turn
+  // registration/schedule answers into cost replies.
   const answerIntent = detectIntentFromAnswerFromText(mainAnswer);
-  if (answerIntent === 'biaya') {
+  if (answerIntent === 'biaya' && (queryIntent === 'general' || queryIntent === 'biaya')) {
     try { traceWhatsapp('detectIntentFromAnswer', { mainAnswer, userQuery, chosen: 'biaya', reason: 'answer indicates fee' }); } catch (e) {}
     return 'biaya';
   }
 
-  const queryIntent = detectIntentFromQuery(userQuery);
-  const strongQueryIntents = ['campus_support', 'ukm', 'international_double_degree'];
+  const strongQueryIntents = [
+    'campus_support',
+    'ukm',
+    'international_double_degree',
+    'pendaftaran',
+    'jadwal_pendaftaran',
+    'beasiswa',
+    'akreditasi',
+    'lokasi',
+    'program_studi',
+    'program_definition',
+    'perbandingan_prodi'
+  ];
   if (strongQueryIntents.includes(queryIntent) && answerIntent !== queryIntent) {
     try {
       traceWhatsapp('detectIntentFromAnswer', {
@@ -1030,8 +1045,9 @@ function buildHumanizedWhatsappReply({
   const isDeterministicPmbInfo = deterministicSource === 'rag-pmb-info';
   const isDeterministicProgramProfile = deterministicSource === 'rag-program-profile';
   const isDeterministicFee = deterministicSource === 'rag-fee-structured' || /^\s*Program Studi\s*:/i.test(normalizedAnswer);
+  const isDeterministicSemanticRag = /^semantic-rag-/i.test(deterministicSource);
 
-  if (isDeterministicGreeting || isDeterministicPmbInfo || isDeterministicProgramProfile || isDeterministicFee) {
+  if (isDeterministicGreeting || isDeterministicPmbInfo || isDeterministicProgramProfile || isDeterministicFee || isDeterministicSemanticRag) {
     console.log('[TRACE_HUMANIZER_PRESERVE_DETERMINISTIC]', {
       rawIntent,
       rawRagSource,
@@ -1056,7 +1072,19 @@ function buildHumanizedWhatsappReply({
   console.log('[TRACE_INTENT_HUMANIZER]', { detectedIntentBeforeCostOverride: detectedIntent });
 
   const queryIntent = detectIntentFromQuery(userQuery);
-  const strongQueryIntents = ['campus_support', 'ukm', 'international_double_degree'];
+  const strongQueryIntents = [
+    'campus_support',
+    'ukm',
+    'international_double_degree',
+    'pendaftaran',
+    'jadwal_pendaftaran',
+    'beasiswa',
+    'akreditasi',
+    'lokasi',
+    'program_studi',
+    'program_definition',
+    'perbandingan_prodi'
+  ];
   if (strongQueryIntents.includes(queryIntent) && detectedIntent !== queryIntent) {
     try {
       traceWhatsapp('buildHumanizedWhatsappReply', {
@@ -1074,7 +1102,7 @@ function buildHumanizedWhatsappReply({
 
   // Strong rule: treat explicit fee/biaya queries as COST/`biaya` intent and preserve it.
   // Avoid overriding location intent when the answer or query clearly points to campus location.
-  const costQueryPattern = /\b(biaya|dpp|ukt|pendaftaran|biaya\s+masuk|biaya\s+kuliah|cicilan|total\s+biaya|harga)\b/i;
+  const costQueryPattern = /\b(biaya|dpp|ukt|biaya\s+pendaftaran|uang\s+pendaftaran|bayar\s+pendaftaran|biaya\s+masuk|biaya\s+kuliah|cicilan|total\s+biaya|harga)\b/i;
   const explicitCostQuery = costQueryPattern.test(String(userQuery || ''));
   const answerCostIntent = detectIntentFromAnswerFromText(normalizedAnswer) === 'biaya';
   const nonCostQueryIntents = ['lokasi', 'jadwal_pendaftaran', 'akreditasi', 'perbandingan_prodi', 'beasiswa', 'prospek_kerja'];

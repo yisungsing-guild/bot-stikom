@@ -2393,6 +2393,23 @@ function tryRplTransferAnswer(question) {
   const asksConversion = /\b(konversi|alih\s+kredit|pengakuan\s+sks|sks|mata\s+kuliah)\b/.test(q) && /\b(konversi|diakui|pengakuan|alih)\b/.test(q);
   if (!asksRpl && !asksTransfer && !asksConversion) return null;
 
+  if (asksRpl && /\b(cara|bagaimana|gimana|gmn|daftar|mendaftar|mengikuti|ikut|alur|prosedur|ajukan|mengajukan)\b/.test(q)) {
+    return {
+      answer: [
+        'Untuk mendaftar atau mengajukan jalur RPL, kakak perlu mengikuti arahan PMB/akademik karena berkas dan penilaiannya harus diverifikasi oleh kampus.',
+        '',
+        'Gambaran langkah amannya:',
+        '',
+        '- Hubungi Admin PMB dan sampaikan bahwa kakak ingin mendaftar jalur RPL.',
+        '- Siapkan dokumen pendukung seperti riwayat pendidikan, transkrip/sertifikat, portofolio, atau bukti pengalaman yang relevan.',
+        '- Serahkan/unggah dokumen sesuai arahan PMB.',
+        '- Tim akademik/prodi akan menilai dokumen untuk menentukan pengakuan pembelajaran atau konversi yang memungkinkan.',
+        '',
+        'Untuk syarat final, jadwal, dan format dokumen, kakak perlu konfirmasi ke Admin PMB ITB STIKOM Bali.'
+      ].join('\n')
+    };
+  }
+
   if (asksConversion) {
     return {
       answer: [
@@ -2456,21 +2473,21 @@ function tryAcademicOperationsAnswer(question) {
 
   if (/\b(jadwal\s+kuliah|melihat\s+jadwal|jadwal\s+ujian|perkuliahan\s+dimulai|jadwal\s+bentrok|bentrok)\b/.test(q)) {
     if (/bentrok/.test(q)) return answerLines(['Kalau jadwal kuliah atau ujian bentrok, kakak sebaiknya segera konfirmasi ke dosen pembimbing akademik/prodi atau bagian akademik.', '', 'Data yang saya pegang belum memuat prosedur penyelesaian bentrok secara rinci, jadi keputusan final tetap mengikuti arahan akademik.']);
-    return answerLines(['Untuk jadwal kuliah, jadwal ujian, atau tanggal mulai perkuliahan, data yang saya pegang belum memuat jadwal akademik rinci.', '', 'Informasi amannya: kakak bisa mengecek portal akademik/SIAKAD jika tersedia, atau konfirmasi ke bagian akademik/prodi untuk jadwal resmi terbaru.']);
+    return answerLines(['Untuk jadwal kuliah, jadwal ujian, atau tanggal mulai perkuliahan, data yang saya pegang belum memuat jadwal akademik rinci.', '', 'Informasi amannya: kakak bisa mengecek portal akademik/SION jika tersedia, atau konfirmasi ke bagian akademik/prodi untuk jadwal resmi terbaru.']);
   }
 
   if (/\bkrs\b/.test(q)) {
     if (/apa\s+itu/.test(q)) return answerLines(['KRS adalah Kartu Rencana Studi, yaitu daftar mata kuliah yang dipilih mahasiswa untuk diikuti pada satu semester.', '', 'Untuk jadwal pengisian, cara pengisian, dan konsekuensi jika terlambat KRS, kakak perlu mengikuti arahan bagian akademik atau dosen pembimbing akademik.']);
-    return answerLines(['Untuk pengisian KRS, jadwal KRS, atau keterlambatan KRS, data yang saya pegang belum memuat prosedur rinci.', '', 'Informasi amannya: kakak perlu cek portal akademik/SIAKAD jika tersedia dan konfirmasi ke dosen pembimbing akademik atau bagian akademik.']);
+    return answerLines(['Untuk pengisian KRS, jadwal KRS, atau keterlambatan KRS, data yang saya pegang belum memuat prosedur rinci.', '', 'Informasi amannya: kakak perlu cek portal akademik/SION jika tersedia dan konfirmasi ke dosen pembimbing akademik atau bagian akademik.']);
   }
 
   if (/\b(dosen\s+pembimbing\s+akademik|pembimbing\s+akademik|\bpa\b)\b/.test(q)) {
-    return answerLines(['Dosen pembimbing akademik biasanya ditetapkan oleh prodi atau bagian akademik untuk membantu arahan studi mahasiswa.', '', 'Saya tidak memiliki akses ke data personal mahasiswa, jadi untuk mengetahui dosen pembimbing akademik kakak, silakan cek portal akademik/SIAKAD atau konfirmasi ke bagian akademik/prodi.']);
+    return answerLines(['Dosen pembimbing akademik biasanya ditetapkan oleh prodi atau bagian akademik untuk membantu arahan studi mahasiswa.', '', 'Saya tidak memiliki akses ke data personal mahasiswa, jadi untuk mengetahui dosen pembimbing akademik kakak, silakan cek portal akademik/SION atau konfirmasi ke bagian akademik/prodi.']);
   }
 
   if (/\b(nilai|revisi\s+nilai)\b/.test(q)) {
     if (/salah|revisi|mengajukan/.test(q)) return answerLines(['Kalau nilai terlihat salah atau perlu revisi, kakak sebaiknya menghubungi dosen pengampu mata kuliah terlebih dahulu, lalu mengikuti arahan prodi/bagian akademik.', '', 'Data yang saya pegang belum memuat alur revisi nilai secara rinci, jadi keputusan final tetap mengikuti prosedur akademik resmi.']);
-    return answerLines(['Untuk melihat nilai atau jadwal pengumuman nilai, kakak bisa mengecek portal akademik/SIAKAD jika tersedia.', '', 'Saya belum memiliki jadwal pengumuman nilai yang rinci pada data training, jadi untuk kepastian tanggal silakan konfirmasi ke bagian akademik atau dosen pengampu.']);
+    return answerLines(['Untuk melihat nilai atau jadwal pengumuman nilai, kakak bisa mengecek portal akademik/SION jika tersedia.', '', 'Saya belum memiliki jadwal pengumuman nilai yang rinci pada data training, jadi untuk kepastian tanggal silakan konfirmasi ke bagian akademik atau dosen pengampu.']);
   }
 
   if (/\b(skripsi|sidang|kelulusan)\b/.test(q)) {
@@ -2510,6 +2527,19 @@ function tryStudentAffairsOperationsAnswer(question) {
   const hasStudentAffairs = /\b(bem|ukm|organisasi\s+mahasiswa|ormawa|mahasiswa\s+aktif|prestasi|lomba|seminar|sertifikasi|pelatihan)\b/.test(q);
   if (!hasStudentAffairs) return null;
   if (/\bbeasiswa\b/.test(q)) return null;
+
+  if (/(apas+saja|daftar|list|organisasis+mahasiswa|ormawa)/.test(q) && /(organisasis+mahasiswa|ormawa|ukm|bem|kemahasiswaan)/.test(q)) {
+    return answerLines([
+      'Organisasi mahasiswa/Ormawa yang dapat ditanyakan di ITB STIKOM Bali antara lain:',
+      '',
+      '- Badan Eksekutif Mahasiswa (BEM)',
+      '- Dewan Perwakilan Mahasiswa (DPM)',
+      '- Himpunan Mahasiswa Program Studi (Himaprodi)',
+      '- Unit Kegiatan Mahasiswa (UKM), seperti Futsal, Basket, Mapala Kompas, Musik, Tari, Tabuh, Teater Biner, VOS, KSL, Syntax, Athena Esport, GHoST, dan UKM lain yang tercatat pada data kampus.',
+      '',
+      'Untuk daftar paling terbaru, jadwal open recruitment, atau kontak pengurus, kakak bisa konfirmasi ke bagian kemahasiswaan atau pengurus organisasi terkait.'
+    ]);
+  }
 
   if (/\b(bergabung|gabung|ikut|mendaftar|daftar)\b/.test(q) && /\bbem\b/.test(q)) {
     return answerLines(['Untuk bergabung dengan BEM, kakak bisa mengikuti informasi rekrutmen atau open recruitment dari BEM/kemahasiswaan.', '', 'Data yang saya pegang belum memuat jadwal dan syarat rekrutmen BEM yang rinci, jadi silakan konfirmasi ke bagian kemahasiswaan atau kanal resmi BEM ITB STIKOM Bali.']);
@@ -2578,7 +2608,19 @@ function tryCareerOperationsAnswer(question) {
 
 function tryCampusContactOperationsAnswer(question) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(nomor\s+telepon|nomor\s+admin|no\.?\s*admin|telepon|telpon|no\.?\s*telp|kontak|hubungi\s+admin|menghubungi\s+admin|jam\s+operasional)\b/.test(q)) return null;
+  if (!/\b(nomor\s+telepon|nomor\s+admin|no\.?\s*admin|telepon|telpon|no\.?\s*telp|kontak|hubungi\s+admin|menghubungi\s+admin|jam\s+operasional|alamat|lokasi|letak|di\s*mana|dimana|maps|rute)\b/.test(q)) return null;
+
+  if (/\b(alamat|lokasi|letak|di\s*mana|dimana|maps|rute)\b/.test(q) && /\b(kampus|stikom|itb\s*stikom|renon|denpasar|jimbaran|abiansemal)\b/.test(q)) {
+    return answerLines([
+      'Alamat/lokasi kampus ITB STIKOM Bali yang tersedia pada data:',
+      '',
+      '- Kampus Denpasar/Renon: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali. Telepon (0361) 244445.',
+      '- Kampus Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali. Telepon (0361) 8953534.',
+      '- Kampus Abiansemal: Jl. Janger, Abiansemal, Dauh Yeh Cani, Badung, Bali. Telepon (0361) 4790925.',
+      '',
+      'Kalau kakak ingin datang untuk PMB atau layanan tertentu, sebaiknya konfirmasi dulu ke admin kampus agar diarahkan ke kampus yang tepat.'
+    ]);
+  }
 
   if (/\b(jam\s+operasional|jam\s+buka|operasional)\b/.test(q)) {
     return answerLines(['Untuk jam operasional kampus/admin, data yang saya pegang belum memuat jadwal layanan yang lengkap.', '', 'Informasi amannya: silakan konfirmasi ke admin kampus terlebih dahulu sebelum datang, terutama jika di luar jam kerja atau hari libur.']);
@@ -3281,11 +3323,23 @@ function buildCampusSupportStaticEntityAnswer(entity, question) {
   const key = entity.key;
   const q = String(question || '').toLowerCase();
   const data = {
-    'student-exchange': [
-      'Student Exchange adalah program pertukaran mahasiswa yang memberi kesempatan mahasiswa mendapatkan pengalaman belajar di lingkungan internasional.',
-      'Program ini bertujuan memperluas wawasan global, melatih kemampuan bahasa asing, membangun kemandirian, dan memperluas jaringan internasional.',
-      'Untuk jadwal, negara tujuan, syarat peserta, dan alur pendaftaran, detailnya perlu mengikuti informasi terbaru dari admin kampus atau International Office.'
-    ],
+    'student-exchange': /\b(syarat|persyaratan|requirement|requirements|ketentuan)\b/.test(q)
+      ? [
+        'Untuk syarat Student Exchange, data yang saya pegang belum memuat daftar persyaratan resmi yang lengkap.',
+        'Informasi amannya: syarat peserta biasanya perlu mengikuti ketentuan program yang sedang dibuka, seperti status mahasiswa aktif, seleksi kampus, kesiapan akademik, dokumen administrasi, dan kemampuan bahasa sesuai tujuan program.',
+        'Untuk syarat final, jadwal, negara tujuan, dan alur pendaftaran, kakak perlu konfirmasi ke admin kampus atau International Office.'
+      ]
+      : /\b(cara|bagaimana|gimana|gmn|mengikuti|ikut|daftar|mendaftar|alur|prosedur)\b/.test(q)
+        ? [
+          'Untuk mengikuti Student Exchange, kakak perlu menunggu informasi program yang sedang dibuka lalu mendaftar sesuai arahan kampus.',
+          'Gambaran amannya: cek informasi dari kampus/International Office, siapkan dokumen yang diminta, ikuti seleksi atau verifikasi, lalu ikuti arahan keberangkatan/program jika diterima.',
+          'Detail jadwal, negara tujuan, syarat peserta, dan dokumen wajib perlu dikonfirmasi ke admin kampus atau International Office karena bisa berubah per periode.'
+        ]
+        : [
+          'Student Exchange adalah program pertukaran mahasiswa yang memberi kesempatan mahasiswa mendapatkan pengalaman belajar di lingkungan internasional.',
+          'Program ini bertujuan memperluas wawasan global, melatih kemampuan bahasa asing, membangun kemandirian, dan memperluas jaringan internasional.',
+          'Untuk jadwal, negara tujuan, syarat peserta, dan alur pendaftaran, detailnya perlu mengikuti informasi terbaru dari admin kampus atau International Office.'
+        ],
     gccp: [
       'GCCP atau Global Cross Cultural Program adalah program lintas budaya yang memberi pengalaman internasional kepada mahasiswa.',
       'Kegiatannya dapat berupa short course, kegiatan outbound ke luar negeri, atau kegiatan inbound bersama mahasiswa asing sesuai program yang berjalan.',
@@ -4138,6 +4192,22 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
     }
     return best;
   };
+  const asksGeneralUkmMeaning = /^(?:apa\s+itu|itu\s+apa|maksud(?:nya)?\s+apa|jelaskan)\s+ukm\??$/i.test(String(question || '').trim())
+    || (/\bapa\s+itu\s+ukm\b/i.test(String(question || '')) && !findMentionedUkm(q));
+  if (asksGeneralUkmMeaning) {
+    return {
+      answer: [
+        'UKM adalah Unit Kegiatan Mahasiswa, yaitu wadah kegiatan mahasiswa di luar perkuliahan untuk mengembangkan minat, bakat, organisasi, kreativitas, kepemimpinan, dan prestasi.',
+        '',
+        'Di kampus, UKM bisa mencakup bidang olahraga, seni, kerohanian, teknologi, komunitas minat, pecinta alam, dan kegiatan mahasiswa lainnya.',
+        '',
+        'Kalau kakak ingin tahu daftar UKM yang tersedia, kakak bisa tanya: "UKM apa saja yang ada di STIKOM Bali?"'
+      ].join('\n'),
+      source: 'semantic-rag-ukm-definition',
+      frameSource: 'semantic-rag-direct-answer'
+    };
+  }
+
   const currentMentionedUkm = findMentionedUkm(q);
   const recentMentionedUkm = findMentionedUkm(recent);
   const hasKnownUkmName = !!currentMentionedUkm;

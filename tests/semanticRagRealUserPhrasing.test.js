@@ -59,7 +59,7 @@ describe('semanticRag real user phrasing regression', () => {
 
   test('understands casual academic and finance variants', async () => {
     const cases = [
-      { q: 'jadwal kuliah liat dimana?', must: /portal akademik|SIAKAD|akademik/i },
+      { q: 'jadwal kuliah liat dimana?', must: /portal akademik|SION|akademik/i },
       { q: 'telat krs gimana?', must: /KRS|dosen pembimbing|akademik/i },
       { q: 'nilai ku salah harus lapor siapa?', must: /dosen pengampu|revisi nilai|akademik/i },
       { q: 'mau ajukan skripsi caranya?', must: /skripsi|prodi|akademik/i },

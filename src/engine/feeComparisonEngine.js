@@ -1317,6 +1317,7 @@ function tryDualDegreeAnswer(question) {
   const asksAllPairs = /\b(jurusan\s+apa\s+dan\s+jurusan\s+apa|yang\s+lain|lainnya|semua|dnui|help|di\s+sana|disana)\b/.test(q) && (hasDoubleDegreeSignal || hasPartnerSignal);
   const asksUtbMajor = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(jurusan|prodi|mengambil|ambil|dapat|dapet|di\s+utb|utb\s+nya|utbnya)\b/.test(q);
   const asksUtbSpecific = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(seperti\s+apa|spesifik|khusus|dibanding|beda|bedanya|perbedaan|program\s+lain)\b/.test(q);
+  const asksHowToJoin = /\b(cara|bagaimana|gimana|gmn|mengikuti|ikut|daftar|mendaftar|alur|prosedur|syarat|persyaratan)\b/.test(q);
   const asksMeaning = /\b(apa\s+itu|maksudnya|pengertian|jelaskan|seperti\s+apa)\b/.test(q);
 
   const pairLines = [
@@ -1407,6 +1408,24 @@ function tryDualDegreeAnswer(question) {
         '',
         'Jadi, kalau pertanyaannya pasangan UTB dan STIKOM Bali, jawabannya: STIKOM Bali Bisnis Digital, UTB DKV (Desain Komunikasi Visual).'
       ].join('\n')
+    };
+  }
+
+  if (asksHowToJoin && hasDoubleDegreeSignal && !asksMeaning && !asksAllPairs && !asksUtbMajor && !asksUtbPair && !asksUtbSpecific) {
+    return {
+      answer: [
+        'Untuk mengikuti program Double Degree, kakak perlu mendaftar atau mengajukan minat melalui jalur PMB/admin kampus sesuai program mitra yang dipilih.',
+        '',
+        'Gambaran langkah amannya:',
+        '',
+        '* Pilih program Double Degree yang diminati: UTB, DNUI, atau HELP University.',
+        '* Konfirmasi ke Admin PMB mengenai syarat, jadwal, kuota, dokumen, dan skema akademiknya.',
+        '* Siapkan dokumen pendaftaran sesuai arahan kampus.',
+        '* Ikuti proses seleksi/verifikasi jika program tersebut mensyaratkan seleksi.',
+        '',
+        'Detail teknis seperti syarat peserta, jadwal keberangkatan/perkuliahan, dokumen, dan alur final bisa berbeda per mitra, jadi bagian itu perlu dikonfirmasi ke Admin PMB ITB STIKOM Bali.'
+      ].join('\n'),
+      frameSource: 'semantic-rag-direct-answer'
     };
   }
 
@@ -1924,5 +1943,3 @@ module.exports = {
   formatRp,
   formatRange
 };
-
-
