@@ -4512,6 +4512,7 @@ const SOURCES_NEEDING_INDEX = new Set([
   'semantic-rag-fee-general',
   'semantic-rag-contextual-fee',
   'semantic-rag-fee-comparison',
+  'semantic-rag-ukm-list',
   'semantic-rag-campus-support-entity',
   'semantic-rag-campus-facility'
 ]);

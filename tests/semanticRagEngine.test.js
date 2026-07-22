@@ -1643,7 +1643,8 @@ describe('semanticRagEngine', () => {
     const result = await querySemanticRag('apa itu ukm ksl?');
 
     expect(result.success).toBe(true);
-    expect(result.source).toBe('semantic-rag-training-specific');
+    expect(result.source).toBe('semantic-rag-ukm-list');
+    expect(result.debug.source).toBe('semantic-rag-ukm-specific-profile');
     expect(result.answer).toMatch(/UKM KSL adalah unit kegiatan mahasiswa/i);
     expect(result.answer).not.toMatch(/belum punya informasi detail/i);
   });

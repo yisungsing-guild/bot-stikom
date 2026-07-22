@@ -105,6 +105,27 @@ describe('answerPreflightEvaluator', () => {
     expect(result.answer).toMatch(/Teknologi Informasi/i);
   });
 
+  test('allows specific UKM KSL profile answers from training content', () => {
+    const withAcronym = evaluateOutboundAnswer(
+      'Kelompok Studi Linux (KSL) adalah wadah mahasiswa yang memiliki ketertarikan pada Linux dan open-source.',
+      'apa itu ukm ksl?'
+    );
+    expect(withAcronym.blocked).toBe(false);
+    expect(withAcronym.issues).not.toContain('missing_requested_entity');
+
+    const withExpandedName = evaluateOutboundAnswer(
+      'Kelompok Studi Linux adalah wadah mahasiswa yang memiliki ketertarikan pada Linux dan open-source.',
+      'apa itu ukm ksl?'
+    );
+    expect(withExpandedName.blocked).toBe(false);
+
+    const genericUkmList = evaluateOutboundAnswer(
+      'Ada UKM/Ormawa seperti Basket, Futsal, dan Musik.',
+      'apa itu ukm ksl?'
+    );
+    expect(genericUkmList.blocked).toBe(true);
+    expect(genericUkmList.issues).toContain('missing_requested_entity');
+  });
   test('allows partner-specific DNUI double degree answers', () => {
     const result = evaluateOutboundAnswer(
       'Double Degree DNUI adalah program Double Degree internasional ITB STIKOM Bali dengan Dalian Neusoft University of Information, China. Prodi di ITB STIKOM Bali: Bisnis Digital. Jurusan di DNUI belum tercantum pada data yang tersedia.',

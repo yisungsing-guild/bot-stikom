@@ -125,7 +125,8 @@ function detectRequiredEntities(text) {
     { key: 'language learning center', patterns: [/\blanguage\s+learning\s+center\b/i, /\bllc\b/i, /belajar\s+bahasa/i, /kemampuan\s+bahasa/i] },
     { key: 'career center', patterns: [/\bcareer\s*center\b/i, /pusat\s+kar(?:ir|ier)/i] },
     { key: 'softskill', patterns: [/\bsoft\s*skill\b/i, /\bsoftskill\b/i] },
-    { key: 'ukm', patterns: [/\bukm\b/i, /ormawa/i] },
+    { key: 'ukm', patterns: [/\bukm\b/i, /ormawa/i, /unit\s+kegiatan\s+mahasiswa/i, /organisasi\s+mahasiswa/i] },
+    { key: 'ksl', patterns: [/\bksl\b/i, /kelompok\s+studi\s+linux/i] },
     { key: 'esport', patterns: [/\besports?\b/i, /athena\s+esports?/i] },
     { key: 'double degree', patterns: [/double\s*degree/i, /dual\s*degree/i, /gelar\s+ganda/i] },
     { key: 'dnui', patterns: [/\bdnui\b/i, /dalian\s+neusoft/i] },
@@ -148,6 +149,8 @@ function answerMentionsEntity(answer, entity) {
   const aliases = {
     'language learning center': ['language learning center', 'llc', 'belajar bahasa', 'kemampuan bahasa'],
     'career center': ['career center', 'pusat karier', 'pusat karir'],
+    ukm: ['ukm', 'ormawa', 'unit kegiatan mahasiswa', 'organisasi mahasiswa', 'kegiatan mahasiswa', 'wadah mahasiswa', 'komunitas mahasiswa', 'himpunan mahasiswa', 'kelompok studi'],
+    ksl: ['ksl', 'kelompok studi linux'],
     'double degree': ['double degree', 'dual degree', 'gelar ganda'],
     'sistem informasi': ['sistem informasi', 'si'],
     'teknologi informasi': ['teknologi informasi', 'ti'],
@@ -178,7 +181,7 @@ function detectAnswerQueryMismatch(answer, userQuery = '') {
     const hits = queryTerms.filter((term) => answerNorm.includes(term));
     const hasIntentOverlap = detectIntentConflict(answer, userQuery).conflict === false
       && hasAnyIntent(detectIntentSet(answer), Array.from(detectIntentSet(userQuery)));
-    if (!hits.length && !hasIntentOverlap) {
+    if (!hits.length && !hasIntentOverlap && !requestedEntities.length) {
       return { mismatch: true, reason: 'no_query_term_overlap', missingEntities: [], queryTerms };
     }
   }

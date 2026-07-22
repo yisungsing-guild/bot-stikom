@@ -77,7 +77,7 @@ function mapProviderIntentToFormatter(intent) {
   if (lowered === 'rag-fee-structured') return 'biaya';
   if (/\b(ukm|ormawa|kegiatan[_-]?mahasiswa)\b/i.test(lowered)) return 'ukm';
   if (/\b(dual[_-]?degree|double[_-]?degree)\b/i.test(lowered) || lowered === 'semantic-rag-dual-degree') return 'international_double_degree';
-  if (/\b(campus[_-]?support|career[_-]?center|linked[_-]?in|linkedin|gccp|bccp|language[_-]?learning|llc|softskill|student[_-]?exchange)\b/i.test(lowered)) {
+  if (/\b(campus[_-]?(support|facility)|career[_-]?center|linked[_-]?in|linkedin|gccp|bccp|language[_-]?learning|llc|softskill|student[_-]?exchange)\b/i.test(lowered)) {
     return 'campus_support';
   }
   switch (normalized) {
@@ -739,7 +739,7 @@ function detectIntentFromQuery(userQuery) {
   const q = String(userQuery || '').toLowerCase().trim();
   if (!q) return 'general';
 
-  if (/\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|llc|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/i.test(q)) {
+  if (/\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|llc|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa|fasilitas|layanan|sarana|prasarana)\b/i.test(q)) {
     try { traceWhatsapp('detectIntentFromQuery', { query: userQuery, detected: 'campus_support' }); } catch (e) {}
     return 'campus_support';
   }
@@ -759,7 +759,7 @@ function detectIntentFromQuery(userQuery) {
   }
 
   const semanticPatterns = [
-    { intent: 'campus_support', regex: /\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|llc|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/ },
+    { intent: 'campus_support', regex: /\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|llc|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa|fasilitas|layanan|sarana|prasarana)\b/ },
     { intent: 'ukm', regex: /\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|komunitas|athena esports|esport|esports|musik|futsal|basket|teater biner|vos)\b/ },
     { intent: 'international_double_degree', regex: /\b(double degree|double-degree|double gelar|dual degree|program internasional|kelas internasional|exchange semester|kuliah di luar negeri)\b/ },
     { intent: 'beasiswa', regex: /\b(beasiswa|scholarship|grant|bantuan pendidikan|kip|1k1s|prestasi|yayasan|kemitraan|kurang mampu|tidak mampu)\b/ },

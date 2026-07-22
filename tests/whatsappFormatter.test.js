@@ -28,6 +28,16 @@ describe('WhatsApp reply formatter', () => {
     expect(result).toContain('UKM/Ormawa');
     expect(result).not.toMatch(/Program Studi yang Kakak tanyakan|Program Studi KSL/i);
   });
+  test('keeps campus facility answers as campus support even when the list mentions UKM', () => {
+    const result = buildHumanizedWhatsappReply({
+      mainAnswer: 'Fasilitas dan program pendukung yang tersedia di ITB STIKOM Bali antara lain:\n\n- Career Center\n- Inkubator Bisnis\n- Lebih dari 30 Unit Kegiatan Mahasiswa (UKM)\n- Language Learning Center',
+      userQuery: 'fasilitas apa saja yang ada di stikom bali?',
+      intent: 'semantic-rag-campus-facility'
+    });
+
+    expect(result).toMatch(/fasilitas atau program pendukung|Fasilitas dan program pendukung/i);
+    expect(result).not.toMatch(/^Baik Kak, saya bantu jawab tentang UKM\/Ormawa/i);
+  });
   test('classifies LLC definition queries as campus support even when upstream intent says program definition', () => {
     expect(detectIntentFromAnswer('', 'apa itu llc?')).toBe('campus_support');
 
