@@ -1625,7 +1625,21 @@ function tryProgramAccreditationAnswer(question) {
   if (!isAccreditationQuestion(question)) return null;
   const q = String(question || '').toLowerCase();
   const program = findAccreditationProgram(question);
-  const asksAll = /\b(semua|daftar|apa\s+saja|prodi\s+apa\s+saja|program\s+studi\s+apa\s+saja)\b/i.test(q) || !program;
+  const asksCampusAccreditation = /\b(kampus|institusi|perguruan\s+tinggi|itb\s*stikom|stikom\s+bali)\b/i.test(q) && !program;
+  const asksAll = /\b(semua|daftar|apa\s+saja|prodi\s+apa\s+saja|program\s+studi\s+apa\s+saja)\b/i.test(q) || (!program && !asksCampusAccreditation);
+
+  if (asksCampusAccreditation) {
+    return {
+      answer: [
+        'Untuk akreditasi institusi/kampus ITB STIKOM Bali, saya belum menemukan ringkasan status akreditasi institusi yang cukup aman pada data yang tersedia.',
+        '',
+        'Agar tidak keliru atau membocorkan isi dokumen SK mentah, informasi amannya: data yang sudah tersedia saat ini baru cukup untuk menjawab akreditasi per program studi.',
+        '',
+        'Saya bisa bantu tampilkan daftar akreditasi prodi seperti Sistem Informasi, Teknologi Informasi, Bisnis Digital, Sistem Komputer, dan Manajemen Informatika.'
+      ].join('\n'),
+      source: 'semantic-rag-accreditation'
+    };
+  }
 
   if (program && !asksAll) {
     return {
@@ -4155,6 +4169,18 @@ function inferFrameTopic(question, source) {
     };
   }
 
+  if (src.includes('accreditation') || /\b(akreditasi|akredit|terakreditasi|ban\s*-?\s*pt|lam\s+infokom)\b/.test(q)) {
+    return {
+      request: 'informasi akreditasi program studi yang kakak tanyakan',
+      assumption: 'Saya tampilkan status, masa berlaku, dan lembaga akreditasi tanpa menyalin isi dokumen SK mentah.',
+      conclusion: 'Jadi, informasi akreditasi paling aman dibaca dari status per prodi dan masa berlaku sertifikatnya.',
+      followups: [
+        'Akreditasi SI apa?',
+        'Akreditasi TI apa?',
+        'Daftar akreditasi prodi apa saja?'
+      ]
+    };
+  }
   if ((src.includes('program-list') || /\b(jurusan|prodi|program\s+studi)\b/.test(q)) && !src.includes('fee') && !/\b(biaya|harga|bayar|ukt|dpp|pendaftaran|rincian|detail|gelombang|gel\b)\b/.test(q)) {
     return {
       request: 'daftar jurusan/program studi yang tersedia di ITB STIKOM Bali',

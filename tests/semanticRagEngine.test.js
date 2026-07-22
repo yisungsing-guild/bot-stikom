@@ -333,6 +333,33 @@ describe('semanticRagEngine', () => {
     expect(sisipanDetail.answer).toContain('Total awal masuk setelah potongan (Gelombang Sisipan): Rp. 16.000.000');
   });
 
+  test('answers short accreditation questions without leaking raw SK text', async () => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'false';
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const cases = [
+      ['apa akreditasi si?', /Sistem Informasi[\s\S]*Baik Sekali/i],
+      ['akreditasi ti apa?', /Teknologi Informasi[\s\S]*Baik/i],
+      ['akreditasi bd apa?', /Bisnis Digital[\s\S]*Baik/i]
+    ];
+
+    for (const [question, expected] of cases) {
+      const result = await querySemanticRag(question, { topK: 5 });
+      expect(result.success).toBe(true);
+      expect(result.source).toBe('semantic-rag-accreditation');
+      expect(result.answer).toMatch(expected);
+      expect(result.answer).not.toMatch(/Pasal\s+\d+|Menimbang:|Mengingat:|Memutuskan:|Nomor\s*:\s*\d+\s*\/\s*SK/i);
+    }
+
+    const campus = await querySemanticRag('akreditasi stikom bali apa?', { topK: 5 });
+    expect(campus.success).toBe(true);
+    expect(campus.source).toBe('semantic-rag-accreditation');
+    expect(campus.answer).toMatch(/akreditasi institusi\/kampus/i);
+    expect(campus.answer).toMatch(/belum menemukan ringkasan status akreditasi institusi/i);
+    expect(campus.answer).not.toMatch(/Pasal\s+\d+|Menimbang:|Mengingat:|Memutuskan:|Nomor\s*:\s*\d+\s*\/\s*SK/i);  });
   test('answers short program definition before runtime index fallback', async () => {
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
