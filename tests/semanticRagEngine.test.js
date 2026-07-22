@@ -1648,6 +1648,118 @@ describe('semanticRagEngine', () => {
     expect(result.answer).toMatch(/UKM KSL adalah unit kegiatan mahasiswa/i);
     expect(result.answer).not.toMatch(/belum punya informasi detail/i);
   });
+  test('answers uploaded Athena and Ghost UKM profiles from DB using short UKM names', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => []),
+      chunkText: jest.fn((text) => [String(text || '')]),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+    jest.doMock('../src/db', () => ({
+      trainingData: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'training-db-athena',
+            filename: 'PROFILE ATHENA ESPORT.docx',
+            content: 'Profil UKM ATHENA ESPORT\nAthena Esport adalah unit kegiatan mahasiswa ITB STIKOM Bali yang menjadi wadah mahasiswa untuk mengembangkan minat dan prestasi di bidang esports, kompetisi game, latihan tim, dan kegiatan komunitas gaming.',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-07-21T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+            uploadedById: null
+          },
+          {
+            id: 'training-db-ghost',
+            filename: 'Profil_UKM_GHoST_ITB_STIKOM_Bali.docx',
+            content: 'Profil UKM GHoST\nGHoST adalah unit kegiatan mahasiswa di ITB STIKOM Bali yang berfokus pada kegiatan komunitas mahasiswa, pengembangan kreativitas, kolaborasi anggota, dan aktivitas organisasi sesuai profil UKM yang tersedia.',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-07-21T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+            uploadedById: null
+          }
+        ])
+      }
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const athena = await querySemanticRag('apa itu ukm athena?');
+    expect(athena.success).toBe(true);
+    expect(athena.source).toBe('semantic-rag-ukm-list');
+    expect(athena.debug.source).toBe('semantic-rag-ukm-specific-profile');
+    expect(athena.answer).toMatch(/Athena Esport|Athena Esports/i);
+    expect(athena.answer).toMatch(/esports|kompetisi game|gaming/i);
+    expect(athena.answer).not.toMatch(/belum punya informasi detail|belum sesuai/i);
+
+    const ghost = await querySemanticRag('apa itu ukm ghost?');
+    expect(ghost.success).toBe(true);
+    expect(ghost.source).toBe('semantic-rag-ukm-list');
+    expect(ghost.debug.source).toBe('semantic-rag-ukm-specific-profile');
+    expect(ghost.answer).toMatch(/GHoST|Ghost/i);
+    expect(ghost.answer).toMatch(/unit kegiatan mahasiswa|komunitas mahasiswa|organisasi/i);
+    expect(ghost.answer).not.toMatch(/belum punya informasi detail|belum sesuai/i);
+  });
+  test('answers uploaded Career Center and Inkubator Bisnis training content from DB when file index is empty', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => []),
+      chunkText: jest.fn((text) => [String(text || '')]),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+    jest.doMock('../src/db', () => ({
+      trainingData: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'training-db-career-center',
+            filename: 'Career Center.docx',
+            content: 'Career Center ITB STIKOM Bali membantu mahasiswa dalam pengembangan karier dan softskill melalui pelatihan kesiapan kerja, konsultasi karier, informasi lowongan, pembekalan CV, dan persiapan wawancara kerja.',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-07-21T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+            uploadedById: null
+          },
+          {
+            id: 'training-db-inkubator',
+            filename: 'Inkubator Bisnis.docx',
+            content: 'Inkubator Bisnis ITB STIKOM Bali adalah fasilitas pendukung untuk membantu mahasiswa mengembangkan ide usaha digital melalui pendampingan bisnis, validasi ide, mentoring, dan penguatan kewirausahaan.',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-07-21T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+            uploadedById: null
+          }
+        ])
+      }
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const career = await querySemanticRag('career center di stikom itu ngapain?');
+    expect(career.success).toBe(true);
+    expect(career.source).toBe('semantic-rag-campus-support-entity');
+    expect(career.answer).toMatch(/Career Center/i);
+    expect(career.answer).toMatch(/softskill|pelatihan kesiapan kerja|konsultasi karier|lowongan|CV|wawancara/i);
+    expect(career.answer).not.toMatch(/Saya siap bantu|belum.*rincian|belum.*lengkap|perlu dikonfirmasi/i);
+
+    const inkubator = await querySemanticRag('inkubator bisnis itu apa?');
+    expect(inkubator.success).toBe(true);
+    expect(inkubator.source).toBe('semantic-rag-campus-support-entity');
+    expect(inkubator.answer).toMatch(/Inkubator Bisnis/i);
+    expect(inkubator.answer).toMatch(/ide usaha digital|pendampingan bisnis|mentoring|kewirausahaan/i);
+    expect(inkubator.answer).not.toMatch(/belum menemukan informasi yang cukup lengkap|belum bisa memastikan/i);
+  });
 });
 
 

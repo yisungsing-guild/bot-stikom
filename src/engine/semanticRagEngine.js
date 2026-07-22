@@ -1387,7 +1387,7 @@ function trySmallTalkAnswer(question) {
     };
   }
 
-  if (/\b(sibuk|lagi\s+apa|ngapain|available|bisa\s+bantu)\b/i.test(normalized) && !/\b(biaya|prodi|jurusan|pendaftaran|jadwal|gelombang|beasiswa)\b/i.test(normalized)) {
+  if (/\b(sibuk|lagi\s+apa|ngapain|available|bisa\s+bantu)\b/i.test(normalized) && !/\b(biaya|prodi|jurusan|pendaftaran|jadwal|gelombang|beasiswa|career\s*center|pusat\s+karier|pusat\s+karir|inkubator|softskill|fasilitas|layanan|program|gccp|bccp|student\s*exchange|language\s+learning|llc|ukm|ormawa)\b/i.test(normalized)) {
     return {
       answer: 'Saya siap bantu, Kak. Mau tanya seputar PMB, biaya, prodi, beasiswa, UKM, fasilitas, atau informasi kampus lainnya?'
     };
@@ -2223,7 +2223,7 @@ function normalizeFacilityTerm(value) {
 }
 const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'linkedin-career-center', label: 'program LinkedIn di Career Center', type: 'facility_program', patterns: ['linkedin career center', 'linked in career center', 'program linkedin', 'program linked in'] },
-  { key: 'career-center', label: 'Career Center', type: 'facility', patterns: ['career center', 'pusat karier', 'pusat karir'] },
+  { key: 'career-center', label: 'Career Center', type: 'facility', patterns: ['career center', 'career development center', 'pusat karier', 'pusat karir'] },
   { key: 'gccp', label: 'GCCP', type: 'international_program', patterns: ['gccp', 'global cultural exchange program'] },
   { key: 'bccp', label: 'BCCP', type: 'international_program', patterns: ['bccp'] },
   { key: 'student-exchange', label: 'Student Exchange', type: 'international_program', patterns: ['student exchange', 'students exchange', 'studens exchange', 'pertukaran mahasiswa', 'exchange program'] },
@@ -2267,7 +2267,7 @@ function resolveCampusSupportEntity(question, options = {}) {
 
 function asksCampusSupportDetail(question) {
   const q = String(question || '').toLowerCase();
-  return /\b(apa\s+itu|itu\s+apa|apakah|ada|jelaskan|detail|lebih\s+detail|program|layanan|kegiatan|aktivitas|kegunaan|manfaat|syarat|cara|bagaimana|gimana|ikut|mengikuti|daftar|mendaftar|pendaftaran|registrasi|info(?:rmasi)?|punya\s+info)\b/i.test(q);
+  return /\b(apa\s+itu|itu\s+apa|apakah|ada|jelaskan|detail|lebih\s+detail|program|layanan|kegiatan|aktivitas|kegunaan|fungsi|peran|ngapain|buat\s+apa|untuk\s+apa|manfaat|syarat|cara|bagaimana|gimana|ikut|mengikuti|daftar|mendaftar|pendaftaran|registrasi|info(?:rmasi)?|punya\s+info)\b/i.test(q);
 }
 
 function isShortCampusSupportFollowUp(question) {
@@ -2650,13 +2650,11 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   if (!q) return null;
   const activeIndex = Array.isArray(indexForQuery) ? indexForQuery : [];
 
-  const asksSpecificDetail = /\b(apa\s+itu|apakah|jelaskan|detail|program|layanan|kegunaan|manfaat|syarat|cara|bagaimana|gimana)\b/i.test(String(question || ''));
+  const asksSpecificDetail = /\b(apa\s+itu|itu\s+apa|apakah|jelaskan|detail|program|layanan|kegiatan|aktivitas|kegunaan|fungsi|peran|ngapain|buat\s+apa|untuk\s+apa|manfaat|syarat|cara|bagaimana|gimana)\b/i.test(String(question || ''));
   const facilityTerms = CAMPUS_SUPPORT_ENTITY_REGISTRY.map(campusSupportEntityToFacilityTerm);
 
   const matchedTerm = facilityTerms.find((term) => term.patterns.some((pattern) => q.includes(pattern)));
   if (!matchedTerm || !asksSpecificDetail) return null;
-  if (matchedTerm.label === 'Career Center') return null;
-
   const candidatePatterns = matchedTerm.patterns.map(normalizeFacilityTerm);
   let scored = scoreSpecificFacilityCandidates(activeIndex, candidatePatterns, matchedTerm);
   if (!scored.length) {
@@ -2732,8 +2730,6 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const hasFollowUpSignal = resolved.fromRecent && isShortCampusSupportFollowUp(question);
   const asksDetail = asksCampusSupportDetail(question);
   if (!currentMentionsEntity && !hasFollowUpSignal && !asksDetail) return null;
-  if (resolved.entity.key === 'career-center' && currentMentionsEntity) return null;
-
   const entityQuestion = currentMentionsEntity
     ? question
     : `${resolved.entity.label} ${question}`;
@@ -3269,6 +3265,67 @@ function loadUkmNames() {
   return names;
 }
 
+function normalizeUkmMatchText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\besports\b/g, 'esport')
+    .replace(/[._-]+/g, ' ')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildUkmAliasEntries(names) {
+  const blockedSingleAliases = new Set(['badan', 'dewan', 'unit', 'program', 'ukm', 'hima', 'himaprodi']);
+  const entries = [];
+  const aliasOwner = new Map();
+  const addAlias = (name, alias) => {
+    const cleaned = normalizeUkmMatchText(alias);
+    if (!cleaned || cleaned.length < 3) return;
+    if (!aliasOwner.has(cleaned)) aliasOwner.set(cleaned, new Set());
+    aliasOwner.get(cleaned).add(name);
+  };
+
+  for (const name of Array.isArray(names) ? names : []) {
+    const label = String(name || '').trim();
+    if (!label) continue;
+    addAlias(label, label);
+    const normalized = normalizeUkmMatchText(label);
+    const tokens = normalized.split(/\s+/).filter(Boolean);
+    if (tokens.length >= 2 && tokens[0].length >= 5 && !blockedSingleAliases.has(tokens[0])) {
+      addAlias(label, tokens[0]);
+    }
+    if (/\besport\b/i.test(normalized)) {
+      addAlias(label, normalized.replace(/\besport\b/i, 'esports'));
+      addAlias(label, normalized.replace(/\besport\b/i, 'esport'));
+    }
+  }
+
+  for (const name of Array.isArray(names) ? names : []) {
+    const label = String(name || '').trim();
+    if (!label) continue;
+    const aliases = [];
+    for (const [alias, owners] of aliasOwner.entries()) {
+      if (owners.size === 1 && owners.has(label)) aliases.push(alias);
+    }
+    aliases.sort((a, b) => b.length - a.length);
+    entries.push({ name: label, aliases });
+  }
+  return entries;
+}
+
+function buildUkmAliasRegexes(name) {
+  const entries = buildUkmAliasEntries(loadUkmNames());
+  const entry = entries.find((item) => item.name.toLowerCase() === String(name || '').trim().toLowerCase());
+  const aliases = entry && entry.aliases.length ? entry.aliases : [normalizeUkmMatchText(name)];
+  return aliases
+    .filter(Boolean)
+    .map((alias) => alias
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\s+/g, '\\s+')
+      .replace(/esport\\b/i, 'esports?\\b'))
+    .map((pattern) => new RegExp(`\\b${pattern}\\b`, 'i'));
+}
 const UKM_INTEREST_PROFILES = [
   { key: 'sports', label: 'olahraga', re: /\b(olahraga|sport|futsal|sepak\s*bola|basket|bola|atlet|main\s+bola)\b/, items: ['Futsal', 'Basket', 'Athena Esports'] },
   { key: 'esports', label: 'esports atau game kompetitif', re: /\b(esport|esports|game|gaming|gamer|mobile\s+legend|mlbb|pubg|valorant|turnamen\s+game)\b/, items: ['Athena Esports'] },
@@ -3359,22 +3416,24 @@ function buildSpecificUkmProfileAnswer(ukmName, indexForQuery) {
   const name = String(ukmName || '').trim();
   if (!name || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
 
-  const escapedName = name.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const nameRe = new RegExp(`\\b${escapedName}\\b`, 'i');
+  const nameRegexes = buildUkmAliasRegexes(name);
+  const matchesName = (value) => nameRegexes.some((re) => re.test(String(value || '')));
   const profileRe = /\b(profil|profile|tentang|deskripsi|visi|misi|tujuan|kegiatan|aktivitas|program\s+kerja|sejarah)\b/i;
   const ukmRe = /\b(ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i;
 
   const candidates = indexForQuery
     .map((item) => {
       const chunk = String(item && item.chunk ? item.chunk : item && item.text ? item.text : '').trim();
-      if (!chunk || !nameRe.test(chunk)) return null;
+      if (!chunk) return null;
 
       const filename = String((item && (item.filename || item.sourceFile)) || '');
       const sectionTitle = String((item && item.sectionTitle) || '');
       const hay = `${filename}\n${sectionTitle}\n${chunk}`;
+      if (!matchesName(hay)) return null;
       let score = 0;
-      if (nameRe.test(filename)) score += 4;
-      if (nameRe.test(sectionTitle)) score += 3;
+      if (matchesName(filename)) score += 4;
+      if (matchesName(sectionTitle)) score += 3;
+      if (matchesName(chunk)) score += 3;
       if (/\bprofil(?:e)?\s+ukm\b/i.test(hay)) score += 4;
       if (profileRe.test(chunk)) score += 2;
       if (ukmRe.test(chunk)) score += 1;
@@ -3395,9 +3454,9 @@ function buildSpecificUkmProfileAnswer(ukmName, indexForQuery) {
 
   const useful = [];
   for (const line of lines) {
-    if (!nameRe.test(line) && !profileRe.test(line) && useful.length > 0) {
+    if (!matchesName(line) && !profileRe.test(line) && useful.length > 0) {
       useful.push(line);
-    } else if (nameRe.test(line) || profileRe.test(line) || ukmRe.test(line)) {
+    } else if (matchesName(line) || profileRe.test(line) || ukmRe.test(line)) {
       useful.push(line);
     }
     if (useful.join(' ').length >= 420 || useful.length >= 5) break;
@@ -3422,25 +3481,32 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
   const names = loadUkmNames();
+  const ukmAliasEntries = buildUkmAliasEntries(names);
   const findMentionedUkm = (text) => {
     let best = null;
     let bestIndex = -1;
-    for (const name of names) {
-      const escaped = String(name || '').toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      if (!escaped) continue;
-      const re = new RegExp(`\\b${escaped}\\b`, 'gi');
-      let match;
-      while ((match = re.exec(text)) !== null) {
-        if (match.index >= bestIndex) {
-          best = name;
-          bestIndex = match.index;
+    let bestLength = 0;
+    for (const entry of ukmAliasEntries) {
+      for (const alias of entry.aliases) {
+        const pattern = alias
+          .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          .replace(/\s+/g, '\\s+')
+          .replace(/esport\\b/i, 'esports?\\b');
+        if (!pattern) continue;
+        const re = new RegExp(`\\b${pattern}\\b`, 'gi');
+        let match;
+        while ((match = re.exec(text)) !== null) {
+          if (match.index > bestIndex || (match.index === bestIndex && alias.length > bestLength)) {
+            best = entry.name;
+            bestIndex = match.index;
+            bestLength = alias.length;
+          }
         }
       }
     }
     return best;
   };
-  const currentMentionedUkm = findMentionedUkm(q);
-  const recentMentionedUkm = findMentionedUkm(recent);
+  const currentMentionedUkm = findMentionedUkm(q);  const recentMentionedUkm = findMentionedUkm(recent);
   const hasKnownUkmName = !!currentMentionedUkm;
   const hasActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
   const hasUkmSignal = /\b(ukm(?:nya)?|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
