@@ -2457,6 +2457,37 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
   };
 }
 
+function escapeRegExp(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildFlexibleAliasPattern(alias) {
+  const normalized = normalizeUkmMatchText(alias);
+  if (!normalized) return '';
+  const parts = normalized.split(/\s+/).filter(Boolean).map((part) => {
+    if (/^esports?$/i.test(part)) return 'esports?';
+    return escapeRegExp(part);
+  });
+  return parts.join('\\s+');
+}
+
+function isLowQualityTrainingSnippet(text) {
+  const raw = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!raw) return true;
+  if (/^OCR berhasil mengekstrak teks dari gambar\.?$/i.test(raw)) return true;
+  if (/^teks berhasil diekstrak/i.test(raw)) return true;
+  if (/^(hasil\s+ocr|ocr result|parsed text)\b/i.test(raw)) return true;
+  if (/^(profil|profile|program kerja|visi|misi|tujuan|sejarah)\s*:?$/i.test(raw)) return true;
+  if (/^(profil|profile|program kerja|visi|misi|tujuan|sejarah)\b/i.test(raw) && raw.length < 75) return true;
+  if (/^(ukm|ormawa|unit kegiatan mahasiswa)\s+[\p{L}\p{N} ._-]+$/iu.test(raw) && raw.length < 55) return true;
+  if (/\b(pada|seperti|yaitu|antara\s+lain|meliputi|sebagai|dalam|untuk|oleh|di)\s*$/i.test(raw)) return true;
+  if (raw.length < 28) return true;
+  const letters = raw.replace(/[^\p{L}\p{N}]/gu, '');
+  if (letters.length < 18) return true;
+  if (/\b(merupakan|adalah|bergerak|berfokus|wadah|bertujuan|memfasilitasi|mengembangkan|menjadi|melaksanakan|kegiatan|aktivitas|program|pelatihan|pendidikan|kompetisi|komunitas|organisasi)\b/i.test(raw)) return false;
+  if (/\.$/.test(raw) && raw.split(/\s+/).length >= 8) return false;
+  return raw.split(/\s+/).length < 7;
+}
 function tokenizeUploadedTrainingQuestion(question) {
   const stopwords = new Set([
     'apa', 'apakah', 'bagaimana', 'gimana', 'jelaskan', 'detail', 'tentang', 'itu', 'ini', 'adalah',
@@ -2530,13 +2561,14 @@ function buildGenericUploadedTrainingAnswer(question, indexForQuery) {
   const snippets = [];
   const targetForFaq = target || questionTokens.slice(0, 4).join(' ');
   const faqAnswer = extractBestFaqAnswerFromChunk(best.chunk, normalizeFacilityTerm(targetForFaq), questionTokens.filter((token) => token.length >= 4));
-  if (faqAnswer) snippets.push(faqAnswer);
+  if (faqAnswer && !isLowQualityTrainingSnippet(faqAnswer)) snippets.push(faqAnswer);
 
   const lines = best.chunk
     .split(/\r?\n|(?<=[.!?])\s+/)
     .map((line) => line.replace(/\s+/g, ' ').trim())
     .filter(Boolean)
-    .filter((line) => !/^(lampiran|surat keputusan|nomor|email|www\.|https?:\/\/)/i.test(line));
+    .filter((line) => !/^(lampiran|surat keputusan|nomor|email|www\.|https?:\/\/)/i.test(line))
+    .filter((line) => !isLowQualityTrainingSnippet(line));
 
   const matchedLines = lines.filter((line) => {
     const norm = normalizeFacilityTerm(line);
@@ -2545,7 +2577,7 @@ function buildGenericUploadedTrainingAnswer(question, indexForQuery) {
   const chosen = matchedLines.length ? matchedLines : lines.slice(0, 3);
   for (const line of chosen) {
     const cleaned = cleanFacilitySnippetText(line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, ''));
-    if (!cleaned || cleaned.length < 20) continue;
+    if (!cleaned || isLowQualityTrainingSnippet(cleaned)) continue;
     if (snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(cleaned))) continue;
     snippets.push(cleaned.length > 700 ? `${cleaned.slice(0, 697).trim()}...` : cleaned);
     if (snippets.length >= 3) break;
@@ -3456,11 +3488,9 @@ function buildUkmAliasRegexes(name) {
   const aliases = entry && entry.aliases.length ? entry.aliases : [normalizeUkmMatchText(name)];
   return aliases
     .filter(Boolean)
-    .map((alias) => alias
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace(/\s+/g, '\\s+')
-      .replace(/esport\\b/i, 'esports?\\b'))
-    .map((pattern) => new RegExp(`\\b${pattern}\\b`, 'i'));
+    .map((alias) => buildFlexibleAliasPattern(alias))
+    .filter(Boolean)
+    .map((pattern) => new RegExp('\\b' + pattern + '\\b', 'i'));
 }
 const UKM_INTEREST_PROFILES = [
   { key: 'sports', label: 'olahraga', re: /\b(olahraga|sport|futsal|sepak\s*bola|basket|bola|atlet|main\s+bola)\b/, items: ['Futsal', 'Basket', 'Athena Esports'] },
@@ -3548,6 +3578,13 @@ function loadUkmList() {
   return null;
 }
 
+function isLikelyUkmRosterChunk(text) {
+  const raw = String(text || '');
+  const rosterLines = (raw.match(/(?:^|\n)\s*\d+\s+UKM\b/gi) || []).length;
+  const degreeMarkers = (raw.match(/\b(?:S\.KOM|M\.KOM|M\.T|M\.CS|S\.T|M\.BA|S\.E|M\.M)\b/gi) || []).length;
+  const definitionMarkers = /\b(adalah|merupakan|bergerak|berfokus|wadah|bertujuan|memfasilitasi|mengembangkan|minat|bakat|prestasi|kegiatan|aktivitas)\b/i.test(raw);
+  return (rosterLines >= 2 && (degreeMarkers >= 2 || !definitionMarkers)) || (degreeMarkers >= 3 && !definitionMarkers);
+}
 function buildSpecificUkmProfileAnswer(ukmName, indexForQuery) {
   const name = String(ukmName || '').trim();
   if (!name || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
@@ -3561,6 +3598,7 @@ function buildSpecificUkmProfileAnswer(ukmName, indexForQuery) {
     .map((item) => {
       const chunk = String(item && item.chunk ? item.chunk : item && item.text ? item.text : '').trim();
       if (!chunk) return null;
+      if (isLikelyUkmRosterChunk(chunk)) return null;
 
       const filename = String((item && (item.filename || item.sourceFile)) || '');
       const sectionTitle = String((item && item.sectionTitle) || '');
@@ -3586,10 +3624,18 @@ function buildSpecificUkmProfileAnswer(ukmName, indexForQuery) {
     .split(/\r?\n+/)
     .map((line) => line.replace(/\s+/g, ' ').trim())
     .filter(Boolean)
-    .filter((line) => !/^(lampiran|surat keputusan|nomor|email|www\.|https?:\/\/)/i.test(line));
+    .filter((line) => !/^(lampiran|surat keputusan|nomor|email|www\.|https?:\/\/)/i.test(line))
+    .filter((line) => !isLowQualityTrainingSnippet(line));
 
   const useful = [];
+  const definitionalLines = lines.filter((line) => {
+    return matchesName(line) && /\b(adalah|merupakan|bergerak|berfokus|wadah|bertujuan|memfasilitasi|mengembangkan|menjadi|organisasi)\b/i.test(line);
+  });
+  if (definitionalLines.length) {
+    useful.push(...definitionalLines.slice(0, 3));
+  }
   for (const line of lines) {
+    if (useful.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(line))) continue;
     if (!matchesName(line) && !profileRe.test(line) && useful.length > 0) {
       useful.push(line);
     } else if (matchesName(line) || profileRe.test(line) || ukmRe.test(line)) {
@@ -3624,10 +3670,7 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
     let bestLength = 0;
     for (const entry of ukmAliasEntries) {
       for (const alias of entry.aliases) {
-        const pattern = alias
-          .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-          .replace(/\s+/g, '\\s+')
-          .replace(/esport\\b/i, 'esports?\\b');
+        const pattern = buildFlexibleAliasPattern(alias);
         if (!pattern) continue;
         const re = new RegExp(`\\b${pattern}\\b`, 'gi');
         let match;
@@ -3642,7 +3685,8 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
     }
     return best;
   };
-  const currentMentionedUkm = findMentionedUkm(q);  const recentMentionedUkm = findMentionedUkm(recent);
+  const currentMentionedUkm = findMentionedUkm(q);
+  const recentMentionedUkm = findMentionedUkm(recent);
   const hasKnownUkmName = !!currentMentionedUkm;
   const hasActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
   const hasUkmSignal = /\b(ukm(?:nya)?|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;

@@ -1117,7 +1117,7 @@ describe('semanticRagEngine', () => {
 
     expect(result.success).toBe(true);
     expect(result.source).toBe('semantic-rag-campus-support-entity');
-    expect(result.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+    expect(result.answer).toMatch(/belum.*detail|belum.*memastikan|data yang tersedia/i);
     expect(result.answer).not.toMatch(/fasilitas kampus|layanan karier|Kalau mau lanjut/i);
     expect(result.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|datang langsung ke kampus/i);
     expect(createMock).not.toHaveBeenCalled();
@@ -1162,7 +1162,7 @@ describe('semanticRagEngine', () => {
 
     expect(result.success).toBe(true);
     expect(result.source).toBe('semantic-rag-campus-support-entity');
-    expect(result.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+    expect(result.answer).toMatch(/belum.*detail|belum.*memastikan|data yang tersedia/i);
     expect(result.answer).not.toMatch(/S1 \(Sarjana\)|S2 \(Pascasarjana\)|D3 \(Diploma\)/i);
   });
 
@@ -1199,7 +1199,7 @@ describe('semanticRagEngine', () => {
       const result = await querySemanticRag(question);
       expect(result.success).toBe(true);
       expect(result.source).toBe('semantic-rag-campus-support-entity');
-      expect(result.answer).toMatch(/Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
+      expect(result.answer).toMatch(/belum.*detail|belum.*memastikan|data yang tersedia/i);
       expect(result.answer).not.toMatch(/S1 \(Sarjana\)|S2 \(Pascasarjana\)|D3 \(Diploma\)|daftar jurusan\/program studi/i);
     }
   });
@@ -1797,14 +1797,96 @@ describe('semanticRagEngine', () => {
     expect(inkubator.answer).toMatch(/ide usaha digital|pendampingan bisnis|mentoring|kewirausahaan/i);
     expect(inkubator.answer).not.toMatch(/belum menemukan informasi yang cukup lengkap|belum bisa memastikan/i);
   });
+  test('filters OCR status lines and broken fragments from uploaded UKM profile answers', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => []),
+      chunkText: jest.fn((text) => [String(text || '')]),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+    jest.doMock('../src/db', () => ({
+      trainingData: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'training-db-kmhd',
+            filename: 'Profil UKM KMHD.docx',
+            content: 'OCR berhasil mengekstrak teks dari gambar.\nProfil UKM KMHD\nKMHD adalah unit kegiatan mahasiswa kerohanian Hindu di ITB STIKOM Bali yang menjadi wadah mahasiswa untuk mengembangkan kegiatan keagamaan, kebersamaan, pelayanan, dan pembinaan karakter.',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-07-21T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+            uploadedById: null
+          },
+          {
+            id: 'training-db-tabuh',
+            filename: 'Profil UKM Tabuh Bramara Gita.docx',
+            content: 'Profil UKM Tabuh\nSalah satu UKM yang menonjol adalah UKM Tabuh Bramara Gita, organisasi seni.\nUKM ini resmi berdiri pada\nSejak berdiri, UKM ini aktif tampil di acara kampus seperti\nUKM Tabuh Bramara Gita adalah unit kegiatan mahasiswa seni tabuh yang menjadi wadah mahasiswa untuk mengembangkan minat dalam seni musik tradisional Bali, latihan tabuh, dan tampil pada kegiatan kampus.',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-07-21T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+            uploadedById: null
+          }
+        ])
+      }
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const kmhd = await querySemanticRag('apa itu ukm kmhd?');
+    expect(kmhd.success).toBe(true);
+    expect(kmhd.source).toBe('semantic-rag-ukm-list');
+    expect(kmhd.answer).toMatch(/KMHD adalah unit kegiatan mahasiswa/i);
+    expect(kmhd.answer).not.toMatch(/OCR berhasil mengekstrak teks/i);
+
+    const tabuh = await querySemanticRag('apa itu ukm tabuh?');
+    expect(tabuh.success).toBe(true);
+    expect(tabuh.source).toBe('semantic-rag-ukm-list');
+    expect(tabuh.answer).toMatch(/UKM Tabuh Bramara Gita adalah unit kegiatan mahasiswa seni tabuh/i);
+    expect(tabuh.answer).not.toMatch(/resmi berdiri pada\s*(?:\n|$)/i);
+    expect(tabuh.answer).not.toMatch(/acara kampus seperti\s*(?:\n|$)/i);
+  });
+
+  test('accepts uploaded Athena Esport profile for Athena Esport wording', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => []),
+      chunkText: jest.fn((text) => [String(text || '')]),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+    jest.doMock('../src/db', () => ({
+      trainingData: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'training-db-athena-esport',
+            filename: 'PROFILE ATHENA ESPORT.docx',
+            content: 'Profil UKM ATHENA ESPORT\nAthena Esport adalah unit kegiatan mahasiswa ITB STIKOM Bali yang menjadi wadah mahasiswa untuk mengembangkan minat dan prestasi di bidang esports, kompetisi game, latihan tim, dan kegiatan komunitas gaming.',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-07-21T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+            uploadedById: null
+          }
+        ])
+      }
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('apa itu ukm athena esport?');
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-ukm-list');
+    expect(result.answer).toMatch(/Athena Esport|Athena Esports/i);
+    expect(result.answer).toMatch(/kompetisi game|gaming|esports/i);
+    expect(result.answer).not.toMatch(/belum sesuai|ditahan/i);
+  });
 });
-
-
-
-
-
-
-
-
-
 

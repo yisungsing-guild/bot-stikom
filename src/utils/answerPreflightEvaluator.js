@@ -153,6 +153,7 @@ function answerMentionsEntity(answer, entity) {
     'career center': ['career center', 'pusat karier', 'pusat karir'],
     ukm: ['ukm', 'ormawa', 'unit kegiatan mahasiswa', 'organisasi mahasiswa', 'kegiatan mahasiswa', 'wadah mahasiswa', 'komunitas mahasiswa', 'himpunan mahasiswa', 'kelompok studi'],
     athena: ['athena', 'athena esport', 'athena esports'],
+    esport: ['esport', 'esports', 'athena esport', 'athena esports', 'kompetisi game', 'gaming'],
     ghost: ['ghost'],
     ksl: ['ksl', 'kelompok studi linux'],
     'double degree': ['double degree', 'dual degree', 'gelar ganda'],
