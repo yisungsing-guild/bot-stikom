@@ -4865,12 +4865,17 @@ async function querySemanticRag(question, options = {}) {
   const asksCurrentWaveBeforeIndex = /\b(sekarang|hari\s+ini|saat\s+ini|masih\s+buka|masih\s+dibuka|buka|dibuka)\b/i.test(earlyQuestion)
     && /\b(gelombang|pendaftaran|pmb|daftar)\b/i.test(earlyQuestion)
     && !isFeeDetailLikeBeforeIndex;
+  const asksDoubleDegreeBeforeIndex = /\b(double\s*degree|dual\s*degree|gelar\s+ganda|\bdd\b|utb|dnui|dalian\s+neusoft|help\s+university|help\b)\b/i.test(earlyQuestion)
+    && !isFeeDetailLikeBeforeIndex;
   const earlyNoIndexHandlers = [];
   if (asksCurrentWaveBeforeIndex) {
     earlyNoIndexHandlers.push(
       ['semantic-rag-current-open-waves', tryCurrentOpenWavesAnswer],
       ['semantic-rag-schedule-window', tryScheduleWindowAnswer]
     );
+  }
+  if (asksDoubleDegreeBeforeIndex) {
+    earlyNoIndexHandlers.push(['semantic-rag-dual-degree', tryDualDegreeAnswer]);
   }
   earlyNoIndexHandlers.push(['semantic-rag-program-definition', tryProgramDefinitionAnswer]);
   const earlyNoIndexResult = runDeterministicHandlers(question, earlyNoIndexHandlers, options, [question], { routeStage: 'pre-index-deterministic' });

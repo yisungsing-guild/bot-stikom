@@ -143,6 +143,32 @@ describe('Humanizer Module', () => {
       expect(result).toMatch(/Berikut gambaran sederhananya\.\n\nSistem Informasi adalah/i);
       expect(result).toMatch(/teknologi informasi\.\n\nSingkatnya,/i);
     });
+    it('should preserve official BD and MI definition paragraphs and SK program label', () => {
+      const bd = formatHumanizedResponse([
+        'Saya pahami kakak ingin tahu apa itu Bisnis Digital. Berikut gambaran sederhananya.',
+        'Bisnis Digital adalah program studi yang memadukan strategi bisnis, pemasaran digital, analitik data, dan pemanfaatan teknologi untuk pertumbuhan usaha.',
+        'Singkatnya, prodi ini cocok untuk kakak yang tertarik pada bisnis digital.'
+      ].join('\n'), 'apa itu bd?', { intent: 'program_definition', program: 'Bisnis Digital' });
+
+      expect(bd).toMatch(/Bisnis Digital adalah program studi yang memadukan strategi bisnis/i);
+
+      const mi = formatHumanizedResponse([
+        'Baik, Kak. Saya jelaskan Manajemen Informatika dari fokus belajar dan kecocokan minatnya.',
+        'Manajemen Informatika adalah program D3 yang berfokus pada penerapan teknologi informasi untuk kebutuhan operasional.',
+        'Singkatnya, prodi ini cocok untuk kakak yang tertarik pada pemrograman terapan.'
+      ].join('\n'), 'apa itu mi?', { intent: 'program_definition', program: 'Manajemen Informatika' });
+
+      expect(mi).toMatch(/Manajemen Informatika adalah program D3/i);
+
+      const sk = formatHumanizedResponse([
+        'Sistem Komputer adalah program studi yang berfokus pada integrasi perangkat keras dan perangkat lunak.',
+        'Singkatnya, prodi ini cocok untuk kakak yang tertarik pada hardware.'
+      ].join('\n'), 'apa itu sk?', { intent: 'program_definition', program: 'Sistem Komputer' });
+
+      expect(sk).toMatch(/Program Studi Sistem Komputer/i);
+      expect(sk.split('\n')[0]).not.toMatch(/Program Studi yang berfokus/i);
+      expect(sk).not.toMatch(/mata kuliah inti di yang berfokus/i);
+    });
     it('should clean duplicated presentation boilerplate for campus support answers', () => {
       process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'true';
       const mainAnswer = [

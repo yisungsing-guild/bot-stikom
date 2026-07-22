@@ -73,10 +73,10 @@ function mapProviderIntentToFormatter(intent) {
   const lowered = String(intent || '').trim().toLowerCase();
   if (lowered === 'rag-greeting') return 'greeting';
   if (lowered === 'rag-pmb-info') return 'pmb';
-  if (lowered === 'rag-program-profile') return 'program_definition';
+  if (lowered === 'rag-program-profile' || lowered === 'semantic-rag-program-definition') return 'program_definition';
   if (lowered === 'rag-fee-structured') return 'biaya';
   if (/\b(ukm|ormawa|kegiatan[_-]?mahasiswa)\b/i.test(lowered)) return 'ukm';
-  if (/\b(dual[_-]?degree|double[_-]?degree)\b/i.test(lowered)) return 'international_double_degree';
+  if (/\b(dual[_-]?degree|double[_-]?degree)\b/i.test(lowered) || lowered === 'semantic-rag-dual-degree') return 'international_double_degree';
   if (/\b(campus[_-]?support|career[_-]?center|linked[_-]?in|linkedin|gccp|bccp|language[_-]?learning|llc|softskill|student[_-]?exchange)\b/i.test(lowered)) {
     return 'campus_support';
   }
@@ -495,19 +495,31 @@ function extractTrailingFollowUpQuestions(text) {
   return { body: normalized, suggestions: [] };
 }
 
+function normalizeKnownProgramLabel(value) {
+  const v = String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const map = new Map([
+    ['sistem informasi', 'Sistem Informasi'],
+    ['teknologi informasi', 'Teknologi Informasi'],
+    ['sistem komputer', 'Sistem Komputer'],
+    ['bisnis digital', 'Bisnis Digital'],
+    ['manajemen informatika', 'Manajemen Informatika']
+  ]);
+  return map.get(v) || null;
+}
+
 function extractProgramFromText(text) {
   if (!text) return null;
   console.log('[TRACE_EXTRACT_PROGRAM_INPUT]', { inputText: text });
 
   const byAlias = mapProgramAlias(text);
-  // Match "Program Studi <program-name>" — stop at punctuation, common conjunctions, or line break
+  // Match "Program Studi <program-name>" only when the captured text is a known prodi label.
   const regexMatch = String(text).match(/Program Studi\s+([A-Za-z\s]+?)(?:\s+(?:memiliki|menawarkan|adalah|dengan|dan|atau|,|\.|\n|$))/i);
-  const regexProgram = (regexMatch && regexMatch[1]) ? String(regexMatch[1]).trim() : null;
+  const regexProgramRaw = (regexMatch && regexMatch[1]) ? String(regexMatch[1]).trim() : null;
+  const regexProgram = normalizeKnownProgramLabel(regexProgramRaw);
 
-  console.log('[TRACE_PROGRAM_ALIAS_IN_EXTRACT]', { inputText: text, byAlias, regexProgram });
-  console.log('[TRACE_PROGRAM_REGEX_MATCH]', { inputText: text, regexProgram });
+  console.log('[TRACE_PROGRAM_ALIAS_IN_EXTRACT]', { inputText: text, byAlias, regexProgram, regexProgramRaw });
+  console.log('[TRACE_PROGRAM_REGEX_MATCH]', { inputText: text, regexProgram, regexProgramRaw });
 
-  // Prioritize explicit regex "Program Studi ..." over alias
   const result = regexProgram || byAlias || null;
   console.log('[TRACE_EXTRACT_PROGRAM_RESULT]', { result });
   return result;
@@ -782,7 +794,7 @@ function detectIntentFromAnswer(mainAnswer, userQuery) {
   }
 
   const queryIntent = detectIntentFromQuery(userQuery);
-  const strongQueryIntents = ['campus_support', 'ukm'];
+  const strongQueryIntents = ['campus_support', 'ukm', 'international_double_degree'];
   if (strongQueryIntents.includes(queryIntent) && answerIntent !== queryIntent) {
     try {
       traceWhatsapp('detectIntentFromAnswer', {
@@ -808,6 +820,7 @@ function detectIntentFromAnswerFromText(mainAnswer) {
   const feeKeywords = /\b(?:rincian biaya|biaya awal masuk|biaya masuk|dana pendidikan(?: pokok)?|total biaya|biaya pendidikan|biaya semester|biaya pendaftaran|biaya kuliah|dpp|ukt|cicilan|fee|bayar|harga)\b/i;
   if (/\b(ukm|ormawa|organisasi mahasiswa|unit kegiatan|athena esports|esport|esports|musik|futsal|basket|teater biner|vos|pengurus ukm|kemahasiswaan)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'ukm' }); } catch (e) {} return 'ukm'; }
   if (/\b(gccp|bccp|student\s*exchange|short\s*course|linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|softskill|language\s+learning\s+center|llc|belajar\s+bahasa|kemampuan\s+bahasa|fasilitas\s+bahasa)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'campus_support' }); } catch (e) {} return 'campus_support'; }
+  if (/\b(double\s*degree|dual\s*degree|gelar\s+ganda|utb|dnui|dalian\s+neusoft|help\s+university)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'international_double_degree' }); } catch (e) {} return 'international_double_degree'; }
 
   if (feeMarker.test(answer) || feeKeywords.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'biaya' }); } catch (e) {} return 'biaya'; }
   if (/\b(bedanya|perbedaan|versus|vs|beda antara|dibanding|dibandingkan|lebih baik|mana (?:yang )?lebih baik|lebih cocok|lebih unggul|Perbandingan cepat|Perbandingan singkat)\b/i.test(answer)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'perbandingan_prodi' }); } catch (e) {} return 'perbandingan_prodi'; }
@@ -1043,7 +1056,7 @@ function buildHumanizedWhatsappReply({
   console.log('[TRACE_INTENT_HUMANIZER]', { detectedIntentBeforeCostOverride: detectedIntent });
 
   const queryIntent = detectIntentFromQuery(userQuery);
-  const strongQueryIntents = ['campus_support', 'ukm'];
+  const strongQueryIntents = ['campus_support', 'ukm', 'international_double_degree'];
   if (strongQueryIntents.includes(queryIntent) && detectedIntent !== queryIntent) {
     try {
       traceWhatsapp('buildHumanizedWhatsappReply', {

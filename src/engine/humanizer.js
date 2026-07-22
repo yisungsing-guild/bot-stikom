@@ -710,9 +710,13 @@ function filterNonStikomPrograms(text) {
     'Teknologi Informasi',
     'Sistem Informasi',
     'Sistem Komputer',
+    'Bisnis Digital',
+    'Manajemen Informatika',
     'TI',
     'SI',
-    'SK'
+    'SK',
+    'BD',
+    'MI'
   ];
 
   // Programs NOT available at STIKOM (should be removed).
@@ -733,15 +737,24 @@ function filterNonStikomPrograms(text) {
 
   // Remove paragraphs that mention non-STIKOM programs
   const lines = cleaned.split('\n');
-  const filtered = lines.filter(line => {
-    // Check if line mentions non-STIKOM programs
-    for (const pattern of nonStikomPatterns) {
-      if (pattern.test(line)) {
-        return false; // Exclude this line
-      }
+  const filtered = lines.map(line => {
+    const isOfficialStikomProgramLine = stikomPrograms.some((program) => new RegExp('\\b' + program.replace(/\\s+/g, '\\s+') + '\\b', 'i').test(line));
+    const hasNonStikomProgram = nonStikomPatterns.some((pattern) => pattern.test(line));
+
+    if (hasNonStikomProgram && isOfficialStikomProgramLine) {
+      return String(line)
+        .replace(/\b(?:Teknik Informatika|Ilmu Komputer|Statistika|Teknik Elektro|Teknik Mesin|Teknik Sipil)\b\s*(?:atau|dan|,)?\s*/gi, '')
+        .replace(/\b(?:Akuntansi|Administrasi)\b\s*(?:atau|dan|,)?\s*/gi, '')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/,\s*,/g, ',')
+        .replace(/\s+,/g, ',')
+        .replace(/,\s*\./g, '.')
+        .trim();
     }
-    return true; // Keep line
-  });
+
+    if (hasNonStikomProgram) return '';
+    return line;
+  }).filter(Boolean);
 
   return filtered.join('\n').trim();
 }
