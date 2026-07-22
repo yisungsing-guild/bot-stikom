@@ -333,6 +333,15 @@ describe('semanticRagEngine', () => {
     expect(sisipanDetail.answer).toContain('Total awal masuk setelah potongan (Gelombang Sisipan): Rp. 16.000.000');
   });
 
+  test('answers short program definition before runtime index fallback', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const result = await querySemanticRag('apa itu si?');
+    expect(result.source).toBe('semantic-rag-program-definition');
+    expect(result.answer).toMatch(/Sistem Informasi/i);
+    expect(result.answer).not.toMatch(/belum bisa mengambil jawaban/i);
+  });
   test('routes short program-wave detail questions to fee details, not schedule', async () => {
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '600000';

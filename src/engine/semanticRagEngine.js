@@ -4860,9 +4860,27 @@ async function querySemanticRag(question, options = {}) {
     return response;
   }
 
+  const earlyQuestion = String(question || '');
+  const isFeeDetailLikeBeforeIndex = /\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|rincian|rinci|detail)\b/i.test(earlyQuestion);
+  const asksCurrentWaveBeforeIndex = /\b(sekarang|hari\s+ini|saat\s+ini|masih\s+buka|masih\s+dibuka|buka|dibuka)\b/i.test(earlyQuestion)
+    && /\b(gelombang|pendaftaran|pmb|daftar)\b/i.test(earlyQuestion)
+    && !isFeeDetailLikeBeforeIndex;
+  const earlyNoIndexHandlers = [];
+  if (asksCurrentWaveBeforeIndex) {
+    earlyNoIndexHandlers.push(
+      ['semantic-rag-current-open-waves', tryCurrentOpenWavesAnswer],
+      ['semantic-rag-schedule-window', tryScheduleWindowAnswer]
+    );
+  }
+  earlyNoIndexHandlers.push(['semantic-rag-program-definition', tryProgramDefinitionAnswer]);
+  const earlyNoIndexResult = runDeterministicHandlers(question, earlyNoIndexHandlers, options, [question], { routeStage: 'pre-index-deterministic' });
+  if (earlyNoIndexResult && earlyNoIndexResult.answer) {
+    setCachedSemanticResult(resultCacheKey, earlyNoIndexResult);
+    return earlyNoIndexResult;
+  }
+
   const runtimeSemanticIndex = await getRuntimeSemanticIndex();
   const runtimeOptions = { ...options, semanticIndexOverride: runtimeSemanticIndex };
-
   const directCompoundQuestion = /double degree/i.test(String(question || '')) && /fasilitas/i.test(String(question || ''))
     ? 'ada double degree apa saja dan fasilitas apa saja yang ada di kampus?'
     : question;
