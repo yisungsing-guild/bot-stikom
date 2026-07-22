@@ -2457,6 +2457,142 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
   };
 }
 
+function tokenizeUploadedTrainingQuestion(question) {
+  const stopwords = new Set([
+    'apa', 'apakah', 'bagaimana', 'gimana', 'jelaskan', 'detail', 'tentang', 'itu', 'ini', 'adalah',
+    'program', 'fasilitas', 'layanan', 'kegiatan', 'aktivitas', 'info', 'informasi', 'yang', 'dan',
+    'atau', 'untuk', 'dari', 'dengan', 'pada', 'di', 'ke', 'stikom', 'bali', 'itb', 'kampus',
+    'mahasiswa', 'kak', 'kakak', 'min', 'admin', 'punya', 'mempunyai', 'ada', 'ngapain',
+    'fungsi', 'peran', 'buat', 'apa', 'untuk', 'mana', 'saja', 'ya'
+  ]);
+  return normalizeFacilityTerm(question)
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token && (token.length >= 3 || /^(ti|si|bd|sk|mi|llc|ksl)$/i.test(token)) && !stopwords.has(token));
+}
+
+function isGenericUploadedTrainingQuestion(question) {
+  const q = String(question || '').toLowerCase();
+  if (!q.trim()) return false;
+  if (/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|cicilan|potongan|diskon|gelombang|jadwal|deadline|pendaftaran|daftar|registrasi|beasiswa|kip)\b/i.test(q)) return false;
+  if (/\b(?:apa\s+itu|itu\s+apa|jelaskan|detail|tentang|informasi\s+tentang|info\s+tentang|ngapain|fungsi|peran|buat\s+apa|untuk\s+apa|kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|layanan(?:nya)?)\b/i.test(q)) return true;
+  const tokens = tokenizeUploadedTrainingQuestion(q);
+  return tokens.length >= 2 && /\b(stikom|itb\s*stikom|kampus|mahasiswa|program|fasilitas|layanan|ukm|ormawa)\b/i.test(q);
+}
+
+function isUploadedTrainingIndexItem(item) {
+  if (!item) return false;
+  if (item.fromTrainingDb) return true;
+  if (item.trainingId) return true;
+  const src = String(item.source || item.origin || '').toLowerCase();
+  return /upload|training|admin|dataset/.test(src);
+}
+
+function buildGenericUploadedTrainingAnswer(question, indexForQuery) {
+  if (!isGenericUploadedTrainingQuestion(question)) return null;
+  if (!Array.isArray(indexForQuery) || !indexForQuery.length) return null;
+
+  const questionTokens = Array.from(new Set(tokenizeUploadedTrainingQuestion(question)));
+  if (!questionTokens.length) return null;
+  const target = extractTrainingSpecificTarget(question);
+  const targetTokens = target ? target.split(/\s+/).filter((token) => token.length >= 3) : [];
+  const terms = Array.from(new Set([...questionTokens, ...targetTokens]));
+  if (!terms.length) return null;
+
+  const scored = [];
+  for (const item of indexForQuery) {
+    if (!isUploadedTrainingIndexItem(item)) continue;
+    const chunk = String(item && item.chunk ? item.chunk : item && item.text ? item.text : '').trim();
+    if (!chunk || chunk.length < 30) continue;
+    if (isLikelyRawAdministrativeDocument(chunk)) continue;
+    const filename = String((item && (item.filename || item.sourceFile)) || '');
+    const sectionTitle = String((item && item.sectionTitle) || '');
+    const hayRaw = `${filename}\n${sectionTitle}\n${chunk}`;
+    const hay = normalizeFacilityTerm(hayRaw);
+    const filenameNorm = normalizeFacilityTerm(filename);
+    const exactTarget = target && hay.includes(normalizeFacilityTerm(target));
+    const termHits = terms.filter((term) => hay.includes(normalizeFacilityTerm(term)));
+    const filenameHits = terms.filter((term) => filenameNorm.includes(normalizeFacilityTerm(term)));
+    const distinctiveHits = termHits.filter((term) => String(term).length >= 4);
+    const enoughOverlap = exactTarget || distinctiveHits.length >= 2 || (distinctiveHits.length >= 1 && filenameHits.length >= 1);
+    if (!enoughOverlap) continue;
+    const uploadBoost = /upload/i.test(String(item.source || '')) || item.fromTrainingDb ? 3 : 0;
+    const recencyBoost = item.createdAt ? 1 : 0;
+    const score = (exactTarget ? 8 : 0) + (filenameHits.length * 3) + (distinctiveHits.length * 2) + termHits.length + uploadBoost + recencyBoost;
+    scored.push({ item, chunk, filename, score, termHits });
+  }
+
+  if (!scored.length) return null;
+  scored.sort((a, b) => b.score - a.score);
+  const best = scored[0];
+  if (!best || best.score < 6) return null;
+
+  const snippets = [];
+  const targetForFaq = target || questionTokens.slice(0, 4).join(' ');
+  const faqAnswer = extractBestFaqAnswerFromChunk(best.chunk, normalizeFacilityTerm(targetForFaq), questionTokens.filter((token) => token.length >= 4));
+  if (faqAnswer) snippets.push(faqAnswer);
+
+  const lines = best.chunk
+    .split(/\r?\n|(?<=[.!?])\s+/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .filter((line) => !/^(lampiran|surat keputusan|nomor|email|www\.|https?:\/\/)/i.test(line));
+
+  const matchedLines = lines.filter((line) => {
+    const norm = normalizeFacilityTerm(line);
+    return best.termHits.some((term) => norm.includes(normalizeFacilityTerm(term))) || (target && norm.includes(normalizeFacilityTerm(target)));
+  });
+  const chosen = matchedLines.length ? matchedLines : lines.slice(0, 3);
+  for (const line of chosen) {
+    const cleaned = cleanFacilitySnippetText(line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, ''));
+    if (!cleaned || cleaned.length < 20) continue;
+    if (snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(cleaned))) continue;
+    snippets.push(cleaned.length > 700 ? `${cleaned.slice(0, 697).trim()}...` : cleaned);
+    if (snippets.length >= 3) break;
+  }
+
+  if (!snippets.length) return null;
+  const titleRaw = target || best.filename.replace(/\.[a-z0-9]+$/i, '') || questionTokens.slice(0, 4).join(' ');
+  const title = String(titleRaw || 'dokumen training')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return {
+    answer: [
+      `Berikut informasi dari dokumen training terkait ${title}:`,
+      '',
+      snippets.map((line) => `- ${line}`).join('\n'),
+      '',
+      'Kalau kakak membutuhkan detail teknis seperti jadwal, syarat, alur pendaftaran, atau kontak terbaru dan belum tercantum di dokumen, sebaiknya konfirmasi ke admin kampus terkait.'
+    ].join('\n'),
+    source: 'semantic-rag-uploaded-training-generic',
+    frameSource: 'semantic-rag-training-specific',
+    filename: best.filename || undefined,
+    confidenceScore: Math.min(1, best.score / 16)
+  };
+}
+
+function buildGenericUploadedTrainingResponse(question, indexForQuery, routeStage, options = {}) {
+  const result = buildGenericUploadedTrainingAnswer(question, indexForQuery);
+  if (!result || !result.answer) return null;
+  const response = buildDeterministicResponse(question, 'semantic-rag-uploaded-training-generic', result, { routeStage }, options);
+  const preflight = evaluateOutboundAnswer(response.answer, question, { source: 'semantic-rag-uploaded-training-generic' });
+  if (preflight.blocked) {
+    appendAnswerQualityLog({
+      question,
+      source: 'semantic-rag-uploaded-training-generic-preflight',
+      category: response.answerCategory,
+      confidenceTier: 'VERY_LOW',
+      confidenceScore: response.confidenceScore || 0,
+      action: 'fallback',
+      reason: Array.isArray(preflight.issues) ? preflight.issues.join(',') : 'answer_preflight_blocked',
+      answer: preflight.answer
+    });
+    return null;
+  }
+  return { ...response, answer: preflight.answer, debug: { ...(response.debug || {}), preflightIssues: preflight.issues || [] } };
+}
 function tryTrainingSpecificAnswer(question, indexForQuery) {
   return buildTrainingSpecificAnswerFromIndex(question, indexForQuery);
 }
@@ -5040,6 +5176,11 @@ async function querySemanticRag(question, options = {}) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
       return fallbackResult;
     }
+    const genericUploadedResult = buildGenericUploadedTrainingResponse(question, runtimeSemanticIndex, 'fallback-no-ai-uploaded-training', options);
+    if (genericUploadedResult) {
+      setCachedSemanticResult(resultCacheKey, genericUploadedResult);
+      return genericUploadedResult;
+    }
     appendAnswerQualityLog({ question, source: 'semantic-rag-disabled', category: detectAnswerCategory(question, 'semantic-rag-disabled'), confidenceTier: 'VERY_LOW', confidenceScore: 0, action: 'fallback', reason: 'missing_openai_api_key', answer: '' });
     return { success: true, answer: null, source: 'semantic-rag-disabled', reason: 'missing_openai_api_key', contexts: [], confidenceTier: 'VERY_LOW', answerCategory: detectAnswerCategory(question, 'semantic-rag-disabled') };
   }
@@ -5146,6 +5287,11 @@ async function querySemanticRag(question, options = {}) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
       return fallbackResult;
     }
+    const genericUploadedResult = buildGenericUploadedTrainingResponse(question, runtimeSemanticIndex, 'rag-no-context-uploaded-training', options);
+    if (genericUploadedResult) {
+      setCachedSemanticResult(resultCacheKey, genericUploadedResult);
+      return genericUploadedResult;
+    }
     const generalFallbackResult = runVettedDeterministicFallback(question, runtimeOptions, rewrite, 'rag-no-context-deterministic-fallback');
     if (generalFallbackResult) {
       setCachedSemanticResult(resultCacheKey, generalFallbackResult);
@@ -5220,6 +5366,11 @@ async function querySemanticRag(question, options = {}) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
       return fallbackResult;
     }
+    const genericUploadedResult = buildGenericUploadedTrainingResponse(question, runtimeSemanticIndex, 'rag-evidence-not-answerable-uploaded-training', options);
+    if (genericUploadedResult) {
+      setCachedSemanticResult(resultCacheKey, genericUploadedResult);
+      return genericUploadedResult;
+    }
     const category = detectAnswerCategory(question, 'semantic-rag-evidence-not-answerable');
     const answer = buildSpecificInsufficientDataAnswer(question, 'very_low');
     appendAnswerQualityLog({
@@ -5256,6 +5407,11 @@ async function querySemanticRag(question, options = {}) {
         setCachedSemanticResult(resultCacheKey, fallbackResult);
         return fallbackResult;
       }
+      const genericUploadedResult = buildGenericUploadedTrainingResponse(question, runtimeSemanticIndex, 'rag-empty-answer-uploaded-training', options);
+      if (genericUploadedResult) {
+        setCachedSemanticResult(resultCacheKey, genericUploadedResult);
+        return genericUploadedResult;
+      }
       const generalFallbackResult = runVettedDeterministicFallback(question, runtimeOptions, rewrite, 'rag-empty-answer-deterministic-fallback');
       if (generalFallbackResult) {
         setCachedSemanticResult(resultCacheKey, generalFallbackResult);
@@ -5280,6 +5436,11 @@ async function querySemanticRag(question, options = {}) {
       if (fallbackResult) {
         setCachedSemanticResult(resultCacheKey, fallbackResult);
         return fallbackResult;
+      }
+      const genericUploadedResult = buildGenericUploadedTrainingResponse(question, runtimeSemanticIndex, 'rag-insufficient-context-uploaded-training', options);
+      if (genericUploadedResult) {
+        setCachedSemanticResult(resultCacheKey, genericUploadedResult);
+        return genericUploadedResult;
       }
       const generalFallbackResult = runVettedDeterministicFallback(question, runtimeOptions, rewrite, 'rag-insufficient-context-deterministic-fallback');
       if (generalFallbackResult) {
@@ -5381,6 +5542,11 @@ async function querySemanticRag(question, options = {}) {
     if (fallbackResult) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
       return fallbackResult;
+    }
+    const genericUploadedResult = buildGenericUploadedTrainingResponse(question, runtimeSemanticIndex, 'rag-error-uploaded-training', options);
+    if (genericUploadedResult) {
+      setCachedSemanticResult(resultCacheKey, genericUploadedResult);
+      return genericUploadedResult;
     }
     const category = detectAnswerCategory(question, 'semantic-rag-error');
     const answer = 'Maaf, saya belum bisa mengambil jawaban dari data saat ini. Coba ulangi pertanyaannya sebentar lagi, atau tuliskan dengan lebih spesifik.';

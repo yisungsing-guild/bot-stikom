@@ -1648,6 +1648,43 @@ describe('semanticRagEngine', () => {
     expect(result.answer).toMatch(/UKM KSL adalah unit kegiatan mahasiswa/i);
     expect(result.answer).not.toMatch(/belum punya informasi detail/i);
   });
+  test('answers a new uploaded document topic through generic training fallback', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => []),
+      chunkText: jest.fn((text) => [String(text || '')]),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+    jest.doMock('../src/db', () => ({
+      trainingData: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'training-db-mentoring-alumni',
+            filename: 'Program Mentoring Alumni.docx',
+            content: 'Program Mentoring Alumni ITB STIKOM Bali adalah kegiatan pendampingan mahasiswa oleh alumni untuk berbagi pengalaman industri, persiapan karier, penguatan portofolio, diskusi dunia kerja, dan perluasan jejaring profesional.',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-07-21T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+            uploadedById: null
+          }
+        ])
+      }
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('apa itu mentoring alumni?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-uploaded-training-generic');
+    expect(result.answer).toMatch(/Program Mentoring Alumni/i);
+    expect(result.answer).toMatch(/pendampingan mahasiswa|alumni|pengalaman industri|portofolio|jejaring profesional/i);
+    expect(result.answer).not.toMatch(/belum menemukan informasi|belum bisa memastikan|tidak mempunyai jawaban/i);
+  });
   test('answers uploaded Athena and Ghost UKM profiles from DB using short UKM names', async () => {
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
