@@ -560,9 +560,9 @@ function setCachedSemanticResult(cacheKey, result) {
 function hasExcessivePlaceholderNoise(text) {
   const raw = String(text || '');
   if (!raw.trim()) return true;
-  const placeholderHits = (raw.match(/(?:_{4,}|\.{6,}|:{3,}|�{2,}|\(\s*(?:nama|nomor|jabatan|alamat|mitra)[^)]+\))/gi) || []).length;
+  const placeholderHits = (raw.match(/(?:_{4,}|\.{6,}|:{3,}|\uFFFD{2,}|\(\s*(?:nama|nomor|jabatan|alamat|mitra)[^)]+\))/gi) || []).length;
   if (placeholderHits >= 2) return true;
-  const symbolCount = (raw.match(/[_.:�-]/g) || []).length;
+  const symbolCount = (raw.match(/[_.:\uFFFD-]/g) || []).length;
   return raw.length > 200 && symbolCount / raw.length > 0.18;
 }
 
@@ -1201,7 +1201,7 @@ function isLikelyRawAdministrativeDocument(text) {
     /\balamat\s+telepon\s+e\s*-?\s*mail\b/i,
     /\b(?:Nama|Logo)\s+Mitra\b/i
   ].filter((pattern) => pattern.test(normalized)).length;
-  const placeholderSignals = /_{5,}|\.{8,}|:{3,}|�{2,}|(?:Nomor\s*:\s*(?:\.{4,}|�+|\([^)]*\)))/i.test(normalized);
+  const placeholderSignals = /_{5,}|\.{8,}|:{3,}|\uFFFD{2,}|(?:Nomor\s*:\s*(?:\.{4,}|\uFFFD+|\([^)]*\)))/i.test(normalized);
   const decreeSignals = [
     /\bKEPUTUSAN\b/i,
     /\bMenimbang\s*:/i,
@@ -1941,6 +1941,7 @@ function tryPmbRequirementsAnswer(question, _indexForQuery, options = {}) {
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
   const asksRequirement = /\b(syarat|persyaratan|dokumen|berkas|lampiran|formulir|kelengkapan|requirement|requirements|document|documents|file|files)\b/.test(q);
   const pmbContext = /\b(daftar|pendaftaran|pmb|camaba|mahasiswa\s+baru|kuliah|registrasi|stikom|itb\s*stikom|apply|application|admission|register|registration|enroll|study|studying|international\s+student)\b/.test(q)
+    || /\b(diunggah|unggah|upload|diupload|di\s*upload)\b/.test(q)
     || (isLikelyEnglishConversation(question, options) && /\b(apply|application|admission|register|registration|enroll|study|studying|international\s+student|siap\.stikom-bali\.ac\.id|itb\s*stikom|stikom\s*bali)\b/i.test(recent));
   if (!asksRequirement || !pmbContext) return null;
 
@@ -1968,6 +1969,13 @@ function tryPmbInfoAnswer(question) {
   return { answer: buildPmbInfoAnswer() };
 }
 
+function tryCurrentAdmissionStatusAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const asksStatus = /\b(masih\s+menerima|menerima\s+pendaftaran|menerima\s+mahasiswa|masih\s+buka|masih\s+dibuka)\b/.test(q)
+    && /\b(pendaftaran|pmb|daftar|mahasiswa\s+baru|camaba)\b/.test(q);
+  if (!asksStatus) return null;
+  return tryCurrentOpenWavesAnswer('sekarang gelombang berapa?');
+}
 function tryCurrentOpenWavesAnswer(question) {
   if (!ragEngine || typeof ragEngine.tryStructuredCurrentOpenWavesAnswer !== 'function') return null;
   return ragEngine.tryStructuredCurrentOpenWavesAnswer(question);
@@ -2303,8 +2311,9 @@ function tryScheduleWindowAnswer(question) {
 
 function tryRegistrationHowAnswer(question) {
   const q = String(question || '').toLowerCase();
-  const asksRegister = (/\b(cara|gimana|bagaimana|dimana|di\s*mana|mana|lewat|link|online|mau|ingin|pengen|pengin|bisa)\b/.test(q) && /\b(daftar(?:nya)?|mendaftar|pendaftaran|registrasi|kuliah)\b/.test(q)) || /\b(apply|application|admission|register|registration|enroll|study(?:ing)?|international\s+student)\b/i.test(q);
+  const asksRegister = (/\b(cara|gimana|gmn|gmna|bagaimana|dimana|di\s*mana|mana|lewat|link|online|mau|ingin|pengen|pengin|bisa)\b/.test(q) && /\b(daftar(?:nya)?|mendaftar|pendaftaran|registrasi|kuliah)\b/.test(q)) || /\b(apply|application|admission|register|registration|enroll|study(?:ing)?|international\s+student)\b/i.test(q);
   if (!asksRegister) return null;
+  if (/\b(rpl|pindahan|alih\s+transfer|konversi|mata\s+kuliah|sks)\b/.test(q)) return null;
   if (/\b(biaya|bayar|harga|dpp|ukt|potongan|gelombang|jadwal|tanggal|deadline|masih\s+buka)\b/.test(q)) return null;
 
   return {
@@ -2326,6 +2335,257 @@ function tryRegistrationHowAnswer(question) {
   };
 }
 
+function tryAdmissionAdminPolicyAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  if (/\b(ubah|mengubah|ganti|mengganti|pindah|switch)\b/.test(q) && /\b(pilihan\s+jurusan|pilihan\s+prodi|jurusan|prodi|program\s+studi)\b/.test(q)) {
+    return {
+      answer: [
+        'Untuk perubahan pilihan jurusan/prodi, data yang saya pegang belum memuat ketentuan teknis yang lengkap.',
+        '',
+        'Informasi amannya: kakak sebaiknya segera konfirmasi ke Admin PMB sebelum proses pendaftaran/registrasi difinalkan, supaya dibantu cek apakah pilihan prodi masih bisa diubah dan apa langkahnya.',
+        '',
+        'Kalau kakak belum yakin memilih prodi, saya bisa bantu jelaskan perbedaan TI, SI, SK, BD, dan MI.'
+      ].join('\n')
+    };
+  }
+
+  if (/\b(tanpa\s+datang|tidak\s+datang|nggak\s+datang|gak\s+datang|ga\s+datang|full\s+online|online\s+saja)\b/.test(q) && /\b(kampus|daftar|mendaftar|pendaftaran|registrasi|pmb)\b/.test(q)) {
+    return {
+      answer: [
+        'Bisa daftar secara online melalui https://siap.stikom-bali.ac.id.',
+        '',
+        'Kakak tetap perlu mengikuti arahan dokumen dan tahapan yang muncul di sistem pendaftaran. Kalau ada bagian yang belum jelas atau perlu verifikasi, Admin PMB bisa membantu melalui kanal resmi atau langsung di kampus.'
+      ].join('\n')
+    };
+  }
+
+  return null;
+}
+
+function tryProgramRecommendationClarificationAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const asksGenericFit = /\b(jurusan|prodi|program\s+studi)\b/.test(q)
+    && /\b(cocok|sesuai|rekomendasi|saran|pilih|pilihan|yang\s+mana)\b/.test(q)
+    && !/\b(coding|ngoding|data|bisnis|marketing|hardware|iot|jaringan|desain|karir|karier|kerja|menjadi|jadi)\b/.test(q);
+  if (!asksGenericFit) return null;
+
+  return {
+    answer: [
+      'Bisa, Kak. Untuk rekomendasi prodi yang lebih pas, saya perlu tahu minat atau target kerja kakak dulu.',
+      '',
+      'Gambaran cepatnya:',
+      '',
+      '- Suka coding, aplikasi, cloud, jaringan, atau keamanan sistem: Teknologi Informasi (TI).',
+      '- Suka analisis kebutuhan, proses bisnis, data, dan solusi sistem perusahaan: Sistem Informasi (SI).',
+      '- Suka hardware, IoT, embedded system, dan integrasi perangkat: Sistem Komputer (SK).',
+      '- Suka bisnis, digital marketing, e-commerce, data analytics, dan wirausaha digital: Bisnis Digital (BD).',
+      '- Ingin jalur D3 yang lebih praktis untuk pemrograman terapan dan dukungan sistem informasi: Manajemen Informatika (MI).',
+      '',
+      'Kakak bisa balas minatnya, misalnya "saya suka coding" atau "saya tertarik bisnis digital", nanti saya bantu arahkan.'
+    ].join('\n')
+  };
+}
+
+function tryRplTransferAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const asksRpl = /\brpl\b|rekognisi\s+pembelajaran\s+lampau/.test(q);
+  const asksTransfer = /\b(mahasiswa\s+pindahan|pindahan|alih\s+transfer|transfer\s+kuliah|pindah\s+kampus)\b/.test(q);
+  const asksConversion = /\b(konversi|alih\s+kredit|pengakuan\s+sks|sks|mata\s+kuliah)\b/.test(q) && /\b(konversi|diakui|pengakuan|alih)\b/.test(q);
+  if (!asksRpl && !asksTransfer && !asksConversion) return null;
+
+  if (asksConversion) {
+    return {
+      answer: [
+        'Konversi mata kuliah biasanya dinilai oleh pihak akademik/prodi berdasarkan transkrip, capaian pembelajaran, dan kesesuaian mata kuliah sebelumnya.',
+        '',
+        'Jadi, jumlah mata kuliah atau SKS yang bisa diakui tidak bisa dipastikan otomatis dari chat. Kakak perlu mengirim/menunjukkan dokumen akademik ke Admin PMB atau bagian akademik untuk proses penilaian resmi.'
+      ].join('\n')
+    };
+  }
+
+  if (asksTransfer) {
+    return {
+      answer: [
+        'Untuk mahasiswa pindahan/alih transfer, data yang tersedia menunjukkan konteks jalur pindahan perlu dikonfirmasi ke PMB atau bagian akademik.',
+        '',
+        'Informasi amannya: kakak perlu menyiapkan dokumen akademik dari kampus sebelumnya, lalu pihak kampus akan menilai kelayakan dan kemungkinan konversi mata kuliah/SKS.',
+        '',
+        'Untuk syarat final, alur, dan dokumen wajib, silakan konfirmasi ke Admin PMB ITB STIKOM Bali agar tidak ada dokumen yang terlewat.'
+      ].join('\n')
+    };
+  }
+
+  return {
+    answer: [
+      'RPL (Rekognisi Pembelajaran Lampau) adalah mekanisme pengakuan pembelajaran, kompetensi, atau pengalaman sebelumnya agar dapat dinilai untuk kebutuhan studi.',
+      '',
+      'Gambaran umumnya:',
+      '',
+      '- Siapkan bukti pengalaman, sertifikat, portofolio, atau dokumen akademik yang relevan.',
+      '- Ajukan melalui PMB atau bagian akademik sesuai arahan kampus.',
+      '- Tim akademik/prodi akan menilai kelayakan pengakuan atau konversinya.',
+      '',
+      'Untuk syarat final, jadwal, dan dokumen yang wajib dikumpulkan, kakak perlu konfirmasi ke Admin PMB ITB STIKOM Bali.'
+    ].join('\n')
+  };
+}
+function answerLines(lines) {
+  return { answer: lines.join('\n') };
+}
+
+function tryApplicantDataCorrectionAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  if (!/\b(salah|keliru|typo|koreksi|perbaiki|ubah)\b/.test(q) || !/\b(data|mengisi|isi|form|formulir|pendaftaran|daftar)\b/.test(q)) return null;
+  return answerLines([
+    'Kalau kakak salah mengisi data pendaftaran, jangan mengisi ulang sembarangan dulu.',
+    '',
+    'Langkah amannya:',
+    '',
+    '- Catat bagian data yang salah.',
+    '- Siapkan data yang benar.',
+    '- Hubungi Admin PMB agar dibantu koreksi atau diarahkan langkah perbaikannya.',
+    '',
+    'Ini perlu dikonfirmasi ke Admin PMB karena beberapa data mungkin hanya bisa diubah oleh petugas setelah pendaftaran tersimpan.'
+  ]);
+}
+
+function tryAcademicOperationsAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const hasAcademic = /\b(akademik|kuliah|perkuliahan|jadwal|ujian|krs|nilai|skripsi|sidang|kelulusan|wisuda|dosen\s+pembimbing\s+akademik|pembimbing\s+akademik|pa\b)\b/.test(q);
+  if (!hasAcademic) return null;
+
+  if (/\b(jadwal\s+kuliah|melihat\s+jadwal|jadwal\s+ujian|perkuliahan\s+dimulai|jadwal\s+bentrok|bentrok)\b/.test(q)) {
+    if (/bentrok/.test(q)) return answerLines(['Kalau jadwal kuliah atau ujian bentrok, kakak sebaiknya segera konfirmasi ke dosen pembimbing akademik/prodi atau bagian akademik.', '', 'Data yang saya pegang belum memuat prosedur penyelesaian bentrok secara rinci, jadi keputusan final tetap mengikuti arahan akademik.']);
+    return answerLines(['Untuk jadwal kuliah, jadwal ujian, atau tanggal mulai perkuliahan, data yang saya pegang belum memuat jadwal akademik rinci.', '', 'Informasi amannya: kakak bisa mengecek portal akademik/SIAKAD jika tersedia, atau konfirmasi ke bagian akademik/prodi untuk jadwal resmi terbaru.']);
+  }
+
+  if (/\bkrs\b/.test(q)) {
+    if (/apa\s+itu/.test(q)) return answerLines(['KRS adalah Kartu Rencana Studi, yaitu daftar mata kuliah yang dipilih mahasiswa untuk diikuti pada satu semester.', '', 'Untuk jadwal pengisian, cara pengisian, dan konsekuensi jika terlambat KRS, kakak perlu mengikuti arahan bagian akademik atau dosen pembimbing akademik.']);
+    return answerLines(['Untuk pengisian KRS, jadwal KRS, atau keterlambatan KRS, data yang saya pegang belum memuat prosedur rinci.', '', 'Informasi amannya: kakak perlu cek portal akademik/SIAKAD jika tersedia dan konfirmasi ke dosen pembimbing akademik atau bagian akademik.']);
+  }
+
+  if (/\b(dosen\s+pembimbing\s+akademik|pembimbing\s+akademik|\bpa\b)\b/.test(q)) {
+    return answerLines(['Dosen pembimbing akademik biasanya ditetapkan oleh prodi atau bagian akademik untuk membantu arahan studi mahasiswa.', '', 'Saya tidak memiliki akses ke data personal mahasiswa, jadi untuk mengetahui dosen pembimbing akademik kakak, silakan cek portal akademik/SIAKAD atau konfirmasi ke bagian akademik/prodi.']);
+  }
+
+  if (/\b(nilai|revisi\s+nilai)\b/.test(q)) {
+    if (/salah|revisi|mengajukan/.test(q)) return answerLines(['Kalau nilai terlihat salah atau perlu revisi, kakak sebaiknya menghubungi dosen pengampu mata kuliah terlebih dahulu, lalu mengikuti arahan prodi/bagian akademik.', '', 'Data yang saya pegang belum memuat alur revisi nilai secara rinci, jadi keputusan final tetap mengikuti prosedur akademik resmi.']);
+    return answerLines(['Untuk melihat nilai atau jadwal pengumuman nilai, kakak bisa mengecek portal akademik/SIAKAD jika tersedia.', '', 'Saya belum memiliki jadwal pengumuman nilai yang rinci pada data training, jadi untuk kepastian tanggal silakan konfirmasi ke bagian akademik atau dosen pengampu.']);
+  }
+
+  if (/\b(skripsi|sidang|kelulusan)\b/.test(q)) {
+    return answerLines(['Untuk skripsi, sidang, dan syarat kelulusan, data yang saya pegang belum memuat prosedur rinci yang lengkap.', '', 'Informasi amannya: kakak perlu konfirmasi ke prodi atau bagian akademik mengenai syarat SKS, administrasi, pembimbing, jadwal pengajuan, proses sidang, dan ketentuan kelulusan yang berlaku.']);
+  }
+
+  if (/\b(wisuda)\b/.test(q)) {
+    return answerLines(['Untuk syarat, pendaftaran, jadwal, atau biaya wisuda, data yang saya pegang belum memuat rincian resmi yang lengkap.', '', 'Informasi amannya: kakak perlu konfirmasi ke bagian akademik/BAAK atau admin kampus untuk periode wisuda, dokumen wajib, alur pendaftaran, dan biaya yang berlaku.']);
+  }
+
+  return null;
+}
+
+function tryFinanceOperationsAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const hasFinance = /\b(ukt|bayar|membayar|pembayaran|bank|tagihan|bukti\s+pembayaran|denda|dendanya|keterlambatan|terlambat\s+membayar)\b/.test(q) || (/\bonline\b/.test(q) && /\b(bayar|membayar|pembayaran|tagihan|ukt)\b/.test(q));
+  if (!hasFinance) return null;
+
+  if (/\b(cicil|cicilan|dicicil|angsuran)\b/.test(q)) return null;
+  if (/\b(ukt|pembayaran|membayar|bayar|bank)\b/.test(q) || (/\bonline\b/.test(q) && /\b(bayar|membayar|pembayaran|tagihan|ukt)\b/.test(q))) {
+    return answerLines(['Untuk pembayaran UKT atau tagihan kuliah, data yang saya pegang belum memuat nomor rekening/metode bank yang rinci.', '', 'Informasi amannya: kakak perlu mengikuti instruksi pembayaran resmi dari kampus/portal pembayaran, lalu simpan bukti pembayaran. Jika terlambat membayar atau ada kendala pembayaran online/bank, segera konfirmasi ke bagian keuangan/admin kampus.']);
+  }
+
+  if (/\b(tagihan|bukti\s+pembayaran|cetak)\b/.test(q)) {
+    return answerLines(['Untuk melihat tagihan atau mencetak bukti pembayaran, kakak perlu mengecek portal pembayaran/akademik jika tersedia atau menghubungi bagian keuangan.', '', 'Jika tagihan berubah, biasanya perlu dicek kembali komponennya oleh bagian keuangan agar tidak salah membaca biaya, potongan, atau status pembayaran.']);
+  }
+
+  if (/\b(denda|dendanya|keterlambatan|terlambat)\b/.test(q)) {
+    return answerLines(['Untuk denda keterlambatan pembayaran, data yang saya pegang belum memuat nominal denda resmi.', '', 'Informasi amannya: kakak perlu konfirmasi ke bagian keuangan/admin kampus untuk memastikan apakah ada denda, berapa nominalnya, dan bagaimana penyelesaiannya.']);
+  }
+
+  return null;
+}
+
+function tryStudentAffairsOperationsAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const hasStudentAffairs = /\b(bem|ukm|organisasi\s+mahasiswa|ormawa|mahasiswa\s+aktif|prestasi|lomba|seminar|sertifikasi|pelatihan)\b/.test(q);
+  if (!hasStudentAffairs) return null;
+  if (/\bbeasiswa\b/.test(q)) return null;
+
+  if (/\b(bergabung|gabung|ikut|mendaftar|daftar)\b/.test(q) && /\bbem\b/.test(q)) {
+    return answerLines(['Untuk bergabung dengan BEM, kakak bisa mengikuti informasi rekrutmen atau open recruitment dari BEM/kemahasiswaan.', '', 'Data yang saya pegang belum memuat jadwal dan syarat rekrutmen BEM yang rinci, jadi silakan konfirmasi ke bagian kemahasiswaan atau kanal resmi BEM ITB STIKOM Bali.']);
+  }
+
+  if (/\b(mahasiswa\s+aktif)\b/.test(q) && /\bbeasiswa\b/.test(q)) {
+    return answerLines(['Untuk beasiswa mahasiswa aktif, data yang saya pegang belum memuat syarat dan periode pengajuan yang lengkap.', '', 'Informasi amannya: mahasiswa aktif bisa menanyakan peluang beasiswa ke bagian kemahasiswaan/akademik, lalu mengikuti syarat dan seleksi yang berlaku.']);
+  }
+
+  if (/\b(prestasi|lomba|seminar|sertifikasi|pelatihan)\b/.test(q)) {
+    if (/lomba/.test(q)) return answerLines(['Untuk dukungan lomba nasional, kakak bisa menghubungi bagian kemahasiswaan/prodi agar dibantu arahan administrasi dan dukungan yang memungkinkan.', '', 'Data yang saya pegang belum memuat bentuk dukungan lomba secara rinci, jadi konfirmasi resmi tetap diperlukan.']);
+    if (/prestasi/.test(q)) return answerLines(['Untuk melaporkan prestasi, kakak sebaiknya menghubungi bagian kemahasiswaan/prodi dan menyiapkan bukti prestasi seperti sertifikat, surat tugas, atau dokumentasi lomba.', '', 'Data yang saya pegang belum memuat alur pelaporan prestasi secara rinci.']);
+    return answerLines(['Untuk seminar, pelatihan, atau sertifikasi, kakak bisa mengikuti informasi dari kampus, prodi, Career Center, atau bagian kemahasiswaan.', '', 'Data yang saya pegang belum memuat jadwal kegiatan rinci, jadi silakan konfirmasi ke admin kampus atau kanal resmi kegiatan.']);
+  }
+
+  return null;
+}
+
+function tryInternationalOperationsAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const hasIntl = /\b(double\s*degree|dual\s*degree|student\s+exchange|pertukaran\s+mahasiswa|kelas\s+internasional|bahasa\s+inggris|negara|internasional)\b/.test(q);
+  if (!hasIntl) return null;
+
+  if (/\bnegara\b/.test(q) && /\b(kerja\s+sama|bekerja\s+sama|mitra|double|internasional)\b/.test(q)) {
+    return answerLines(['Untuk kerja sama program internasional/double degree, negara mitra yang terbaca pada data adalah:', '', '- China, melalui DNUI - Dalian Neusoft University of Information.', '- Malaysia, melalui HELP University.', '', 'Selain itu ada Double Degree Nasional dengan UTB - Universitas Teknologi Bandung di Indonesia.']);
+  }
+
+  if (/\b(kelas\s+internasional|bahasa\s+inggris)\b/.test(q)) {
+    return answerLines(['Data yang tersedia mencantumkan program Double Degree Internasional dan fasilitas pendukung bahasa seperti Language Learning Center.', '', 'Untuk apakah perkuliahan reguler menggunakan bahasa Inggris atau ada kelas internasional khusus di prodi tertentu, detail teknisnya perlu dikonfirmasi ke Admin PMB/prodi agar tidak salah informasi.']);
+  }
+
+  return null;
+}
+
+function tryLecturerOperationsAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  if (!/\b(dosen|kaprodi|ketua\s+program\s+studi|ketua\s+prodi|pembimbing)\b/.test(q)) return null;
+
+  if (/\bketua\s+(program\s+studi|prodi)|kaprodi\b/.test(q)) {
+    return answerLines(['Untuk nama Ketua Program Studi/Kaprodi, data yang saya pegang belum cukup aman untuk memastikan nama pejabat terbaru.', '', 'Catatan: jika kakak menulis Teknik Informatika, pada data prodi ITB STIKOM Bali yang digunakan bot istilah yang sesuai adalah Teknologi Informasi. Untuk nama Kaprodi terbaru, silakan konfirmasi ke admin kampus atau website resmi prodi.']);
+  }
+
+  if (/\b(menghubungi|kontak|hubungi)\b/.test(q)) {
+    return answerLines(['Untuk menghubungi dosen, kakak sebaiknya memakai kanal resmi kampus, prodi, atau portal akademik jika tersedia.', '', 'Saya tidak menampilkan kontak pribadi dosen. Jika butuh bantuan menghubungi dosen, silakan konfirmasi ke bagian akademik/prodi.']);
+  }
+
+  return answerLines(['Untuk profil dosen atau pencarian dosen pembimbing, data yang saya pegang belum memuat daftar dosen yang lengkap dan terbaru.', '', 'Informasi amannya: kakak bisa mengecek website/portal resmi kampus atau menghubungi prodi/bagian akademik.']);
+}
+
+function tryAdministrationOperationsAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  if (!/\b(surat\s+aktif\s+kuliah|transkrip|legalisir|ijazah|cuti\s+kuliah|mengundurkan\s+diri|pengunduran\s+diri|administrasi)\b/.test(q)) return null;
+  return answerLines(['Untuk layanan administrasi seperti surat aktif kuliah, transkrip nilai, legalisir ijazah, cuti kuliah, atau pengunduran diri, data yang saya pegang belum memuat alur dan dokumen rinci.', '', 'Informasi amannya: kakak perlu menghubungi bagian akademik/administrasi kampus agar diarahkan formulir, dokumen, biaya jika ada, dan proses resminya.']);
+}
+
+function tryCareerOperationsAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  if (!/\b(career\s+center|karier|karir|lowongan|loker|kerja|penyaluran\s+kerja|surat\s+rekomendasi|rekomendasi\s+kerja)\b/.test(q)) return null;
+
+  if (/\b(lowongan|loker|penyaluran\s+kerja|membantu\s+penyaluran|surat\s+rekomendasi|rekomendasi\s+kerja)\b/.test(q)) {
+    return answerLines(['Career Center di ITB STIKOM Bali membantu mahasiswa/lulusan terkait persiapan karier dan informasi dunia kerja.', '', 'Untuk lowongan kerja, penyaluran kerja, atau surat rekomendasi, data yang saya pegang belum memuat alur rinci. Kakak bisa menghubungi Career Center/admin kampus agar diarahkan ke informasi lowongan, kegiatan karier, atau prosedur surat rekomendasi yang berlaku.']);
+  }
+
+  return null;
+}
+
+function tryCampusContactOperationsAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  if (!/\b(nomor\s+telepon|nomor\s+admin|no\.?\s*admin|telepon|telpon|no\.?\s*telp|kontak|hubungi\s+admin|menghubungi\s+admin|jam\s+operasional)\b/.test(q)) return null;
+
+  if (/\b(jam\s+operasional|jam\s+buka|operasional)\b/.test(q)) {
+    return answerLines(['Untuk jam operasional kampus/admin, data yang saya pegang belum memuat jadwal layanan yang lengkap.', '', 'Informasi amannya: silakan konfirmasi ke admin kampus terlebih dahulu sebelum datang, terutama jika di luar jam kerja atau hari libur.']);
+  }
+
+  return answerLines(['Untuk menghubungi ITB STIKOM Bali, kanal yang tersedia pada data:', '', '- Kampus Denpasar/Renon: telepon (0361) 244445, fax (0361) 264773.', '- Kampus Jimbaran: telepon (0361) 8353534.', '- Kampus Abiansemal: telepon (0361) 4730925.', '- Pendaftaran online: https://siap.stikom-bali.ac.id', '', 'Kalau kakak butuh bantuan PMB, gunakan kanal admin/PMB resmi agar diarahkan sesuai kebutuhan.']);
+}
 function normalizeFacilityTerm(value) {
   return String(value || '')
     .toLowerCase()
@@ -2819,7 +3079,7 @@ function cleanFacilitySnippetText(text) {
 
   out = out
     .replace(/\b(?:q|a)\s*[:\-.]\s*/gi, '')
-    .replace(/[“”"]/g, '')
+    .replace(/[\u201C\u201D"]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -4845,7 +5105,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (/^(?:mohon\s+)?maaf\b/i.test(body)) return body;
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
   const src = String(source || '').toLowerCase();
-  if (src.includes('insufficient-data') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements') || src.includes('direct-answer') || src.includes('accreditation')) return body;
+  if (src.includes('insufficient-data') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements') || src.includes('admission-admin-policy') || src.includes('rpl-transfer') || src.includes('program-recommendation-clarify') || src.includes('fee-general') || src.includes('academic-operations') || src.includes('finance-operations') || src.includes('student-affairs-operations') || src.includes('international-operations') || src.includes('lecturer-operations') || src.includes('administration-operations') || src.includes('career-operations') || src.includes('campus-contact-operations') || src.includes('applicant-data-correction') || src.includes('current-admission-status') || src.includes('current-open-waves') || src.includes('direct-answer') || src.includes('accreditation')) return body;
   const q = String(question || '').toLowerCase();
   if (/\b(apa\s+kabar|apa\s+khabar|kabar\s+apa|khabar\s+apa|gimana\s+kabar|gimana\s+khabar|kabar\s+kamu|khabar\s+kamu|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|bagaimana\s+kabar|bagaimana\s+khabar)\b/i.test(q)) return body;
   if (/^\s*(halo|hallo|hai|hi|hello|haloo|halooo|assalamualaikum|assalamu\s+alaikum|om\s+swastiastu|swastiastu|shalom|namo\s+buddhaya|nammo\s+buddhaya|salam\s+kebajikan|rahayu|salam\s+rahayu|salam|selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam)\s*(kak|min|admin|tiko)?\s*$/i.test(String(question || '').trim())) return body;
@@ -4930,6 +5190,17 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-unsupported-program', tryUnsupportedProgramAnswer],
   ['semantic-rag-pmb-contact', tryPmbContactAnswer],
   ['semantic-rag-pmb-requirements', tryPmbRequirementsAnswer],
+  ['semantic-rag-admission-admin-policy', tryAdmissionAdminPolicyAnswer],
+  ['semantic-rag-rpl-transfer', tryRplTransferAnswer],
+  ['semantic-rag-applicant-data-correction', tryApplicantDataCorrectionAnswer],
+  ['semantic-rag-academic-operations', tryAcademicOperationsAnswer],
+  ['semantic-rag-finance-operations', tryFinanceOperationsAnswer],
+  ['semantic-rag-student-affairs-operations', tryStudentAffairsOperationsAnswer],
+  ['semantic-rag-international-operations', tryInternationalOperationsAnswer],
+  ['semantic-rag-lecturer-operations', tryLecturerOperationsAnswer],
+  ['semantic-rag-administration-operations', tryAdministrationOperationsAnswer],
+  ['semantic-rag-career-operations', tryCareerOperationsAnswer],
+  ['semantic-rag-campus-contact-operations', tryCampusContactOperationsAnswer],
   ['semantic-rag-accreditation', tryProgramAccreditationAnswer],
   ['semantic-rag-campus-support-entity', tryCampusSupportEntityAnswer],
   ['semantic-rag-registration-info', tryRegistrationHowAnswer],
@@ -4947,6 +5218,8 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-scholarship', tryScholarshipAnswer],
   ['semantic-rag-current-open-waves', tryCurrentOpenWavesAnswer],
   ['semantic-rag-pmb-info', tryPmbInfoAnswer],
+  ['semantic-rag-program-recommendation-clarify', tryProgramRecommendationClarificationAnswer],
+
   ['semantic-rag-program-recommendation', tryProgramRecommendationAnswer],
   ['semantic-rag-fee-comparison', tryFeeComparisonAnswer],
   ['semantic-rag-program-comparison', tryProgramComparisonAnswer],
@@ -5315,7 +5588,7 @@ async function querySemanticRag(question, options = {}) {
 
   const earlyQuestion = String(question || '');
   const isFeeDetailLikeBeforeIndex = /\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|rincian|rinci|detail)\b/i.test(earlyQuestion);
-  const asksCurrentWaveBeforeIndex = /\b(sekarang|hari\s+ini|saat\s+ini|masih\s+buka|masih\s+dibuka|buka|dibuka)\b/i.test(earlyQuestion)
+  const asksCurrentWaveBeforeIndex = /\b(sekarang|hari\s+ini|saat\s+ini|masih\s+buka|masih\s+dibuka|menerima\s+pendaftaran|masih\s+menerima|menerima\s+mahasiswa|buka|dibuka)\b/i.test(earlyQuestion)
     && /\b(gelombang|pendaftaran|pmb|daftar)\b/i.test(earlyQuestion)
     && !isFeeDetailLikeBeforeIndex;
   const asksDoubleDegreeBeforeIndex = /\b(double\s*degree|dual\s*degree|gelar\s+ganda|\bdd\b|utb|dnui|dalian\s+neusoft|help\s+university|help\b)\b/i.test(earlyQuestion)
@@ -5323,6 +5596,7 @@ async function querySemanticRag(question, options = {}) {
   const earlyNoIndexHandlers = [];
   if (asksCurrentWaveBeforeIndex) {
     earlyNoIndexHandlers.push(
+      ['semantic-rag-current-admission-status', tryCurrentAdmissionStatusAnswer],
       ['semantic-rag-current-open-waves', tryCurrentOpenWavesAnswer],
       ['semantic-rag-schedule-window', tryScheduleWindowAnswer]
     );
@@ -5330,6 +5604,24 @@ async function querySemanticRag(question, options = {}) {
   if (asksDoubleDegreeBeforeIndex) {
     earlyNoIndexHandlers.push(['semantic-rag-dual-degree', tryDualDegreeAnswer]);
   }
+  earlyNoIndexHandlers.push(['semantic-rag-pmb-info', tryPmbInfoAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-applicant-data-correction', tryApplicantDataCorrectionAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-administration-operations', tryAdministrationOperationsAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-academic-operations', tryAcademicOperationsAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-finance-operations', tryFinanceOperationsAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-student-affairs-operations', tryStudentAffairsOperationsAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-international-operations', tryInternationalOperationsAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-lecturer-operations', tryLecturerOperationsAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-career-operations', tryCareerOperationsAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-campus-contact-operations', tryCampusContactOperationsAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-rpl-transfer', tryRplTransferAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-registration-info', tryRegistrationHowAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-pmb-requirements', tryPmbRequirementsAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-admission-admin-policy', tryAdmissionAdminPolicyAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-scholarship', tryScholarshipAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-program-list', tryProgramListAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-program-comparison', tryProgramComparisonAnswer]);
+  earlyNoIndexHandlers.push(['semantic-rag-program-recommendation-clarify', tryProgramRecommendationClarificationAnswer]);
   earlyNoIndexHandlers.push(['semantic-rag-accreditation', tryProgramAccreditationAnswer]);
   earlyNoIndexHandlers.push(['semantic-rag-program-definition', tryProgramDefinitionAnswer]);
   const earlyNoIndexResult = runDeterministicHandlers(question, earlyNoIndexHandlers, options, [question], { routeStage: 'pre-index-deterministic' });
@@ -5353,9 +5645,9 @@ async function querySemanticRag(question, options = {}) {
   if (feeLikeBeforeCompound) {
     const feePreHandlers = handlersForSources([
       'semantic-rag-registration-fee',
+      'semantic-rag-fee-general',
       'semantic-rag-fee-detail',
       'semantic-rag-contextual-fee',
-      'semantic-rag-fee-general',
       'semantic-rag-fee-comparison'
     ]);
     const normalizedFeeQuestion = /\b(diskon|potongan)\b/i.test(String(question || '')) && /\bregistrasi\b/i.test(String(question || ''))
@@ -5845,26 +6137,3 @@ module.exports = {
   buildContextText,
   cosineSimilarity
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

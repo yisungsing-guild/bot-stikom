@@ -664,7 +664,40 @@ function tryScholarshipAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (!/\b(beasiswa|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
 
+  if (/\b(seluruh|semua|full|penuh|100\s*%)\b/.test(q) && /\b(biaya|ditanggung|menanggung|cover|cakupan)\b/.test(q)) {
+    return {
+      answer: [
+        'Untuk apakah beasiswa menanggung seluruh biaya, data yang saya pegang belum memuat ketentuan cakupan lengkap per jenis beasiswa.',
+        '',
+        'Informasi amannya: beasiswa/potongan yang tersedia bisa berbeda cakupan dan nominalnya. Untuk memastikan apakah ada yang menanggung seluruh biaya, kakak perlu konfirmasi ke Admin PMB ITB STIKOM Bali sesuai jalur beasiswa yang dipilih.'
+      ].join('\n')
+    };
+  }
+
+  if (/\b(cara|bagaimana|gimana|mendapatkan|dapat|mengajukan|daftar|prosedur|alur)\b/.test(q) && /\b(beasiswa|bantuan\s+biaya|potongan)\b/.test(q)) {
+    return {
+      answer: [
+        'Untuk mendapatkan beasiswa, kakak perlu memilih jalur beasiswa yang ingin diajukan lalu mengikuti arahan PMB/kampus.',
+        '',
+        'Gambaran amannya:',
+        '',
+        '- Tanyakan jalur beasiswa yang tersedia ke Admin PMB.',
+        '- Siapkan dokumen sesuai jenis beasiswa yang dipilih.',
+        '- Ajukan berkas sesuai jadwal dan prosedur PMB.',
+        '- Tunggu verifikasi/seleksi dari pihak kampus.',
+        '',
+        'Data training saat ini belum memuat syarat rinci per beasiswa, jadi ketentuan final tetap perlu dikonfirmasi ke Admin PMB ITB STIKOM Bali.'
+      ].join('\n')
+    };
+  }
   const specificTopic = detectSpecificScholarshipTopic(question);
+  if (specificTopic && /\b(ada|tersedia|punya|apakah)\b/.test(q) && !asksScholarshipDetail(question)) {
+    return {
+      answer: specificTopic + ' tercatat sebagai salah satu pilihan beasiswa/program bantuan di ITB STIKOM Bali. Untuk syarat, prosedur, dan kuota resminya, kakak perlu konfirmasi ke Admin PMB.',
+      source: 'semantic-rag-scholarship-availability'
+    };
+  }
+
   if (specificTopic && asksScholarshipDetail(question)) {
     return {
       answer: buildScholarshipNoTrainingAnswer(specificTopic),
@@ -710,7 +743,7 @@ function hasDoubleDegreePartnerFeeTarget(question) {
 function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
   const q = String(question || '').toLowerCase().trim();
   if (!q) return null;
-  const asksFee = /\b(biaya|harga|bayar|uang|ukt|dpp|pendaftaran|rincian\s+biaya|biaya\s+s1|s1)\b/.test(q);
+  const asksFee = /\b(biaya|harga|bayar|uang|ukt|dpp|pendaftaran|rincian\s+biaya|biaya\s+s1|s1|cicil|cicilan|dicicil|nyicil|pembayaran)\b/.test(q);
   if (!asksFee) return null;
   if (hasDoubleDegreePartnerFeeTarget(question)) return null;
 
@@ -720,6 +753,37 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
   const asksOnlyFee = /^(ada\s+biaya|biaya|biaya\s+kuliah|biaya\s+s1|rincian\s+biaya\s*(?:[1-4]|i{1,3}|iv)?\s*[a-c]?)\??$/i.test(raw);
   const asksFeeComponents = /\b(biaya\s+(?:apa\s+aja|apa\s+saja|yang\s+dibayar|masuk)|bayar\s+apa\s+aja|komponen\s+biaya)\b/i.test(raw);
 
+  if (/\b(cicil|cicilan|dicicil|nyicil|angsuran|skema\s+pembayaran)\b/.test(q)) {
+    return {
+      answer: [
+        'Untuk skema cicilan/pembayaran, data yang tersedia menunjukkan biaya dapat memiliki ketentuan pembayaran bertahap, tetapi detail finalnya perlu mengikuti ketentuan PMB/keuangan.',
+        '',
+        'Informasi amannya: kakak sebutkan prodi dan gelombangnya dulu agar rincian biaya bisa dihitung, lalu konfirmasi skema cicilan resminya ke Admin PMB atau bagian keuangan.'
+      ].join('\n')
+    };
+  }
+
+  if (/\buang\s+pangkal(?:nya)?\b/.test(q)) {
+    return {
+      answer: [
+        'Di data PMB, istilah yang paling dekat dengan uang pangkal adalah DPP/biaya awal masuk.',
+        '',
+        'Nominalnya berbeda sesuai prodi dan bisa berubah setelah potongan gelombang. Untuk angka tepat, kakak bisa sebutkan prodi dan gelombangnya, misalnya: "uang pangkal TI Gelombang IV B".'
+      ].join('\n')
+    };
+  }
+
+  if (/\btotal\s+biaya(?:\s+kuliah)?\b/.test(q) && !hasProgram) {
+    return {
+      answer: [
+        'Total biaya kuliah tergantung prodi, gelombang pendaftaran, dan komponen yang ingin dihitung.',
+        '',
+        'Data biaya yang tersedia paling aman dibaca sebagai biaya awal masuk/DPP dan biaya pendidikan per semester. Saya tidak mengalikan otomatis sampai lulus kalau durasi atau skema pembayaran tidak disebutkan secara jelas.',
+        '',
+        'Kakak bisa kirim contoh: "total biaya TI Gelombang IV B" atau "rincian biaya SI Gelombang I A".'
+      ].join('\n')
+    };
+  }
   if (hasWave && !hasProgram) {
     return {
       answer: [
@@ -734,6 +798,23 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
     };
   }
 
+  if (hasProgram && !hasWave) {
+    const found = feeProfileByProgram(question, index);
+    const program = found && found.program ? found.program : null;
+    const profile = found && found.profile ? found.profile : null;
+    if (program && profile && Number.isFinite(profile.biayaAwalLow)) {
+      return {
+        answer: [
+          'Berikut gambaran biaya untuk Prodi ' + program.label + ':',
+          '',
+          '- Biaya awal masuk: ' + formatRange(profile.biayaAwalLow, profile.biayaAwalHigh),
+          '- ' + educationFeeLine(profile),
+          '',
+          'Nominal di atas belum menghitung potongan berdasarkan gelombang. Kalau kakak ingin rincian setelah potongan, sebutkan gelombangnya, misalnya: "rincian biaya ' + program.label + ' Gelombang IV B".'
+        ].join('\n')
+      };
+    }
+  }
   if (/\bbiaya\s+s1\b|^biaya\s*s1\??$/i.test(raw)) {
     const profiles = extractProfiles(index)
       .filter((p) => ['si', 'ti', 'bd', 'sk'].includes(p.key) && Number.isFinite(p.biayaAwalLow))
@@ -1843,14 +1924,5 @@ module.exports = {
   formatRp,
   formatRange
 };
-
-
-
-
-
-
-
-
-
 
 
