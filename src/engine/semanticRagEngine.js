@@ -1618,7 +1618,12 @@ function isAccreditationQuestion(question) {
 }
 
 function buildProgramAccreditationLine(item) {
-  return `Akreditasi Prodi ${item.label} (${item.degree}): ${item.grade}. Masa berlaku akreditasi: ${item.valid}. Lembaga akreditasi: ${item.agency}.`;
+  return [
+    `Akreditasi Prodi ${item.label} (${item.degree}):`,
+    `- Peringkat: ${item.grade}`,
+    `- Masa berlaku: ${item.valid}`,
+    `- Lembaga akreditasi: ${item.agency}`
+  ].join('\n');
 }
 
 function tryProgramAccreditationAnswer(question) {
@@ -1643,11 +1648,7 @@ function tryProgramAccreditationAnswer(question) {
 
   if (program && !asksAll) {
     return {
-      answer: [
-        buildProgramAccreditationLine(program),
-        '',
-        'Saya rangkum hanya status dan masa berlaku akreditasinya agar tidak menampilkan isi dokumen legal/SK mentah.'
-      ].join('\n'),
+      answer: buildProgramAccreditationLine(program),
       source: 'semantic-rag-accreditation'
     };
   }
@@ -4844,7 +4845,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (/^(?:mohon\s+)?maaf\b/i.test(body)) return body;
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
   const src = String(source || '').toLowerCase();
-  if (src.includes('insufficient-data') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements') || src.includes('direct-answer')) return body;
+  if (src.includes('insufficient-data') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements') || src.includes('direct-answer') || src.includes('accreditation')) return body;
   const q = String(question || '').toLowerCase();
   if (/\b(apa\s+kabar|apa\s+khabar|kabar\s+apa|khabar\s+apa|gimana\s+kabar|gimana\s+khabar|kabar\s+kamu|khabar\s+kamu|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|bagaimana\s+kabar|bagaimana\s+khabar)\b/i.test(q)) return body;
   if (/^\s*(halo|hallo|hai|hi|hello|haloo|halooo|assalamualaikum|assalamu\s+alaikum|om\s+swastiastu|swastiastu|shalom|namo\s+buddhaya|nammo\s+buddhaya|salam\s+kebajikan|rahayu|salam\s+rahayu|salam|selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam)\s*(kak|min|admin|tiko)?\s*$/i.test(String(question || '').trim())) return body;

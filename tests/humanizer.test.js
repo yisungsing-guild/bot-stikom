@@ -208,6 +208,20 @@ describe('Humanizer Module', () => {
       expect(result).not.toMatch(/Kalau Kakak ingin tahu lebih lanjut/i);
     });
 
+    it('should not append generic follow-ups to accreditation answers', () => {
+      process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'true';
+      const mainAnswer = [
+        'Akreditasi Prodi Sistem Informasi (S1):',
+        '- Peringkat: Baik Sekali',
+        '- Masa berlaku: 14 Desember 2023 sampai 14 Desember 2028',
+        '- Lembaga akreditasi: LAM INFOKOM'
+      ].join('\n');
+
+      const result = formatHumanizedResponse(mainAnswer, 'akreditasi si apa?', { intent: 'akreditasi' });
+      expect(result).toContain('Akreditasi Prodi Sistem Informasi');
+      expect(result).not.toMatch(/Kalau Kakak ingin tahu lebih lanjut/i);
+      expect(result).not.toMatch(/Apakah ada informasi lain|Mau saya jelaskan tentang aspek lain|Adakah pertanyaan lain/i);
+    });
     it('should not append follow-ups to long comparison answers', () => {
       process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'true';
       const mainAnswer = [

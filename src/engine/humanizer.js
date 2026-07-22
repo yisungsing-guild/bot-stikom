@@ -247,6 +247,7 @@ function detectScholarshipType(userQuery = '', context = {}) {
 }
 
 function generateFollowUpQuestions(intent, userQuery = '', context = {}) {
+  if (intent === 'akreditasi' || intent === 'accreditation') return [];
   const questions = [];
   const seen = new Set();
   const enrichedContext = { ...context, scholarshipType: context.scholarshipType || detectScholarshipType(userQuery, context) };
