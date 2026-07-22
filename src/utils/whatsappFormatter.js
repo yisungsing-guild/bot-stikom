@@ -138,12 +138,7 @@ function inferQuestionTopic(userQuery, mainAnswer) {
   const normalizedQuery = String(userQuery || '').trim().toLowerCase();
   const normalizedAnswer = String(mainAnswer || '').trim().toLowerCase();
   const queryIntent = detectIntentFromQuery(userQuery);
-    const strongQueryIntents = ['campus_support', 'ukm'];
-  if (strongQueryIntents.includes(queryIntent) && detectedIntent !== queryIntent) {
-    console.log('[TRACE_INTENT_QUERY_OVERRIDE]', { detectedIntentBefore: detectedIntent, queryIntent, userQuery });
-    detectedIntent = queryIntent;
-  }
-const answerIntent = detectIntentFromAnswerFromText(mainAnswer);
+  const answerIntent = detectIntentFromAnswerFromText(mainAnswer);
 
   if (queryIntent === 'lokasi' || answerIntent === 'lokasi' ||
       /\b(lokasi|alamat|berlokasi|kampus|denpasar|cabang|di\s+mana|dimana)\b/i.test(normalizedQuery) ||
@@ -787,12 +782,21 @@ function detectIntentFromAnswer(mainAnswer, userQuery) {
   }
 
   const queryIntent = detectIntentFromQuery(userQuery);
-    const strongQueryIntents = ['campus_support', 'ukm'];
-  if (strongQueryIntents.includes(queryIntent) && detectedIntent !== queryIntent) {
-    console.log('[TRACE_INTENT_QUERY_OVERRIDE]', { detectedIntentBefore: detectedIntent, queryIntent, userQuery });
-    detectedIntent = queryIntent;
+  const strongQueryIntents = ['campus_support', 'ukm'];
+  if (strongQueryIntents.includes(queryIntent) && answerIntent !== queryIntent) {
+    try {
+      traceWhatsapp('detectIntentFromAnswer', {
+        mainAnswer,
+        userQuery,
+        chosen: queryIntent,
+        reason: 'strong query intent override',
+        answerIntent
+      });
+    } catch (e) {}
+    return queryIntent;
   }
-if (queryIntent !== 'general') return queryIntent;
+
+  if (queryIntent !== 'general') return queryIntent;
 
   return answerIntent;
 }
@@ -1039,12 +1043,20 @@ function buildHumanizedWhatsappReply({
   console.log('[TRACE_INTENT_HUMANIZER]', { detectedIntentBeforeCostOverride: detectedIntent });
 
   const queryIntent = detectIntentFromQuery(userQuery);
-    const strongQueryIntents = ['campus_support', 'ukm'];
+  const strongQueryIntents = ['campus_support', 'ukm'];
   if (strongQueryIntents.includes(queryIntent) && detectedIntent !== queryIntent) {
-    console.log('[TRACE_INTENT_QUERY_OVERRIDE]', { detectedIntentBefore: detectedIntent, queryIntent, userQuery });
+    try {
+      traceWhatsapp('buildHumanizedWhatsappReply', {
+        detectedIntentBefore: detectedIntent,
+        queryIntent,
+        userQuery,
+        reason: 'strong query intent override'
+      });
+    } catch (e) {}
     detectedIntent = queryIntent;
   }
-const explicitLocationQuery = queryIntent === 'lokasi' || /\b(lokasi|alamat|berlokasi|kampus|denpasar|cabang|di\s+mana|dimana)\b/i.test(String(userQuery || ''));
+
+  const explicitLocationQuery = queryIntent === 'lokasi' || /\b(lokasi|alamat|berlokasi|kampus|denpasar|cabang|di\s+mana|dimana)\b/i.test(String(userQuery || ''));
   const answerLocationIntent = detectIntentFromAnswerFromText(normalizedAnswer) === 'lokasi';
 
   // Strong rule: treat explicit fee/biaya queries as COST/`biaya` intent and preserve it.
@@ -1145,4 +1157,3 @@ module.exports.detectIntentFromQuery = detectIntentFromQuery;
 module.exports.detectIntentFromAnswerFromText = detectIntentFromAnswerFromText;
 module.exports.buildHumanizedIntentConfirmation = buildHumanizedIntentConfirmation;
 module.exports.generateFollowUpQuestions = generateFollowUpQuestions;
-

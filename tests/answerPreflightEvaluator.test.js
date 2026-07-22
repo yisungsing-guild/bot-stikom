@@ -105,6 +105,15 @@ describe('answerPreflightEvaluator', () => {
     expect(result.answer).toMatch(/Teknologi Informasi/i);
   });
 
+  test('allows partner-specific DNUI double degree answers', () => {
+    const result = evaluateOutboundAnswer(
+      'Double Degree DNUI adalah program Double Degree internasional ITB STIKOM Bali dengan Dalian Neusoft University of Information, China. Prodi di ITB STIKOM Bali: Bisnis Digital. Jurusan di DNUI belum tercantum pada data yang tersedia.',
+      'apa itu double degree dnui?'
+    );
+    expect(result.blocked).toBe(false);
+    expect(result.issues).not.toContain('missing_requested_entity');
+    expect(result.answer).toMatch(/DNUI|Dalian Neusoft/i);
+  });
   test('blocks answers that miss the specific entity requested by the user', () => {
     const result = evaluateOutboundAnswer(
       'Career Center membantu mahasiswa melalui informasi lowongan kerja dan konsultasi karier.',

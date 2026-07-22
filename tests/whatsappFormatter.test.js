@@ -28,6 +28,18 @@ describe('WhatsApp reply formatter', () => {
     expect(result).toContain('UKM/Ormawa');
     expect(result).not.toMatch(/Program Studi yang Kakak tanyakan|Program Studi KSL/i);
   });
+  test('classifies LLC definition queries as campus support even when upstream intent says program definition', () => {
+    expect(detectIntentFromAnswer('', 'apa itu llc?')).toBe('campus_support');
+
+    const result = buildHumanizedWhatsappReply({
+      mainAnswer: 'Language Learning Center adalah fasilitas pendukung untuk peningkatan kemampuan bahasa mahasiswa ITB STIKOM Bali.',
+      userQuery: 'apa itu llc?',
+      intent: 'program_definition'
+    });
+
+    expect(result).toMatch(/fasilitas belajar bahasa|Language Learning Center/i);
+    expect(result).not.toMatch(/Program Studi yang Kakak tanyakan|program studi/i);
+  });
   test('classifies fee+prodi queries as biaya intent', () => {
     expect(detectIntentFromAnswer('', 'berapa biaya prodi TI gelombang 3A')).toBe('biaya');
     expect(detectIntentFromAnswer('', 'berapa biaya prodi Sistem Informasi gelombang 3A')).toBe('biaya');
@@ -331,4 +343,3 @@ describe('WhatsApp reply formatter', () => {
     });
   });
 });
-

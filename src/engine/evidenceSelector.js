@@ -289,7 +289,13 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
   const detectedIntent = detectIntent(question, intent);
   const missingEvidence = [];
   const terms = getContentTerms(question);
+  const q = String(question || '').trim().toLowerCase();
+  const asksShortProgramDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q)
+    && /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi)\b/i.test(q);
 
+  if (asksShortProgramDefinition) {
+    return { answerable: true, reason: 'short_program_definition_direct_answer', missingEvidence: [] };
+  }
   if (!terms.length && !isExplicitLegalQuestion(question, detectedIntent)) {
     return { answerable: false, reason: 'ambiguous_question', missingEvidence: ['question_object'] };
   }

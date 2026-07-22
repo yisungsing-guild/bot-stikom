@@ -266,6 +266,21 @@ describe('feeComparisonEngine', () => {
     }
   });
 
+  test('answers partner-specific international double degree questions without unrelated partners', () => {
+    const dnui = tryDualDegreeAnswer('apa itu double degree dnui?');
+    expect(dnui).toBeTruthy();
+    expect(dnui.answer).toMatch(/DNUI|Dalian Neusoft University of Information/i);
+    expect(dnui.answer).toMatch(/Bisnis Digital/i);
+    expect(dnui.answer).toMatch(/belum tercantum/i);
+    expect(dnui.answer).not.toMatch(/UTB|HELP University/i);
+
+    const help = tryDualDegreeAnswer('apa itu double degree help university?');
+    expect(help).toBeTruthy();
+    expect(help.answer).toMatch(/HELP University, Malaysia/i);
+    expect(help.answer).toMatch(/Sistem Informasi/i);
+    expect(help.answer).toMatch(/belum tercantum/i);
+    expect(help.answer).not.toMatch(/UTB|DNUI|Dalian Neusoft/i);
+  });
   test('answers UTB double degree major as DKV', () => {
     const result = tryDualDegreeAnswer('Yang saya tanya Double Degree dengan UTB, di UTB nya itu mengambil jurusan apa?');
     expect(result).toBeTruthy();
@@ -520,11 +535,3 @@ describe('feeComparisonEngine', () => {
     }
   });
 });
-
-
-
-
-
-
-
-

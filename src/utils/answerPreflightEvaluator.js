@@ -9,6 +9,7 @@ function normalizeOutboundAnswerText(text) {
   if (!out.trim()) return '';
 
   out = out.replace(/\u00A0/g, ' ');
+  out = out.replace(/\u00e2\u20ac\u00a6/g, '...');
   out = out.replace(/([A-Za-z0-9)\]])\s*(?:\u2026|\.{3})(?=\s*(?:\n|$))/g, '$1.');
   out = out.replace(/\b(per|pendaftar|pertanyaan|informasi|program|fasilitas|dokumen|syarat|jadwal|gelombang)(?:\u2026|\.{3})\s*$/i, '$1.');
   out = out.replace(/\n\s*Kalau mau lanjut, kakak bisa tanya:\s*$/i, '');
