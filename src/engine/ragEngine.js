@@ -9357,8 +9357,10 @@ function cleanDocumentText(rawText) {
   for (const line of lines) {
     const trimmed = String(line || '').trim();
     if (!trimmed) continue;
-    if (metadataPattern.test(trimmed)) continue;
-    if (legalPattern.test(trimmed) && !/\b(biaya|dpp|ukt|pendaftaran|potongan|diskon|program|prodi|internasional|jadwal|gelombang)\b/i.test(trimmed)) continue;
+    const isLikelyContentLine = trimmed.length >= 160 || /\b(organisasi|ukm|himpunan|mahasiswa|didirikan|berdiri|bertujuan|program\s+kerja|kegiatan|prestasi|pelatihan|turnamen|wadah|minat|bakat|kampus)\b/i.test(trimmed);
+    const isLikelyMetadataLine = metadataPattern.test(trimmed) && !isLikelyContentLine;
+    if (isLikelyMetadataLine) continue;
+    if (legalPattern.test(trimmed) && !/\b(biaya|dpp|ukt|pendaftaran|potongan|diskon|program|prodi|internasional|jadwal|gelombang|organisasi|ukm|himpunan|mahasiswa)\b/i.test(trimmed)) continue;
     const pageMatch = /^\s*(?:page|halaman)\s*[:\.]?\s*(\d+)/i.exec(trimmed);
     if (pageMatch) {
       keep.push(`HALAMAN: ${pageMatch[1]}`);
@@ -9824,6 +9826,48 @@ async function updateTrainingRagIngestStatus(trainingId, patch = {}) {
   }
 }
 
+function countTrainingChunksInIndex(index, trainingId) {
+  const id = String(trainingId || '').trim();
+  if (!id || !Array.isArray(index)) return 0;
+  return index.filter(item => item && String(item.trainingId || '') === id).length;
+}
+
+function verifyTrainingIndexed(trainingId, indexOverride = null) {
+  const id = String(trainingId || '').trim();
+  if (!id) {
+    return { indexed: false, chunksInIndex: 0, reason: 'missing_training_id' };
+  }
+
+  try {
+    const index = Array.isArray(indexOverride) ? indexOverride : loadIndex();
+    const chunksInIndex = countTrainingChunksInIndex(index, id);
+    return {
+      indexed: chunksInIndex > 0,
+      chunksInIndex,
+      indexPath: getIndexPath()
+    };
+  } catch (err) {
+    return {
+      indexed: false,
+      chunksInIndex: 0,
+      reason: err && err.message ? err.message : String(err),
+      indexPath: getIndexPath()
+    };
+  }
+}
+
+function invalidateSemanticRagCaches(reason, details = {}) {
+  try {
+    const semanticRagEngine = require('./semanticRagEngine');
+    if (semanticRagEngine && typeof semanticRagEngine.clearSemanticCaches === 'function') {
+      return semanticRagEngine.clearSemanticCaches({ reason, ...details });
+    }
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err), reason }, '[RAG] Failed to invalidate semantic RAG caches');
+  }
+  return { success: false };
+}
+
 async function ingestTrainingData(trainingId, text, source = 'upload', options = null) {
   try {
     await updateTrainingRagIngestStatus(trainingId, {
@@ -10087,7 +10131,33 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
     }
 
     saveIndex(filteredIndex);
-    logger.info({ trainingId, chunks: chunks.length, skippedDuplicates, skippedAdministrative, aliasedDuplicates, divisionKey: divisionKey || null }, '[RAG] Ingested chunks');
+
+    let persistedIndex = loadIndex();
+    let persistedChunkCount = countTrainingChunksInIndex(persistedIndex, trainingId);
+    const inMemoryChunkCount = countTrainingChunksInIndex(filteredIndex, trainingId);
+
+    if (persistedChunkCount === 0 && inMemoryChunkCount > 0) {
+      logger.warn({ trainingId, inMemoryChunkCount }, '[RAG] Quality gate retry: saved index did not contain expected chunks');
+      saveIndex(filteredIndex);
+      persistedIndex = loadIndex();
+      persistedChunkCount = countTrainingChunksInIndex(persistedIndex, trainingId);
+    }
+
+    const sourceChunksConsidered = Math.max(0, chunks.length - skippedAdministrative);
+    const ingested = Math.max(0, sourceChunksConsidered - skippedDuplicates);
+    const indexedChunkCount = persistedChunkCount;
+    const qualityGate = {
+      indexed: indexedChunkCount > 0,
+      chunksInIndex: indexedChunkCount,
+      inMemoryChunks: inMemoryChunkCount,
+      sourceChunks: chunks.length,
+      sourceChunksConsidered,
+      skippedAdministrative,
+      skippedDuplicates,
+      aliasedDuplicates
+    };
+
+    logger.info({ trainingId, chunks: chunks.length, skippedDuplicates, skippedAdministrative, aliasedDuplicates, indexedChunkCount, divisionKey: divisionKey || null }, '[RAG] Ingested chunks');
     
     // Audit logging: verify docCategory enrichment
     if (process.env.RAG_AUDIT_LOGGING === 'true') {
@@ -10098,13 +10168,36 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
         totalChunks,
         withDocCategory,
         enrichmentRate: (withDocCategory / totalChunks * 100).toFixed(2) + '%',
-        categories: [...new Set(filteredIndex.map(c => c.docCategory))].sort()
+        categories: [...new Set(filteredIndex.map(c => c.docCategory))].sort(),
+        qualityGate
       }, '[RAG AUDIT] Ingest enrichment summary');
-      auditLogger.logIngest(trainingId, chunks.length - skippedDuplicates, withDocCategory);
+      auditLogger.logIngest(trainingId, indexedChunkCount, withDocCategory);
+    }
+
+    if (!qualityGate.indexed) {
+      const error = 'RAG quality gate failed: document produced no chunks in the persisted index';
+      logger.error({ trainingId, source, sourceFile: resolvedSourceFile, qualityGate }, '[RAG] Ingest quality gate failed');
+      await updateTrainingRagIngestStatus(trainingId, {
+        status: 'failed',
+        error,
+        chunkCount: 0,
+        ingestedAt: null
+      });
+      return {
+        success: false,
+        status: 'failed',
+        reason: 'rag_index_quality_gate_failed',
+        error,
+        ingested,
+        skippedDuplicates,
+        aliasedDuplicates,
+        indexedChunkCount,
+        totalChunks: chunks.length,
+        cleaningFallbackUsed,
+        qualityGate
+      };
     }
     
-    const ingested = chunks.length - skippedDuplicates;
-    const indexedChunkCount = ingested + aliasedDuplicates;
     await updateTrainingRagIngestStatus(trainingId, {
       status: 'success',
       error: null,
@@ -10112,7 +10205,14 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
       ingestedAt: new Date()
     });
 
-    return { success: true, ingested, skippedDuplicates, aliasedDuplicates, indexedChunkCount, totalChunks: chunks.length, cleaningFallbackUsed };
+    const cacheInvalidation = invalidateSemanticRagCaches('training_ingested', {
+      trainingId,
+      source,
+      sourceFile: resolvedSourceFile,
+      indexedChunkCount
+    });
+
+    return { success: true, ingested, skippedDuplicates, aliasedDuplicates, indexedChunkCount, totalChunks: chunks.length, cleaningFallbackUsed, qualityGate, cacheInvalidation };
   } catch (err) {
     logger.error({ err: err.message }, '[RAG] Ingest error');
     await updateTrainingRagIngestStatus(trainingId, {
@@ -13810,6 +13910,9 @@ function parseCompactRupiahNumber(raw, opts = null) {
 
 module.exports = {
   ingestTrainingData,
+  verifyTrainingIndexed,
+  countTrainingChunksInIndex,
+  invalidateSemanticRagCaches,
   query,
   computeEmbedding,
   chunkText,

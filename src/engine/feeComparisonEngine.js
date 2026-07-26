@@ -94,7 +94,7 @@ function detectProgram(question) {
   if (/\bsistem\s+(?:informasi|infomrasi|infromasi)\b/.test(q)) return { key: 'si', label: 'Sistem Informasi', family: 's1' };
   if (/\b(?:teknologi\s+informasi|teknik\s+informatika|tek\s*info|tekinfo)\b/.test(q)) return { key: 'ti', label: 'Teknologi Informasi', family: 's1' };
   if (/\b(?:bisnis|binis|bisinis)\s+digital\b/.test(q)) return { key: 'bd', label: 'Bisnis Digital', family: 's1' };
-  if (/\bmanajemen\s+informatika\b/.test(q)) return { key: 'mi', label: 'Manajemen Informatika', family: 'd3' };
+  if (/\b(manajemen\s+informatika|d3|diploma(?:\s+(?:3|tiga))?|informatic\s+diploma)\b/.test(q)) return { key: 'mi', label: 'Manajemen Informatika', family: 'd3' };
   if (/\bti\b/.test(q)) return { key: 'ti', label: 'Teknologi Informasi', family: 's1' };
   if (/\bbd\b/.test(q)) return { key: 'bd', label: 'Bisnis Digital', family: 's1' };
   if (/\bsk\b/.test(q)) return { key: 'sk', label: 'Sistem Komputer', family: 'sk' };
@@ -179,7 +179,7 @@ function detectMentionedPrograms(question) {
     { key: 'ti', label: 'Teknologi Informasi', re: /\b(ti|teknologi\s+informasi|teknik\s+informatika|tek\s*info|tekinfo)\b/ },
     { key: 'bd', label: 'Bisnis Digital', re: /\b(bd|(?:bisnis|binis|bisinis)\s+digital)\b/ },
     { key: 'sk', label: 'Sistem Komputer', re: /\b(sk|sistem\s+komputer)\b/ },
-    { key: 'mi', label: 'Manajemen Informatika', re: /\b(mi|manajemen\s+informatika)\b/ }
+    { key: 'mi', label: 'Manajemen Informatika', re: /\b(mi|manajemen\s+informatika|d3|diploma(?:\s+(?:3|tiga))?|informatic\s+diploma)\b/ }
   ];
   return specs.filter((spec) => spec.re.test(q));
 }

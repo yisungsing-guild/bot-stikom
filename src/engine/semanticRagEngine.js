@@ -239,14 +239,22 @@ function computeLexicalScore(query, content, filename = '') {
 function convertTrainingDataToCandidate(trainingData) {
   if (!trainingData) return null;
   
-  const content = String(trainingData.content || '').trim();
+  const content = cleanDocumentMarkers(String(trainingData.content || '').trim());
   if (!content) return null;
   
-  // Split content into chunks similar to RAG index structure
-  const chunkSize = 900;
-  const chunks = [];
-  for (let i = 0; i < content.length; i += chunkSize) {
-    chunks.push(content.slice(i, i + chunkSize));
+  // Use the same topic-aware chunker as the persisted RAG index. This keeps
+  // Q&A pairs, table sections, and headings together better than fixed slicing.
+  let chunks = [];
+  try {
+    chunks = ragEngine.chunkText(content, 900, 150);
+  } catch (e) {
+    chunks = [];
+  }
+  if (!chunks.length) {
+    for (let i = 0; i < content.length; i += 900) {
+      const chunk = content.slice(i, i + 900).trim();
+      if (chunk) chunks.push(chunk);
+    }
   }
   
   return chunks.map((chunk, idx) => ({
@@ -379,6 +387,56 @@ function extractGenericEntities(text) {
   return [...new Set(entities)];
 }
 
+const QUERY_ANCHOR_STOPWORDS = new Set([
+  'apa', 'apakah', 'bagaimana', 'gimana', 'berapa', 'kapan', 'dimana', 'mana',
+  'yang', 'dan', 'atau', 'untuk', 'dengan', 'pada', 'dari', 'ke', 'di', 'itu',
+  'ini', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'saya', 'aku', 'kamu', 'kak',
+  'kakak', 'min', 'admin', 'tolong', 'mohon', 'dong', 'ya', 'nih', 'nya',
+  'jelaskan', 'sebutkan', 'info', 'informasi', 'tentang', 'terkait', 'kalau',
+  'jika', 'jadi', 'adalah', 'untuknya', 'tersebut', 'kampus', 'kuliah',
+  'pendaftaran', 'daftar', 'biaya', 'harga', 'jadwal', 'syarat', 'dokumen',
+  'program', 'studi', 'prodi', 'jurusan', 'tahun', 'ajaran'
+]);
+
+function extractQueryAnchorTerms(text) {
+  const normalized = normalizeForLexicalMatch(text);
+  if (!normalized) return [];
+
+  const anchors = [];
+  const add = (value) => {
+    const v = normalizeForLexicalMatch(value);
+    if (v && !anchors.includes(v)) anchors.push(v);
+  };
+
+  const strongPatterns = [
+    /\b(sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika)\b/gi,
+    /\b(double\s+degree|dual\s+degree|student\s+exchange|international\s+program|program\s+internasional)\b/gi,
+    /\b(linkedin|career\s+center|pusat\s+karier|sion|portal\s+akademik|wisuda|yudisium|skripsi|akreditasi|kip|1k1s|dpp|ukt)\b/gi,
+    /\b(gelombang\s+(?:khusus|[0-9]+|[ivx]+)\s*[a-c]?)\b/gi,
+    /\b(si|ti|sk|bd|mi|d3|s1|s2|dnui|help|utb)\b/gi
+  ];
+
+  for (const pattern of strongPatterns) {
+    for (const match of String(text || '').matchAll(pattern)) add(match[1] || match[0]);
+  }
+
+  for (const token of normalized.split(/\s+/).filter(Boolean)) {
+    if (token.length < 3) continue;
+    if (QUERY_ANCHOR_STOPWORDS.has(token)) continue;
+    if (/^\d+$/.test(token) && (token.length < 4 || /^20\d{2}$/.test(token))) continue;
+    add(token);
+  }
+
+  return anchors.slice(0, 10);
+}
+
+function hasAnchorOverlap(question, content) {
+  const anchors = extractQueryAnchorTerms(question);
+  if (!anchors.length) return true;
+  const cNorm = normalizeForLexicalMatch(content);
+  return anchors.some((anchor) => cNorm.includes(anchor));
+}
+
 // Generic intent detection from question
 function detectGenericIntent(question) {
   const q = String(question).toLowerCase();
@@ -479,6 +537,71 @@ function computeAdminPenalty(content, question) {
 }
 
 // Generic combined scoring
+function getRequestedAcademicTargets(query) {
+  const q = normalizeForLexicalMatch(query);
+  const targets = [];
+  const add = (name, variants) => {
+    if (variants.some((v) => new RegExp('\\b' + v.replace(/\\s+/g, '\\s+') + '\\b', 'i').test(q))) {
+      targets.push({ name, variants });
+    }
+  };
+  add('SI', ['si', 'sistem informasi']);
+  add('TI', ['ti', 'teknologi informasi', 'teknik informatika']);
+  add('SK', ['sk', 'sistem komputer']);
+  add('BD', ['bd', 'bisnis digital']);
+  add('MI', ['mi', 'manajemen informatika']);
+  add('D3', ['d3', 'diploma 3', 'diploma tiga']);
+  add('DNUI', ['dnui', 'dalian neusoft']);
+  add('HELP', ['help', 'help university']);
+  add('UTB', ['utb', 'universitas teknologi bandung']);
+  return targets;
+}
+
+function targetVariantMatches(text, variants) {
+  const haystack = normalizeForLexicalMatch(text);
+  return variants.some((variant) => {
+    const v = normalizeForLexicalMatch(variant);
+    if (!v) return false;
+    return new RegExp('\\b' + v.replace(/\\s+/g, '\\s+') + '\\b', 'i').test(haystack);
+  });
+}
+
+function computeSourceIntentBoost(query, item, questionIntent = null) {
+  const intent = questionIntent || detectGenericIntent(query);
+  const filename = String((item && (item.filename || item.sourceFile)) || '').toLowerCase();
+  const chunk = String((item && item.chunk) || '');
+  const category = String((item && (item.docCategory || item.category || (item.metadata && item.metadata.docCategory))) || '').toUpperCase();
+  let boost = 0;
+
+  const requestedTargets = getRequestedAcademicTargets(query);
+  if (requestedTargets.length) {
+    const filenameMatchesTarget = requestedTargets.some((target) => targetVariantMatches(filename, target.variants));
+    const contentMatchesTarget = requestedTargets.some((target) => targetVariantMatches(filename + ' ' + chunk.slice(0, 700), target.variants));
+    if (filenameMatchesTarget) boost += 0.5;
+    else if (contentMatchesTarget) boost -= 0.2;
+    else boost -= 0.65;
+  }
+
+  if (intent === 'fee') {
+    if (/\bbiaya\b|rincian\s+biaya|dpp|ukt/i.test(filename) || category === 'BIAYA') boost += 0.25;
+    if (/kalender|jadwal/i.test(filename) || category === 'JADWAL') boost -= 0.2;
+  }
+  if (intent === 'schedule') {
+    if (/kalender|jadwal|pendaftaran/i.test(filename) || category === 'JADWAL') boost += 0.2;
+    if (/\bbiaya\b|rincian\s+biaya/i.test(filename) || category === 'BIAYA') boost -= 0.08;
+  }
+  if (intent === 'organization') {
+    if (/\b(ukm|ormawa|hima|bem|dpm|profile|profil)\b/i.test(filename)) boost += 0.2;
+  }
+  if (intent === 'program') {
+    if (/prodi|program|karier|karir/i.test(filename) || category === 'PRODI_PROFILE') boost += 0.18;
+  }
+
+  const sourceScore = computeLexicalScore(query, filename, filename);
+  if (sourceScore >= 0.4) boost += Math.min(0.18, sourceScore * 0.18);
+  return Math.max(-0.75, Math.min(0.55, boost));
+}
+
 function computeGenericScore(query, content, questionIntent = null) {
   if (!query || !content) return 0;
   
@@ -527,7 +650,7 @@ async function getDatabaseCandidates(searchQueries, options = {}) {
       if (bestScore > 0.15) { // Minimum threshold for generic match
         candidates.push({
           item: chunk,
-          score: bestScore,
+          score: Math.max(0, Math.min(1, bestScore + computeSourceIntentBoost(question, chunk, questionIntent))),
           lexicalScore: bestLexicalScore,
           semanticScore: 0,
           sourceType: 'database',
@@ -1010,7 +1133,8 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
         }
         
         // Combine semantic and generic scores
-        const combinedScore = emb ? (bestSemanticScore * 0.6 + bestGenericScore * 0.4) : bestGenericScore;
+        const sourceIntentBoost = computeSourceIntentBoost(question, item, questionIntent);
+        const combinedScore = Math.max(0, Math.min(1, (emb ? (bestSemanticScore * 0.45 + bestGenericScore * 0.45 + bestLexicalScore * 0.1) : (bestGenericScore * 0.85 + bestLexicalScore * 0.15)) + sourceIntentBoost));
         
         if (combinedScore > 0.1) {
           semanticScored.push({ 
@@ -1019,6 +1143,7 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
             lexicalScore: bestLexicalScore,
             semanticScore: bestSemanticScore,
             genericScore: bestGenericScore,
+            sourceIntentBoost,
             sourceType: 'semantic',
             intent: questionIntent
           });
@@ -1066,13 +1191,23 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     intent: s.intent || questionIntent
   }));
 
-  // Apply quality-control filtering
+  // Apply quality-control filtering. If the filter removes every otherwise
+  // relevant candidate, keep strong raw candidates instead of immediately
+  // falling back to a vague/no-data answer.
   const filteredContexts = filterSemanticContextsForQuestion(question, rawContexts);
+  const relaxedMinRaw = Number(process.env.SEMANTIC_RAG_RELAXED_MIN_SCORE || '0.16');
+  const relaxedMin = Number.isFinite(relaxedMinRaw) ? relaxedMinRaw : 0.16;
+  const contexts = filteredContexts.length
+    ? filteredContexts
+    : rawContexts.filter((ctx) => Number(ctx && ctx.score) >= relaxedMin).slice(0, topK);
 
   return {
-    contexts: filteredContexts,
-    topScore: filteredContexts.length ? filteredContexts[0].score : 0,
-    indexSize: (Array.isArray(index) ? index.length : 0) + dbCandidates.length
+    contexts,
+    topScore: contexts.length ? contexts[0].score : 0,
+    indexSize: (Array.isArray(index) ? index.length : 0) + dbCandidates.length,
+    rawContextCount: rawContexts.length,
+    filteredContextCount: filteredContexts.length,
+    relaxedFallbackUsed: !filteredContexts.length && contexts.length > 0
   };
 }
 
@@ -1212,7 +1347,7 @@ function filterSemanticContextsForQuestion(question, contexts) {
   if (!Array.isArray(contexts)) return [];
   
   const questionIntent = detectGenericIntent(question);
-  const questionEntities = extractGenericEntities(question);
+  const questionAnchors = extractQueryAnchorTerms(question);
   const isLegalQuestion = /\b(pasal|ayat|force\s*majeure|addendum|perjanjian|klausul|isi\s+pasal|legal|hukum)\b/i.test(question);
   
   return contexts.filter(ctx => {
@@ -1227,13 +1362,12 @@ function filterSemanticContextsForQuestion(question, contexts) {
     const genericScore = computeGenericScore(question, ctx.chunk, questionIntent);
     if (genericScore < 0.2) return false;
     
-    // Entity compatibility - stricter check for domain-specific entities
+    // Anchor compatibility: only require distinctive query terms. The older
+    // generic entity check treated normal question words as required entities,
+    // which made valid RAG chunks fall through to fallback answers.
+    if (!hasAnchorOverlap(question, String(ctx.chunk || '') + ' ' + String(ctx.filename || '') + ' ' + String(ctx.sourceFile || ''))) return false;
+
     const chunkEntities = extractGenericEntities(ctx.chunk);
-    const entityOverlap = questionEntities.length > 0 
-      ? questionEntities.some(e => chunkEntities.some(ce => ce.toLowerCase() === e.toLowerCase()))
-      : true;
-    
-    if (!entityOverlap) return false;
     
     // Intent compatibility - allow related intents but penalize cross-domain
     const chunkIntent = ctx.intent || detectGenericIntent(ctx.chunk);
@@ -1259,7 +1393,7 @@ function filterSemanticContextsForQuestion(question, contexts) {
     if (!intentCompatible) return false;
     
     // Additional domain-specific rejection: if question has specific domain entities, reject chunks without them
-    const hasDomainEntities = questionEntities.some(e => 
+    const hasDomainEntities = questionAnchors.some(e => 
       /\b(portal\s+akademik|sion|wisuda|yudisium|kelulusan|career\s+center|pusat\s+karier|llc|double\s+degree|dual\s+degree)\b/i.test(e)
     );
     if (hasDomainEntities) {
@@ -1283,7 +1417,7 @@ function selectEvidenceByCompatibility(question, contexts, options = {}) {
   if (!Array.isArray(contexts)) return [];
   
   const questionIntent = options.intent || detectGenericIntent(question);
-  const questionEntities = extractGenericEntities(question);
+  const questionAnchors = extractQueryAnchorTerms(question);
   const isLegalQuestion = /\b(pasal|ayat|force\s*majeure|addendum|perjanjian|klausul|isi\s+pasal|legal|hukum)\b/i.test(question);
   const maxEvidence = options.maxEvidence || 5;
   
@@ -1308,16 +1442,12 @@ function selectEvidenceByCompatibility(question, contexts, options = {}) {
       const genericScore = computeGenericScore(question, cleaned, questionIntent);
       if (genericScore < 0.25) continue;
       
-      // Entity compatibility
-      const unitEntities = extractGenericEntities(cleaned);
-      const entityOverlap = questionEntities.length > 0 
-        ? questionEntities.some(e => unitEntities.some(ue => ue.toLowerCase() === e.toLowerCase()))
-        : true;
-      
-      if (!entityOverlap) continue;
+      // Anchor compatibility: only enforce distinctive terms from the user's question.
+      const anchorOverlap = hasAnchorOverlap(question, String(cleaned || '') + ' ' + String(ctx.filename || '') + ' ' + String(ctx.sourceFile || ''));
+      if (!anchorOverlap) continue;
       
       // Factual terms check (reject generic-only matches)
-      const hasFactualTerms = /[A-Z][a-z]+|\d+/.test(cleaned) || questionEntities.length > 0;
+      const hasFactualTerms = /[A-Z][a-z]+|\d+/.test(cleaned) || questionAnchors.length > 0;
       if (!hasFactualTerms) continue;
       
       evidenceUnits.push({
@@ -1325,9 +1455,9 @@ function selectEvidenceByCompatibility(question, contexts, options = {}) {
         source: ctx.filename || ctx.sourceFile || 'unknown',
         sourceId: ctx.id || ctx.trainingId || 'unknown',
         score: genericScore,
-        entityScore: entityOverlap ? 1 : 0,
+        entityScore: anchorOverlap ? 1 : 0,
         intentScore: questionIntent === detectGenericIntent(cleaned) ? 1 : 0.5,
-        reason: `generic_score=${genericScore.toFixed(2)}; entity_overlap=${entityOverlap}`,
+        reason: `generic_score=${genericScore.toFixed(2)}; anchor_overlap=${anchorOverlap}`,
         isSelectedEvidence: true
       });
     }
@@ -1356,7 +1486,7 @@ function selectEvidenceByCompatibility(question, contexts, options = {}) {
 function evaluateGenericAnswerability(question, selectedEvidence, options = {}) {
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   const questionIntent = options.intent || detectGenericIntent(question);
-  const questionEntities = extractGenericEntities(question);
+  const questionAnchors = extractQueryAnchorTerms(question);
   
   if (!evidence.length) {
     return { answerable: false, reason: 'no_selected_evidence', missingEvidence: ['selected_evidence'] };
@@ -1386,15 +1516,9 @@ function evaluateGenericAnswerability(question, selectedEvidence, options = {}) 
     }
   }
   
-  // Check for entity presence
-  if (questionEntities.length > 0) {
-    const evidenceEntities = extractGenericEntities(combinedText);
-    const entityPresent = questionEntities.some(qe => 
-      evidenceEntities.some(ee => ee.toLowerCase() === qe.toLowerCase())
-    );
-    if (!entityPresent) {
-      missingEvidence.push('requested_entity');
-    }
+  // Check for distinctive query anchors, not generic question words.
+  if (questionAnchors.length > 0 && !hasAnchorOverlap(question, combinedText)) {
+    missingEvidence.push('requested_anchor');
   }
   
   // Check for list questions
@@ -2968,7 +3092,9 @@ function extractBestFaqAnswerFromChunk(chunk, target, targetTokens, userQuestion
   const target = extractTrainingSpecificTarget(question);
   if (!target || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
 
-  const targetTokens = target.split(/\s+/).filter((token) => token.length >= 4);
+  const targetTokens = target
+    .split(/\s+/)
+    .filter((token) => token.length >= 4 || /^(ukm|bem|dpm|hima|bos|dos|ksl|vos|u2m|jcos|mcos|pmk|ksr)$/i.test(token));
   if (!targetTokens.length) return null;
 
   const scored = [];
@@ -3700,6 +3826,64 @@ function loadUkmList() {
   return null;
 }
 
+function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
+  const name = String(ukmName || '').trim();
+  if (!name) return null;
+  const target = normalizeFacilityTerm(name);
+  const indexes = [];
+  if (Array.isArray(indexForQuery) && indexForQuery.length) indexes.push(indexForQuery);
+  try {
+    const fullIndex = ragEngine.loadIndex();
+    if (Array.isArray(fullIndex) && fullIndex.length) indexes.push(fullIndex);
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err), ukmName: name }, '[SemanticRAG] failed to load full index for UKM profile');
+  }
+
+  const seenIds = new Set();
+  const matches = [];
+  for (const index of indexes) {
+    for (const item of index) {
+      if (!item || seenIds.has(item.id)) continue;
+      seenIds.add(item.id);
+      const filename = String(item.filename || item.sourceFile || '');
+      const chunk = String(item.chunk || '').trim();
+      if (!chunk) continue;
+      const haystack = normalizeFacilityTerm(filename + ' ' + chunk);
+      const filenameNorm = normalizeFacilityTerm(filename);
+      const hasUkmSignal = /\bukm\b/i.test(filename) || /\bukm\b/i.test(chunk) || /\bunit\s+kegiatan\s+mahasiswa\b/i.test(chunk);
+      const nameMatch = haystack.includes(target) || haystack.includes('ukm ' + target);
+      const filenameMatch = filenameNorm.includes('ukm') && filenameNorm.includes(target);
+      if (!hasUkmSignal || (!nameMatch && !filenameMatch)) continue;
+      const summaryPenalty = item.isSummary ? -1 : 0;
+      const filenameBoost = filenameMatch ? 6 : 0;
+      const profileBoost = /profile|profil/i.test(filename) ? 4 : 0;
+      matches.push({ item, chunk, score: filenameBoost + profileBoost + summaryPenalty });
+    }
+  }
+
+  if (!matches.length) return null;
+  matches.sort((a, b) => b.score - a.score);
+  const best = matches[0];
+  const lines = best.chunk
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .filter((line) => !/^ringkasan\s+dokumen\s*:?$/i.test(line));
+  const body = lines
+    .join(' ')
+    .replace(/^PROFILE\s+ORGANISASI\s+/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (!body || body.length < 20) return null;
+  const answerText = body.length > 900 ? body.slice(0, 897).trim() + '...' : body;
+  const title = name.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  return {
+    answer: 'Berikut penjelasan tentang UKM ' + title + ':\n\n' + answerText,
+    source: 'semantic-rag-ukm-specific',
+    frameSource: 'semantic-rag-ukm-specific',
+    debug: { ukmProfileFromIndex: true, filename: best.item.filename || best.item.sourceFile || null }
+  };
+}
 function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
@@ -3799,6 +3983,9 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
     || /\b(apa\s+itu|itu\s+apa|apa\s+ya|maksud(?:nya)?|kepanjangan|singkatan|kegiatan(?:nya)?|aktivitas(?:nya)?|program\s+kerja|proker|jadwal|latihan|tujuan|detail|tentang|bergerak\s+di\s+bidang|bidang\s+apa|fokus(?:nya)?|divisi)\b/i.test(q)
   );
   if (asksSpecificUkmDetail) {
+    const indexedProfileAnswer = buildUkmProfileAnswerFromIndex(mentionedUkm, _indexForQuery);
+    if (indexedProfileAnswer) return indexedProfileAnswer;
+
     const profileAnswer = buildTrainingSpecificAnswerFromIndex(`ukm ${mentionedUkm} ${question}`, _indexForQuery);
     if (profileAnswer) return { ...profileAnswer, source: 'semantic-rag-ukm-specific', frameSource: 'semantic-rag-ukm-specific' };
 
@@ -5749,10 +5936,24 @@ async function querySemanticRag(question, options = {}) {
     return errorResult;
   }
 }
-function clearSemanticCaches() {
+function clearSemanticCaches(details = null) {
+  const before = {
+    resultCacheSize: semanticResultCache.size,
+    embeddingCacheSize: semanticEmbeddingCache.size,
+    hadIndexCache: Boolean(semanticIndexCache),
+    hadTrainingDbCache: Boolean(trainingDbCache)
+  };
+
   semanticResultCache.clear();
   semanticEmbeddingCache.clear();
   semanticIndexCache = null;
+  trainingDbCache = null;
+
+  if (details) {
+    logger.info({ details, before }, '[Semantic RAG] Caches invalidated');
+  }
+
+  return { success: true, before };
 }
 
 function prewarmSemanticRag() {
