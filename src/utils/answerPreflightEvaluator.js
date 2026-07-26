@@ -143,6 +143,35 @@ const OFF_TOPIC_INTENTS = {
   registration: ['ukm', 'facility', 'double_degree']
 };
 
+function isConversationalQuery(userQuery) {
+  const q = normalizeForAlignment(userQuery);
+  if (!q) return false;
+  if (detectIntentSet(q).size) return false;
+  const words = q.split(/\s+/).filter(Boolean);
+  if (words.length > 5) return false;
+  const normalizedRepeats = q.replace(/([a-z])\1{2,}/gi, '$1$1');
+  return /^(?:halo|hallo|hello|helo|hai|hi|hey|bro|sis|min|admin|kak|gan|pagi|siang|sore|malam|permisi|assalamualaikum|salam)(?:\s+(?:halo|hallo|hello|helo|hai|hi|hey|bro|sis|min|admin|kak|gan|pagi|siang|sore|malam|permisi))*$/i.test(normalizedRepeats)
+    || /^(?:apa\s+kabar|gimana\s+kabarnya|bagaimana\s+kabarnya|test|tes|makasih|terima\s+kasih|thanks|thank\s+you|ok|oke|okey|siap|baik)$/i.test(normalizedRepeats);
+}
+
+function buildConversationalFallback(userQuery) {
+  const q = normalizeForAlignment(userQuery);
+  if (/\b(?:makasih|terima\s+kasih|thanks|thank\s+you)\b/i.test(q)) {
+    return 'Sama-sama, kak. Kalau ada yang ingin ditanyakan seputar ITB STIKOM Bali, silakan chat lagi ya.';
+  }
+  if (/\b(?:ok|oke|okey|siap|baik)\b/i.test(q)) {
+    return 'Siap, kak. Ada yang bisa saya bantu lagi seputar ITB STIKOM Bali?';
+  }
+  if (/\b(?:apa\s+kabar|gimana\s+kabarnya|bagaimana\s+kabarnya)\b/i.test(q)) {
+    return 'Baik, kak. Ada yang bisa saya bantu seputar ITB STIKOM Bali?';
+  }
+  return 'Halo kak, ada yang bisa saya bantu seputar ITB STIKOM Bali?';
+}
+
+function isGenericRecoveryFallbackText(answer) {
+  return /\b(?:belum\s+mempunyai\s+jawaban\s+yang\s+cukup\s+aman|jawaban\s+yang\s+terbentuk\s+belum\s+sesuai|sistem\s+kami\s+sedang\s+kendala|pesan\s+tadi\s+belum\s+terbaca|belum\s+kebaca\s+dengan\s+benar|belum\s+menemukan\s+informasi\s+yang\s+cukup)\b/i.test(String(answer || ''));
+}
+
 function detectIntentSet(text) {
   const out = new Set();
   const value = String(text || '');
@@ -331,6 +360,7 @@ function buildGenericPreflightFallback(userQuery, reason) {
   return 'Untuk ' + topic + ', data yang saya pegang belum cukup lengkap atau belum cukup aman untuk menjawab detailnya. Jadi saya tidak akan menebak di luar informasi yang tersedia. Untuk detail resminya, kakak bisa konfirmasi ke admin kampus/PMB terkait.';
 }
 function buildPreflightFallback(userQuery, reason) {
+  if (isConversationalQuery(userQuery)) return buildConversationalFallback(userQuery);
   const topicFallback = buildGenericPreflightFallback(userQuery, reason);
   if (topicFallback) return topicFallback;
   return 'Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.';
@@ -398,33 +428,41 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   const rawFaqQnaDump = hasRawFaqQnaDump(original);
   let text = normalizeOutboundAnswerText(stripOptionalFollowupSuggestions(original));
   const issues = [];
+  const conversationalQuery = isConversationalQuery(userQuery);
 
   if (!text.trim()) {
-    issues.push('empty_answer');
     text = buildPreflightFallback(userQuery, 'empty_answer');
+    issues.push(conversationalQuery ? 'recovered_empty_conversation' : 'empty_answer');
+  }
+
+  if (conversationalQuery && isGenericRecoveryFallbackText(text)) {
+    text = buildConversationalFallback(userQuery);
+    issues.push('recovered_conversation_fallback');
   }
 
   if (!issues.length && rawFaqQnaDump) {
-    issues.push('raw_document_leak');
     text = buildPreflightFallback(userQuery, 'raw_document_leak');
+    issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
   }
 
   if (!issues.length) {
     if (hasRawTechnicalLeak(text)) {
-      issues.push('technical_leak');
       text = buildPreflightFallback(userQuery, 'technical_leak');
+      issues.push(conversationalQuery ? 'recovered_conversation_technical_leak' : 'technical_leak');
     } else if (hasDocumentSourceLeak(text)) {
-      issues.push('raw_document_leak');
       text = buildPreflightFallback(userQuery, 'raw_document_leak');
+      issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
     } else if (hasUnsafeAdministrativeLeak(text, userQuery) || hasLikelyRawDocumentLeak(text)) {
-      issues.push('raw_document_leak');
       text = buildPreflightFallback(userQuery, 'raw_document_leak');
+      issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
     } else if (hasPlaceholderOrOcrNoise(text)) {
       issues.push('placeholder_or_ocr_noise');
       text = buildPreflightFallback(userQuery, 'raw_document_leak');
     } else if (lacksConcreteItemsForApaSaja(text, userQuery)) {
       issues.push('apa_saja_without_concrete_items');
       text = buildPreflightFallback(userQuery, 'intent_conflict');
+    } else if (conversationalQuery) {
+      // Greetings and simple social replies do not need RAG alignment checks.
     } else if (!isTrustedSemanticAlignmentSource(meta && meta.source)) {
       const alignmentAudit = detectAnswerQueryMismatch(text, userQuery);
       if (alignmentAudit.mismatch) {
@@ -466,7 +504,6 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     }
   };
 }
-
 module.exports = {
   evaluateOutboundAnswer,
   normalizeOutboundAnswerText,
@@ -474,6 +511,7 @@ module.exports = {
   hasRawTechnicalLeak,
   hasDocumentSourceLeak,
   hasLikelyRawDocumentLeak,
+  isConversationalQuery,
   detectIntentConflict,
   detectAnswerQueryMismatch
 };

@@ -16372,15 +16372,33 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
       }
 
       try {
+        let recoveryAnswer = '';
+        let recoverySource = 'unhandled_error_fallback';
+        try {
+          if (isPureGreetingRestart(text)) {
+            recoveryAnswer = buildGreetingReply(text);
+            recoverySource = 'unhandled_error_greeting_recovery';
+          } else {
+            const semanticRecovery = await querySemanticRag(text, { topK: 8, mode: 'webhook_error_recovery' });
+            if (semanticRecovery && semanticRecovery.success && String(semanticRecovery.answer || '').trim()) {
+              recoveryAnswer = String(semanticRecovery.answer || '').trim();
+              recoverySource = semanticRecovery.source || 'semantic-rag-error-recovery';
+            }
+          }
+        } catch (recoveryErr) {
+          logger.warn({ err: recoveryErr && recoveryErr.message ? recoveryErr.message : String(recoveryErr) }, '[ProviderRoute] webhook error recovery answer failed');
+        }
+
         await sendBotMessage(
           chatId,
-          (getBotToneConfig().enabled
+          recoveryAnswer || (getBotToneConfig().enabled
             ? 'Maaf ya, aku lagi ada kendala jadi pesan tadi belum kebaca dengan benar.\n' +
               'Boleh kirim ulang pertanyaannya sekali lagi?\n' +
               'Kalau masih sama, balas: ADMIN biar dibantu human agent.'
             : 'Maaf kak, sistem kami sedang kendala sehingga pesan tadi belum terbaca dengan benar.\n' +
               'Boleh kirim ulang pertanyaannya sekali lagi?\n' +
-              'Kalau masih sama, balas: ADMIN agar dibantu human agent.')
+              'Kalau masih sama, balas: ADMIN agar dibantu human agent.'),
+          { source: recoverySource, sourceType: recoveryAnswer ? SOURCE_TYPES.RAG : SOURCE_TYPES.UNKNOWN }
         );
       } catch (e) {
         // swallow; sendBotMessage already logs send failures

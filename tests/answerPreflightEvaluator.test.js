@@ -203,4 +203,38 @@ describe('answerPreflightEvaluator', () => {
     expect(result.issues).toContain('raw_document_leak');
     expect(result.answer).not.toMatch(/\(F\)|\(Q\)|\(A\)|FAQ:/i);
   });
+  test('recovers greetings from generic safety or system fallbacks without blocking', () => {
+    const safeFallback = evaluateOutboundAnswer(
+      'Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.',
+      'Halo bro'
+    );
+    expect(safeFallback.blocked).toBe(false);
+    expect(safeFallback.issues).toContain('recovered_conversation_fallback');
+    expect(safeFallback.answer).toMatch(/Halo kak|bantu/i);
+    expect(safeFallback.answer).not.toMatch(/belum mempunyai jawaban|berdasarkan data/i);
+
+    const systemFallback = evaluateOutboundAnswer(
+      'Maaf kak, sistem kami sedang kendala sehingga pesan tadi belum terbaca dengan benar. Boleh kirim ulang pertanyaannya sekali lagi?',
+      'Hallo'
+    );
+    expect(systemFallback.blocked).toBe(false);
+    expect(systemFallback.answer).toMatch(/Halo kak|bantu/i);
+    expect(systemFallback.answer).not.toMatch(/sistem kami sedang kendala|belum terbaca/i);
+  });
+
+  test('keeps real RAG answers for program and fee questions unblocked', () => {
+    const si = evaluateOutboundAnswer(
+      'Sistem Informasi adalah program studi yang mempelajari perancangan, pengelolaan, dan pemanfaatan sistem informasi untuk kebutuhan organisasi dan bisnis.',
+      'Apa itu si?'
+    );
+    expect(si.blocked).toBe(false);
+    expect(si.answer).toMatch(/Sistem Informasi/i);
+
+    const fee = evaluateOutboundAnswer(
+      'Rincian biaya Program Studi Teknologi Informasi gelombang 1C: DPP Rp 10.000.000, SPP tetap Rp 3.000.000, dan biaya lainnya mengikuti ketentuan PMB yang berlaku.',
+      'Rincian biaya prodi ti gelombang 1C'
+    );
+    expect(fee.blocked).toBe(false);
+    expect(fee.answer).toMatch(/Teknologi Informasi|gelombang 1C|DPP/i);
+  });
 });
