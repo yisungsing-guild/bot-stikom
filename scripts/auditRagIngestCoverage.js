@@ -93,6 +93,62 @@ function compactRow(row, chunksInIndex) {
   };
 }
 
+function extractAcademicYear(value) {
+  const text = String(value || '');
+  const match = text.match(/(?:t\.?a\.?|tahun\s+ajaran|academic\s+year)?\s*(20\d{2})\s*[-\/]\s*(20\d{2})/i);
+  if (!match) return null;
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  return { start, end, key: `${start}-${end}` };
+}
+
+function normalizeTopicFilename(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\.[a-z0-9]{2,5}$/i, '')
+    .replace(/(?:t\.?a\.?|tahun\s+ajaran)?\s*20\d{2}\s*[-\/]\s*20\d{2}/gi, ' ')
+    .replace(/\b(?:copy|salinan|final|revisi|rev|baru|old|lama|latest|terbaru)\b/gi, ' ')
+    .replace(/[-_()\[\]{}]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildVersionConflictReport(rows, indexStats) {
+  const groups = new Map();
+  for (const row of rows) {
+    if (!row || !row.active) continue;
+    const chunksInIndex = indexStats.byTrainingId.get(String(row.id)) || 0;
+    if (chunksInIndex <= 0) continue;
+    const filename = row.filename || row.storedFilename || '';
+    const topicKey = normalizeTopicFilename(filename);
+    if (!topicKey || topicKey.length < 5) continue;
+    const year = extractAcademicYear(`${filename} ${row.content || ''}`);
+    const compact = { ...compactRow(row, chunksInIndex), topicKey, academicYear: year ? year.key : null, academicYearEnd: year ? year.end : null };
+    if (!groups.has(topicKey)) groups.set(topicKey, []);
+    groups.get(topicKey).push(compact);
+  }
+
+  const conflicts = [];
+  for (const [topicKey, items] of groups.entries()) {
+    if (items.length < 2) continue;
+    const years = [...new Set(items.map((item) => item.academicYear).filter(Boolean))];
+    const hasMixedYears = years.length > 1;
+    const latestEnd = Math.max(...items.map((item) => Number(item.academicYearEnd) || 0));
+    const stale = latestEnd > 0 ? items.filter((item) => Number(item.academicYearEnd) > 0 && Number(item.academicYearEnd) < latestEnd) : [];
+    if (!hasMixedYears && stale.length === 0) continue;
+    conflicts.push({
+      topicKey,
+      activeIndexedDocuments: items.length,
+      academicYears: years.sort(),
+      latestAcademicYearEnd: latestEnd || null,
+      staleCandidates: stale.map((item) => ({ id: item.id, filename: item.filename, academicYear: item.academicYear, chunksInIndex: item.chunksInIndex })),
+      documents: items.map((item) => ({ id: item.id, filename: item.filename, academicYear: item.academicYear, chunksInIndex: item.chunksInIndex, createdAt: item.createdAt }))
+    });
+  }
+  conflicts.sort((a, b) => b.activeIndexedDocuments - a.activeIndexedDocuments || a.topicKey.localeCompare(b.topicKey));
+  return conflicts;
+}
 async function main() {
   const projectRoot = path.resolve(__dirname, '..');
   const args = parseArgs(process.argv);
@@ -171,6 +227,8 @@ async function main() {
   const chunkCountMismatch = [];
   const indexed = [];
 
+  const versionConflicts = buildVersionConflictReport(rows, indexStats);
+
   for (const row of rows) {
     const chunksInIndex = indexStats.byTrainingId.get(String(row.id)) || 0;
     const compact = compactRow(row, chunksInIndex);
@@ -212,6 +270,8 @@ async function main() {
       successMissingIndexRows: successMissingIndex.length,
       chunkCountMismatchRows: chunkCountMismatch.length,
       orphanIndexTrainingIds: orphanTrainingIds.length,
+      versionConflictGroups: versionConflicts.length,
+      staleVersionCandidates: versionConflicts.reduce((sum, group) => sum + group.staleCandidates.length, 0),
       statusCounts: countBy(rows, (row) => row.ragIngestStatus || 'unknown'),
       sourceCounts: countBy(rows, (row) => row.source || 'unknown'),
       divisionCounts: countBy(rows, (row) => row.divisionKey || 'global')
@@ -222,7 +282,8 @@ async function main() {
     emptyContentRows: emptyContent,
     successMissingIndexRows: successMissingIndex,
     chunkCountMismatchRows: chunkCountMismatch,
-    orphanIndexTrainingIds: orphanTrainingIds
+    orphanIndexTrainingIds: orphanTrainingIds,
+    versionConflicts
   };
 
   if (outPath) {
@@ -238,6 +299,8 @@ async function main() {
     console.log(`TrainingData scanned: ${report.trainingData.scannedRows}, active: ${report.trainingData.activeRows}, indexed: ${report.trainingData.indexedRows}`);
     console.log(`Missing active: ${report.trainingData.missingActiveRows}, failed: ${report.trainingData.failedRows}, rejected: ${report.trainingData.rejectedRows}, empty content: ${report.trainingData.emptyContentRows}`);
     console.log(`Success missing from index: ${report.trainingData.successMissingIndexRows}, chunk count mismatch: ${report.trainingData.chunkCountMismatchRows}`);
+    console.log(`Version conflict groups: ${report.trainingData.versionConflictGroups}, stale version candidates: ${report.trainingData.staleVersionCandidates}`);
+    if (versionConflicts.length) console.log('\nVersion conflicts / stale candidates:\n' + versionConflicts.slice(0, 12).map((g) => `- ${g.topicKey} | years=${g.academicYears.join(', ')} | stale=${g.staleCandidates.length}`).join('\n'));
     if (missing.length) console.log('\nMissing active rows:\n' + missing.map((r) => `- ${r.id} | ${r.filename} | status=${r.ragIngestStatus} | content=${r.contentLength}`).join('\n'));
     if (failed.length) console.log('\nFailed rows:\n' + failed.map((r) => `- ${r.id} | ${r.filename} | ${r.ragIngestError || 'no error'}`).join('\n'));
     if (outPath) console.log(`\nReport written to ${outPath}`);

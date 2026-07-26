@@ -1,0 +1,103 @@
+{
+  "ok": false,
+  "generatedAt": "2026-07-26T12:35:30.966Z",
+  "envPath": "C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\tmp\\nonexistent-neon.env",
+  "filters": {
+    "includeInactive": false,
+    "onlyDivision": null
+  },
+  "indexFile": {
+    "path": "C:\\Users\\TSC-AKA\\Videos\\MARKETING\\BOTAI\\system_wa\\src\\data\\rag_index.json",
+    "bytes": 25165482,
+    "modifiedAt": "2026-07-26T12:35:05.492Z"
+  },
+  "index": {
+    "chunks": 617,
+    "uniqueTrainingIds": 69,
+    "uniqueFilenames": 69,
+    "categories": {
+      "UNKNOWN": 223,
+      "PRODI_PROFILE": 142,
+      "LOKASI": 3,
+      "BIAYA": 132,
+      "KURIKULUM": 14,
+      "PROGRAM_KHUSUS": 16,
+      "MOU": 1,
+      "ADMINISTRASI": 3,
+      "SK": 47,
+      "TEMPLATE": 3,
+      "PROSPEK_KERJA": 9,
+      "AKREDITASI": 23,
+      "JADWAL": 1
+    }
+  },
+  "trainingData": {
+    "scannedRows": 70,
+    "activeRows": 70,
+    "indexedRows": 69,
+    "missingActiveRows": 1,
+    "failedRows": 0,
+    "rejectedRows": 1,
+    "emptyContentRows": 0,
+    "successMissingIndexRows": 0,
+    "chunkCountMismatchRows": 0,
+    "orphanIndexTrainingIds": 0,
+    "versionConflictGroups": 0,
+    "staleVersionCandidates": 0,
+    "statusCounts": {
+      "success": 69,
+      "rejected": 1
+    },
+    "sourceCounts": {
+      "upload": 68,
+      "manual": 2
+    },
+    "divisionCounts": {
+      "global": 70
+    }
+  },
+  "missingActiveRows": [
+    {
+      "id": "859b9e4a-3a69-4a27-89f6-cd697df1d50e",
+      "filename": "PROFILE DPM.pdf",
+      "storedFilename": "PROFILE DPM-1784613181934.pdf",
+      "divisionKey": null,
+      "active": true,
+      "source": "upload",
+      "ragIngestStatus": "rejected",
+      "ragChunkCount": 1,
+      "chunksInIndex": 0,
+      "hasContent": true,
+      "contentLength": 14,
+      "ragIngestError": "content too short or no meaningful chunks",
+      "createdAt": "2026-07-21T05:53:02.921Z",
+      "updatedAt": "2026-07-26T11:23:43.981Z",
+      "ragIngestedAt": null
+    }
+  ],
+  "failedRows": [],
+  "rejectedRows": [
+    {
+      "id": "859b9e4a-3a69-4a27-89f6-cd697df1d50e",
+      "filename": "PROFILE DPM.pdf",
+      "storedFilename": "PROFILE DPM-1784613181934.pdf",
+      "divisionKey": null,
+      "active": true,
+      "source": "upload",
+      "ragIngestStatus": "rejected",
+      "ragChunkCount": 1,
+      "chunksInIndex": 0,
+      "hasContent": true,
+      "contentLength": 14,
+      "ragIngestError": "content too short or no meaningful chunks",
+      "createdAt": "2026-07-21T05:53:02.921Z",
+      "updatedAt": "2026-07-26T11:23:43.981Z",
+      "ragIngestedAt": null
+    }
+  ],
+  "emptyContentRows": [],
+  "successMissingIndexRows": [],
+  "chunkCountMismatchRows": [],
+  "orphanIndexTrainingIds": [],
+  "versionConflicts": []
+}

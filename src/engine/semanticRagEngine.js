@@ -566,6 +566,58 @@ function targetVariantMatches(text, variants) {
   });
 }
 
+function extractAcademicYearValue(value) {
+  const text = String(value || '');
+  const match = text.match(/(?:t\.?a\.?|tahun\s+ajaran|academic\s+year)?\s*(20\d{2})\s*[-\/]\s*(20\d{2})/i);
+  if (!match) return null;
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  return { start, end, key: start + '-' + end };
+}
+
+function getCurrentAcademicYearValue() {
+  const today = getSemanticTodayYmd();
+  const year = Number(String(today).slice(0, 4));
+  const month = Number(String(today).slice(5, 7));
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
+  const start = month >= 7 ? year : year - 1;
+  return { start, end: start + 1, key: start + '-' + (start + 1) };
+}
+
+function computeDocumentFreshnessBoost(query, item) {
+  const filename = String((item && (item.filename || item.sourceFile)) || '');
+  const chunk = String((item && item.chunk) || '');
+  const version = String((item && item.trainingVersion) || '');
+  const haystack = [filename, version, chunk.slice(0, 900)].join(' ');
+  const docYear = extractAcademicYearValue(haystack);
+  const requestedYear = extractAcademicYearValue(query);
+  const currentYear = getCurrentAcademicYearValue();
+  let boost = 0;
+
+  if (requestedYear && docYear) {
+    if (docYear.start === requestedYear.start && docYear.end === requestedYear.end) boost += 0.22;
+    else boost -= 0.28;
+  } else if (docYear && currentYear) {
+    if (docYear.start === currentYear.start && docYear.end === currentYear.end) boost += 0.14;
+    else if (docYear.end < currentYear.end) boost -= Math.min(0.24, 0.08 * Math.max(1, currentYear.end - docYear.end));
+    else if (docYear.end > currentYear.end) boost += 0.08;
+  }
+
+  const createdAt = Date.parse(String((item && (item.createdAt || item.updatedAt)) || ''));
+  if (Number.isFinite(createdAt)) {
+    const ageDays = Math.max(0, (Date.now() - createdAt) / 86400000);
+    if (ageDays <= 30) boost += 0.08;
+    else if (ageDays <= 120) boost += 0.04;
+  }
+
+  if (/\b(terbaru|sekarang|saat\s+ini|current|latest|tahun\s+ini)\b/i.test(query) && docYear && currentYear) {
+    if (docYear.end >= currentYear.end) boost += 0.1;
+    else boost -= 0.1;
+  }
+
+  return Math.max(-0.32, Math.min(0.26, boost));
+}
 function computeSourceIntentBoost(query, item, questionIntent = null) {
   const intent = questionIntent || detectGenericIntent(query);
   const filename = String((item && (item.filename || item.sourceFile)) || '').toLowerCase();
@@ -597,9 +649,11 @@ function computeSourceIntentBoost(query, item, questionIntent = null) {
     if (/prodi|program|karier|karir/i.test(filename) || category === 'PRODI_PROFILE') boost += 0.18;
   }
 
+  boost += computeDocumentFreshnessBoost(query, item);
+
   const sourceScore = computeLexicalScore(query, filename, filename);
   if (sourceScore >= 0.4) boost += Math.min(0.18, sourceScore * 0.18);
-  return Math.max(-0.75, Math.min(0.55, boost));
+  return Math.max(-0.85, Math.min(0.68, boost));
 }
 
 function computeGenericScore(query, content, questionIntent = null) {

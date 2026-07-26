@@ -19,6 +19,7 @@
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 const { PrismaClient } = require('@prisma/client');
 const logger = require('../src/logger');
 
@@ -37,6 +38,8 @@ const CONFIG = {
   BROADCAST_ARCHIVE_DAYS: parseInt(process.env.MAINTENANCE_BROADCAST_DAYS || '90', 10),
   TEMP_CLEANUP_DAYS: parseInt(process.env.MAINTENANCE_TEMP_DAYS || '7', 10),
   LOG_CLEANUP_DAYS: parseInt(process.env.MAINTENANCE_LOG_DAYS || '14', 10),
+  RAG_AUDIT_ENABLED: String(process.env.MAINTENANCE_RAG_AUDIT_ENABLED || 'true').toLowerCase() !== 'false',
+  RAG_AUDIT_TIMEOUT_MS: parseInt(process.env.MAINTENANCE_RAG_AUDIT_TIMEOUT_MS || '60000', 10),
 };
 
 const DRY_RUN = process.argv.includes('--dry-run');
@@ -370,6 +373,77 @@ async function maintenanceDatabase() {
 // MAIN EXECUTION
 // ============================================================================
 
+// ============================================================================
+// 7. RAG INGEST HEALTH AUDIT
+// ============================================================================
+
+function runNodeScript(scriptPath, args = [], options = {}) {
+  return new Promise((resolve) => {
+    const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 60000;
+    const child = spawn(process.execPath, [scriptPath, ...args], {
+      cwd: path.resolve(__dirname, '..'),
+      env: process.env,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    let stdout = '';
+    let stderr = '';
+    let finished = false;
+    const timer = setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      child.kill('SIGTERM');
+      resolve({ code: 124, stdout, stderr: stderr + '\nTimed out after ' + timeoutMs + 'ms' });
+    }, timeoutMs);
+    child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
+    child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+    child.on('close', (code) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      resolve({ code, stdout, stderr });
+    });
+    child.on('error', (err) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      resolve({ code: 1, stdout, stderr: stderr + '\n' + (err && err.message ? err.message : String(err)) });
+    });
+  });
+}
+
+async function auditRagIngestHealth() {
+  if (!CONFIG.RAG_AUDIT_ENABLED) {
+    await logMaintenance('auditRagIngestHealth', 'success', { skipped: true, reason: 'disabled' });
+    return { skipped: true };
+  }
+
+  const reportsDir = path.resolve(__dirname, '..', 'reports');
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const outPath = path.join(reportsDir, 'rag_ingest_health_' + stamp + '.json');
+  const scriptPath = path.resolve(__dirname, 'auditRagIngestCoverage.js');
+  const args = ['--json', '--allowDbDown', '--out', outPath];
+  if (!DRY_RUN) args.push('--failOnMissing');
+
+  const result = await runNodeScript(scriptPath, args, { timeoutMs: CONFIG.RAG_AUDIT_TIMEOUT_MS });
+  let parsed = null;
+  try { parsed = JSON.parse(result.stdout); } catch (_) {}
+  const summary = parsed && parsed.trainingData ? parsed.trainingData : null;
+  const status = result.code === 0 ? 'success' : 'error';
+  await logMaintenance('auditRagIngestHealth', status, {
+    code: result.code,
+    reportPath: outPath,
+    summary,
+    stderr: result.stderr ? result.stderr.slice(0, 1000) : null
+  });
+
+  return {
+    ok: result.code === 0 && (!parsed || parsed.ok !== false),
+    code: result.code,
+    reportPath: outPath,
+    summary,
+    error: result.code === 0 ? null : (result.stderr || 'rag audit failed').slice(0, 1000)
+  };
+}
 async function runMaintenance() {
   const startTime = Date.now();
   const results = {};
@@ -387,6 +461,7 @@ async function runMaintenance() {
     results.cleanupOldBroadcasts = await cleanupOldBroadcasts();
     results.cleanupTempFiles = await cleanupTempFiles();
     results.maintenanceDatabase = await maintenanceDatabase();
+    results.auditRagIngestHealth = await auditRagIngestHealth();
 
     const duration = Date.now() - startTime;
     
@@ -474,4 +549,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runMaintenance, cleanupOldSessions, cleanupSessionFlags, cleanupOldUploads, cleanupOldBroadcasts, cleanupTempFiles, maintenanceDatabase };
+module.exports = { runMaintenance, cleanupOldSessions, cleanupSessionFlags, cleanupOldUploads, cleanupOldBroadcasts, cleanupTempFiles, maintenanceDatabase, auditRagIngestHealth };

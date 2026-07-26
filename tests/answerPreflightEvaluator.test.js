@@ -177,4 +177,30 @@ describe('answerPreflightEvaluator', () => {
     expect(result.blocked).toBe(true);
     expect(result.issues).toContain('raw_document_leak');
   });
+  test('strips or blocks QNA/FAQ document source leaks before outbound send', () => {
+    const cleaned = evaluateOutboundAnswer(
+      'Sumber: QNA Bot - Hi-Think.docx\nQ: Apa itu Hi-Think?\nA: Hi-Think adalah program pendampingan karier untuk persiapan kerja di Jepang.',
+      'apa itu hi-think?'
+    );
+    expect(cleaned.answer).not.toMatch(/QNA Bot|\.docx|Sumber:|^Q:|^A:/im);
+    expect(cleaned.answer).toMatch(/Hi-Think|pendampingan karier/i);
+
+    const leaked = evaluateOutboundAnswer(
+      'Jawaban berdasarkan konteks training dari PROFILE ORGANISASI UKM BOS.docx: UKM BOS adalah organisasi badminton.',
+      'apa itu ukm bos?'
+    );
+    expect(leaked.blocked).toBe(true);
+    expect(leaked.issues.some((issue) => ['raw_document_leak', 'missing_requested_entity', 'answer_query_mismatch'].includes(issue))).toBe(true);
+    expect(leaked.answer).not.toMatch(/PROFILE ORGANISASI|\.docx|konteks training/i);
+  });
+
+  test('blocks residual multi-marker FAQ/QNA dumps', () => {
+    const result = evaluateOutboundAnswer(
+      '(F) Fakta internal (Q) Apa biaya SI? (A) Biaya SI mengikuti dokumen PMB. FAQ: Jangan tampilkan format ini.',
+      'berapa biaya SI?'
+    );
+    expect(result.blocked).toBe(true);
+    expect(result.issues).toContain('raw_document_leak');
+    expect(result.answer).not.toMatch(/\(F\)|\(Q\)|\(A\)|FAQ:/i);
+  });
 });

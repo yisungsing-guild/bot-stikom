@@ -4,11 +4,23 @@ function envFlag(name, fallback = false) {
   return /^(1|true|yes|on)$/i.test(String(raw).trim());
 }
 
+function stripDocumentSourceReferences(text) {
+  let out = String(text || '');
+  const fileExt = String.raw`(?:pdf|docx?|xlsx?|pptx?|txt|csv|jpg|jpeg|png|webp|mp4|mp3)`;
+  out = out.replace(new RegExp(String.raw`\s*\((?:sumber|source|file|filename|sourceFile|dokumen|document)\s*[:=-]\s*[^)]*\.${fileExt}\b[^)]*\)`, 'gi'), ' ');
+  out = out.replace(new RegExp(String.raw`(?:^|\n)\s*(?:sumber|source|file|filename|sourceFile|dokumen|document)\s*[:=-]\s*[^\n]*\.${fileExt}\b[^\n]*`, 'gi'), '\n');
+  out = out.replace(new RegExp(String.raw`\b(?:berdasarkan|mengacu pada|diambil dari|dari)\s+(?:dokumen|file|konteks\s+training|training\s+data|data\s+training)\s+[^\n.]{0,160}\.${fileExt}\b[^\n.]*[.]?`, 'gi'), '');
+  out = out.replace(new RegExp(String.raw`\b(?:QNA|FAQ)\s+(?:Bot\s+-\s+)?[^\n.]{0,120}\.${fileExt}\b`, 'gi'), '');
+  out = out.replace(/\b(?:berdasarkan|mengacu pada)\s+(?:konteks\s+training|training\s+data|data\s+training|chunk|retrieval)\b[,.]?\s*/gi, '');
+  out = out.replace(/\b(?:trainingId|sourceFile|docCategory|ragChunkCount|ragIngestStatus|embedding)\s*[:=-]\s*[^\n]+/gi, '');
+  return out;
+}
 function normalizeOutboundAnswerText(text) {
   let out = String(text || '');
   if (!out.trim()) return '';
 
   out = out.replace(/\u00A0/g, ' ');
+  out = stripDocumentSourceReferences(out);
   const faqQuestionLabel = String.raw`(?:\([QF]\)|[QF]\s*[:.-]|FAQ\s*[:.-]|Question\s*[:.-]|Pertanyaan\s*[:.-]|Tanya\s*[:.-])`;
   const faqAnswerLabel = String.raw`(?:\(A\)|A\s*[:.-]|Answer\s*[:.-]|Jawaban\s*[:.-]|Jawab\s*[:.-])`;
   // Strip inline FAQ/QNA labels and keep only the answer portion for user-facing replies.
@@ -38,9 +50,17 @@ function stripOptionalFollowupSuggestions(text) {
 
 function hasRawTechnicalLeak(text) {
   const out = String(text || '');
-  return /\b(?:SOURCE_CHUNKS|CONFIDENCE|CONTEXT:|ASSIST_HINTS|TRACE_|relevance_audit|trainingId|docCategory|embedding)\b/i.test(out);
+  return /\b(?:SOURCE_CHUNKS|CONFIDENCE|CONTEXT:|ASSIST_HINTS|TRACE_|relevance_audit|trainingId|sourceFile|ragChunkCount|ragIngestStatus|docCategory|embedding)\b/i.test(out);
 }
 
+function hasDocumentSourceLeak(text) {
+  const out = String(text || '');
+  const fileExtLeak = /\b[\w .()\[\]-]{2,160}\.(?:pdf|docx?|xlsx?|pptx?|txt|csv|jpg|jpeg|png|webp|mp4|mp3)\b/i.test(out);
+  const explicitSourceLeak = /\b(?:sumber|source|file|filename|sourceFile|dokumen|document)\s*[:=-]\s*[^\n]{3,180}/i.test(out);
+  const trainingPhraseLeak = /\b(?:berdasarkan|mengacu pada|diambil dari|dari)\s+(?:dokumen|file|konteks\s+training|training\s+data|data\s+training|chunk|retrieval)\b/i.test(out);
+  const qnaFileLeak = /\b(?:QNA|FAQ)\s+(?:Bot\s+-\s+)?[A-Za-z0-9 ._-]{2,80}\b/i.test(out) && /\b(?:dokumen|file|source|sumber|docx|pdf)\b/i.test(out);
+  return fileExtLeak || explicitSourceLeak || trainingPhraseLeak || qnaFileLeak;
+}
 function isExplicitLegalDocumentQuestion(userQuery) {
   return /\b(?:isi\s+)?pasal\s+\d+|ayat\s*\(\d+\)|force\s+majeure|addendum|klausul|perjanjian|kontrak|nota\s+kesepahaman|mou|moa|pihak\s+pertama|pihak\s+kedua|dokumen\s+(?:legal|hukum|kerja\s*sama)|surat\s+keputusan|\bSK\b/i.test(String(userQuery || ''));
 }
@@ -68,6 +88,13 @@ function hasUnsafeAdministrativeLeak(answer, userQuery = '') {
   ];
   return rawMarkers.some((pattern) => pattern.test(out));
 }
+function hasRawFaqQnaDump(text) {
+  const out = String(text || '');
+  const inlineFaqMarkerCount = (out.match(/\((?:F|Q|A)\)/gi) || []).length;
+  const lineFaqMarkerCount = (out.match(/(?:^|\n)\s*(?:FAQ|QNA|Q|A|F|Question|Answer|Pertanyaan|Jawaban|Tanya|Jawab)\s*[:\-.]/gi) || []).length;
+  const hasFaqHeaderWithQa = /(?:^|\n)\s*(?:FAQ|QNA)\s*[:\-.]/i.test(out) && lineFaqMarkerCount >= 2;
+  return inlineFaqMarkerCount >= 2 || lineFaqMarkerCount >= 3 || hasFaqHeaderWithQa;
+}
 function hasLikelyRawDocumentLeak(text) {
   const out = String(text || '');
   const lower = out.toLowerCase();
@@ -87,10 +114,11 @@ function hasLikelyRawDocumentLeak(text) {
     /\bJalan\s+Raya\s+Puputan\s+Nomor\s+86\b/i,
     /\btemplate\s+PKS\b/i
   ];
-  const faqMarkerCount = (out.match(/(?:^|\n)\s*(?:FAQ|Q|A|F|Question|Answer|Pertanyaan|Jawaban)\s*[:\-.]/gi) || []).length;
+  const faqMarkerCount = (out.match(/(?:^|\n)\s*(?:FAQ|QNA|Q|A|F|Question|Answer|Pertanyaan|Jawaban|Tanya|Jawab)\s*[:\-.]/gi) || []).length;
+  const inlineFaqMarkerCount = (out.match(/\((?:F|Q|A)\)/gi) || []).length;
   const legalMarkerCount = legalMarkers.filter((re) => re.test(out)).length;
-  const placeholderLike = /_{5,}|\.{8,}|:{3,}|ï¿½{2,}|(?:nomor\s*:\s*(?:\.{4,}|ï¿½+|\([^)]*\)))|(?:E\s*-\s*mail\s*:::)/i.test(out);
-  return faqMarkerCount >= 3 || legalMarkerCount >= 2 || (legalMarkerCount >= 1 && placeholderLike) || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
+  const placeholderLike = /_{5,}|\.{8,}|:{3,}|\?{4,}|(?:nomor\s*:\s*(?:\.{4,}|\?{4,}|\([^)]*\)))|(?:E\s*-\s*mail\s*:::)/i.test(out);
+  return faqMarkerCount >= 2 || inlineFaqMarkerCount >= 2 || legalMarkerCount >= 2 || (legalMarkerCount >= 1 && placeholderLike) || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
 }
 
 
@@ -367,6 +395,7 @@ function decidePreflightAction(issues, meta = {}) {
 }
 function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   const original = String(answer || '');
+  const rawFaqQnaDump = hasRawFaqQnaDump(original);
   let text = normalizeOutboundAnswerText(stripOptionalFollowupSuggestions(original));
   const issues = [];
 
@@ -375,10 +404,18 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     text = buildPreflightFallback(userQuery, 'empty_answer');
   }
 
+  if (!issues.length && rawFaqQnaDump) {
+    issues.push('raw_document_leak');
+    text = buildPreflightFallback(userQuery, 'raw_document_leak');
+  }
+
   if (!issues.length) {
     if (hasRawTechnicalLeak(text)) {
       issues.push('technical_leak');
       text = buildPreflightFallback(userQuery, 'technical_leak');
+    } else if (hasDocumentSourceLeak(text)) {
+      issues.push('raw_document_leak');
+      text = buildPreflightFallback(userQuery, 'raw_document_leak');
     } else if (hasUnsafeAdministrativeLeak(text, userQuery) || hasLikelyRawDocumentLeak(text)) {
       issues.push('raw_document_leak');
       text = buildPreflightFallback(userQuery, 'raw_document_leak');
@@ -435,6 +472,7 @@ module.exports = {
   normalizeOutboundAnswerText,
   stripOptionalFollowupSuggestions,
   hasRawTechnicalLeak,
+  hasDocumentSourceLeak,
   hasLikelyRawDocumentLeak,
   detectIntentConflict,
   detectAnswerQueryMismatch

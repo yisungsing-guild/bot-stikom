@@ -40,7 +40,9 @@
     "test:integration": "jest --runInBand tests/providerWebhook.test.js tests/messageExamples.test.js",
     "test:uat": "jest --runInBand tests/providerRealUat.test.js",
     "test:handles": "jest --runInBand --detectOpenHandles",
-    "diagnostic:run21": "node scripts/run21Diagnostic.js"
+    "diagnostic:run21": "node scripts/run21Diagnostic.js",
+    "rag:health": "node scripts/auditRagIngestCoverage.js --failOnMissing",
+    "rag:health:json": "node scripts/auditRagIngestCoverage.js --json --failOnMissing"
   },
   "engines": {
     "node": ">=20.0.0"
