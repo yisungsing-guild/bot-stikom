@@ -144,6 +144,62 @@ const INTENT_CATALOG = {
     ]
   },
 
+  PROSEDUR_PENDAFTARAN: {
+    key: 'PROSEDUR_PENDAFTARAN',
+    label: 'Prosedur Pendaftaran',
+    docCategories: ['JADWAL', 'ADMINISTRASI'],
+    requiredEvidenceKeywords: ['cara', 'langkah', 'prosedur', 'alur', 'daftar', 'pendaftaran', 'registrasi', 'mendaftar', 'tahap', 'step'],
+    forbiddenDocCategories: ['MOU', 'SK', 'SURAT', 'TEMPLATE'],
+    description: 'Menanyakan tentang cara/alur proses pendaftaran',
+    examples: [
+      'Bagaimana cara mendaftar?',
+      'Alur pendaftaran online?',
+      'Langkah-langkah daftar PMB'
+    ]
+  },
+
+  DAFTAR_PROGRAM: {
+    key: 'DAFTAR_PROGRAM',
+    label: 'Daftar Program/Jurusan',
+    docCategories: ['PRODI_PROFILE'],
+    requiredEvidenceKeywords: ['apa saja', 'daftar', 'list', 'pilihan', 'macam', 'tersedia', 'program studi', 'prodi', 'jurusan'],
+    forbiddenDocCategories: ['ADMINISTRASI', 'MOU', 'SK', 'SURAT', 'TEMPLATE'],
+    description: 'Menanyakan daftar program studi atau jurusan yang tersedia',
+    examples: [
+      'Apa saja jurusan yang tersedia?',
+      'Daftar program studi',
+      'Pilihan prodi apa saja?'
+    ]
+  },
+
+  PERBANDINGAN: {
+    key: 'PERBANDINGAN',
+    label: 'Perbandingan Program',
+    docCategories: ['PRODI_PROFILE', 'KURIKULUM', 'PROSPEK_KERJA'],
+    requiredEvidenceKeywords: ['perbedaan', 'beda', 'bandingkan', 'lebih baik', 'mana', 'vs', 'versus'],
+    forbiddenDocCategories: ['ADMINISTRASI', 'MOU', 'SK', 'SURAT', 'TEMPLATE'],
+    description: 'Menanyakan perbandingan antara program studi',
+    examples: [
+      'Apa perbedaan TI dan SI?',
+      'Beda TI dengan SI?',
+      'Mana lebih baik TI atau SI?'
+    ]
+  },
+
+  REKOMENDASI: {
+    key: 'REKOMENDASI',
+    label: 'Rekomendasi Program',
+    docCategories: ['PRODI_PROFILE', 'PROSPEK_KERJA'],
+    requiredEvidenceKeywords: ['cocok', 'rekomendasi', 'pilih', 'mana yang cocok', 'jurusan apa', 'prodi apa', 'saran'],
+    forbiddenDocCategories: ['ADMINISTRASI', 'MOU', 'SK', 'SURAT', 'TEMPLATE'],
+    description: 'Menanyakan rekomendasi program studi yang cocok',
+    examples: [
+      'Jurusan apa yang cocok untuk saya?',
+      'Prodi apa yang sebaiknya saya ambil?',
+      'Rekomendasi jurusan untuk saya'
+    ]
+  },
+
   GENERAL: {
     key: 'GENERAL',
     label: 'Pertanyaan Umum',
@@ -220,6 +276,30 @@ function classifyIntent(question) {
   // PROGRAM_KHUSUS
   if (/\b(double\s+degree|dual\s+degree|internasional|dnui|utb|help|kelas\s+internasional|kelas\s+nasional|china|bali|malaysia|program\s+khusus)\b/i.test(q)) {
     return 'PROGRAM_KHUSUS';
+  }
+
+  // PROSEDUR_PENDAFTARAN
+  if (/\b(cara|langkah|prosedur|alur|tahap|step)\b/i.test(q) &&
+      /\b(daftar|pendaftaran|registrasi|mendaftar|pmb)\b/i.test(q)) {
+    return 'PROSEDUR_PENDAFTARAN';
+  }
+
+  // DAFTAR_PROGRAM
+  if (/\b(apa\s+saja|daftar|list|pilihan|macam|tersedia)\b/i.test(q) &&
+      /\b(program\s+studi|prodi|jurusan)\b/i.test(q)) {
+    return 'DAFTAR_PROGRAM';
+  }
+
+  // PERBANDINGAN
+  if (/\b(perbedaan|beda|bandingkan|lebih\s+baik|mana|vs|versus)\b/i.test(q) &&
+      /\b(si|ti|bd|sk|mi|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika)\b/i.test(q)) {
+    return 'PERBANDINGAN';
+  }
+
+  // REKOMENDASI
+  if (/\b(cocok|rekomendasi|pilih|saran)\b/i.test(q) &&
+      /\b(jurusan|prodi|program\s+studi|untuk\s+saya)\b/i.test(q)) {
+    return 'REKOMENDASI';
   }
 
   return 'GENERAL';

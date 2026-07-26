@@ -11,7 +11,12 @@ const globalKey = '__system_wa_prisma__';
 /** @type {import('@prisma/client').PrismaClient} */
 let prisma = (process && process[globalKey]) || globalThis[globalKey];
 if (!prisma) {
-	prisma = new PrismaClient();
+	const databaseUrl = String(process.env.DATABASE_URL || '').trim();
+	const prismaConfig = {};
+	if (databaseUrl) {
+		prismaConfig.datasources = { db: { url: databaseUrl } };
+	}
+	prisma = new PrismaClient(prismaConfig);
 	// Cache for the lifetime of the process.
 	process[globalKey] = prisma;
 	if (process.env.NODE_ENV !== 'production') {

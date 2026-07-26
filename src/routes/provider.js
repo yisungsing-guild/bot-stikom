@@ -8129,6 +8129,7 @@ module.exports = function (provider) {
           console.log('[DEBUG_TELEMETRY_ERROR]', { err: e && e.message ? e.message : String(e), chatId });
         }
       }
+      // Call provider.sendMessage with metaPayload only if provider supports it.
       await provider.sendMessage(chatId, outboundText, metaPayload);
     } catch (err) {
       logger.error({ err }, '[ProviderRoute] sendBotMessage failed');

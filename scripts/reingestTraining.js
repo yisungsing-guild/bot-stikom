@@ -1,4 +1,13 @@
-require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+// Load production.local env explicitly
+const prodLocal = path.join(process.cwd(), '.env.production.local');
+if (fs.existsSync(prodLocal)) {
+  require('dotenv').config({ path: prodLocal, override: true });
+} else {
+  require('dotenv').config();
+}
 
 const prisma = require('../src/db');
 const { ingestTrainingData } = require('../src/engine/ragEngine');

@@ -87,6 +87,7 @@ function detectProgram(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(dnui|dalian\s+neusoft)\b/.test(q)) return { key: 'dnui', label: 'Double Degree DNUI', family: 'international' };
   if (/\b(help\s+university|help\b.*malaysia|biaya\s+pendaftaran\s+help\b|pendaftaran\s+help\b|help)\b/.test(q)) return { key: 'help', label: 'Double Degree HELP University', family: 'international' };
+  if (/\b(?:double|dual)\s*degree\b/.test(q) && /\b(sistem\s+informasi|si\b)\b/.test(q)) return { key: 'help', label: 'Double Degree HELP University', family: 'international' };
   if (/\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q)) return { key: 'utb', label: 'Double Degree UTB', family: 'utb' };
   if (/\b(s2|pascasarjana|magister|master)\b/.test(q)) return { key: 's2', label: 'S2 Sistem Informasi', family: 's2' };
   if (/\bsistem\s+komputer\b/.test(q)) return { key: 'sk', label: 'Sistem Komputer', family: 'sk' };
@@ -541,7 +542,7 @@ function tryProgramRecommendationAnswer(question) {
   const centralFitAnswer = buildProgramFitAnswer(question);
 
   const asksRecommendation = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|jurusan\s+yang\s+mana|prodi\s+yang\s+mana|program\s+yang\s+mana|masuk\s+jurusan\s+apa|ambil\s+jurusan\s+apa)\b/.test(q);
-  const hasCareerGoal = /\b(ingin|mau|pengen|nanti|kerja|bekerja|karir|karier|perusahaan|menjadi|jadi|minat|hobi|hobby|suka|senang|takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert)\b/.test(q);
+  const hasCareerGoal = /\b(ingin|mau|pengen|nanti|kerja|bekerja|karir|karier|perusahaan|menjadi|jadi|minat|hobi|hobby|suka|senang|takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert|designer|desainer|ui\/ux|uiux|ux|produk\s+digital)\b/.test(q);
   const asksMajor = /\b(jurusan|prodi|program\s+studi|kuliah)\b/.test(q);
 
   const dataInterest = /\b(mengolah\s+data|olah\s+data|analisis\s+data|menganalisa\s+data|menganalisis\s+data|data\s+analyst|data\s+analis|business\s+intelligence|bi\b|dashboard|basis\s+data|database|sql|analytics|analitik)\b/.test(q);
@@ -560,11 +561,44 @@ function tryProgramRecommendationAnswer(question) {
 
   const careerProfile = detectCareerProfile(question);
   const asksSuitability = /\b(cocok|sesuai|bisa|bs|boleh|tidak\s+cocok|nggak\s+cocok|ga\s+cocok|gak\s+cocok|kurang\s+cocok|ambil|mengambil|pilih)\b/.test(q);
+  if (careerProfile && !mentionedPrograms.length) {
+    const programLabels = { si: 'Sistem Informasi (SI)', ti: 'Teknologi Informasi (TI)', bd: 'Bisnis Digital (BD)', sk: 'Sistem Komputer (SK)', mi: 'Manajemen Informatika (MI)' };
+    const primary = programLabels[careerProfile.primary] || 'program yang paling relevan';
+    const primaryFit = careerProfile.fit && careerProfile.fit[careerProfile.primary] ? careerProfile.fit[careerProfile.primary].text : '';
+    const alternatives = (careerProfile.alternative || []).map((key) => programLabels[key]).filter(Boolean);
+    return {
+      answer: [
+        'Pilihan utama yang paling dekat adalah ' + primary + '.',
+        '',
+        primaryFit,
+        alternatives.length ? 'Alternatif yang juga bisa dipertimbangkan: ' + alternatives.join(', ') + '.' : null,
+        '',
+        'Jadi, untuk arah ' + careerProfile.label + ', pilih prodi berdasarkan sisi yang paling kakak minati: produk/bisnis, implementasi teknis, atau analisis kebutuhan pengguna.'
+      ].filter(Boolean).join('\n')
+    };
+  }
   if (careerProfile && mentionedPrograms.length === 1 && asksSuitability) {
     return formatProgramCareerFitAnswer(mentionedPrograms[0], careerProfile);
   }
 
   if (!asksRecommendation && !(hasCareerGoal && (asksMajor || hasStrongInterestSignal || careerProfile))) return null;
+
+  if (asksRecommendation && asksMajor && !hasStrongInterestSignal && !careerProfile && !mentionedPrograms.length) {
+    return {
+      answer: [
+        'Bisa, Kak. Supaya rekomendasinya tepat, saya perlu tahu minat atau tujuan kakak dulu.',
+        '',
+        'Sebagai gambaran awal:',
+        '',
+        '- Teknologi Informasi (TI): cocok kalau kakak suka coding, aplikasi, jaringan, cloud, atau keamanan sistem.',
+        '- Sistem Informasi (SI): cocok kalau kakak suka data, analisis kebutuhan, proses bisnis, dan solusi sistem untuk organisasi.',
+        '- Bisnis Digital (BD): cocok kalau kakak suka bisnis, digital marketing, e-commerce, konten, atau wirausaha digital.',
+        '- Sistem Komputer (SK): cocok kalau kakak suka hardware, IoT, jaringan, embedded system, atau integrasi perangkat.',
+        '',
+        'Kalau kakak ceritakan minatnya, misalnya suka coding, desain bisnis, data, atau hardware, saya bisa bantu pilihkan prodi yang paling dekat.'
+      ].join('\n')
+    };
+  }
 
   const centralPrimaryKey = centralFitAnswer && centralFitAnswer.candidates && centralFitAnswer.candidates[0] && centralFitAnswer.candidates[0].program ? centralFitAnswer.candidates[0].program.key : '';
   const shouldPreferCentralFit = /\b(takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert|menggambar|gambar|ilustrasi|desain|dkv|visual)\b/.test(q);
@@ -955,6 +989,23 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
   const hasContextualFeeSignal = /\b(cek\s+lagi|coba\s+cek|itu|yang\s+(?:double|dual)\s*degree|yang\s+help)\b/i.test(q) && /\b(biaya|rincian|detail|dpp|ukt|semester|pendaftaran|registrasi|harga|bayar)\b/i.test(sessionText);
   if (!hasOwnFeeSignal && !hasContextualFeeSignal) return null;
   if (isRegistrationFeeQuestion(question) && !/\b(rincian|detail|dpp|ukt|awal(?:nya)?|masuk|total\s+(?:awal|kuliah)|semua)\b/.test(q)) return null;
+  if (/\b(double|dual)\s*degree\b/i.test(q) && /\b(teknologi\s+informasi|ti)\b/i.test(q) && !/\b(help|dnui|utb|dalian|undiknas|bandung)\b/i.test(q)) {
+    return {
+      answer: [
+        'Saya belum menemukan data biaya Program Double Degree untuk Teknologi Informasi pada dokumen biaya yang tersedia.',
+        '',
+        'Data Double Degree yang tersedia di dokumen adalah:',
+        '- Double Degree HELP University untuk Sistem Informasi',
+        '- Double Degree DNUI untuk Bisnis Digital',
+        '- Double Degree UTB Bandung untuk Bisnis Digital',
+        '',
+        'Jadi saya tidak mengambil biaya Teknologi Informasi reguler sebagai jawaban Double Degree, supaya nominalnya tidak keliru.'
+      ].join('\n'),
+      program: null,
+      profile: null,
+      wave: null
+    };
+  }
   const wave = normalizeWave(question);
   const found = feeProfileByProgram(question, index);
 
@@ -1122,8 +1173,27 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
       wave: null
     };
   }
+  const englishFee = /(and the|international student|help university|fee breakdown|application fee|education & exam fee|double degree)/i.test(sessionText);
   if (!wave && found && found.program && found.profile && found.program.family === 'international') {
     const { program, profile } = found;
+    if (englishFee) {
+      return {
+        answer: [
+          `Fee breakdown for ${program.label}:`,
+          '',
+          `* Application fee: ${formatRp(profile.pendaftaran)}`,
+          `* DPP / Education & Exam Fee/Subject: ${formatRp(profile.dpp || 0)}`,
+          profile.languageFee ? `* ${profile.languageLabel || 'Language fee'}: ${formatRp(profile.languageFee)} (due near Semester II)` : null,
+          `* ${educationFeeLine(profile).replace(/Biaya pendidikan per semester/gi, 'Education fee per semester')}`,
+          '',
+          'If you mention the admission wave, for example Wave I A or Wave IV A, I can calculate the total after the application and DPP discounts.'
+        ].filter(Boolean).join('\n'),
+        program,
+        profile,
+        wave: null
+      };
+    }
+
     return {
       answer: [
         `Rincian biaya program ${program.label}:`,
@@ -1228,12 +1298,20 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
   }
 
   if (jas !== null && program.family === 'd3') {
-    lines.push(`* Biaya registrasi/perlengkapan: ${formatRp(jas)}`);
+    if (jas > 0) {
+      lines.push(`* Biaya registrasi/perlengkapan: ${formatRp(jas)}`);
+    }
   } else {
-    lines.push(`* Jas almamater dan topi: ${formatRp(jas || 0)}`);
-    lines.push(`* Kaos, tas, GMTI: ${formatRp(kaos || 0)}`);
+    if (jas > 0) {
+      lines.push(`* Jas almamater dan topi: ${formatRp(jas)}`);
+    }
+    if (kaos > 0) {
+      lines.push(`* Kaos, tas, GMTI: ${formatRp(kaos)}`);
+    }
   }
-  lines.push(`Subtotal biaya awal masuk: ${formatRp(subtotalPerlengkapan)}`);
+  if (subtotalPerlengkapan > 0) {
+    lines.push(`Subtotal biaya awal masuk: ${formatRp(subtotalPerlengkapan)}`);
+  }
   lines.push(`* DPP: ${formatRp(dpp)}`);
   lines.push(`* Potongan biaya DPP (${wave.display}): ${formatRp(dppDiscount.total)}${dppDiscount.note}`);
   lines.push(`Total awal masuk setelah potongan (${wave.display}): ${formatRp(totalAwal)}`);

@@ -1917,5 +1917,18 @@ describe('semanticRagEngine', () => {
     expect(result.answer).toMatch(/kompetisi game|gaming|esports/i);
     expect(result.answer).not.toMatch(/belum sesuai|ditahan/i);
   });
+  test('answers BEM definition before generic UKM fallback', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const result = await querySemanticRag('apa itu bem?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-bem');
+    expect(result.answer).toMatch(/Badan Eksekutif Mahasiswa/i);
+    expect(result.answer).toMatch(/organisasi mahasiswa/i);
+    expect(result.answer).not.toMatch(/Kuliah Sambil Kerja di Luar Negeri|belum punya informasi detail tentang kegiatan atau program kerja UKM/i);
+  });
+
 });
 

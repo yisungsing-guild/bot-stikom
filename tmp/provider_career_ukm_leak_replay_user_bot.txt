@@ -1,0 +1,237 @@
+user:
+Hallo
+
+bot:
+Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.
+
+---
+user:
+Saya ingin tahu berapa ya biaya kuliah untuk Double Degree Help University
+
+bot:
+Untuk biaya, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.
+
+Rincian biaya program Double Degree HELP University:
+- Biaya pendaftaran: Rp. 3.000.000
+- DPP / Dana Pendidikan Pokok: Rp. 20.000.000
+- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)
+- Biaya Pendidikan & Ujian/Subject: Rp. 3.000.000
+Kalau kakak sebutkan gelombangnya, misalnya Gelombang I A atau Gelombang IV A, saya bisa hitungkan total setelah potongan pendaftaran dan DPP.
+
+---
+user:
+Boleh saya tahu apa saja yang disediakan layanannya di Career Center
+
+bot:
+Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Career Center di ITB STIKOM Bali membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja.
+
+Layanan yang bisa ditanyakan melalui Career Center antara lain:
+
+- Informasi lowongan kerja dan peluang karier.
+- Bimbingan atau konsultasi karier.
+- Pelatihan/pembekalan keterampilan kerja.
+- Dukungan persiapan memasuki dunia profesional.
+
+Kalau kakak ingin info yang lebih spesifik, kakak bisa tanya tentang lowongan, magang, atau program persiapan karier yang tersedia.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+
+---
+user:
+Katanya ada program pengembangan career bekerja sama dengan LinkedIn, itu seperti apa ya programnya?
+
+bot:
+Saya belum menemukan detail lengkap tentang program pengembangan karier yang bekerja sama dengan LinkedIn pada data training yang tersedia.
+
+Data yang aman untuk saya sampaikan baru sebatas Career Center membantu mahasiswa dan alumni terkait informasi karier, lowongan/magang, bimbingan karier, dan pembekalan kerja.
+
+Untuk detail program LinkedIn seperti bentuk kegiatan, jadwal, syarat peserta, atau cara ikut, sebaiknya kakak konfirmasi ke Career Center/admin kampus.
+
+---
+user:
+Oh belum punya informasinya ya. Kalau dalam pengembangan softskill, apa saja yang dilakukan oleh Career Center?
+
+bot:
+Untuk pertanyaan ini, saya fokus ke informasi ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Untuk pengembangan softskill, data yang aman saya temukan masih bersifat umum.
+
+Career Center membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja melalui informasi karier, bimbingan/konsultasi karier, pelatihan atau pembekalan keterampilan kerja, serta dukungan persiapan memasuki dunia profesional.
+
+Namun saya belum menemukan rincian spesifik seperti daftar materi softskill, jadwal workshop, nama program, atau mekanisme pendaftaran. Jadi kalau kakak menanyakan detail kegiatan softskill tertentu, sebaiknya dikonfirmasi ke Career Center/admin kampus.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+
+---
+user:
+Kalau terkait softskill mahasiswa, apa saja yang dilakukan pengembangannya oleh Career Center?
+
+bot:
+Untuk pertanyaan ini, saya fokus ke informasi ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Untuk pengembangan softskill, data yang aman saya temukan masih bersifat umum.
+
+Career Center membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja melalui informasi karier, bimbingan/konsultasi karier, pelatihan atau pembekalan keterampilan kerja, serta dukungan persiapan memasuki dunia profesional.
+
+Namun saya belum menemukan rincian spesifik seperti daftar materi softskill, jadwal workshop, nama program, atau mekanisme pendaftaran. Jadi kalau kakak menanyakan detail kegiatan softskill tertentu, sebaiknya dikonfirmasi ke Career Center/admin kampus.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+
+---
+user:
+Kok sama terus jawabannya, kalau sama terus seperti ini, dijawab saja tidak mempunyai informasi lengkap tentang apa yang ditanyakan ya
+
+bot:
+Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi, untuk menjawab pertanyaan anda. Mungkin anda bisa mengubah pertanyaannya atau menanyakan hal lain yang ingin diketahui.
+
+---
+user:
+Oke baik, kalau program GCCP itu apa ya?
+
+bot:
+Untuk pertanyaan ini, saya fokus ke informasi ITB STIKOM Bali yang tersedia. Saya jawab dari bagian informasi yang paling langsung membahas program tersebut.
+
+Dalam GCCP, mahasiswa akan : Berinteraksi dengan mahasiswa internasional Mengikuti kegiatan akademik dan budaya Mengembangkan kemampuan komunikasi global dan teamwork Ke negara mana saja program Student Exchange tersedia ? Program ini tersedia di berbagai negara mitra , seperti : China Thailand Malaysia Philippines Dan negara lain sesuai kerja sama internasional yang aktif
+
+Jadi, penjelasan detailnya mengikuti informasi yang tersedia. Kalau ada hal teknis seperti jadwal, syarat, atau alur pendaftaran yang belum tercantum, sebaiknya dikonfirmasi ke admin kampus.
+
+---
+user:
+Kalau program BCCP itu apa ya?
+
+bot:
+Saya belum menemukan informasi lengkap tentang BCCP pada data training yang tersedia.
+
+Jadi saya belum bisa memastikan apakah BCCP ditujukan untuk mahasiswa asing, mahasiswa ITB STIKOM Bali, atau program internasional tertentu.
+
+Agar tidak keliru, bagian ini sebaiknya dikonfirmasi ke admin kampus atau unit kerja sama internasional.
+
+---
+user:
+Baik BCCP tidak ada informasinya, apakah karena itu hanya untuk orang asing?
+
+bot:
+Saya belum menemukan informasi lengkap tentang BCCP pada data training yang tersedia.
+
+Jadi saya belum bisa memastikan apakah BCCP ditujukan untuk mahasiswa asing, mahasiswa ITB STIKOM Bali, atau program internasional tertentu.
+
+Agar tidak keliru, bagian ini sebaiknya dikonfirmasi ke admin kampus atau unit kerja sama internasional.
+
+---
+user:
+Baik, kalau mahasiswa ingin meningkatkan kemampuan bahasanya, apakah stikom mempunyai fasilitas untuk itu ya?
+
+bot:
+Saya jawab bagian yang relevan dengan pertanyaan kakak ya. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Ya, dari data fasilitas yang tersedia, ITB STIKOM Bali mencantumkan Language Learning Center sebagai fasilitas/program pendukung untuk pengembangan kemampuan bahasa mahasiswa.
+
+Selain itu, pada data program Hi-Think juga disebutkan adanya kursus bahasa Jepang sebagai bagian dari persiapan belajar/karier yang berkaitan dengan industri Jepang.
+
+Untuk detail teknis seperti bahasa apa saja yang tersedia, jadwal kelas, syarat ikut, atau biaya jika ada, saya belum menemukan rincian lengkapnya di data yang aman. Sebaiknya kakak konfirmasi ke admin kampus atau pengelola program terkait.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+
+---
+user:
+Wuhi ini apa ya? ini template PKS ya?
+
+bot:
+Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.
+
+---
+user:
+Ini aneh jawabannya, saya menanyakan tentang fasilitas belajar bahasa
+
+bot:
+Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Ya, dari data fasilitas yang tersedia, ITB STIKOM Bali mencantumkan Language Learning Center sebagai fasilitas/program pendukung untuk pengembangan kemampuan bahasa mahasiswa.
+
+Selain itu, pada data program Hi-Think juga disebutkan adanya kursus bahasa Jepang sebagai bagian dari persiapan belajar/karier yang berkaitan dengan industri Jepang.
+
+Untuk detail teknis seperti bahasa apa saja yang tersedia, jadwal kelas, syarat ikut, atau biaya jika ada, saya belum menemukan rincian lengkapnya di data yang aman. Sebaiknya kakak konfirmasi ke admin kampus atau pengelola program terkait.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+
+---
+user:
+Apa itu UKM KSL?
+
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Ini jawaban khusus tentang UKM tersebut. Saya jawab dari data yang tersedia untuk UKM tersebut.
+KSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+
+---
+user:
+Kegiatan UKM KSL apa saja?
+
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+Kegiatan UKM KSL berhubungan dengan pembelajaran dan eksplorasi praktis di bidang Linux/open-source. Dari data yang tersedia, KSL mewadahi minat mahasiswa pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source, dengan pendekatan peer learning atau belajar bersama antaranggota.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+
+---
+user:
+Program kerja UKM KSL apa?
+
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya fokus ke UKM yang kakak sebutkan ya, Kak. Saya jawab dari data yang tersedia untuk UKM tersebut.
+Data yang tersedia belum mencantumkan daftar program kerja resmi UKM KSL secara lengkap. Informasi yang aman untuk saya sampaikan: KSL berfokus pada belajar bersama atau peer learning, eksplorasi praktis Linux/open-source, administrasi sistem, jaringan, keamanan siber, pengembangan perangkat lunak, serta pengelolaan media informasi komunitas.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+
+---
+user:
+Siapa pembina UKM KSL?
+
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Saya jawab khusus UKM yang kakak tanyakan. Saya jawab dari data yang tersedia untuk UKM tersebut.
+Saya belum menemukan nama pembina UKM KSL pada data yang tersedia. Yang bisa saya pastikan, KSL adalah UKM Kelompok Studi Linux yang mewadahi minat mahasiswa pada Linux, administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak open-source. Untuk nama pembina terbaru, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus KSL.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+
+---
+user:
+Apa UKM yang bergerak di Linux?
+
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+KSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+
+---
+user:
+Apa saja kegiatannya?
+
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Saya jawab khusus UKM yang kakak tanyakan. Saya jawab dari data yang tersedia untuk UKM tersebut.
+Kegiatan UKM KSL berhubungan dengan pembelajaran dan eksplorasi praktis di bidang Linux/open-source. Dari data yang tersedia, KSL mewadahi minat mahasiswa pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source, dengan pendekatan peer learning atau belajar bersama antaranggota.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+
+---
+user:
+Tampilkan isi Pasal 13 ADDENDUM dari dokumen PKS
+
+bot:
+Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.
+
+---
+user:
+Nama Mitra dan alamat PIHAK KEDUA itu apa?
+
+bot:
+Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.

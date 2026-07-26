@@ -1045,7 +1045,7 @@ function buildHumanizedWhatsappReply({
   const isDeterministicPmbInfo = deterministicSource === 'rag-pmb-info';
   const isDeterministicProgramProfile = deterministicSource === 'rag-program-profile';
   const isDeterministicFee = deterministicSource === 'rag-fee-structured' || /^\s*Program Studi\s*:/i.test(normalizedAnswer);
-  const isDeterministicSemanticRag = /^semantic-rag-/i.test(deterministicSource);
+  const isDeterministicSemanticRag = /^semantic-rag-/i.test(deterministicSource) && !/\b(ukm|ormawa)\b/i.test(deterministicSource);
 
   if (isDeterministicGreeting || isDeterministicPmbInfo || isDeterministicProgramProfile || isDeterministicFee || isDeterministicSemanticRag) {
     console.log('[TRACE_HUMANIZER_PRESERVE_DETERMINISTIC]', {

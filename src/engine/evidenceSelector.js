@@ -1,12 +1,10 @@
 const DEFAULT_MAX_EVIDENCE = 5;
 
 const STOPWORDS = new Set([
-  'apa', 'apakah', 'bagaimana', 'gimana', 'kalau', 'terkait', 'tentang', 'untuk',
   'yang', 'dengan', 'dalam', 'oleh', 'dari', 'itu', 'ini', 'kak', 'kakak', 'min',
-  'saya', 'aku', 'mau', 'ingin', 'menanyakan', 'bertanya', 'baik', 'oke', 'ok',
-  'punya', 'mempunyai', 'memiliki', 'ada', 'saja', 'admin', 'tolong', 'jelaskan',
-  'info', 'informasi', 'detail', 'lengkap', 'dong', 'ya', 'nih', 'nya', 'dan',
-  'atau', 'di', 'ke', 'se', 'bisa', 'dapat', 'mohon', 'kampus', 'dimiliki'
+  'saya', 'aku', 'mau', 'ingin', 'punya', 'mempunyai', 'memiliki', 'ada', 'saja',
+  'admin', 'tolong', 'dong', 'ya', 'nih', 'nya', 'dan', 'atau', 'di', 'ke', 'se',
+  'bisa', 'dapat', 'mohon', 'dimiliki'
 ]);
 
 const ENTITY_RULES = [
@@ -22,7 +20,9 @@ const ENTITY_RULES = [
   { key: 'gccp', aliases: ['gccp'] },
   { key: 'bccp', aliases: ['bccp'] },
   { key: 'career center', aliases: ['career center', 'pusat karier', 'pusat karir'] },
-  { key: 'language learning center', aliases: ['language learning center', 'llc', 'belajar bahasa'] }
+  { key: 'language learning center', aliases: ['language learning center', 'llc', 'belajar bahasa'] },
+  { key: 'bem', aliases: ['bem', 'badan eksekutif mahasiswa'] },
+  { key: 'ukm', aliases: ['ukm', 'unit kegiatan mahasiswa', 'kelompok studi'] }
 ];
 
 function normalizeText(value) {
@@ -45,7 +45,7 @@ function compactText(value) {
 function getContentTerms(value) {
   return normalizeText(value)
     .split(/\s+/)
-    .filter((term) => term.length >= 3 && !STOPWORDS.has(term));
+    .filter((term) => term.length >= 2 && !STOPWORDS.has(term));
 }
 
 function includesAlias(normalized, alias) {
@@ -296,6 +296,12 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
   if (asksShortProgramDefinition) {
     return { answerable: true, reason: 'short_program_definition_direct_answer', missingEvidence: [] };
   }
+  
+  // Allow general intent questions with any evidence to pass through
+  if (detectedIntent === 'general' && evidence.length > 0 && text.trim()) {
+    return { answerable: true, reason: 'general_intent_with_evidence', missingEvidence: [] };
+  }
+  
   if (!terms.length && !isExplicitLegalQuestion(question, detectedIntent)) {
     return { answerable: false, reason: 'ambiguous_question', missingEvidence: ['question_object'] };
   }

@@ -4,6 +4,7 @@ const {
   hasSemanticEvidenceAlignment,
   sanitizeSemanticIndex
 } = require('../src/engine/semanticRagEngine');
+const { evaluateOutboundAnswer } = require('../src/utils/answerPreflightEvaluator');
 
 describe('semantic evidence selection', () => {
   test('rejects raw legal/administrative agreement chunks before answer generation', () => {
@@ -68,5 +69,43 @@ describe('semantic evidence selection', () => {
     )).toBe(true);
 
     expect(hasSemanticEvidenceAlignment('Mempunyai', 'Language Learning Center adalah fasilitas belajar bahasa.')).toBe(false);
+  });
+
+  test('canonical preflight blocks semantic answers with raw legal/administrative leakage', () => {
+    const rawLegalAnswer = [
+      'Program internasional / kerja sama internasional: left 8255 Logo Mitra 0 0 Logo Mitra right -83820',
+      'PERJANJIAN KERJA SAMA ANTARA INSTITUT TEKNOLOGI DAN BISNIS STIKOM BALI DAN (NAMA MITRA)',
+      'Nomor: ...............................................',
+      'PIHAK KESATU dan PIHAK KEDUA selanjutnya secara bersama-sama disebut PARA PIHAK.',
+      'Pasal 13 ADDENDUM Perubahan terhadap Perjanjian Kerja Sama ini akan ditetapkan dalam addendum.',
+      'dibuat dalam rangkap 2 (dua) yang bermeterai cukup dan mempunyai kekuatan hukum yang sama.'
+    ].join(' ');
+
+    const userQuery = 'apakah ada program kerja sama internasional?';
+    
+    const preflight = evaluateOutboundAnswer(rawLegalAnswer, userQuery, { source: 'semantic-rag' });
+    
+    expect(preflight.blocked).toBe(true);
+    expect(preflight.issues).toContain('raw_document_leak');
+    expect(preflight.answer).not.toBe(rawLegalAnswer);
+    expect(preflight.answer).toMatch(/belum cukup|aman|konfirmasi ke admin/i);
+  });
+
+  test('canonical preflight blocks semantic answers with SK decree leakage', () => {
+    const rawSkAnswer = [
+      'KEPUTUSAN LEMBAGA AKREDITASI MANDIRI INFORMATIKA DAN KOMPUTER',
+      'Nomor:149/SK/LAM-INFOKOM/Ak/S/XII/2023',
+      'TENTANG PERINGKAT AKREDITASI PROGRAM STUDI SISTEM INFORMASI',
+      'Menimbang: bahwa untuk melaksanakan ketentuan Pasal 4 Peraturan Menteri Pendidikan dan Kebudayaan Nomor 5 Tahun 2020.',
+      'Mengingat: Undang-undang Nomor 12 Tahun 2012 tentang Pendidikan Tinggi.'
+    ].join(' ');
+
+    const userQuery = 'apa status akreditasi sistem informasi?';
+    
+    const preflight = evaluateOutboundAnswer(rawSkAnswer, userQuery, { source: 'semantic-rag' });
+    
+    expect(preflight.blocked).toBe(true);
+    expect(preflight.issues).toContain('raw_document_leak');
+    expect(preflight.answer).not.toBe(rawSkAnswer);
   });
 });

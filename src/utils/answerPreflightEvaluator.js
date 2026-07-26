@@ -9,6 +9,15 @@ function normalizeOutboundAnswerText(text) {
   if (!out.trim()) return '';
 
   out = out.replace(/\u00A0/g, ' ');
+  const faqQuestionLabel = String.raw`(?:\([QF]\)|[QF]\s*[:.-]|FAQ\s*[:.-]|Question\s*[:.-]|Pertanyaan\s*[:.-]|Tanya\s*[:.-])`;
+  const faqAnswerLabel = String.raw`(?:\(A\)|A\s*[:.-]|Answer\s*[:.-]|Jawaban\s*[:.-]|Jawab\s*[:.-])`;
+  // Strip inline FAQ/QNA labels and keep only the answer portion for user-facing replies.
+  out = out.replace(new RegExp(`^\\s*${faqQuestionLabel}\\s*[^?\\n]{3,260}\\?\\s*${faqAnswerLabel}\\s*`, 'i'), '');
+  out = out.replace(new RegExp(`(?:^|\\n)\\s*${faqQuestionLabel}\\s*[^\\n]*\\?\\s*`, 'gim'), '\n');
+  out = out.replace(new RegExp(`(?:^|\\s)${faqAnswerLabel}\\s*`, 'gi'), ' ');
+  out = out.replace(new RegExp(`^\\s*(?:${faqQuestionLabel}|${faqAnswerLabel})\\s*`, 'gim'), '');
+  out = out.replace(new RegExp(`(?:^|\\n)\\s*(?:${faqQuestionLabel}|${faqAnswerLabel})\\s*`, 'gim'), '\n');
+  out = out.replace(new RegExp(`\\s+(?:${faqQuestionLabel}|${faqAnswerLabel})\\s*`, 'gi'), ' ');
   out = out.replace(/\u00e2\u20ac\u00a6/g, '...');
   out = out.replace(/([A-Za-z0-9)\]])\s*(?:\u2026|\.{3})(?=\s*(?:\n|$))/g, '$1.');
   out = out.replace(/\b(per|pendaftar|pertanyaan|informasi|program|fasilitas|dokumen|syarat|jadwal|gelombang)(?:\u2026|\.{3})\s*$/i, '$1.');
@@ -73,11 +82,14 @@ function hasLikelyRawDocumentLeak(text) {
     /\bpara\s+pihak\b/i,
     /\bforce\s+majeure\b/i,
     /\bmempunyai\s+kekuatan\s+hukum\s+yang\s+sama\b/i,
-    /\b(?:nama|logo)\s+mitra\b/i
+    /\b(?:nama|logo)\s+mitra\b/i,
+    /\bAlamat\s+Telepon\s+E\s*-\s*mail\b/i,
+    /\bJalan\s+Raya\s+Puputan\s+Nomor\s+86\b/i,
+    /\btemplate\s+PKS\b/i
   ];
   const faqMarkerCount = (out.match(/(?:^|\n)\s*(?:FAQ|Q|A|F|Question|Answer|Pertanyaan|Jawaban)\s*[:\-.]/gi) || []).length;
   const legalMarkerCount = legalMarkers.filter((re) => re.test(out)).length;
-  const placeholderLike = /_{5,}|\.{8,}|:{3,}|�{2,}|(?:nomor\s*:\s*(?:\.{4,}|�+|\([^)]*\)))/i.test(out);
+  const placeholderLike = /_{5,}|\.{8,}|:{3,}|ï¿½{2,}|(?:nomor\s*:\s*(?:\.{4,}|ï¿½+|\([^)]*\)))|(?:E\s*-\s*mail\s*:::)/i.test(out);
   return faqMarkerCount >= 3 || legalMarkerCount >= 2 || (legalMarkerCount >= 1 && placeholderLike) || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
 }
 
@@ -299,13 +311,13 @@ function buildPreflightFallback(userQuery, reason) {
 function hasExcessiveRawQuotation(answer) {
   const text = String(answer || '');
   const longLines = text.split(/\n+/).filter((line) => line.trim().length > 220).length;
-  const quotedLines = text.split(/\n+/).filter((line) => /^\s*(?:>|"|�|')/.test(line.trim())).length;
+  const quotedLines = text.split(/\n+/).filter((line) => /^\s*(?:>|"|ï¿½|')/.test(line.trim())).length;
   return longLines >= 2 || quotedLines >= 3;
 }
 
 function hasPlaceholderOrOcrNoise(answer) {
   const text = String(answer || '');
-  return /_{4,}|\.{6,}|:{3,}|�{2,}|\b(?:left|right)\s+-?\d{3,}\b|\blogo\s+mitra\b|\(\s*nama\s+mitra\s*\)/i.test(text);
+  return /_{4,}|\.{6,}|:{3,}|ï¿½{2,}|\b(?:left|right)\s+-?\d{3,}\b|\blogo\s+mitra\b|\(\s*nama\s+mitra\s*\)/i.test(text);
 }
 
 function isTooLongForQuestion(answer, userQuery) {
@@ -319,7 +331,7 @@ function isTooLongForQuestion(answer, userQuery) {
 function lacksConcreteItemsForApaSaja(answer, userQuery) {
   if (!/\bapa\s+saja\b/i.test(String(userQuery || ''))) return false;
   const text = String(answer || '');
-  const bulletCount = (text.match(/(?:^|\n)\s*(?:[-*�]|\d+\.)\s+\S/g) || []).length;
+  const bulletCount = (text.match(/(?:^|\n)\s*(?:[-*ï¿½]|\d+\.)\s+\S/g) || []).length;
   const namedItems = (text.match(/\b(?:GCCP|BCCP|Double\s*Degree|Dual\s*Degree|Student\s+Exchange|UTB|DNUI|HELP|KIP|Prestasi|Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer)\b/gi) || []).length;
   const hasListLanguage = /\b(?:antara\s+lain|meliputi|terdiri\s+dari|tersedia|pilihan|program\s+mitra|beasiswa|program)\b/i.test(text);
   return bulletCount < 2 && namedItems < 2 && !hasListLanguage;
@@ -328,7 +340,7 @@ function lacksConcreteItemsForApaSaja(answer, userQuery) {
 function isTrustedSemanticAlignmentSource(source) {
   const value = String(source || '').trim().toLowerCase();
   if (!value) return false;
-  return /^semantic-rag-(?:registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|accreditation|akreditasi)/i.test(value);
+  return /^semantic-rag-(?:registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification)/i.test(value);
 }
 
 function decidePreflightAction(issues, meta = {}) {
@@ -427,3 +439,6 @@ module.exports = {
   detectIntentConflict,
   detectAnswerQueryMismatch
 };
+
+
+

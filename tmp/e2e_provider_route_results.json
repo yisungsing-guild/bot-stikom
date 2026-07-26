@@ -10,10 +10,10 @@
       "ragUsed": true
     },
     "sentMessages": [
-      "Teknologi Informasi adalah bidang yang berkaitan dengan pengelolaan, pengolahan, dan penyebaran informasi menggunakan teknologi komputer dan sistem informasi. Ini mencakup berbagai aktivitas seperti jaringan komputer, server management, pengolahan data, serta membaca dan menulis tentang teknologi melalui blog. Apakah Anda ingin tahu lebih lanjut tentang hobi atau aktivitas yang umum di kalangan mahasiswa Teknologi Informasi?",
+      "Definisi: Teknologi Informasi (TI) adalah program studi yang berfokus pada penerapan teknologi untuk membangun, mengelola, dan mengamankan sistem digital.\nKompetensi utama: Fokus utamanya pemrograman, pengembangan aplikasi, infrastruktur IT, jaringan, cloud, keamanan siber, layanan digital, dan pengolahan data teknis.\nLama studi: umumnya 8 semester untuk jenjang S1.\nGelar: Sarjana Komputer (S. Kom.).\nAkreditasi: silakan sebutkan prodi jika kakak ingin status akreditasi terbaru yang spesifik.\nProspek kerja: Prospek kerja TI antara lain Software Developer, Web/App Developer, Dev Ops Engineer, Network Engineer, Cybersecurity Specialist, Data Engineer, dan pengembang layanan digital.\nBidang pekerjaan: software, jaringan, cloud, keamanan, dan layanan digital. Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
       "Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia."
     ],
-    "lastMessage": "Teknologi Informasi adalah bidang yang berkaitan dengan pengelolaan, pengolahan, dan penyebaran informasi menggunakan teknologi komputer dan sistem informasi. Ini mencakup berbagai aktivitas seperti jaringan komputer, server management, pengolahan data, serta membaca dan menulis tentang teknologi melalui blog. Apakah Anda ingin tahu lebih lanjut tentang hobi atau aktivitas yang umum di kalangan mahasiswa Teknologi Informasi?"
+    "lastMessage": "Definisi: Teknologi Informasi (TI) adalah program studi yang berfokus pada penerapan teknologi untuk membangun, mengelola, dan mengamankan sistem digital.\nKompetensi utama: Fokus utamanya pemrograman, pengembangan aplikasi, infrastruktur IT, jaringan, cloud, keamanan siber, layanan digital, dan pengolahan data teknis.\nLama studi: umumnya 8 semester untuk jenjang S1.\nGelar: Sarjana Komputer (S. Kom.).\nAkreditasi: silakan sebutkan prodi jika kakak ingin status akreditasi terbaru yang spesifik.\nProspek kerja: Prospek kerja TI antara lain Software Developer, Web/App Developer, Dev Ops Engineer, Network Engineer, Cybersecurity Specialist, Data Engineer, dan pengembang layanan digital.\nBidang pekerjaan: software, jaringan, cloud, keamanan, dan layanan digital. Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?"
   },
   {
     "chatId": "e2e-02",
@@ -26,9 +26,9 @@
       "ragUsed": true
     },
     "sentMessages": [
-      "Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang, mengembangkan, dan mengimplementasikan sistem informasi. Ini mencakup Government dan Enterprise Systems, sistem desain grafis berbasis multimedia, serta pengembangan potensi kewirausahaan di bidang sistem informasi. Apakah Anda ingin tahu lebih lanjut tentang karier yang bisa diambil setelah lulus dari Program Studi Sistem Informasi?"
+      "Definisi: Sistem Informasi (SI) adalah program studi yang menghubungkan kebutuhan bisnis/organisasi dengan solusi teknologi informasi.\nKompetensi utama: Fokus utamanya analisis kebutuhan bisnis, perancangan sistem informasi, basis data, proses organisasi, integrasi sistem, dashboard, dan pengelolaan data.\nLama studi: umumnya 8 semester untuk jenjang S1.\nGelar: Sarjana Komputer (S. Kom.).\nAkreditasi: silakan sebutkan prodi jika kakak ingin status akreditasi terbaru yang spesifik.\nProspek kerja: Prospek kerja SI antara lain Business Analyst, System Analyst, Data Analyst, IT Consultant, Project Manager, pengelola sistem informasi, dan konsultan implementasi sistem.\nBidang pekerjaan: analisis sistem, data, proses bisnis, dan solusi sistem informasi. Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?"
     ],
-    "lastMessage": "Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang, mengembangkan, dan mengimplementasikan sistem informasi. Ini mencakup Government dan Enterprise Systems, sistem desain grafis berbasis multimedia, serta pengembangan potensi kewirausahaan di bidang sistem informasi. Apakah Anda ingin tahu lebih lanjut tentang karier yang bisa diambil setelah lulus dari Program Studi Sistem Informasi?"
+    "lastMessage": "Definisi: Sistem Informasi (SI) adalah program studi yang menghubungkan kebutuhan bisnis/organisasi dengan solusi teknologi informasi.\nKompetensi utama: Fokus utamanya analisis kebutuhan bisnis, perancangan sistem informasi, basis data, proses organisasi, integrasi sistem, dashboard, dan pengelolaan data.\nLama studi: umumnya 8 semester untuk jenjang S1.\nGelar: Sarjana Komputer (S. Kom.).\nAkreditasi: silakan sebutkan prodi jika kakak ingin status akreditasi terbaru yang spesifik.\nProspek kerja: Prospek kerja SI antara lain Business Analyst, System Analyst, Data Analyst, IT Consultant, Project Manager, pengelola sistem informasi, dan konsultan implementasi sistem.\nBidang pekerjaan: analisis sistem, data, proses bisnis, dan solusi sistem informasi. Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?"
   },
   {
     "chatId": "e2e-03",
@@ -36,12 +36,12 @@
     "status": 200,
     "responseBody": {
       "ok": true,
-      "source": "rag-program-career-role"
+      "source": "rag-program-profile"
     },
     "sentMessages": [
-      "Prospek kerja untuk jurusan Teknologi Informasi biasanya terkait dengan Program Hi-Think (Program Persiapan Bekerja di Bidang TI di Jepang) 10.\nContoh peran atau bidang kerja yang relevan: Software Developer, Web/App Developer, Network Engineer, IT Support. Kalau ingin, saya bisa bantu lanjutkan dengan prospek kerja yang paling dekat dengan minat kamu, misalnya marketing digital, analisis data, atau pengembangan aplikasi. Mau saya jelaskan lagi bagian lain?"
+      "Prospek kerja Teknologi Informasi (TI):\nProspek kerja TI antara lain Software Developer, Web/App Developer, Dev Ops Engineer, Network Engineer, Cybersecurity Specialist, Data Engineer, dan pengembang layanan digital. Bidang pekerjaan TI paling dekat dengan software, jaringan, cloud, keamanan, dan layanan digital. Mau saya jelaskan lagi bagian lain?"
     ],
-    "lastMessage": "Prospek kerja untuk jurusan Teknologi Informasi biasanya terkait dengan Program Hi-Think (Program Persiapan Bekerja di Bidang TI di Jepang) 10.\nContoh peran atau bidang kerja yang relevan: Software Developer, Web/App Developer, Network Engineer, IT Support. Kalau ingin, saya bisa bantu lanjutkan dengan prospek kerja yang paling dekat dengan minat kamu, misalnya marketing digital, analisis data, atau pengembangan aplikasi. Mau saya jelaskan lagi bagian lain?"
+    "lastMessage": "Prospek kerja Teknologi Informasi (TI):\nProspek kerja TI antara lain Software Developer, Web/App Developer, Dev Ops Engineer, Network Engineer, Cybersecurity Specialist, Data Engineer, dan pengembang layanan digital. Bidang pekerjaan TI paling dekat dengan software, jaringan, cloud, keamanan, dan layanan digital. Mau saya jelaskan lagi bagian lain?"
   },
   {
     "chatId": "e2e-04",
@@ -49,12 +49,12 @@
     "status": 200,
     "responseBody": {
       "ok": true,
-      "source": "rag-program-career-role"
+      "source": "rag-program-profile"
     },
     "sentMessages": [
-      "Prospek kerja untuk jurusan Sistem Informasi biasanya terkait dengan Penjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimple\nContoh peran atau bidang kerja yang relevan: Business Analyst, System Analyst, IT Consultant, Data Analyst. Kalau ingin, saya bisa bantu lanjutkan dengan prospek kerja yang paling dekat dengan minat kamu, misalnya marketing digital, analisis data, atau pengembangan aplikasi. Mau saya jelaskan lagi bagian lain?"
+      "Prospek kerja Sistem Informasi (SI):\nProspek kerja SI antara lain Business Analyst, System Analyst, Data Analyst, IT Consultant, Project Manager, pengelola sistem informasi, dan konsultan implementasi sistem. Bidang pekerjaan SI paling dekat dengan analisis sistem, data, proses bisnis, dan solusi sistem informasi. Mau saya jelaskan lagi bagian lain?"
     ],
-    "lastMessage": "Prospek kerja untuk jurusan Sistem Informasi biasanya terkait dengan Penjelasan Prodi dan Karier Masa Depan Prodi | Penjelasan prodi | Yang Dipelajari | Cocok Untuk | Peluang Kerja Sistem Informasi | \"Program Studi Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengembangkan | serta mengimple\nContoh peran atau bidang kerja yang relevan: Business Analyst, System Analyst, IT Consultant, Data Analyst. Kalau ingin, saya bisa bantu lanjutkan dengan prospek kerja yang paling dekat dengan minat kamu, misalnya marketing digital, analisis data, atau pengembangan aplikasi. Mau saya jelaskan lagi bagian lain?"
+    "lastMessage": "Prospek kerja Sistem Informasi (SI):\nProspek kerja SI antara lain Business Analyst, System Analyst, Data Analyst, IT Consultant, Project Manager, pengelola sistem informasi, dan konsultan implementasi sistem. Bidang pekerjaan SI paling dekat dengan analisis sistem, data, proses bisnis, dan solusi sistem informasi. Mau saya jelaskan lagi bagian lain?"
   },
   {
     "chatId": "e2e-05",
@@ -62,12 +62,12 @@
     "status": 200,
     "responseBody": {
       "ok": true,
-      "source": "rag-program-comparison"
+      "source": "rag-program-profile"
     },
     "sentMessages": [
-      "PMB, ringkasan yang relevan untuk Sistem Informasi, Teknologi Informasi adalah:\n\n- Sistem Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1.\n- Teknologi Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1. Mau saya jelaskan lebih detail untuk salah satu prodi atau bandingkan dari sisi biaya, kurikulum, atau prospek kerja?"
+      "Perbedaan singkat Sistem Informasi (SI) dan Teknologi Informasi (TI):\n\n- Sistem Informasi (SI): Fokus utamanya analisis kebutuhan bisnis, perancangan sistem informasi, basis data, proses organisasi, integrasi sistem, dashboard, dan pengelolaan data.\n\nProspek: Prospek kerja SI antara lain Business Analyst, System Analyst, Data Analyst, IT Consultant, Project Manager, pengelola sistem informasi, dan konsultan implementasi sistem.\n\n- Teknologi Informasi (TI): Fokus utamanya pemrograman, pengembangan aplikasi, infrastruktur IT, jaringan, cloud, keamanan siber, layanan digital, dan pengolahan data teknis.\n\nProspek: Prospek kerja TI antara lain Software Developer, Web/App Developer, Dev Ops Engineer, Network Engineer, Cybersecurity Specialist, Data Engineer, dan pengembang layanan digital.\nRingkasnya: SI lebih dekat ke sistem informasi, data, dan proses bisnis; TI lebih teknis ke software, infrastruktur, cloud, dan keamanan; SK lebih dekat ke hardware, embedded system, IoT, dan jaringan perangkat. Mau saya jelaskan lagi bagian lain?"
     ],
-    "lastMessage": "PMB, ringkasan yang relevan untuk Sistem Informasi, Teknologi Informasi adalah:\n\n- Sistem Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1.\n- Teknologi Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1. Mau saya jelaskan lebih detail untuk salah satu prodi atau bandingkan dari sisi biaya, kurikulum, atau prospek kerja?"
+    "lastMessage": "Perbedaan singkat Sistem Informasi (SI) dan Teknologi Informasi (TI):\n\n- Sistem Informasi (SI): Fokus utamanya analisis kebutuhan bisnis, perancangan sistem informasi, basis data, proses organisasi, integrasi sistem, dashboard, dan pengelolaan data.\n\nProspek: Prospek kerja SI antara lain Business Analyst, System Analyst, Data Analyst, IT Consultant, Project Manager, pengelola sistem informasi, dan konsultan implementasi sistem.\n\n- Teknologi Informasi (TI): Fokus utamanya pemrograman, pengembangan aplikasi, infrastruktur IT, jaringan, cloud, keamanan siber, layanan digital, dan pengolahan data teknis.\n\nProspek: Prospek kerja TI antara lain Software Developer, Web/App Developer, Dev Ops Engineer, Network Engineer, Cybersecurity Specialist, Data Engineer, dan pengembang layanan digital.\nRingkasnya: SI lebih dekat ke sistem informasi, data, dan proses bisnis; TI lebih teknis ke software, infrastruktur, cloud, dan keamanan; SK lebih dekat ke hardware, embedded system, IoT, dan jaringan perangkat. Mau saya jelaskan lagi bagian lain?"
   },
   {
     "chatId": "e2e-01",
@@ -78,7 +78,7 @@
       "source": "general_small_talk"
     },
     "sentMessages": [
-      "Teknologi Informasi adalah bidang yang berkaitan dengan pengelolaan, pengolahan, dan penyebaran informasi menggunakan teknologi komputer dan sistem informasi. Ini mencakup berbagai aktivitas seperti jaringan komputer, server management, pengolahan data, serta membaca dan menulis tentang teknologi melalui blog. Apakah Anda ingin tahu lebih lanjut tentang hobi atau aktivitas yang umum di kalangan mahasiswa Teknologi Informasi?",
+      "Definisi: Teknologi Informasi (TI) adalah program studi yang berfokus pada penerapan teknologi untuk membangun, mengelola, dan mengamankan sistem digital.\nKompetensi utama: Fokus utamanya pemrograman, pengembangan aplikasi, infrastruktur IT, jaringan, cloud, keamanan siber, layanan digital, dan pengolahan data teknis.\nLama studi: umumnya 8 semester untuk jenjang S1.\nGelar: Sarjana Komputer (S. Kom.).\nAkreditasi: silakan sebutkan prodi jika kakak ingin status akreditasi terbaru yang spesifik.\nProspek kerja: Prospek kerja TI antara lain Software Developer, Web/App Developer, Dev Ops Engineer, Network Engineer, Cybersecurity Specialist, Data Engineer, dan pengembang layanan digital.\nBidang pekerjaan: software, jaringan, cloud, keamanan, dan layanan digital. Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?",
       "Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia."
     ],
     "lastMessage": "Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia."

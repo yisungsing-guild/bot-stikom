@@ -134,14 +134,28 @@ function isRawAdministrativeOrLegalChunk(chunk, filename = '') {
     /\bHAK\s+DAN\s+KEWAJIBAN\b/i,
     /\bPENYELESAIAN\s+PERSELISIHAN\b/i,
     /\bADDENDUM\b/i,
-    /\bNama\s+Mitra\b/i
+    /\bNama\s+Mitra\b/i,
+    /\bbermeterai\s+cukup\b/i,
+    /\bdipergunakan\s+sebagaimana\s+mestinya\b/i,
+    /\bkekuatan\s+hukum\s+yang\s+sama\b/i,
+    /\bdibuat\s+dalam\s+rangkap\b/i,
+    /\bkorespondensi\b/i
   ].filter((pattern) => pattern.test(haystack)).length;
 
   const placeholderLike = /_{5,}|\.{8,}|:{3,}|(?:\(\s*NAMA\s+MITRA\s*\))/i.test(haystack);
   const hasStudentFacingEvidence = /\b(biaya|dpp|ukt|pendaftaran|gelombang|jadwal|program\s+studi|prodi|beasiswa|fasilitas|ukm|ormawa|career\s*center|language\s+learning|kampus)\b/i.test(text);
+  
+  // Address/contact patterns that indicate document headers
+  const addressPattern = /\b(?:Jalan|Jl\.?|Jalan\s+Raya|Alamat)\s+[A-Z][a-z]+.*\d+.*\b/i.test(haystack);
+  const contactPattern = /\b(?:Telepon|E\s*-\s*mail|Email|Telp)\s*::?\s*\d+/i.test(haystack);
+  
+  // Contract template signatures
+  const contractFooter = /\bDemikian\s+Perjanjian\s+ini\s+dibuat\b/i.test(haystack);
+  const signingBlock = /\bbertanda\s+tangan\s+di\s+bawah\s+ini\b/i.test(haystack);
 
   if (legalHits >= 2) return true;
-  if (legalHits >= 1 && placeholderLike) return true;
+  if (legalHits >= 1 && (placeholderLike || addressPattern || contactPattern)) return true;
+  if (contractFooter || signingBlock) return true;
   if (/\b(?:mou|moa|kontrak|kerja\s+sama|kerjasama|memorandum|mitra)\b/i.test(file) && legalHits >= 1 && !hasStudentFacingEvidence) return true;
   return false;
 }
@@ -285,7 +299,105 @@ function trySimpleGuardAnswer(question) {
   return null;
 }
 
-function buildPmbOverviewAnswer() {
+function buildPmbOverviewAnswer(question = '') {
+  const qLower = String(question || '').toLowerCase();
+  
+  // Handle specific registration intent questions - check specific patterns first
+  if (/\b(daftar\s+online|pendaftaran\s+online|daftar\s+secara\s+online|online\s+registration)\b/.test(qLower)) {
+    return [
+      'Pendaftaran online PMB ITB STIKOM Bali dapat dilakukan melalui:',
+      '',
+      'Website: https://siap.stikom-bali.ac.id/',
+      '',
+      'Langkah-langkah:',
+      '1. Buka website di atas',
+      '2. Buat akun pendaftaran',
+      '3. Isi data diri dan pilih program studi',
+      '4. Upload dokumen persyaratan',
+      '5. Ikuti instruksi pembayaran',
+      '6. Tunggu konfirmasi dan jadwal tes',
+      '',
+      'Kakak butuh bantuan untuk langkah tertentu?'
+    ].join('\n');
+  }
+
+  if (/\b(daftar\s+ke\s+kampus|daftar\s+langsung|pendaftaran\s+langsung|datang\s+ke\s+kampus)\b/.test(qLower)) {
+    return [
+      'Pendaftaran langsung ke kampus ITB STIKOM Bali dapat dilakukan dengan:',
+      '',
+      '1. Datang ke lokasi kampus ITB STIKOM Bali',
+      '2. Bawa dokumen persyaratan (ijazah, KTP, KK, foto)',
+      '3. Isi formulir pendaftaran di lokasi',
+      '4. Lakukan pembayaran di tempat',
+      '5. Dapatkan jadwal tes seleksi',
+      '',
+      'Untuk informasi alamat dan jam operasional, silakan hubungi admin PMB.'
+    ].join('\n');
+  }
+
+  if (/\b(lulusan\s+smk|smk\s+lulusan|lulus\s+smk)\b.*\b(bisa\s+daftar|boleh\s+daftar|diterima|masuk)\b/i.test(qLower)) {
+    return [
+      'Ya, lulusan SMK bisa mendaftar kuliah di ITB STIKOM Bali.',
+      '',
+      'Persyaratan untuk lulusan SMK:',
+      '* Fotokopi Ijazah/SKL SMK',
+      '* Fotokopi Kartu Keluarga',
+      '* Fotokopi KTP/Kartu Pelajar',
+      '* Pas foto terbaru',
+      '* Surat keterangan sehat',
+      '',
+      'Lulusan SMK dapat mendaftar ke semua program studi S1 yang tersedia (SI, TI, SK, BD, MI).',
+      '',
+      'Kakak ingin tahu info lebih lanjut tentang program studi atau cara daftar?'
+    ].join('\n');
+  }
+
+  if (/\b(syarat|persyaratan|dokumen|berkas)\b/.test(qLower)) {
+    return [
+      'Persyaratan pendaftaran umum untuk PMB ITB STIKOM Bali:',
+      '',
+      '* Fotokopi Ijazah/SKL (SMA/SMK sederajat)',
+      '* Fotokopi Kartu Keluarga',
+      '* Fotokopi KTP/Kartu Pelajar',
+      '* Pas foto terbaru (background merah/biru)',
+      '* Transkrip nilai (untuk pindahan/S2)',
+      '* Surat keterangan sehat',
+      '',
+      'Persyaratan tambahan mungkin berbeda tergantung jalur pendaftaran. Kakak ingin tahu detail untuk jalur tertentu?'
+    ].join('\n');
+  }
+
+  if (/\b(masih\s+buka|buka\s+pendaftaran|pendaftaran\s+masih|gelombang\s+sekarang|sekarang\s+gelombang)\b/.test(qLower)) {
+    return [
+      'Per 24 Juli 2026, gelombang pendaftaran yang sedang buka:',
+      '',
+      '- Gelombang IV B: 19 Juli 2026 - 1 Agustus 2026',
+      '',
+      'Kakak ingin tahu jadwal lengkap semua gelombang atau info gelombang lain?'
+    ].join('\n');
+  }
+
+  // General registration intent - check this AFTER specific patterns
+  if (/\b(mau\s+daftar|ingin\s+daftar|cara\s+daftar|bagaimana\s+daftar|alur\s+daftar|mau\s+kuliah|ingin\s+kuliah|saya\s+mau\s+kuliah|saya\s+ingin\s+kuliah)\b/.test(qLower)) {
+    return [
+      'ITB STIKOM Bali adalah kampus teknologi yang berfokus pada bidang informatika dan digital. Kami menyediakan program studi S1 (Sistem Informasi, Teknologi Informasi, Sistem Komputer, Manajemen Informatika, Bisnis Digital), D3, dan S2.',
+      '',
+      'Untuk mendaftar kuliah di ITB STIKOM Bali, kakak bisa mengikuti langkah berikut:',
+      '',
+      '1. Cek jadwal gelombang pendaftaran yang sedang buka',
+      '2. Pilih program studi yang diminati (S1, D3, atau S2)',
+      '3. Siapkan dokumen persyaratan (ijazah, KTP, KK, foto, dll)',
+      '4. Lakukan pendaftaran online melalui website https://siap.stikom-bali.ac.id/',
+      '5. Atau daftar langsung ke kampus ITB STIKOM Bali',
+      '6. Ikuti tes seleksi sesuai jadwal',
+      '7. Tunggu pengumuman hasil seleksi',
+      '8. Lakukan registrasi ulang jika diterima',
+      '',
+      'Kakak ingin tahu jadwal gelombang yang sedang buka sekarang?'
+    ].join('\n');
+  }
+  
+  // Default PMB overview
   return [
     'PMB adalah singkatan dari Penerimaan Mahasiswa Baru, yaitu proses penerimaan calon mahasiswa yang ingin mendaftar kuliah di ITB STIKOM Bali.',
     '',
@@ -299,7 +411,7 @@ function buildPmbOverviewAnswer() {
     '* Syarat dan dokumen pendaftaran',
     '* Kontak atau bantuan admin PMB',
     '',
-    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: �jadwal PMB sekarang gelombang berapa?�, �rincian biaya SI gelombang 2B?�, atau �apa saja syarat pendaftaran?�'
+    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: "jadwal PMB sekarang gelombang berapa?", "rincian biaya SI gelombang 2B?", atau "apa saja syarat pendaftaran?"'
   ].join('\n');
 }
 
@@ -2123,7 +2235,7 @@ async function tryStructuredProgramRecommendationAnswer(rawQuestion, indexForQue
     /(konten|content|instagram|\big\b|tiktok|sosmed|social\s*media|marketing|digital\s*marketing|copywriting|branding|desain|design|video|editing|editor)/i.test(qLower);
 
   // Additional: users asking about market analysis / data analysis
-  const aboutMarketAnalysis = /(analisis\s+pasar|riset\s+pasar|market\s+research|analisis\s+data|data\s+analis|data\s+science|business\s+analytics)/i.test(qLower);
+  const aboutMarketAnalysis = /(analisis\s+pasar|riset\s+pasar|market\s*research|analisis\s+data|data\s+analis|data\s+science|business\s+analytics)/i.test(qLower);
 
   // Additional: hardware / merakit -> Sistem Komputer
   const aboutHardware = /(merakit|rakit|komputer\b|pc\b|hardware|perangkat\s+keras|embedded|iot|mikrokontroler|robot|robotik|robotics)/i.test(qLower);
@@ -2146,6 +2258,25 @@ async function tryStructuredProgramRecommendationAnswer(rawQuestion, indexForQue
       contexts: [],
       confidenceTier: 'HIGH',
       debug: { method: 'coding-hobby-signal' }
+    };
+  }
+
+  // Design-specific recommendation with Double Degree UTB alternative
+  if (hasHobbySignal && aboutContentCreation && /(desain|design|visual|graphic|branding|ui|ux)/i.test(qLower)) {
+    return {
+      answer: [
+        'Kalau kakak suka desain, pilihan utama yang paling cocok adalah Bisnis Digital (BD).',
+        '',
+        'Alasannya, BD fokus pada digital marketing, branding, visual content, dan strategi bisnis digital yang erat dengan desain.',
+        '',
+        'Alternatif lain: Double Degree UTB (National Class) - program kolaborasi ITB STIKOM Bali dengan Universitas Teknologi Bali yang memberikan gelar ganda dan pengalaman internasional.',
+        '',
+        'Kakak ingin tahu lebih detail tentang Bisnis Digital atau Double Degree UTB?'
+      ].join('\n'),
+      source: 'rag-major-recommendation',
+      contexts: [],
+      confidenceTier: 'HIGH',
+      debug: { method: 'design-hobby-signal' }
     };
   }
 
@@ -2384,7 +2515,7 @@ function createProgramOverviewCatalog() {
     },
     {
       title: 'PROGRAM DUAL DEGREE',
-      intro: 'Tersedia program Dual Degree nasional dan internasional dengan mitra UTB, DNUI, dan HELP. Untuk UTB, jalurnya adalah National Class; untuk DNUI dan HELP, jalurnya International Class.'
+      intro: 'Tersedia program Dual Degree nasional (UTB - National Class) dan internasional (DNUI, HELP - International Class).'
     },
     {
       title: 'PROGRAM INTERNATIONAL CLASS',
@@ -2507,6 +2638,9 @@ function tryStructuredProgramOverviewAnswer(rawQuestion) {
   const hasSpecificProgramMention = /\b(si|ti|bd|sk|mi|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|s\.?k(?:om(?:puter)?)?|manajemen\s+informatika|manajemen\s+informasi)\b/i.test(qLower);
   if (hasSpecificProgramMention) return null;
 
+  // Exclude UKM/Ormawa/BEM queries from program overview to allow UKM handler to process them
+  if (/\b(ukm|ormawa|organisasi\s+mahasiswa|bem)\b/i.test(qLower)) return null;
+
   // Expanded triggers to catch all program overview queries including variations like:
   // "ada program studi apa saja", "program studi di", "jurusan di", "kampus ini punya program apa saja", 
   // "daftar prodi", "pilihan jurusan", "prodi yang tersedia", "program pendidikan di"
@@ -2516,7 +2650,7 @@ function tryStructuredProgramOverviewAnswer(rawQuestion) {
     /(?:\b(?:kampus|sekolah).*\bpunya|punya.*\b(?:program|prodi|jurusan))/i,  // "kampus punya program apa"
     /(?:\b(?:daftar|list|pilihan)\s+(?:prodi|jurusan|program)|\b(?:prodi|jurusan)\s+(?:yang|apa)\s+(?:tersedia|ada|ditawarkan))/i,  // "daftar prodi", "pilihan jurusan", "prodi yang tersedia"
     /(?:\b(?:program\s+)?pendidikan\s+di\b)/i,  // "program pendidikan di"
-    /(?:\bapa\s+itu\b|\bdi\b.+\sbelajar\s+apa\b|\bmata\s+kuliah\b|\blulusan\b.+\b(?:bekerja|kerja)\b|\bprospek\s+kerja\b|\bkarir\b|\bprogram\s+studi\b|\bprofil\s+prodi\b)/i,  // Original triggers
+    /(?:\bapa\s+itu\s+(?:program\s+studi|prodi|jurusan|si|ti|bd|sk|mi|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika)\b|\bdi\b.+\sbelajar\s+apa\b|\bmata\s+kuliah\b|\blulusan\b.+\b(?:bekerja|kerja)\b|\bprospek\s+kerja\b|\bkarir\b|\bprogram\s+studi\b|\bprofil\s+prodi\b)/i,  // "apa itu program studi/prodi" with program context
     /(?:berikan|beri|tampilkan)\s+(?:detail|informasi|ringkasan)|(?:detail|informasi|ringkasan)\s+(?:tentang|prodi|masing|-masing)|detail\s+tentang\s+masing|-masing\s+prodi|detail\s+prodi/i  // Detail request triggers
   ];
   
@@ -3062,9 +3196,9 @@ function tryStructuredCampusAccreditationAnswer(question, indexForQuery) {
   // Generic fallback for campus accreditation questions: provide general info
   // (don't duplicate program overview, just indicate where to find accreditation info)
   const lines = [];
-  lines.push('Untuk informasi akreditasi kampus ITB STIKOM Bali, silakan hubungi bagian akademik atau lihat dokumen akreditasi resmi di laman kampus.');
+  lines.push('ITB STIKOM Bali adalah kampus terakreditasi. Untuk informasi detail status akreditasi kampus, silakan hubungi bagian akademik atau lihat dokumen akreditasi resmi di laman kampus.');
   lines.push('');
-  lines.push('Jika Anda ingin tahu tentang program studi yang kami tawarkan, bisa saya jelaskan lengkap.');
+  lines.push('Jika Anda ingin tahu tentang akreditasi program studi tertentu, sebutkan nama prodi (misalnya: SI, TI, SK, BD).');
 
   return { answer: lines.join('\n'), source: 'rag-accreditation-campus' };
 }
@@ -3583,9 +3717,10 @@ function tryStructuredCurrentOpenWavesAnswer(question) {
   if (!mentionsWave) return null;
 
   const asksNow = /(sekarang|saat\s+ini|hari\s+ini|lagi\s+buka|yang\s+sedang\s+buka|terbuka|dibuka|open|masih\s+buka|masih\s+dibuka)/i.test(qLower) ||
-    /sekarang\s+gelombang\s+berapa/i.test(qLower) ||
-    /\bkapan\b.*\bgelombang\b/i.test(qLower) || /\bgelombang\b.*\bberikutnya\b/i.test(qLower);
-  if (!asksNow) return null;
+    /sekarang\s+gelombang\s+berapa/i.test(qLower);
+  const asksNext = /\bgelombang\b.*\bberikutnya\b/i.test(qLower) || /\bkapan\b.*\bgelombang\b/i.test(qLower);
+  
+  if (!asksNow && !asksNext) return null;
 
   const windows = extractScheduleRegistrationWindowsFromIndex();
   if (!windows || windows.length === 0) return null;
@@ -3599,6 +3734,24 @@ function tryStructuredCurrentOpenWavesAnswer(question) {
   open.sort((a, b) => (a.endYmd < b.endYmd ? -1 : a.endYmd > b.endYmd ? 1 : 0));
   upcoming.sort((a, b) => (a.startYmd < b.startYmd ? -1 : a.startYmd > b.startYmd ? 1 : 0));
 
+  // If user asks about "berikutnya" (next wave), show upcoming waves
+  if (asksNext) {
+    if (upcoming.length > 0) {
+      const nextStart = upcoming[0].startYmd;
+      const next = upcoming.filter(w => w.startYmd === nextStart).slice(0, 6);
+      const items = next.map(w => `${w.display} (${compactDateRangeText(w.masa)})`);
+      const line1 = `Gelombang berikutnya yang akan dibuka: ${items.join(' | ')}`;
+      const line2 = 'Balas gelombangnya, nanti saya kirim jadwal detailnya.';
+      return { answer: [line1, '', line2].join('\n'), source: 'rag-next-waves' };
+    } else {
+      return { 
+        answer: `Per ${todayPretty} (WITA), belum ada informasi gelombang berikutnya. Silakan hubungi admin PMB untuk jadwal terbaru.`, 
+        source: 'rag-next-waves' 
+      };
+    }
+  }
+
+  // If user asks about "sekarang" (current wave), show open waves
   if (open.length > 0) {
     const items = open.slice(0, 4).map(w => `${w.display} (${compactDateRangeText(w.masa)})`);
     const more = open.length > 4 ? ` (+${open.length - 4} lainnya)` : '';
@@ -3879,7 +4032,7 @@ function chooseRagFollowUp(question, answer) {
   const qHasFeeSignal = /(beasiswa|prestasi|ranking|potongan|dpp|kip|1k1s|biaya|spp|ukt|pembayaran|pendaftaran)/i.test(q);
 
   // If the question or answer is about UKM/Ormawa, offer a UKM-specific follow-up
-  if (/(\bukm\b|\bormawa\b|\borganisasi\s+mahasiswa\b|\bnama\s+ukm\b|\bdaftar\s+ukm\b|\blist\s+ukm\b)/i.test(q) || /(\bukm\b|\bormawa\b|\borganisasi\s+mahasiswa\b|\bnama\s+ukm\b|\bdaftar\s+ukm\b|\blist\s+ukm\b)/i.test(a)) {
+  if (/(\bukm\b|\bormawa\b|\borganisasi\s+mahasiswa\b|\bbem\b|\bnama\s+ukm\b|\bdaftar\s+ukm\b|\blist\s+ukm\b)/i.test(q) || /(\bukm\b|\bormawa\b|\borganisasi\s+mahasiswa\b|\bbem\b|\bnama\s+ukm\b|\bdaftar\s+ukm\b|\blist\s+ukm\b)/i.test(a)) {
     return 'Mau saya tampilkan kontak pembina atau detail lain?';
   }
 
@@ -11831,7 +11984,7 @@ async function query(question, topK = 8, options = null) {
       const trimmedQ = String(rawForDetect || '').trim();
       const simpleWords = (trimmedQ.split(/\s+/).filter(Boolean) || []);
 
-      const greetingsList = ['halo', 'hallo', 'hai', 'hello', 'hi', 'hey', 'permisi', 'selamat pagi', 'selamat siang', 'selamat sore', 'selamat malam', 'assalamualaikum', 'salam'];
+      const greetingsList = ['halo', 'hallo', 'hai', 'hello', 'hi', 'hey', 'permisi', 'selamat pagi', 'selamat siang', 'selamat sore', 'selamat malam', 'assalamualaikum', 'salam', 'apa kabar'];
       const low = String(trimmedQ || '').toLowerCase();
       const isExact = greetingsList.includes(low);
       const startsWithGreeting = greetingsList.some(g => low.startsWith(g + ' '));
@@ -11845,8 +11998,8 @@ async function query(question, topK = 8, options = null) {
       // Broad PMB requests that are NOT asking schedule-specific details should be
       // handled by the deterministic PMB info route so they don't fall through to
       // fee / generic retrieval paths.
-      if (/\b(pmb|penerimaan mahasiswa baru|pendaftaran|registrasi)\b/.test(simpleQLower) && !/\b(biaya|harga|dpp|ukt|spp|uang\s+pendaftaran|bayar|potongan|diskon|rincian|gelombang|jadwal|tanggal|kapan|pengumuman)\b/.test(simpleQLower)) {
-        const pmb = buildPmbOverviewAnswer();
+      if (/\b(pmb|penerimaan mahasiswa baru|pendaftaran|registrasi|mau\s+daftar|ingin\s+daftar|cara\s+daftar|bagaimana\s+daftar|alur\s+daftar|mau\s+kuliah|ingin\s+kuliah|saya\s+mau\s+kuliah|saya\s+ingin\s+kuliah|daftar|lulusan\s+smk|smk\s+lulusan)\b/.test(simpleQLower) && !/\b(biaya|harga|dpp|ukt|spp|uang\s+pendaftaran|bayar|potongan|diskon|rincian|gelombang|jadwal|tanggal|kapan|pengumuman)\b/.test(simpleQLower)) {
+        const pmb = buildPmbOverviewAnswer(question);
         return wrapRagResult(cleanAnswerLanguage(pmb), 'rag-pmb-info', 'HIGH', question);
       }
 
@@ -12712,7 +12865,64 @@ async function query(question, topK = 8, options = null) {
     // solely on vector similarity ranking.
     try {
       const qNorm = normalizeIndonesianQuestionText(question || '');
-      if (/\bukm\b|\bormawa\b|\borganisasi\s+mahasiswa\b/i.test(qNorm)) {
+      // Only trigger UKM list handler for general UKM queries, not specific UKM questions
+      // General: "apa saja ukm", "daftar ukm", "ukm apa saja", "list ukm"
+      // Specific: "apa itu ukm ksl", "jelaskan ukm athena", "ukm rade adalah"
+      const isGeneralUkmQuery = /\b(?:apa\s+saja|daftar|list|semua|nama-nama)\s+(?:ukm|ormawa|organisasi\s+mahasiswa)\b/i.test(qNorm) ||
+                                 /\b(?:ukm|ormawa|organisasi\s+mahasiswa)\s+(?:apa\s+saja|yang\s+ada|tersedia|di\s+stikom)\b/i.test(qNorm);
+      
+      // Check if this is a specific UKM query (mentions UKM + specific name)
+      const isSpecificUkmQuery = /\b(?:ukm|ormawa|organisasi\s+mahasiswa|bem)\b/i.test(qNorm) && 
+                                  (/\b(?:ksl|athena|rade|tabuh|ghost|basket|futsal|jcos|mcos|u2m|mapala|paskamras|progress|syntax|teater|tari|musik|multimedia|himaprodi|himas)\b/i.test(qNorm) ||
+                                   /\b(?:apa\s+itu|jelaskan|tentang|profil|adalah|deskripsi)\b/i.test(qNorm));
+      
+      // For specific UKM queries, try to find matching UKM document by name
+      if (isSpecificUkmQuery) {
+        try {
+          const fullIndex = loadIndex && typeof loadIndex === 'function' ? loadIndex() : (Array.isArray(indexForQuery) ? indexForQuery : []);
+          const ukmNameMatch = qNorm.match(/\b(ksl|athena|rade|tabuh|ghost|basket|futsal|jcos|mcos|u2m|mapala|paskamras|progress|syntax|teater|tari|musik|multimedia|himaprodi|himas|bem)\b/i);
+          
+          if (ukmNameMatch && Array.isArray(fullIndex)) {
+            const targetName = ukmNameMatch[1].toLowerCase();
+            
+            // Find chunks from UKM documents that match the UKM name
+            const ukmMatches = [];
+            for (const it of fullIndex) {
+              if (!it || !it.chunk || !it.filename) continue;
+              
+              const filenameLower = String(it.filename).toLowerCase();
+              const chunkLower = String(it.chunk).toLowerCase();
+              
+              // Only match if filename contains both "ukm" and the specific name (high confidence)
+              if (filenameLower.includes('ukm') && filenameLower.includes(targetName)) {
+                ukmMatches.push({ it, score: 1.0, matchType: 'filename' });
+              }
+            }
+            
+            // Only return if we have a confident filename match
+            if (ukmMatches.length > 0) {
+              // Sort by score and return the best match
+              ukmMatches.sort((a, b) => b.score - a.score);
+              const best = ukmMatches[0];
+              const content = String(best.it.chunk || '').replace(/\s+/g, ' ').trim();
+              
+              return {
+                success: true,
+                answer: formatRagAnswer(cleanAnswerLanguage(`Informasi UKM dari ${best.it.filename}:\n\n${content}\n\nMau saya tampilkan kontak pembina atau detail lain?`), 'rag-ukm-specific', 'HIGH', question),
+                source: 'rag-ukm-specific',
+                contexts: [{ id: best.it.id, score: best.score, chunk: best.it.chunk, trainingId: best.it.trainingId, filename: best.it.filename, divisionKey: best.it.divisionKey }],
+                confidenceScore: best.score,
+                debug: { ukm_specific_match: true, matchType: best.matchType }
+              };
+            }
+            // If no filename match found, fall through to normal RAG retrieval
+          }
+        } catch (e) {
+          // Fall through to normal RAG if specific matching fails
+        }
+      }
+      
+      if (isGeneralUkmQuery && (/\bukm\b|\bormawa\b|\borganisasi\s+mahasiswa\b|\bbem\b/i.test(qNorm))) {
         // If a precomputed, cleaned UKM list exists, prefer returning it
         try {
           // Prefer an explicitly categorized list if present

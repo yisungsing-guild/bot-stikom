@@ -1,0 +1,1220 @@
+[
+  {
+    "user": "Halo",
+    "bot": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.",
+    "status": 200,
+    "source": "semantic-rag-small-talk",
+    "err": null
+  },
+  {
+    "user": "Hai",
+    "bot": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.",
+    "status": 200,
+    "source": "semantic-rag-small-talk",
+    "err": null
+  },
+  {
+    "user": "Selamat pagi",
+    "bot": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.",
+    "status": 200,
+    "source": "semantic-rag-small-talk",
+    "err": null
+  },
+  {
+    "user": "Selamat siang",
+    "bot": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.",
+    "status": 200,
+    "source": "semantic-rag-small-talk",
+    "err": null
+  },
+  {
+    "user": "Selamat malam",
+    "bot": "Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.",
+    "status": 200,
+    "source": "semantic-rag-small-talk",
+    "err": null
+  },
+  {
+    "user": "Apa kabar?",
+    "bot": "Saya baik-baik saja, terima kasih. Ada yang bisa saya bantu seputar ITB STIKOM Bali?",
+    "status": 200,
+    "source": "semantic-rag-small-talk",
+    "err": null
+  },
+  {
+    "user": "Kamu siapa?",
+    "bot": "Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu menjawab pertanyaan seputar PMB, cara daftar, jadwal pendaftaran, rincian biaya, program studi, beasiswa, UKM, fasilitas, lokasi kampus, dan informasi kampus yang tersedia di data.",
+    "status": 200,
+    "source": "semantic-rag-small-talk",
+    "err": null
+  },
+  {
+    "user": "Kamu bisa bantu apa?",
+    "bot": "Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu menjawab pertanyaan seputar PMB, cara daftar, jadwal pendaftaran, rincian biaya, program studi, beasiswa, UKM, fasilitas, lokasi kampus, dan informasi kampus yang tersedia di data.",
+    "status": 200,
+    "source": "semantic-rag-small-talk",
+    "err": null
+  },
+  {
+    "user": "Apa yang bisa kamu lakukan?",
+    "bot": "Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu menjawab pertanyaan seputar PMB, cara daftar, jadwal pendaftaran, rincian biaya, program studi, beasiswa, UKM, fasilitas, lokasi kampus, dan informasi kampus yang tersedia di data.",
+    "status": 200,
+    "source": "semantic-rag-small-talk",
+    "err": null
+  },
+  {
+    "user": "Apa itu Sistem Informasi?",
+    "bot": "Kalau yang kakak maksud Sistem Informasi, saya jelaskan gambaran prodinya dulu ya. Saya jelaskan sebagai gambaran awal untuk calon mahasiswa.\n\nSistem Informasi adalah program studi yang berfokus pada cara merancang solusi digital yang menghubungkan kebutuhan bisnis, proses organisasi, dan teknologi informasi. Mahasiswa belajar melihat masalah dari sisi pengguna, data, dan proses kerja agar solusi yang dibuat tidak hanya canggih secara teknis, tetapi juga efektif dipakai di dunia nyata.\n\nSingkatnya, prodi ini cocok untuk kakak yang tertarik pada analisis kebutuhan, proses bisnis, data, dan solusi sistem informasi.",
+    "status": 200,
+    "source": "semantic-rag-program-definition",
+    "err": null
+  },
+  {
+    "user": "Apa itu Teknologi Informasi?",
+    "bot": "Baik, Kak. Saya jelaskan Teknologi Informasi dari fokus belajar dan kecocokan minatnya. Saya jelaskan sebagai gambaran awal untuk calon mahasiswa.\n\nTeknologi Informasi adalah program studi yang menekankan pengembangan solusi perangkat lunak, infrastruktur komputasi, dan integrasi sistem modern. Mahasiswa dibimbing untuk memahami bagaimana membangun, mengelola, dan mengamankan layanan digital yang andal untuk kebutuhan industri.\n\nSingkatnya, prodi ini cocok untuk kakak yang tertarik pada coding, aplikasi, jaringan, cloud, keamanan, dan pengelolaan layanan digital.",
+    "status": 200,
+    "source": "semantic-rag-program-definition",
+    "err": null
+  },
+  {
+    "user": "Apa itu Sistem Komputer?",
+    "bot": "Saya pahami kakak ingin tahu apa itu Sistem Komputer. Berikut gambaran sederhananya. Saya jelaskan sebagai gambaran awal untuk calon mahasiswa.\n\nSistem Komputer adalah program studi yang berfokus pada integrasi perangkat keras dan perangkat lunak, mulai dari sistem tertanam sampai infrastruktur komputasi. Mahasiswa belajar merancang sistem komputasi yang efisien, stabil, dan dapat dioperasikan untuk kebutuhan industri.\n\nSingkatnya, prodi ini cocok untuk kakak yang tertarik pada hardware, embedded system, IoT, jaringan, dan integrasi perangkat.",
+    "status": 200,
+    "source": "semantic-rag-program-definition",
+    "err": null
+  },
+  {
+    "user": "Perbedaan Sistem Informasi dan Teknologi Informasi apa?",
+    "bot": "Saya jelaskan perbedaan Sistem Informasi dan Teknologi Informasi secara ringkas tapi tetap jelas. Saya bandingkan dari fokus belajar, skill yang dibangun, dan arah kariernya.\n\nProgram S1 Sistem Informasi, Teknologi Informasi memiliki fokus yang berbeda. Berikut penjelasan singkat tiap prodi dan perbedaannya:\n\n1) Sistem Informasi (SI)\nSI adalah prodi yang mempelajari bagaimana teknologi digunakan untuk membantu kebutuhan organisasi atau perusahaan. Fokusnya ada pada perancangan dan pengelolaan sistem informasi, analisis kebutuhan bisnis, basis data, proses organisasi, dashboard, dan solusi digital.\nArah kariernya dekat dengan Business Analyst, System Analyst, Data Analyst, IT Consultant, Project Manager, atau pengelola sistem informasi perusahaan.\n\n2) Teknologi Informasi (TI)\nTI adalah prodi yang mempelajari penerapan teknologi untuk membangun, mengelola, dan mengamankan sistem digital. Fokusnya lebih kuat pada software, pemrograman, pengembangan aplikasi, infrastruktur IT, cloud, keamanan siber, jaringan, dan pengolahan data.\nArah kariernya dekat dengan Software Developer, Web/App Developer, DevOps, Cybersecurity Specialist, Network Engineer, Data Engineer, atau pengembang layanan digital.\n\nJadi, perbedaan utamanya: SI lebih ke sistem informasi, data, dan proses bisnis; TI lebih ke software, aplikasi, infrastruktur IT, dan keamanan teknologi.",
+    "status": 200,
+    "source": "semantic-rag-program-comparison",
+    "err": null
+  },
+  {
+    "user": "Perbedaan Sistem Informasi dan Sistem Komputer apa?",
+    "bot": "Untuk membedakan Sistem Informasi dan Sistem Komputer, saya pisahkan inti tiap prodi. Saya bandingkan dari fokus belajar, skill yang dibangun, dan arah kariernya.\n\nProgram S1 Sistem Informasi, Sistem Komputer memiliki fokus yang berbeda. Berikut penjelasan singkat tiap prodi dan perbedaannya:\n\n1) Sistem Informasi (SI)\nSI adalah prodi yang mempelajari bagaimana teknologi digunakan untuk membantu kebutuhan organisasi atau perusahaan. Fokusnya ada pada perancangan dan pengelolaan sistem informasi, analisis kebutuhan bisnis, basis data, proses organisasi, dashboard, dan solusi digital.\nArah kariernya dekat dengan Business Analyst, System Analyst, Data Analyst, IT Consultant, Project Manager, atau pengelola sistem informasi perusahaan.\n\n2) Sistem Komputer (SK)\nSK adalah prodi yang mempelajari hubungan antara perangkat keras dan perangkat lunak. Fokusnya lebih dekat ke hardware, arsitektur komputer, embedded system, Internet of Things (IoT), jaringan, mikrokontroler, robotika, dan integrasi perangkat.\nArah kariernya dekat dengan IoT Engineer, Embedded Engineer, Hardware Engineer, Network Engineer, atau bidang infrastruktur/perangkat.\n\nJadi, perbedaan utamanya: SI lebih ke sistem informasi, data, dan proses bisnis; SK lebih ke perangkat, jaringan, embedded system, dan IoT.",
+    "status": 200,
+    "source": "semantic-rag-program-comparison",
+    "err": null
+  },
+  {
+    "user": "Perbedaan Teknologi Informasi dan Sistem Komputer apa?",
+    "bot": "Baik, Kak. Saya bandingkan Teknologi Informasi dan Sistem Komputer dari fokus belajar, skill, dan arah kariernya. Saya bandingkan dari fokus belajar, skill yang dibangun, dan arah kariernya.\n\nProgram S1 Sistem Komputer, Teknologi Informasi memiliki fokus yang berbeda. Berikut penjelasan singkat tiap prodi dan perbedaannya:\n\n1) Sistem Komputer (SK)\nSK adalah prodi yang mempelajari hubungan antara perangkat keras dan perangkat lunak. Fokusnya lebih dekat ke hardware, arsitektur komputer, embedded system, Internet of Things (IoT), jaringan, mikrokontroler, robotika, dan integrasi perangkat.\nArah kariernya dekat dengan IoT Engineer, Embedded Engineer, Hardware Engineer, Network Engineer, atau bidang infrastruktur/perangkat.\n\n2) Teknologi Informasi (TI)\nTI adalah prodi yang mempelajari penerapan teknologi untuk membangun, mengelola, dan mengamankan sistem digital. Fokusnya lebih kuat pada software, pemrograman, pengembangan aplikasi, infrastruktur IT, cloud, keamanan siber, jaringan, dan pengolahan data.\nArah kariernya dekat dengan Software Developer, Web/App Developer, DevOps, Cybersecurity Specialist, Network Engineer, Data Engineer, atau pengembang layanan digital.\n\nJadi, perbedaan utamanya: SK lebih ke perangkat, jaringan, embedded system, dan IoT; TI lebih ke software, aplikasi, infrastruktur IT, dan keamanan teknologi.",
+    "status": 200,
+    "source": "semantic-rag-program-comparison",
+    "err": null
+  },
+  {
+    "user": "Program studi apa saja yang ada di ITB STIKOM Bali?",
+    "bot": "Kalau yang ditanyakan jurusan di STIKOM Bali, pilihannya seperti ini. Saya tampilkan program reguler D3/S1/S2 dan pilihan Double Degree.\n\nS2 (Pascasarjana):\n\n- S2 Sistem Informasi (SI)\n\nS1 (Sarjana):\n\n- Sistem Informasi\n- Teknologi Informasi\n- Bisnis Digital\n- Sistem Komputer\n\nD3 (Diploma):\n\n- D3 Manajemen Informatika\n\nDouble Degree:\n\n- Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) - Prodi STIKOM Bali: Bisnis Digital; di UTB: DKV (Desain Komunikasi Visual)\n- Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi STIKOM Bali: Bisnis Digital; jurusan di DNUI belum tercantum pada data yang tersedia\n- Dual Degree (International Class) dengan HELP University, Malaysia - Prodi STIKOM Bali: Sistem Informasi; jurusan di HELP belum tercantum pada data yang tersedia\n\nJadi, pilihan programnya mencakup S2, S1, D3, dan Double Degree.",
+    "status": 200,
+    "source": "semantic-rag-program-list",
+    "err": null
+  },
+  {
+    "user": "Program studi mana yang cocok untuk menjadi programmer?",
+    "bot": "Kalau arahnya memilih jurusan, saya lihat dulu minat dan pekerjaan yang kakak incar. Saya pakai minat atau pekerjaan yang kakak sebutkan sebagai dasar jawabannya.\n\nPilihan utama yang paling dekat adalah Teknologi Informasi (TI).\nTeknologi Informasi paling cocok karena fokusnya lebih dekat ke coding, pengembangan aplikasi, software, backend/frontend, infrastruktur IT, cloud, dan keamanan.\nAlternatif yang juga bisa dipertimbangkan: Sistem Informasi (SI), Manajemen Informatika (MI).\nJadi, untuk arah programmer / software developer, pilih prodi berdasarkan sisi yang paling kakak minati: produk/bisnis, implementasi teknis, atau analisis kebutuhan pengguna.",
+    "status": 200,
+    "source": "semantic-rag-program-recommendation",
+    "err": null
+  },
+  {
+    "user": "Program studi mana yang cocok untuk menjadi network engineer?",
+    "bot": "Saya bantu arahkan ke prodi yang paling relevan dengan target kakak. Saya pakai minat atau pekerjaan yang kakak sebutkan sebagai dasar jawabannya.\n\nPilihan utama yang paling dekat adalah Sistem Komputer (SK).\nSistem Komputer paling cocok karena fokusnya dekat dengan hardware, IoT, embedded system, mikrokontroler, jaringan, robotika, dan integrasi perangkat.\nAlternatif yang juga bisa dipertimbangkan: Teknologi Informasi (TI).\nJadi, untuk arah IoT / jaringan / hardware, pilih prodi berdasarkan sisi yang paling kakak minati: produk/bisnis, implementasi teknis, atau analisis kebutuhan pengguna.",
+    "status": 200,
+    "source": "semantic-rag-program-recommendation",
+    "err": null
+  },
+  {
+    "user": "Program studi mana yang cocok untuk UI/UX Designer?",
+    "bot": "Saya pakai tujuan karier yang kakak sebutkan sebagai dasar rekomendasi prodi. Saya pakai minat atau pekerjaan yang kakak sebutkan sebagai dasar jawabannya.\n\nPilihan utama yang paling dekat adalah Bisnis Digital (BD).\nBisnis Digital cocok kalau kakak ingin UI/UX atau produk digital dari sisi kebutuhan pasar, produk, pengguna, bisnis, branding, dan strategi digital.\nAlternatif yang juga bisa dipertimbangkan: Teknologi Informasi (TI), Sistem Informasi (SI).\nJadi, untuk arah UI/UX / produk digital, pilih prodi berdasarkan sisi yang paling kakak minati: produk/bisnis, implementasi teknis, atau analisis kebutuhan pengguna.",
+    "status": 200,
+    "source": "semantic-rag-program-recommendation",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Informasi Gelombang 1A?",
+    "bot": "Baik, Kak. Saya rincikan biaya Sistem Informasi dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I A): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I A): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Informasi Gelombang 1B?",
+    "bot": "Saya cek bagian biaya Sistem Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Informasi Gelombang 2A?",
+    "bot": "Untuk biaya Sistem Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Informasi Gelombang 2B?",
+    "bot": "Baik, Kak. Saya rincikan biaya Sistem Informasi dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Informasi Gelombang 3?",
+    "bot": "Untuk biaya Sistem Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang III): Rp. 150.000\nTotal biaya pendaftaran (Gelombang III): Rp. 350.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang III): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang III): Rp. 14.850.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Informasi Gelombang 1A apa saja?",
+    "bot": "Saya cek bagian biaya Sistem Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I A): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I A): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Informasi Gelombang 1B apa saja?",
+    "bot": "Saya jawab rincian biaya Sistem Informasi sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Informasi Gelombang 2A apa saja?",
+    "bot": "Baik, Kak. Saya rincikan biaya Sistem Informasi dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Informasi Gelombang 2B apa saja?",
+    "bot": "Untuk biaya Sistem Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Informasi Gelombang 3 apa saja?",
+    "bot": "Saya jawab rincian biaya Sistem Informasi sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang III): Rp. 150.000\nTotal biaya pendaftaran (Gelombang III): Rp. 350.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang III): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang III): Rp. 14.850.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya pendaftaran Sistem Informasi Gelombang 1A?",
+    "bot": "Untuk biaya pendaftaran Sistem Informasi, saya pisahkan dari biaya awal masuk dan biaya semester. Saya jawab hanya komponen pendaftaran, bukan DPP, biaya awal masuk, atau UKT.\n\nBiaya pendaftaran untuk Prodi Sistem Informasi Gelombang I A:\n\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nCatatan: ini hanya komponen pendaftaran, belum termasuk DPP, biaya awal masuk/perlengkapan, dan UKT per semester.",
+    "status": 200,
+    "source": "semantic-rag-registration-fee",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya pendaftaran Sistem Informasi Gelombang 2B?",
+    "bot": "Untuk biaya pendaftaran Sistem Informasi, saya pisahkan dari biaya awal masuk dan biaya semester. Saya jawab hanya komponen pendaftaran, bukan DPP, biaya awal masuk, atau UKT.\n\nBiaya pendaftaran untuk Prodi Sistem Informasi Gelombang II B:\n\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nCatatan: ini hanya komponen pendaftaran, belum termasuk DPP, biaya awal masuk/perlengkapan, dan UKT per semester.",
+    "status": 200,
+    "source": "semantic-rag-registration-fee",
+    "err": null
+  },
+  {
+    "user": "Berapa DPP Sistem Informasi Gelombang 1B?",
+    "bot": "Saya jawab rincian biaya Sistem Informasi sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa DPP Sistem Informasi Gelombang 2A?",
+    "bot": "Baik, Kak. Saya rincikan biaya Sistem Informasi dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya semester pertama Sistem Informasi Gelombang 2B?",
+    "bot": "Saya cek bagian biaya Sistem Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa total biaya awal Sistem Informasi Gelombang 2B?",
+    "bot": "Saya jawab rincian biaya Sistem Informasi sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Teknologi Informasi Gelombang 1A?",
+    "bot": "Saya cek bagian biaya Teknologi Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I A): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I A): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Teknologi Informasi Gelombang 1B?",
+    "bot": "Baik, Kak. Saya rincikan biaya Teknologi Informasi dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Teknologi Informasi Gelombang 2A?",
+    "bot": "Saya jawab rincian biaya Teknologi Informasi sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Teknologi Informasi Gelombang 2B?",
+    "bot": "Saya cek bagian biaya Teknologi Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Teknologi Informasi Gelombang 3?",
+    "bot": "Saya jawab rincian biaya Teknologi Informasi sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang III): Rp. 150.000\nTotal biaya pendaftaran (Gelombang III): Rp. 350.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang III): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang III): Rp. 14.850.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Teknologi Informasi Gelombang 1A apa saja?",
+    "bot": "Baik, Kak. Saya rincikan biaya Teknologi Informasi dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I A): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I A): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Teknologi Informasi Gelombang 1B apa saja?",
+    "bot": "Untuk biaya Teknologi Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Teknologi Informasi Gelombang 2A apa saja?",
+    "bot": "Untuk biaya Teknologi Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Teknologi Informasi Gelombang 2B apa saja?",
+    "bot": "Baik, Kak. Saya rincikan biaya Teknologi Informasi dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Teknologi Informasi Gelombang 3 apa saja?",
+    "bot": "Untuk biaya Teknologi Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang III): Rp. 150.000\nTotal biaya pendaftaran (Gelombang III): Rp. 350.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang III): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang III): Rp. 14.850.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya pendaftaran Teknologi Informasi Gelombang 1A?",
+    "bot": "Baik, Kak. Saya jawab khusus biaya pendaftaran Teknologi Informasi supaya tidak tercampur dengan DPP atau UKT. Saya jawab hanya komponen pendaftaran, bukan DPP, biaya awal masuk, atau UKT.\n\nBiaya pendaftaran untuk Prodi Teknologi Informasi Gelombang I A:\n\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nCatatan: ini hanya komponen pendaftaran, belum termasuk DPP, biaya awal masuk/perlengkapan, dan UKT per semester.",
+    "status": 200,
+    "source": "semantic-rag-registration-fee",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya pendaftaran Teknologi Informasi Gelombang 2B?",
+    "bot": "Baik, Kak. Saya jawab khusus biaya pendaftaran Teknologi Informasi supaya tidak tercampur dengan DPP atau UKT. Saya jawab hanya komponen pendaftaran, bukan DPP, biaya awal masuk, atau UKT.\n\nBiaya pendaftaran untuk Prodi Teknologi Informasi Gelombang II B:\n\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nCatatan: ini hanya komponen pendaftaran, belum termasuk DPP, biaya awal masuk/perlengkapan, dan UKT per semester.",
+    "status": 200,
+    "source": "semantic-rag-registration-fee",
+    "err": null
+  },
+  {
+    "user": "Berapa DPP Teknologi Informasi Gelombang 1B?",
+    "bot": "Untuk biaya Teknologi Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa DPP Teknologi Informasi Gelombang 2A?",
+    "bot": "Saya cek bagian biaya Teknologi Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya semester pertama Teknologi Informasi Gelombang 2B?",
+    "bot": "Baik, Kak. Saya rincikan biaya Teknologi Informasi dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa total biaya awal Teknologi Informasi Gelombang 2B?",
+    "bot": "Saya cek bagian biaya Teknologi Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Komputer Gelombang 1A?",
+    "bot": "Untuk biaya Sistem Komputer, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang I A): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang I A): Rp. 11.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Komputer Gelombang 1B?",
+    "bot": "Saya jawab rincian biaya Sistem Komputer sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 11.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Komputer Gelombang 2A?",
+    "bot": "Baik, Kak. Saya rincikan biaya Sistem Komputer dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 750.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 12.050.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Komputer Gelombang 2B?",
+    "bot": "Untuk biaya Sistem Komputer, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 750.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 12.050.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk Sistem Komputer Gelombang 3?",
+    "bot": "Baik, Kak. Saya rincikan biaya Sistem Komputer dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang III): Rp. 150.000\nTotal biaya pendaftaran (Gelombang III): Rp. 350.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang III): Rp. 0\nTotal awal masuk setelah potongan (Gelombang III): Rp. 12.850.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Komputer Gelombang 1A apa saja?",
+    "bot": "Saya jawab rincian biaya Sistem Komputer sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang I A): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang I A): Rp. 11.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Komputer Gelombang 1B apa saja?",
+    "bot": "Untuk biaya Sistem Komputer, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 11.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Komputer Gelombang 2A apa saja?",
+    "bot": "Saya cek bagian biaya Sistem Komputer dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 750.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 12.050.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Komputer Gelombang 2B apa saja?",
+    "bot": "Saya jawab rincian biaya Sistem Komputer sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 750.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 12.050.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Rincian biaya Sistem Komputer Gelombang 3 apa saja?",
+    "bot": "Saya cek bagian biaya Sistem Komputer dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang III): Rp. 150.000\nTotal biaya pendaftaran (Gelombang III): Rp. 350.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang III): Rp. 0\nTotal awal masuk setelah potongan (Gelombang III): Rp. 12.850.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya pendaftaran Sistem Komputer Gelombang 1A?",
+    "bot": "Saya cek komponen pendaftaran Sistem Komputer dari data PMB ya, Kak. Saya jawab hanya komponen pendaftaran, bukan DPP, biaya awal masuk, atau UKT.\n\nBiaya pendaftaran untuk Prodi Sistem Komputer Gelombang I A:\n\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nCatatan: ini hanya komponen pendaftaran, belum termasuk DPP, biaya awal masuk/perlengkapan, dan UKT per semester.",
+    "status": 200,
+    "source": "semantic-rag-registration-fee",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya pendaftaran Sistem Komputer Gelombang 2B?",
+    "bot": "Saya cek komponen pendaftaran Sistem Komputer dari data PMB ya, Kak. Saya jawab hanya komponen pendaftaran, bukan DPP, biaya awal masuk, atau UKT.\n\nBiaya pendaftaran untuk Prodi Sistem Komputer Gelombang II B:\n\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nCatatan: ini hanya komponen pendaftaran, belum termasuk DPP, biaya awal masuk/perlengkapan, dan UKT per semester.",
+    "status": 200,
+    "source": "semantic-rag-registration-fee",
+    "err": null
+  },
+  {
+    "user": "Berapa DPP Sistem Komputer Gelombang 1B?",
+    "bot": "Untuk biaya Sistem Komputer, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 11.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa DPP Sistem Komputer Gelombang 2A?",
+    "bot": "Saya cek bagian biaya Sistem Komputer dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 750.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 12.050.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya semester pertama Sistem Komputer Gelombang 2B?",
+    "bot": "Saya jawab rincian biaya Sistem Komputer sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang I): Rp. 1.000.000\nTotal awal masuk setelah potongan (Gelombang I): Rp. 11.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa total biaya awal Sistem Komputer Gelombang 2B?",
+    "bot": "Untuk biaya Sistem Komputer, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 750.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 12.050.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Sistem Informasi Gelombang 1A?",
+    "bot": "Saya jawab rincian biaya Sistem Informasi sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Double Degree HELP University, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 3.000.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 1.250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 1.750.000\n\nBiaya awal masuk untuk Prodi Double Degree HELP University:\n\n- DPP / Dana Pendidikan Pokok: Rp. 20.000.000\n- Potongan biaya DPP (Gelombang I A): Rp. 8.000.000\nTotal awal masuk setelah potongan (Gelombang I A): Rp. 13.750.000\n- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)\n\nBiaya Pendidikan & Ujian/Subject: Rp. 3.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Sistem Informasi Gelombang 1B?",
+    "bot": "Saya cek bagian biaya Sistem Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Double Degree HELP University, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 3.000.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 1.250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 1.750.000\n\nBiaya awal masuk untuk Prodi Double Degree HELP University:\n\n- DPP / Dana Pendidikan Pokok: Rp. 20.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 8.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 13.750.000\n- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)\n\nBiaya Pendidikan & Ujian/Subject: Rp. 3.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Sistem Informasi Gelombang 2A?",
+    "bot": "Untuk biaya Sistem Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Double Degree HELP University, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 3.000.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 1.000.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 2.000.000\n\nBiaya awal masuk untuk Prodi Double Degree HELP University:\n\n- DPP / Dana Pendidikan Pokok: Rp. 20.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 6.000.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 16.000.000\n- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)\n\nBiaya Pendidikan & Ujian/Subject: Rp. 3.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Sistem Informasi Gelombang 2B?",
+    "bot": "Saya jawab rincian biaya Sistem Informasi sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Double Degree HELP University, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 3.000.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 1.000.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 2.000.000\n\nBiaya awal masuk untuk Prodi Double Degree HELP University:\n\n- DPP / Dana Pendidikan Pokok: Rp. 20.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 6.000.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 16.000.000\n- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)\n\nBiaya Pendidikan & Ujian/Subject: Rp. 3.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Sistem Informasi Gelombang 3?",
+    "bot": "Saya cek bagian biaya Sistem Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Double Degree HELP University, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 3.000.000\n- Potongan biaya pendaftaran (Gelombang III): Rp. 750.000\nTotal biaya pendaftaran (Gelombang III): Rp. 2.250.000\n\nBiaya awal masuk untuk Prodi Double Degree HELP University:\n\n- DPP / Dana Pendidikan Pokok: Rp. 20.000.000\n- Potongan biaya DPP (Gelombang III): Rp. 4.000.000\nTotal awal masuk setelah potongan (Gelombang III): Rp. 18.250.000\n- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)\n\nBiaya Pendidikan & Ujian/Subject: Rp. 3.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Teknologi Informasi Gelombang 1A?",
+    "bot": "Saya belum menemukan data biaya Program Double Degree untuk Teknologi Informasi pada dokumen biaya yang tersedia.\n\nData Double Degree yang tersedia di dokumen adalah:\n- Double Degree HELP University untuk Sistem Informasi\n- Double Degree DNUI untuk Bisnis Digital\n- Double Degree UTB Bandung untuk Bisnis Digital\n\nJadi saya tidak mengambil biaya Teknologi Informasi reguler sebagai jawaban Double Degree, supaya nominalnya tidak keliru.",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Teknologi Informasi Gelombang 1B?",
+    "bot": "Saya belum menemukan data biaya Program Double Degree untuk Teknologi Informasi pada dokumen biaya yang tersedia.\n\nData Double Degree yang tersedia di dokumen adalah:\n- Double Degree HELP University untuk Sistem Informasi\n- Double Degree DNUI untuk Bisnis Digital\n- Double Degree UTB Bandung untuk Bisnis Digital\n\nJadi saya tidak mengambil biaya Teknologi Informasi reguler sebagai jawaban Double Degree, supaya nominalnya tidak keliru.",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Teknologi Informasi Gelombang 2A?",
+    "bot": "Saya belum menemukan data biaya Program Double Degree untuk Teknologi Informasi pada dokumen biaya yang tersedia.\n\nData Double Degree yang tersedia di dokumen adalah:\n- Double Degree HELP University untuk Sistem Informasi\n- Double Degree DNUI untuk Bisnis Digital\n- Double Degree UTB Bandung untuk Bisnis Digital\n\nJadi saya tidak mengambil biaya Teknologi Informasi reguler sebagai jawaban Double Degree, supaya nominalnya tidak keliru.",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Teknologi Informasi Gelombang 2B?",
+    "bot": "Saya belum menemukan data biaya Program Double Degree untuk Teknologi Informasi pada dokumen biaya yang tersedia.\n\nData Double Degree yang tersedia di dokumen adalah:\n- Double Degree HELP University untuk Sistem Informasi\n- Double Degree DNUI untuk Bisnis Digital\n- Double Degree UTB Bandung untuk Bisnis Digital\n\nJadi saya tidak mengambil biaya Teknologi Informasi reguler sebagai jawaban Double Degree, supaya nominalnya tidak keliru.",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya Program Double Degree Teknologi Informasi Gelombang 3?",
+    "bot": "Saya belum menemukan data biaya Program Double Degree untuk Teknologi Informasi pada dokumen biaya yang tersedia.\n\nData Double Degree yang tersedia di dokumen adalah:\n- Double Degree HELP University untuk Sistem Informasi\n- Double Degree DNUI untuk Bisnis Digital\n- Double Degree UTB Bandung untuk Bisnis Digital\n\nJadi saya tidak mengambil biaya Teknologi Informasi reguler sebagai jawaban Double Degree, supaya nominalnya tidak keliru.",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Apa saja rincian biaya Program Double Degree?",
+    "bot": "Baik, Kak. Saya rincikan biaya dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nInformasi biaya masuk biasanya terdiri dari DPP (uang pangkal) dan UKT per semester, serta pengelompokan berdasarkan gelombang pendaftaran.\n\nUntuk rincian: lihat informasi PMB (biaya awal masuk / DPP), atau cek portal PMB/halaman resmi pendaftaran untuk nilai spesifik per program dan gelombang.\n\nKalau mau, saya bisa bantu carikan tautan PMB atau kontak Admin PMB untuk rincian biaya.",
+    "status": 200,
+    "source": "semantic-rag-fee-fallback",
+    "err": null
+  },
+  {
+    "user": "Apakah biaya Double Degree lebih mahal dari reguler?",
+    "bot": "Saya cek bagian biaya dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nSaya bandingkan dari biaya awal masuk yang tertulis di dokumen. Komponen biaya pendidikan saya tampilkan sesuai label pada data; jika tertulis per semester, tidak saya kalikan menjadi total kuliah agar tidak menebak di luar dokumen.\n\nYang paling mahal dari data yang tersedia: Double Degree DNUI (Double Degree International), Double Degree HELP University (Double Degree International) dengan biaya awal masuk Rp. 23.000.000.\n\nRincian pembanding:\n- Double Degree DNUI (Double Degree International): biaya awal masuk Rp. 23.000.000; biaya pendidikan per semester Rp. 16.000.000/semester\n- Double Degree HELP University (Double Degree International): biaya awal masuk Rp. 23.000.000; Biaya Pendidikan & Ujian/Subject Rp. 3.000.000 (Biaya Pendidikan & Ujian/Subject)\n- Sistem Informasi (S1): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 6.500.000/semester\n- Teknologi Informasi (S1): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 6.500.000/semester\n- Bisnis Digital (S1): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 6.500.000/semester\n- Double Degree UTB (Double Degree National): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 7.500.000/semester\n- Manajemen Informatika (D3): biaya awal masuk Rp. 12.000.000 - Rp. 15.500.000; biaya pendidikan per semester Rp. 4.500.000/semester\n- Sistem Komputer (S1): biaya awal masuk Rp. 13.000.000; biaya pendidikan per semester Rp. 6.000.000/semester",
+    "status": 200,
+    "source": "semantic-rag-fee-comparison",
+    "err": null
+  },
+  {
+    "user": "Berapa tambahan biaya Double Degree?",
+    "bot": "Baik, Kak. Saya rincikan biaya dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nInformasi biaya masuk biasanya terdiri dari DPP (uang pangkal) dan UKT per semester, serta pengelompokan berdasarkan gelombang pendaftaran.\n\nUntuk rincian: lihat informasi PMB (biaya awal masuk / DPP), atau cek portal PMB/halaman resmi pendaftaran untuk nilai spesifik per program dan gelombang.\n\nKalau mau, saya bisa bantu carikan tautan PMB atau kontak Admin PMB untuk rincian biaya.",
+    "status": 200,
+    "source": "semantic-rag-fee-fallback",
+    "err": null
+  },
+  {
+    "user": "Apakah Double Degree memiliki biaya pendaftaran yang berbeda?",
+    "bot": "Baik, Kak. Ini khusus biaya pendaftaran, bukan total biaya kuliah. Saya jawab hanya komponen pendaftaran, bukan DPP, biaya awal masuk, atau UKT.\n\nBiaya pendaftaran: Rp. 500.000.\n\nNominal yang dibayar bisa berubah setelah potongan sesuai gelombang pendaftaran:\n- Gelombang Khusus: potongan Rp. 300.000, total Rp. 200.000\n- Gelombang I: potongan Rp. 250.000, total Rp. 250.000\n- Gelombang II: potongan Rp. 200.000, total Rp. 300.000\n- Gelombang III: potongan Rp. 150.000, total Rp. 350.000\n- Gelombang IV: potongan Rp. 100.000, total Rp. 400.000\n- Gelombang Sisipan: potongan Rp. 0, total Rp. 500.000\n\nKalau kakak sebutkan gelombangnya, misalnya Gelombang I B atau Gelombang IV A, saya bisa hitungkan total biaya pendaftarannya.",
+    "status": 200,
+    "source": "semantic-rag-registration-fee",
+    "err": null
+  },
+  {
+    "user": "Apakah DPP Double Degree berbeda dengan reguler?",
+    "bot": "Untuk biaya, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nInformasi biaya masuk biasanya terdiri dari DPP (uang pangkal) dan UKT per semester, serta pengelompokan berdasarkan gelombang pendaftaran.\n\nUntuk rincian: lihat informasi PMB (biaya awal masuk / DPP), atau cek portal PMB/halaman resmi pendaftaran untuk nilai spesifik per program dan gelombang.\n\nKalau mau, saya bisa bantu carikan tautan PMB atau kontak Admin PMB untuk rincian biaya.",
+    "status": 200,
+    "source": "semantic-rag-fee-fallback",
+    "err": null
+  },
+  {
+    "user": "Apakah ada potongan biaya Double Degree?",
+    "bot": "Ada, Kak. Untuk beasiswa, pilihannya seperti ini. Saya kaitkan dengan konteks calon mahasiswa baru dan PMB.\n\nYa, ada beberapa pilihan beasiswa/program bantuan yang bisa ditanyakan di ITB STIKOM Bali:\n\n- Beasiswa KIP\n- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n- Beasiswa Prestasi\n- Beasiswa Yayasan\n- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global\n- Kuliah Sambil Kerja di Luar Negeri\n\nSelain itu, pada data biaya PMB juga ada potongan biaya yang mengikuti gelombang pendaftaran:\n- Potongan biaya pendaftaran per gelombang\n- Potongan DPP nominal per gelombang\n- Tambahan beasiswa DPP berupa persentase dari DPP\n\nUntuk S1 SI/TI/BD, tambahan beasiswa DPP yang terbaca di dokumen:\n- Gelombang Khusus: 60%\n- Gelombang I: 50%\n- Gelombang II: 40%\n- Gelombang III: 30%\n- Gelombang IV: 20%\n\nKalau kakak sebutkan prodi dan gelombangnya, saya bisa hitungkan rincian biaya setelah potongan.\n\nIntinya, ada jalur beasiswa/program bantuan dan ada juga potongan biaya PMB sesuai gelombang.",
+    "status": 200,
+    "source": "semantic-rag-scholarship",
+    "err": null
+  },
+  {
+    "user": "Kalau saya memilih Sistem Informasi Gelombang 2B total bayarnya berapa?",
+    "bot": "Saya cek bagian biaya Sistem Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Kalau masuk Teknologi Informasi Gelombang 1A harus bayar apa saja?",
+    "bot": "Untuk biaya Teknologi Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I A): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I A): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Kalau memilih Sistem Komputer Gelombang 3 rincian pembayarannya bagaimana?",
+    "bot": "Saya jawab rincian biaya Sistem Komputer sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang III): Rp. 150.000\nTotal biaya pendaftaran (Gelombang III): Rp. 350.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang III): Rp. 0\nTotal awal masuk setelah potongan (Gelombang III): Rp. 12.850.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Total biaya awal masuk SI Gelombang 1B berapa?",
+    "bot": "Untuk biaya Sistem Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I B): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I B): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Sistem Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I B): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I B): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Biaya registrasi ulang TI Gelombang 2A berapa?",
+    "bot": "Baik, Kak. Saya rincikan biaya Teknologi Informasi dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Biaya awal SK Gelombang 2B terdiri dari apa saja?",
+    "bot": "Saya jawab rincian biaya Sistem Komputer sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Sistem Komputer, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Sistem Komputer:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 11.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 750.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 12.050.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Berapa total pembayaran pertama Double Degree?",
+    "bot": "Saya jawab bagian yang relevan dengan pertanyaan kakak ya. Saya tetap batasi ke informasi yang tersedia agar tidak menebak di luar konteks kampus.\n\nUntuk pertanyaan tentang pembayaran (UKT, tagihan, atau denda), biasanya bagian keuangan kampus yang menangani detail transaksi dan metode pembayaran.\n\nSaran umum: cek portal akademik atau hubungi bagian keuangan kampus untuk rincian tagihan dan metode pembayaran. Untuk denda, konfirmasi tanggal jatuh tempo dan besaran denda kepada bagian keuangan.\n\nKalau mau, saya bisa bantu carikan informasi kontak bagian keuangan atau langkah umum pelunasan.\n\nJadi, jawaban ini saya rangkum dari informasi yang paling relevan dengan pertanyaan kakak.",
+    "status": 200,
+    "source": "semantic-rag-finance-fallback",
+    "err": null
+  },
+  {
+    "user": "Double Degree SI Gelombang 2B totalnya berapa?",
+    "bot": "Saya cek bagian biaya Sistem Informasi dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nUntuk program studi Double Degree HELP University, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 3.000.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 1.000.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 2.000.000\n\nBiaya awal masuk untuk Prodi Double Degree HELP University:\n\n- DPP / Dana Pendidikan Pokok: Rp. 20.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 6.000.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 16.000.000\n- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)\n\nBiaya Pendidikan & Ujian/Subject: Rp. 3.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Double Degree TI Gelombang 1A rincian biayanya apa saja?",
+    "bot": "Saya belum menemukan data biaya Program Double Degree untuk Teknologi Informasi pada dokumen biaya yang tersedia.\n\nData Double Degree yang tersedia di dokumen adalah:\n- Double Degree HELP University untuk Sistem Informasi\n- Double Degree DNUI untuk Bisnis Digital\n- Double Degree UTB Bandung untuk Bisnis Digital\n\nJadi saya tidak mengambil biaya Teknologi Informasi reguler sebagai jawaban Double Degree, supaya nominalnya tidak keliru.",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Bandingkan biaya SI reguler dengan SI Double Degree Gelombang 2B.",
+    "bot": "Saya cek bagian biaya Sistem Informasi dari data PMB ya. Saya bandingkan dari fokus belajar, skill yang dibangun, dan arah kariernya.\n\nUntuk program studi Double Degree HELP University, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 3.000.000\n- Potongan biaya pendaftaran (Gelombang II B): Rp. 1.000.000\nTotal biaya pendaftaran (Gelombang II B): Rp. 2.000.000\n\nBiaya awal masuk untuk Prodi Double Degree HELP University:\n\n- DPP / Dana Pendidikan Pokok: Rp. 20.000.000\n- Potongan biaya DPP (Gelombang II B): Rp. 6.000.000\nTotal awal masuk setelah potongan (Gelombang II B): Rp. 16.000.000\n- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)\n\nBiaya Pendidikan & Ujian/Subject: Rp. 3.000.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Bandingkan biaya TI Gelombang 1A dan Gelombang 2B.",
+    "bot": "Saya cek bagian biaya Teknologi Informasi dari data PMB ya. Saya bandingkan dari fokus belajar, skill yang dibangun, dan arah kariernya.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang I A): Rp. 250.000\nTotal biaya pendaftaran (Gelombang I A): Rp. 250.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang I A): Rp. 2.000.000\nTotal awal masuk setelah potongan (Gelombang I A): Rp. 13.750.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Bandingkan biaya SI dan TI Gelombang 2A.",
+    "bot": "Baik, Kak. Saya rincikan biaya dari komponen PMB yang tersedia. Saya bandingkan dari fokus belajar, skill yang dibangun, dan arah kariernya.\n\nUntuk program studi Teknologi Informasi, rincian biaya sebagai berikut:\n\nPendaftaran:\n- Biaya pendaftaran: Rp. 500.000\n- Potongan biaya pendaftaran (Gelombang II A): Rp. 200.000\nTotal biaya pendaftaran (Gelombang II A): Rp. 300.000\n\nBiaya awal masuk untuk Prodi Teknologi Informasi:\n\n- Jas almamater dan topi: Rp. 750.000\n- Kaos, tas, GMTI: Rp. 750.000\nSubtotal biaya awal masuk: Rp. 1.500.000\n- DPP: Rp. 14.000.000\n- Potongan biaya DPP (Gelombang II A): Rp. 1.500.000\nTotal awal masuk setelah potongan (Gelombang II A): Rp. 14.300.000\n\nBiaya pendidikan per semester (UKT): Rp. 6.500.000",
+    "status": 200,
+    "source": "semantic-rag-fee-detail",
+    "err": null
+  },
+  {
+    "user": "Program studi mana yang biaya masuknya paling murah?",
+    "bot": "Untuk biaya, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nSaya bandingkan dari biaya awal masuk yang tertulis di dokumen. Komponen biaya pendidikan saya tampilkan sesuai label pada data; jika tertulis per semester, tidak saya kalikan menjadi total kuliah agar tidak menebak di luar dokumen.\n\nYang paling murah dari data yang tersedia: Manajemen Informatika (D3) dengan biaya awal masuk Rp. 12.000.000 - Rp. 15.500.000.\n\nRincian pembanding:\n- Manajemen Informatika (D3): biaya awal masuk Rp. 12.000.000 - Rp. 15.500.000; biaya pendidikan per semester Rp. 4.500.000/semester\n- Sistem Komputer (S1): biaya awal masuk Rp. 13.000.000; biaya pendidikan per semester Rp. 6.000.000/semester\n- Sistem Informasi (S1): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 6.500.000/semester\n- Teknologi Informasi (S1): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 6.500.000/semester\n- Bisnis Digital (S1): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 6.500.000/semester\n- Double Degree UTB (Double Degree National): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 7.500.000/semester\n- Double Degree DNUI (Double Degree International): biaya awal masuk Rp. 23.000.000; biaya pendidikan per semester Rp. 16.000.000/semester\n- Double Degree HELP University (Double Degree International): biaya awal masuk Rp. 23.000.000; Biaya Pendidikan & Ujian/Subject Rp. 3.000.000 (Biaya Pendidikan & Ujian/Subject)",
+    "status": 200,
+    "source": "semantic-rag-fee-comparison",
+    "err": null
+  },
+  {
+    "user": "Program studi mana yang biaya masuknya paling mahal?",
+    "bot": "Saya cek bagian biaya dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nSaya bandingkan dari biaya awal masuk yang tertulis di dokumen. Komponen biaya pendidikan saya tampilkan sesuai label pada data; jika tertulis per semester, tidak saya kalikan menjadi total kuliah agar tidak menebak di luar dokumen.\n\nYang paling mahal dari data yang tersedia: Double Degree DNUI (Double Degree International), Double Degree HELP University (Double Degree International) dengan biaya awal masuk Rp. 23.000.000.\n\nRincian pembanding:\n- Double Degree DNUI (Double Degree International): biaya awal masuk Rp. 23.000.000; biaya pendidikan per semester Rp. 16.000.000/semester\n- Double Degree HELP University (Double Degree International): biaya awal masuk Rp. 23.000.000; Biaya Pendidikan & Ujian/Subject Rp. 3.000.000 (Biaya Pendidikan & Ujian/Subject)\n- Sistem Informasi (S1): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 6.500.000/semester\n- Teknologi Informasi (S1): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 6.500.000/semester\n- Bisnis Digital (S1): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 6.500.000/semester\n- Double Degree UTB (Double Degree National): biaya awal masuk Rp. 16.000.000; biaya pendidikan per semester Rp. 7.500.000/semester\n- Manajemen Informatika (D3): biaya awal masuk Rp. 12.000.000 - Rp. 15.500.000; biaya pendidikan per semester Rp. 4.500.000/semester\n- Sistem Komputer (S1): biaya awal masuk Rp. 13.000.000; biaya pendidikan per semester Rp. 6.000.000/semester",
+    "status": 200,
+    "source": "semantic-rag-fee-comparison",
+    "err": null
+  },
+  {
+    "user": "Bagaimana cara daftar?",
+    "bot": "Saya bantu jelaskan cara mulai pendaftarannya secara umum ya, Kak. Kakak bisa mulai dari pendaftaran online atau datang langsung ke kampus.\n\nUntuk daftar kuliah di ITB STIKOM Bali, kakak bisa memilih salah satu jalur berikut:\n\n- Online: melalui https://siap.stikom-bali.ac.id\n- Offline: datang langsung ke kampus ITB STIKOM Bali untuk dibantu proses pendaftaran oleh petugas/PMB.\n\nLangkah awal yang bisa kakak lakukan:\n\n- Tentukan prodi yang ingin dipilih.\n- Cek gelombang pendaftaran yang sedang buka.\n- Siapkan data/dokumen pendaftaran sesuai arahan PMB.\n- Lanjutkan pendaftaran online atau datang ke kampus untuk pendaftaran offline.\n\nKalau kakak mau, saya bisa bantu cek gelombang yang sedang buka sekarang atau rincian biaya berdasarkan prodi yang dipilih.\n\nJadi, langkah paling aman adalah memilih prodi, cek gelombang aktif, lalu lanjut melalui kanal resmi PMB atau admin.",
+    "status": 200,
+    "source": "semantic-rag-registration-info",
+    "err": null
+  },
+  {
+    "user": "Apa syarat pendaftaran?",
+    "bot": "Untuk syarat dan dokumen pendaftaran, saya belum menemukan daftar berkas yang lengkap dan final pada data yang tersedia.\n\nAgar tidak salah menyebut dokumen, langkah paling aman:\n\n- Cek dan isi pendaftaran online melalui https://siap.stikom-bali.ac.id\n- Ikuti arahan dokumen yang muncul pada proses pendaftaran\n- Atau datang langsung ke kampus ITB STIKOM Bali untuk dibantu petugas PMB\n\nKalau kakak ingin lanjut, saya bisa bantu cek gelombang yang sedang buka atau rincian biaya sesuai prodi.",
+    "status": 200,
+    "source": "semantic-rag-pmb-requirements",
+    "err": null
+  },
+  {
+    "user": "Dokumen apa saja yang diperlukan?",
+    "bot": "Untuk syarat dan dokumen pendaftaran, saya belum menemukan daftar berkas yang lengkap dan final pada data yang tersedia.\n\nAgar tidak salah menyebut dokumen, langkah paling aman:\n\n- Cek dan isi pendaftaran online melalui https://siap.stikom-bali.ac.id\n- Ikuti arahan dokumen yang muncul pada proses pendaftaran\n- Atau datang langsung ke kampus ITB STIKOM Bali untuk dibantu petugas PMB\n\nKalau kakak ingin lanjut, saya bisa bantu cek gelombang yang sedang buka atau rincian biaya sesuai prodi.",
+    "status": 200,
+    "source": "semantic-rag-pmb-requirements",
+    "err": null
+  },
+  {
+    "user": "Bagaimana alur pendaftaran mahasiswa baru?",
+    "bot": "Kalau konteksnya mau daftar kuliah, saya jelaskan langkah awal PMB-nya ya, Kak. Kakak bisa mulai dari pendaftaran online atau datang langsung ke kampus.\n\nUntuk daftar kuliah di ITB STIKOM Bali, kakak bisa memilih salah satu jalur berikut:\n\n- Online: melalui https://siap.stikom-bali.ac.id\n- Offline: datang langsung ke kampus ITB STIKOM Bali untuk dibantu proses pendaftaran oleh petugas/PMB.\n\nLangkah awal yang bisa kakak lakukan:\n\n- Tentukan prodi yang ingin dipilih.\n- Cek gelombang pendaftaran yang sedang buka.\n- Siapkan data/dokumen pendaftaran sesuai arahan PMB.\n- Lanjutkan pendaftaran online atau datang ke kampus untuk pendaftaran offline.\n\nKalau kakak mau, saya bisa bantu cek gelombang yang sedang buka sekarang atau rincian biaya berdasarkan prodi yang dipilih.\n\nJadi, langkah paling aman adalah memilih prodi, cek gelombang aktif, lalu lanjut melalui kanal resmi PMB atau admin.",
+    "status": 200,
+    "source": "semantic-rag-registration-info",
+    "err": null
+  },
+  {
+    "user": "Apakah bisa daftar secara online?",
+    "bot": "Saya pahami kakak ingin tahu cara daftar kuliah di ITB STIKOM Bali. Saya jawab dari alur awal PMB yang aman. Kakak bisa mulai dari pendaftaran online atau datang langsung ke kampus.\n\nUntuk daftar kuliah di ITB STIKOM Bali, kakak bisa memilih salah satu jalur berikut:\n\n- Online: melalui https://siap.stikom-bali.ac.id\n- Offline: datang langsung ke kampus ITB STIKOM Bali untuk dibantu proses pendaftaran oleh petugas/PMB.\n\nLangkah awal yang bisa kakak lakukan:\n\n- Tentukan prodi yang ingin dipilih.\n- Cek gelombang pendaftaran yang sedang buka.\n- Siapkan data/dokumen pendaftaran sesuai arahan PMB.\n- Lanjutkan pendaftaran online atau datang ke kampus untuk pendaftaran offline.\n\nKalau kakak mau, saya bisa bantu cek gelombang yang sedang buka sekarang atau rincian biaya berdasarkan prodi yang dipilih.\n\nJadi, langkah paling aman adalah memilih prodi, cek gelombang aktif, lalu lanjut melalui kanal resmi PMB atau admin.",
+    "status": 200,
+    "source": "semantic-rag-registration-info",
+    "err": null
+  },
+  {
+    "user": "Apakah bisa daftar langsung ke kampus?",
+    "bot": "Saya pahami kakak ingin tahu cara daftar kuliah di ITB STIKOM Bali. Saya jawab dari alur awal PMB yang aman. Kakak bisa mulai dari pendaftaran online atau datang langsung ke kampus.\n\nUntuk daftar kuliah di ITB STIKOM Bali, kakak bisa memilih salah satu jalur berikut:\n\n- Online: melalui https://siap.stikom-bali.ac.id\n- Offline: datang langsung ke kampus ITB STIKOM Bali untuk dibantu proses pendaftaran oleh petugas/PMB.\n\nLangkah awal yang bisa kakak lakukan:\n\n- Tentukan prodi yang ingin dipilih.\n- Cek gelombang pendaftaran yang sedang buka.\n- Siapkan data/dokumen pendaftaran sesuai arahan PMB.\n- Lanjutkan pendaftaran online atau datang ke kampus untuk pendaftaran offline.\n\nKalau kakak mau, saya bisa bantu cek gelombang yang sedang buka sekarang atau rincian biaya berdasarkan prodi yang dipilih.\n\nJadi, langkah paling aman adalah memilih prodi, cek gelombang aktif, lalu lanjut melalui kanal resmi PMB atau admin.",
+    "status": 200,
+    "source": "semantic-rag-registration-info",
+    "err": null
+  },
+  {
+    "user": "Ada beasiswa?",
+    "bot": "Ada, Kak. Untuk beasiswa, pilihannya seperti ini. Saya kaitkan dengan konteks calon mahasiswa baru dan PMB.\n\nYa, ada beberapa pilihan beasiswa/program bantuan yang bisa ditanyakan di ITB STIKOM Bali:\n\n- Beasiswa KIP\n- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)\n- Beasiswa Prestasi\n- Beasiswa Yayasan\n- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global\n- Kuliah Sambil Kerja di Luar Negeri\n\nSelain itu, pada data biaya PMB juga ada potongan biaya yang mengikuti gelombang pendaftaran:\n- Potongan biaya pendaftaran per gelombang\n- Potongan DPP nominal per gelombang\n- Tambahan beasiswa DPP berupa persentase dari DPP\n\nUntuk S1 SI/TI/BD, tambahan beasiswa DPP yang terbaca di dokumen:\n- Gelombang Khusus: 60%\n- Gelombang I: 50%\n- Gelombang II: 40%\n- Gelombang III: 30%\n- Gelombang IV: 20%\n\nKalau kakak sebutkan prodi dan gelombangnya, saya bisa hitungkan rincian biaya setelah potongan.\n\nIntinya, ada jalur beasiswa/program bantuan dan ada juga potongan biaya PMB sesuai gelombang.",
+    "status": 200,
+    "source": "semantic-rag-scholarship",
+    "err": null
+  },
+  {
+    "user": "Apa itu KIP Kuliah?",
+    "bot": "Maaf Kak, penjelasan detail tentang Beasiswa KIP belum ada di data training saat ini.\n\nData yang tersedia baru menyebutkan nama programnya sebagai salah satu pilihan beasiswa/program bantuan, belum menjelaskan definisi, syarat, prosedur, atau ketentuannya.\n\nUntuk detail yang paling akurat, silakan konfirmasi ke Admin PMB ITB STIKOM Bali.",
+    "status": 200,
+    "source": "semantic-rag-scholarship",
+    "err": null
+  },
+  {
+    "user": "Bagaimana cara mendapatkan KIP Kuliah?",
+    "bot": "Maaf Kak, penjelasan detail tentang Beasiswa KIP belum ada di data training saat ini.\n\nData yang tersedia baru menyebutkan nama programnya sebagai salah satu pilihan beasiswa/program bantuan, belum menjelaskan definisi, syarat, prosedur, atau ketentuannya.\n\nUntuk detail yang paling akurat, silakan konfirmasi ke Admin PMB ITB STIKOM Bali.",
+    "status": 200,
+    "source": "semantic-rag-scholarship",
+    "err": null
+  },
+  {
+    "user": "Apa itu Beasiswa 1K1S?",
+    "bot": "Maaf Kak, penjelasan detail tentang Beasiswa 1K1S (Satu Keluarga Satu Sarjana) belum ada di data training saat ini.\n\nData yang tersedia baru menyebutkan nama programnya sebagai salah satu pilihan beasiswa/program bantuan, belum menjelaskan definisi, syarat, prosedur, atau ketentuannya.\n\nUntuk detail yang paling akurat, silakan konfirmasi ke Admin PMB ITB STIKOM Bali.",
+    "status": 200,
+    "source": "semantic-rag-scholarship",
+    "err": null
+  },
+  {
+    "user": "Apa itu RPL?",
+    "bot": "RPL adalah Rekognisi Pembelajaran Lampau, yaitu jalur pengakuan capaian belajar atau pengalaman sebelumnya agar bisa diperhitungkan dalam proses kuliah.\n\nPada data biaya yang tersedia, mahasiswa RPL dikenakan ketentuan berdasarkan jumlah SKS yang diakui. Karena hasilnya bergantung pada asesmen dokumen, detail final perlu dikonfirmasi ke Admin PMB ITB STIKOM Bali.",
+    "status": 200,
+    "source": "semantic-rag-rpl",
+    "err": null
+  },
+  {
+    "user": "Jadwal PMB sekarang bagaimana?",
+    "bot": "Saya jawab dari kalender pendaftaran PMB yang tersedia ya, Kak. Saya gunakan tanggal hari ini kalau kakak menanyakan status pendaftaran sekarang.\n\nPer 26 Juli 2026, gelombang yang bisa kakak pilih adalah:\n\n- Gelombang IV B: 19 Juli 2026 - 1 Agustus 2026\n\nJadi, untuk tanggal 26 Juli 2026, kakak mengikuti gelombang yang sedang aktif pada tanggal tersebut.",
+    "status": 200,
+    "source": "semantic-rag-schedule-window",
+    "err": null
+  },
+  {
+    "user": "Gelombang 2B masih buka?",
+    "bot": "Baik, Kak. Saya cocokkan pertanyaan kakak dengan kalender gelombang PMB. Saya gunakan tanggal hari ini kalau kakak menanyakan status pendaftaran sekarang.\n\nPer 26 Juli 2026, Gelombang II B sudah tidak buka. Jadwalnya sudah berakhir pada 18 April 2026.\n\nJadwal Gelombang II B:\n\n- Gelombang II B: 29 Maret 2026 - 18 April 2026\n\nYang sedang buka sekarang adalah:\n- Gelombang IV B: 19 Juli 2026 - 1 Agustus 2026\n\nJadi, gelombang yang bisa diikuti mengikuti tanggal daftar kakak pada kalender PMB.",
+    "status": 200,
+    "source": "semantic-rag-schedule-window",
+    "err": null
+  },
+  {
+    "user": "Kapan pendaftaran ditutup?",
+    "bot": "Untuk jadwal gelombang, saya cek berdasarkan tanggal atau bulan yang kakak sebutkan. Saya gunakan tanggal hari ini kalau kakak menanyakan status pendaftaran sekarang.\n\nPer 26 Juli 2026, PMB ITB STIKOM Bali sedang buka pada Gelombang IV B: 19 Juli 2026 - 1 Agustus 2026.\n\nBatas akhir pendaftaran terakhir yang tercantum adalah 11 September 2026 (Gelombang Sisipan 2).\n\nJadi, gelombang yang bisa diikuti mengikuti tanggal daftar kakak pada kalender PMB.",
+    "status": 200,
+    "source": "semantic-rag-schedule-window",
+    "err": null
+  },
+  {
+    "user": "Apakah masih menerima mahasiswa baru?",
+    "bot": "Untuk jadwal gelombang, saya cek berdasarkan tanggal atau bulan yang kakak sebutkan. Saya gunakan tanggal hari ini kalau kakak menanyakan status pendaftaran sekarang.\n\nYa, PMB ITB STIKOM Bali masih dibuka per 26 Juli 2026.\n\nGelombang yang sedang aktif:\n\n- Gelombang IV B: 19 Juli 2026 - 1 Agustus 2026\n\nKakak bisa daftar online melalui https://siap.stikom-bali.ac.id atau daftar offline dengan datang langsung ke kampus ITB STIKOM Bali.\n\nJadi, gelombang yang bisa diikuti mengikuti tanggal daftar kakak pada kalender PMB.",
+    "status": 200,
+    "source": "semantic-rag-schedule-window",
+    "err": null
+  },
+  {
+    "user": "Kapan tes masuk dilaksanakan?",
+    "bot": "Saya bantu cek status gelombang pendaftarannya dari data PMB. Saya gunakan tanggal hari ini kalau kakak menanyakan status pendaftaran sekarang.\n\nTes masuk/testing PMB ITB STIKOM Bali dijadwalkan berbeda untuk tiap gelombang.\n\nGelombang yang sedang aktif per 26 Juli 2026: Gelombang IV B: 19 Juli 2026 - 1 Agustus 2026.\n\nSebutkan gelombangnya, misalnya \"Gelombang II B\" atau \"Gelombang IV B\", supaya saya kirim jadwal testing, pengumuman, dan registrasi ulang yang tepat.\n\nJadi, gelombang yang bisa diikuti mengikuti tanggal daftar kakak pada kalender PMB.",
+    "status": 200,
+    "source": "semantic-rag-schedule-window",
+    "err": null
+  },
+  {
+    "user": "Apa itu UKM KSL?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nSaya rangkum pilihan UKM/Ormawa yang tercatat ya, Kak. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Kegiatan UKM KSL apa saja?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nKalau yang kakak cari kegiatan mahasiswa, daftar UKM-nya seperti ini. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKegiatan UKM KSL berhubungan dengan pembelajaran dan eksplorasi praktis di bidang Linux/open-source. Dari data yang tersedia, KSL mewadahi minat mahasiswa pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source, dengan pendekatan peer learning atau belajar bersama antaranggota.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Program kerja UKM KSL apa?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nKalau yang kakak cari kegiatan mahasiswa, daftar UKM-nya seperti ini. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nData yang tersedia belum mencantumkan daftar program kerja resmi UKM KSL secara lengkap. Informasi yang aman untuk saya sampaikan: KSL berfokus pada belajar bersama atau peer learning, eksplorasi praktis Linux/open-source, administrasi sistem, jaringan, keamanan siber, pengembangan perangkat lunak, serta pengelolaan media informasi komunitas.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Visi misi UKM KSL apa?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nUntuk UKM dan organisasi mahasiswa, berikut daftar yang tersedia di data. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nSaya belum menemukan teks visi dan misi resmi UKM KSL secara lengkap pada data yang tersedia. Namun profil yang tersedia menjelaskan bahwa KSL menjadi wadah mahasiswa yang tertarik pada Linux, administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source, dengan pendekatan belajar bersama dan eksplorasi praktis.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Siapa pembina UKM KSL?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nBaik, Kak. Saya tampilkan UKM/Ormawa yang tercatat di ITB STIKOM Bali. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nSaya belum menemukan nama pembina UKM KSL pada data yang tersedia. Yang bisa saya pastikan, KSL adalah UKM Kelompok Studi Linux yang mewadahi minat mahasiswa pada Linux, administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak open-source. Untuk nama pembina terbaru, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus KSL.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apa manfaat bergabung dengan UKM KSL?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nSaya rangkum pilihan UKM/Ormawa yang tercatat ya, Kak. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nManfaat bergabung dengan UKM KSL adalah mahasiswa bisa mengembangkan kemampuan praktis di bidang Linux/open-source, administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak. KSL juga memberi ruang belajar bersama antaranggota dan membangun kreativitas digital melalui aktivitas komunitas.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apa itu UKM VOS?",
+    "bot": "Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Vos.\n\nData yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apa kegiatan UKM VOS?",
+    "bot": "Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Vos.\n\nData yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apa program kerja UKM VOS?",
+    "bot": "Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Vos.\n\nData yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apa itu JCOS?",
+    "bot": "Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Jcos.\n\nData yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "JCOS bergerak di bidang apa?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nUntuk UKM dan organisasi mahasiswa, berikut daftar yang tersedia di data. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nAda 32 UKM/Ormawa yang tercatat di ITB STIKOM Bali:\nBadan Legislatif dan Eksekutif:\n- Badan Eksekutif Mahasiswa\n- Dewan Perwakilan Mahasiswa\nUKM/Ormawa lainnya:\n- Athena Esports\n- Basket\n- Bos\n- D.o.s\n- Futsal\n- Ghost\n- Himaprodi BD\n- Himaprodi SI\n- Himaprodi SK\n- Himaprodi TI\n- Himas Jimbaran\n- Himatography\n- Jcos\n- Kmhd\n- Ksl\n- Ksr\n- Mapala Kompas\n- Mcos\n- Multimedia\n- Musik\n- Paskamras\n- Pmk\n- Progress\n- Rade\n- Syntax\n- Tabuh\n- Tari\n- Teater Biner\n- U2M\n- Vos\nUntuk info jadwal kegiatan, pendaftaran anggota, atau kontak pembina, kakak bisa konfirmasi ke pihak kampus/kemahasiswaan.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apa kegiatan JCOS?",
+    "bot": "Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Jcos.\n\nData yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "KSL itu apa?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nUntuk UKM dan organisasi mahasiswa, berikut daftar yang tersedia di data. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "VOS itu apa?",
+    "bot": "Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Vos.\n\nData yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "JCOS itu apa?",
+    "bot": "Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Jcos.\n\nData yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "CDC itu apa?",
+    "bot": "Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia. Saya tetap batasi ke informasi yang tersedia agar tidak menebak di luar konteks kampus.\n\nCDC biasanya merujuk pada Career Development Center/Career Center, yaitu layanan kampus yang membantu mahasiswa dan alumni terkait informasi karier, persiapan kerja, lowongan, magang, atau pengembangan karier sesuai data layanan kampus yang tersedia.\n\nJadi, jawaban ini saya rangkum dari informasi yang paling relevan dengan pertanyaan kakak.",
+    "status": 200,
+    "source": "semantic-rag-campus-support-entity",
+    "err": null
+  },
+  {
+    "user": "BAAK itu apa?",
+    "bot": "Untuk pertanyaan ini, saya fokus ke informasi ITB STIKOM Bali yang tersedia. Saya tetap batasi ke informasi yang tersedia agar tidak menebak di luar konteks kampus.\n\nBAAK adalah bagian layanan akademik/administrasi akademik kampus. Untuk urusan seperti data akademik, administrasi perkuliahan, KRS/KHS/transkrip, atau informasi akademik resmi, kakak bisa menghubungi BAAK.\n\nJadi, jawaban ini saya rangkum dari informasi yang paling relevan dengan pertanyaan kakak.",
+    "status": 200,
+    "source": "semantic-rag-campus-support-entity",
+    "err": null
+  },
+  {
+    "user": "Apa sejarah ITB STIKOM Bali?",
+    "bot": "Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.",
+    "status": 200,
+    "source": "semantic-rag-disabled",
+    "err": null
+  },
+  {
+    "user": "Apa visi kampus?",
+    "bot": "Kalau yang kakak cari alamat kampus, saya bantu jawab ya. Berikut alamat kampus yang tersedia.\n\nLokasi kampus ITB STIKOM Bali:\n\n- Denpasar/Renon Campus: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali.\n- Kampus Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.\n- Kampus Abiansemal: Jl. Janger, Abiansemal, Dauh Yeh Cani, Badung, Bali.\n\nKalau kakak ingin datang langsung, sebaiknya pilih kampus sesuai kebutuhan layanan/prodi lalu cek rute maps dari lokasi kakak.\n\nJadi, ITB STIKOM Bali memiliki beberapa lokasi kampus, dan tujuan kunjungan sebaiknya disesuaikan dengan kebutuhan layanan kakak.",
+    "status": 200,
+    "source": "semantic-rag-campus-location",
+    "err": null
+  },
+  {
+    "user": "Apa misi kampus?",
+    "bot": "Baik, Kak. Ini informasi lokasi kampus ITB STIKOM Bali. Berikut alamat kampus yang tersedia.\n\nLokasi kampus ITB STIKOM Bali:\n\n- Denpasar/Renon Campus: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali.\n- Kampus Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.\n- Kampus Abiansemal: Jl. Janger, Abiansemal, Dauh Yeh Cani, Badung, Bali.\n\nKalau kakak ingin datang langsung, sebaiknya pilih kampus sesuai kebutuhan layanan/prodi lalu cek rute maps dari lokasi kakak.\n\nJadi, ITB STIKOM Bali memiliki beberapa lokasi kampus, dan tujuan kunjungan sebaiknya disesuaikan dengan kebutuhan layanan kakak.",
+    "status": 200,
+    "source": "semantic-rag-campus-location",
+    "err": null
+  },
+  {
+    "user": "Apa keunggulan kampus?",
+    "bot": "Saya pahami kakak menanyakan lokasi kampus ITB STIKOM Bali. Berikut alamat kampus yang tersedia.\n\nLokasi kampus ITB STIKOM Bali:\n\n- Denpasar/Renon Campus: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali.\n- Kampus Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.\n- Kampus Abiansemal: Jl. Janger, Abiansemal, Dauh Yeh Cani, Badung, Bali.\n\nKalau kakak ingin datang langsung, sebaiknya pilih kampus sesuai kebutuhan layanan/prodi lalu cek rute maps dari lokasi kakak.\n\nJadi, ITB STIKOM Bali memiliki beberapa lokasi kampus, dan tujuan kunjungan sebaiknya disesuaikan dengan kebutuhan layanan kakak.",
+    "status": 200,
+    "source": "semantic-rag-campus-location",
+    "err": null
+  },
+  {
+    "user": "Apa akreditasi kampus?",
+    "bot": "Kalau yang kakak cari alamat kampus, saya bantu jawab ya. Berikut alamat kampus yang tersedia.\n\nLokasi kampus ITB STIKOM Bali:\n\n- Denpasar/Renon Campus: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali.\n- Kampus Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.\n- Kampus Abiansemal: Jl. Janger, Abiansemal, Dauh Yeh Cani, Badung, Bali.\n\nKalau kakak ingin datang langsung, sebaiknya pilih kampus sesuai kebutuhan layanan/prodi lalu cek rute maps dari lokasi kakak.\n\nJadi, ITB STIKOM Bali memiliki beberapa lokasi kampus, dan tujuan kunjungan sebaiknya disesuaikan dengan kebutuhan layanan kakak.",
+    "status": 200,
+    "source": "semantic-rag-campus-location",
+    "err": null
+  },
+  {
+    "user": "Di mana lokasi kampus?",
+    "bot": "Saya pahami kakak menanyakan lokasi kampus ITB STIKOM Bali. Berikut alamat kampus yang tersedia.\n\nLokasi kampus ITB STIKOM Bali:\n\n- Denpasar/Renon Campus: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali.\n- Kampus Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.\n- Kampus Abiansemal: Jl. Janger, Abiansemal, Dauh Yeh Cani, Badung, Bali.\n\nKalau kakak ingin datang langsung, sebaiknya pilih kampus sesuai kebutuhan layanan/prodi lalu cek rute maps dari lokasi kakak.\n\nJadi, ITB STIKOM Bali memiliki beberapa lokasi kampus, dan tujuan kunjungan sebaiknya disesuaikan dengan kebutuhan layanan kakak.",
+    "status": 200,
+    "source": "semantic-rag-campus-location",
+    "err": null
+  },
+  {
+    "user": "Fasilitas laboratorium apa saja?",
+    "bot": "Mohon maaf, jawaban yang terbentuk belum sesuai dengan pertanyaan kakak tentang fasilitas kampus, jadi saya tahan agar tidak mengirim informasi yang keliru. Boleh kirim ulang pertanyaannya dengan topik yang lebih spesifik?",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Apakah ada perpustakaan digital?",
+    "bot": "Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi, untuk menjawab pertanyaan anda. Mungkin anda bisa mengubah pertanyaannya atau menanyakan hal lain yang ingin diketahui.",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Kampus memiliki fasilitas apa?",
+    "bot": "Saya jawab bagian yang relevan dengan pertanyaan kakak ya. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.\n\nFasilitas dan program pendukung yang tersedia di ITB STIKOM Bali antara lain:\n\n- Career Center\n- Inkubator Bisnis\n- Program Pengembangan Softskill\n- Lebih dari 30 Unit Kegiatan Mahasiswa (UKM)\n- Language Learning Center\n- Kuliah Sambil Kerja di Luar Negeri\n- Program Double Degree Nasional\n- Program Double Degree Internasional\n- Program Hi-Think untuk persiapan bekerja di bidang TI di Jepang\n- Program GCCP atau short course di luar negeri\n- Magang berbayar di luar negeri\n- Program jaminan konsultasi selama 2 tahun setelah lulus\nJadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Ada laboratorium jaringan?",
+    "bot": "Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi, untuk menjawab pertanyaan anda. Mungkin anda bisa mengubah pertanyaannya atau menanyakan hal lain yang ingin diketahui.",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Apakah tersedia WiFi?",
+    "bot": "Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi, untuk menjawab pertanyaan anda. Mungkin anda bisa mengubah pertanyaannya atau menanyakan hal lain yang ingin diketahui.",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Apakah ada ruang multimedia?",
+    "bot": "Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Multimedia.\n\nData yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apa itu Career Center?",
+    "bot": "Baik, Kak. Saya bantu jawab dari konteks ITB STIKOM Bali ya. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.\n\nCareer Center di ITB STIKOM Bali membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja.\n\nLayanan yang bisa ditanyakan melalui Career Center antara lain:\n\n- Informasi lowongan kerja dan peluang karier.\n- Bimbingan atau konsultasi karier.\n- Pelatihan/pembekalan keterampilan kerja.\n- Dukungan persiapan memasuki dunia profesional.\n\nKalau kakak ingin info yang lebih spesifik, kakak bisa tanya tentang lowongan, magang, atau program persiapan karier yang tersedia.\n\nJadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Career Center membantu apa?",
+    "bot": "Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.\n\nCareer Center di ITB STIKOM Bali membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja.\n\nLayanan yang bisa ditanyakan melalui Career Center antara lain:\n\n- Informasi lowongan kerja dan peluang karier.\n- Bimbingan atau konsultasi karier.\n- Pelatihan/pembekalan keterampilan kerja.\n- Dukungan persiapan memasuki dunia profesional.\n\nKalau kakak ingin info yang lebih spesifik, kakak bisa tanya tentang lowongan, magang, atau program persiapan karier yang tersedia.\n\nJadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Layanan kemahasiswaan apa saja?",
+    "bot": "Saya jawab bagian yang relevan dengan pertanyaan kakak ya. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.\n\nFasilitas dan program pendukung yang tersedia di ITB STIKOM Bali antara lain:\n\n- Career Center\n- Inkubator Bisnis\n- Program Pengembangan Softskill\n- Lebih dari 30 Unit Kegiatan Mahasiswa (UKM)\n- Language Learning Center\n- Kuliah Sambil Kerja di Luar Negeri\n- Program Double Degree Nasional\n- Program Double Degree Internasional\n- Program Hi-Think untuk persiapan bekerja di bidang TI di Jepang\n- Program GCCP atau short course di luar negeri\n- Magang berbayar di luar negeri\n- Program jaminan konsultasi selama 2 tahun setelah lulus\nJadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Apa layanan akademik yang tersedia?",
+    "bot": "Baik, Kak. Saya bantu jawab dari konteks ITB STIKOM Bali ya. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.\n\nFasilitas dan program pendukung yang tersedia di ITB STIKOM Bali antara lain:\n\n- Career Center\n- Inkubator Bisnis\n- Program Pengembangan Softskill\n- Lebih dari 30 Unit Kegiatan Mahasiswa (UKM)\n- Language Learning Center\n- Kuliah Sambil Kerja di Luar Negeri\n- Program Double Degree Nasional\n- Program Double Degree Internasional\n- Program Hi-Think untuk persiapan bekerja di bidang TI di Jepang\n- Program GCCP atau short course di luar negeri\n- Magang berbayar di luar negeri\n- Program jaminan konsultasi selama 2 tahun setelah lulus\nJadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Apa layanan administrasi kampus?",
+    "bot": "Baik, Kak. Saya bantu jawab dari konteks ITB STIKOM Bali ya. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.\n\nFasilitas dan program pendukung yang tersedia di ITB STIKOM Bali antara lain:\n\n- Career Center\n- Inkubator Bisnis\n- Program Pengembangan Softskill\n- Lebih dari 30 Unit Kegiatan Mahasiswa (UKM)\n- Language Learning Center\n- Kuliah Sambil Kerja di Luar Negeri\n- Program Double Degree Nasional\n- Program Double Degree Internasional\n- Program Hi-Think untuk persiapan bekerja di bidang TI di Jepang\n- Program GCCP atau short course di luar negeri\n- Magang berbayar di luar negeri\n- Program jaminan konsultasi selama 2 tahun setelah lulus\nJadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.",
+    "status": 200,
+    "source": "semantic-rag-campus-facility",
+    "err": null
+  },
+  {
+    "user": "Kampus bekerja sama dengan perusahaan apa saja?",
+    "bot": "Baik, Kak. Ini informasi lokasi kampus ITB STIKOM Bali. Berikut alamat kampus yang tersedia.\n\nLokasi kampus ITB STIKOM Bali:\n\n- Denpasar/Renon Campus: Jl. Raya Puputan No. 86 Renon, Denpasar, Bali.\n- Kampus Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.\n- Kampus Abiansemal: Jl. Janger, Abiansemal, Dauh Yeh Cani, Badung, Bali.\n\nKalau kakak ingin datang langsung, sebaiknya pilih kampus sesuai kebutuhan layanan/prodi lalu cek rute maps dari lokasi kakak.\n\nJadi, ITB STIKOM Bali memiliki beberapa lokasi kampus, dan tujuan kunjungan sebaiknya disesuaikan dengan kebutuhan layanan kakak.",
+    "status": 200,
+    "source": "semantic-rag-campus-location",
+    "err": null
+  },
+  {
+    "user": "Apakah ada kerja sama luar negeri?",
+    "bot": "Ada, Kak. Untuk beasiswa, pilihannya seperti ini. Saya kaitkan dengan konteks calon mahasiswa baru dan PMB.\n\nKuliah Sambil Kerja di Luar Negeri tercatat sebagai salah satu pilihan beasiswa/program bantuan di ITB STIKOM Bali. Untuk syarat, prosedur, dan kuota resminya, kakak perlu konfirmasi ke Admin PMB.\n\nIntinya, ada jalur beasiswa/program bantuan dan ada juga potongan biaya PMB sesuai gelombang.",
+    "status": 200,
+    "source": "semantic-rag-scholarship",
+    "err": null
+  },
+  {
+    "user": "Apakah ada program magang?",
+    "bot": "Untuk pertanyaan ini, saya fokus ke informasi ITB STIKOM Bali yang tersedia. Saya jawab dari informasi yang tersedia dan paling relevan dengan pertanyaan kakak.\n\nBerikut penjelasan tentang ADA Magang:\n\n- Magang Berbayar di Luar Negeri\n- 3 | Koordinator Layanan Industri | S2 | 1 | Penyediaan Kesempatan Magang, mengkoordinasikan penyediaan kesempatan magang untuk mahasiswa, termasuk penempatan, pemantauan, dan evaluasi. | - Pelatihan Audit Teknologi Informasi\n- a) Jumlah Mahasiswa Magang atau\n\nJadi, informasi ini bisa kakak pahami sebagai gambaran awal. Untuk detail teknis seperti jadwal, syarat, atau pendaftaran, kakak bisa konfirmasi ke admin kampus jika belum tercantum.",
+    "status": 200,
+    "source": "semantic-rag-training-specific",
+    "err": null
+  },
+  {
+    "user": "Apakah ada pertukaran mahasiswa?",
+    "bot": "Untuk pertanyaan ini, saya fokus ke informasi ITB STIKOM Bali yang tersedia. Saya jawab dari bagian informasi yang paling langsung membahas program tersebut.\n\nStudent Exchange adalah salah satu program/fasilitas pendukung di ITB STIKOM Bali.\n\nBerdasarkan informasi yang tersedia:\n- Program internasional / kerja sama internasional: Apa itu Student Exchange di ITB STIKOM Bali? Student Exchange adalah program pertukaran mahasiswa yang memberikan kesempatan kepada mahasiswa ITB STIKOM Bali untuk belajar di kampus luar negeri dalam periode tertentu , sekaligus mendapatkan pengalaman akademik dan budaya internasional . Apa tujuan dari program Student Exchange? Program ini bertujuan untuk : Memberikan pengalaman belajar di lingkungan internasional Meningkatkan kemampuan bahasa asing Mengembangkan wawasan global dan lintas budaya Membangun jaringan internasional Apa saja jenis program Student Exchange yang tersedia ? Terdapat beberapa jenis program, yaitu : Exchange Reguler (Credit Transfer) – Mengikuti perkuliahan di kampus mitra dan dapat dikonversi ke SKS Short Program / Summer Program – Program jangka pendek dengan fokus tertentu Global Cross Cultural Program (GCCP).\n- Biaya pendaftaran: Apa itu Student Exchange di ITB STIKOM Bali? Student Exchange adalah program pertukaran mahasiswa yang memberikan kesempatan kepada mahasiswa ITB STIKOM Bali untuk belajar di kampus luar negeri dalam periode tertentu , sekaligus mendapatkan pengalaman akademik dan budaya internasional . Apa tujuan dari program Student Exchange? Program ini bertujuan untuk : Memberikan pengalaman belajar di lingkungan internasional Meningkatkan kemampuan bahasa asing Mengembangkan wawasan global dan lintas budaya Membangun jaringan internasional Apa saja jenis program Student Exchange yang tersedia ?\n---\nTerdapat beberapa jenis program, yaitu : Exchange Reguler (Credit Transfer) – Mengikuti perkuliahan di kampus mitra dan dapat dikonversi ke SKS Short Program / Summer Program – Program jangka pendek dengan fokus tertentu Global Cross Cultural Program (GCCP) – Program unggulan berbasis pe.\n\nUntuk detail teknis seperti jadwal, syarat peserta, atau alur pendaftaran program, kakak bisa konfirmasi ke admin kampus jika belum tercantum.\n\nJadi, penjelasan detailnya mengikuti informasi yang tersedia. Kalau ada hal teknis seperti jadwal, syarat, atau alur pendaftaran yang belum tercantum, sebaiknya dikonfirmasi ke admin kampus.",
+    "status": 200,
+    "source": "semantic-rag-campus-support-entity",
+    "err": null
+  },
+  {
+    "user": "Apa isi dokumen Profil UKM KSL?",
+    "bot": "Untuk syarat dan dokumen pendaftaran, saya belum menemukan daftar berkas yang lengkap dan final pada data yang tersedia.\n\nAgar tidak salah menyebut dokumen, langkah paling aman:\n\n- Cek dan isi pendaftaran online melalui https://siap.stikom-bali.ac.id\n- Ikuti arahan dokumen yang muncul pada proses pendaftaran\n- Atau datang langsung ke kampus ITB STIKOM Bali untuk dibantu petugas PMB\n\nKalau kakak ingin lanjut, saya bisa bantu cek gelombang yang sedang buka atau rincian biaya sesuai prodi.",
+    "status": 200,
+    "source": "semantic-rag-pmb-requirements",
+    "err": null
+  },
+  {
+    "user": "Ceritakan isi Profil UKM KSL.",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nSaya rangkum pilihan UKM/Ormawa yang tercatat ya, Kak. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Ringkas Profil UKM KSL.",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nSaya rangkum pilihan UKM/Ormawa yang tercatat ya, Kak. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apa informasi penting dari Profil UKM KSL?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nUntuk UKM dan organisasi mahasiswa, berikut daftar yang tersedia di data. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Profil UKM KSL membahas apa?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nBaik, Kak. Saya tampilkan UKM/Ormawa yang tercatat di ITB STIKOM Bali. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Organisasi mahasiswa Linux itu apa?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nKalau yang kakak cari kegiatan mahasiswa, daftar UKM-nya seperti ini. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Komunitas Linux di kampus ada?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nSaya rangkum pilihan UKM/Ormawa yang tercatat ya, Kak. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Unit mahasiswa Linux namanya apa?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nSaya rangkum pilihan UKM/Ormawa yang tercatat ya, Kak. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apakah ada UKM yang fokus Open Source?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nBaik, Kak. Saya tampilkan UKM/Ormawa yang tercatat di ITB STIKOM Bali. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Berapa biaya masuk?",
+    "bot": "Baik, Kak. Saya rincikan biaya dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.\n\nAda biaya pendaftaran, biaya awal masuk/DPP, dan biaya pendidikan per semester. Namun untuk angka yang tepat, saya perlu tahu prodi dan gelombangnya dulu.\n\nContoh pertanyaan yang bisa kakak kirim:\n- Rincian biaya SI Gelombang I B\n- Rincian biaya TI Gelombang IV A\n- UKT Sistem Komputer\n- Biaya S1 termurah apa?",
+    "status": 200,
+    "source": "semantic-rag-fee-general",
+    "err": null
+  },
+  {
+    "user": "SI",
+    "bot": "Kakak maksud Sistem Informasi? Saya bisa bantu jelaskan biaya, prospek kerja, pengertian prodi, atau perbedaan dengan prodi lain. Coba tuliskan misalnya: \"biaya Sistem Informasi Gelombang I B\" atau \"prospek kerja Sistem Informasi\".",
+    "status": 200,
+    "source": "semantic-rag-clarification",
+    "err": null
+  },
+  {
+    "user": "Apa UKM yang bergerak di Linux?",
+    "bot": "Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.\n\nKalau yang kakak cari kegiatan mahasiswa, daftar UKM-nya seperti ini. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.\nKSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.\nJadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.",
+    "status": 200,
+    "source": "semantic-rag-ukm-list",
+    "err": null
+  },
+  {
+    "user": "Apa saja kegiatannya?",
+    "bot": "Maaf, saya belum menemukan jawaban yang cukup jelas dari data yang tersedia. Boleh tulis ulang pertanyaannya dengan detail yang ingin dicek?",
+    "status": 200,
+    "source": "semantic-rag-disabled",
+    "err": null
+  },
+  {
+    "user": "Bagaimana cara daftar?",
+    "bot": "Saya bantu jelaskan cara mulai pendaftarannya secara umum ya, Kak. Kakak bisa mulai dari pendaftaran online atau datang langsung ke kampus.\n\nUntuk daftar kuliah di ITB STIKOM Bali, kakak bisa memilih salah satu jalur berikut:\n\n- Online: melalui https://siap.stikom-bali.ac.id\n- Offline: datang langsung ke kampus ITB STIKOM Bali untuk dibantu proses pendaftaran oleh petugas/PMB.\n\nLangkah awal yang bisa kakak lakukan:\n\n- Tentukan prodi yang ingin dipilih.\n- Cek gelombang pendaftaran yang sedang buka.\n- Siapkan data/dokumen pendaftaran sesuai arahan PMB.\n- Lanjutkan pendaftaran online atau datang ke kampus untuk pendaftaran offline.\n\nKalau kakak mau, saya bisa bantu cek gelombang yang sedang buka sekarang atau rincian biaya berdasarkan prodi yang dipilih.\n\nJadi, langkah paling aman adalah memilih prodi, cek gelombang aktif, lalu lanjut melalui kanal resmi PMB atau admin.",
+    "status": 200,
+    "source": "semantic-rag-registration-info",
+    "err": null
+  },
+  {
+    "user": "Kalau jalur KIP bagaimana?",
+    "bot": "Maaf Kak, penjelasan detail tentang Beasiswa KIP belum ada di data training saat ini.\n\nData yang tersedia baru menyebutkan nama programnya sebagai salah satu pilihan beasiswa/program bantuan, belum menjelaskan definisi, syarat, prosedur, atau ketentuannya.\n\nUntuk detail yang paling akurat, silakan konfirmasi ke Admin PMB ITB STIKOM Bali.",
+    "status": 200,
+    "source": "semantic-rag-scholarship",
+    "err": null
+  },
+  {
+    "user": "ksllllllll",
+    "bot": "Maaf, saya belum menemukan jawaban yang cukup jelas dari data yang tersedia. Boleh tulis ulang pertanyaannya dengan detail yang ingin dicek?",
+    "status": 200,
+    "source": "semantic-rag-disabled",
+    "err": null
+  },
+  {
+    "user": "....",
+    "bot": "Maaf, saya belum menemukan jawaban yang cukup jelas dari data yang tersedia. Boleh tulis ulang pertanyaannya dengan detail yang ingin dicek?",
+    "status": 200,
+    "source": "semantic-rag-disabled",
+    "err": null
+  },
+  {
+    "user": "???",
+    "bot": "Maaf, saya belum menemukan jawaban yang cukup jelas dari data yang tersedia. Boleh tulis ulang pertanyaannya dengan detail yang ingin dicek?",
+    "status": 200,
+    "source": "semantic-rag-disabled",
+    "err": null
+  },
+  {
+    "user": "Siapa Presiden Indonesia?",
+    "bot": "Maaf, saya hanya bisa membantu informasi seputar ITB STIKOM Bali berdasarkan data kampus yang tersedia. Untuk pertanyaan di luar konteks kampus, seperti harga pasar, cuaca, resep, atau tokoh umum, sebaiknya kakak cek sumber khusus yang relevan.",
+    "status": 200,
+    "source": "semantic-rag-out-of-domain",
+    "err": null
+  },
+  {
+    "user": "Harga Bitcoin hari ini berapa?",
+    "bot": "Maaf, saya hanya bisa membantu informasi seputar ITB STIKOM Bali berdasarkan data kampus yang tersedia. Untuk pertanyaan di luar konteks kampus, seperti harga pasar, cuaca, resep, atau tokoh umum, sebaiknya kakak cek sumber khusus yang relevan.",
+    "status": 200,
+    "source": "semantic-rag-out-of-domain",
+    "err": null
+  },
+  {
+    "user": "Cuaca di Jepang bagaimana?",
+    "bot": "Maaf, saya hanya bisa membantu informasi seputar ITB STIKOM Bali berdasarkan data kampus yang tersedia. Untuk pertanyaan di luar konteks kampus, seperti harga pasar, cuaca, resep, atau tokoh umum, sebaiknya kakak cek sumber khusus yang relevan.",
+    "status": 200,
+    "source": "semantic-rag-out-of-domain",
+    "err": null
+  },
+  {
+    "user": "Resep nasi goreng bagaimana?",
+    "bot": "Maaf, saya hanya bisa membantu informasi seputar ITB STIKOM Bali berdasarkan data kampus yang tersedia. Untuk pertanyaan di luar konteks kampus, seperti harga pasar, cuaca, resep, atau tokoh umum, sebaiknya kakak cek sumber khusus yang relevan.",
+    "status": 200,
+    "source": "semantic-rag-out-of-domain",
+    "err": null
+  },
+  {
+    "user": "Siapa Cristiano Ronaldo?",
+    "bot": "Maaf, saya hanya bisa membantu informasi seputar ITB STIKOM Bali berdasarkan data kampus yang tersedia. Untuk pertanyaan di luar konteks kampus, seperti harga pasar, cuaca, resep, atau tokoh umum, sebaiknya kakak cek sumber khusus yang relevan.",
+    "status": 200,
+    "source": "semantic-rag-out-of-domain",
+    "err": null
+  }
+]

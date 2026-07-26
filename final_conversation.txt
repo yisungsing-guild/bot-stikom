@@ -1,0 +1,1394 @@
+user: Halo
+bot: Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.
+
+user: Hai kak
+bot: Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.
+
+user: Selamat pagi
+bot: Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.
+
+user: Apa kabar?
+bot: Baik, ada yang bisa saya bantu?
+Baik, ada yang bisa saya bantu?
+
+user: Saya ingin kuliah di ITB STIKOM Bali.
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Program studi apa saja yang tersedia?
+bot: ITB STIKOM Bali menyediakan berbagai jenjang dan jenis program studi. Berikut ringkasannya:
+PROGRAM S2 / MAGISTER (PASCASARJANA)
+Program magister/pascasarjana tersedia untuk mahasiswa yang sudah menyelesaikan S1 dan ingin melanjutkan ke jenjang pendidikan lebih tinggi dengan fokus pada penelitian dan keahlian lanjutan.
+PROGRAM S1 (SARJANA)
+
+- Bisnis Digital (BD): fokus pada strategi bisnis digital, e-commerce, pemasaran digital, analisis pasar dan monetisasi konten. Contoh mata kuliah: Digital Marketing, E-commerce, Analisis Data Digital. Lulusan: Digital Marketer, E-commerce Manager, Content Strategist.
+- Sistem Informasi (SI): jembatan antara bisnis dan teknologi; desain & implementasi sistem informasi, analisis kebutuhan bisnis, manajemen data, integrasi sistem. Contoh mata kuliah: Analisis Sistem, Basis Data, Rekayasa Perangkat Lunak. Lulusan: Business Analyst, System Analyst, IT Consultant.
+- Teknologi Informasi (TI): lebih menekankan pengembangan perangkat lunak, infrastruktur, jaringan dan keamanan. Contoh mata kuliah: Pemrograman, Jaringan Komputer, Keamanan Siber. Lulusan: Software Developer, Network Engineer, Dev Ops.
+- Sistem Komputer (SK): fokus pada arsitektur komputer, sistem tertanam/embedded, elektronika digital, IoT dan perangkat keras. Contoh mata kuliah: Arsitektur Komputer, Mikrokontroler, Sistem Tertanam. Lulusan: Embedded Engineer, Hardware Engineer.
+- Manajemen Informatika (MI): fokus pada pengelolaan informasi, dukungan operasional teknologi, dan layanan sistem informasi bisnis. Contoh mata kuliah: Administrasi Sistem Informasi, Tata Kelola TI, Operasional Teknologi. Lulusan: IT Operations, Business Administrator, Project Support.
+
+PROGRAM D3 (DIPLOMA 3)
+Program D3 tersedia untuk calon mahasiswa yang ingin pendidikan yang lebih singkat (3 tahun) dan fokus pada praktik. Tersedia dalam beberapa spesialisasi sesuai bidang teknologi dan bisnis.
+PROGRAM DUAL DEGREE
+Tersedia program Dual Degree nasional dan internasional dengan mitra UTB, DNUI, dan HELP. Untuk UTB, jalurnya adalah National Class; untuk DNUI dan HELP, jalurnya International Class.
+PROGRAM INTERNATIONAL CLASS
+Program S1 reguler dengan kelas khusus yang menitikberatkan pada pembelajaran berbahasa Inggris dan standar internasional. Kelas ini dirancang untuk mahasiswa yang ingin pengalaman belajar dengan standar internasional.
+Mau info lebih detail?
+
+- Per prodi S1 (kurikulum/akreditasi/prospek): Sebutkan BD / SI / TI / SK / MI
+- Program D3: Balas "D3"
+- Program Dual Degree: Balas "Dual Degree" atau mitra yang dituju (UTB/DNUI/HELP)
+- International Class: Balas "International Class"
+- Biaya & pendaftaran: Balas "Biaya"
+
+user: Apa perbedaan Sistem Informasi dan Teknologi Informasi?
+bot: PMB, ringkasan yang relevan untuk Sistem Informasi, Teknologi Informasi adalah:
+
+- Sistem Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1.
+- Teknologi Informasi: Ringkasan dokumen: Program studi terlihat: PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN Program internasional / kerja sama internasional: BALI Biaya pendaftaran: 1.
+Mau saya jelaskan lebih detail untuk salah satu prodi atau bandingkan dari sisi biaya, kurikulum, atau prospek kerja?
+
+user: Kalau saya suka coding lebih cocok masuk jurusan apa?
+bot: Kalau kakak hobi ngoding, pilihan utama yang paling cocok adalah Teknologi Informasi (TI).
+Alasannya, TI paling dekat dengan pemrograman, pengembangan aplikasi, software, backend/frontend, infrastruktur IT, cloud, keamanan sistem, dan pekerjaan teknis digital.
+Sistem Informasi (SI) tetap bisa jadi alternatif kalau kakak ingin menggabungkan coding dengan analisis kebutuhan bisnis, proses organisasi, dan pengelolaan data.
+
+user: Kalau saya suka desain jurusan apa yang cocok?
+bot: Prodi yang paling cocok untuk hobi tersebut adalah Sistem Informasi.
+Alasan: aktivitas yang kakak sebutkan paling selaras dengan profil minat pada Sistem Informasi.\n\n Contoh yang sejalan: Sistem Informasi Desain grafis; Sistem Informasi Freelancer IT/desain.
+
+user: Akreditasi kampus bagaimana?
+bot: Maaf, saya hanya bisa berdiskusi tentang ITB STIKOM Bali. Kalau kakak ingin tahu jurusan yang ada di ITB STIKOM Bali, saya bisa bantu jelaskan.
+Mau saya jelaskan lagi bagian lain?
+
+user: Apakah kampus sudah terakreditasi?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Bagaimana cara daftar kuliah?
+bot: Untuk mendaftar kuliah di ITB STIKOM Bali, kakak bisa mengikuti langkah berikut:
+
+1) Cek jadwal gelombang pendaftaran yang sedang buka
+
+2) Pilih program studi yang diminati (S1, D3, atau S2)
+
+3) Siapkan dokumen persyaratan (ijazah, KTP, KK, foto, dll)
+
+4) Lakukan pendaftaran online melalui website PMB
+
+5) Ikuti tes seleksi sesuai jadwal
+
+6) Tunggu pengumuman hasil seleksi
+
+7) Lakukan registrasi ulang jika diterima
+
+Kakak ingin tahu jadwal gelombang yang sedang buka sekarang?
+
+user: Persyaratan pendaftaran apa saja?
+bot: Persyaratan pendaftaran umum untuk PMB ITB STIKOM Bali:
+
+* Fotokopi Ijazah/SKL (SMA/SMK sederajat)
+* Fotokopi Kartu Keluarga
+* Fotokopi KTP/Kartu Pelajar
+* Pas foto terbaru (background merah/biru)
+* Transkrip nilai (untuk pindahan/S2)
+* Surat keterangan sehat
+
+Persyaratan tambahan mungkin berbeda tergantung jalur pendaftaran. Kakak ingin tahu detail untuk jalur tertentu?
+
+user: Dokumen apa saja yang harus disiapkan?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Masih buka pendaftaran?
+bot: Per 24 Juli 2026, gelombang pendaftaran yang sedang buka:
+
+- Gelombang IV B: 19 Juli 2026 - 1 Agustus 2026
+
+Kakak ingin tahu jadwal lengkap semua gelombang atau info gelombang lain?
+
+user: Kapan gelombang berikutnya dibuka?
+bot: Per 24 Juli 2026 (WITA), gelombang yang sedang buka pendaftaran:
+
+- Gelombang IV B (19 Juli 2026 - 1 Agustus 2026)
+
+Balas gelombangnya (mis. "II B" / "III A" / "Khusus"), nanti saya kirim jadwal detailnya.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Pendaftaran ditutup kapan?
+bot: Jadwal PMB tersedia dan dibagi per gelombang (contoh: Khusus, I A/I B/I C, II A/II B/II C, dst.).
+Kakak ingin cek jadwal gelombang yang mana? (Balas misalnya: "2 B" / "Gelombang II B" / "Khusus").
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Daftar online bagaimana?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Kalau daftar langsung ke kampus bagaimana?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Saya lulusan SMK, apakah bisa daftar?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Saya lulusan paket C apakah bisa kuliah?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Saya mahasiswa pindahan, apakah bisa transfer SKS?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada program RPL?
+bot: Jalur RPL (Rekognisi Pembelajaran Lampau) adalah mekanisme pengakuan kompetensi atau pengalaman sebelumnya sehingga beberapa mata kuliah dapat diakui.
+
+Biasanya langkah umum:
+
+- Siapkan bukti pengalaman atau sertifikat (sertifikat pelatihan, surat keterangan kerja, portofolio, transkrip nilai jika ada).
+- Ajukan permohonan RPL ke bagian PMB/akademik dengan melampirkan dokumen pendukung.
+- Tim akademik akan menilai kelayakan; bisa ada tes/penilaian tambahan atau wawancara.
+
+Untuk ketentuan dan persyaratan pasti di ITB STIKOM Bali, minta saya sambungkan ke admin (balas: ADMIN), atau sebutkan apakah kakak punya pengalaman kerja/sertifikat tertentu agar saya bantu arahkan dokumen yang perlu disiapkan.
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Apa itu RPL?
+bot: Jalur RPL (Rekognisi Pembelajaran Lampau) adalah mekanisme pengakuan kompetensi atau pengalaman sebelumnya sehingga beberapa mata kuliah dapat diakui.
+
+Biasanya langkah umum:
+
+- Siapkan bukti pengalaman atau sertifikat (sertifikat pelatihan, surat keterangan kerja, portofolio, transkrip nilai jika ada).
+- Ajukan permohonan RPL ke bagian PMB/akademik dengan melampirkan dokumen pendukung.
+- Tim akademik akan menilai kelayakan; bisa ada tes/penilaian tambahan atau wawancara.
+
+Untuk ketentuan dan persyaratan pasti di ITB STIKOM Bali, minta saya sambungkan ke admin (balas: ADMIN), atau sebutkan apakah kakak punya pengalaman kerja/sertifikat tertentu agar saya bantu arahkan dokumen yang perlu disiapkan.
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Ada kelas malam?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada kelas karyawan?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada kelas online?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Berapa biaya pendaftaran?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Berapa biaya registrasi ulang?
+bot: Jadwal PMB tersedia dan dibagi per gelombang (contoh: Khusus, I A/I B/I C, II A/II B/II C, dst.).
+Kakak ingin cek jadwal gelombang yang mana? (Balas misalnya: "2 B" / "Gelombang II B" / "Khusus").
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Sistem Informasi Gelombang 1A.
+bot: Program Studi: Sistem Informasi
+Gelombang: 1A
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 500.000
+
+Potongan Pendaftaran (Gel 1):
+Rp 250.000
+
+Total Pendaftaran:
+Rp 250.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Sistem Informasi Gelombang 1B.
+bot: Program Studi: Sistem Informasi
+Gelombang: 1B
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 500.000
+
+Potongan Pendaftaran (Gel 1):
+Rp 250.000
+
+Total Pendaftaran:
+Rp 250.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Sistem Informasi Gelombang 2.
+bot: Program Studi: Sistem Informasi
+Gelombang: 2
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 500.000
+
+Potongan Pendaftaran (Gel 2):
+Rp 200.000
+
+Total Pendaftaran:
+Rp 300.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 750.000
+- Topi: Rp 0
+- Kaos: Rp 750.000
+- GMTI: Rp 0
+- Tas: Rp 0
+- Jas Alamater, Topi: Rp 750.000
+- Kaos, Tas, GMTI: Rp 750.000
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+- Cam Scanner 12-02-2026 14.39 (1).pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Teknologi Informasi Gelombang 1A.
+bot: Program Studi: Teknologi Informasi
+Gelombang: 1A
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 500.000
+
+Potongan Pendaftaran (Gel 1):
+Rp 250.000
+
+Total Pendaftaran:
+Rp 250.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Teknologi Informasi Gelombang 1B.
+bot: Program Studi: Teknologi Informasi
+Gelombang: 1B
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 500.000
+
+Potongan Pendaftaran (Gel 1):
+Rp 250.000
+
+Total Pendaftaran:
+Rp 250.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Teknologi Informasi Gelombang 2.
+bot: Program Studi: Teknologi Informasi
+Gelombang: 2
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 700.000
+
+Potongan Pendaftaran (Gel 2):
+Rp 200.000
+
+Total Pendaftaran:
+Rp 500.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Sumber:
+
+- rincian Biaya UTB Tahun Ajaran 2026-2027.pdf
+- Cam Scanner 12-02-2026 14.39 (1).pdf
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Bisnis Digital Gelombang 1A.
+bot: Program Studi: Bisnis Digital
+Gelombang: 1A
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 500.000
+
+Potongan Pendaftaran (Gel 1):
+Rp 250.000
+
+Total Pendaftaran:
+Rp 250.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Bisnis Digital Gelombang 1B.
+bot: Program Studi: Bisnis Digital
+Gelombang: 1B
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 500.000
+
+Potongan Pendaftaran (Gel 1):
+Rp 250.000
+
+Total Pendaftaran:
+Rp 250.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Desain Komunikasi Visual Gelombang 1A.
+bot: Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Rincian biaya Desain Komunikasi Visual Gelombang 2.
+bot: Program Studi: Desain Komunikasi Visual
+Gelombang: 2
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 700.000
+
+Potongan Pendaftaran (Gel 2):
+Rp 100.000
+
+Total Pendaftaran:
+Rp 600.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Sumber:
+
+- rincian Biaya UTB Tahun Ajaran 2026-2027.pdf
+- Cam Scanner 12-02-2026 14.39 (1).pdf
+- rincian Biaya D3 Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Total biaya masuk Sistem Informasi Gelombang 1B berapa?
+bot: Program Studi: Sistem Informasi
+Gelombang: 1B
+Tahun Akademik: Tahun Akademik tidak tersedia
+
+Biaya Pendaftaran:
+
+Biaya Pendaftaran:
+Rp 500.000
+
+Potongan Pendaftaran (Gel 1):
+Rp 250.000
+
+Total Pendaftaran:
+Rp 250.000
+
+DPP:
+Rp 14.000.000
+
+Biaya Perlengkapan:
+
+- Jas almamater: Rp 0
+- Topi: Rp 0
+- Kaos: Rp 0
+- GMTI: Rp 0
+- Tas: Rp 0
+
+Sumber:
+
+- rincian Biaya SI, TI dan BD Tahun Ajaran 2026-2027.pdf
+
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Kalau saya memilih Teknologi Informasi Gelombang 2 total bayarnya berapa?
+bot: 
+
+user: Apakah biaya bisa dicicil?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Minimal pembayaran pertama berapa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Biaya per semester berapa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Apakah ada biaya praktikum?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Apakah ada biaya pembangunan?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Apakah ada biaya lain selain UKT?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Beasiswa apa saja yang tersedia?
+bot: Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:
+
+- Beasiswa ranking kelas
+- Beasiswa prestasi (lokal/nasional/internasional)
+- Beasiswa KIP
+- Beasiswa 1K1S
+- Beasiswa Yayasan
+
+Kakak mau tanya yang mana? Balas saja: "ranking" / "prestasi" / "KIP" / "1K1S" / "Yayasan".
+Perlu saya cek opsi beasiswa atau potongan biaya yang relevan?
+
+user: Bagaimana cara mendapatkan beasiswa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+Perlu saya cek opsi beasiswa atau potongan biaya yang relevan?
+
+user: Apakah ada beasiswa KIP Kuliah?
+bot: Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:
+
+- Beasiswa ranking kelas
+- Beasiswa prestasi (lokal/nasional/internasional)
+- Beasiswa KIP
+- Beasiswa 1K1S
+- Beasiswa Yayasan
+
+Kakak mau tanya yang mana? Balas saja: "ranking" / "prestasi" / "KIP" / "1K1S" / "Yayasan".
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Bagaimana alur KIP Kuliah?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Apa syarat KIP Kuliah?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Apakah ada beasiswa 1K1S?
+bot: Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:
+
+- Beasiswa ranking kelas
+- Beasiswa prestasi (lokal/nasional/internasional)
+- Beasiswa KIP
+- Beasiswa 1K1S
+- Beasiswa Yayasan
+
+Kakak mau tanya yang mana? Balas saja: "ranking" / "prestasi" / "KIP" / "1K1S" / "Yayasan".
+Perlu saya cek opsi beasiswa atau potongan biaya yang relevan?
+
+user: Bagaimana cara mendapatkan beasiswa 1K1S?
+bot: Beasiswa 1K1S adalah beasiswa untuk keluarga dengan satu anak yang menyelesaikan pendidikan sarjana. Biasanya memberikan potongan biaya DPP/UKT bagi calon mahasiswa yang memenuhi syarat keluarga, namun ketentuan final perlu dikonfirmasi ke bagian PMB.
+Perlu saya cek opsi beasiswa atau potongan biaya yang relevan?
+
+user: Ada potongan biaya kuliah?
+bot: Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:
+
+- Beasiswa ranking kelas
+- Beasiswa prestasi (lokal/nasional/internasional)
+- Beasiswa KIP
+- Beasiswa 1K1S
+- Beasiswa Yayasan
+
+Kakak mau tanya yang mana? Balas saja: "ranking" / "prestasi" / "KIP" / "1K1S" / "Yayasan".
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Kalau nilai saya bagus apakah ada beasiswa?
+bot: Ada beberapa jenis beasiswa/potongan yang biasanya tersedia atau ditanyakan di PMB:
+
+- Beasiswa ranking kelas
+- Beasiswa prestasi (lokal/nasional/internasional)
+- Beasiswa KIP
+- Beasiswa 1K1S
+- Beasiswa Yayasan
+
+Kakak mau tanya yang mana? Balas saja: "ranking" / "prestasi" / "KIP" / "1K1S" / "Yayasan".
+Perlu saya cek opsi beasiswa atau potongan biaya yang relevan?
+
+user: Fasilitas kampus apa saja?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada laboratorium komputer?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada laboratorium jaringan?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada laboratorium multimedia?
+bot: 
+
+user: Ada studio podcast?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada ruang editing?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada perpustakaan?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada wifi kampus?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada kantin?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada area parkir?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada asrama mahasiswa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Kalau mahasiswa ingin meningkatkan kemampuan bahasanya, apakah STIKOM mempunyai fasilitas untuk itu?
+bot: Ya, Kak. Untuk peningkatan kemampuan bahasa, data yang tersedia mencantumkan Language Learning Center sebagai fasilitas pendukung di ITB STIKOM Bali.
+Saya belum menemukan detail lengkap tentang bentuk kegiatan, jadwal, bahasa yang tersedia, atau cara mengikutinya. Jadi informasi amannya: fasilitasnya ada, sedangkan detail teknisnya sebaiknya dikonfirmasi ke admin kampus.
+
+user: Ada pelatihan bahasa Inggris?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada komunitas bahasa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada kelas bahasa Jepang?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada sertifikasi bahasa Inggris?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Career Center itu apa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Career Center membantu apa saja?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada pelatihan kerja?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada seminar karier?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada lowongan kerja untuk mahasiswa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada program magang?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Apakah mahasiswa dibantu mencari pekerjaan?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada sertifikasi buat mahasiswa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: UKM apa saja yang tersedia?
+bot: Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026):
+
+BADAN LEGISLATIF DAN EKSEKUTIF:
+
+- Badan Eksekutif Mahasiswa
+- Dewan Perwakilan Mahasiswa
+
+LAINNYA:
+
+- Athena Esports
+- Basket
+- Bos
+- D. o. s
+- Futsal
+- Ghost
+- Himaprodi BD
+- Himaprodi SI
+- Himaprodi SK
+- Himaprodi TI
+- Himas Jimbaran
+- Himatography
+- Jcos
+- Kmhd
+- Ksl
+- Ksr
+- Mapala Kompas
+- Mcos
+- Multimedia
+- Musik
+- Paskamras
+- Pmk
+- Progress
+- Rade
+- Syntax
+- Tabuh
+- Tari
+- Teater Biner
+- U2M
+- Vos
+
+Mau saya tampilkan kontak pembina atau detail lain?
+
+user: Bagaimana cara ikut UKM?
+bot: Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026):
+
+BADAN LEGISLATIF DAN EKSEKUTIF:
+
+- Badan Eksekutif Mahasiswa
+- Dewan Perwakilan Mahasiswa
+
+LAINNYA:
+
+- Athena Esports
+- Basket
+- Bos
+- D. o. s
+- Futsal
+- Ghost
+- Himaprodi BD
+- Himaprodi SI
+- Himaprodi SK
+- Himaprodi TI
+- Himas Jimbaran
+- Himatography
+- Jcos
+- Kmhd
+- Ksl
+- Ksr
+- Mapala Kompas
+- Mcos
+- Multimedia
+- Musik
+- Paskamras
+- Pmk
+- Progress
+- Rade
+- Syntax
+- Tabuh
+- Tari
+- Teater Biner
+- U2M
+- Vos
+
+Mau saya tampilkan kontak pembina atau detail lain?
+
+user: Ada UKM Esports?
+bot: Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026):
+
+BADAN LEGISLATIF DAN EKSEKUTIF:
+
+- Badan Eksekutif Mahasiswa
+- Dewan Perwakilan Mahasiswa
+
+LAINNYA:
+
+- Athena Esports
+- Basket
+- Bos
+- D. o. s
+- Futsal
+- Ghost
+- Himaprodi BD
+- Himaprodi SI
+- Himaprodi SK
+- Himaprodi TI
+- Himas Jimbaran
+- Himatography
+- Jcos
+- Kmhd
+- Ksl
+- Ksr
+- Mapala Kompas
+- Mcos
+- Multimedia
+- Musik
+- Paskamras
+- Pmk
+- Progress
+- Rade
+- Syntax
+- Tabuh
+- Tari
+- Teater Biner
+- U2M
+- Vos
+
+Mau saya tampilkan kontak pembina atau detail lain?
+
+user: Ada UKM Musik?
+bot: Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026):
+
+BADAN LEGISLATIF DAN EKSEKUTIF:
+
+- Badan Eksekutif Mahasiswa
+- Dewan Perwakilan Mahasiswa
+
+LAINNYA:
+
+- Athena Esports
+- Basket
+- Bos
+- D. o. s
+- Futsal
+- Ghost
+- Himaprodi BD
+- Himaprodi SI
+- Himaprodi SK
+- Himaprodi TI
+- Himas Jimbaran
+- Himatography
+- Jcos
+- Kmhd
+- Ksl
+- Ksr
+- Mapala Kompas
+- Mcos
+- Multimedia
+- Musik
+- Paskamras
+- Pmk
+- Progress
+- Rade
+- Syntax
+- Tabuh
+- Tari
+- Teater Biner
+- U2M
+- Vos
+
+Mau saya tampilkan kontak pembina atau detail lain?
+
+user: Ada UKM Tari?
+bot: Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026):
+
+BADAN LEGISLATIF DAN EKSEKUTIF:
+
+- Badan Eksekutif Mahasiswa
+- Dewan Perwakilan Mahasiswa
+
+LAINNYA:
+
+- Athena Esports
+- Basket
+- Bos
+- D. o. s
+- Futsal
+- Ghost
+- Himaprodi BD
+- Himaprodi SI
+- Himaprodi SK
+- Himaprodi TI
+- Himas Jimbaran
+- Himatography
+- Jcos
+- Kmhd
+- Ksl
+- Ksr
+- Mapala Kompas
+- Mcos
+- Multimedia
+- Musik
+- Paskamras
+- Pmk
+- Progress
+- Rade
+- Syntax
+- Tabuh
+- Tari
+- Teater Biner
+- U2M
+- Vos
+
+Mau saya tampilkan kontak pembina atau detail lain?
+
+user: Ada organisasi mahasiswa?
+bot: Ada 32 UKM/Ormawa di ITB STIKOM Bali (sumber: SK PEMBINA ORMAWA 2026):
+
+BADAN LEGISLATIF DAN EKSEKUTIF:
+
+- Badan Eksekutif Mahasiswa
+- Dewan Perwakilan Mahasiswa
+
+LAINNYA:
+
+- Athena Esports
+- Basket
+- Bos
+- D. o. s
+- Futsal
+- Ghost
+- Himaprodi BD
+- Himaprodi SI
+- Himaprodi SK
+- Himaprodi TI
+- Himas Jimbaran
+- Himatography
+- Jcos
+- Kmhd
+- Ksl
+- Ksr
+- Mapala Kompas
+- Mcos
+- Multimedia
+- Musik
+- Paskamras
+- Pmk
+- Progress
+- Rade
+- Syntax
+- Tabuh
+- Tari
+- Teater Biner
+- U2M
+- Vos
+
+Mau saya tampilkan kontak pembina atau detail lain?
+
+user: Ada BEM?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada HIMA?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Jadwal kuliah bisa dilihat dimana?
+bot: Jadwal PMB tersedia dan dibagi per gelombang (contoh: Khusus, I A/I B/I C, II A/II B/II C, dst.).
+Kakak ingin cek jadwal gelombang yang mana? (Balas misalnya: "2 B" / "Gelombang II B" / "Khusus").
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Bagaimana cara mengisi KRS?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Transkrip nilai bisa dilihat dimana?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Nilai saya salah harus lapor siapa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Bagaimana cara reset password SION?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Saya lupa password SION.
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Bagaimana cara menghubungi BAAK?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Pendaftaran wisuda bagaimana?
+bot: PMB adalah singkatan dari Penerimaan Mahasiswa Baru, yaitu proses penerimaan calon mahasiswa yang ingin mendaftar kuliah di ITB STIKOM Bali.
+
+PMB, kakak bisa bertanya tentang:
+
+* Jalur Pendaftaran: alur daftar, cara mendaftar, dan langkah berikutnya
+* Jadwal pendaftaran: gelombang yang sedang buka, tanggal mulai, dan batas akhir
+* Program Studi: pilihan S1, D3, S2, dan Double Degree
+* Rincian biaya: pendaftaran, DPP, biaya awal masuk, dan biaya per semester
+* Beasiswa/potongan: KIP, 1K1S, prestasi, yayasan, dan potongan berdasarkan gelombang
+* Syarat dan dokumen pendaftaran
+* Kontak atau bantuan admin PMB
+
+Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: "jadwal PMB sekarang gelombang berapa? ", "rincian biaya SI gelombang 2B? ", atau "apa saja syarat pendaftaran? "
+Mau saya jelaskan komponen biaya lain atau opsi potongan yang relevan?
+
+user: Apa syarat wisuda?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Yudisium itu apa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Kalau sudah lulus harus kemana?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Bagaimana cara mengambil ijazah?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Apakah ada student exchange?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada kerja sama luar negeri?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Ada program internasional?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Mahasiswa bisa magang di luar negeri?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Kalau saya ingin konsultasi akademik harus ke siapa?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan juga info akademik lainnya (jadwal/kalendar/semester)?
+
+user: Apakah kampus mempunyai layanan konseling?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Bagaimana cara menghubungi dosen wali?
+bot: Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.
+Coba periksa kembali detail pertanyaannya (mis. nama program studi, gelombang, atau topik yang dimaksud),
+atau hubungi admin jika ingin bantuan lebih lanjut.
+[ Hubungi Admin ]
+Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.
+
+Mau saya bantu jelaskan detail gelombang atau jadwalnya?
+
+user: Terima kasih.
+bot: Sama-sama, Kak. Kalau ada yang ingin ditanyakan lagi seputar ITB STIKOM Bali, saya siap bantu.
+Mau saya jelaskan lagi bagian lain?
+
