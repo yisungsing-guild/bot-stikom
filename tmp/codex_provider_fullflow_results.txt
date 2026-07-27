@@ -1,0 +1,716 @@
+user:
+Halo bro
+bot:
+Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.
+---META {"status":200,"source":"semantic-rag-small-talk"}
+
+user:
+Hallo
+bot:
+Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.
+---META {"status":200,"source":"semantic-rag-small-talk"}
+
+user:
+Apa itu si?
+bot:
+Saya pahami kakak ingin tahu apa itu Sistem Informasi. Berikut gambaran sederhananya. Saya jelaskan sebagai gambaran awal untuk calon mahasiswa.
+
+Sistem Informasi adalah program studi yang berfokus pada cara merancang solusi digital yang menghubungkan kebutuhan bisnis, proses organisasi, dan teknologi informasi. Mahasiswa belajar melihat masalah dari sisi pengguna, data, dan proses kerja agar solusi yang dibuat tidak hanya canggih secara teknis, tetapi juga efektif dipakai di dunia nyata.
+
+Singkatnya, prodi ini cocok untuk kakak yang tertarik pada analisis kebutuhan, proses bisnis, data, dan solusi sistem informasi.
+---META {"status":200,"source":"semantic-rag-program-definition"}
+
+user:
+Rincian biaya prodi ti gelombang 1C
+bot:
+Untuk biaya Teknologi Informasi, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.
+
+Untuk program studi Teknologi Informasi, rincian biaya sebagai berikut:
+
+Pendaftaran:
+
+- Biaya pendaftaran: Rp. 500.000
+- Potongan biaya pendaftaran (Gelombang I C): Rp. 250.000
+
+Total biaya pendaftaran (Gelombang I C): Rp. 250.000
+
+Biaya awal masuk untuk Prodi Teknologi Informasi:
+
+- Jas almamater dan topi: Rp. 750.000
+- Kaos, tas, GMTI: Rp. 750.000
+
+Subtotal biaya awal masuk: Rp. 1.500.000
+
+- DPP: Rp. 14.000.000
+- Potongan biaya DPP (Gelombang I C): Rp. 2.000.000
+
+Total awal masuk setelah potongan (Gelombang I C): Rp. 13.750.000
+
+Biaya pendidikan per semester (UKT): Rp. 6.500.000
+---META {"status":200,"source":"semantic-rag-fee-detail"}
+
+user:
+saya mau nanya tentang kegiatan mahasiswa di stikom. Di stikom ada kegiatan mahasiswa jenis apa saja?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya rangkum pilihan UKM/Ormawa yang tercatat ya, Kak. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.
+
+Ada 32 UKM/Ormawa yang tercatat di ITB STIKOM Bali:
+
+Badan Legislatif dan Eksekutif:
+
+- Badan Eksekutif Mahasiswa
+- Dewan Perwakilan Mahasiswa
+
+UKM/Ormawa lainnya:
+
+- Athena Esports
+- Basket
+- Bos
+- D.o.s
+- Futsal
+- Ghost
+- Himaprodi BD
+- Himaprodi SI
+- Himaprodi SK
+- Himaprodi TI
+- Himas Jimbaran
+- Himatography
+- Jcos
+- Kmhd
+- Ksl
+- Ksr
+- Mapala Kompas
+- Mcos
+- Multimedia
+- Musik
+- Paskamras
+- Pmk
+- Progress
+- Rade
+- Syntax
+- Tabuh
+- Tari
+- Teater Biner
+- U2M
+- Vos
+
+Untuk info jadwal kegiatan, pendaftaran anggota, atau kontak pembina, kakak bisa konfirmasi ke pihak kampus/kemahasiswaan.
+Jadi, pilihan UKM/Ormawa cukup beragam dan bisa kakak sesuaikan dengan minat kegiatan di kampus.
+---META {"status":200,"source":"semantic-rag-ukm-list"}
+
+user:
+vos itu apa ya?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM VOS:
+Berikut adalah profil singkat mengenai UKM Voice of STIKOM Bali: 1. Fokus & Kegiatan Utama Pengembangan Bakat Vokal: Menyelenggarakan latihan rutin untuk mengasah teknik vokal, harmoni, dan performa panggung anggota. Pengisi Acara Resmi Kampus: Menjadi tim paduan suara utama dalam berbagai agenda sakral dan formal kampus, seperti Wisuda ITB STIKOM Bali, Dies Natalis, serta upacara pembukaan seminar atau acara nasional. Delegasi Kompetisi: Mewakili lembaga dalam berbagai ajang perlombaan paduan suara atau festival musik, baik di tingkat regional maupun nasional. 2. Fungsi Organisasi Selain fokus pada bidang musikalitas, VOS juga berfungsi sebagai tempat belajar berorganisasi bagi para anggotanya. Di dalamnya terdapat struktur kepengurusan yang melatih kemampuan leadership, manajemen waktu, komunikasi publik, serta kerja sama tim dalam mengelola sebuah pertunjukan atau kepanitiaan acara. 3
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+kegiatan ukm vos ini apa saja ya?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM VOS:
+Berikut adalah profil singkat mengenai UKM Voice of STIKOM Bali: 1. Fokus & Kegiatan Utama Pengembangan Bakat Vokal: Menyelenggarakan latihan rutin untuk mengasah teknik vokal, harmoni, dan performa panggung anggota. Pengisi Acara Resmi Kampus: Menjadi tim paduan suara utama dalam berbagai agenda sakral dan formal kampus, seperti Wisuda ITB STIKOM Bali, Dies Natalis, serta upacara pembukaan seminar atau acara nasional. Delegasi Kompetisi: Mewakili lembaga dalam berbagai ajang perlombaan paduan suara atau festival musik, baik di tingkat regional maupun nasional. 2. Fungsi Organisasi Selain fokus pada bidang musikalitas, VOS juga berfungsi sebagai tempat belajar berorganisasi bagi para anggotanya. Di dalamnya terdapat struktur kepengurusan yang melatih kemampuan leadership, manajemen waktu, komunikasi publik, serta kerja sama tim dalam mengelola sebuah pertunjukan atau kepanitiaan acara. 3
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+boleh tau tentang program linkedIn di career center ya?
+bot:
+Saya belum menemukan detail lengkap tentang program pengembangan karier yang bekerja sama dengan LinkedIn pada data yang tersedia.
+
+Data yang aman untuk saya sampaikan baru sebatas Career Center membantu mahasiswa dan alumni terkait informasi karier, lowongan/magang, bimbingan karier, dan pembekalan kerja.
+
+Untuk detail program LinkedIn seperti bentuk kegiatan, jadwal, syarat peserta, atau cara ikut, sebaiknya kakak konfirmasi ke Career Center/admin kampus.
+---META {"status":200,"source":"semantic-rag-campus-support-insufficient-data"}
+
+user:
+apa yang harus saya lakukan untuk bisa mengikuti program linkedIn di career center?
+bot:
+Saya belum menemukan detail lengkap tentang program pengembangan karier yang bekerja sama dengan LinkedIn pada data yang tersedia.
+
+Data yang aman untuk saya sampaikan baru sebatas Career Center membantu mahasiswa dan alumni terkait informasi karier, lowongan/magang, bimbingan karier, dan pembekalan kerja.
+
+Untuk detail program LinkedIn seperti bentuk kegiatan, jadwal, syarat peserta, atau cara ikut, sebaiknya kakak konfirmasi ke Career Center/admin kampus.
+---META {"status":200,"source":"semantic-rag-campus-support-insufficient-data"}
+
+user:
+kamu punya informasi lebih detailnya untuk saya bisa mendaftar?
+bot:
+Saya belum menemukan detail lengkap tentang program pengembangan karier yang bekerja sama dengan LinkedIn pada data yang tersedia.
+
+Data yang aman untuk saya sampaikan baru sebatas Career Center membantu mahasiswa dan alumni terkait informasi karier, lowongan/magang, bimbingan karier, dan pembekalan kerja.
+
+Untuk detail program LinkedIn seperti bentuk kegiatan, jadwal, syarat peserta, atau cara ikut, sebaiknya kakak konfirmasi ke Career Center/admin kampus.
+---META {"status":200,"source":"semantic-rag-linkedin-career-insufficient-data"}
+
+user:
+jadwal remedial semester genap ini kapan ya?
+bot:
+Saya belum menemukan jadwal remedial semester genap yang cukup aman pada data yang tersedia. Untuk jadwal resmi remedial, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK/dosen pengampu.
+---META {"status":200,"source":"semantic-rag-academic-schedule"}
+
+user:
+absensinya 5 kali apakah bisa ikut remedial ya?
+bot:
+Saya belum menemukan kebijakan akademik yang cukup aman untuk menjawab detail itu dari data yang tersedia. Untuk aturan resmi, kakak sebaiknya konfirmasi ke BAAK, dosen pengampu, atau prodi terkait.
+---META {"status":200,"source":"semantic-rag-operational-academic-policy-no-answer"}
+
+user:
+saya mau tau program stikom yang nanya Hi-think, itu program apa?
+bot:
+Saya jawab bagian yang relevan dengan pertanyaan kakak ya. Saya jawab dari bagian informasi yang paling langsung membahas program tersebut.
+
+Program Hi-Think adalah program kolaborasi antara ITB STIKOM Bali dengan perusahaan teknologi Hi-Think Jepang, yang menggabungkan perkuliahan dengan kurikulum industri teknologi Jepang serta peluang kerja setelah lulus.
+
+Jadi, penjelasan detailnya mengikuti informasi yang tersedia. Kalau ada hal teknis seperti jadwal, syarat, atau alur pendaftaran yang belum tercantum, sebaiknya dikonfirmasi ke admin kampus.
+---META {"status":200,"source":"semantic-rag-campus-support-entity"}
+
+user:
+kami dari industri, di stikom itu ada layanan industri apa saja ya?
+bot:
+Saya belum menemukan daftar layanan industri khusus pada data yang tersedia.
+
+Data yang aman saya sampaikan baru sebatas fasilitas/program pendukung kampus seperti Career Center, Inkubator Bisnis, program pengembangan softskill, Language Learning Center, Hi-Think, GCCP, Student Exchange, dan Double Degree.
+
+Kalau konteksnya kerja sama industri, rekrutmen, magang, pelatihan, atau layanan untuk perusahaan, sebaiknya dikonfirmasi ke admin kampus/unit kerja sama agar tidak keliru.
+---META {"status":200,"source":"semantic-rag-campus-facility-insufficient-data"}
+
+user:
+indikator apa saja yang dipertanggungjawabkan stikom bali sebagai institusi pendidikan ya?
+bot:
+Saya belum menemukan rincian indikator pertanggungjawaban institusi pendidikan ITB STIKOM Bali yang cukup aman pada data yang tersedia. Agar tidak keliru, indikator resmi seperti akreditasi, mutu akademik, tata kelola, layanan, atau pelaporan institusi sebaiknya dikonfirmasi ke pihak kampus/unit terkait.
+---META {"status":200,"source":"semantic-rag-institution-indicator-insufficient-data"}
+
+user:
+untuk inkubator bisnis stikom bali, apa saja yang menjadi layanannya?
+bot:
+Untuk pertanyaan ini, saya fokus ke informasi ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Inkubator Bisnis ITB STIKOM Bali adalah fasilitas pendukung untuk membantu mahasiswa mengembangkan ide usaha atau rintisan bisnis.
+
+Layanan yang aman saya sampaikan dari data yang tersedia meliputi:
+
+- Pendampingan pengembangan ide bisnis.
+- Validasi ide usaha.
+- Mentoring bisnis.
+- Penguatan kewirausahaan atau kesiapan usaha digital.
+
+Untuk jadwal program, syarat ikut, mentor, atau mekanisme pendaftaran, saya belum menemukan detail lengkap di data yang tersedia. Bagian itu sebaiknya dikonfirmasi ke admin kampus/pengelola Inkubator Bisnis.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+---META {"status":200,"source":"semantic-rag-campus-facility"}
+
+user:
+di stikom bali ada program stikom bali goes to school, itu program apa ya?
+bot:
+Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia. Saya tetap batasi ke informasi yang tersedia agar tidak menebak di luar konteks kampus.
+
+Program STIKOM Bali Goes to School adalah program kunjungan/promosi edukatif ITB STIKOM Bali ke sekolah-sekolah, terutama untuk siswa SMA/SMK.
+
+Dari data yang tersedia, program ini bertujuan memperkenalkan ITB STIKOM Bali dan memberikan gambaran tentang potensi dunia digital, seperti teknologi informasi, bisnis digital, dan bidang kreatif/digital kepada siswa sekolah.
+
+Untuk jadwal kunjungan, sekolah sasaran, bentuk kegiatan, atau cara mengundang kampus ke sekolah, saya belum menemukan detail lengkap di data yang tersedia. Bagian itu sebaiknya dikonfirmasi ke admin kampus.
+
+Jadi, jawaban ini saya rangkum dari informasi yang paling relevan dengan pertanyaan kakak.
+---META {"status":200,"source":"semantic-rag-campus-support-entity"}
+
+user:
+program apa saja yang ada di student exchange
+bot:
+Saya jawab bagian yang relevan dengan pertanyaan kakak ya. Saya jawab dari bagian informasi yang paling langsung membahas program tersebut.
+
+Terdapat beberapa jenis program, yaitu: Exchange Reguler (Credit Transfer) – Mengikuti perkuliahan di kampus mitra dan dapat dikonversi ke SKS Short Program / Summer Program – Program jangka pendek dengan fokus tertentu Global Cross Cultural Program (GCCP) – Program unggulan berbasis pertukaran budaya dan interaksi global
+
+Jadi, penjelasan detailnya mengikuti informasi yang tersedia. Kalau ada hal teknis seperti jadwal, syarat, atau alur pendaftaran yang belum tercantum, sebaiknya dikonfirmasi ke admin kampus.
+---META {"status":200,"source":"semantic-rag-campus-support-entity"}
+
+user:
+berapa biaya kuliah untuk double degree dengan help uni malaysia?
+bot:
+Saya cek bagian biaya dari data PMB ya. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.
+
+Rincian biaya program Double Degree HELP University:
+
+- Biaya pendaftaran: Rp. 3.000.000
+- DPP / Dana Pendidikan Pokok: Rp. 20.000.000
+- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)
+- Biaya Pendidikan & Ujian/Subject: Rp. 3.000.000
+
+Kalau kakak sebutkan gelombangnya, misalnya Gelombang I A atau Gelombang IV A, saya bisa hitungkan total setelah potongan pendaftaran dan DPP.
+---META {"status":200,"source":"semantic-rag-fee-detail"}
+
+user:
+berapa biaya kuliah untuk double degree stikom dengan help uni malaysia?
+bot:
+Baik, Kak. Saya rincikan biaya dari komponen PMB yang tersedia. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.
+
+Rincian biaya program Double Degree HELP University:
+
+- Biaya pendaftaran: Rp. 3.000.000
+- DPP / Dana Pendidikan Pokok: Rp. 20.000.000
+- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)
+- Biaya Pendidikan & Ujian/Subject: Rp. 3.000.000
+
+Kalau kakak sebutkan gelombangnya, misalnya Gelombang I A atau Gelombang IV A, saya bisa hitungkan total setelah potongan pendaftaran dan DPP.
+---META {"status":200,"source":"semantic-rag-fee-detail"}
+
+user:
+saya ingin tau berapa ya biaya kuliah untuk double degree help university?
+bot:
+Saya jawab rincian biaya sesuai prodi dan gelombang yang kakak sebutkan. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.
+
+Rincian biaya program Double Degree HELP University:
+
+- Biaya pendaftaran: Rp. 3.000.000
+- DPP / Dana Pendidikan Pokok: Rp. 20.000.000
+- Bahasa Inggris: Rp. 5.000.000 (menjelang Semester II)
+- Biaya Pendidikan & Ujian/Subject: Rp. 3.000.000
+
+Kalau kakak sebutkan gelombangnya, misalnya Gelombang I A atau Gelombang IV A, saya bisa hitungkan total setelah potongan pendaftaran dan DPP.
+---META {"status":200,"source":"semantic-rag-fee-detail"}
+
+user:
+boleh saya tau apa saja yang di sediakan layanan di career center?
+bot:
+Untuk pertanyaan ini, saya fokus ke informasi ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Career Center di ITB STIKOM Bali membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja.
+
+Layanan yang bisa ditanyakan melalui Career Center antara lain:
+
+- Informasi lowongan kerja dan peluang karier.
+- Bimbingan atau konsultasi karier.
+- Pelatihan/pembekalan keterampilan kerja.
+- Dukungan persiapan memasuki dunia profesional.
+
+Kalau kakak ingin info yang lebih spesifik, kakak bisa tanya tentang lowongan, magang, atau program persiapan karier yang tersedia.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+---META {"status":200,"source":"semantic-rag-campus-facility"}
+
+user:
+katanya ada program pengembangan career bekerja sama dengan LinkedIn, itu seperti apa ya programnya?
+bot:
+Saya belum menemukan detail lengkap tentang program pengembangan karier yang bekerja sama dengan LinkedIn pada data yang tersedia.
+
+Data yang aman untuk saya sampaikan baru sebatas Career Center membantu mahasiswa dan alumni terkait informasi karier, lowongan/magang, bimbingan karier, dan pembekalan kerja.
+
+Untuk detail program LinkedIn seperti bentuk kegiatan, jadwal, syarat peserta, atau cara ikut, sebaiknya kakak konfirmasi ke Career Center/admin kampus.
+---META {"status":200,"source":"semantic-rag-campus-support-insufficient-data"}
+
+user:
+oh kamu belum punya informasinya ya. kalau begitu pengembangan softskill, apa saja yang di lakukan oleh career center?
+bot:
+Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Untuk pengembangan softskill, data yang aman saya temukan masih bersifat umum.
+
+Career Center membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja melalui informasi karier, bimbingan/konsultasi karier, pelatihan atau pembekalan keterampilan kerja, serta dukungan persiapan memasuki dunia profesional.
+
+Namun saya belum menemukan rincian spesifik seperti daftar materi softskill, jadwal workshop, nama program, atau mekanisme pendaftaran. Jadi kalau kakak menanyakan detail kegiatan softskill tertentu, sebaiknya dikonfirmasi ke Career Center/admin kampus.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+---META {"status":200,"source":"semantic-rag-campus-support-entity"}
+
+user:
+kalau terkait softskill mahasiswa, apa saya yang dilakukan pengembangan oleh career center?
+bot:
+Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Untuk pengembangan softskill, data yang aman saya temukan masih bersifat umum.
+
+Career Center membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja melalui informasi karier, bimbingan/konsultasi karier, pelatihan atau pembekalan keterampilan kerja, serta dukungan persiapan memasuki dunia profesional.
+
+Namun saya belum menemukan rincian spesifik seperti daftar materi softskill, jadwal workshop, nama program, atau mekanisme pendaftaran. Jadi kalau kakak menanyakan detail kegiatan softskill tertentu, sebaiknya dikonfirmasi ke Career Center/admin kampus.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+---META {"status":200,"source":"semantic-rag-campus-support-entity"}
+
+user:
+kalau program bccp itu apa ya?
+bot:
+Saya belum menemukan informasi lengkap tentang BCCP pada data yang tersedia.
+
+Jadi saya belum bisa memastikan apakah BCCP ditujukan untuk mahasiswa asing, mahasiswa ITB STIKOM Bali, atau program internasional tertentu.
+
+Agar tidak keliru, bagian ini sebaiknya dikonfirmasi ke admin kampus atau unit kerja sama internasional.
+---META {"status":200,"source":"semantic-rag-campus-support-insufficient-data"}
+
+user:
+kalau program gcpp itu apa ya?
+bot:
+Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia. Saya tetap batasi ke informasi yang tersedia agar tidak menebak di luar konteks kampus.
+
+GCCP adalah Global Cross Cultural Program, yaitu program internasional/short course yang berkaitan dengan pengalaman lintas budaya dan interaksi global.
+
+Dari data yang tersedia, GCCP termasuk salah satu program pendukung/internasional di ITB STIKOM Bali. Untuk detail teknis seperti negara tujuan, jadwal, syarat peserta, biaya, atau alur pendaftaran, saya belum menemukan rincian lengkap yang aman untuk disampaikan.
+
+Agar tidak keliru, detail pelaksanaan GCCP sebaiknya dikonfirmasi ke admin kampus atau unit kerja sama internasional.
+
+Jadi, jawaban ini saya rangkum dari informasi yang paling relevan dengan pertanyaan kakak.
+---META {"status":200,"source":"semantic-rag-campus-support-entity"}
+
+user:
+kalau mahasiswa ingin meningkatkan kemampuan bahasanya, apakah stikom mempunyai fasilitas untuk itu ya?apa itu ukm Badan Eksekutif Mahasiswa?
+bot:
+Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia. Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.
+
+Ya, dari data fasilitas yang tersedia, ITB STIKOM Bali mencantumkan Language Learning Center sebagai fasilitas/program pendukung untuk pengembangan kemampuan bahasa mahasiswa.
+
+Selain itu, pada data program Hi-Think juga disebutkan adanya kursus bahasa Jepang sebagai bagian dari persiapan belajar/karier yang berkaitan dengan industri Jepang.
+
+Untuk detail teknis seperti bahasa apa saja yang tersedia, jadwal kelas, syarat ikut, atau biaya jika ada, saya belum menemukan rincian lengkapnya di data yang aman. Sebaiknya kakak konfirmasi ke admin kampus atau pengelola program terkait.
+
+Jadi, fasilitas kampus tidak hanya berupa sarana belajar, tetapi juga layanan karier, pengembangan diri, UKM, dan program internasional.
+---META {"status":200,"source":"semantic-rag-campus-facility"}
+
+user:
+apa itu ukm Dewan Perwakilan Mahasiswa?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya fokus ke UKM yang kakak sebutkan ya, Kak. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Dewan Perwakilan Mahasiswa:
+Misi: Membangun internal berlandaskan kekeluargaan dan bernafaskan profesionalisme. Tanggap terhadap peningkatan kesejahteraan mahasiswa. Menghasilkan kajian dan membangun kerja sama strategis dalam upaya pemecahan masalah sosial. Menjembatani pengembangan minat, bakat, dan keilmuan mahasiswa ITB STIKOM Bali. KEGIATAN & PERAN UTAMA Menyelenggarakan Pemilihan Raya Mahasiswa (PEMIRA) sebagai wujud demokrasi dan regenerasi kepengurusan Ormawa setiap tahun. Mengoordinasikan dan mengawal pelantikan pengurus seluruh Ormawa (UKM, HIMAPRODI, HIMAS) bersama Dewan Perwakilan Mahasiswa (DPM-PM). Menjembatani aspirasi mahasiswa dengan pihak kampus terkait kesejahteraan dan kebijakan kemahasiswaan. Membina dan mendukung program kerja seluruh UKM di lingkungan ITB STIKOM Bali. CATATAN Profil ini disusun berdasarkan publikasi resmi ITB STIKOM Bali (stikom-bali.ac.id) dan akun media sosial resmi BEM-PM,
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Athena Esports?
+bot:
+Baik Kak, saya bantu jawab tentang UKM esports di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Athena Esports:
+ATHENA ESPORT Athena Esport merupakan unit kegiatan mahasiswa yang bergerak di bidang esports sebagai wadah bagi mahasiswa untuk mengembangkan minat, bakat, serta potensi dalam dunia permainan kompetitif. Organisasi ini berfokus pada pembinaan anggota melalui kegiatan latihan, pengembangan kemampuan individu maupun tim, serta persiapan untuk mengikuti berbagai turnamen esports di tingkat regional maupun nasional. Selain menjadi tempat bagi mahasiswa yang ingin berprestasi di ranah kompetitif, Athena Esport juga membangun lingkungan komunitas yang terbuka dan suportif bagi siapa saja yang memiliki ketertarikan terhadap dunia game. Anggota dapat saling berbagi pengalaman, berdiskusi mengenai perkembangan industri game dan skena esports, serta menjalin relasi dengan sesama mahasiswa yang memiliki hobi serupa. VISI Menjadi wadah dalam memperkenalkan, mengembangkan, serta meningkatkan popular
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Basket?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Ini jawaban khusus tentang UKM tersebut. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Basket:
+Diskripsi Organisasi: UKM Basket ITB STIKOM Bali bertindak sebagai wadah bagi para mahasiswa yang memiliki ketertarikan dan semangat di bidang olahraga bola basket, baik dari sisi teknik bermain, kepemimpinan tim, hingga penyelenggaraan event olahraga kampus. Berbeda dengan kegiatan olahraga rekreasional biasa, UKM Basket menerapkan pendekatan latihan terstruktur dan kompetisi aktif. Anggota di dalamnya saling mengasah kemampuan mulai dari hal mendasar seperti teknik dasar dribbling, passing, dan shooting, hingga strategi permainan tingkat lanjut seperti taktik tim, sistem pertahanan, dan adaptasi format permainan 3x3 maupun 5x5. Selain berlatih secara internal, UKM ini juga rutin mengikuti turnamen antaruniversitas seperti PNB Basketball Tournament, di mana para anggota tampil penuh dedikasi dan semangat untuk memberikan performa terbaik dalam setiap pertandingan. Selain fokus pada pres
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Bos?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Saya jawab khusus UKM yang kakak tanyakan. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM BOS:
+Program internasional / kerja sama internasional: Unit Kegiatan Mahasiswa Badminton Of STIKOM Bali (UKM BOS) didirikan pada tanggal 12 Desember 2012 sebagai organisasi olahraga bulutangkis di Institut Teknologi dan Bisnis STIKOM Bali. UKM BOS rutin mengadakan pelatihan dan berbagai turnamen seperti STIKOM Badminton Cup untuk mengasah kemampuan anggota dan menumbuhkan sportivitas serta kebersamaan antar mahasiswa. UKM ini juga berperan dalam mempererat hubungan antar mahasiswa dan mengembangkan prestasi bulutangkis di lingkungan kampus. Jadwal/gelombang: Unit Kegiatan Mahasiswa Badminton Of STIKOM Bali (UKM BOS) didirikan pada tanggal 12 Desember 2012 sebagai organisasi olahraga bulutangkis di Institut Teknologi dan Bisnis STIKOM Bali. UKM BOS rutin mengadakan pelatihan dan berbagai turnamen seperti STIKOM Badminton Cup untuk mengasah kemampuan anggota dan menumbuhkan sportivitas serta.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm D.o.s?
+bot:
+Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM D.o.s.
+
+Data yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.
+---META {"status":200,"source":"semantic-rag-ukm-specific-insufficient-data"}
+
+user:
+apa itu ukm Futsal?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Futsal:
+PROFIL SINGKAT Unit Kegiatan Mahasiswa FUTSAL merupakan sebuah wadah yang memfasilitasi mahasiswa untuk mengembangkan minat, bakat dan prestasi di cabang olahraga FUTSAL. Unit Kegiatan Mahasiswa FUTSAL juga dapat menjadi sarana bagi mahasiswa untuk mengasah skill dalam bermain FUTSAL. Selain itu, Unit Kegiatan Mahasiswa FUTSAL juga sering mengikuti dan memenangkan berbagai kompetensi baik di tingkat regional (antar-kampus) hingga di tingkat Nasional.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Ghost?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Ghost:
+DESKRIPSI SINGKAT UKM GHoST merupakan wadah pengembangan minat dan bakat mahasiswa ITB STIKOM Bali di bidang kebugaran, gym, dan olahraga kesehatan. Selain membina anggota secara internal, UKM GHoST dikenal luas di komunitas fitness Bali sebagai penyelenggara kompetisi binaraga dan kalistenik tingkat umum yang rutin digelar setiap tahun. KEGIATAN RUTIN & UNGGULAN GHOST HEALTH COMPETITION (dahulu GBC – GHoST Body Contest): kompetisi binaraga/fitness tahunan terbuka untuk umum se-Bali dengan 3 kategori (Men's Junior Fitness, Men's Fitness, Men's Sport Physic). Edisi 2025 bertema “Iron Clash” digelar di Lippo Mall Kuta, diikuti 90 peserta dari berbagai daerah. GHoST Calisthenics Competition: lomba olahraga kalistenik yang memeriahkan STIKOMFEST setiap tahunnya. KBOR (Kompetisi internal anggota): kategori Best Body, Best Sixpack, dan Best Perform. Bazar penggalangan dana, umumnya berkolabora
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Himaprodi BD?
+bot:
+Baik, Kak. Saya jelaskan Bisnis Digital dari fokus belajar dan kecocokan minatnya. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.
+
+Bisnis Digital adalah program studi yang memadukan strategi bisnis, pemasaran digital, analitik data, dan pemanfaatan teknologi untuk pertumbuhan usaha. Mahasiswa belajar memahami perilaku pasar dan merancang model bisnis yang relevan di ekosistem digital.
+
+Singkatnya, prodi ini cocok untuk kakak yang tertarik pada bisnis, digital marketing, e-commerce, data analytics, dan kewirausahaan digital.
+---META {"status":200,"source":"semantic-rag-program-definition"}
+
+user:
+apa itu ukm Himaprodi SI?
+bot:
+Baik, Kak. Saya jelaskan Sistem Informasi dari fokus belajar dan kecocokan minatnya. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.
+
+Sistem Informasi adalah program studi yang berfokus pada cara merancang solusi digital yang menghubungkan kebutuhan bisnis, proses organisasi, dan teknologi informasi. Mahasiswa belajar melihat masalah dari sisi pengguna, data, dan proses kerja agar solusi yang dibuat tidak hanya canggih secara teknis, tetapi juga efektif dipakai di dunia nyata.
+
+Singkatnya, prodi ini cocok untuk kakak yang tertarik pada analisis kebutuhan, proses bisnis, data, dan solusi sistem informasi.
+---META {"status":200,"source":"semantic-rag-program-definition"}
+
+user:
+apa itu ukm Himaprodi SK?
+bot:
+Saya pahami kakak ingin tahu apa itu Sistem Komputer. Berikut gambaran sederhananya. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.
+
+Sistem Komputer adalah program studi yang berfokus pada integrasi perangkat keras dan perangkat lunak, mulai dari sistem tertanam sampai infrastruktur komputasi. Mahasiswa belajar merancang sistem komputasi yang efisien, stabil, dan dapat dioperasikan untuk kebutuhan industri.
+
+Singkatnya, prodi ini cocok untuk kakak yang tertarik pada hardware, embedded system, IoT, jaringan, dan integrasi perangkat.
+---META {"status":200,"source":"semantic-rag-program-definition"}
+
+user:
+apa itu ukm Himaprodi TI?
+bot:
+Kalau yang kakak maksud Teknologi Informasi, saya jelaskan gambaran prodinya dulu ya. Saya tampilkan daftar UKM/Ormawa yang tercatat pada data yang tersedia.
+
+Teknologi Informasi adalah program studi yang menekankan pengembangan solusi perangkat lunak, infrastruktur komputasi, dan integrasi sistem modern. Mahasiswa dibimbing untuk memahami bagaimana membangun, mengelola, dan mengamankan layanan digital yang andal untuk kebutuhan industri.
+
+Singkatnya, prodi ini cocok untuk kakak yang tertarik pada coding, aplikasi, jaringan, cloud, keamanan, dan pengelolaan layanan digital.
+---META {"status":200,"source":"semantic-rag-program-definition"}
+
+user:
+apa itu ukm Himas Jimbaran?
+bot:
+Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Himas Jimbaran.
+
+Data yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.
+---META {"status":200,"source":"semantic-rag-ukm-specific-insufficient-data"}
+
+user:
+apa itu ukm Himatography?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Himatography:
+PROFILE SINGKAT UNIT KEGIATAN MAHASISWA HIMATOGRAPHY HIMATOGRAPHY merupakan salah satu Unit Kegiatan Mahasiswa dari Institut Teknologi dan Bisnis STIKOM Bali. Yang menjadi wadah bagi mahasiswa ITB STIKOM Bali yang memiliki kegemaran dalam bidang photography dan videography. Unit Kegiatan Mahasiswa Himatography memiliki slogan "Apapun Kameramu, Tunjukkan Kreasimu!" dimana artinya kita tidak membatasi seseorang untuk berkarya
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Jcos?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM JCOS:
+Visi UKM JCOS Membentuk organisasi yang dapat mempelajari dan memahami segala bentuk tentang bahasa dan kebudayaan jepang Misi UKM JCOS Mempelajari, memperdalam dan memperluas wawasan tentang kebudayaan Jepang. Memberikan informasi dan pengetahuan-pengetahuan tentang Kebudayaan Jepang kepada para mahasiswa-mahasiswa yang berminat untuk memperdalam pengetahuannya tentang Kebudayaan Jepang. Menjadi tempat dan wadah untuk hal-hal mengenai Kebudayaan Jepang di Kampus ITB STIKOM Bali. Menyelenggarakan kegiatan-kegiatan yang berbau tentang kejepangan dan mengajak mahasiswa-mahasiswa untuk ikut serta Mengapresiasikan dan menerapkan seni-seni yang berhubungan dengan Kebudayaan Jepang sebagai bentuk apresiasi seni terhadap Kebudayaan Jepang Arti Lambang UKM Japanese Community Of STIKOM Bali Warna Emas Melambangkan Elegan dan kuat kebersamaan setiap anggota dalam menghadapi segala tugas dan tantan
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Kmhd?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Ini jawaban khusus tentang UKM tersebut. Saya jawab dari data yang tersedia untuk UKM tersebut.
+KMHD adalah Unit Kegiatan Mahasiswa yang menjadi wadah bagi mahasiswa Hindu di ITB STIKOM Bali untuk mengembangkan minat dan bakat di bidang agama. Dari profil yang tersedia, kegiatan KMHD meliputi kegiatan bulanan anggota, pelatihan anggota, dan ngayah bersama. Dengan moto Satyam Eva Jayate, KMHD menjadi sarana bagi mahasiswa Hindu untuk memperdalam pemahaman keagamaan sekaligus membina karakter berdasarkan nilai kebenaran dan dharma.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Ksl?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Ini jawaban khusus tentang UKM tersebut. Saya jawab dari data yang tersedia untuk UKM tersebut.
+KSL adalah UKM Kelompok Studi Linux di ITB STIKOM Bali. UKM ini menjadi wadah bagi mahasiswa yang tertarik pada administrasi sistem, jaringan, keamanan siber, dan pengembangan perangkat lunak berbasis open-source. KSL menerapkan pendekatan belajar bersama atau peer learning serta eksplorasi praktis, bukan hanya teori seperti di kelas reguler.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Ksr?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Saya jawab khusus UKM yang kakak tanyakan. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM KSR:
+alam menghadapi situasi krisis, serta keterampilan klinis yang kompeten dalam memberikan pertolongan pertama pada kecelakaan. Dalam menjalankan roda eksistensinya, UKM KSR-PMI senantiasa berpedoman teguh pada Tujuh Prinsip Dasar Gerakan Palang Merah dan Bulan Sabit Merah Internasional, yang meliputi kemanusiaan, kesamaan, kenetralan, kemandirian, kesukarelaan, kesatuan, dan kesemestaan. Implementasi dari nilai-nilai luhur tersebut diwujudkan secara konsisten melalui berbagai program kerja nyata yang berdampak luas, mulai dari pelaksanaan agenda donor darah rutin, aksi pelayanan kesehatan, hingga kesiapsiagaan dalam manajemen tanggap darurat bencana. Dengan mengedepankan profesionalisme, serta semangat pengabdian yang tulus, UKM KSR-PMI terus berdiri kokoh sebagai garda terdepan kemanusiaan yang siap menjembatani solidaritas sosial, memberikan perlindungan keselamatan bagi civitas akademi
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Mapala Kompas?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya fokus ke UKM yang kakak sebutkan ya, Kak. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Mapala Kompas:
+SEJARAH SINGKAT Mapala Kompas ITB STIKOM Bali merupakan Unit Kegiatan Mahasiswa (UKM) yang bergerak di bidang kepecintaalaman dan pelestarian lingkungan. Mapala Kompas menjadi wadah bagi mahasiswa untuk mengembangkan minat, bakat, pengetahuan, dan keterampilan dalam kegiatan alam bebas, sekaligus menumbuhkan rasa tanggung jawab terhadap lingkungan dan masyarakat. Sejak berdiri, Mapala Kompas terus aktif melaksanakan berbagai kegiatan pendidikan, pelatihan, konservasi lingkungan, eksplorasi alam, serta berpartisipasi dalam berbagai kegiatan dan kompetisi kepecintaalaman. VISI Mapala Kompas ITB STIKOM Bali merupakan wadah bagi mahasiswa/i ITB STIKOM Bali sebagai organisasi penggiat alam melalui kegiatan-kegiatan yang tidak menyimpang terhadap kelestarian alam yang berdasarkan minat dan bakat serta berasaskan Tri Hita Karana. MISI Taqwa terhadap Tuhan Yang Maha Esa Menjaga kekompakan antar
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Mcos?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Ini jawaban khusus tentang UKM tersebut. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM MCOS:
+PROFIL SINGKAT UKM MCOS nama UKM: moslem community of stikom bali) deskripsi singkat: MCOS merupakan Unit Kegiatan Mahasiswa (UKM) yang bergerak di bidang keagamaan Islam serta pengembangan karakter mahasiswa. MCOS menjadi wadah bagi mahasiswa untuk belajar, berdiskusi, mengembangkan soft skill, dan mempererat ukhuwah melalui berbagai kegiatan positif, edukatif, dan kreatif baik di bidang keislaman, sosial, maupun teknologi. tahun berdiri: 29 September 2007 visi: Menjadikan Mcos Sebagai Lembaga Dakwah Kampus Yang Profesional, Tangguh Dan Berlandaskan Pada Al-Qur'an Dan As-Sunnah
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Multimedia?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Multimedia:
+Unit Kegiatan Mahasiswa (UKM) Multimedia ITB STIKOM Bali hadir sebagai pusat inkubasi, kolaborasi, dan inovasi bagi talenta muda di bidang industri kreatif digital. Kami berdedikasi untuk menjembatani ide-ide konseptual menjadi karya visual dan audio-visual yang tidak hanya memiliki keunggulan estetis, tetapi juga membawa dampak dan pesan yang relevan bagi masyarakat. Untuk memastikan sistem pengembangan keahlian yang komprehensif dan profesional, ruang lingkup karya kami difokuskan pada tiga pilar utama: Graphic Design, Audio & Video Editing, dan 3D Modeling. Dalam pergerakannya pada periode kepengurusan 2026, UKM Multimedia secara konsisten memperluas jangkauan kreativitas dan kontribusinya. Ekosistem kreatif ini dihidupkan melalui penyelenggaraan Mahakarya Multimedia sebagai ruang eksibisi internal, pelaksanaan kompetisi bergengsi Adukarya Multimedia, serta partisipasi aktif talenta k
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Musik?
+bot:
+Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Musik.
+
+Data yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.
+---META {"status":200,"source":"semantic-rag-ukm-specific-insufficient-data"}
+
+user:
+apa itu ukm Paskamras?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Paskamras:
+UKM PASKAMRAS ITB STIKOM Bali 1. IDENTITAS ORGANISASI Nama Organisasi: Unit Kegiatan Mahasiswa Pasukan Keamanan Acara Stikom Bali ( UKM PASKAMRAS ) Tahun Berdiri: 27 Februari 2008 Instansi: Institut Teknologi dan Bisnis ( ITB) Stikom Bali Email: paskamras.official08@gmail.com Instagram: @paskamras_stikombali 2. SEJARAH SINGKAT UKM PASKAMRAS merupakan organisasi Kemahasiswaan di lingkungan ITB Stikom Bali yang bergerak di bidang pengamanan acara kampus. Organisasi ini dibentuk atas dasar kepedulian mahasiswa terhadap pentingnya keamanan dan kelancaran kegiatan kampus. Sejak berdiri pada tahun 2008, UKM PASKAMRAS aktif berperan dalam berbagai kegiatan kampus seperti Dies Natalis, Kompetisi, Festival, Seminar, Kegiatan Sosial, dan berbagai event lainnya agar berjalan aman, tertib, dan lancar. 3. VISI “ Mengamankan dan Melindungi seluruh rangkaian acara, panitia, un
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Pmk?
+bot:
+Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Pmk.
+
+Data yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.
+---META {"status":200,"source":"semantic-rag-ukm-specific-insufficient-data"}
+
+user:
+apa itu ukm Progress?
+bot:
+Maaf, saya belum punya informasi detail tentang kegiatan atau program kerja UKM Progress.
+
+Data yang tersedia baru cukup untuk menyebutkan bahwa UKM/Ormawa tersebut tercatat di daftar kampus. Untuk detail kegiatan, jadwal, atau pendaftaran anggota, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.
+---META {"status":200,"source":"semantic-rag-ukm-specific-insufficient-data"}
+
+user:
+apa itu ukm Rade?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Saya jawab khusus UKM yang kakak tanyakan. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM RADE:
+Program Kegiatan Organisasi UKM RADE menyelenggarakan berbagai program kegiatan yang bertujuan untuk meningkatkan kompetensi teknis, kreativitas, dan pengalaman organisasi anggota. Program kegiatan tersebut meliputi: Pelatihan Dasar Robotika dan Embedded SystemKegiatan pembelajaran yang memberikan pemahaman dasar mengenai elektronika, mikrokontroler, sensor, aktuator, dan pemrograman sistem embedded. Pengembangan Proyek Teknologi (Research Penelitian)Program yang mendorong anggota untuk merancang dan mengembangkan proyek berbasis teknologi sebagai sarana penerapan ilmu dan peningkatan kemampuan problem solving. Partisipasi Kompetisi dan Perlombaan TeknologiPartisipasi dalam berbagai perlombaan robotika dan inovasi teknologi untuk meningkatkan pengalaman, prestasi, dan daya saing anggota. Kegiatan Pengabdian kepada MasyarakatPelaksanaan kegiatan edukasi dan pelatihan teknologi kepada sisw
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Syntax?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Syntax:
+SYNAMON (SYNTAX Night Harmony) SYNAMON (SYNTAX Night Harmony) merupakan event tahunan yang diselenggarakan oleh Unit Kegiatan Mahasiswa Speaking Youth Entertainment Experience (SYNTAX). Event ini sebelumnya dikenal dengan nama SYNCOSTAN, namun pada tahun 2025 hadir dengan identitas baru sebagai SYNAMON. Pergantian nama ini dilakukan sebagai bentuk penyegaran sekaligus penegasan nilai harmoni dan kebersamaan yang ingin dihadirkan dalam kegiatan tersebut. Tujuan utama dari kegiatan ini adalah untuk mempererat rasa kekeluargaan dan kebersamaan antar mahasiswa ITB STIKOM Bali, baik yang tergabung dalam UKM SYNTAX maupun dari luar UKM. Sebagai malam keakraban, SYNAMON akan diisi dengan berbagai penampilan dan aktivitas yang mencerminkan karakter UKM SYNTAX sebagai Unit Kegiatan Mahasiswa di bidang Public Speaking. Berbeda dengan event yang lain, SYNAMON diselenggarakan di area lobby kampus se
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Tabuh?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Ini jawaban khusus tentang UKM tersebut. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Tabuh:
+n salah satu momen penting bagi UKM dalam memperlihatkan potensi seni kepada tamu undangan, sivitas akademika, dan masyarakat umum. Selain itu, partisipasi ini menjadi sarana mempertegas identitas budaya kampus sekaligus memperkokoh posisi UKM sebagai perwakilan seni dan budaya di lingkungan institusi. “PARTISIPASI KEGIATAN INTERNAL & EKSTERNAL” Partisipasi Kegiatan Eksternal dan Internal merupakan bentuk keterlibatan UKM Tabuh Bramara Gita dalam berbagai acara, baik yang diselenggarakan di dalam kampus maupun yang diundang oleh pihak luar seperti sekolah, komunitas seni, pemerintah daerah, festival budaya, serta organisasi kebudayaan lainnya. Kegiatan ini merupakan media untuk memperluas jaringan, memperkuat eksistensi UKM di lingkungan seni, serta mempromosikan budaya Bali kepada publik. Dalam acara mahasiswa juga merupakan wujud kontribusi UKM dalam meningkatkan nilai estetika dan ide
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Tari?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Saya jawab khusus UKM yang kakak tanyakan. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM TARI:
+PROFILE ORMAWA Unit Kegiatan Tari Tradisional “PRAGINA” merupakan wadah aktivitas kemahasiswaan non akademik yang bergerak di bidang Seni Tradisional Bali untuk mengembangkan minat dan bakat mahasiswa. Berdirinya UKM Tari Tradisional “PRAGINA” diprakarsai oleh Prof. Dr. I Made Bandem, MA. Beserta Istrinya dan inisiatif dari rekan-rekan mahasiswa. Dari awal munculnya UKM Tari Tradisional “PRAGINA” ini, penggagas pertama yaitu I Made Kartika Yasa mengumpulkan rekan-rekan mahasiswa yang mempunyai minat, bakat, hobi dalam bidang seni Tari Tradisional di LAB bawah kampus STIKOM lama yang bertempat di jalan Teuku Umar. UKM Tari Tradisional “PRAGINA” berdiri sah bersama UKM Tabuh “Bramara Gita” pada tanggal 8 Agustus 2009 pada saat Dies Natalies ke VI di panggung terbuka Ardha Candra- Art Centre dengan persembahan Tari Sekar Jagat. Dari waktu ke waktu UKM Tari Tradisional “PRAGINA” di dampingi
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Teater Biner?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Saya jawab dari data yang tersedia untuk UKM yang kakak maksud. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM Teater Biner:
+PROFILE UKM Teater Biner ITB STIKOM Bali merupakan Unit Kegiatan Mahasiswa yang bergerak di bidang seni pertunjukan dan menjadi wadah bagi mahasiswa untuk mengembangkan minat, bakat, serta kreativitas dalam dunia teater dan kesenian. Melalui berbagai kegiatan seperti pelatihan, workshop, pementasan, dan kompetisi, Teater Biner berkomitmen untuk menciptakan ruang belajar yang mendukung pengembangan kemampuan artistik, kerja sama tim, serta karakter anggotanya. Sejak berdiri, Teater Biner aktif menghasilkan berbagai karya seni dan menyelenggarakan program kerjanya sebagai sarana pembinaan serta apresiasi seni. Selain berkarya di atas panggung, Teater Biner juga aktif berpartisipasi dalam berbagai kompetisi tingkat regional maupun nasional dan berhasil meraih sejumlah prestasi membanggakan. Dengan semangat kreativitas, kolaborasi, dan inovasi, Teater Biner terus berupaya menjadi ruang ekspr
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm U2M?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Ini jawaban khusus tentang UKM tersebut. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM U2M:
+PROFIL SINGKAT Unit Kegiatan Mahasiswa Unit Usaha Mahasiswa (UKM U2M) merupakan organisasi kemahasiswaan ITB STIKOM Bali yang berfokus pada pengembangan jiwa kewirausahaan mahasiswa. UKM ini hadir sebagai wadah bagi mahasiswa yang ingin belajar, mengembangkan, dan mempraktikkan keterampilan bisnis melalui berbagai kegiatan seperti seminar, workshop, business sharing, mentoring, serta pelatihan pitching. Dengan landasan visi “menciptakan generasi muda mandiri dan berdaya saing global”, UKM U2M berkomitmen menyediakan ruang belajar yang kolaboratif, lingkungan yang inovatif, serta jaringan relasi yang luas agar mahasiswa mampu menciptakan dan mengembangkan peluang bisnis secara nyata. Selain itu, UKM U2M juga berperan sebagai wadah pembinaan mental dan kreativitas mahasiswa untuk menjadi wirausahawan muda yang siap bersaing di dunia industri modern.
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}
+
+user:
+apa itu ukm Vos?
+bot:
+Baik Kak, saya bantu jawab tentang UKM/Ormawa di ITB STIKOM Bali.
+
+Baik, Kak. Saya jawab khusus UKM yang kakak tanyakan. Saya jawab dari data yang tersedia untuk UKM tersebut.
+
+Berikut penjelasan tentang UKM VOS:
+Berikut adalah profil singkat mengenai UKM Voice of STIKOM Bali: 1. Fokus & Kegiatan Utama Pengembangan Bakat Vokal: Menyelenggarakan latihan rutin untuk mengasah teknik vokal, harmoni, dan performa panggung anggota. Pengisi Acara Resmi Kampus: Menjadi tim paduan suara utama dalam berbagai agenda sakral dan formal kampus, seperti Wisuda ITB STIKOM Bali, Dies Natalis, serta upacara pembukaan seminar atau acara nasional. Delegasi Kompetisi: Mewakili lembaga dalam berbagai ajang perlombaan paduan suara atau festival musik, baik di tingkat regional maupun nasional. 2. Fungsi Organisasi Selain fokus pada bidang musikalitas, VOS juga berfungsi sebagai tempat belajar berorganisasi bagi para anggotanya. Di dalamnya terdapat struktur kepengurusan yang melatih kemampuan leadership, manajemen waktu, komunikasi publik, serta kerja sama tim dalam mengelola sebuah pertunjukan atau kepanitiaan acara. 3
+Untuk detail yang belum tercantum, sebaiknya dikonfirmasi ke pengurus UKM atau kemahasiswaan.
+---META {"status":200,"source":"semantic-rag-ukm-specific"}

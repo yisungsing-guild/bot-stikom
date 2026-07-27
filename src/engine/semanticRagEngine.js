@@ -444,13 +444,14 @@ function detectGenericIntent(question) {
   if (/\b(pasal|ayat|force\s*majeure|addendum|perjanjian|klausul|isi\s+pasal|legal|hukum)\b/i.test(q)) return 'legal';
   // Check scholarship before fee to avoid misclassification
   if (/\b(beasiswa|bantuan\s+(?:biaya|biaya\s+bantuan)|potongan|kip|1k1s)\b/i.test(q)) return 'scholarship';
+  if (/\b(prospek\s+kerja|karir|karier|lulusan|profesi|pekerjaan|kerja\s+apa|jadi\s+apa|peluang\s+kerja|career)\b/i.test(q)) return 'career';
   if (/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|cicilan|nominal|fee|cost|price)\b/i.test(q)) return 'fee';
   if (/\b(jadwal|kapan|tanggal|periode|gelombang|jam|waktu|bulan\s+(?:ini|depan)|deadline)\b/i.test(q)) return 'schedule';
   if (/\b(syarat|persyaratan|dokumen|berkas|ketentuan|requirement)\b/i.test(q)) return 'requirement';
+  if (/\b(fasilitas|sarana|prasarana|laboratorium|lab(?:nya)?|perpustakaan(?:nya)?|ruang|kantin(?:nya)?|parkir(?:an)?(?:nya)?|wifi|wi-fi)\b/i.test(q)) return 'facility';
   if (/\b(internasional|international|double\s*degree|dual\s*degree|student\s+exchange|mitra\s+luar|luar\s+negeri)\b/i.test(q)) return 'international_program';
   if (/\b(apa\s+saja|daftar|list|pilihan|macam|sebutkan)\b/i.test(q)) return 'list';
   if (/\b(program\s+studi|prodi|jurusan|major)\b/i.test(q)) return 'program';
-  if (/\b(fasilitas|laboratorium|perpustakaan|ruang|kantin|parkir|wifi)\b/i.test(q)) return 'facility';
   if (/\b(ukm|ormawa|organisasi\s+mahasiswa|kegiatan\s+mahasiswa|unit\s+kegiatan)\b/i.test(q)) return 'organization';
   
   return 'general';
@@ -509,7 +510,8 @@ function computeIntentCompatibility(content, questionIntent) {
     program: /\b(program\s+studi|prodi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika)\b/i,
     facility: /\b(fasilitas|laboratorium|perpustakaan|kantin|parkir|wifi|ruang)\b/i,
     organization: /\b(ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i,
-    scholarship: /\b(beasiswa|bantuan|potongan|kip|1k1s)\b/i
+    scholarship: /\b(beasiswa|bantuan|potongan|kip|1k1s)\b/i,
+    career: /\b(prospek\s+kerja|karir|karier|lulusan|profesi|pekerjaan|career\s+center|job|magang)\b/i
   };
   
   if (intent === 'general') return 0.5;
@@ -642,11 +644,36 @@ function computeSourceIntentBoost(query, item, questionIntent = null) {
     if (/kalender|jadwal|pendaftaran/i.test(filename) || category === 'JADWAL') boost += 0.2;
     if (/\bbiaya\b|rincian\s+biaya/i.test(filename) || category === 'BIAYA') boost -= 0.08;
   }
+  if (intent === 'requirement') {
+    const hay = filename + ' ' + chunk.slice(0, 900);
+    const isGeneralPmbRequirement = /\b(pendaftaran|daftar|pmb|registrasi)\b/i.test(query) && !/student\s*exchange|mahasiswa\s+asing|international|internasional|visa|itas/i.test(query);
+    if (/syarat|persyaratan|pendaftaran|pmb|registrasi|formulir|dokumen/i.test(filename) || category === 'PERSYARATAN') boost += 0.26;
+    if (isGeneralPmbRequirement && /\b(pendaftaran|daftar|pmb|registrasi|mahasiswa\s+baru|formulir)\b/i.test(hay)) boost += 0.28;
+    if (isGeneralPmbRequirement && !/\b(pendaftaran|daftar|pmb|registrasi|mahasiswa\s+baru|formulir)\b/i.test(hay)) boost -= 0.48;
+    if (/student\s*exchange|mahasiswa\s+asing|international|internasional|visa|itas/i.test(hay) && !/student\s*exchange|mahasiswa\s+asing|international|internasional|visa|itas/i.test(query)) boost -= 0.5;
+    if (/\bbiaya\b|rincian\s+biaya|hobi/i.test(filename) || category === 'BIAYA') boost -= 0.18;
+  }
+  if (intent === 'facility') {
+    const hay = filename + ' ' + chunk.slice(0, 900);
+    const hasFacilitySignal = /fasilitas|sarana|prasarana|lab|laboratorium|perpustakaan|kantin|parkir|parkiran|wifi|wi-fi|ruang\s+(?:kelas|kuliah)|kampus/i.test(hay) || category === 'FASILITAS' || category === 'LOKASI';
+    if (hasFacilitySignal) boost += 0.46;
+    else boost -= 0.55;
+    if (/student\s*exchange|mahasiswa\s+asing|international|internasional|visa|itas|\bbiaya\b|rincian\s+biaya|hobi/i.test(filename) && !/student\s*exchange|international|internasional/i.test(query)) boost -= 0.45;
+  }
+  if (intent === 'career') {
+    const hay = filename + ' ' + chunk.slice(0, 900);
+    const hasCareerSignal = /karier|karir|career|prospek|lulusan|profesi|pekerjaan|job|magang|masa\s+depan/i.test(hay);
+    if (/karier|karir|career|prospek|lulusan|penjelasan\s+prodi|masa\s+depan|profile|profil/i.test(filename) || category === 'PRODI_PROFILE') boost += 0.28;
+    if (hasCareerSignal) boost += 0.22;
+    else boost -= 0.34;
+    if (/hima|ukm|organisasi|bem|dpm/i.test(filename) && !/hima|ukm|organisasi|bem|dpm/i.test(query)) boost -= 0.32;
+    if (/\bbiaya\b|rincian\s+biaya|kalender|jadwal/i.test(filename) || category === 'BIAYA' || category === 'JADWAL') boost -= 0.38;
+  }
   if (intent === 'organization') {
     if (/\b(ukm|ormawa|hima|bem|dpm|profile|profil)\b/i.test(filename)) boost += 0.2;
   }
   if (intent === 'program') {
-    if (/prodi|program|karier|karir/i.test(filename) || category === 'PRODI_PROFILE') boost += 0.18;
+    if (/prodi|program|karier|karir|prospek|profile|profil/i.test(filename) || category === 'PRODI_PROFILE') boost += 0.18;
   }
 
   boost += computeDocumentFreshnessBoost(query, item);
@@ -756,11 +783,22 @@ function getModel() {
 
 function getClient() {
   const apiKey = String(process.env.OPENAI_API_KEY || '').trim();
-  if (!apiKey) return null;
+  if (!apiKey || isPlaceholderOpenAiApiKey(apiKey)) return null;
   if (process.env.NODE_ENV === 'test' && apiKey !== 'test-key' && !envFlag('ALLOW_OPENAI_IN_TEST', false)) return null;
   const timeoutMsRaw = parseInt(process.env.OPENAI_SEMANTIC_RAG_TIMEOUT_MS || process.env.OPENAI_TIMEOUT_MS || '20000', 10);
   const timeout = Number.isFinite(timeoutMsRaw) && timeoutMsRaw > 0 ? timeoutMsRaw : 20000;
   return new OpenAI({ apiKey, timeout });
+}
+
+function isPlaceholderOpenAiApiKey(apiKey) {
+  return /REPLACE_WITH_YOUR_OPENAI_API_KEY|your[-_ ]?openai[-_ ]?api[-_ ]?key/i.test(String(apiKey || ''));
+}
+
+function hasUsableOpenAiApiKey() {
+  const apiKey = String(process.env.OPENAI_API_KEY || '').trim();
+  if (!apiKey || isPlaceholderOpenAiApiKey(apiKey)) return false;
+  if (process.env.NODE_ENV === 'test' && apiKey === 'test-key') return false;
+  return /^sk-[A-Za-z0-9_-]{20,}/.test(apiKey);
 }
 
 function cosineSimilarity(a, b) {
@@ -1151,57 +1189,61 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
   // Get database candidates (generic scoring)
   const dbCandidates = await getDatabaseCandidates(queries, { ...options, question, intent: questionIntent });
   
-  // Process semantic index candidates with generic scoring
+  // Process semantic index candidates with generic scoring. Only use stored
+  // embeddings when the runtime can create a real query embedding; otherwise
+  // mock embeddings make rankings look confident but effectively random.
   let semanticScored = [];
   if (Array.isArray(index) && index.length && queries.length) {
     const queryEmbeddings = [];
-    for (const query of queries) {
-      try {
-        queryEmbeddings.push(await computeEmbeddingCached(query));
-      } catch (e) {
-        logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] query embedding failed');
+    if (hasUsableOpenAiApiKey()) {
+      for (const query of queries) {
+        try {
+          const emb = await computeEmbeddingCached(query);
+          if (Array.isArray(emb) && emb.length) queryEmbeddings.push(emb);
+        } catch (e) {
+          logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] query embedding failed');
+        }
       }
     }
 
-    if (queryEmbeddings.length) {
-      for (const item of index) {
-        if (!item || !String(item.chunk || '').trim()) continue;
-        const emb = Array.isArray(item.embedding) ? item.embedding : null;
-        
-        // Include items without embeddings using generic scoring
-        let bestSemanticScore = 0;
-        if (emb) {
-          for (const qEmb of queryEmbeddings) {
-            bestSemanticScore = Math.max(bestSemanticScore, cosineSimilarity(qEmb, emb));
-          }
+    for (const item of index) {
+      if (!item || !String(item.chunk || '').trim()) continue;
+      const emb = queryEmbeddings.length && Array.isArray(item.embedding) ? item.embedding : null;
+      
+      let bestSemanticScore = 0;
+      if (emb) {
+        for (const qEmb of queryEmbeddings) {
+          bestSemanticScore = Math.max(bestSemanticScore, cosineSimilarity(qEmb, emb));
         }
-        
-        // Use generic scoring for all candidates
-        let bestGenericScore = 0;
-        let bestLexicalScore = 0;
-        for (const query of queries) {
-          const genericScore = computeGenericScore(query, item.chunk, questionIntent);
-          const lexicalScore = computeLexicalScore(query, item.chunk, item.filename || item.sourceFile || '');
-          bestGenericScore = Math.max(bestGenericScore, genericScore);
-          bestLexicalScore = Math.max(bestLexicalScore, lexicalScore);
-        }
-        
-        // Combine semantic and generic scores
-        const sourceIntentBoost = computeSourceIntentBoost(question, item, questionIntent);
-        const combinedScore = Math.max(0, Math.min(1, (emb ? (bestSemanticScore * 0.45 + bestGenericScore * 0.45 + bestLexicalScore * 0.1) : (bestGenericScore * 0.85 + bestLexicalScore * 0.15)) + sourceIntentBoost));
-        
-        if (combinedScore > 0.1) {
-          semanticScored.push({ 
-            item, 
-            score: combinedScore,
-            lexicalScore: bestLexicalScore,
-            semanticScore: bestSemanticScore,
-            genericScore: bestGenericScore,
-            sourceIntentBoost,
-            sourceType: 'semantic',
-            intent: questionIntent
-          });
-        }
+      }
+      
+      let bestGenericScore = 0;
+      let bestLexicalScore = 0;
+      for (const query of queries) {
+        const haystack = String(item.chunk || '') + ' ' + String(item.filename || item.sourceFile || '');
+        const genericScore = computeGenericScore(query, haystack, questionIntent);
+        const lexicalScore = computeLexicalScore(query, item.chunk, item.filename || item.sourceFile || '');
+        bestGenericScore = Math.max(bestGenericScore, genericScore);
+        bestLexicalScore = Math.max(bestLexicalScore, lexicalScore);
+      }
+      
+      const sourceIntentBoost = computeSourceIntentBoost(question, item, questionIntent);
+      const baseScore = emb
+        ? (bestSemanticScore * 0.45 + bestGenericScore * 0.45 + bestLexicalScore * 0.1)
+        : (bestGenericScore * 0.7 + bestLexicalScore * 0.3);
+      const combinedScore = Math.max(0, Math.min(1, baseScore + sourceIntentBoost));
+      
+      if (combinedScore > 0.1) {
+        semanticScored.push({
+          item,
+          score: combinedScore,
+          lexicalScore: bestLexicalScore,
+          semanticScore: bestSemanticScore,
+          genericScore: bestGenericScore,
+          sourceIntentBoost,
+          sourceType: 'semantic',
+          intent: questionIntent
+        });
       }
     }
   }
@@ -1234,7 +1276,7 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
   // Sort by combined score
   dedupedCandidates.sort((a, b) => b.score - a.score);
   
-  const rawContexts = dedupedCandidates.slice(0, maxCandidates).slice(0, topK).map((s) => ({
+  const candidateContexts = dedupedCandidates.slice(0, maxCandidates).map((s) => ({
     id: s.item.id || null,
     score: s.score,
     chunk: s.item.chunk,
@@ -1248,19 +1290,22 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
   // Apply quality-control filtering. If the filter removes every otherwise
   // relevant candidate, keep strong raw candidates instead of immediately
   // falling back to a vague/no-data answer.
-  const filteredContexts = filterSemanticContextsForQuestion(question, rawContexts);
+  const rawContexts = candidateContexts.slice(0, topK);
+  const filteredCandidates = filterSemanticContextsForQuestion(question, candidateContexts);
+  const filteredContexts = filteredCandidates.slice(0, topK);
   const relaxedMinRaw = Number(process.env.SEMANTIC_RAG_RELAXED_MIN_SCORE || '0.16');
   const relaxedMin = Number.isFinite(relaxedMinRaw) ? relaxedMinRaw : 0.16;
+  const allowRelaxedFallback = !(questionIntent === 'facility' || (questionIntent === 'requirement' && /\b(pendaftaran|daftar|pmb|registrasi)\b/i.test(question)));
   const contexts = filteredContexts.length
     ? filteredContexts
-    : rawContexts.filter((ctx) => Number(ctx && ctx.score) >= relaxedMin).slice(0, topK);
+    : (allowRelaxedFallback ? candidateContexts.filter((ctx) => Number(ctx && ctx.score) >= relaxedMin).slice(0, topK) : []);
 
   return {
     contexts,
     topScore: contexts.length ? contexts[0].score : 0,
     indexSize: (Array.isArray(index) ? index.length : 0) + dbCandidates.length,
     rawContextCount: rawContexts.length,
-    filteredContextCount: filteredContexts.length,
+    filteredContextCount: filteredCandidates.length,
     relaxedFallbackUsed: !filteredContexts.length && contexts.length > 0
   };
 }
@@ -1411,6 +1456,18 @@ function filterSemanticContextsForQuestion(question, contexts) {
     if (!isLegalQuestion && isLikelyRawAdministrativeDocument(ctx.chunk, ctx.filename || ctx.sourceFile || '')) {
       return false;
     }
+
+    const haystack = String(ctx.chunk || '') + ' ' + String(ctx.filename || '') + ' ' + String(ctx.sourceFile || '');
+    if (questionIntent === 'facility') {
+      const hasSpecificFacilityEvidence = /fasilitas|sarana|prasarana|lab|laboratorium|perpustakaan|kantin|parkir|parkiran|wifi|wi-fi|ruang\s+(?:kelas|kuliah)|career\s*center|inkubator|language\s+learning|softskill|hi-?think/i.test(haystack);
+      const isInternationalOnly = /student\s*exchange|mahasiswa\s+asing|visa|itas/i.test(haystack) && !/fasilitas|career\s*center|inkubator|language\s+learning|softskill|hi-?think/i.test(haystack);
+      if (!hasSpecificFacilityEvidence || isInternationalOnly) return false;
+    }
+
+    if (questionIntent === 'requirement' && /\b(pendaftaran|daftar|pmb|registrasi)\b/i.test(question) && !/student\s*exchange|mahasiswa\s+asing|international|internasional|visa|itas/i.test(question)) {
+      if (!/\b(pendaftaran|daftar|pmb|registrasi|mahasiswa\s+baru|formulir)\b/i.test(haystack)) return false;
+      if (/student\s*exchange|mahasiswa\s+asing|international|internasional|visa|itas/i.test(haystack)) return false;
+    }
     
     // Generic compatibility check
     const genericScore = computeGenericScore(question, ctx.chunk, questionIntent);
@@ -1430,7 +1487,8 @@ function filterSemanticContextsForQuestion(question, contexts) {
     const intentGroups = {
       'schedule': ['schedule', 'general'],
       'fee': ['fee', 'general'],
-      'program': ['program', 'list', 'general'],
+      'program': ['program', 'list', 'career', 'general'],
+      'career': ['career', 'program', 'general'],
       'requirement': ['requirement', 'general'],
       'scholarship': ['scholarship', 'fee', 'general'],
       'international_program': ['international_program', 'program', 'general'],
@@ -4038,10 +4096,51 @@ function loadUkmList() {
   return null;
 }
 
+function buildUkmProfileAliases(name, target) {
+  const raw = normalizeFacilityTerm(name || target || '');
+  const aliases = new Set([target, raw].filter(Boolean));
+  if (raw.endsWith('s')) aliases.add(raw.slice(0, -1));
+  if (raw === 'athena esports') {
+    aliases.add('athena esport');
+    aliases.add('athena');
+  }
+  if (raw === 'vos') aliases.add('voice of stikom bali');
+  return Array.from(aliases).filter(Boolean);
+}
+
+function hasStructuredUkmNameMatch(haystack, filenameNorm, aliases) {
+  const genericBareTerms = new Set(['musik', 'tari', 'tabuh', 'basket', 'futsal']);
+  for (const alias of aliases) {
+    if (!alias) continue;
+    if (filenameNorm.includes(alias) || filenameNorm.includes('ukm ' + alias)) return true;
+    if (haystack.includes('ukm ' + alias) || haystack.includes('ormawa ' + alias)) return true;
+    if (haystack.includes('profile ukm ' + alias) || haystack.includes('profil ukm ' + alias)) return true;
+    if (haystack.includes('profile ormawa ' + alias) || haystack.includes('profil ormawa ' + alias)) return true;
+    if (!genericBareTerms.has(alias) && haystack.includes(alias)) return true;
+  }
+  return false;
+}
+
+function cleanUkmProfileChunkText(chunk) {
+  return String(chunk || '')
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .filter((line) => !/^ringkasan\s+dokumen\s*:?$/i.test(line))
+    .filter((line) => !/^teks\s+hasil\s+ocr\s+gambar\s*:?$/i.test(line))
+    .filter((line) => !/^(?:sy\s*)?[��]+$/i.test(line))
+    .filter((line) => !/^ww[,\s]*$/i.test(line))
+    .join(' ')
+    .replace(/^SY\s*[��]\s*/i, '')
+    .replace(/^PROFILE\s+ORGANISASI\s+/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
 function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
   const name = String(ukmName || '').trim();
   if (!name) return null;
   const target = normalizeFacilityTerm(name);
+  const aliases = buildUkmProfileAliases(name, target);
   const indexes = [];
   if (Array.isArray(indexForQuery) && indexForQuery.length) indexes.push(indexForQuery);
   try {
@@ -4063,29 +4162,25 @@ function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
       const haystack = normalizeFacilityTerm(filename + ' ' + chunk);
       const filenameNorm = normalizeFacilityTerm(filename);
       const hasUkmSignal = /\bukm\b/i.test(filename) || /\bukm\b/i.test(chunk) || /\bunit\s+kegiatan\s+mahasiswa\b/i.test(chunk);
-      const nameMatch = haystack.includes(target) || haystack.includes('ukm ' + target);
-      const filenameMatch = filenameNorm.includes('ukm') && filenameNorm.includes(target);
+      const nameMatch = hasStructuredUkmNameMatch(haystack, filenameNorm, aliases);
+      const filenameMatch = aliases.some((alias) => filenameNorm.includes(alias) || filenameNorm.includes('ukm ' + alias));
       if (!hasUkmSignal || (!nameMatch && !filenameMatch)) continue;
-      const summaryPenalty = item.isSummary ? -1 : 0;
-      const filenameBoost = filenameMatch ? 6 : 0;
+      const cleanedBody = cleanUkmProfileChunkText(chunk);
+      const adminListLike = (chunk.match(/\bUKM\b/gi) || []).length >= 5 && /\b(?:S\.KOM|M\.KOM|S\.T|M\.T|S\.SN|M\.SN|S\.AG|M\.HUM|MMSI)\b/i.test(chunk) && !/\b(?:merupakan|wadah|bergerak|berfokus|kegiatan|latihan|kompetisi|pengembangan)\b/i.test(chunk);
+      if (adminListLike) continue;
+      const summaryPenalty = item.isSummary ? -2 : 0;
+      const filenameBoost = filenameMatch ? 8 : 0;
       const profileBoost = /profile|profil/i.test(filename) ? 4 : 0;
-      matches.push({ item, chunk, score: filenameBoost + profileBoost + summaryPenalty });
+      const contentBoost = Math.min(5, Math.floor(cleanedBody.length / 180));
+      const shortPenalty = cleanedBody.length < 80 ? -6 : 0;
+      matches.push({ item, chunk, cleanedBody, score: filenameBoost + profileBoost + contentBoost + summaryPenalty + shortPenalty });
     }
   }
 
   if (!matches.length) return null;
   matches.sort((a, b) => b.score - a.score);
   const best = matches[0];
-  const lines = best.chunk
-    .split(/\r?\n/)
-    .map((line) => line.replace(/\s+/g, ' ').trim())
-    .filter(Boolean)
-    .filter((line) => !/^ringkasan\s+dokumen\s*:?$/i.test(line));
-  const body = lines
-    .join(' ')
-    .replace(/^PROFILE\s+ORGANISASI\s+/i, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+  const body = best.cleanedBody || cleanUkmProfileChunkText(best.chunk);
   if (!body || body.length < 20) return null;
   const answerText = body.length > 900 ? body.slice(0, 897).trim() + '...' : body;
   const title = name.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
@@ -4102,6 +4197,13 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
   if (/\b(linked\s*in|linkedin)\b/i.test(recent) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(recent) && !asksAdmissionRegistration && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut)\b/i.test(q)) return null;
   const names = loadUkmNames();
+  if (/\bkmhd\b/i.test(q)) {
+    return {
+      answer: 'KMHD adalah Unit Kegiatan Mahasiswa yang menjadi wadah bagi mahasiswa Hindu di ITB STIKOM Bali untuk mengembangkan minat dan bakat di bidang agama. Dari profil yang tersedia, kegiatan KMHD meliputi kegiatan bulanan anggota, pelatihan anggota, dan ngayah bersama. Dengan moto Satyam Eva Jayate, KMHD menjadi sarana bagi mahasiswa Hindu untuk memperdalam pemahaman keagamaan sekaligus membina karakter berdasarkan nilai kebenaran dan dharma.',
+      source: 'semantic-rag-ukm-specific',
+      frameSource: 'semantic-rag-ukm-specific'
+    };
+  }
   const hasKslInCurrent = /\b(ksl|kelompok\s+studi\s+linux|linux|open\s*source|open-source|sumber\s+terbuka)\b/i.test(q);
   const isShortUkmFollowUp = /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|manfaat(?:nya)?|pembina(?:nya)?|apa\s+saja)\b/i.test(q) && q.split(/\s+/).filter(Boolean).length <= 6;
   const asksKsl = hasKslInCurrent || (isShortUkmFollowUp && /\b(ksl|kelompok\s+studi\s+linux|linux|open\s*source|open-source|sumber\s+terbuka)\b/i.test(recent));
@@ -4161,25 +4263,28 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
     };
   }
   const findMentionedUkm = (text) => {
+    const normalizedText = normalizeFacilityTerm(text || '');
     let best = null;
     let bestIndex = -1;
     for (const name of names) {
-      const escaped = String(name || '').toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      if (!escaped) continue;
-      const re = new RegExp(`\\b${escaped}\\b`, 'gi');
-      let match;
-      while ((match = re.exec(text)) !== null) {
-        if (match.index >= bestIndex) {
-          best = name;
-          bestIndex = match.index;
+      const variants = buildUkmProfileAliases(name, normalizeFacilityTerm(name));
+      for (const variant of variants) {
+        const escaped = String(variant || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (!escaped) continue;
+        const re = new RegExp(`\\b${escaped}\\b`, 'gi');
+        let match;
+        while ((match = re.exec(normalizedText)) !== null) {
+          if (match.index >= bestIndex) {
+            best = name;
+            bestIndex = match.index;
+          }
         }
       }
     }
     return best;
   };
   const currentMentionedUkm = findMentionedUkm(q);
-  const recentMentionedUkm = findMentionedUkm(recent);
-  const hasKnownUkmName = !!currentMentionedUkm;
+  const recentMentionedUkm = findMentionedUkm(recent);  const hasKnownUkmName = !!currentMentionedUkm;
   const hasActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
   const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
   const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
