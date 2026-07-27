@@ -4128,13 +4128,71 @@ function cleanUkmProfileChunkText(chunk) {
     .filter(Boolean)
     .filter((line) => !/^ringkasan\s+dokumen\s*:?$/i.test(line))
     .filter((line) => !/^teks\s+hasil\s+ocr\s+gambar\s*:?$/i.test(line))
-    .filter((line) => !/^(?:sy\s*)?[��]+$/i.test(line))
+    .filter((line) => !/^(?:sy\s*)?[�ï¿½]+$/i.test(line))
     .filter((line) => !/^ww[,\s]*$/i.test(line))
     .join(' ')
-    .replace(/^SY\s*[��]\s*/i, '')
+    .replace(/^SY\s*[�ï¿½]\s*/i, '')
     .replace(/^PROFILE\s+ORGANISASI\s+/i, '')
+    .replace(/^PROFILE\s+SINGKAT\s+/i, '')
+    .replace(/^PROFIL\s+SINGKAT\s+/i, '')
+    .replace(/^Berikut\s+adalah\s+profil\s+singkat\s+mengenai\s+/i, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
+}
+
+function normalizeUkmProfileSentence(sentence) {
+  let out = String(sentence || '')
+    .replace(/\s+/g, ' ')
+    .replace(/^(?:\d+[.)]\s*)+/, '')
+    .replace(/^(?:fokus\s*&\s*kegiatan\s+utama|fungsi\s+organisasi|profil\s+singkat|profile\s+singkat|deskripsi\s+singkat|kegiatan\s+rutin\s*&\s*unggulan)\s*[:\-]?\s*/i, '')
+    .replace(/^(?:UKM\s+)?Voice\s+of\s+STIKOM\s+Bali\s*[:\-]?\s*/i, 'VOS ')
+    .replace(/^(?:UKM\s+)?VOS\s*[:\-]?\s*/i, 'VOS ')
+    .replace(/\s+\d+$/g, '')
+    .trim();
+
+  out = out.replace(/\s+([,.;:!?])/g, '$1');
+  if (out && !/[.!?]$/.test(out)) out += '.';
+  return out;
+}
+
+function summarizeUkmProfileBody(body, ukmTitle) {
+  const raw = String(body || '').trim();
+  if (!raw) return '';
+
+  const normalized = raw
+    .replace(/\b(\d+[.)])\s+(?=[A-ZÀ-ÖØ-Ý][\p{L}\s/&-]{3,40}\s*:)/gu, '\n$1 ')
+    .replace(/\b([A-ZÀ-ÖØ-Ý][\p{L}\s/&-]{3,40})\s*:\s*/gu, '\n$1: ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  const sentenceCandidates = normalized
+    .split(/(?<=[.!?])\s+|\n+/u)
+    .map(normalizeUkmProfileSentence)
+    .filter((line) => line.length >= 35)
+    .filter((line) => !/^(visi|misi|catatan|identitas\s+organisasi|sejarah\s+singkat)\b/i.test(line))
+    .filter((line) => !/\b(?:email|instagram|@|http|www\.)\b/i.test(line));
+
+  const seen = new Set();
+  const selected = [];
+  for (const line of sentenceCandidates) {
+    const key = normalizeFacilityTerm(line);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    selected.push(line);
+    if (selected.length >= 4) break;
+  }
+
+  if (selected.length) {
+    return [
+      `${ukmTitle} adalah UKM/Ormawa di ITB STIKOM Bali yang informasinya tersedia pada data kampus.`,
+      '',
+      'Ringkasan kegiatannya:',
+      selected.map((line) => `- ${line}`).join('\n')
+    ].join('\n');
+  }
+
+  const fallback = normalizeUkmProfileSentence(raw);
+  return fallback.length > 700 ? `${fallback.slice(0, 697).trim()}...` : fallback;
 }
 function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
   const name = String(ukmName || '').trim();
@@ -4182,8 +4240,9 @@ function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
   const best = matches[0];
   const body = best.cleanedBody || cleanUkmProfileChunkText(best.chunk);
   if (!body || body.length < 20) return null;
-  const answerText = body.length > 900 ? body.slice(0, 897).trim() + '...' : body;
-  const title = name.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  const title = name.split(/\\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  const answerText = summarizeUkmProfileBody(body, title);
+  if (!answerText || answerText.length < 20) return null;
   return {
     answer: 'Berikut penjelasan tentang UKM ' + title + ':\n\n' + answerText,
     source: 'semantic-rag-ukm-specific',
