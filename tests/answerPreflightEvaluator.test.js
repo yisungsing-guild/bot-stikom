@@ -2,7 +2,8 @@ const {
   evaluateOutboundAnswer,
   normalizeOutboundAnswerText,
   hasLikelyRawDocumentLeak,
-  detectIntentConflict
+  detectIntentConflict,
+  isConversationalQuery
 } = require('../src/utils/answerPreflightEvaluator');
 
 describe('answerPreflightEvaluator', () => {
@@ -221,6 +222,39 @@ describe('answerPreflightEvaluator', () => {
     expect(systemFallback.answer).toMatch(/Halo kak|bantu/i);
     expect(systemFallback.answer).not.toMatch(/sistem kami sedang kendala|belum terbaca/i);
   });
+  test('recovers broad conversational variants without treating RAG questions as chat only', () => {
+    const variants = [
+      'halloooo min',
+      'selamat pagi kak',
+      'pagi admin',
+      'hai kak',
+      'tes bot',
+      'siap kak',
+      'boleh tanya?',
+      'izin tanya admin',
+      'terima kasih ya'
+    ];
+
+    for (const query of variants) {
+      const result = evaluateOutboundAnswer(
+        'Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.',
+        query
+      );
+      expect(result.blocked).toBe(false);
+      expect(result.answer).not.toMatch(/belum mempunyai jawaban|sistem kami sedang kendala/i);
+    }
+
+    expect(isConversationalQuery('halo apa itu SI?')).toBe(false);
+    expect(isConversationalQuery('halo rincian biaya SI')).toBe(false);
+
+    const ragQuestion = evaluateOutboundAnswer(
+      'Sistem Informasi adalah program studi di ITB STIKOM Bali.',
+      'halo apa itu SI?'
+    );
+    expect(ragQuestion.blocked).toBe(false);
+    expect(ragQuestion.answer).toMatch(/Sistem Informasi/i);
+  });
+
 
   test('keeps real RAG answers for program and fee questions unblocked', () => {
     const si = evaluateOutboundAnswer(

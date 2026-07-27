@@ -148,10 +148,17 @@ function isConversationalQuery(userQuery) {
   if (!q) return false;
   if (detectIntentSet(q).size) return false;
   const words = q.split(/\s+/).filter(Boolean);
-  if (words.length > 5) return false;
-  const normalizedRepeats = q.replace(/([a-z])\1{2,}/gi, '$1$1');
-  return /^(?:halo|hallo|hello|helo|hai|hi|hey|bro|sis|min|admin|kak|gan|pagi|siang|sore|malam|permisi|assalamualaikum|salam)(?:\s+(?:halo|hallo|hello|helo|hai|hi|hey|bro|sis|min|admin|kak|gan|pagi|siang|sore|malam|permisi))*$/i.test(normalizedRepeats)
-    || /^(?:apa\s+kabar|gimana\s+kabarnya|bagaimana\s+kabarnya|test|tes|makasih|terima\s+kasih|thanks|thank\s+you|ok|oke|okey|siap|baik)$/i.test(normalizedRepeats);
+  if (words.length > 7) return false;
+  const normalizedRepeats = q.replace(/([a-z])\1+/gi, '$1');
+  const greetingToken = String.raw`(?:halo|hallo|hello|helo|hai|hi|hey|bro|sis|min|admin|kak|gan|pagi|siang|sore|malam|permisi|assalamualaikum|salam)`;
+  const politeTail = String.raw`(?:kak|kakak|min|admin|bro|sis|gan|ya|dong|nih)?`;
+  return new RegExp(String.raw`^(?:selamat\s+)?${greetingToken}(?:\s+${greetingToken})*\s*${politeTail}$`, 'i').test(normalizedRepeats)
+    || /^(?:apa\s+kabar|gimana\s+kabarnya|bagaimana\s+kabarnya)(?:\s+(?:kak|kakak|min|admin))?$/i.test(normalizedRepeats)
+    || /^(?:test|tes|testing|cek|ping)(?:\s+(?:bot|kak|min|admin))?$/i.test(normalizedRepeats)
+    || /^(?:makasih|terima\s+kasih|thanks|thank\s+you)(?:\s+(?:kak|kakak|min|admin|ya))?$/i.test(normalizedRepeats)
+    || /^(?:ok|oke|okey|okay|siap|baik|noted|mantap)(?:\s+(?:kak|kakak|min|admin|ya))?$/i.test(normalizedRepeats)
+    || /^(?:boleh\s+)?(?:mau\s+)?(?:tanya|bertanya|nanya)(?:\s+(?:kak|kakak|min|admin))?$/i.test(normalizedRepeats)
+    || /^(?:boleh\s+tanya|mau\s+tanya|izin\s+tanya)(?:\s+(?:kak|kakak|min|admin))?$/i.test(normalizedRepeats);
 }
 
 function buildConversationalFallback(userQuery) {

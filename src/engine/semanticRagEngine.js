@@ -1826,9 +1826,16 @@ function trySmallTalkAnswer(question) {
     };
   }
 
-  if (/\b(sibuk|lagi\s+apa|ngapain|available|bisa\s+bantu)\b/i.test(normalized) && !/\b(biaya|prodi|jurusan|pendaftaran|jadwal|gelombang|beasiswa)\b/i.test(normalized)) {
+  if (/\b(sibuk|lagi\s+apa|ngapain|available|bisa\s+bantu)\b/i.test(normalized) && !/\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|pendaftaran|jadwal|gelombang|beasiswa|fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|language\s+learning\s+center|llc|bccp|gccp|hi-?think|ukm|ormawa|double\s*degree|dual\s*degree)\b/i.test(normalized)) {
     return {
       answer: 'Saya siap bantu, Kak. Mau tanya seputar PMB, biaya, prodi, beasiswa, UKM, fasilitas, atau informasi kampus lainnya?'
+    };
+  }
+
+  if (/^(?:boleh\s+)?(?:mau\s+)?(?:tanya|bertanya|nanya)(?:\s+(?:kak|kakak|min|admin))?$|^(?:boleh\s+tanya|mau\s+tanya|izin\s+tanya)(?:\s+(?:kak|kakak|min|admin))?$/i.test(normalized)
+      && !/\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|lokasi|alamat|ukm|ormawa|double\s*degree|dual\s*degree|akreditasi|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i.test(normalized)) {
+    return {
+      answer: 'Boleh, Kak. Silakan tulis pertanyaannya seputar ITB STIKOM Bali, misalnya PMB, biaya, prodi, jadwal pendaftaran, beasiswa, fasilitas, atau informasi kampus lainnya.'
     };
   }
 
@@ -1837,7 +1844,6 @@ function trySmallTalkAnswer(question) {
       answer: 'Kalau sebagai asisten, saya tidak punya selera pribadi seperti manusia, Kak. Tapi saya bisa ngobrol santai soal musik secukupnya. Untuk info kampus, saya juga bisa bantu soal UKM seni seperti Musik, Tari, Tabuh, Teater Biner, atau VOS kalau datanya tersedia.'
     };
   }
-
   if (/\b(kamu|tiko|bot|admin)\b/i.test(normalized) && /\b(suka|senang|hobi|hobby)\b/i.test(normalized) && /\b(film|movie|nonton|drama|series|serial)\b/i.test(normalized)) {
     return {
       answer: 'Kalau sebagai asisten, saya tidak punya selera pribadi seperti manusia, Kak. Tapi saya bisa ngobrol santai secukupnya. Kalau mau balik ke info kampus, saya bisa bantu soal PMB, prodi, biaya, UKM, atau fasilitas ITB STIKOM Bali.'
