@@ -2370,8 +2370,9 @@ function formatScheduleItems(windows) {
 }
 
 function getScheduleWindows() {
-  if (!ragEngine || typeof ragEngine.extractScheduleRegistrationWindowsFromIndex !== 'function') return [];
-  return ragEngine.extractScheduleRegistrationWindowsFromIndex() || [];
+  if (!ragEngine || typeof ragEngine.extractScheduleRegistrationWindowsFromIndex !== 'function') return FALLBACK_PMB_2026_2027_WINDOWS;
+  const windows = ragEngine.extractScheduleRegistrationWindowsFromIndex() || [];
+  return windows.length ? windows : FALLBACK_PMB_2026_2027_WINDOWS;
 }
 
 function scheduleWindowSummary(w) {
@@ -2388,6 +2389,23 @@ function scheduleAvailabilityPhrase(window, todayYmd) {
   if (todayYmd > window.endYmd) return `sudah tidak buka. Jadwalnya sudah berakhir pada ${formatYmdIndonesian(window.endYmd)}`;
   return `sedang buka sampai ${formatYmdIndonesian(window.endYmd)}`;
 }
+const FALLBACK_PMB_2026_2027_WINDOWS = [
+  { key: 'KHUSUS', display: 'Gelombang Khusus', masa: '28 Oktober 2025 s/d 27 Desember 2025', startYmd: '2025-10-28', endYmd: '2025-12-27' },
+  { key: 'IA', display: 'Gelombang I A', masa: '28 Desember 2025 s/d 31 Januari 2026', startYmd: '2025-12-28', endYmd: '2026-01-31' },
+  { key: 'IB', display: 'Gelombang I B', masa: '1 Februari 2026 s/d 14 Februari 2026', startYmd: '2026-02-01', endYmd: '2026-02-14' },
+  { key: 'IC', display: 'Gelombang I C', masa: '15 Februari 2026 s/d 7 Maret 2026', startYmd: '2026-02-15', endYmd: '2026-03-07' },
+  { key: 'IIA', display: 'Gelombang II A', masa: '8 Maret 2026 s/d 28 Maret 2026', startYmd: '2026-03-08', endYmd: '2026-03-28' },
+  { key: 'IIB', display: 'Gelombang II B', masa: '29 Maret 2026 s/d 18 April 2026', startYmd: '2026-03-29', endYmd: '2026-04-18' },
+  { key: 'IIC', display: 'Gelombang II C', masa: '19 April 2026 s/d 2 Mei 2026', startYmd: '2026-04-19', endYmd: '2026-05-02' },
+  { key: 'IIIA', display: 'Gelombang III A', masa: '3 Mei 2026 s/d 16 Mei 2026', startYmd: '2026-05-03', endYmd: '2026-05-16' },
+  { key: 'IIIB', display: 'Gelombang III B', masa: '17 Mei 2026 s/d 30 Mei 2026', startYmd: '2026-05-17', endYmd: '2026-05-30' },
+  { key: 'IIIC', display: 'Gelombang III C', masa: '31 Mei 2026 s/d 4 Juli 2026', startYmd: '2026-05-31', endYmd: '2026-07-04' },
+  { key: 'IVA', display: 'Gelombang IV A', masa: '5 Juli 2026 s/d 18 Juli 2026', startYmd: '2026-07-05', endYmd: '2026-07-18' },
+  { key: 'IVB', display: 'Gelombang IV B', masa: '19 Juli 2026 s/d 1 Agustus 2026', startYmd: '2026-07-19', endYmd: '2026-08-01' },
+  { key: 'IVC', display: 'Gelombang IV C', masa: '2 Agustus 2026 s/d 15 Agustus 2026', startYmd: '2026-08-02', endYmd: '2026-08-15' },
+  { key: 'SISIPAN1', display: 'Gelombang Sisipan 1', masa: '16 Agustus 2026 s/d 29 Agustus 2026', startYmd: '2026-08-16', endYmd: '2026-08-29' },
+  { key: 'SISIPAN2', display: 'Gelombang Sisipan 2', masa: '30 Agustus 2026 s/d 11 September 2026', startYmd: '2026-08-30', endYmd: '2026-09-11' }
+];
 
 function tryScheduleWindowAnswer(question) {
   const q = String(question || '').trim();
