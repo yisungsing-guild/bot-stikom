@@ -405,7 +405,7 @@ function lacksConcreteItemsForApaSaja(answer, userQuery) {
 function isTrustedSemanticAlignmentSource(source) {
   const value = String(source || '').trim().toLowerCase();
   if (!value) return false;
-  return /^semantic-rag-(?:registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification)/i.test(value);
+  return /^semantic-rag-(?:registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|linkedin|institution|operational|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification)/i.test(value);
 }
 
 function decidePreflightAction(issues, meta = {}) {

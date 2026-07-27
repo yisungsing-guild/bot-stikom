@@ -3461,7 +3461,7 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
 
 function buildLinkedInCareerNoDataAnswer() {
   return [
-    'Saya belum menemukan detail lengkap tentang program pengembangan karier yang bekerja sama dengan LinkedIn pada data training yang tersedia.',
+    'Saya belum menemukan detail lengkap tentang program pengembangan karier yang bekerja sama dengan LinkedIn pada data yang tersedia.',
     '',
     'Data yang aman untuk saya sampaikan baru sebatas Career Center membantu mahasiswa dan alumni terkait informasi karier, lowongan/magang, bimbingan karier, dan pembekalan kerja.',
     '',
@@ -3471,7 +3471,7 @@ function buildLinkedInCareerNoDataAnswer() {
 
 function buildBccpNoDataAnswer() {
   return [
-    'Saya belum menemukan informasi lengkap tentang BCCP pada data training yang tersedia.',
+    'Saya belum menemukan informasi lengkap tentang BCCP pada data yang tersedia.',
     '',
     'Jadi saya belum bisa memastikan apakah BCCP ditujukan untuk mahasiswa asing, mahasiswa ITB STIKOM Bali, atau program internasional tertentu.',
     '',
@@ -3501,7 +3501,7 @@ function buildCareerSoftskillAnswer() {
 
 function buildIndustryServicesNoDataAnswer() {
   return [
-    'Saya belum menemukan daftar layanan industri khusus pada data training yang tersedia.',
+    'Saya belum menemukan daftar layanan industri khusus pada data yang tersedia.',
     '',
     'Data yang aman saya sampaikan baru sebatas fasilitas/program pendukung kampus seperti Career Center, Inkubator Bisnis, program pengembangan softskill, Language Learning Center, Hi-Think, GCCP, Student Exchange, dan Double Degree.',
     '',
@@ -3547,17 +3547,17 @@ function buildGoesToSchoolAnswer() {
 function buildAcademicPolicyNoDataAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(absensi|presensi|kehadiran)\b/i.test(q) && /\b(remedial|remidi|ujian\s+ulang|ujian\s+susulan)\b/i.test(q)) {
-    return 'Saya belum menemukan aturan yang cukup aman tentang batas absensi/presensi untuk bisa mengikuti remedial pada data training yang tersedia. Agar tidak salah, kakak sebaiknya konfirmasi ke BAAK/dosen pengampu/prodi terkait ketentuan remedial dan syarat kehadiran.';
+    return 'Saya belum menemukan aturan yang cukup aman tentang batas absensi/presensi untuk bisa mengikuti remedial pada data yang tersedia. Agar tidak salah, kakak sebaiknya konfirmasi ke BAAK/dosen pengampu/prodi terkait ketentuan remedial dan syarat kehadiran.';
   }
-  return 'Saya belum menemukan kebijakan akademik yang cukup aman untuk menjawab detail itu dari data training yang tersedia. Untuk aturan resmi, kakak sebaiknya konfirmasi ke BAAK, dosen pengampu, atau prodi terkait.';
+  return 'Saya belum menemukan kebijakan akademik yang cukup aman untuk menjawab detail itu dari data yang tersedia. Untuk aturan resmi, kakak sebaiknya konfirmasi ke BAAK, dosen pengampu, atau prodi terkait.';
 }
 
 function buildAcademicScheduleNoDataAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(remedial|remidi)\b/i.test(q)) {
-    return 'Saya belum menemukan jadwal remedial semester genap yang cukup aman pada data training yang tersedia. Untuk jadwal resmi remedial, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK/dosen pengampu.';
+    return 'Saya belum menemukan jadwal remedial semester genap yang cukup aman pada data yang tersedia. Untuk jadwal resmi remedial, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK/dosen pengampu.';
   }
-  return 'Saya belum menemukan jadwal akademik yang cukup aman pada data training yang tersedia. Untuk jadwal resmi, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK.';
+  return 'Saya belum menemukan jadwal akademik yang cukup aman pada data yang tersedia. Untuk jadwal resmi, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK.';
 }
 
 
@@ -3616,7 +3616,9 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
 
   const currentMentionsEntity = !resolved.fromRecent;
   const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
+  const asksOtherSupportTopic = /\b(layanan\s+industri|kerja\s*sama\s+industri|industri|inkubator|goes\s*to\s*school|gccp|gcpp|gcp|bccp|student\s+exchange|soft\s*skill|softskill|language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa|ukm|ormawa|hi-?think)\b/i.test(q);
   if (resolved.fromRecent && asksAdmissionRegistration) return null;
+  if (resolved.fromRecent && resolved.entity.key === 'linkedin-career-center' && asksOtherSupportTopic) return null;
   if (resolved.fromRecent && isExplicitNonSupportTopic(question) && resolved.entity.key !== 'linkedin-career-center') return null;
   const hasFollowUpSignal = resolved.fromRecent && isShortCampusSupportFollowUp(question);
   const asksDetail = asksCampusSupportDetail(question);
@@ -3669,7 +3671,8 @@ function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options =
   if (!asksLinkedInProgram) return null;
 
   const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
-  if (!currentHasLinkedInCareerContext && asksAdmissionRegistration) return null;
+  const asksOtherSupportTopic = /\b(layanan\s+industri|kerja\s*sama\s+industri|industri|inkubator|goes\s*to\s*school|gccp|gcpp|gcp|bccp|student\s+exchange|soft\s*skill|softskill|language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa|ukm|ormawa|hi-?think)\b/i.test(q);
+  if (!currentHasLinkedInCareerContext && (asksAdmissionRegistration || asksOtherSupportTopic)) return null;
 
   return {
     answer: buildLinkedInCareerNoDataAnswer(),
@@ -5644,7 +5647,7 @@ async function querySemanticRag(question, options = {}) {
 
 
   if (/\b(indikator|pertanggung\s*jawab(?:an)?|dipertanggung\s*jawabkan|institusi\s+pendidikan|akuntabilitas|kinerja\s+institusi)\b/i.test(String(question || ''))) {
-    const response = { success: true, answer: 'Saya belum menemukan rincian indikator pertanggungjawaban institusi pendidikan ITB STIKOM Bali yang cukup aman pada data training yang tersedia. Agar tidak keliru, indikator resmi seperti akreditasi, mutu akademik, tata kelola, layanan, atau pelaporan institusi sebaiknya dikonfirmasi ke pihak kampus/unit terkait.', source: 'semantic-rag-institution-indicator-insufficient-data', contexts: [] };
+    const response = { success: true, answer: 'Saya belum menemukan rincian indikator pertanggungjawaban institusi pendidikan ITB STIKOM Bali yang cukup aman pada data yang tersedia. Agar tidak keliru, indikator resmi seperti akreditasi, mutu akademik, tata kelola, layanan, atau pelaporan institusi sebaiknya dikonfirmasi ke pihak kampus/unit terkait.', source: 'semantic-rag-institution-indicator-insufficient-data', contexts: [] };
     setCachedSemanticResult(resultCacheKey, response);
     return response;
   }
