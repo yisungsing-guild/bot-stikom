@@ -2440,17 +2440,33 @@ module.exports = function (provider) {
 
       let routeEntities = null;
       try { routeEntities = typeof extractStructuredEntities === 'function' ? extractStructuredEntities(q) : null; } catch (e) { routeEntities = null; }
-      if (!routeEntities || routeEntities.intent !== 'COST') {
-        return false;
-      }
 
       let hasProgram = false;
       try {
         hasProgram = !!(
           (routeEntities && routeEntities.program) ||
-          (routeEntities && routeEntities.partner)
+          (routeEntities && routeEntities.partner) ||
+          extractSpecificProgramHint(q) ||
+          extractProgramHint(q) ||
+          extractDualDegreeHint(q)
         );
       } catch (e) { hasProgram = false; }
+
+      const inferredFeeChoice = (typeof parseFeeDetailChoice === 'function') ? parseFeeDetailChoice(q) : null;
+      const explicitDetailedFeeChoice = (inferredFeeChoice === 'breakdown' || inferredFeeChoice === 'semester') &&
+        (hasProgram || /\b(gelombang|potongan|diskon|perlengkapan|dpp|ukt|semester|per\s*semester|rincian|detail|komponen|biaya|pembayaran)\b/i.test(q));
+      const explicitCostIntention = isExplicitFeeQuestion(q) || explicitDetailedFeeChoice || inferredFeeChoice === 'pendaftaran' || inferredFeeChoice === 'dpp';
+      const routeIntent = routeEntities && routeEntities.intent ? String(routeEntities.intent) : null;
+
+      if (!routeEntities || routeIntent !== 'COST') {
+        if (explicitCostIntention && (hasProgram || pendingOffer)) {
+          return true;
+        }
+        return false;
+      }
+      if (explicitDetailedFeeChoice) {
+        return true;
+      }
 
       let isDetailedFeeQuestion = false;
       try { isDetailedFeeQuestion = isExplicitDetailedFeeQuestion(q); } catch (e) { isDetailedFeeQuestion = false; }

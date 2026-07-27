@@ -3890,6 +3890,31 @@ describe('Provider webhook', () => {
     expect(persisted && persisted.data && persisted.data.lastProgramHint).toBe('Sistem Komputer');
   });
 
+  test('detailed fee breakdown with wave is not routed to registration-fee answer', async () => {
+    process.env.ENABLE_RAG = 'true';
+    prisma.trainingData.count.mockResolvedValueOnce(1);
+
+    const rag = require('../src/engine/ragEngine');
+    rag.query.mockClear();
+
+    const chatId = 'user-fee-breakdown-wave-detail';
+    const res = await request(app)
+      .post('/provider/webhook')
+      .send({ chatId, text: 'rincian biaya si gelombang 1C?' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+
+    const sentText = provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\n');
+    expect(sentText).toMatch(/Untuk program studi Sistem Informasi, rincian biaya sebagai berikut:/i);
+    expect(sentText).toContain('Potongan Pendaftaran (Gelombang I C)');
+    expect(sentText).not.toMatch(/Biaya pendaftaran untuk Prodi Sistem Informasi/i);
+
+    expectTransportOrComposerGlobal();
+    expectAnySessionHasPending();
+    expect(rag.query).not.toHaveBeenCalled();
+  });
+
   test('semester fee answer for DNUI uses per semester label, not Ujian/Subject', async () => {
     process.env.ENABLE_RAG = 'true';
     prisma.trainingData.count.mockResolvedValueOnce(1);
