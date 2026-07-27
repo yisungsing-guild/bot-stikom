@@ -1815,7 +1815,7 @@ function trySmallTalkAnswer(question) {
   }
 
 
-  if (/\b(kamu|tiko|bot|asisten)\b/i.test(normalized) && /\b(siapa|apa|bisa\s+bantu\s+apa|bantu\s+apa|lakukan|fungsi|tugas)\b/i.test(normalized)) {
+  if (/\b(kamu|tiko|bot|asisten)\b/i.test(normalized) && /\b(siapa|apa|bisa\s+bantu\s+apa|bantu\s+apa|lakukan|fungsi|tugas)\b/i.test(normalized) && !/\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|pendaftaran|jadwal|gelombang|beasiswa|fasilitas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|soft\s*skill|softskill|pengembangan\s+softskill|inkubator|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|ukm|ormawa|double\s*degree|dual\s*degree)\b/i.test(normalized)) {
     return {
       answer: 'Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu menjawab pertanyaan seputar PMB, cara daftar, jadwal pendaftaran, rincian biaya, program studi, beasiswa, UKM, fasilitas, lokasi kampus, dan informasi kampus yang tersedia di data.'
     };
@@ -2192,6 +2192,8 @@ function tryPmbRequirementsAnswer(question, _indexForQuery, options = {}) {
   const pmbContext = /\b(daftar|pendaftaran|pmb|camaba|mahasiswa\s+baru|kuliah|registrasi|stikom|itb\s*stikom|apply|application|admission|international\s+student|study|studying)\b/.test(q);
   const implicitPmbDocumentQuestion = /\b(dokumen|berkas|lampiran|formulir|unggah|mengunggah|diunggah|upload)\b/.test(q) && /\b(apa\s+saja|apa|harus|perlu|wajib|yang)\b/.test(q);
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
+  if (/\b(linked\s*in|linkedin)\b/i.test(recent) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(recent) && !asksAdmissionRegistration && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut)\b/i.test(q)) return null;
   const recentPmbContext = /\b(daftar|pendaftaran|pmb|camaba|mahasiswa\s+baru|kuliah|registrasi|stikom|itb\s*stikom|apply|application|admission|international\s+student|study|studying)\b/.test(recent);
   if (!asksRequirement || (!pmbContext && !recentPmbContext && !implicitPmbDocumentQuestion)) return null;
 
@@ -2632,6 +2634,8 @@ function tryRegistrationHowAnswer(question, _indexForQuery, options = {}) {
   if (/\b(pendaftaran\s+(wisuda|yudisium|akun|account|event|ujian|examination|krs|transkrip|nilai|sertifikasi|pelatihan|training|ukm|ormawa|bem|lomba|beasiswa)|daftar\s+(wisuda|yudisium|akun|account|event|ujian|examination|krs|transkrip|nilai|sertifikasi|pelatihan|training|ukm|ormawa|bem|lomba|beasiswa)|registrasi\s+(wisuda|yudisium|akun|account|event|ujian|examination|krs|transkrip|nilai|sertifikasi|pelatihan|training|ukm|ormawa|bem|lomba|beasiswa))\b/i.test(q)) return null;
 
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
+  if (/\b(linked\s*in|linkedin)\b/i.test(recent) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(recent) && !asksAdmissionRegistration && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut)\b/i.test(q)) return null;
   const english = isEnglishQuestion(q) || isEnglishQuestion(recent);
   if (english) {
     return {
@@ -2813,6 +2817,9 @@ function tryGraduationRegistrationAnswer(question) {
 
 function tryAcademicScheduleAnswer(question) {
   const q = String(question || '').toLowerCase();
+  if (isAcademicScheduleLookupQuestion(q)) {
+    return { answer: buildAcademicScheduleNoDataAnswer(q) };
+  }
   // Must explicitly mention kuliah to avoid matching PMB schedule
   if (!/\b(jadwal\s+kuliah|kuliah\s+jadwal|liat\s+jadwal\s+kuliah|lihat\s+jadwal\s+kuliah|cek\s+jadwal\s+kuliah|jadwal\s+liat\s+kuliah|jadwal\s+lihat\s+kuliah|dimana\s+jadwal\s+kuliah|jadwal\s+kuliah\s+liat|jadwal\s+kuliah\s+lihat|jadwal\s+kuliah\s+dimana|jadwal\s+kuliah\s+liat\s+dimana)\b/i.test(q)) return null;
   // Exclude PMB-related questions
@@ -2901,7 +2908,7 @@ function normalizeFacilityTerm(value) {
 const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'linkedin-career-center', label: 'program LinkedIn di Career Center', type: 'facility_program', patterns: ['linkedin career center', 'linked in career center', 'program linkedin', 'program linked in'] },
   { key: 'career-center', label: 'Career Center', type: 'facility', patterns: ['career center', 'pusat karier', 'pusat karir'] },
-  { key: 'gccp', label: 'GCCP', type: 'international_program', patterns: ['gccp', 'global cultural exchange program'] },
+  { key: 'gccp', label: 'GCCP', type: 'international_program', patterns: ['gccp', 'gcpp', 'gcp', 'global cross cultural program', 'global cultural exchange program'] },
   { key: 'bccp', label: 'BCCP', type: 'international_program', patterns: ['bccp'] },
   { key: 'student-exchange', label: 'Student Exchange', type: 'international_program', patterns: ['student exchange', 'students exchange', 'studens exchange', 'pertukaran mahasiswa', 'exchange program'] },
   { key: 'short-course', label: 'short course', type: 'international_program', patterns: ['short course', 'shortcourse', 'kursus singkat'] },
@@ -3492,6 +3499,68 @@ function buildCareerSoftskillAnswer() {
   ].join('\n');
 }
 
+function buildIndustryServicesNoDataAnswer() {
+  return [
+    'Saya belum menemukan daftar layanan industri khusus pada data training yang tersedia.',
+    '',
+    'Data yang aman saya sampaikan baru sebatas fasilitas/program pendukung kampus seperti Career Center, Inkubator Bisnis, program pengembangan softskill, Language Learning Center, Hi-Think, GCCP, Student Exchange, dan Double Degree.',
+    '',
+    'Kalau konteksnya kerja sama industri, rekrutmen, magang, pelatihan, atau layanan untuk perusahaan, sebaiknya dikonfirmasi ke admin kampus/unit kerja sama agar tidak keliru.'
+  ].join('\n');
+}
+
+function buildInkubatorBisnisAnswer() {
+  return [
+    'Inkubator Bisnis ITB STIKOM Bali adalah fasilitas pendukung untuk membantu mahasiswa mengembangkan ide usaha atau rintisan bisnis.',
+    '',
+    'Layanan yang aman saya sampaikan dari data yang tersedia meliputi:',
+    '',
+    '- Pendampingan pengembangan ide bisnis.',
+    '- Validasi ide usaha.',
+    '- Mentoring bisnis.',
+    '- Penguatan kewirausahaan atau kesiapan usaha digital.',
+    '',
+    'Untuk jadwal program, syarat ikut, mentor, atau mekanisme pendaftaran, saya belum menemukan detail lengkap di data yang tersedia. Bagian itu sebaiknya dikonfirmasi ke admin kampus/pengelola Inkubator Bisnis.'
+  ].join('\n');
+}
+
+function buildGccpAnswer() {
+  return [
+    'GCCP adalah Global Cross Cultural Program, yaitu program internasional/short course yang berkaitan dengan pengalaman lintas budaya dan interaksi global.',
+    '',
+    'Dari data yang tersedia, GCCP termasuk salah satu program pendukung/internasional di ITB STIKOM Bali. Untuk detail teknis seperti negara tujuan, jadwal, syarat peserta, biaya, atau alur pendaftaran, saya belum menemukan rincian lengkap yang aman untuk disampaikan.',
+    '',
+    'Agar tidak keliru, detail pelaksanaan GCCP sebaiknya dikonfirmasi ke admin kampus atau unit kerja sama internasional.'
+  ].join('\n');
+}
+
+function buildGoesToSchoolAnswer() {
+  return [
+    'Program STIKOM Bali Goes to School adalah program kunjungan/promosi edukatif ITB STIKOM Bali ke sekolah-sekolah, terutama untuk siswa SMA/SMK.',
+    '',
+    'Dari data yang tersedia, program ini bertujuan memperkenalkan ITB STIKOM Bali dan memberikan gambaran tentang potensi dunia digital, seperti teknologi informasi, bisnis digital, dan bidang kreatif/digital kepada siswa sekolah.',
+    '',
+    'Untuk jadwal kunjungan, sekolah sasaran, bentuk kegiatan, atau cara mengundang kampus ke sekolah, saya belum menemukan detail lengkap di data yang tersedia. Bagian itu sebaiknya dikonfirmasi ke admin kampus.'
+  ].join('\n');
+}
+
+function buildAcademicPolicyNoDataAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  if (/\b(absensi|presensi|kehadiran)\b/i.test(q) && /\b(remedial|remidi|ujian\s+ulang|ujian\s+susulan)\b/i.test(q)) {
+    return 'Saya belum menemukan aturan yang cukup aman tentang batas absensi/presensi untuk bisa mengikuti remedial pada data training yang tersedia. Agar tidak salah, kakak sebaiknya konfirmasi ke BAAK/dosen pengampu/prodi terkait ketentuan remedial dan syarat kehadiran.';
+  }
+  return 'Saya belum menemukan kebijakan akademik yang cukup aman untuk menjawab detail itu dari data training yang tersedia. Untuk aturan resmi, kakak sebaiknya konfirmasi ke BAAK, dosen pengampu, atau prodi terkait.';
+}
+
+function buildAcademicScheduleNoDataAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  if (/\b(remedial|remidi)\b/i.test(q)) {
+    return 'Saya belum menemukan jadwal remedial semester genap yang cukup aman pada data training yang tersedia. Untuk jadwal resmi remedial, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK/dosen pengampu.';
+  }
+  return 'Saya belum menemukan jadwal akademik yang cukup aman pada data training yang tersedia. Untuk jadwal resmi, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK.';
+}
+
+
 function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   if (/\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier|career)\b/i.test(q)) {
@@ -3499,6 +3568,20 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
       answer: buildLinkedInCareerNoDataAnswer(),
       source: 'semantic-rag-campus-support-insufficient-data',
       frameSource: 'semantic-rag-insufficient-data'
+    };
+  }
+  if (/\b(?:gccp|gcpp|gcp)\b/i.test(q)) {
+    return {
+      answer: buildGccpAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+  }
+  if (/\b(?:goes\s*to\s*school|goestoschool|stikom\s+bali\s+goes)\b/i.test(q)) {
+    return {
+      answer: buildGoesToSchoolAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
     };
   }
   if (/\bbccp\b/i.test(q)) {
@@ -3532,7 +3615,9 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   if (!resolved || !resolved.entity) return null;
 
   const currentMentionsEntity = !resolved.fromRecent;
-  if (resolved.fromRecent && isExplicitNonSupportTopic(question)) return null;
+  const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
+  if (resolved.fromRecent && asksAdmissionRegistration) return null;
+  if (resolved.fromRecent && isExplicitNonSupportTopic(question) && resolved.entity.key !== 'linkedin-career-center') return null;
   const hasFollowUpSignal = resolved.fromRecent && isShortCampusSupportFollowUp(question);
   const asksDetail = asksCampusSupportDetail(question);
   if (!currentMentionsEntity && !hasFollowUpSignal && !asksDetail) return null;
@@ -3552,7 +3637,17 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
 
-  const shouldFailClosed = asksDetail || hasFollowUpSignal || resolved.entity.type === 'international_program' || resolved.entity.key === 'linkedin-career-center';
+  if (resolved.entity.key === 'linkedin-career-center') {
+    return {
+      answer: buildLinkedInCareerNoDataAnswer(),
+      source: 'semantic-rag-linkedin-career-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
+
+  const shouldFailClosed = asksDetail || hasFollowUpSignal || resolved.entity.type === 'international_program';
   if (!shouldFailClosed) return null;
 
   return {
@@ -3569,13 +3664,15 @@ function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options =
   const currentHasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q);
   const hasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(`${q}\n${recent}`) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(`${q}\n${recent}`);
   if (!hasLinkedInCareerContext) return null;
-  if (!currentHasLinkedInCareerContext && isExplicitNonSupportTopic(question)) return null;
 
   const asksLinkedInProgram = /\b(program|tentang|apa\s+itu|itu\s+apa|mengikuti|ikut|daftar|mendaftar|pendaftaran|registrasi|detail|lebih\s+detail|punya\s+info|info(?:rmasi)?|syarat|cara|bagaimana|gimana)\b/i.test(q);
   if (!asksLinkedInProgram) return null;
 
+  const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
+  if (!currentHasLinkedInCareerContext && asksAdmissionRegistration) return null;
+
   return {
-    answer: buildInsufficientDataAnswer('very_low'),
+    answer: buildLinkedInCareerNoDataAnswer(),
     source: 'semantic-rag-linkedin-career-insufficient-data',
     frameSource: 'semantic-rag-insufficient-data'
   };
@@ -3585,6 +3682,38 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|softskill|language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|gccp|bccp|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
   if (!asksFacilities) return null;
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
+
+  if (/\b(layanan\s+industri|dari\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri)\b/i.test(q)) {
+    return {
+      answer: buildIndustryServicesNoDataAnswer(),
+      source: 'semantic-rag-campus-facility-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data'
+    };
+  }
+
+  if (/\b(?:goes\s*to\s*school|goestoschool|stikom\s+bali\s+goes)\b/i.test(q)) {
+    return {
+      answer: buildGoesToSchoolAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
+
+  if (/\b(?:gccp|gcpp|gcp)\b/i.test(q)) {
+    return {
+      answer: buildGccpAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
+
+  if (/\binkubator(?:\s+bisnis)?\b/i.test(q)) {
+    return {
+      answer: buildInkubatorBisnisAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
 
   if (/\bbccp\b/i.test(q)) {
     return {
@@ -3833,6 +3962,8 @@ const UKM_INTEREST_PROFILES = [
 function tryUkmInterestRecommendation(question, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
+  if (/\b(linked\s*in|linkedin)\b/i.test(recent) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(recent) && !asksAdmissionRegistration && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut)\b/i.test(q)) return null;
   const currentHasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q);
   const profile = UKM_INTEREST_PROFILES.find((item) => item.re.test(q));
   if (!profile) return null;
@@ -3965,6 +4096,8 @@ function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
 function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
+  if (/\b(linked\s*in|linkedin)\b/i.test(recent) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(recent) && !asksAdmissionRegistration && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut)\b/i.test(q)) return null;
   const names = loadUkmNames();
   const hasKslInCurrent = /\b(ksl|kelompok\s+studi\s+linux|linux|open\s*source|open-source|sumber\s+terbuka)\b/i.test(q);
   const isShortUkmFollowUp = /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|manfaat(?:nya)?|pembina(?:nya)?|apa\s+saja)\b/i.test(q) && q.split(/\s+/).filter(Boolean).length <= 6;
@@ -4047,7 +4180,7 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const hasActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
   const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
   const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
-  const hasExplicitDifferentTopic = /\b(double\s*degree|dual\s*degree|dnui|help\s+university|utb|bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|linked\s*in|linkedin|career\s*center|pmb|mahasiswa\s+baru|biaya|harga|tarif|ukt|dpp|gelombang|jadwal|beasiswa|kip|prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|fasilitas|layanan|sarana|prasarana|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas|lokasi|alamat)\b/i.test(q);
+  const hasExplicitDifferentTopic = /\b(double\s*degree|dual\s*degree|dnui|help\s+university|utb|bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|linked\s*in|linkedin|career\s*center|pmb|mahasiswa\s+baru|biaya|harga|tarif|ukt|dpp|gelombang|jadwal|beasiswa|kip|prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|indikator|pertanggung\s*jawab(?:an)?|institusi\s+pendidikan|akuntabilitas|fasilitas|layanan|sarana|prasarana|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas|lokasi|alamat)\b/i.test(q);
   if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic) return null;
   if (!hasUkmSignal && !hasUkmContext) return null;
 
@@ -5042,7 +5175,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (/^(?:mohon\s+)?maaf\b/i.test(body)) return body;
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
   const src = String(source || '').toLowerCase();
-  if (src.includes('insufficient-data') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
+  if (src.includes('insufficient-data') || src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
   const q = String(question || '').toLowerCase();
   if (src.includes('rpl')) return body;
   if (src.includes('scholarship') && /\b(seluruh|semua|full|penuh|100\s*%)\b/i.test(q)) return body;
@@ -5504,7 +5637,14 @@ async function querySemanticRag(question, options = {}) {
   if (cachedResult) return cachedResult;
 
   if (isOperationalAcademicPolicyQuestion(question)) {
-    const response = { success: true, answer: null, source: 'semantic-rag-operational-academic-policy-no-answer', contexts: [] };
+    const response = { success: true, answer: buildAcademicPolicyNoDataAnswer(question), source: 'semantic-rag-operational-academic-policy-no-answer', contexts: [] };
+    setCachedSemanticResult(resultCacheKey, response);
+    return response;
+  }
+
+
+  if (/\b(indikator|pertanggung\s*jawab(?:an)?|dipertanggung\s*jawabkan|institusi\s+pendidikan|akuntabilitas|kinerja\s+institusi)\b/i.test(String(question || ''))) {
+    const response = { success: true, answer: 'Saya belum menemukan rincian indikator pertanggungjawaban institusi pendidikan ITB STIKOM Bali yang cukup aman pada data training yang tersedia. Agar tidak keliru, indikator resmi seperti akreditasi, mutu akademik, tata kelola, layanan, atau pelaporan institusi sebaiknya dikonfirmasi ke pihak kampus/unit terkait.', source: 'semantic-rag-institution-indicator-insufficient-data', contexts: [] };
     setCachedSemanticResult(resultCacheKey, response);
     return response;
   }
