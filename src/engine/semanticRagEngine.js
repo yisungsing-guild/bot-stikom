@@ -1459,9 +1459,12 @@ function filterSemanticContextsForQuestion(question, contexts) {
 
     const haystack = String(ctx.chunk || '') + ' ' + String(ctx.filename || '') + ' ' + String(ctx.sourceFile || '');
     if (questionIntent === 'facility') {
-      const hasSpecificFacilityEvidence = /fasilitas|sarana|prasarana|lab|laboratorium|perpustakaan|kantin|parkir|parkiran|wifi|wi-fi|ruang\s+(?:kelas|kuliah)|career\s*center|inkubator|language\s+learning|softskill|hi-?think/i.test(haystack);
-      const isInternationalOnly = /student\s*exchange|mahasiswa\s+asing|visa|itas/i.test(haystack) && !/fasilitas|career\s*center|inkubator|language\s+learning|softskill|hi-?think/i.test(haystack);
-      if (!hasSpecificFacilityEvidence || isInternationalOnly) return false;
+      const hasFacilitySignal = /fasilitas|sarana|prasarana|lab|laboratorium|perpustakaan|kantin|parkir|parkiran|wifi|wi-fi|ruang\s+(?:kelas|kuliah)|career\s*center|inkubator|language\s+learning|softskill|hi-?think/i.test(haystack);
+      const hasInternationalSupportSignal = /student\s*exchange|mahasiswa\s+asing|visa|itas|international|internasional/i.test(haystack);
+      const hasSpecificFacilityEvidence = hasFacilitySignal || hasInternationalSupportSignal;
+      const isInternationalOnly = hasInternationalSupportSignal && !hasFacilitySignal && !/career\s*center|inkubator|language\s+learning|softskill|hi-?think/i.test(haystack);
+      const questionMentionsInternational = /student\s*exchange|mahasiswa\s+asing|visa|itas|international|internasional/i.test(question);
+      if (!hasSpecificFacilityEvidence || (isInternationalOnly && !questionMentionsInternational)) return false;
     }
 
     if (questionIntent === 'requirement' && /\b(pendaftaran|daftar|pmb|registrasi)\b/i.test(question) && !/student\s*exchange|mahasiswa\s+asing|international|internasional|visa|itas/i.test(question)) {
@@ -3260,28 +3263,38 @@ function extractBestFaqAnswerFromChunk(chunk, target, targetTokens, userQuestion
   scored.sort((a, b) => b.score - a.score);
 
   const snippets = [];
+  let bestFaqAnswer = null;
+  let bestFaqScore = 0;
   for (const { chunk } of scored.slice(0, 4)) {
-    const faqAnswer = extractBestFaqAnswerFromChunk(chunk, target, targetTokens, question);
-    if (faqAnswer && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(faqAnswer))) {
-      snippets.push(faqAnswer);
-      break;
+    const faqResult = extractBestFaqAnswerFromChunk(chunk, target, targetTokens, question, true);
+    const faqAnswer = faqResult && typeof faqResult.answer === 'string' ? faqResult.answer : '';
+    const faqScore = faqResult && typeof faqResult.score === 'number' ? faqResult.score : 0;
+    if (faqAnswer && faqScore > bestFaqScore) {
+      bestFaqScore = faqScore;
+      bestFaqAnswer = faqAnswer;
     }
+  }
 
-    const lines = chunk
-      .split(/\r?\n/)
-      .map((line) => line.replace(/\s+/g, ' ').trim())
-      .filter(Boolean);
-    const matchedLines = lines.filter((line) => {
-      const normalizedLine = normalizeFacilityTerm(line);
-      return normalizedLine.includes(target) || targetTokens.every((token) => normalizedLine.includes(token));
-    });
-    const chosen = matchedLines.length ? matchedLines : lines.slice(0, 2);
-    for (const line of chosen) {
-      const cleaned = line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim();
-      if (cleaned && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(cleaned))) snippets.push(cleaned);
+  if (bestFaqAnswer && bestFaqScore >= 2) {
+    snippets.push(bestFaqAnswer);
+  } else {
+    for (const { chunk } of scored.slice(0, 4)) {
+      const lines = chunk
+        .split(/\r?\n/)
+        .map((line) => line.replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
+      const matchedLines = lines.filter((line) => {
+        const normalizedLine = normalizeFacilityTerm(line);
+        return normalizedLine.includes(target) || targetTokens.every((token) => normalizedLine.includes(token));
+      });
+      const chosen = matchedLines.length ? matchedLines : lines.slice(0, 2);
+      for (const line of chosen) {
+        const cleaned = line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim();
+        if (cleaned && !snippets.some((existing) => normalizeFacilityTerm(existing) === normalizeFacilityTerm(cleaned))) snippets.push(cleaned);
+        if (snippets.length >= 3) break;
+      }
       if (snippets.length >= 3) break;
     }
-    if (snippets.length >= 3) break;
   }
 
   if (!snippets.length) return null;
@@ -3427,8 +3440,6 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
 
   const matchedTerm = facilityTerms.find((term) => term.patterns.some((pattern) => q.includes(pattern)));
   if (!matchedTerm || !asksSpecificDetail) return null;
-  if (matchedTerm.label === 'Career Center') return null;
-
   const candidatePatterns = matchedTerm.patterns.map(normalizeFacilityTerm);
   let scored = scoreSpecificFacilityCandidates(activeIndex, candidatePatterns);
   if (!scored.length) {
@@ -3592,6 +3603,22 @@ function buildGccpAnswer() {
   ].join('\n');
 }
 
+function buildStudentExchangeProgramOptionsAnswer() {
+  return [
+    'Student Exchange di ITB STIKOM Bali termasuk bagian dari program internasional dan dukungan kampus untuk pengalaman belajar di luar negeri.',
+    '',
+    'Dari informasi yang tersedia, beberapa opsi yang terkait dengan program internasional adalah:',
+    '',
+    '- GCCP (Global Cross Cultural Program)',
+    '- BCCP',
+    '- short course internasional atau program pertukaran budaya',
+    '',
+    'Jika kakak ingin detail tentang salah satu dari program di atas, misalnya GCCP atau BCCP, silakan tanya lagi supaya saya bisa fokus ke program tersebut.',
+    '',
+    'Untuk detail teknis seperti negara tujuan, syarat peserta, jadwal, atau alur pendaftaran, sebaiknya konfirmasi ke admin kampus atau unit kerja sama internasional di STIKOM Bali.'
+  ].join('\n');
+}
+
 function buildGoesToSchoolAnswer() {
   return [
     'Program STIKOM Bali Goes to School adalah program kunjungan/promosi edukatif ITB STIKOM Bali ke sekolah-sekolah, terutama untuk siswa SMA/SMK.',
@@ -3624,7 +3651,7 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   if (/\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier|career)\b/i.test(q)) {
     return {
       answer: buildLinkedInCareerNoDataAnswer(),
-      source: 'semantic-rag-campus-support-insufficient-data',
+      source: 'semantic-rag-campus-support-entity',
       frameSource: 'semantic-rag-insufficient-data'
     };
   }
@@ -3681,7 +3708,17 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const hasFollowUpSignal = resolved.fromRecent && isShortCampusSupportFollowUp(question);
   const asksDetail = asksCampusSupportDetail(question);
   if (!currentMentionsEntity && !hasFollowUpSignal && !asksDetail) return null;
-  if (resolved.entity.key === 'career-center' && currentMentionsEntity) return null;
+
+  const asksStudentExchangeProgramOptions = /\b(program\s+apa\s+saja|ada\s+program\s+apa\s+saja|pilihan\s+program|program\s+yang\s+tersedia|opsi\s+program|ada\s+pilihan\s+program|program\s+internasional|program\s+support|program\s+pendukung)\b/i.test(q);
+  if (resolved.entity.key === 'student-exchange' && asksStudentExchangeProgramOptions) {
+    return {
+      answer: buildStudentExchangeProgramOptionsAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
 
   const entityQuestion = currentMentionsEntity
     ? question
@@ -3697,6 +3734,15 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
 
+  if (resolved.entity.key === 'student-exchange') {
+    return {
+      answer: buildStudentExchangeProgramOptionsAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   if (resolved.entity.key === 'linkedin-career-center') {
     return {
       answer: buildLinkedInCareerNoDataAnswer(),
