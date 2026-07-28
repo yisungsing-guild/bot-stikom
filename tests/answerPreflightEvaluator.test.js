@@ -33,7 +33,7 @@ describe('answerPreflightEvaluator', () => {
     expect(result.answer).toBe('Double Degree tersedia melalui beberapa program mitra.');
   });
   test('cleans visible dangling ellipsis artifacts', () => {
-    expect(normalizeOutboundAnswerText('Bagian ini terpotong per…')).toBe('Bagian ini terpotong per.');
+    expect(normalizeOutboundAnswerText('Bagian ini terpotong per\u2026')).toBe('Bagian ini terpotong per.');
     expect(normalizeOutboundAnswerText('Program GCCP)...')).toBe('Program GCCP).');
   });
 
@@ -195,14 +195,15 @@ describe('answerPreflightEvaluator', () => {
     expect(leaked.answer).not.toMatch(/PROFILE ORGANISASI|\.docx|konteks training/i);
   });
 
-  test('blocks residual multi-marker FAQ/QNA dumps', () => {
+  test('recovers safe content from residual multi-marker FAQ/QNA dumps', () => {
     const result = evaluateOutboundAnswer(
       '(F) Fakta internal (Q) Apa biaya SI? (A) Biaya SI mengikuti dokumen PMB. FAQ: Jangan tampilkan format ini.',
       'berapa biaya SI?'
     );
-    expect(result.blocked).toBe(true);
-    expect(result.issues).toContain('raw_document_leak');
-    expect(result.answer).not.toMatch(/\(F\)|\(Q\)|\(A\)|FAQ:/i);
+    expect(result.blocked).toBe(false);
+    expect(result.issues).toContain('recovered_raw_document_leak');
+    expect(result.answer).toMatch(/Biaya SI/i);
+    expect(result.answer).not.toMatch(/\(F\)|\(Q\)|\(A\)|FAQ:|Fakta internal|Jangan tampilkan format ini/i);
   });
 
   test('blocks raw profile and structured document dumps from any uploaded document', () => {
@@ -282,6 +283,20 @@ describe('answerPreflightEvaluator', () => {
     expect(result.issues).not.toContain('raw_document_leak');
     expect(result.answer).toMatch(/Inkubator Bisnis|pendampingan|mentoring/i);
   });
+  test('recovers the safe answer portion when a valid summary is followed by raw document text', () => {
+    const result = evaluateOutboundAnswer(
+      [
+        'Inkubator Bisnis ITB STIKOM Bali membantu mahasiswa mengembangkan ide usaha melalui pendampingan, validasi ide, mentoring bisnis, dan penguatan kewirausahaan.',
+        'PROFIL LEMBAGA INKUBATOR BISNIS ITB STIKOM BALI Identitas Lembaga Nama Lembaga Inkubator Bisnis ITB STIKOM Bali Tahun Berdiri 2014 Dasar Hukum Surat Keputusan Pendirian Inkubator Bisnis Pembina / Penanggung Jawab Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis Alamat Kampus ITB STIKOM Bali Website ibt.stikom-bali.ac.id/inbis'
+      ].join(' '),
+      'apa itu inkubator bisnis?'
+    );
+
+    expect(result.blocked).toBe(false);
+    expect(result.issues).toContain('recovered_raw_document_leak');
+    expect(result.answer).toMatch(/Inkubator Bisnis|pendampingan|mentoring/i);
+    expect(result.answer).not.toMatch(/PROFIL LEMBAGA|Identitas Lembaga|Tahun Berdiri|Dasar Hukum/i);
+  });
   test('recovers greetings from generic safety or system fallbacks without blocking', () => {
     const safeFallback = evaluateOutboundAnswer(
       'Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.',
@@ -350,4 +365,3 @@ describe('answerPreflightEvaluator', () => {
     expect(fee.answer).toMatch(/Teknologi Informasi|gelombang 1C|DPP/i);
   });
 });
-

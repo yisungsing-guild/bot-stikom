@@ -135,15 +135,15 @@ function hasLikelyRawDocumentLeak(text) {
     /\b(?:BAB|BAGIAN)\s+[IVX\d]+\b/i,
     /\bDAFTAR\s+ISI\b/i,
     /\b(?:Latar\s+Belakang|Maksud\s+dan\s+Tujuan|Ruang\s+Lingkup)\b/i,
-    /\b(?:Visi|Misi)\s*[:：]/i,
-    /\b(?:Nama|Alamat|Website|Email|E-mail|Telepon|No\.?\s*SK|Nomor\s+SK)\s*[:：]/i,
-    /\b(?:Pembina|Ketua|Sekretaris|Bendahara|Koordinator|Penanggung\s+Jawab)\s*[:：]/i,
+    /\b(?:Visi|Misi)\s*[:\uFF1A]/i,
+    /\b(?:Nama|Alamat|Website|Email|E-mail|Telepon|No\.?\s*SK|Nomor\s+SK)\s*[:\uFF1A]/i,
+    /\b(?:Pembina|Ketua|Sekretaris|Bendahara|Koordinator|Penanggung\s+Jawab)\s*[:\uFF1A]/i,
     /\b(?:Struktur\s+Organisasi|Susunan\s+Pengurus|Identitas\s+(?:Lembaga|Organisasi|Program))\b/i,
     /\b(?:Lampiran|Tembusan|Ditetapkan\s+di|Pada\s+tanggal|Menetapkan|Memutuskan)\b/i,
-    /\b(?:Narahubung|Contact\s+Person|CP)\s*[:：]/i
+    /\b(?:Narahubung|Contact\s+Person|CP)\s*[:\uFF1A]/i
   ];
   const structureMarkerCount = documentStructureMarkers.filter((re) => re.test(out)).length;
-  const labelValueCount = (out.match(/\b[A-ZÀ-ÖØ-ÞA-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ\s/().-]{2,38}\s*[:：]\s*\S/g) || []).length;
+  const labelValueCount = (out.match(/\b[A-Za-z][A-Za-z0-9\s/().-]{2,38}\s*:\s*\S/g) || []).length;
   const denseInlineProfile = out.length > 550 && labelValueCount >= 5;
   const repeatedDocumentHeader = /\b(?:PROFIL|PROFILE|KEPUTUSAN|SURAT\s+KEPUTUSAN|PERJANJIAN|NOTA\s+KESEPAHAMAN|MOU|MOA)\b[\s\S]{0,260}\b(?:Nama|Alamat|Nomor|Tahun|Dasar\s+Hukum|Pembina|Penanggung\s+Jawab)\b/i.test(out);
   const placeholderLike = /_{5,}|\.{8,}|:{3,}|\?{4,}|(?:nomor\s*:\s*(?:\.{4,}|\?{4,}|\([^)]*\)))|(?:E\s*-\s*mail\s*:::)/i.test(out);
@@ -161,6 +161,51 @@ function hasLikelyRawDocumentLeak(text) {
 }
 
 
+function recoverSafeSummaryFromLeakyAnswer(answer, userQuery = '') {
+  const original = String(answer || '');
+  if (!original.trim()) return '';
+
+  let cleaned = normalizeOutboundAnswerText(stripOptionalFollowupSuggestions(original));
+  cleaned = cleaned.replace(/\bFakta internal\b[.:-]?\s*/gi, ' ');
+  cleaned = cleaned.replace(/\bFAQ\s*:\s*Jangan tampilkan format ini\.?/gi, ' ');
+  cleaned = cleaned.replace(/\bJangan tampilkan format ini\.?/gi, ' ');
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  if (!cleaned) return '';
+
+  const rawLineMarker = /\b(?:PROFIL|PROFILE)\s+(?:LEMBAGA|ORGANISASI|DIVISI|UNIT|UKM|PROGRAM)|\bDAFTAR\s+ISI\b|\b(?:BAB|BAGIAN)\s+[IVX\d]+\b|\b(?:Identitas\s+(?:Lembaga|Organisasi|Program)|Nama\s+Lembaga|Tahun\s+Berdiri|Dasar\s+Hukum|Pembina\s*\/\s*Penanggung\s+Jawab|Ringkasan\s+Capaian|Struktur\s+Organisasi|Susunan\s+Pengurus|Nomor\s+SK|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan|Ditetapkan\s+di|Pada\s+tanggal|Tembusan|Lampiran|PIHAK\s+PERTAMA|PIHAK\s+KEDUA|Pasal\s+\d+|NOTA\s+KESEPAHAMAN|PERJANJIAN\s+KERJA\s+SAMA)\b/i;
+  const queryTerms = normalizeForAlignment(userQuery).split(/\s+/).filter((word) => word.length >= 4 && !/^(yang|dari|untuk|dengan|atau|kakak|kalau|bagaimana|gimana|seperti|program|fasilitas)$/.test(word));
+  const hasQueryOverlap = (value) => !queryTerms.length || queryTerms.some((term) => normalizeForAlignment(value).includes(term));
+  const chunks = cleaned
+    .split(/(?:\n+|(?<=[.!?])\s+(?=[A-Z0-9]))/)
+    .map((item) => item.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim())
+    .filter(Boolean);
+
+  const safeChunks = [];
+  for (const chunk of chunks) {
+    if (safeChunks.length >= 4) break;
+    if (chunk.length < 24 || chunk.length > 360) continue;
+    if (rawLineMarker.test(chunk)) continue;
+    if (hasRawTechnicalLeak(chunk) || hasDocumentSourceLeak(chunk)) continue;
+    if (hasUnsafeAdministrativeLeak(chunk, userQuery) || hasLikelyRawDocumentLeak(chunk)) continue;
+    if (!hasQueryOverlap(chunk) && safeChunks.length === 0) continue;
+    safeChunks.push(chunk.replace(/\s{2,}/g, ' '));
+  }
+
+  const recovered = safeChunks.join('\n\n').trim();
+  if (recovered.length >= 24 && recovered.length <= 900) return recovered;
+
+  if (cleaned.length >= 24 && cleaned.length <= 650
+    && !rawLineMarker.test(cleaned)
+    && !hasRawTechnicalLeak(cleaned)
+    && !hasDocumentSourceLeak(cleaned)
+    && !hasUnsafeAdministrativeLeak(cleaned, userQuery)
+    && !hasLikelyRawDocumentLeak(cleaned)
+    && hasQueryOverlap(cleaned)) {
+    return cleaned;
+  }
+
+  return '';
+}
 const INTENT_PATTERNS = {
   fee: [/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|cicilan|nominal|potongan\s+biaya)\b/i],
   schedule: [/\b(jadwal|kapan|tanggal|periode|gelombang|dibuka|pendaftaran\s+sekarang|bulan\s+(?:ini|depan))\b/i],
@@ -415,13 +460,13 @@ function buildPreflightFallback(userQuery, reason) {
 function hasExcessiveRawQuotation(answer) {
   const text = String(answer || '');
   const longLines = text.split(/\n+/).filter((line) => line.trim().length > 220).length;
-  const quotedLines = text.split(/\n+/).filter((line) => /^\s*(?:>|"|Ã¯Â¿Â½|')/.test(line.trim())).length;
+  const quotedLines = text.split(/\n+/).filter((line) => /^\s*(?:>|"|\uFFFD|')/.test(line.trim())).length;
   return longLines >= 2 || quotedLines >= 3;
 }
 
 function hasPlaceholderOrOcrNoise(answer) {
   const text = String(answer || '');
-  return /_{4,}|\.{6,}|:{3,}|Ã¯Â¿Â½{2,}|\b(?:left|right)\s+-?\d{3,}\b|\blogo\s+mitra\b|\(\s*nama\s+mitra\s*\)/i.test(text);
+  return /_{4,}|\.{6,}|:{3,}|\uFFFD{2,}|\b(?:left|right)\s+-?\d{3,}\b|\blogo\s+mitra\b|\(\s*nama\s+mitra\s*\)/i.test(text);
 }
 
 function isTooLongForQuestion(answer, userQuery) {
@@ -435,7 +480,7 @@ function isTooLongForQuestion(answer, userQuery) {
 function lacksConcreteItemsForApaSaja(answer, userQuery) {
   if (!/\bapa\s+saja\b/i.test(String(userQuery || ''))) return false;
   const text = String(answer || '');
-  const bulletCount = (text.match(/(?:^|\n)\s*(?:[-*Ã¯Â¿Â½]|\d+\.)\s+\S/g) || []).length;
+  const bulletCount = (text.match(/(?:^|\n)\s*(?:[-*\uFFFD]|\d+\.)\s+\S/g) || []).length;
   const namedItems = (text.match(/\b(?:GCCP|BCCP|Double\s*Degree|Dual\s*Degree|Student\s+Exchange|UTB|DNUI|HELP|KIP|Prestasi|Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer)\b/gi) || []).length;
   const hasListLanguage = /\b(?:antara\s+lain|meliputi|terdiri\s+dari|tersedia|pilihan|program\s+mitra|beasiswa|program)\b/i.test(text);
   return bulletCount < 2 && namedItems < 2 && !hasListLanguage;
@@ -487,8 +532,14 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   }
 
   if (!issues.length && rawFaqQnaDump) {
-    text = buildPreflightFallback(userQuery, 'raw_document_leak');
-    issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
+    const recovered = recoverSafeSummaryFromLeakyAnswer(text, userQuery);
+    if (recovered) {
+      text = recovered;
+      issues.push('recovered_raw_document_leak');
+    } else {
+      text = buildPreflightFallback(userQuery, 'raw_document_leak');
+      issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
+    }
   }
 
   if (!issues.length) {
@@ -496,11 +547,23 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
       text = buildPreflightFallback(userQuery, 'technical_leak');
       issues.push(conversationalQuery ? 'recovered_conversation_technical_leak' : 'technical_leak');
     } else if (hasDocumentSourceLeak(text)) {
-      text = buildPreflightFallback(userQuery, 'raw_document_leak');
-      issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
+      const recovered = recoverSafeSummaryFromLeakyAnswer(text, userQuery);
+      if (recovered) {
+        text = recovered;
+        issues.push('recovered_raw_document_leak');
+      } else {
+        text = buildPreflightFallback(userQuery, 'raw_document_leak');
+        issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
+      }
     } else if (hasUnsafeAdministrativeLeak(text, userQuery) || hasLikelyRawDocumentLeak(text)) {
-      text = buildPreflightFallback(userQuery, 'raw_document_leak');
-      issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
+      const recovered = recoverSafeSummaryFromLeakyAnswer(text, userQuery);
+      if (recovered) {
+        text = recovered;
+        issues.push('recovered_raw_document_leak');
+      } else {
+        text = buildPreflightFallback(userQuery, 'raw_document_leak');
+        issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
+      }
     } else if (hasPlaceholderOrOcrNoise(text)) {
       issues.push('placeholder_or_ocr_noise');
       text = buildPreflightFallback(userQuery, 'raw_document_leak');
