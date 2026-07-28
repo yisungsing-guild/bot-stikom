@@ -180,6 +180,34 @@ describe('evidenceSelector', () => {
     expect(context).not.toMatch(/PERJANJIAN KERJA SAMA|Nomor:|PIHAK KESATU/i);
   });
 
+  test('selects the matching FAQ/QNA pair instead of the whole FAQ dump', () => {
+    const faqChunk = [
+      'Q: Apakah Career Center membantu cari magang?',
+      'A: Career Center membantu mahasiswa lewat info lowongan, magang, rekrutmen, job fair, dan konsultasi karier.',
+      '',
+      'Q: Apakah kantin buka malam?',
+      'A: Informasi jam operasional kantin mengikuti kebijakan kampus.'
+    ].join('\n');
+
+    const selected = selectEvidenceFromContexts({
+      question: 'Apakah career center membantu cari magang?',
+      contexts: [{ chunk: faqChunk, filename: 'FAQ Career Center.docx', trainingId: 'faq-career' }],
+      intent: 'general'
+    });
+    const answerability = evaluateEvidenceAnswerability({
+      question: 'Apakah career center membantu cari magang?',
+      selectedEvidence: selected,
+      intent: 'general'
+    });
+    const context = buildSelectedEvidenceContext(selected);
+
+    expect(selected.length).toBeGreaterThanOrEqual(1);
+    expect(selected[0].text).toMatch(/Career Center membantu mahasiswa/i);
+    expect(selected[0].text).toMatch(/magang|lowongan|job fair|konsultasi karier/i);
+    expect(selected[0].text).not.toMatch(/kantin buka malam/i);
+    expect(context).not.toMatch(/\bQ\s*:|\bA\s*:|FAQ:/i);
+    expect(answerability.answerable).toBe(true);
+  });
   test('international list question is not answerable from generic cooperation statement', () => {
     const selected = selectEvidenceFromContexts({
       question: 'Apa saja program internasional?',

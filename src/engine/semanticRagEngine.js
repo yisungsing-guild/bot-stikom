@@ -1,4 +1,4 @@
-const { OpenAI } = require('openai');
+﻿const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
@@ -41,6 +41,10 @@ let semanticIndexCache = null; // { ts, index }
 function getCacheNumber(name, defaultValue) {
   const raw = Number(process.env[name]);
   return Number.isFinite(raw) && raw >= 0 ? raw : defaultValue;
+}
+
+function isStrictDocumentOnlyMode() {
+  return envFlag('SEMANTIC_RAG_STRICT_DOCUMENT_ONLY', false);
 }
 
 function normalizeCacheText(value) {
@@ -321,7 +325,7 @@ function splitIntoEvidenceUnits(text, question = '') {
     }
     
     // Split by list items
-    const listItems = paragraph.split(/\n\s*[-*•]\s*/).filter(item => item.trim());
+    const listItems = paragraph.split(/\n\s*[-*â€¢]\s*/).filter(item => item.trim());
     if (listItems.length > 1) {
       units.push(...listItems.map(cleanDocumentMarkers));
       continue;
@@ -1178,6 +1182,69 @@ function buildSemanticRoutingQuestions(question, rewrite) {
     current
   ], 8);
 }
+// FAQ document keywords for direct lookup fallback
+const FAQ_KEYWORDS = {
+  career: ['career center', 'lowongan kerja', 'magang', 'job fair', 'rekrutmen', 'campus hiring', 'tracer study', 'konsultasi karier', 'prospek kerja', 'kerja sama perusahaan', 'alumni', 'pekerjaan'],
+  student_exchange: ['student exchange', 'pertukaran mahasiswa', 'gccp', 'bccp', 'program exchange', 'credit transfer', 'short program', 'summer program', 'negara mitra', 'syarat student exchange', 'manfaat student exchange'],
+  izin_belajar: ['izin belajar', 'study permit', 'mahasiswa asing', 'visa pelajar', 'itas', 'kitas', 'sktt', 'perpanjangan izin', 'dokumen mahasiswa asing', 'pengurusan izin belajar']
+};
+
+function getTopicBoost(filename, chunk) {
+  const haystack = `${filename || ''} ${chunk || ''}`.toLowerCase();
+  let boost = 0;
+  if (/faq|pertanyaan|jawaban|FAQ/i.test(haystack)) boost += 0.15;
+  if (/career center|lowongan|magang|job fair|tracer study|konsultasi karier/i.test(haystack)) boost += 0.2;
+  if (/student exchange|pertukaran mahasiswa|gccp|bccp|program exchange/i.test(haystack)) boost += 0.2;
+  if (/izin belajar|study permit|mahasiswa asing|visa pelajar|itas|kitas/i.test(haystack)) boost += 0.2;
+  return boost;
+}
+
+function faqLookup(question, topK = 8) {
+  const index = getCachedSemanticIndex();
+  if (!Array.isArray(index) || !index.length) return [];
+
+  const q = String(question || '').toLowerCase();
+  const results = [];
+
+  for (const item of index) {
+    const chunk = String(item.chunk || '');
+    const filename = String(item.filename || item.sourceFile || '');
+    const haystack = `${filename} ${chunk}`.toLowerCase();
+
+    let matchScore = 0;
+    let matchedTopic = null;
+
+    for (const [topic, keywords] of Object.entries(FAQ_KEYWORDS)) {
+      for (const keyword of keywords) {
+        if (haystack.includes(keyword.toLowerCase())) {
+          matchScore += 0.3;
+          if (!matchedTopic) matchedTopic = topic;
+        }
+      }
+    }
+
+    // Also check if the question itself appears in the chunk
+    const qTokens = q.split(/\s+/).filter(t => t.length >= 3);
+    const chunkTokens = chunk.toLowerCase().split(/\s+/);
+    const overlap = qTokens.filter(t => chunkTokens.includes(t)).length;
+    if (overlap > 0) {
+      matchScore += overlap * 0.15;
+    }
+
+    if (matchScore > 0.2) {
+      results.push({
+        item,
+        score: Math.min(matchScore, 1.0),
+        topic: matchedTopic,
+        sourceType: 'faq-lookup'
+      });
+    }
+  }
+
+  results.sort((a, b) => b.score - a.score);
+  return results.slice(0, topK);
+}
+
 async function retrieveSemanticContexts(searchQueries, options = {}) {
   const index = getCachedSemanticIndex();
   const topK = Number.isFinite(Number(options.topK)) ? Math.max(1, Number(options.topK)) : parseInt(process.env.SEMANTIC_RAG_TOP_K || process.env.RAG_TOP_K || '8', 10);
@@ -1185,10 +1252,10 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
   const queries = uniqueList(searchQueries, 4);
   const question = options.question || queries[0] || '';
   const questionIntent = options.intent || detectGenericIntent(question);
-  
+
   // Get database candidates (generic scoring)
   const dbCandidates = await getDatabaseCandidates(queries, { ...options, question, intent: questionIntent });
-  
+
   // Process semantic index candidates with generic scoring. Only use stored
   // embeddings when the runtime can create a real query embedding; otherwise
   // mock embeddings make rankings look confident but effectively random.
@@ -1209,14 +1276,14 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     for (const item of index) {
       if (!item || !String(item.chunk || '').trim()) continue;
       const emb = queryEmbeddings.length && Array.isArray(item.embedding) ? item.embedding : null;
-      
+
       let bestSemanticScore = 0;
       if (emb) {
         for (const qEmb of queryEmbeddings) {
           bestSemanticScore = Math.max(bestSemanticScore, cosineSimilarity(qEmb, emb));
         }
       }
-      
+
       let bestGenericScore = 0;
       let bestLexicalScore = 0;
       for (const query of queries) {
@@ -1226,13 +1293,14 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
         bestGenericScore = Math.max(bestGenericScore, genericScore);
         bestLexicalScore = Math.max(bestLexicalScore, lexicalScore);
       }
-      
+
       const sourceIntentBoost = computeSourceIntentBoost(question, item, questionIntent);
+      const topicBoost = getTopicBoost(item.filename || item.sourceFile || '', item.chunk);
       const baseScore = emb
         ? (bestSemanticScore * 0.45 + bestGenericScore * 0.45 + bestLexicalScore * 0.1)
         : (bestGenericScore * 0.7 + bestLexicalScore * 0.3);
-      const combinedScore = Math.max(0, Math.min(1, baseScore + sourceIntentBoost));
-      
+      const combinedScore = Math.max(0, Math.min(1, baseScore + sourceIntentBoost + topicBoost));
+
       if (combinedScore > 0.1) {
         semanticScored.push({
           item,
@@ -1241,23 +1309,24 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
           semanticScore: bestSemanticScore,
           genericScore: bestGenericScore,
           sourceIntentBoost,
+          topicBoost,
           sourceType: 'semantic',
           intent: questionIntent
         });
       }
     }
   }
-  
+
   // Merge semantic and database candidates
   const allCandidates = [...semanticScored, ...dbCandidates];
-  
+
   // Deduplicate by trainingId + chunk content hash
   const seenSignatures = new Set();
   const dedupedCandidates = [];
   for (const candidate of allCandidates) {
     const item = candidate.item;
     const signature = `${item.trainingId || 'no-tid'}-${item.chunk.slice(0, 100)}`;
-    
+
     if (seenSignatures.has(signature)) {
       // If duplicate, keep the one with higher score
       const existingIdx = dedupedCandidates.findIndex(c => {
@@ -1272,10 +1341,10 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
       dedupedCandidates.push(candidate);
     }
   }
-  
+
   // Sort by combined score
   dedupedCandidates.sort((a, b) => b.score - a.score);
-  
+
   const candidateContexts = dedupedCandidates.slice(0, maxCandidates).map((s) => ({
     id: s.item.id || null,
     score: s.score,
@@ -1295,10 +1364,36 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
   const filteredContexts = filteredCandidates.slice(0, topK);
   const relaxedMinRaw = Number(process.env.SEMANTIC_RAG_RELAXED_MIN_SCORE || '0.16');
   const relaxedMin = Number.isFinite(relaxedMinRaw) ? relaxedMinRaw : 0.16;
+  const minContextScoreRaw = Number(process.env.SEMANTIC_RAG_MIN_CONTEXT_SCORE || '0.22');
+  const minContextScore = Number.isFinite(minContextScoreRaw) ? minContextScoreRaw : 0.22;
   const allowRelaxedFallback = !(questionIntent === 'facility' || (questionIntent === 'requirement' && /\b(pendaftaran|daftar|pmb|registrasi)\b/i.test(question)));
-  const contexts = filteredContexts.length
+  const strictDocumentOnly = isStrictDocumentOnlyMode();
+
+  let contexts = filteredContexts.length
     ? filteredContexts
     : (allowRelaxedFallback ? candidateContexts.filter((ctx) => Number(ctx && ctx.score) >= relaxedMin).slice(0, topK) : []);
+
+  if (minContextScore > 0 && contexts.length) {
+    contexts = contexts.filter((ctx) => Number(ctx.score) >= minContextScore);
+  }
+
+  // FAQ fallback: only use direct keyword lookup when strict document-only mode is disabled
+  if (contexts.length === 0 && !strictDocumentOnly && envFlag('SEMANTIC_RAG_ALLOW_FAQ_LOOKUP', false)) {
+    const faqResults = faqLookup(question, topK);
+    if (faqResults.length > 0) {
+      contexts = faqResults.slice(0, topK).map((s) => ({
+        id: s.item.id || null,
+        score: s.score,
+        chunk: s.item.chunk,
+        filename: s.item.filename || s.item.sourceFile || null,
+        trainingId: s.item.trainingId || null,
+        divisionKey: s.item.divisionKey || null,
+        metadata: s.item.metadata || null,
+        intent: s.intent || questionIntent,
+        sourceType: s.sourceType
+      }));
+    }
+  }
 
   return {
     contexts,
@@ -1306,7 +1401,8 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     indexSize: (Array.isArray(index) ? index.length : 0) + dbCandidates.length,
     rawContextCount: rawContexts.length,
     filteredContextCount: filteredCandidates.length,
-    relaxedFallbackUsed: !filteredContexts.length && contexts.length > 0
+    relaxedFallbackUsed: !filteredContexts.length && contexts.length > 0,
+    faqFallbackUsed: contexts.length > 0 && contexts[0].sourceType === 'faq-lookup'
   };
 }
 
@@ -2218,7 +2314,7 @@ function buildPmbInfoAnswer() {
     '* Syarat dan dokumen pendaftaran',
     '* Kontak atau bantuan admin PMB',
     '',
-    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: “jadwal PMB sekarang gelombang berapa?”, “rincian biaya SI gelombang 2B?”, atau “apa saja syarat pendaftaran?”'
+    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: â€œjadwal PMB sekarang gelombang berapa?â€, â€œrincian biaya SI gelombang 2B?â€, atau â€œapa saja syarat pendaftaran?â€'
   ].join('\n');
 }
 
@@ -2248,6 +2344,7 @@ function tryPmbContactAnswer(question) {
 
 function tryPmbRequirementsAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
+  if (isNonPmbFaqDomainQuestion(question)) return null;
   if (/\b(ukm|ormawa|organisasi\s+mahasiswa|ksl|vos|jcos|mcos|bem|hima|himpunan|kelompok\s+studi\s+linux)\b/i.test(q)) return null;
   const asksRequirement = /\b(syarat|persyaratan|dokumen|berkas|lampiran|formulir|kelengkapan|unggah|mengunggah|diunggah|upload|requirement|requirements|document|documents|application\s+document|application\s+form)\b/.test(q);
   const pmbContext = /\b(daftar|pendaftaran|pmb|camaba|mahasiswa\s+baru|kuliah|registrasi|stikom|itb\s*stikom|apply|application|admission|international\s+student|study|studying)\b/.test(q);
@@ -2292,6 +2389,7 @@ function tryPmbRequirementsAnswer(question, _indexForQuery, options = {}) {
 
 function tryPmbInfoAnswer(question) {
   const q = String(question || '').toLowerCase();
+  if (isNonPmbFaqDomainQuestion(question)) return null;
   if (!/\b(pmb|penerimaan\s+mahasiswa\s+baru|penerimaan\s+maba|maba|camaba)\b/.test(q)) return null;
   const isSpecificSchedule = /\b(jadwal|gelombang|tanggal|deadline|kapan|masih\s+buka|masih\s+dibuka|masih\s+menerima|menerima\s+pendaftaran|dibuka|buka|sekarang|hari\s+ini|saat\s+ini)\b/.test(q);
   const isOverview = /\b(apa\s+itu|maksudnya|tentang|informasi|bertanya|tanya|jelaskan|penjelasan|alur|syarat|dokumen)\b/.test(q);
@@ -2300,6 +2398,7 @@ function tryPmbInfoAnswer(question) {
 }
 
 function tryCurrentOpenWavesAnswer(question) {
+  if (isNonPmbFaqDomainQuestion(question)) return null;
   if (!ragEngine || typeof ragEngine.tryStructuredCurrentOpenWavesAnswer !== 'function') return null;
   return ragEngine.tryStructuredCurrentOpenWavesAnswer(question);
 }
@@ -2687,6 +2786,7 @@ function tryScheduleWindowAnswer(question) {
 
 function tryRegistrationHowAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
+  if (isNonPmbFaqDomainQuestion(question)) return null;
   const asksRegister = /\b(cara|gimana|bagaimana|dimana|di\s*mana|mana|lewat|link|online|mau|ingin|pengen|pengin|bisa|how|where|apply|application|admission|gmn)\b/.test(q) && /\b(daftar(?:nya)?|mendaftar|pendaftaran|registrasi|kuliah|apply|application|admission|study|studying|min)\b/.test(q);
   if (!asksRegister) return null;
   if (/\b(biaya|bayar|harga|dpp|ukt|potongan|gelombang|jadwal|tanggal|deadline|masih\s+buka|fee|cost|price)\b/.test(q)) return null;
@@ -3043,7 +3143,7 @@ function extractTrainingSpecificTarget(question) {
   const raw = String(question || '').trim();
   if (!raw) return '';
 
-  const quoted = /["��']([^"��']{3,80})["��']/.exec(raw);
+  const quoted = /["ï¿½ï¿½']([^"ï¿½ï¿½']{3,80})["ï¿½ï¿½']/.exec(raw);
   let target = quoted ? quoted[1] : '';
   if (!target) {
     const m = /\b(?:apa\s+itu|apakah|jelaskan|detail(?:\s+tentang)?|tentang|info(?:rmasi)?\s+tentang|maksud(?:nya)?\s+apa)\s+(.{3,90})/i.exec(raw);
@@ -3138,7 +3238,7 @@ function extractFaqQaPairsFromChunk(chunk) {
   if (pairs.length) return pairs;
 
   const flat = raw.replace(/\s+/g, ' ').trim();
-  const questionRe = /((?:apa\s+saja|apa|apakah|bagaimana|gimana|berapa|kapan|di\s*mana|dimana|ke\s+negara\s+mana|ke\s*mana|kemana|siapa|mengapa|kenapa)\b[^?]{4,240}\?)/gi;
+  const questionRe = /((?:[A-Z0-9][^?]{0,80}\s+)?(?:apa\s+saja|apa|apakah|bagaimana|gimana|berapa|kapan|di\s*mana|dimana|ke\s+negara\s+mana|ke\s*mana|kemana|siapa|mengapa|kenapa)\b[^?]{4,240}\?)/gi;
   const markers = [];
   while ((match = questionRe.exec(flat)) !== null) {
     markers.push({ questionText: match[1].trim(), start: match.index, end: match.index + match[1].length });
@@ -3163,8 +3263,11 @@ function cleanUserVisibleRagAnswerText(text) {
   return out;
 }
 function isLikelyFaqQuestionText(text) {
-  return /^(?:q|tanya|pertanyaan)\s*[:\-.]/i.test(String(text || '').trim())
-    || /^(?:apa|apakah|bagaimana|gimana|berapa|kapan|di\s*mana|dimana|ke\s+negara\s+mana|ke\s*mana|kemana|siapa|mengapa|kenapa|apa\s+saja)\b/i.test(String(text || '').trim());
+  const value = String(text || '').trim();
+  if (!value) return false;
+  if (/^(?:q|tanya|pertanyaan)\s*[:\-.]/i.test(value)) return true;
+  if (/^(?:apa|apakah|bagaimana|gimana|berapa|kapan|di\s*mana|dimana|ke\s+negara\s+mana|ke\s*mana|kemana|siapa|mengapa|kenapa|apa\s+saja)\b/i.test(value)) return true;
+  return /\?\s*$/.test(value) && /\b(?:apa\s+saja|apa|apakah|bagaimana|gimana|berapa|kapan|di\s*mana|dimana|ke\s+negara\s+mana|ke\s*mana|kemana|siapa|mengapa|kenapa|wajib|perlu|diperlukan|dibutuhkan|bisa)\b/i.test(value);
 }
 
 function cleanFaqAnswerText(text) {
@@ -3226,7 +3329,223 @@ function extractBestFaqAnswerFromChunk(chunk, target, targetTokens, userQuestion
   if (!best || best.score < 2) return '';
   const answer = best.answer.length > 900 ? `${best.answer.slice(0, 897).trim()}...` : best.answer;
   return returnMatch ? { answer, score: best.score } : answer;
-}function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
+}
+
+function hasFaqAnswerDomainConflict(userQuestion, faqQuestion, answer, sourceText = '') {
+  const asked = normalizeFacilityTerm(userQuestion || '');
+  const ans = normalizeFacilityTerm(answer);
+  if (!asked || !ans) return false;
+
+  const domains = [
+    { name: 'study_permit', terms: ['izin belajar', 'study permit', 'mahasiswa asing', 'visa pelajar', 'itas', 'kitas', 'sktt'] },
+    { name: 'career', terms: ['career center', 'karier', 'karir', 'lowongan', 'magang', 'job fair', 'campus hiring', 'rekrutmen', 'tracer study', 'melamar kerja'] },
+    { name: 'student_exchange', terms: ['student exchange', 'pertukaran mahasiswa', 'gccp', 'bccp', 'credit transfer', 'summer program'] },
+    { name: 'pmb', terms: ['pmb', 'pendaftaran mahasiswa baru', 'gelombang', 'siap stikom', 'calon mahasiswa'] }
+  ];
+
+  for (const domain of domains) {
+    const answerHasDomain = domain.terms.some((term) => ans.includes(normalizeFacilityTerm(term)));
+    if (!answerHasDomain) continue;
+    const questionHasDomain = domain.terms.some((term) => asked.includes(normalizeFacilityTerm(term)));
+    if (!questionHasDomain) return true;
+  }
+  return false;
+}
+
+function isCareerCenterQuestion(question) {
+  const q = normalizeFacilityTerm(question || '');
+  return /\b(career center|pusat karier|pusat karir|karier|karir|lowongan|pekerjaan|peluang kerja|lulusan|alumni|magang|job fair|campus hiring|rekrutmen|perusahaan|kerja sama|kerjasama|pelatihan|pembekalan|tracer study|melamar kerja)\b/i.test(q);
+}
+
+function isStudyPermitQuestion(question) {
+  const q = normalizeFacilityTerm(question || '');
+  return /\b(izin belajar|study permit|mahasiswa asing|foreign student|visa pelajar|itas|kitas|sktt)\b/i.test(q);
+}
+
+function isStudentExchangeQuestion(question) {
+  const q = normalizeFacilityTerm(question || '');
+  return /\b(student exchange|pertukaran mahasiswa|gccp|global cross cultural program|credit transfer|summer program|short program)\b/i.test(q);
+}
+
+function isNonPmbFaqDomainQuestion(question) {
+  return isCareerCenterQuestion(question) || isStudyPermitQuestion(question) || isStudentExchangeQuestion(question);
+}
+
+function tryKnownFaqQnaAnswer(question) {
+  const q = normalizeFacilityTerm(question || '');
+  if (!q) return null;
+  const answer = (value) => ({
+    answer: value,
+    source: 'semantic-rag-generic-faq-qna',
+    frameSource: 'semantic-rag-training-specific',
+    matchedSource: 'deterministic-faq-qna-guard'
+  });
+
+  if (isStudyPermitQuestion(q)) {
+    if (/\b(biaya|bayar|gratis)\b/i.test(q)) {
+      return answer('Tidak ada biaya yang dikeluarkan untuk pengurusan Izin Belajar.');
+    }
+    if (/\b(mulai kuliah|sebelum.*selesai|kuliah sebelum)\b/i.test(q)) {
+      return answer('Mahasiswa dapat mengikuti arahan kampus terkait perkuliahan sambil proses Izin Belajar berjalan. Namun Izin Belajar tetap wajib diselesaikan karena merupakan dokumen resmi yang harus dimiliki mahasiswa asing.');
+    }
+    if (/\b(berapa lama|lama proses|proses pembuatan)\b/i.test(q)) {
+      return answer('Lama proses dapat berbeda sesuai verifikasi dan proses dari pihak terkait. Mahasiswa sebaiknya mengajukan dokumen lebih awal dan mengikuti arahan kampus agar proses tidak terlambat.');
+    }
+    if (/\b(siapa|diurus|siapa yang mengurus|kampus yang mengurus|mahasiswa yang mengurus)\b/i.test(q)) {
+      return answer('Pengurusan Izin Belajar dibantu oleh kampus/unit terkait, sementara mahasiswa wajib menyiapkan dan melengkapi dokumen yang diminta. Jadi prosesnya dilakukan melalui kerja sama antara mahasiswa dan kampus.');
+    }
+    if (/\b(proses|prosedur|pengurusan dokumen|dokumen mahasiswa asing)\b/i.test(q)) {
+      return answer('Pengurusan dokumen mahasiswa asing di ITB STIKOM Bali dilakukan dengan menghubungi bagian kerja sama atau international office kampus. Mahasiswa menyiapkan dokumen persyaratan, kemudian kampus membantu proses pengajuan dan koordinasi administrasi sampai dokumen selesai sesuai ketentuan yang berlaku.');
+    }
+    if (/\b(dokumen|berkas|persyaratan|diperlukan|pengajuan)\b/i.test(q)) {
+      return answer('Dokumen yang diperlukan untuk pengajuan Izin Belajar umumnya meliputi identitas/paspor mahasiswa asing, dokumen penerimaan atau status studi di kampus, pas foto, dan dokumen pendukung lain sesuai ketentuan pengajuan. Untuk daftar final, mahasiswa perlu mengikuti arahan kampus karena persyaratan dapat mengikuti ketentuan pemerintah yang berlaku.');
+    }
+    if (/\b(cara|bagaimana|mengurus|urus)\b/i.test(q)) {
+      return answer('Pengurusan Izin Belajar dilakukan melalui kampus. Mahasiswa menyiapkan dokumen persyaratan mahasiswa asing, menyerahkannya ke pihak kampus/unit terkait, lalu kampus membantu proses pengajuan Izin Belajar sesuai prosedur pemerintah.');
+    }
+
+    if (/\b(apa itu|wajib|harus punya|perlu punya)\b/i.test(q)) {
+      return answer('Izin Belajar adalah dokumen resmi dari pemerintah Indonesia yang menyatakan bahwa mahasiswa asing diperbolehkan menempuh pendidikan di Indonesia. Dokumen ini wajib dimiliki oleh seluruh mahasiswa asing.');
+    }
+  }
+
+  if (isCareerCenterQuestion(q)) {
+    if (/\b(keuntungan|manfaat|sisi karier)\b/i.test(q)) {
+      return answer('Keuntungan dari sisi karier adalah mahasiswa mendapat dukungan persiapan masuk dunia kerja, seperti informasi lowongan dan magang, pembekalan keterampilan kerja, konsultasi karier, job fair, campus hiring, serta akses jaringan industri.');
+    }
+    if (/\b(membantu.*pekerjaan|mendapatkan pekerjaan|lulusan.*pekerjaan)\b/i.test(q)) {
+      return answer('Ya. ITB STIKOM Bali membantu mahasiswa dan lulusan melalui Career Center dengan menyediakan informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan pembekalan kerja. Keputusan diterima bekerja tetap mengikuti seleksi perusahaan.');
+    }
+    if (/\b(kerja sama|kerjasama|memiliki kerja sama|memiliki kerjasama)\b/i.test(q)) {
+      return answer('Ya. ITB STIKOM Bali terus mengembangkan kerja sama dengan dunia usaha dan dunia industri untuk mendukung pembelajaran berbasis praktik, magang, dan pengembangan karier mahasiswa.');
+    }
+    if (/\b(perusahaan|rekrutmen|campus hiring|datang ke kampus)\b/i.test(q)) {
+      return answer('Ya. Perusahaan dapat hadir melalui kegiatan rekrutmen kampus atau campus hiring, sehingga mahasiswa dan alumni bisa mendapatkan informasi karier dan mengikuti proses seleksi yang tersedia.');
+    }
+    if (/\b(job fair)\b/i.test(q)) {
+      return answer('Ya. ITB STIKOM Bali menyelenggarakan Job Fair yang menghadirkan perusahaan dari berbagai sektor industri agar mahasiswa dan alumni dapat memperoleh informasi karier, mengikuti rekrutmen, dan membangun jaringan profesional.');
+    }
+    if (/\b(kapan|mulai mengikuti|mulai ikut)\b/i.test(q)) {
+      return answer('Mahasiswa dapat mulai mengikuti program Career Center sejak masih menjadi mahasiswa aktif, terutama saat membutuhkan informasi magang, pembekalan kerja, konsultasi karier, atau persiapan melamar pekerjaan.');
+    }
+    if (/\b(pelatihan|melamar kerja|sebelum melamar|pembekalan)\b/i.test(q)) {
+      return answer('Ya. Mahasiswa mendapat pembekalan atau pelatihan sebelum melamar kerja, seperti persiapan keterampilan kerja, konsultasi karier, dan dukungan menghadapi proses rekrutmen.');
+    }
+    if (/\b(peluang kerja|prospek kerja)\b/i.test(q)) {
+      return answer('Peluang kerja lulusan ITB STIKOM Bali didukung oleh kurikulum yang relevan dengan kebutuhan industri serta dukungan Career Center, seperti informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study.');
+    }
+
+    if (/\b(alumni|lowongan kerja)\b/i.test(q)) {
+      return answer('Ya. Alumni tetap dapat memperoleh informasi lowongan kerja dan mengikuti kegiatan Career Center seperti job fair, seminar karier, workshop, serta kegiatan pengembangan profesional.');
+    }
+    if (/\b(tracer study)\b/i.test(q)) {
+      return answer('Tracer Study adalah survei kepada alumni untuk mengetahui kondisi lulusan setelah menyelesaikan studi, seperti masa tunggu kerja, jenis pekerjaan, kesesuaian bidang kerja, dan masukan untuk peningkatan mutu pendidikan.');
+    }
+    if (/\b(konsultasi|berkonsultasi)\b/i.test(q)) {
+      return answer('Ya. Mahasiswa dapat berkonsultasi mengenai karier melalui Career Center, termasuk terkait persiapan kerja, peluang karier, magang, dan proses melamar pekerjaan.');
+    }
+    if (/\b(hanya.*it|bidang it|selain it)\b/i.test(q)) {
+      return answer('Tidak. Lulusan tidak hanya bisa bekerja di bidang IT. Peluang kerja juga terbuka di bidang bisnis digital, perbankan, pariwisata, startup, pemerintahan, pendidikan, industri kreatif, maupun technopreneur sesuai kompetensi yang dimiliki.');
+    }
+    if (/\b(magang)\b/i.test(q)) {
+      return answer('Ya, ada program dan informasi magang. Career Center membantu mahasiswa mendapatkan informasi peluang magang serta mendukung persiapan mahasiswa sebelum masuk ke dunia kerja.');
+    }
+    if (/\b(apa itu|career center|pusat karier|pusat karir)\b/i.test(q)) {
+      return answer('Career Center ITB STIKOM Bali merupakan unit yang membantu mahasiswa dan alumni mempersiapkan karier melalui pengembangan kompetensi, informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study.');
+    }
+  }
+
+  if (/\b(mengapa memilih|kenapa memilih|alasan memilih)\b/i.test(q) && /\b(stikom bali|itb stikom)\b/i.test(q)) {
+    return answer('ITB STIKOM Bali dapat dipilih karena menyediakan pendidikan berbasis teknologi dan bisnis yang didukung program karier, magang, kerja sama industri, kegiatan mahasiswa, program internasional, serta layanan pendukung seperti Career Center untuk membantu mahasiswa mempersiapkan masa depan.');
+  }
+
+  if (isStudentExchangeQuestion(q)) {
+    if (/\b(tujuan)\b/i.test(q)) {
+      return answer('Program Student Exchange bertujuan memberikan pengalaman belajar di lingkungan internasional, meningkatkan kemampuan bahasa asing, mengembangkan wawasan global dan lintas budaya, serta membangun jaringan internasional.');
+    }
+    if (/\b(negara|ke negara mana)\b/i.test(q)) {
+      return answer('Program Student Exchange tersedia ke berbagai negara mitra, seperti China, Thailand, Malaysia, Philippines, dan negara lain sesuai kerja sama internasional yang aktif.');
+    }
+    if (/\b(jenis|program.*tersedia|pilihan program|apa saja jenis)\b/i.test(q)) {
+      return answer('Jenis program Student Exchange yang tersedia meliputi Exchange Reguler atau Credit Transfer, Short Program / Summer Program, dan Global Cross Cultural Program (GCCP).');
+    }
+    if (/\b(apa itu)\b/i.test(q) && /\bgccp\b/i.test(q)) {
+      return answer('GCCP adalah Global Cross Cultural Program, yaitu program internasional yang memberi pengalaman lintas budaya dan interaksi global kepada mahasiswa.');
+    }
+    if (/\b(kegiatan)\b/i.test(q) && /\bgccp\b/i.test(q)) {
+      return answer('Kegiatan dalam GCCP berfokus pada pengalaman lintas budaya dan interaksi global, seperti pengenalan budaya, aktivitas akademik atau short course, kolaborasi dengan peserta internasional, dan pengembangan wawasan global.');
+    }
+
+    if (/\b(syarat|persyaratan)\b/i.test(q)) {
+      return answer('Persyaratan umum Student Exchange meliputi mahasiswa aktif ITB STIKOM Bali, memiliki IPK sesuai ketentuan, memiliki kemampuan bahasa asing terutama Bahasa Inggris, serta lolos seleksi administrasi dan wawancara.');
+    }
+    if (/\b(manfaat)\b/i.test(q)) {
+      return answer('Manfaat mengikuti Student Exchange antara lain pengalaman belajar internasional, peningkatan kepercayaan diri dan kemandirian, memperluas jaringan global, serta nilai tambah untuk karier di masa depan.');
+    }
+    if (/\b(apa itu|student exchange|pertukaran mahasiswa)\b/i.test(q)) {
+      return answer('Student Exchange adalah program pertukaran mahasiswa yang memberi kesempatan kepada mahasiswa ITB STIKOM Bali untuk belajar di kampus luar negeri dalam periode tertentu, sekaligus mendapatkan pengalaman akademik dan budaya internasional.');
+    }
+  }
+  return null;
+}
+function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}) {
+  const q = String(question || '').trim();
+  if (!q || !isLikelyFaqQuestionText(q)) return null;
+  const index = Array.isArray(indexForQuery) ? indexForQuery : [];
+  if (!index.length) return null;
+
+  const scored = [];
+  for (const item of index) {
+    const chunk = String(item && item.chunk ? item.chunk : '').trim();
+    if (!chunk) continue;
+    if (isLikelyRawAdministrativeDocument(chunk, item && (item.filename || item.sourceFile || ''))) continue;
+    const pairs = extractFaqQaPairsFromChunk(chunk);
+    if (!pairs.length) continue;
+    const sourceText = `${item.filename || ''} ${item.sourceFile || ''} ${item.title || ''}`;
+    for (const pair of pairs) {
+      const qTokens = Array.from(new Set(faqComparableTokens(q)));
+      const fTokens = Array.from(new Set(faqComparableTokens(pair.questionText)));
+      const fSet = new Set(fTokens);
+      const overlap = qTokens.filter((token) => fSet.has(token)).length;
+      const qNorm = normalizeFacilityTerm(q);
+      const fNorm = normalizeFacilityTerm(pair.questionText);
+      const nearExact = qNorm && fNorm && (qNorm.includes(fNorm) || fNorm.includes(qNorm));
+      const shortSpecific = qTokens.length <= 2 && overlap >= 1;
+      if (!nearExact && !shortSpecific && overlap < 2) continue;
+
+      const score = scoreFaqQuestionMatch(q, pair.questionText, '', []);
+      if (score < 8) continue;
+      const answer = cleanUserVisibleRagAnswerText(pair.answerText);
+      if (!answer || answer.length < 8) continue;
+      if (hasFaqAnswerDomainConflict(q, pair.questionText, answer, '')) continue;
+      const sourceBoost = /upload/i.test(String(item && item.source ? item.source : '')) ? 2 : 0;
+      const sourceTermBoost = qTokens.filter((token) => normalizeFacilityTerm(sourceText).includes(token)).length;
+      scored.push({ item, pair, answer, score: score + sourceBoost + sourceTermBoost + overlap, baseScore: score, overlap });
+    }
+  }
+
+  if (!scored.length) return null;
+  scored.sort((a, b) => b.score - a.score || b.baseScore - a.baseScore || a.answer.length - b.answer.length);
+  const best = scored[0];
+  const bestNorm = normalizeFacilityTerm(best.pair.questionText);
+  const userNorm = normalizeFacilityTerm(q);
+  const strongExactOrNearExact = bestNorm && userNorm && (userNorm.includes(bestNorm) || bestNorm.includes(userNorm));
+  if (best.baseScore < 12 && !strongExactOrNearExact) return null;
+
+  return {
+    answer: best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer,
+    source: 'semantic-rag-generic-faq-qna',
+    frameSource: 'semantic-rag-training-specific',
+    matchedFaqQuestion: best.pair.questionText,
+    matchedTrainingId: best.item && best.item.trainingId,
+    matchedSource: best.item && (best.item.filename || best.item.sourceFile || best.item.id)
+  };
+}
+
+function tryGenericFaqQnaAnswer(question, indexForQuery, options = {}) {
+  return buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options);
+}
+function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
   // Allow training-specific FAQ matching even for some structured campus
   // questions (e.g., Double Degree or partner-related FAQ), because FAQ
   // entries may be authored in a Q/A form and should be matched directly.
@@ -3379,7 +3698,7 @@ function cleanFacilitySnippetText(text) {
 
   out = out
     .replace(/\b(?:q|a)\s*[:\-.]\s*/gi, '')
-    .replace(/[��"]/g, '')
+    .replace(/[ï¿½ï¿½"]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -3699,6 +4018,10 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const resolved = resolveCampusSupportEntity(question, options);
   if (!resolved || !resolved.entity) return null;
 
+  // Prefer the dedicated campus facility handler for general Career Center
+  // questions, because this produces a better Career Center answer.
+  if (resolved.entity.key === 'career-center') return null;
+
   const currentMentionsEntity = !resolved.fromRecent;
   const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
   const asksOtherSupportTopic = /\b(layanan\s+industri|kerja\s*sama\s+industri|industri|inkubator|goes\s*to\s*school|gccp|gcpp|gcp|bccp|student\s+exchange|soft\s*skill|softskill|language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa|ukm|ormawa|hi-?think)\b/i.test(q);
@@ -3899,6 +4222,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
 }
 function tryCampusLocationAnswer(question) {
   const q = String(question || '').toLowerCase();
+  if (isStudyPermitQuestion(question) || isCareerCenterQuestion(question) || isStudentExchangeQuestion(question)) return null;
   if (!/\b(lokasi|alamat|kampus|dimana|di\s*mana|where|letak|maps|rute)\b/i.test(q)) return null;
   if (/\b(fasilitas|layanan|sarana|prasarana|ukm|ormawa|organisasi|kegiatan\s+mahasiswa|komunitas|hobi|minat)\b/i.test(q)) return null;
   const asksMainCampus = /\b(kampus\s+(?:utama|pusat)|utama(?:nya)?|pusat(?:nya)?)\b/i.test(q);
@@ -4174,10 +4498,10 @@ function cleanUkmProfileChunkText(chunk) {
     .filter(Boolean)
     .filter((line) => !/^ringkasan\s+dokumen\s*:?$/i.test(line))
     .filter((line) => !/^teks\s+hasil\s+ocr\s+gambar\s*:?$/i.test(line))
-    .filter((line) => !/^(?:sy\s*)?[�ï¿½]+$/i.test(line))
+    .filter((line) => !/^(?:sy\s*)?[ï¿½Ã¯Â¿Â½]+$/i.test(line))
     .filter((line) => !/^ww[,\s]*$/i.test(line))
     .join(' ')
-    .replace(/^SY\s*[�ï¿½]\s*/i, '')
+    .replace(/^SY\s*[ï¿½Ã¯Â¿Â½]\s*/i, '')
     .replace(/^PROFILE\s+ORGANISASI\s+/i, '')
     .replace(/^PROFILE\s+SINGKAT\s+/i, '')
     .replace(/^PROFIL\s+SINGKAT\s+/i, '')
@@ -4206,8 +4530,8 @@ function summarizeUkmProfileBody(body, ukmTitle) {
   if (!raw) return '';
 
   const normalized = raw
-    .replace(/\b(\d+[.)])\s+(?=[A-ZÀ-ÖØ-Ý][\p{L}\s/&-]{3,40}\s*:)/gu, '\n$1 ')
-    .replace(/\b([A-ZÀ-ÖØ-Ý][\p{L}\s/&-]{3,40})\s*:\s*/gu, '\n$1: ')
+    .replace(/\b(\d+[.)])\s+(?=\p{Lu}[\p{L}\s/&-]{3,40}\s*:)/gu, '\n$1 ')
+    .replace(/\b(\p{Lu}[\p{L}\s/&-]{3,40})\s*:\s*/gu, '\n$1: ')
     .replace(/\s{2,}/g, ' ')
     .trim();
 
@@ -5359,7 +5683,7 @@ function buildFrameOpeners(question, source, topic) {
     }
     return [
       'Bisa, Kak. Sederhananya, prodi ini bisa dipahami seperti ini.',
-      `Untuk pertanyaan “apa itu”, saya jelaskan dari fokus belajar dan arah skill-nya ya.`,
+      `Untuk pertanyaan â€œapa ituâ€, saya jelaskan dari fokus belajar dan arah skill-nya ya.`,
       'Kalau ingin mengenal prodinya dulu, penjelasannya seperti ini, Kak.',
       'Untuk pertanyaan "apa itu", saya jelaskan dari fokus belajar dan arah skill-nya ya.'
     ];
@@ -5468,6 +5792,8 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-org-structure-unavailable', tryOrganizationalStructureAnswer],
   ['semantic-rag-clarification', tryShortClarificationAnswer],
   ['semantic-rag-out-of-domain', tryOutOfDomainAnswer],
+  ['semantic-rag-known-faq-qna', tryKnownFaqQnaAnswer],
+  ['semantic-rag-generic-faq-qna', tryGenericFaqQnaAnswer],
   ['semantic-rag-dual-degree-followup', tryDoubleDegreeFollowUpAnswer],
   ['semantic-rag-scholarship', tryScholarshipAnswer],
   ['semantic-rag-feedback', tryFeedbackAnswer],
@@ -5537,6 +5863,7 @@ const SOURCES_NEEDING_INDEX = new Set([
   'semantic-rag-fee-comparison',
   // Training-specific and campus facility/entity handlers need index
   'semantic-rag-training-specific',
+  'semantic-rag-generic-faq-qna',
   'semantic-rag-campus-facility',
   'semantic-rag-campus-support-entity',
   // UKM and campus location queries rely on indexed training/facility data
@@ -5546,6 +5873,8 @@ const SOURCES_NEEDING_INDEX = new Set([
 const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-small-talk',
   'semantic-rag-out-of-domain',
+  'semantic-rag-known-faq-qna',
+  'semantic-rag-generic-faq-qna',
   'semantic-rag-dual-degree-followup',
   'semantic-rag-unsupported-program',
   // lightweight PMB/schedule handlers that do not require index
@@ -5868,15 +6197,17 @@ async function querySemanticRag(question, options = {}) {
     return response;
   }
 
-  const shortDefinitionResponse = tryShortProgramDefinitionDirectAnswer(question);
+  const strictDocumentOnly = isStrictDocumentOnlyMode();
+  const fallbacksAllowed = !strictDocumentOnly;
+  const shortDefinitionResponse = strictDocumentOnly ? null : tryShortProgramDefinitionDirectAnswer(question);
   if (shortDefinitionResponse) {
     setCachedSemanticResult(resultCacheKey, shortDefinitionResponse);
     return shortDefinitionResponse;
   }
-
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   if (debugTrace) {
+    console.log('[TRACE STRICT] strictDocumentOnly:', strictDocumentOnly);
     console.log('[TRACE PRE_AI] handlers:', preAiHandlers.map(([s]) => s));
     console.log('[TRACE PRE_AI] question:', question);
     console.log('[TRACE PRE_AI] PRE_AI_HANDLER_SOURCES membership check:', {
@@ -5885,7 +6216,7 @@ async function querySemanticRag(question, options = {}) {
       'semantic-rag-certification': PRE_AI_HANDLER_SOURCES.has('semantic-rag-certification')
     });
   }
-  const preAiResult = runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });
+  const preAiResult = strictDocumentOnly ? null : runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });
   if (debugTrace) {
     console.log('[TRACE PRE_AI] result from runDeterministicHandlers:', {
       hasResult: !!preAiResult,
@@ -5905,7 +6236,7 @@ async function querySemanticRag(question, options = {}) {
   }
 
   const preRewriteHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_REWRITE_HANDLER_SOURCES.has(source));
-  const preRewriteResult = runDeterministicHandlers(question, preRewriteHandlers, options, [question], { routeStage: 'pre-rewrite' });
+  const preRewriteResult = strictDocumentOnly ? null : runDeterministicHandlers(question, preRewriteHandlers, options, [question], { routeStage: 'pre-rewrite' });
   if (debugTrace) {
     console.log('[TRACE PRE_REWRITE] result:', {
       hasResult: !!preRewriteResult,
@@ -5920,11 +6251,23 @@ async function querySemanticRag(question, options = {}) {
     return preRewriteResult;
   }
 
-  // (index-first deterministic pass removed — rely on semantic routing and
+  // (index-first deterministic pass removed â€” rely on semantic routing and
   // retriever flow to decide deterministic handlers after rewrite and RAG)
 
   const client = getClient();
   if (!client) {
+    if (strictDocumentOnly) {
+      const response = {
+        success: true,
+        answer: null,
+        source: 'semantic-rag-disabled',
+        reason: 'missing_openai_api_key',
+        contexts: [],
+        debug: { strictDocumentOnly: true }
+      };
+      setCachedSemanticResult(resultCacheKey, response);
+      return response;
+    }
     const fallbackResult = runDeterministicHandlers(question, DETERMINISTIC_HANDLERS, options, [question], { routeStage: 'fallback-no-ai' });
     if (fallbackResult) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
@@ -5994,7 +6337,7 @@ async function querySemanticRag(question, options = {}) {
     return response;
   }
 
-  const semanticRouteEnabled = shouldUseSemanticDeterministicRoute(rewrite);
+  const semanticRouteEnabled = shouldUseSemanticDeterministicRoute(rewrite) && !strictDocumentOnly;
   const preferTrainingFirst = semanticRouteEnabled && shouldPreferTrainingBeforeDeterministic(rewrite);
   const runSemanticDeterministicRoute = (routeStage = 'ai-intent') => {
     if (!semanticRouteEnabled) return null;
@@ -6039,9 +6382,9 @@ async function querySemanticRag(question, options = {}) {
   let selectedEvidence = [];
   if (retrieved.contexts.length > 0) {
     try {
-      selectedEvidence = selectEvidenceByCompatibility(question, retrieved.contexts, { intent: rewrite.intent, maxEvidence: 5 });
+      selectedEvidence = selectEvidenceFromContexts({ question, contexts: retrieved.contexts, intent: rewrite.intent, maxEvidence: 5 });
     } catch (e) {
-      logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] generic evidence selection failed, using raw contexts');
+      logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] evidence selector failed, using raw contexts');
       selectedEvidence = retrieved.contexts.map(ctx => ({
         text: ctx.chunk,
         source: ctx.filename || ctx.sourceFile || 'unknown',
@@ -6056,15 +6399,32 @@ async function querySemanticRag(question, options = {}) {
   let answerabilityResult = null;
   if (selectedEvidence.length > 0) {
     try {
-      answerabilityResult = evaluateGenericAnswerability(question, selectedEvidence, { intent: rewrite.intent });
+      answerabilityResult = evaluateEvidenceAnswerability({ question, selectedEvidence, intent: rewrite.intent });
     } catch (e) {
-      logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] generic answerability evaluation failed, proceeding with generation');
+      logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] evidence answerability evaluation failed, proceeding with generation');
     }
   }
   
-  if (!selectedEvidence.length || retrieved.topScore < minScore) {
+  if (!selectedEvidence.length) {
     if (debugTrace) {
-      console.log('[TRACE RAG_NO_CONTEXT] No evidence or low score, running fallbacks');
+      console.log('[TRACE RAG_NO_CONTEXT] No evidence selected, running fallbacks');
+    }
+    if (isStrictDocumentOnlyMode()) {
+      const veryLowThresholdRaw = Number(process.env.SEMANTIC_RAG_VERY_LOW_SCORE || '0.12');
+      const veryLowThreshold = Number.isFinite(veryLowThresholdRaw) ? veryLowThresholdRaw : 0.12;
+      const noContextResult = {
+        success: true,
+        answer: buildInsufficientDataAnswer(retrieved.topScore >= veryLowThreshold ? 'low' : 'very_low'),
+        source: 'semantic-rag-no-context',
+        contexts: selectedEvidence,
+        confidenceScore: retrieved.topScore,
+        confidenceTier: retrieved.topScore >= veryLowThreshold ? 'LOW' : 'VERY_LOW',
+        debug: { rewrite, minScore, veryLowThreshold, indexSize: retrieved.indexSize, answerabilityResult, strictDocumentOnly: true }
+      };
+      if (debugTrace) {
+        console.log('[TRACE RAG_NO_CONTEXT] STRICT_DOCUMENT_ONLY returning no-context result');
+      }
+      return noContextResult;
     }
     const fallbackResult = preferTrainingFirst ? runSemanticDeterministicRoute('ai-intent-fallback-after-rag-no-context') : null;
     if (debugTrace) {
@@ -6116,6 +6476,22 @@ async function querySemanticRag(question, options = {}) {
     if (debugTrace) {
       console.log('[TRACE UNANSWERABLE] Evidence not answerable, running fallbacks');
     }
+    if (strictDocumentOnly) {
+      const insufficientAnswer = buildSpecificInsufficientDataAnswer(question, answerabilityResult.missingEvidence);
+      const unanswerableResult = {
+        success: true,
+        answer: insufficientAnswer,
+        source: 'semantic-rag-unanswerable',
+        contexts: selectedEvidence,
+        confidenceScore: retrieved.topScore,
+        confidenceTier: 'LOW',
+        debug: { rewrite, answerabilityResult, strictDocumentOnly: true }
+      };
+      if (debugTrace) {
+        console.log('[TRACE UNANSWERABLE] STRICT_DOCUMENT_ONLY returning unanswerable result');
+      }
+      return unanswerableResult;
+    }
     const fallbackResult = preferTrainingFirst ? runSemanticDeterministicRoute('ai-intent-fallback-after-rag-unanswerable') : null;
     if (debugTrace) {
       console.log('[TRACE UNANSWERABLE] preferTrainingFirst fallback:', {
@@ -6161,15 +6537,32 @@ async function querySemanticRag(question, options = {}) {
   }
 
   try {
-    // Build context from selected evidence (not cleaned here - cleaning happens after generation)
-    const evidenceText = selectedEvidence.map(e => e.text).join('\n\n');
-    const rawAnswer = await answerFromContexts(client, question, rewrite, [{ chunk: evidenceText, filename: 'selected-evidence' }], {
+    // Build context from selected evidence (preserve source labels so generator can
+    // see which chunks/evidence came from which document). Cleaning still happens
+    // after generation.
+    const evidenceContext = buildSelectedEvidenceContext(selectedEvidence, parseInt(process.env.SEMANTIC_RAG_CONTEXT_MAX_CHARS || '9000', 10));
+    const rawAnswer = await answerFromContexts(client, question, rewrite, [{ chunk: evidenceContext, filename: 'selected-evidence' }], {
       programHint: options.programHint || '',
       intentHint: options.intentHint || ''
     });
     if (!rawAnswer) {
       if (debugTrace) {
         console.log('[TRACE EMPTY_ANSWER] No raw answer, running fallbacks');
+      }
+      if (strictDocumentOnly) {
+        const emptyAnswerResult = {
+          success: true,
+          answer: buildInsufficientDataAnswer('very_low'),
+          source: 'semantic-rag-empty-answer',
+          contexts: selectedEvidence,
+          confidenceScore: retrieved.topScore,
+          confidenceTier: 'VERY_LOW',
+          debug: { rewrite, answerabilityResult, strictDocumentOnly: true }
+        };
+        if (debugTrace) {
+          console.log('[TRACE EMPTY_ANSWER] STRICT_DOCUMENT_ONLY returning empty-answer result');
+        }
+        return emptyAnswerResult;
       }
       const fallbackResult = preferTrainingFirst ? runSemanticDeterministicRoute('ai-intent-fallback-after-rag-empty-answer') : null;
       if (debugTrace) {
@@ -6215,6 +6608,22 @@ async function querySemanticRag(question, options = {}) {
           hasResult: !!fallbackResult,
           source: fallbackResult ? fallbackResult.source : null
         });
+      }
+      if (!fallbacksAllowed) {
+        const cleaned = rawAnswer.replace(/TIDAK_CUKUP_DATA[:\s-]*/i, '').trim();
+        const allowClarifyingFallback = envFlag('SEMANTIC_RAG_RETURN_CLARIFICATION_ON_NO_DATA', true);
+        const insufficientContextResult = {
+          success: true,
+          answer: allowClarifyingFallback && cleaned ? buildInsufficientDataAnswer('very_low') + ' ' + cleaned : buildInsufficientDataAnswer('very_low'),
+          source: 'semantic-rag-insufficient-context',
+          contexts: selectedEvidence,
+          confidenceScore: retrieved.topScore,
+          debug: { rewrite, answerabilityResult }
+        };
+        if (debugTrace) {
+          console.log('[TRACE INSUFFICIENT_CONTEXT] STRICT_DOCUMENT_ONLY returning insufficient-context result');
+        }
+        return insufficientContextResult;
       }
       if (fallbackResult) {
         if (debugTrace) {
@@ -6282,6 +6691,21 @@ async function querySemanticRag(question, options = {}) {
           source: fallbackResult ? fallbackResult.source : null
         });
       }
+      if (!fallbacksAllowed) {
+        const preflightBlockedResult = {
+          success: true,
+          answer: preflight.answer,
+          source: 'semantic-rag-preflight-blocked',
+          contexts: selectedEvidence,
+          confidenceScore: retrieved.topScore,
+          confidenceTier: 'VERY_LOW',
+          debug: { rewrite, preflight, answerabilityResult }
+        };
+        if (debugTrace) {
+          console.log('[TRACE PREFLIGHT_BLOCKED] STRICT_DOCUMENT_ONLY returning preflight-blocked result');
+        }
+        return preflightBlockedResult;
+      }
       if (fallbackResult) {
         if (debugTrace) {
           console.log('[TRACE PREFLIGHT_BLOCKED] CACHING and RETURNING fallbackResult');
@@ -6339,6 +6763,20 @@ async function querySemanticRag(question, options = {}) {
     return response;
   } catch (err) {
     logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] answer generation failed');
+    if (!fallbacksAllowed) {
+      const errorResult = {
+        success: true,
+        answer: 'Maaf, saya belum bisa mengambil jawaban dari data saat ini. Coba ulangi pertanyaannya sebentar lagi, atau tuliskan dengan lebih spesifik.',
+        source: 'semantic-rag-error',
+        contexts: selectedEvidence,
+        confidenceScore: retrieved.topScore,
+        debug: { rewrite, error: err && err.message ? err.message : String(err), answerabilityResult }
+      };
+      if (debugTrace) {
+        console.log('[TRACE ERROR] STRICT_DOCUMENT_ONLY returning error result');
+      }
+      return errorResult;
+    }
     const fallbackResult = preferTrainingFirst ? runSemanticDeterministicRoute('ai-intent-fallback-after-rag-error') : null;
     if (debugTrace) {
       console.log('[TRACE ERROR] preferTrainingFirst fallback:', {
@@ -6428,6 +6866,16 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
+
+
+
+
+
+
+
 
 
 

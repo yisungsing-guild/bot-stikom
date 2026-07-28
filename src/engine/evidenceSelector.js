@@ -42,6 +42,15 @@ function compactText(value) {
     .trim();
 }
 
+function cleanFaqMarkers(value) {
+  return compactText(value)
+    .replace(/\b(?:FAQ|QNA)\s*[:.-]\s*/gi, '')
+    .replace(/\b(?:Question|Pertanyaan|Tanya|Q|F)\s*[:.-]\s*/gi, '')
+    .replace(/\b(?:Answer|Jawaban|Jawab|A)\s*[:.-]\s*/gi, '')
+    .replace(/\((?:F|Q|A)\)\s*/gi, '')
+    .trim();
+}
+
 function getContentTerms(value) {
   return normalizeText(value)
     .split(/\s+/)
@@ -100,6 +109,48 @@ function isLegalBoilerplate(text) {
   return /\b(?:pasal\s+\d+|ayat\s*\(\d+\)|pihak\s+kesatu|pihak\s+pertama|pihak\s+kedua|para\s+pihak|force\s+majeure|addendum|bermeterai|mempunyai\s+kekuatan\s+hukum|nomor\s*:|alamat\s+telepon\s+e\s*-?\s*mail|tanda\s+tangan|perjanjian\s+kerja\s+sama|nota\s+kesepahaman|korespondensi)\b/i.test(String(text || ''));
 }
 
+// Deteksi dokumen mentaw yang lebih ketat — pola yang menandakan chunk berisi
+// dokumen hukum/administratif mentaw (bukan ringkasan yang sudah diproses).
+// Digunakan di lax fallback dan sebagai lapisan pertahanan tambahan.
+function isLikelyRawDocument(text) {
+  const value = String(text || '');
+  if (!value || value.length < 40) return false;
+
+  // Hitung jumlah marker dokumen mentaw
+  const markers = [
+    /\bpasal\s+\d+[a-z]?\b/i,
+    /\bayat\s*\(\s*\d+\s*\)/i,
+    /\bpihak\s+(?:kesatu|pertama|kedua)\b/i,
+    /\bpara\s+pihak\b/i,
+    /\bperjanjian\s+kerja\s+sama\b/i,
+    /\bnota\s+kesepahaman\b/i,
+    /\bforce\s+majeure\b/i,
+    /\baddendum\b/i,
+    /\bbermeterai\b/i,
+    /\bmempunyai\s+kekuatan\s+hukum\s+yang\s+sama\b/i,
+    /\b(?:menimbang|mengingat|memutuskan|ditetapkan|dipertimbulkan)\s*:/i,
+    /\bnomor\s*:\s*\d+\s*\/\s*SK\b/i,
+    /\b(?:tanda\s+tangan|berstempel|stempel|tembusan|lampiran|perihal)\b/i,
+    /\balamat\s+telepon\s+e\s*-?\s*mail\b/i,
+    /\btemplate\s+(?:PKS|kontrak|perjanjian)\b/i,
+    /\b(?:nama|logo)\s+mitra\s*(?:\.{4,}|\?{4,})?\b/i,
+    /\bJalan\s+Raya\s+Puputan\s+Nomor\s+86\b/i
+  ];
+
+  const markerCount = markers.filter((re) => re.test(value)).length;
+  if (markerCount >= 2) return true;
+
+  // Jika ada satu marker kuat + placeholder noise, anggap dokumen mentaw
+  const placeholderLike = /_{5,}|\.{6,}|:{3,}|…{2,}|(?:nomor\s*:\s*(?:\.{4,}|…+))/i.test(value);
+  if (markerCount >= 1 && placeholderLike) return true;
+
+  // Deteksi dokumen mentaw dengan pola "Pasal X ... PIHAK KESATU ... PIHAK KEDUA"
+  if (/\bpasal\b/i.test(value) && /\bpihak\s+(?:kesatu|pertama|kedua)\b/i.test(value)) return true;
+
+
+  return false;
+}
+
 function shouldRejectEvidenceUnit(text, question, intent) {
   const allowLegal = isExplicitLegalQuestion(question, intent);
   if (isPlaceholderOrOcrNoise(text)) return { reject: true, reason: 'placeholder_or_ocr_noise' };
@@ -130,6 +181,37 @@ function extractRequestedLegalSection(text, question) {
   return found && found[0] ? [compactText(found[0])] : [];
 }
 
+function splitFaqEvidenceUnits(text) {
+  const source = compactText(text);
+  if (!source) return [];
+
+  const pairRegex = /(?:^|\n)\s*(?:(?:FAQ|QNA)\s*[:.-]\s*)?(?:\(?[QF]\)?|Question|Pertanyaan|Tanya)\s*[:.-]\s*([\s\S]*?)(?:\n\s*(?:\(?A\)?|Answer|Jawaban|Jawab)\s*[:.-]\s*)([\s\S]*?)(?=\n\s*(?:(?:FAQ|QNA)\s*[:.-]\s*)?(?:\(?[QF]\)?|Question|Pertanyaan|Tanya)\s*[:.-]|$)/gi;
+  const units = [];
+  let match;
+  while ((match = pairRegex.exec(source)) !== null) {
+    const questionPart = cleanFaqMarkers(match[1]);
+    const answerPart = cleanFaqMarkers(match[2]);
+    const unit = compactText([questionPart, answerPart].filter(Boolean).join(' '));
+    if (unit.length >= 18) units.push(unit);
+  }
+
+  const inlinePairRegex = /(?:\(?[QF]\)?|Question|Pertanyaan|Tanya)\s*[:.-]\s*([^?\n]{3,260}\?)\s*(?:\(?A\)?|Answer|Jawaban|Jawab)\s*[:.-]\s*([\s\S]*?)(?=(?:\(?[QF]\)?|Question|Pertanyaan|Tanya)\s*[:.-]|$)/gi;
+  while ((match = inlinePairRegex.exec(source)) !== null) {
+    const questionPart = cleanFaqMarkers(match[1]);
+    const answerPart = cleanFaqMarkers(match[2]);
+    const unit = compactText([questionPart, answerPart].filter(Boolean).join(' '));
+    if (unit.length >= 18) units.push(unit);
+  }
+
+  const seen = new Set();
+  return units.filter((unit) => {
+    const key = normalizeText(unit).slice(0, 260);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function splitEvidenceUnits(text, question, intent) {
   const source = compactText(text);
   if (!source) return [];
@@ -137,6 +219,8 @@ function splitEvidenceUnits(text, question, intent) {
     const legalSection = extractRequestedLegalSection(source, question);
     if (legalSection.length) return legalSection;
   }
+  const faqUnits = splitFaqEvidenceUnits(source);
+  if (faqUnits.length) return faqUnits;
   const paragraphs = source
     .split(/\n\s*\n|(?:\r?\n){2,}|(?=\bPasal\s+\d+\b)/i)
     .map(compactText)
@@ -213,12 +297,46 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
   const limit = Math.min(6, Math.max(3, Number.isFinite(Number(maxEvidence)) ? Number(maxEvidence) : DEFAULT_MAX_EVIDENCE));
   const candidates = [];
   const rejected = [];
+  // Early lax whole-context scoring: consider entire chunks before splitting units.
+  // This helps long/structured FAQ or QnA chunks survive over-aggressive unit-splitting.
+  // Only apply for non-legal, non-fee intents (controlled list) to avoid changing
+  // deterministic fee behavior.
+  const earlyLaxAllowedIntents = new Set(['international_program', 'program', 'list', 'general']);
+  if (earlyLaxAllowedIntents.has(detectedIntent)) {
+    list.forEach((context, index) => {
+      const rawText = String((context && (context.chunk || context.text || context.content)) || '');
+      if (splitFaqEvidenceUnits(rawText).length) return;
+      const fullText = cleanFaqMarkers(rawText);
+      if (!fullText) return;
+      const rejection = shouldRejectEvidenceUnit(fullText, question, detectedIntent);
+      if (rejection.reject) return;
+      const relevance = scoreRelevance(fullText, question);
+      const ent = scoreEntities(fullText, requiredEntities);
+      const intentSc = scoreIntentAlignment(fullText, detectedIntent);
+      const total = relevance * 0.6 + ent * 0.2 + intentSc * 0.2;
+      if (total > 0.20) { // slightly higher early threshold than the fallback later
+        candidates.push({
+          text: fullText,
+          source: getSourceLabel(context, index),
+          sourceId: getSourceId(context, index),
+          relevanceScore: Number(relevance.toFixed(3)),
+          entityScore: Number(ent.toFixed(3)),
+          intentScore: Number(intentSc.toFixed(3)),
+          totalScore: Number(total.toFixed(3)),
+          reason: 'early_lax_fallback',
+          isSelectedEvidence: true,
+          _total: total
+        });
+      }
+    });
+  }
 
+  // Proceed with normal unit-splitting and scoring
   list.forEach((context, index) => {
     const chunk = String((context && (context.chunk || context.text || context.content)) || '');
     const units = splitEvidenceUnits(chunk, question, detectedIntent);
     units.forEach((unit) => {
-      const text = compactText(unit);
+      const text = cleanFaqMarkers(unit);
       const rejection = shouldRejectEvidenceUnit(text, question, detectedIntent);
       if (rejection.reject) {
         rejected.push({ source: getSourceLabel(context, index), reason: rejection.reason, preview: text.slice(0, 180) });
@@ -244,12 +362,57 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
         relevanceScore: Number(relevanceScore.toFixed(3)),
         entityScore: Number(entityScore.toFixed(3)),
         intentScore: Number(intentScore.toFixed(3)),
+        totalScore: Number(total.toFixed(3)),
         reason: `intent=${detectedIntent}; relevance=${relevanceScore.toFixed(2)}; entity=${entityScore.toFixed(2)}; intentScore=${intentScore.toFixed(2)}`,
         isSelectedEvidence: true,
         _total: total
       });
     });
   });
+
+  // Lax fallback: jika tidak ada kandidat yang lolos dan intent masuk dalam kategori non-legal,
+  // coba padukan konteks penuh dengan threshold longga agar dokumen yang relevan di indeks
+  // tidak dikosongkan oleh aturan split/unit yang terlalu ketat.
+  // WASPADA: tetap filter dokumen mentaw (pasal, legal boilerplate, OCR noise)
+  // agar tidak pernah masuk sebagai evidence, bahkan di lax mode.
+  if (candidates.length === 0 && ['international_program', 'program', 'list', 'general'].includes(detectedIntent)) {
+    const lax = [];
+    list.forEach((context, index) => {
+      const rawText = String((context && (context.chunk || context.text || context.content)) || '');
+      if (splitFaqEvidenceUnits(rawText).length) return;
+      const text = cleanFaqMarkers(rawText);
+      if (!text) return;
+      // CRITICAL: filter dokumen mentaw juga di lax fallback — jangan pernah pilih
+      // chunks yang berisi pasal, legal boilerplate, atau OCR noise.
+      const rejection = shouldRejectEvidenceUnit(text, question, detectedIntent);
+      if (rejection.reject) return;
+      if (isLikelyRawDocument(text)) return;
+      const relevance = scoreRelevance(text, question);
+      const ent = scoreEntities(text, requiredEntities);
+      const intentSc = scoreIntentAlignment(text, detectedIntent);
+      const total = relevance * 0.6 + ent * 0.2 + intentSc * 0.2;
+      // threshold dinaikkan dari 0.18 ke 0.25 untuk mengurangi noise
+      if (total > 0.25) {
+        lax.push({
+          text,
+          source: getSourceLabel(context, index),
+          sourceId: getSourceId(context, index),
+          relevanceScore: Number(relevance.toFixed(3)),
+          entityScore: Number(ent.toFixed(3)),
+          intentScore: Number(intentSc.toFixed(3)),
+          totalScore: Number(total.toFixed(3)),
+          reason: 'lax_fallback',
+          isSelectedEvidence: true,
+          _total: total
+        });
+      }
+    });
+
+    if (lax.length) {
+      lax.sort((a, b) => b._total - a._total || b.text.length - a.text.length);
+      for (const item of lax.slice(0, Math.min(lax.length, 6))) candidates.push(item);
+    }
+  }
 
   const seen = new Set();
   const selected = candidates

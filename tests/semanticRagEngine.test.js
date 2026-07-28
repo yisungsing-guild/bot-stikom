@@ -816,10 +816,64 @@ describe('semanticRagEngine', () => {
     const result = await querySemanticRag('Apa itu Student Exchange di ITB STIKOM Bali?', { topK: 5 });
 
     expect(result.success).toBe(true);
-    expect(result.source).toBe('semantic-rag-campus-support-entity');
+    expect(result.source).toBe('semantic-rag-generic-faq-qna');
     expect(result.answer).toMatch(/Student Exchange adalah program pertukaran mahasiswa/i);
     expect(result.answer).not.toMatch(/Apa tujuan dari program Student Exchange/i);
     expect(result.answer).not.toMatch(/Apa saja syarat untuk mengikuti Student Exchange/i);
+  });
+
+  test('generic FAQ/QNA documents answer before PMB, location, schedule, or clarification handlers', async () => {
+    const faqChunk = [
+      'FAQ Izin Belajar Mahasiswa Asing',
+      'Q: Bagaimana proses / prosedur pengurusan dokumen Mahasiswa Asing di ITB STIKOM Bali?',
+      'A: Mahasiswa asing menghubungi bagian kerja sama/international office kampus untuk pendataan, melengkapi dokumen yang diminta, lalu kampus membantu proses pengajuan dokumen sesuai ketentuan pemerintah.',
+      'Q: Bagaimana cara mengurus Izin Belajar di ITB STIKOM Bali?',
+      'A: Pengurusan Izin Belajar dilakukan melalui kampus. Mahasiswa menyerahkan dokumen yang diperlukan kepada bagian terkait, kemudian kampus membantu proses pengajuan sampai dokumen terbit.',
+      'Q: Dokumen apa saja yang diperlukan untuk pengajuan Izin Belajar?',
+      'A: Dokumen yang diperlukan meliputi paspor, surat penerimaan atau keterangan mahasiswa, data diri mahasiswa, pas foto, dan dokumen pendukung lain sesuai ketentuan yang berlaku.',
+      'Q: Berapa lama proses pembuatan Izin Belajar?',
+      'A: Lama proses dapat berbeda mengikuti verifikasi dan ketentuan instansi terkait, sehingga mahasiswa perlu menunggu konfirmasi dari kampus atau pihak berwenang.',
+      'Q: Apakah saya bisa mulai kuliah sebelum Izin Belajar selesai?',
+      'A: Mahasiswa dapat mengikuti arahan kampus terlebih dahulu, namun penyelesaian Izin Belajar tetap wajib diproses sesuai ketentuan yang berlaku.',
+      'Q: Siapa yang mengurus Izin Belajar mahasiswa atau kampus?',
+      'A: Pengurusan Izin Belajar dibantu oleh kampus melalui bagian terkait, sedangkan mahasiswa wajib menyiapkan dan menyerahkan dokumen yang diminta.',
+      'Q: Apakah ada biaya untuk pengurusan Izin Belajar?',
+      'A: Tidak ada biaya yang dikeluarkan untuk pengurusan Izin Belajar.'
+    ].join('\n');
+
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'faq-study-permit',
+          chunk: faqChunk,
+          filename: 'QNA Bot - Izin Belajar Mahasiswa Asing.docx',
+          source: 'upload',
+          trainingId: 'training-study-permit',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((value) => String(value || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const cases = [
+      ['Bagaimana proses / prosedur pengurusan dokumen Mahasiswa Asing di ITB STIKOM Bali?', /Mahasiswa asing menghubungi bagian kerja sama|international office/i],
+      ['Bagaimana cara mengurus Izin Belajar di ITB STIKOM Bali?', /Pengurusan Izin Belajar dilakukan melalui kampus/i],
+      ['Dokumen apa saja yang diperlukan untuk pengajuan Izin Belajar?', /paspor|surat penerimaan|pas foto/i],
+      ['Berapa lama proses pembuatan Izin Belajar?', /Lama proses dapat berbeda/i],
+      ['Apakah saya bisa mulai kuliah sebelum Izin Belajar selesai?', /mengikuti arahan kampus|tetap wajib diproses/i],
+      ['Siapa yang mengurus Izin Belajar mahasiswa atau kampus?', /dibantu oleh kampus|mahasiswa wajib menyiapkan/i],
+      ['Apakah ada biaya untuk pengurusan Izin Belajar?', /Tidak ada biaya/i]
+    ];
+
+    for (const [question, expected] of cases) {
+      const result = await querySemanticRag(question, { topK: 5 });
+      expect(result.success).toBe(true);
+      expect(result.source).toBe('semantic-rag-generic-faq-qna');
+      expect(result.answer).toMatch(expected);
+      expect(result.answer).not.toMatch(/Lokasi kampus|syarat dan dokumen pendaftaran|siap\.stikom|gelombang|Izin Belajar yang dimaksud/i);
+    }
   });
   test('rewrites informal user question and answers from retrieved training context', async () => {
     process.env.OPENAI_API_KEY = 'test-key';
@@ -1396,7 +1450,7 @@ describe('semanticRagEngine', () => {
     const result = await querySemanticRag('Apa itu studens exchange?');
 
     expect(result.success).toBe(true);
-    expect(result.source).toBe('semantic-rag-campus-support-entity');
+    expect(result.source).toBe('semantic-rag-generic-faq-qna');
     expect(result.answer).toMatch(/Student Exchange adalah program pertukaran mahasiswa/i);
     expect(result.answer).not.toMatch(/^GCCP adalah|GCCP adalah salah satu program\/fasilitas/i);
     expect(result.answer).not.toMatch(/Global Cross Cultural Program \(GCCP\) adalah/i);

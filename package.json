@@ -33,6 +33,7 @@
     "test": "npm run test:unit",
     "rag:web-sync": "node scripts/ingestWebRag.js",
     "rag:audit-ingest": "node scripts/auditRagIngestCoverage.js",
+    "rag:rebuild": "node scripts/rebuildRagIndex.js",
     "answer-quality:weekly": "node scripts/auditAnswerQualityWeekly.js",
     "test:unit": "jest --runInBand --testPathIgnorePatterns=providerRealUat --testPathIgnorePatterns=run21 --testPathIgnorePatterns=providerWebhook --testPathIgnorePatterns=messageExamples --testPathIgnorePatterns=semanticRagEngine --testPathIgnorePatterns=ragEngine --testPathIgnorePatterns=registrationDiscount --testPathIgnorePatterns=parse_fee_numbering --testPathIgnorePatterns=debug_fee_output --testPathIgnorePatterns=bug-audit --testPathIgnorePatterns=productionRuntime --testPathIgnorePatterns=providerRoute --testPathIgnorePatterns=provider_ --testPathIgnorePatterns=feeComparisonEngine --testPathIgnorePatterns=admin --testPathIgnorePatterns=integrationRuntime --testPathIgnorePatterns=ragRetrieval --testPathIgnorePatterns=retrieval --testPathIgnorePatterns=traceRuntime --testPathIgnorePatterns=fonnte --testPathIgnorePatterns=wati --testPathIgnorePatterns=serverRuntime --testPathIgnorePatterns=fileParser --testPathIgnorePatterns=webSearchFallback",
     "test:evidence": "jest --runInBand tests/evidenceSelector.test.js tests/semanticEvidenceSelection.test.js tests/answerPreflightEvaluator.test.js",
@@ -90,3 +91,5 @@
     "seed": "node prisma/seed.js"
   }
 }
+
+

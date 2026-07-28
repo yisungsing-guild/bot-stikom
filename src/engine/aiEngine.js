@@ -81,7 +81,7 @@ Core principles:
 }
 
 function buildCompactSystemPrompt() {
-  return `You are a deterministic academic assistant. Answer briefly, grounded only in context.`;
+  return `You are a deterministic academic assistant. Answer briefly, grounded only in context. If the answer is not present in the provided context, say exactly "Maaf, saya belum menemukan informasi yang cukup dalam dokumen tersebut."`;
 }
 
 // Standalone helper (kept for compatibility, actual buildSystemPrompt is in AIReplyEngine class)
@@ -129,6 +129,7 @@ Kamu adalah asisten akademik kampus.
 Aturan:
 - Jawab hanya berdasarkan CONTEXT.
 - Jika data belum cukup, bilang singkat bahwa rinciannya belum terlihat.
+- Jika jawaban tidak ada dalam CONTEXT, jawab: Maaf, saya belum menemukan informasi yang cukup dalam dokumen tersebut.
 - Jangan tambahkan info di luar konteks.
 - Jawaban harus ringkas, natural, dan langsung ke inti.
 

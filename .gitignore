@@ -1,4 +1,4 @@
-# Node / dependencies
+﻿# Node / dependencies
 node_modules/
 
 # Environment & secrets
@@ -34,3 +34,8 @@ admin-ui/out/
 Thumbs.db
 .vscode/
 .idea/
+# Local diagnostics / generated verification artifacts
+tmp/
+test_documents/
+c
+
