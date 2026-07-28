@@ -146,6 +146,77 @@ function hasLikelyRawDocumentLeak(text) {
   const labelValueCount = (out.match(/\b[A-Za-z][A-Za-z0-9\s/().-]{2,38}\s*:\s*\S/g) || []).length;
   const denseInlineProfile = out.length > 550 && labelValueCount >= 5;
   const repeatedDocumentHeader = /\b(?:PROFIL|PROFILE|KEPUTUSAN|SURAT\s+KEPUTUSAN|PERJANJIAN|NOTA\s+KESEPAHAMAN|MOU|MOA)\b[\s\S]{0,260}\b(?:Nama|Alamat|Nomor|Tahun|Dasar\s+Hukum|Pembina|Penanggung\s+Jawab)\b/i.test(out);
+  const inlineAnswerCount = (out.match(/\b(?:Jawaban|Answer|Jawab|A)\s*[:\-.]/gi) || []).length;
+  const questionMarkCount = (out.match(/\?/g) || []).length;
+  const qnaSequenceLike = /\b(?:FAQ|QNA|INFORMASI\s+UMUM)\b/i.test(out) && (inlineAnswerCount >= 1 || questionMarkCount >= 1);
+  const formTableMarkers = [
+    /\bFORM\s+IKU\b/i,
+    /\bPersentase\s+PTS\b/i,
+    /\bPerguruan\s+Tinggi\b/i,
+    /\bJumlah\s+Total\b/i,
+    /\bYa\s*\/\s*Tidak\b/i,
+    /\b(?:A|B|C)\.\s+[A-Z][A-Za-z\s]{8,}/,
+    /\b(?:Passpor|Passport|KITAS|ITAS|SKTT|VITAS|LoA|Financial\s+Statement|Medical\s+Statement)\b/i
+  ];
+  const formTableMarkerCount = formTableMarkers.filter((re) => re.test(out)).length;
+  const fragmentedLineCount = out.split(/\n+/).filter((line) => {
+    const t = line.trim();
+    return t.length > 0 && t.length <= 38 && !/[.!?]$/.test(t);
+  }).length;
+  const residualQnaLike = (questionMarkCount >= 2
+    || /\?\s+(?:Dokumen|Syarat|Visa|Biaya|Masa|Tidak|Umumnya|Proses|SKTT|ITAS|Izin|Program|Mahasiswa|Apakah|Bagaimana|Berapa)\b/i.test(out))
+    && /\b(?:dokumen|syarat|visa|itas|izin\s+belajar|mahasiswa\s+asing|biaya|program|passport|passpor|kitas|sktt)\b/i.test(out);
+  const documentChecklistLike = /\bsbb\s*:/i.test(out)
+    || ((out.match(/\b(?:Passport|Passpor|KITAS|ITAS|SKTT|VITAS|LoA|Financial\s+Statement|Medical\s+Statement|Statement\s+Letter|Academic\s+Transcripts|Form\s+F1-01)\b/gi) || []).length >= 3);
+  const tableRowLike = /^\s*\d+\s*\|/m.test(out) || /\bmeliputi\s*:\s*(?:\n|\s)*\d+[.)]/i.test(out);
+  const institutionalFormLike = /\b(?:PTS|Perguruan\s+Tinggi|Program\s+Studi)\b/i.test(out) && /\b(?:Persentase|Jumlah\s+Total|Ya\s*\/\s*Tidak|kegiatan\s+pembelajaran\s+di\s+luar)\b/i.test(out);
+  const spreadsheetExtractionLike = /^\s*\[Sheet:\s*[^\]]+\]/i.test(out)
+    || ((out.match(/\s\|\s/g) || []).length >= 3)
+    || /\b(?:visi|misi|tujuan|layanan|program)\s*\|\s*/i.test(out);
+  const bareFormFieldLike = out.length <= 120
+    && /\b(?:Nama|Kode|Program\s+Studi|Perguruan\s+Tinggi|Jumlah|Keterangan|Tahun)\b/i.test(out)
+    && /:\s*$/.test(out.trim());
+  const rawHeadingLike = out.length <= 140
+    && /\b(?:FORMULIR\s+DATA|DATA\s+YANG\s+DIPERLUKAN|INDIKATOR\s+KINERJA|STRUKTUR\s+ORGANISASI|SUSUNAN\s+PENGURUS)\b/i.test(out);
+  const numberedSectionLike = /\b\d+\.\s+(?:Struktur\s+Organisasi|Layanan\s+dan\s+Program|Identitas\s+Lembaga|Ringkasan\s+Capaian|Ruang\s+Lingkup|Tujuan|Pelaksanaan)\b/i.test(out);
+  const rawStaffRosterLike = /\b(?:Pembina|Kepala|Manajer|Asisten\s+Manajer|Koordinator|Staff|Staf|Direktur)\b/i.test(out)
+    && /\b(?:S\.Kom|M\.Kom|S\.TI|M\.T|S\.E|M\.M|Dr\.|Ir\.)\b/i.test(out)
+    && ((out.match(/\b(?:Pembina|Kepala|Manajer|Asisten\s+Manajer|Koordinator|Staff|Staf|Direktur)\b/gi) || []).length >= 2);
+  const rawCooperationRosterLike = /\b(?:Bentuk\s+Kolaborasi|penandatanganan\s+MoU|Mitra\s+komunitas|Akademisi|Pemerintah|Industri)\b/i.test(out)
+    && /\b(?:Dinas|Kementerian|UMKM|SMA|SMK|Universitas|Lembaga|Komunitas)\b/i.test(out);
+  const rawProfileIntroLike = out.length > 180
+    && /^\s*(?:PROFIL|PROFILE|Company\s+Profile)\b/i.test(out);
+  const rawSectionContentLike = /\b(?:PENDAHULUAN|Ruang\s+Lingkup|MEKANISME\s*&\s*ALUR|ALUR\s+PENGAJUAN|Kriteria\s+Mitra)\b/i.test(out)
+    && out.length > 220;
+  const institutionalCriteriaLike = /\b(?:perguruan\s+tinggi|program\s+studi|prodi|mahasiswa\s+inbound)\b/i.test(out)
+    && /\b(?:Jumlah|Kriteria|Indikator|Triwulan|Akreditasi|pembelajaran\s+di\s+luar\s+program|QS200)\b/i.test(out)
+    && ((out.match(/\b\d+[.)]/g) || []).length >= 2 || /\b[a-e]\)/i.test(out));
+  const choppedFragmentLike = out.length > 180
+    && /^[a-z]/.test(out.trim())
+    && !/[.!?)]\s*$/.test(out.trim());
+  const ocrHtmlArtifactLike = /&(?:amp|lt|gt|nbsp);/i.test(out)
+    || /\b(?:k\s+ekuatan|Tri\s+d\s+arma|startup\s+compang|1ain)\b/i.test(out);
+  const ocrSourceLike = /\b(?:Teks\s+hasil\s+OCR|hasil\s+OCR\s+gambar|CATATAN\s+UNTUK|bahan\s+referensi\s*\/\s*(?:administrasi|koordinasi))\b/i.test(out);
+  const rawProfileTitleOnlyLike = out.length <= 180
+    && /^\s*(?:PROFIL|PROFILE|Company\s+profile|Profiling)\b/i.test(out)
+    && !/[.!?]/.test(out);
+  const rawCertificateLike = /\b(?:Badan\s+Akreditasi\s+Nasional\s+Perguruan\s+Tinggi|BAN-PT|Surat\s+Keputusan\s+Direktur\s+Dewan\s+Eksekutif)\b/i.test(out)
+    && /\b(?:No\.|Nomor|menyatakan\s+bahwa|Program\s+Studi)\b/i.test(out);
+  const partialLeadingFragmentLike = out.length > 160
+    && /^[a-z]/.test(out.trim())
+    && /\b(?:perguruan\s+tinggi|visi\s+misi|dies\s+natalis|program|kegiatan|mahasiswa|organisasi|layanan)\b/i.test(out);
+  const embeddedRawHeadingLike = out.length > 240
+    && /\b(?:KEGIATAN\s*&\s*PERAN\s+UTAMA|DESKRIPSI\s+ORMAWA|FOKUS\s*&\s*KEGIATAN\s+UTAMA|CATATAN|Misi\s*:)\b/.test(out);
+  const rawSkHeadingLike = out.length <= 180
+    && /\b(?:SURAT\s+KEPUTUSAN|AKREDITASI\s+NASIONAL\s+PERGURUAN\s+TINGGI|PENETAPAN\s+PEMBINA|SUSUNAN\s+PEMBINA|DIREKTUR\s+DEWAN\s+EKSEKUTIF)\b/i.test(out);
+  const rawOrmawaRosterTableLike = /\bNO\.?\s+ORMAWA\s+PEMBINA\s+(?:KOORDINATOR|PENDAMPING)\b/i.test(out)
+    || (/\b(?:BEM|DPM|ATHENA|PMK|U2M|D\.O\.S|MCOS)\b/i.test(out) && ((out.match(/\bS\.KOM|\bM\.KOM|\bM\.T|\bMM\.SI|\bSE\./gi) || []).length >= 2));
+  const brokenProfileOcrLike = /\bLOG\s+O\s+PROFILE\b/i.test(out)
+    || /\bDESKRIPSI\s+ORMAWA\s*:/i.test(out);
+  const numberedProfileSynopsisLike = /\bprofil\s+singkat\s+mengenai\s+UKM\b/i.test(out)
+    && /\b\d+\.\s+(?:Fokus|Kegiatan|Program|Tujuan|Struktur)\b/i.test(out);
+  const rawAccreditationHeadingLike = out.length <= 180
+    && /\bKONVERSI\s+PERINGKAT\s+AKREDITASI\s+PERGURUAN\s+TINGGI\b/i.test(out);
   const placeholderLike = /_{5,}|\.{8,}|:{3,}|\?{4,}|(?:nomor\s*:\s*(?:\.{4,}|\?{4,}|\([^)]*\)))|(?:E\s*-\s*mail\s*:::)/i.test(out);
   return faqMarkerCount >= 2
     || inlineFaqMarkerCount >= 2
@@ -153,6 +224,34 @@ function hasLikelyRawDocumentLeak(text) {
     || profileMarkerCount >= 3
     || structureMarkerCount >= 4
     || denseInlineProfile
+    || qnaSequenceLike
+    || formTableMarkerCount >= 2
+    || residualQnaLike
+    || documentChecklistLike
+    || tableRowLike
+    || institutionalFormLike
+    || spreadsheetExtractionLike
+    || bareFormFieldLike
+    || rawHeadingLike
+    || numberedSectionLike
+    || rawStaffRosterLike
+    || rawCooperationRosterLike
+    || rawProfileIntroLike
+    || rawSectionContentLike
+    || institutionalCriteriaLike
+    || choppedFragmentLike
+    || ocrHtmlArtifactLike
+    || ocrSourceLike
+    || rawProfileTitleOnlyLike
+    || rawCertificateLike
+    || partialLeadingFragmentLike
+    || embeddedRawHeadingLike
+    || rawSkHeadingLike
+    || rawOrmawaRosterTableLike
+    || brokenProfileOcrLike
+    || numberedProfileSynopsisLike
+    || rawAccreditationHeadingLike
+    || (formTableMarkerCount >= 1 && fragmentedLineCount >= 4)
     || repeatedDocumentHeader
     || (profileMarkerCount >= 2 && out.length > 700)
     || (structureMarkerCount >= 2 && out.length > 900)
@@ -172,7 +271,7 @@ function recoverSafeSummaryFromLeakyAnswer(answer, userQuery = '') {
   cleaned = cleaned.replace(/\s+/g, ' ').trim();
   if (!cleaned) return '';
 
-  const rawLineMarker = /\b(?:PROFIL|PROFILE)\s+(?:LEMBAGA|ORGANISASI|DIVISI|UNIT|UKM|PROGRAM)|\bDAFTAR\s+ISI\b|\b(?:BAB|BAGIAN)\s+[IVX\d]+\b|\b(?:Identitas\s+(?:Lembaga|Organisasi|Program)|Nama\s+Lembaga|Tahun\s+Berdiri|Dasar\s+Hukum|Pembina\s*\/\s*Penanggung\s+Jawab|Ringkasan\s+Capaian|Struktur\s+Organisasi|Susunan\s+Pengurus|Nomor\s+SK|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan|Ditetapkan\s+di|Pada\s+tanggal|Tembusan|Lampiran|PIHAK\s+PERTAMA|PIHAK\s+KEDUA|Pasal\s+\d+|NOTA\s+KESEPAHAMAN|PERJANJIAN\s+KERJA\s+SAMA)\b/i;
+  const rawLineMarker = new RegExp(String.raw`\b(?:PROFIL|PROFILE)\s+(?:LEMBAGA|ORGANISASI|DIVISI|UNIT|UKM|PROGRAM)|\b(?:FAQ|QNA|INFORMASI\s+UMUM)\b|\b(?:Pertanyaan|Question|Tanya|Q|Jawaban|Answer|Jawab|A)\s*[:\-.]|\bDAFTAR\s+ISI\b|\b(?:BAB|BAGIAN)\s+[IVX\d]+\b|\b(?:Identitas\s+(?:Lembaga|Organisasi|Program)|Nama\s+Lembaga|Tahun\s+Berdiri|Dasar\s+Hukum|Pembina\s*/\s*Penanggung\s+Jawab|Ringkasan\s+Capaian|Struktur\s+Organisasi|Susunan\s+Pengurus|Nomor\s+SK|Surat\s+Keputusan\s+Pendirian|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan|Ditetapkan\s+di|Pada\s+tanggal|Tembusan|Lampiran|PIHAK\s+PERTAMA|PIHAK\s+KEDUA|Pasal\s+\d+|NOTA\s+KESEPAHAMAN|PERJANJIAN\s+KERJA\s+SAMA|FORM\s+IKU|Persentase\s+PTS|Ya\s*/\s*Tidak|Jumlah\s+Total|Passpor|Passport|KITAS|ITAS|SKTT|VITAS)\b`, 'i');
   const queryTerms = normalizeForAlignment(userQuery).split(/\s+/).filter((word) => word.length >= 4 && !/^(yang|dari|untuk|dengan|atau|kakak|kalau|bagaimana|gimana|seperti|program|fasilitas)$/.test(word));
   const hasQueryOverlap = (value) => !queryTerms.length || queryTerms.some((term) => normalizeForAlignment(value).includes(term));
   const chunks = cleaned
