@@ -3171,7 +3171,7 @@ function asksCampusSupportOwner(question) {
 
 function asksCampusSupportTechnicalDetail(question) {
   const q = String(question || '').toLowerCase();
-  return /\b(?:cara(?:nya)?|bagaimana|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?|biaya(?:nya)?|bayar|harga(?:nya)?|formulir|link|kontak|cp|narahubung|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
+  return /\b(?:cara(?:nya)?|bagaimana|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?|biaya(?:nya)?|bayar|harga(?:nya)?|formulir|link|kontak|\bcp\b|narahubung|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
 }
 
 function buildCampusSupportTechnicalNoDataAnswer(entity, question = '') {
@@ -3186,7 +3186,7 @@ function buildCampusSupportTechnicalNoDataAnswer(entity, question = '') {
     detail = 'jadwal pelaksanaan';
   } else if (/\b(?:biaya(?:nya)?|bayar|harga(?:nya)?)\b/i.test(q)) {
     detail = 'biaya program';
-  } else if (/\b(?:kontak|cp|narahubung|formulir|link)\b/i.test(q)) {
+  } else if (/\b(?:kontak|\bcp\b|narahubung|formulir|link)\b/i.test(q)) {
     detail = 'kontak, formulir, atau link pendaftaran';
   }
   return [
@@ -3665,7 +3665,7 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
   // entries may be authored in a Q/A form and should be matched directly.
   if (isStructuredCampusQuestion(question)) {
     const q = String(question || '').toLowerCase();
-    const allowFaqMatch = /\b(double\s*degree|dual\s*degree|utb|dnui|help|faq)\b/i.test(q) || isLikelyFaqQuestionText(question);
+    const allowFaqMatch = /\b(double\s*degree|dual\s*degree|utb|dnui|help|faq|ukm|ormawa|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa)\b/i.test(q) || isLikelyFaqQuestionText(question);
     if (!allowFaqMatch) return null;
   }
   const target = extractTrainingSpecificTarget(question);
@@ -4820,6 +4820,12 @@ function summarizeUkmProfileBody(body, ukmTitle) {
   const fallback = normalizeUkmProfileSentence(raw);
   return fallback.length > 700 ? `${fallback.slice(0, 697).trim()}...` : fallback;
 }
+function getCachedTrainingDbIndexForUkm() {
+  const records = trainingDbCache && Array.isArray(trainingDbCache.data) ? trainingDbCache.data : [];
+  if (!records.length) return [];
+  return records.flatMap((record) => convertTrainingDataToCandidate(record) || []);
+}
+
 function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
   const name = String(ukmName || '').trim();
   if (!name) return null;
@@ -4827,6 +4833,8 @@ function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
   const aliases = buildUkmProfileAliases(name, target);
   const indexes = [];
   if (Array.isArray(indexForQuery) && indexForQuery.length) indexes.push(indexForQuery);
+  const dbIndex = getCachedTrainingDbIndexForUkm();
+  if (dbIndex.length) indexes.push(dbIndex);
   try {
     const fullIndex = ragEngine.loadIndex();
     if (Array.isArray(fullIndex) && fullIndex.length) indexes.push(fullIndex);
@@ -4876,6 +4884,35 @@ function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
     debug: { ukmProfileFromIndex: true, filename: best.item.filename || best.item.sourceFile || null }
   };
 }
+function asksUkmTechnicalDetail(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(?:cara(?:nya)?|bagaimana\s+cara|gimana\s+cara|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?|biaya(?:nya)?|bayar|harga(?:nya)?|formulir|link|kontak|\bcp\b|narahubung|pembina(?:nya)?|pelatih|coach|penanggung\s+jawab|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
+}
+
+function buildUkmTechnicalNoDataAnswer(ukmName, question = '') {
+  const label = String(ukmName || '').trim() || 'UKM/Ormawa tersebut';
+  const q = String(question || '').toLowerCase();
+  let detail = 'detail teknis seperti syarat, jadwal, kontak, pembina, atau alur pendaftaran';
+  if (/\b(?:cara|bagaimana\s+cara|gimana\s+cara|alur|prosedur|mekanisme|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
+    detail = 'alur/cara bergabung atau mendaftar';
+  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?)\b/i.test(q)) {
+    detail = 'syarat anggota';
+  } else if (/\b(?:jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?)\b/i.test(q)) {
+    detail = 'jadwal kegiatan atau pendaftaran';
+  } else if (/\b(?:biaya(?:nya)?|bayar|harga(?:nya)?)\b/i.test(q)) {
+    detail = 'biaya keanggotaan atau kegiatan';
+  } else if (/\b(?:kontak|\bcp\b|narahubung|formulir|link)\b/i.test(q)) {
+    detail = 'kontak, formulir, atau link pendaftaran';
+  } else if (/\b(?:pembina(?:nya)?|pelatih|coach|penanggung\s+jawab)\b/i.test(q)) {
+    detail = 'pembina atau penanggung jawab';
+  }
+  return [
+    `Untuk ${detail} UKM ${label}, saya belum menemukan informasi yang lengkap dan aman pada data yang tersedia.`,
+    '',
+    'Data yang aman saya sampaikan baru sebatas profil/kegiatan umum UKM tersebut. Agar tidak keliru, detail teknis itu sebaiknya dikonfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.'
+  ].join('\n');
+}
+
 function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getLastUserMessage(options && options.sessionData).toLowerCase();
@@ -5016,6 +5053,15 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
 
   const followUpUsesRecentUkm = !currentMentionedUkm && !asksUkmList && !hasExplicitDifferentTopic && shouldUseRecentEntityContext(q) && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|apa\s+saja|gimana|bagaimana)\b/i.test(q);
   const mentionedUkm = currentMentionedUkm || (followUpUsesRecentUkm ? recentMentionedUkm : null);
+  if (mentionedUkm && asksUkmTechnicalDetail(q)) {
+
+    return {
+      answer: buildUkmTechnicalNoDataAnswer(mentionedUkm, question),
+      source: 'semantic-rag-ukm-specific-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data',
+      contextResolved: followUpUsesRecentUkm || undefined
+    };
+  }
   const shortUkmMention = currentMentionedUkm && q.split(/\s+/).filter(Boolean).length <= 4;
   const asksSpecificUkmDetail = mentionedUkm && (
     shortUkmMention
@@ -5027,6 +5073,10 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
 
     const profileAnswer = buildTrainingSpecificAnswerFromIndex(`ukm ${mentionedUkm} ${question}`, _indexForQuery);
     if (profileAnswer) return { ...profileAnswer, source: 'semantic-rag-ukm-specific', frameSource: 'semantic-rag-ukm-specific' };
+
+    const hasSearchSpace = (Array.isArray(_indexForQuery) && _indexForQuery.length)
+      || getCachedTrainingDbIndexForUkm().length;
+    if (!hasSearchSpace) return null;
 
     return {
       answer: [

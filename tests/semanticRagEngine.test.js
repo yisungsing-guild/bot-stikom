@@ -1879,6 +1879,37 @@ describe('semanticRagEngine', () => {
     expect(ghost.answer).toMatch(/unit kegiatan mahasiswa|komunitas mahasiswa|organisasi/i);
     expect(ghost.answer).not.toMatch(/belum punya informasi detail|belum sesuai/i);
   });
+  test('keeps UKM technical follow-ups from repeating the previous profile when details are missing', async () => {
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'ukm-vos-profile',
+          chunk: 'Profil UKM VOS. VOS adalah UKM Voice of STIKOM Bali yang berfokus pada pengembangan bakat vokal. Kegiatan yang tersedia dalam profil meliputi latihan vokal, harmoni, performa panggung, pengisi acara resmi kampus, dan delegasi kompetisi paduan suara.',
+          filename: 'Profile Ormawa VOS.docx',
+          source: 'upload',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const profile = await querySemanticRag('apa itu ukm vos dan program kerjanya seperti apa?');
+    expect(profile.success).toBe(true);
+    expect(profile.answer).toMatch(/VOS|Voice of STIKOM|vokal/i);
+    expect(profile.answer).toMatch(/latihan vokal|pengisi acara|kompetisi/i);
+
+    const followUp = await querySemanticRag('Bagaimana caranya bergabung?', {
+      sessionData: { messages: [{ message: 'apa itu ukm vos dan program kerjanya seperti apa?' }] }
+    });
+    expect(followUp.success).toBe(true);
+    expect(followUp.source).toBe('semantic-rag-ukm-specific-insufficient-data');
+    expect(followUp.answer).toMatch(/belum menemukan informasi yang lengkap dan aman/i);
+    expect(followUp.answer).toMatch(/alur\/cara bergabung atau mendaftar/i);
+    expect(followUp.answer).not.toMatch(/latihan vokal|pengisi acara|kompetisi paduan suara/i);
+  });
+
   test('answers uploaded Career Center and Inkubator Bisnis training content from DB when file index is empty', async () => {
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
