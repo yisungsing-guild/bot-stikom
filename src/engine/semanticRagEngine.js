@@ -1,4 +1,4 @@
-﻿const { OpenAI } = require('openai');
+const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
@@ -325,7 +325,7 @@ function splitIntoEvidenceUnits(text, question = '') {
     }
     
     // Split by list items
-    const listItems = paragraph.split(/\n\s*[-*â€¢]\s*/).filter(item => item.trim());
+    const listItems = paragraph.split(/\n\s*[-*Ã¢â‚¬Â¢]\s*/).filter(item => item.trim());
     if (listItems.length > 1) {
       units.push(...listItems.map(cleanDocumentMarkers));
       continue;
@@ -2371,7 +2371,7 @@ function buildPmbInfoAnswer() {
     '* Syarat dan dokumen pendaftaran',
     '* Kontak atau bantuan admin PMB',
     '',
-    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: â€œjadwal PMB sekarang gelombang berapa?â€, â€œrincian biaya SI gelombang 2B?â€, atau â€œapa saja syarat pendaftaran?â€'
+    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: Ã¢â‚¬Å“jadwal PMB sekarang gelombang berapa?Ã¢â‚¬Â, Ã¢â‚¬Å“rincian biaya SI gelombang 2B?Ã¢â‚¬Â, atau Ã¢â‚¬Å“apa saja syarat pendaftaran?Ã¢â‚¬Â'
   ].join('\n');
 }
 
@@ -3169,6 +3169,32 @@ function asksCampusSupportOwner(question) {
   return /\b(siapa\s+(?:yang\s+)?(?:menangani|mengelola|bertanggung\s+jawab)|(?:ditangani|dikelola)\s+oleh\s+siapa|pengelola(?:nya)?|penanggung\s+jawab(?:nya)?|unit\s+pengelola|bagian\s+yang\s+menangani|divisi\s+yang\s+menangani|direktorat\s+yang\s+menangani)\b/i.test(q);
 }
 
+function asksCampusSupportTechnicalDetail(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(?:cara(?:nya)?|bagaimana|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?|biaya(?:nya)?|bayar|harga(?:nya)?|formulir|link|kontak|cp|narahubung|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
+}
+
+function buildCampusSupportTechnicalNoDataAnswer(entity, question = '') {
+  const label = entity && entity.label ? entity.label : 'program atau fasilitas tersebut';
+  const q = String(question || '').toLowerCase();
+  let detail = 'detail teknis seperti syarat, jadwal, biaya, kontak, atau alur pendaftaran';
+  if (/\b(?:cara|bagaimana|gimana|alur|prosedur|mekanisme|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
+    detail = 'alur/cara mengikuti atau mendaftar';
+  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?)\b/i.test(q)) {
+    detail = 'syarat peserta';
+  } else if (/\b(?:jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?)\b/i.test(q)) {
+    detail = 'jadwal pelaksanaan';
+  } else if (/\b(?:biaya(?:nya)?|bayar|harga(?:nya)?)\b/i.test(q)) {
+    detail = 'biaya program';
+  } else if (/\b(?:kontak|cp|narahubung|formulir|link)\b/i.test(q)) {
+    detail = 'kontak, formulir, atau link pendaftaran';
+  }
+  return [
+    `Untuk ${detail} ${label}, saya belum menemukan informasi yang lengkap dan aman pada data yang tersedia.`,
+    '',
+    `Data yang aman saya sampaikan baru sebatas informasi umum tentang ${label}. Agar tidak keliru, detail teknis tersebut sebaiknya dikonfirmasi ke admin kampus atau pengelola program terkait.`
+  ].join('\n');
+}
 function buildCampusSupportOwnerNoDataAnswer(entity) {
   const label = entity && entity.label ? entity.label : 'program atau fasilitas tersebut';
   return [
@@ -3181,14 +3207,14 @@ function buildCampusSupportOwnerNoDataAnswer(entity) {
 function isShortCampusSupportFollowUp(question) {
   const q = normalizeFacilityTerm(question);
   if (!q) return false;
-  if (q.split(/\s+/).length <= 5 && /\b(itu|apa|iya|ya|benar|detail|daftar|mendaftar|caranya|gimana|bagaimana|syarat|program|kegiatan)\b/i.test(q)) return true;
+  if (q.split(/\s+/).length <= 6 && /\b(itu|apa|iya|ya|benar|detail|daftar|mendaftar|caranya|cara|ikut|gabung|bergabung|gimana|bagaimana|syarat(?:nya)?|jadwal(?:nya)?|program|kegiatan)\b/i.test(q)) return true;
   return /\b(yang\s+tadi|program\s+itu|fasilitas\s+itu|cara\s+daftar(?:nya)?|lebih\s+detail(?:nya)?)\b/i.test(String(question || ''));
 }
 
 function isStandaloneNewTopicQuestion(question) {
   const q = normalizeFacilityTerm(question);
   if (!q) return false;
-  if (/\b(yang\s+tadi|tadi|itu\s+tadi|program\s+itu|fasilitas\s+itu|layanan\s+itu|kegiatan(?:nya)?|program(?:nya)?|detail(?:nya)?|caranya|syarat(?:nya)?|biaya(?:nya)?|jadwal(?:nya)?)\b/i.test(q)) return false;
+  if (/\b(yang\s+tadi|tadi|itu\s+tadi|program\s+itu|fasilitas\s+itu|layanan\s+itu|kegiatan(?:nya)?|program(?:nya)?|detail(?:nya)?|caranya|cara\s+(?:ikut|gabung|bergabung|daftar|mendaftar)|bagaimana\s+cara|gimana\s+cara|syarat(?:nya)?|syaratnya\s+apa|biaya(?:nya)?|jadwal(?:nya)?|jadwalnya\s+kapan)\b/i.test(q)) return false;
   return /\b(apa\s+itu|itu\s+apa|jelaskan|tentang|pengertian|definisi|apa\s+saja|ada\s+apa\s+saja|daftar|list|berapa|kapan|di\s+mana|dimana|siapa|bagaimana|gimana|mengapa|kenapa)\b/i.test(q);
 }
 
@@ -3198,7 +3224,7 @@ function shouldUseRecentEntityContext(question) {
   if (isStandaloneNewTopicQuestion(q)) return false;
   const wordCount = q.split(/\s+/).filter(Boolean).length;
   if (wordCount > 8) return false;
-  return /\b(itu|tersebut|tadi|yang\s+tadi|detail(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|proker(?:nya)?|caranya|syarat(?:nya)?|biaya(?:nya)?|jadwal(?:nya)?|pembina(?:nya)?|manfaat(?:nya)?|gimana|bagaimana|lanjut|iya|ya)\b/i.test(q);
+  return /\b(itu|tersebut|tadi|yang\s+tadi|detail(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|proker(?:nya)?|caranya|cara\s+(?:ikut|gabung|bergabung|daftar|mendaftar)|bagaimana\s+cara|gimana\s+cara|syarat(?:nya)?|syaratnya\s+apa|biaya(?:nya)?|jadwal(?:nya)?|jadwalnya\s+kapan|pembina(?:nya)?|manfaat(?:nya)?|gimana|bagaimana|lanjut|iya|ya)\b/i.test(q);
 }
 
 function campusSupportEntityToFacilityTerm(entity) {
@@ -3231,7 +3257,7 @@ function extractTrainingSpecificTarget(question) {
   const raw = String(question || '').trim();
   if (!raw) return '';
 
-  const quoted = /["ï¿½ï¿½']([^"ï¿½ï¿½']{3,80})["ï¿½ï¿½']/.exec(raw);
+  const quoted = /["Ã¯Â¿Â½Ã¯Â¿Â½']([^"Ã¯Â¿Â½Ã¯Â¿Â½']{3,80})["Ã¯Â¿Â½Ã¯Â¿Â½']/.exec(raw);
   let target = quoted ? quoted[1] : '';
   if (!target) {
     const m = /\b(?:apa\s+itu|apakah|jelaskan|detail(?:\s+tentang)?|tentang|info(?:rmasi)?\s+tentang|maksud(?:nya)?\s+apa)\s+(.{3,90})/i.exec(raw);
@@ -3786,7 +3812,7 @@ function cleanFacilitySnippetText(text) {
 
   out = out
     .replace(/\b(?:q|a)\s*[:\-.]\s*/gi, '')
-    .replace(/[ï¿½ï¿½"]/g, '')
+    .replace(/[Ã¯Â¿Â½Ã¯Â¿Â½"]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -4006,6 +4032,23 @@ function buildInkubatorBisnisAnswer() {
   ].join('\n');
 }
 
+function asksInkubatorBisnisJoinOrRegistration(question) {
+  const q = String(question || '').toLowerCase();
+  const joinIntent = /\b(?:cara(?:nya)?|bagaimana|gimana|alur|prosedur|mekanisme|syarat|persyaratan|daftar|mendaftar|pendaftaran|registrasi)\b/i.test(q)
+    && /\b(?:bergabung|gabung|ikut|mengikuti|masuk|daftar|mendaftar|pendaftaran|registrasi|program(?:nya)?|inkubator|incubator|inbis)\b/i.test(q);
+  const shortFollowUpJoinIntent = /^\s*(?:bagaimana|gimana|cara(?:nya)?|alur|prosedur|mekanisme|syarat(?:nya)?|persyaratan(?:nya)?)(?:\s+(?:cara(?:nya)?\s+)?)?(?:bergabung|gabung|ikut|mengikuti|masuk|daftar|mendaftar)?\s*\??\s*$/i.test(q);
+  return joinIntent || shortFollowUpJoinIntent;
+}
+
+function buildInkubatorBisnisJoinNoDataAnswer() {
+  return [
+    'Untuk cara bergabung atau mendaftar ke Inkubator Bisnis ITB STIKOM Bali, saya belum menemukan alur pendaftaran yang lengkap dan aman pada data yang tersedia.',
+    '',
+    'Data yang aman saya sampaikan baru sebatas fungsi Inkubator Bisnis sebagai fasilitas pendukung untuk pendampingan ide bisnis, validasi ide, mentoring bisnis, dan penguatan kewirausahaan.',
+    '',
+    'Agar tidak keliru, detail seperti syarat peserta, jadwal seleksi, formulir, kontak pengelola, atau mekanisme pendaftaran sebaiknya dikonfirmasi ke admin kampus/pengelola Inkubator Bisnis.'
+  ].join('\n');
+}
 function buildGccpAnswer() {
   return [
     'GCCP adalah Global Cross Cultural Program, yaitu program internasional/short course yang berkaitan dengan pengalaman lintas budaya dan interaksi global.',
@@ -4069,6 +4112,13 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
   if (/\b(?:gccp|gcpp|gcp)\b/i.test(q)) {
+    if (asksCampusSupportTechnicalDetail(q)) {
+      return {
+        answer: buildCampusSupportTechnicalNoDataAnswer({ label: 'GCCP' }, q),
+        source: 'semantic-rag-campus-support-insufficient-data',
+        frameSource: 'semantic-rag-insufficient-data'
+      };
+    }
     return {
       answer: buildGccpAnswer(),
       source: 'semantic-rag-campus-support-entity',
@@ -4122,6 +4172,15 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
   // Prefer the dedicated campus facility handler for general Career Center
+  if (asksCampusSupportTechnicalDetail(question)) {
+    return {
+      answer: buildCampusSupportTechnicalNoDataAnswer(resolved.entity, question),
+      source: 'semantic-rag-campus-support-entity-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   // questions, because this produces a better Career Center answer.
   if (resolved.entity.key === 'career-center') return null;
 
@@ -4149,6 +4208,15 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const entityQuestion = currentMentionsEntity
     ? question
     : `${resolved.entity.label} ${question}`;
+  if (resolved.entity.key === 'inkubator-bisnis' && asksInkubatorBisnisJoinOrRegistration(q)) {
+    return {
+      answer: buildInkubatorBisnisJoinNoDataAnswer(),
+      source: 'semantic-rag-campus-support-entity-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   if (resolved.entity.key === 'inkubator-bisnis' && /\b(apa\s+itu|itu\s+apa|seperti\s+apa|gambaran|program(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|layanan(?:nya)?|manfaat(?:nya)?|apa\s+saja|proker|detail|cara(?:nya)?|bagaimana|gimana|bergabung|gabung|ikut|daftar|mendaftar|pendaftaran|syarat|persyaratan|alur|prosedur|mekanisme)\b/i.test(q)) {
     return {
       answer: buildInkubatorBisnisAnswer(),
@@ -4188,6 +4256,15 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
 
+  if (resolved.entity.key === 'inkubator-bisnis' && asksInkubatorBisnisJoinOrRegistration(q)) {
+    return {
+      answer: buildInkubatorBisnisJoinNoDataAnswer(),
+      source: 'semantic-rag-campus-support-entity-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   if (resolved.entity.key === 'inkubator-bisnis' && /\b(program(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|layanan(?:nya)?|manfaat(?:nya)?|apa\s+saja|proker|cara(?:nya)?|bagaimana|gimana|bergabung|gabung|ikut|daftar|mendaftar|pendaftaran|syarat|persyaratan|alur|prosedur|mekanisme)\b/i.test(q)) {
     return {
       answer: buildInkubatorBisnisAnswer(),
@@ -4281,6 +4358,13 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   }
 
   if (/\b(?:gccp|gcpp|gcp)\b/i.test(q)) {
+    if (asksCampusSupportTechnicalDetail(q)) {
+      return {
+        answer: buildCampusSupportTechnicalNoDataAnswer({ label: 'GCCP' }, q),
+        source: 'semantic-rag-campus-support-insufficient-data',
+        frameSource: 'semantic-rag-insufficient-data'
+      };
+    }
     return {
       answer: buildGccpAnswer(),
       source: 'semantic-rag-campus-facility',
@@ -4289,6 +4373,13 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   }
 
   if (/\b(?:inkubator(?:\s+bisnis)?|incubator(?:\s+bisnis)?|inbis)\b/i.test(q)) {
+    if (asksInkubatorBisnisJoinOrRegistration(q)) {
+      return {
+        answer: buildInkubatorBisnisJoinNoDataAnswer(),
+        source: 'semantic-rag-campus-facility-insufficient-data',
+        frameSource: 'semantic-rag-insufficient-data'
+      };
+    }
     return {
       answer: buildInkubatorBisnisAnswer(),
       source: 'semantic-rag-campus-facility',
@@ -4305,6 +4396,13 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   }
 
   if (/\b(language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa(?:nya)?|meningkatkan\s+kemampuan\s+bahasa(?:nya)?|fasilitas\s+bahasa|kursus\s+bahasa)\b/i.test(q)) {
+    if (asksCampusSupportTechnicalDetail(q)) {
+      return {
+        answer: buildCampusSupportTechnicalNoDataAnswer({ label: 'Language Learning Center' }, q),
+        source: 'semantic-rag-campus-facility-insufficient-data',
+        frameSource: 'semantic-rag-insufficient-data'
+      };
+    }
     return {
       answer: buildLanguageLearningAnswer(),
       source: 'semantic-rag-campus-facility',
@@ -4332,6 +4430,13 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   }
 
   if (/\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
+    if (asksCampusSupportTechnicalDetail(q)) {
+      return {
+        answer: buildCampusSupportTechnicalNoDataAnswer({ label: 'Career Center' }, q),
+        source: 'semantic-rag-campus-facility-insufficient-data',
+        frameSource: 'semantic-rag-insufficient-data'
+      };
+    }
     return {
       answer: [
         'Career Center di ITB STIKOM Bali membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja.',
@@ -4649,10 +4754,10 @@ function cleanUkmProfileChunkText(chunk) {
     .filter(Boolean)
     .filter((line) => !/^ringkasan\s+dokumen\s*:?$/i.test(line))
     .filter((line) => !/^teks\s+hasil\s+ocr\s+gambar\s*:?$/i.test(line))
-    .filter((line) => !/^(?:sy\s*)?[ï¿½Ã¯Â¿Â½]+$/i.test(line))
+    .filter((line) => !/^(?:sy\s*)?[Ã¯Â¿Â½ÃƒÂ¯Ã‚Â¿Ã‚Â½]+$/i.test(line))
     .filter((line) => !/^ww[,\s]*$/i.test(line))
     .join(' ')
-    .replace(/^SY\s*[ï¿½Ã¯Â¿Â½]\s*/i, '')
+    .replace(/^SY\s*[Ã¯Â¿Â½ÃƒÂ¯Ã‚Â¿Ã‚Â½]\s*/i, '')
     .replace(/^PROFILE\s+ORGANISASI\s+/i, '')
     .replace(/^PROFILE\s+SINGKAT\s+/i, '')
     .replace(/^PROFIL\s+SINGKAT\s+/i, '')
@@ -5868,7 +5973,7 @@ function buildFrameOpeners(question, source, topic) {
     }
     return [
       'Bisa, Kak. Sederhananya, prodi ini bisa dipahami seperti ini.',
-      `Untuk pertanyaan â€œapa ituâ€, saya jelaskan dari fokus belajar dan arah skill-nya ya.`,
+      `Untuk pertanyaan Ã¢â‚¬Å“apa ituÃ¢â‚¬Â, saya jelaskan dari fokus belajar dan arah skill-nya ya.`,
       'Kalau ingin mengenal prodinya dulu, penjelasannya seperti ini, Kak.',
       'Untuk pertanyaan "apa itu", saya jelaskan dari fokus belajar dan arah skill-nya ya.'
     ];
@@ -6065,6 +6170,7 @@ const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-unsupported-double-degree-partner',
   'semantic-rag-known-faq-qna',
   'semantic-rag-generic-faq-qna',
+  'semantic-rag-campus-support-entity',
   'semantic-rag-dual-degree-followup',
   'semantic-rag-unsupported-program',
   // lightweight PMB/schedule handlers that do not require index
@@ -6441,7 +6547,7 @@ async function querySemanticRag(question, options = {}) {
     return preRewriteResult;
   }
 
-  // (index-first deterministic pass removed â€” rely on semantic routing and
+  // (index-first deterministic pass removed Ã¢â‚¬â€ rely on semantic routing and
   // retriever flow to decide deterministic handlers after rewrite and RAG)
 
   const client = getClient();
@@ -7056,24 +7162,3 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

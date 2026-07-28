@@ -1270,6 +1270,60 @@ describe('semanticRagEngine', () => {
     expect(followUp.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|S1 \(Sarjana\)|D3 \(Diploma\)/i);
   });
 
+  test('answers Inkubator Bisnis join follow-ups with registration no-data instead of repeating the profile', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const firstQuestion = 'Baik, kalau program inkubator bisnis yang di stikom bali itu, seperti apa ya?';
+    const first = await querySemanticRag(firstQuestion);
+    expect(first.success).toBe(true);
+    expect(first.answer).toMatch(/Inkubator Bisnis ITB STIKOM Bali adalah fasilitas pendukung/i);
+
+    const followUp = await querySemanticRag('Bagaimana caranya bergabung?', {
+      sessionData: {
+        messages: [
+          { direction: 'user', message: firstQuestion },
+          { direction: 'bot', message: first.answer }
+        ]
+      }
+    });
+
+    expect(followUp.success).toBe(true);
+    expect(followUp.source).toMatch(/insufficient-data/);
+    expect(followUp.answer).toMatch(/belum menemukan informasi yang lengkap dan aman|belum menemukan alur pendaftaran|cara bergabung|mendaftar(?: ke)? Inkubator Bisnis|alur\/cara mengikuti atau mendaftar Inkubator Bisnis/i);
+    expect(followUp.answer).not.toMatch(/Layanan yang aman saya sampaikan[\s\S]*Pendampingan pengembangan ide bisnis[\s\S]*Validasi ide usaha[\s\S]*Mentoring bisnis/i);
+    expect(followUp.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|gelombang PMB/i);
+  });
+  test('keeps technical campus-support follow-ups as no-data instead of drifting to PMB, schedule, or repeated profiles', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const cases = [
+      ['Apa itu GCCP?', 'Bagaimana cara ikut?', /GCCP/i],
+      ['Apa itu Language Learning Center?', 'Jadwalnya kapan?', /Language Learning Center/i],
+      ['Apa itu Career Center?', 'Bagaimana cara mendaftar programnya?', /Career Center/i],
+      ['Apa itu Student Exchange?', 'Syaratnya apa?', /Student Exchange/i],
+      ['Apa itu BCCP?', 'Bagaimana cara ikut?', /BCCP/i]
+    ];
+
+    for (const [firstQuestion, followQuestion, labelRe] of cases) {
+      const first = await querySemanticRag(firstQuestion);
+      const follow = await querySemanticRag(followQuestion, {
+        sessionData: {
+          messages: [
+            { direction: 'user', message: firstQuestion },
+            { direction: 'bot', message: first.answer }
+          ]
+        }
+      });
+
+      expect(follow.success).toBe(true);
+      expect(follow.source).toMatch(/insufficient-data/);
+      expect(follow.answer).toMatch(labelRe);
+      expect(follow.answer).toMatch(/belum menemukan informasi yang lengkap dan aman|belum menemukan alur pendaftaran/i);
+      expect(follow.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|gelombang yang sedang buka|Gelombang IV|S1 \(Sarjana\)|D3 \(Diploma\)/i);
+    }
+  });
   test('does not answer campus support program variants with generic academic program list', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
@@ -1985,4 +2039,3 @@ describe('semanticRagEngine', () => {
   });
 
 });
-
