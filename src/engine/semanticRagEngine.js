@@ -850,6 +850,31 @@ function getRecentConversation(sessionData) {
     .filter(Boolean)
     .join('\n');
 }
+function getRecentUserConversation(sessionData) {
+  const maxMessages = parseInt(process.env.SEMANTIC_RAG_CONTEXT_MESSAGES || '8', 10);
+  const messages = sessionData && Array.isArray(sessionData.messages) ? sessionData.messages : [];
+  const recent = messages.slice(-Math.max(0, maxMessages || 0));
+  return recent
+    .filter((m) => {
+      const direction = String((m && (m.direction || m.role)) || '').toLowerCase();
+      return !direction || direction === 'user' || direction === 'incoming' || direction === 'inbound';
+    })
+    .map((m) => clampText((m && (m.message || m.content || m.text)) || '', 500))
+    .filter(Boolean)
+    .join('\n');
+}
+
+function getLastUserMessage(sessionData) {
+  const messages = sessionData && Array.isArray(sessionData.messages) ? sessionData.messages : [];
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const m = messages[i];
+    const direction = String((m && (m.direction || m.role)) || '').toLowerCase();
+    if (direction && direction !== 'user' && direction !== 'incoming' && direction !== 'inbound') continue;
+    const message = clampText((m && (m.message || m.content || m.text)) || '', 500);
+    if (message) return message;
+  }
+  return '';
+}
 
 function isEnglishQuestion(question) {
   const q = String(question || '').toLowerCase();
@@ -3096,7 +3121,8 @@ function findCampusSupportEntity(text) {
 function resolveCampusSupportEntity(question, options = {}) {
   const current = findCampusSupportEntity(question);
   if (current) return { entity: current, fromRecent: false };
-  const recent = getRecentConversation(options && options.sessionData);
+  if (!shouldUseRecentEntityContext(question)) return null;
+  const recent = getRecentUserConversation(options && options.sessionData);
   const fromRecent = findCampusSupportEntity(recent);
   return fromRecent ? { entity: fromRecent, fromRecent: true } : null;
 }
@@ -3111,6 +3137,22 @@ function isShortCampusSupportFollowUp(question) {
   if (!q) return false;
   if (q.split(/\s+/).length <= 5 && /\b(itu|apa|iya|ya|benar|detail|daftar|mendaftar|caranya|gimana|bagaimana|syarat|program|kegiatan)\b/i.test(q)) return true;
   return /\b(yang\s+tadi|program\s+itu|fasilitas\s+itu|cara\s+daftar(?:nya)?|lebih\s+detail(?:nya)?)\b/i.test(String(question || ''));
+}
+
+function isStandaloneNewTopicQuestion(question) {
+  const q = normalizeFacilityTerm(question);
+  if (!q) return false;
+  if (/\b(yang\s+tadi|tadi|itu\s+tadi|program\s+itu|fasilitas\s+itu|layanan\s+itu|kegiatan(?:nya)?|program(?:nya)?|detail(?:nya)?|caranya|syarat(?:nya)?|biaya(?:nya)?|jadwal(?:nya)?)\b/i.test(q)) return false;
+  return /\b(apa\s+itu|itu\s+apa|jelaskan|tentang|pengertian|definisi|apa\s+saja|ada\s+apa\s+saja|daftar|list|berapa|kapan|di\s+mana|dimana|siapa|bagaimana|gimana|mengapa|kenapa)\b/i.test(q);
+}
+
+function shouldUseRecentEntityContext(question) {
+  const q = normalizeFacilityTerm(question);
+  if (!q) return false;
+  if (isStandaloneNewTopicQuestion(q)) return false;
+  const wordCount = q.split(/\s+/).filter(Boolean).length;
+  if (wordCount > 8) return false;
+  return /\b(itu|tersebut|tadi|yang\s+tadi|detail(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|proker(?:nya)?|caranya|syarat(?:nya)?|biaya(?:nya)?|jadwal(?:nya)?|pembina(?:nya)?|manfaat(?:nya)?|gimana|bagaimana|lanjut|iya|ya)\b/i.test(q);
 }
 
 function campusSupportEntityToFacilityTerm(entity) {
@@ -4057,6 +4099,15 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
 
+  if (resolved.entity.key === 'inkubator-bisnis' && /\b(program(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|layanan(?:nya)?|manfaat(?:nya)?|apa\s+saja|proker)\b/i.test(q)) {
+    return {
+      answer: buildInkubatorBisnisAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   if (resolved.entity.key === 'student-exchange') {
     return {
       answer: buildStudentExchangeProgramOptionsAnswer(),
@@ -4622,7 +4673,7 @@ function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
 }
 function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
-  const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const recent = getLastUserMessage(options && options.sessionData).toLowerCase();
   const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
   if (/\b(linked\s*in|linkedin)\b/i.test(recent) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(recent) && !asksAdmissionRegistration && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut)\b/i.test(q)) return null;
   const names = loadUkmNames();
@@ -4722,10 +4773,15 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic) return null;
   if (!hasUkmSignal && !hasUkmContext) return null;
 
+  const asksUkmList = (
+    /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(q)
+    && /\b(ada|apa|daftar|list|sebutkan|mana|saja|aja|jenis|pilihan)\b/i.test(q)
+  ) || /\b(ada\s+ukm|ukm\s+apa|apa\s+saja\s+ukm|daftar\s+ukm|list\s+ukm|sebutkan\s+ukm|ada\s+ormawa|daftar\s+ormawa)\b/i.test(q);
+
   const recommendation = tryUkmInterestRecommendation(question, options);
   if (recommendation) return recommendation;
 
-  const followUpUsesRecentUkm = !currentMentionedUkm && !hasExplicitDifferentTopic && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|apa\s+saja|gimana|bagaimana)\b/i.test(q) && q.split(/\s+/).filter(Boolean).length <= 8;
+  const followUpUsesRecentUkm = !currentMentionedUkm && !asksUkmList && !hasExplicitDifferentTopic && shouldUseRecentEntityContext(q) && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|apa\s+saja|gimana|bagaimana)\b/i.test(q);
   const mentionedUkm = currentMentionedUkm || (followUpUsesRecentUkm ? recentMentionedUkm : null);
   const shortUkmMention = currentMentionedUkm && q.split(/\s+/).filter(Boolean).length <= 4;
   const asksSpecificUkmDetail = mentionedUkm && (
@@ -4748,8 +4804,7 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
       source: 'semantic-rag-ukm-specific-insufficient-data'
     };
   }
-
-  if (!/\b(stikom|itb\s*stikom|kampus|ada|apa|daftar|list|sebutkan|mana|saja|aja|jenis|kegiatan\s+mahasiswa)\b/i.test(q) && !hasUkmContext && !hasKnownUkmName) return null;
+  if (!asksUkmList) return null;
 
   const list = loadUkmList();
   if (!list || !list.text) {
@@ -5715,6 +5770,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
   const src = String(source || '').toLowerCase();
   if (src.includes('insufficient-data') || src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
+  if (src.includes('ukm') || src.includes('generic-faq-qna') || src.includes('training-specific') || src.includes('campus-support-entity') || src.includes('campus-facility')) return body;
   const q = String(question || '').toLowerCase();
   if (src.includes('rpl')) return body;
   if (src.includes('scholarship') && /\b(seluruh|semua|full|penuh|100\s*%)\b/i.test(q)) return body;
@@ -6868,31 +6924,6 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
