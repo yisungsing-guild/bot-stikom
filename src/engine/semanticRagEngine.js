@@ -4863,9 +4863,37 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
     }
     return best;
   };
+  const extractExplicitUnknownUkmName = (text) => {
+    const normalizedText = normalizeFacilityTerm(text || '');
+    const patterns = [
+      /\b(?:apa\s+itu|itu\s+apa|tentang|detail|profil|kegiatan|aktivitas|program\s+kerja|proker|pembina|visi\s+misi)\s+ukm\s+([a-z0-9][a-z0-9\s._-]{1,50})\b/i,
+      /\bukm\s+([a-z0-9][a-z0-9\s._-]{1,50})\s+(?:itu|ini|adalah|punya|bergerak|kegiatan|aktivitas|program|proker|pembina|visi|misi|apa|gimana|bagaimana)\b/i
+    ];
+    for (const re of patterns) {
+      const match = normalizedText.match(re);
+      if (!match || !match[1]) continue;
+      const candidate = match[1]
+        .replace(/\b(?:itu|ini|apa|adalah|punya|bergerak|kegiatan|aktivitas|program|proker|pembina|visi|misi|gimana|bagaimana|ya|kak|min|admin)\b.*$/i, '')
+        .trim();
+      if (!candidate) continue;
+      if (/\b(?:apa\s+saja|daftar|list|olahraga|sport|teknologi|seni|musik|organisasi|himpunan|ormawa|kegiatan\s+mahasiswa)\b/i.test(candidate)) continue;
+      const candidateNorm = normalizeFacilityTerm(candidate);
+      if (!candidateNorm) continue;
+      const known = names.some((name) => buildUkmProfileAliases(name, normalizeFacilityTerm(name)).some((alias) => normalizeFacilityTerm(alias) === candidateNorm));
+      if (!known) return candidate.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    }
+    return '';
+  };
   const currentMentionedUkm = findMentionedUkm(q);
   const recentMentionedUkm = findMentionedUkm(recent);
-  const hasKnownUkmName = !!currentMentionedUkm;
+  const explicitUnknownUkmName = !currentMentionedUkm ? extractExplicitUnknownUkmName(q) : '';
+  if (explicitUnknownUkmName) {
+    return {
+      answer: `Saya belum menemukan data UKM/Ormawa bernama ${explicitUnknownUkmName} pada daftar UKM/Ormawa ITB STIKOM Bali yang tersedia. Jadi saya belum bisa menjelaskan profil, kegiatan, pembina, atau program kerjanya. Untuk memastikan apakah UKM tersebut ada atau merupakan nama baru, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau admin kampus.`,
+      source: 'semantic-rag-ukm-unknown-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data'
+    };
+  }  const hasKnownUkmName = !!currentMentionedUkm;
   const hasActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
   const hasUkmSignal = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
   const hasUkmContext = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
@@ -7028,6 +7056,7 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
 
 
 
