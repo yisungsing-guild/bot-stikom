@@ -4149,7 +4149,7 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const entityQuestion = currentMentionsEntity
     ? question
     : `${resolved.entity.label} ${question}`;
-  if (resolved.entity.key === 'inkubator-bisnis' && /\b(apa\s+itu|itu\s+apa|seperti\s+apa|gambaran|program(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|layanan(?:nya)?|manfaat(?:nya)?|apa\s+saja|proker|detail)\b/i.test(q)) {
+  if (resolved.entity.key === 'inkubator-bisnis' && /\b(apa\s+itu|itu\s+apa|seperti\s+apa|gambaran|program(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|layanan(?:nya)?|manfaat(?:nya)?|apa\s+saja|proker|detail|cara(?:nya)?|bagaimana|gimana|bergabung|gabung|ikut|daftar|mendaftar|pendaftaran|syarat|persyaratan|alur|prosedur|mekanisme)\b/i.test(q)) {
     return {
       answer: buildInkubatorBisnisAnswer(),
       source: 'semantic-rag-campus-support-entity',
@@ -4188,7 +4188,7 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
 
-  if (resolved.entity.key === 'inkubator-bisnis' && /\b(program(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|layanan(?:nya)?|manfaat(?:nya)?|apa\s+saja|proker)\b/i.test(q)) {
+  if (resolved.entity.key === 'inkubator-bisnis' && /\b(program(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|layanan(?:nya)?|manfaat(?:nya)?|apa\s+saja|proker|cara(?:nya)?|bagaimana|gimana|bergabung|gabung|ikut|daftar|mendaftar|pendaftaran|syarat|persyaratan|alur|prosedur|mekanisme)\b/i.test(q)) {
     return {
       answer: buildInkubatorBisnisAnswer(),
       source: 'semantic-rag-campus-support-entity',
@@ -5727,7 +5727,7 @@ function buildFrameOpeners(question, source, topic) {
   }
 
   if (src.includes('scholarship')) {
-    if (/\\b(seluruh|semua|full|penuh|100\\s*%)\\b/i.test(q)) {
+    if (/\\b(seluruh|semua|full|penuh|100\\s*%)\b/i.test(q)) {
       return [
         'Saya jawab hati-hati ya, Kak, karena cakupan beasiswa perlu dipastikan per jalur.',
         'Untuk apakah beasiswa menanggung seluruh biaya, saya batasi ke data yang tersedia.',
@@ -7056,6 +7056,9 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-function envFlag(name, fallback = false) {
+﻿function envFlag(name, fallback = false) {
   const raw = process.env[name];
   if (typeof raw === 'undefined') return fallback;
   return /^(1|true|yes|on)$/i.test(String(raw).trim());
@@ -117,8 +117,21 @@ function hasLikelyRawDocumentLeak(text) {
   const faqMarkerCount = (out.match(/(?:^|\n)\s*(?:FAQ|QNA|Q|A|F|Question|Answer|Pertanyaan|Jawaban|Tanya|Jawab)\s*[:\-.]/gi) || []).length;
   const inlineFaqMarkerCount = (out.match(/\((?:F|Q|A)\)/gi) || []).length;
   const legalMarkerCount = legalMarkers.filter((re) => re.test(out)).length;
+  const profileMarkers = [
+    /\bPROFIL\s+LEMBAGA\b/i,
+    /\bIdentitas\s+Lembaga\b/i,
+    /\bNama\s+Lembaga\b/i,
+    /\bTahun\s+Berdiri\b/i,
+    /\bDasar\s+Hukum\b/i,
+    /\bPembina\s*\/\s*Penanggung\s+Jawab\b/i,
+    /\bRingkasan\s+Capaian\b/i,
+    /\b(?:Tim|Wirausaha)\s+(?:Wirausaha\s+)?Binaan\b/i,
+    /\bAlamat\s+Kampus\b/i,
+    /\bWebsite\s+ibt\.stikom-bali\.ac\.id\b/i
+  ];
+  const profileMarkerCount = profileMarkers.filter((re) => re.test(out)).length;
   const placeholderLike = /_{5,}|\.{8,}|:{3,}|\?{4,}|(?:nomor\s*:\s*(?:\.{4,}|\?{4,}|\([^)]*\)))|(?:E\s*-\s*mail\s*:::)/i.test(out);
-  return faqMarkerCount >= 2 || inlineFaqMarkerCount >= 2 || legalMarkerCount >= 2 || (legalMarkerCount >= 1 && placeholderLike) || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
+  return faqMarkerCount >= 2 || inlineFaqMarkerCount >= 2 || legalMarkerCount >= 2 || profileMarkerCount >= 3 || (profileMarkerCount >= 2 && out.length > 700) || (legalMarkerCount >= 1 && placeholderLike) || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
 }
 
 
@@ -376,13 +389,13 @@ function buildPreflightFallback(userQuery, reason) {
 function hasExcessiveRawQuotation(answer) {
   const text = String(answer || '');
   const longLines = text.split(/\n+/).filter((line) => line.trim().length > 220).length;
-  const quotedLines = text.split(/\n+/).filter((line) => /^\s*(?:>|"|ï¿½|')/.test(line.trim())).length;
+  const quotedLines = text.split(/\n+/).filter((line) => /^\s*(?:>|"|Ã¯Â¿Â½|')/.test(line.trim())).length;
   return longLines >= 2 || quotedLines >= 3;
 }
 
 function hasPlaceholderOrOcrNoise(answer) {
   const text = String(answer || '');
-  return /_{4,}|\.{6,}|:{3,}|ï¿½{2,}|\b(?:left|right)\s+-?\d{3,}\b|\blogo\s+mitra\b|\(\s*nama\s+mitra\s*\)/i.test(text);
+  return /_{4,}|\.{6,}|:{3,}|Ã¯Â¿Â½{2,}|\b(?:left|right)\s+-?\d{3,}\b|\blogo\s+mitra\b|\(\s*nama\s+mitra\s*\)/i.test(text);
 }
 
 function isTooLongForQuestion(answer, userQuery) {
@@ -396,7 +409,7 @@ function isTooLongForQuestion(answer, userQuery) {
 function lacksConcreteItemsForApaSaja(answer, userQuery) {
   if (!/\bapa\s+saja\b/i.test(String(userQuery || ''))) return false;
   const text = String(answer || '');
-  const bulletCount = (text.match(/(?:^|\n)\s*(?:[-*ï¿½]|\d+\.)\s+\S/g) || []).length;
+  const bulletCount = (text.match(/(?:^|\n)\s*(?:[-*Ã¯Â¿Â½]|\d+\.)\s+\S/g) || []).length;
   const namedItems = (text.match(/\b(?:GCCP|BCCP|Double\s*Degree|Dual\s*Degree|Student\s+Exchange|UTB|DNUI|HELP|KIP|Prestasi|Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer)\b/gi) || []).length;
   const hasListLanguage = /\b(?:antara\s+lain|meliputi|terdiri\s+dari|tersedia|pilihan|program\s+mitra|beasiswa|program)\b/i.test(text);
   return bulletCount < 2 && namedItems < 2 && !hasListLanguage;
@@ -522,6 +535,7 @@ module.exports = {
   detectIntentConflict,
   detectAnswerQueryMismatch
 };
+
 
 
 
