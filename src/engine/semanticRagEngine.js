@@ -3075,7 +3075,7 @@ const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'short-course', label: 'short course', type: 'international_program', patterns: ['short course', 'shortcourse', 'kursus singkat'] },
   { key: 'hi-think', label: 'Hi-Think', type: 'facility_program', patterns: ['hi think', 'hithink'] },
   { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc'] },
-  { key: 'inkubator-bisnis', label: 'Inkubator Bisnis', type: 'facility', patterns: ['inkubator bisnis'] },
+  { key: 'inkubator-bisnis', label: 'Inkubator Bisnis', type: 'facility', patterns: ['inkubator bisnis', 'inkubator', 'inbis'] },
   { key: 'softskill', label: 'Program Pengembangan Softskill', type: 'facility_program', patterns: ['pengembangan softskill', 'softskill'] },
   { key: 'kuliah-sambil-kerja-ln', label: 'Kuliah Sambil Kerja di Luar Negeri', type: 'international_program', patterns: ['kuliah sambil kerja di luar negeri'] },
   { key: 'magang-berbayar-ln', label: 'Magang Berbayar di Luar Negeri', type: 'international_program', patterns: ['magang berbayar di luar negeri'] },
@@ -4109,7 +4109,7 @@ function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options =
 }
 function tryCampusFacilityAnswer(question, indexForQuery) {
   const q = String(question || '').toLowerCase();
-  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|softskill|language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|gccp|bccp|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
+  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|inbis|softskill|language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|gccp|bccp|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
   if (!asksFacilities) return null;
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
 
@@ -4137,7 +4137,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
     };
   }
 
-  if (/\binkubator(?:\s+bisnis)?\b/i.test(q)) {
+  if (/\b(?:inkubator(?:\s+bisnis)?|inbis)\b/i.test(q)) {
     return {
       answer: buildInkubatorBisnisAnswer(),
       source: 'semantic-rag-campus-facility',
@@ -4398,10 +4398,10 @@ function tryUkmInterestRecommendation(question, options = {}) {
   const currentHasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q);
   const profile = UKM_INTEREST_PROFILES.find((item) => item.re.test(q));
   if (!profile) return null;
-  const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(`${q} ${recent}`);
+  const hasUkmContext = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(`${q} ${recent}`);
   const asksActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
-  const asksUkm = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q) || hasUkmContext || asksActivityByInterest;
-  const asksRecommendation = asksActivityByInterest || /\b(cocok|rekomendasi|saran|sarankan|pilih|ikut|gabung|masuk|ambil|hobi|hobby|suka|minat|ada\s+yang|ada\s+apa|apa\s+yang|apa\s+saja|bidang|dibidang|jenis|kategori|kalau|yang)\b/i.test(q);
+  const asksUkm = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q) || hasUkmContext || asksActivityByInterest;
+  const asksRecommendation = asksActivityByInterest || /\b(cocok|rekomendasi|saran|sarankan|pilih|ikut|gabung|masuk|ambil|hobi|hobby|suka|minat|ada\s+yang|ada\s+apa|apa\s+ada|apa\s+yang|apa\s+saja|bidang|dibidang|jenis|kategori|kalau|kalo|yang)\b/i.test(q);
   if (!asksUkm || !asksRecommendation) return null;
 
 
@@ -4713,10 +4713,11 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
     return best;
   };
   const currentMentionedUkm = findMentionedUkm(q);
-  const recentMentionedUkm = findMentionedUkm(recent);  const hasKnownUkmName = !!currentMentionedUkm;
+  const recentMentionedUkm = findMentionedUkm(recent);
+  const hasKnownUkmName = !!currentMentionedUkm;
   const hasActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
-  const hasUkmSignal = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
-  const hasUkmContext = /\b(ukm|ormawa|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
+  const hasUkmSignal = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
+  const hasUkmContext = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
   const hasExplicitDifferentTopic = /\b(double\s*degree|dual\s*degree|dnui|help\s+university|utb|bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|linked\s*in|linkedin|career\s*center|pmb|mahasiswa\s+baru|biaya|harga|tarif|ukt|dpp|gelombang|jadwal|beasiswa|kip|prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|indikator|pertanggung\s*jawab(?:an)?|institusi\s+pendidikan|akuntabilitas|fasilitas|layanan|sarana|prasarana|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas|lokasi|alamat)\b/i.test(q);
   if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic) return null;
   if (!hasUkmSignal && !hasUkmContext) return null;
@@ -4724,11 +4725,12 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const recommendation = tryUkmInterestRecommendation(question, options);
   if (recommendation) return recommendation;
 
-  const mentionedUkm = currentMentionedUkm || recentMentionedUkm;
+  const followUpUsesRecentUkm = !currentMentionedUkm && !hasExplicitDifferentTopic && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|apa\s+saja|gimana|bagaimana)\b/i.test(q) && q.split(/\s+/).filter(Boolean).length <= 8;
+  const mentionedUkm = currentMentionedUkm || (followUpUsesRecentUkm ? recentMentionedUkm : null);
   const shortUkmMention = currentMentionedUkm && q.split(/\s+/).filter(Boolean).length <= 4;
   const asksSpecificUkmDetail = mentionedUkm && (
     shortUkmMention
-    || /\b(apa\s+itu|itu\s+apa|apa\s+ya|maksud(?:nya)?|kepanjangan|singkatan|kegiatan(?:nya)?|aktivitas(?:nya)?|program\s+kerja|proker|jadwal|latihan|tujuan|detail|tentang|bergerak\s+di\s+bidang|bidang\s+apa|fokus(?:nya)?|divisi)\b/i.test(q)
+    || /\b(apa\s+itu|itu\s+apa|ukm\s+apa|apa\s+ya|maksud(?:nya)?|kepanjangan|singkatan|kegiatan(?:nya)?|aktivitas(?:nya)?|program\s+kerja|proker|jadwal|latihan|tujuan|detail|tentang|bergerak\s+di\s+bidang|bidang\s+apa|fokus(?:nya)?|divisi)\b/i.test(q)
   );
   if (asksSpecificUkmDetail) {
     const indexedProfileAnswer = buildUkmProfileAnswerFromIndex(mentionedUkm, _indexForQuery);
@@ -4861,7 +4863,7 @@ function inferFrameTopic(question, source) {
       ]
     };
   }
-  if (src.includes('campus-facility') || /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|inkubator|softskill)\b/.test(q)) {
+  if (src.includes('campus-facility') || /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|inkubator|inbis|softskill)\b/.test(q)) {
     return {
       request: 'fasilitas atau layanan pendukung di ITB STIKOM Bali',
       assumption: 'Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.',
@@ -6866,6 +6868,12 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
+
+
+
 
 
 
