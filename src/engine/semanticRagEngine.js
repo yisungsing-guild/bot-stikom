@@ -2202,6 +2202,38 @@ function tryShortClarificationAnswer(question) {
 
   return null;
 }
+function detectUnsupportedDoubleDegreePartner(question) {
+  const q = normalizeFacilityTerm(question);
+  if (!/\b(double\s*degree|dual\s*degree|dd)\b/i.test(q)) return null;
+  const knownPartner = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help\b)\b/i.test(q);
+  if (/\bessex\b/i.test(q)) return 'Essex University';
+  const partnerMatch = q.match(/\b(?:dengan|bersama|mitra|partner)\s+([a-z0-9\s]{3,70}?\b(?:university|universitas|college|institute|institut)\b(?:\s+[a-z0-9]+){0,4})/i);
+  if (!partnerMatch || knownPartner) return null;
+  const raw = partnerMatch[1].replace(/\b(?:itu|yang|ditargetkan|target|calon|mahasiswa|seperti|apa|ya)\b.*$/i, '').trim();
+  if (!raw) return null;
+  const normalized = normalizeFacilityTerm(raw);
+  if (/\b(utb|universitas teknologi bandung|dnui|dalian neusoft|help university|help)\b/i.test(normalized)) return null;
+  return raw.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+function tryUnsupportedDoubleDegreePartnerAnswer(question) {
+  const partner = detectUnsupportedDoubleDegreePartner(question);
+  if (!partner) return null;
+  return {
+    answer: [
+      `Saya belum menemukan data kerja sama Double Degree ITB STIKOM Bali dengan ${partner} pada dokumen yang tersedia.`,
+      '',
+      'Data Double Degree yang tersedia saat ini hanya mencantumkan:',
+      '- UTB - Universitas Teknologi Bandung untuk Double Degree nasional',
+      '- DNUI - Dalian Neusoft University of Information, China untuk Double Degree internasional',
+      '- HELP University, Malaysia untuk Double Degree internasional',
+      '',
+      `Jadi saya belum bisa memastikan target calon mahasiswa, syarat, atau detail program Double Degree dengan ${partner}. Agar tidak keliru, bagian itu perlu dikonfirmasi ke Admin PMB atau dokumen resmi terbaru kampus.`
+    ].join('\n'),
+    source: 'semantic-rag-unsupported-double-degree-partner',
+    frameSource: 'semantic-rag-insufficient-data'
+  };
+}
 function tryDoubleDegreeFollowUpAnswer(question, _indexForQuery, options = {}) {
   const raw = String(question || '').trim();
   const q = raw.toLowerCase();
@@ -3086,6 +3118,7 @@ function normalizeFacilityTerm(value) {
     .replace(/\bstudens\s+exchange\b/g, 'student exchange')
     .replace(/\bstudents\s+exchange\b/g, 'student exchange')
     .replace(/\bstudent\s+exchanges\b/g, 'student exchange')
+    .replace(/\bincubator\b/g, 'inkubator')
     .replace(/[-_]+/g, ' ')
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
@@ -3100,7 +3133,7 @@ const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'short-course', label: 'short course', type: 'international_program', patterns: ['short course', 'shortcourse', 'kursus singkat'] },
   { key: 'hi-think', label: 'Hi-Think', type: 'facility_program', patterns: ['hi think', 'hithink'] },
   { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc', 'belajar bahasa', 'kemampuan bahasa', 'meningkatkan kemampuan bahasa', 'fasilitas bahasa', 'kursus bahasa'] },
-  { key: 'inkubator-bisnis', label: 'Inkubator Bisnis', type: 'facility', patterns: ['inkubator bisnis', 'inkubator', 'inbis'] },
+  { key: 'inkubator-bisnis', label: 'Inkubator Bisnis', type: 'facility', patterns: ['inkubator bisnis', 'inkubator', 'incubator bisnis', 'incubator', 'inbis'] },
   { key: 'softskill', label: 'Program Pengembangan Softskill', type: 'facility_program', patterns: ['pengembangan softskill', 'softskill'] },
   { key: 'kuliah-sambil-kerja-ln', label: 'Kuliah Sambil Kerja di Luar Negeri', type: 'international_program', patterns: ['kuliah sambil kerja di luar negeri'] },
   { key: 'magang-berbayar-ln', label: 'Magang Berbayar di Luar Negeri', type: 'international_program', patterns: ['magang berbayar di luar negeri'] },
@@ -3130,6 +3163,19 @@ function resolveCampusSupportEntity(question, options = {}) {
 function asksCampusSupportDetail(question) {
   const q = String(question || '').toLowerCase();
   return /\b(apa\s+itu|itu\s+apa|apakah|ada|jelaskan|detail|lebih\s+detail|program|layanan|kegiatan|aktivitas|kegunaan|manfaat|syarat|cara|bagaimana|gimana|ikut|mengikuti|daftar|mendaftar|pendaftaran|registrasi|info(?:rmasi)?|punya\s+info)\b/i.test(q);
+}
+function asksCampusSupportOwner(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(siapa\s+(?:yang\s+)?(?:menangani|mengelola|bertanggung\s+jawab)|(?:ditangani|dikelola)\s+oleh\s+siapa|pengelola(?:nya)?|penanggung\s+jawab(?:nya)?|unit\s+pengelola|bagian\s+yang\s+menangani|divisi\s+yang\s+menangani|direktorat\s+yang\s+menangani)\b/i.test(q);
+}
+
+function buildCampusSupportOwnerNoDataAnswer(entity) {
+  const label = entity && entity.label ? entity.label : 'program atau fasilitas tersebut';
+  return [
+    `Saya belum menemukan data yang cukup jelas tentang siapa atau unit yang menangani ${label} pada dokumen yang tersedia.`,
+    '',
+    `Data yang aman saya sampaikan baru sebatas informasi umum tentang ${label}. Untuk memastikan pengelola, penanggung jawab, atau unit yang menangani, sebaiknya kakak konfirmasi ke admin kampus atau pengelola program terkait.`
+  ].join('\n');
 }
 
 function isShortCampusSupportFollowUp(question) {
@@ -4066,6 +4112,15 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const resolved = resolveCampusSupportEntity(question, options);
   if (!resolved || !resolved.entity) return null;
 
+  if (asksCampusSupportOwner(question)) {
+    return {
+      answer: buildCampusSupportOwnerNoDataAnswer(resolved.entity),
+      source: 'semantic-rag-campus-support-owner-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   // Prefer the dedicated campus facility handler for general Career Center
   // questions, because this produces a better Career Center answer.
   if (resolved.entity.key === 'career-center') return null;
@@ -4094,6 +4149,15 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const entityQuestion = currentMentionsEntity
     ? question
     : `${resolved.entity.label} ${question}`;
+  if (resolved.entity.key === 'inkubator-bisnis' && /\b(apa\s+itu|itu\s+apa|seperti\s+apa|gambaran|program(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|layanan(?:nya)?|manfaat(?:nya)?|apa\s+saja|proker|detail)\b/i.test(q)) {
+    return {
+      answer: buildInkubatorBisnisAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   if (resolved.entity.key === 'language-learning-center') {
     return {
       answer: buildLanguageLearningAnswer(),
@@ -4196,7 +4260,7 @@ function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options =
 }
 function tryCampusFacilityAnswer(question, indexForQuery) {
   const q = String(question || '').toLowerCase();
-  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|inbis|softskill|language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|gccp|bccp|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
+  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|incubator|inbis|softskill|language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|gccp|bccp|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
   if (!asksFacilities) return null;
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
 
@@ -4224,7 +4288,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
     };
   }
 
-  if (/\b(?:inkubator(?:\s+bisnis)?|inbis)\b/i.test(q)) {
+  if (/\b(?:inkubator(?:\s+bisnis)?|incubator(?:\s+bisnis)?|inbis)\b/i.test(q)) {
     return {
       answer: buildInkubatorBisnisAnswer(),
       source: 'semantic-rag-campus-facility',
@@ -4954,7 +5018,7 @@ function inferFrameTopic(question, source) {
       ]
     };
   }
-  if (src.includes('campus-facility') || /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|inkubator|inbis|softskill)\b/.test(q)) {
+  if (src.includes('campus-facility') || /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|inkubator|incubator|inbis|softskill)\b/.test(q)) {
     return {
       request: 'fasilitas atau layanan pendukung di ITB STIKOM Bali',
       assumption: 'Saya rangkum fasilitas dan program pendukung yang tersedia agar kakak bisa memilih bagian yang ingin ditanyakan lebih lanjut.',
@@ -5887,6 +5951,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-clarification', tryShortClarificationAnswer],
   ['semantic-rag-out-of-domain', tryOutOfDomainAnswer],
   ['semantic-rag-career-softskill', tryCareerCenterSoftskillAnswer],
+  ['semantic-rag-unsupported-double-degree-partner', tryUnsupportedDoubleDegreePartnerAnswer],
   ['semantic-rag-known-faq-qna', tryKnownFaqQnaAnswer],
   ['semantic-rag-dual-degree-followup', tryDoubleDegreeFollowUpAnswer],
   ['semantic-rag-scholarship', tryScholarshipAnswer],
@@ -5969,6 +6034,7 @@ const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-small-talk',
   'semantic-rag-out-of-domain',
   'semantic-rag-career-softskill',
+  'semantic-rag-unsupported-double-degree-partner',
   'semantic-rag-known-faq-qna',
   'semantic-rag-generic-faq-qna',
   'semantic-rag-dual-degree-followup',
@@ -6962,6 +7028,10 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
+
 
 
 

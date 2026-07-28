@@ -1,4 +1,4 @@
-const ragEngine = require('./ragEngine');
+﻿const ragEngine = require('./ragEngine');
 const fs = require('fs');
 const path = require('path');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
@@ -538,6 +538,7 @@ function formatProgramCareerFitAnswer(program, career) {
 function tryProgramRecommendationAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return null;
+  if (/\b(?:in(?:cu|ku)bator(?:\s+bisnis)?|inbis)\b/i.test(q)) return null;
   if (/\b(beda|bedanya|bedain|perbedaan|bandingkan|perbandingan|apa\s+yang\s+membedakan|mana\s+bedanya)\b/.test(q)) return null;
   const centralFitAnswer = buildProgramFitAnswer(question);
 
@@ -1549,6 +1550,7 @@ function tryDualDegreeAnswer(question) {
 
 function tryCareerAnswer(question) {
   const q = String(question || '').toLowerCase();
+  if (/\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd)\b/.test(q)) return null;
   if (!/\b(prospek|kerja|karir|karier|lulusan|peluang|profesi|pekerjaan|bidang|bisa\s+jadi|jadi\s+apa|kerja\s+apa|kerjanya\s+apa|profesi\s+apa)\b/.test(q)) return null;
   const program = detectProgram(question);
   if (!program) return null;
@@ -2022,3 +2024,4 @@ module.exports = {
   formatRp,
   formatRange
 };
+
