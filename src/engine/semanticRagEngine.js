@@ -3099,7 +3099,7 @@ const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'student-exchange', label: 'Student Exchange', type: 'international_program', patterns: ['student exchange', 'students exchange', 'studens exchange', 'pertukaran mahasiswa', 'exchange program'] },
   { key: 'short-course', label: 'short course', type: 'international_program', patterns: ['short course', 'shortcourse', 'kursus singkat'] },
   { key: 'hi-think', label: 'Hi-Think', type: 'facility_program', patterns: ['hi think', 'hithink'] },
-  { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc'] },
+  { key: 'language-learning-center', label: 'Language Learning Center', type: 'facility', patterns: ['language learning center', 'llc', 'belajar bahasa', 'kemampuan bahasa', 'meningkatkan kemampuan bahasa', 'fasilitas bahasa', 'kursus bahasa'] },
   { key: 'inkubator-bisnis', label: 'Inkubator Bisnis', type: 'facility', patterns: ['inkubator bisnis', 'inkubator', 'inbis'] },
   { key: 'softskill', label: 'Program Pengembangan Softskill', type: 'facility_program', patterns: ['pengembangan softskill', 'softskill'] },
   { key: 'kuliah-sambil-kerja-ln', label: 'Kuliah Sambil Kerja di Luar Negeri', type: 'international_program', patterns: ['kuliah sambil kerja di luar negeri'] },
@@ -3921,11 +3921,17 @@ function buildLanguageLearningAnswer() {
 
 function buildCareerSoftskillAnswer() {
   return [
-    'Untuk pengembangan softskill, data yang aman saya temukan masih bersifat umum.',
+    'Dalam pengembangan softskill, Career Center ITB STIKOM Bali membantu mahasiswa dan alumni mempersiapkan diri masuk dunia kerja.',
     '',
-    'Career Center membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja melalui informasi karier, bimbingan/konsultasi karier, pelatihan atau pembekalan keterampilan kerja, serta dukungan persiapan memasuki dunia profesional.',
+    'Hal yang aman saya sampaikan dari data yang tersedia meliputi:',
     '',
-    'Namun saya belum menemukan rincian spesifik seperti daftar materi softskill, jadwal workshop, nama program, atau mekanisme pendaftaran. Jadi kalau kakak menanyakan detail kegiatan softskill tertentu, sebaiknya dikonfirmasi ke Career Center/admin kampus.'
+    '- Bimbingan atau konsultasi karier.',
+    '- Pembekalan dan pelatihan keterampilan kerja.',
+    '- Informasi lowongan kerja dan magang.',
+    '- Kegiatan pendukung seperti job fair atau campus hiring jika tersedia pada agenda kampus.',
+    '- Dukungan persiapan memasuki dunia profesional.',
+    '',
+    'Untuk rincian teknis seperti jadwal pelatihan, daftar materi softskill, nama program, atau cara ikut kegiatan tertentu, saya belum menemukan detail lengkap pada data yang tersedia. Bagian itu sebaiknya dikonfirmasi ke Career Center/admin kampus.'
   ].join('\n');
 }
 
@@ -4088,6 +4094,25 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const entityQuestion = currentMentionsEntity
     ? question
     : `${resolved.entity.label} ${question}`;
+  if (resolved.entity.key === 'language-learning-center') {
+    return {
+      answer: buildLanguageLearningAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
+
+  if (resolved.entity.key === 'softskill') {
+    return {
+      answer: buildCareerSoftskillAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   const specific = buildSpecificFacilityAnswerFromIndex(entityQuestion, indexForQuery);
   if (specific) {
     return {
@@ -4138,9 +4163,20 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     contextResolved: resolved.fromRecent || undefined
   };
 }
+function tryCareerCenterSoftskillAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const asksSoftskill = /\b(soft\s*skill|softskill|pengembangan\s+softskill|keterampilan\s+kerja|pembekalan\s+kerja|kompetensi)\b/i.test(q);
+  const mentionsCareerCenter = /\b(career\s*center|pusat\s+karier|pusat\s+karir|karir|karier|career)\b/i.test(q);
+  if (!asksSoftskill || !mentionsCareerCenter) return null;
+  return {
+    answer: buildCareerSoftskillAnswer(),
+    source: 'semantic-rag-career-softskill',
+    frameSource: 'semantic-rag-campus-support-entity'
+  };
+}
 function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
-  const recent = getRecentConversation(options && options.sessionData).toLowerCase();
+  const recent = getLastUserMessage(options && options.sessionData).toLowerCase();
   const currentHasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q);
   const hasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(`${q}\n${recent}`) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(`${q}\n${recent}`);
   if (!hasLinkedInCareerContext) return null;
@@ -4223,7 +4259,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
     };
   }
 
-  if (/\\b(linked\\s*in|linkedin)\\b/i.test(q) && /\\b(career\\s*center|pusat\\s+karier|karir|karier)\\b/i.test(q)) {
+  if (/\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q)) {
     return {
       answer: buildLinkedInCareerNoDataAnswer(),
       source: 'semantic-rag-campus-facility-insufficient-data',
@@ -5850,8 +5886,8 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-org-structure-unavailable', tryOrganizationalStructureAnswer],
   ['semantic-rag-clarification', tryShortClarificationAnswer],
   ['semantic-rag-out-of-domain', tryOutOfDomainAnswer],
+  ['semantic-rag-career-softskill', tryCareerCenterSoftskillAnswer],
   ['semantic-rag-known-faq-qna', tryKnownFaqQnaAnswer],
-  ['semantic-rag-generic-faq-qna', tryGenericFaqQnaAnswer],
   ['semantic-rag-dual-degree-followup', tryDoubleDegreeFollowUpAnswer],
   ['semantic-rag-scholarship', tryScholarshipAnswer],
   ['semantic-rag-feedback', tryFeedbackAnswer],
@@ -5865,6 +5901,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-campus-support-fallback', tryCampusSupportFallback],
   ['semantic-rag-campus-support-entity', tryCampusSupportEntityAnswer],
   ['semantic-rag-campus-facility', tryCampusFacilityAnswer],
+  ['semantic-rag-generic-faq-qna', tryGenericFaqQnaAnswer],
   ['semantic-rag-career-fallback', tryCareerFallback],
   ['semantic-rag-billing-change-fallback', require('./billingFallback').tryBillingChangeFallback],
   ['semantic-rag-finance-fallback', tryFinanceFallback],
@@ -5931,6 +5968,7 @@ const SOURCES_NEEDING_INDEX = new Set([
 const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-small-talk',
   'semantic-rag-out-of-domain',
+  'semantic-rag-career-softskill',
   'semantic-rag-known-faq-qna',
   'semantic-rag-generic-faq-qna',
   'semantic-rag-dual-degree-followup',
@@ -6924,6 +6962,12 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
+
+
+
 
 
 
