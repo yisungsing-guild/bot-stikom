@@ -1,4 +1,4 @@
-﻿const ragEngine = require('./ragEngine');
+const ragEngine = require('./ragEngine');
 const fs = require('fs');
 const path = require('path');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
@@ -770,7 +770,7 @@ function tryScholarshipAnswer(question) {
 
 function hasDoubleDegreePartnerFeeTarget(question) {
   const q = String(question || '').toLowerCase();
-  const hasFee = /\b(?:biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments)\b/i.test(q);
+  const hasFee = /\b(?:biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/i.test(q);
   const hasDoubleDegree = /\b(?:double\s*degree|dual\s*degree|dd)\b/i.test(q);
   const hasPartner = /\b(?:help(?:\s+(?:uni|university))?|help\s+uni(?:versity)?\s+malaysia|dnui|dalian\s+neusoft|utb|universitas\s+teknologi\s+bandung)\b/i.test(q);
   return hasFee && hasDoubleDegree && hasPartner;
@@ -987,7 +987,7 @@ function getSessionFeeContextText(sessionData) {
 function tryDetailedFeeAnswer(question, index, options = {}) {
   const q = String(question || '').toLowerCase();
   const sessionText = getSessionFeeContextText(options && options.sessionData);
-  const hasOwnFeeSignal = /\b(biaya|rincian|detail|dpp|ukt|gelombang|gel\b|bayar|bayarnya|pendaftaran|registrasi|duit|uang|harga|total|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester|fee|fees|cost|costs|tuition|payment|payments)\b/.test(q) || hasDoubleDegreePartnerFeeTarget(question);
+  const hasOwnFeeSignal = /\b(biaya(?:nya)?|rincian|detail|dpp|ukt|gelombang|gel\b|bayar|bayarnya|pendaftaran|registrasi|duit|uang|harga(?:nya)?|total|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/.test(q) || hasDoubleDegreePartnerFeeTarget(question);
   const hasContextualFeeSignal = /\b(cek\s+lagi|coba\s+cek|itu|yang\s+(?:double|dual)\s*degree|yang\s+help)\b/i.test(q) && /\b(biaya|rincian|detail|dpp|ukt|semester|pendaftaran|registrasi|harga|bayar)\b/i.test(sessionText);
   if (!hasOwnFeeSignal && !hasContextualFeeSignal) return null;
   if (isRegistrationFeeQuestion(question) && !/\b(dpp|ukt|awal(?:nya)?|masuk|total\s+(?:awal|kuliah)|semua)\b/.test(q)) return null;

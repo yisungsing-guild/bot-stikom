@@ -6222,6 +6222,7 @@ const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-generic-faq-qna',
   'semantic-rag-campus-support-entity',
   'semantic-rag-dual-degree-followup',
+  'semantic-rag-dual-degree',
   'semantic-rag-unsupported-program',
   // lightweight PMB/schedule handlers that do not require index
   'semantic-rag-academic-schedule',
@@ -6550,6 +6551,16 @@ async function querySemanticRag(question, options = {}) {
     setCachedSemanticResult(resultCacheKey, shortDefinitionResponse);
     return shortDefinitionResponse;
   }
+  const hasDirectFeeSignal = /\b(?:biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/i.test(String(question || ''));
+  if (!strictDocumentOnly && hasDirectFeeSignal) {
+    const feeResult = tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options);
+    if (feeResult && feeResult.answer) {
+      const builtFeeResult = buildDeterministicResponse(question, 'semantic-rag-fee-detail', feeResult, { routeStage: 'pre-ai-fee' });
+      setCachedSemanticResult(resultCacheKey, builtFeeResult);
+      return builtFeeResult;
+    }
+  }
+
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   if (debugTrace) {
