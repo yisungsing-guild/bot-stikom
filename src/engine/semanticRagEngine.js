@@ -2626,10 +2626,14 @@ const FALLBACK_PMB_2026_2027_WINDOWS = [
   { key: 'SISIPAN2', display: 'Gelombang Sisipan 2', masa: '30 Agustus 2026 s/d 11 September 2026', startYmd: '2026-08-30', endYmd: '2026-09-11' }
 ];
 
-function tryScheduleWindowAnswer(question) {
+function tryScheduleWindowAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').trim();
   if (!q) return null;
   const qLower = q.toLowerCase();
+  const recentContext = getRecentUserConversation(options && options.sessionData).toLowerCase();
+  const hasRecentNonPmbContext = /\b(ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|gccp|bccp|student\s*exchange|language\s+learning\s+center|career\s*center|inkubator\s+bisnis|inbis)\b/i.test(recentContext);
+  const explicitPmbContext = /\b(pmb|penerimaan\s+mahasiswa\s+baru|mahasiswa\s+baru|maba|camaba|kuliah|daftar\s+kuliah|pendaftaran\s+kuliah|siap\.stikom)\b/i.test(qLower);
+  if (hasRecentNonPmbContext && !explicitPmbContext && asksCampusSupportTechnicalDetail(qLower)) return null;
 
   const scheduleKeyword = /\b(jadwal|gelombang|gbg|bulan\s+depan|bulan\s+ini|bulan\s+lalu|dari\s+kapan|sampai\s+kapan|deadline|tanggal|tgl|kapan|ditutup|tutup|penutupan|batas\s+akhir|tes\s+masuk|test\s+masuk|testing|dilaksanakan)\b/i;
   const registrationKeyword = /\b(pmb|penerimaan\s+mahasiswa\s+baru|penerimaan\s+maba|mahasiswa\s+baru|maba|camaba|pendaftaran|daftar)\b/i;
@@ -3171,23 +3175,23 @@ function asksCampusSupportOwner(question) {
 
 function asksCampusSupportTechnicalDetail(question) {
   const q = String(question || '').toLowerCase();
-  return /\b(?:cara(?:nya)?|bagaimana|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?|biaya(?:nya)?|bayar|harga(?:nya)?|formulir|link|kontak|\bcp\b|narahubung|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
+  return /\b(?:cara(?:nya)?|bagaimana|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|proses(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?|kuota|kouta|seleksi|interview|wawancara|biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp|formulir|form(?:nya)?|link(?:nya)?|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengelola(?:nya)?|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
 }
 
 function buildCampusSupportTechnicalNoDataAnswer(entity, question = '') {
   const label = entity && entity.label ? entity.label : 'program atau fasilitas tersebut';
   const q = String(question || '').toLowerCase();
   let detail = 'detail teknis seperti syarat, jadwal, biaya, kontak, atau alur pendaftaran';
-  if (/\b(?:cara|bagaimana|gimana|alur|prosedur|mekanisme|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
+  if (/\b(?:cara|bagaimana|gimana|alur|prosedur|mekanisme|proses|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
     detail = 'alur/cara mengikuti atau mendaftar';
-  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?)\b/i.test(q)) {
-    detail = 'syarat peserta';
-  } else if (/\b(?:jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?)\b/i.test(q)) {
-    detail = 'jadwal pelaksanaan';
-  } else if (/\b(?:biaya(?:nya)?|bayar|harga(?:nya)?)\b/i.test(q)) {
+  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?|kuota|kouta|seleksi|interview|wawancara)\b/i.test(q)) {
+    detail = 'syarat, kuota, atau proses seleksi peserta';
+  } else if (/\b(?:jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?)\b/i.test(q)) {
+    detail = 'jadwal, deadline, atau periode pelaksanaan';
+  } else if (/\b(?:biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp)\b/i.test(q)) {
     detail = 'biaya program';
-  } else if (/\b(?:kontak|\bcp\b|narahubung|formulir|link)\b/i.test(q)) {
-    detail = 'kontak, formulir, atau link pendaftaran';
+  } else if (/\b(?:kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengelola(?:nya)?|formulir|form(?:nya)?|link(?:nya)?)\b/i.test(q)) {
+    detail = 'kontak, admin/PIC, formulir, atau link pendaftaran';
   }
   return [
     `Untuk ${detail} ${label}, saya belum menemukan informasi yang lengkap dan aman pada data yang tersedia.`,
@@ -3207,14 +3211,14 @@ function buildCampusSupportOwnerNoDataAnswer(entity) {
 function isShortCampusSupportFollowUp(question) {
   const q = normalizeFacilityTerm(question);
   if (!q) return false;
-  if (q.split(/\s+/).length <= 6 && /\b(itu|apa|iya|ya|benar|detail|daftar|mendaftar|caranya|cara|ikut|gabung|bergabung|gimana|bagaimana|syarat(?:nya)?|jadwal(?:nya)?|program|kegiatan)\b/i.test(q)) return true;
-  return /\b(yang\s+tadi|program\s+itu|fasilitas\s+itu|cara\s+daftar(?:nya)?|lebih\s+detail(?:nya)?)\b/i.test(String(question || ''));
+  if (q.split(/\s+/).length <= 6 && /\b(itu|apa|iya|ya|benar|detail|daftar(?:nya)?|mendaftar|pendaftaran(?:nya)?|registrasi(?:nya)?|join(?:nya)?|caranya|cara|ikut|gabung|bergabung|gimana|bagaimana|syarat(?:nya)?|jadwal(?:nya)?|deadline|timeline|kuota|kouta|seleksi|interview|wawancara|link(?:nya)?|form(?:nya)?|formulir|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengelola(?:nya)?|program|kegiatan)\b/i.test(q)) return true;
+  return /\b(yang\s+tadi|program\s+itu|fasilitas\s+itu|cara\s+daftar(?:nya)?|daftar(?:nya)?\s+(?:gimana|bagaimana)|link(?:nya)?\s+(?:ada|apa)|pic(?:nya)?|admin(?:nya)?|kontak(?:nya)?|deadline(?:nya)?|timeline(?:nya)?|lebih\s+detail(?:nya)?)\b/i.test(String(question || ''));
 }
 
 function isStandaloneNewTopicQuestion(question) {
   const q = normalizeFacilityTerm(question);
   if (!q) return false;
-  if (/\b(yang\s+tadi|tadi|itu\s+tadi|program\s+itu|fasilitas\s+itu|layanan\s+itu|kegiatan(?:nya)?|program(?:nya)?|detail(?:nya)?|caranya|cara\s+(?:ikut|gabung|bergabung|daftar|mendaftar)|bagaimana\s+cara|gimana\s+cara|syarat(?:nya)?|syaratnya\s+apa|biaya(?:nya)?|jadwal(?:nya)?|jadwalnya\s+kapan)\b/i.test(q)) return false;
+  if (/\b(yang\s+tadi|tadi|itu\s+tadi|program\s+itu|fasilitas\s+itu|layanan\s+itu|kegiatan(?:nya)?|program(?:nya)?|detail(?:nya)?|caranya|cara\s+(?:ikut|gabung|bergabung|daftar|mendaftar)|daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?|join(?:nya)?|bagaimana\s+cara|gimana\s+cara|syarat(?:nya)?|syaratnya\s+apa|biaya(?:nya)?|jadwal(?:nya)?|jadwalnya\s+kapan|deadline(?:nya)?|timeline(?:nya)?|kuota|kouta|seleksi|interview|wawancara|link(?:nya)?|form(?:nya)?|formulir|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengelola(?:nya)?)\b/i.test(q)) return false;
   return /\b(apa\s+itu|itu\s+apa|jelaskan|tentang|pengertian|definisi|apa\s+saja|ada\s+apa\s+saja|daftar|list|berapa|kapan|di\s+mana|dimana|siapa|bagaimana|gimana|mengapa|kenapa)\b/i.test(q);
 }
 
@@ -3224,7 +3228,7 @@ function shouldUseRecentEntityContext(question) {
   if (isStandaloneNewTopicQuestion(q)) return false;
   const wordCount = q.split(/\s+/).filter(Boolean).length;
   if (wordCount > 8) return false;
-  return /\b(itu|tersebut|tadi|yang\s+tadi|detail(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|proker(?:nya)?|caranya|cara\s+(?:ikut|gabung|bergabung|daftar|mendaftar)|bagaimana\s+cara|gimana\s+cara|syarat(?:nya)?|syaratnya\s+apa|biaya(?:nya)?|jadwal(?:nya)?|jadwalnya\s+kapan|pembina(?:nya)?|manfaat(?:nya)?|gimana|bagaimana|lanjut|iya|ya)\b/i.test(q);
+  return /\b(itu|tersebut|tadi|yang\s+tadi|detail(?:nya)?|kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|proker(?:nya)?|caranya|cara\s+(?:ikut|gabung|bergabung|daftar|mendaftar)|daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?|join(?:nya)?|bagaimana\s+cara|gimana\s+cara|syarat(?:nya)?|syaratnya\s+apa|biaya(?:nya)?|jadwal(?:nya)?|jadwalnya\s+kapan|deadline(?:nya)?|timeline(?:nya)?|kuota|kouta|seleksi|interview|wawancara|link(?:nya)?|form(?:nya)?|formulir|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengelola(?:nya)?|pembina(?:nya)?|manfaat(?:nya)?|gimana|bagaimana|lanjut|iya|ya)\b/i.test(q);
 }
 
 function campusSupportEntityToFacilityTerm(entity) {
@@ -4479,10 +4483,10 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
 function tryCampusLocationAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (isStudyPermitQuestion(question) || isCareerCenterQuestion(question) || isStudentExchangeQuestion(question)) return null;
-  if (!/\b(lokasi|alamat|kampus|dimana|di\s*mana|where|letak|maps|rute)\b/i.test(q)) return null;
+  if (!/\b(lokasi(?:nya)?|alamat(?:nya)?|kampus(?:nya)?|dimana|di\s*mana|where|letak(?:nya)?|maps?|google\s+maps|rute|arah|patokan|pin\s+lokasi|share\s*loc|shareloc)\b/i.test(q)) return null;
   if (/\b(fasilitas|layanan|sarana|prasarana|ukm|ormawa|organisasi|kegiatan\s+mahasiswa|komunitas|hobi|minat)\b/i.test(q)) return null;
   const asksMainCampus = /\b(kampus\s+(?:utama|pusat)|utama(?:nya)?|pusat(?:nya)?)\b/i.test(q);
-  const asksGenericCampusLocation = /\b(kampus(?:nya)?|lokasi\s+kampus|alamat\s+kampus|campus(?:\s+location)?|location\s+campus|campus\s+address|campus\s+address)\b/i.test(q);
+  const asksGenericCampusLocation = /\b(kampus(?:nya)?|lokasi(?:nya)?\s+kampus|alamat(?:nya)?\s+kampus|campus(?:\s+location)?|location\s+campus|campus\s+address|maps?|google\s+maps|rute|arah|pin\s+lokasi|share\s*loc|shareloc)\b/i.test(q);
   const mentionsOtherCampus = /\b(udayana|unud|warmadewa|undiknas|unhi|unwar|politeknik|universitas\s+(?!teknologi\s+bandung))\b/i.test(q) && !/\b(stikom|itb\s*stikom|stikom\s*bali)\b/i.test(q);
   if (mentionsOtherCampus) return null;
   // Avoid answering campus location when the user asks about competitions/support
@@ -4635,17 +4639,16 @@ function tryCareerFallback(question) {
 }
 
 const UKM_INTEREST_PROFILES = [
-  { key: 'sports', label: 'olahraga', re: /\b(olahraga|sport|futsal|sepak\s*bola|basket|bola|atlet|main\s+bola)\b/, items: ['Futsal', 'Basket', 'Athena Esports'] },
-  { key: 'esports', label: 'esports atau game kompetitif', re: /\b(esport|esports|game|gaming|gamer|mobile\s+legend|mlbb|pubg|valorant|turnamen\s+game)\b/, items: ['Athena Esports'] },
+  { key: 'esports', label: 'esports atau game kompetitif', re: /\b(e-?sport|e-?sports|game|gaming|gamer|game\s+kompetitif|mobile\s+legend|mlbb|pubg|valorant|turnamen\s+game)\b/, items: ['Athena Esports'] },
+  { key: 'sports', label: 'olahraga', re: /\b(olahraga|sport|sports|atlet|turnamen|kompetisi|latihan|futsal|sepak\s*bola|main\s+bola|bola|basket)\b/, items: ['Futsal', 'Basket'] },
   { key: 'nature', label: 'alam, petualangan, atau kegiatan outdoor', re: /\b(alam|outdoor|gunung|mendaki|hiking|camping|petualangan|mapala|lingkungan)\b/, items: ['Mapala Kompas'] },
-  { key: 'media', label: 'foto, video, desain, atau multimedia', re: /\b(foto|fotografi|photography|kamera|video|videografi|multimedia|desain|design|editing|konten|content|media)\b/, items: ['Himatography', 'Multimedia'] },
+  { key: 'media', label: 'foto, video, desain, atau multimedia', re: /\b(foto|fotografi|photography|kamera|video|videografi|multimedia|desain|design|desain\s+grafis|graphic\s+design|ui\s*\/?\s*ux|editing|konten|content|content\s+creator|konten\s+kreator|sosmed|media)\b/, items: ['Himatography', 'Multimedia'] },
   { key: 'arts', label: 'seni, musik, tari, tabuh, atau teater', re: /\b(seni|musik|band|nyanyi|vokal|vocal|tari|menari|tabuh|teater|drama|akting|acting)\b/, items: ['Musik', 'Tari', 'Tabuh', 'Teater Biner', 'Vos'] },
   { key: 'leadership', label: 'organisasi, kepemimpinan, atau kegiatan kampus', re: /\b(organisasi|kepemimpinan|leadership|pemimpin|bem|dpm|hima|himpunan|panitia|event|acara|kampus)\b/, items: ['Badan Eksekutif Mahasiswa', 'Dewan Perwakilan Mahasiswa', 'Himaprodi BD', 'Himaprodi SI', 'Himaprodi SK', 'Himaprodi TI', 'Himas Jimbaran'] },
   { key: 'volunteer', label: 'relawan, kesehatan, atau kedisiplinan', re: /\b(relawan|volunteer|kesehatan|medis|palang\s+merah|sosial|disiplin|paskibra|baris\s+berbaris)\b/, items: ['Ksr', 'Paskamras'] },
   { key: 'religious', label: 'kegiatan rohani atau keagamaan', re: /\b(rohani|agama|keagamaan|hindu|kristen|islam|muslim|kmhd|pmk|ksl)\b/, items: ['Kmhd', 'Pmk', 'Ksl'] },
-  { key: 'technology', label: 'teknologi, coding, atau komunitas IT', re: /\b(coding|ngoding|programming|programmer|teknologi|it\b|komputer|software|developer|web|aplikasi)\b/, items: ['Syntax', 'Progress'] }
+  { key: 'technology', label: 'teknologi, coding, atau komunitas IT', re: /\b(coding|ngoding|programming|programmer|teknologi|it\b|komputer|software|developer|web|aplikasi|ai|artificial\s+intelligence|machine\s+learning|data\s+science|database|server|cyber|cybersecurity|jaringan|network|open\s*source|linux)\b/, items: ['Syntax', 'Progress', 'Ksl'] }
 ];
-
 function tryUkmInterestRecommendation(question, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
@@ -4886,23 +4889,23 @@ function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
 }
 function asksUkmTechnicalDetail(question) {
   const q = String(question || '').toLowerCase();
-  return /\b(?:cara(?:nya)?|bagaimana\s+cara|gimana\s+cara|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?|biaya(?:nya)?|bayar|harga(?:nya)?|formulir|link|kontak|\bcp\b|narahubung|pembina(?:nya)?|pelatih|coach|penanggung\s+jawab|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
+  return /\b(?:cara(?:nya)?|bagaimana\s+cara|bagaimana|gimana\s+cara|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|proses(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?|kuota|kouta|seleksi|interview|wawancara|biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp|formulir|form(?:nya)?|link(?:nya)?|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|pembina(?:nya)?|pelatih|coach|penanggung\s+jawab|admin(?:nya)?|pengurus(?:nya)?|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
 }
 
 function buildUkmTechnicalNoDataAnswer(ukmName, question = '') {
   const label = String(ukmName || '').trim() || 'UKM/Ormawa tersebut';
   const q = String(question || '').toLowerCase();
   let detail = 'detail teknis seperti syarat, jadwal, kontak, pembina, atau alur pendaftaran';
-  if (/\b(?:cara|bagaimana\s+cara|gimana\s+cara|alur|prosedur|mekanisme|daftar|mendaftar|pendaftaran|registrasi|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
+  if (/\b(?:cara|bagaimana\s+cara|bagaimana|gimana\s+cara|gimana|alur|prosedur|mekanisme|proses|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
     detail = 'alur/cara bergabung atau mendaftar';
-  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?)\b/i.test(q)) {
-    detail = 'syarat anggota';
-  } else if (/\b(?:jadwal(?:nya)?|kapan|tanggal(?:nya)?|periode(?:nya)?)\b/i.test(q)) {
-    detail = 'jadwal kegiatan atau pendaftaran';
-  } else if (/\b(?:biaya(?:nya)?|bayar|harga(?:nya)?)\b/i.test(q)) {
+  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?|kuota|kouta|seleksi|interview|wawancara)\b/i.test(q)) {
+    detail = 'syarat anggota, kuota, atau proses seleksi';
+  } else if (/\b(?:jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?)\b/i.test(q)) {
+    detail = 'jadwal kegiatan, deadline, atau periode pendaftaran';
+  } else if (/\b(?:biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp)\b/i.test(q)) {
     detail = 'biaya keanggotaan atau kegiatan';
-  } else if (/\b(?:kontak|\bcp\b|narahubung|formulir|link)\b/i.test(q)) {
-    detail = 'kontak, formulir, atau link pendaftaran';
+  } else if (/\b(?:kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengurus(?:nya)?|formulir|form(?:nya)?|link(?:nya)?)\b/i.test(q)) {
+    detail = 'kontak, admin/PIC, formulir, atau link pendaftaran';
   } else if (/\b(?:pembina(?:nya)?|pelatih|coach|penanggung\s+jawab)\b/i.test(q)) {
     detail = 'pembina atau penanggung jawab';
   }
@@ -4912,7 +4915,6 @@ function buildUkmTechnicalNoDataAnswer(ukmName, question = '') {
     'Data yang aman saya sampaikan baru sebatas profil/kegiatan umum UKM tersebut. Agar tidak keliru, detail teknis itu sebaiknya dikonfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.'
   ].join('\n');
 }
-
 function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getLastUserMessage(options && options.sessionData).toLowerCase();
@@ -5039,8 +5041,8 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const hasActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
   const hasUkmSignal = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|bem|hima|unit\s+kegiatan|komunitas|himpunan)\b/i.test(q) || hasKnownUkmName || hasActivityByInterest;
   const hasUkmContext = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(recent);
-  const hasExplicitDifferentTopic = /\b(double\s*degree|dual\s*degree|dnui|help\s+university|utb|bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|linked\s*in|linkedin|career\s*center|pmb|mahasiswa\s+baru|biaya|harga|tarif|ukt|dpp|gelombang|jadwal|beasiswa|kip|prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|indikator|pertanggung\s*jawab(?:an)?|institusi\s+pendidikan|akuntabilitas|fasilitas|layanan|sarana|prasarana|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas|lokasi|alamat)\b/i.test(q);
-  if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic) return null;
+  const hasExplicitDifferentTopic = /\b(double\s*degree|dual\s*degree|dd|gelar\s+ganda|program\s+ganda|dnui|help\s+university|utb|bccp|gccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|hi-?think|linked\s*in|linkedin|career\s*center|pusat\s+kar(?:i|ie)r|cdc|pmb|mahasiswa\s+baru|biaya(?:nya)?|harga(?:nya)?|tarif|spp|tagihan|bayar(?:an|nya)?|uang\s+kuliah|angsuran|cicil|cicilan|nyicil|ukt|dpp|gelombang|jadwal|deadline|timeline|beasiswa|kip|prodi|program\s+studi|jurusan|peminatan|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|indikator|pertanggung\s*jawab(?:an)?|institusi\s+pendidikan|akuntabilitas|fasilitas|layanan|sarana|prasarana|inkubator\s+bisnis|inbis|incubator\s+bisnis|language\s+learning\s+center|llc|pusat\s+bahasa|kursus\s+bahasa|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas|lokasi(?:nya)?|alamat(?:nya)?|maps?|google\s+maps|rute|share\s*loc|shareloc)\b/i.test(q);
+  if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic && !asksUkmTechnicalDetail(q)) return null;
   if (!hasUkmSignal && !hasUkmContext) return null;
 
   const asksUkmList = (
@@ -5051,7 +5053,7 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const recommendation = tryUkmInterestRecommendation(question, options);
   if (recommendation) return recommendation;
 
-  const followUpUsesRecentUkm = !currentMentionedUkm && !asksUkmList && !hasExplicitDifferentTopic && shouldUseRecentEntityContext(q) && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|apa\s+saja|gimana|bagaimana)\b/i.test(q);
+  const followUpUsesRecentUkm = !currentMentionedUkm && !asksUkmList && (!hasExplicitDifferentTopic || asksUkmTechnicalDetail(q)) && shouldUseRecentEntityContext(q) && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|deadline(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?|join(?:nya)?|link(?:nya)?|form(?:nya)?|kontak|\bcp\b|pic|admin(?:nya)?|apa\s+saja|gimana|bagaimana)\b/i.test(q);
   const mentionedUkm = currentMentionedUkm || (followUpUsesRecentUkm ? recentMentionedUkm : null);
   if (mentionedUkm && asksUkmTechnicalDetail(q)) {
 

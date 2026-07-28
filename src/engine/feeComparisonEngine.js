@@ -770,7 +770,7 @@ function tryScholarshipAnswer(question) {
 
 function hasDoubleDegreePartnerFeeTarget(question) {
   const q = String(question || '').toLowerCase();
-  const hasFee = /\b(?:biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/i.test(q);
+  const hasFee = /\b(?:biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|dpp|ukt|semester(?:an)?|per\s+semester|pendaftaran|registrasi|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|fee|fees|cost|costs|tuition|payment|payments|berapa|total(?:an)?)\b/i.test(q);
   const hasDoubleDegree = /\b(?:double\s*degree|dual\s*degree|dd)\b/i.test(q);
   const hasPartner = /\b(?:help(?:\s+(?:uni|university))?|help\s+uni(?:versity)?\s+malaysia|dnui|dalian\s+neusoft|utb|universitas\s+teknologi\s+bandung)\b/i.test(q);
   return hasFee && hasDoubleDegree && hasPartner;
@@ -778,7 +778,7 @@ function hasDoubleDegreePartnerFeeTarget(question) {
 function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
   const q = String(question || '').toLowerCase().trim();
   if (!q) return null;
-  const asksFee = /\b(biaya|harga|bayar|uang|ukt|dpp|pendaftaran|rincian\s+biaya|biaya\s+s1|s1|cicil|cicilan|dicicil|nyicil|pembayaran)\b/.test(q);
+  const asksFee = /\b(biaya(?:nya)?|harga(?:nya)?|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|ukt|dpp|pendaftaran|rincian\s+biaya|biaya\s+s1|s1|angsuran|cicil|cicilan|dicicil|nyicil|pembayaran|tagihan|total(?:an)?|berapa)\b/.test(q);
   if (!asksFee) return null;
   if (hasDoubleDegreePartnerFeeTarget(question)) return null;
 
@@ -987,7 +987,7 @@ function getSessionFeeContextText(sessionData) {
 function tryDetailedFeeAnswer(question, index, options = {}) {
   const q = String(question || '').toLowerCase();
   const sessionText = getSessionFeeContextText(options && options.sessionData);
-  const hasOwnFeeSignal = /\b(biaya(?:nya)?|rincian|detail|dpp|ukt|gelombang|gel\b|bayar|bayarnya|pendaftaran|registrasi|duit|uang|harga(?:nya)?|total|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/.test(q) || hasDoubleDegreePartnerFeeTarget(question);
+  const hasOwnFeeSignal = /\b(biaya(?:nya)?|rincian|detail|dpp|ukt|spp|gelombang|gel\b|bayar(?:an|nya)?|pendaftaran|registrasi|duit|uang|uang\s+kuliah|uang\s+masuk|harga(?:nya)?|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|total(?:an)?|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester|semesteran|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/.test(q) || hasDoubleDegreePartnerFeeTarget(question);
   const hasContextualFeeSignal = /\b(cek\s+lagi|coba\s+cek|itu|yang\s+(?:double|dual)\s*degree|yang\s+help)\b/i.test(q) && /\b(biaya|rincian|detail|dpp|ukt|semester|pendaftaran|registrasi|harga|bayar)\b/i.test(sessionText);
   if (!hasOwnFeeSignal && !hasContextualFeeSignal) return null;
   if (isRegistrationFeeQuestion(question) && !/\b(dpp|ukt|awal(?:nya)?|masuk|total\s+(?:awal|kuliah)|semua)\b/.test(q)) return null;
@@ -1385,7 +1385,7 @@ function tryContextualMultiProgramFeeAnswer(question, index, options = {}) {
 
 function tryDualDegreeAnswer(question) {
   const q = String(question || '').toLowerCase();
-  const hasFeeSignal = /\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments)\b/.test(q);
+  const hasFeeSignal = /\b(biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|dpp|ukt|semester(?:an)?|per\s+semester|pendaftaran|registrasi|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|fee|fees|cost|costs|tuition|payment|payments|berapa|total(?:an)?)\b/.test(q);
   if (hasFeeSignal) return null;
   const hasDoubleDegreeSignal = /\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd)\b/.test(q);
   const hasPartnerSignal = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help)\b/.test(q);

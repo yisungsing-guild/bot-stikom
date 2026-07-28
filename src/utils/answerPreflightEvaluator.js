@@ -306,14 +306,14 @@ function recoverSafeSummaryFromLeakyAnswer(answer, userQuery = '') {
   return '';
 }
 const INTENT_PATTERNS = {
-  fee: [/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|cicilan|nominal|potongan\s+biaya)\b/i],
-  schedule: [/\b(jadwal|kapan|tanggal|periode|gelombang|dibuka|pendaftaran\s+sekarang|bulan\s+(?:ini|depan))\b/i],
-  ukm: [/\b(ukm(?:nya)?|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|athena(?:\s+esports?)?|ghost|esports?|musik|futsal|basket|teater\s+biner|vos|kegiatan\s+mahasiswa)\b/i],
+  fee: [/\b(biaya(?:nya)?|harga(?:nya)?|tarif|ukt|dpp|spp|uang|uang\s+kuliah|uang\s+masuk|bayar(?:an|nya)?|pembayaran|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|nominal|total(?:an)?|potongan\s+biaya)\b/i],
+  schedule: [/\b(jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode|gelombang|dibuka|ditutup|tutup|mulai|berakhir|pendaftaran\s+sekarang|bulan\s+(?:ini|depan))\b/i],
+  ukm: [/\b(ukm(?:nya)?|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|komunitas|himpunan|hima|athena(?:\s+e-?sports?)?|ghost|e-?sports?|gaming|game\s+kompetitif|olahraga|sport|musik|futsal|basket|teater\s+biner|vos|vokal|paduan\s+suara|kegiatan\s+mahasiswa)\b/i],
   scholarship: [/\b(beasiswa|kip|1k1s|bantuan\s+biaya|potongan\s+dpp|prestasi)\b/i],
-  double_degree: [/\b(double\s*degree|dual\s*degree|utb|dnui|help\s+university|gelar\s+ganda)\b/i],
-  facility: [/\b(fasilitas|layanan|sarana|prasarana|career\s*center|inkubator\s+bisnis|language\s+learning\s+center|softskill|gccp|bccp|belajar\s+bahasa|kemampuan\s+bahasa)\b/i],
-  program: [/\b(prodi|program\s+studi|jurusan|s1|d3|s2|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer)\b/i],
-  registration: [/\b(cara\s+daftar|mendaftar|registrasi|pendaftaran\s+online|syarat\s+(?:daftar|pendaftaran)|dokumen\s+pendaftaran)\b/i]
+  double_degree: [/\b(double\s*degree|dual\s*degree|dd|utb|dnui|help\s+university|gelar\s+ganda|program\s+ganda|kampus\s+mitra|partner)\b/i],
+  facility: [/\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+kar(?:i|ie)r|cdc|inkubator\s+bisnis|inbis|incubator\s+bisnis|language\s+learning\s+center|llc|pusat\s+bahasa|kursus\s+bahasa|softskill|gccp|bccp|student\s*exchange|exchange\s+program|hi-?think|belajar\s+bahasa|kemampuan\s+bahasa)\b/i],
+  program: [/\b(prodi|program\s+studi|pilihan\s+prodi|peminatan|jurusan|kuliah|s1|d3|s2|diploma|manajemen\s+informatika|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer)\b/i],
+  registration: [/\b(cara\s+(?:daftar|masuk|gabung|join)|join|bergabung|mendaftar|registrasi|pendaftaran\s+online|formulir|link\s+daftar|syarat\s+(?:daftar|pendaftaran)|dokumen\s+pendaftaran)\b/i]
 };
 
 const OFF_TOPIC_INTENTS = {
