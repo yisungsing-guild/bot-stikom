@@ -204,6 +204,84 @@ describe('answerPreflightEvaluator', () => {
     expect(result.issues).toContain('raw_document_leak');
     expect(result.answer).not.toMatch(/\(F\)|\(Q\)|\(A\)|FAQ:/i);
   });
+
+  test('blocks raw profile and structured document dumps from any uploaded document', () => {
+    const rawProfile = [
+      'PROFIL LEMBAGA INKUBATOR BISNIS ITB STIKOM BALI',
+      'Identitas Lembaga Nama Lembaga Inkubator Bisnis ITB STIKOM Bali',
+      'Lembaga Induk Institut Teknologi dan Bisnis STIKOM Bali',
+      'Tahun Berdiri 2014',
+      'Dasar Hukum Surat Keputusan Pendirian Inkubator Bisnis',
+      'Pembina / Penanggung Jawab Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis',
+      'Alamat Kampus ITB STIKOM Bali, Jl. Raya Puputan No. 86, Renon',
+      'Website ibt.stikom-bali.ac.id/inbis'
+    ].join(' ');
+
+    expect(hasLikelyRawDocumentLeak(rawProfile)).toBe(true);
+    const profileResult = evaluateOutboundAnswer(rawProfile, 'bagaimana caranya bergabung inkubator bisnis?');
+    expect(profileResult.blocked).toBe(true);
+    expect(profileResult.issues).toContain('raw_document_leak');
+    expect(profileResult.answer).not.toMatch(/PROFIL LEMBAGA|Identitas Lembaga|Tahun Berdiri|Dasar Hukum/i);
+
+    const rawDivisionProfile = [
+      'PROFILE DIVISI KERJA SAMA INTERNASIONAL',
+      'DAFTAR ISI',
+      'BAB I PENDAHULUAN',
+      'Latar Belakang',
+      'Maksud dan Tujuan',
+      'Ruang Lingkup',
+      'Struktur Organisasi',
+      'Ketua Sekretaris Bendahara Koordinator'
+    ].join(' ');
+
+    const divisionResult = evaluateOutboundAnswer(rawDivisionProfile, 'apa itu divisi kerja sama internasional?');
+    expect(divisionResult.blocked).toBe(true);
+    expect(divisionResult.issues).toContain('raw_document_leak');
+    expect(divisionResult.answer).not.toMatch(/DAFTAR ISI|BAB I|Struktur Organisasi/i);
+  });
+
+  test('blocks raw SK and cooperation-document structures beyond the known legal templates', () => {
+    const rawDecision = [
+      'SURAT KEPUTUSAN REKTOR',
+      'Nomor SK: 001/STIKOM/SK/2026',
+      'Menimbang bahwa perlu menetapkan pengelola program',
+      'Mengingat peraturan yang berlaku',
+      'Memutuskan menetapkan susunan pengurus',
+      'Ditetapkan di Denpasar',
+      'Pada tanggal 28 Juli 2026',
+      'Tembusan disampaikan kepada pihak terkait'
+    ].join(' ');
+
+    expect(hasLikelyRawDocumentLeak(rawDecision)).toBe(true);
+    const decisionResult = evaluateOutboundAnswer(rawDecision, 'siapa yang menangani language learning center?');
+    expect(decisionResult.blocked).toBe(true);
+    expect(decisionResult.issues).toContain('raw_document_leak');
+    expect(decisionResult.answer).not.toMatch(/SURAT KEPUTUSAN|Nomor SK|Menimbang|Memutuskan/i);
+
+    const rawMou = [
+      'NOTA KESEPAHAMAN ANTARA ITB STIKOM BALI DAN MITRA',
+      'Nomor: 123/MOU/VII/2026',
+      'PIHAK PERTAMA dan PIHAK KEDUA sepakat',
+      'Pasal 1 Ruang Lingkup',
+      'Pasal 2 Hak dan Kewajiban',
+      'Lampiran dokumen kerja sama'
+    ].join(' ');
+
+    const mouResult = evaluateOutboundAnswer(rawMou, 'apakah ada kerja sama internasional?');
+    expect(mouResult.blocked).toBe(true);
+    expect(mouResult.issues).toContain('raw_document_leak');
+    expect(mouResult.answer).not.toMatch(/NOTA KESEPAHAMAN|PIHAK PERTAMA|Pasal 1|Lampiran/i);
+  });
+
+  test('allows concise safe summaries even when the topic comes from a profile document', () => {
+    const result = evaluateOutboundAnswer(
+      'Inkubator Bisnis ITB STIKOM Bali membantu mahasiswa mengembangkan ide usaha melalui pendampingan, validasi ide, mentoring bisnis, dan penguatan kewirausahaan.',
+      'apa itu inkubator bisnis?'
+    );
+    expect(result.blocked).toBe(false);
+    expect(result.issues).not.toContain('raw_document_leak');
+    expect(result.answer).toMatch(/Inkubator Bisnis|pendampingan|mentoring/i);
+  });
   test('recovers greetings from generic safety or system fallbacks without blocking', () => {
     const safeFallback = evaluateOutboundAnswer(
       'Mohon maaf, saya belum mempunyai jawaban yang cukup aman dan lengkap untuk pertanyaan itu berdasarkan data yang tersedia.',
@@ -272,3 +350,4 @@ describe('answerPreflightEvaluator', () => {
     expect(fee.answer).toMatch(/Teknologi Informasi|gelombang 1C|DPP/i);
   });
 });
+

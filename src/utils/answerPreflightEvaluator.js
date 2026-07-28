@@ -1,4 +1,4 @@
-﻿function envFlag(name, fallback = false) {
+function envFlag(name, fallback = false) {
   const raw = process.env[name];
   if (typeof raw === 'undefined') return fallback;
   return /^(1|true|yes|on)$/i.test(String(raw).trim());
@@ -130,8 +130,34 @@ function hasLikelyRawDocumentLeak(text) {
     /\bWebsite\s+ibt\.stikom-bali\.ac\.id\b/i
   ];
   const profileMarkerCount = profileMarkers.filter((re) => re.test(out)).length;
+  const documentStructureMarkers = [
+    /\b(?:PROFIL|PROFILE)\s+(?:LEMBAGA|ORGANISASI|DIVISI|UNIT|UKM|PROGRAM)\b/i,
+    /\b(?:BAB|BAGIAN)\s+[IVX\d]+\b/i,
+    /\bDAFTAR\s+ISI\b/i,
+    /\b(?:Latar\s+Belakang|Maksud\s+dan\s+Tujuan|Ruang\s+Lingkup)\b/i,
+    /\b(?:Visi|Misi)\s*[:：]/i,
+    /\b(?:Nama|Alamat|Website|Email|E-mail|Telepon|No\.?\s*SK|Nomor\s+SK)\s*[:：]/i,
+    /\b(?:Pembina|Ketua|Sekretaris|Bendahara|Koordinator|Penanggung\s+Jawab)\s*[:：]/i,
+    /\b(?:Struktur\s+Organisasi|Susunan\s+Pengurus|Identitas\s+(?:Lembaga|Organisasi|Program))\b/i,
+    /\b(?:Lampiran|Tembusan|Ditetapkan\s+di|Pada\s+tanggal|Menetapkan|Memutuskan)\b/i,
+    /\b(?:Narahubung|Contact\s+Person|CP)\s*[:：]/i
+  ];
+  const structureMarkerCount = documentStructureMarkers.filter((re) => re.test(out)).length;
+  const labelValueCount = (out.match(/\b[A-ZÀ-ÖØ-ÞA-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ\s/().-]{2,38}\s*[:：]\s*\S/g) || []).length;
+  const denseInlineProfile = out.length > 550 && labelValueCount >= 5;
+  const repeatedDocumentHeader = /\b(?:PROFIL|PROFILE|KEPUTUSAN|SURAT\s+KEPUTUSAN|PERJANJIAN|NOTA\s+KESEPAHAMAN|MOU|MOA)\b[\s\S]{0,260}\b(?:Nama|Alamat|Nomor|Tahun|Dasar\s+Hukum|Pembina|Penanggung\s+Jawab)\b/i.test(out);
   const placeholderLike = /_{5,}|\.{8,}|:{3,}|\?{4,}|(?:nomor\s*:\s*(?:\.{4,}|\?{4,}|\([^)]*\)))|(?:E\s*-\s*mail\s*:::)/i.test(out);
-  return faqMarkerCount >= 2 || inlineFaqMarkerCount >= 2 || legalMarkerCount >= 2 || profileMarkerCount >= 3 || (profileMarkerCount >= 2 && out.length > 700) || (legalMarkerCount >= 1 && placeholderLike) || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
+  return faqMarkerCount >= 2
+    || inlineFaqMarkerCount >= 2
+    || legalMarkerCount >= 2
+    || profileMarkerCount >= 3
+    || structureMarkerCount >= 4
+    || denseInlineProfile
+    || repeatedDocumentHeader
+    || (profileMarkerCount >= 2 && out.length > 700)
+    || (structureMarkerCount >= 2 && out.length > 900)
+    || (legalMarkerCount >= 1 && placeholderLike)
+    || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
 }
 
 
@@ -535,7 +561,3 @@ module.exports = {
   detectIntentConflict,
   detectAnswerQueryMismatch
 };
-
-
-
-
