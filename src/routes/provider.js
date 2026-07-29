@@ -39,6 +39,7 @@ const { AnalyticsEngine } = require('../engine/analyticsEngine');
 const { appendChatMessage, getChatMessages } = require('../engine/chatLog');
 const { webSearchFallbackAnswer } = require('../engine/webSearchFallback');
 const { sanitizeWhatsappText } = require('../utils/textSanitizer');
+const { buildCanonicalFeeTemplate: renderCanonicalFeeTemplate, formatRupiah } = require('../utils/feeRenderer');
 const { evaluateOutboundAnswer } = require('../utils/answerPreflightEvaluator');
 const { decorateBotAnswerText: decorateBotAnswerTextCore } = require('../engine/conversationalStyle');
 const { safeSessionUpsert: safeSessionUpsertBase } = require('../utils/sessionUpsert');
@@ -76,6 +77,32 @@ function cleanVisibleTruncationArtifacts(text) {
   out = out.replace(/\b(per|pendaftar|pertanyaan|informasi|program|fasilitas|dokumen|syarat|jadwal|gelombang)(?:\u2026|\.{3})\s*$/i, '$1.');
   return out.replace(/\n{3,}/g, '\n\n').trim();
 }
+
+function adjustWhatsappSplitCutForMoneyToken(text, cut) {
+  const source = String(text || '');
+  let safeCut = Math.max(0, Math.min(Number(cut) || 0, source.length));
+  if (safeCut <= 0 || safeCut >= source.length) return safeCut;
+
+  const before = source.slice(0, safeCut);
+  const after = source.slice(safeCut);
+
+  // Never split right after "Rp." / "Rp" or inside a grouped number like 500.000.
+  if (/\bRp\.?\s*$/i.test(before) || (/^\s*\d/.test(after) && /\bRp\.?\s*$/i.test(before.replace(/\s+$/g, '')))) {
+    const nextBreak = after.search(/(?:\n|[.!?]\s+|,\s+)/);
+    if (nextBreak > 0 && nextBreak <= 80) return safeCut + nextBreak + 1;
+    const prevBreak = before.search(/\bRp\.?\s*$/i);
+    if (prevBreak >= Math.floor(safeCut * 0.45)) return prevBreak;
+  }
+
+  const tailNumber = before.match(/(?:Rp\.?\s*)?\d{1,3}(?:[.,]\d{0,3})*$/i);
+  const headNumber = after.match(/^\d{1,3}(?:[.,]\d{3})*/);
+  if (tailNumber && headNumber) {
+    const tokenStart = safeCut - tailNumber[0].length;
+    if (tokenStart >= Math.floor(safeCut * 0.45)) return tokenStart;
+  }
+
+  return safeCut;
+}
 function splitLongWhatsappMessage(text, maxLen = getOutboundTextChunkLimit()) {
   const cleaned = cleanVisibleTruncationArtifacts(text);
   if (!cleaned || cleaned.length <= maxLen) return cleaned ? [cleaned] : [];
@@ -94,6 +121,8 @@ function splitLongWhatsappMessage(text, maxLen = getOutboundTextChunkLimit()) {
     let cut = Math.max(paragraphCut, lineCut, sentenceCut);
     if (cut < Math.floor(maxLen * 0.55)) cut = commaCut;
     if (cut < Math.floor(maxLen * 0.45)) cut = maxLen;
+    cut = adjustWhatsappSplitCutForMoneyToken(rest, cut);
+    if (cut < Math.floor(maxLen * 0.35)) cut = maxLen;
 
     let part = rest.slice(0, cut).trim();
     part = cleanVisibleTruncationArtifacts(part);
@@ -402,7 +431,7 @@ module.exports = function (provider) {
     const hasScholarshipBlock = /\bUntuk\s+meringankan\s+biaya\b/i.test(raw) && /\bbeasiswa\b/i.test(raw);
     const hasClosingPrompt = /\bApakah\s+Kakak\s+ingin\s+dijelaskan\s+tentang\?/i.test(raw) && /\bSilah?kan\s+diketikkan\b/i.test(raw);
     const hasStructuredFeeTemplate =
-      /\bPendaftaran:[ \t]*\n[ \t]*\*\s*Biaya\s+pendaftaran\b/i.test(raw) &&
+      /\bPendaftaran:[ \t]*\n[ \t]*[-\*\u2022\u00b7]\s*Biaya\s+pendaftaran\b/i.test(raw) &&
       /\bBiaya\s+awal\s+masuk\s+untuk\s+Prodi\b/i.test(raw) &&
       /\bTotal\s+awal\s+masuk\s+setelah\s+potongan\b/i.test(raw) &&
       /\bBiaya\s+pendidikan\s+per\s+semester\s*\(UKT\)\b/i.test(raw);
@@ -414,7 +443,9 @@ module.exports = function (provider) {
       /\bbiaya\s+kuliah\b/i.test(raw) ||
       /\brincian\s+biaya\s+sebagai\s+berikut\s*:/i.test(raw)
     );
-    return (hasScholarshipBlock && hasClosingPrompt && hasFeeCue) || hasStructuredFeeTemplate;
+    const hasMoneyMarker = /\bRp\.?\s*[0-9]/i.test(raw);
+    const hasDetailedFeeSection = /\b(?:Biaya pendaftaran|Biaya pendidikan|Biaya pendidikan per semester|Biaya kuliah|DPP|UKT|Potongan biaya|Total biaya|Biaya awal masuk|Rincian biaya)\b/i.test(raw);
+    return (hasScholarshipBlock && hasClosingPrompt && hasFeeCue) || hasStructuredFeeTemplate || (hasMoneyMarker && hasDetailedFeeSection);
   }
 
   function sanitizeFeeTemplateWhatsappText(input) {
@@ -450,6 +481,7 @@ module.exports = function (provider) {
     // Normalize spacing without changing list bullets.
     text = text.replace(/\r\n/g, '\n');
     text = text.replace(/\n{3,}/g, '\n\n');
+    text = text.replace(/\bRp\.\s*\n+\s*([0-9])/g, 'Rp. $1');
     text = text
       .split('\n')
       .map((l) => String(l || '').replace(/[\t ]+$/g, ''))
@@ -1855,50 +1887,58 @@ module.exports = function (provider) {
               // Prefer canonical feeStruct from RAG if available (ensures original PDF chunks used).
               let structured = null;
               if (ragResult && ragResult.feeStruct) {
-                const fs = ragResult.feeStruct;
-                const lines = [];
-                lines.push(`Program Studi: ${fs.program || (fs.programLabel || 'Tidak tersedia')}`);
-                lines.push('');
-                lines.push('Biaya Pendaftaran:');
-                lines.push(`- Biaya Pendaftaran: ${fs.registrationFee || '(tidak tercantum)'} `);
-                lines.push(`- Potongan Pendaftaran: ${fs.registrationDiscount || '(tidak tercantum)'} `);
-                if (fs.registrationFee && fs.registrationDiscount) {
-                  try {
-                    const num = (v)=>parseInt(String(v).replace(/[^0-9]/g,''),10)||0;
-                    const totalReg = num(fs.registrationFee) - num(fs.registrationDiscount);
-                    lines.push(`- Total Pendaftaran: Rp ${totalReg.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} `);
-                  } catch(e){ lines.push(`- Total Pendaftaran: (tidak terhitung)`); }
-                } else {
-                  lines.push(`- Total Pendaftaran: ${fs.totalPendaftaran || '(tidak tercantum)'} `);
-                }
-                lines.push('');
-                lines.push('DPP:');
-                lines.push(`- DPP: ${fs.dpp || '(tidak tercantum)'} `);
-                lines.push('');
-                lines.push('Biaya Perlengkapan:');
-                lines.push(`- Jas Almamater: ${fs.uniformFee || fs.atribut1 || '(tidak tercantum)'} `);
-                lines.push(`- Topi: ${fs.capFee || '(tidak tercantum)'} `);
-                lines.push(`- Kaos: ${fs.shirtFee || fs.atribut2 || '(tidak tercantum)'} `);
-                lines.push(`- Tas: ${fs.bagFee || '(tidak tercantum)'} `);
-                lines.push(`- GMTI: ${fs.gmtiFee || '(tidak tercantum)'} `);
-                lines.push('');
-                lines.push(`Subtotal Awal Masuk: ${fs.subtotalAwalMasuk || fs.totalAwalMasuk || '(tidak tercantum)'} `);
-                lines.push('');
-                lines.push(`Potongan DPP: ${fs.dppDiscount || '(tidak tercantum)'} `);
-                lines.push('');
-                lines.push(`Total Biaya Masuk: ${fs.totalAwalMasuk ? fs.totalAwalMasuk : (fs.subtotalAwalMasuk ? fs.subtotalAwalMasuk : '(tidak tercantum)')}`);
-                lines.push('');
-                lines.push(`Biaya Pendidikan per Semester (UKT): ${fs.ukt || fs.semester || '(tidak tercantum)'} `);
                 try {
-                  const srcs = Array.isArray(fs.sourceChunks) ? fs.sourceChunks.map(s=>s && (s.sourceFile||s.filename)).filter(Boolean) : [];
-                  if (srcs.length) {
-                    lines.push('');
-                    lines.push('Sumber:');
-                    for (const s of srcs) lines.push(`- ${s}`);
+                  const fs = ragResult.feeStruct;
+                  // Use canonical renderer so all paths produce identical template
+                  structured = buildCanonicalFeeTemplate(fs, { program: fs.program || fs.programLabel, wave: fs.gelombang || fs.wave });
+                  ragResult.answer = structured;
+                } catch (e) {
+                  // fallback to previous behavior when renderer fails
+                  const fs = ragResult.feeStruct;
+                  const lines = [];
+                  lines.push(`Program Studi: ${fs.program || (fs.programLabel || 'Tidak tersedia')}`);
+                  lines.push('');
+                  lines.push('Biaya Pendaftaran:');
+                  lines.push(`- Biaya Pendaftaran: ${fs.registrationFee || '(tidak tercantum)'} `);
+                  lines.push(`- Potongan Pendaftaran: ${fs.registrationDiscount || '(tidak tercantum)'} `);
+                  if (fs.registrationFee && fs.registrationDiscount) {
+                    try {
+                      const num = (v)=>parseInt(String(v).replace(/[^0-9]/g,''),10)||0;
+                      const totalReg = num(fs.registrationFee) - num(fs.registrationDiscount);
+                      lines.push(`- Total Pendaftaran: Rp ${totalReg.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} `);
+                    } catch(e){ lines.push(`- Total Pendaftaran: (tidak terhitung)`); }
+                  } else {
+                    lines.push(`- Total Pendaftaran: ${fs.totalPendaftaran || '(tidak tercantum)'} `);
                   }
-                } catch(e){}
-                structured = lines.join('\n');
-                ragResult.answer = structured;
+                  lines.push('');
+                  lines.push('DPP:');
+                  lines.push(`- DPP: ${fs.dpp || '(tidak tercantum)'} `);
+                  lines.push('');
+                  lines.push('Biaya Perlengkapan:');
+                  lines.push(`- Jas Almamater: ${fs.uniformFee || fs.atribut1 || '(tidak tercantum)'} `);
+                  lines.push(`- Topi: ${fs.capFee || '(tidak tercantum)'} `);
+                  lines.push(`- Kaos: ${fs.shirtFee || fs.atribut2 || '(tidak tercantum)'} `);
+                  lines.push(`- Tas: ${fs.bagFee || '(tidak tercantum)'} `);
+                  lines.push(`- GMTI: ${fs.gmtiFee || '(tidak tercantum)'} `);
+                  lines.push('');
+                  lines.push(`Subtotal Awal Masuk: ${fs.subtotalAwalMasuk || fs.totalAwalMasuk || '(tidak tercantum)'} `);
+                  lines.push('');
+                  lines.push(`Potongan DPP: ${fs.dppDiscount || '(tidak tercantum)'} `);
+                  lines.push('');
+                  lines.push(`Total Biaya Masuk: ${fs.totalAwalMasuk ? fs.totalAwalMasuk : (fs.subtotalAwalMasuk ? fs.subtotalAwalMasuk : '(tidak tercantum)')}`);
+                  lines.push('');
+                  lines.push(`Biaya Pendidikan per Semester (UKT): ${fs.ukt || fs.semester || '(tidak tercantum)'} `);
+                  try {
+                    const srcs = Array.isArray(fs.sourceChunks) ? fs.sourceChunks.map(s=>s && (s.sourceFile||s.filename)).filter(Boolean) : [];
+                    if (srcs.length) {
+                      lines.push('');
+                      lines.push('Sumber:');
+                      for (const s of srcs) lines.push(`- ${s}`);
+                    }
+                  } catch(e){}
+                  structured = lines.join('\n');
+                  ragResult.answer = structured;
+                }
               } else {
                 // If we couldn't build a structured reply from RAG, append scholarships + final prompt.
                 const needsPostamble = !/Untuk meringankan biaya|Beasiswa KIP|Apakah Kakak ingin dijelaskan tentang\?/i.test(ragResult.answer);
@@ -1906,17 +1946,17 @@ module.exports = function (provider) {
                 if (needsPostamble && shouldAppendFeeScholarshipPostamble) {
                   const postamble = [
                     'Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:',
-                    '* Beasiswa KIP',
-                    '* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)',
-                    '* Beasiswa Prestasi',
-                    '* Beasiswa Yayasan',
+                    '- Beasiswa KIP',
+                    '- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)',
+                    '- Beasiswa Prestasi',
+                    '- Beasiswa Yayasan',
                     'Silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus.',
-                    '* Kuliah Sambil Kerja di Luar Negeri',
+                    '- Kuliah Sambil Kerja di Luar Negeri',
                     '',
                     'Apakah Kakak ingin dijelaskan tentang?',
-                    '* Biaya perkuliahan program studi yang lainnya',
-                    '* Salah satu jenis beasiswa',
-                    '* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll',
+                    '- Biaya perkuliahan program studi yang lainnya',
+                    '- Salah satu jenis beasiswa',
+                    '- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll',
                     'Silahkan diketikkan.'
                   ].join('\n');
                   ragResult.answer = String(ragResult.answer || '').trim() + '\n\n' + postamble;
@@ -1929,17 +1969,17 @@ module.exports = function (provider) {
               if (needsPostamble && shouldAppendFeeScholarshipPostamble) {
                 const postamble = [
                   'Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:',
-                  '* Beasiswa KIP',
-                  '* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)',
-                  '* Beasiswa Prestasi',
-                  '* Beasiswa Yayasan',
+                  '- Beasiswa KIP',
+                  '- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)',
+                  '- Beasiswa Prestasi',
+                  '- Beasiswa Yayasan',
                     'Silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus.',
-                  '* Kuliah Sambil Kerja di Luar Negeri',
+                  '- Kuliah Sambil Kerja di Luar Negeri',
                   '',
                   'Apakah Kakak ingin dijelaskan tentang?',
-                  '* Biaya perkuliahan program studi yang lainnya',
-                  '* Salah satu jenis beasiswa',
-                  '* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll',
+                  '- Biaya perkuliahan program studi yang lainnya',
+                  '- Salah satu jenis beasiswa',
+                  '- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll',
                   'Silahkan diketikkan.'
                 ].join('\n');
                 ragResult.answer = String(ragResult.answer || '').trim() + '\n\n' + postamble;
@@ -3876,7 +3916,7 @@ module.exports = function (provider) {
     const headerPrefix = (discountKey === 's1' || discountKey === 'sk') ? 'Prodi' : 'Program';
     const headerButir = butirLabel === 'pendaftaran' ? 'pendaftaran' : `${butirLabel}`;
     // Reformat output to match WA template requested by product team
-    lines.push(`Jadi Kakak ingin tahu biaya kuliah untuk Program Studi ${p}. Saya jelaskan sekarang ya.`);
+    lines.push(`Untuk biaya ${p}, saya susun dari komponen PMB yang tersedia pada dokumen. Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.`);
     lines.push('');
     lines.push(`Untuk program studi ${p}, rincian biaya sebagai berikut:`);
     lines.push('');
@@ -3884,12 +3924,13 @@ module.exports = function (provider) {
     // Pendaftaran
     const pendaftaranAmt = table.pendaftaran || null;
     lines.push('Pendaftaran:');
-    if (pendaftaranAmt) lines.push(`Biaya pendaftaran: ${formatRupiah(pendaftaranAmt)}`);
-    else lines.push(`Biaya pendaftaran: (tidak tercantum)`);
-    lines.push(`Potongan biaya pendaftaran${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah((typeof baseDiscount === 'number' && Number.isFinite(baseDiscount) && baseDiscount > 0) ? baseDiscount : 0)}`);
+    if (pendaftaranAmt) lines.push(`- Biaya pendaftaran: ${formatRupiah(pendaftaranAmt)}`);
+    else lines.push('- Biaya pendaftaran: (tidak tercantum)');
+    lines.push(`- Potongan biaya pendaftaran${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah((typeof baseDiscount === 'number' && Number.isFinite(baseDiscount) && baseDiscount > 0) ? baseDiscount : 0)}`);
 
     if (pendaftaranAmt) {
       const pendaftaranTotal = (typeof baseDiscount === 'number' ? Math.max(0, pendaftaranAmt - baseDiscount) : pendaftaranAmt);
+      lines.push('');
       lines.push(`Total biaya pendaftaran${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah(pendaftaranTotal)}`);
     }
 
@@ -3898,8 +3939,6 @@ module.exports = function (provider) {
     // Biaya awal masuk
     lines.push(`Biaya awal masuk untuk Prodi ${p}:`);
     const dppAmt = table.dpp || null;
-    if (dppAmt) lines.push(`DPP: ${formatRupiah(dppAmt)}`);
-    else lines.push('DPP: (tidak tercantum)');
 
     const perlengkapanItems = [];
     const uniformFee = table.uniformFee || table.atribut1 || null;
@@ -3920,27 +3959,31 @@ module.exports = function (provider) {
     if (!isCombinedKaosTasGmti && gmtiFee && gmtiFee !== shirtFee && gmtiFee !== uniformFee && gmtiFee !== capFee) perlengkapanItems.push({ label: 'GMTI', amount: gmtiFee });
     if (!isCombinedKaosTasGmti && bagFee && bagFee !== shirtFee && bagFee !== uniformFee && bagFee !== capFee && bagFee !== gmtiFee) perlengkapanItems.push({ label: 'Tas', amount: bagFee });
 
-    lines.push('Perlengkapan:');
     if (perlengkapanItems.length) {
       for (const item of perlengkapanItems) lines.push(`- ${item.label}: ${formatRupiah(item.amount)}`);
     } else {
       lines.push('- (tidak tercantum)');
     }
+
     const perlengkapanTotal = perlengkapanItems.reduce((sum, item) => sum + (item && typeof item.amount === 'number' ? item.amount : 0), 0);
-    lines.push(`Total perlengkapan: ${formatRupiah(perlengkapanTotal)}`);
+    lines.push('');
+    lines.push(`Subtotal biaya awal masuk: ${formatRupiah(perlengkapanTotal)}`);
+    lines.push('');
+
+    if (dppAmt) {
+      lines.push(`- DPP: ${formatRupiah(dppAmt)}`);
+    } else {
+      lines.push('- DPP: (tidak tercantum)');
+    }
 
     const dppDiscount = (typeof dppScholar === 'number' && Number.isFinite(dppScholar) && dppScholar > 0) ? dppScholar : 0;
-    lines.push(`Potongan biaya DPP${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah(dppDiscount)}`);
+    lines.push(`- Potongan biaya DPP${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah(dppDiscount)}`);
 
-    const totalPendaftaran = pendaftaranAmt ? Math.max(0, pendaftaranAmt - ((typeof baseDiscount === 'number' && Number.isFinite(baseDiscount)) ? baseDiscount : 0)) : 0;
+    const pendaftaranTotal = pendaftaranAmt ? Math.max(0, pendaftaranAmt - ((typeof baseDiscount === 'number' && Number.isFinite(baseDiscount)) ? baseDiscount : 0)) : 0;
     const dppSetelahPotongan = dppAmt ? Math.max(0, dppAmt - dppDiscount) : 0;
-    const totalAwalMasuk = totalPendaftaran + dppSetelahPotongan + perlengkapanTotal;
+    const totalAwalMasuk = pendaftaranTotal + dppSetelahPotongan + perlengkapanTotal;
 
     lines.push('');
-    lines.push('Perhitungan:');
-    lines.push(`Total Pendaftaran = ${formatRupiah(pendaftaranAmt || 0)} - ${formatRupiah((typeof baseDiscount === 'number' && Number.isFinite(baseDiscount) && baseDiscount > 0) ? baseDiscount : 0)} = ${formatRupiah(totalPendaftaran)}`);
-    lines.push(`DPP Setelah Potongan = ${formatRupiah(dppAmt || 0)} - ${formatRupiah(dppDiscount)} = ${formatRupiah(dppSetelahPotongan)}`);
-    lines.push(`Total Awal Masuk = ${formatRupiah(totalPendaftaran)} + ${formatRupiah(dppSetelahPotongan)} + ${formatRupiah(perlengkapanTotal)} = ${formatRupiah(totalAwalMasuk)}`);
     lines.push(`Total awal masuk setelah potongan${waveLabel ? ` (${waveLabel})` : ''}: ${formatRupiah(totalAwalMasuk)}`);
 
     // Biaya per semester
@@ -3952,22 +3995,27 @@ module.exports = function (provider) {
     // Scholarship list
     lines.push('');
     lines.push('Untuk meringankan biaya, tersedia berbagai macam beasiswa yang bisa dimanfaatkan sesuai syarat dan ketentuan yang berlaku termasuk:');
-    lines.push('* Beasiswa KIP');
-    lines.push('* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
-    lines.push('* Beasiswa Prestasi');
-    lines.push('* Beasiswa Yayasan');
+    lines.push('- Beasiswa KIP');
+    lines.push('- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
+    lines.push('- Beasiswa Prestasi');
+    lines.push('- Beasiswa Yayasan');
     lines.push('Silakan hubungi PMB untuk informasi sekolah yang mendapatkan potongan atau beasiswa khusus.');
-    lines.push('* Kuliah Sambil Kerja di Luar Negeri');
+    lines.push('- Kuliah Sambil Kerja di Luar Negeri');
 
     // Final prompt
     lines.push('');
     lines.push('Apakah Kakak ingin dijelaskan tentang?');
-    lines.push('* Biaya perkuliahan program studi yang lainnya');
-    lines.push('* Salah satu jenis beasiswa');
-    lines.push('* Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll');
+    lines.push('- Biaya perkuliahan program studi yang lainnya');
+    lines.push('- Salah satu jenis beasiswa');
+    lines.push('- Fasilitas yang ada di ITB STIKOM Bali seperti Career Center, Inkubator Bisnis, Hi-Think (Program Persiapan Kerja di Bidang TI di Jepang) dll');
     lines.push('Silahkan diketikkan.');
 
     return { program: p, gelombang: gel, message: lines.join('\n').trim() };
+  }
+
+  // Shared canonical fee template renderer used by fast-path and RAG post-processing.
+  function buildCanonicalFeeTemplate(fs, opts) {
+    return renderCanonicalFeeTemplate(fs, opts);
   }
 
   function isAlumniSmkTiClaim(text) {
@@ -4912,7 +4960,7 @@ module.exports = function (provider) {
     const stikomAnchor = /(itb\s*stikom|stikom\s*bali|\bstikom\b|stikom-bali\.ac\.id|www\.stikom-bali\.ac\.id)/i;
     if (stikomAnchor.test(tRaw)) return false;
 
-    // Allowed “admission + campus info” intents that commonly omit the campus name in follow-up.
+    // Allowed â€œadmission + campus infoâ€ intents that commonly omit the campus name in follow-up.
     const admissionIntent = /(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran|registrasi|gelombang|jadwal|testing|pengumuman|biaya|rincian|dpp|beasiswa|prodi|program\s+studi|jurusan|kuliah|kampus|alamat|lokasi|fasilitas|karier|akreditasi)/i;
 
     // If the user explicitly mentions another institution/topic, block.
@@ -4945,7 +4993,7 @@ module.exports = function (provider) {
     if (!raw.trim()) return false;
 
     const m = raw
-      // Convert keycap digit emoji (e.g. 1️⃣) into plain digit.
+      // Convert keycap digit emoji (e.g. 1ï¸âƒ£) into plain digit.
       .replace(/([0-9])\uFE0F?\u20E3/g, '$1');
 
     // Heuristic: contains multiple numbered option lines (common menu formats):
@@ -4993,7 +5041,7 @@ module.exports = function (provider) {
     // But avoid matching normal questions that merely contain a number.
     const normalized = raw
       .toLowerCase()
-      // Convert keycap digit emoji (e.g. 1️⃣) into plain digit.
+      // Convert keycap digit emoji (e.g. 1ï¸âƒ£) into plain digit.
       .replace(/([0-9])\uFE0F?\u20E3/g, '$1')
       .trim();
 
@@ -5016,7 +5064,7 @@ module.exports = function (provider) {
 
     for (const lineRaw of lines) {
       const line = String(lineRaw || '')
-        // Convert keycap digit emoji (e.g. 1️⃣) into plain digit.
+        // Convert keycap digit emoji (e.g. 1ï¸âƒ£) into plain digit.
         .replace(/([0-9])\uFE0F?\u20E3/g, '$1')
         .trim();
       if (!line) continue;
@@ -6276,7 +6324,7 @@ module.exports = function (provider) {
     // UX update: do not add extra prompts here.
     // Fee answers already end with the standardized postamble:
     // - scholarship list
-    // - “Apakah Kakak ingin dijelaskan tentang …”
+    // - â€œApakah Kakak ingin dijelaskan tentang …â€
     return '';
   }
 
@@ -6288,8 +6336,8 @@ module.exports = function (provider) {
     for (const line of lines) {
       const raw = String(line || '').trim();
       if (!raw) continue;
-      if (!/^[-•]\s+/.test(raw)) continue;
-      bullets.push(raw.replace(/^[-•]\s+/, ''));
+      if (!/^[-â€¢]\s+/.test(raw)) continue;
+      bullets.push(raw.replace(/^[-â€¢]\s+/, ''));
     }
     return bullets;
   }
@@ -6696,8 +6744,8 @@ module.exports = function (provider) {
     for (const line of lines) {
       const raw = String(line || '').trim();
       if (!raw) continue;
-      if (!/^[-•]\s+/.test(raw)) continue;
-      bullets.push(raw.replace(/^[-•]\s+/, ''));
+      if (!/^[-â€¢]\s+/.test(raw)) continue;
+      bullets.push(raw.replace(/^[-â€¢]\s+/, ''));
     }
 
     const first4 = bullets.slice(0, 4);
@@ -6833,27 +6881,27 @@ module.exports = function (provider) {
   function buildRecommendedFollowupQuestions(userText) {
     const t = String(userText || '').toLowerCase();
 
-    let q1 = '* Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?';
-    let q2 = '* Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?';
+    let q1 = '- Mau info biaya kuliah (pendaftaran, DPP, UKT) untuk prodi yang kakak minati?';
+    let q2 = '- Mau saya bantu cek jadwal PMB/gelombang dan timeline (testing/pengumuman/registrasi)?';
 
     if (/(biaya|dpp|ukt|uang\s+kuliah|uang\s+pendaftaran|pendaftaran|registrasi|cicil|cicilan|pembayaran|potongan|diskon)/i.test(t)) {
-      q1 = '* Mau saya jelaskan rincian biaya per komponen (pendaftaran, DPP, UKT, dan biaya awal masuk)?';
-      q2 = '* Mau info opsi cicilan/pembayaran serta beasiswa/potongan yang tersedia?';
+      q1 = '- Mau saya jelaskan rincian biaya per komponen (pendaftaran, DPP, UKT, dan biaya awal masuk)?';
+      q2 = '- Mau info opsi cicilan/pembayaran serta beasiswa/potongan yang tersedia?';
     } else if (/(jadwal|gelombang|deadline|testing|test\b|pengumuman|registrasi\s+ulang|daftar\s+ulang)/i.test(t)) {
-      q1 = '* Mau saya cek jadwal gelombang lain yang kakak inginkan (mis. II A / II C / Khusus)?';
-      q2 = '* Mau saya jelaskan syarat & dokumen pendaftaran PMB yang perlu disiapkan?';
+      q1 = '- Mau saya cek jadwal gelombang lain yang kakak inginkan (mis. II A / II C / Khusus)?';
+      q2 = '- Mau saya jelaskan syarat & dokumen pendaftaran PMB yang perlu disiapkan?';
     } else if (/(syarat|persyaratan|dokumen|berkas|formulir|scan|fotokopi|pas\s*foto|ijazah|rapor|raport)/i.test(t)) {
-      q1 = '* Mau checklist dokumen yang harus disiapkan sesuai jalur pendaftaran?';
-      q2 = '* Mau alur pendaftaran langkah demi langkah (dari daftar sampai registrasi)?';
+      q1 = '- Mau checklist dokumen yang harus disiapkan sesuai jalur pendaftaran?';
+      q2 = '- Mau alur pendaftaran langkah demi langkah (dari daftar sampai registrasi)?';
     } else if (/(beasiswa|kip|prestasi|yayasan|potongan\s+dpp|potongan\s+pendaftaran)/i.test(t)) {
-      q1 = '* Mau info syarat beasiswa yang mana (KIP/Prestasi/Yayasan/dll)?';
-      q2 = '* Mau saya bantu cek beasiswa/potongan yang berlaku di gelombang tertentu?';
+      q1 = '- Mau info syarat beasiswa yang mana (KIP/Prestasi/Yayasan/dll)?';
+      q2 = '- Mau saya bantu cek beasiswa/potongan yang berlaku di gelombang tertentu?';
     } else if (/(akreditasi|ban-pt|nomor\s+sk|sk\b)/i.test(t)) {
       q1 = '* Mau saya cek status akreditasi prodi tertentu (SI/TI/BD/SK/D3/S2)?';
       q2 = '* Mau info kurikulum/keunggulan atau prospek karier dari prodinya?';
     }
 
-    const q3 = '* Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?';
+    const q3 = '- Mau info fasilitas di ITB STIKOM Bali (lab komputer, perpustakaan, wifi, Career Center, Inkubator Bisnis, Hi-Think)?';
     return `Rekomendasi pertanyaan berikutnya:\n${q1}\n${q2}\n${q3}`;
   }
 
@@ -10088,12 +10136,12 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           // Show scholarship list and persist pendingScholarshipChoice so the next reply is interpreted as a selection.
           const lines = [];
           lines.push('Berikut jenis beasiswa yang tersedia:');
-          lines.push('* Beasiswa KIP');
-          lines.push('* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
-          lines.push('* Beasiswa Prestasi');
-          lines.push('* Beasiswa Yayasan');
-          lines.push('* Beasiswa khusus untuk alumni — silakan hubungi PMB untuk detail');
-          lines.push('* Kuliah Sambil Kerja di Luar Negeri');
+          lines.push('- Beasiswa KIP');
+          lines.push('- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
+          lines.push('- Beasiswa Prestasi');
+          lines.push('- Beasiswa Yayasan');
+          lines.push('- Beasiswa khusus untuk alumni — silakan hubungi PMB untuk detail');
+          lines.push('- Kuliah Sambil Kerja di Luar Negeri');
           lines.push('');
           lines.push('Kakak mau penjelasan beasiswa yang mana? Balas nama beasiswa atau angka.');
 
@@ -16429,4 +16477,9 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
 };
 
 module.exports.stripKamuInginTahuHeader = stripKamuInginTahuHeader;
+module.exports._test = {
+  splitLongWhatsappMessage,
+  adjustWhatsappSplitCutForMoneyToken
+};
+
 

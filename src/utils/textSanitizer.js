@@ -393,6 +393,9 @@ function sanitizeWhatsappText(input) {
   // Final pass: normalize encoding artifacts that can show up as weird symbols in WhatsApp.
   text = normalizeMojibakePunctuationForWhatsapp(text);
 
+  // Preserve common Rupiah formatting when line breaks were introduced after 'Rp.'
+  text = text.replace(/\bRp\.\s*\n+\s*([0-9])/g, 'Rp. $1');
+
   return text.trim();
 }
 
