@@ -1994,9 +1994,28 @@ function isGreetingOnly(normalizedText) {
   });
 }
 
+function tryMixedIntentAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const asksPersonalPreference = /\b(kamu|tiko|bot|admin)\b/i.test(q) && /\b(suka|senang|hobi|hobby)\b/i.test(q);
+  const asksUkmMusic = /\b(ukm|ormawa|unit\s+kegiatan|organisasi\s+mahasiswa)\b/i.test(q) && /\b(musik|lagu|nyanyi|vokal|vos|seni)\b/i.test(q);
+  if (!asksPersonalPreference || !asksUkmMusic) return null;
+  return {
+    answer: [
+      'Kalau sebagai asisten, saya tidak punya selera pribadi seperti manusia, Kak.',
+      '',
+      'Untuk minat musik atau seni, dari data UKM/Ormawa yang tersedia kakak bisa melihat UKM Musik dan VOS. UKM Musik berkaitan dengan minat bermusik, sedangkan VOS berkaitan dengan vokal/paduan suara.',
+      '',
+      'Untuk jadwal latihan, pendaftaran anggota, atau kontak pengurus, saya belum punya detail yang cukup aman di data. Bagian itu sebaiknya dikonfirmasi ke kemahasiswaan atau pengurus UKM terkait.'
+    ].join('\n'),
+    source: 'semantic-rag-mixed-intent',
+    frameSource: 'semantic-rag-mixed-intent'
+  };
+}
+
 function trySmallTalkAnswer(question) {
   const raw = String(question || '').trim();
   if (!raw) return null;
+  const hasCampusInfoIntent = /\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|lokasi|alamat|ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i.test(raw);
   const normalized = raw
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s{2,}/g, ' ')
@@ -2052,12 +2071,12 @@ function trySmallTalkAnswer(question) {
     };
   }
 
-  if (/\b(kamu|tiko|bot|admin)\b/i.test(normalized) && /\b(suka|senang|hobi|hobby)\b/i.test(normalized) && /\b(musik|lagu|nyanyi|band)\b/i.test(normalized)) {
+  if (!hasCampusInfoIntent && /\b(kamu|tiko|bot|admin)\b/i.test(normalized) && /\b(suka|senang|hobi|hobby)\b/i.test(normalized) && /\b(musik|lagu|nyanyi|band)\b/i.test(normalized)) {
     return {
       answer: 'Kalau sebagai asisten, saya tidak punya selera pribadi seperti manusia, Kak. Tapi saya bisa ngobrol santai soal musik secukupnya. Untuk info kampus, saya juga bisa bantu soal UKM seni seperti Musik, Tari, Tabuh, Teater Biner, atau VOS kalau datanya tersedia.'
     };
   }
-  if (/\b(kamu|tiko|bot|admin)\b/i.test(normalized) && /\b(suka|senang|hobi|hobby)\b/i.test(normalized) && /\b(film|movie|nonton|drama|series|serial)\b/i.test(normalized)) {
+  if (!hasCampusInfoIntent && /\b(kamu|tiko|bot|admin)\b/i.test(normalized) && /\b(suka|senang|hobi|hobby)\b/i.test(normalized) && /\b(film|movie|nonton|drama|series|serial)\b/i.test(normalized)) {
     return {
       answer: 'Kalau sebagai asisten, saya tidak punya selera pribadi seperti manusia, Kak. Tapi saya bisa ngobrol santai secukupnya. Kalau mau balik ke info kampus, saya bisa bantu soal PMB, prodi, biaya, UKM, atau fasilitas ITB STIKOM Bali.'
     };
@@ -3523,10 +3542,10 @@ function isNonPmbFaqDomainQuestion(question) {
 function tryKnownFaqQnaAnswer(question) {
   const q = normalizeFacilityTerm(question || '');
   if (!q) return null;
-  const answer = (value) => ({
+  const answer = (value, source = 'semantic-rag-generic-faq-qna', frameSource = 'semantic-rag-training-specific') => ({
     answer: value,
-    source: 'semantic-rag-generic-faq-qna',
-    frameSource: 'semantic-rag-training-specific',
+    source,
+    frameSource,
     matchedSource: 'deterministic-faq-qna-guard'
   });
 
@@ -3559,48 +3578,49 @@ function tryKnownFaqQnaAnswer(question) {
   }
 
   if (isCareerCenterQuestion(q)) {
+    const careerAnswer = (value) => answer(value, 'semantic-rag-campus-support-entity', 'semantic-rag-campus-support-entity');
     if (/\b(keuntungan|manfaat|sisi karier)\b/i.test(q)) {
-      return answer('Keuntungan dari sisi karier adalah mahasiswa mendapat dukungan persiapan masuk dunia kerja, seperti informasi lowongan dan magang, pembekalan keterampilan kerja, konsultasi karier, job fair, campus hiring, serta akses jaringan industri.');
+      return careerAnswer('Keuntungan dari sisi karier adalah mahasiswa mendapat dukungan persiapan masuk dunia kerja, seperti informasi lowongan dan magang, pembekalan keterampilan kerja, konsultasi karier, job fair, campus hiring, serta akses jaringan industri.');
     }
     if (/\b(membantu.*pekerjaan|mendapatkan pekerjaan|lulusan.*pekerjaan)\b/i.test(q)) {
-      return answer('Ya. ITB STIKOM Bali membantu mahasiswa dan lulusan melalui Career Center dengan menyediakan informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan pembekalan kerja. Keputusan diterima bekerja tetap mengikuti seleksi perusahaan.');
+      return careerAnswer('Ya. ITB STIKOM Bali membantu mahasiswa dan lulusan melalui Career Center dengan menyediakan informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan pembekalan kerja. Keputusan diterima bekerja tetap mengikuti seleksi perusahaan.');
     }
     if (/\b(kerja sama|kerjasama|memiliki kerja sama|memiliki kerjasama)\b/i.test(q)) {
-      return answer('Ya. ITB STIKOM Bali terus mengembangkan kerja sama dengan dunia usaha dan dunia industri untuk mendukung pembelajaran berbasis praktik, magang, dan pengembangan karier mahasiswa.');
+      return careerAnswer('Ya. ITB STIKOM Bali terus mengembangkan kerja sama dengan dunia usaha dan dunia industri untuk mendukung pembelajaran berbasis praktik, magang, dan pengembangan karier mahasiswa.');
     }
     if (/\b(perusahaan|rekrutmen|campus hiring|datang ke kampus)\b/i.test(q)) {
-      return answer('Ya. Perusahaan dapat hadir melalui kegiatan rekrutmen kampus atau campus hiring, sehingga mahasiswa dan alumni bisa mendapatkan informasi karier dan mengikuti proses seleksi yang tersedia.');
+      return careerAnswer('Ya. Perusahaan dapat hadir melalui kegiatan rekrutmen kampus atau campus hiring, sehingga mahasiswa dan alumni bisa mendapatkan informasi karier dan mengikuti proses seleksi yang tersedia.');
     }
     if (/\b(job fair)\b/i.test(q)) {
-      return answer('Ya. ITB STIKOM Bali menyelenggarakan Job Fair yang menghadirkan perusahaan dari berbagai sektor industri agar mahasiswa dan alumni dapat memperoleh informasi karier, mengikuti rekrutmen, dan membangun jaringan profesional.');
+      return careerAnswer('Ya. ITB STIKOM Bali menyelenggarakan Job Fair yang menghadirkan perusahaan dari berbagai sektor industri agar mahasiswa dan alumni dapat memperoleh informasi karier, mengikuti rekrutmen, dan membangun jaringan profesional.');
     }
     if (/\b(kapan|mulai mengikuti|mulai ikut)\b/i.test(q)) {
-      return answer('Mahasiswa dapat mulai mengikuti program Career Center sejak masih menjadi mahasiswa aktif, terutama saat membutuhkan informasi magang, pembekalan kerja, konsultasi karier, atau persiapan melamar pekerjaan.');
+      return careerAnswer('Mahasiswa dapat mulai mengikuti program Career Center sejak masih menjadi mahasiswa aktif, terutama saat membutuhkan informasi magang, pembekalan kerja, konsultasi karier, atau persiapan melamar pekerjaan.');
     }
     if (/\b(pelatihan|melamar kerja|sebelum melamar|pembekalan)\b/i.test(q)) {
-      return answer('Ya. Mahasiswa mendapat pembekalan atau pelatihan sebelum melamar kerja, seperti persiapan keterampilan kerja, konsultasi karier, dan dukungan menghadapi proses rekrutmen.');
+      return careerAnswer('Ya. Mahasiswa mendapat pembekalan atau pelatihan sebelum melamar kerja, seperti persiapan keterampilan kerja, konsultasi karier, dan dukungan menghadapi proses rekrutmen.');
     }
     if (/\b(peluang kerja|prospek kerja)\b/i.test(q)) {
-      return answer('Peluang kerja lulusan ITB STIKOM Bali didukung oleh kurikulum yang relevan dengan kebutuhan industri serta dukungan Career Center, seperti informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study.');
+      return careerAnswer('Peluang kerja lulusan ITB STIKOM Bali didukung oleh kurikulum yang relevan dengan kebutuhan industri serta dukungan Career Center, seperti informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study.');
     }
 
     if (/\b(alumni|lowongan kerja)\b/i.test(q)) {
-      return answer('Ya. Alumni tetap dapat memperoleh informasi lowongan kerja dan mengikuti kegiatan Career Center seperti job fair, seminar karier, workshop, serta kegiatan pengembangan profesional.');
+      return careerAnswer('Ya. Alumni tetap dapat memperoleh informasi lowongan kerja dan mengikuti kegiatan Career Center seperti job fair, seminar karier, workshop, serta kegiatan pengembangan profesional.');
     }
     if (/\b(tracer study)\b/i.test(q)) {
-      return answer('Tracer Study adalah survei kepada alumni untuk mengetahui kondisi lulusan setelah menyelesaikan studi, seperti masa tunggu kerja, jenis pekerjaan, kesesuaian bidang kerja, dan masukan untuk peningkatan mutu pendidikan.');
+      return careerAnswer('Tracer Study adalah survei kepada alumni untuk mengetahui kondisi lulusan setelah menyelesaikan studi, seperti masa tunggu kerja, jenis pekerjaan, kesesuaian bidang kerja, dan masukan untuk peningkatan mutu pendidikan.');
     }
     if (/\b(konsultasi|berkonsultasi)\b/i.test(q)) {
-      return answer('Ya. Mahasiswa dapat berkonsultasi mengenai karier melalui Career Center, termasuk terkait persiapan kerja, peluang karier, magang, dan proses melamar pekerjaan.');
+      return careerAnswer('Ya. Mahasiswa dapat berkonsultasi mengenai karier melalui Career Center, termasuk terkait persiapan kerja, peluang karier, magang, dan proses melamar pekerjaan.');
     }
     if (/\b(hanya.*it|bidang it|selain it)\b/i.test(q)) {
-      return answer('Tidak. Lulusan tidak hanya bisa bekerja di bidang IT. Peluang kerja juga terbuka di bidang bisnis digital, perbankan, pariwisata, startup, pemerintahan, pendidikan, industri kreatif, maupun technopreneur sesuai kompetensi yang dimiliki.');
+      return careerAnswer('Tidak. Lulusan tidak hanya bisa bekerja di bidang IT. Peluang kerja juga terbuka di bidang bisnis digital, perbankan, pariwisata, startup, pemerintahan, pendidikan, industri kreatif, maupun technopreneur sesuai kompetensi yang dimiliki.');
     }
     if (/\b(magang)\b/i.test(q)) {
-      return answer('Ya, ada program dan informasi magang. Career Center membantu mahasiswa mendapatkan informasi peluang magang serta mendukung persiapan mahasiswa sebelum masuk ke dunia kerja.');
+      return careerAnswer('Ya, ada program dan informasi magang. Career Center membantu mahasiswa mendapatkan informasi peluang magang serta mendukung persiapan mahasiswa sebelum masuk ke dunia kerja.');
     }
     if (/\b(apa itu|career center|pusat karier|pusat karir)\b/i.test(q)) {
-      return answer('Career Center ITB STIKOM Bali merupakan unit yang membantu mahasiswa dan alumni mempersiapkan karier melalui pengembangan kompetensi, informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study.');
+      return careerAnswer('Career Center ITB STIKOM Bali merupakan unit yang membantu mahasiswa dan alumni mempersiapkan karier melalui pengembangan kompetensi, informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study.');
     }
   }
 
@@ -4573,12 +4593,14 @@ function tryCampusSupportFallback(question) {
 
 function tryFinanceFallback(question) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(ukt|tagihan|denda|pembayaran|bayar|uang\s*pangkal|uang\s*pangkal|uang\s*pangkalnya)\b/i.test(q)) return null;
-  const isPmbFeeQuestion = /\b(pmb|mahasiswa\s+baru|pendaftaran|biaya\s+masuk|awal\s+masuk|dpp|gelombang|gel\b|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|\bsi\b|\bti\b|\bsk\b|\bbd\b)\b/i.test(q);
-  if (isPmbFeeQuestion) return null;
+  if (!/\b(ukt|tagihan|denda|pembayaran|bayar|metode\s+bayar|cara\s+bayar)\b/i.test(q)) return null;
+  const operationalPaymentQuestion = /\b(tagihan|denda|jatuh\s+tempo|telat|terlambat|berubah|metode|transfer|va|virtual\s+account|lewat\s+apa|via\s+apa|cara\s+bayar|bayar\s+lewat|pembayaran)\b/i.test(q);
+  if (!operationalPaymentQuestion) return null;
+  const isPmbFeeQuestion = /\b(pmb|mahasiswa\s+baru|pendaftaran|biaya\s+masuk|awal\s+masuk|dpp|uang\s*pangkal|gelombang|gel\b|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|bisnis\s+digital|\bsi\b|\bti\b|\bsk\b|\bbd\b)\b/i.test(q);
+  if (isPmbFeeQuestion && !/\b(tagihan|denda|telat|terlambat|berubah|metode|transfer|va|virtual\s+account|lewat\s+apa|via\s+apa|cara\s+bayar|bayar\s+lewat|pembayaran)\b/i.test(q)) return null;
   return {
     answer: [
-      'Untuk pertanyaan tentang pembayaran (UKT, tagihan, atau denda), biasanya bagian keuangan kampus yang menangani detail transaksi dan metode pembayaran.',
+      'Untuk pertanyaan tentang pembayaran UKT, tagihan, atau denda, biasanya bagian keuangan kampus yang menangani detail transaksi dan metode pembayaran.',
       '',
       'Saran umum: cek portal akademik atau hubungi bagian keuangan kampus untuk rincian tagihan dan metode pembayaran. Untuk denda, konfirmasi tanggal jatuh tempo dan besaran denda kepada bagian keuangan.',
       '',
@@ -6162,6 +6184,7 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
 // Preserve stable handler ordering: pre-AI conversational fallbacks first,
 // then campus/support/training handlers, then fee and program handlers.
 const DETERMINISTIC_HANDLERS = [
+  ['semantic-rag-mixed-intent', tryMixedIntentAnswer],
   ['semantic-rag-small-talk', trySmallTalkAnswer],
   ['semantic-rag-org-structure-unavailable', tryOrganizationalStructureAnswer],
   ['semantic-rag-clarification', tryShortClarificationAnswer],
@@ -6247,6 +6270,7 @@ const SOURCES_NEEDING_INDEX = new Set([
   'semantic-rag-campus-location'
 ]);
 const PRE_AI_HANDLER_SOURCES = new Set([
+  'semantic-rag-mixed-intent',
   'semantic-rag-small-talk',
   'semantic-rag-out-of-domain',
   'semantic-rag-career-softskill',
@@ -6318,6 +6342,7 @@ function getSemanticHandlerSources(intent) {
       'semantic-rag-fee-comparison'
     ],
     fee_general: [
+      'semantic-rag-finance-fallback',
       'semantic-rag-fee-general',
       'semantic-rag-fee-detail',
       'semantic-rag-registration-fee',
@@ -6590,6 +6615,13 @@ async function querySemanticRag(question, options = {}) {
     setCachedSemanticResult(resultCacheKey, shortDefinitionResponse);
     return shortDefinitionResponse;
   }
+  const financeOperationalResult = strictDocumentOnly ? null : tryFinanceFallback(question);
+  if (financeOperationalResult && financeOperationalResult.answer) {
+    const builtFinanceResult = buildDeterministicResponse(question, 'semantic-rag-finance-fallback', financeOperationalResult, { routeStage: 'pre-ai-finance' });
+    setCachedSemanticResult(resultCacheKey, builtFinanceResult);
+    return builtFinanceResult;
+  }
+
   const hasDirectFeeSignal = /\b(?:biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/i.test(String(question || ''));
   if (!strictDocumentOnly && hasDirectFeeSignal) {
     const feeResult = tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options);
@@ -6664,6 +6696,7 @@ async function querySemanticRag(question, options = {}) {
       setCachedSemanticResult(resultCacheKey, response);
       return response;
     }
+    await getActiveTrainingDataFromDb();
     const fallbackResult = runDeterministicHandlers(question, DETERMINISTIC_HANDLERS, options, [question], { routeStage: 'fallback-no-ai' });
     if (fallbackResult) {
       setCachedSemanticResult(resultCacheKey, fallbackResult);
