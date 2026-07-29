@@ -363,7 +363,9 @@ module.exports = function (provider) {
     // If BOT_AUTO_TONE is enabled, word-level replacements (Saya->aku, Anda->kamu)
     // would change these messages.
     const rawNorm = raw.replace(/\s+/g, ' ').trim().toLowerCase();
+    const looksLikeNumericFeeAnswer = /\bRp\.?\s*\d/i.test(raw) && /\b(biaya|dpp|ukt|pendaftaran|semester|potongan|total|cicilan)\b/i.test(raw);
     const shouldBypassAutoTone =
+      looksLikeNumericFeeAnswer ||
       rawNorm.includes('tunggu sebentar ya, saya sedang mencari informasi yang tepat untuk anda') ||
       /\[\s*💬\s*hubungi\s+admin\s*\]/i.test(raw);
 
@@ -6939,6 +6941,13 @@ module.exports = function (provider) {
     out = out.replace(/^(?:Baik,?\s*kak\.?\s*)?(?:Terima\s*kasih|Terimakasih)\s+atas\s+pertanyaan(?:an)?(nya)?\.?\s*\n+/i, '');
     out = stripKamuInginTahuHeader(out);
 
+    // Preserve deterministic semantic RAG answers before conversational decoration.
+    const rawRagSource = options && options.context && (options.context.ragSource || options.context.source)
+      ? String(options.context.ragSource || options.context.source || '').trim()
+      : '';
+    if (/^semantic-rag-/i.test(rawRagSource)) {
+      return out;
+    }
     // Do not append recommended follow-up questions automatically.
     // Preserve any follow-up prompts already present in the raw answer text.
 

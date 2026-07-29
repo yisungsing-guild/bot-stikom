@@ -1509,6 +1509,8 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
 
 function tryFeeComparisonAnswer(question) {
   const q = String(question || '').toLowerCase();
+  const hasExplicitFeeSignal = /\b(biaya(?:nya)?|harga(?:nya)?|tarif(?:nya)?|ongkos(?:nya)?|uang|bayar(?:nya|an)?|dpp|ukt|spp|cicilan|dicicil|nyicil|nominal|total(?:an)?|termurah|termahal|murah|mahal|hemat|irit|terjangkau|per\s+semester|semesteran)\b/.test(q);
+  if (!hasExplicitFeeSignal) return null;
   // conservative static dataset aligned to regression tests
   const DATA = {
     si: { key: 'si', label: 'Sistem Informasi', degree: 'S1', biayaAwal: 16000000, semester: 6500000, pendaftaran: 500000, dpp: 14000000 },

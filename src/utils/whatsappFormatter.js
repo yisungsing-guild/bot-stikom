@@ -1044,7 +1044,8 @@ function buildHumanizedWhatsappReply({
   const isDeterministicGreeting = deterministicSource === 'rag-greeting' || isGreetingQuestion(userQuery);
   const isDeterministicPmbInfo = deterministicSource === 'rag-pmb-info';
   const isDeterministicProgramProfile = deterministicSource === 'rag-program-profile';
-  const isDeterministicFee = deterministicSource === 'rag-fee-structured' || /^\s*Program Studi\s*:/i.test(normalizedAnswer);
+  const looksLikeDeterministicFeeAnswer = /\bRp\.?\s*\d/i.test(normalizedAnswer) && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(normalizedAnswer);
+  const isDeterministicFee = deterministicSource === 'rag-fee-structured' || /^\s*Program Studi\s*:/i.test(normalizedAnswer) || looksLikeDeterministicFeeAnswer;
   const isDeterministicSemanticRag = /^semantic-rag-/i.test(deterministicSource) && !/\b(ukm|ormawa)\b/i.test(deterministicSource);
 
   if (isDeterministicGreeting || isDeterministicPmbInfo || isDeterministicProgramProfile || isDeterministicFee || isDeterministicSemanticRag) {

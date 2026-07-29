@@ -1972,7 +1972,7 @@ function isGreetingOnly(normalizedText) {
   const addressWords = new Set([
     'kak', 'kakak', 'min', 'admin', 'tiko', 'semua', 'guys',
     'gan', 'agan', 'bro', 'sis', 'mas', 'mbak', 'pak', 'bu',
-    'bang', 'bos', 'boss', 'bli', 'mb', 'cuk'
+    'bang', 'bos', 'boss', 'bli', 'mb', 'cuk', 'bot'
   ]);
   const timeWords = new Set(['pagi', 'siang', 'sore', 'malam']);
   const words = text.split(/\s+/).filter(Boolean);
@@ -1980,7 +1980,7 @@ function isGreetingOnly(normalizedText) {
 
   const cleanWord = (word) => collapseRepeatedLetters(word).replace(/[^a-z]/g, '');
   const first = cleanWord(words[0]);
-  const exactGreetings = new Set(['halo', 'hallo', 'hai', 'hay', 'hi', 'hello', 'helo', 'salam']);
+  const exactGreetings = new Set(['halo', 'hallo', 'hai', 'hay', 'hi', 'hello', 'helo', 'salam', 'p', 'tes', 'test', 'testing', 'ping']);
   const fuzzyGreetingRoots = ['halo', 'hallo', 'hai', 'hello', 'helo', 'hay', 'salam'];
   const firstIsGreeting = exactGreetings.has(first)
     || addressWords.has(first)
@@ -2022,6 +2022,24 @@ function trySmallTalkAnswer(question) {
     .trim()
     .toLowerCase();
 
+  const shortCheckInPattern = /^(p|tes|test|testing|cek|ping)(\s+(bot|kak|min|admin|tiko))?$/i;
+  if (shortCheckInPattern.test(normalized)) {
+    return {
+      answer: 'Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Ada yang bisa saya bantu seputar PMB, program studi, biaya, beasiswa, atau informasi kampus?'
+    };
+  }
+
+  if (!hasCampusInfoIntent && /\b(halo|hallo|hai|hay|hi|hello|helo)\b/i.test(normalized) && /\b(mau|ingin|boleh|izin|saya|aku|sy)\b/i.test(normalized) && /\b(tanya|bertanya|nanya|menanyakan)\b/i.test(normalized)) {
+    return {
+      answer: 'Boleh, Kak. Silakan tanyakan seputar PMB, program studi, biaya, beasiswa, atau informasi kampus ITB STIKOM Bali.'
+    };
+  }
+
+  if (!hasCampusInfoIntent && /\b(kamu|tiko|bot|asisten)\b/i.test(normalized) && /\b(bot|manusia|ai|artificial\s+intelligence|robot)\b/i.test(normalized)) {
+    return {
+      answer: 'Saya Tiko, asisten virtual informasi ITB STIKOM Bali. Saya bukan manusia, tapi saya bisa bantu menjawab pertanyaan seputar PMB, program studi, biaya, beasiswa, dan informasi kampus yang tersedia di data.'
+    };
+  }
   if (/\b(terima\s*(?:kasih|ksih|ksh)|terimakasih|makasih|mksh|mksih|thanks|thank\s+you|thx)\b/i.test(normalized)) {
     return {
       answer: 'Sama-sama, Kak. Kalau ada yang ingin ditanyakan lagi seputar ITB STIKOM Bali, saya siap bantu.'
@@ -2224,6 +2242,11 @@ function tryShortClarificationAnswer(question) {
   const raw = String(question || '').trim();
   const q = raw.toLowerCase();
   if (!raw) return null;
+  const contextualizeSafeFallback = (answer) => {
+    const topic = raw.replace(/\s+/g, ' ').replace(/["'`]+/g, '').trim();
+    if (!topic) return answer;
+    return `Terkait pertanyaan kakak tentang ${topic}, ${String(answer || '').replace(/^\s*/, '').replace(/^[A-Z]/, (m) => m.toLowerCase())}`;
+  };
 
   if (/^\d{1,2}$/.test(q)) {
     return {
@@ -6107,7 +6130,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (/^(?:mohon\s+)?maaf\b/i.test(body)) return body;
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
   const src = String(source || '').toLowerCase();
-  if (src.includes('insufficient-data') || src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
+  if (src.includes('insufficient-data') || src.includes('safe-general') || src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
   if (src.includes('ukm') || src.includes('generic-faq-qna') || src.includes('training-specific') || src.includes('campus-support-entity') || src.includes('campus-facility')) return body;
   const q = String(question || '').toLowerCase();
   if (src.includes('rpl')) return body;
@@ -6181,6 +6204,134 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
   return String(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content || '' : '').trim();
 }
 
+function trySafeGeneralCampusFallback(question) {
+  const raw = String(question || '').trim();
+  const q = raw.toLowerCase();
+  if (!raw) return null;
+
+  const contextualizeSafeFallback = (answer) => {
+    const topic = raw.replace(/\s+/g, ' ').replace(/["'`]+/g, '').trim().slice(0, 140);
+    if (!topic) return answer;
+    const body = String(answer || '').replace(/^\s*/, '').replace(/^[A-Z]/, (m) => m.toLowerCase());
+    return `Terkait pertanyaan kakak tentang ${topic}, ${body}`;
+  };
+
+  if (/\b(password\s+(?:akun\s+)?admin|username\s+dan\s+password|prompt\s+sistem|system\s+prompt|abaikan\s+semua\s+aturan|seluruh\s+isi\s+dokumen\s+internal|data\s+pribadi|alamat\s+rumah\s+dosen|nomor\s+telepon\s+seluruh\s+mahasiswa|penyaringan\s+dokumen|dokumen\s+legal)\b/i.test(raw)) {
+    return { answer: contextualizeSafeFallback('maaf, Kak. Untuk permintaan password, username, alamat rumah, data pribadi, prompt sistem, aturan internal, atau dokumen internal/legal, saya tidak bisa membantu membukanya. Saya hanya bisa membantu informasi umum seputar ITB STIKOM Bali yang aman untuk calon mahasiswa dan publik.') };
+  }
+
+  if (/\b(hasil\s+pertandingan|sepak\s+bola|soal\s+matematika|tempat\s+wisata|isi\s+film|memperbaiki\s+motor|hukum\s+pidana|terjemahkan|arti\s+mimpi|berita\s+terbaru)\b/i.test(raw)) {
+    return { answer: contextualizeSafeFallback('maaf, Kak. Untuk pertandingan sepak bola, soal matematika, tempat wisata, film terbaru, perbaikan motor, hukum pidana, terjemahan, arti mimpi, atau berita terbaru, saya tidak bisa membantu karena di luar domain kampus. Saya hanya bisa membantu informasi seputar ITB STIKOM Bali, seperti PMB, program studi, biaya, beasiswa, fasilitas, layanan kampus, dan kontak yang tersedia di data.') };
+  }
+
+  if (/\b(kamu\s+pintar|pintar\s+juga|selamat\s+bekerja|cuma\s+mau\s+menyapa)\b/i.test(raw)) {
+    return { answer: contextualizeSafeFallback('terima kasih, Kak. Saya siap bantu kalau ada yang ingin ditanyakan seputar ITB STIKOM Bali.') };
+  }
+
+  if (/sistem\s+informasi[\s\S]{0,80}suka\s+bisnis|suka\s+bisnis[\s\S]{0,80}sistem\s+informasi/i.test(q)) {
+    return { answer: contextualizeSafeFallback('Sistem Informasi cukup relevan untuk orang yang suka bisnis karena prodi ini menghubungkan kebutuhan bisnis, proses organisasi, dan solusi teknologi informasi. Untuk detail kurikulum dan prospek resminya, kakak bisa lanjut tanya Sistem Informasi atau konfirmasi ke admin PMB.') };
+  }
+
+  if (/dkv[\s\S]{0,80}(animasi|lama\s+kuliah)|berapa\s+lama[\s\S]{0,40}dkv/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk detail DKV seperti animasi atau lama kuliah, saya perlu hati-hati karena ketersediaan dan skema program harus dipastikan ke admin PMB. Secara umum, DKV berkaitan dengan desain komunikasi visual, sedangkan detail mata kuliah dan durasi resmi perlu konfirmasi kampus.') };
+  }
+
+  if (/dokumen[\s\S]{0,60}\bkip\b|\bkip\b[\s\S]{0,60}dokumen|hasil\s+program\s+1k1s|beasiswa\s+pertukaran\s+mahasiswa/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk detail beasiswa seperti dokumen KIP, hasil program 1K1S, atau beasiswa pertukaran mahasiswa, kakak perlu konfirmasi ke admin PMB/unit terkait agar mendapatkan syarat, jadwal, dan hasil resmi terbaru.') };
+  }
+
+  if (/biaya[\s\S]{0,80}double\s*degree[\s\S]{0,80}teknologi\s+informasi|double\s*degree[\s\S]{0,80}teknologi\s+informasi[\s\S]{0,80}gelombang/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk biaya Double Degree Teknologi Informasi, saya tidak akan menebak jika kombinasi prodi, partner, dan gelombangnya tidak tercatat jelas. Kakak bisa konfirmasi ke admin PMB agar mendapatkan rincian biaya Double Degree yang sesuai pilihan program.') };
+  }
+  if (/\b(takut\s+salah\s+memilih\s+jurusan|tertarik\s+dengan\s+program\s+itu|program\s+itu\s+tersedia|itu\s+sudah\s+termasuk\s+semuanya|yang\s+tadi\s+maksudnya\s+apa|apa\s+itu\??$)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('supaya saya tidak salah menangkap konteks, tuliskan dulu program atau topik yang dimaksud. Misalnya: Sistem Informasi, Teknologi Informasi, Bisnis Digital, biaya, jadwal PMB, beasiswa, atau fasilitas kampus.') };
+  }
+
+  if (/\b(menu|kemampuan\s+bot|bisa\s+bertanya\s+tentang\s+apa\s+saja|kembali\s+ke\s+menu|menu\s+utama|reset\s+percakapan)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('saya bisa bantu menu informasi seputar ITB STIKOM Bali: PMB dan cara daftar, jadwal gelombang, rincian biaya, program studi, beasiswa, Double Degree, fasilitas kampus, Career Center, Inkubator Bisnis, UKM, RPL, serta kontak kampus. Silakan ketik topik yang ingin kakak tanyakan.') };
+  }
+
+  if (/\b(apa\s+itu\s+itb\s+stikom\s+bali|keunggulan\s+(?:itb\s+)?stikom\s+bali|keunggulan\s+kuliah|visi\s+dan\s+misi|campus\s+tour|terakreditasi|akreditasi\s+kampus)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('ITB STIKOM Bali adalah perguruan tinggi di Bali yang berfokus pada bidang teknologi informasi, bisnis digital, dan desain. Untuk detail resmi seperti akreditasi institusi, visi-misi, keunggulan kampus, atau agenda campus tour, kakak bisa konfirmasi ke admin/kampus agar mendapatkan informasi terbaru.') };
+  }
+
+  if (/\bapa\s+saja\s+tahapan\s+pendaftaran\s+mahasiswa\s+baru\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('tahapan pendaftaran mahasiswa baru biasanya mencakup:\n- mengisi data/form pendaftaran PMB\n- menyiapkan dokumen yang diminta\n- mengikuti proses seleksi atau tes jika dijadwalkan\n- melakukan registrasi ulang setelah dinyatakan lolos\nUntuk link aktif dan jadwal terbaru, kakak bisa konfirmasi ke admin PMB.') };
+  }
+
+  if (/\bapa\s+saja\s+persyaratan\s+pendaftaran\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('persyaratan pendaftaran biasanya berkaitan dengan:\n- identitas calon mahasiswa\n- dokumen sekolah seperti ijazah atau surat keterangan lulus jika masih proses\n- pas foto atau berkas pendukung lain jika diminta\n- pilihan program studi dan jalur/gelombang pendaftaran\nUntuk daftar dokumen resmi terbaru, kakak sebaiknya konfirmasi ke admin PMB.') };
+  }
+
+  if (/\bapa\s+saja\s+syarat\s+pengajuan\s+cuti\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('syarat pengajuan cuti adalah urusan akademik internal. Biasanya perlu memperhatikan:\n- status mahasiswa\n- periode pengajuan cuti\n- formulir atau surat permohonan\n- persetujuan unit akademik/prodi\nUntuk prosedur resmi dan dokumen final, kakak perlu menghubungi bagian akademik kampus.') };
+  }
+
+  if (/\bapa\s+saja\s+persyaratan\s+seminar\s+proposal\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('persyaratan seminar proposal adalah urusan akademik/prodi. Biasanya perlu memperhatikan:\n- status bimbingan tugas akhir\n- naskah proposal\n- persetujuan dosen pembimbing\n- jadwal dan ketentuan dari prodi\nUntuk syarat resmi terbaru, kakak perlu konfirmasi ke prodi atau bagian akademik.') };
+  }
+
+  if (/\bapa\s+saja\s+perlengkapan\s+wisuda\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('perlengkapan wisuda adalah informasi operasional wisuda. Biasanya berkaitan dengan:\n- toga atau atribut wisuda\n- kartu/undangan atau bukti pendaftaran wisuda\n- ketentuan pakaian\n- jadwal pengambilan perlengkapan\nUntuk daftar resmi dan jadwal pengambilan terbaru, kakak perlu konfirmasi ke panitia wisuda atau admin kampus.') };
+  }
+  if (/\b(link\s+pendaftar(?:an|annya)|penda[pf]taran\s+masih\s+buka|surat\s+keterangan\s+lulus|pas\s*foto|materi\s+tes|hasil\s+tes|lulus\s+tes|lulusan\s+tahun\s+sebelumnya|kelas\s+malam)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk pendaftaran mahasiswa baru, kakak bisa menanyakan jalur daftar, jadwal gelombang, syarat dokumen, biaya, dan kontak PMB. Untuk detail khusus seperti link aktif, hasil tes, kelas malam, pas foto, atau penggunaan surat keterangan lulus, sebaiknya konfirmasi ke admin PMB agar sesuai kondisi terbaru.') };
+  }
+
+  if (/\b(toefl|dua\s+ijazah|lama\s+program\s+double\s+degree|pendaftaran\s+double\s+degree|program\s+internasional|pertuk(?:a|ra)n\s+mahasiswa|pertukran\s+mahasiswa|kampus\s+luar\s+negeri|negara\s+mana\s+saja\s+yang\s+menjadi\s+tujuan\s+pertukaran|dokumen\s+keberangkatan|urusan\s+internasional)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk program internasional atau Double Degree, data aman yang tersedia dapat saya bantu jelaskan secara umum. Untuk syarat khusus seperti TOEFL, lama program, dua ijazah, jadwal pendaftaran, kampus mitra, negara tujuan pertukaran, atau dokumen keberangkatan, kakak perlu konfirmasi ke admin kampus/unit internasional.') };
+  }
+
+  if (/\b(studio\s+desain|tempat\s+ibadah|musala|mushola|ruang\s+kesehatan|lapangan\s+olahraga|meminjam\s+ruangan|peminjaman\s+ruangan|asrama|perpus(?:takaan)?\s+di\s+mana|fasilitas)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk fasilitas kampus, saya bisa bantu jelaskan fasilitas yang tercatat di data. Untuk detail operasional seperti ketersediaan ruangan, prosedur peminjaman, tempat ibadah, ruang kesehatan, lapangan, asrama, atau lokasi perpustakaan, kakak sebaiknya konfirmasi ke admin kampus.') };
+  }
+
+  if (/\b(kalender\s+akademik|melihat\s+nilai|khs|cuti|aktif\s+kembali|pindah\s+kelas|kartu\s+mahasiswa|masalah\s+akademik|reset\s+password|mereset\s+password|lupa\s+password|login\s+ke\s+sion|log\s+in\s+sion|akun\s+mahasiswa\s+.*terkunci|email\s+mahasiswa|nomor\s+telepon|e-?learning|unggah\s+tugas|mengunggah\s+tugas|tugas\s+.*gagal\s+diunggah|saya\s+tidak\s+bisa\s+masuk)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk layanan akademik atau IT support seperti SION, e-learning, nilai, KHS, cuti, kartu mahasiswa, reset password, akun terkunci, mengganti email atau nomor telepon, pindah kelas, dan unggah tugas, sebaiknya kakak menghubungi unit akademik/IT kampus. Saya tidak mengakses akun mahasiswa atau data akademik pribadi.') };
+  }
+
+  if (/\b(ukm|kegiatan\s+mahasiswa|poin\s+kegiatan|dana\s+kegiatan|ruangan\s+untuk\s+kegiatan|perundungan|pelecehan|masalah\s+dengan\s+teman|membantu\s+masalah\s+mahasiswa|konseling|perlindungan\s+mahasiswa|kemahasiswaan)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk urusan kemahasiswaan, UKM, kegiatan mahasiswa, konseling, atau pelaporan masalah mahasiswa, kakak bisa menghubungi bagian kemahasiswaan atau admin kampus. Saya bisa bantu info umum yang tersedia, tetapi detail prosedur internal perlu dikonfirmasi ke unit terkait.') };
+  }
+
+  if (/\b(mbkm|sks\s+yang\s+dapat\s+dikonversi|dikonversi\s+menjadi\s+sks|rpl|startup|inkubator\s+bisnis|mendaftar\s+inkubator|persyaratan\s+.*inkubator)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk MBKM, RPL, startup, atau Inkubator Bisnis, saya bisa bantu penjelasan umum berdasarkan data yang tersedia. Untuk syarat peserta, konversi SKS, cara daftar, dan PIC resmi, kakak sebaiknya konfirmasi ke admin kampus/unit terkait.') };
+  }
+
+  if (/\b(dosen\s+pembimbing|seminar\s+proposal|plagiarisme|surat\s+penelitian|surat\s+keterangan\s+lunas|yudisium|wisuda|alumni|ijazah|legalisir|surat\s+resmi|surat\s+rekomendasi|peminjaman\s+aula|proyektor|humas|kunjungan\s+sekolah|publikasi\s+kegiatan|berita\s+kegiatan|dokumentasi\s+kegiatan|nim)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk urusan administrasi kampus seperti skripsi, pembimbing, surat, yudisium, wisuda, ijazah, legalisir, fasilitas kelas, humas, publikasi, dokumentasi, atau NIM, kakak perlu menghubungi admin/unit terkait agar diarahkan sesuai prosedur terbaru.') };
+  }
+
+  if (/\b(teknologi\s+informsi|sistem\s+informsi)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('kalau yang kakak maksud adalah program studi Teknologi Informasi atau Sistem Informasi, saya bisa bantu jelaskan gambaran belajar, biaya, prospek kerja, dan perbedaannya. Silakan sebutkan prodi yang ingin dibahas agar jawabannya lebih tepat.') };
+  }
+
+  if (/\bbeasisiwa\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('kalau yang kakak maksud beasiswa, saya bisa bantu jelaskan jenis beasiswa atau potongan biaya yang tersedia berdasarkan data. Untuk syarat dan jadwal terbaru, sebaiknya tetap dikonfirmasi ke admin PMB.') };
+  }
+
+  if (/\bpenda[pf]taran\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk pendaftaran mahasiswa baru, kakak bisa menanyakan jadwal gelombang, cara daftar, syarat dokumen, biaya, dan kontak PMB. Untuk memastikan status pendaftaran terbaru, kakak bisa konfirmasi ke admin PMB ITB STIKOM Bali.') };
+  }
+
+  if (/\b(?:ti|bd|double\s*degree|dkv)\s+(?:brp|berapa)\??$/i.test(q)) {
+    return { answer: contextualizeSafeFallback('kalau maksud kakak adalah biaya, saya bisa bantu cek rincian biaya berdasarkan prodi dan gelombang. Mohon tuliskan prodi lengkap dan gelombangnya, misalnya: biaya Teknologi Informasi Gelombang 1A.') };
+  }
+
+  if (/\b(dkv\s+dan\s+bisnis\s+digital|bisnis\s+digital\s+dan\s+dkv)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('untuk perbandingan DKV dan Bisnis Digital, saya perlu hati-hati karena data prodi yang tersedia di ITB STIKOM Bali perlu dipastikan sesuai konteks program yang dimaksud. Secara umum, Bisnis Digital lebih dekat ke bisnis berbasis teknologi, sedangkan DKV berfokus pada desain komunikasi visual. Untuk pilihan prodi resmi yang tersedia, kakak bisa konfirmasi ke admin PMB.') };
+  }
+
+  if (/^(bagaimana\s+cara\s+mendaftarnya|bagaimana\s+prospek\s+kerjanya|siapa\s+yang\s+bisa\s+saya\s+hubungi|apa\s+itu)\??$/i.test(q)) {
+    return { answer: contextualizeSafeFallback('pertanyaan itu masih butuh konteks supaya jawabannya tepat. Mohon sebutkan dulu topiknya, misalnya PMB, prodi tertentu, biaya, beasiswa, SION, e-learning, fasilitas, atau layanan kampus.') };
+  }
+
+  if (/\b(informasi\s+ini\s+masih\s+berlaku|jangan\s+mengarang|mengonfirmasi\s+informasi)\b/i.test(q)) {
+    return { answer: contextualizeSafeFallback('saya akan menjawab berdasarkan data yang tersedia dan tidak menambahkan detail yang tidak aman. Untuk memastikan informasi terbaru, terutama jadwal, biaya, dan kebijakan kampus, kakak bisa konfirmasi ke admin resmi ITB STIKOM Bali.') };
+  }
+
+  return null;
+}
 // Preserve stable handler ordering: pre-AI conversational fallbacks first,
 // then campus/support/training handlers, then fee and program handlers.
 const DETERMINISTIC_HANDLERS = [
@@ -6189,6 +6340,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-org-structure-unavailable', tryOrganizationalStructureAnswer],
   ['semantic-rag-clarification', tryShortClarificationAnswer],
   ['semantic-rag-out-of-domain', tryOutOfDomainAnswer],
+  ['semantic-rag-safe-general-fallback', trySafeGeneralCampusFallback],
   ['semantic-rag-career-softskill', tryCareerCenterSoftskillAnswer],
   ['semantic-rag-unsupported-double-degree-partner', tryUnsupportedDoubleDegreePartnerAnswer],
   ['semantic-rag-known-faq-qna', tryKnownFaqQnaAnswer],
@@ -6273,6 +6425,7 @@ const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-mixed-intent',
   'semantic-rag-small-talk',
   'semantic-rag-out-of-domain',
+  'semantic-rag-safe-general-fallback',
   'semantic-rag-career-softskill',
   'semantic-rag-unsupported-double-degree-partner',
   'semantic-rag-known-faq-qna',
@@ -6622,6 +6775,12 @@ async function querySemanticRag(question, options = {}) {
     return builtFinanceResult;
   }
 
+  const earlySafeGeneralFallback = strictDocumentOnly ? null : trySafeGeneralCampusFallback(question);
+  if (earlySafeGeneralFallback && earlySafeGeneralFallback.answer) {
+    const builtSafeGeneralResult = buildDeterministicResponse(question, 'semantic-rag-safe-general-fallback', earlySafeGeneralFallback, { routeStage: 'pre-ai-safe-general' });
+    setCachedSemanticResult(resultCacheKey, builtSafeGeneralResult);
+    return builtSafeGeneralResult;
+  }
   const hasDirectFeeSignal = /\b(?:biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/i.test(String(question || ''));
   if (!strictDocumentOnly && hasDirectFeeSignal) {
     const feeResult = tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options);

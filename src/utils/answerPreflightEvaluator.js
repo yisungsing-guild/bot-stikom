@@ -591,6 +591,11 @@ function isTrustedSemanticAlignmentSource(source) {
   return /^semantic-rag-(?:registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|linkedin|institution|operational|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification)/i.test(value);
 }
 
+function isClarificationPromptAnswer(text) {
+  const value = String(text || '').toLowerCase();
+  if (!value.trim()) return false;
+  return /\b(maksud(?:nya)?\s+(?:topik|yang)|topik\s+apa|sebutkan\s+dulu|mohon\s+sebutkan|bisa\s+sebutkan|perlu\s+konteks|butuh\s+konteks|pertanyaan\s+itu\s+masih\s+butuh\s+konteks)\b/i.test(value);
+}
 function decidePreflightAction(issues, meta = {}) {
   const hardIssues = new Set([
     'technical_leak',
@@ -630,6 +635,27 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     issues.push('recovered_conversation_fallback');
   }
 
+  const trustedSemanticGeneratedAnswer = isTrustedSemanticAlignmentSource(meta && meta.source);
+  if (
+    trustedSemanticGeneratedAnswer &&
+    !rawFaqQnaDump &&
+    !hasRawTechnicalLeak(text) &&
+    !hasDocumentSourceLeak(text)
+  ) {
+    return {
+      answer: text,
+      changed: text !== original,
+      issues,
+      action: 'send',
+      blocked: false,
+      meta: {
+        source: meta && meta.source ? meta.source : null,
+        originalLength: original.length,
+        finalLength: text.length,
+        trustedSemanticBypass: true
+      }
+    };
+  }
   if (!issues.length && rawFaqQnaDump) {
     const recovered = recoverSafeSummaryFromLeakyAnswer(text, userQuery);
     if (recovered) {
@@ -674,8 +700,12 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     } else if (!isTrustedSemanticAlignmentSource(meta && meta.source)) {
       const alignmentAudit = detectAnswerQueryMismatch(text, userQuery);
       if (alignmentAudit.mismatch) {
-        issues.push(alignmentAudit.reason || 'answer_query_mismatch');
-        text = buildPreflightFallback(userQuery, 'intent_conflict');
+        if (alignmentAudit.reason === 'ambiguous_short_query' && isClarificationPromptAnswer(text)) {
+          // Clarification prompts are the correct response for very short ambiguous queries.
+        } else {
+          issues.push(alignmentAudit.reason || 'answer_query_mismatch');
+          text = buildPreflightFallback(userQuery, 'intent_conflict');
+        }
       } else {
         const intentAudit = detectIntentConflict(text, userQuery);
         if (intentAudit.conflict) {
@@ -696,6 +726,11 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   if (hasExcessiveRawQuotation(original)) issues.push('excessive_raw_quotation');
   if (isTooLongForQuestion(original, userQuery)) issues.push('too_long_for_query');
 
+  if (issues.includes('ambiguous_short_query') && isClarificationPromptAnswer(text)) {
+    for (let i = issues.length - 1; i >= 0; i -= 1) {
+      if (issues[i] === 'ambiguous_short_query') issues.splice(i, 1);
+    }
+  }
   const action = decidePreflightAction(issues, meta);
   const blocked = action === 'regenerate' || action === 'fallback';
 
