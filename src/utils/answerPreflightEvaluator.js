@@ -635,9 +635,16 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     issues.push('recovered_conversation_fallback');
   }
 
-  const trustedSemanticGeneratedAnswer = isTrustedSemanticAlignmentSource(meta && meta.source);
+  const sourceValue = meta && meta.source ? String(meta.source).trim().toLowerCase() : '';
+  const preserveTrustedFeeAnswer = /^semantic-rag-(?:fee|contextual-fee|registration-fee)/i.test(sourceValue)
+    && /\bRp\.?\s*\d/i.test(text)
+    && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(text);
+  const preserveTrustedInkubatorAnswer = sourceValue === 'semantic-rag-campus-support-entity'
+    && /^Ya, ITB STIKOM Bali memiliki Inkubator Bisnis\b/i.test(text)
+    && /\b(Pendampingan|Program inkubasi|mentoring|kewirausahaan|coworking|model bisnis|rintisan bisnis)\b/i.test(text)
+    && !/\b(?:PROFIL\s+LEMBAGA|\[Sheet:|SOURCE_CHUNKS|CONFIDENCE|embedding|Identitas\s+Lembaga|Dasar\s+Hukum|Pembina\s*\/\s*Penanggung\s+Jawab|Struktur\s+Organisasi|DAFTAR\s+ISI)\b/i.test(text);
   if (
-    trustedSemanticGeneratedAnswer &&
+    (preserveTrustedFeeAnswer || preserveTrustedInkubatorAnswer) &&
     !rawFaqQnaDump &&
     !hasRawTechnicalLeak(text) &&
     !hasDocumentSourceLeak(text)
@@ -652,7 +659,8 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
         source: meta && meta.source ? meta.source : null,
         originalLength: original.length,
         finalLength: text.length,
-        trustedSemanticBypass: true
+        trustedFeeBypass: preserveTrustedFeeAnswer,
+        trustedInkubatorBypass: preserveTrustedInkubatorAnswer
       }
     };
   }
