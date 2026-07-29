@@ -24,7 +24,7 @@ const {
   tryCareerAnswer,
   tryContextualMultiProgramFeeAnswer
 } = require('./feeComparisonEngine');
-const { evaluateOutboundAnswer } = require('../utils/answerPreflightEvaluator');
+const { evaluateOutboundAnswer, hasLikelyRawDocumentLeak } = require('../utils/answerPreflightEvaluator');
 
 function envFlag(name, defaultValue = false) {
   const raw = process.env[name];
@@ -836,7 +836,37 @@ function uniqueList(values, max) {
   }
   return out;
 }
+function isConversationRawDocumentQuote(text) {
+  const value = String(text || '').trim();
+  if (!value) return false;
+  if (hasLikelyRawDocumentLeak(value)) return true;
+  const markerGroups = [
+    /\b(?:PROFIL|PROFILE)\s+(?:LEMBAGA|ORGANISASI|DIVISI|UNIT|UKM|PROGRAM|FAKULTAS|BAGIAN)\b/i,
+    /\b(?:Identitas\s+(?:Lembaga|Organisasi|Program)|Nama\s+(?:Lembaga|Organisasi|Program|Perguruan\s+Tinggi)|Tahun\s+Berdiri|Dasar\s+Hukum|Pembina\s*\/\s*Penanggung\s+Jawab|Ringkasan\s+Capaian|Struktur\s+Organisasi|Susunan\s+Pengurus)\b/i,
+    /\b(?:SURAT\s+KEPUTUSAN|KEPUTUSAN\s+(?:REKTOR|KETUA|DIREKTUR)|Nomor\s*SK|Menimbang|Mengingat|Memutuskan|Ditetapkan\s+di|Pada\s+tanggal|Tembusan|Lampiran|Pasal\s+\d+)\b/i,
+    /\b(?:NOTA\s+KESEPAHAMAN|PERJANJIAN\s+KERJA\s*SAMA|MOU|MOA|ADDENDUM|PIHAK\s+PERTAMA|PIHAK\s+KEDUA|PARA\s+PIHAK|FORCE\s+MAJEURE)\b/i,
+    /\b(?:FAQ|QNA|Question|Answer|Pertanyaan|Jawaban|Tanya|Jawab|Q|A)\s*[:\-.]/i,
+    /\b(?:FORM\s+IKU|Persentase\s+PTS|Jumlah\s+Total|Ya\s*\/\s*Tidak|\[Sheet:\s*[^\]]+\]|\s\|\s)\b/i,
+    /\b(?:Passport|Passpor|KITAS|ITAS|SKTT|VITAS|LoA|Financial\s+Statement|Medical\s+Statement|Academic\s+Transcripts)\b/i,
+    /\b(?:Teks\s+hasil\s+OCR|hasil\s+OCR\s+gambar|CATATAN\s+UNTUK|LOG\s+O\s+PROFILE|DESKRIPSI\s+ORMAWA)\b/i
+  ];
+  const hits = markerGroups.filter((re) => re.test(value)).length;
+  const labelValueCount = (value.match(/\b[A-Za-z][A-Za-z0-9\s/().-]{2,40}\s*:\s*\S/g) || []).length;
+  const longStructured = value.length > 450 && (hits >= 1 || labelValueCount >= 3);
+  return hits >= 2 || longStructured;
+}
 
+function isRawDocumentLeakComplaint(question) {
+  const value = String(question || '').trim();
+  if (!value) return false;
+  const complaint = /\b(?:kenapa|kok|mengapa|loh|lah|aneh|salah|bocor|full\s*dokumen|dokumen\s+mentah|raw|nyangkut|ngawur|tidak\s+nyambung|ga\s+nyambung|gak\s+nyambung|nggak\s+nyambung|jadi\s+begini|seperti\s+ini)\b/i.test(value);
+  if (!complaint) return false;
+  return isConversationRawDocumentQuote(value) || value.length > 500;
+}
+
+function buildRawDocumentLeakComplaintAnswer() {
+  return 'Maaf ya, Kak. Itu tidak seharusnya terkirim dalam bentuk potongan dokumen mentah. Saya akan tahan jawaban seperti itu dan tidak memakai kutipan dokumen mentah tadi sebagai sumber jawaban berikutnya. Kalau detail yang ditanyakan belum ada di data yang aman, saya akan jawab bahwa informasinya belum tersedia dan menyarankan konfirmasi ke admin kampus.';
+}
 function getRecentConversation(sessionData) {
   const maxMessages = parseInt(process.env.SEMANTIC_RAG_CONTEXT_MESSAGES || '8', 10);
   const messages = sessionData && Array.isArray(sessionData.messages) ? sessionData.messages : [];
@@ -845,6 +875,7 @@ function getRecentConversation(sessionData) {
     .map((m) => {
       const direction = String(m && m.direction ? m.direction : 'message').trim();
       const message = clampText(m && m.message ? m.message : '', 500);
+      if (isConversationRawDocumentQuote(message)) return '';
       return message ? `${direction}: ${message}` : '';
     })
     .filter(Boolean)
@@ -860,7 +891,7 @@ function getRecentUserConversation(sessionData) {
       return !direction || direction === 'user' || direction === 'incoming' || direction === 'inbound';
     })
     .map((m) => clampText((m && (m.message || m.content || m.text)) || '', 500))
-    .filter(Boolean)
+    .filter((message) => message && !isConversationRawDocumentQuote(message))
     .join('\n');
 }
 
@@ -871,7 +902,7 @@ function getLastUserMessage(sessionData) {
     const direction = String((m && (m.direction || m.role)) || '').toLowerCase();
     if (direction && direction !== 'user' && direction !== 'incoming' && direction !== 'inbound') continue;
     const message = clampText((m && (m.message || m.content || m.text)) || '', 500);
-    if (message) return message;
+    if (message && !isConversationRawDocumentQuote(message)) return message;
   }
   return '';
 }
@@ -6526,6 +6557,12 @@ async function querySemanticRag(question, options = {}) {
   const resultCacheKey = buildSemanticResultCacheKey(question, options);
   const cachedResult = getCachedSemanticResult(resultCacheKey);
   if (cachedResult) return cachedResult;
+
+  if (isRawDocumentLeakComplaint(question)) {
+    const response = { success: true, answer: buildRawDocumentLeakComplaintAnswer(), source: 'semantic-rag-raw-document-leak-feedback', contexts: [] };
+    setCachedSemanticResult(resultCacheKey, response);
+    return response;
+  }
 
   if (isOperationalAcademicPolicyQuestion(question)) {
     const response = { success: true, answer: buildAcademicPolicyNoDataAnswer(question), source: 'semantic-rag-operational-academic-policy-no-answer', contexts: [] };
