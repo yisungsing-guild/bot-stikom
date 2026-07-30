@@ -7003,6 +7003,17 @@ function runDeterministicHandlers(originalQuestion, handlers, options = {}, vari
           ...debugExtra,
           semanticVariant: variant !== String(originalQuestion || '').trim() ? variant : undefined
         });
+        if (isMeaningMismatchAnswer(originalQuestion, built.answer, built.source)) {
+          if (debugTrace) {
+            console.log('[TRACE runDeterministicHandlers] SKIPPING meaning-mismatch handler:', {
+              source,
+              builtSource: built.source,
+              anchors: extractMeaningAnchors(originalQuestion),
+              builtAnswerPreview: String(built.answer).slice(0, 100)
+            });
+          }
+          continue;
+        }
         if (debugTrace) {
           console.log('[TRACE runDeterministicHandlers] RETURNING from handler:', {
             source,
@@ -7038,6 +7049,85 @@ function buildInsufficientDataAnswer(kind = 'very_low') {
   }
   return 'Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi, untuk menjawab pertanyaan anda. Mungkin anda bisa mengubah pertanyaannya atau menanyakan hal lain yang ingin diketahui.';
 }
+function buildMeaningMismatchFallbackAnswer(question) {
+  if (isAcademicScheduleLookupQuestion(question)) return buildAcademicScheduleNoDataAnswer(question);
+  return buildInsufficientDataAnswer('low');
+}
+
+const MEANING_STOPWORDS = new Set([
+  'apa', 'apakah', 'itu', 'ini', 'yang', 'dan', 'atau', 'untuk', 'dengan', 'dari', 'pada', 'dalam', 'tentang', 'terkait',
+  'saya', 'aku', 'kak', 'kakak', 'min', 'admin', 'ingin', 'mau', 'tahu', 'tau', 'menanyakan', 'bertanya', 'maksudnya',
+  'kalau', 'kalo', 'baik', 'iya', 'ya', 'nah', 'jadi', 'berarti', 'sekarang', 'saat', 'tahun', 'ada', 'sudah',
+  'program', 'fasilitas', 'informasi', 'detail', 'jelaskan', 'bagaimana', 'gimana', 'berapa', 'kapan', 'dimana', 'mana',
+  'stikom', 'bali', 'itb', 'kampus', 'kuliah', 'mahasiswa', 'mahasiswi', 'tersebut', 'terima', 'kasih', 'mempersiapkan', 'mendapat', 'setelah', 'tamat', 'saja'
+]);
+
+function extractMeaningAnchors(question) {
+  const normalized = normalizeCacheText(question);
+  if (!normalized) return [];
+
+  const phraseAnchors = [
+    'semester antara', 'semester pendek', 'pelaksanaan akademik', 'kalender akademik', 'ujian remidi', 'ujian remedial',
+    'j1', 'training 1 tahun', 'amerika', 'career center', 'inkubator bisnis', 'language learning center', 'kuliah sambil kerja',
+    'magang berbayar', 'hi think', 'hithink', 'gccp', 'short course', 'double degree', 'dual degree', 'help university',
+    'dnui', 'dalian neusoft', 'utb', 'universitas teknologi bandung', 'softskill', 'soft skill', 'pmb', 'gelombang',
+    'sistem informasi', 'teknologi informasi', 'bisnis digital', 'sistem komputer', 'manajemen informatika'
+  ];
+
+  const anchors = [];
+  for (const phrase of phraseAnchors) {
+    const p = normalizeCacheText(phrase);
+    if (p && normalized.includes(p)) anchors.push(p);
+  }
+
+  for (const token of normalized.split(' ')) {
+    if (!token || token.length < 3) continue;
+    if (MEANING_STOPWORDS.has(token)) continue;
+    if (/^\d{4}$/.test(token)) continue;
+    anchors.push(token);
+  }
+
+  const aliases = [];
+  if (anchors.includes('remidi')) aliases.push('remedial');
+  if (anchors.includes('remedial')) aliases.push('remidi');
+  if (anchors.includes('pendaftaran') || anchors.includes('mendaftar') || anchors.includes('daftar')) aliases.push('pmb', 'pendaftaran', 'daftar');
+  if (anchors.includes('karier') || anchors.includes('karir')) aliases.push('career center', 'karier', 'karir');
+  if (anchors.includes('pekerjaan') || anchors.includes('kerja')) aliases.push('career center', 'karier', 'magang', 'kerja');
+  if (anchors.includes('amerika')) aliases.push('usa', 'america');
+
+  return uniqueList([...anchors, ...aliases], 12);
+}
+
+function hasNoDataAnswerPhrase(answer) {
+  return /\b(belum\s+(?:menemukan|mempunyai|ada)|tidak\s+(?:mempunyai|menemukan|ada|cukup)|data\s+yang\s+tersedia|agar\s+tidak\s+keliru|agar\s+tidak\s+salah|konfirmasi|cek\s+pengumuman|cek\s+kalender|sion|baak)\b/i.test(String(answer || ''));
+}
+
+function answerMentionsUnaskedSpecificEntity(question, answer) {
+  const q = normalizeCacheText(question);
+  const a = normalizeCacheText(answer);
+  const entities = [
+    'help university', 'dnui', 'dalian neusoft', 'utb', 'universitas teknologi bandung', 'hi think', 'hithink',
+    'double degree', 'dual degree', 'bisnis digital', 'sistem informasi', 'teknologi informasi', 'program studi'
+  ];
+  return entities.some(entity => a.includes(entity) && !q.includes(entity));
+}
+
+function isMeaningMismatchAnswer(question, answer, source = '') {
+  if (!String(answer || '').trim()) return false;
+  const anchors = extractMeaningAnchors(question);
+  if (!anchors.length) return false;
+
+  const normalizedAnswer = normalizeCacheText(answer);
+  const hits = anchors.filter(anchor => normalizedAnswer.includes(anchor));
+  if (hits.length > 0) return false;
+
+  const noDataAnswer = hasNoDataAnswerPhrase(answer);
+  if (noDataAnswer) return answerMentionsUnaskedSpecificEntity(question, answer);
+
+  const src = String(source || '').toLowerCase();
+  if (/training-specific|generic-faq-qna|campus-support-entity|campus-facility|schedule-window|current-open-waves|registration-info|program-list/.test(src)) return true;
+  return anchors.length >= 2;
+}
 
 function tryShortProgramDefinitionDirectAnswer(question) {
   const q = String(question || '').trim();
@@ -7067,6 +7157,7 @@ function isUnsafeDeterministicFallback(question, result, rewrite = null) {
   if (source.includes('registration-info') && asksRegistration && supportEntity && !asksAdmissionRegistration) return true;
   if (source.includes('registration-info') && asksRegistration && mentionsLinkedinCareer && !asksAdmissionRegistration) return true;
   if (source.includes('registration-info') && /\bdaftar\s+kuliah\b/i.test(answer) && (supportEntity || mentionsLinkedinCareer)) return true;
+  if (isMeaningMismatchAnswer(question, result.answer, result.source)) return true;
 
   if (source.includes('program-list') && supportEntity && ['international_program', 'facility_program', 'facility'].includes(supportEntity.type)) return true;
   if (source.includes('program-list') && /\b(bccp|short\s*course|student\s*exchange|students\s*exchange|exchange\s+program|pertukaran\s+mahasiswa)\b/i.test(q)) return true;
@@ -7681,6 +7772,33 @@ async function querySemanticRag(question, options = {}) {
       return preflightBlockedResult;
     }
 
+    if (isMeaningMismatchAnswer(question, preflight.answer, 'semantic-rag')) {
+      logger.warn({
+        reason: 'meaning_mismatch',
+        question,
+        anchors: extractMeaningAnchors(question),
+        answerPreview: String(preflight.answer || '').slice(0, 180)
+      }, '[SemanticRAG] answer blocked by meaning relevance gate');
+
+      const meaningFallback = fallbacksAllowed ? runVettedDeterministicFallback(question, options, rewrite, 'rag-meaning-mismatch-deterministic-fallback') : null;
+      if (meaningFallback) {
+        setCachedSemanticResult(resultCacheKey, meaningFallback);
+        return meaningFallback;
+      }
+
+      const meaningMismatchResult = {
+        success: true,
+        answer: buildMeaningMismatchFallbackAnswer(question),
+        source: 'semantic-rag-meaning-mismatch',
+        contexts: selectedEvidence,
+        confidenceScore: retrieved.topScore,
+        confidenceTier: 'VERY_LOW',
+        debug: { rewrite, preflight, answerabilityResult, meaningAnchors: extractMeaningAnchors(question) }
+      };
+      setCachedSemanticResult(resultCacheKey, meaningMismatchResult);
+      return meaningMismatchResult;
+    }
+
     // Detect answer category and format accordingly using preflight.answer (preserves normalization)
     const answerCategory = detectAnswerCategory(preflight.answer, question);
     const formattedAnswer = formatAnswerByCategory(preflight.answer, answerCategory);
@@ -7699,7 +7817,7 @@ async function querySemanticRag(question, options = {}) {
 
     const response = {
       success: true,
-      answer: preflight.answer,
+      answer: formattedAnswer,
       source: 'semantic-rag',
       contexts: selectedEvidence,
       confidenceScore: retrieved.topScore,
