@@ -39,6 +39,21 @@ function normalizeMojibakePunctuationForWhatsapp(input) {
   return text;
 }
 
+function normalizeInlineBulletLists(input) {
+  let text = String(input || '');
+  if (!text.trim()) return text;
+
+  // Fix flattened list text such as:
+  // "Langkah awal: - Pilih prodi. - Cek gelombang."
+  text = text.replace(/(:)\s+([-\u2022\u00b7])\s+(?=\S)/g, '$1\n$2 ');
+
+  // Split subsequent inline bullets, but avoid touching hyphenated words or URLs.
+  text = text.replace(/([.!?])\s+([-\u2022\u00b7])\s+(?=[A-Za-zÀ-ÿ0-9])/g, '$1\n$2 ');
+
+  // Normalize bullet spacing after splitting.
+  text = text.replace(/(^|\n)\s*[-\u2022\u00b7]\s*/g, '$1- ');
+  return text;
+}
 function sanitizeWhatsappText(input) {
   const enabled = String(process.env.WHATSAPP_STRIP_MARKDOWN || 'true').toLowerCase() === 'true';
   if (!enabled) return normalizeMojibakePunctuationForWhatsapp(String(input || ''));
@@ -48,6 +63,8 @@ function sanitizeWhatsappText(input) {
 
   // Normalize non-breaking spaces
   text = text.replace(/\u00A0/g, ' ');
+
+  text = normalizeInlineBulletLists(text);
 
   // Preserve WhatsApp-style list bullets that start with "* ".
   // Other markdown emphasis is still cleaned below.
@@ -387,7 +404,7 @@ function sanitizeWhatsappText(input) {
   // Generic list formatting above may add a blank line after any header ending in ':',
   // but WhatsApp follow-up prompts should keep bullets directly below the prompt line.
   text = text.replace(
-    /((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:\s*)\n\s*\n(\s*(?:[-\u2022\u00b7*]|\d+[.)])\s*)/gi,
+    /((?:Kalau\s+(?:mau|ingin)\s+lanjut|Kalau\s+kakak\s+(?:mau|ingin)\s+lanjut|Kakak\s+bisa\s+lanjut\s+tanya|Rekomendasi\s+pertanyaan\s+berikutnya|Pertanyaan\s+berikutnya)[^\n:]{0,140}:\s*)\n\s*\n(\s*(?:[-\u2022\u00b7]|\d+[.)])\s*)/gi,
     '$1\n$2'
   );
   // Final pass: normalize encoding artifacts that can show up as weird symbols in WhatsApp.
@@ -401,5 +418,6 @@ function sanitizeWhatsappText(input) {
 
 module.exports = {
   sanitizeWhatsappText,
+  normalizeInlineBulletLists,
   normalizeMojibakePunctuationForWhatsapp
 };

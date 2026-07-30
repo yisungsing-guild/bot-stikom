@@ -112,7 +112,7 @@ function buildSemanticResultCacheKey(question, options = {}) {
   if (!q) return null;
   const topK = Number.isFinite(Number(options.topK)) ? String(Number(options.topK)) : '';
   const frame = envFlag('BOT_NATURAL_ANSWER_FRAME', true) ? '1' : '0';
-  const followups = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false) ? '1' : '0';
+  const followups = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true) ? '1' : '0';
   const indexRevision = getSemanticIndexRevision();
   return `q:${q}|topK:${topK}|frame:${frame}|followups:${followups}|today:${getSemanticTodayYmd()}|index:${indexRevision}|style:v4`;
 }
@@ -3615,6 +3615,15 @@ function isCareerCenterQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
   return /\b(career center|pusat karier|pusat karir|karier|karir|lowongan|pekerjaan|peluang kerja|lulusan|alumni|magang|job fair|campus hiring|rekrutmen|perusahaan|kerja sama|kerjasama|pelatihan|pembekalan|tracer study|melamar kerja)\b/i.test(q);
 }
+function isOverseasWorkStudyQuestion(question) {
+  const q = normalizeFacilityTerm(question || '');
+  return /\b(kuliah sambil kerja(?: di\s*)?luar negeri|kuliah kerja luar negeri|work study|study and work)\b/i.test(q);
+}
+
+function isPaidOverseasInternshipQuestion(question) {
+  const q = normalizeFacilityTerm(question || '');
+  return /\b(magang berbayar(?: di\s*)?luar negeri|paid internship|internship berbayar)\b/i.test(q);
+}
 
 function isStudyPermitQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
@@ -3623,7 +3632,7 @@ function isStudyPermitQuestion(question) {
 
 function isStudentExchangeQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
-  return /\b(student exchange|pertukaran mahasiswa|gccp|global cross cultural program|credit transfer|summer program|short program)\b/i.test(q);
+  return /\b(student exchange|pertukaran mahasiswa|gccp|global cross cultural program|credit transfer|summer program|short program|short course|shortcourse|kursus singkat)\b/i.test(q);
 }
 
 function isNonPmbFaqDomainQuestion(question) {
@@ -3639,6 +3648,14 @@ function tryKnownFaqQnaAnswer(question) {
     frameSource,
     matchedSource: 'deterministic-faq-qna-guard'
   });
+
+  if (isOverseasWorkStudyQuestion(q)) {
+    return answer(buildOverseasWorkStudyAnswer(), 'semantic-rag-campus-facility', 'semantic-rag-campus-facility');
+  }
+
+  if (isPaidOverseasInternshipQuestion(q)) {
+    return answer(buildPaidOverseasInternshipAnswer(), 'semantic-rag-campus-facility', 'semantic-rag-campus-facility');
+  }
 
   if (isStudyPermitQuestion(q)) {
     if (/\b(biaya|bayar|gratis)\b/i.test(q)) {
@@ -4198,6 +4215,35 @@ function buildInkubatorBisnisJoinNoDataAnswer() {
     'Agar tidak keliru, detail seperti syarat peserta, jadwal seleksi, formulir, kontak pengelola, atau mekanisme pendaftaran sebaiknya dikonfirmasi ke admin kampus/pengelola Inkubator Bisnis.'
   ].join('\n');
 }
+function buildOverseasWorkStudyAnswer() {
+  return [
+    'Kuliah Sambil Kerja di Luar Negeri adalah program pendukung yang tercatat di data fasilitas/program ITB STIKOM Bali untuk memberi mahasiswa peluang pengalaman belajar sekaligus bekerja di luar negeri.',
+    '',
+    'Data yang aman saya sampaikan baru sebatas nama dan arah programnya: program ini berkaitan dengan pengalaman internasional, pengembangan kemampuan kerja, dan persiapan mahasiswa menghadapi lingkungan kerja global.',
+    '',
+    'Untuk detail teknis seperti negara tujuan, syarat peserta, durasi, biaya, jadwal, jenis pekerjaan, dan alur pendaftaran, data training saat ini belum memuat rincian lengkap. Bagian itu sebaiknya dikonfirmasi ke admin kampus atau unit kerja sama internasional.'
+  ].join('\n');
+}
+
+function buildPaidOverseasInternshipAnswer() {
+  return [
+    'Magang Berbayar di Luar Negeri adalah program pendukung yang tercatat sebagai peluang pengalaman kerja/magang internasional bagi mahasiswa.',
+    '',
+    'Maksudnya, mahasiswa berkesempatan mengikuti magang di luar negeri dan programnya disebut sebagai magang berbayar pada data fasilitas yang tersedia.',
+    '',
+    'Namun data yang aman belum memuat rincian seperti negara tujuan, perusahaan mitra, nominal uang saku/gaji, durasi, syarat peserta, biaya, jadwal, atau alur seleksi. Untuk detail tersebut, kakak sebaiknya konfirmasi ke admin kampus atau unit kerja sama internasional agar tidak keliru.'
+  ].join('\n');
+}
+
+function buildHiThinkAnswer() {
+  return [
+    'Program Hi-Think adalah program kolaborasi antara ITB STIKOM Bali dengan perusahaan teknologi Hi-Think Jepang.',
+    '',
+    'Program ini berkaitan dengan persiapan mahasiswa untuk belajar dan berkarier di lingkungan industri teknologi Jepang, termasuk penguatan kurikulum/kompetensi dan kursus bahasa Jepang sesuai data yang tersedia.',
+    '',
+    'Untuk detail teknis seperti syarat ikut, jadwal, kuota, biaya, atau alur pendaftaran, kakak sebaiknya konfirmasi ke admin kampus atau pengelola program.'
+  ].join('\n');
+}
 function buildGccpAnswer() {
   return [
     'GCCP adalah Global Cross Cultural Program, yaitu program internasional/short course yang berkaitan dengan pengalaman lintas budaya dan interaksi global.',
@@ -4258,6 +4304,37 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
       answer: buildLinkedInCareerNoDataAnswer(),
       source: 'semantic-rag-campus-support-entity',
       frameSource: 'semantic-rag-insufficient-data'
+    };
+  }
+  if (isOverseasWorkStudyQuestion(q)) {
+    return {
+      answer: buildOverseasWorkStudyAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
+
+  if (isPaidOverseasInternshipQuestion(q)) {
+    return {
+      answer: buildPaidOverseasInternshipAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
+
+  if (/\b(?:hi-?think|hithink)\b/i.test(q)) {
+    return {
+      answer: buildHiThinkAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
+
+  if (/\b(?:short\s*course|shortcourse|kursus\s+singkat)\b/i.test(q) && !/\bgccp\b/i.test(q)) {
+    return {
+      answer: buildGccpAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
     };
   }
   if (/\b(?:gccp|gcpp|gcp)\b/i.test(q)) {
@@ -4495,7 +4572,7 @@ function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options =
 }
 function tryCampusFacilityAnswer(question, indexForQuery) {
   const q = String(question || '').toLowerCase();
-  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|incubator|inbis|softskill|language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|gccp|bccp|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
+  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|incubator|inbis|softskill|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|hithink|gccp|gcpp|gcp|short\s*course|shortcourse|kursus\s+singkat|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
   if (!asksFacilities) return null;
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
 
@@ -4515,6 +4592,37 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
     };
   }
 
+  if (isOverseasWorkStudyQuestion(q)) {
+    return {
+      answer: buildOverseasWorkStudyAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
+
+  if (isPaidOverseasInternshipQuestion(q)) {
+    return {
+      answer: buildPaidOverseasInternshipAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
+
+  if (/\b(?:hi-?think|hithink)\b/i.test(q)) {
+    return {
+      answer: buildHiThinkAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
+
+  if (/\b(?:short\s*course|shortcourse|kursus\s+singkat)\b/i.test(q) && !/\bgccp\b/i.test(q)) {
+    return {
+      answer: buildGccpAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
   if (/\b(?:gccp|gcpp|gcp)\b/i.test(q)) {
     if (asksCampusSupportTechnicalDetail(q)) {
       return {
@@ -4553,7 +4661,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
     };
   }
 
-  if (/\b(language\s+learning|belajar\s+bahasa|kemampuan\s+bahasa(?:nya)?|meningkatkan\s+kemampuan\s+bahasa(?:nya)?|fasilitas\s+bahasa|kursus\s+bahasa)\b/i.test(q)) {
+  if (/\b(language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa(?:nya)?|meningkatkan\s+kemampuan\s+bahasa(?:nya)?|fasilitas\s+bahasa|kursus\s+bahasa)\b/i.test(q)) {
     if (asksCampusSupportTechnicalDetail(q)) {
       return {
         answer: buildCampusSupportTechnicalNoDataAnswer({ label: 'Language Learning Center' }, q),
@@ -5335,6 +5443,18 @@ function inferFrameTopic(question, source) {
       ]
     };
   }
+  if (isOverseasWorkStudyQuestion(q) || isPaidOverseasInternshipQuestion(q)) {
+    return {
+      request: 'program pengalaman kerja atau belajar di luar negeri yang kakak tanyakan',
+      assumption: 'Saya jawab sesuai nama program yang tercatat dan tidak menambahkan detail teknis yang belum ada di data.',
+      conclusion: 'Jadi, program ini berkaitan dengan pengalaman internasional, tetapi detail pelaksanaan tetap perlu dikonfirmasi ke admin kampus atau unit kerja sama internasional.',
+      followups: [
+        'Apa saja program internasional yang tersedia di STIKOM Bali?',
+        'Apa itu GCCP atau short course internasional?',
+        'Apa saja pilihan Double Degree internasional?'
+      ]
+    };
+  }
   if (src.includes('training-specific')) {
     return {
       request: 'informasi spesifik yang kakak tanyakan',
@@ -5802,14 +5922,18 @@ function buildContextualFollowups(followups, question, body, source, topic) {
   };
   const validate = isFollowupValidationEnabled();
   const out = [];
+  const qNorm = normalizeCacheText(question);
+  const src = String(source || '').toLowerCase();
   for (const item of list) {
     const expanded = expandContextualFollowup(item, context);
     if (!expanded || out.includes(expanded)) continue;
+    const expandedNorm = normalizeCacheText(expanded);
+    if (src.includes('fee') && /\brincian\s+biaya\b/i.test(question) && /\brincian\s+biaya\b/i.test(expanded)) continue;
+    if (qNorm && expandedNorm && (expandedNorm === qNorm || expandedNorm.includes(qNorm) || qNorm.includes(expandedNorm))) continue;
     if (validate && !canAnswerFollowupCandidate(expanded)) continue;
     out.push(expanded);
     if (out.length >= 3) break;
-  }
-  return out;
+  }  return out;
 }
 
 function buildHybridFrameOpeners(question, source, topic) {
@@ -6209,39 +6333,55 @@ function buildFrameOpeners(question, source, topic) {
 function formatNaturalAnswerFrame(question, answer, source) {
   const body = String(answer || '').trim();
   if (!body) return body;
-  if (/^(?:mohon\s+)?maaf\b/i.test(body)) return body;
-  if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
   const src = String(source || '').toLowerCase();
-  if (src.includes('insufficient-data') || src.includes('safe-general') || src.includes('institution-vision-mission') || src.includes('student-concern') || src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('small-talk') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return body;
-  if (src.includes('ukm') || src.includes('generic-faq-qna') || src.includes('training-specific') || src.includes('campus-support-entity') || src.includes('campus-facility')) return body;
+  if (src.includes('small-talk')) return body;
+  const appendFollowupsOnly = () => {
+    if (!envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) return body;
+    const topic = inferFrameTopic(question, source);
+    const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
+    if (!followups.length) return body;
+    return [body, '', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.map(item => `- ${item}`)].join('\n')].join('\n').trim();
+  };
+  if (/^(?:mohon\s+)?maaf\b/i.test(body)) return appendFollowupsOnly();
+  if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return appendFollowupsOnly();
+  if (src.includes('insufficient-data') || src.includes('safe-general') || src.includes('institution-vision-mission') || src.includes('student-concern') || src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return appendFollowupsOnly();
+  if (src.includes('ukm') || src.includes('generic-faq-qna') || src.includes('training-specific') || src.includes('campus-support-entity') || src.includes('campus-facility')) return appendFollowupsOnly();
   const q = String(question || '').toLowerCase();
-  if (src.includes('rpl')) return body;
-  if (src.includes('scholarship') && /\b(seluruh|semua|full|penuh|100\s*%)\b/i.test(q)) return body;
-  if (/belum menemukan data biaya Program Double Degree untuk Teknologi Informasi/i.test(body)) return body;
-  if (/\b(apa\s+kabar|apa\s+khabar|kabar\s+apa|khabar\s+apa|gimana\s+kabar|gimana\s+khabar|kabar\s+kamu|khabar\s+kamu|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|bagaimana\s+kabar|bagaimana\s+khabar)\b/i.test(q)) return body;
+  if (src.includes('rpl')) return appendFollowupsOnly();
+  if (src.includes('scholarship') && /\b(seluruh|semua|full|penuh|100\s*%)\b/i.test(q)) return appendFollowupsOnly();
+  if (/belum menemukan data biaya Program Double Degree untuk Teknologi Informasi/i.test(body)) return appendFollowupsOnly();
+  if (/\b(apa\s+kabar|apa\s+khabar|kabar\s+apa|khabar\s+apa|gimana\s+kabar|gimana\s+khabar|kabar\s+kamu|khabar\s+kamu|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|bagaimana\s+kabar|bagaimana\s+khabar)\b/i.test(q)) return appendFollowupsOnly();
   if (/^\s*(halo|hallo|hai|hi|hello|haloo|halooo|assalamualaikum|assalamu\s+alaikum|om\s+swastiastu|swastiastu|shalom|namo\s+buddhaya|nammo\s+buddhaya|salam\s+kebajikan|rahayu|salam\s+rahayu|salam|selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam)\s*(kak|min|admin|tiko)?\s*$/i.test(String(question || '').trim())) return body;
 
   const questionText = String(question || '').trim();
   if (isEnglishQuestion(questionText)) {
-    return body;
+    return appendFollowupsOnly();
   }
   const topic = inferFrameTopic(question, source);
   const opener = pickVariant(question, source, buildFrameOpeners(question, source, topic));
   const opening = `${opener} ${topic.assumption}`.replace(/\s{2,}/g, ' ').trim();
   const parts = [opening, '', body];
 
-  if (src.includes('fee')) return parts.join('\n').trim();
-
+  if (src.includes('fee')) {
+    if (envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) {
+      const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
+      if (followups.length) {
+        parts.push('', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.map(item => `- ${item}`)].join('\n'));
+      }
+    }
+    return parts.join('\n').trim();
+  }
   const bodyAlreadyHasConclusion = /\n\s*(?:Jadi|Singkatnya|Kesimpulannya),|\n\s*Kesimpulan\s*:/i.test(body);
   if (!bodyAlreadyHasConclusion && topic.conclusion) {
     parts.push('', topic.conclusion);
   }
 
-  const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
-  if (followups.length) {
-    parts.push('', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.map(item => `- ${item}`)].join('\n'));
+  if (envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) {
+    const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
+    if (followups.length) {
+      parts.push('', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.map(item => `- ${item}`)].join('\n'));
+    }
   }
-
   return parts.join('\n').trim();
 }
 
