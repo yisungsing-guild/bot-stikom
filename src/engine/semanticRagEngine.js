@@ -2114,7 +2114,7 @@ function trySmallTalkAnswer(question) {
     };
   }
 
-  if (/^(oke|ok|okay|okey|siap|baik|sip|mantap|noted|iya|ya|y)$/i.test(normalized)) {
+  if (/^(oke|ok|okay|okey|siap|baik|sip|mantap|noted|iya|ya|y)(?:\s+(?:kalau|kalo)\s+begitu)?$/i.test(normalized)) {
     return {
       answer: 'Baik, Kak. Silakan lanjutkan kalau ada yang ingin ditanyakan seputar ITB STIKOM Bali.'
     };
@@ -2375,6 +2375,24 @@ function tryUnsupportedDoubleDegreePartnerAnswer(question) {
     frameSource: 'semantic-rag-insufficient-data'
   };
 }
+function tryUnsupportedInternationalProgramAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const mentionsJ1 = /\b(j\s*1|j-?1|training\s+1\s+tahun|program\s+j1|visa\s+j1)\b/i.test(q);
+  const mentionsAmerica = /\b(amerika|america|usa|united\s+states|as\b)\b/i.test(q);
+  const asksProgram = /\b(program|training|magang|internship|kerja|bekerja|luar\s+negeri|ada|tersedia|sudah\s+ada)\b/i.test(q);
+  if (!(mentionsJ1 || (mentionsAmerica && asksProgram))) return null;
+  return {
+    answer: [
+      'Saya belum menemukan data yang cukup aman bahwa ITB STIKOM Bali memiliki program J1/training 1 tahun ke Amerika pada dokumen yang tersedia saat ini.',
+      '',
+      'Agar tidak salah menyebut program, syarat, negara tujuan, durasi, biaya, atau mitra, bagian ini sebaiknya dikonfirmasi ke admin kampus atau unit kerja sama internasional.',
+      '',
+      'Program internasional yang tercatat di data saat ini antara lain Double Degree internasional, GCCP/short course, Hi-Think, kuliah sambil kerja di luar negeri, dan magang berbayar di luar negeri.'
+    ].join('\n'),
+    source: 'semantic-rag-unsupported-international-program',
+    frameSource: 'semantic-rag-insufficient-data'
+  };
+}
 function tryDoubleDegreeFollowUpAnswer(question, _indexForQuery, options = {}) {
   const raw = String(question || '').trim();
   const q = raw.toLowerCase();
@@ -2451,11 +2469,13 @@ function tryOutOfDomainAnswer(question) {
 function isAcademicScheduleLookupQuestion(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return false;
-  const scheduleSignal = /\b(jadwal|kalender|agenda|kapan|tanggal|tgl|hari|jam|periode|pelaksanaan|dilaksanakan|berlangsung)\b/i.test(q);
+  const scheduleSignal = /\b(jadwal|kalender|agenda|kapan|tanggal|tgl|hari|jam|periode|pelaksanaan|dilaksanakan|berlangsung|selesai|berakhir)\b/i.test(q);
   const examSignal = /\b(ujian|uts|uas|remedial|remidi|ujian\s+ulang|ujian\s+susulan|susulan)\b/i.test(q);
-  return scheduleSignal && examSignal;
+  const semesterBetweenSignal = /\b(semester\s+antara|semester\s+pendek|sp\b)\b/i.test(q);
+  const academicExecutionSignal = /\b(pelaksanaan\s+akademik|kalender\s+akademik|agenda\s+akademik|jadwal\s+akademik|perkuliahan|kuliah\s+semester)\b/i.test(q);
+  if (/\b(pmb|penerimaan\s+mahasiswa\s+baru|maba|camaba|gelombang\s+pendaftaran|daftar\s+kuliah)\b/i.test(q)) return false;
+  return scheduleSignal && (examSignal || semesterBetweenSignal || academicExecutionSignal);
 }
-
 function isOperationalAcademicPolicyQuestion(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return false;
@@ -4157,6 +4177,20 @@ function buildLanguageLearningAnswer() {
   ].join('\n');
 }
 
+function buildCareerReadinessProgramsAnswer() {
+  return [
+    'Untuk mempersiapkan mahasiswa mendapatkan pekerjaan setelah lulus, program/fasilitas yang paling relevan di ITB STIKOM Bali adalah:',
+    '',
+    '- Career Center: membantu informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study.',
+    '- Program Pengembangan Softskill: mendukung pembekalan keterampilan kerja dan kesiapan masuk dunia profesional.',
+    '- Magang atau informasi peluang magang: membantu mahasiswa mengenal dunia kerja sebelum lulus.',
+    '- Program Hi-Think: berkaitan dengan persiapan belajar/karier di lingkungan industri teknologi Jepang sesuai data yang tersedia.',
+    '- Magang berbayar di luar negeri: tercatat sebagai program pendukung internasional, tetapi detail teknisnya perlu dikonfirmasi ke admin kampus/unit kerja sama internasional.',
+    '- Program jaminan konsultasi selama 2 tahun setelah lulus: tercatat sebagai dukungan konsultasi setelah lulus.',
+    '',
+    'Jadi, kalau fokus kakak adalah kesiapan kerja, yang paling utama ditanyakan dulu adalah Career Center, softskill, magang, dan program internasional karier.'
+  ].join('\n');
+}
 function buildCareerSoftskillAnswer() {
   return [
     'Dalam pengembangan softskill, Career Center ITB STIKOM Bali membantu mahasiswa dan alumni mempersiapkan diri masuk dunia kerja.',
@@ -4290,7 +4324,9 @@ function buildAcademicPolicyNoDataAnswer(question) {
 
 function buildAcademicScheduleNoDataAnswer(question) {
   const q = String(question || '').toLowerCase();
-  if (/\b(remedial|remidi)\b/i.test(q)) {
+  if (/\b(semester\s+antara|semester\s+pendek|sp\b|pelaksanaan\s+akademik)\b/i.test(q)) {
+    return 'Saya belum menemukan jadwal pelaksanaan akademik semester antara yang cukup aman pada data yang tersedia. Untuk tanggal selesai atau periode resminya, kakak sebaiknya cek kalender akademik/SION atau konfirmasi ke BAAK.';
+  }  if (/\b(remedial|remidi)\b/i.test(q)) {
     return 'Saya belum menemukan jadwal remedial semester genap yang cukup aman pada data yang tersedia. Untuk jadwal resmi remedial, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK/dosen pengampu.';
   }
   return 'Saya belum menemukan jadwal akademik yang cukup aman pada data yang tersedia. Untuk jadwal resmi, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK.';
@@ -4575,6 +4611,13 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|incubator|inbis|softskill|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|hithink|gccp|gcpp|gcp|short\s*course|shortcourse|kursus\s+singkat|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
   if (!asksFacilities) return null;
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
+  if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa)\b/i.test(q)) {
+    return {
+      answer: buildCareerReadinessProgramsAnswer(),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
 
   if (/\b(layanan\s+industri|dari\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri)\b/i.test(q)) {
     return {
@@ -5467,6 +5510,18 @@ function inferFrameTopic(question, source) {
       ]
     };
   }
+  if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang)\b/i.test(q)) {
+    return {
+      request: 'program atau fasilitas yang membantu kesiapan kerja mahasiswa',
+      assumption: 'Saya fokuskan ke layanan kampus yang paling berkaitan dengan karier dan kesiapan kerja.',
+      conclusion: 'Jadi, untuk kesiapan kerja, jalur paling relevan adalah Career Center, softskill, magang, dan program karier/internasional yang tercatat.',
+      followups: [
+        'Layanan apa saja yang diberikan Career Center?',
+        'Apa itu Program Pengembangan Softskill?',
+        'Program magang apa saja yang tersedia untuk mahasiswa?'
+      ]
+    };
+  }
   if (src.includes('campus-facility-detail')) {
     return {
       request: 'detail program atau fasilitas pendukung yang kakak tanyakan',
@@ -5854,7 +5909,9 @@ function expandContextualFollowup(item, context = {}) {
   if (/double\s*degree|dual\s*degree/.test(q)) {
     return 'Apa saja pilihan Double Degree yang tersedia, dan kampus mitranya bekerja sama dengan prodi apa?';
   }
-  if (/career\s*center|layanan/.test(q)) {
+  if (/soft\s*skill|softskill|pengembangan\s+softskill/.test(q)) {
+    return 'Apa saja bentuk Program Pengembangan Softskill untuk membantu kesiapan kerja mahasiswa?';
+  }  if (/career\s*center|layanan/.test(q)) {
     return 'Layanan apa saja yang diberikan Career Center untuk membantu mahasiswa menyiapkan karier?';
   }
   if (/fasilitas|sarana|prasarana/.test(q)) {
@@ -6335,6 +6392,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (!body) return body;
   const src = String(source || '').toLowerCase();
   if (src.includes('small-talk')) return body;
+  if (src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('insufficient-data') || src.includes('unsupported-international-program')) return body;
   const appendFollowupsOnly = () => {
     if (!envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) return body;
     const topic = inferFrameTopic(question, source);
@@ -6637,6 +6695,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-student-concern', tryStudentConcernAnswer],
   ['semantic-rag-career-softskill', tryCareerCenterSoftskillAnswer],
   ['semantic-rag-unsupported-double-degree-partner', tryUnsupportedDoubleDegreePartnerAnswer],
+  ['semantic-rag-unsupported-international-program', tryUnsupportedInternationalProgramAnswer],
   ['semantic-rag-known-faq-qna', tryKnownFaqQnaAnswer],
   ['semantic-rag-institution-vision-mission', tryInstitutionVisionMissionAnswer],
   ['semantic-rag-dual-degree-followup', tryDoubleDegreeFollowUpAnswer],
@@ -6726,6 +6785,7 @@ const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-student-concern',
   'semantic-rag-career-softskill',
   'semantic-rag-unsupported-double-degree-partner',
+  'semantic-rag-unsupported-international-program',
   'semantic-rag-known-faq-qna',
   'semantic-rag-generic-faq-qna',
   'semantic-rag-campus-support-entity',
@@ -6974,7 +7034,7 @@ function shouldPreferTrainingBeforeDeterministic(rewrite) {
 
 function buildInsufficientDataAnswer(kind = 'very_low') {
   if (kind === 'low') {
-    return 'Saya ragu apakah saya mempunyai cukup data untuk menjawab pertanyaan anda. Tapi akan saya coba menjawab.';
+    return 'Saya belum menemukan data yang cukup aman untuk menjawab pertanyaan itu. Agar tidak keliru, kakak bisa cek pengumuman resmi kampus/SION atau konfirmasi ke admin/unit terkait.';
   }
   return 'Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi, untuk menjawab pertanyaan anda. Mungkin anda bisa mengubah pertanyaannya atau menanyakan hal lain yang ingin diketahui.';
 }
