@@ -5374,6 +5374,36 @@ module.exports = function (provider) {
     if (mentionsPmb && !negatesPmb) return false;
     return scheduleSignal && (examSignal || semesterSignal || academicSignal);
   }
+  function buildProviderAcademicScheduleNoDataAnswer(rawText) {
+    const t = String(rawText || '').toLowerCase();
+    if (/\b(semester\s+antara|semester\s+pendek|sp\b)\b/i.test(t)) {
+      return 'Saya belum menemukan jadwal pelaksanaan akademik semester antara yang cukup aman pada data yang tersedia. Untuk tanggal selesai atau periode resminya, kakak sebaiknya cek kalender akademik/SION atau konfirmasi ke BAAK.';
+    }
+    if (/\b(semester\s+(?:genap|ganjil)|genap\s+\d{4}\s*\/\s*\d{4}|ganjil\s+\d{4}\s*\/\s*\d{4})\b/i.test(t)) {
+      return 'Saya belum menemukan jadwal pelaksanaan akademik semester genap/ganjil yang cukup aman pada data yang tersedia. Untuk tanggal mulai, selesai, atau periode resminya, kakak sebaiknya cek kalender akademik/SION atau konfirmasi ke BAAK.';
+    }
+    if (/\b(remedial|remidi)\b/i.test(t)) {
+      return 'Saya belum menemukan jadwal remedial semester genap yang cukup aman pada data yang tersedia. Untuk jadwal resmi remedial, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK/dosen pengampu.';
+    }
+    return 'Saya belum menemukan jadwal akademik yang cukup aman pada data yang tersedia. Untuk jadwal resmi, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK.';
+  }
+
+  function looksLikePmbScheduleOutbound(rawText) {
+    const t = String(rawText || '').toLowerCase();
+    return /\b(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|gelombang\s+pendaftaran|jadwal\s+pendaftaran|admin\s+pmb|cara\s+daftar|syarat\s+dokumen|biaya\s+pmb)\b/i.test(t);
+  }
+
+  function guardOutboundMeaningBeforeSend(inboundUserText, outboundText) {
+    const inbound = String(inboundUserText || '');
+    const outbound = String(outboundText || '');
+    if (!inbound.trim() || !outbound.trim()) return outbound;
+
+    if (isAcademicScheduleLookupQuestion(inbound) && looksLikePmbScheduleOutbound(outbound)) {
+      return buildProviderAcademicScheduleNoDataAnswer(inbound);
+    }
+
+    return outbound;
+  }
   function inferNonMarketingDepartmentSelection(rawText) {
     const t = String(rawText || '').toLowerCase();
     if (!t.trim()) return null;
@@ -8585,6 +8615,7 @@ module.exports = function (provider) {
 
       const shouldDecorate = !isJestOrTestEnv() || String(process.env.FORCE_REPLY_DECORATION_TEST || '').toLowerCase() === 'true';
       const alreadyFormatted = /(?:^|\n)Topik:/i.test(String(messageText || '')) && /(?:^|\n)Kesimpulan:/i.test(String(messageText || ''));
+      messageText = guardOutboundMeaningBeforeSend(text, messageText);
       let decorated = String(messageText || '');
       try {
         const responseIntent = detectResponseIntent(messageText, text);
