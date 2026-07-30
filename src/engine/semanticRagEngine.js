@@ -7139,14 +7139,95 @@ function answerMentionsUnaskedSpecificEntity(question, answer) {
   return entities.some(entity => a.includes(entity) && !q.includes(entity));
 }
 
+function inferQuestionMeaningProfile(question) {
+  const q = String(question || '').toLowerCase();
+  if (!q.trim()) return { intent: 'unknown' };
+
+  if (isAcademicScheduleLookupQuestion(q)) return { intent: 'academic_schedule' };
+  if (/\b(biaya|harga|bayar|ukt|dpp|rincian\s+biaya|biaya\s+kuliah|potongan\s+biaya)\b/i.test(q)) return { intent: 'fee' };
+  if (/\b(pmb|penerimaan\s+mahasiswa\s+baru)\b/i.test(q) && /\b(apa\s+itu|tentang|bertanya|tanya|informasi|jelaskan|maksud)\b/i.test(q)) return { intent: 'pmb_info' };
+  if (/\b(daftar|mendaftar|pendaftaran|registrasi)\b/i.test(q) && /\b(kuliah|pmb|stikom|camaba|mahasiswa\s+baru)\b/i.test(q)) return { intent: 'registration_info' };
+  if (/\b(jurusan|prodi|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa)\b/i.test(q)) return { intent: 'program_list' };
+  if (/\b(apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan)\b/i.test(q) && /\b(sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i.test(q)) return { intent: 'program_definition' };
+  if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa)\b/i.test(q)) return { intent: 'career_readiness' };
+  if (/\b(fasilitas|layanan|sarana|prasarana)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|unggulan|diunggulkan|tersedia|yang\s+ada|ada\s+apa)\b/i.test(q)) return { intent: 'facility_list' };
+  if (/\b(program|training|magang|internship|kerja|bekerja|sertifikasi|kelas|kursus|bahasa)\b/i.test(q) && /\b(j\s*1|j-?1|n\s*[1-5]|jlpt|amerika|america|usa|jepang|japan|luar\s+negeri)\b/i.test(q)) return { intent: 'international_program_availability' };
+  if (/\b(beasiswa|kip|1k1s|potongan|prestasi|yayasan)\b/i.test(q)) return { intent: 'scholarship' };
+  return { intent: 'unknown' };
+}
+
+function answerMatchesQuestionMeaning(question, answer, source = '') {
+  const profile = inferQuestionMeaningProfile(question);
+  const intent = profile.intent || 'unknown';
+  if (intent === 'unknown') return null;
+
+  const a = String(answer || '').toLowerCase();
+  const src = String(source || '').toLowerCase();
+  const noData = hasNoDataAnswerPhrase(answer);
+
+  if (intent === 'academic_schedule') {
+    return noData || /\b(semester\s+antara|semester\s+pendek|remedial|remidi|jadwal\s+akademik|kalender\s+akademik|sion|baak)\b/i.test(a);
+  }
+  if (intent === 'fee') {
+    return /\b(rp\.?|biaya|ukt|dpp|pendaftaran|potongan|gelombang)\b/i.test(a);
+  }
+  if (intent === 'pmb_info') {
+    return /\b(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|calon\s+mahasiswa)\b/i.test(a);
+  }
+  if (intent === 'registration_info') {
+    return /\b(daftar|mendaftar|pendaftaran|registrasi|siap\.stikom-bali\.ac\.id|online|offline|pmb)\b/i.test(a);
+  }
+  if (intent === 'program_list') {
+    return /\b(sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|s2\s+sistem\s+informasi|double\s+degree|dual\s+degree)\b/i.test(a);
+  }
+  if (intent === 'program_definition') {
+    const q = String(question || '').toLowerCase();
+    if (/\bsi\b|sistem\s+informasi/i.test(q)) return /sistem\s+informasi/i.test(a);
+    if (/\bti\b|teknologi\s+informasi/i.test(q)) return /teknologi\s+informasi/i.test(a);
+    if (/\bbd\b|bisnis\s+digital/i.test(q)) return /bisnis\s+digital/i.test(a);
+    if (/\bsk\b|sistem\s+komputer/i.test(q)) return /sistem\s+komputer/i.test(a);
+    if (/\bmi\b|manajemen\s+informatika/i.test(q)) return /manajemen\s+informatika/i.test(a);
+    return /program\s+studi|prodi/i.test(a);
+  }
+  if (intent === 'career_readiness') {
+    return /\b(career\s*center|pusat\s+karier|karier|karir|soft\s*skill|softskill|magang|lowongan|job\s*fair|campus\s*hiring|hi-?think|konsultasi)\b/i.test(a);
+  }
+  if (intent === 'facility_list') {
+    const facilityHits = ['career center', 'inkubator', 'softskill', 'soft skill', 'ukm', 'language learning', 'double degree', 'hi-think', 'hithink', 'gccp', 'magang', 'konsultasi'].filter(term => a.includes(term)).length;
+    return facilityHits >= 2 || (src.includes('campus-facility') && /\bfasilitas\b/i.test(a));
+  }
+  if (intent === 'international_program_availability') {
+    const q = String(question || '').toLowerCase();
+    const targetMentioned = (/\b(j\s*1|j-?1)\b/i.test(q) ? /\bj\s*1|j-?1\b/i.test(a) : true)
+      && (/\bn\s*[1-5]|jlpt\b/i.test(q) ? /\bn\s*[1-5]|jlpt\b/i.test(a) : true)
+      && (/amerika|america|usa/i.test(q) ? /amerika|america|usa/i.test(a) : true)
+      && (/jepang|japan/i.test(q) ? /jepang|japan/i.test(a) : true);
+    return targetMentioned && (noData || /\b(double\s+degree|gccp|hi-?think|magang|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/i.test(a));
+  }
+  if (intent === 'scholarship') {
+    return /\b(beasiswa|kip|1k1s|potongan|prestasi|yayasan)\b/i.test(a);
+  }
+
+  return null;
+}
 function isMeaningMismatchAnswer(question, answer, source = '') {
   if (!String(answer || '').trim()) return false;
+
+  const qForAvailability = String(question || '').toLowerCase();
+  const srcForAvailability = String(source || '').toLowerCase();
+  const asksAvailability = /\b(apakah|apa|ada|tersedia|sudah\s+ada|punya|memiliki)\b/i.test(qForAvailability) && /\b(program|layanan|fasilitas|kelas|kursus|sertifikasi|training|magang|kerja|beasiswa|komunitas|ukm|jalur)\b/i.test(qForAvailability);
+  const asksRecommendationExplicitly = /\b(cocok|cocoknya|rekomendasi|saran|sarankan|jurusan\s+apa|prodi\s+apa|pilih\s+jurusan)\b/i.test(qForAvailability);
+  if (srcForAvailability.includes('program-recommendation') && asksAvailability && !asksRecommendationExplicitly) return true;
+
+  const meaningMatch = answerMatchesQuestionMeaning(question, answer, source);
+  if (meaningMatch === true) return false;
+  if (meaningMatch === false) return true;
+
   const anchors = extractMeaningAnchors(question);
   if (!anchors.length) return false;
 
   const normalizedAnswer = normalizeCacheText(answer);
   const src = String(source || '').toLowerCase();
-  if (src.includes('program-list') && /\b(jurusan|prodi|program\s+studi|program\s+kuliah)\b/i.test(String(question || '')) && /\b(sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika)\b/i.test(String(answer || ''))) return false;
   const hits = anchors.filter(anchor => normalizedAnswer.includes(anchor));
   if (hits.length > 0) return false;
 
@@ -7157,6 +7238,137 @@ function isMeaningMismatchAnswer(question, answer, source = '') {
   return anchors.length >= 2;
 }
 
+function isGeneralCampusAvailabilityQuestion(question) {
+  const q = String(question || '').toLowerCase();
+  if (!/\b(apakah|apa|ada|tersedia|sudah\s+ada|punya|memiliki)\b/i.test(q)) return false;
+  if (!/\b(program|layanan|fasilitas|kelas|kursus|sertifikasi|training|magang|kerja|beasiswa|komunitas|ukm|jalur)\b/i.test(q)) return false;
+  if (!/\b(stikom|itb\s*stikom|kampus|bali|di\s+stikom|internasional|international|luar\s+negeri|korea|jepang|amerika|malaysia|china|australia|singapura|jerman|program|kelas|kursus|sertifikasi|training|magang)\b/i.test(q)) return false;
+  return true;
+}
+
+function extractAvailabilityTopic(question) {
+  let q = String(question || '').trim();
+  q = q.replace(/[?!.]+$/g, '').trim();
+  q = q.replace(/^\s*(?:kalau|kalo|baik|iya|ya|nah|apakah|apa)\s+/i, '');
+  q = q.replace(/\b(?:apakah|apa|sudah|ada|tersedia|punya|memiliki|di|itb|stikom|bali|kampus|kak|ya)\b/gi, ' ');
+  q = q.replace(/\s{2,}/g, ' ').trim();
+  return q.length >= 4 && q.length <= 90 ? q : 'program atau layanan tersebut';
+}
+
+function buildGeneralAvailabilityNoDataAnswer(question) {
+  const topic = extractAvailabilityTopic(question);
+  return [
+    `Saya belum menemukan data yang cukup aman tentang ${topic} pada informasi ITB STIKOM Bali yang tersedia saat ini.`,
+    '',
+    'Agar tidak keliru menyebut ketersediaan, syarat, jadwal, biaya, atau unit pengelolanya, kakak sebaiknya konfirmasi ke admin kampus/unit terkait.',
+    '',
+    'Kalau konteksnya program pendukung kampus, data yang tersedia saat ini mencatat beberapa program seperti Career Center, Inkubator Bisnis, UKM, Language Learning Center, Double Degree, Hi-Think, GCCP/short course, kuliah sambil kerja di luar negeri, dan magang berbayar di luar negeri.'
+  ].join('\n');
+}
+async function verifyAnswerRelevanceWithLlm(client, question, answer, source = '') {
+  if (!client || !envFlag('SEMANTIC_RAG_LLM_RELEVANCE_GATE', true)) return null;
+  const src = String(source || '').toLowerCase();
+  if (src.includes('small-talk')) return { ok: true, verdict: 'small_talk_skipped', confidence: 1 };
+  const q = String(question || '').trim();
+  const a = String(answer || '').trim();
+  if (!q || !a) return { ok: false, verdict: 'empty', confidence: 1 };
+
+  const prompt = [
+    'Nilai apakah JAWABAN benar-benar menjawab MAKSUD PERTANYAAN USER.',
+    'Ini adalah pemeriksa umum sebelum jawaban chatbot kampus dikirim ke WhatsApp.',
+    '',
+    'Kembalikan JSON valid saja dengan schema:',
+    '{"verdict":"direct|safe_no_data|partial|mismatch|hallucination","confidence":0-1,"reason":"singkat"}',
+    '',
+    'Definisi:',
+    '- direct: jawaban menjawab inti pertanyaan user secara relevan.',
+    '- safe_no_data: jawaban tidak memberi fakta yang diminta karena data tidak tersedia, tetapi tetap menyebut target/topik yang ditanyakan user dan tidak mengalihkan ke topik lain.',
+    '- partial: sebagian menjawab tetapi ada bagian penting yang belum dijawab.',
+    '- mismatch: jawaban membahas topik lain, hanya cocok kata, atau tidak menjawab maksud user.',
+    '- hallucination: jawaban mengklaim fakta yang tidak didukung/terlalu pasti untuk topik yang tampak tidak tersedia.',
+    '',
+    'Aturan penting:',
+    '- Jangan terjebak kesamaan kata. Fokus pada maksud pertanyaan.',
+    '- Kalau user bertanya jadwal akademik, jawaban PMB/gelombang pendaftaran adalah mismatch.',
+    '- Kalau user bertanya program tertentu yang belum ada datanya, safe_no_data boleh hanya jika menyebut program/negara/target yang user tanyakan.',
+    '- Kalau jawaban hanya berisi rekomendasi pertanyaan lanjutan tanpa menjawab pertanyaan utama, verdict mismatch.',
+    '- Kalau jawaban berupa daftar dan user memang meminta daftar, verdict direct.',
+    '',
+    `SOURCE: ${source || '-'}`,
+    '',
+    `PERTANYAAN USER:\n${clampText(q, 1200)}`,
+    '',
+    `JAWABAN BOT:\n${clampText(a, 2500)}`
+  ].join('\n');
+
+  try {
+    const completion = await client.chat.completions.create({
+      model: getModel(),
+      messages: [
+        { role: 'system', content: 'You are a strict semantic relevance judge for a grounded campus chatbot. Return only valid JSON.' },
+        { role: 'user', content: prompt }
+      ],
+      max_completion_tokens: 180,
+      temperature: 0,
+      top_p: 0.1
+    });
+    const obj = extractJsonObject(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content : '');
+    const verdict = String(obj && obj.verdict ? obj.verdict : '').toLowerCase();
+    const confidence = Number.isFinite(Number(obj && obj.confidence)) ? Math.max(0, Math.min(1, Number(obj.confidence))) : 0;
+    const ok = ['direct', 'safe_no_data'].includes(verdict) || (verdict === 'partial' && confidence >= 0.82);
+    return { ok, verdict: verdict || 'unknown', confidence, reason: String(obj && obj.reason ? obj.reason : '').slice(0, 240) };
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err), source }, '[SemanticRAG] LLM relevance verifier failed; using local meaning gate only');
+    return null;
+  }
+}
+
+async function finalizeSemanticResult(question, result, resultCacheKey, options = {}) {
+  if (!result || !result.answer) return result;
+  const source = result.source || 'semantic-rag';
+  const client = options.client || getClient();
+  const localMismatch = isMeaningMismatchAnswer(question, result.answer, source);
+  const llmVerdict = localMismatch ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
+  const llmMismatch = llmVerdict && llmVerdict.ok === false;
+
+  if (localMismatch || llmMismatch) {
+    logger.warn({
+      question,
+      source,
+      localMismatch,
+      llmVerdict,
+      answerPreview: String(result.answer || '').slice(0, 220)
+    }, '[SemanticRAG] result blocked by general semantic relevance verifier');
+
+    const blocked = {
+      success: true,
+      answer: buildMeaningMismatchFallbackAnswer(question),
+      source: 'semantic-rag-meaning-verifier-blocked',
+      contexts: Array.isArray(result.contexts) ? result.contexts : [],
+      confidenceScore: typeof result.confidenceScore === 'number' ? result.confidenceScore : 0,
+      confidenceTier: 'VERY_LOW',
+      debug: {
+        ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
+        blockedSource: source,
+        localMismatch,
+        llmVerdict,
+        meaningAnchors: extractMeaningAnchors(question)
+      }
+    };
+    if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
+    return blocked;
+  }
+
+  const finalized = llmVerdict ? {
+    ...result,
+    debug: {
+      ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
+      llmMeaningVerifier: llmVerdict
+    }
+  } : result;
+  if (resultCacheKey) setCachedSemanticResult(resultCacheKey, finalized);
+  return finalized;
+}
 function tryShortProgramDefinitionDirectAnswer(question) {
   const q = String(question || '').trim();
   if (!q) return null;
@@ -7177,6 +7389,10 @@ function isUnsafeDeterministicFallback(question, result, rewrite = null) {
   const source = String(result.source || '').toLowerCase();
   const intent = String(rewrite && rewrite.intent ? rewrite.intent : '').toLowerCase();
   const answer = String(result.answer || '').toLowerCase();
+
+  const asksAvailability = /\\b(apakah|apa|ada|tersedia|sudah\\s+ada|punya|memiliki)\\b/i.test(q) && /\\b(program|layanan|fasilitas|kelas|kursus|sertifikasi|training|magang|kerja|beasiswa|komunitas|ukm|jalur)\\b/i.test(q);
+  const asksRecommendationExplicitly = /\\b(cocok|cocoknya|rekomendasi|saran|sarankan|jurusan\\s+apa|prodi\\s+apa|pilih\\s+jurusan)\\b/i.test(q);
+  if (source.includes('program-recommendation') && asksAvailability && !asksRecommendationExplicitly) return true;
 
   const supportEntity = findCampusSupportEntity(q);
   const mentionsLinkedinCareer = /\b(linked\s*in|linkedin|career\s*center|karir\s*center|pusat\s*karir)\b/i.test(q);
@@ -7215,41 +7431,35 @@ async function querySemanticRag(question, options = {}) {
 
   if (isRawDocumentLeakComplaint(question)) {
     const response = { success: true, answer: buildRawDocumentLeakComplaintAnswer(), source: 'semantic-rag-raw-document-leak-feedback', contexts: [] };
-    setCachedSemanticResult(resultCacheKey, response);
-    return response;
+    return await finalizeSemanticResult(question, response, resultCacheKey);
   }
 
   if (isOperationalAcademicPolicyQuestion(question)) {
     const response = { success: true, answer: buildAcademicPolicyNoDataAnswer(question), source: 'semantic-rag-operational-academic-policy-no-answer', contexts: [] };
-    setCachedSemanticResult(resultCacheKey, response);
-    return response;
+    return await finalizeSemanticResult(question, response, resultCacheKey);
   }
 
 
   if (/\b(indikator|pertanggung\s*jawab(?:an)?|dipertanggung\s*jawabkan|institusi\s+pendidikan|akuntabilitas|kinerja\s+institusi)\b/i.test(String(question || ''))) {
     const response = { success: true, answer: 'Saya belum menemukan rincian indikator pertanggungjawaban institusi pendidikan ITB STIKOM Bali yang cukup aman pada data yang tersedia. Agar tidak keliru, indikator resmi seperti akreditasi, mutu akademik, tata kelola, layanan, atau pelaporan institusi sebaiknya dikonfirmasi ke pihak kampus/unit terkait.', source: 'semantic-rag-institution-indicator-insufficient-data', contexts: [] };
-    setCachedSemanticResult(resultCacheKey, response);
-    return response;
+    return await finalizeSemanticResult(question, response, resultCacheKey);
   }
 
   if (/\b(pks|pasal\s+\d+|addendum|pihak\s+(?:pertama|kedua|kesatu)|nama\s+mitra|template\s+pks|perjanjian\s+kerja\s*sama)\b/i.test(String(question || ''))) {
     const response = { success: true, answer: null, source: 'semantic-rag-admin-legal-no-answer', contexts: [] };
-    setCachedSemanticResult(resultCacheKey, response);
-    return response;
+    return await finalizeSemanticResult(question, response, resultCacheKey);
   }
 
   const strictDocumentOnly = isStrictDocumentOnlyMode();
   const fallbacksAllowed = !strictDocumentOnly;
   const shortDefinitionResponse = strictDocumentOnly ? null : tryShortProgramDefinitionDirectAnswer(question);
   if (shortDefinitionResponse) {
-    setCachedSemanticResult(resultCacheKey, shortDefinitionResponse);
-    return shortDefinitionResponse;
+    return await finalizeSemanticResult(question, shortDefinitionResponse, resultCacheKey);
   }
   const financeOperationalResult = strictDocumentOnly ? null : tryFinanceFallback(question);
   if (financeOperationalResult && financeOperationalResult.answer) {
     const builtFinanceResult = buildDeterministicResponse(question, 'semantic-rag-finance-fallback', financeOperationalResult, { routeStage: 'pre-ai-finance' });
-    setCachedSemanticResult(resultCacheKey, builtFinanceResult);
-    return builtFinanceResult;
+    return await finalizeSemanticResult(question, builtFinanceResult, resultCacheKey);
   }
 
   const hasDirectFeeSignal = /\b(?:biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/i.test(String(question || ''));
@@ -7257,8 +7467,7 @@ async function querySemanticRag(question, options = {}) {
     const feeResult = tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options);
     if (feeResult && feeResult.answer) {
       const builtFeeResult = buildDeterministicResponse(question, 'semantic-rag-fee-detail', feeResult, { routeStage: 'pre-ai-fee' });
-      setCachedSemanticResult(resultCacheKey, builtFeeResult);
-      return builtFeeResult;
+      return await finalizeSemanticResult(question, builtFeeResult, resultCacheKey);
     }
   }
 
@@ -7289,8 +7498,7 @@ async function querySemanticRag(question, options = {}) {
         answerPreview: String(preAiResult.answer).slice(0, 100)
       });
     }
-    setCachedSemanticResult(resultCacheKey, preAiResult);
-    return preAiResult;
+    return await finalizeSemanticResult(question, preAiResult, resultCacheKey);
   }
 
   const preRewriteHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_REWRITE_HANDLER_SOURCES.has(source));
@@ -7305,8 +7513,7 @@ async function querySemanticRag(question, options = {}) {
     if (debugTrace) {
       console.log('[TRACE PRE_REWRITE] CACHING and RETURNING preRewriteResult');
     }
-    setCachedSemanticResult(resultCacheKey, preRewriteResult);
-    return preRewriteResult;
+    return await finalizeSemanticResult(question, preRewriteResult, resultCacheKey);
   }
 
   // (index-first deterministic pass removed - rely on semantic routing and
@@ -7342,8 +7549,17 @@ async function querySemanticRag(question, options = {}) {
     }
     const fallbackResult = runDeterministicHandlers(question, DETERMINISTIC_HANDLERS, options, [question], { routeStage: 'fallback-no-ai' });
     if (fallbackResult) {
-      setCachedSemanticResult(resultCacheKey, fallbackResult);
-      return fallbackResult;
+      return await finalizeSemanticResult(question, fallbackResult, resultCacheKey);
+    }
+    if (isGeneralCampusAvailabilityQuestion(question)) {
+      const generalNoData = {
+        success: true,
+        answer: buildGeneralAvailabilityNoDataAnswer(question),
+        source: 'semantic-rag-general-availability-no-data',
+        contexts: [],
+        confidenceTier: 'VERY_LOW'
+      };
+      return await finalizeSemanticResult(question, generalNoData, resultCacheKey);
     }
     return { success: true, answer: null, source: 'semantic-rag-disabled', reason: 'missing_openai_api_key', contexts: [] };
   }
@@ -7405,8 +7621,7 @@ async function querySemanticRag(question, options = {}) {
       contexts: [],
       debug: { rewrite }
     };
-    setCachedSemanticResult(resultCacheKey, response);
-    return response;
+    return await finalizeSemanticResult(question, response, resultCacheKey);
   }
 
   const semanticRouteEnabled = shouldUseSemanticDeterministicRoute(rewrite) && !strictDocumentOnly;
@@ -7858,8 +8073,7 @@ async function querySemanticRag(question, options = {}) {
         answerPreview: String(response.answer).slice(0, 100)
       });
     }
-    setCachedSemanticResult(resultCacheKey, response);
-    return response;
+    return await finalizeSemanticResult(question, response, resultCacheKey);
   } catch (err) {
     logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] answer generation failed');
     if (!fallbacksAllowed) {
