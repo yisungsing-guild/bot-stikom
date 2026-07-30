@@ -9269,7 +9269,7 @@ module.exports = function (provider) {
     // Run before legacy rule/regex/fast paths so knowledge answers are not
     // hijacked by older deterministic routing. Set SEMANTIC_RAG_ONLY=true to
     // stop here when no grounded answer is found.
-    if (isSemanticRagFirstEnabled() && isRagEnabled() && (hasActiveTrainingData || allowIndexFallbackNoDb) && !looksLikeWrongAnswerFeedback(text) && !shouldSkipSemanticRagFirst(text, sessionData)) {
+    if (isSemanticRagFirstEnabled() && isRagEnabled() && allowBundledIndex && !looksLikeWrongAnswerFeedback(text) && !shouldSkipSemanticRagFirst(text, sessionData)) {
       try {
         const topK = parseInt(process.env.SEMANTIC_RAG_TOP_K || process.env.RAG_TOP_K || '8', 10);
         const semanticProgramHint = (typeof extractSpecificProgramHint === 'function' ? extractSpecificProgramHint(text) : null)
