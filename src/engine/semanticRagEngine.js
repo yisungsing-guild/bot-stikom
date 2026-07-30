@@ -8125,6 +8125,43 @@ async function querySemanticRag(question, options = {}) {
     return errorResult;
   }
 }
+async function verifyOutboundSemanticRelevance(question, answer, source = 'provider-outbound') {
+  const q = String(question || '').trim();
+  const a = String(answer || '').trim();
+  if (!q || !a) return { ok: true, skipped: true, reason: 'empty_question_or_answer' };
+  const src = String(source || '').trim() || 'provider-outbound';
+
+  const localMismatch = isMeaningMismatchAnswer(q, a, src);
+  if (localMismatch) {
+    return {
+      ok: false,
+      localMismatch: true,
+      llmVerdict: null,
+      reason: 'local_meaning_mismatch',
+      meaningAnchors: extractMeaningAnchors(q)
+    };
+  }
+
+  const client = getClient();
+  const llmVerdict = await verifyAnswerRelevanceWithLlm(client, q, a, src);
+  if (llmVerdict && llmVerdict.ok === false) {
+    return {
+      ok: false,
+      localMismatch: false,
+      llmVerdict,
+      reason: 'llm_meaning_mismatch',
+      meaningAnchors: extractMeaningAnchors(q)
+    };
+  }
+
+  return {
+    ok: true,
+    localMismatch: false,
+    llmVerdict,
+    reason: llmVerdict ? 'llm_verified' : 'local_verified_or_llm_unavailable',
+    meaningAnchors: extractMeaningAnchors(q)
+  };
+}
 function clearSemanticCaches(details = null) {
   const before = {
     resultCacheSize: semanticResultCache.size,
@@ -8157,6 +8194,7 @@ function prewarmSemanticRag() {
 
 module.exports = {
   querySemanticRag,
+  verifyOutboundSemanticRelevance,
   prewarmSemanticRag,
   rewriteQuestionWithLlm,
   retrieveSemanticContexts,

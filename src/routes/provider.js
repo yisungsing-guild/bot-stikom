@@ -11,7 +11,7 @@ const { handleFSM, upsertSession } = require('../engine/fsm');
 const { findReplyByRules } = require('../engine/replyEngine');
 const _ragEngine = require('../engine/ragEngine');
 const extractStructuredEntities = _ragEngine.extractStructuredEntities;
-const { querySemanticRag } = require('../engine/semanticRagEngine');
+const { querySemanticRag, verifyOutboundSemanticRelevance } = require('../engine/semanticRagEngine');
 const { getRagIndexPath, getRagDataDir } = require('../utils/ragPaths');
 
 // Wrapper around ragEngine.query that records calls/results so later stages
@@ -5393,6 +5393,49 @@ module.exports = function (provider) {
     return /\b(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|gelombang\s+pendaftaran|jadwal\s+pendaftaran|admin\s+pmb|cara\s+daftar|syarat\s+dokumen|biaya\s+pmb)\b/i.test(t);
   }
 
+  function shouldSkipFinalSemanticRelevanceGate(inboundUserText, outboundText, meta = {}) {
+    const inbound = String(inboundUserText || '').trim();
+    const outbound = String(outboundText || '').trim();
+    if (!inbound || !outbound) return true;
+    if (String(meta && meta.source || '').includes('timeout')) return true;
+    if (/^\s*(balas|pilih|ketik)\b/i.test(outbound)) return true;
+    if (/\b(silakan\s+pilih|balas\s+dengan\s+angka|ketik\s*:)\b/i.test(outbound)) return true;
+    if (/^\s*(halo|hallo|hai|hi|hello|apa\s+kabar|baik|oke|ok|siap|terima\s+kasih)\b/i.test(inbound) && outbound.length < 260) return true;
+    return false;
+  }
+
+  function buildFinalSemanticMismatchFallback(inboundUserText) {
+    if (isAcademicScheduleLookupQuestion(inboundUserText)) return buildProviderAcademicScheduleNoDataAnswer(inboundUserText);
+    if (isGeneralCampusAvailabilityQuestion(inboundUserText)) return buildGeneralAvailabilityNoDataAnswer(inboundUserText);
+    return 'Saya belum menemukan data yang cukup aman untuk menjawab pertanyaan itu. Agar tidak keliru, kakak bisa cek informasi resmi kampus atau konfirmasi ke admin/unit terkait.';
+  }
+
+  async function guardOutboundSemanticRelevanceBeforeSend(inboundUserText, outboundText, meta = {}) {
+    const original = String(outboundText || '').trim();
+    if (!original || shouldSkipFinalSemanticRelevanceGate(inboundUserText, original, meta)) return original;
+    if (envFlag('PROVIDER_FINAL_SEMANTIC_RELEVANCE_GATE', true) === false) return original;
+
+    const source = meta && (meta.source || meta.ragSource || meta.finalPipeline)
+      ? String(meta.source || meta.ragSource || meta.finalPipeline)
+      : 'provider-outbound';
+
+    try {
+      const verdict = await verifyOutboundSemanticRelevance(inboundUserText, original, source);
+      if (verdict && verdict.ok === false) {
+        logger.warn({
+          source,
+          verdict,
+          inboundPreview: String(inboundUserText || '').slice(0, 220),
+          outboundPreview: original.slice(0, 260)
+        }, '[Provider] outbound blocked by final semantic relevance gate');
+        return buildFinalSemanticMismatchFallback(inboundUserText);
+      }
+    } catch (e) {
+      logger.warn({ err: e && e.message ? e.message : String(e), source }, '[Provider] final semantic relevance gate failed; sending original outbound');
+    }
+
+    return original;
+  }
   function guardOutboundMeaningBeforeSend(inboundUserText, outboundText) {
     const inbound = String(inboundUserText || '');
     const outbound = String(outboundText || '');
@@ -8616,6 +8659,7 @@ module.exports = function (provider) {
       const shouldDecorate = !isJestOrTestEnv() || String(process.env.FORCE_REPLY_DECORATION_TEST || '').toLowerCase() === 'true';
       const alreadyFormatted = /(?:^|\n)Topik:/i.test(String(messageText || '')) && /(?:^|\n)Kesimpulan:/i.test(String(messageText || ''));
       messageText = guardOutboundMeaningBeforeSend(text, messageText);
+      messageText = await guardOutboundSemanticRelevanceBeforeSend(text, messageText, meta);
       let decorated = String(messageText || '');
       try {
         const responseIntent = detectResponseIntent(messageText, text);
