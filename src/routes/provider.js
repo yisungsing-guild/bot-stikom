@@ -272,7 +272,8 @@ module.exports = function (provider) {
   }
 
   function isSemanticRagFirstEnabled() {
-    return envFlag('SEMANTIC_RAG_FIRST', false);
+    if (envFlag('DISABLE_SEMANTIC_RAG_FIRST', false)) return false;
+    return envFlag('SEMANTIC_RAG_FIRST', true);
   }
 
   function isSemanticRagOnlyEnabled() {
@@ -338,8 +339,8 @@ module.exports = function (provider) {
   function getBotToneConfig() {
     const toneRaw = (process.env.BOT_TONE || process.env.BOT_CHAT_STYLE || '').toString().trim().toLowerCase();
     const enabled = envFlag('BOT_FRIENDLY_TONE', false) || ['casual', 'santai', 'friendly'].includes(toneRaw);
-    const opening = (process.env.BOT_FRIENDLY_OPENING || 'Siap! Aku bantu ya 👍').toString().trim();
-    const closing = (process.env.BOT_FRIENDLY_CLOSING || 'Kalau masih bingung, bilang aja—aku bantu lagi 😊').toString().trim();
+    const opening = (process.env.BOT_FRIENDLY_OPENING || 'Siap! Aku bantu ya ðŸ‘').toString().trim();
+    const closing = (process.env.BOT_FRIENDLY_CLOSING || 'Kalau masih bingung, bilang ajaâ€”aku bantu lagi ðŸ˜Š').toString().trim();
     return { enabled, opening: opening || '', closing: closing || '' };
   }
 
@@ -367,7 +368,7 @@ module.exports = function (provider) {
     const shouldBypassAutoTone =
       looksLikeNumericFeeAnswer ||
       rawNorm.includes('tunggu sebentar ya, saya sedang mencari informasi yang tepat untuk anda') ||
-      /\[\s*💬\s*hubungi\s+admin\s*\]/i.test(raw);
+      /\[\s*ðŸ’¬\s*hubungi\s+admin\s*\]/i.test(raw);
 
     if (shouldBypassAutoTone) return raw;
     if (!isAutoToneEnabled()) return raw;
@@ -413,7 +414,7 @@ module.exports = function (provider) {
         const styles = ['casual', 'enthusiastic', 'succinct', 'formal'];
         const pick = styles[Math.floor(Math.random() * styles.length)];
         if (pick === 'enthusiastic') {
-          out = out + (out.endsWith('!') ? ' ✨' : ' ✨');
+          out = out + (out.endsWith('!') ? ' âœ¨' : ' âœ¨');
         } else if (pick === 'succinct') {
           out = String(out || '').split(/\r?\n/)[0];
         } else if (pick === 'formal') {
@@ -553,7 +554,7 @@ module.exports = function (provider) {
   }
 
   function buildFriendlyProcessingMessage() {
-    return 'Tunggu sebentar ya, saya sedang mencari informasi yang tepat untuk Anda ⏳';
+    return 'Tunggu sebentar ya, saya sedang mencari informasi yang tepat untuk Anda â³';
   }
 
   function buildHandoverOfferMessage() {
@@ -591,7 +592,7 @@ module.exports = function (provider) {
     const header = tone.enabled ? 'Mau pilih yang mana?' : 'Mau pilih yang mana, kak?';
     return (
       `${header}\n` +
-      '1) Hitung total biaya awal masuk (butir 1–4)\n' +
+      '1) Hitung total biaya awal masuk (butir 1â€“4)\n' +
       '2) Jelaskan skema potongan per gelombang'
     );
   }
@@ -764,7 +765,7 @@ module.exports = function (provider) {
     }
 
     // If query is program code + wave pattern (e.g., "SI 2C?", "TI 1A?")
-    // → asking about cost for that specific program+wave
+    // â†’ asking about cost for that specific program+wave
     if (((hasProgram || hasProgramName) && hasWave && !/\b(jadwal|tanggal|deadline|kapan|testing|pengumuman)\b/i.test(q)) || (hasProgram && /\b\d+[a-c]\b|\bkhusus\b/i.test(q) && !/\b(jadwal|tanggal|deadline|kapan|testing|pengumuman)\b/i.test(q))) {
       return 'COST';
     }
@@ -776,12 +777,12 @@ module.exports = function (provider) {
     // Career signal keywords (Coding, Data, AI, etc)
     const careerSignal = /\b(coding|ngoding|programmer|software engineer|software\s+engineer|data analyst|ai engineer|ai\s+engineer|cyber security|cybersecurity)\b/i.test(q);
 
-    // If query contains program code/name + academic keyword → ACADEMIC_PROGRAM
+    // If query contains program code/name + academic keyword â†’ ACADEMIC_PROGRAM
     if ((hasProgram || hasProgramName) && academicSignal) {
       return 'ACADEMIC_PROGRAM';
     }
 
-    // If just program code with short query (≤3 words) asking about definition/what it is
+    // If just program code with short query (â‰¤3 words) asking about definition/what it is
     if (hasProgram && (words.length <= 3 || /\bapa|jelaskan|definisi/i.test(q))) {
       return 'ACADEMIC_PROGRAM';
     }
@@ -791,7 +792,7 @@ module.exports = function (provider) {
       return 'ACADEMIC_PROGRAM';
     }
 
-    // Recommendation signals: hobby/interest → which program fits
+    // Recommendation signals: hobby/interest â†’ which program fits
     const recommendSignal = /\b(suka\s+ngoding|suka\s+bikin\s+aplikasi|suka\s+aplikasi|suka\s+komputer|suka\s+teknologi|cocok\s+(jurusan|masuk\s+jurusan)|jurusan\s+yang\s+sesuai|minat\s+jurusan|rekomendasi\s+jurusan)\b/i.test(q);
     if (recommendSignal) {
       return 'ACADEMIC_PROGRAM';
@@ -1965,7 +1966,7 @@ module.exports = function (provider) {
                 }
               }
             } else {
-              // No structured numbers found — just append scholarships + prompt if missing.
+              // No structured numbers found â€” just append scholarships + prompt if missing.
               const needsPostamble = !/Untuk meringankan biaya|Beasiswa KIP|Apakah Kakak ingin dijelaskan tentang\?/i.test(ragResult.answer);
               const shouldAppendFeeScholarshipPostamble = !isFeeRagSource && !isCostIntent;
               if (needsPostamble && shouldAppendFeeScholarshipPostamble) {
@@ -1988,7 +1989,7 @@ module.exports = function (provider) {
               }
             }
           } catch (e) {
-            // Don't let post-processing failures break RAG — log and continue.
+            // Don't let post-processing failures break RAG â€” log and continue.
             logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] RAG post-processing failed');
             traceRagQueryWithEval('TRACE_PROVIDER_CATCH_RAG_POSTPROCESS', { error: e && e.stack ? e.stack : String(e) });
           }
@@ -2777,8 +2778,8 @@ module.exports = function (provider) {
       const hasHelp = /help\s+university/i.test(raw) && /dual\s*degree/i.test(raw);
 
       if (hasUtb) add('Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) - di UTB mengambil DKV (Desain Komunikasi Visual)');
-      if (hasDnui) add('Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China — Prodi: Bisnis Digital');
-      if (hasHelp) add('Dual Degree (International Class) dengan HELP University, Malaysia — Prodi: Sistem Informasi');
+      if (hasDnui) add('Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China â€” Prodi: Bisnis Digital');
+      if (hasHelp) add('Dual Degree (International Class) dengan HELP University, Malaysia â€” Prodi: Sistem Informasi');
 
       cachedDualDegreeList = out.length ? out : null;
       cachedDualDegreeListMtimeMs = mtimeMs;
@@ -3004,15 +3005,15 @@ module.exports = function (provider) {
 
     // Registration fee (biaya pendaftaran)
     const registrationFee = grab([
-      /\b1\s*\.\s*Pendaftaran\s*[:\-–]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/i,
-      /(?:^|[\r\n])\s*(?:Biaya\s+)?Pendaftaran\s*[:\-–]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/im,
-      /\bPendaftaran\s*[:\-–]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/i
+      /\b1\s*\.\s*Pendaftaran\s*[:\-â€“]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/i,
+      /(?:^|[\r\n])\s*(?:Biaya\s+)?Pendaftaran\s*[:\-â€“]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/im,
+      /\bPendaftaran\s*[:\-â€“]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/i
     ]);
 
     // DPP (Dana Pendidikan Pokok)
     const dpp = grab([
-      /\b2\s*\.\s*(?:Dana\s*Pendidikan\s*Pokok|DanaPendidikanPokok)\s*(?:\(\s*DPP\s*\))?\s*[:–\-]?\s*(?:Rp\.?\s*)?([0-9][0-9.]{0,20})/i,
-      /(?:Dana\s*Pendidikan\s*Pokok|DanaPendidikanPokok)\s*(?:\(\s*DPP\s*\))?\s*[:–\-]?\s*(?:Rp\.?\s*)?([0-9][0-9.]{0,20})/i
+      /\b2\s*\.\s*(?:Dana\s*Pendidikan\s*Pokok|DanaPendidikanPokok)\s*(?:\(\s*DPP\s*\))?\s*[:â€“\-]?\s*(?:Rp\.?\s*)?([0-9][0-9.]{0,20})/i,
+      /(?:Dana\s*Pendidikan\s*Pokok|DanaPendidikanPokok)\s*(?:\(\s*DPP\s*\))?\s*[:â€“\-]?\s*(?:Rp\.?\s*)?([0-9][0-9.]{0,20})/i
     ]);
 
     // Uniform components parsing
@@ -3050,8 +3051,8 @@ module.exports = function (provider) {
 
     // UKT (Biaya pendidikan per semester)
     const ukt = grab([
-      /\b5\s*\.\s*(?:Biaya\s*Pendidikan\s*Per\s*Semester|BiayaPendidikanPerSemester)\s*[:–\-]?\s*(?:Rp\.?\s*)?([0-9][0-9.]{0,20})/i,
-      /(?:Biaya\s*Pendidikan\s*Per\s*Semester|BiayaPendidikanPerSemester)\s*[:–\-]?\s*(?:Rp\.?\s*)?([0-9][0-9.]{0,20})/i
+      /\b5\s*\.\s*(?:Biaya\s*Pendidikan\s*Per\s*Semester|BiayaPendidikanPerSemester)\s*[:â€“\-]?\s*(?:Rp\.?\s*)?([0-9][0-9.]{0,20})/i,
+      /(?:Biaya\s*Pendidikan\s*Per\s*Semester|BiayaPendidikanPerSemester)\s*[:â€“\-]?\s*(?:Rp\.?\s*)?([0-9][0-9.]{0,20})/i
     ]);
 
     // Additional attribute: Pengalaman Industri / Biaya Magang / Praktikum
@@ -3143,8 +3144,8 @@ module.exports = function (provider) {
     ], { min: 1_000_000, max: 50_000_000 });
 
     const lunas2Tahun = grab([
-      /Lunas\s+Selama\s+2\s*Tahun\s*[-—]*\s*([0-9][0-9.]{0,20})/i,
-      /Selama\s+2\s*Tahun\s*[-—]*\s*([0-9][0-9.]{0,20})/i
+      /Lunas\s+Selama\s+2\s*Tahun\s*[-â€”]*\s*([0-9][0-9.]{0,20})/i,
+      /Selama\s+2\s*Tahun\s*[-â€”]*\s*([0-9][0-9.]{0,20})/i
     ], { min: 5_000_000, max: 250_000_000 });
 
     if (!pendaftaran && !semester && !lunas2Tahun) return null;
@@ -3260,9 +3261,9 @@ module.exports = function (provider) {
     };
 
     const pendaftaran = grab([
-      /\b1\s*\.\s*Pendaftaran\s*[:\-–]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/i,
-      /(?:^|[\r\n])\s*(?:Biaya\s+)?Pendaftaran\s*[:\-–]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/im,
-      /\bPendaftaran\s*[:\-–]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/i
+      /\b1\s*\.\s*Pendaftaran\s*[:\-â€“]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/i,
+      /(?:^|[\r\n])\s*(?:Biaya\s+)?Pendaftaran\s*[:\-â€“]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/im,
+      /\bPendaftaran\s*[:\-â€“]?\s*(?:Rp\.?\s*)?([0-9][0-9.,\s]{0,30})/i
     ], { min: 100_000, max: 50_000_000 });
 
     const dpp = grab([
@@ -3349,7 +3350,7 @@ module.exports = function (provider) {
       const s2Section = takeAround(s2Marker, 160000);
       const s2 = s2Section ? extractS2FeeBasicsFromSection(s2Section) : null;
 
-      // Dual Degree UTB (National Class) — similar component structure to S1.
+      // Dual Degree UTB (National Class) â€” similar component structure to S1.
       const utbMarker = /(?:rincian\s+biaya\s+utb|DUAL\s*DEGREE[\s\S]{0,1200}(?:UNIVERSITAS\s*TEKNOLOGI\s*BANDUNG|\bUTB\b))/i;
       // Avoid aggressive stopAfter slicing: the corpus is chunked and may repeat headers.
       const utbSection = takeAround(utbMarker, 200000);
@@ -3773,7 +3774,7 @@ module.exports = function (provider) {
       extractProgramHint(trimmed);
 
     // parseGelombang returns null if wave has invalid suffix (e.g., "1C", "2A")
-    // Do NOT fallback to 'I' — invalid waves should be rejected and handled by RAG engine
+    // Do NOT fallback to 'I' â€” invalid waves should be rejected and handled by RAG engine
     const gel = parseGelombang(trimmed);
     logger.info({ programPick: programPick || null, gel: gel || null, hasIndex: HAS_BUNDLED_RAG_INDEX, invalidWave: gel === null }, '[Provider] looksLikeMustPayTotalQuestion debug');
     if (!programPick || !gel) return null;
@@ -3804,25 +3805,25 @@ module.exports = function (provider) {
       table = feeBasics.dnui;
       if (!table || !table.pendaftaran || !table.dpp || !table.bahasa) return null;
       baseTotal = table.pendaftaran + table.dpp + table.bahasa;
-      butirLabel = 'butir 1–3';
+      butirLabel = 'butir 1â€“3';
     } else if (isHelp) {
       discountKey = 'help';
       table = feeBasics.help;
       if (!table || !table.pendaftaran || !table.dpp || !table.bahasa) return null;
       baseTotal = table.pendaftaran + table.dpp + table.bahasa;
-      butirLabel = 'butir 1–3';
+      butirLabel = 'butir 1â€“3';
     } else if (isUtb) {
       discountKey = 'utb';
       table = feeBasics.utb;
       baseTotal = table && typeof table.totalAwalMasuk === 'number' ? table.totalAwalMasuk : null;
-      butirLabel = 'butir 1–4';
+      butirLabel = 'butir 1â€“4';
     } else if (isD3) {
       discountKey = 'd3';
       table = feeBasics.d3;
       if (table && table.pendaftaran && table.registrasi) {
         baseTotal = table.pendaftaran + table.registrasi;
       }
-      butirLabel = 'butir 1–2';
+      butirLabel = 'butir 1â€“2';
     } else if (isS2) {
       discountKey = 's2';
       table = feeBasics.s2;
@@ -3832,12 +3833,12 @@ module.exports = function (provider) {
       discountKey = 'sk';
       table = feeBasics.sk;
       baseTotal = table && typeof table.totalAwalMasuk === 'number' ? table.totalAwalMasuk : null;
-      butirLabel = 'butir 1–4';
+      butirLabel = 'butir 1â€“4';
     } else if (isS1Group) {
       discountKey = 's1';
       table = feeBasics.s1;
       baseTotal = table && typeof table.totalAwalMasuk === 'number' ? table.totalAwalMasuk : null;
-      butirLabel = 'butir 1–4';
+      butirLabel = 'butir 1â€“4';
     } else {
       return null;
     }
@@ -4814,7 +4815,7 @@ module.exports = function (provider) {
       if (v.fax) contactBits.push(`Fax: ${v.fax}`);
       if (contactBits.length) parts.push(contactBits.join(' | '));
 
-      const body = parts.join(' — ').replace(/\s{2,}/g, ' ').trim();
+      const body = parts.join(' â€” ').replace(/\s{2,}/g, ' ').trim();
       if (body) lines.push(`- ${label}: ${body}`);
     };
 
@@ -4962,7 +4963,7 @@ module.exports = function (provider) {
     const stikomAnchor = /(itb\s*stikom|stikom\s*bali|\bstikom\b|stikom-bali\.ac\.id|www\.stikom-bali\.ac\.id)/i;
     if (stikomAnchor.test(tRaw)) return false;
 
-    // Allowed â€œadmission + campus infoâ€ intents that commonly omit the campus name in follow-up.
+    // Allowed Ã¢â‚¬Å“admission + campus infoÃ¢â‚¬Â intents that commonly omit the campus name in follow-up.
     const admissionIntent = /(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran|registrasi|gelombang|jadwal|testing|pengumuman|biaya|rincian|dpp|beasiswa|prodi|program\s+studi|jurusan|kuliah|kampus|alamat|lokasi|fasilitas|karier|akreditasi)/i;
 
     // If the user explicitly mentions another institution/topic, block.
@@ -4995,7 +4996,7 @@ module.exports = function (provider) {
     if (!raw.trim()) return false;
 
     const m = raw
-      // Convert keycap digit emoji (e.g. 1ï¸âƒ£) into plain digit.
+      // Convert keycap digit emoji (e.g. 1Ã¯Â¸ÂÃ¢Æ’Â£) into plain digit.
       .replace(/([0-9])\uFE0F?\u20E3/g, '$1');
 
     // Heuristic: contains multiple numbered option lines (common menu formats):
@@ -5043,7 +5044,7 @@ module.exports = function (provider) {
     // But avoid matching normal questions that merely contain a number.
     const normalized = raw
       .toLowerCase()
-      // Convert keycap digit emoji (e.g. 1ï¸âƒ£) into plain digit.
+      // Convert keycap digit emoji (e.g. 1Ã¯Â¸ÂÃ¢Æ’Â£) into plain digit.
       .replace(/([0-9])\uFE0F?\u20E3/g, '$1')
       .trim();
 
@@ -5066,7 +5067,7 @@ module.exports = function (provider) {
 
     for (const lineRaw of lines) {
       const line = String(lineRaw || '')
-        // Convert keycap digit emoji (e.g. 1ï¸âƒ£) into plain digit.
+        // Convert keycap digit emoji (e.g. 1Ã¯Â¸ÂÃ¢Æ’Â£) into plain digit.
         .replace(/([0-9])\uFE0F?\u20E3/g, '$1')
         .trim();
       if (!line) continue;
@@ -5359,7 +5360,7 @@ module.exports = function (provider) {
     const t = String(rawText || '').replace(/\s{2,}/g, ' ').trim();
     if (!t) return '';
     if (t.length <= maxLen) return t;
-    return t.slice(0, Math.max(0, maxLen - 1)).trimEnd() + '…';
+    return t.slice(0, Math.max(0, maxLen - 1)).trimEnd() + 'â€¦';
   }
 
   function isAcademicScheduleLookupQuestion(rawText) {
@@ -5478,7 +5479,7 @@ module.exports = function (provider) {
       return 5;
     }
 
-    // Akademik & Kemahasiswaan — treat these as non-marketing dept questions
+    // Akademik & Kemahasiswaan â€” treat these as non-marketing dept questions
     // (do not skip offering contact for informational phrasing).
     if (/(\bakademik\b|perwalian|krs\b|khs\b|sks\b|jadwal\s*(kuliah|perkuliahan|ujian|uts|uas)|kalender\s+akademik|nilai|transkrip|cuti\s+akademik|skripsi|yudisium|wisuda|bimbingan|sidang|kemahasiswaan|ukm\b|organisasi|ormawa|bem\b|hima\b|absensi|presensi|kehadiran|remedial|remidi|ujian\s+ulang|ujian\s+susulan|izin\s+tidak\s+masuk|alpha|alpa)/i.test(t)) {
       return 1;
@@ -5524,8 +5525,8 @@ module.exports = function (provider) {
     return (
       header +
       (tone.enabled
-        ? 'Pilih menu yang tersedia atau ketik pertanyaan kamu ya 😊\n\n'
-        : 'Silakan pilih menu yang tersedia atau ketik pertanyaan kamu 😊\n\n') +
+        ? 'Pilih menu yang tersedia atau ketik pertanyaan kamu ya ðŸ˜Š\n\n'
+        : 'Silakan pilih menu yang tersedia atau ketik pertanyaan kamu ðŸ˜Š\n\n') +
       'Ketik angka menu berikut:\n\n' +
       '1) Akademik & Kemahasiswaan\n' +
       '2) Keuangan\n' +
@@ -6277,7 +6278,7 @@ module.exports = function (provider) {
       // If topic is basically just the campus name, treat as no specific topic.
       const tl = topic.toLowerCase();
       if (/^(itb\s*stikom\s*bali|stikom\s*bali|itb\s*stikom|stikom)$/i.test(tl)) topic = null;
-      if (topic && topic.length > 140) topic = topic.slice(0, 140) + '…';
+      if (topic && topic.length > 140) topic = topic.slice(0, 140) + 'â€¦';
     }
 
     return { topic };
@@ -6418,7 +6419,7 @@ module.exports = function (provider) {
     // UX update: do not add extra prompts here.
     // Fee answers already end with the standardized postamble:
     // - scholarship list
-    // - â€œApakah Kakak ingin dijelaskan tentang …â€
+    // - Ã¢â‚¬Å“Apakah Kakak ingin dijelaskan tentang â€¦Ã¢â‚¬Â
     return '';
   }
 
@@ -6430,8 +6431,8 @@ module.exports = function (provider) {
     for (const line of lines) {
       const raw = String(line || '').trim();
       if (!raw) continue;
-      if (!/^[-â€¢]\s+/.test(raw)) continue;
-      bullets.push(raw.replace(/^[-â€¢]\s+/, ''));
+      if (!/^[-Ã¢â‚¬Â¢]\s+/.test(raw)) continue;
+      bullets.push(raw.replace(/^[-Ã¢â‚¬Â¢]\s+/, ''));
     }
     return bullets;
   }
@@ -6500,7 +6501,7 @@ module.exports = function (provider) {
 
     // Prefer explicit "gelombang" mentions.
     // Preserve explicit numeric sub-waves (A/B/C) while canonicalizing the base wave.
-    // Examples: "gelombang 1C" → "1C", "gelombang 2A" → "2A", "gelombang III B" → "1B"
+    // Examples: "gelombang 1C" â†’ "1C", "gelombang 2A" â†’ "2A", "gelombang III B" â†’ "1B"
     const m = /\bgelombang\s*([1-4]|i{1,3}|iv)\s*([a-c])?\b/i.exec(t);
     if (m && m[1]) {
       let base = String(m[1]).toUpperCase();
@@ -6659,10 +6660,10 @@ module.exports = function (provider) {
     if (!raw) return false;
     const t = raw.toLowerCase();
 
-    // We only set this flag for our own hobby→jurusan clarification prompt.
+    // We only set this flag for our own hobbyâ†’jurusan clarification prompt.
     const mentionsJurusan = /\b(jurusan|prodi|program\s+studi)\b/i.test(t);
     const mentionsAktivitas = /\baktivitas\b/i.test(t) || /\bngapain\b/i.test(t);
-    const asksExampleCount = /\b(2\s*[–\-]\s*3|2\s*sampai\s*3|dua\s*sampai\s*tiga)\b/i.test(t);
+    const asksExampleCount = /\b(2\s*[â€“\-]\s*3|2\s*sampai\s*3|dua\s*sampai\s*tiga)\b/i.test(t);
     const mentionsContoh = /\bcontoh\b/i.test(t);
 
     return mentionsJurusan && mentionsAktivitas && (asksExampleCount || mentionsContoh);
@@ -6838,8 +6839,8 @@ module.exports = function (provider) {
     for (const line of lines) {
       const raw = String(line || '').trim();
       if (!raw) continue;
-      if (!/^[-â€¢]\s+/.test(raw)) continue;
-      bullets.push(raw.replace(/^[-â€¢]\s+/, ''));
+      if (!/^[-Ã¢â‚¬Â¢]\s+/.test(raw)) continue;
+      bullets.push(raw.replace(/^[-Ã¢â‚¬Â¢]\s+/, ''));
     }
 
     const first4 = bullets.slice(0, 4);
@@ -6855,7 +6856,7 @@ module.exports = function (provider) {
     const entryBullets = first4.filter((b) => !isSemesterBullet(b));
     if (entryBullets.length < 3) return null;
 
-    // Require strong signals of the real cost components (butir 1–4).
+    // Require strong signals of the real cost components (butir 1â€“4).
     const hasPendaftaran = entryBullets.some((b) => /\bpendaftaran\b/i.test(b));
     const hasDpp = entryBullets.some((b) => /\b(dpp|dana\s+pendidikan\s+pokok|dana\s+pengembangan\s+pendidikan)\b/i.test(b));
     if (!hasPendaftaran || !hasDpp) return null;
@@ -6877,11 +6878,11 @@ module.exports = function (provider) {
     const t = String(lastBotText || '');
     if (!t.trim()) return null;
 
-    // Only attempt when the bot explicitly asked to compute initial-entry total (butir 1–4 / awal masuk).
+    // Only attempt when the bot explicitly asked to compute initial-entry total (butir 1â€“4 / awal masuk).
     // Note: do not use strict word boundaries here; the bot often uses conjugations like "hitungkan".
     const asksInitialTotal = /(hitung|itung|jumlahkan|kalkulasi)/i.test(t) &&
       (
-        /(butir\s*1\s*[-–]\s*4)/i.test(t) ||
+        /(butir\s*1\s*[-â€“]\s*4)/i.test(t) ||
         /(awal\s+masuk)/i.test(t) ||
         /(biaya\s+(?:total\s+)?awal\s+masuk)/i.test(t) ||
         /(total\s+awal\s+masuk)/i.test(t)
@@ -7166,7 +7167,7 @@ module.exports = function (provider) {
         const incomingIsGeneral = !mappedIncomingIntent || String(mappedIncomingIntent).toLowerCase() === 'general' || String(mappedIncomingIntent).toLowerCase() === 'unknown';
 
         if (incomingIsHigh && !incomingIsGeneral) {
-          // Provider intent locked — do not allow humanizer to change it
+          // Provider intent locked â€” do not allow humanizer to change it
           console.log('[TRACE_INTENT_LOCKED]', {
             incomingIntent,
             mappedIncomingIntent,
@@ -7569,7 +7570,7 @@ module.exports = function (provider) {
     const t = raw.toLowerCase();
     const endsWithQuestion = /\?\s*$/.test(raw);
     if (!endsWithQuestion) return false;
-    // Typical prompt produced by scholarship answer: asks which category (Juara 1–3 vs Harapan/Favorit)
+    // Typical prompt produced by scholarship answer: asks which category (Juara 1â€“3 vs Harapan/Favorit)
     const hasCategoryWord = /\bkategori\b/i.test(raw);
     const hasJuara = /\bjuara\b/i.test(raw);
     const hasNational = /\bnasional\b/i.test(raw);
@@ -8324,7 +8325,7 @@ module.exports = function (provider) {
       }
 
       // Keep it compact to avoid bloating Session.data.messages
-      if (reason && reason.length > 220) reason = reason.slice(0, 220) + '…';
+      if (reason && reason.length > 220) reason = reason.slice(0, 220) + 'â€¦';
 
       await appendChatMessageBestEffort(
         chatId,
@@ -8395,7 +8396,7 @@ module.exports = function (provider) {
       }
 
       // Keep it compact to avoid bloating Session.data.messages
-      if (reason && reason.length > 220) reason = reason.slice(0, 220) + '…';
+      if (reason && reason.length > 220) reason = reason.slice(0, 220) + 'â€¦';
 
       await appendChatMessageBestEffort(
         chatId,
@@ -8762,13 +8763,13 @@ module.exports = function (provider) {
           if (!src || typeof src !== 'string') return src;
           let out = String(src);
           // Remove lines that are only separators like '---', '--', '- --', '----' or variants
-          out = out.replace(/^\s*[-—–]{2,}\s*$/gm, '');
+          out = out.replace(/^\s*[-â€”â€“]{2,}\s*$/gm, '');
           out = out.replace(/^\s*-\s*-+\s*$/gm, '');
           out = out.replace(/^\s*-\s*--\s*$/gm, '');
           // Remove lines that only contain dashes/spaces
           out = out.replace(/^\s*[-\s]{2,}\s*$/gm, '');
           // Remove specific opening lines or emoji-first lines
-          out = out.replace(/^\s*💡.*$/gm, '');
+          out = out.replace(/^\s*ðŸ’¡.*$/gm, '');
           out = out.replace(/^\s*Mari kita bahas.*$/gim, '');
           out = out.replace(/^\s*Ini informasi mengenai.*$/gim, '');
           // Collapse excessive blank lines
@@ -8905,7 +8906,7 @@ module.exports = function (provider) {
       const allowFastEarly = HAS_BUNDLED_RAG_INDEX && (typeof allowFastFeeFor === 'function') && allowFastFeeFor(routeTextEarly, { feeChoice: !!(inferredChoiceEarly === 'breakdown'), pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer) });
       if (allowFastEarly) {
         // Do not set global skip flag when user is in a registrationFlow choose_program
-        // asking about a specific S1 program — anchored RAG should be attempted.
+        // asking about a specific S1 program â€” anchored RAG should be attempted.
         let shouldSetSkip = true;
         try {
           const flowEarly = sessionData && sessionData.registrationFlow ? sessionData.registrationFlow : null;
@@ -10248,7 +10249,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           lines.push('- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
           lines.push('- Beasiswa Prestasi');
           lines.push('- Beasiswa Yayasan');
-          lines.push('- Beasiswa khusus untuk alumni — silakan hubungi PMB untuk detail');
+          lines.push('- Beasiswa khusus untuk alumni â€” silakan hubungi PMB untuk detail');
           lines.push('- Kuliah Sambil Kerja di Luar Negeri');
           lines.push('');
           lines.push('Kakak mau penjelasan beasiswa yang mana? Balas nama beasiswa atau angka.');
@@ -10304,8 +10305,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           if (computed && computed.items && computed.items.length >= 3) {
             const program = extractProgramHint(ctx.lastBot) || extractProgramHint(ctx.lastUser);
             const header = program
-              ? `Baik, saya hitungkan total biaya awal masuk (butir 1–4) untuk ${program}:`
-              : 'Baik, saya hitungkan total biaya awal masuk (butir 1–4):';
+              ? `Baik, saya hitungkan total biaya awal masuk (butir 1â€“4) untuk ${program}:`
+              : 'Baik, saya hitungkan total biaya awal masuk (butir 1â€“4):';
             const lines = [
               header,
               ...computed.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`),
@@ -10729,7 +10730,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             const lines = [
               header,
               ...analysis.base.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`),
-              `Total biaya awal masuk (butir 1–4): ${formatRupiah(analysis.base.total)}`
+              `Total biaya awal masuk (butir 1â€“4): ${formatRupiah(analysis.base.total)}`
             ];
 
             const perSemSum = Array.isArray(analysis.perSemester)
@@ -10752,7 +10753,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
               ? analysis.otherOneTime.reduce((acc, x) => acc + (x && x.amount ? x.amount : 0), 0)
               : 0;
             if (otherSum > 0) {
-              lines.push('', 'Komponen lain (sekali bayar, di luar butir 1–4):');
+              lines.push('', 'Komponen lain (sekali bayar, di luar butir 1â€“4):');
               for (const x of analysis.otherOneTime) lines.push(`- ${x.raw}`);
               lines.push(`Subtotal komponen lain: ${formatRupiah(otherSum)}`);
             }
@@ -10936,8 +10937,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
               null;
 
             const header = program
-              ? `Baik, saya hitungkan total biaya awal masuk (butir 1–4) untuk ${program} (${gelLabel}):`
-              : `Baik, saya hitungkan total biaya awal masuk (butir 1–4) (${gelLabel}):`;
+              ? `Baik, saya hitungkan total biaya awal masuk (butir 1â€“4) untuk ${program} (${gelLabel}):`
+              : `Baik, saya hitungkan total biaya awal masuk (butir 1â€“4) (${gelLabel}):`;
 
             const lines = [
               header,
@@ -10986,7 +10987,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
                 `${program ? `Program Studi: ${program}\n` : ''}` +
                 `User ingin dihitungkan total biaya awal masuk/total bayar untuk mendaftar.\n` +
                 `Gelombang: ${String(gelLabel).replace(/^Gelombang\s+/i, '')}.\n` +
-                `Tolong hitungkan total yang perlu dibayar (awal masuk / butir 1–4 jika tersedia), masukkan potongan biaya pendaftaran untuk gelombang tersebut bila ada, dan tampilkan perhitungannya.`;
+                `Tolong hitungkan total yang perlu dibayar (awal masuk / butir 1â€“4 jika tersedia), masukkan potongan biaya pendaftaran untuk gelombang tersebut bila ada, dan tampilkan perhitungannya.`;
 
               const ragResult = await ragQueryWithEval(chatId, q, topK, { conversationContext: JSON.stringify((sessionData && sessionData.messages) ? sessionData.messages : []).slice(0, 1200), answerQuestion: q });
               if (ragResult && ragResult.success && ragResult.answer) {
@@ -11013,7 +11014,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           // If we cannot compute, ask for the missing breakdown explicitly.
           await sendBotMessage(
             chatId,
-            `Siap, kak (Gelombang ${gel}). Untuk menghitung totalnya, saya perlu rincian komponen biaya awal masuk (butir 1–4) yang kakak maksud.\n` +
+            `Siap, kak (Gelombang ${gel}). Untuk menghitung totalnya, saya perlu rincian komponen biaya awal masuk (butir 1â€“4) yang kakak maksud.\n` +
               'Boleh kirimkan daftar biayanya (pendaftaran, DPP, biaya semester awal, dll) atau screenshot/teks rincian tersebut?'
           );
           return res.send({ ok: true, source: 'pending_total_cost_need_breakdown', gelombang: gel });
@@ -11025,7 +11026,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
 
     // Deterministic total-payment computation:
     // If user asks "hitung total pembayaran" and we recently sent a cost breakdown with bullets,
-    // compute the initial-entry total (butir 1–4) and show additional components separately.
+    // compute the initial-entry total (butir 1â€“4) and show additional components separately.
     try {
       if (isTotalCostRequest(text)) {
         // Special-case: user asks "jadi berapa saya harus bayar" with program + gelombang in one message.
@@ -11111,7 +11112,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           const lines = [
             header,
             ...analysis.base.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`),
-            `Total biaya awal masuk (butir 1–4): ${formatRupiah(analysis.base.total)}`
+            `Total biaya awal masuk (butir 1â€“4): ${formatRupiah(analysis.base.total)}`
           ];
 
           const perSemSum = Array.isArray(analysis.perSemester)
@@ -11135,7 +11136,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             ? analysis.otherOneTime.reduce((acc, x) => acc + (x && x.amount ? x.amount : 0), 0)
             : 0;
           if (otherSum > 0) {
-            lines.push('', 'Komponen lain (sekali bayar, di luar butir 1–4):');
+            lines.push('', 'Komponen lain (sekali bayar, di luar butir 1â€“4):');
             for (const x of analysis.otherOneTime) {
               lines.push(`- ${x.raw}`);
             }
@@ -13066,8 +13067,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
 
                 const gelLabelLocal = gelLabel || (gelFromText ? (formatGelombangLabel(gelFromText) || `Gelombang ${gelFromText}`) : null);
                 const header = program
-                  ? `Baik, saya hitungkan total biaya awal masuk (butir 1–4) untuk ${program} (${gelLabelLocal || ''}):`.replace(/\s+\(\):$/, ':')
-                  : `Baik, saya hitungkan total biaya awal masuk (butir 1–4) (${gelLabelLocal || ''}):`.replace(/\s+\(\):$/, ':');
+                  ? `Baik, saya hitungkan total biaya awal masuk (butir 1â€“4) untuk ${program} (${gelLabelLocal || ''}):`.replace(/\s+\(\):$/, ':')
+                  : `Baik, saya hitungkan total biaya awal masuk (butir 1â€“4) (${gelLabelLocal || ''}):`.replace(/\s+\(\):$/, ':');
 
                 const lines = [header, ...base.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`)];
 
@@ -13511,7 +13512,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
               }
 
               // Try bundled index fast-path when data is available. Don't rely solely
-              // on `allowBundledIndex` boolean — attempt to read the bundled index
+              // on `allowBundledIndex` boolean â€” attempt to read the bundled index
               // and use it when present so tests and environments with the file
               // still exercise the deterministic fast-path.
               const feeBasics = extractFeeBasicsFromBundledIndex();
@@ -13916,7 +13917,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             chatId,
             imgPrefix +
             'Oke, untuk S1 Reguler.\n\n' +
-            'Form pendaftaran (ringkas) — data yang biasanya diisi:\n' +
+            'Form pendaftaran (ringkas) â€” data yang biasanya diisi:\n' +
             '- Data diri (nama, NIK, tempat/tanggal lahir, alamat)\n' +
             '- Kontak (HP, email)\n' +
             '- Pendidikan asal (asal sekolah/kampus, jurusan/jenjang, tahun lulus)\n' +
@@ -13943,7 +13944,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           chatId,
           imgPrefix +
           'Oke, untuk S2 / Pascasarjana.\n\n' +
-          'Form pendaftaran (ringkas) — data yang biasanya diisi:\n' +
+          'Form pendaftaran (ringkas) â€” data yang biasanya diisi:\n' +
           '- Data diri & kontak\n' +
           '- Pendidikan asal\n' +
           '- Pilihan program/kelas & kampus\n\n' +
@@ -13980,7 +13981,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           chatId,
           imgPrefix +
           'Siap, kak. Untuk S1 Reguler.\n\n' +
-          'Form pendaftaran (ringkas) — data yang biasanya diisi:\n' +
+          'Form pendaftaran (ringkas) â€” data yang biasanya diisi:\n' +
           '- Data diri (nama, NIK, tempat/tanggal lahir, alamat)\n' +
           '- Kontak (HP, email)\n' +
           '- Pendidikan asal (asal sekolah/kampus, jurusan/jenjang, tahun lulus)\n' +
@@ -14224,8 +14225,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           await sendBotMessage(
             chatId,
             'Siap, kak. Biar saya pastikan potongannya, kakak termasuk kategori yang mana?\n' +
-              '1) Juara 1–3 tingkat Nasional\n' +
-              '2) Harapan 1–3 / Favorit tingkat Nasional\n\n' +
+              '1) Juara 1â€“3 tingkat Nasional\n' +
+              '2) Harapan 1â€“3 / Favorit tingkat Nasional\n\n' +
               'Balas: 1 atau 2 (atau tulis langsung kategorinya).'
           );
           return res.send({ ok: true, source: 'scholarship_followup_category' });
@@ -15097,7 +15098,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
 
     // Fast-path: user replies with only the wave key (e.g., "2 b", "1c", "khusus").
     // This often happens right after we ask "gelombang yang mana?".
-    // IMPORTANT: do NOT hijack explicit "gelombang 3a" messages here — those are ambiguous
+    // IMPORTANT: do NOT hijack explicit "gelombang 3a" messages here â€” those are ambiguous
     // (jadwal/potongan/biaya) and should go through the clarify-wave flow.
     if (HAS_BUNDLED_RAG_INDEX) {
       const trimmedWaveOnly = String(text || '').trim();
@@ -15592,7 +15593,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           const isReferential = /\b(?:yang\s+tadi|yang\s+sebelumnya|lanjut|lanjutkan|terus|trus|detail|rincian)\b/i.test(trimmed)
             || (/\bitu\b/i.test(trimmed) && !/^\s*apa\s+itu\b/i.test(trimmed));
 
-          // Special: if the bot just asked for 2–3 hobby/activity examples,
+          // Special: if the bot just asked for 2â€“3 hobby/activity examples,
           // treat the user's short activity reply (e.g. "membuat robot") as a continuation.
           // Without this, the reply can miss RAG rules and fall back to the generic "belum bisa jawab".
           try {
@@ -15624,14 +15625,14 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             if (computed && computed.items && computed.items.length >= 3) {
               const program = extractProgramHint(ctx.lastBot) || extractProgramHint(ctx.lastUser) || getActiveProgram({ chatId, userText: (ctx && ctx.lastUser) ? ctx.lastUser : (ctx && ctx.lastBot) ? ctx.lastBot : '', sessionData }).activeProgram || null;
               const header = program
-                ? `Baik, saya hitungkan total biaya awal masuk (butir 1–4) untuk ${program}:`
-                : 'Baik, saya hitungkan total biaya awal masuk (butir 1–4):';
+                ? `Baik, saya hitungkan total biaya awal masuk (butir 1â€“4) untuk ${program}:`
+                : 'Baik, saya hitungkan total biaya awal masuk (butir 1â€“4):';
               const lines = [
                 header,
                 ...computed.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`),
                 `Total biaya awal masuk: ${formatRupiah(computed.total)}`,
                 '',
-                'Catatan: total di atas hanya untuk butir 1–4 (komponen awal masuk). Biaya per semester/komponen lain dibayar sesuai ketentuan di dokumen.'
+                'Catatan: total di atas hanya untuk butir 1â€“4 (komponen awal masuk). Biaya per semester/komponen lain dibayar sesuai ketentuan di dokumen.'
               ].join('\n');
               await sendBotMessage(chatId, lines);
               return res.send({ ok: true, source: 'followup_compute_total', program: program || null });
@@ -15656,8 +15657,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
               await sendBotMessage(
                 chatId,
                 'Siap, kak. Biar saya pastikan potongannya, kakak termasuk kategori yang mana?\n' +
-                  '1) Juara 1–3 tingkat Nasional\n' +
-                  '2) Harapan 1–3 / Favorit tingkat Nasional\n\n' +
+                  '1) Juara 1â€“3 tingkat Nasional\n' +
+                  '2) Harapan 1â€“3 / Favorit tingkat Nasional\n\n' +
                   'Balas: 1 atau 2 (atau tulis langsung kategorinya).'
               );
               return res.send({ ok: true, source: 'scholarship_followup_category' });
@@ -16221,7 +16222,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
 
           await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer));
 
-          // If we just asked the user for 2–3 hobby/activity examples, remember it briefly
+          // If we just asked the user for 2â€“3 hobby/activity examples, remember it briefly
           // so short replies like "membuat robot" are treated as continuations.
           try {
             if (answerAsksHobbyActivityExamples(ragResult.answer)) {
@@ -16509,7 +16510,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
       out = out.trim() + '\n\n' + 'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.';
     }
     if (!/\badmin\b/i.test(outLower)) {
-      out = out.trim() + '\n\n' + '[ 💬 Hubungi Admin ]';
+      out = out.trim() + '\n\n' + '[ ðŸ’¬ Hubungi Admin ]';
     }
 
     await sendBotMessage(chatId, out);
