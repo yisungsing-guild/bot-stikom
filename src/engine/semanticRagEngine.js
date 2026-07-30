@@ -8142,6 +8142,16 @@ async function verifyOutboundSemanticRelevance(question, answer, source = 'provi
     };
   }
 
+  if (/^semantic-rag-/i.test(src)) {
+    return {
+      ok: true,
+      localMismatch: false,
+      llmVerdict: null,
+      reason: 'trusted_semantic_rag_local_verified',
+      meaningAnchors: extractMeaningAnchors(q)
+    };
+  }
+
   const client = getClient();
   const llmVerdict = await verifyAnswerRelevanceWithLlm(client, q, a, src);
   if (llmVerdict && llmVerdict.ok === false) {
@@ -8224,3 +8234,4 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+

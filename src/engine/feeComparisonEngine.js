@@ -79,9 +79,20 @@ function extractProfiles(index) {
     return null;
   };
 
+  const isPlausibleFeeAmount = (field, value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return false;
+    if (field === 'pendaftaran') return n >= 100000 && n <= 10000000;
+    if (field === 'dpp') return n >= 1000000 && n <= 100000000;
+    if (field === 'semester') return n >= 500000 && n <= 100000000;
+    if (field === 'totalAwalMasuk') return n >= 1000000 && n <= 200000000;
+    if (field === 'atribut') return n >= 100000 && n <= 50000000;
+    return n > 0;
+  };
+
   const assignIfMissing = (prof, field, value) => {
     if (!prof || !field) return;
-    if (!Number.isFinite(value)) return;
+    if (!isPlausibleFeeAmount(field, value)) return;
     if (prof[field] == null || prof[field] === '') {
       prof[field] = value;
     }

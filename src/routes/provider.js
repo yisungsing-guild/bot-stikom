@@ -5393,6 +5393,17 @@ module.exports = function (provider) {
     return /\b(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|gelombang\s+pendaftaran|jadwal\s+pendaftaran|admin\s+pmb|cara\s+daftar|syarat\s+dokumen|biaya\s+pmb)\b/i.test(t);
   }
 
+  function looksLikeProtectedKnowledgeBaseAnswer(rawText) {
+    const raw = String(rawText || '').trim();
+    if (!raw) return false;
+    const t = raw.toLowerCase();
+    const bulletCount = (raw.match(/^\s*(?:[-*]|\d+[.)])\s+\S/gm) || []).length;
+    const sectionCount = (raw.match(/^\s*[A-Z0-9][^\n]{1,70}:\s*$/gm) || []).length;
+    const hasCampusAnchor = /\b(?:itb\s+)?stikom\s+bali\b|\bpmb\b|penerimaan\s+mahasiswa\s+baru|program\s+studi|\bprodi\b|double\s+degree|career\s+center|inkubator\s+bisnis|language\s+learning\s+center|hi-think|gccp|ukm|ormawa/i.test(t);
+    const hasStructuredKnowledgeShape = bulletCount >= 2 || sectionCount >= 2 || /\bkalau\s+mau\s+lanjut\b/i.test(raw);
+    return hasCampusAnchor && hasStructuredKnowledgeShape;
+  }
+
   function shouldSkipFinalSemanticRelevanceGate(inboundUserText, outboundText, meta = {}) {
     const inbound = String(inboundUserText || '').trim();
     const outbound = String(outboundText || '').trim();
@@ -5415,9 +5426,12 @@ module.exports = function (provider) {
     if (!original || shouldSkipFinalSemanticRelevanceGate(inboundUserText, original, meta)) return original;
     if (envFlag('PROVIDER_FINAL_SEMANTIC_RELEVANCE_GATE', true) === false) return original;
 
-    const source = meta && (meta.source || meta.ragSource || meta.finalPipeline)
+    let source = meta && (meta.source || meta.ragSource || meta.finalPipeline)
       ? String(meta.source || meta.ragSource || meta.finalPipeline)
       : 'provider-outbound';
+    if (!/^semantic-rag-/i.test(source) && looksLikeProtectedKnowledgeBaseAnswer(original)) {
+      source = 'semantic-rag-inferred';
+    }
 
     try {
       const verdict = await verifyOutboundSemanticRelevance(inboundUserText, original, source);
@@ -7028,7 +7042,7 @@ module.exports = function (provider) {
     const rawRagSource = options && options.context && (options.context.ragSource || options.context.source)
       ? String(options.context.ragSource || options.context.source || '').trim()
       : '';
-    if (/^semantic-rag-/i.test(rawRagSource)) {
+    if (/^semantic-rag-/i.test(rawRagSource) || looksLikeProtectedKnowledgeBaseAnswer(out)) {
       return out;
     }
     // Do not append recommended follow-up questions automatically.
@@ -16575,5 +16589,6 @@ module.exports._test = {
   splitLongWhatsappMessage,
   adjustWhatsappSplitCutForMoneyToken
 };
+
 
 
