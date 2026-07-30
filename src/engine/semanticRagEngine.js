@@ -655,12 +655,13 @@ function computeSourceIntentBoost(query, item, questionIntent = null) {
   let boost = 0;
 
   const requestedTargets = getRequestedAcademicTargets(query);
-  if (requestedTargets.length) {
+  const applyProgramTargetPenalty = !['general', 'program_definition', 'out_of_domain', 'small_talk', 'unknown'].includes(intent);
+  if (requestedTargets.length && applyProgramTargetPenalty) {
     const filenameMatchesTarget = requestedTargets.some((target) => targetVariantMatches(filename, target.variants));
     const contentMatchesTarget = requestedTargets.some((target) => targetVariantMatches(filename + ' ' + chunk.slice(0, 700), target.variants));
     if (filenameMatchesTarget) boost += 0.5;
-    else if (contentMatchesTarget) boost -= 0.2;
-    else boost -= 0.65;
+    else if (contentMatchesTarget) boost -= 0.05;
+    else if (/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pendaftaran|registrasi|pembayaran|cicilan|nominal)\b/i.test(query)) boost -= 0.2;
   }
 
   if (intent === 'fee') {
