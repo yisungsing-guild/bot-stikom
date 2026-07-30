@@ -5365,9 +5365,14 @@ module.exports = function (provider) {
   function isAcademicScheduleLookupQuestion(rawText) {
     const t = String(rawText || '').toLowerCase();
     if (!t.trim()) return false;
-    const scheduleSignal = /\b(jadwal|kalender|agenda|kapan|tanggal|tgl|hari|jam|periode|pelaksanaan|dilaksanakan|berlangsung)\b/i.test(t);
+    const scheduleSignal = /\b(jadwal|kalender|agenda|kapan|tanggal|tgl|hari|jam|periode|pelaksanaan|dilaksanakan|berlangsung|selesai|berakhir|mulai)\b/i.test(t);
     const examSignal = /\b(ujian|uts|uas|remedial|remidi|ujian\s+ulang|ujian\s+susulan|susulan)\b/i.test(t);
-    return scheduleSignal && examSignal;
+    const semesterSignal = /\b(semester\s+(?:genap|ganjil|antara|pendek)|genap\s+\d{4}\s*\/\s*\d{4}|ganjil\s+\d{4}\s*\/\s*\d{4})\b/i.test(t);
+    const academicSignal = /\b(akademik|perkuliahan|kuliah\s+semester|jadwal\s+(?:kuliah|perkuliahan|akademik)|kalender\s+akademik|pelaksanaan\s+akademik)\b/i.test(t);
+    const mentionsPmb = /\b(pmb|penerimaan\s+mahasiswa\s+baru|camaba|maba|gelombang\s+pendaftaran|daftar\s+kuliah)\b/i.test(t);
+    const negatesPmb = /\b(?:bukan|tidak|nggak|gak|ga)\s+(?:bertanya\s+tentang\s+)?(?:pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|gelombang\s+pendaftaran)\b/i.test(t);
+    if (mentionsPmb && !negatesPmb) return false;
+    return scheduleSignal && (examSignal || semesterSignal || academicSignal);
   }
   function inferNonMarketingDepartmentSelection(rawText) {
     const t = String(rawText || '').toLowerCase();
@@ -6936,6 +6941,11 @@ module.exports = function (provider) {
     // Avoid decorating strict menu/selection prompts; these rely on precise replies.
     const isStrictPrompt = /^\r?\n*\s*(?:Balas\s*:\s*.+|(?:Pilih|Ketik)\s+angka\b.*)$/i.test(out);
     if (isStrictPrompt) return out;
+    const inboundLooksAcademicSchedule = isAcademicScheduleLookupQuestion(inboundUserText);
+    const outboundLooksPmbSchedule = /\b(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|gelombang\s+pendaftaran|jadwal\s+pendaftaran|admin\s+pmb|cara\s+daftar|syarat\s+dokumen)\b/i.test(out);
+    if (inboundLooksAcademicSchedule && outboundLooksPmbSchedule) {
+      return 'Saya belum menemukan jadwal pelaksanaan akademik semester genap/ganjil yang cukup aman pada data yang tersedia. Untuk tanggal mulai, selesai, atau periode resminya, kakak sebaiknya cek kalender akademik/SION atau konfirmasi ke BAAK.';
+    }
 
     // Remove legacy intro that duplicates the requested template.
     out = out.replace(/^(?:Baik,?\s*kak\.?\s*)?(?:Terima\s*kasih|Terimakasih)\s+atas\s+pertanyaan(?:an)?(nya)?\.?\s*\n+/i, '');

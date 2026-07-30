@@ -2484,12 +2484,15 @@ function tryOutOfDomainAnswer(question) {
 function isAcademicScheduleLookupQuestion(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return false;
-  const scheduleSignal = /\b(jadwal|kalender|agenda|kapan|tanggal|tgl|hari|jam|periode|pelaksanaan|dilaksanakan|berlangsung|selesai|berakhir)\b/i.test(q);
+  const scheduleSignal = /\b(jadwal|kalender|agenda|kapan|tanggal|tgl|hari|jam|periode|pelaksanaan|dilaksanakan|berlangsung|selesai|berakhir|mulai)\b/i.test(q);
   const examSignal = /\b(ujian|uts|uas|remedial|remidi|ujian\s+ulang|ujian\s+susulan|susulan)\b/i.test(q);
   const semesterBetweenSignal = /\b(semester\s+antara|semester\s+pendek|sp\b)\b/i.test(q);
-  const academicExecutionSignal = /\b(pelaksanaan\s+akademik|kalender\s+akademik|agenda\s+akademik|jadwal\s+akademik|perkuliahan|kuliah\s+semester)\b/i.test(q);
-  if (/\b(pmb|penerimaan\s+mahasiswa\s+baru|maba|camaba|gelombang\s+pendaftaran|daftar\s+kuliah)\b/i.test(q)) return false;
-  return scheduleSignal && (examSignal || semesterBetweenSignal || academicExecutionSignal);
+  const regularSemesterSignal = /\b(semester\s+(?:genap|ganjil)|genap\s+\d{4}\s*\/\s*\d{4}|ganjil\s+\d{4}\s*\/\s*\d{4})\b/i.test(q);
+  const academicExecutionSignal = /\b(pelaksanaan\s+akademik|kalender\s+akademik|agenda\s+akademik|jadwal\s+akademik|jadwal\s+(?:kuliah|perkuliahan)|perkuliahan|kuliah\s+semester|akademik)\b/i.test(q);
+  const mentionsPmb = /\b(pmb|penerimaan\s+mahasiswa\s+baru|maba|camaba|gelombang\s+pendaftaran|daftar\s+kuliah)\b/i.test(q);
+  const negatesPmb = /\b(?:bukan|tidak|nggak|gak|ga)\s+(?:bertanya\s+tentang\s+)?(?:pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|gelombang\s+pendaftaran)\b/i.test(q);
+  if (mentionsPmb && !negatesPmb) return false;
+  return scheduleSignal && (examSignal || semesterBetweenSignal || regularSemesterSignal || academicExecutionSignal);
 }
 function isOperationalAcademicPolicyQuestion(question) {
   const q = String(question || '').toLowerCase();
@@ -4341,7 +4344,11 @@ function buildAcademicScheduleNoDataAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(semester\s+antara|semester\s+pendek|sp\b|pelaksanaan\s+akademik)\b/i.test(q)) {
     return 'Saya belum menemukan jadwal pelaksanaan akademik semester antara yang cukup aman pada data yang tersedia. Untuk tanggal selesai atau periode resminya, kakak sebaiknya cek kalender akademik/SION atau konfirmasi ke BAAK.';
-  }  if (/\b(remedial|remidi)\b/i.test(q)) {
+  }
+  if (/\b(semester\s+(?:genap|ganjil)|genap\s+\d{4}\s*\/\s*\d{4}|ganjil\s+\d{4}\s*\/\s*\d{4})\b/i.test(q)) {
+    return 'Saya belum menemukan jadwal pelaksanaan akademik semester genap/ganjil yang cukup aman pada data yang tersedia. Untuk tanggal mulai, selesai, atau periode resminya, kakak sebaiknya cek kalender akademik/SION atau konfirmasi ke BAAK.';
+  }
+  if (/\b(remedial|remidi)\b/i.test(q)) {
     return 'Saya belum menemukan jadwal remedial semester genap yang cukup aman pada data yang tersedia. Untuk jadwal resmi remedial, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK/dosen pengampu.';
   }
   return 'Saya belum menemukan jadwal akademik yang cukup aman pada data yang tersedia. Untuk jadwal resmi, kakak sebaiknya cek pengumuman akademik/SION atau konfirmasi ke BAAK.';
