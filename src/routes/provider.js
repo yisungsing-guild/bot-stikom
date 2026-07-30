@@ -8806,11 +8806,15 @@ module.exports = function (provider) {
             console.log('[TRACE_COST_RESPONSE_ERROR]', { err: e && e.message ? e.message : String(e), preview: String(cleaned || '').slice(0, 240) });
           }
         } catch (e) {}
+        const outboundSource = meta && meta.source ? String(meta.source || '') : '';
+        const semanticRagOutbound = /^semantic-rag-/i.test(outboundSource);
         const preflight = String(cleaned || '').trim() === 'WELCOME_MENU'
           ? { answer: cleaned, issues: [], action: 'send', blocked: false, meta: { source: 'welcome_literal_token' } }
-          : evaluateOutboundAnswer(cleaned, text, {
-              source: meta && meta.source ? meta.source : null
-            });
+          : semanticRagOutbound
+            ? { answer: cleaned, issues: [], action: 'send', blocked: false, meta: { source: outboundSource, semanticRagPreserved: true } }
+            : evaluateOutboundAnswer(cleaned, text, {
+                source: meta && meta.source ? meta.source : null
+              });
         if (preflight.issues && preflight.issues.length) {
           logger.warn({ chatId: toChatId, issues: preflight.issues, meta: preflight.meta }, '[ProviderRoute] outbound answer preflight adjusted');
         }
@@ -8821,11 +8825,15 @@ module.exports = function (provider) {
         }
       } catch (e) {
         // Fallback: send original decorated content if cleanup fails
+        const outboundSource = meta && meta.source ? String(meta.source || '') : '';
+        const semanticRagOutbound = /^semantic-rag-/i.test(outboundSource);
         const preflight = String(decorated || '').trim() === 'WELCOME_MENU'
           ? { answer: decorated, issues: [], action: 'send', blocked: false, meta: { source: 'welcome_literal_token' } }
-          : evaluateOutboundAnswer(decorated, text, {
-              source: meta && meta.source ? meta.source : null
-            });
+          : semanticRagOutbound
+            ? { answer: decorated, issues: [], action: 'send', blocked: false, meta: { source: outboundSource, semanticRagPreserved: true } }
+            : evaluateOutboundAnswer(decorated, text, {
+                source: meta && meta.source ? meta.source : null
+              });
         if (preflight.issues && preflight.issues.length) {
           logger.warn({ chatId: toChatId, issues: preflight.issues, meta: preflight.meta }, '[ProviderRoute] outbound fallback preflight adjusted');
         }
