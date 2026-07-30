@@ -2379,8 +2379,23 @@ function tryUnsupportedInternationalProgramAnswer(question) {
   const q = String(question || '').toLowerCase();
   const mentionsJ1 = /\b(j\s*1|j-?1|training\s+1\s+tahun|program\s+j1|visa\s+j1)\b/i.test(q);
   const mentionsAmerica = /\b(amerika|america|usa|united\s+states|as\b)\b/i.test(q);
-  const asksProgram = /\b(program|training|magang|internship|kerja|bekerja|luar\s+negeri|ada|tersedia|sudah\s+ada)\b/i.test(q);
-  if (!(mentionsJ1 || (mentionsAmerica && asksProgram))) return null;
+  const mentionsJapaneseLevel = /\b(n\s*[1-5]|jlpt\s*n\s*[1-5]|sertifikasi\s+n\s*[1-5]|kelas\s+n\s*[1-5])\b/i.test(q);
+  const mentionsJapan = /\b(jepang|japan|nihon)\b/i.test(q);
+  const asksProgram = /\b(program|training|magang|internship|kerja|bekerja|luar\s+negeri|sertifikasi|kelas|kursus|bahasa|ada|tersedia|sudah\s+ada)\b/i.test(q);
+  if (!(mentionsJ1 || (mentionsAmerica && asksProgram) || (mentionsJapaneseLevel && mentionsJapan && asksProgram))) return null;
+  if (mentionsJapaneseLevel && mentionsJapan) {
+    return {
+      answer: [
+        'Saya belum menemukan data yang cukup aman bahwa ITB STIKOM Bali memiliki program N4/JLPT N4 ke Jepang pada dokumen yang tersedia saat ini.',
+        '',
+        'Data yang tersedia baru menunjukkan program Hi-Think yang berkaitan dengan Jepang dan kursus bahasa Jepang sebagai bagian dari persiapan belajar/karier di lingkungan industri Jepang.',
+        '',
+        'Untuk memastikan apakah ada kelas N4, sertifikasi JLPT N4, syarat, jadwal, biaya, atau jalur ke Jepang, kakak sebaiknya konfirmasi ke admin kampus atau pengelola program terkait.'
+      ].join('\n'),
+      source: 'semantic-rag-unsupported-international-program',
+      frameSource: 'semantic-rag-insufficient-data'
+    };
+  }
   return {
     answer: [
       'Saya belum menemukan data yang cukup aman bahwa ITB STIKOM Bali memiliki program J1/training 1 tahun ke Amerika pada dokumen yang tersedia saat ini.',
@@ -2522,7 +2537,7 @@ function buildPmbInfoAnswer() {
   return [
     'PMB adalah singkatan dari Penerimaan Mahasiswa Baru, yaitu proses penerimaan calon mahasiswa yang ingin mendaftar kuliah di ITB STIKOM Bali.',
     '',
-    'Dalam konteks PMB, kakak bisa bertanya tentang:',
+    'PMB, kakak bisa bertanya tentang:',
     '',
     '* Pendaftaran: alur daftar, cara mendaftar, dan langkah berikutnya',
     '* Jadwal pendaftaran: gelombang yang sedang buka, tanggal mulai, dan batas akhir',
@@ -6123,6 +6138,12 @@ function buildHybridFrameOpeners(question, source, topic) {
     ];
   }
 
+  if (src.includes('pmb-info')) {
+    return [
+      'Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia.'
+    ];
+  }
+
   if (src.includes('dual-degree')) {
     return [
       prefix + ' Saya jawab dari program Double Degree yang tersedia di ITB STIKOM Bali.',
@@ -6142,6 +6163,12 @@ function buildFrameOpeners(question, source, topic) {
   const assumption = topic && topic.assumption ? topic.assumption : 'Saya batasi ke data yang tersedia.';
   const hybridOpeners = buildHybridFrameOpeners(question, source, topic);
   if (hybridOpeners && hybridOpeners.length) return hybridOpeners;
+
+  if (src.includes('pmb-info')) {
+    return [
+      'Bisa, Kak. Saya jawab sesuai data ITB STIKOM Bali yang tersedia.'
+    ];
+  }
 
   if (src.includes('dual-degree')) {
     return [
@@ -7068,7 +7095,7 @@ function extractMeaningAnchors(question) {
 
   const phraseAnchors = [
     'semester antara', 'semester pendek', 'pelaksanaan akademik', 'kalender akademik', 'ujian remidi', 'ujian remedial',
-    'j1', 'training 1 tahun', 'amerika', 'career center', 'inkubator bisnis', 'language learning center', 'kuliah sambil kerja',
+    'j1', 'training 1 tahun', 'n4', 'jlpt n4', 'jepang', 'amerika', 'career center', 'inkubator bisnis', 'language learning center', 'kuliah sambil kerja',
     'magang berbayar', 'hi think', 'hithink', 'gccp', 'short course', 'double degree', 'dual degree', 'help university',
     'dnui', 'dalian neusoft', 'utb', 'universitas teknologi bandung', 'softskill', 'soft skill', 'pmb', 'gelombang',
     'sistem informasi', 'teknologi informasi', 'bisnis digital', 'sistem komputer', 'manajemen informatika'
@@ -7118,13 +7145,14 @@ function isMeaningMismatchAnswer(question, answer, source = '') {
   if (!anchors.length) return false;
 
   const normalizedAnswer = normalizeCacheText(answer);
+  const src = String(source || '').toLowerCase();
+  if (src.includes('program-list') && /\b(jurusan|prodi|program\s+studi|program\s+kuliah)\b/i.test(String(question || '')) && /\b(sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika)\b/i.test(String(answer || ''))) return false;
   const hits = anchors.filter(anchor => normalizedAnswer.includes(anchor));
   if (hits.length > 0) return false;
 
   const noDataAnswer = hasNoDataAnswerPhrase(answer);
   if (noDataAnswer) return answerMentionsUnaskedSpecificEntity(question, answer);
 
-  const src = String(source || '').toLowerCase();
   if (/training-specific|generic-faq-qna|campus-support-entity|campus-facility|schedule-window|current-open-waves|registration-info|program-list/.test(src)) return true;
   return anchors.length >= 2;
 }

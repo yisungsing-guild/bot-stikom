@@ -570,7 +570,8 @@ function tryProgramListAnswer(question) {
   const asksProgramList = /\b(jurusan|prodi|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan|fakultas)\b/.test(q);
   const asksAvailable = /\b(apa\s+saja|apa\s+aja|ada\s+apa|tersedia|yang\s+ada|di\s+stikom|stikom)\b/.test(q);
   const recommendationIntent = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|ingin|mau|pengen|bekerja|kerja|karir|karier|minat|hobi)\b/.test(q);
-  if (recommendationIntent) return null;
+  const explicitListIntent = asksProgramList && asksAvailable && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa)\b/.test(q);
+  if (recommendationIntent && !explicitListIntent) return null;
   if (!asksProgramList || !asksAvailable) return null;
 
   return {

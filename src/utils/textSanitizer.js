@@ -30,6 +30,13 @@ function normalizeMojibakePunctuationForWhatsapp(input) {
     text = text.replace(re, replacement);
   }
 
+  const mojibakeOpenQuote = String.fromCharCode(0x00c3, 0x00a2, 0x00e2, 0x201a, 0x00ac, 0x00c5, 0x201c);
+  const mojibakeCloseQuote = String.fromCharCode(0x00c3, 0x00a2, 0x00e2, 0x201a, 0x00ac, 0x00c2, 0x009d);
+  const mojibakeApostrophe = String.fromCharCode(0x00c3, 0x00a2, 0x00e2, 0x201a, 0x00ac, 0x00e2, 0x201e, 0x00a2);
+  text = text
+    .replaceAll(mojibakeOpenQuote, '"')
+    .replaceAll(mojibakeCloseQuote, '"')
+    .replaceAll(mojibakeApostrophe, "'");
   // Cleanup: collapse some common spacing artifacts (keep conservative).
   // Use [ \t] instead of \s to avoid matching newlines; preserve intentional blank lines.
   text = text.replace(/[ \t]+\n/g, '\n');
