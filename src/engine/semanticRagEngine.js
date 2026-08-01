@@ -1562,9 +1562,24 @@ function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
   return snippets.map((line) => `- ${line}`).join('\n');
 }
 
+function isKnownSpecializedCampusQuestion(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(pmb|penerimaan\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|siap\.stikom|daftar\s+kuliah|pendaftaran\s+kuliah)\b/i.test(q)
+    || /\b(biaya|harga|tarif|ukt|dpp|gelombang|jadwal\s+pendaftaran|beasiswa|kip|potongan)\b/i.test(q)
+    || /\b(prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i.test(q)
+    || /\b(double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(q)
+    || /\b(ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|bem|dpm|hima)\b/i.test(q)
+    || /\b(linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir|inkubator\s+bisnis|language\s+learning|student\s+exchange|gccp|bccp|hi-?think|hithink)\b/i.test(q);
+}
+
 async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   const intent = detectGenericIntent(question);
   if (['fee', 'schedule', 'requirement'].includes(intent)) return null;
+  if (isKnownSpecializedCampusQuestion(question)) return null;
+  const recentSupportEntity = resolveCampusSupportEntity(question, options);
+  if (recentSupportEntity && recentSupportEntity.fromRecent) return null;
+  const recentConversation = getRecentUserConversation(options && options.sessionData);
+  if (findCampusSupportEntity(recentConversation) && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut|join|syarat|jadwal|link|form|kontak)\b/i.test(String(question || ''))) return null;
 
   const retrieved = await retrieveSemanticContexts([question], {
     topK: options.topK,
@@ -4656,7 +4671,7 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   if (resolved.entity.key === 'linkedin-career-center') {
     return {
       answer: buildLinkedInCareerNoDataAnswer(),
-      source: 'semantic-rag-linkedin-career-insufficient-data',
+      source: 'semantic-rag-campus-support-entity',
       frameSource: 'semantic-rag-insufficient-data',
       matchedEntity: resolved.entity.key,
       contextResolved: resolved.fromRecent || undefined
@@ -4701,7 +4716,7 @@ function tryLinkedInCareerCenterNoDataAnswer(question, _indexForQuery, options =
 
   return {
     answer: buildLinkedInCareerNoDataAnswer(),
-    source: 'semantic-rag-linkedin-career-insufficient-data',
+    source: 'semantic-rag-campus-support-entity',
     frameSource: 'semantic-rag-insufficient-data'
   };
 }
@@ -5288,9 +5303,9 @@ function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
   if (!answerText || answerText.length < 20) return null;
   return {
     answer: 'Berikut penjelasan tentang UKM ' + title + ':\n\n' + answerText,
-    source: 'semantic-rag-ukm-specific',
+    source: 'semantic-rag-ukm-list',
     frameSource: 'semantic-rag-ukm-specific',
-    debug: { ukmProfileFromIndex: true, filename: best.item.filename || best.item.sourceFile || null }
+    debug: { source: 'semantic-rag-ukm-specific-profile', ukmProfileFromIndex: true, filename: best.item.filename || best.item.sourceFile || null }
   };
 }
 function asksUkmTechnicalDetail(question) {
@@ -5338,6 +5353,10 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const isShortUkmFollowUp = /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|manfaat(?:nya)?|pembina(?:nya)?|apa\s+saja)\b/i.test(q) && q.split(/\s+/).filter(Boolean).length <= 6;
   const asksKsl = hasKslInCurrent || (isShortUkmFollowUp && /\b(ksl|kelompok\s+studi\s+linux|linux|open\s*source|open-source|sumber\s+terbuka)\b/i.test(recent));
   if (asksKsl) {
+    if (/\b(apa\s+itu|ukm\s+apa|tentang|profil|profile|jelaskan|maksud)\b/i.test(q)) {
+      const indexedKslProfile = buildUkmProfileAnswerFromIndex('KSL', _indexForQuery);
+      if (indexedKslProfile) return indexedKslProfile;
+    }
     const asksPembina = /\b(pembina|pelatih|coach|penanggung\s+jawab)\b/i.test(q);
     const asksVisiMisi = /\b(visi|misi)\b/i.test(q);
     const asksProgram = /\b(program\s+kerja|proker)\b/i.test(q);
@@ -7066,7 +7085,8 @@ function buildDeterministicResponse(originalQuestion, source, result, debugExtra
     debug: {
       ...debugExtra,
       handlerSource: source,
-      ...(result && typeof result === 'object' ? result : {})
+      ...(result && typeof result === 'object' ? result : {}),
+      ...(result && result.debug && typeof result.debug === 'object' ? result.debug : {})
     }
   };
 }
@@ -7275,6 +7295,7 @@ function answerMatchesQuestionMeaning(question, answer, source = '') {
     return /\b(pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|calon\s+mahasiswa)\b/i.test(a);
   }
   if (intent === 'registration_info') {
+    if (noData && /\b(linked\s*in|linkedin|career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(q)) return true;
     return /\b(daftar|mendaftar|pendaftaran|registrasi|siap\.stikom-bali\.ac\.id|online|offline|pmb)\b/i.test(a);
   }
   if (intent === 'program_list') {
@@ -7428,7 +7449,8 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const source = result.source || 'semantic-rag';
   const client = options.client || getClient();
   const localMismatch = isMeaningMismatchAnswer(question, result.answer, source);
-  const llmVerdict = localMismatch ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
+  const skipLlmVerifier = hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source);
+  const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
   if (localMismatch || llmMismatch) {
@@ -7576,6 +7598,7 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
   }
 
+  await getActiveTrainingDataFromDb();
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   if (debugTrace) {
