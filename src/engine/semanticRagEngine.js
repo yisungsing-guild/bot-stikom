@@ -1562,6 +1562,12 @@ function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
   return snippets.map((line) => `- ${line}`).join('\n');
 }
 
+function isAcademicAdminUploadedDocQuestion(question, intent = '') {
+  const q = String(question || '').toLowerCase();
+  if (!['schedule', 'requirement', 'general', 'list'].includes(String(intent || ''))) return false;
+  if (/\b(pmb|penerimaan\s+mahasiswa\s+baru|camaba|daftar\s+kuliah|gelombang\s+pendaftaran|biaya|ukt|dpp)\b/i.test(q)) return false;
+  return /\b(sidang|tugas\s+akhir|skripsi|tesis|seminar\s+proposal|sempro|yudisium|wisuda|kelulusan|akademik)\b/i.test(q);
+}
 function isKnownSpecializedCampusQuestion(question) {
   const q = String(question || '').toLowerCase();
   return /\b(pmb|penerimaan\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|siap\.stikom|daftar\s+kuliah|pendaftaran\s+kuliah)\b/i.test(q)
@@ -1574,7 +1580,8 @@ function isKnownSpecializedCampusQuestion(question) {
 
 async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   const intent = detectGenericIntent(question);
-  if (['fee', 'schedule', 'requirement'].includes(intent)) return null;
+  if (intent === 'fee') return null;
+  if (['schedule', 'requirement'].includes(intent) && !isAcademicAdminUploadedDocQuestion(question, intent)) return null;
   if (isKnownSpecializedCampusQuestion(question)) return null;
   const recentSupportEntity = resolveCampusSupportEntity(question, options);
   if (recentSupportEntity && recentSupportEntity.fromRecent) return null;
