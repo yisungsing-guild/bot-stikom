@@ -1830,6 +1830,43 @@ function retrieveGenericUploadedContextsFromIndex(question, options = {}) {
   scored.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
   return scored.slice(0, options.topK || 12);
 }
+async function retrieveAcademicAdminUploadedContextsFromDb(question, options = {}) {
+  const q = String(question || '');
+  const intent = options.intent || detectGenericIntent(q);
+  if (!isAcademicAdminUploadedDocQuestion(q, intent)) return [];
+
+  const rows = await getActiveTrainingDataFromDb();
+  if (!Array.isArray(rows) || !rows.length) return [];
+
+  const out = [];
+  for (const row of rows) {
+    if (!row || !String(row.content || '').trim()) continue;
+    const filename = row.filename || row.source || 'uploaded-training';
+    const content = cleanDocumentMarkers(String(row.content || ''));
+    const haystack = `${filename}\n${content}`;
+    if (!hasAcademicAdminQuestionOverlap(q, haystack)) continue;
+
+    let score = computeGenericScore(q, haystack, intent) + computeSourceIntentBoost(q, { filename, chunk: content }, intent);
+    if (/\b(yudisium|wisuda|sidang|tugas\s+akhir|proyek\s+akhir)\b/i.test(filename)) score += 0.25;
+    if (/\b(hari\s*\/?\s*tanggal|tanggal|pukul|jam|wita|wib|wit|tempat|loket|deadline|terakhir|sampai\s+dengan)\b/i.test(content)) score += 0.25;
+    if (hasAnchorOverlap(q, haystack)) score += 0.15;
+
+    out.push({
+      id: `${row.id}-db-full`,
+      score: Math.max(0.2, Math.min(1, score)),
+      chunk: content,
+      filename,
+      trainingId: row.id || null,
+      divisionKey: row.divisionKey || null,
+      metadata: { source: 'database-full', ragIngestStatus: row.ragIngestStatus || 'unknown' },
+      intent,
+      sourceType: 'database-academic-full'
+    });
+  }
+
+  out.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  return out.slice(0, options.topK || 6);
+}
 async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   const intent = detectGenericIntent(question);
   if (intent === 'fee') return null;
@@ -1849,10 +1886,14 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   const directAcademicContexts = academicAdminUploaded
     ? retrieveAcademicAdminUploadedContextsFromIndex(question, { intent, topK: Math.max(12, Number(options.topK || 0) || 0) })
     : [];
+  const fullAcademicDbContexts = academicAdminUploaded
+    ? await retrieveAcademicAdminUploadedContextsFromDb(question, { intent, topK: 6 })
+    : [];
   const directGenericContexts = academicAdminUploaded
     ? []
     : retrieveGenericUploadedContextsFromIndex(question, { intent, topK: Math.max(12, Number(options.topK || 0) || 0) });
   const contexts = [
+    ...fullAcademicDbContexts,
     ...directAcademicContexts,
     ...directGenericContexts,
     ...(Array.isArray(retrieved.contexts) ? retrieved.contexts : [])
@@ -1897,8 +1938,8 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
     answer: formatNaturalAnswerFrame(question, answer, 'semantic-rag-uploaded-training-generic'),
     source: 'semantic-rag-uploaded-training-generic',
     contexts: selectedEvidence,
-    confidenceScore: retrieved.topScore,
-    confidenceTier: retrieved.topScore >= 0.55 ? 'HIGH' : 'MEDIUM',
+    confidenceScore: combinedTopScore,
+    confidenceTier: combinedTopScore >= 0.55 ? 'HIGH' : 'MEDIUM',
     debug: {
       routeStage: 'fallback-no-ai-local-training-db',
       intent,
@@ -8643,6 +8684,9 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
 
 
 
