@@ -1628,6 +1628,30 @@ function isSafeCompactAcademicRequirementAnswer(question, answer) {
   if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
   return a.length <= 2500;
 }
+function isSafePmbOverviewAnswer(question, answer) {
+  const q = String(question || '').toLowerCase();
+  const a = String(answer || '').trim();
+  if (!a || !/\b(pmb|penerimaan\s+mahasiswa\s+baru|maba|camaba)\b/i.test(q)) return false;
+  if (!/\bPMB\s+adalah\s+singkatan\s+dari\s+Penerimaan\s+Mahasiswa\s+Baru\b/i.test(a)) return false;
+  if (!/\bITB\s+STIKOM\s+Bali\b/i.test(a)) return false;
+  if (!/\b(?:pendaftaran|jadwal|program\s+studi|prodi|biaya|beasiswa|syarat|dokumen|kontak|admin\s+PMB)\b/i.test(a)) return false;
+  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
+  if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
+  return a.length <= 1400;
+}
+
+function isSafeDualDegreeAnswer(question, answer) {
+  const q = String(question || '').toLowerCase();
+  const a = String(answer || '').trim();
+  if (!a || !/\b(double\s*degree|dual\s*degree|gelar\s+ganda|dd)\b/i.test(q)) return false;
+  if (!/\b(Double|Dual)\s*Degree\b/i.test(a)) return false;
+  const mentionsKnownPartner = /\b(UTB|Universitas\s+Teknologi\s+Bandung|DNUI|Dalian\s+Neusoft|HELP\s+University|HELP)\b/i.test(a);
+  const mentionsKnownProgram = /\b(Bisnis\s+Digital|Sistem\s+Informasi|DKV|Desain\s+Komunikasi\s+Visual)\b/i.test(a);
+  if (!mentionsKnownPartner || !mentionsKnownProgram) return false;
+  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
+  if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
+  return a.length <= 1600;
+}
 function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const q = normalizeAcademicAdminQueryText(question);
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
@@ -1645,7 +1669,7 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
     .replace(/\s+(?:Hari\s*\/?\s*Tanggal|Tanggal|Pukul|Waktu|Jam|Tempat|Loket|Lokasi|Selain\s+dari\s+tanggal\s+tersebut|[B-Z]\.\s+|Persyaratan)\b[\s\S]*$/i, '')
     .trim();
   const getValue = (labelPattern) => {
-    const re = new RegExp(`(?:${labelPattern})\\s*[:：]?\\s*([^\\n]+)`, 'i');
+    const re = new RegExp(`(?:${labelPattern})\\s*[:\\uFF1A]?\\s*([^\\n]+)`, 'i');
     const m = section.match(re);
     return m && m[1] ? cleanScheduleFieldValue(m[1]) : '';
   };
@@ -4774,7 +4798,7 @@ function cleanFacilitySnippetText(text) {
 
   out = out
     .replace(/\b(?:q|a)\s*[:\-.]\s*/gi, '')
-    .replace(/["'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â]/g, '')
+    .replace(/["'\u201c\u201d\u2018\u2019]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -7308,7 +7332,7 @@ function tryInstitutionVisionMissionAnswer(question, indexForQuery) {
     const visionText = String(vision[1] || '').trim();
     if (/\b(acara|panitia|undangan|peserta|anggota|organisasi|ukm|himpunan|pengurus)\b/i.test(visionText)) continue;
     const lines = ['Berikut visi/misi ITB STIKOM Bali yang saya temukan pada data tersedia:'];
-    if (vision && vision[1]) lines.push('', `Visi: ${vision[1].replace(/[ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â"]+$/g, '').trim()}`);
+    if (vision && vision[1]) lines.push('', `Visi: ${vision[1].replace(/[\u201d"]+$/g, '').trim()}`);
     if (mission && mission[1]) {
       const cleanedMission = mission[1]
         .replace(/\b(?:tujuan|struktur organisasi|profil|sejarah|kontak)\b[\s\S]*$/i, '')
@@ -8149,7 +8173,10 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const compactRequirementSafe = Boolean(result.debug && result.debug.compactAcademicRequirement)
     && isSafeCompactAcademicRequirementAnswer(question, result.answer);
   const compactAcademicSafe = compactScheduleSafe || compactRequirementSafe;
-  if (preflight && preflight.blocked && !compactAcademicSafe) {
+  const structuredPmbSafe = /pmb-info/i.test(source) && isSafePmbOverviewAnswer(question, result.answer);
+  const structuredDualDegreeSafe = /dual-degree/i.test(source) && isSafeDualDegreeAnswer(question, result.answer);
+  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe;
+  if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
       answer: preflight.answer,
@@ -8167,7 +8194,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
     return blocked;
   }
-  if (preflight && preflight.changed && preflight.answer && !compactAcademicSafe) {
+  if (preflight && preflight.changed && preflight.answer && !structuredSemanticSafe) {
     result = {
       ...result,
       answer: preflight.answer,
@@ -8180,7 +8207,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
 
   const client = options.client || getClient();
   const localMismatch = isMeaningMismatchAnswer(question, result.answer, source);
-  const skipLlmVerifier = compactAcademicSafe || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source));
+  const skipLlmVerifier = structuredSemanticSafe || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source));
   const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
@@ -9005,7 +9032,10 @@ async function verifyOutboundSemanticRelevance(question, answer, source = 'provi
       && /\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|Persyaratan)\b/i.test(a)
       && ((a.match(/(?:^|\n|\s)\b[A-Z]\.\s+/g) || []).length >= 2 || (a.match(/\b(?:Hari\/Tanggal|Pukul|Tempat|Waktu)\s*:/gi) || []).length >= 4);
     const compactOutboundAcademicSafe = isSafeCompactAcademicScheduleAnswer(q, a) || isSafeCompactAcademicRequirementAnswer(q, a);
-    const unsafeSemanticOutput = !compactOutboundAcademicSafe && (Boolean(preflight && preflight.blocked)
+    const structuredOutboundSafe = compactOutboundAcademicSafe
+      || (/pmb-info/i.test(src) && isSafePmbOverviewAnswer(q, a))
+      || (/dual-degree/i.test(src) && isSafeDualDegreeAnswer(q, a));
+    const unsafeSemanticOutput = !structuredOutboundSafe && (Boolean(preflight && preflight.blocked)
       || hasLikelyRawDocumentLeak(a)
       || structuredDocDump
       || preflightIssues.some((issue) => /(?:raw_document_leak|technical_leak|placeholder_or_ocr_noise|excessive_raw_quotation|too_long_for_query|long_answer_split_expected)/i.test(String(issue || ''))));
@@ -9112,17 +9142,3 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
