@@ -1658,6 +1658,32 @@ function isSafeDualDegreeAnswer(question, answer) {
   if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
   return a.length <= 1600;
 }
+function isSafeAbbreviationClarificationAnswer(question, answer, source = '') {
+  const q = String(question || '').trim();
+  const a = String(answer || '').trim();
+  const src = String(source || '').toLowerCase();
+  if (!a || !src.includes('abbreviation-clarification')) return false;
+  if (!/\b(?:apa\s+itu|itu\s+apa|maksud(?:nya)?|kepanjangan|singkatan|tentang|info(?:rmasi)?|jelaskan)\b/i.test(q)) return false;
+  if (!/\bsingkatan\s+"?[A-Z0-9]{2,6}"?\s+yang\s+dimaksud\s+itu\s+apa\s+ya/i.test(a)) return false;
+  if (!/\b(?:kepanjangannya|konteksnya|prodi|fasilitas|layanan|organisasi|PMB|akademik|RAG)\b/i.test(a)) return false;
+  return a.length <= 500;
+}
+
+function isSafeProgramDefinitionAnswer(question, answer, source = '') {
+  const q = String(question || '').toLowerCase();
+  const a = String(answer || '').trim();
+  const src = String(source || '').toLowerCase();
+  if (!a || !src.includes('program-definition')) return false;
+  if (!/\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q)) return false;
+  const asksKnownProgram = /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi)\b/i.test(q);
+  if (!asksKnownProgram) return false;
+  const mentionsKnownProgram = /\b(?:Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika)\b/i.test(a);
+  const hasDefinitionShape = /\b(?:adalah|merupakan|fokus|berfokus|program\s+studi|prodi|mempelajari|skill|kemampuan|karier)\b/i.test(a);
+  if (!mentionsKnownProgram || !hasDefinitionShape) return false;
+  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
+  return a.length <= 1800;
+}
+
 function isSafeCompactAcademicGeneralAnswer(question, answer) {
   const q = normalizeAcademicAdminQueryText(question);
   const a = String(answer || '').trim();
@@ -8381,8 +8407,10 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredPmbSafe = /pmb-info/i.test(source) && isSafePmbOverviewAnswer(question, result.answer);
   const structuredDualDegreeSafe = /dual-degree/i.test(source) && isSafeDualDegreeAnswer(question, result.answer);
   const structuredFacilitySafe = isSafeCampusFacilityAnswer(question, result.answer, source);
+  const structuredProgramDefinitionSafe = isSafeProgramDefinitionAnswer(question, result.answer, source);
+  const structuredAbbreviationClarificationSafe = isSafeAbbreviationClarificationAnswer(question, result.answer, source);
   const explicitExternalNoDataSafe = /explicit-external-insufficient-data/i.test(source);
-  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || explicitExternalNoDataSafe;
+  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || explicitExternalNoDataSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
@@ -9303,7 +9331,9 @@ async function verifyOutboundSemanticRelevance(question, answer, source = 'provi
     const structuredOutboundSafe = compactOutboundAcademicSafe
       || (/pmb-info/i.test(src) && isSafePmbOverviewAnswer(q, a))
       || (/dual-degree/i.test(src) && isSafeDualDegreeAnswer(q, a))
-      || isSafeCampusFacilityAnswer(q, a, src);
+      || isSafeCampusFacilityAnswer(q, a, src)
+      || isSafeProgramDefinitionAnswer(q, a, src)
+      || isSafeAbbreviationClarificationAnswer(q, a, src);
     const unsafeSemanticOutput = !structuredOutboundSafe && (Boolean(preflight && preflight.blocked)
       || hasLikelyRawDocumentLeak(a)
       || structuredDocDump

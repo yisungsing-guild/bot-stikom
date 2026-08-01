@@ -5422,6 +5422,7 @@ module.exports = function (provider) {
     const outbound = String(outboundText || '').trim();
     if (!inbound || !outbound) return true;
     if (String(meta && meta.source || '').includes('timeout')) return true;
+    if (isSafeDoubleDegreeOutboundAnswer(inbound, outbound, meta)) return true;
     if (isDoubleDegreeProcessQuestion(inbound)) return true;
     if (/^\s*(balas|pilih|ketik)\b/i.test(outbound)) return true;
     if (/\b(silakan\s+pilih|balas\s+dengan\s+angka|ketik\s*:)\b/i.test(outbound)) return true;
@@ -5439,6 +5440,7 @@ module.exports = function (provider) {
     const original = String(outboundText || '').trim();
     if (!original || shouldSkipFinalSemanticRelevanceGate(inboundUserText, original, meta)) return original;
     if (envFlag('PROVIDER_FINAL_SEMANTIC_RELEVANCE_GATE', true) === false) return original;
+    if (isSafeDoubleDegreeOutboundAnswer(inboundUserText, original, meta)) return original;
     if (isDoubleDegreeProcessQuestion(inboundUserText)) return original;
     if (/^Perkuliahan\b/i.test(original)) return original;
 
@@ -6322,6 +6324,26 @@ module.exports = function (provider) {
     return asksAvailability || mentionsProdi;
   }
 
+  function isDoubleDegreeAvailabilityOrInfoQuestion(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return false;
+    const hasDoubleDegree = /\b(?:double\s*degree|dual\s*degree|gelar\s+ganda|utb|dnui|dalian\s+neusoft|help\s+university)\b/i.test(raw);
+    if (!hasDoubleDegree) return false;
+    return /\b(?:apakah|apa|ada|tersedia|punya|memiliki|program|internasional|nasional|mitra|partner|kampus|prodi|jurusan|pilihan|jelaskan|tentang|info(?:rmasi)?)\b/i.test(raw);
+  }
+
+  function isSafeDoubleDegreeOutboundAnswer(inboundText, outboundText, meta = {}) {
+    const inbound = String(inboundText || '').trim();
+    const outbound = String(outboundText || '').trim();
+    if (!isDoubleDegreeAvailabilityOrInfoQuestion(inbound) || !outbound) return false;
+    if (!/\bDouble\s*Degree\b/i.test(outbound)) return false;
+    if (!/\b(?:ITB\s*)?STIKOM\s+Bali\b/i.test(outbound)) return false;
+    if (/\binternasional\b/i.test(inbound) && !/\b(?:DNUI|Dalian\s+Neusoft|HELP\s+University|Malaysia|China|internasional)\b/i.test(outbound)) return false;
+    if (/\bnasional\b/i.test(inbound) && !/\b(?:UTB|Universitas\s+Teknologi\s+Bandung|nasional)\b/i.test(outbound)) return false;
+    if (!/\b(?:UTB|Universitas\s+Teknologi\s+Bandung|DNUI|Dalian\s+Neusoft|HELP\s+University|Malaysia|China|Bisnis\s+Digital|Sistem\s+Informasi)\b/i.test(outbound)) return false;
+    const source = String(meta && (meta.source || meta.ragSource || meta.finalPipeline) || '');
+    return /^semantic-rag-dual-degree/i.test(source) || /semantic-rag/i.test(source) || /\b(?:UTB|DNUI|HELP\s+University)\b/i.test(outbound);
+  }
   function isDoubleDegreeProcessQuestion(text) {
     const raw = String(text || '').trim();
     if (!raw) return false;
@@ -8499,6 +8521,22 @@ module.exports = function (provider) {
       return null;
     };
     const inboundTs = parseInboundTsMs(inboundTsRaw);
+    const requestReceivedAtMs = Date.now();
+    const requestInboundNorm = normalizeTextForDedup(text);
+    const requestInboundMarker = {
+      norm: requestInboundNorm,
+      ts: inboundTs || requestReceivedAtMs,
+      inboundTs: inboundTs || null
+    };
+    const isLatestInboundForThisRequest = (targetChatId = chatId) => {
+      const latest = lastInboundByChat.get(targetChatId);
+      if (!latest) return true;
+      if (latest.norm !== requestInboundMarker.norm) return false;
+      if (requestInboundMarker.inboundTs && latest.inboundTs) {
+        return latest.inboundTs === requestInboundMarker.inboundTs;
+      }
+      return latest.ts === requestInboundMarker.ts;
+    };
 
     console.log('[TRACE_INCOMING]', { chatId, text, messageId, inboundTs });
     recordRouteDebugEvent(chatId, { route: 'incoming', text, source: 'webhook' });
@@ -8525,8 +8563,8 @@ module.exports = function (provider) {
     // Prefer inboundTs if present (stable across retries), otherwise fall back to an arrival-time window.
     if (INBOUND_TEXT_WINDOW_MS > 0) {
       const prev = lastInboundByChat.get(chatId);
-      const nowMs = Date.now();
-      const norm = normalizeTextForDedup(text);
+      const nowMs = requestReceivedAtMs;
+      const norm = requestInboundNorm;
 
       // Strong dedupe: if we have inboundTs, keep a TTL cache so retries later won't re-trigger replies.
       if (inboundTs) {
@@ -8559,7 +8597,10 @@ module.exports = function (provider) {
         }
       }
 
-      lastInboundByChat.set(chatId, { norm, ts: inboundTs || nowMs, inboundTs: inboundTs || null });
+      lastInboundByChat.set(chatId, requestInboundMarker);
+      if (lastInboundByChat.size > 10000) lastInboundByChat.clear();
+    } else {
+      lastInboundByChat.set(chatId, requestInboundMarker);
       if (lastInboundByChat.size > 10000) lastInboundByChat.clear();
     }
 
@@ -8658,6 +8699,11 @@ module.exports = function (provider) {
             // non-fatal: if session lookup fails, fall back to sending the message
           }
 
+          if (!isLatestInboundForThisRequest(chatId)) {
+            timeoutFired = true;
+            return;
+          }
+
           timeoutFired = true;
           outboundSent = true;
           timeoutSendPromise = sendBotMessageOriginal(chatId, timeoutFallbackMessage, meta);
@@ -8672,6 +8718,12 @@ module.exports = function (provider) {
     // In hard mode, once timed out, suppress any late replies.
     let sendBotMessage = async (toChatId, messageText, meta = {}) => {
       if (replyTimeoutIsHard && timeoutFired) return;
+      if (!isLatestInboundForThisRequest(toChatId)) {
+        clearReplyDeadline();
+        outboundSent = true;
+        logger.info({ chatId: toChatId }, '[ProviderRoute] suppressed stale outbound for older inbound');
+        return;
+      }
 
       // As soon as we start sending the real reply, cancel the deadline so the
       // timeout message can't fire after the answer.
@@ -8837,6 +8889,7 @@ module.exports = function (provider) {
         }
         const outboundParts = splitLongWhatsappMessage(preflight.answer);
         for (let i = 0; i < outboundParts.length; i++) {
+          if (!isLatestInboundForThisRequest(toChatId)) break;
           const partMeta = i === 0 ? meta : { ...meta, splitPart: i + 1, splitTotal: outboundParts.length };
           await sendBotMessageOriginal(toChatId, outboundParts[i], partMeta);
         }
@@ -8856,6 +8909,7 @@ module.exports = function (provider) {
         }
         const fallbackParts = splitLongWhatsappMessage(preflight.answer);
         for (let i = 0; i < fallbackParts.length; i++) {
+          if (!isLatestInboundForThisRequest(toChatId)) break;
           const partMeta = i === 0 ? meta : { ...meta, splitPart: i + 1, splitTotal: fallbackParts.length };
           await sendBotMessageOriginal(toChatId, fallbackParts[i], partMeta);
         }
