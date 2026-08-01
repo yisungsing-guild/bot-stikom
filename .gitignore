@@ -52,3 +52,69 @@ c
 # Local restore/debug helpers and credential samples
 scripts/adminUsers.example.json
 *.restore.test.js
+# Local backups / runtime state
+backups/
+sandbox-baileys-auth/
+baileys-auth/
+
+# Generated RAG/vector artifacts
+data/rag_index*.json
+data/vec_index/
+data/ingest/
+
+# Root-level debug/test scratch files
+/*.out
+/*.tmp
+/debug*.js
+/debug*.txt
+/debug*.json
+/temp*.js
+/tmp*.js
+/test-output*.txt
+/test-results*.txt
+/test-result*.txt
+/*debug-output*.txt
+/*trace*.txt
+/*diff*.txt
+/provtest.out
+/query_provider_debug_map.txt
+# Hidden root scratch files
+/.patch*
+/.temp*
+/.tmp*
+/provider_diff.txt
+# Root local reports/audits/scratch files are not part of Railway deploy
+/*.md
+/*.txt
+/*.json
+/*.js
+!/.env.example
+!/package.json
+!/package-lock.json
+!/admin-panel.js
+
+# Non-deploy test/audit/tool folders
+tests/
+tools/
+quarantined_backups/
+
+# Source backup/scratch files
+src/**/*.bak*
+src/**/*backup*
+src/**/tmp_*.js
+src/**/temp_*.js
+src/**/*.broken
+# More local-only artifacts not needed for Railway deploy
+docs/guidance/
+docs/retrieval/*.md
+ngrok-v3-stable-windows-amd64/
+query_blocks/
+rag-audit-logs/
+reports/
+*.traineddata
+*.py
+/dy
+/provider.diff
+# Local DB/user seed secrets
+prisma/prisma/dev.db
+scripts/adminUsers.json
