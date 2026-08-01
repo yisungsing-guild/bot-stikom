@@ -6497,7 +6497,7 @@ function inferFrameTopic(question, source) {
     };
   }
 
-  if ((src.includes('program-list') || /\b(jurusan|prodi|program\s+studi)\b/.test(q)) && !src.includes('fee') && !/\b(biaya|harga|bayar|ukt|dpp|pendaftaran|rincian|detail|gelombang|gel\b)\b/.test(q)) {
+  if (src.includes('program-list') && !src.includes('fee') && !/\\b(biaya|harga|bayar|ukt|dpp|pendaftaran|rincian|detail|gelombang|gel\\b)\\b/.test(q)) {
     return {
       request: 'daftar jurusan/program studi yang tersedia di ITB STIKOM Bali',
       assumption: 'Saya tampilkan program reguler D3/S1/S2 dan pilihan Double Degree.',
@@ -8491,6 +8491,23 @@ async function querySemanticRag(question, options = {}) {
     };
   }
 
+  if (rewrite.needsClarification) {
+    const qForRecommendation = String(question || '').toLowerCase();
+    const asksProgramFit = /\b(cocok|rekomendasi|saran|pilih|pilihan|jurusan|prodi|program\s+studi)\b/i.test(qForRecommendation);
+    const hasInterestSignal = /\b(suka|hobi|hobby|minat|tertarik|senang|ingin|pengen|desain|design|visual|dkv|ui\s*\/?\s*ux|konten|content|bisnis|marketing|jualan|usaha|coding|ngoding|programming|pemrograman|jaringan|network|server|hardware|komputer|data|analisis|game|aplikasi|web|website)\b/i.test(qForRecommendation);
+    if (asksProgramFit && hasInterestSignal) {
+      const canonicalQuestion = `Rekomendasi jurusan/prodi ITB STIKOM Bali berdasarkan minat: ${String(question || '').trim()}`;
+      rewrite = {
+        ...(rewrite && typeof rewrite === 'object' ? rewrite : {}),
+        canonicalQuestion,
+        searchQueries: uniqueList([canonicalQuestion, String(question || '').trim(), 'rekomendasi jurusan prodi berdasarkan minat hobi'], 4),
+        intent: 'program_recommendation',
+        confidence: Math.max(Number(rewrite.confidence) || 0, 0.78),
+        needsClarification: false,
+        clarificationQuestion: ''
+      };
+    }
+  }
   if (rewrite.needsClarification && rewrite.clarificationQuestion) {
     if (isGenericSemanticClarification(question, rewrite.clarificationQuestion)) {
       const response = {
