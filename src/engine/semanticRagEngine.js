@@ -1609,6 +1609,16 @@ function isSafeCompactAcademicScheduleAnswer(question, answer) {
   if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
   return a.length <= 850;
 }
+function isSafeCompactAcademicRequirementAnswer(question, answer) {
+  const q = String(question || '');
+  const a = String(answer || '').trim();
+  if (!a || !isAcademicAdminUploadedDocQuestion(q, 'requirement')) return false;
+  if (!/\b(?:Persyaratan|Syarat)\s+(?:Yudisium|Wisuda|akademik)\b/i.test(a)) return false;
+  if (!/\n\s*-\s+\S+/.test(a)) return false;
+  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
+  if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
+  return a.length <= 1200;
+}
 function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const q = normalizeAcademicAdminQueryText(question);
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
@@ -7137,6 +7147,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (src.includes('small-talk')) return body;
   if (src.includes('pmb-info')) return body;
   if (src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('insufficient-data') || src.includes('unsupported-international-program')) return body;
+  if (src.includes('uploaded-training-generic') && isAcademicAdminUploadedDocQuestion(question, detectGenericIntent(normalizeAcademicAdminQueryText(question)))) return body;
   const appendFollowupsOnly = () => {
     if (!envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) return body;
     const topic = inferFrameTopic(question, source);
@@ -8071,13 +8082,14 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
 
   if (/^semantic-rag-uploaded-training-generic$/i.test(source) && Array.isArray(result.contexts) && result.contexts.length) {
     const compactAcademicSchedule = buildAcademicScheduleSummaryAnswer(question, result.contexts);
-    if (compactAcademicSchedule) {
+    const compactAcademicRequirement = compactAcademicSchedule ? '' : buildAcademicRequirementSummaryAnswer(question, result.contexts);
+    if (compactAcademicSchedule || compactAcademicRequirement) {
       result = {
         ...result,
-        answer: formatNaturalAnswerFrame(question, compactAcademicSchedule, source),
+        answer: formatNaturalAnswerFrame(question, compactAcademicSchedule || compactAcademicRequirement, source),
         debug: {
           ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
-          compactAcademicSchedule: true
+          ...(compactAcademicSchedule ? { compactAcademicSchedule: true } : { compactAcademicRequirement: true })
         }
       };
     }
@@ -8086,7 +8098,10 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const preflight = evaluateOutboundAnswer(result.answer, question, { source });
   const compactScheduleSafe = Boolean(result.debug && result.debug.compactAcademicSchedule)
     && isSafeCompactAcademicScheduleAnswer(question, result.answer);
-  if (preflight && preflight.blocked && !compactScheduleSafe) {
+  const compactRequirementSafe = Boolean(result.debug && result.debug.compactAcademicRequirement)
+    && isSafeCompactAcademicRequirementAnswer(question, result.answer);
+  const compactAcademicSafe = compactScheduleSafe || compactRequirementSafe;
+  if (preflight && preflight.blocked && !compactAcademicSafe) {
     const blocked = {
       success: true,
       answer: preflight.answer,
@@ -8104,7 +8119,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
     return blocked;
   }
-  if (preflight && preflight.changed && preflight.answer && !compactScheduleSafe) {
+  if (preflight && preflight.changed && preflight.answer && !compactAcademicSafe) {
     result = {
       ...result,
       answer: preflight.answer,
@@ -8117,7 +8132,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
 
   const client = options.client || getClient();
   const localMismatch = isMeaningMismatchAnswer(question, result.answer, source);
-  const skipLlmVerifier = hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source);
+  const skipLlmVerifier = compactAcademicSafe || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source));
   const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
@@ -8941,10 +8956,11 @@ async function verifyOutboundSemanticRelevance(question, answer, source = 'provi
     const structuredDocDump = a.length > 700
       && /\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|Persyaratan)\b/i.test(a)
       && ((a.match(/(?:^|\n|\s)\b[A-Z]\.\s+/g) || []).length >= 2 || (a.match(/\b(?:Hari\/Tanggal|Pukul|Tempat|Waktu)\s*:/gi) || []).length >= 4);
-    const unsafeSemanticOutput = Boolean(preflight && preflight.blocked)
+    const compactOutboundAcademicSafe = isSafeCompactAcademicScheduleAnswer(q, a) || isSafeCompactAcademicRequirementAnswer(q, a);
+    const unsafeSemanticOutput = !compactOutboundAcademicSafe && (Boolean(preflight && preflight.blocked)
       || hasLikelyRawDocumentLeak(a)
       || structuredDocDump
-      || preflightIssues.some((issue) => /(?:raw_document_leak|technical_leak|placeholder_or_ocr_noise|excessive_raw_quotation|too_long_for_query|long_answer_split_expected)/i.test(String(issue || '')));
+      || preflightIssues.some((issue) => /(?:raw_document_leak|technical_leak|placeholder_or_ocr_noise|excessive_raw_quotation|too_long_for_query|long_answer_split_expected)/i.test(String(issue || ''))));
 
     if (unsafeSemanticOutput) {
       return {
