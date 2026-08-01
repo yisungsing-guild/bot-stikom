@@ -1604,14 +1604,15 @@ function selectAcademicDocumentSection(question, evidence, mode = 'schedule') {
 function isSafeCompactAcademicScheduleAnswer(question, answer) {
   const q = String(question || '');
   const a = String(answer || '').trim();
-  if (!a || !isAcademicAdminUploadedDocQuestion(q, 'schedule')) return false;
-  if (!/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|yudisium|wisuda)\b/i.test(a)) return false;
-  const hasConcreteSchedule = /\b(?:Hari\s*\/?\s*Tanggal|Tanggal)\s*:/i.test(a)
-    && /\b(?:Pukul|Waktu|Jam)\s*:/i.test(a)
-    && /\b(?:Tempat|Loket|Lokasi)\s*:/i.test(a);
+  const core = a.replace(/\n\s*(?:Topik\s+lanjutan|Rekomendasi[^:]*|Kalau\s+mau\s+lanjut)[\s\S]*$/i, '').trim();
+  if (!core || !isAcademicAdminUploadedDocQuestion(q, 'schedule')) return false;
+  if (!/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|yudisium|wisuda)\b/i.test(core)) return false;
+  const hasConcreteSchedule = /\b(?:Hari\s*\/?\s*Tanggal|Tanggal)\s*:/i.test(core)
+    && /\b(?:Pukul|Waktu|Jam)\s*:/i.test(core)
+    && /\b(?:Tempat|Loket|Lokasi)\s*:/i.test(core);
   if (!hasConcreteSchedule) return false;
-  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|Persyaratan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
-  if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
+  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|Persyaratan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(core)) return false;
+  if ((core.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
   return a.length <= 850;
 }
 function isSafeCompactAcademicRequirementAnswer(question, answer) {
@@ -3439,7 +3440,7 @@ function tryAmbiguousAbbreviationClarificationAnswer(question) {
   const abbr = extractAmbiguousAbbreviation(question);
   if (!abbr) return null;
   return {
-    answer: `Kak, singkatan "${abbr}" yang dimaksud itu apa ya? Bisa tuliskan kepanjangannya atau konteksnya, misalnya prodi, fasilitas, layanan kampus, organisasi, PMB, atau dokumen akademik. Setelah konteksnya jelas, saya cekkan berdasarkan data RAG yang tersedia.`
+    answer: `Kak, singkatan "${abbr}" yang dimaksud itu apa ya? Bisa tuliskan kepanjangannya atau konteksnya, misalnya prodi, fasilitas, layanan kampus, organisasi, PMB, atau data akademik. Setelah konteksnya jelas, saya cekkan berdasarkan data RAG yang tersedia.`
   };
 }
 function tryFeedbackAnswer(question) {
@@ -6402,6 +6403,20 @@ function inferFrameTopic(question, source) {
   const q = String(question || '').toLowerCase();
   const src = String(source || '').toLowerCase();
 
+  if (src.includes('uploaded-training-generic') && isAcademicAdminUploadedDocQuestion(question, detectGenericIntent(normalizeAcademicAdminQueryText(question)))) {
+    const topic = /\byudisium\b/i.test(q) ? 'informasi yudisium' : (/\bwisuda\b/i.test(q) ? 'informasi wisuda' : 'informasi akademik dari dokumen kampus');
+    return {
+      request: topic,
+      assumption: 'Saya jawab dari data akademik yang tersedia dan hanya mengambil bagian yang relevan.',
+      conclusion: 'Jadi, informasi ini saya rangkum dari data akademik yang tersedia. Untuk proses administrasi resmi atau perubahan terbaru, kakak tetap bisa konfirmasi ke BAAK/unit akademik.',
+      followups: [
+        'Kapan pendaftaran yudisium?',
+        'Kapan pelaksanaan yudisium?',
+        'Persyaratan yudisium apa saja?'
+      ]
+    };
+  }
+
   if (src.includes('pmb-info')) {
     return {
       request: 'informasi umum tentang PMB ITB STIKOM Bali',
@@ -7375,13 +7390,34 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (src.includes('small-talk')) return body;
   if (src.includes('pmb-info')) return body;
   if (src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('insufficient-data') || src.includes('unsupported-international-program')) return body;
-  if (src.includes('uploaded-training-generic') && isAcademicAdminUploadedDocQuestion(question, detectGenericIntent(normalizeAcademicAdminQueryText(question)))) return body;
+  const isUploadedAcademicAnswer = src.includes('uploaded-training-generic') && isAcademicAdminUploadedDocQuestion(question, detectGenericIntent(normalizeAcademicAdminQueryText(question)));
+  if (isUploadedAcademicAnswer) {
+    if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
+    if (hasLikelyRawDocumentLeak(body)) return body;
+    const topic = inferFrameTopic(question, source);
+    const followups = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)
+      ? topic.followups
+          .map((item) => String(item || '').trim())
+          .filter(Boolean)
+          .filter((item) => normalizeCacheText(item) !== normalizeCacheText(question))
+          .slice(0, 3)
+      : [];
+    const parts = [
+      'Baik, Kak. Saya bantu jawab dari data yang tersedia.',
+      `Saya tangkap pertanyaannya tentang ${topic.request}. ${topic.assumption}`.replace(/\s{2,}/g, ' ').trim(),
+      '',
+      body
+    ];
+    if (topic.conclusion) parts.push('', topic.conclusion);
+    if (followups.length) parts.push('', ['Topik lanjutan:', ...followups.map(item => `- ${item}`)].join('\n'));
+    return parts.join('\n').trim();
+  }
   const appendFollowupsOnly = () => {
     if (!envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) return body;
     const topic = inferFrameTopic(question, source);
     const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
     if (!followups.length) return body;
-    return [body, '', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.map(item => `- ${item}`)].join('\n')].join('\n').trim();
+    return [body, '', ['Topik lanjutan:', ...followups.map(item => `- ${item}`)].join('\n')].join('\n').trim();
   };
   if (/^(?:mohon\s+)?maaf\b/i.test(body)) return appendFollowupsOnly();
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return appendFollowupsOnly();
@@ -7408,7 +7444,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
     if (envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) {
       const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
       if (followups.length) {
-        parts.push('', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.map(item => `- ${item}`)].join('\n'));
+        parts.push('', ['Topik lanjutan:', ...followups.map(item => `- ${item}`)].join('\n'));
       }
     }
     return parts.join('\n').trim();
@@ -7421,7 +7457,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) {
     const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
     if (followups.length) {
-      parts.push('', ['Kalau mau lanjut, kakak bisa tanya:', ...followups.map(item => `- ${item}`)].join('\n'));
+      parts.push('', ['Topik lanjutan:', ...followups.map(item => `- ${item}`)].join('\n'));
     }
   }
   return parts.join('\n').trim();
