@@ -1,4 +1,4 @@
-const { OpenAI } = require('openai');
+﻿const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
@@ -266,13 +266,13 @@ function convertTrainingDataToCandidate(trainingData) {
   // Q&A pairs, table sections, and headings together better than fixed slicing.
   let chunks = [];
   try {
-    chunks = ragEngine.chunkText(content, 900, 150);
+    chunks = ragEngine.chunkText(content, 1600, 300);
   } catch (e) {
     chunks = [];
   }
   if (!chunks.length) {
-    for (let i = 0; i < content.length; i += 900) {
-      const chunk = content.slice(i, i + 900).trim();
+    for (let i = 0; i < content.length; i += 1300) {
+      const chunk = content.slice(i, i + 1600).trim();
       if (chunk) chunks.push(chunk);
     }
   }
@@ -1568,6 +1568,111 @@ function isAcademicAdminUploadedDocQuestion(question, intent = '') {
   if (/\b(pmb|penerimaan\s+mahasiswa\s+baru|camaba|daftar\s+kuliah|gelombang\s+pendaftaran|biaya|ukt|dpp)\b/i.test(q)) return false;
   return /\b(sidang|tugas\s+akhir|skripsi|tesis|seminar\s+proposal|sempro|yudisium|wisuda|kelulusan|akademik)\b/i.test(q);
 }
+function selectAcademicAdminUploadedEvidence(question, contexts, options = {}) {
+  const intent = options.intent || detectGenericIntent(question);
+  const list = Array.isArray(contexts) ? contexts : [];
+  const q = String(question || '');
+  const qNorm = normalizeForLexicalMatch(q);
+  const wantedTerms = extractQueryAnchorTerms(q);
+
+  const addWanted = (term, pattern) => {
+    if (pattern.test(q) && !wantedTerms.includes(term)) wantedTerms.push(term);
+  };
+
+  addWanted('sidang', /\bsidang\b/i);
+  addWanted('tugas akhir', /\btugas\s+akhir\b/i);
+  addWanted('proyek akhir', /\bproyek\s+akhir\b/i);
+  addWanted('yudisium', /\byudisium\b/i);
+  addWanted('wisuda', /\bwisuda\b/i);
+  addWanted('seminar proposal', /\b(?:seminar\s+proposal|sempro)\b/i);
+
+  const academicTermPattern = /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|seminar\s+proposal|sempro|yudisium|wisuda|akademik)\b/i;
+  const detailPattern = /\b(hari\s*\/?\s*tanggal|tanggal|pukul|jam|wita|wib|wit|tempat|loket|ruang|deadline|terakhir|sampai\s+dengan|periode|semester|tahun\s+akademik)\b/i;
+  const datePattern = /\b(?:senin|selasa|rabu|kamis|jumat|jum'at|sabtu|minggu|ahad)?\s*,?\s*\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s+\d{4}\b|\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b|\b\d{4}-\d{2}-\d{2}\b/i;
+  const timePattern = /\b\d{1,2}[.:]\d{2}\s*(?:wita|wib|wit)?\b/i;
+  const sectionHeaderPattern = /^\s*(?:[A-Z]\.|[IVXLCDM]+\.|\d+[.)])\s+/i;
+
+  const candidates = [];
+
+  for (const ctx of list) {
+    if (!ctx) continue;
+    const raw = String(ctx.chunk || ctx.text || '');
+    const cleaned = cleanDocumentMarkers(raw);
+    if (!cleaned.trim()) continue;
+
+    const lines = cleaned
+      .split(/\r?\n/)
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+    if (!lines.length) continue;
+
+    const filename = ctx.filename || ctx.sourceFile || ctx.source || 'uploaded-training';
+    const documentHaystack = `${filename}\n${cleaned}`;
+    if (!/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|seminar\s+proposal|sempro|yudisium|wisuda|kelulusan|akademik)\b/i.test(documentHaystack)) continue;
+    if (/\b(SK|surat\s+keputusan|keputusan\s+rektor|pengelola|inkubator|inbis|kerja\s+sama|perjanjian|mou|moa)\b/i.test(filename) && !hasAnchorOverlap(q, documentHaystack)) continue;
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const lineContext = `${line} ${filename}`;
+      const lineNorm = normalizeForLexicalMatch(lineContext);
+      const anchorHit = hasAnchorOverlap(q, lineContext);
+      const explicitTermHit = academicTermPattern.test(line) && wantedTerms.some((term) => lineNorm.includes(normalizeForLexicalMatch(term)));
+      const broadAcademicHit = academicTermPattern.test(line) && computePhraseOverlap(qNorm, lineNorm) > 0;
+      if (!anchorHit && !explicitTermHit && !broadAcademicHit) continue;
+
+      let start = i;
+      for (let back = i; back >= Math.max(0, i - 8); back -= 1) {
+        if (sectionHeaderPattern.test(lines[back]) || academicTermPattern.test(lines[back])) {
+          start = back;
+        }
+      }
+
+      let end = Math.min(lines.length, start + 18);
+      for (let next = start + 1; next < Math.min(lines.length, start + 22); next += 1) {
+        if (next > i && sectionHeaderPattern.test(lines[next]) && !academicTermPattern.test(lines[next])) {
+          end = next;
+          break;
+        }
+      }
+
+      const block = lines.slice(start, end).join('\n').trim();
+      if (!block || !hasAnchorOverlap(q, `${block} ${filename}`)) continue;
+
+      const hasScheduleDetail = datePattern.test(block) || timePattern.test(block) || detailPattern.test(block);
+      const looksLikeRequirementOnly = /\b(persyaratan|syarat|wajib|ketentuan)\b/i.test(block) && !/\b(hari\s*\/?\s*tanggal|pukul|jam|wita|wib|wit|tempat|loket|deadline|terakhir\s+dapat\s+dilakukan|sampai\s+dengan)\b/i.test(block);
+      if (intent === 'schedule' && looksLikeRequirementOnly) continue;
+      const hasRequirementDetail = /\b(wajib|syarat|persyaratan|dokumen|berkas|melengkapi|formulir|krs|bukti|persetujuan)\b/i.test(block);
+      if (intent === 'schedule' && !hasScheduleDetail) continue;
+      if (intent === 'requirement' && !hasRequirementDetail) continue;
+
+      const blockNorm = normalizeForLexicalMatch(block);
+      const wantedHitCount = wantedTerms.filter((term) => blockNorm.includes(normalizeForLexicalMatch(term))).length;
+      const directQuestionPhraseBonus = qNorm && blockNorm.includes(qNorm) ? 0.2 : 0;
+      const wantedTermBonus = Math.min(0.35, wantedHitCount * 0.1) + directQuestionPhraseBonus;
+      const score = computeGenericScore(q, block, intent) + wantedTermBonus + (datePattern.test(block) ? 0.25 : 0) + (timePattern.test(block) ? 0.15 : 0);
+      candidates.push({
+        text: block.length > 1200 ? `${block.slice(0, 1197).trim()}...` : block,
+        source: filename,
+        sourceId: ctx.id || ctx.trainingId || 'unknown',
+        score,
+        entityScore: 1,
+        intentScore: intent === detectGenericIntent(block) ? 1 : 0.8,
+        reason: `academic_uploaded_block; score=${score.toFixed(2)}`,
+        isSelectedEvidence: true
+      });
+    }
+  }
+
+  const seen = new Set();
+  return candidates
+    .filter((item) => {
+      const key = normalizeForLexicalMatch(item.text).slice(0, 220);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, options.maxEvidence || 2);
+}
 function isKnownSpecializedCampusQuestion(question) {
   const q = String(question || '').toLowerCase();
   return /\b(pmb|penerimaan\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|siap\.stikom|daftar\s+kuliah|pendaftaran\s+kuliah)\b/i.test(q)
@@ -1596,22 +1701,33 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   const contexts = Array.isArray(retrieved.contexts) ? retrieved.contexts : [];
   if (!contexts.length) return null;
 
+  const academicAdminUploaded = isAcademicAdminUploadedDocQuestion(question, intent);
   const hasDatabaseContext = contexts.some((ctx) => ctx && (ctx.sourceType === 'database' || (ctx.metadata && ctx.metadata.source === 'database')));
-  if (!hasDatabaseContext) return null;
+  if (!academicAdminUploaded && !hasDatabaseContext) return null;
 
   const minScoreRaw = Number(process.env.SEMANTIC_RAG_LOCAL_DB_MIN_SCORE || '0.3');
   const minScore = Number.isFinite(minScoreRaw) ? minScoreRaw : 0.3;
-  if (Number(retrieved.topScore || 0) < minScore) return null;
+  const academicMinScoreRaw = Number(process.env.SEMANTIC_RAG_ACADEMIC_UPLOAD_MIN_SCORE || '0.12');
+  const academicMinScore = Number.isFinite(academicMinScoreRaw) ? academicMinScoreRaw : 0.12;
+  if (Number(retrieved.topScore || 0) < (academicAdminUploaded ? academicMinScore : minScore)) return null;
 
-  const selectedEvidence = selectEvidenceFromContexts({
-    question,
-    contexts,
-    intent,
-    maxEvidence: 4
-  });
+  let selectedEvidence = academicAdminUploaded
+    ? selectAcademicAdminUploadedEvidence(question, contexts, { intent, maxEvidence: 4 })
+    : [];
+
+  if (!selectedEvidence.length) {
+    selectedEvidence = selectEvidenceFromContexts({
+      question,
+      contexts,
+      intent,
+      maxEvidence: 4
+    });
+  }
   if (!selectedEvidence.length) return null;
 
-  const answerability = evaluateEvidenceAnswerability({ question, selectedEvidence, intent });
+  const answerability = academicAdminUploaded && selectedEvidence.some((item) => /academic_uploaded_block/i.test(String(item && item.reason || '')))
+    ? { answerable: true, reason: 'academic_uploaded_block_answerable', missingEvidence: [] }
+    : evaluateEvidenceAnswerability({ question, selectedEvidence, intent });
   if (answerability && answerability.answerable === false) return null;
 
   const answer = buildLocalUploadedTrainingAnswer(question, selectedEvidence);
@@ -4115,7 +4231,7 @@ function cleanFacilitySnippetText(text) {
 
   out = out
     .replace(/\b(?:q|a)\s*[:\-.]\s*/gi, '')
-    .replace(/["'Ã¢â‚¬Å“Ã¢â‚¬Â]/g, '')
+    .replace(/["'ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -5867,7 +5983,7 @@ function inferFrameTopic(question, source) {
     };
   }
 
-  if (src.includes('fee') || /\b(biaya|bayar|dpp|ukt|gelombang|pendaftaran|termurah|termahal)\b/.test(q)) {
+  if (src.includes('fee') || (!isAcademicAdminUploadedDocQuestion(question, detectGenericIntent(question)) && /\b(biaya|bayar|dpp|ukt|gelombang|pendaftaran|termurah|termahal)\b/.test(q))) {
     return {
       request: 'informasi biaya kuliah atau biaya pendaftaran',
       assumption: 'Saya pakai komponen biaya PMB yang tersedia dan tidak menambahkan hitungan di luar data.',
@@ -6540,6 +6656,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   };
   if (/^(?:mohon\s+)?maaf\b/i.test(body)) return appendFollowupsOnly();
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return appendFollowupsOnly();
+  if (src.includes('uploaded-training-generic') && isAcademicAdminUploadedDocQuestion(question, detectGenericIntent(question))) return appendFollowupsOnly();
   if (src.includes('insufficient-data') || src.includes('safe-general') || src.includes('institution-vision-mission') || src.includes('student-concern') || src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return appendFollowupsOnly();
   if (src.includes('ukm') || src.includes('generic-faq-qna') || src.includes('training-specific') || src.includes('campus-support-entity') || src.includes('campus-facility')) return appendFollowupsOnly();
   const q = String(question || '').toLowerCase();
@@ -6647,7 +6764,7 @@ function tryInstitutionVisionMissionAnswer(question, indexForQuery) {
     const visionText = String(vision[1] || '').trim();
     if (/\b(acara|panitia|undangan|peserta|anggota|organisasi|ukm|himpunan|pengurus)\b/i.test(visionText)) continue;
     const lines = ['Berikut visi/misi ITB STIKOM Bali yang saya temukan pada data tersedia:'];
-    if (vision && vision[1]) lines.push('', `Visi: ${vision[1].replace(/[Ã¢â‚¬Â"]+$/g, '').trim()}`);
+    if (vision && vision[1]) lines.push('', `Visi: ${vision[1].replace(/[ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â"]+$/g, '').trim()}`);
     if (mission && mission[1]) {
       const cleanedMission = mission[1]
         .replace(/\b(?:tujuan|struktur organisasi|profil|sejarah|kontak)\b[\s\S]*$/i, '')
@@ -8366,4 +8483,12 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
+
+
+
+
+
 
