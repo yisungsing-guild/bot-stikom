@@ -1580,11 +1580,16 @@ function selectAcademicDocumentSection(question, evidence, mode = 'schedule') {
   const wantsPelaksanaan = /\b(pelaksanaan|dilaksanakan|berlangsung|kapan\s+(?:pelaksanaan|dilaksanakan)|jam|pukul)\b/i.test(q);
   const wantsRegistration = /\b(pendaftaran|daftar|registrasi|terakhir|deadline|batas)\b/i.test(q) && !wantsPelaksanaan;
   const wantsRequirement = mode === 'requirement' || /\b(syarat|persyaratan|dokumen|berkas|apa\s+saja|ketentuan)\b/i.test(q);
+  const asksYudisium = /\byudisium\b/i.test(q);
+  const asksThesisDefense = /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q);
 
   let best = null;
   for (const section of sections) {
     const hay = normalizeAcademicAdminQueryText(`${section.title}\n${section.text}`);
+    const title = normalizeAcademicAdminQueryText(section.title || '');
     if (topicPatterns.length && !topicPatterns.some((pattern) => pattern.test(hay))) continue;
+    if (asksYudisium && /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title) && !/\byudisium\b/i.test(title)) continue;
+    if (asksThesisDefense && /\byudisium\b/i.test(title) && !/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title)) continue;
     let score = 0;
     if (wantsRequirement && /\b(persyaratan|syarat|ketentuan|dokumen|berkas)\b/i.test(section.title)) score += 5;
     if (wantsPelaksanaan && /\b(pelaksanaan|jadwal|waktu)\b/i.test(section.title)) score += 5;
@@ -1651,6 +1656,38 @@ function isSafeDualDegreeAnswer(question, answer) {
   if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
   if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
   return a.length <= 1600;
+}
+function isSafeCompactAcademicGeneralAnswer(question, answer) {
+  const q = normalizeAcademicAdminQueryText(question);
+  const a = String(answer || '').trim();
+  if (!a || !isAcademicAdminUploadedDocQuestion(q, 'general')) return false;
+  if (!/\b(?:info(?:rmasi)?|tentang|jelaskan|apa\s+itu|punya\s+informasi|menanyakan)\b/i.test(q)) return false;
+  if (!/\b(?:Yudisium|Wisuda|Sidang|Tugas\s+Akhir|Proyek\s+Akhir)\b/i.test(a)) return false;
+  if (!/\b(?:Hari\s*\/?\s*Tanggal|Tanggal|Pukul|Waktu|Tempat|Persyaratan|Syarat|Pendaftaran|Pelaksanaan)\b/i.test(a)) return false;
+  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
+  return a.length <= 2600;
+}
+
+function isSafeCampusFacilityAnswer(question, answer, source = '') {
+  const q = String(question || '').toLowerCase();
+  const a = String(answer || '').trim();
+  const src = String(source || '').toLowerCase();
+  if (!a || !src.includes('campus-facility')) return false;
+  if (!/\b(fasilitas|layanan|sarana|prasarana|unggulan|diunggulkan|program\s+pendukung)\b/i.test(q)) return false;
+  const hits = [
+    /Career\s*Center/i,
+    /Inkubator\s+Bisnis/i,
+    /Soft\s*skill|Softskill/i,
+    /UKM|Unit\s+Kegiatan\s+Mahasiswa/i,
+    /Language\s+Learning|LLC/i,
+    /Double\s+Degree|Dual\s+Degree/i,
+    /Hi-?Think/i,
+    /GCCP|short\s*course/i,
+    /Magang/i
+  ].filter((pattern) => pattern.test(a)).length;
+  if (hits < 2) return false;
+  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
+  return a.length <= 1800;
 }
 function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const q = normalizeAcademicAdminQueryText(question);
@@ -1765,12 +1802,36 @@ function buildAcademicRequirementSummaryAnswer(question, selectedEvidence) {
   const topic = /\byudisium\b/i.test(q) ? 'Persyaratan Yudisium' : (/\bwisuda\b/i.test(q) ? 'Persyaratan Wisuda' : 'Persyaratan akademik yang ditanyakan');
   return [`${topic}:`, ...uniqueItems.map((item) => `- ${item}`)].join('\n').trim();
 }
+function buildAcademicGeneralSummaryAnswer(question, selectedEvidence) {
+  const q = normalizeAcademicAdminQueryText(question);
+  const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
+  if (!isAcademicAdminUploadedDocQuestion(q, 'general')) return '';
+  if (!/\b(?:info(?:rmasi)?|tentang|jelaskan|apa\s+itu|punya\s+informasi|menanyakan)\b/i.test(q)) return '';
+
+  const topic = /\byudisium\b/i.test(q) ? 'Yudisium' : (/\bwisuda\b/i.test(q) ? 'Wisuda' : 'informasi akademik');
+  const topicQuestion = topic === 'Yudisium' ? 'yudisium' : (topic === 'Wisuda' ? 'wisuda' : q);
+  const parts = [];
+
+  const registration = buildAcademicScheduleSummaryAnswer(`kapan pendaftaran ${topicQuestion}?`, evidence);
+  if (registration) parts.push(registration);
+
+  const implementation = buildAcademicScheduleSummaryAnswer(`kapan pelaksanaan ${topicQuestion}?`, evidence);
+  if (implementation && implementation !== registration) parts.push(implementation);
+
+  const requirements = buildAcademicRequirementSummaryAnswer(`persyaratan ${topicQuestion} apa saja?`, evidence);
+  if (requirements) parts.push(requirements);
+
+  if (!parts.length) return '';
+  return [`Saya punya informasi tentang ${topic} dari dokumen akademik yang tersedia:`, '', parts.join('\n\n')].join('\n').trim();
+}
 function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   const scheduleSummary = buildAcademicScheduleSummaryAnswer(question, evidence);
   if (scheduleSummary) return scheduleSummary;
   const requirementSummary = buildAcademicRequirementSummaryAnswer(question, evidence);
   if (requirementSummary) return requirementSummary;
+  const academicGeneralSummary = buildAcademicGeneralSummaryAnswer(question, evidence);
+  if (academicGeneralSummary) return academicGeneralSummary;
 
   const snippets = [];
   const seen = new Set();
@@ -2229,6 +2290,7 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
     : question;
   const intent = detectGenericIntent(questionForRetrieval);
   if (intent === 'fee') return null;
+  if (/\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|pusat\s+karir|inkubator|inbis|softskill|language\s+learning|llc|hi-?think|gccp|gcpp|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|ukm|ormawa)\b/i.test(String(question || ''))) return null;
   const directAcademicSection = await tryDirectAcademicAdminUploadedSectionAnswer(question, options);
   if (directAcademicSection && directAcademicSection.answer) return directAcademicSection;
   if (['schedule', 'requirement'].includes(intent) && !isAcademicAdminUploadedDocQuestion(question, intent)) return null;
@@ -8155,13 +8217,14 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   if (/^semantic-rag-uploaded-training-generic$/i.test(source) && Array.isArray(result.contexts) && result.contexts.length) {
     const compactAcademicSchedule = buildAcademicScheduleSummaryAnswer(question, result.contexts);
     const compactAcademicRequirement = compactAcademicSchedule ? '' : buildAcademicRequirementSummaryAnswer(question, result.contexts);
-    if (compactAcademicSchedule || compactAcademicRequirement) {
+    const compactAcademicGeneral = (compactAcademicSchedule || compactAcademicRequirement) ? '' : buildAcademicGeneralSummaryAnswer(question, result.contexts);
+    if (compactAcademicSchedule || compactAcademicRequirement || compactAcademicGeneral) {
       result = {
         ...result,
-        answer: formatNaturalAnswerFrame(question, compactAcademicSchedule || compactAcademicRequirement, source),
+        answer: formatNaturalAnswerFrame(question, compactAcademicSchedule || compactAcademicRequirement || compactAcademicGeneral, source),
         debug: {
           ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
-          ...(compactAcademicSchedule ? { compactAcademicSchedule: true } : { compactAcademicRequirement: true })
+          ...(compactAcademicSchedule ? { compactAcademicSchedule: true } : (compactAcademicRequirement ? { compactAcademicRequirement: true } : { compactAcademicGeneral: true }))
         }
       };
     }
@@ -8172,10 +8235,13 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && isSafeCompactAcademicScheduleAnswer(question, result.answer);
   const compactRequirementSafe = Boolean(result.debug && result.debug.compactAcademicRequirement)
     && isSafeCompactAcademicRequirementAnswer(question, result.answer);
-  const compactAcademicSafe = compactScheduleSafe || compactRequirementSafe;
+  const compactGeneralSafe = Boolean(result.debug && result.debug.compactAcademicGeneral)
+    && isSafeCompactAcademicGeneralAnswer(question, result.answer);
+  const compactAcademicSafe = compactScheduleSafe || compactRequirementSafe || compactGeneralSafe;
   const structuredPmbSafe = /pmb-info/i.test(source) && isSafePmbOverviewAnswer(question, result.answer);
   const structuredDualDegreeSafe = /dual-degree/i.test(source) && isSafeDualDegreeAnswer(question, result.answer);
-  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe;
+  const structuredFacilitySafe = isSafeCampusFacilityAnswer(question, result.answer, source);
+  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
@@ -8351,6 +8417,8 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
+
+
   const preAiUploadedTraining = strictDocumentOnly ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
   if (preAiUploadedTraining && preAiUploadedTraining.answer) {
     return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
@@ -8401,6 +8469,8 @@ async function querySemanticRag(question, options = {}) {
     }
     return await finalizeSemanticResult(question, preRewriteResult, resultCacheKey);
   }
+
+
 
   // (index-first deterministic pass removed - rely on semantic routing and
   // retriever flow to decide deterministic handlers after rewrite and RAG)
@@ -9048,10 +9118,11 @@ async function verifyOutboundSemanticRelevance(question, answer, source = 'provi
     const structuredDocDump = a.length > 700
       && /\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|Persyaratan)\b/i.test(a)
       && ((a.match(/(?:^|\n|\s)\b[A-Z]\.\s+/g) || []).length >= 2 || (a.match(/\b(?:Hari\/Tanggal|Pukul|Tempat|Waktu)\s*:/gi) || []).length >= 4);
-    const compactOutboundAcademicSafe = isSafeCompactAcademicScheduleAnswer(q, a) || isSafeCompactAcademicRequirementAnswer(q, a);
+    const compactOutboundAcademicSafe = isSafeCompactAcademicScheduleAnswer(q, a) || isSafeCompactAcademicRequirementAnswer(q, a) || isSafeCompactAcademicGeneralAnswer(q, a);
     const structuredOutboundSafe = compactOutboundAcademicSafe
       || (/pmb-info/i.test(src) && isSafePmbOverviewAnswer(q, a))
-      || (/dual-degree/i.test(src) && isSafeDualDegreeAnswer(q, a));
+      || (/dual-degree/i.test(src) && isSafeDualDegreeAnswer(q, a))
+      || isSafeCampusFacilityAnswer(q, a, src);
     const unsafeSemanticOutput = !structuredOutboundSafe && (Boolean(preflight && preflight.blocked)
       || hasLikelyRawDocumentLeak(a)
       || structuredDocDump
