@@ -1610,14 +1610,23 @@ function isSafeCompactAcademicScheduleAnswer(question, answer) {
   return a.length <= 850;
 }
 function isSafeCompactAcademicRequirementAnswer(question, answer) {
-  const q = String(question || '');
+  const q = normalizeAcademicAdminQueryText(question);
   const a = String(answer || '').trim();
   if (!a || !isAcademicAdminUploadedDocQuestion(q, 'requirement')) return false;
   if (!/\b(?:Persyaratan|Syarat)\s+(?:Yudisium|Wisuda|akademik)\b/i.test(a)) return false;
-  if (!/\n\s*-\s+\S+/.test(a)) return false;
+
+  const bulletCount = (a.match(/(?:^|\n|\s)-\s+\S+/g) || []).length;
+  if (bulletCount < 1) return false;
+
+  const requirementHits = [
+    /\b(telah|sudah|wajib|bebas|lunas|minimum|tidak\s+lebih|terdaftar|eligible)\b/i,
+    /\b(syarat|persyaratan|dokumen|berkas|krs|pddikti|pin|ipk|nilai|transkrip|sk\s+rektor|sidang|tugas\s+akhir|proyek\s+akhir|mata\s+kuliah|kurikulum)\b/i
+  ].filter((pattern) => pattern.test(a)).length;
+  if (requirementHits < 1) return false;
+
   if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
   if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
-  return a.length <= 1200;
+  return a.length <= 2500;
 }
 function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const q = normalizeAcademicAdminQueryText(question);
@@ -1689,6 +1698,10 @@ function buildAcademicRequirementSummaryAnswer(question, selectedEvidence) {
   const flushCurrent = () => {
     const cleaned = current
       .replace(/^\s*(?:[-*]|\d+[.)])\s*/, '')
+      .replace(/\s*\\?\s*INSTITUT\s+TEKNOLOGI\s+DAN\s+BISNIS[\s\S]*$/i, '')
+      .replace(/\s*\\?\s*Kampus\s+(?:Denpasar|Jimbaran|Abiansemal)[\s\S]*$/i, '')
+      .replace(/\s*\\?\s*(?:Jl\.?|Jalan)\s+Raya\s+Puputan[\s\S]*$/i, '')
+      .replace(/\s+\|\s*(?:Ph|Telp|Phone|Email)\s*:[\s\S]*$/i, '')
       .replace(/\s+/g, ' ')
       .trim();
     current = '';
@@ -7918,6 +7931,7 @@ function inferQuestionMeaningProfile(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return { intent: 'unknown' };
 
+  if (isAcademicAdminUploadedDocQuestion(q, 'requirement') && /\b(syarat|persyaratan|dokumen|berkas|apa\s+saja|ketentuan)\b/i.test(q)) return { intent: 'academic_requirement' };
   if (isAcademicAdminUploadedDocQuestion(q, 'schedule') || isAcademicScheduleLookupQuestion(q)) return { intent: 'academic_schedule' };
   if (/\b(biaya|harga|bayar|ukt|dpp|rincian\s+biaya|biaya\s+kuliah|potongan\s+biaya)\b/i.test(q)) return { intent: 'fee' };
   if (/\b(pmb|penerimaan\s+mahasiswa\s+baru)\b/i.test(q) && /\b(apa\s+itu|tentang|bertanya|tanya|informasi|jelaskan|maksud)\b/i.test(q)) return { intent: 'pmb_info' };
@@ -7941,6 +7955,10 @@ function answerMatchesQuestionMeaning(question, answer, source = '') {
   const src = String(source || '').toLowerCase();
   const noData = hasNoDataAnswerPhrase(answer);
 
+  if (intent === 'academic_requirement') {
+    if (/\b(?:pmb|penerimaan\s+mahasiswa\s+baru|calon\s+mahasiswa|camaba|gelombang\s+pendaftaran|admin\s+pmb)\b/i.test(a)) return false;
+    return noData || /\b(persyaratan|syarat|yudisium|wisuda|telah|sudah|wajib|bebas|lunas|minimum|tidak\s+lebih|krs|pddikti|pin|ipk|nilai|transkrip|sk\s+rektor|sidang|tugas\s+akhir|proyek\s+akhir|mata\s+kuliah|kurikulum)\b/i.test(a);
+  }
   if (intent === 'academic_schedule') {
     if (/\b(?:pmb|penerimaan\s+mahasiswa\s+baru|calon\s+mahasiswa|camaba|gelombang\s+pendaftaran|admin\s+pmb)\b/i.test(a)) return false;
     if (/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q)) {
