@@ -1,4 +1,4 @@
-﻿const { OpenAI } = require('openai');
+const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
@@ -1538,6 +1538,64 @@ function buildContextText(contexts, options = {}) {
   return blocks.join('\n\n');
 }
 
+function normalizeAcademicAdminQueryText(value) {
+  return String(value || '')
+    .replace(/\byudis(?:um|iun|uim|iumnya)\b/gi, 'yudisium')
+    .replace(/\bproyek\s+ahir\b/gi, 'proyek akhir')
+    .replace(/\btugas\s+ahir\b/gi, 'tugas akhir');
+}
+
+function splitAcademicDocumentSections(text) {
+  const cleaned = cleanDocumentMarkers(String(text || '')).replace(/\r\n/g, '\n');
+  if (!cleaned.trim()) return [];
+  const matches = [...cleaned.matchAll(/(?:^|\n)\s*([A-Z])\.\s+([^:\n]{3,120})\s*:?/g)];
+  if (!matches.length) return [{ label: '', title: '', text: cleaned.trim() }];
+  const sections = [];
+  for (let i = 0; i < matches.length; i += 1) {
+    const start = matches[i].index + (matches[i][0].startsWith('\n') ? 1 : 0);
+    const end = i + 1 < matches.length ? matches[i + 1].index : cleaned.length;
+    sections.push({
+      label: String(matches[i][1] || '').trim(),
+      title: String(matches[i][2] || '').replace(/\s+/g, ' ').trim(),
+      text: cleaned.slice(start, end).trim()
+    });
+  }
+  return sections.filter((section) => section.text);
+}
+
+function selectAcademicDocumentSection(question, evidence, mode = 'schedule') {
+  const q = normalizeAcademicAdminQueryText(question).toLowerCase();
+  const combined = (Array.isArray(evidence) ? evidence : [])
+    .map((item) => String(item && item.text || item && item.chunk || ''))
+    .join('\n\n');
+  const sections = splitAcademicDocumentSections(combined);
+  if (!sections.length) return '';
+
+  const topicPatterns = [];
+  if (/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q)) topicPatterns.push(/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i);
+  if (/\byudisium\b/i.test(q)) topicPatterns.push(/\byudisium\b/i);
+  if (/\bwisuda\b/i.test(q)) topicPatterns.push(/\bwisuda\b/i);
+  if (/\b(seminar\s+proposal|sempro)\b/i.test(q)) topicPatterns.push(/\b(seminar\s+proposal|sempro)\b/i);
+
+  const wantsPelaksanaan = /\b(pelaksanaan|dilaksanakan|berlangsung|kapan\s+(?:pelaksanaan|dilaksanakan)|jam|pukul)\b/i.test(q);
+  const wantsRegistration = /\b(pendaftaran|daftar|registrasi|terakhir|deadline|batas)\b/i.test(q) && !wantsPelaksanaan;
+  const wantsRequirement = mode === 'requirement' || /\b(syarat|persyaratan|dokumen|berkas|apa\s+saja|ketentuan)\b/i.test(q);
+
+  let best = null;
+  for (const section of sections) {
+    const hay = normalizeAcademicAdminQueryText(`${section.title}\n${section.text}`);
+    if (topicPatterns.length && !topicPatterns.some((pattern) => pattern.test(hay))) continue;
+    let score = 0;
+    if (wantsRequirement && /\b(persyaratan|syarat|ketentuan|dokumen|berkas)\b/i.test(section.title)) score += 5;
+    if (wantsPelaksanaan && /\b(pelaksanaan|jadwal|waktu)\b/i.test(section.title)) score += 5;
+    if (wantsRegistration && /\b(pendaftaran|registrasi)\b/i.test(section.title)) score += 5;
+    if (!wantsRequirement && !wantsPelaksanaan && !wantsRegistration && /\b(pelaksanaan|pendaftaran|persyaratan|jadwal)\b/i.test(section.title)) score += 2;
+    if (/\b(hari\s*\/?\s*tanggal|tanggal|pukul|waktu|tempat|loket|wita|wib|wit)\b/i.test(hay)) score += 1;
+    if (/\b(syarat|persyaratan|dokumen|berkas|krs|bukti|surat|transkrip|ijazah|skpi)\b/i.test(hay)) score += 1;
+    if (score > 0 && (!best || score > best.score)) best = { score, section };
+  }
+  return best && best.section ? best.section.text : '';
+}
 function isSafeCompactAcademicScheduleAnswer(question, answer) {
   const q = String(question || '');
   const a = String(answer || '').trim();
@@ -1552,33 +1610,15 @@ function isSafeCompactAcademicScheduleAnswer(question, answer) {
   return a.length <= 850;
 }
 function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
-  const q = String(question || '');
+  const q = normalizeAcademicAdminQueryText(question);
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   if (!isAcademicAdminUploadedDocQuestion(q, 'schedule')) return '';
-  if (!/\b(kapan|jadwal|tanggal|deadline|terakhir|pendaftaran|daftar|registrasi|pukul|jam)\b/i.test(q)) return '';
+  if (!/\b(kapan|jadwal|tanggal|deadline|terakhir|pendaftaran|daftar|registrasi|pukul|jam|pelaksanaan|dilaksanakan|berlangsung)\b/i.test(q)) return '';
 
   const combined = evidence.map((item) => cleanDocumentMarkers(String(item && item.text || ''))).join('\n\n');
   if (!combined.trim()) return '';
 
-  const sectionPatterns = [];
-  if (/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q)) {
-    sectionPatterns.push(/(?:A\.\s*)?Pendaftaran\s+Sidang\s+Tugas\s+Akhir\s*\/\s*Proyek\s+Akhir\s*:?[\s\S]{0,900}?(?=\n\s*[B-Z]\.\s+|\n\s*\d+\.\s+|$)/i);
-  }
-  if (/\byudisium\b/i.test(q)) {
-    sectionPatterns.push(/(?:B\.\s*)?Pendaftaran\s+Yudisium\s*I?\s*:?[\s\S]{0,900}?(?=\n\s*[C-Z]\.\s+|\n\s*\d+\.\s+|$)/i);
-  }
-  if (/\bwisuda\b/i.test(q)) {
-    sectionPatterns.push(/(?:wisuda|pelaksanaan\s+wisuda)[\s\S]{0,900}?(?=\n\s*[A-Z]\.\s+|$)/i);
-  }
-
-  let section = '';
-  for (const pattern of sectionPatterns) {
-    const match = combined.match(pattern);
-    if (match && match[0]) {
-      section = match[0];
-      break;
-    }
-  }
+  let section = selectAcademicDocumentSection(q, evidence, 'schedule');
   if (!section) section = combined.slice(0, 1200);
 
   const cleanScheduleFieldValue = (value) => String(value || '')
@@ -1586,7 +1626,7 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
     .replace(/\s+(?:Hari\s*\/?\s*Tanggal|Tanggal|Pukul|Waktu|Jam|Tempat|Loket|Lokasi|Selain\s+dari\s+tanggal\s+tersebut|[B-Z]\.\s+|Persyaratan)\b[\s\S]*$/i, '')
     .trim();
   const getValue = (labelPattern) => {
-    const re = new RegExp(`(?:${labelPattern})\\s*[:ï¼š]?\\s*([^\\n]+)`, 'i');
+    const re = new RegExp(`(?:${labelPattern})\\s*[:：]?\\s*([^\\n]+)`, 'i');
     const m = section.match(re);
     return m && m[1] ? cleanScheduleFieldValue(m[1]) : '';
   };
@@ -1598,7 +1638,12 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const period = periodMatch ? periodMatch[0].replace(/\s+/g, ' ').trim() : '';
 
   const asksThesisDefense = /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q);
-  const topic = asksThesisDefense ? 'pendaftaran Sidang Tugas Akhir/Proyek Akhir' : (/\byudisium\b/i.test(q) ? 'pendaftaran Yudisium' : 'jadwal yang ditanyakan');
+  const asksYudisium = /\byudisium\b/i.test(q);
+  const asksWisuda = /\bwisuda\b/i.test(q);
+  const wantsPelaksanaan = /\b(pelaksanaan|dilaksanakan|berlangsung|kapan\s+(?:pelaksanaan|dilaksanakan))\b/i.test(q);
+  const wantsRegistration = /\b(pendaftaran|daftar|registrasi|terakhir|deadline|batas)\b/i.test(q) && !wantsPelaksanaan;
+  const action = wantsPelaksanaan ? 'pelaksanaan' : (wantsRegistration ? 'pendaftaran' : 'jadwal');
+  const topic = asksThesisDefense ? `${action} Sidang Tugas Akhir/Proyek Akhir` : (asksYudisium ? `${action} Yudisium` : (asksWisuda ? `${action} Wisuda` : 'jadwal yang ditanyakan'));
 
   if (!date && !time && !place) return '';
   const lines = [`Untuk ${topic}${period ? ` ${period}` : ''}:`];
@@ -1614,10 +1659,41 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
 
   return lines.join('\n').trim();
 }
+
+function buildAcademicRequirementSummaryAnswer(question, selectedEvidence) {
+  const q = normalizeAcademicAdminQueryText(question);
+  const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
+  if (!isAcademicAdminUploadedDocQuestion(q, 'requirement')) return '';
+  if (!/\b(syarat|persyaratan|dokumen|berkas|apa\s+saja|ketentuan)\b/i.test(q)) return '';
+
+  const section = selectAcademicDocumentSection(q, evidence, 'requirement');
+  if (!section) return '';
+
+  const lines = section
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  const items = [];
+  for (const line of lines) {
+    if (/^\s*[A-Z]\.\s+/i.test(line)) continue;
+    const cleaned = line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim();
+    if (!cleaned || /^persyaratan\b/i.test(cleaned)) continue;
+    if (/\b(hari\s*\/?\s*tanggal|pukul|waktu|tempat)\s*:/i.test(cleaned)) continue;
+    if (!/\b(syarat|wajib|telah|sudah|bebas|lunas|krs|bukti|formulir|dokumen|berkas|surat|transkrip|ijazah|skpi|tugas\s+akhir|sidang|yudisium)\b/i.test(cleaned) && !/^\d+[.)]/.test(line)) continue;
+    items.push(cleaned);
+    if (items.length >= 8) break;
+  }
+  if (!items.length) return '';
+
+  const topic = /\byudisium\b/i.test(q) ? 'Persyaratan Yudisium' : (/\bwisuda\b/i.test(q) ? 'Persyaratan Wisuda' : 'Persyaratan akademik yang ditanyakan');
+  return [`${topic}:`, ...items.map((item) => `- ${item}`)].join('\n').trim();
+}
 function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   const scheduleSummary = buildAcademicScheduleSummaryAnswer(question, evidence);
   if (scheduleSummary) return scheduleSummary;
+  const requirementSummary = buildAcademicRequirementSummaryAnswer(question, evidence);
+  if (requirementSummary) return requirementSummary;
 
   const snippets = [];
   const seen = new Set();
@@ -1642,21 +1718,21 @@ function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
 }
 
 function isAcademicAdminUploadedDocQuestion(question, intent = '') {
-  const q = String(question || '').toLowerCase();
+  const q = normalizeAcademicAdminQueryText(question).toLowerCase();
   if (!['schedule', 'requirement', 'general', 'list'].includes(String(intent || ''))) return false;
   if (/\b(pmb|penerimaan\s+mahasiswa\s+baru|camaba|daftar\s+kuliah|gelombang\s+pendaftaran|biaya|ukt|dpp)\b/i.test(q)) return false;
   return /\b(sidang|tugas\s+akhir|skripsi|tesis|seminar\s+proposal|sempro|yudisium|wisuda|kelulusan|akademik)\b/i.test(q);
 }
 function hasAcademicAdminQuestionOverlap(question, content) {
-  const q = String(question || '').toLowerCase();
-  const c = String(content || '').toLowerCase();
+  const q = normalizeAcademicAdminQueryText(question).toLowerCase();
+  const c = normalizeAcademicAdminQueryText(content).toLowerCase();
   if (!q.trim() || !c.trim()) return false;
 
   const asksThesisDefense = /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q);
   const asksYudisium = /\byudisium\b/i.test(q);
   const asksWisuda = /\bwisuda\b/i.test(q);
   const asksSempro = /\b(seminar\s+proposal|sempro)\b/i.test(q);
-  const asksSchedule = /\b(kapan|jadwal|tanggal|deadline|terakhir|pendaftaran|daftar|registrasi)\b/i.test(q);
+  const asksSchedule = /\b(kapan|jadwal|tanggal|deadline|terakhir|pendaftaran|daftar|registrasi|pelaksanaan|dilaksanakan|berlangsung|pukul|jam|waktu)\b/i.test(q);
 
   if (asksThesisDefense && !/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(c)) return false;
   if (asksThesisDefense && asksSchedule) {
@@ -1667,14 +1743,15 @@ function hasAcademicAdminQuestionOverlap(question, content) {
   if (asksYudisium && !/\byudisium\b/i.test(c)) return false;
   if (asksWisuda && !/\bwisuda\b/i.test(c)) return false;
   if (asksSempro && !/\b(seminar\s+proposal|sempro)\b/i.test(c)) return false;
-  if (asksSchedule && !/\b(pendaftaran|daftar|registrasi|hari\s*\/?\s*tanggal|tanggal|pukul|jam|deadline|terakhir|sampai\s+dengan|loket|tempat|periode)\b/i.test(c)) return false;
+  if (asksSchedule && !/\b(pendaftaran|daftar|registrasi|pelaksanaan|dilaksanakan|berlangsung|hari\s*\/?\s*tanggal|tanggal|pukul|jam|waktu|deadline|terakhir|sampai\s+dengan|loket|tempat|lokasi|aula|periode)\b/i.test(c)) return false;
 
   return /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|seminar\s+proposal|sempro|yudisium|wisuda|kelulusan|akademik)\b/i.test(c);
 }
 function selectAcademicAdminUploadedEvidence(question, contexts, options = {}) {
-  const intent = options.intent || detectGenericIntent(question);
+  const normalizedQuestion = normalizeAcademicAdminQueryText(question);
+  const intent = options.intent || detectGenericIntent(normalizedQuestion);
   const list = Array.isArray(contexts) ? contexts : [];
-  const q = String(question || '');
+  const q = normalizedQuestion;
   const qNorm = normalizeForLexicalMatch(q);
   const wantedTerms = extractQueryAnchorTerms(q);
 
@@ -1693,7 +1770,7 @@ function selectAcademicAdminUploadedEvidence(question, contexts, options = {}) {
   const asksYudisium = /\byudisium\b/i.test(q);
   const asksWisuda = /\bwisuda\b/i.test(q);
   const academicTermPattern = /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|seminar\s+proposal|sempro|yudisium|wisuda|akademik)\b/i;
-  const detailPattern = /\b(hari\s*\/?\s*tanggal|tanggal|pukul|jam|wita|wib|wit|tempat|loket|ruang|deadline|terakhir|sampai\s+dengan|periode|semester|tahun\s+akademik)\b/i;
+  const detailPattern = /\b(hari\s*\/?\s*tanggal|tanggal|pukul|jam|waktu|wita|wib|wit|tempat|loket|lokasi|aula|ruang|pelaksanaan|dilaksanakan|berlangsung|deadline|terakhir|sampai\s+dengan|periode|semester|tahun\s+akademik)\b/i;
   const datePattern = /\b(?:senin|selasa|rabu|kamis|jumat|jum'at|sabtu|minggu|ahad)?\s*,?\s*\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s+\d{4}\b|\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b|\b\d{4}-\d{2}-\d{2}\b/i;
   const timePattern = /\b\d{1,2}[.:]\d{2}\s*(?:wita|wib|wit)?\b/i;
   const sectionHeaderPattern = /^\s*(?:[A-Z]\.|[IVXLCDM]+\.|\d+[.)])\s+/i;
@@ -1801,7 +1878,7 @@ function retrieveAcademicAdminUploadedContextsFromIndex(question, options = {}) 
   const index = getCachedSemanticIndex();
   if (!Array.isArray(index) || !index.length) return [];
 
-  const q = String(question || '');
+  const q = normalizeAcademicAdminQueryText(question);
   const intent = options.intent || detectGenericIntent(q);
   if (!isAcademicAdminUploadedDocQuestion(q, intent)) return [];
 
@@ -1817,7 +1894,7 @@ function retrieveAcademicAdminUploadedContextsFromIndex(question, options = {}) 
   addAnchor('wisuda', /\bwisuda\b/i);
 
   const academicPattern = /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|seminar\s+proposal|sempro|yudisium|wisuda|kelulusan|akademik)\b/i;
-  const detailPattern = /\b(hari\s*\/?\s*tanggal|tanggal|pukul|jam|wita|wib|wit|tempat|loket|deadline|terakhir|sampai\s+dengan|periode|semester|tahun\s+akademik)\b/i;
+  const detailPattern = /\b(hari\s*\/?\s*tanggal|tanggal|pukul|jam|waktu|wita|wib|wit|tempat|loket|lokasi|aula|pelaksanaan|dilaksanakan|berlangsung|deadline|terakhir|sampai\s+dengan|periode|semester|tahun\s+akademik)\b/i;
   const qNorm = normalizeForLexicalMatch(q);
   const scored = [];
 
@@ -1921,7 +1998,7 @@ function retrieveGenericUploadedContextsFromIndex(question, options = {}) {
   return scored.slice(0, options.topK || 12);
 }
 async function retrieveAcademicAdminUploadedContextsFromDb(question, options = {}) {
-  const q = String(question || '');
+  const q = normalizeAcademicAdminQueryText(question);
   const intent = options.intent || detectGenericIntent(q);
   if (!isAcademicAdminUploadedDocQuestion(q, intent)) return [];
 
@@ -2023,9 +2100,60 @@ async function retrieveGenericUploadedContextsFromDb(question, seedContexts = []
   out.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
   return out.slice(0, options.topK || 6);
 }
+async function tryDirectAcademicAdminUploadedSectionAnswer(question, options = {}) {
+  const normalizedQuestion = normalizeAcademicAdminQueryText(question);
+  const intent = detectGenericIntent(normalizedQuestion);
+  if (!isAcademicAdminUploadedDocQuestion(normalizedQuestion, intent) && !isAcademicAdminUploadedDocQuestion(normalizedQuestion, 'requirement')) return null;
+
+  const rows = await getActiveTrainingDataFromDb();
+  if (!Array.isArray(rows) || !rows.length) return null;
+
+  const contexts = [];
+  for (const row of rows) {
+    if (!row || !String(row.content || '').trim()) continue;
+    const filename = row.filename || row.source || 'uploaded-training';
+    const content = cleanDocumentMarkers(String(row.content || ''));
+    const haystack = `${filename}\n${content}`;
+    if (!hasAcademicAdminQuestionOverlap(normalizedQuestion, haystack)) continue;
+    contexts.push({
+      text: content,
+      source: filename,
+      sourceId: row.id || 'unknown',
+      score: 0.95,
+      entityScore: 1,
+      intentScore: 1,
+      reason: 'academic_uploaded_direct_section',
+      isSelectedEvidence: true
+    });
+  }
+  if (!contexts.length) return null;
+
+  const answer = buildLocalUploadedTrainingAnswer(normalizedQuestion, contexts);
+  if (!answer) return null;
+
+  return {
+    success: true,
+    answer: formatNaturalAnswerFrame(question, answer, 'semantic-rag-uploaded-training-generic'),
+    source: 'semantic-rag-uploaded-training-generic',
+    contexts,
+    confidenceScore: 0.95,
+    confidenceTier: 'HIGH',
+    debug: {
+      routeStage: 'fallback-no-ai-local-training-db-direct-section',
+      intent,
+      answerabilityResult: { answerable: true, reason: 'academic_uploaded_direct_section_answerable', missingEvidence: [] }
+    }
+  };
+}
 async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
-  const intent = detectGenericIntent(question);
+  const normalizedAcademicQuestion = normalizeAcademicAdminQueryText(question);
+  const questionForRetrieval = isAcademicAdminUploadedDocQuestion(normalizedAcademicQuestion, 'schedule') || isAcademicAdminUploadedDocQuestion(normalizedAcademicQuestion, 'requirement')
+    ? normalizedAcademicQuestion
+    : question;
+  const intent = detectGenericIntent(questionForRetrieval);
   if (intent === 'fee') return null;
+  const directAcademicSection = await tryDirectAcademicAdminUploadedSectionAnswer(question, options);
+  if (directAcademicSection && directAcademicSection.answer) return directAcademicSection;
   if (['schedule', 'requirement'].includes(intent) && !isAcademicAdminUploadedDocQuestion(question, intent)) return null;
   if (isKnownSpecializedCampusQuestion(question)) return null;
   const recentSupportEntity = resolveCampusSupportEntity(question, options);
@@ -2033,25 +2161,25 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   const recentConversation = getRecentUserConversation(options && options.sessionData);
   if (findCampusSupportEntity(recentConversation) && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut|join|syarat|jadwal|link|form|kontak)\b/i.test(String(question || ''))) return null;
 
-  const retrieved = await retrieveSemanticContexts([question], {
+  const retrieved = await retrieveSemanticContexts([questionForRetrieval], {
     topK: options.topK,
-    question,
+    question: questionForRetrieval,
     intent
   });
-  const academicAdminUploaded = isAcademicAdminUploadedDocQuestion(question, intent);
+  const academicAdminUploaded = isAcademicAdminUploadedDocQuestion(questionForRetrieval, intent);
   const directAcademicContexts = academicAdminUploaded
-    ? retrieveAcademicAdminUploadedContextsFromIndex(question, { intent, topK: Math.max(12, Number(options.topK || 0) || 0) })
+    ? retrieveAcademicAdminUploadedContextsFromIndex(questionForRetrieval, { intent, topK: Math.max(12, Number(options.topK || 0) || 0) })
     : [];
   const fullAcademicDbContexts = academicAdminUploaded
-    ? await retrieveAcademicAdminUploadedContextsFromDb(question, { intent, topK: 6 })
+    ? await retrieveAcademicAdminUploadedContextsFromDb(questionForRetrieval, { intent, topK: 6 })
     : [];
   const directGenericContexts = academicAdminUploaded
     ? []
-    : retrieveGenericUploadedContextsFromIndex(question, { intent, topK: Math.max(12, Number(options.topK || 0) || 0) });
+    : retrieveGenericUploadedContextsFromIndex(questionForRetrieval, { intent, topK: Math.max(12, Number(options.topK || 0) || 0) });
   const retrievedContexts = Array.isArray(retrieved.contexts) ? retrieved.contexts : [];
   const fullGenericDbContexts = academicAdminUploaded
     ? []
-    : await retrieveGenericUploadedContextsFromDb(question, [...directGenericContexts, ...retrievedContexts], { intent, topK: 6 });
+    : await retrieveGenericUploadedContextsFromDb(questionForRetrieval, [...directGenericContexts, ...retrievedContexts], { intent, topK: 6 });
   const contexts = [
     ...fullAcademicDbContexts,
     ...fullGenericDbContexts,
@@ -2073,7 +2201,7 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   if (combinedTopScore < (academicAdminUploaded ? academicMinScore : minScore)) return null;
 
   let selectedEvidence = academicAdminUploaded
-    ? selectAcademicAdminUploadedEvidence(question, contexts, { intent, maxEvidence: 4 })
+    ? selectAcademicAdminUploadedEvidence(questionForRetrieval, contexts, { intent, maxEvidence: 4 })
     : [];
 
   if (!selectedEvidence.length && !academicAdminUploaded) {
@@ -2088,10 +2216,10 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
 
   const answerability = academicAdminUploaded && selectedEvidence.some((item) => /academic_uploaded_block/i.test(String(item && item.reason || '')))
     ? { answerable: true, reason: 'academic_uploaded_block_answerable', missingEvidence: [] }
-    : evaluateEvidenceAnswerability({ question, selectedEvidence, intent });
+    : evaluateEvidenceAnswerability({ question: questionForRetrieval, selectedEvidence, intent });
   if (answerability && answerability.answerable === false) return null;
 
-  const answer = buildLocalUploadedTrainingAnswer(question, selectedEvidence);
+  const answer = buildLocalUploadedTrainingAnswer(questionForRetrieval, selectedEvidence);
   if (!answer) return null;
 
   return {
@@ -7767,7 +7895,7 @@ function answerMatchesQuestionMeaning(question, answer, source = '') {
   const intent = profile.intent || 'unknown';
   if (intent === 'unknown') return null;
 
-  const q = String(question || '').toLowerCase();
+  const q = normalizeAcademicAdminQueryText(question).toLowerCase();
   const a = String(answer || '').toLowerCase();
   const src = String(source || '').toLowerCase();
   const noData = hasNoDataAnswerPhrase(answer);
@@ -8920,6 +9048,16 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
+
+
+
+
+
+
+
 
 
 
