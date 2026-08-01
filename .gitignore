@@ -1,4 +1,4 @@
-﻿# Node / dependencies
+# Node / dependencies
 node_modules/
 
 # Environment & secrets
@@ -34,8 +34,21 @@ admin-ui/out/
 Thumbs.db
 .vscode/
 .idea/
+.kilo/
+.cline/
+
 # Local diagnostics / generated verification artifacts
 tmp/
 test_documents/
+outputs/
+.traces/
+.jest-*.txt
+.jest-*.json
+tmp_*.js
+temp*.txt
+temp*.json
 c
 
+# Local restore/debug helpers and credential samples
+scripts/adminUsers.example.json
+*.restore.test.js
