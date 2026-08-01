@@ -43,9 +43,16 @@ function createRuleRouter({
     let ragResult = null;
     const text = String(composePayload.userQuery || '').trim();
     const intentLabel = composePayload.intent && composePayload.intent.label ? composePayload.intent.label : detectIntent(text);
+    const needsSemanticGrounding = (() => {
+      const t = String(text || '').toLowerCase();
+      const mentionsCost = /\b(?:biaya|uang\s+kuliah|ukt|spp|semester|pendaftaran|registrasi|dpp|rincian\s+biaya|potongan|diskon)\b/i.test(t);
+      const mentionsDetail = /\b(?:gelombang|prodi|rincian|detail|dpp|ukt|perlengkapan|potongan|komponen|semester)\b/i.test(t);
+      const hasProgramHint = /\b(?:si|ti|bd|sk|s1|s2|d3|dnui|help|utb)\b/i.test(t);
+      return (intentLabel === 'COST' && mentionsCost) || (mentionsCost && mentionsDetail) || (mentionsCost && hasProgramHint);
+    })();
 
     const RULE_AUTOSHORTCUT_THRESHOLD = parseFloat(process.env.RULE_AUTOSHORTCUT_THRESHOLD || '0.65');
-    if (ruleCandidate && typeof ruleCandidate.confidence === 'number' && ruleCandidate.confidence >= RULE_AUTOSHORTCUT_THRESHOLD) {
+    if (!needsSemanticGrounding && ruleCandidate && typeof ruleCandidate.confidence === 'number' && ruleCandidate.confidence >= RULE_AUTOSHORTCUT_THRESHOLD) {
       return { winner: 'rule', candidate: ruleCandidate, answer: ruleCandidate.answer };
     }
 

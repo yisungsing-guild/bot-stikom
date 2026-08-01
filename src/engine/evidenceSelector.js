@@ -22,8 +22,7 @@ const ENTITY_RULES = [
   { key: 'career center', aliases: ['career center', 'pusat karier', 'pusat karir'] },
   { key: 'language learning center', aliases: ['language learning center', 'llc', 'belajar bahasa'] },
   { key: 'bem', aliases: ['bem', 'badan eksekutif mahasiswa'] },
-  { key: 'ukm', aliases: ['ukm', 'unit kegiatan mahasiswa', 'kelompok studi'] },
-  { key: 'inkubator bisnis', aliases: ['inkubator bisnis', 'inbis'] }
+  { key: 'ukm', aliases: ['ukm', 'unit kegiatan mahasiswa', 'kelompok studi'] }
 ];
 
 function normalizeText(value) {

@@ -399,19 +399,23 @@ function buildPmbOverviewAnswer(question = '') {
   
   // Default PMB overview
   return [
+    'Baik, Kak. Saya bantu jawab dari konteks ITB STIKOM Bali ya. Saya jelaskan sebagai gambaran awal sebelum kakak masuk ke detail pendaftaran.',
+    '',
     'PMB adalah singkatan dari Penerimaan Mahasiswa Baru, yaitu proses penerimaan calon mahasiswa yang ingin mendaftar kuliah di ITB STIKOM Bali.',
     '',
-    'Dalam konteks PMB, kakak bisa bertanya tentang:',
+    'PMB, kakak bisa bertanya tentang:',
     '',
-    '* Jalur Pendaftaran: alur daftar, cara mendaftar, dan langkah berikutnya',
+    '* Pendaftaran: alur daftar, cara mendaftar, dan langkah berikutnya',
     '* Jadwal pendaftaran: gelombang yang sedang buka, tanggal mulai, dan batas akhir',
-    '* Program Studi: pilihan S1, D3, S2, dan Double Degree',
+    '* Program studi: pilihan S1, D3, S2, dan Double Degree',
     '* Rincian biaya: pendaftaran, DPP, biaya awal masuk, dan biaya per semester',
     '* Beasiswa/potongan: KIP, 1K1S, prestasi, yayasan, dan potongan berdasarkan gelombang',
     '* Syarat dan dokumen pendaftaran',
     '* Kontak atau bantuan admin PMB',
     '',
-    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: "jadwal PMB sekarang gelombang berapa?", "rincian biaya SI gelombang 2B?", atau "apa saja syarat pendaftaran?"'
+    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: jadwal PMB sekarang gelombang berapa? rincian biaya SI gelombang 2B? atau “apa saja syarat pendaftaran?”',
+    '',
+    'Jadi, PMB adalah pintu awal untuk calon mahasiswa baru, dan detailnya bisa dilanjutkan ke jadwal, biaya, prodi, atau syarat pendaftaran.'
   ].join('\n');
 }
 

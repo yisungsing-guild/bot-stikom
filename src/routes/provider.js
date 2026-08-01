@@ -286,6 +286,16 @@ module.exports = function (provider) {
     if (isHardSessionResetCommand(text)) return true;
     if (/^\d+$/.test(text)) return true;
 
+    // Explicit short program/partner picks should not be forced through the
+    // semantic-first path, since they are already deterministic selection signals.
+    const normalized = normalizeProgramSelectionText(text);
+    const explicitProgramSelection =
+      !!(extractSpecificProgramHint(text) || extractProgramHint(text) || extractDualDegreeHint(text) || parseS1ProgramChoice(text)) ||
+      !!(extractSpecificProgramHint(normalized) || extractProgramHint(normalized) || extractDualDegreeHint(normalized) || parseS1ProgramChoice(normalized)) ||
+      !!looksLikeProgramSelectionReply(text);
+
+    if (explicitProgramSelection) return true;
+
     // Keep explicit handover confirmations in the operational flow.
     if (sessionData && sessionData.handoverOffered) {
       const t = text.toLowerCase();
@@ -2452,17 +2462,18 @@ module.exports = function (provider) {
       const pendingOffer = !!(o.pendingFeeBreakdownOffer || o.pendingFeeDetail);
 
       // Strong safety: force retrieval (no fast-path) for explicitly detailed
-      // cost queries. This prevents the bundled fast-fee from hijacking
-      // questions that mention wave/program/detailed components.
+      // cost queries only when there is no clear program context or active
+      // pending fee follow-up. Once a program hint is present, a detailed
+      // program-specific fee question should stay deterministic and grounded.
       try {
         const detailedKeywords = /\b(?:gelombang|prodi|rincian|dpp|ukt|perlengkapan|potongan)\b/i;
         const costWords = /\b(?:biaya|uang|dpp|ukt|spp|pendaftaran|dana)\b/i;
         // If the query contains both detailed keywords and cost words we
         // normally force retrieval (no fast-path). However, if the caller
-        // already indicated a feeChoice (e.g., explicit 'breakdown'), allow
-        // the fast-path decision to proceed so multi-turn picks can be
-        // answered deterministically when appropriate.
-        if (detailedKeywords.test(q) && costWords.test(q) && !feeChoice) {
+        // already indicated a feeChoice or the message clearly carries a
+        // program context, allow the deterministic fast-path so program-
+        // specific breakdown requests can be answered cleanly.
+        if (detailedKeywords.test(q) && costWords.test(q) && !feeChoice && !hasProgram && !pendingOffer) {
           return false;
         }
       } catch (e) {
@@ -2502,7 +2513,8 @@ module.exports = function (provider) {
       const routeIntent = routeEntities && routeEntities.intent ? String(routeEntities.intent) : null;
 
       if (!routeEntities || routeIntent !== 'COST') {
-        if (explicitCostIntention && (hasProgram || pendingOffer)) {
+        const shortAffirmation = isShortAffirmation(q) || isAcknowledgementOnly(q) || isShortContinueRequest(q);
+        if ((explicitCostIntention || shortAffirmation) && (hasProgram || pendingOffer)) {
           return true;
         }
         return false;
@@ -2514,10 +2526,10 @@ module.exports = function (provider) {
       let isDetailedFeeQuestion = false;
       try { isDetailedFeeQuestion = isExplicitDetailedFeeQuestion(q); } catch (e) { isDetailedFeeQuestion = false; }
       // For explicitly detailed fee queries, avoid the fast-path only when the
-      // user did not already indicate a fee detail choice or we don't have a
+      // user did not already indicate a fee detail choice and we do not have a
       // program/pending fee context. This keeps explicit breakdown/semester
       // requests for known programs eligible for deterministic fast answers.
-      if (isDetailedFeeQuestion && !feeChoice && !pendingOffer) {
+      if (isDetailedFeeQuestion && !feeChoice && !pendingOffer && !hasProgram) {
         return false;
       }
       if (isDetailedFeeQuestion && feeChoice && !hasProgram && !pendingOffer) {
@@ -5410,6 +5422,7 @@ module.exports = function (provider) {
     const outbound = String(outboundText || '').trim();
     if (!inbound || !outbound) return true;
     if (String(meta && meta.source || '').includes('timeout')) return true;
+    if (isDoubleDegreeProcessQuestion(inbound)) return true;
     if (/^\s*(balas|pilih|ketik)\b/i.test(outbound)) return true;
     if (/\b(silakan\s+pilih|balas\s+dengan\s+angka|ketik\s*:)\b/i.test(outbound)) return true;
     if (/^\s*(halo|hallo|hai|hi|hello|apa\s+kabar|baik|oke|ok|siap|terima\s+kasih)\b/i.test(inbound) && outbound.length < 260) return true;
@@ -5426,6 +5439,8 @@ module.exports = function (provider) {
     const original = String(outboundText || '').trim();
     if (!original || shouldSkipFinalSemanticRelevanceGate(inboundUserText, original, meta)) return original;
     if (envFlag('PROVIDER_FINAL_SEMANTIC_RELEVANCE_GATE', true) === false) return original;
+    if (isDoubleDegreeProcessQuestion(inboundUserText)) return original;
+    if (/^Perkuliahan\b/i.test(original)) return original;
 
     let source = meta && (meta.source || meta.ragSource || meta.finalPipeline)
       ? String(meta.source || meta.ragSource || meta.finalPipeline)
@@ -6143,6 +6158,7 @@ module.exports = function (provider) {
     if (isStudyModeQuestion(raw)) return false;
     if (isAdmissionScheduleQuestion(raw) || isProgramListQuestion(raw) || isCampusLocationQuestion(raw)) return false;
     if (parseFeeDetailChoice(raw)) return false;
+    if (sessionData && sessionData.pendingFeeBreakdownOffer && (isShortAffirmation(raw) || isShortNegation(raw))) return false;
 
     // Short program-specific questions like "apa itu ti" / "apa itu si" should not be
     // classified as generic small talk, because they are asking about a program.
@@ -6311,13 +6327,14 @@ module.exports = function (provider) {
     if (!raw) return false;
     const t = raw.toLowerCase();
 
-    const asksProcess = /\b(bagaimana|gimana|cara|proses)\b/i.test(raw) && /\b(belajar|perkuliahan|kuliah|metode|sistem)\b/i.test(t);
+    const asksProcess = /\b(bagaimana|gimana|cara|proses)\b/i.test(raw) && /\b(belajar|perkuliahan|kuliah|metode|sistem|jalur)\b/i.test(t);
     if (!asksProcess) return false;
 
-    const hasPartner = /\b(help(\s+university)?|dnui|dalian\s+neusoft)\b/i.test(raw);
-    const hasDoubleDegree = /\bdouble\s*degree\b/i.test(raw);
+    const hasPartner = /\b(help(\s+university)?|dnui|dalian\s+neusoft|utb)\b/i.test(raw);
+    const hasDoubleDegree = /\bdouble\s*degree\b/i.test(raw) || /\bdual\s*degree\b/i.test(raw);
+    const hasStudyMention = /\b(perkuliahan|kuliah|semester|jalur|kelas|belajar)\b/i.test(t);
 
-    return hasPartner || hasDoubleDegree;
+    return (hasPartner || hasDoubleDegree) && hasStudyMention;
   }
 
   function buildDoubleDegreeProcessAnswerMessage(text) {
@@ -9574,12 +9591,21 @@ module.exports = function (provider) {
       const topK = parseInt(process.env.RAG_TOP_K || '10', 10);
       let ragResult = null;
       const ruleCandidate = selectBestRuleCandidate();
+      const intentLabel = detectIntent(String(text || '').trim());
+      const needsSemanticGrounding = (() => {
+        const t = String(text || '').toLowerCase();
+        const mentionsCost = /\b(?:biaya|uang\s+kuliah|ukt|spp|semester|pendaftaran|registrasi|dpp|rincian\s+biaya|potongan|diskon)\b/i.test(t);
+        const mentionsDetail = /\b(?:gelombang|prodi|rincian|detail|dpp|ukt|perlengkapan|potongan|komponen|semester)\b/i.test(t);
+        const hasProgramHint = /\b(?:si|ti|bd|sk|s1|s2|d3|dnui|help|utb)\b/i.test(t);
+        return (intentLabel === 'COST' && mentionsCost) || (mentionsCost && mentionsDetail) || (mentionsCost && hasProgramHint);
+      })();
 
       // If a high-confidence rule candidate exists, short-circuit and prefer
       // the deterministic rule over calling RAG to save costs and ensure
       // deterministic responses for well-covered cases (keywords, menus).
+      // However, fee/detail questions are meaning-sensitive and should stay grounded.
       const RULE_AUTOSHORTCUT_THRESHOLD = parseFloat(process.env.RULE_AUTOSHORTCUT_THRESHOLD || '0.65');
-      if (!isAcademicProgramQuery && ruleCandidate && typeof ruleCandidate.confidence === 'number' && ruleCandidate.confidence >= RULE_AUTOSHORTCUT_THRESHOLD) {
+      if (!isAcademicProgramQuery && !needsSemanticGrounding && ruleCandidate && typeof ruleCandidate.confidence === 'number' && ruleCandidate.confidence >= RULE_AUTOSHORTCUT_THRESHOLD) {
         const out = { winner: 'rule', candidate: ruleCandidate, answer: buildUnifiedResponse(null, ruleCandidate.answer, 'rule') };
         logDecision(out);
         return out;
@@ -9873,6 +9899,16 @@ module.exports = function (provider) {
 
       await sendBotMessage(chatId, 'Maaf, saya hanya bisa menjawab seputaran STIKOM Bali.');
       return res.send({ ok: true, source: 'out_of_scope' });
+    }
+
+    // Double Degree process questions must be answered deterministically before
+    // the generic small-talk classifier can reinterpret them as vague chat.
+    if (isDoubleDegreeProcessQuestion(text)) {
+      const answer = buildDoubleDegreeProcessAnswerMessage(text);
+      if (answer) {
+        await sendBotMessage(chatId, answer);
+        return res.send({ ok: true, source: 'double_degree_process' });
+      }
     }
 
     // General small-talk: answer briefly but do not treat this as an out-of-scope error.
@@ -11674,6 +11710,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             extractSpecificProgramHint(trimmed) ||
             parseS1ProgramChoice(trimmed) ||
             (pending && pending.program ? String(pending.program) : null) ||
+            (sessionData && sessionData.lastProgramHint ? String(sessionData.lastProgramHint) : null) ||
             null;
           // (removed temporary TRACE_YA_PROGRAM log)
 

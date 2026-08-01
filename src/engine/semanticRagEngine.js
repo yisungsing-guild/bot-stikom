@@ -2539,6 +2539,8 @@ function tryUnsupportedProgramAnswer(question) {
 
 function buildPmbInfoAnswer() {
   return [
+    'Baik, Kak. Saya bantu jawab dari konteks ITB STIKOM Bali ya. Saya jelaskan sebagai gambaran awal sebelum kakak masuk ke detail pendaftaran.',
+    '',
     'PMB adalah singkatan dari Penerimaan Mahasiswa Baru, yaitu proses penerimaan calon mahasiswa yang ingin mendaftar kuliah di ITB STIKOM Bali.',
     '',
     'PMB, kakak bisa bertanya tentang:',
@@ -2551,7 +2553,9 @@ function buildPmbInfoAnswer() {
     '* Syarat dan dokumen pendaftaran',
     '* Kontak atau bantuan admin PMB',
     '',
-    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: "jadwal PMB sekarang gelombang berapa?", "rincian biaya SI gelombang 2B?", atau "apa saja syarat pendaftaran?"'
+    'Kalau kakak ingin info yang lebih spesifik, silakan tanya misalnya: "jadwal PMB sekarang gelombang berapa?", "rincian biaya SI gelombang 2B?", atau "apa saja syarat pendaftaran?"',
+    '',
+    'Jadi, PMB adalah pintu awal untuk calon mahasiswa baru, dan detailnya bisa dilanjutkan ke jadwal, biaya, prodi, atau syarat pendaftaran.'
   ].join('\n');
 }
 
@@ -6427,6 +6431,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (!body) return body;
   const src = String(source || '').toLowerCase();
   if (src.includes('small-talk')) return body;
+  if (src.includes('pmb-info')) return body;
   if (src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('insufficient-data') || src.includes('unsupported-international-program')) return body;
   const appendFollowupsOnly = () => {
     if (!envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) return body;
@@ -7078,6 +7083,21 @@ function shouldPreferTrainingBeforeDeterministic(rewrite) {
   return envFlag('SEMANTIC_RAG_PREFER_TRAINING_FOR_DUAL_DEGREE', true);
 }
 
+function hasExplicitFeeQuestionSignal(question) {
+  const q = String(question || '').toLowerCase();
+  if (!q.trim()) return false;
+
+  const hasMoneyTopic = /\b(biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar(?:an|nya)?|pembayaran|uang(?:\s+kuliah|\s+masuk)?|dpp|ukt|spp|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|nominal|total(?:an)?|fee|fees|cost|costs|tuition|payment|payments)\b/i.test(q);
+  if (hasMoneyTopic) return true;
+
+  const asksRegistrationAmount =
+    /\b(?:pendaftaran|registrasi|daftar)\b.{0,45}\b(?:berapa|rp|rupiah|nominal)\b/i.test(q) ||
+    /\b(?:berapa|rp|rupiah|nominal)\b.{0,45}\b(?:pendaftaran|registrasi|daftar)\b/i.test(q);
+  const asksRegistrationProcess = /\b(cara|gimana|bagaimana|jadwal|tanggal|kapan|masih\s+buka|buka|periode|gelombang\s+berapa)\b/i.test(q);
+  if (asksRegistrationAmount && !asksRegistrationProcess) return true;
+
+  return /\b(per\s+semester|semesteran|uang\s+kuliah|uang\s+masuk|awal(?:nya)?\s+masuk|biaya\s+masuk)\b/i.test(q);
+}
 function buildInsufficientDataAnswer(kind = 'very_low') {
   if (kind === 'low') {
     return 'Saya belum menemukan data yang cukup aman untuk menjawab pertanyaan itu. Agar tidak keliru, kakak bisa cek pengumuman resmi kampus/SION atau konfirmasi ke admin/unit terkait.';
@@ -7470,7 +7490,7 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtFinanceResult, resultCacheKey);
   }
 
-  const hasDirectFeeSignal = /\b(?:biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|registrasi|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/i.test(String(question || ''));
+  const hasDirectFeeSignal = hasExplicitFeeQuestionSignal(question);
   if (!strictDocumentOnly && hasDirectFeeSignal) {
     const feeResult = tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options);
     if (feeResult && feeResult.answer) {

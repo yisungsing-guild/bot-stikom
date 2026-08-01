@@ -588,7 +588,9 @@ function lacksConcreteItemsForApaSaja(answer, userQuery) {
 function isTrustedSemanticAlignmentSource(source) {
   const value = String(source || '').trim().toLowerCase();
   if (!value) return false;
-  return /^semantic-rag-(?:registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|linkedin|institution|operational|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification)/i.test(value);
+  const trustedSemanticPrefix = /^semantic-rag-(?:registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|linkedin|institution|operational|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification)/i;
+  const trustedProviderSource = /(?:^|[-_])(double_degree_process|fast_fee|fee_breakdown_offer_answer_fast|followup_compute_total|study_mode|dkv_available|fee_breakdown_offer_need_program|fee_breakdown_offer_answer|general_small_talk|greeting|permission_to_ask|pmb_info|provider_outbound)(?:$|[-_])/i;
+  return trustedSemanticPrefix.test(value) || trustedProviderSource.test(value);
 }
 
 function isClarificationPromptAnswer(text) {
@@ -636,15 +638,23 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   }
 
   const sourceValue = meta && meta.source ? String(meta.source).trim().toLowerCase() : '';
-  const preserveTrustedFeeAnswer = /^semantic-rag-(?:fee|contextual-fee|registration-fee)/i.test(sourceValue)
+  const preserveTrustedFeeAnswer = (
+    (/^semantic-rag-(?:fee|contextual-fee|registration-fee)/i.test(sourceValue) || /(?:^|[-_])(fast_fee|fee_breakdown_offer_answer_fast|fee_breakdown_offer_answer|followup_compute_total)(?:$|[-_])/i.test(sourceValue))
+    || (/\bRp\.?\s*\d/i.test(text) && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(text))
+  )
     && /\bRp\.?\s*\d/i.test(text)
     && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(text);
+  const preserveTrustedDualDegreeAnswer = (
+    /(?:^|[-_])(double_degree_process|study_mode|dkv_available)(?:$|[-_])/i.test(sourceValue)
+    || (/\b(perkuliahan|kuliah|senin|jumat|bali|cina|online|tahun\s+ke-3|tahun\s+ke-4)\b/i.test(text) && /\b(double degree|dual degree|dnui|help)\b/i.test(String(userQuery || '')))
+  )
+    && /\b(perkuliahan|kuliah|senin|jumat|bali|cina|online|tahun\s+ke-3|tahun\s+ke-4)\b/i.test(text);
   const preserveTrustedInkubatorAnswer = sourceValue === 'semantic-rag-campus-support-entity'
     && /^Ya, ITB STIKOM Bali memiliki Inkubator Bisnis\b/i.test(text)
     && /\b(Pendampingan|Program inkubasi|mentoring|kewirausahaan|coworking|model bisnis|rintisan bisnis)\b/i.test(text)
     && !/\b(?:PROFIL\s+LEMBAGA|\[Sheet:|SOURCE_CHUNKS|CONFIDENCE|embedding|Identitas\s+Lembaga|Dasar\s+Hukum|Pembina\s*\/\s*Penanggung\s+Jawab|Struktur\s+Organisasi|DAFTAR\s+ISI)\b/i.test(text);
   if (
-    (preserveTrustedFeeAnswer || preserveTrustedInkubatorAnswer) &&
+    (preserveTrustedFeeAnswer || preserveTrustedDualDegreeAnswer || preserveTrustedInkubatorAnswer) &&
     !rawFaqQnaDump &&
     !hasRawTechnicalLeak(text) &&
     !hasDocumentSourceLeak(text)
@@ -660,6 +670,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
         originalLength: original.length,
         finalLength: text.length,
         trustedFeeBypass: preserveTrustedFeeAnswer,
+        trustedDualDegreeBypass: preserveTrustedDualDegreeAnswer,
         trustedInkubatorBypass: preserveTrustedInkubatorAnswer
       }
     };
