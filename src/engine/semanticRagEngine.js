@@ -2290,7 +2290,7 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
     : question;
   const intent = detectGenericIntent(questionForRetrieval);
   if (intent === 'fee') return null;
-  if (/\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|pusat\s+karir|inkubator|inbis|softskill|language\s+learning|llc|hi-?think|gccp|gcpp|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|ukm|ormawa)\b/i.test(String(question || ''))) return null;
+  if (/\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|pusat\s+karir|karier|karir|lowongan|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study|konsultasi\s+karier|inkubator|inbis|softskill|language\s+learning|llc|hi-?think|gccp|gcpp|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|ukm|ormawa)\b/i.test(String(question || ''))) return null;
   const directAcademicSection = await tryDirectAcademicAdminUploadedSectionAnswer(question, options);
   if (directAcademicSection && directAcademicSection.answer) return directAcademicSection;
   if (['schedule', 'requirement'].includes(intent) && !isAcademicAdminUploadedDocQuestion(question, intent)) return null;
@@ -4584,8 +4584,8 @@ function tryKnownFaqQnaAnswer(question) {
     if (/\b(perusahaan|rekrutmen|campus hiring|datang ke kampus)\b/i.test(q)) {
       return careerAnswer('Ya. Perusahaan dapat hadir melalui kegiatan rekrutmen kampus atau campus hiring, sehingga mahasiswa dan alumni bisa mendapatkan informasi karier dan mengikuti proses seleksi yang tersedia.');
     }
-    if (/\b(job fair)\b/i.test(q)) {
-      return careerAnswer('Ya. ITB STIKOM Bali menyelenggarakan Job Fair yang menghadirkan perusahaan dari berbagai sektor industri agar mahasiswa dan alumni dapat memperoleh informasi karier, mengikuti rekrutmen, dan membangun jaringan profesional.');
+    if (/\\b(job fair)\\b/i.test(q)) {
+      return careerAnswer('Pada data Career Center yang tersedia, job fair tercantum sebagai salah satu bentuk dukungan karier untuk mahasiswa dan alumni, bersama informasi lowongan kerja, magang, campus hiring, konsultasi karier, dan tracer study. Untuk jadwal Job Fair yang sedang/akan berjalan, kakak perlu cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.');
     }
     if (/\b(kapan|mulai mengikuti|mulai ikut)\b/i.test(q)) {
       return careerAnswer('Mahasiswa dapat mulai mengikuti program Career Center sejak masih menjadi mahasiswa aktif, terutama saat membutuhkan informasi magang, pembekalan kerja, konsultasi karier, atau persiapan melamar pekerjaan.');
@@ -4793,6 +4793,7 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
 }
 
 function tryTrainingSpecificAnswer(question, indexForQuery) {
+  if (/\bjob\s*fair\b/i.test(String(question || ''))) return null;
   // Allow training-specific answers to be considered for all queries.
   // Earlier code blocked UKM/ormawa queries explicitly which prevented
   // training-indexed UKM profiles and FAQ answers from being used.
@@ -5031,7 +5032,7 @@ function buildBccpNoDataAnswer() {
 
 function buildLanguageLearningAnswer() {
   return [
-    'Ya, dari data fasilitas yang tersedia, ITB STIKOM Bali mencantumkan Language Learning Center sebagai fasilitas/program pendukung untuk pengembangan kemampuan bahasa mahasiswa.',
+    'LLC adalah singkatan dari Language Learning Center. Dari data fasilitas yang tersedia, ITB STIKOM Bali mencantumkan Language Learning Center (LLC) sebagai fasilitas/program pendukung untuk pengembangan kemampuan bahasa mahasiswa.',
     '',
     'Selain itu, pada data program Hi-Think juga disebutkan adanya kursus bahasa Jepang sebagai bagian dari persiapan belajar/karier yang berkaitan dengan industri Jepang.',
     '',
@@ -5311,6 +5312,15 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   }
   // questions, because this produces a better Career Center answer.
   if (resolved.entity.key === 'career-center') return null;
+  if (resolved.entity.key === 'language-learning-center') {
+    return {
+      answer: buildLanguageLearningAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-facility',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
 
   const currentMentionsEntity = !resolved.fromRecent;
   const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
@@ -8398,6 +8408,19 @@ async function querySemanticRag(question, options = {}) {
 
   const strictDocumentOnly = isStrictDocumentOnlyMode();
   const fallbacksAllowed = !strictDocumentOnly;
+  const earlySupportQuestion = String(question || '').toLowerCase();
+  if (!strictDocumentOnly && /\b(?:llc|language\s+learning\s+center)\b/i.test(earlySupportQuestion) && /\b(?:apa|itu|pengertian|maksud|tentang|info(?:rmasi)?|jelaskan)\b/i.test(earlySupportQuestion)) {
+    const result = { answer: buildLanguageLearningAnswer(), source: 'semantic-rag-campus-facility', frameSource: 'semantic-rag-campus-facility' };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-facility', result, { routeStage: 'pre-ai-support-abbreviation' }), resultCacheKey);
+  }
+  if (!strictDocumentOnly && /\bjob\s*fair\b/i.test(earlySupportQuestion)) {
+    const result = {
+      answer: 'Pada data Career Center yang tersedia, job fair tercantum sebagai salah satu bentuk dukungan karier untuk mahasiswa dan alumni, bersama informasi lowongan kerja, magang, campus hiring, konsultasi karier, dan tracer study. Untuk jadwal Job Fair yang sedang atau akan berjalan, kakak perlu cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.',
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', result, { routeStage: 'pre-ai-support-career-event' }), resultCacheKey);
+  }
   const shortDefinitionResponse = strictDocumentOnly ? null : tryShortProgramDefinitionDirectAnswer(question);
   if (shortDefinitionResponse) {
     return await finalizeSemanticResult(question, shortDefinitionResponse, resultCacheKey);
@@ -8417,7 +8440,15 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
-
+  const earlySupportHandlers = strictDocumentOnly ? [] : handlersForSources([
+    'semantic-rag-campus-support-entity',
+    'semantic-rag-career-softskill',
+    'semantic-rag-campus-facility'
+  ]);
+  const earlySupportResult = strictDocumentOnly ? null : runDeterministicHandlers(question, earlySupportHandlers, options, [question], { routeStage: 'pre-ai-support' });
+  if (earlySupportResult) {
+    return await finalizeSemanticResult(question, earlySupportResult, resultCacheKey);
+  }
 
   const preAiUploadedTraining = strictDocumentOnly ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
   if (preAiUploadedTraining && preAiUploadedTraining.answer) {
