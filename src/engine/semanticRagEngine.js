@@ -1679,24 +1679,54 @@ function buildAcademicRequirementSummaryAnswer(question, selectedEvidence) {
   const section = selectAcademicDocumentSection(q, evidence, 'requirement');
   if (!section) return '';
 
-  const lines = section
+  const rawLines = section
     .split(/\r?\n/)
     .map((line) => line.replace(/\s+/g, ' ').trim())
     .filter(Boolean);
+
   const items = [];
-  for (const line of lines) {
-    if (/^\s*[A-Z]\.\s+/i.test(line)) continue;
-    const cleaned = line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim();
-    if (!cleaned || /^persyaratan\b/i.test(cleaned)) continue;
-    if (/\b(hari\s*\/?\s*tanggal|pukul|waktu|tempat)\s*:/i.test(cleaned)) continue;
-    if (!/\b(syarat|wajib|telah|sudah|bebas|lunas|krs|bukti|formulir|dokumen|berkas|surat|transkrip|ijazah|skpi|tugas\s+akhir|sidang|yudisium)\b/i.test(cleaned) && !/^\d+[.)]/.test(line)) continue;
+  let current = '';
+  const flushCurrent = () => {
+    const cleaned = current
+      .replace(/^\s*(?:[-*]|\d+[.)])\s*/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    current = '';
+    if (!cleaned || /^persyaratan\b/i.test(cleaned)) return;
+    if (/\b(hari\s*\/?\s*tanggal|pukul|waktu|tempat)\s*:/i.test(cleaned)) return;
+    if (!/\b(syarat|wajib|telah|sudah|bebas|lunas|krs|bukti|formulir|dokumen|berkas|surat|transkrip|ijazah|skpi|tugas\s+akhir|proyek\s+akhir|sidang|yudisium|pddikti|pin|mata\s+kuliah|kurikulum)\b/i.test(cleaned)) return;
     items.push(cleaned);
-    if (items.length >= 8) break;
+  };
+
+  for (const line of rawLines) {
+    if (/^\s*[A-Z]\.\s+/i.test(line)) continue;
+    if (/^persyaratan\b/i.test(line)) continue;
+    if (/^\s*(?:[-*]|\d+[.)])\s+/.test(line)) {
+      flushCurrent();
+      current = line;
+      continue;
+    }
+    if (!current) {
+      if (/\b(syarat|wajib|telah|sudah|bebas|lunas|krs|bukti|formulir|dokumen|berkas|surat|transkrip|ijazah|skpi|tugas\s+akhir|proyek\s+akhir|sidang|yudisium|pddikti|pin|mata\s+kuliah|kurikulum)\b/i.test(line)) current = line;
+      continue;
+    }
+    current = `${current} ${line}`.replace(/\s+/g, ' ').trim();
   }
-  if (!items.length) return '';
+  flushCurrent();
+
+  const uniqueItems = [];
+  const seen = new Set();
+  for (const item of items) {
+    const key = normalizeForLexicalMatch(item).slice(0, 160);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    uniqueItems.push(item);
+    if (uniqueItems.length >= 8) break;
+  }
+  if (!uniqueItems.length) return '';
 
   const topic = /\byudisium\b/i.test(q) ? 'Persyaratan Yudisium' : (/\bwisuda\b/i.test(q) ? 'Persyaratan Wisuda' : 'Persyaratan akademik yang ditanyakan');
-  return [`${topic}:`, ...items.map((item) => `- ${item}`)].join('\n').trim();
+  return [`${topic}:`, ...uniqueItems.map((item) => `- ${item}`)].join('\n').trim();
 }
 function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
