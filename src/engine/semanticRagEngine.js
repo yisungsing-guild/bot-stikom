@@ -1,4 +1,4 @@
-const { OpenAI } = require('openai');
+﻿const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
@@ -1573,7 +1573,7 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
     .replace(/\s+(?:Hari\s*\/?\s*Tanggal|Tanggal|Pukul|Waktu|Jam|Tempat|Loket|Lokasi|Selain\s+dari\s+tanggal\s+tersebut|[B-Z]\.\s+|Persyaratan)\b[\s\S]*$/i, '')
     .trim();
   const getValue = (labelPattern) => {
-    const re = new RegExp(`(?:${labelPattern})\\s*[:：]?\\s*([^\\n]+)`, 'i');
+    const re = new RegExp(`(?:${labelPattern})\\s*[:ï¼š]?\\s*([^\\n]+)`, 'i');
     const m = section.match(re);
     return m && m[1] ? cleanScheduleFieldValue(m[1]) : '';
   };
@@ -4580,7 +4580,7 @@ function cleanFacilitySnippetText(text) {
 
   out = out
     .replace(/\b(?:q|a)\s*[:\-.]\s*/gi, '')
-    .replace(/["'ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â]/g, '')
+    .replace(/["'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -7113,7 +7113,7 @@ function tryInstitutionVisionMissionAnswer(question, indexForQuery) {
     const visionText = String(vision[1] || '').trim();
     if (/\b(acara|panitia|undangan|peserta|anggota|organisasi|ukm|himpunan|pengurus)\b/i.test(visionText)) continue;
     const lines = ['Berikut visi/misi ITB STIKOM Bali yang saya temukan pada data tersedia:'];
-    if (vision && vision[1]) lines.push('', `Visi: ${vision[1].replace(/[ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â"]+$/g, '').trim()}`);
+    if (vision && vision[1]) lines.push('', `Visi: ${vision[1].replace(/[ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â"]+$/g, '').trim()}`);
     if (mission && mission[1]) {
       const cleanedMission = mission[1]
         .replace(/\b(?:tujuan|struktur organisasi|profil|sejarah|kontak)\b[\s\S]*$/i, '')
@@ -7670,7 +7670,7 @@ function buildInsufficientDataAnswer(kind = 'very_low') {
   return 'Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi, untuk menjawab pertanyaan anda. Mungkin anda bisa mengubah pertanyaannya atau menanyakan hal lain yang ingin diketahui.';
 }
 function buildMeaningMismatchFallbackAnswer(question) {
-  if (isAcademicScheduleLookupQuestion(question)) return buildAcademicScheduleNoDataAnswer(question);
+  if (isAcademicAdminUploadedDocQuestion(question, 'schedule') || isAcademicScheduleLookupQuestion(question)) return buildAcademicScheduleNoDataAnswer(question);
   return buildInsufficientDataAnswer('low');
 }
 
@@ -7736,7 +7736,7 @@ function inferQuestionMeaningProfile(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return { intent: 'unknown' };
 
-  if (isAcademicScheduleLookupQuestion(q)) return { intent: 'academic_schedule' };
+  if (isAcademicAdminUploadedDocQuestion(q, 'schedule') || isAcademicScheduleLookupQuestion(q)) return { intent: 'academic_schedule' };
   if (/\b(biaya|harga|bayar|ukt|dpp|rincian\s+biaya|biaya\s+kuliah|potongan\s+biaya)\b/i.test(q)) return { intent: 'fee' };
   if (/\b(pmb|penerimaan\s+mahasiswa\s+baru)\b/i.test(q) && /\b(apa\s+itu|tentang|bertanya|tanya|informasi|jelaskan|maksud)\b/i.test(q)) return { intent: 'pmb_info' };
   if (/\b(daftar|mendaftar|pendaftaran|registrasi)\b/i.test(q) && /\b(kuliah|pmb|stikom|camaba|mahasiswa\s+baru)\b/i.test(q)) return { intent: 'registration_info' };
@@ -7754,11 +7754,18 @@ function answerMatchesQuestionMeaning(question, answer, source = '') {
   const intent = profile.intent || 'unknown';
   if (intent === 'unknown') return null;
 
+  const q = String(question || '').toLowerCase();
   const a = String(answer || '').toLowerCase();
   const src = String(source || '').toLowerCase();
   const noData = hasNoDataAnswerPhrase(answer);
 
   if (intent === 'academic_schedule') {
+    if (/\b(?:pmb|penerimaan\s+mahasiswa\s+baru|calon\s+mahasiswa|camaba|gelombang\s+pendaftaran|admin\s+pmb)\b/i.test(a)) return false;
+    if (/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q)) {
+      return noData || /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|hari\s*\/?\s*tanggal|tanggal|pukul|wita|wib|wit|loket|tempat|sion|baak|akademik)\b/i.test(a);
+    }
+    if (/\byudisium\b/i.test(q)) return noData || /\b(yudisium|hari\s*\/?\s*tanggal|tanggal|pukul|wita|wib|wit|loket|tempat|sion|baak|akademik)\b/i.test(a);
+    if (/\bwisuda\b/i.test(q)) return noData || /\b(wisuda|hari\s*\/?\s*tanggal|tanggal|pukul|wita|wib|wit|loket|tempat|sion|baak|akademik)\b/i.test(a);
     return noData || /\b(semester\s+antara|semester\s+pendek|remedial|remidi|jadwal\s+akademik|kalender\s+akademik|sion|baak)\b/i.test(a);
   }
   if (intent === 'fee') {
@@ -8898,3 +8905,6 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
