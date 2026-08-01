@@ -1538,6 +1538,19 @@ function buildContextText(contexts, options = {}) {
   return blocks.join('\n\n');
 }
 
+function isSafeCompactAcademicScheduleAnswer(question, answer) {
+  const q = String(question || '');
+  const a = String(answer || '').trim();
+  if (!a || !isAcademicAdminUploadedDocQuestion(q, 'schedule')) return false;
+  if (!/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|yudisium|wisuda)\b/i.test(a)) return false;
+  const hasConcreteSchedule = /\b(?:Hari\s*\/?\s*Tanggal|Tanggal)\s*:/i.test(a)
+    && /\b(?:Pukul|Waktu|Jam)\s*:/i.test(a)
+    && /\b(?:Tempat|Loket|Lokasi)\s*:/i.test(a);
+  if (!hasConcreteSchedule) return false;
+  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|Persyaratan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
+  if ((a.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
+  return a.length <= 850;
+}
 function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const q = String(question || '');
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
@@ -7943,7 +7956,9 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   }
 
   const preflight = evaluateOutboundAnswer(result.answer, question, { source });
-  if (preflight && preflight.blocked) {
+  const compactScheduleSafe = Boolean(result.debug && result.debug.compactAcademicSchedule)
+    && isSafeCompactAcademicScheduleAnswer(question, result.answer);
+  if (preflight && preflight.blocked && !compactScheduleSafe) {
     const blocked = {
       success: true,
       answer: preflight.answer,
@@ -7961,7 +7976,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
     return blocked;
   }
-  if (preflight && preflight.changed && preflight.answer) {
+  if (preflight && preflight.changed && preflight.answer && !compactScheduleSafe) {
     result = {
       ...result,
       answer: preflight.answer,
@@ -8905,6 +8920,7 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
 
 
 
