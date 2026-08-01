@@ -3370,6 +3370,78 @@ function isGenericSemanticClarification(question, clarificationQuestion) {
   return false;
 }
 
+function detectExplicitExternalEntity(question) {
+  const q = normalizeFacilityTerm(question || '');
+  if (!q.trim()) return null;
+  const partnerDoubleDegreeContext = /\b((double|dual)\s*degree|dd)\b/.test(q) && /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university)\b/.test(q);
+  if (partnerDoubleDegreeContext) return null;
+
+  const known = [
+    ['UGM', /\b(?:ugm|universitas\s+gadjah\s+mada)\b/i],
+    ['UI', /\b(?:ui|universitas\s+indonesia)\b/i],
+    ['Unair', /\b(?:unair|universitas\s+airlangga)\b/i],
+    ['IPB', /\b(?:ipb|institut\s+pertanian\s+bogor)\b/i],
+    ['Udayana/UNUD', /\b(?:udayana|unud|universitas\s+udayana)\b/i],
+    ['Undiksha', /\b(?:undiksha|universitas\s+pendidikan\s+ganesha)\b/i],
+    ['Politeknik Negeri Bali/PNB', /\b(?:pnb|politeknik\s+negeri\s+bali)\b/i],
+    ['Universitas Terbuka', /\buniversitas\s+terbuka\b/i],
+    ['Institut Teknologi Bandung/ITB', /\b(?:institut\s+teknologi\s+bandung|itb\b(?!\s*stikom))\b/i],
+    ['Binus', /\bbinus\b/i],
+    ['Telkom University', /\btelkom\s+university\b/i],
+    ['Undiknas', /\bundiknas\b/i],
+    ['Warmadewa', /\bwarmadewa\b/i]
+  ];
+  for (const [label, pattern] of known) {
+    if (pattern.test(q)) return label;
+  }
+
+  const generic = q.match(/\b(universitas|institut|politeknik|kampus)\s+(?!(?:teknologi\s+dan\s+bisnis\s+)?stikom\b|itb\s+stikom\b|stikom\s+bali\b|renon\b|jimbaran\b|abiansemal\b)([a-z0-9][a-z0-9\s]{2,60})/i);
+  if (generic && !/\b(stikom|itb\s*stikom)\b/i.test(q)) return `${generic[1]} ${generic[2]}`.trim();
+  return null;
+}
+
+function tryExplicitExternalEntityNoDataAnswer(question) {
+  const entity = detectExplicitExternalEntity(question);
+  if (!entity) return null;
+  return {
+    answer: `Maaf, saya belum menemukan data tentang ${entity} pada dokumen ITB STIKOM Bali yang tersedia. Saya hanya bisa menjawab berdasarkan informasi ITB STIKOM Bali, jadi saya tidak akan menebak tentang kampus atau entitas lain.`,
+    source: 'semantic-rag-explicit-external-insufficient-data',
+    frameSource: 'semantic-rag-insufficient-data'
+  };
+}
+
+function extractAmbiguousAbbreviation(question) {
+  const raw = String(question || '').trim();
+  if (!/\b(?:apa\s+itu|itu\s+apa|maksud(?:nya)?|kepanjangan|singkatan|tentang|info(?:rmasi)?|jelaskan)\b/i.test(raw)) return '';
+  if (detectExplicitExternalEntity(raw)) return '';
+
+  const known = new Set([
+    'ITB', 'STIKOM', 'PMB', 'RAG', 'LLC', 'SI', 'TI', 'BD', 'SK', 'MI', 'D3', 'S1', 'S2',
+    'KIP', 'UKM', 'DPP', 'UTB', 'DNUI', 'HELP', 'GCCP', 'BCCP', 'RPL', 'MBKM', 'SION',
+    'BAAK', 'TA', 'PA', 'KRS', 'KHS', 'IPK', 'SKS', 'PDDIKTI', 'PIN', 'NIM', 'TOEFL',
+    'JLPT', 'DKV'
+  ]);
+  const stop = new Set(['APA', 'ITU', 'YA', 'KAK', 'MIN', 'DAN', 'ATAU', 'DI', 'KE', 'DARI', 'UNTUK', 'DENGAN', 'PRODI']);
+  const candidates = [];
+  const re = /\b[A-Za-z][A-Za-z0-9]{1,5}\b/g;
+  let match;
+  while ((match = re.exec(raw)) !== null) {
+    const token = match[0];
+    const upper = token.toUpperCase();
+    if (stop.has(upper) || known.has(upper)) continue;
+    const looksLikeAbbreviation = token === upper || /^[A-Z0-9]{2,6}$/.test(token) || /^(?:apa\s+itu\s+|tentang\s+|info(?:rmasi)?\s+)?[a-z0-9]{2,5}(?:\s+itu\s+apa)?\??$/i.test(raw);
+    if (looksLikeAbbreviation) candidates.push(upper);
+  }
+  return candidates[0] || '';
+}
+
+function tryAmbiguousAbbreviationClarificationAnswer(question) {
+  const abbr = extractAmbiguousAbbreviation(question);
+  if (!abbr) return null;
+  return {
+    answer: `Kak, singkatan "${abbr}" yang dimaksud itu apa ya? Bisa tuliskan kepanjangannya atau konteksnya, misalnya prodi, fasilitas, layanan kampus, organisasi, PMB, atau dokumen akademik. Setelah konteksnya jelas, saya cekkan berdasarkan data RAG yang tersedia.`
+  };
+}
 function tryFeedbackAnswer(question) {
   const q = String(question || '').toLowerCase().trim();
   if (!q) return null;
@@ -6827,6 +6899,8 @@ function expandContextualFollowup(item, context = {}) {
 const FOLLOWUP_VALIDATION_SKIP_SOURCES = new Set([
   'semantic-rag-small-talk',
   'semantic-rag-clarification',
+  'semantic-rag-explicit-external-no-data',
+  'semantic-rag-abbreviation-clarification',
   'semantic-rag-out-of-domain',
   'semantic-rag-security-refusal',
   'semantic-rag-student-concern',
@@ -7599,6 +7673,8 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-mixed-intent', tryMixedIntentAnswer],
   ['semantic-rag-small-talk', trySmallTalkAnswer],
   ['semantic-rag-org-structure-unavailable', tryOrganizationalStructureAnswer],
+  ['semantic-rag-explicit-external-no-data', tryExplicitExternalEntityNoDataAnswer],
+  ['semantic-rag-abbreviation-clarification', tryAmbiguousAbbreviationClarificationAnswer],
   ['semantic-rag-clarification', tryShortClarificationAnswer],
   ['semantic-rag-out-of-domain', tryOutOfDomainAnswer],
   ['semantic-rag-security-refusal', trySecurityRefusalAnswer],
@@ -7690,6 +7766,8 @@ const SOURCES_NEEDING_INDEX = new Set([
 const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-mixed-intent',
   'semantic-rag-small-talk',
+  'semantic-rag-explicit-external-no-data',
+  'semantic-rag-abbreviation-clarification',
   'semantic-rag-out-of-domain',
   'semantic-rag-security-refusal',
   'semantic-rag-student-concern',
@@ -8127,6 +8205,7 @@ function isMeaningMismatchAnswer(question, answer, source = '') {
 
   const qForAvailability = String(question || '').toLowerCase();
   const srcForAvailability = String(source || '').toLowerCase();
+  if (srcForAvailability.includes('explicit-external-insufficient-data')) return false;
   const asksAvailability = /\b(apakah|apa|ada|tersedia|sudah\s+ada|punya|memiliki)\b/i.test(qForAvailability) && /\b(program|layanan|fasilitas|kelas|kursus|sertifikasi|training|magang|kerja|beasiswa|komunitas|ukm|jalur)\b/i.test(qForAvailability);
   const asksRecommendationExplicitly = /\b(cocok|cocoknya|rekomendasi|saran|sarankan|jurusan\s+apa|prodi\s+apa|pilih\s+jurusan)\b/i.test(qForAvailability);
   if (srcForAvailability.includes('program-recommendation') && asksAvailability && !asksRecommendationExplicitly) return true;
@@ -8266,7 +8345,8 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredPmbSafe = /pmb-info/i.test(source) && isSafePmbOverviewAnswer(question, result.answer);
   const structuredDualDegreeSafe = /dual-degree/i.test(source) && isSafeDualDegreeAnswer(question, result.answer);
   const structuredFacilitySafe = isSafeCampusFacilityAnswer(question, result.answer, source);
-  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe;
+  const explicitExternalNoDataSafe = /explicit-external-insufficient-data/i.test(source);
+  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || explicitExternalNoDataSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
@@ -8410,6 +8490,12 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, response, resultCacheKey);
   }
 
+  const explicitExternalNoData = tryExplicitExternalEntityNoDataAnswer(question);
+  if (explicitExternalNoData && explicitExternalNoData.answer) {
+    const response = buildDeterministicResponse(question, 'semantic-rag-explicit-external-no-data', explicitExternalNoData, { routeStage: 'pre-ai-explicit-external-no-data' });
+    return await finalizeSemanticResult(question, response, resultCacheKey);
+  }
+
 
   if (/\b(indikator|pertanggung\s*jawab(?:an)?|dipertanggung\s*jawabkan|institusi\s+pendidikan|akuntabilitas|kinerja\s+institusi)\b/i.test(String(question || ''))) {
     const response = { success: true, answer: 'Saya belum menemukan rincian indikator pertanggungjawaban institusi pendidikan ITB STIKOM Bali yang cukup aman pada data yang tersedia. Agar tidak keliru, indikator resmi seperti akreditasi, mutu akademik, tata kelola, layanan, atau pelaporan institusi sebaiknya dikonfirmasi ke pihak kampus/unit terkait.', source: 'semantic-rag-institution-indicator-insufficient-data', contexts: [] };
@@ -8443,6 +8529,11 @@ async function querySemanticRag(question, options = {}) {
       frameSource: 'semantic-rag-campus-support-entity'
     };
     return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', result, { routeStage: 'pre-ai-support-career-event' }), resultCacheKey);
+  }
+  const abbreviationClarification = strictDocumentOnly ? null : tryAmbiguousAbbreviationClarificationAnswer(question);
+  if (abbreviationClarification && abbreviationClarification.answer) {
+    const response = buildDeterministicResponse(question, 'semantic-rag-abbreviation-clarification', abbreviationClarification, { routeStage: 'pre-ai-abbreviation-clarification' });
+    return await finalizeSemanticResult(question, response, resultCacheKey);
   }
   const shortDefinitionResponse = strictDocumentOnly ? null : tryShortProgramDefinitionDirectAnswer(question);
   if (shortDefinitionResponse) {
