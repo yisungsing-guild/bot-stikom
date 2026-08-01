@@ -1538,6 +1538,78 @@ function buildContextText(contexts, options = {}) {
   return blocks.join('\n\n');
 }
 
+function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
+  const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
+  const snippets = [];
+  const seen = new Set();
+
+  for (const item of evidence) {
+    const text = cleanUserVisibleRagAnswerText(item && item.text);
+    if (!text || text.length < 12) continue;
+    const normalized = normalizeFacilityTerm(text);
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    snippets.push(text.length > 900 ? `${text.slice(0, 897).trim()}...` : text);
+    if (snippets.length >= 3) break;
+  }
+
+  if (!snippets.length) return '';
+
+  const asksDefinition = /\b(apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan|tentang)\b/i.test(String(question || ''));
+  if (asksDefinition && snippets.length === 1) return snippets[0];
+  if (snippets.length === 1) return snippets[0];
+
+  return snippets.map((line) => `- ${line}`).join('\n');
+}
+
+async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
+  const intent = detectGenericIntent(question);
+  if (['fee', 'schedule', 'requirement'].includes(intent)) return null;
+
+  const retrieved = await retrieveSemanticContexts([question], {
+    topK: options.topK,
+    question,
+    intent
+  });
+  const contexts = Array.isArray(retrieved.contexts) ? retrieved.contexts : [];
+  if (!contexts.length) return null;
+
+  const hasDatabaseContext = contexts.some((ctx) => ctx && (ctx.sourceType === 'database' || (ctx.metadata && ctx.metadata.source === 'database')));
+  if (!hasDatabaseContext) return null;
+
+  const minScoreRaw = Number(process.env.SEMANTIC_RAG_LOCAL_DB_MIN_SCORE || '0.3');
+  const minScore = Number.isFinite(minScoreRaw) ? minScoreRaw : 0.3;
+  if (Number(retrieved.topScore || 0) < minScore) return null;
+
+  const selectedEvidence = selectEvidenceFromContexts({
+    question,
+    contexts,
+    intent,
+    maxEvidence: 4
+  });
+  if (!selectedEvidence.length) return null;
+
+  const answerability = evaluateEvidenceAnswerability({ question, selectedEvidence, intent });
+  if (answerability && answerability.answerable === false) return null;
+
+  const answer = buildLocalUploadedTrainingAnswer(question, selectedEvidence);
+  if (!answer) return null;
+
+  return {
+    success: true,
+    answer: formatNaturalAnswerFrame(question, answer, 'semantic-rag-uploaded-training-generic'),
+    source: 'semantic-rag-uploaded-training-generic',
+    contexts: selectedEvidence,
+    confidenceScore: retrieved.topScore,
+    confidenceTier: retrieved.topScore >= 0.55 ? 'HIGH' : 'MEDIUM',
+    debug: {
+      routeStage: 'fallback-no-ai-local-training-db',
+      intent,
+      answerabilityResult: answerability,
+      indexSize: retrieved.indexSize
+    }
+  };
+}
 function isLikelyRawAdministrativeDocument(chunk, filename = '') {
   const text = String(chunk || '');
   const file = String(filename || '');
@@ -7499,6 +7571,11 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
+  const preAiUploadedTraining = strictDocumentOnly ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
+  if (preAiUploadedTraining && preAiUploadedTraining.answer) {
+    return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
+  }
+
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   if (debugTrace) {
@@ -7562,6 +7639,10 @@ async function querySemanticRag(question, options = {}) {
       return response;
     }
     await getActiveTrainingDataFromDb();
+    const localUploadedTraining = await tryLocalUploadedTrainingGenericAnswer(question, options);
+    if (localUploadedTraining && localUploadedTraining.answer) {
+      return await finalizeSemanticResult(question, localUploadedTraining, resultCacheKey);
+    }
     if (isInstitutionVisionMissionQuestion(question)) {
       try {
         const localRetrieved = await retrieveSemanticContexts([question], { topK: options.topK, question, intent: detectGenericIntent(question) });
