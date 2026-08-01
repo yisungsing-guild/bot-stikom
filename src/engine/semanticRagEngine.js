@@ -1699,6 +1699,10 @@ function selectAcademicAdminUploadedEvidence(question, contexts, options = {}) {
 }
 function isKnownSpecializedCampusQuestion(question) {
   const q = String(question || '').toLowerCase();
+  if (/\b(kegiatan\s+mahasiswa|aktivitas\s+mahasiswa|unit\s+kegiatan|program\s+kerja|ukm|ormawa|organisasi\s+mahasiswa|bem|dpm|hima)\b/i.test(q)) return true;
+  if (/\b(student\s*exchange|pertukaran\s+mahasiswa|gccp|bccp|program\s+internasional|international\s+program|double\s*degree|dual\s*degree)\b/i.test(q)) return true;
+  if (/\b(lokasi|alamat|kampus\s+di\s+mana|dimana\s+kampus|where\s+is|campus\s+location|location|address)\b/i.test(q)) return true;
+  if (/\b(layanan\s+industri|kerja\s*sama\s+industri|goes?\s*to\s*school|kunjungan\s+sekolah)\b/i.test(q)) return true;
   return /\b(pmb|penerimaan\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|siap\.stikom|daftar\s+kuliah|pendaftaran\s+kuliah)\b/i.test(q)
     || /\b(biaya|harga|tarif|ukt|dpp|gelombang|jadwal\s+pendaftaran|beasiswa|kip|potongan)\b/i.test(q)
     || /\b(prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i.test(q)
@@ -1867,6 +1871,72 @@ async function retrieveAcademicAdminUploadedContextsFromDb(question, options = {
   out.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
   return out.slice(0, options.topK || 6);
 }
+async function retrieveGenericUploadedContextsFromDb(question, seedContexts = [], options = {}) {
+  const q = String(question || '');
+  const intent = options.intent || detectGenericIntent(q);
+  if (!q.trim() || intent === 'fee') return [];
+
+  const anchors = extractQueryAnchorTerms(q);
+  if (!anchors.length) return [];
+
+  const seeds = Array.isArray(seedContexts) ? seedContexts : [];
+  const seedTrainingIds = new Set(seeds.map((ctx) => String(ctx && ctx.trainingId || '').trim()).filter(Boolean));
+  const seedFilenames = new Set(seeds.map((ctx) => normalizeForLexicalMatch(ctx && (ctx.filename || ctx.sourceFile || ctx.source) || '')).filter(Boolean));
+
+  const rows = await getActiveTrainingDataFromDb();
+  if (!Array.isArray(rows) || !rows.length) return [];
+
+  const requiresSeed = seedTrainingIds.size > 0 || seedFilenames.size > 0;
+  const out = [];
+  for (const row of rows) {
+    if (!row || !String(row.content || '').trim()) continue;
+    const filename = row.filename || row.source || 'uploaded-training';
+    const filenameNorm = normalizeForLexicalMatch(filename);
+    const matchesSeed = seedTrainingIds.has(String(row.id || '')) || seedFilenames.has(filenameNorm);
+    if (requiresSeed && !matchesSeed) continue;
+
+    const content = cleanDocumentMarkers(String(row.content || ''));
+    const haystack = `${filename}\n${content}`;
+    if (!hasAnchorOverlap(q, haystack)) continue;
+    if (isLikelyRawAdministrativeDocument(content, filename) && !/\b(pasal|ayat|legal|hukum|perjanjian|mou|moa|kerja\s*sama)\b/i.test(q)) continue;
+
+    const hayNorm = normalizeForLexicalMatch(haystack);
+    const anchorHits = anchors.filter((term) => hayNorm.includes(normalizeForLexicalMatch(term))).length;
+    if (!anchorHits) continue;
+
+    const genericScore = computeGenericScore(q, haystack, intent);
+    const lexicalScore = computeLexicalScore(q, content, filename);
+    const intentCompatibility = computeIntentCompatibility(content, intent);
+    let score = (genericScore * 0.55) + (lexicalScore * 0.25) + (intentCompatibility * 0.1) + Math.min(0.25, anchorHits * 0.08);
+    if (matchesSeed) score += 0.2;
+
+    if (intent === 'schedule' && /\b(kapan|jadwal|tanggal|deadline|terakhir)\b/i.test(q)) {
+      if (!/\b(hari\s*\/?\s*tanggal|tanggal|pukul|jam|deadline|terakhir|sampai\s+dengan|periode|bulan|tahun|\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b/i.test(content)) continue;
+      score += 0.15;
+    }
+
+    if (intent === 'requirement' && /\b(syarat|persyaratan|dokumen|berkas|ketentuan)\b/i.test(q)) {
+      if (!/\b(syarat|persyaratan|dokumen|berkas|ketentuan|wajib|melampirkan|mengunggah|formulir|kartu|surat|bukti)\b/i.test(content)) continue;
+      score += 0.12;
+    }
+
+    if (score < (matchesSeed ? 0.2 : 0.42)) continue;
+    out.push({
+      id: `${row.id}-db-full-generic`,
+      score: Math.max(0.2, Math.min(1, score)),
+      chunk: content,
+      filename,
+      trainingId: row.id || null,
+      divisionKey: row.divisionKey || null,
+      metadata: { source: 'database-full-generic', ragIngestStatus: row.ragIngestStatus || 'unknown' },
+      intent,
+      sourceType: 'database-generic-full'
+    });
+  }
+
+  out.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  return out.slice(0, options.topK || 6);
+}
 async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   const intent = detectGenericIntent(question);
   if (intent === 'fee') return null;
@@ -1892,11 +1962,16 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   const directGenericContexts = academicAdminUploaded
     ? []
     : retrieveGenericUploadedContextsFromIndex(question, { intent, topK: Math.max(12, Number(options.topK || 0) || 0) });
+  const retrievedContexts = Array.isArray(retrieved.contexts) ? retrieved.contexts : [];
+  const fullGenericDbContexts = academicAdminUploaded
+    ? []
+    : await retrieveGenericUploadedContextsFromDb(question, [...directGenericContexts, ...retrievedContexts], { intent, topK: 6 });
   const contexts = [
     ...fullAcademicDbContexts,
+    ...fullGenericDbContexts,
     ...directAcademicContexts,
     ...directGenericContexts,
-    ...(Array.isArray(retrieved.contexts) ? retrieved.contexts : [])
+    ...retrievedContexts
   ];
   if (!contexts.length) return null;
 
@@ -8684,6 +8759,10 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
+
 
 
 
