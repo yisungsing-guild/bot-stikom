@@ -7535,16 +7535,18 @@ function isInstitutionVisionMissionQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
   if (!/\b(visi|misi)\b/i.test(q)) return false;
   if (/\b(ukm|himaprodi|himpunan|bem|inbis|inkubator|career center|pusat karier|pusat karir|prodi|program studi)\b/i.test(q)) return false;
-  return /\b(stikom bali|itb stikom|kampus|institut|lembaga)\b/i.test(q) || /^\s*(?:visi|misi)(?:\s+dan\s+misi)?(?:\s+apa)?\s*\??\s*$/i.test(q);
+  return /\b(stikom|stikom bali|itb stikom|kampus|institut|lembaga)\b/i.test(q) || /^\s*(?:visi|misi)(?:\s+dan\s+misi)?(?:\s+apa)?\s*\??\s*$/i.test(q);
 }
 
 function tryInstitutionVisionMissionAnswer(question, indexForQuery) {
   if (!isInstitutionVisionMissionQuestion(question)) return null;
   const index = Array.isArray(indexForQuery) ? indexForQuery : [];
   const exclude = /\b(inkubator|inbis|ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|bem|mapala|jcos|ksl|rade|basket|esport|paskamras|pasukan\s+keamanan|keamanan\s+acara|voice of stikom|student exchange|gccp)\b/i;
+  const asksMission = /\bmisi\b/i.test(String(question || ''));
+  const asksVision = /\bvisi\b/i.test(String(question || ''));
   const candidates = index
-    .map((item) => String(item && item.chunk ? item.chunk : '').trim())
-    .filter((chunk) => chunk && /\bvisi\s*(?:[::]|\r?\n)/i.test(chunk) && /\bmisi\s*(?:[::]|\r?\n)/i.test(chunk) && /\b(stikom bali|itb stikom|institut teknologi dan bisnis)\b/i.test(chunk) && !exclude.test(chunk) && !/\b(goes to school|unlock potential|sma\/?smk|latar belakang)\b/i.test(chunk));
+    .map((item) => String(item && (item.chunk || item.text || item.content) ? (item.chunk || item.text || item.content) : '').trim())
+    .filter((chunk) => chunk && /\bvisi\s*(?:[::]|\r?\n)/i.test(chunk) && (!asksMission || /\bmisi\s*(?:[::]|\r?\n)/i.test(chunk)) && /\b(stikom bali|itb stikom|institut teknologi dan bisnis)\b/i.test(chunk) && !exclude.test(chunk) && !/\b(goes to school|unlock potential|sma\/?smk|latar belakang)\b/i.test(chunk));
 
   for (const chunk of candidates) {
     const compact = cleanUserVisibleRagAnswerText(chunk).replace(/\s+/g, ' ').trim();
@@ -7554,9 +7556,9 @@ function tryInstitutionVisionMissionAnswer(question, indexForQuery) {
     if (!vision) continue;
     const visionText = String(vision[1] || '').trim();
     if (/\b(acara|panitia|undangan|peserta|anggota|organisasi|ukm|himpunan|pengurus)\b/i.test(visionText)) continue;
-    const lines = ['Berikut visi/misi ITB STIKOM Bali yang saya temukan pada data tersedia:'];
+    const lines = [asksVision && !asksMission ? 'Berikut visi ITB STIKOM Bali yang saya temukan pada data tersedia:' : 'Berikut visi/misi ITB STIKOM Bali yang saya temukan pada data tersedia:'];
     if (vision && vision[1]) lines.push('', `Visi: ${vision[1].replace(/[\u201d"]+$/g, '').trim()}`);
-    if (mission && mission[1]) {
+    if (asksMission && mission && mission[1]) {
       const cleanedMission = mission[1]
         .replace(/\b(?:tujuan|struktur organisasi|profil|sejarah|kontak)\b[\s\S]*$/i, '')
         .replace(/\s*(?:\d+\.|\u2022|[;-])\s*/g, '\n- ')
@@ -7572,7 +7574,7 @@ function tryInstitutionVisionMissionAnswer(question, indexForQuery) {
   }
 
   return {
-    answer: 'Maaf, Kak. Saya belum menemukan teks visi dan misi resmi ITB STIKOM Bali secara lengkap pada data yang tersedia, jadi saya tidak mau mengarang. Untuk teks resmi terbaru, kakak sebaiknya konfirmasi ke admin kampus atau kanal resmi ITB STIKOM Bali.',
+    answer: asksVision && !asksMission ? 'Maaf, Kak. Saya belum menemukan teks visi resmi ITB STIKOM Bali yang cukup aman pada data yang tersedia, jadi saya tidak mau mengarang. Untuk teks resmi terbaru, kakak sebaiknya konfirmasi ke admin kampus atau kanal resmi ITB STIKOM Bali.' : 'Maaf, Kak. Saya belum menemukan teks visi dan misi resmi ITB STIKOM Bali secara lengkap pada data yang tersedia, jadi saya tidak mau mengarang. Untuk teks resmi terbaru, kakak sebaiknya konfirmasi ke admin kampus atau kanal resmi ITB STIKOM Bali.',
     source: 'semantic-rag-institution-vision-mission',
     frameSource: 'semantic-rag-institution-vision-mission'
   };
@@ -8628,6 +8630,14 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, earlySupportResult, resultCacheKey);
   }
 
+  if (!strictDocumentOnly && isInstitutionVisionMissionQuestion(question)) {
+    const institutionVisionMission = tryInstitutionVisionMissionAnswer(question, getCachedSemanticIndex());
+    if (institutionVisionMission && institutionVisionMission.answer) {
+      const builtInstitutionVisionMission = buildDeterministicResponse(question, 'semantic-rag-institution-vision-mission', institutionVisionMission, { routeStage: 'pre-ai-institution-vision-mission' });
+      return await finalizeSemanticResult(question, builtInstitutionVisionMission, resultCacheKey);
+    }
+  }
+
   const preAiUploadedTraining = strictDocumentOnly ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
   if (preAiUploadedTraining && preAiUploadedTraining.answer) {
     return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
@@ -8699,10 +8709,6 @@ async function querySemanticRag(question, options = {}) {
       return response;
     }
     await getActiveTrainingDataFromDb();
-    const localUploadedTraining = await tryLocalUploadedTrainingGenericAnswer(question, options);
-    if (localUploadedTraining && localUploadedTraining.answer) {
-      return await finalizeSemanticResult(question, localUploadedTraining, resultCacheKey);
-    }
     if (isInstitutionVisionMissionQuestion(question)) {
       try {
         const localRetrieved = await retrieveSemanticContexts([question], { topK: options.topK, question, intent: detectGenericIntent(question) });
@@ -8715,6 +8721,10 @@ async function querySemanticRag(question, options = {}) {
       } catch (e) {
         logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] no-ai local RAG fallback failed');
       }
+    }
+    const localUploadedTraining = await tryLocalUploadedTrainingGenericAnswer(question, options);
+    if (localUploadedTraining && localUploadedTraining.answer) {
+      return await finalizeSemanticResult(question, localUploadedTraining, resultCacheKey);
     }
     const fallbackResult = runDeterministicHandlers(question, DETERMINISTIC_HANDLERS, options, [question], { routeStage: 'fallback-no-ai' });
     if (fallbackResult) {
