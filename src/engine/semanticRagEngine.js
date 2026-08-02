@@ -7533,48 +7533,133 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
 
 function isInstitutionVisionMissionQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
-  if (!/\b(visi|misi)\b/i.test(q)) return false;
+  if (!/\b(?:visi|misi)(?:\s*nya|nya)?\b/i.test(q)) return false;
   if (/\b(ukm|himaprodi|himpunan|bem|inbis|inkubator|career center|pusat karier|pusat karir|prodi|program studi)\b/i.test(q)) return false;
   return /\b(stikom|stikom bali|itb stikom|kampus|institut|lembaga)\b/i.test(q) || /^\s*(?:visi|misi)(?:\s+dan\s+misi)?(?:\s+apa)?\s*\??\s*$/i.test(q);
 }
 
 function tryInstitutionVisionMissionAnswer(question, indexForQuery) {
   if (!isInstitutionVisionMissionQuestion(question)) return null;
+  const rawQuestion = String(question || '');
+  const asksMission = /\bmisi(?:\s*nya|nya)?\b/i.test(rawQuestion);
+  const asksVision = /\bvisi(?:\s*nya|nya)?\b/i.test(rawQuestion);
+  const wantsOnlyMission = asksMission && !asksVision;
+  const wantsOnlyVision = asksVision && !asksMission;
+  const wantsBoth = asksVision && asksMission;
   const index = Array.isArray(indexForQuery) ? indexForQuery : [];
-  const exclude = /\b(inkubator|inbis|ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|bem|mapala|jcos|ksl|rade|basket|esport|paskamras|pasukan\s+keamanan|keamanan\s+acara|voice of stikom|student exchange|gccp)\b/i;
-  const asksMission = /\bmisi\b/i.test(String(question || ''));
-  const asksVision = /\bvisi\b/i.test(String(question || ''));
+  const exclude = /\b(inkubator|inbis|ukm|unit\s+kegiatan\s+mahasiswa|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|bem|mapala|jcos|ksl|rade|basket|e-?sport|paskamras|pasukan\s+keamanan|keamanan\s+acara|voice\s+of\s+stikom|student\s+exchange|gccp|goes\s+to\s+school|unlock\s+potential|sma\/?smk|latar\s+belakang|moslem\s+community|mcos|u2m|paskamras|athena)\b/i;
+  const institution = /\b(stikom bali|itb\s*stikom|institut teknologi dan bisnis(?:\s*\(itb\))?\s*stikom bali|visi\s*&\s*misi\s+institut)\b/i;
+  const getText = (item) => String(item && (item.chunk || item.text || item.content) ? (item.chunk || item.text || item.content) : '').trim();
+  const getFilename = (item) => String(item && (item.filename || item.source || item.title || '') ? (item.filename || item.source || item.title || '') : '').trim();
   const candidates = index
-    .map((item) => String(item && (item.chunk || item.text || item.content) ? (item.chunk || item.text || item.content) : '').trim())
-    .filter((chunk) => chunk && /\bvisi\s*(?:[::]|\r?\n)/i.test(chunk) && (!asksMission || /\bmisi\s*(?:[::]|\r?\n)/i.test(chunk)) && /\b(stikom bali|itb stikom|institut teknologi dan bisnis)\b/i.test(chunk) && !exclude.test(chunk) && !/\b(goes to school|unlock potential|sma\/?smk|latar belakang)\b/i.test(chunk));
+    .map((item) => ({ text: getText(item), filename: getFilename(item) }))
+    .filter((item) => item.text)
+    .filter((item) => institution.test(item.text) && !exclude.test(`${item.filename} ${item.text}`))
+    .filter((item) => {
+      const chunk = item.text;
+      const hasVision = /\bvisi\b/i.test(chunk);
+      const hasMission = /\bmisi\b/i.test(chunk);
+      if (wantsOnlyMission) return hasMission;
+      if (wantsOnlyVision) return hasVision;
+      return hasVision || hasMission;
+    });
 
-  for (const chunk of candidates) {
-    const compact = cleanUserVisibleRagAnswerText(chunk).replace(/\s+/g, ' ').trim();
-    const parseText = compact.replace(/\bVisi\s*&\s*Misi\s+Institut\b/ig, '');
-    const vision = /\bvisi\s*[::]?\s*["']?([^"'.]{20,280}(?:\.|$))/i.exec(parseText);
-    const mission = /\bmisi\s*[::]?\s*([\s\S]{20,700})/i.exec(parseText);
-    if (!vision) continue;
-    const visionText = String(vision[1] || '').trim();
-    if (/\b(acara|panitia|undangan|peserta|anggota|organisasi|ukm|himpunan|pengurus)\b/i.test(visionText)) continue;
-    const lines = [asksVision && !asksMission ? 'Berikut visi ITB STIKOM Bali yang saya temukan pada data tersedia:' : 'Berikut visi/misi ITB STIKOM Bali yang saya temukan pada data tersedia:'];
-    if (vision && vision[1]) lines.push('', `Visi: ${vision[1].replace(/[\u201d"]+$/g, '').trim()}`);
-    if (asksMission && mission && mission[1]) {
-      const cleanedMission = mission[1]
-        .replace(/\b(?:tujuan|struktur organisasi|profil|sejarah|kontak)\b[\s\S]*$/i, '')
-        .replace(/\s*(?:\d+\.|\u2022|[;-])\s*/g, '\n- ')
-        .trim()
-        .slice(0, 700);
-      if (cleanedMission) lines.push('', `Misi:\n${cleanedMission.startsWith('- ') ? cleanedMission : `- ${cleanedMission}`}`);
+  const cleanSectionValue = (value) => String(value || '')
+    .replace(/[\u201c\u201d"]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/^[:\-\s]+/, '')
+    .replace(/\s*[.;,]?\s*$/, '.')
+    .trim();
+
+  const isStopLine = (line, currentLabel) => {
+    const l = String(line || '').trim();
+    if (!l) return false;
+    const stop = /^(?:\d+[.)]\s*)?(?:visi|misi|tujuan|sasaran|sejarah|profil|identitas|struktur|kontak|alamat|kegiatan|program|makna|catatan)\b/i;
+    if (!stop.test(l)) return false;
+    if (currentLabel === 'visi' && /^(?:\d+[.)]\s*)?visi\b/i.test(l)) return false;
+    if (currentLabel === 'misi' && /^(?:\d+[.)]\s*)?misi\b/i.test(l)) return false;
+    return true;
+  };
+
+  const extractSection = (text, label) => {
+    const normalized = cleanUserVisibleRagAnswerText(text).replace(/\r/g, '\n');
+    const lines = normalized.split('\n').map((line) => line.trim()).filter(Boolean);
+    const labelRe = label === 'visi'
+      ? /^(?:\d+[.)]\s*)?visi(?:\s*&\s*misi|\s+dan\s+misi)?\s*[::-]?\s*(.*)$/i
+      : /^(?:\d+[.)]\s*)?misi\s*[::-]?\s*(.*)$/i;
+
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i].match(labelRe);
+      if (!match) continue;
+      const parts = [];
+      const inline = String(match[1] || '').trim();
+      if (inline && !/^(?:visi|misi)$/i.test(inline)) parts.push(inline);
+      for (let j = i + 1; j < lines.length; j++) {
+        const next = lines[j];
+        if (isStopLine(next, label)) break;
+        parts.push(next);
+        if (parts.join(' ').length > (label === 'misi' ? 900 : 350)) break;
+      }
+      const value = cleanSectionValue(parts.join(' '));
+      if (value && value.length >= 20 && !/\b(acara|panitia|undangan|peserta|anggota|organisasi|ukm|himpunan|pengurus)\b/i.test(value)) return value;
     }
+
+    const compact = normalized.replace(/\s+/g, ' ').trim();
+    const directRe = label === 'visi'
+      ? /\bvisi\b\s*[::-]?\s*[\u201c\u201d"']?(.+?)(?=\s+\b(?:misi|tujuan|sasaran|sejarah|profil|identitas|struktur|kontak)\b|$)/i
+      : /\bmisi\b\s*[::-]?\s*(.+?)(?=\s+\b(?:visi|tujuan|sasaran|sejarah|profil|identitas|struktur|kontak)\b|$)/i;
+    const direct = compact.match(directRe);
+    if (direct && direct[1]) {
+      const value = cleanSectionValue(direct[1]);
+      if (value && value.length >= 20 && !/\b(acara|panitia|undangan|peserta|anggota|organisasi|ukm|himpunan|pengurus)\b/i.test(value)) return value;
+    }
+    return '';
+  };
+
+  let visionText = '';
+  let missionText = '';
+  for (const chunk of candidates) {
+    if (!visionText && !wantsOnlyMission) visionText = extractSection(chunk, 'visi');
+    if (!missionText && !wantsOnlyVision) missionText = extractSection(chunk, 'misi');
+    if ((wantsOnlyVision && visionText) || (wantsOnlyMission && missionText) || (wantsBoth && visionText && missionText)) break;
+  }
+
+  if (wantsOnlyMission && !missionText) {
     return {
-      answer: lines.join('\n'),
+      answer: 'Maaf, Kak. Saya belum menemukan teks misi resmi ITB STIKOM Bali yang cukup aman pada data yang tersedia, jadi saya tidak mau mengarang. Untuk teks resmi terbaru, kakak sebaiknya konfirmasi ke admin kampus atau kanal resmi ITB STIKOM Bali.',
+      source: 'semantic-rag-institution-vision-mission',
+      frameSource: 'semantic-rag-institution-vision-mission'
+    };
+  }
+  if (wantsOnlyVision && !visionText) {
+    return {
+      answer: 'Maaf, Kak. Saya belum menemukan teks visi resmi ITB STIKOM Bali yang cukup aman pada data yang tersedia, jadi saya tidak mau mengarang. Untuk teks resmi terbaru, kakak sebaiknya konfirmasi ke admin kampus atau kanal resmi ITB STIKOM Bali.',
+      source: 'semantic-rag-institution-vision-mission',
+      frameSource: 'semantic-rag-institution-vision-mission'
+    };
+  }
+  if (wantsBoth && (!visionText || !missionText)) {
+    return {
+      answer: 'Maaf, Kak. Saya belum menemukan teks visi dan misi resmi ITB STIKOM Bali secara lengkap pada data yang tersedia, jadi saya tidak mau mengarang. Untuk teks resmi terbaru, kakak sebaiknya konfirmasi ke admin kampus atau kanal resmi ITB STIKOM Bali.',
       source: 'semantic-rag-institution-vision-mission',
       frameSource: 'semantic-rag-institution-vision-mission'
     };
   }
 
+  const lines = [];
+  if (wantsOnlyMission) {
+    lines.push('Baik, Kak. Berikut misi ITB STIKOM Bali dari data yang tersedia:', '', 'Misi:');
+    lines.push(...missionText.split(/\s*(?:\d+[.)]|;| - )\s*/).map(cleanSectionValue).filter(Boolean).map((item) => `- ${item}`));
+  } else if (wantsOnlyVision) {
+    lines.push('Baik, Kak. Berikut visi ITB STIKOM Bali dari data yang tersedia:', '', 'Visi:', `- ${visionText}`);
+  } else {
+    lines.push('Baik, Kak. Berikut visi dan misi ITB STIKOM Bali dari data yang tersedia:');
+    if (visionText) lines.push('', 'Visi:', `- ${visionText}`);
+    if (missionText) lines.push('', 'Misi:', ...missionText.split(/\s*(?:\d+[.)]|;| - )\s*/).map(cleanSectionValue).filter(Boolean).map((item) => `- ${item}`));
+  }
+
   return {
-    answer: asksVision && !asksMission ? 'Maaf, Kak. Saya belum menemukan teks visi resmi ITB STIKOM Bali yang cukup aman pada data yang tersedia, jadi saya tidak mau mengarang. Untuk teks resmi terbaru, kakak sebaiknya konfirmasi ke admin kampus atau kanal resmi ITB STIKOM Bali.' : 'Maaf, Kak. Saya belum menemukan teks visi dan misi resmi ITB STIKOM Bali secara lengkap pada data yang tersedia, jadi saya tidak mau mengarang. Untuk teks resmi terbaru, kakak sebaiknya konfirmasi ke admin kampus atau kanal resmi ITB STIKOM Bali.',
+    answer: lines.join('\n').trim(),
     source: 'semantic-rag-institution-vision-mission',
     frameSource: 'semantic-rag-institution-vision-mission'
   };
