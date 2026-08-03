@@ -1161,6 +1161,15 @@ function hasSemanticFeeSignal(question) {
 function refineSemanticIntent(intent, entities, question = '') {
   const current = SEMANTIC_INTENTS.has(intent) ? intent : 'unknown';
   const feeScope = entityText(entities, ['fee_scope', 'scope', 'component']).toLowerCase();
+  const q = String(question || '').toLowerCase();
+  const asksDefinitionShape = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|jelaskan|definisi|maksud(?:nya)?)\b/.test(q);
+  const mentionsProgramKey = /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi|dkv|desain\s+komunikasi\s+visual)\b/.test(q);
+  if (asksDefinitionShape && mentionsProgramKey && ['program_recommendation', 'career', 'program_list', 'program_comparison', 'unknown'].includes(current)) {
+    return 'program_definition';
+  }
+  if (/\b(double\s*degree|dual\s*degree|dd)\b/.test(q) && !hasSemanticFeeSignal(question)) {
+    return 'dual_degree';
+  }
   if (current === 'dual_degree' && hasSemanticFeeSignal(question)) {
     return /\b(pendaftaran|daftar|application)\b/.test(feeScope) || /\bbiaya\s+pendaftaran|pendaftaran\b/i.test(String(question || ''))
       ? 'registration_fee'
@@ -2988,7 +2997,7 @@ function trySmallTalkAnswer(question) {
       answer: 'Terima kasih, Kak. Saya siap bantu kalau ada yang ingin ditanyakan seputar ITB STIKOM Bali.'
     };
   }
-  if (/\b(terima\s*(?:kasih|ksih|ksh)|terimakasih|makasih|mksh|mksih|thanks|thank\s+you|thx)\b/i.test(normalized)) {
+  if (/\b(?:baik\s+)?(?:terima\s*(?:kasih|ksih|ksh)|terimakasih|makasih|mksh|mksih|thanks|thank\s+you|thx)\b/i.test(normalized)) {
     return {
       answer: 'Sama-sama, Kak. Kalau ada yang ingin ditanyakan lagi seputar ITB STIKOM Bali, saya siap bantu.'
     };
@@ -4158,17 +4167,17 @@ function tryContactLecturerAnswer(question) {
 
 function tryGraduationRegistrationAnswer(question) {
   const q = String(question || '').toLowerCase();
-  // Must explicitly mention wisuda to avoid matching general registration
+  // Must explicitly mention wisuda or yudisium to avoid matching general registration
   if (!/\b(wisuda|yudisium)\b/i.test(q)) {
     return null;
   }
   return {
     answer: [
-      'Untuk pendaftaran wisuda, kakak perlu menghubungi pihak akademik atau BAAK.',
+      'Untuk pendaftaran yudisium atau wisuda, kakak perlu menghubungi pihak akademik atau BAAK.',
       '',
-      'Proses pendaftaran wisuda biasanya diurus melalui bagian akademik kampus.',
+      'Proses pendaftaran yudisium/ wisuda biasanya diurus melalui bagian akademik kampus.',
       '',
-      'Kakak bisa menghubungi BAAK untuk informasi lebih lanjut mengenai persyaratan dan jadwal wisuda.'
+      'Kakak bisa menghubungi BAAK untuk informasi lebih lanjut mengenai persyaratan dan jadwal yudisium atau wisuda.'
     ].join('\n')
   };
 }
@@ -4908,6 +4917,7 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
 function tryTrainingSpecificAnswer(question, indexForQuery) {
   const q = String(question || '');
   if (/\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|pusat\s+karir|karier|karir|lowongan|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study|konsultasi\s+karier|inkubator|inbis|incubator|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|softskill|soft\s*skill|hi-?think|hithink|gccp|gcpp|bccp|student\s*exchange|short\s*course|kuliah\s+sambil\s+kerja|magang\s+berbayar)\b/i.test(q)) return null;
+  if (/\b(?:double\s*degree|dual\s*degree|dkv|desain\s+komunikasi\s+visual|desain\s+visual|visual\s+branding|illustration|utb|dnui|help\s+university)\b/i.test(q)) return null;
   // Allow training-specific answers to be considered for all queries.
   // Earlier code blocked UKM/ormawa queries explicitly which prevented
   // training-indexed UKM profiles and FAQ answers from being used.
@@ -8134,7 +8144,8 @@ function buildDeterministicResponse(originalQuestion, source, result, debugExtra
 }
 
 function runDeterministicHandlers(originalQuestion, handlers, options = {}, variants = [], debugExtra = {}) {
-  const questions = uniqueList([...(Array.isArray(variants) ? variants : []), originalQuestion], 8);
+  const trimmedOriginal = String(originalQuestion || '').trim();
+  const questions = uniqueList([trimmedOriginal, ...(Array.isArray(variants) ? variants : [])], 8);
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   if (debugTrace) {
     console.log('[TRACE runDeterministicHandlers] START', {
@@ -8592,9 +8603,11 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const client = options.client || getClient();
   const localMismatch = isMeaningMismatchAnswer(question, result.answer, source);
   const explicitFeeQuestion = hasExplicitFeeQuestionSignal(question);
+  const explicitDualDegreeQuestion = /\b(double\s*degree|dual\s*degree|dd)\b/i.test(question);
   const feeSourceSafe = /(?:semantic-rag-fee-detail|semantic-rag-registration-fee|semantic-rag-contextual-fee|semantic-rag-fee-general|semantic-rag-fee-comparison|semantic-rag-finance-fallback|semantic-rag-clarify)/i.test(source);
   const explicitFeeSafe = explicitFeeQuestion && (feeSourceSafe || /(?:biaya|harga|ukt|dpp|tarif|pembayaran|spp|pay|fee)/i.test(source));
-  const skipLlmVerifier = structuredSemanticSafe || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe);
+  const dualDegreeSourceSafe = explicitDualDegreeQuestion && /semantic-rag-dual-degree/i.test(source);
+  const skipLlmVerifier = structuredSemanticSafe || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
   const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
@@ -8760,12 +8773,12 @@ async function querySemanticRag(question, options = {}) {
     };
     return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', result, { routeStage: 'pre-ai-support-career-event' }), resultCacheKey);
   }
-  const abbreviationClarification = strictDocumentOnly || client ? null : tryAmbiguousAbbreviationClarificationAnswer(question);
+  const abbreviationClarification = strictDocumentOnly ? null : tryAmbiguousAbbreviationClarificationAnswer(question);
   if (abbreviationClarification && abbreviationClarification.answer) {
     const response = buildDeterministicResponse(question, 'semantic-rag-abbreviation-clarification', abbreviationClarification, { routeStage: 'pre-ai-abbreviation-clarification' });
     return await finalizeSemanticResult(question, response, resultCacheKey);
   }
-  const shortDefinitionResponse = strictDocumentOnly || client ? null : tryShortProgramDefinitionDirectAnswer(question);
+  const shortDefinitionResponse = strictDocumentOnly ? null : tryShortProgramDefinitionDirectAnswer(question);
   if (shortDefinitionResponse) {
     return await finalizeSemanticResult(question, shortDefinitionResponse, resultCacheKey);
   }
@@ -8802,11 +8815,6 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
-  const preAiUploadedTraining = strictDocumentOnly || client ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
-  if (preAiUploadedTraining && preAiUploadedTraining.answer) {
-    return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
-  }
-
   await getActiveTrainingDataFromDb();
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
@@ -8822,6 +8830,18 @@ async function querySemanticRag(question, options = {}) {
       'semantic-rag-certification': PRE_AI_HANDLER_SOURCES.has('semantic-rag-certification')
     });
   }
+
+  const preAiUploadedTraining = strictDocumentOnly || client ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
+  if (preAiUploadedTraining && preAiUploadedTraining.answer) {
+    if (debugTrace) {
+      console.log('[TRACE PRE_AI] CACHING and RETURNING preAiUploadedTraining:', {
+        source: preAiUploadedTraining.source,
+        answerPreview: String(preAiUploadedTraining.answer).slice(0, 100)
+      });
+    }
+    return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
+  }
+
   let preAiResult = null;
   if (!strictDocumentOnly && !client && !shouldDeferDeterministicToSemantic) {
     preAiResult = runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });

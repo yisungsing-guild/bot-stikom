@@ -734,6 +734,10 @@ function tryProgramRecommendationAnswer(question) {
   if (!q.trim()) return null;
   if (/\b(?:in(?:cu|ku)bator(?:\s+bisnis)?|inbis)\b/i.test(q)) return null;
   if (/\b(beda|bedanya|bedain|perbedaan|bandingkan|perbandingan|apa\s+yang\s+membedakan|mana\s+bedanya)\b/.test(q)) return null;
+  if (/\b(?:dkv|desain\s+komunikasi\s+visual|desain\s+visual|visual\s+branding|illustration)\b/.test(q)) {
+    const fitAnswer = buildProgramFitAnswer(question);
+    if (fitAnswer) return { ...fitAnswer, frameSource: 'semantic-rag-program-recommendation' };
+  }
   const centralFitAnswer = buildProgramFitAnswer(question);
 
   const asksRecommendation = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|jurusan\s+yang\s+mana|prodi\s+yang\s+mana|program\s+yang\s+mana|masuk\s+jurusan\s+apa|ambil\s+jurusan\s+apa)\b/.test(q);
@@ -1650,6 +1654,13 @@ function tryDualDegreeAnswer(question) {
     '- DNUI - Dalian Neusoft University of Information, China: Prodi di STIKOM Bali adalah Bisnis Digital; jurusan di DNUI belum tercantum pada data yang tersedia.',
     '- HELP University, Malaysia: Prodi di STIKOM Bali adalah Sistem Informasi; jurusan di HELP belum tercantum pada data yang tersedia.'
   ];
+  const internationalLines = [
+    '- DNUI - Dalian Neusoft University of Information, China: Prodi di STIKOM Bali adalah Bisnis Digital; jurusan di DNUI belum tercantum pada data yang tersedia.',
+    '- HELP University, Malaysia: Prodi di STIKOM Bali adalah Sistem Informasi; jurusan di HELP belum tercantum pada data yang tersedia.'
+  ];
+  const nationalLines = [
+    '- UTB - Universitas Teknologi Bandung: Prodi di STIKOM Bali adalah Bisnis Digital; jurusan di UTB adalah DKV (Desain Komunikasi Visual).'
+  ];
   const asksDnui = /\b(dnui|dalian\s+neusoft)\b/.test(q);
   const asksHelp = /\b(help\s+university|help\b.*malaysia|help)\b/.test(q);
 
@@ -1759,8 +1770,7 @@ function tryDualDegreeAnswer(question) {
       answer: [
         'Ya, ada program Double Degree internasional di ITB STIKOM Bali:',
         '',
-        '- DNUI - Dalian Neusoft University of Information, China',
-        '- HELP University, Malaysia',
+        ...internationalLines,
         '',
         'Pada data yang tersedia, DNUI terkait Prodi Bisnis Digital di STIKOM Bali, sedangkan HELP University terkait Prodi Sistem Informasi di STIKOM Bali. Nama jurusan di sisi DNUI/HELP belum tercantum, jadi saya tidak menebak di luar data.'
       ].join('\n')
@@ -1772,7 +1782,7 @@ function tryDualDegreeAnswer(question) {
       answer: [
         'Ya, ada program Double Degree nasional di ITB STIKOM Bali:',
         '',
-        '- UTB - Universitas Teknologi Bandung',
+        ...nationalLines,
         '',
         'Untuk sisi STIKOM Bali, prodi yang terkait adalah Bisnis Digital. Untuk sisi UTB, jurusan yang diambil adalah DKV (Desain Komunikasi Visual).'
       ].join('\n')
@@ -1785,10 +1795,14 @@ function tryDualDegreeAnswer(question) {
         ? 'Double Degree adalah program kerja sama kuliah dengan kampus mitra, sehingga mahasiswa mengikuti skema akademik yang melibatkan ITB STIKOM Bali dan universitas partner.'
         : 'Ya, ada program Double Degree di ITB STIKOM Bali.',
       '',
-      'Pilihan yang tersedia:',
-      ...pairLines,
+      asksInternational
+        ? 'Pilihan internasional yang tersedia:'
+        : (asksNational ? 'Pilihan nasional yang tersedia:' : 'Pilihan yang tersedia:'),
+      ...(asksInternational ? internationalLines : (asksNational ? nationalLines : pairLines)),
       '',
-      'Kalau kakak mau, saya bisa jelaskan detail program UTB, DNUI, atau HELP.'
+      asksInternational
+        ? 'Kalau kakak mau, saya bisa jelaskan detail program DNUI atau HELP.'
+        : (asksNational ? 'Kalau kakak mau, saya bisa jelaskan detail program UTB.' : 'Kalau kakak mau, saya bisa jelaskan detail program UTB, DNUI, atau HELP.')
     ].join('\n')
   };
 }
