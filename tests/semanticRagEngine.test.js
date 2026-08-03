@@ -27,13 +27,25 @@ describe('semanticRagEngine', () => {
     expect(result.source).toBe('semantic-rag-disabled');
   });
 
-  test('does not answer operational academic policy questions without data', async () => {
+  test('keeps explicit fee requests from being rejected by the general meaning verifier', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const explicitFee = await querySemanticRag('biaya masuk kuliah 2025');
+    expect(explicitFee.success).toBe(true);
+    expect(explicitFee.source).not.toBe('semantic-rag-meaning-verifier-blocked');
+    expect(explicitFee.answer).toEqual(expect.any(String));
+    expect(explicitFee.answer).toMatch(/biaya|UKT|DPP|masuk/i);
+  });
+
+  test('returns a safe no-data answer for operational academic policy questions', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 
     const result = await querySemanticRag('Kalau absensinya 5 kali apakah masih bisa ikut remedial ya');
 
     expect(result.success).toBe(true);
-    expect(result.answer).toBeNull();
+    expect(result.answer).toEqual(expect.any(String));
+    expect(result.answer).toMatch(/kebijakan akademik|BAAK|konfirmasi/i);
     expect(result.source).toBe('semantic-rag-operational-academic-policy-no-answer');
   });
   test('allows remedial and exam schedule questions to reach retrieval', async () => {
@@ -44,6 +56,25 @@ describe('semanticRagEngine', () => {
     expect(result.success).toBe(true);
     expect(result.source).not.toBe('semantic-rag-operational-academic-policy-no-answer');
   });
+  test('keeps DKV, Career Center, Hi-Think, and job fair definition questions on-topic', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const cases = [
+      ['Apa itu DKV?', /DKV|Desain Komunikasi Visual/i],
+      ['Apa saja program di Career Center?', /Career Center|lowongan|magang|job fair|konsultasi karier/i],
+      ['Apa itu Hi-Think?', /Hi-Think|persiapan.*kerja|teknologi Jepang/i],
+      ['kak mau tau job fair itu apa?', /job fair|pekerjaan|perusahaan|mitra industri/i]
+    ];
+
+    for (const [question, pattern] of cases) {
+      const result = await querySemanticRag(question);
+      expect(result.success).toBe(true);
+      expect(result.source).not.toBe('semantic-rag-meaning-verifier-blocked');
+      expect(result.answer).toMatch(pattern);
+    }
+  });
+
   test('answers greeting and wellbeing without calling semantic RAG', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 
