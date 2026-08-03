@@ -232,6 +232,32 @@ describe('evidenceSelector', () => {
     expect(answerability.answerable).toBe(true);
   });
 
+  test('definition-like questions are answerable from document evidence without requiring partner names', () => {
+    const selected = selectEvidenceFromContexts({
+      question: 'Apa itu Student Exchange di ITB STIKOM Bali?',
+      contexts: [{ chunk: 'Student Exchange adalah program pertukaran mahasiswa yang memberikan kesempatan belajar di kampus luar negeri dalam periode tertentu.', filename: 'Apa itu Student Exchange di ITB STIKOM Bali.docx' }],
+      intent: 'international_program'
+    });
+    const answerability = evaluateEvidenceAnswerability({ question: 'Apa itu Student Exchange di ITB STIKOM Bali?', selectedEvidence: selected, intent: 'international_program' });
+
+    expect(selected).toHaveLength(1);
+    expect(answerability.answerable).toBe(true);
+    expect(answerability.reason).toBe('definition_like_question_with_evidence');
+  });
+
+  test('generic definition questions are answerable from descriptive evidence without special-case keywords', () => {
+    const selected = selectEvidenceFromContexts({
+      question: 'Apa itu Toga?',
+      contexts: [{ chunk: 'Toga adalah gelar akademik yang diberikan kepada lulusan setelah menyelesaikan studi.', filename: 'apa itu toga.txt' }],
+      intent: 'general'
+    });
+    const answerability = evaluateEvidenceAnswerability({ question: 'Apa itu Toga?', selectedEvidence: selected, intent: 'general' });
+
+    expect(selected).toHaveLength(1);
+    expect(answerability.answerable).toBe(true);
+    expect(answerability.reason).toBe('definition_like_question_with_evidence');
+  });
+
   test('final selected context excludes raw chunk markers and rejected legal clauses', () => {
     const selected = selectEvidenceFromContexts({ question: 'Apa isi Pasal 9 tentang force majeure?', contexts: [{ chunk: legalTemplate, filename: 'template-pks.docx', trainingId: 'pks-1' }], intent: 'legal' });
     const finalContext = buildContextText(selected, { filterAdmin: false });

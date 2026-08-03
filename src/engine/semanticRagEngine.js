@@ -8182,6 +8182,7 @@ function inferQuestionMeaningProfile(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return { intent: 'unknown' };
 
+  if (/\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q) && /\b(?:student\s+exchange|career\s+center|bccp|gccp|toga|ukm|ormawa|program|fasilitas|layanan|beasiswa|kursus|magang|internasional|double\s+degree|dual\s+degree|language\s+learning\s+center|hi[- ]?think)\b/i.test(q)) return { intent: 'definition_question' };
   if (isAcademicAdminUploadedDocQuestion(q, 'requirement') && /\b(syarat|persyaratan|dokumen|berkas|apa\s+saja|ketentuan)\b/i.test(q)) return { intent: 'academic_requirement' };
   if (isAcademicAdminUploadedDocQuestion(q, 'schedule') || isAcademicScheduleLookupQuestion(q)) return { intent: 'academic_schedule' };
   if (/\b(biaya|harga|bayar|ukt|dpp|rincian\s+biaya|biaya\s+kuliah|potongan\s+biaya)\b/i.test(q)) return { intent: 'fee' };
@@ -8232,14 +8233,14 @@ function answerMatchesQuestionMeaning(question, answer, source = '') {
   if (intent === 'program_list') {
     return /\b(sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|s2\s+sistem\s+informasi|double\s+degree|dual\s+degree)\b/i.test(a);
   }
-  if (intent === 'program_definition') {
+  if (intent === 'program_definition' || intent === 'definition_question') {
     const q = String(question || '').toLowerCase();
     if (/\bsi\b|sistem\s+informasi/i.test(q)) return /sistem\s+informasi/i.test(a);
     if (/\bti\b|teknologi\s+informasi/i.test(q)) return /teknologi\s+informasi/i.test(a);
     if (/\bbd\b|bisnis\s+digital/i.test(q)) return /bisnis\s+digital/i.test(a);
     if (/\bsk\b|sistem\s+komputer/i.test(q)) return /sistem\s+komputer/i.test(a);
     if (/\bmi\b|manajemen\s+informatika/i.test(q)) return /manajemen\s+informatika/i.test(a);
-    return /program\s+studi|prodi/i.test(a);
+    return /program\s+studi|prodi|program|fasilitas|layanan|kegiatan|gelar|akademik|mahasiswa|kampus|luar\s+negeri/i.test(a) || /student\s+exchange|career\s+center|gccp|bccp|ukm|ormawa|language\s+learning\s+center|hi[- ]?think/i.test(a);
   }
   if (intent === 'career_readiness') {
     return /\b(career\s*center|pusat\s+karier|karier|karir|soft\s*skill|softskill|magang|lowongan|job\s*fair|campus\s*hiring|hi-?think|konsultasi)\b/i.test(a);
@@ -8410,7 +8411,9 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredProgramDefinitionSafe = isSafeProgramDefinitionAnswer(question, result.answer, source);
   const structuredAbbreviationClarificationSafe = isSafeAbbreviationClarificationAnswer(question, result.answer, source);
   const explicitExternalNoDataSafe = /explicit-external-insufficient-data/i.test(source);
-  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || explicitExternalNoDataSafe;
+  const meaningProfile = inferQuestionMeaningProfile(question);
+  const structuredDefinitionSafe = meaningProfile.intent === 'definition_question' && /semantic-rag-uploaded-training-generic|campus-support-entity|campus-facility/i.test(source);
+  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || explicitExternalNoDataSafe || structuredDefinitionSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,

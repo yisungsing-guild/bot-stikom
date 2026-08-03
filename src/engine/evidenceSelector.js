@@ -455,9 +455,15 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
   const q = String(question || '').trim().toLowerCase();
   const asksShortProgramDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q)
     && /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi)\b/i.test(q);
+  const asksDefinitionLikeQuestion = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q)
+    && (terms.length >= 2 || /\b(?:program|kegiatan|fasilitas|ukm|ormawa|beasiswa|career|center|exchange|double|degree|gccp|bccp|student|gelar|akademik|kampus|mahasiswa|kuliah|internasional|mitra|luar\s+negeri|akreditasi|jadwal|biaya|syarat|persyaratan)\b/i.test(q));
+  const hasEvidenceContent = Boolean(text.trim());
+  const hasSpecificEvidenceTerms = /\b(?:program|kegiatan|fasilitas|ukm|ormawa|beasiswa|career|center|exchange|double|degree|gccp|bccp|student|internasional|mitra|luar\s+negeri|akreditasi|jadwal|biaya|syarat|persyaratan|gelar|akademik|kampus|mahasiswa|kuliah)\b/i.test(text);
+  const keyTerms = terms.filter((term) => term.length >= 3);
+  const hasQuestionTermOverlap = keyTerms.some((term) => text.toLowerCase().includes(term));
 
-  if (asksShortProgramDefinition) {
-    return { answerable: true, reason: 'short_program_definition_direct_answer', missingEvidence: [] };
+  if (asksShortProgramDefinition || (asksDefinitionLikeQuestion && hasEvidenceContent && (hasSpecificEvidenceTerms || hasQuestionTermOverlap))) {
+    return { answerable: true, reason: 'definition_like_question_with_evidence', missingEvidence: [] };
   }
   
   // Allow general intent questions with any evidence to pass through
@@ -483,7 +489,10 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
     missingEvidence.push('concrete_requirements');
   }
   if (detectedIntent === 'international_program' && !/\b(?:GCCP|BCCP|Double\s*Degree|Dual\s*Degree|Student\s+Exchange|UTB|DNUI|HELP|mitra|luar\s+negeri|internasional)\b/i.test(text)) {
-    missingEvidence.push('international_program_name_or_partner');
+    const asksDefinitionLikeQuestion = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q);
+    if (!asksDefinitionLikeQuestion) {
+      missingEvidence.push('international_program_name_or_partner');
+    }
   }
   if (/\bapa\s+saja\b/i.test(String(question || '')) && detectedIntent !== 'legal' && !hasConcreteList(text)) {
     missingEvidence.push('multiple_concrete_items');
