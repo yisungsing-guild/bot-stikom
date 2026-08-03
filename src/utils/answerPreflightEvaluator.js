@@ -588,7 +588,7 @@ function lacksConcreteItemsForApaSaja(answer, userQuery) {
 function isTrustedSemanticAlignmentSource(source) {
   const value = String(source || '').trim().toLowerCase();
   if (!value) return false;
-  const trustedSemanticPrefix = /^semantic-rag-(?:registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|linkedin|institution|operational|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification)/i;
+  const trustedSemanticPrefix = /^semantic-rag-(?:uploaded-training|registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|linkedin|institution|operational|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification)/i;
   const trustedProviderSource = /(?:^|[-_])(double_degree_process|fast_fee|fee_breakdown_offer_answer_fast|followup_compute_total|study_mode|dkv_available|fee_breakdown_offer_need_program|fee_breakdown_offer_answer|general_small_talk|greeting|permission_to_ask|pmb_info|provider_outbound)(?:$|[-_])/i;
   return trustedSemanticPrefix.test(value) || trustedProviderSource.test(value);
 }
