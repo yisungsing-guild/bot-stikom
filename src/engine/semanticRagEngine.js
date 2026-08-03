@@ -5156,16 +5156,17 @@ function buildLanguageLearningAnswer() {
 
 function buildCareerReadinessProgramsAnswer() {
   return [
-    'Untuk mempersiapkan mahasiswa mendapatkan pekerjaan setelah lulus, program/fasilitas yang paling relevan di ITB STIKOM Bali adalah:',
+    'Program atau layanan yang relevan di Career Center ITB STIKOM Bali umumnya mencakup:',
     '',
-    '- Career Center: membantu informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study.',
-    '- Program Pengembangan Softskill: mendukung pembekalan keterampilan kerja dan kesiapan masuk dunia profesional.',
-    '- Magang atau informasi peluang magang: membantu mahasiswa mengenal dunia kerja sebelum lulus.',
-    '- Program Hi-Think: berkaitan dengan persiapan belajar/karier di lingkungan industri teknologi Jepang sesuai data yang tersedia.',
-    '- Magang berbayar di luar negeri: tercatat sebagai program pendukung internasional, tetapi detail teknisnya perlu dikonfirmasi ke admin kampus/unit kerja sama internasional.',
-    '- Program jaminan konsultasi selama 2 tahun setelah lulus: tercatat sebagai dukungan konsultasi setelah lulus.',
+    '- Informasi lowongan kerja dan peluang karier.',
+    '- Informasi magang dan peluang pengalaman kerja.',
+    '- Job fair atau campus hiring jika tersedia di agenda kampus.',
+    '- Konsultasi karier dan bimbingan persiapan melamar pekerjaan.',
+    '- Pembekalan softskill dan keterampilan kerja.',
+    '- Tracer study dan dukungan kesiapan kerja setelah lulus.',
+    '- Program pendukung karier internasional seperti Hi-Think, short course, atau peluang kerja/magang luar negeri sesuai data yang tersedia.',
     '',
-    'Jadi, kalau fokus kakak adalah kesiapan kerja, yang paling utama ditanyakan dulu adalah Career Center, softskill, magang, dan program internasional karier.'
+    'Jadi, kalau kakak menanyakan “apa saja program di Career Center?”, jawabannya yang paling aman adalah layanan di atas, bukan hanya topik yang perlu ditanyakan lagi.'
   ].join('\n');
 }
 function buildCareerSoftskillAnswer() {
@@ -5248,9 +5249,9 @@ function buildPaidOverseasInternshipAnswer() {
 
 function buildHiThinkAnswer() {
   return [
-    'Program Hi-Think adalah program kolaborasi antara ITB STIKOM Bali dengan perusahaan teknologi Hi-Think Jepang.',
+    'Program Hi-Think tercatat sebagai program yang berkaitan dengan persiapan belajar dan karier mahasiswa di lingkungan industri teknologi Jepang.',
     '',
-    'Program ini berkaitan dengan persiapan mahasiswa untuk belajar dan berkarier di lingkungan industri teknologi Jepang, termasuk penguatan kurikulum/kompetensi dan kursus bahasa Jepang sesuai data yang tersedia.',
+    'Dari data yang tersedia, program ini menekankan penguatan kompetensi dan persiapan kerja yang relevan dengan kebutuhan industri teknologi, serta adanya unsur pembelajaran bahasa Jepang yang mendukung kesiapan kerja.',
     '',
     'Untuk detail teknis seperti syarat ikut, jadwal, kuota, biaya, atau alur pendaftaran, kakak sebaiknya konfirmasi ke admin kampus atau pengelola program.'
   ].join('\n');
@@ -5316,6 +5317,41 @@ function buildAcademicScheduleNoDataAnswer(question) {
 
 function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
+  if (/\b(?:dkv|desain\s+komunikasi\s+visual)\b/i.test(q) && /\b(?:apa\s+itu|itu\s+apa|definisi|pengertian|jelaskan|maksud(?:nya)?)\b/i.test(q)) {
+    return {
+      answer: [
+        'DKV adalah singkatan dari Desain Komunikasi Visual.',
+        '',
+        'Bidang ini fokus pada seni visual, komunikasi pesan, branding, dan penyampaian informasi melalui elemen visual seperti layout, warna, tipografi, ilustrasi, dan media digital.',
+        '',
+        'Untuk detail kurikulum atau program resmi yang tersedia di kampus, kakak bisa cek program studi yang relevan atau konfirmasi ke admin PMB supaya tidak keliru.'
+      ].join('\n'),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+  }
+  if (/\bjob\s*fair\b/i.test(q) && /\b(?:apa\s+itu|itu\s+apa|definisi|pengertian|jelaskan|maksud(?:nya)?|kegunaan|manfaat)\b/i.test(q)) {
+    return {
+      answer: [
+        'Job fair adalah kegiatan kampus yang mempertemukan mahasiswa atau alumni dengan perusahaan, instansi, atau mitra industri.',
+        '',
+        'Tujuannya biasanya untuk memperkenalkan peluang kerja, magang, dan karier, sekaligus memberi kesempatan peserta untuk bertanya langsung dengan pihak rekrutmen.',
+        '',
+        'Pada data Career Center yang tersedia, job fair tercantum sebagai salah satu bentuk dukungan karier yang penting, bersama informasi lowongan kerja, magang, campus hiring, konsultasi karier, dan tracer study.',
+        '',
+        'Untuk jadwal, syarat, atau daftar perusahaan yang hadir, kakak sebaiknya cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.'
+      ].join('\n'),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+  }
+  if (/\bcareer\s*center\b/i.test(q) && /\b(?:apa\s+saja|program|layanan|apa\s+itu|itu\s+apa|detail|kegunaan|manfaat)\b/i.test(q)) {
+    return {
+      answer: buildCareerReadinessProgramsAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+  }
   if (/\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier|career)\b/i.test(q)) {
     return {
       answer: buildLinkedInCareerNoDataAnswer(),
@@ -7798,7 +7834,7 @@ function trySafeGeneralCampusFallback(question) {
     return { answer: contextualizeSafeFallback('untuk pendaftaran mahasiswa baru, kakak bisa menanyakan jadwal gelombang, cara daftar, syarat dokumen, biaya, dan kontak PMB. Untuk memastikan status pendaftaran terbaru, kakak bisa konfirmasi ke admin PMB ITB STIKOM Bali.') };
   }
 
-  if (/\b(?:ti|bd|double\s*degree|dkv)\s+(?:brp|berapa)\??$/i.test(q)) {
+  if (/\b(?:ti|bd|double\s*degree|dkv)\s+(?:brp|berapa)\??$/i.test(q) && /\b(?:biaya|harga|ukt|dpp|gelombang|uang\s*pangkal|pmb)\b/i.test(q)) {
     return { answer: contextualizeSafeFallback('kalau maksud kakak adalah biaya, saya bisa bantu cek rincian biaya berdasarkan prodi dan gelombang. Mohon tuliskan prodi lengkap dan gelombangnya, misalnya: biaya Teknologi Informasi Gelombang 1A.') };
   }
 
@@ -8181,6 +8217,23 @@ function shouldPreferTrainingBeforeDeterministic(rewrite) {
   return envFlag('SEMANTIC_RAG_PREFER_TRAINING_FOR_DUAL_DEGREE', true);
 }
 
+function shouldDeferDeterministicBeforeSemantic(question) {
+  const q = String(question || '').trim();
+  if (!q || q.length < 12) return false;
+
+  const directQuestionStarts = /^(?:apa|siapa|kapan|dimana|bagaimana|gimana|berapa|apakah|jelaskan|tolong|minta|info|informasi|bisakah|bisa|apaan|maksud|pengertian|ceritakan|detail)\b/i;
+  const clearDomainSignals = /\b(?:biaya(?:nya)?|harga(?:nya)?|ukt|spp|tarif|daftar|pendaftaran|registrasi|program(?:\s+studi)?|jurusan|beasiswa|prodi|jadwal|kelas|fasilitas|magang|training|sertifikat|syarat|seleksi|kampus|kuliah)\b/i;
+  const slangOrInformalSignals = /\b(?:kalo|gmn|gimana|mau|pengen|sya|aku|min|kak|brp|bgt|bgs|gak|gk|blah|mksd|maksud|yg|nih|dong|yaudah|udah|jd|jdi|cpt|cuma|pake|bkin|bisa|engga|tergantung)\b/i;
+  const multiWordNaturalQuestion = q.split(/\s+/).filter(Boolean).length >= 4;
+  const likelyNaturalQuery = /[a-zA-Z]/.test(q) && (slangOrInformalSignals.test(q) || multiWordNaturalQuestion);
+
+  if (!likelyNaturalQuery) return false;
+  if (directQuestionStarts.test(q) || clearDomainSignals.test(q)) return false;
+
+  const unambiguousShortForm = /^(?:gmn|gimana|bagaimana|apa|berapa|kapan|dimana|siapa|apakah)\s+/i.test(q);
+  return likelyNaturalQuery && !unambiguousShortForm && !clearDomainSignals.test(q);
+}
+
 function hasExplicitFeeQuestionSignal(question) {
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return false;
@@ -8321,6 +8374,15 @@ function answerMatchesQuestionMeaning(question, answer, source = '') {
   }
   if (intent === 'program_definition') {
     const q = String(question || '').toLowerCase();
+    if (/\bdkv\b|desain\s+komunikasi\s+visual/i.test(q)) return /\bdkv\b|desain\s+komunikasi\s+visual/i.test(a);
+    if (/\bhi-?think\b|hithink/i.test(q)) return /\bhi-?think\b|hithink/i.test(a);
+    if (/\bjob\s*fair\b/i.test(q)) return /\bjob\s*fair\b|pameran\s+kerja/i.test(a);
+    if (/\bcareer\s*center\b|pusat\s+karier|pusat\s+karir/i.test(q)) return /\bcareer\s*center\b|pusat\s+karier|pusat\s+karir/i.test(a);
+    if (/\blanguage\s+learning\s+center\b|\bllc\b/i.test(q)) return /\blanguage\s+learning\s+center\b|\bllc\b/i.test(a);
+    if (/\binkubator\s+bisnis\b|\binbis\b/i.test(q)) return /\binkubator\s+bisnis\b|\binbis\b/i.test(a);
+    if (/\bgccp\b|\bshort\s*course\b/i.test(q)) return /\bgccp\b|\bshort\s*course\b/i.test(a);
+    if (/\bstudent\s+exchange\b/i.test(q)) return /\bstudent\s+exchange\b|pertukaran\s+mahasiswa/i.test(a);
+    if (/\bsoft\s*skill\b|softskill/i.test(q)) return /\bsoft\s*skill\b|softskill/i.test(a);
     if (/\bsi\b|sistem\s+informasi/i.test(q)) return /sistem\s+informasi/i.test(a);
     if (/\bti\b|teknologi\s+informasi/i.test(q)) return /teknologi\s+informasi/i.test(a);
     if (/\bbd\b|bisnis\s+digital/i.test(q)) return /bisnis\s+digital/i.test(a);
@@ -8529,11 +8591,14 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
 
   const client = options.client || getClient();
   const localMismatch = isMeaningMismatchAnswer(question, result.answer, source);
-  const skipLlmVerifier = structuredSemanticSafe || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source));
+  const explicitFeeQuestion = hasExplicitFeeQuestionSignal(question);
+  const feeSourceSafe = /(?:semantic-rag-fee-detail|semantic-rag-registration-fee|semantic-rag-contextual-fee|semantic-rag-fee-general|semantic-rag-fee-comparison|semantic-rag-finance-fallback|semantic-rag-clarify)/i.test(source);
+  const explicitFeeSafe = explicitFeeQuestion && (feeSourceSafe || /(?:biaya|harga|ukt|dpp|tarif|pembayaran|spp|pay|fee)/i.test(source));
+  const skipLlmVerifier = structuredSemanticSafe || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe);
   const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
-  if (localMismatch || llmMismatch) {
+  if ((localMismatch && !explicitFeeSafe) || llmMismatch) {
     logger.warn({
       question,
       source,
@@ -8576,8 +8641,20 @@ function tryShortProgramDefinitionDirectAnswer(question) {
   if (!q) return null;
   const normalized = q.toLowerCase();
   const asksDefinitionShape = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(normalized);
-  const mentionsProgramKey = /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi)\b/i.test(normalized);
+  const mentionsProgramKey = /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi|dkv|desain\s+komunikasi\s+visual)\b/i.test(normalized);
   if (!asksDefinitionShape || !mentionsProgramKey) return null;
+  if (/\bdkv\b|desain\s+komunikasi\s+visual/i.test(normalized)) {
+    const answer = [
+      'DKV adalah singkatan dari Desain Komunikasi Visual.',
+      '',
+      'Secara umum, bidang ini fokus pada seni visual, komunikasi pesan, branding, dan penyampaian informasi lewat elemen visual seperti layout, warna, tipografi, ilustrasi, dan media digital.',
+      '',
+      'Untuk detail kurikulum atau program resmi yang tersedia di kampus, kakak bisa cek program studi yang relevan atau konfirmasi ke admin PMB supaya tidak keliru.'
+    ].join('\n');
+    return buildDeterministicResponse(q, 'semantic-rag-program-definition', { answer, source: 'semantic-rag-program-definition' }, {
+      routeStage: 'short-definition-direct'
+    });
+  }
   const result = tryProgramDefinitionAnswer(q);
   if (!result || !result.answer) return null;
   return buildDeterministicResponse(q, 'semantic-rag-program-definition', result, {
@@ -8659,13 +8736,15 @@ async function querySemanticRag(question, options = {}) {
   }
 
   const strictDocumentOnly = isStrictDocumentOnlyMode();
+  const client = getClient();
   const fallbacksAllowed = !strictDocumentOnly;
   const earlySupportQuestion = String(question || '').toLowerCase();
-  if (!strictDocumentOnly && /\b(?:llc|language\s+learning\s+center)\b/i.test(earlySupportQuestion) && /\b(?:apa|itu|pengertian|maksud|tentang|info(?:rmasi)?|jelaskan)\b/i.test(earlySupportQuestion)) {
+  const deferEarlyKeywordFallbacks = Boolean(client) && shouldDeferDeterministicBeforeSemantic(question);
+  if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && /\b(?:llc|language\s+learning\s+center)\b/i.test(earlySupportQuestion) && /\b(?:apa|itu|pengertian|maksud|tentang|info(?:rmasi)?|jelaskan)\b/i.test(earlySupportQuestion)) {
     const result = { answer: buildLanguageLearningAnswer(), source: 'semantic-rag-campus-facility', frameSource: 'semantic-rag-campus-facility' };
     return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-facility', result, { routeStage: 'pre-ai-support-abbreviation' }), resultCacheKey);
   }
-  if (!strictDocumentOnly && /\bjob\s*fair\b/i.test(earlySupportQuestion)) {
+  if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && /\bjob\s*fair\b/i.test(earlySupportQuestion)) {
     const result = {
       answer: 'Pada data Career Center yang tersedia, job fair tercantum sebagai salah satu bentuk dukungan karier untuk mahasiswa dan alumni, bersama informasi lowongan kerja, magang, campus hiring, konsultasi karier, dan tracer study. Untuk jadwal Job Fair yang sedang atau akan berjalan, kakak perlu cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.',
       source: 'semantic-rag-campus-support-entity',
@@ -8673,7 +8752,7 @@ async function querySemanticRag(question, options = {}) {
     };
     return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', result, { routeStage: 'pre-ai-support-career-event' }), resultCacheKey);
   }
-  if (!strictDocumentOnly && /\b(campus\s*hiring|rekrutmen|lowongan|loker|magang|tracer\s*study|konsultasi\s+karier)\b/i.test(earlySupportQuestion) && /\b(apakah|ada|punya|tersedia|informasi|info|tentang|apa|bagaimana|gimana|di\s*mana|dimana)\b/i.test(earlySupportQuestion)) {
+  if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && /\b(campus\s*hiring|rekrutmen|lowongan|loker|magang|tracer\s*study|konsultasi\s+karier)\b/i.test(earlySupportQuestion) && /\b(apakah|ada|punya|tersedia|informasi|info|tentang|apa|bagaimana|gimana|di\s*mana|dimana)\b/i.test(earlySupportQuestion)) {
     const result = {
       answer: 'Pada data Career Center yang tersedia, ITB STIKOM Bali mencantumkan dukungan karier seperti informasi lowongan kerja, magang, campus hiring, job fair, konsultasi karier, dan tracer study. Untuk daftar lowongan, jadwal, formulir, atau kegiatan yang sedang berjalan, kakak perlu cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.',
       source: 'semantic-rag-campus-support-entity',
@@ -8681,23 +8760,23 @@ async function querySemanticRag(question, options = {}) {
     };
     return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', result, { routeStage: 'pre-ai-support-career-event' }), resultCacheKey);
   }
-  const abbreviationClarification = strictDocumentOnly ? null : tryAmbiguousAbbreviationClarificationAnswer(question);
+  const abbreviationClarification = strictDocumentOnly || client ? null : tryAmbiguousAbbreviationClarificationAnswer(question);
   if (abbreviationClarification && abbreviationClarification.answer) {
     const response = buildDeterministicResponse(question, 'semantic-rag-abbreviation-clarification', abbreviationClarification, { routeStage: 'pre-ai-abbreviation-clarification' });
     return await finalizeSemanticResult(question, response, resultCacheKey);
   }
-  const shortDefinitionResponse = strictDocumentOnly ? null : tryShortProgramDefinitionDirectAnswer(question);
+  const shortDefinitionResponse = strictDocumentOnly || client ? null : tryShortProgramDefinitionDirectAnswer(question);
   if (shortDefinitionResponse) {
     return await finalizeSemanticResult(question, shortDefinitionResponse, resultCacheKey);
   }
-  const financeOperationalResult = strictDocumentOnly ? null : tryFinanceFallback(question);
+  const financeOperationalResult = strictDocumentOnly || client ? null : tryFinanceFallback(question);
   if (financeOperationalResult && financeOperationalResult.answer) {
     const builtFinanceResult = buildDeterministicResponse(question, 'semantic-rag-finance-fallback', financeOperationalResult, { routeStage: 'pre-ai-finance' });
     return await finalizeSemanticResult(question, builtFinanceResult, resultCacheKey);
   }
 
   const hasDirectFeeSignal = hasExplicitFeeQuestionSignal(question);
-  if (!strictDocumentOnly && hasDirectFeeSignal) {
+  if (!strictDocumentOnly && !client && hasDirectFeeSignal) {
     const feeResult = tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options);
     if (feeResult && feeResult.answer) {
       const builtFeeResult = buildDeterministicResponse(question, 'semantic-rag-fee-detail', feeResult, { routeStage: 'pre-ai-fee' });
@@ -8705,17 +8784,17 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
-  const earlySupportHandlers = strictDocumentOnly ? [] : handlersForSources([
+  const earlySupportHandlers = strictDocumentOnly || client ? [] : handlersForSources([
     'semantic-rag-campus-support-entity',
     'semantic-rag-career-softskill',
     'semantic-rag-campus-facility'
   ]);
-  const earlySupportResult = strictDocumentOnly ? null : runDeterministicHandlers(question, earlySupportHandlers, options, [question], { routeStage: 'pre-ai-support' });
+  const earlySupportResult = strictDocumentOnly || client ? null : runDeterministicHandlers(question, earlySupportHandlers, options, [question], { routeStage: 'pre-ai-support' });
   if (earlySupportResult) {
     return await finalizeSemanticResult(question, earlySupportResult, resultCacheKey);
   }
 
-  if (!strictDocumentOnly && isInstitutionVisionMissionQuestion(question)) {
+  if (!strictDocumentOnly && !client && isInstitutionVisionMissionQuestion(question)) {
     const institutionVisionMission = tryInstitutionVisionMissionAnswer(question, getCachedSemanticIndex());
     if (institutionVisionMission && institutionVisionMission.answer) {
       const builtInstitutionVisionMission = buildDeterministicResponse(question, 'semantic-rag-institution-vision-mission', institutionVisionMission, { routeStage: 'pre-ai-institution-vision-mission' });
@@ -8723,7 +8802,7 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
-  const preAiUploadedTraining = strictDocumentOnly ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
+  const preAiUploadedTraining = strictDocumentOnly || client ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
   if (preAiUploadedTraining && preAiUploadedTraining.answer) {
     return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
   }
@@ -8731,47 +8810,55 @@ async function querySemanticRag(question, options = {}) {
   await getActiveTrainingDataFromDb();
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
+  const shouldDeferDeterministicToSemantic = Boolean(client) && shouldDeferDeterministicBeforeSemantic(question);
   if (debugTrace) {
     console.log('[TRACE STRICT] strictDocumentOnly:', strictDocumentOnly);
     console.log('[TRACE PRE_AI] handlers:', preAiHandlers.map(([s]) => s));
     console.log('[TRACE PRE_AI] question:', question);
+    console.log('[TRACE PRE_AI] shouldDeferDeterministicToSemantic:', shouldDeferDeterministicToSemantic);
     console.log('[TRACE PRE_AI] PRE_AI_HANDLER_SOURCES membership check:', {
       'semantic-rag-graduation-registration': PRE_AI_HANDLER_SOURCES.has('semantic-rag-graduation-registration'),
       'semantic-rag-academic-grade': PRE_AI_HANDLER_SOURCES.has('semantic-rag-academic-grade'),
       'semantic-rag-certification': PRE_AI_HANDLER_SOURCES.has('semantic-rag-certification')
     });
   }
-  const preAiResult = strictDocumentOnly ? null : runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });
-  if (debugTrace) {
-    console.log('[TRACE PRE_AI] result from runDeterministicHandlers:', {
-      hasResult: !!preAiResult,
-      source: preAiResult ? preAiResult.source : null,
-      answerPreview: preAiResult ? String(preAiResult.answer).slice(0, 100) : null
-    });
-  }
-  if (preAiResult) {
+  let preAiResult = null;
+  if (!strictDocumentOnly && !client && !shouldDeferDeterministicToSemantic) {
+    preAiResult = runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });
     if (debugTrace) {
-      console.log('[TRACE PRE_AI] CACHING and RETURNING preAiResult:', {
-        source: preAiResult.source,
-        answerPreview: String(preAiResult.answer).slice(0, 100)
+      console.log('[TRACE PRE_AI] result from runDeterministicHandlers:', {
+        hasResult: !!preAiResult,
+        source: preAiResult ? preAiResult.source : null,
+        answerPreview: preAiResult ? String(preAiResult.answer).slice(0, 100) : null
       });
     }
-    return await finalizeSemanticResult(question, preAiResult, resultCacheKey);
+    if (preAiResult) {
+      if (debugTrace) {
+        console.log('[TRACE PRE_AI] CACHING and RETURNING preAiResult:', {
+          source: preAiResult.source,
+          answerPreview: String(preAiResult.answer).slice(0, 100)
+        });
+      }
+      return await finalizeSemanticResult(question, preAiResult, resultCacheKey);
+    }
   }
 
   const preRewriteHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_REWRITE_HANDLER_SOURCES.has(source));
-  const preRewriteResult = strictDocumentOnly ? null : runDeterministicHandlers(question, preRewriteHandlers, options, [question], { routeStage: 'pre-rewrite' });
-  if (debugTrace) {
-    console.log('[TRACE PRE_REWRITE] result:', {
-      hasResult: !!preRewriteResult,
-      source: preRewriteResult ? preRewriteResult.source : null
-    });
-  }
-  if (preRewriteResult) {
+  let preRewriteResult = null;
+  if (!strictDocumentOnly && !client && !shouldDeferDeterministicToSemantic) {
+    preRewriteResult = runDeterministicHandlers(question, preRewriteHandlers, options, [question], { routeStage: 'pre-rewrite' });
     if (debugTrace) {
-      console.log('[TRACE PRE_REWRITE] CACHING and RETURNING preRewriteResult');
+      console.log('[TRACE PRE_REWRITE] result:', {
+        hasResult: !!preRewriteResult,
+        source: preRewriteResult ? preRewriteResult.source : null
+      });
     }
-    return await finalizeSemanticResult(question, preRewriteResult, resultCacheKey);
+    if (preRewriteResult) {
+      if (debugTrace) {
+        console.log('[TRACE PRE_REWRITE] CACHING and RETURNING preRewriteResult');
+      }
+      return await finalizeSemanticResult(question, preRewriteResult, resultCacheKey);
+    }
   }
 
 
@@ -8779,7 +8866,6 @@ async function querySemanticRag(question, options = {}) {
   // (index-first deterministic pass removed - rely on semantic routing and
   // retriever flow to decide deterministic handlers after rewrite and RAG)
 
-  const client = getClient();
   if (!client) {
     if (strictDocumentOnly) {
       const response = {
