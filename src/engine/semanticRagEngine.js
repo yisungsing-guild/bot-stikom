@@ -8428,16 +8428,16 @@ function answerMatchesQuestionMeaning(question, answer, source = '') {
 function isMeaningMismatchAnswer(question, answer, source = '') {
   if (!String(answer || '').trim()) return false;
 
-  const qForAvailability = String(question || '').toLowerCase();
   const srcForAvailability = String(source || '').toLowerCase();
   if (srcForAvailability.includes('explicit-external-insufficient-data')) return false;
   
-  // Definition questions from safe document sources should NOT be considered a mismatch
-  const meaningProfile = inferQuestionMeaningProfile(question);
-  if (meaningProfile.intent === 'definition_question' && /semantic-rag-uploaded-training-generic|campus-support-entity|campus-facility/i.test(srcForAvailability)) {
+  // GENERIC RAG MODE: Any answer from document sources should be trusted
+  // Don't overthink meaning matching for RAG-retrieved content
+  if (/semantic-rag-uploaded-training|campus-support|campus-facility/i.test(srcForAvailability)) {
     return false;
   }
   
+  const qForAvailability = String(question || '').toLowerCase();
   const asksAvailability = /\b(apakah|apa|ada|tersedia|sudah\s+ada|punya|memiliki)\b/i.test(qForAvailability) && /\b(program|layanan|fasilitas|kelas|kursus|sertifikasi|training|magang|kerja|beasiswa|komunitas|ukm|jalur)\b/i.test(qForAvailability);
   const asksRecommendationExplicitly = /\b(cocok|cocoknya|rekomendasi|saran|sarankan|jurusan\s+apa|prodi\s+apa|pilih\s+jurusan)\b/i.test(qForAvailability);
   if (srcForAvailability.includes('program-recommendation') && asksAvailability && !asksRecommendationExplicitly) return true;
@@ -8619,11 +8619,14 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const feeSourceSafe = /(?:semantic-rag-fee-detail|semantic-rag-registration-fee|semantic-rag-contextual-fee|semantic-rag-fee-general|semantic-rag-fee-comparison|semantic-rag-finance-fallback|semantic-rag-clarify)/i.test(source);
   const explicitFeeSafe = explicitFeeQuestion && (feeSourceSafe || /(?:biaya|harga|ukt|dpp|tarif|pembayaran|spp|pay|fee)/i.test(source));
   const dualDegreeSourceSafe = explicitDualDegreeQuestion && /semantic-rag-dual-degree/i.test(source);
-  const skipLlmVerifier = structuredSemanticSafe || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
+  
+  // GENERIC RAG MODE: Trust document sources completely - skip all verifiers
+  const isDocumentSource = /semantic-rag-uploaded-training|campus-support|campus-facility/i.test(source);
+  const skipLlmVerifier = structuredSemanticSafe || isDocumentSource || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
   const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
-  if ((localMismatch && !explicitFeeSafe) || llmMismatch) {
+  if ((localMismatch && !explicitFeeSafe && !isDocumentSource) || llmMismatch) {
     logger.warn({
       question,
       source,

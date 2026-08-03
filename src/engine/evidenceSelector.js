@@ -453,58 +453,54 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
   const missingEvidence = [];
   const terms = getContentTerms(question);
   const q = String(question || '').trim().toLowerCase();
-  const asksShortProgramDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q)
-    && /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi)\b/i.test(q);
-  const asksDefinitionLikeQuestion = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q)
-    && (terms.length >= 2 || /\b(?:program|kegiatan|fasilitas|ukm|ormawa|beasiswa|career|center|exchange|double|degree|gccp|bccp|student|gelar|akademik|kampus|mahasiswa|kuliah|internasional|mitra|luar\s+negeri|akreditasi|jadwal|biaya|syarat|persyaratan)\b/i.test(q));
-  const hasEvidenceContent = Boolean(text.trim());
-  const hasSpecificEvidenceTerms = /\b(?:program|kegiatan|fasilitas|ukm|ormawa|beasiswa|career|center|exchange|double|degree|gccp|bccp|student|internasional|mitra|luar\s+negeri|akreditasi|jadwal|biaya|syarat|persyaratan|gelar|akademik|kampus|mahasiswa|kuliah)\b/i.test(text);
-  const keyTerms = terms.filter((term) => term.length >= 3);
-  const hasQuestionTermOverlap = keyTerms.some((term) => text.toLowerCase().includes(term));
 
-  if (asksShortProgramDefinition || (asksDefinitionLikeQuestion && hasEvidenceContent && (hasSpecificEvidenceTerms || hasQuestionTermOverlap))) {
-    return { answerable: true, reason: 'definition_like_question_with_evidence', missingEvidence: [] };
-  }
-  
-  // Allow general intent questions with any evidence to pass through
-  if (detectedIntent === 'general' && evidence.length > 0 && text.trim()) {
-    return { answerable: true, reason: 'general_intent_with_evidence', missingEvidence: [] };
-  }
-  
+  // Check for no content
   if (!terms.length && !isExplicitLegalQuestion(question, detectedIntent)) {
     return { answerable: false, reason: 'ambiguous_question', missingEvidence: ['question_object'] };
   }
   if (!evidence.length || !text.trim()) {
     return { answerable: false, reason: 'no_selected_evidence', missingEvidence: ['selected_evidence'] };
   }
+
+  // STRICT CHECKS: Specific query types that need structural validation
   if (detectedIntent === 'fee') {
     if (!/\b(?:Rp\.?|rupiah|\d[\d.,]+\s*(?:ribu|juta)|\d{5,})\b/i.test(text)) missingEvidence.push('fee_amount');
     const requestedEntities = detectEntities(question).filter((entity) => /sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika/.test(entity));
     if (requestedEntities.length && requestedEntities.some((entity) => !detectEntities(text).includes(entity))) missingEvidence.push('requested_program_entity');
   }
-  if (detectedIntent === 'schedule' && !/\b(?:tanggal|periode|gelombang|bulan|tahun|jam|\d{1,2}\s*(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b/i.test(text)) {
-    missingEvidence.push('date_or_period');
-  }
-  if (detectedIntent === 'requirement' && !/\b(?:syarat|persyaratan|dokumen|berkas|ijazah|ktp|kk|foto|rapor|formulir)\b/i.test(text)) {
-    missingEvidence.push('concrete_requirements');
-  }
-  if (detectedIntent === 'international_program' && !/\b(?:GCCP|BCCP|Double\s*Degree|Dual\s*Degree|Student\s+Exchange|UTB|DNUI|HELP|mitra|luar\s+negeri|internasional)\b/i.test(text)) {
-    const asksDefinitionLikeQuestion = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q);
-    if (!asksDefinitionLikeQuestion) {
-      missingEvidence.push('international_program_name_or_partner');
-    }
-  }
-  if (/\bapa\s+saja\b/i.test(String(question || '')) && detectedIntent !== 'legal' && !hasConcreteList(text)) {
-    missingEvidence.push('multiple_concrete_items');
-  }
   if (detectedIntent === 'legal' && !hasRequiredPasalAlignment(text, question)) {
     missingEvidence.push('requested_legal_section');
   }
+  // List queries must have concrete multiple items
+  if (/\bapa\s+saja\b/i.test(q) && detectedIntent !== 'legal' && !hasConcreteList(text)) {
+    missingEvidence.push('multiple_concrete_items');
+  }
 
+  // If strict checks found issues, reject
+  if (missingEvidence.length > 0) {
+    return {
+      answerable: missingEvidence.length === 0,
+      reason: 'missing_required_answer_shape',
+      missingEvidence
+    };
+  }
+
+  // GENERIC RAG MODE: For other intents, if evidence exists and has content, trust it
+  // RAG retrieval already filtered for relevance, don't over-verify structure
+  if (evidence.length > 0 && text.trim()) {
+    // Special case: definition-like questions keep their specific reason for backwards compatibility
+    const asksDefinitionLikeQuestion = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q);
+    if (asksDefinitionLikeQuestion) {
+      return { answerable: true, reason: 'definition_like_question_with_evidence', missingEvidence: [] };
+    }
+    return { answerable: true, reason: 'rag_retrieved_evidence_sufficient', missingEvidence: [] };
+  }
+
+  // Fallback
   return {
-    answerable: missingEvidence.length === 0,
-    reason: missingEvidence.length ? 'missing_required_answer_shape' : 'selected_evidence_answerable',
-    missingEvidence
+    answerable: false,
+    reason: 'no_selected_evidence',
+    missingEvidence: ['selected_evidence']
   };
 }
 
