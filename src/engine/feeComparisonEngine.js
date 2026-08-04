@@ -456,12 +456,26 @@ function cleanProgramSummary(summary, programLabel) {
 function tryProgramDefinitionAnswer(question) {
   const q = String(question || '').toLowerCase();
   const asksCurriculum = /\b(mata\s+kuliah|matkul|kurikulum|dipelajari|yang\s+dipelajari|belajar\s+apa|ngulik\s+apa|skill|kemampuan|kompetensi)\b/.test(q);
-  if (!asksCurriculum && !/\b(apa\s+itu|itu\s+apa|apaan|maksudnya|jelaskan|tentang|pengertian|arahnya\s+(?:ke)?mana|kemana|tuh|sebenernya|sebenarnya)\b/.test(q)) return null;
+  const asksEntrySkillConcern = /\b(harus|wajib|perlu|butuh|apa(?:kah)?|bisa|boleh)\b[\s\S]{0,60}\b(jago|mahir|cakap|bisa)\b[\s\S]{0,40}\b(komputer|coding|ngoding|teknologi\s+informasi|it\b)\b|\b(kurang|belum|tidak|nggak|gak)\s+(?:jago|mahir|cakap|bisa)\b[\s\S]{0,40}\b(komputer|coding|ngoding|teknologi\s+informasi|it\b)\b/i.test(q);
+  if (!asksCurriculum && !asksEntrySkillConcern && !/\b(apa\s+itu|itu\s+apa|apaan|maksudnya|jelaskan|tentang|pengertian|arahnya\s+(?:ke)?mana|kemana|tuh|sebenernya|sebenarnya)\b/.test(q)) return null;
   const program = detectProgram(question);
   if (!program) return null;
   const domain = readProgramDomain(program.key);
   if (!domain || !domain.ringkasan) return null;
 
+  if (asksEntrySkillConcern) {
+    return {
+      answer: [
+        `Untuk ${program.label}, kakak tidak harus sudah jago komputer atau coding dari awal.`,
+        '',
+        program.key === 'bd'
+          ? 'Di Bisnis Digital, fokus utamanya adalah bisnis berbasis teknologi: digital marketing, e-commerce, strategi produk digital, analisis pasar, branding, data analytics, dan kewirausahaan digital. Pemahaman teknologi tetap membantu, tetapi tidak harus mulai sebagai programmer.'
+          : `Yang penting kakak siap belajar dasar teknologi secara bertahap sesuai kurikulum ${program.label}.`,
+        '',
+        'Kalau masih pemula, kakak bisa mulai dari dasar penggunaan komputer, logika sederhana, aplikasi produktivitas, dan bertanya ke PMB/prodi untuk arahan pilihan jurusan yang paling cocok.'
+      ].join('\n')
+    };
+  }
   if (asksCurriculum && (domain.apaYangDipelajari || domain.mataKuliah || domain.skill)) {
     const lines = [
       `Di ${program.label}, materi kuliah dan skill yang ditekankan arahnya seperti ini:`
@@ -501,8 +515,28 @@ function tryProgramComparisonAnswer(question) {
   const mentioned = detectMentionedPrograms(question);
   const keys = new Set(mentioned.map((p) => p.key));
   const asksOtherPrograms = /\b(prodi|program\s+studi|jurusan)\s+lain\b|\blainnya\b|\byang\s+lain\b/.test(q);
-  if (mentioned.length === 1 && asksOtherPrograms) {
-    ['si', 'ti', 'sk', 'bd'].forEach((key) => keys.add(key));
+  const asksSimilarPrograms = /\b(prodi|program\s+studi|jurusan)\s+(serupa|mirip)\b|\b(serupa|mirip)\b/.test(q);
+  const asksGeneralManagement = /\bmanajemen\b/.test(q) && !/\bmanajemen\s+informatika\b/.test(q);
+
+  if (keys.has('bd') && asksGeneralManagement) {
+    return {
+      answer: [
+        'Bisnis Digital berbeda dari Manajemen umum, Kak.',
+        '',
+        '- Bisnis Digital fokus pada bisnis berbasis teknologi: digital marketing, e-commerce, produk digital, analisis pasar, data analytics, branding, dan kewirausahaan digital.',
+        '- Manajemen umum biasanya lebih luas ke pengelolaan organisasi, SDM, operasional, pemasaran, dan keuangan tanpa fokus khusus pada ekosistem digital.',
+        '',
+        'Di ITB STIKOM Bali, data prodi yang tersedia mencantumkan Bisnis Digital, bukan Prodi Manajemen umum. Jadi kalau kakak ingin bisnis yang dekat dengan teknologi, pemasaran online, e-commerce, dan data, Bisnis Digital lebih sesuai.'
+      ].join('\n')
+    };
+  }
+
+  if (mentioned.length === 1 && (asksOtherPrograms || asksSimilarPrograms)) {
+    if (keys.has('bd')) {
+      ['si', 'ti', 'bd'].forEach((key) => keys.add(key));
+    } else {
+      ['si', 'ti', 'sk', 'bd'].forEach((key) => keys.add(key));
+    }
   }
   if (keys.size < 2) return null;
   const displayOrder = ['si', 'sk', 'ti', 'bd', 'mi'];
@@ -1671,10 +1705,11 @@ function tryDualDegreeAnswer(question) {
   const hasFeeSignal = /\b(biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|dpp|ukt|semester(?:an)?|per\s+semester|pendaftaran|registrasi|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|fee|fees|cost|costs|tuition|payment|payments|berapa|total(?:an)?)\b/.test(q);
   if (hasFeeSignal) return null;
   const hasDoubleDegreeSignal = /\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd)\b/.test(q);
+  const hasInternationalProgramSignal = /\b(program\s+internasional|kelas\s+internasional|international\s+(?:program|class)|study\s+abroad|student\s+exchange|pertukaran\s+mahasiswa)\b/.test(q);
   const hasPartnerSignal = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help)\b/.test(q);
   const asksPartnerProgram = /\b(jurusan|prodi|program\s+studi|padanan|pasangan|di\s+stikom|stikom\s+bali|di\s+sana|disana|mitra|partner|yang\s+diambil|harus\s+diambil)\b/.test(q);
-  if (!hasDoubleDegreeSignal && !(hasPartnerSignal && asksPartnerProgram)) return null;
-  const asksInternational = /\b(internasional|international|luar\s+negeri|dnui|help|china|malaysia)\b/.test(q);
+  if (!hasDoubleDegreeSignal && !hasInternationalProgramSignal && !(hasPartnerSignal && asksPartnerProgram)) return null;
+  const asksInternational = hasInternationalProgramSignal || /\b(internasional|international|luar\s+negeri|dnui|help|china|malaysia)\b/.test(q);
   const asksNational = /\b(nasional|national|utb|bandung)\b/.test(q);
   const asksUtbPair = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(padanan|pasangan|di\s+stikom|stikom\s+bali|harus\s+diambil|jurusan\s+apa\s+dan\s+jurusan\s+apa)\b/.test(q);
   const asksAllPairs = /\b(jurusan\s+apa\s+dan\s+jurusan\s+apa|yang\s+lain|lainnya|semua|dnui|help|di\s+sana|disana)\b/.test(q) && (hasDoubleDegreeSignal || hasPartnerSignal);

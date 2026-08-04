@@ -112,7 +112,7 @@ function buildSemanticResultCacheKey(question, options = {}) {
   if (!q) return null;
   const topK = Number.isFinite(Number(options.topK)) ? String(Number(options.topK)) : '';
   const frame = envFlag('BOT_NATURAL_ANSWER_FRAME', true) ? '1' : '0';
-  const followups = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true) ? '1' : '0';
+  const followups = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false) ? '1' : '0';
   const indexRevision = getSemanticIndexRevision();
   return `q:${q}|topK:${topK}|frame:${frame}|followups:${followups}|today:${getSemanticTodayYmd()}|index:${indexRevision}|style:v4`;
 }
@@ -4052,23 +4052,15 @@ function tryRegistrationHowAnswer(question, _indexForQuery, options = {}) {
 
   return {
     answer: [
-      'Untuk daftar kuliah di ITB STIKOM Bali, kakak bisa memilih salah satu jalur berikut:',
+      'Untuk daftar kuliah di ITB STIKOM Bali, kakak bisa melalui online atau offline.',
       '',
-      '- Online: melalui https://siap.stikom-bali.ac.id',
-      '- Offline: datang langsung ke kampus ITB STIKOM Bali untuk dibantu proses pendaftaran oleh petugas/PMB.',
+      'Online: melalui https://siap.stikom-bali.ac.id',
+      'Offline: datang langsung ke kampus ITB STIKOM Bali untuk dibantu petugas PMB.',
       '',
-      'Langkah awal yang bisa kakak lakukan:',
-      '',
-      '- Tentukan prodi yang ingin dipilih.',
-      '- Cek gelombang pendaftaran yang sedang buka.',
-      '- Siapkan data/dokumen pendaftaran sesuai arahan PMB.',
-      '- Lanjutkan pendaftaran online atau datang ke kampus untuk pendaftaran offline.',
-      '',
-      'Kalau kakak mau, saya bisa bantu cek gelombang yang sedang buka sekarang atau rincian biaya berdasarkan prodi yang dipilih.'
+      'Langkah awalnya: tentukan prodi, cek gelombang pendaftaran yang sedang buka, lalu siapkan data/dokumen sesuai arahan PMB.'
     ].join('\n')
   };
 }
-
 function tryRegistrationDataCorrectionAnswer(question) {
   const q = String(question || '').toLowerCase();
   // Must explicitly mention data correction/salah isi with registration context
@@ -6060,16 +6052,20 @@ function tryThesisFallback(question) {
 
 function tryInternationalClassFallback(question) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(kelas\s+internasional|kelas internasional|program\s+internasional|kelas\s+internasional\s+ada)\b/i.test(q)) return null;
+  if (!/\b(kelas\s+internasional|kelas internasional|program\s+internasional|kelas\s+internasional\s+ada|study\s+abroad|student\s+exchange|pertukaran\s+mahasiswa)\b/i.test(q)) return null;
   return {
     answer: [
-      'Program kelas internasional umumnya diorganisir lewat program Double Degree Internasional, Language Learning Center, atau kerja sama prodi. Untuk kepastian ketersediaan dan persyaratan, hubungi Admin PMB atau bagian Kemahasiswaan.',
-      'Jika mau, saya bisa bantu carikan info Double Degree Internasional atau kontak Language Learning Center.'
-    ].join(' '),
+      'Program internasional yang tercatat untuk ITB STIKOM Bali:',
+      '',
+      '- Double Degree Internasional DNUI - Dalian Neusoft University of Information, China. Prodi di STIKOM Bali: Bisnis Digital.',
+      '- Double Degree Internasional HELP University, Malaysia. Prodi di STIKOM Bali: Sistem Informasi.',
+      '- Student Exchange / pertukaran mahasiswa, jika dibuka sesuai kerja sama dan ketentuan kampus.',
+      '',
+      'Saya tidak mencampur daftar ini dengan prodi reguler. Untuk syarat, kuota, jadwal, dan alur final, kakak bisa konfirmasi ke Admin PMB atau bagian kerja sama/international office kampus.'
+    ].join('\n'),
     source: 'semantic-rag-international-class-fallback'
   };
 }
-
 function tryCareerFallback(question) {
   const q = String(question || '').toLowerCase();
   if (!/\b(loker|lowongan|lowongan\s+kerja|lowongan\s+pekerjaan|career|karier|karir|kerja)\b/i.test(q)) return null;
@@ -7568,7 +7564,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
     if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
     if (hasLikelyRawDocumentLeak(body)) return body;
     const topic = inferFrameTopic(question, source);
-    const followups = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)
+    const followups = envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false)
       ? topic.followups
           .map((item) => String(item || '').trim())
           .filter(Boolean)
@@ -7586,7 +7582,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
     return parts.join('\n').trim();
   }
   const appendFollowupsOnly = () => {
-    if (!envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) return body;
+    if (!envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false)) return body;
     const topic = inferFrameTopic(question, source);
     const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
     if (!followups.length) return body;
@@ -7614,7 +7610,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   const parts = [opening, '', body];
 
   if (src.includes('fee')) {
-    if (envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) {
+    if (envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false)) {
       const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
       if (followups.length) {
         parts.push('', ['Topik lanjutan:', ...followups.map(item => `- ${item}`)].join('\n'));
@@ -7627,7 +7623,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
     parts.push('', topic.conclusion);
   }
 
-  if (envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', true)) {
+  if (envFlag('BOT_SHOW_FOLLOWUP_SUGGESTIONS', false)) {
     const followups = buildContextualFollowups(topic.followups, question, body, source, topic);
     if (followups.length) {
       parts.push('', ['Topik lanjutan:', ...followups.map(item => `- ${item}`)].join('\n'));
@@ -7826,6 +7822,13 @@ function tryStudentConcernAnswer(question) {
   const raw = String(question || '').trim();
   const q = raw.toLowerCase();
   if (!raw) return null;
+  if (/\b(kurang\s+cakap|belum\s+(?:jago|mahir|bisa)|tidak\s+(?:jago|mahir|cakap)|nggak\s+(?:jago|mahir)|gak\s+(?:jago|mahir)|pemula)\b/i.test(q) && /\b(teknologi\s+informasi|komputer|coding|ngoding|it\b|kuliah|mahasiswa|prodi|jurusan)\b/i.test(q)) {
+    return {
+      answer: 'Bisa tetap mulai, Kak. Untuk menjadi mahasiswa ITB STIKOM Bali, kakak tidak harus sudah jago Teknologi Informasi dari awal. Yang penting punya kemauan belajar dan memilih prodi yang paling sesuai minat. Kalau masih kurang cakap di bidang TI, kakak bisa mulai dari dasar komputer, logika, penggunaan aplikasi, dan konsultasi ke Admin PMB/prodi agar diarahkan ke pilihan yang paling cocok.',
+      source: 'semantic-rag-student-concern',
+      frameSource: 'semantic-rag-student-concern'
+    };
+  }
   if (/\b(takut|khawatir|bingung|ragu|galau)\b/i.test(q) && /\b(salah\s+memilih\s+jurusan|pilih\s+jurusan|memilih\s+jurusan|jurusan)\b/i.test(q)) {
     return {
       answer: 'Wajar kok, Kak, kalau takut salah memilih jurusan. Supaya lebih tepat, kakak bisa mulai dari minat dan target kerja: kalau suka bisnis dan sistem, coba lihat Sistem Informasi; kalau suka teknis/coding, Teknologi Informasi; kalau tertarik bisnis online dan digital marketing, Bisnis Digital; kalau suka perangkat/komputer, Sistem Komputer. Kalau kakak cerita minatnya, saya bisa bantu arahkan pilihan prodi yang paling dekat.',
@@ -8690,13 +8693,14 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredProgramListSafe = isSafeProgramListAnswer(question, result.answer, source);
   const structuredProgramDefinitionSafe = isSafeProgramDefinitionAnswer(question, result.answer, source);
   const structuredAbbreviationClarificationSafe = isSafeAbbreviationClarificationAnswer(question, result.answer, source);
+  const structuredRplSafe = /semantic-rag-rpl/i.test(source) && /\b(RPL|Rekognisi\s+Pembelajaran\s+Lampau|SKS|PMB|siap\.stikom-bali\.ac\.id)\b/i.test(String(result.answer || ''));
   const explicitExternalNoDataSafe = /explicit-external-insufficient-data/i.test(source);
   const meaningProfile = inferQuestionMeaningProfile(question);
   const structuredDefinitionSafe = meaningProfile.intent === 'definition_question' && /semantic-rag-uploaded-training-generic|campus-support-entity|campus-facility/i.test(source);
   const structuredAccreditationSafe = /rag-accreditation|semantic-rag-accreditation/i.test(source)
     && /\b(program|prodi|jurusan)\b/i.test(question)
     && /Program yang tersedia[\s\S]+Akreditasi/i.test(result.answer);
-  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe;
+  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
