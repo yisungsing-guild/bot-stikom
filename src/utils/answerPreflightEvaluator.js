@@ -93,7 +93,25 @@ function hasRawFaqQnaDump(text) {
   const inlineFaqMarkerCount = (out.match(/\((?:F|Q|A)\)/gi) || []).length;
   const lineFaqMarkerCount = (out.match(/(?:^|\n)\s*(?:FAQ|QNA|Q|A|F|Question|Answer|Pertanyaan|Jawaban|Tanya|Jawab)\s*[:\-.]/gi) || []).length;
   const hasFaqHeaderWithQa = /(?:^|\n)\s*(?:FAQ|QNA)\s*[:\-.]/i.test(out) && lineFaqMarkerCount >= 2;
-  return inlineFaqMarkerCount >= 2 || lineFaqMarkerCount >= 3 || hasFaqHeaderWithQa;
+  
+  // Configurable thresholds: increased from 2,3 to 4,5 to reduce false positives
+  const inlineFaqThreshold = parseInt(process.env.PREFLIGHT_INLINE_FAQ_THRESHOLD || '4', 10);
+  const lineFaqThreshold = parseInt(process.env.PREFLIGHT_LINE_FAQ_THRESHOLD || '5', 10);
+  
+  const result = inlineFaqMarkerCount >= inlineFaqThreshold || lineFaqMarkerCount >= lineFaqThreshold || hasFaqHeaderWithQa;
+  
+  if (process.env.PREFLIGHT_DEBUG_DETAILED) {
+    console.log('[PREFLIGHT] hasRawFaqQnaDump:', {
+      inline: inlineFaqMarkerCount,
+      inlineThreshold: inlineFaqThreshold,
+      line: lineFaqMarkerCount,
+      lineThreshold: lineFaqThreshold,
+      hasFaqHeader: hasFaqHeaderWithQa,
+      result
+    });
+  }
+  
+  return result;
 }
 function hasLikelyRawDocumentLeak(text) {
   const out = String(text || '');
@@ -144,7 +162,10 @@ function hasLikelyRawDocumentLeak(text) {
   ];
   const structureMarkerCount = documentStructureMarkers.filter((re) => re.test(out)).length;
   const labelValueCount = (out.match(/\b[A-Za-z][A-Za-z0-9\s/().-]{2,38}\s*:\s*\S/g) || []).length;
-  const denseInlineProfile = out.length > 550 && labelValueCount >= 5;
+  
+  // Configurable threshold: increased from 5 to 8 to reduce false positives on curriculum descriptions
+  const labelValueThreshold = parseInt(process.env.PREFLIGHT_LABEL_VALUE_THRESHOLD || '8', 10);
+  const denseInlineProfile = out.length > 550 && labelValueCount >= labelValueThreshold;
   const repeatedDocumentHeader = /\b(?:PROFIL|PROFILE|KEPUTUSAN|SURAT\s+KEPUTUSAN|PERJANJIAN|NOTA\s+KESEPAHAMAN|MOU|MOA)\b[\s\S]{0,260}\b(?:Nama|Alamat|Nomor|Tahun|Dasar\s+Hukum|Pembina|Penanggung\s+Jawab)\b/i.test(out);
   const inlineAnswerCount = (out.match(/\b(?:Jawaban|Answer|Jawab|A)\s*[:\-.]/gi) || []).length;
   const questionMarkCount = (out.match(/\?/g) || []).length;
@@ -218,6 +239,21 @@ function hasLikelyRawDocumentLeak(text) {
   const rawAccreditationHeadingLike = out.length <= 180
     && /\bKONVERSI\s+PERINGKAT\s+AKREDITASI\s+PERGURUAN\s+TINGGI\b/i.test(out);
   const placeholderLike = /_{5,}|\.{8,}|:{3,}|\?{4,}|(?:nomor\s*:\s*(?:\.{4,}|\?{4,}|\([^)]*\)))|(?:E\s*-\s*mail\s*:::)/i.test(out);
+  
+  // ISSUE #1 FIX: Detect curriculum descriptions to skip strict document leak checks
+  // These are naturally dense with learning keywords and shouldn't trigger document leaks
+  const looksLikeCurriculumDescription = /\b(?:belajar|mempelajari|fokus|skill|kompetensi|kemampuan|pengembangan|materi|mata\s+kuliah|skill\s+yang\s+dibangun|keahlian)\b/i.test(out)
+    && /\b(?:pemrograman|data|keamanan|teknologi|sistem|bisnis|digital|marketing|analisis|development|infrastruktur|machine\s+learning|iot|arsitektur|basis\s+data|jaringan|cloud)\b/i.test(out);
+  
+  // Skip strict document leak checks if curriculum description detected
+  if (looksLikeCurriculumDescription) {
+    if (process.env.PREFLIGHT_DEBUG_DETAILED) {
+      console.log('[PREFLIGHT] Curriculum description - skipping strict hasLikelyRawDocumentLeak checks');
+    }
+    // Only check for most critical leaks (legal, OCR artifacts, placeholders)
+    return legalMarkerCount >= 2 || ocrHtmlArtifactLike || ocrSourceLike || placeholderLike;
+  }
+  
   return faqMarkerCount >= 2
     || inlineFaqMarkerCount >= 2
     || legalMarkerCount >= 2
@@ -622,6 +658,16 @@ function decidePreflightAction(issues, meta = {}) {
 }
 function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   const original = String(answer || '');
+  
+  // Add detailed logging for debugging preflight decisions
+  if (process.env.PREFLIGHT_DEBUG_DETAILED) {
+    console.log('[PREFLIGHT] Starting evaluation:', {
+      questionLength: userQuery.length,
+      answerLength: original.length,
+      source: meta && meta.source ? meta.source : 'unknown'
+    });
+  }
+  
   const rawFaqQnaDump = hasRawFaqQnaDump(original);
   let text = normalizeOutboundAnswerText(stripOptionalFollowupSuggestions(original));
   const issues = [];
@@ -688,9 +734,11 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
 
   if (!issues.length) {
     if (hasRawTechnicalLeak(text)) {
+      if (process.env.PREFLIGHT_DEBUG_DETAILED) console.log('[PREFLIGHT] BLOCKED by hasRawTechnicalLeak');
       text = buildPreflightFallback(userQuery, 'technical_leak');
       issues.push(conversationalQuery ? 'recovered_conversation_technical_leak' : 'technical_leak');
     } else if (hasDocumentSourceLeak(text)) {
+      if (process.env.PREFLIGHT_DEBUG_DETAILED) console.log('[PREFLIGHT] BLOCKED by hasDocumentSourceLeak');
       const recovered = recoverSafeSummaryFromLeakyAnswer(text, userQuery);
       if (recovered) {
         text = recovered;
@@ -700,6 +748,9 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
         issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
       }
     } else if (hasUnsafeAdministrativeLeak(text, userQuery) || hasLikelyRawDocumentLeak(text)) {
+      if (process.env.PREFLIGHT_DEBUG_DETAILED) {
+        console.log('[PREFLIGHT] BLOCKED by hasUnsafeAdministrativeLeak or hasLikelyRawDocumentLeak');
+      }
       const recovered = recoverSafeSummaryFromLeakyAnswer(text, userQuery);
       if (recovered) {
         text = recovered;
@@ -709,9 +760,11 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
         issues.push(conversationalQuery ? 'recovered_conversation_document_leak' : 'raw_document_leak');
       }
     } else if (hasPlaceholderOrOcrNoise(text)) {
+      if (process.env.PREFLIGHT_DEBUG_DETAILED) console.log('[PREFLIGHT] BLOCKED by hasPlaceholderOrOcrNoise');
       issues.push('placeholder_or_ocr_noise');
       text = buildPreflightFallback(userQuery, 'raw_document_leak');
     } else if (lacksConcreteItemsForApaSaja(text, userQuery)) {
+      if (process.env.PREFLIGHT_DEBUG_DETAILED) console.log('[PREFLIGHT] BLOCKED by lacksConcreteItemsForApaSaja');
       issues.push('apa_saja_without_concrete_items');
       text = buildPreflightFallback(userQuery, 'intent_conflict');
     } else if (conversationalQuery) {
@@ -722,17 +775,35 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
         if (alignmentAudit.reason === 'ambiguous_short_query' && isClarificationPromptAnswer(text)) {
           // Clarification prompts are the correct response for very short ambiguous queries.
         } else {
+          if (process.env.PREFLIGHT_DEBUG_DETAILED) {
+            console.log('[PREFLIGHT] BLOCKED by alignment mismatch:', alignmentAudit.reason);
+          }
           issues.push(alignmentAudit.reason || 'answer_query_mismatch');
           text = buildPreflightFallback(userQuery, 'intent_conflict');
         }
       } else {
         const intentAudit = detectIntentConflict(text, userQuery);
         if (intentAudit.conflict) {
+          if (process.env.PREFLIGHT_DEBUG_DETAILED) {
+            console.log('[PREFLIGHT] BLOCKED by intent conflict:', intentAudit);
+          }
           issues.push('intent_conflict');
           text = buildPreflightFallback(userQuery, 'intent_conflict');
         }
       }
     }
+  }
+  
+  // Log final decision if debugging
+  if (process.env.PREFLIGHT_DEBUG_DETAILED) {
+    const action = decidePreflightAction(issues, meta);
+    const blocked = action === 'regenerate' || action === 'fallback';
+    console.log('[PREFLIGHT] Final decision:', {
+      blocked,
+      action,
+      issues,
+      answerLength: text.length
+    });
   }
 
   if (/\b(?:\w{2,})(?:\u2026|\.\.\.)\s*$/i.test(text)) {
@@ -752,6 +823,17 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   }
   const action = decidePreflightAction(issues, meta);
   const blocked = action === 'regenerate' || action === 'fallback';
+  
+  // ISSUE #1 FIX: Log final preflight decision for debugging
+  if (process.env.PREFLIGHT_DEBUG_DETAILED) {
+    console.log('[PREFLIGHT] Final decision:', {
+      blocked,
+      action,
+      issues,
+      finalAnswerLength: text.length,
+      originalAnswerLength: original.length
+    });
+  }
 
   return {
     answer: text,
