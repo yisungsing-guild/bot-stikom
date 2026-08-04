@@ -136,6 +136,19 @@ function cleanVisibleTruncationArtifacts(text) {
   return out.replace(/\n{3,}/g, '\n\n').trim();
 }
 
+function stripOutboundFollowupsAndQaLabels(text) {
+  let out = String(text || '');
+  out = out.replace(/(?:^|\n)\s*(?:Pertanyaan|Question|Q)\s*:\s*[^\n]+\n\s*(?:Jawaban|Answer|A)\s*:\s*/gi, '\n');
+  out = out.replace(/^\s*(?:Pertanyaan|Question|Q)\s*:\s*.*$/gim, '');
+  out = out.replace(/^\s*(?:Jawaban|Answer|A)\s*:\s*/gim, '');
+  out = out.replace(/\n\s*(?:Topik\s+lanjutan|Rekomendasi\s+pertanyaan\s+berikutnya)\s*:?\s*[\s\S]*$/i, '');
+  out = out.replace(/\n\s*Kalau\s+Kakak\s+ingin\s+tahu\s+lebih\s+lanjut[\s\S]*$/i, '');
+  out = out.replace(/\n\s*Kalau\s+kakak\s+(?:mau|ingin),?\s*(?:saya\s+)?(?:juga\s+)?bisa\s+(?:bantu\s+)?(?:jelaskan|cek|carikan|tampilkan|hitungkan)[\s\S]*$/i, '');
+  out = out.replace(/\n\s*Kalau\s+kakak\s+sebutkan[^\n]*\bsaya\s+bisa[\s\S]*$/i, '');
+  out = out.replace(/\n\s*Mau\s+(?:info|saya|perbandingan|detail)[^\n?]*\?[\s\S]*$/i, '');
+  out = out.replace(/\n\s*Apakah\s+Kakak\s+ingin\s+dijelaskan[\s\S]*$/i, '');
+  return out.replace(/\n{3,}/g, '\n\n').trim();
+}
 function adjustWhatsappSplitCutForMoneyToken(text, cut) {
   const source = String(text || '');
   let safeCut = Math.max(0, Math.min(Number(cut) || 0, source.length));
@@ -8953,7 +8966,7 @@ module.exports = function (provider) {
           return out.trim();
         };
 
-        let cleaned = inlineOutboundRecommendationQuestion(finalCleanup(decorated));
+        let cleaned = stripOutboundFollowupsAndQaLabels(inlineOutboundRecommendationQuestion(finalCleanup(decorated)));
         cleaned = String(cleaned || '')
           .replace(/\n\s*(?:Topik\s+lanjutan|Kalau\s+Kakak\s+ingin\s+tahu\s+lebih\s+lanjut|Rekomendasi\s+pertanyaan\s+berikutnya)\s*:[\s\S]*$/i, '')
           .trim();
@@ -9031,7 +9044,7 @@ module.exports = function (provider) {
         if (preflight.issues && preflight.issues.length) {
           logger.warn({ chatId: toChatId, issues: preflight.issues, meta: preflight.meta }, '[ProviderRoute] outbound fallback preflight adjusted');
         }
-        const fallbackParts = splitLongWhatsappMessage(preflight.answer);
+        const fallbackParts = splitLongWhatsappMessage(stripOutboundFollowupsAndQaLabels(preflight.answer));
         for (let i = 0; i < fallbackParts.length; i++) {
           if (!isLatestInboundForThisRequest(toChatId)) break;
           const partMeta = i === 0 ? meta : { ...meta, splitPart: i + 1, splitTotal: fallbackParts.length };

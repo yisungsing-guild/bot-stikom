@@ -3063,14 +3063,13 @@ function tryStructuredProgramComparisonAnswer(rawQuestion) {
 
   if (evidenceByProgram.length > 0 && !directCostComparison) {
     const lines = [];
-    lines.push(`Berdasarkan dokumen PMB, ringkasan yang relevan untuk ${evidenceByProgram.map(({ d }) => d.label).join(', ')} adalah:`);
+    lines.push(`Perbedaan singkat ${evidenceByProgram.map(({ d }) => d.label).join(' dan ')}:`);
     lines.push('');
-    for (const { d, evidence } of evidenceByProgram.slice(0, 3)) {
-      const summary = summarizeTrainingEvidence(evidence.chunk, ['biaya', 'dpp', 'ukt', 'pendaftaran', 'fokus', 'prospek', 'kurikulum', 'lulusan']) || d.quickSummary;
-      lines.push(`- ${d.label}: ${summary}`);
+    for (const { d } of evidenceByProgram.slice(0, 3)) {
+      lines.push(`- ${d.label}: ${d.desc || d.quickSummary}`);
     }
     lines.push('');
-    lines.push('Mau saya jelaskan lebih detail untuk salah satu prodi atau bandingkan dari sisi biaya, kurikulum, atau prospek kerja?');
+    lines.push(`Intinya, ${evidenceByProgram.slice(0, 3).map(({ d }) => `${d.label} ${d.quickSummary}`).join(' Sedangkan ')}.`);
     return {
       answer: lines.join('\n'),
       source: 'rag-program-comparison',

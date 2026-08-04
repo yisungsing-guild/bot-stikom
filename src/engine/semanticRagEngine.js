@@ -8736,6 +8736,14 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   if (!result || !result.answer) return result;
   const source = result.source || 'semantic-rag';
 
+  if (/^semantic-rag-uploaded-training-generic$/i.test(source) && hasNoDataAnswerPhrase(result.answer)) {
+    const deterministic = runVettedDeterministicFallback(question, options, null, 'generic-no-data-deterministic-recovery');
+    if (deterministic && deterministic.answer && !hasNoDataAnswerPhrase(deterministic.answer)) {
+      if (resultCacheKey) setCachedSemanticResult(resultCacheKey, deterministic);
+      return deterministic;
+    }
+  }
+
   if (/^semantic-rag-uploaded-training-generic$/i.test(source) && Array.isArray(result.contexts) && result.contexts.length) {
     const compactAcademicSchedule = buildAcademicScheduleSummaryAnswer(question, result.contexts);
     const compactAcademicRequirement = compactAcademicSchedule ? '' : buildAcademicRequirementSummaryAnswer(question, result.contexts);
