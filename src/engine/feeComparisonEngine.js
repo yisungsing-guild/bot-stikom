@@ -578,6 +578,7 @@ function tryProgramComparisonAnswer(question) {
 
 function tryProgramListAnswer(question) {
   const q = String(question || '').toLowerCase();
+  if (/\b(syarat|persyaratan|dokumen|berkas|ketentuan)\b/.test(q) && /\b(daftar|mendaftar|pendaftaran|program\s+studi|prodi|jurusan|pmb|mahasiswa\s+baru|kuliah)\b/.test(q)) return null;
   const asksProgramList = /\b(jurusan(?:nya)?|prodi|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan|fakultas)\b/.test(q);
   const asksAvailable = /\b(apa\s+saja|apa\s+aja|ada\s+apa|tersedia|yang\s+ada|di\s+stikom|stikom)\b/.test(q);
   const recommendationIntent = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|ingin|mau|pengen|bekerja|kerja|karir|karier|minat|hobi)\b/.test(q);
@@ -912,6 +913,7 @@ function buildScholarshipNoTrainingAnswer(topic) {
 
 function tryScholarshipAnswer(question) {
   const q = String(question || '').toLowerCase();
+  if (/\b(double\s*degree|dual\s*degree|dd|utb|dnui|help\s+university)\b/.test(q)) return null;
   if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
 
   if (/\b(seluruh|semua|full|penuh|100\s*%)\b/.test(q) && /\b(biaya|ditanggung|menanggung|cover|cakupan)\b/.test(q)) {

@@ -17,10 +17,68 @@ const { getRagIndexPath, getRagDataDir } = require('../utils/ragPaths');
 // Wrapper around ragEngine.query that records calls/results so later stages
 // can inspect any prior RAG responses (helps when multiple RAG calls occur
 // during a single webhook handling and tests mock only a single call).
+function isUsableSemanticProviderResult(res) {
+  if (!res || !res.answer) return false;
+  const source = String(res.source || '').toLowerCase();
+  if (/disabled|preflight-blocked|meaning-verifier-blocked|no-answer|clarify/i.test(source)) return false;
+  return true;
+}
+
+function isWeakProviderRagResult(res) {
+  if (!res || !res.answer) return true;
+  const source = String(res.source || '').toLowerCase();
+  const answer = String(res.answer || '').toLowerCase();
+  if (/no-ai|no-match|low-confidence|low-coverage|answer-rejected|preflight|insufficient|disabled|no-answer/i.test(source)) return true;
+  if (/engine ai belum dikonfigurasi|belum menemukan data yang cukup aman|data yang saya pegang belum cukup lengkap|tidak akan menebak/i.test(answer)) return true;
+  return false;
+}
+
+function shouldTrySemanticProviderFallback(question, legacyResult) {
+  const q = String(question || '').toLowerCase();
+  if (!q.trim()) return false;
+
+  const keepLegacyDualDegreeFee = /\b(double\s*degree|dual\s*degree|dd|utb|dnui|help\s+university)\b/i.test(q)
+    && /\b(biaya|harga|tarif|bayar|pembayaran|dpp|potongan|diskon|rincian|nominal|total)\b/i.test(q);
+  if (keepLegacyDualDegreeFee && legacyResult && legacyResult.answer && !isWeakProviderRagResult(legacyResult)) return false;
+
+  const campusInfoSignal = /\b(prodi|program\s+studi|jurusan|sistem\s+informasi|sistem\s+komputer|teknologi\s+informasi|bisnis\s+digital|manajemen\s+informatika|akreditasi|beasiswa|kip|1k1s|skss|double\s*degree|dual\s*degree|program\s+internasional|international\s+program|student\s+exchange|pertukaran\s+mahasiswa|izin\s+belajar|visa\s+study|visa|inbis|inkubator\s+bisnis|cdc|career\s*center|pusat\s+kar(?:i|ie)r|faq|qna|ukm|ormawa|organisasi\s+mahasiswa|sks|syarat|persyaratan|rpl)\b/i.test(q);
+  const asksNaturalInfo = /\b(apa|apakah|bagaimana|gimana|jelaskan|detail|informasi|info|berapa|ada|tersedia|punya|memiliki|perbedaan|beda|cocok|belajar|dipelajari|syarat|cara|mengurus|mendaftar|daftar)\b/i.test(q);
+  if (!campusInfoSignal && !asksNaturalInfo) return false;
+
+  const legacySource = String(legacyResult && legacyResult.source || '').toLowerCase();
+  if (legacySource === 'rag-program-comparison' && /\b(perbedaan|beda|syarat|persyaratan|apa\s+saja|belajar|dipelajari)\b/i.test(q)) return true;
+  return isWeakProviderRagResult(legacyResult) || campusInfoSignal;
+}
+
+// Wrapper around ragEngine.query that records calls/results so later stages
+// can inspect any prior RAG responses (helps when multiple RAG calls occur
+// during a single webhook handling and tests mock only a single call).
 async function ragQuery(/* question, topK, options */) {
   const args = Array.from(arguments);
+  let res = null;
   try {
-    const res = await _ragEngine.query.apply(_ragEngine, args);
+    res = await _ragEngine.query.apply(_ragEngine, args);
+    const question = args[0];
+    if (shouldTrySemanticProviderFallback(question, res)) {
+      try {
+        const topK = args.length > 1 ? args[1] : undefined;
+        const opts = args[2] && typeof args[2] === 'object' ? args[2] : {};
+        const semantic = await querySemanticRag(question, { ...opts, topK, providerSemanticFallback: true });
+        if (isUsableSemanticProviderResult(semantic)) {
+          res = {
+            ...semantic,
+            source: semantic.source || 'semantic-rag-provider-fallback',
+            debug: {
+              ...(semantic.debug && typeof semantic.debug === 'object' ? semantic.debug : {}),
+              providerSemanticFallback: true,
+              legacySource: res && res.source ? res.source : null
+            }
+          };
+        }
+      } catch (semanticErr) {
+        logger.warn({ err: semanticErr && semanticErr.message ? semanticErr.message : String(semanticErr) }, '[Provider] semantic RAG fallback failed');
+      }
+    }
     try {
       if (!global.__provider_rag_all) global.__provider_rag_all = [];
       global.__provider_rag_all.push({ ts: new Date().toISOString(), args, result: res });
@@ -5495,6 +5553,10 @@ module.exports = function (provider) {
     if (/(bantuan|kontak\s*admin|hubungi\s*admin|nomor\s*admin|kontak\s*cs|customer\s*service)/i.test(t)) {
       return 5;
     }
+
+    const wantsInfoAnswer = /\b(apa|apakah|adakah|bagaimana|gimana|jelaskan|detail|informasi|info|berapa|ada|tersedia|punya|memiliki|program|layanan|fasilitas|syarat|persyaratan|cara|mengurus|mendaftar|daftar|perbedaan|beda|belajar|dipelajari)\b/i.test(t);
+    const wantsDepartmentContact = /\b(kontak|nomor|admin|cs|customer\s*service|hubungi|pic|narahubung|unit\s+mana|bagian\s+mana)\b/i.test(t);
+    if (wantsInfoAnswer && !wantsDepartmentContact) return null;
 
     // Akademik & Kemahasiswaan â€” treat these as non-marketing dept questions
     // (do not skip offering contact for informational phrasing).
