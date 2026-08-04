@@ -8878,27 +8878,6 @@ async function querySemanticRag(question, options = {}) {
 
   const preAiUploadedTraining = strictDocumentOnly || client ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
   if (preAiUploadedTraining && preAiUploadedTraining.answer) {
-    // For certain academic/admin topics (yudisium/wisuda/jadwal), prefer
-    // uploaded-training content when available so new documents can answer
-    // automatically instead of being overridden by generic admin handlers.
-    const academicSignal = /\b(yudisium|wisuda|jadwal|pendaftaran\s+yudisium|jadwal\s+yudisium)\b/i.test(String(question || ''));
-    if (academicSignal) {
-      try {
-        const preAiHandlersLocal = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
-        const preAiResultLocal = runDeterministicHandlers(question, preAiHandlersLocal, options, [question], { routeStage: 'pre-ai' });
-        if (preAiResultLocal) {
-          if (debugTrace) {
-            console.log('[TRACE PRE_AI] preAi handler matched but uploaded-training answer exists; preferring uploaded-training result:', {
-              handlerSource: preAiResultLocal.source,
-              uploadedTrainingSource: preAiUploadedTraining.source
-            });
-          }
-          return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
-        }
-      } catch (e) {
-        if (debugTrace) console.log('[TRACE PRE_AI] preAi handler check failed', e && e.message ? e.message : String(e));
-      }
-    }
     if (debugTrace) {
       console.log('[TRACE PRE_AI] CACHING and RETURNING preAiUploadedTraining:', {
         source: preAiUploadedTraining.source,
