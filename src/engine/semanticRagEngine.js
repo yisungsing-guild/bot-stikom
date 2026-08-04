@@ -8796,10 +8796,16 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const meaningProfile = inferQuestionMeaningProfile(question);
   const structuredDefinitionSafe = meaningProfile.intent === 'definition_question' && /semantic-rag-uploaded-training-generic|campus-support-entity|campus-facility/i.test(source);
   const structuredAccreditationSafe = /rag-accreditation|semantic-rag-accreditation/i.test(source)
-    && /\b(program|prodi|jurusan)\b/i.test(question)
-    && /Program yang tersedia[\s\S]+Akreditasi/i.test(result.answer);
-  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe;
-  if (preflight && preflight.blocked && !structuredSemanticSafe) {
+    && /\b(BAN\s*-?\s*PT|akreditasi|Baik\s+Sekali|Baik)\b/i.test(String(result.answer || ''));
+  const structuredScholarshipSafe = /semantic-rag-scholarship|rag-scholarship/i.test(source)
+    && /\b(beasiswa|KIP|1K1S|prestasi|yayasan|potongan|PMB)\b/i.test(String(result.answer || ''));
+  const structuredVisaStudySafe = /semantic-rag-(?:generic-faq-qna|uploaded-training-generic)|rag-/i.test(source)
+    && /\b(izin\s+belajar|visa|mahasiswa\s+asing|dokumen|kampus|unit\s+terkait)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
+  const structuredCampusLocationSafe = /semantic-rag-campus-location|rag-campus-location/i.test(source)
+    && /\b(kampus|lokasi|alamat|Denpasar|Renon|Jimbaran|Abiansemal|3\s+lokasi)\b/i.test(String(result.answer || ''));
+  const structuredFeedbackSafe = /semantic-rag-feedback/i.test(source)
+    && /\b(singkat|informatif|koreksi|rapikan|langsung\s+ke\s+inti)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
+  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe;  if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
       answer: preflight.answer,

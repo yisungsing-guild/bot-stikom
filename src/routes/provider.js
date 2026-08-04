@@ -5519,6 +5519,8 @@ module.exports = function (provider) {
     const outbound = String(outboundText || '').trim();
     if (!inbound || !outbound) return true;
     if (String(meta && meta.source || '').includes('timeout')) return true;
+    const metaSource = String((meta && (meta.source || meta.ragSource || meta.finalPipeline)) || '');
+    if (/^(?:semantic-rag-(?:small-talk|program-list|program-comparison|program-definition|program-recommendation|student-concern|scholarship|rpl|campus-location|campus-main-location|ukm-list|generic-faq-qna|international-class-fallback|dual-degree|dual-degree-followup|pmb-info|pmb-requirements|feedback|fee-detail)|rag-(?:accreditation|program-comparison|campus-location|dual-degree-dpp-discount))/i.test(metaSource)) return true;
     if (isSafeDoubleDegreeOutboundAnswer(inbound, outbound, meta)) return true;
     if (isDoubleDegreeProcessQuestion(inbound)) return true;
     if (/^\s*(balas|pilih|ketik)\b/i.test(outbound)) return true;
@@ -5534,7 +5536,6 @@ module.exports = function (provider) {
 
   function buildFinalSemanticMismatchFallback(inboundUserText) {
     if (isAcademicScheduleLookupQuestion(inboundUserText)) return buildProviderAcademicScheduleNoDataAnswer(inboundUserText);
-    if (isGeneralCampusAvailabilityQuestion(inboundUserText)) return buildGeneralAvailabilityNoDataAnswer(inboundUserText);
     return 'Saya belum menemukan data yang cukup aman untuk menjawab pertanyaan itu. Agar tidak keliru, kakak bisa cek informasi resmi kampus atau konfirmasi ke admin/unit terkait.';
   }
 
