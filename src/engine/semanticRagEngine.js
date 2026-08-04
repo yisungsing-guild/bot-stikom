@@ -2340,15 +2340,11 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
     : question;
   const intent = detectGenericIntent(questionForRetrieval);
   if (intent === 'fee') return null;
-  if (/\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|pusat\s+karir|karier|karir|lowongan|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study|konsultasi\s+karier|inkubator|inbis|incubator|softskill|soft\s*skill|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|hi-?think|hithink|gccp|gcpp|bccp|student\s*exchange|short\s*course|kuliah\s+sambil\s+kerja|magang\s+berbayar|ukm|ormawa)\b/i.test(String(question || ''))) return null;
+  const unsupportedPattern = /\b(password|username|system\s+prompt|database|data\s+pribadi|dokumen\s+internal|perjanjian|pks|addendum|pasal)\b/i;
+  if (unsupportedPattern.test(String(question || ''))) return null;
   const directAcademicSection = await tryDirectAcademicAdminUploadedSectionAnswer(question, options);
   if (directAcademicSection && directAcademicSection.answer) return directAcademicSection;
   if (['schedule', 'requirement'].includes(intent) && !isAcademicAdminUploadedDocQuestion(question, intent)) return null;
-  if (isKnownSpecializedCampusQuestion(question)) return null;
-  const recentSupportEntity = resolveCampusSupportEntity(question, options);
-  if (recentSupportEntity && recentSupportEntity.fromRecent) return null;
-  const recentConversation = getRecentUserConversation(options && options.sessionData);
-  if (findCampusSupportEntity(recentConversation) && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut|join|syarat|jadwal|link|form|kontak)\b/i.test(String(question || ''))) return null;
 
   const retrieved = await retrieveSemanticContexts([questionForRetrieval], {
     topK: options.topK,
@@ -8846,12 +8842,12 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
-  const earlySupportHandlers = strictDocumentOnly || client ? [] : handlersForSources([
+  const earlySupportHandlers = strictDocumentOnly ? [] : handlersForSources([
     'semantic-rag-campus-support-entity',
     'semantic-rag-career-softskill',
     'semantic-rag-campus-facility'
   ]);
-  const earlySupportResult = strictDocumentOnly || client ? null : runDeterministicHandlers(question, earlySupportHandlers, options, [question], { routeStage: 'pre-ai-support' });
+  const earlySupportResult = strictDocumentOnly ? null : runDeterministicHandlers(question, earlySupportHandlers, options, [question], { routeStage: 'pre-ai-support' });
   if (earlySupportResult) {
     return await finalizeSemanticResult(question, earlySupportResult, resultCacheKey);
   }
@@ -8883,9 +8879,8 @@ async function querySemanticRag(question, options = {}) {
   const preAiUploadedTraining = strictDocumentOnly || client ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
   if (preAiUploadedTraining && preAiUploadedTraining.answer) {
     // For certain academic/admin topics (yudisium/wisuda/jadwal), prefer
-    // existing pre-AI deterministic handlers (graduation/registration) so
-    // they can provide structured admin responses instead of generic
-    // uploaded-training content.
+    // uploaded-training content when available so new documents can answer
+    // automatically instead of being overridden by generic admin handlers.
     const academicSignal = /\b(yudisium|wisuda|jadwal|pendaftaran\s+yudisium|jadwal\s+yudisium)\b/i.test(String(question || ''));
     if (academicSignal) {
       try {
@@ -8893,9 +8888,12 @@ async function querySemanticRag(question, options = {}) {
         const preAiResultLocal = runDeterministicHandlers(question, preAiHandlersLocal, options, [question], { routeStage: 'pre-ai' });
         if (preAiResultLocal) {
           if (debugTrace) {
-            console.log('[TRACE PRE_AI] PREFERRED preAiResultLocal over uploaded-training:', { source: preAiResultLocal.source });
+            console.log('[TRACE PRE_AI] preAi handler matched but uploaded-training answer exists; preferring uploaded-training result:', {
+              handlerSource: preAiResultLocal.source,
+              uploadedTrainingSource: preAiUploadedTraining.source
+            });
           }
-          return await finalizeSemanticResult(question, preAiResultLocal, resultCacheKey);
+          return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
         }
       } catch (e) {
         if (debugTrace) console.log('[TRACE PRE_AI] preAi handler check failed', e && e.message ? e.message : String(e));
@@ -8911,7 +8909,7 @@ async function querySemanticRag(question, options = {}) {
   }
 
   let preAiResult = null;
-  if (!strictDocumentOnly && !client && !shouldDeferDeterministicToSemantic) {
+  if (!strictDocumentOnly && !shouldDeferDeterministicToSemantic) {
     preAiResult = runDeterministicHandlers(question, preAiHandlers, options, [question], { routeStage: 'pre-ai' });
     if (debugTrace) {
       console.log('[TRACE PRE_AI] result from runDeterministicHandlers:', {
@@ -8933,7 +8931,7 @@ async function querySemanticRag(question, options = {}) {
 
   const preRewriteHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_REWRITE_HANDLER_SOURCES.has(source));
   let preRewriteResult = null;
-  if (!strictDocumentOnly && !client && !shouldDeferDeterministicToSemantic) {
+  if (!strictDocumentOnly && !shouldDeferDeterministicToSemantic) {
     preRewriteResult = runDeterministicHandlers(question, preRewriteHandlers, options, [question], { routeStage: 'pre-rewrite' });
     if (debugTrace) {
       console.log('[TRACE PRE_REWRITE] result:', {
