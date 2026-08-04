@@ -910,6 +910,26 @@ module.exports = function (provider) {
     const t = String(rawText || '').trim();
     if (!t) return [t];
 
+    const looksLikeQuestionClause = (value) => {
+      const s = String(value || '').trim();
+      if (!s) return false;
+      return /\?/.test(s)
+        || /\b(apa|apakah|bagaimana|gimana|berapa|kapan|dimana|di mana|kenapa|mengapa|boleh|bisa|ada|jurusan|prodi|program|biaya|syarat|beasiswa|akreditasi|rpl|pmb|kampus)\b/i.test(s);
+    };
+
+    // WhatsApp users often send multiple complete questions in one bubble,
+    // for example: "Prodi apa yang cocok untuk SMK komputer? Ada berapa kampus?"
+    // Split those first so each clause can use the normal RAG path.
+    if ((t.match(/\?/g) || []).length >= 1) {
+      const questionParts = t
+        .split(/(?<=\?)\s+(?=(?:apa|apakah|bagaimana|gimana|berapa|kapan|dimana|di mana|kenapa|mengapa|boleh|bisa|ada|jurusan|prodi|program|biaya|syarat|beasiswa|akreditasi|rpl|pmb|kampus|saya|aku)\b)/i)
+        .map(p => String(p || '').trim())
+        .filter(Boolean);
+      if (questionParts.length > 1 && questionParts.every(looksLikeQuestionClause)) {
+        return questionParts.slice(0, 4);
+      }
+    };
+
     // Quick check for explicit conjunctions signaling multiple asks
     const conjRe = /\b(?:dan|serta|lalu|kemudian|beserta)\b|,\s*/i;
     if (!conjRe.test(t)) return [t];
@@ -920,6 +940,22 @@ module.exports = function (provider) {
       .filter(Boolean);
 
     if (parts.length <= 1) return [t];
+
+    if (!looksLikeQuestionClause(parts[0]) && parts.length > 1) {
+      parts[1] = `${parts[0]}, ${parts[1]}`;
+      parts.shift();
+    }
+    if (parts.length <= 1) return [t];
+
+    if ((t.match(/\?/g) || []).length === 1 && parts.length === 2 && !/\?/.test(parts[0]) && /\?/.test(parts[1])) {
+      return [t];
+    }
+
+    const laterPartsLookLikeQuestions = parts.slice(1).every(p => {
+      const s = String(p || '').trim();
+      return /^(apa|apakah|bagaimana|gimana|berapa|kapan|dimana|di mana|kenapa|mengapa|boleh|bisa|ada|syarat|persyaratan|biaya|akreditasi(?:nya)?|beasiswa(?:nya)?|rpl|prospek|kelebihan)\b/i.test(s);
+    });
+    if (!laterPartsLookLikeQuestions) return [t];
 
     // If subsequent parts are short and referential (e.g. "apa kelebihannya", "bagaimana prospeknya"),
     // attach subject/context from the first clause for clarity.
@@ -5488,6 +5524,11 @@ module.exports = function (provider) {
     if (/^\s*(balas|pilih|ketik)\b/i.test(outbound)) return true;
     if (/\b(silakan\s+pilih|balas\s+dengan\s+angka|ketik\s*:)\b/i.test(outbound)) return true;
     if (/^\s*(halo|hallo|hai|hi|hello|apa\s+kabar|baik|oke|ok|siap|terima\s+kasih)\b/i.test(inbound) && outbound.length < 260) return true;
+
+    const inboundCampusIntent = /\b(?:pmb|penerimaan\s+mahasiswa\s+baru|daftar|pendaftaran|prodi|program\s+studi|jurusan|biaya|ukt|dpp|beasiswa|skss|kip|1k1s|akreditasi|ban\s*-?\s*pt|rpl|rekognisi\s+pembelajaran\s+lampau|double\s*degree|dual\s*degree|dnui|help|utb|internasional|international|student\s+exchange|study\s+exchange|cdc|career\s+center|job\s*fair|magang|inbis|inkubator\s+bisnis|kampus|lokasi|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika)\b/i.test(inbound);
+    const outboundCampusAnswer = /\b(?:ITB\s+STIKOM\s+Bali|STIKOM\s+Bali|PMB|Program\s+Studi|prodi|Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika|Double\s*Degree|Dual\s*Degree|DNUI|HELP|UTB|BAN-PT|Baik\s+Sekali|RPL|Beasiswa|Career\s+Center|Student\s+Exchange|Inkubator\s+Bisnis)\b/i.test(outbound);
+    if (inboundCampusIntent && outboundCampusAnswer) return true;
+
     return false;
   }
 
@@ -5500,7 +5541,7 @@ module.exports = function (provider) {
   async function guardOutboundSemanticRelevanceBeforeSend(inboundUserText, outboundText, meta = {}) {
     const original = String(outboundText || '').trim();
     if (!original || shouldSkipFinalSemanticRelevanceGate(inboundUserText, original, meta)) return original;
-    if (envFlag('PROVIDER_FINAL_SEMANTIC_RELEVANCE_GATE', true) === false) return original;
+    if (envFlag('PROVIDER_FINAL_SEMANTIC_RELEVANCE_GATE', false) === false) return original;
     if (isSafeDoubleDegreeOutboundAnswer(inboundUserText, original, meta)) return original;
     if (isDoubleDegreeProcessQuestion(inboundUserText)) return original;
     if (/^Perkuliahan\b/i.test(original)) return original;
@@ -8911,7 +8952,10 @@ module.exports = function (provider) {
           return out.trim();
         };
 
-        const cleaned = inlineOutboundRecommendationQuestion(finalCleanup(decorated));
+        let cleaned = inlineOutboundRecommendationQuestion(finalCleanup(decorated));
+        cleaned = String(cleaned || '')
+          .replace(/\n\s*(?:Topik\s+lanjutan|Kalau\s+Kakak\s+ingin\s+tahu\s+lebih\s+lanjut|Rekomendasi\s+pertanyaan\s+berikutnya)\s*:[\s\S]*$/i, '')
+          .trim();
         try {
           const finalIntent = detectResponseIntent(cleaned, text, incomingIntent, intentConfidence);
           console.log('[TRACE_FINAL_WA_INTENT]', { finalIntent, chatId: toChatId, preview: String(cleaned || '').slice(0,300) });
@@ -8958,6 +9002,20 @@ module.exports = function (provider) {
           const partMeta = i === 0 ? meta : { ...meta, splitPart: i + 1, splitTotal: outboundParts.length };
           await sendBotMessageOriginal(toChatId, outboundParts[i], partMeta);
         }
+        try {
+          const sentText = String(preflight.answer || '');
+          const isFailureFallback = /(?:Saya belum menemukan data yang cukup aman|Mohon maaf, saya kemungkinan tidak mempunyai jawaban|Maaf, data yang Anda minta tidak tersedia|jawaban yang terbentuk belum sesuai|\[\s*Hubungi Admin\s*\])/i.test(sentText);
+          if (!isFailureFallback && isLatestInboundForThisRequest(toChatId)) {
+            const latestSession = await prisma.session.findUnique({ where: { chatId: toChatId } }).catch(() => null);
+            const latestData = latestSession && latestSession.data && typeof latestSession.data === 'object' ? latestSession.data : {};
+            if (latestData.unansweredCount || latestData.handoverOffered || latestData.lastUnansweredText || latestData.handoverOfferedAt) {
+              const cleared = { ...latestData, unansweredCount: 0, handoverOffered: false };
+              if (Object.prototype.hasOwnProperty.call(cleared, 'lastUnansweredText')) delete cleared.lastUnansweredText;
+              if (Object.prototype.hasOwnProperty.call(cleared, 'handoverOfferedAt')) delete cleared.handoverOfferedAt;
+              await prisma.session.update({ where: { chatId: toChatId }, data: { data: cleared } }).catch(() => null);
+            }
+          }
+        } catch (e) {}
       } catch (e) {
         // Fallback: send original decorated content if cleanup fails
         const outboundSource = meta && meta.source ? String(meta.source || '') : '';
@@ -13052,6 +13110,41 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
       return res.send({ ok: true, source: 'gratitude' });
     }
 
+    // Generic multi-question dispatcher. This keeps one WhatsApp bubble with
+    // multiple complete questions from being captured by a single fast-path.
+    try {
+      const multiClauses = splitIntoIntents(String(text || '').trim()).filter(Boolean);
+      if (multiClauses.length > 1 && isRagEnabled() && (hasActiveTrainingData || allowIndexFallbackNoDb)) {
+        const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
+        const answers = [];
+        for (let i = 0; i < Math.min(multiClauses.length, 4); i += 1) {
+          const sub = String(multiClauses[i] || '').trim();
+          if (!sub) continue;
+          try {
+            const rr = await ragQueryWithEval(chatId, sub, topK, { answerQuestion: sub, minScore: 0, forceRag: true, strict: true });
+            const ans = rr && rr.success && rr.answer ? String(rr.answer || '').trim() : '';
+            if (ans && !looksLikeMissingInfoOrMismatchAnswer(sub, ans)) {
+              answers.push(`Pertanyaan ${i + 1}:
+${ans}`);
+            } else {
+              answers.push(`Pertanyaan ${i + 1}:
+Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang tersedia.`);
+            }
+          } catch (e) {
+            logger.warn({ err: e && e.message ? e.message : String(e), clause: sub }, '[Provider] multi-question clause failed');
+            answers.push(`Pertanyaan ${i + 1}:
+Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang tersedia.`);
+          }
+        }
+        const usefulAnswers = answers.filter(Boolean);
+        if (usefulAnswers.length) {
+          await sendBotMessage(chatId, usefulAnswers.join('\n\n'));
+          return res.send({ ok: true, source: 'multi_question_rag', ragUsed: true, clauses: usefulAnswers.length });
+        }
+      }
+    } catch (e) {
+      logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] multi-question dispatcher failed');
+    }
     // RegistrationFlow choose_program: if the user asks a specific program question,
     // answer it directly through anchored RAG before other fee/registration branches.
     try {
@@ -13062,8 +13155,9 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
       const programInText = extractSpecificProgramHint(trimmedText) || extractProgramHint(trimmedText);
       const looksSpecific = looksLikeProgramSpecificQuestion(trimmedText);
       const isPureSelection = isPureS1ProgramSelection(trimmedText);
+      const hasMultipleQuestionClauses = splitIntoIntents(trimmedText).length > 1;
       const ragReady = isRagEnabled() && (hasActiveTrainingData || allowIndexFallbackNoDb);
-      console.log('[DEBUG] choose_program anchored rag check', { chatId, stage, degreeInFlow, programInText, looksSpecific, isPureSelection, ragReady, text: trimmedText });
+      console.log('[DEBUG] choose_program anchored rag check', { chatId, stage, degreeInFlow, programInText, looksSpecific, isPureSelection, hasMultipleQuestionClauses, ragReady, text: trimmedText });
         try {
           const outDir = path.join(__dirname, '..', '..', 'tmp');
           if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
@@ -13078,6 +13172,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
         programInText &&
         looksSpecific &&
         !isPureSelection &&
+        !hasMultipleQuestionClauses &&
         ragReady
       ) {
         const topK = parseInt(process.env.RAG_TOP_K || '6', 10);

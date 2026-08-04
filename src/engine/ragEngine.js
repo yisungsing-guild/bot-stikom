@@ -1973,9 +1973,9 @@ function tryStructuredCampusLocationAnswer(question, indexForQuery) {
 
   const locationText = uniqueLocations.join(', ');
   const lines = [];
-  lines.push('ITB STIKOM Bali memiliki kampus yang terhubung dengan beberapa lokasi utama di Bali.');
+  lines.push('ITB STIKOM Bali memiliki 3 lokasi kampus utama yang terdeteksi dari sumber yang tersedia.');
   lines.push(`Lokasi yang terdeteksi dari sumber yang tersedia: ${locationText}.`);
-  lines.push('Informasi ini bisa dipakai sebagai petunjuk awal; untuk alamat lengkap dan rute, sebaiknya cek dokumen resmi atau hubungi admin kampus.');
+  lines.push('Untuk alamat lengkap dan rute, kakak bisa cek dokumen resmi atau hubungi admin kampus.');
 
   return {
     answer: lines.join('\n'),
