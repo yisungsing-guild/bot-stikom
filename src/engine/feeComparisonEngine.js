@@ -912,7 +912,7 @@ function buildScholarshipNoTrainingAnswer(topic) {
 
 function tryScholarshipAnswer(question) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\\s+biaya|kip|1k1s|1\\s*k\\s*1\\s*s|satu\\s+keluarga\\s+satu\\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\\s+sambil\\s+kerja|luar\\s+negeri)\b/.test(q)) return null;
+  if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
 
   if (/\b(seluruh|semua|full|penuh|100\s*%)\b/.test(q) && /\b(biaya|ditanggung|menanggung|cover|cakupan)\b/.test(q)) {
     return {
@@ -924,7 +924,7 @@ function tryScholarshipAnswer(question) {
     };
   }
 
-  if (/\b(cara|bagaimana|gimana|mendapatkan|dapat|mengajukan|daftar|prosedur|alur)\b/.test(q) && /\b(beasiswa(?:nya)?|bantuan\\s+biaya|potongan)\\b/.test(q)) {
+  if (/\b(cara|bagaimana|gimana|mendapatkan|dapat|mengajukan|daftar|prosedur|alur)\b/.test(q) && /\b(beasiswa(?:nya)?|bantuan\s+biaya|potongan)\b/.test(q)) {
     return {
       answer: [
         'Untuk mendapatkan beasiswa, kakak perlu memilih jalur beasiswa yang ingin diajukan lalu mengikuti arahan PMB/kampus.',

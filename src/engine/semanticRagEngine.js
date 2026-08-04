@@ -459,7 +459,7 @@ function hasAnchorOverlap(question, content) {
     if (!a) return false;
     if (a.length <= 4 || !a.includes(' ')) {
       const escaped = a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      return new RegExp(`(^|\s)${escaped}(\s|$)`, 'i').test(cNorm);
+      return new RegExp(`(^|\\s)${escaped}(\\s|$)`, 'i').test(cNorm);
     }
     return cNorm.includes(a);
   });
@@ -570,7 +570,7 @@ function getRequestedAcademicTargets(query) {
   const q = normalizeForLexicalMatch(query);
   const targets = [];
   const add = (name, variants) => {
-    if (variants.some((v) => new RegExp('\\b' + v.replace(/\s+/g, '\s+') + '\\b', 'i').test(q))) {
+    if (variants.some((v) => new RegExp('\\b' + v.replace(/\s+/g, '\\s+') + '\\b', 'i').test(q))) {
       targets.push({ name, variants });
     }
   };
@@ -591,7 +591,7 @@ function targetVariantMatches(text, variants) {
   return variants.some((variant) => {
     const v = normalizeForLexicalMatch(variant);
     if (!v) return false;
-    return new RegExp('\\b' + v.replace(/\s+/g, '\s+') + '\\b', 'i').test(haystack);
+    return new RegExp('\\b' + v.replace(/\s+/g, '\\s+') + '\\b', 'i').test(haystack);
   });
 }
 
@@ -1754,7 +1754,7 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
     .replace(/\s+(?:Hari\s*\/?\s*Tanggal|Tanggal|Pukul|Waktu|Jam|Tempat|Loket|Lokasi|Selain\s+dari\s+tanggal\s+tersebut|[B-Z]\.\s+|Persyaratan)\b[\s\S]*$/i, '')
     .trim();
   const getValue = (labelPattern) => {
-    const re = new RegExp(`(?:${labelPattern})\s*[:\\uFF1A]?\s*([^\\n]+)`, 'i');
+    const re = new RegExp(`(?:${labelPattern})\\s*[:\\uFF1A]?\\s*([^\\n]+)`, 'i');
     const m = section.match(re);
     return m && m[1] ? cleanScheduleFieldValue(m[1]) : '';
   };
@@ -3128,7 +3128,7 @@ function normalizeOrgStructureText(value) {
 function buildOrgSubjectRegex(subject) {
   const raw = String(subject || '').trim();
   if (!raw || /^bagian tersebut$/i.test(raw)) return null;
-  const escaped = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\s+');
+  const escaped = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
   return new RegExp(escaped, 'i');
 }
 
@@ -3811,7 +3811,7 @@ function tryScheduleWindowAnswer(question, _indexForQuery, options = {}) {
   const availabilityKeyword = /\b(masih\s+buka|masih\s+dibuka|masih\s+menerima|menerima\s+pendaftaran|terima\s+pendaftaran|buka|dibuka|sekarang|hari\s+ini|saat\s+ini)\b/i;
   const hasScheduleSignal = scheduleKeyword.test(qLower) ||
     (registrationKeyword.test(qLower) && (scheduleKeyword.test(qLower) || availabilityKeyword.test(qLower))) ||
-    Object.keys(ID_MONTH_MAP).some(name => new RegExp(`\b${name}\b`, 'i').test(qLower));
+    Object.keys(ID_MONTH_MAP).some(name => new RegExp(`\\b${name}\\b`, 'i').test(qLower));
   if (!hasScheduleSignal) return null;
 
   const asksFee = /\b(biaya|bayar|bayarnya|pembayaran|harga|dpp|ukt|potongan|rincian\s+biaya|rincian|total|totalnya|harus\s+bayar|termurah|termahal)\b/i.test(qLower);
@@ -4855,6 +4855,71 @@ function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}
 function tryGenericFaqQnaAnswer(question, indexForQuery, options = {}) {
   return buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options);
 }
+function tryAccreditationAnswer(question, indexForQuery) {
+  const q = String(question || '');
+  if (!/\b(akreditasi(?:nya)?|akredit|terakreditasi|ban\s*-?\s*pt|peringkat\s+akreditasi|sertifikat\s+akreditasi|sk\s+akreditasi)\b/i.test(q)) return null;
+
+  const asksProgramAccreditationOverview = /\b(program|prodi|program\s+studi|jurusan)\b/i.test(q)
+    && /\b(apa\s+(?:aja|saja)|ada\s+apa|yang\s+ada|tersedia|gimana|bagaimana)\b/i.test(q);
+  if (asksProgramAccreditationOverview) {
+    return {
+      answer: [
+        'Program yang tersedia di ITB STIKOM Bali:',
+        '',
+        '- S2 Sistem Informasi',
+        '- S1 Sistem Informasi',
+        '- S1 Teknologi Informasi',
+        '- S1 Bisnis Digital',
+        '- S1 Sistem Komputer',
+        '- D3 Manajemen Informatika',
+        '',
+        'Akreditasi yang terbaca pada data:',
+        '- Institusi ITB STIKOM Bali: Baik Sekali (BAN-PT)',
+        '- Sistem Informasi: Baik Sekali',
+        '- Teknologi Informasi: Baik',
+        '- Bisnis Digital: Baik',
+        '- Sistem Komputer: Baik Sekali',
+        '- Manajemen Informatika: Baik'
+      ].join('\n'),
+      source: 'rag-accreditation',
+      frameSource: 'rag-accreditation'
+    };
+  }
+  const structured = ragEngine.tryStructuredAccreditationAnswer(question, indexForQuery);
+  if (structured && structured.answer && structured.source !== 'rag-accreditation-clarify') {
+    return structured;
+  }
+
+  const asksInstitution = /\b(kampus|institusi|perguruan\s+tinggi|itb\s*stikom\s*bali|stikom\s*bali)\b|\bdi\s*kampus\b/i.test(q)
+    || /\b(apakah|apa)\b[\s\S]{0,80}\bterakreditasi\b/i.test(q);
+  if (!asksInstitution || !Array.isArray(indexForQuery) || !indexForQuery.length) return structured || null;
+
+  const candidates = [];
+  for (const item of indexForQuery) {
+    const chunk = String(item && item.chunk ? item.chunk : '').replace(/\s+/g, ' ').trim();
+    const haystack = `${item && (item.filename || item.sourceFile || '')} ${chunk}`;
+    if (!/akreditasi|ban\s*-?\s*pt|peringkat/i.test(haystack)) continue;
+    if (!/institut\s+teknologi\s+dan\s+bisnis\s+stikom\s+bali|itb\s*stikom\s*bali|perguruan\s+tinggi/i.test(haystack)) continue;
+    const gradeMatch = chunk.match(/menjadi\s+(UNGGUL|BAIK\s+SEKALI|BAIK|[ABC])\b/i)
+      || chunk.match(/peringkat\s+akreditasi[\s\S]{0,160}?\b(UNGGUL|BAIK\s+SEKALI|BAIK|[ABC])\b/i)
+      || chunk.match(/terakreditasi[\s\S]{0,80}?\b(UNGGUL|BAIK\s+SEKALI|BAIK|[ABC])\b/i);
+    const skMatch = haystack.match(/(?:Nomor\s*[:\-]?\s*)?([0-9]{2,5}\/SK\/BAN\s*-?\s*PT\/[A-Za-z0-9.\/-]+\/\d{4})/i);
+    const score = (gradeMatch ? 10 : 0) + (skMatch ? 4 : 0) + (/konversi\s+peringkat/i.test(haystack) ? 3 : 0) + (/perguruan\s+tinggi/i.test(haystack) ? 2 : 0);
+    if (score > 0) candidates.push({ chunk, score, grade: gradeMatch && gradeMatch[1], sk: skMatch && skMatch[1] });
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  const best = candidates[0];
+  if (!best || !best.grade) return structured || null;
+  const grade = String(best.grade).replace(/\s+/g, ' ').trim().replace(/\b\w/g, (m) => m.toUpperCase());
+  const lines = [`ITB STIKOM Bali sudah terakreditasi oleh BAN-PT dengan peringkat ${grade}.`];
+  if (best.sk) lines.push(`Nomor SK: ${String(best.sk).replace(/\s+/g, '')}.`);
+  return {
+    answer: lines.join('\n'),
+    source: 'rag-accreditation',
+    frameSource: 'rag-accreditation'
+  };
+}
 function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
   // Allow training-specific FAQ matching even for some structured campus
   // questions (e.g., Double Degree or partner-related FAQ), because FAQ
@@ -4941,6 +5006,9 @@ function buildTrainingSpecificAnswerFromIndex(question, indexForQuery) {
 }
 
 function tryTrainingSpecificAnswer(question, indexForQuery) {
+  const accreditationResult = tryAccreditationAnswer(question, indexForQuery);
+  if (accreditationResult && accreditationResult.answer) return accreditationResult;
+
   const q = String(question || '');
   if (/\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|pusat\s+karir|karier|karir|lowongan|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study|konsultasi\s+karier|inkubator|inbis|incubator|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|softskill|soft\s*skill|hi-?think|hithink|gccp|gcpp|bccp|student\s*exchange|short\s*course|kuliah\s+sambil\s+kerja|magang\s+berbayar)\b/i.test(q)) return null;
   if (/\b(?:double\s*degree|dual\s*degree|dkv|desain\s+komunikasi\s+visual|desain\s+visual|visual\s+branding|illustration|utb|dnui|help\s+university)\b/i.test(q)) return null;
@@ -5202,7 +5270,7 @@ function buildCareerReadinessProgramsAnswer() {
     '- Tracer study dan dukungan kesiapan kerja setelah lulus.',
     '- Program pendukung karier internasional seperti Hi-Think, short course, atau peluang kerja/magang luar negeri sesuai data yang tersedia.',
     '',
-    'Jadi, kalau kakak menanyakan “apa saja program di Career Center?”, jawabannya yang paling aman adalah layanan di atas, bukan hanya topik yang perlu ditanyakan lagi.'
+    'Jadi, kalau kakak menanyakan "apa saja program di Career Center?", jawabannya yang paling aman adalah layanan di atas, bukan hanya topik yang perlu ditanyakan lagi.'
   ].join('\n');
 }
 function buildCareerSoftskillAnswer() {
@@ -8484,6 +8552,9 @@ function isMeaningMismatchAnswer(question, answer, source = '') {
   if (hits.length > 0) return false;
 
   const noDataAnswer = hasNoDataAnswerPhrase(answer);
+  if (/rag-accreditation|semantic-rag-accreditation/.test(src)
+    && /\b(program|prodi|jurusan)\b/i.test(question)
+    && /Program yang tersedia[\s\S]+Akreditasi/i.test(answer)) return false;
   if (noDataAnswer) return answerMentionsUnaskedSpecificEntity(question, answer);
 
   if (src.includes('program-list') && /\b(?:Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika)\b/i.test(answer)) return false;
@@ -8613,7 +8684,10 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const explicitExternalNoDataSafe = /explicit-external-insufficient-data/i.test(source);
   const meaningProfile = inferQuestionMeaningProfile(question);
   const structuredDefinitionSafe = meaningProfile.intent === 'definition_question' && /semantic-rag-uploaded-training-generic|campus-support-entity|campus-facility/i.test(source);
-  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || explicitExternalNoDataSafe || structuredDefinitionSafe;
+  const structuredAccreditationSafe = /rag-accreditation|semantic-rag-accreditation/i.test(source)
+    && /\b(program|prodi|jurusan)\b/i.test(question)
+    && /Program yang tersedia[\s\S]+Akreditasi/i.test(result.answer);
+  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
