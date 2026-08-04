@@ -2553,6 +2553,12 @@ function filterSemanticContextsForQuestion(question, contexts) {
     const asksCareerCenter = /\b(career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(question);
     if (asksCareerCenter && !/\b(career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(haystack)) return false;
 
+    const asksAccreditation = /\b(akreditasi|ban-pt|badan\s+akreditasi|peringkat\s+akreditasi|sertifikat\s+akreditasi|sk\s+akreditasi|status\s+akreditasi)\b/i.test(question);
+    if (asksAccreditation) {
+      const hasAccreditationEvidence = /\b(akreditasi|ban-pt|badan\s+akreditasi|sertifikat\s+akreditasi|sk\s+akreditasi|peringkat\s+akreditasi|status\s+akreditasi)\b/i.test(haystack);
+      if (!hasAccreditationEvidence) return false;
+    }
+
     if (questionIntent === 'facility') {
       const hasFacilitySignal = /fasilitas|sarana|prasarana|lab|laboratorium|perpustakaan|kantin|parkir|parkiran|wifi|wi-fi|ruang\s+(?:kelas|kuliah)|career\s*center|inkubator|language\s+learning|softskill|hi-?think/i.test(haystack);
       const hasInternationalSupportSignal = /student\s*exchange|mahasiswa\s+asing|visa|itas|international|internasional/i.test(haystack);
