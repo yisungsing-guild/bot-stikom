@@ -28,7 +28,9 @@ process.env.ENABLE_RAG = process.env.ENABLE_RAG || 'true';
 process.env.DISABLE_KEYWORD_RULES = process.env.DISABLE_KEYWORD_RULES || 'true';
 process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS || 'false';
 process.env.SEMANTIC_RAG_RESULT_CACHE_MS = process.env.SEMANTIC_RAG_RESULT_CACHE_MS || '0';
-process.env.OPENAI_API_KEY = '';
+if (String(process.env.CHECK_PMB_DISABLE_LLM || '').toLowerCase() === 'true') {
+  process.env.OPENAI_API_KEY = '';
+}
 
 const sessionStore = new Map();
 const chatStore = new Map();
@@ -131,15 +133,21 @@ const defaultQuestions = [
 function makeRequest(port, payload) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(payload);
+    const token = String(process.env.PROVIDER_WEBHOOK_TOKEN || '').trim();
+    const headers = {
+      'content-type': 'application/json',
+      'content-length': Buffer.byteLength(body)
+    };
+    if (token) {
+      headers['x-webhook-token'] = token;
+      headers.authorization = `Bearer ${token}`;
+    }
     const req = http.request({
       hostname: '127.0.0.1',
       port,
       path: '/provider/webhook',
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'content-length': Buffer.byteLength(body)
-      }
+      headers
     }, (res) => {
       const chunks = [];
       res.on('data', (chunk) => chunks.push(chunk));
