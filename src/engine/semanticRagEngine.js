@@ -3507,11 +3507,11 @@ function tryAmbiguousAbbreviationClarificationAnswer(question) {
 function tryFeedbackAnswer(question) {
   const q = String(question || '').toLowerCase().trim();
   if (!q) return null;
-  const isFeedback = /\b(kok|loh|waduh|salah|tidak\s+nyambung|nggak\s+nyambung|ga\s+nyambung|gak\s+nyambung|tidak\s+menjawab|nggak\s+menjawab|ga\s+menjawab|gak\s+menjawab|jawabannya|jawaban\s+bot|dicek\s+lagi|cek\s+lagi|dari\s+mana\s+dapat\s+informasinya)\b/.test(q);
+  const isFeedback = /\b(kok|loh|waduh|salah|tidak\s+nyambung|nggak\s+nyambung|ga\s+nyambung|gak\s+nyambung|tidak\s+menjawab|nggak\s+menjawab|ga\s+menjawab|gak\s+menjawab|jawabannya|jawaban\s+bot|dicek\s+lagi|cek\s+lagi|koreksi|perbaiki|singkat|informatif|informasi\s+awal|dari\s+mana\s+dapat\s+informasinya)\b/.test(q);
   const hasRealQuestion = /\b(jurusan|prodi|program\s+studi|biaya|bayar|ukt|dpp|semester|pendaftaran|beasiswa|gelombang|double\s*degree|dual\s*degree|akreditasi|prospek|apa\s+itu|berapa|kapan|dimana|bagaimana)\b/.test(q) || /\b\d{5,}\b/.test(q);
   if (!isFeedback || hasRealQuestion) return null;
   return {
-    answer: 'Maaf ya, Kak. Kalau jawaban saya tadi tidak nyambung, berarti data yang saya pegang kemungkinan belum cukup untuk menjawab bagian itu dengan tepat. Saya tidak akan memaksakan jawaban di luar data yang tersedia.'
+    answer: 'Siap, Kak. Untuk informasi awal, saya akan buat jawaban lebih singkat, langsung ke inti, dan tetap berdasarkan data yang tersedia. Kalau ada bagian spesifik yang perlu dikoreksi, kakak bisa kirim teksnya lalu saya bantu rapikan.'
   };
 }
 
@@ -8683,6 +8683,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const compactGeneralSafe = Boolean(result.debug && result.debug.compactAcademicGeneral)
     && isSafeCompactAcademicGeneralAnswer(question, result.answer);
   const compactAcademicSafe = compactScheduleSafe || compactRequirementSafe || compactGeneralSafe;
+  const structuredSmallTalkSafe = /small-talk/i.test(source);
   const structuredPmbSafe = (/pmb-info/i.test(source) && isSafePmbOverviewAnswer(question, result.answer)) || (/pmb-requirements/i.test(source) && /\b(syarat|persyaratan|dokumen|berkas|pendaftaran|siap\.stikom-bali\.ac\.id|pmb)\b/i.test(String(result.answer || '')));
   const structuredDualDegreeSafe = /dual-degree/i.test(source) && isSafeDualDegreeAnswer(question, result.answer);
   const structuredFacilitySafe = isSafeCampusFacilityAnswer(question, result.answer, source);
@@ -8695,7 +8696,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredAccreditationSafe = /rag-accreditation|semantic-rag-accreditation/i.test(source)
     && /\b(program|prodi|jurusan)\b/i.test(question)
     && /Program yang tersedia[\s\S]+Akreditasi/i.test(result.answer);
-  const structuredSemanticSafe = compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe;
+  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
@@ -8933,6 +8934,11 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
   }
 
+  const feedbackDirect = strictDocumentOnly ? null : tryFeedbackAnswer(question);
+  if (feedbackDirect && feedbackDirect.answer) {
+    const builtFeedback = buildDeterministicResponse(question, 'semantic-rag-feedback', feedbackDirect, { routeStage: 'pre-ai-feedback' });
+    return await finalizeSemanticResult(question, builtFeedback, resultCacheKey);
+  }
   const explicitInbisSupport = strictDocumentOnly ? null : (/\b(?:inbis|inkubator\s+bisnis|incubator\s+bisnis)\b/i.test(earlySupportQuestion) ? tryCampusSupportEntityAnswer(question, getCachedSemanticIndex(), options) : null);
   if (explicitInbisSupport && explicitInbisSupport.answer) {
     const builtInbisSupport = buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', explicitInbisSupport, { routeStage: 'pre-ai-campus-support-inbis' });

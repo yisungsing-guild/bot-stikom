@@ -6798,7 +6798,7 @@ module.exports = function (provider) {
     if (!t) return false;
     if (t.includes('?')) return true;
     if (t.length > 40) return true;
-    return /\b(alur|cara\s+daftar|syarat|dokumen|kontak|biaya|beasiswa|program\s+studi|prodi|akreditasi|informasi|pmb|penerimaan|pendaftaran)\b/i.test(t);
+    return /\b(hallo|halo|hai|hay|hello|helo|selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam|alur|cara\s+daftar|syarat|persyaratan|dokumen|berkas|kontak|biaya|beasiswa|program\s+studi|prodi|jurusan|akreditasi|informasi|info|pmb|penerimaan|pendaftaran|double\s*degree|dual\s*degree|program\s+internasional|student\s+exchange|pertukaran\s+mahasiswa|izin\s+belajar|visa|ukm|ormawa|organisasi\s+mahasiswa|inbis|inkubator|cdc|career\s*center|rpl|kampus|sks)\b/i.test(t);
   }
 
   function answerAsksGelombangForTotal(answerText) {
@@ -9163,8 +9163,8 @@ module.exports = function (provider) {
 
         // Don't auto-clear if the inbound is a bare numeric selection (menu reply),
         // if it matches a known follow-up shape for a pending flag, or if it's a
-        // pure greeting restart.
-        if (!isFollowup && !explicitProgramInText && !numericSelection && !keepEphemeralBecauseFollowupShape && !isGreetingRestart) {
+        // fresh greeting or new topic.
+        if (!isFollowup && !explicitProgramInText && !numericSelection && !keepEphemeralBecauseFollowupShape) {
           try {
             const currentState = session ? session.state : 'root';
             const clearedData = { ...(sessionData || {}) };
@@ -10441,17 +10441,25 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           return res.send({ ok: true, source: 'post_fee_fasilitas_overview' });
         }
 
-        // Unrecognized: re-persist pending and reprompt
-        try {
-          const repromptData = { ...clearedData, pendingFollowupChoice: { type: 'post_fee_options', ts: new Date().toISOString() } };
-          await prisma.session.upsert({ where: { chatId }, create: { chatId, state: currentState, data: repromptData }, update: { state: currentState, data: repromptData } });
-        } catch (e) {
-          logger.warn({ err: e.message }, '[Provider] Failed to re-persist pendingFollowupChoice (post_fee_options)');
-        }
+        if (looksLikeNewTopicQuestion(text) || isPureGreetingRestart(text)) {
+          try {
+            await prisma.session.upsert({ where: { chatId }, create: { chatId, state: currentState, data: clearedData }, update: { state: currentState, data: clearedData } });
+          } catch (e) {
+            logger.warn({ err: e.message }, '[Provider] Failed to clear pendingFollowupChoice (post_fee_options -> new topic)');
+          }
+          sessionData = clearedData;
+        } else {
+          // Unrecognized: re-persist pending and reprompt
+          try {
+            const repromptData = { ...clearedData, pendingFollowupChoice: { type: 'post_fee_options', ts: new Date().toISOString() } };
+            await prisma.session.upsert({ where: { chatId }, create: { chatId, state: currentState, data: repromptData }, update: { state: currentState, data: repromptData } });
+          } catch (e) {
+            logger.warn({ err: e.message }, '[Provider] Failed to re-persist pendingFollowupChoice (post_fee_options)');
+          }
 
-        await sendBotMessage(chatId, 'Silakan pilih salah satu:\n1) Biaya perkuliahan program studi yang lainnya\n2) Salah satu jenis beasiswa\n3) Fasilitas yang ada di kampus\nBalas dengan angka (1/2/3) atau sebutkan pilihan.');
-        return res.send({ ok: true, source: 'post_fee_options_reprompt' });
-      }
+          await sendBotMessage(chatId, 'Silakan pilih salah satu:\n1) Biaya perkuliahan program studi yang lainnya\n2) Salah satu jenis beasiswa\n3) Fasilitas yang ada di kampus\nBalas dengan angka (1/2/3) atau sebutkan pilihan.');
+          return res.send({ ok: true, source: 'post_fee_options_reprompt' });
+        }      }
 
       if (pending && pending.type === 'total_vs_discount' && pendingFresh) {
         const choice = parseTotalOrDiscountChoice(text);
