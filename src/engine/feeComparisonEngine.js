@@ -583,7 +583,7 @@ function tryProgramListAnswer(question) {
   const asksAvailable = /\b(apa\s+saja|apa\s+aja|ada\s+apa|tersedia|yang\s+ada|di\s+stikom|stikom)\b/.test(q);
   const recommendationIntent = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|ingin|mau|pengen|bekerja|kerja|karir|karier|minat|hobi)\b/.test(q);
   const explicitListIntent = asksProgramList && asksAvailable && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa|yg\s+ada)\b/.test(q);
-  const asksProgramDetailOverview = asksProgramList && /\b(detail|masing(?:-masing)?|dipelajari|pelajarin|belajar|kurikulum|mata\s+kuliah|matkul|skill|kemampuan)\b/.test(q);
+  const asksProgramDetailOverview = asksProgramList && /\b(detail|masing(?:-masing)?|dipelajari|dipelajarin|pelajarin|belajar|kurikulum|mata\s+kuliah|matkul|skill|kemampuan)\b/.test(q);
   if (recommendationIntent && !explicitListIntent) return null;
   if (!asksProgramList || (!asksAvailable && !asksProgramDetailOverview)) return null;
 
@@ -1334,6 +1334,19 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
     }
   }
 
+  if (wantsFullDetail && (!found || !found.program || !found.profile)) {
+    return {
+      answer: [
+        'Bisa, Kak. Untuk rincian biaya lengkap, saya perlu tahu dulu prodi/program yang kakak maksud.',
+        '',
+        'Balas salah satu: SI / TI / BD / SK / D3 / S2.',
+        'Kalau program Double Degree, balas: UTB / DNUI / HELP.'
+      ].join('\n'),
+      program: null,
+      profile: null,
+      wave: null
+    };
+  }
   if (!wave && found && found.program && found.profile && ['si', 'ti', 'bd', 'sk'].includes(found.program.key) && wantsFullDetail) {
     const { program, profile } = found;
     return {

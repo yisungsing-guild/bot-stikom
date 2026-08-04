@@ -2304,7 +2304,7 @@ module.exports = function (provider) {
     // Normalize tiny common variants so fee intent can be detected reliably.
     // Examples:
     // - "biaya mendaftar" -> treat as "biaya daftar/pendaftaran"
-    const t = tRaw.replace(/\bmendaftar\b/g, 'daftar');
+    const t = tRaw.replace(/\bbiayanya\b/g, 'biaya').replace(/\bmendaftar\b/g, 'daftar');
 
     // Avoid misclassifying academic/admin topics as fee detail choices.
     // Example: "daftar ulang" / "registrasi ulang" is not the same as "biaya pendaftaran".
@@ -14472,6 +14472,23 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
       return res.send({ ok: true, source: 'permission_to_ask' });
     }
 
+    try {
+      const ddPick = /^\s*(UTB|DNUI|HELP)\s*$/i.exec(String(text || '').trim());
+      if (ddPick && allowBundledIndex) {
+        const ctx = await getConversationContext(chatId, text, sessionData);
+        const lastBot = String(ctx.lastBot || '');
+        if (/rincian biaya lengkap|Balas salah satu: SI\s*\/\s*TI\s*\/\s*BD\s*\/\s*SK\s*\/\s*D3\s*\/\s*S2|UTB\s*\/\s*DNUI\s*\/\s*HELP/i.test(lastBot)) {
+          const feeBasics = extractFeeBasicsFromBundledIndex();
+          const fast = feeBasics ? buildFastFeeAnswer(ddPick[1].toUpperCase(), 'breakdown', feeBasics, { originalQuery: `Program Double Degree: ${ddPick[1].toUpperCase()}\nrincian biaya` }) : null;
+          if (fast) {
+            await sendBotMessage(chatId, String(fast || '').trim());
+            return res.send({ ok: true, source: 'double_degree_fee_pick_fast', program: ddPick[1].toUpperCase() });
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn({ err: e.message }, '[Provider] Double Degree fee pick fast path failed');
+    }
     // Deterministic answer for DKV in the UTB Double Degree context.
     if (isDkvProgramQuestion(text)) {
       await sendBotMessage(
@@ -14624,11 +14641,42 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
       const wantsTuition =
         feeChoice === 'semester' ||
         feeChoice === 'breakdown' ||
-        /\b(biaya|uang)\s+kuliah\b/i.test(trimmedFee) ||
+        /\b(biaya|biayanya|uang)\s+kuliah\b/i.test(trimmedFee) ||
+        /\bbiaya(?:nya)?\b/i.test(trimmedFee) ||
         /\bbiaya\s+pendidikan\b/i.test(trimmedFee) ||
         /\bukt\b/i.test(trimmedFee);
 
       const hasProgramInText = !!extractSpecificProgramHint(trimmedFee);
+
+      if (isRagEnabled() && wantsTuition && !hasProgramInText && isLikelyFollowupQuestion(trimmedFee)) {
+        try {
+          const ctx = await getConversationContext(chatId, text, sessionData);
+          const recent = `${ctx.lastUser || ''}\n${ctx.lastBot || ''}`;
+          const recentDoubleDegreeContext = /\b(double\s*degree|dual\s*degree|UTB|DNUI|HELP|Universitas\s+Teknologi\s+Bandung|Dalian\s+Neusoft|HELP\s+University)\b/i.test(recent);
+          if (recentDoubleDegreeContext) {
+            const ddProgram = extractSpecificDualDegreeProgramHint(ctx.lastUser) || extractSpecificDualDegreeProgramHint(ctx.lastBot);
+            if (!ddProgram) {
+              await sendBotMessage(
+                chatId,
+                'Bisa, Kak. Untuk rincian biaya Double Degree, kakak mau program yang mana?\n' +
+                  'Balas: UTB / DNUI / HELP.'
+              );
+              return res.send({ ok: true, source: 'double_degree_fee_followup_need_program' });
+            }
+
+            if (allowBundledIndex) {
+              const feeBasics = extractFeeBasicsFromBundledIndex();
+              const fast = feeBasics ? buildFastFeeAnswer(ddProgram, 'breakdown', feeBasics, { originalQuery: `Program Double Degree: ${ddProgram}\n${trimmedFee}` }) : null;
+              if (fast) {
+                await sendBotMessage(chatId, String(fast || '').trim());
+                return res.send({ ok: true, source: 'double_degree_fee_followup_fast', program: ddProgram });
+              }
+            }
+          }
+        } catch (e) {
+          logger.warn({ err: e.message }, '[Provider] Double Degree fee follow-up guard failed');
+        }
+      }
 
       // Tuition fee question without specifying prodi/program: ask a follow-up first.
       // Keep this before keyword rules so static rules can't hijack tuition-fee UX.
@@ -15218,7 +15266,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
       const wantsTuition =
         feeChoice === 'semester' ||
         feeChoice === 'breakdown' ||
-        /\b(biaya|uang)\s+kuliah\b/i.test(trimmedFee) ||
+        /\b(biaya|biayanya|uang)\s+kuliah\b/i.test(trimmedFee) ||
+        /\bbiaya(?:nya)?\b/i.test(trimmedFee) ||
         /\bbiaya\s+pendidikan\b/i.test(trimmedFee) ||
         /\bukt\b/i.test(trimmedFee);
 
@@ -15759,8 +15808,11 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
         //   but add conversation transcript to improve the final answer.
         if (enableContextFollowups && trimmed && !/^\d+$/.test(trimmed) && !isSimpleGreeting(trimmed)) {
           const isUltraShort = trimmed.length <= 24;
-          const isReferential = /\b(?:yang\s+tadi|yang\s+sebelumnya|lanjut|lanjutkan|terus|trus|detail|rincian)\b/i.test(trimmed)
-            || (/\bitu\b/i.test(trimmed) && !/^\s*apa\s+itu\b/i.test(trimmed));
+          const isReferential = /\b(?:yang\s+tadi|yang\s+sebelumnya|lanjut|lanjutkan|terus|trus|detail|rincian|biayanya|detailnya|rinciannya)\b/i.test(trimmed)
+            || (/\\bitu\\b/i.test(trimmed) && !/^\\s*apa\\s+itu\\b/i.test(trimmed));
+          const contextualShortMax = parseInt(process.env.CONTEXT_FOLLOWUP_MAX_LEN || '80', 10);
+          const isContextualShortFollowup = trimmed.length <= contextualShortMax
+            && (isReferential || isShortContinueRequest(trimmed) || !!parseFeeDetailChoice(trimmed));
 
           // Special: if the bot just asked for 2â€“3 hobby/activity examples,
           // treat the user's short activity reply (e.g. "membuat robot") as a continuation.
@@ -15814,12 +15866,34 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             const anchored = program ? `Program Studi: ${program}\n${answerQ}` : answerQ;
             ragQuestion = anchored;
             ragOptions = { conversationContext: ctx.transcript || '', answerQuestion: answerQ };
-          } else if (isUltraShort && (isShortAffirmation(trimmed) || isReferential || isShortContinueRequest(trimmed))) {
+          } else if ((isUltraShort || isContextualShortFollowup) && (isShortAffirmation(trimmed) || isReferential || isShortContinueRequest(trimmed) || !!parseFeeDetailChoice(trimmed))) {
             // Important: don't use a long transcript as the retrieval query (can drift to other similar docs).
             // Instead, anchor retrieval on the pending intent + program hint from the last bot reply,
             // while still passing conversation transcript for answer generation.
             const ctx = await getConversationContext(chatId, text, sessionData);
 
+            const contextualFeeChoice = parseFeeDetailChoice(trimmed);
+            const recentDoubleDegreeContext = /\b(double\s*degree|dual\s*degree|UTB|DNUI|HELP|Universitas\s+Teknologi\s+Bandung|Dalian\s+Neusoft|HELP\s+University)\b/i.test(`${ctx.lastUser || ''}\n${ctx.lastBot || ''}`);
+            if (contextualFeeChoice === 'breakdown' && recentDoubleDegreeContext) {
+              const ddProgram = extractSpecificDualDegreeProgramHint(ctx.lastUser) || extractSpecificDualDegreeProgramHint(ctx.lastBot);
+              if (!ddProgram) {
+                await sendBotMessage(
+                  chatId,
+                  'Bisa, Kak. Untuk rincian biaya Double Degree, kakak mau program yang mana?\n' +
+                    'Balas: UTB / DNUI / HELP.'
+                );
+                return res.send({ ok: true, source: 'double_degree_fee_followup_need_program' });
+              }
+
+              if (allowBundledIndex) {
+                const feeBasics = extractFeeBasicsFromBundledIndex();
+                const fast = feeBasics ? buildFastFeeAnswer(ddProgram, 'breakdown', feeBasics, { originalQuery: `Program Double Degree: ${ddProgram}\n${trimmed}` }) : null;
+                if (fast) {
+                  await sendBotMessage(chatId, fast);
+                  return res.send({ ok: true, source: 'double_degree_fee_followup_fast', program: ddProgram });
+                }
+              }
+            }
             // If the bot just asked for a scholarship category, an ack-only reply like "siap" provides no info.
             // Ask for the category explicitly instead of drifting to other topics.
             if (isScholarshipCategoryFollowupPrompt(ctx.lastBot) && isAcknowledgementOnly(trimmed)) {
@@ -16390,6 +16464,27 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           }
 
           await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer));
+
+          try {
+            const answerText = String(ragResult.answer || '');
+            if (/Balas salah satu: SI\s*\/\s*TI\s*\/\s*BD\s*\/\s*SK\s*\/\s*D3\s*\/\s*S2/i.test(answerText) && /rincian biaya lengkap/i.test(answerText)) {
+              const currentState = session ? session.state : 'root';
+              const prevData = sessionData || {};
+              const newData = {
+                ...prevData,
+                pendingProgramSelection: {
+                  ts: new Date().toISOString(),
+                  intent: 'tuition_fee',
+                  question: String(text || '').trim(),
+                  feeChoice: 'breakdown'
+                }
+              };
+              await prisma.session.upsert({ where: { chatId }, create: { chatId, state: currentState, data: newData }, update: { state: currentState, data: newData } });
+              sessionData = newData;
+            }
+          } catch (e) {
+            logger.warn({ err: e.message }, '[Provider] Failed to persist pendingProgramSelection (semantic fee clarify)');
+          }
 
           // If we just asked the user for 2â€“3 hobby/activity examples, remember it briefly
           // so short replies like "membuat robot" are treated as continuations.
