@@ -1687,7 +1687,7 @@ function isSafeProgramListAnswer(question, answer, source = '') {
   const mentionsPrograms = /\b(?:Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika)\b/i.test(a);
   if (!mentionsPrograms) return false;
   if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
-  return a.length <= 2600;
+  return a.length <= 4200;
 }
 
 function isSafeProgramDefinitionAnswer(question, answer, source = '') {
@@ -1713,7 +1713,7 @@ function isSafeCompactAcademicGeneralAnswer(question, answer) {
   if (!/\b(?:Yudisium|Wisuda|Sidang|Tugas\s+Akhir|Proyek\s+Akhir)\b/i.test(a)) return false;
   if (!/\b(?:Hari\s*\/?\s*Tanggal|Tanggal|Pukul|Waktu|Tempat|Persyaratan|Syarat|Pendaftaran|Pelaksanaan)\b/i.test(a)) return false;
   if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
-  return a.length <= 2600;
+  return a.length <= 4200;
 }
 
 function isSafeCampusFacilityAnswer(question, answer, source = '') {

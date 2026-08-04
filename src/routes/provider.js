@@ -8938,7 +8938,7 @@ module.exports = function (provider) {
           }
         } catch (e) {}
         const outboundSource = meta && meta.source ? String(meta.source || '') : '';
-        const semanticRagOutbound = /^semantic-rag-/i.test(outboundSource);
+        const semanticRagOutbound = /^semantic-rag-/i.test(outboundSource) || looksLikeProtectedKnowledgeBaseAnswer(cleaned);
         const preflight = String(cleaned || '').trim() === 'WELCOME_MENU'
           ? { answer: cleaned, issues: [], action: 'send', blocked: false, meta: { source: 'welcome_literal_token' } }
           : semanticRagOutbound
@@ -8958,7 +8958,7 @@ module.exports = function (provider) {
       } catch (e) {
         // Fallback: send original decorated content if cleanup fails
         const outboundSource = meta && meta.source ? String(meta.source || '') : '';
-        const semanticRagOutbound = /^semantic-rag-/i.test(outboundSource);
+        const semanticRagOutbound = /^semantic-rag-/i.test(outboundSource) || looksLikeProtectedKnowledgeBaseAnswer(decorated);
         const preflight = String(decorated || '').trim() === 'WELCOME_MENU'
           ? { answer: decorated, issues: [], action: 'send', blocked: false, meta: { source: 'welcome_literal_token' } }
           : semanticRagOutbound
