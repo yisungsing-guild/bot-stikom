@@ -47,49 +47,49 @@ async function main() {
 
   await createUser(
     "Falkultas_INFOKOM",
-    "o2SMcQrphxEUjB1L",
+    "XjHX5P23rLFaP6tW",
     "admin",
     "FAKULTAS INFORMATIKA DAN KOMPUTER"
   );
 
 await createUser(
     "sistem_informasi",
-    "o2SMcQrphxEUjB1L",
+    "xq4fyvoY7g0byv3A",
     "admin",
     "SISTEM INFORMASI"
   );
 
   await createUser(
     "sistem_komputer",
-    "o2SMcQrphxEUjB1L",
+    "wNCDbnawXAQFxd7B",
     "admin",
     "SISTEM KOMPUTER"
   );
 
   await createUser(
     "teknologi_informasi",
-    "o2SMcQrphxEUjB1L",
+    "XfW2eiKXjta5jauf",
     "admin",
     "TEKNOLOGI INFORMASI"
   );
 
 await createUser(
     "bisnis_digital",
-    "o2SMcQrphxEUjB1L",
+    "2Owgj062QpRY6iFK",
     "admin",
     "BISNIS DIGITAL"
   );
 
   await createUser(
     "manajemen_informatika",
-    "o2SMcQrphxEUjB1L",
+    "msaZv87fffuWiH7M",
     "admin",
     "MANAJEMEN INFORMATIKA"
   );
 
   await createUser(
     "pasca",
-    "o2SMcQrphxEUjB1L",
+    "Cv1ZNdtcSj1nnqBU",
     "admin",
     "PASCA SARJANA SISTEM INFORMASI"
   );
