@@ -8796,10 +8796,19 @@ async function querySemanticRag(question, options = {}) {
   }
 
   // If uploaded-training (local RAG) has an authoritative answer, prefer it
-  // and skip early deterministic abbreviation clarification to avoid
-  // intercepting valid RAG responses. This keeps behavior data-driven
-  // (new upload files are read automatically) and avoids adding handlers.
-
+  // before any early deterministic support handlers or abbreviation
+  // clarification. This keeps behavior data-driven and lets new document
+  // uploads answer questions automatically.
+  const preAiUploadedTraining = await tryLocalUploadedTrainingGenericAnswer(question, options);
+  if (preAiUploadedTraining && preAiUploadedTraining.answer) {
+    if (debugTrace) {
+      console.log('[TRACE PRE_AI] returning local uploaded-training result before deterministic handlers:', {
+        source: preAiUploadedTraining.source,
+        answerPreview: String(preAiUploadedTraining.answer).slice(0, 100)
+      });
+    }
+    return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
+  }
 
   const abbreviationClarification = strictDocumentOnly ? null : tryAmbiguousAbbreviationClarificationAnswer(question);
   if (abbreviationClarification && abbreviationClarification.answer) {
@@ -8847,7 +8856,9 @@ async function querySemanticRag(question, options = {}) {
     'semantic-rag-career-softskill',
     'semantic-rag-campus-facility'
   ]);
-  const earlySupportResult = strictDocumentOnly ? null : runDeterministicHandlers(question, earlySupportHandlers, options, [question], { routeStage: 'pre-ai-support' });
+  const earlySupportResult = (!strictDocumentOnly && !client)
+    ? runDeterministicHandlers(question, earlySupportHandlers, options, [question], { routeStage: 'pre-ai-support' })
+    : null;
   if (earlySupportResult) {
     return await finalizeSemanticResult(question, earlySupportResult, resultCacheKey);
   }
@@ -8874,17 +8885,6 @@ async function querySemanticRag(question, options = {}) {
       'semantic-rag-academic-grade': PRE_AI_HANDLER_SOURCES.has('semantic-rag-academic-grade'),
       'semantic-rag-certification': PRE_AI_HANDLER_SOURCES.has('semantic-rag-certification')
     });
-  }
-
-  const preAiUploadedTraining = strictDocumentOnly || client ? null : await tryLocalUploadedTrainingGenericAnswer(question, options);
-  if (preAiUploadedTraining && preAiUploadedTraining.answer) {
-    if (debugTrace) {
-      console.log('[TRACE PRE_AI] CACHING and RETURNING preAiUploadedTraining:', {
-        source: preAiUploadedTraining.source,
-        answerPreview: String(preAiUploadedTraining.answer).slice(0, 100)
-      });
-    }
-    return await finalizeSemanticResult(question, preAiUploadedTraining, resultCacheKey);
   }
 
   let preAiResult = null;
