@@ -17,6 +17,13 @@ const ENTITY_RULES = [
   { key: 'utb', aliases: ['utb', 'universitas teknologi bandung'] },
   { key: 'dnui', aliases: ['dnui', 'dalian neusoft'] },
   { key: 'help', aliases: ['help university', 'help'] },
+  { key: 'akreditasi', aliases: ['akreditasi', 'ban pt', 'ban-pt', 'baik sekali'] },
+  { key: 'rpl', aliases: ['rpl', 'rekognisi pembelajaran lampau'] },
+  { key: 'beasiswa', aliases: ['beasiswa', 'kip', '1k1s', 'skss', 'potongan biaya'] },
+  { key: 'visa study', aliases: ['visa study', 'visa studi', 'visa pelajar', 'izin belajar', 'study permit', 'itas', 'kitas', 'sktt'] },
+  { key: 'inbis', aliases: ['inbis', 'inkubator bisnis', 'business incubator'] },
+  { key: 'cdc', aliases: ['cdc', 'career development center', 'career center', 'pusat karier', 'pusat karir'] },
+  { key: 'faq', aliases: ['faq', 'qna', 'pertanyaan jawaban', 'tanya jawab'] },
   { key: 'gccp', aliases: ['gccp'] },
   { key: 'bccp', aliases: ['bccp'] },
   { key: 'career center', aliases: ['career center', 'pusat karier', 'pusat karir'] },
@@ -78,12 +85,17 @@ function detectEntities(value) {
 function detectIntent(question, intent) {
   const q = String(question || '');
   const explicit = String(intent || '').trim().toLowerCase();
-  if (explicit && explicit !== 'unknown') return explicit;
+  if (explicit && explicit !== 'unknown' && explicit !== 'general') return explicit;
   if (/\b(pasal|ayat|force\s+majeure|addendum|perjanjian|klausul|isi\s+pasal)\b/i.test(q)) return 'legal';
+  if (/\b(beasiswa|bantuan\s+biaya|potongan|kip|1k1s|skss)\b/i.test(q)) return 'scholarship';
+  if (/\b(akreditasi|ban\s*-?\s*pt|peringkat)\b/i.test(q)) return 'accreditation';
+  if (/\b(rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(q)) return 'rpl';
+  if (/\b(visa\s+(?:study|studi|pelajar)|izin\s+belajar|study\s+permit|itas|kitas|sktt|mahasiswa\s+asing)\b/i.test(q)) return 'visa_study';
+  if (/\b(internasional|international|double\s*degree|dual\s*degree|student\s+exchange|study\s+exchange|mitra\s+luar|luar\s+negeri|gccp|bccp|utb|dnui|help)\b/i.test(q)) return 'international_program';
+  if (/\b(inbis|inkubator\s+bisnis|career\s*(?:development\s*)?center|cdc|pusat\s+karier|pusat\s+karir)\b/i.test(q)) return 'campus_service';
   if (/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|cicilan|nominal)\b/i.test(q)) return 'fee';
   if (/\b(jadwal|kapan|tanggal|periode|gelombang|jam|waktu|bulan\s+(?:ini|depan))\b/i.test(q)) return 'schedule';
   if (/\b(syarat|persyaratan|dokumen|berkas|ketentuan)\b/i.test(q)) return 'requirement';
-  if (/\b(internasional|international|double\s*degree|dual\s*degree|student\s+exchange|mitra\s+luar|luar\s+negeri|gccp|bccp|utb|dnui|help)\b/i.test(q)) return 'international_program';
   if (/\b(apa\s+saja|daftar|list|pilihan|macam)\b/i.test(q)) return 'list';
   if (/\b(program\s+studi|prodi|jurusan)\b/i.test(q)) return 'program';
   return 'general';
@@ -257,9 +269,14 @@ function scoreIntentAlignment(text, detectedIntent) {
     fee: /\b(Rp\.?|rupiah|biaya|dpp|ukt|semester|pendaftaran|registrasi|\d[\d.,]+\s*(?:ribu|juta)?)\b/i,
     schedule: /\b(tanggal|jadwal|periode|gelombang|bulan|tahun|jam|\d{1,2}\s*(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember))\b/i,
     requirement: /\b(syarat|persyaratan|dokumen|berkas|ijazah|ktp|kk|foto|rapor)\b/i,
-    international_program: /\b(internasional|international|double\s*degree|dual\s*degree|student\s+exchange|mitra|luar\s+negeri|utb|dnui|help|gccp|bccp)\b/i,
+    international_program: /\b(internasional|international|double\s*degree|dual\s*degree|student\s+exchange|study\s+exchange|mitra|luar\s+negeri|utb|dnui|help|gccp|bccp)\b/i,
     list: /(?:^|\n)\s*(?:[-*•]|\d+\.)\s+\S|\b(?:terdiri\s+dari|meliputi|antara\s+lain)\b/i,
-    program: /\b(program\s+studi|prodi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer)\b/i
+    program: /\b(program\s+studi|prodi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer)\b/i,
+    scholarship: /\b(beasiswa|bantuan\s+biaya|potongan|kip|1k1s|skss)\b/i,
+    accreditation: /\b(akreditasi|ban\s*-?\s*pt|baik\s+sekali|unggul|terakreditasi)\b/i,
+    rpl: /\b(rpl|rekognisi\s+pembelajaran\s+lampau|alih\s+jenjang|konversi\s+sks)\b/i,
+    visa_study: /\b(visa\s+(?:study|studi|pelajar)|izin\s+belajar|study\s+permit|itas|kitas|sktt|mahasiswa\s+asing)\b/i,
+    campus_service: /\b(inbis|inkubator\s+bisnis|career\s*(?:development\s*)?center|cdc|career\s+center|pusat\s+karier|pusat\s+karir)\b/i
   };
   if (!detectedIntent || detectedIntent === 'general') return 0.35;
   return checks[detectedIntent] && checks[detectedIntent].test(value) ? 1 : 0;
@@ -278,6 +295,22 @@ function scoreEntities(text, requiredEntities) {
   const present = new Set(detectEntities(text));
   const hits = requiredEntities.filter((entity) => present.has(entity));
   return hits.length / requiredEntities.length;
+}
+
+function hasRequiredTopicEntityAlignment(text, requiredEntities) {
+  const required = (Array.isArray(requiredEntities) ? requiredEntities : [])
+    .filter((entity) => !['faq'].includes(entity));
+  if (!required.length) return true;
+
+  const present = new Set(detectEntities(text));
+  const strictFamilies = [
+    'double degree', 'utb', 'dnui', 'help', 'gccp', 'bccp',
+    'akreditasi', 'rpl', 'beasiswa', 'visa study', 'inbis', 'cdc'
+  ];
+  const requestedStrict = required.filter((entity) => strictFamilies.includes(entity));
+  if (!requestedStrict.length) return true;
+
+  return requestedStrict.every((entity) => present.has(entity));
 }
 
 function hasRequiredPasalAlignment(text, question) {
@@ -301,7 +334,7 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
   // This helps long/structured FAQ or QnA chunks survive over-aggressive unit-splitting.
   // Only apply for non-legal, non-fee intents (controlled list) to avoid changing
   // deterministic fee behavior.
-  const earlyLaxAllowedIntents = new Set(['international_program', 'program', 'list', 'general']);
+  const earlyLaxAllowedIntents = new Set(['international_program', 'program', 'list', 'general', 'scholarship', 'accreditation', 'rpl', 'visa_study', 'campus_service']);
   if (earlyLaxAllowedIntents.has(detectedIntent)) {
     list.forEach((context, index) => {
       const rawText = String((context && (context.chunk || context.text || context.content)) || '');
@@ -313,6 +346,7 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
       const relevance = scoreRelevance(fullText, question);
       const ent = scoreEntities(fullText, requiredEntities);
       const intentSc = scoreIntentAlignment(fullText, detectedIntent);
+      if (!hasRequiredTopicEntityAlignment(fullText, requiredEntities)) return;
       const total = relevance * 0.6 + ent * 0.2 + intentSc * 0.2;
       if (total > 0.20) { // slightly higher early threshold than the fallback later
         candidates.push({
@@ -347,6 +381,10 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
         return;
       }
       const relevanceScore = scoreRelevance(text, question);
+      if (!hasRequiredTopicEntityAlignment(text, requiredEntities)) {
+        rejected.push({ source: getSourceLabel(context, index), reason: 'missing_required_topic_entity', preview: text.slice(0, 180) });
+        return;
+      }
       const entityScore = scoreEntities(text, requiredEntities);
       const intentScore = scoreIntentAlignment(text, detectedIntent);
       const total = relevanceScore * 0.45 + entityScore * 0.25 + intentScore * 0.3;
@@ -375,7 +413,7 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
   // tidak dikosongkan oleh aturan split/unit yang terlalu ketat.
   // WASPADA: tetap filter dokumen mentaw (pasal, legal boilerplate, OCR noise)
   // agar tidak pernah masuk sebagai evidence, bahkan di lax mode.
-  if (candidates.length === 0 && ['international_program', 'program', 'list', 'general'].includes(detectedIntent)) {
+  if (candidates.length === 0 && ['international_program', 'program', 'list', 'general', 'scholarship', 'accreditation', 'rpl', 'visa_study', 'campus_service'].includes(detectedIntent)) {
     const lax = [];
     list.forEach((context, index) => {
       const rawText = String((context && (context.chunk || context.text || context.content)) || '');
@@ -390,6 +428,7 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
       const relevance = scoreRelevance(text, question);
       const ent = scoreEntities(text, requiredEntities);
       const intentSc = scoreIntentAlignment(text, detectedIntent);
+      if (!hasRequiredTopicEntityAlignment(text, requiredEntities)) return;
       const total = relevance * 0.6 + ent * 0.2 + intentSc * 0.2;
       // threshold dinaikkan dari 0.18 ke 0.25 untuk mengurangi noise
       if (total > 0.25) {
