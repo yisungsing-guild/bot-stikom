@@ -39,6 +39,13 @@ async function main() {
   );
 
   await createUser(
+    "Falkultas",
+    "o2SMcQrphxEUjB1L",
+    "admin",
+    "FAKULTAS DAN PRODI"
+  );
+
+  await createUser(
     "international",
     "ITGWbCB3Lf3YSh3n",
     "admin",
