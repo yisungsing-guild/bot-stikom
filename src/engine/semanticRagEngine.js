@@ -8762,6 +8762,7 @@ async function querySemanticRag(question, options = {}) {
   const strictDocumentOnly = isStrictDocumentOnlyMode();
   const client = getClient();
   const fallbacksAllowed = !strictDocumentOnly;
+  const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   const earlySupportQuestion = String(question || '').toLowerCase();
   const deferEarlyKeywordFallbacks = Boolean(client) && shouldDeferDeterministicBeforeSemantic(question);
   if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && /\b(?:llc|language\s+learning\s+center)\b/i.test(earlySupportQuestion) && /\b(?:apa|itu|pengertian|maksud|tentang|info(?:rmasi)?|jelaskan)\b/i.test(earlySupportQuestion)) {
@@ -8873,7 +8874,6 @@ async function querySemanticRag(question, options = {}) {
 
   await getActiveTrainingDataFromDb();
   const preAiHandlers = DETERMINISTIC_HANDLERS.filter(([source]) => PRE_AI_HANDLER_SOURCES.has(source));
-  const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   const shouldDeferDeterministicToSemantic = Boolean(client) && shouldDeferDeterministicBeforeSemantic(question);
   if (debugTrace) {
     console.log('[TRACE STRICT] strictDocumentOnly:', strictDocumentOnly);
