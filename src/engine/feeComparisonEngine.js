@@ -578,12 +578,30 @@ function tryProgramComparisonAnswer(question) {
 
 function tryProgramListAnswer(question) {
   const q = String(question || '').toLowerCase();
-  const asksProgramList = /\b(jurusan|prodi|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan|fakultas)\b/.test(q);
+  const asksProgramList = /\b(jurusan(?:nya)?|prodi|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan|fakultas)\b/.test(q);
   const asksAvailable = /\b(apa\s+saja|apa\s+aja|ada\s+apa|tersedia|yang\s+ada|di\s+stikom|stikom)\b/.test(q);
   const recommendationIntent = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|ingin|mau|pengen|bekerja|kerja|karir|karier|minat|hobi)\b/.test(q);
-  const explicitListIntent = asksProgramList && asksAvailable && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa)\b/.test(q);
+  const explicitListIntent = asksProgramList && asksAvailable && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa|yg\s+ada)\b/.test(q);
+  const asksProgramDetailOverview = asksProgramList && /\b(detail|masing(?:-masing)?|dipelajari|pelajarin|belajar|kurikulum|mata\s+kuliah|matkul|skill|kemampuan)\b/.test(q);
   if (recommendationIntent && !explicitListIntent) return null;
-  if (!asksProgramList || !asksAvailable) return null;
+  if (!asksProgramList || (!asksAvailable && !asksProgramDetailOverview)) return null;
+
+  if (asksProgramDetailOverview) {
+    return {
+      answer: [
+        'Berikut detail singkat masing-masing prodi di ITB STIKOM Bali:',
+        '',
+        '- Sistem Informasi (S1): belajar analisis kebutuhan, proses bisnis, basis data, perancangan sistem, dashboard, dan solusi digital organisasi.',
+        '- Teknologi Informasi (S1): belajar pemrograman, pengembangan aplikasi, jaringan, cloud, keamanan, dan pengelolaan layanan teknologi.',
+        '- Bisnis Digital (S1): belajar digital marketing, e-commerce, strategi produk digital, analisis pasar, branding, data analytics, dan kewirausahaan digital.',
+        '- Sistem Komputer (S1): belajar arsitektur komputer, embedded system, IoT, jaringan, interfacing perangkat, dan keamanan perangkat/jaringan.',
+        '- Manajemen Informatika (D3): belajar praktik pengolahan data, aplikasi bisnis, administrasi sistem, IT support, dan pemrograman terapan.',
+        '- S2 Sistem Informasi: fokus lanjutan pada pengelolaan sistem informasi, tata kelola, riset, dan penerapan teknologi untuk organisasi.',
+        '',
+        'Pilihan Double Degree juga tersedia untuk skema kerja sama kampus mitra, terutama terkait Bisnis Digital dan Sistem Informasi sesuai partnernya.'
+      ].join('\n')
+    };
+  }
 
   return {
     answer: [
@@ -741,12 +759,12 @@ function tryProgramRecommendationAnswer(question) {
   const centralFitAnswer = buildProgramFitAnswer(question);
 
   const asksRecommendation = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|jurusan\s+yang\s+mana|prodi\s+yang\s+mana|program\s+yang\s+mana|masuk\s+jurusan\s+apa|ambil\s+jurusan\s+apa)\b/.test(q);
-  const hasCareerGoal = /\b(ingin|mau|pengen|nanti|kerja|bekerja|karir|karier|perusahaan|menjadi|jadi|minat|hobi|hobby|suka|senang|takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert|menggambar|gambar|ilustrasi|desain|dkv|visual)\b/.test(q);
+  const hasCareerGoal = /\b(ingin|mau|pengen|nanti|kerja|bekerja|karir|karier|perusahaan|menjadi|jadi|minat|hobi|hobby|suka|senang|takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert|menggambar|gambar|ilustrasi|desain|dkv|visual|sosmed|sosial\s+media|social\s+media|tiktok|live|konten|content)\b/.test(q);
   const asksMajor = /\b(jurusan|prodi|program\s+studi|kuliah)\b/.test(q);
 
   const dataInterest = /\b(mengolah\s+data|olah\s+data|analisis\s+data|menganalisa\s+data|menganalisis\s+data|data\s+analyst|data\s+analis|business\s+intelligence|bi\b|dashboard|basis\s+data|database|sql|analytics|analitik)\b/.test(q);
   const codingInterest = /\b(coding|ngoding|pemrograman|programmer|software|developer|aplikasi|backend|frontend|data\s+engineer|data\s+engineering)\b/.test(q);
-  const businessInterest = /\b(bisnis|marketing|marketer|digital\s+marketer|pemasaran|jualan|e-commerce|marketplace|wirausaha|entrepreneur|konten|sosmed|social\s+media|analisis\s+pasar|riset\s+pasar)\b/.test(q);
+  const businessInterest = /\b(bisnis|marketing|marketer|digital\s+marketer|pemasaran|jualan|e-commerce|marketplace|wirausaha|entrepreneur|konten|content|sosmed|sosial\s+media|social\s+media|tiktok|live\s+(?:di\s+)?tiktok|creator|influencer|analisis\s+pasar|riset\s+pasar)\b/.test(q);
   const hardwareInterest = /\b(hardware|perangkat\s+keras|iot|embedded|mikrokontroler|jaringan|network|robot|robotik|merakit|rakit\s+pc|komputer\s+rakitan)\b/.test(q);
   const hasStrongInterestSignal = dataInterest || codingInterest || businessInterest || hardwareInterest || centralFitAnswer;
   const mentionedPrograms = detectMentionedPrograms(question);
@@ -894,7 +912,7 @@ function buildScholarshipNoTrainingAnswer(topic) {
 
 function tryScholarshipAnswer(question) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(beasiswa|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
+  if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\\s+biaya|kip|1k1s|1\\s*k\\s*1\\s*s|satu\\s+keluarga\\s+satu\\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\\s+sambil\\s+kerja|luar\\s+negeri)\b/.test(q)) return null;
 
   if (/\b(seluruh|semua|full|penuh|100\s*%)\b/.test(q) && /\b(biaya|ditanggung|menanggung|cover|cakupan)\b/.test(q)) {
     return {
@@ -906,7 +924,7 @@ function tryScholarshipAnswer(question) {
     };
   }
 
-  if (/\b(cara|bagaimana|gimana|mendapatkan|dapat|mengajukan|daftar|prosedur|alur)\b/.test(q) && /\b(beasiswa|bantuan\s+biaya|potongan)\b/.test(q)) {
+  if (/\b(cara|bagaimana|gimana|mendapatkan|dapat|mengajukan|daftar|prosedur|alur)\b/.test(q) && /\b(beasiswa(?:nya)?|bantuan\\s+biaya|potongan)\\b/.test(q)) {
     return {
       answer: [
         'Untuk mendapatkan beasiswa, kakak perlu memilih jalur beasiswa yang ingin diajukan lalu mengikuti arahan PMB/kampus.',
