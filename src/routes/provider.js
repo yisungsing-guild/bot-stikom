@@ -8665,14 +8665,10 @@ module.exports = function (provider) {
     let text = req.body.text;
     text = String(text || '').trim();
 
-    // Map short greetings to SMALL_TALK intent so existing reply engine / AI handles them
+    // Only force SMALL_TALK intent for true greeting-only restarts.
+    // This avoids misclassifying greeting-prefixed questions like "halo kak mau tanya biaya".
     try {
-      const greetingSignal = /^\s*(?:halo|hallo|hai|helo|hello|selamat\s+(?:pagi|siang|sore|malam))\b/i;
-      if (greetingSignal.test(text)) {
-        // Do not send reply here; instead set incoming intent to SMALL_TALK and continue
-        // so the existing replyEngine/AI pipeline produces the appropriate response.
-        // detectIntent will be invoked below; use a small override marker to influence routing.
-        text = text; // keep original text
+      if (typeof isPureGreetingRestart === 'function' && isPureGreetingRestart(text)) {
         req.body._forceIntent = 'SMALL_TALK';
       }
     } catch (e) {

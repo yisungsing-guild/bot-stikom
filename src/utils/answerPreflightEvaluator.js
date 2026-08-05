@@ -371,7 +371,8 @@ function isConversationalQuery(userQuery) {
   const normalizedRepeats = q.replace(/([a-z])\1+/gi, '$1');
   const greetingToken = String.raw`(?:halo|hallo|hello|helo|hai|hi|hey|bro|sis|min|admin|kak|gan|pagi|siang|sore|malam|permisi|assalamualaikum|salam)`;
   const politeTail = String.raw`(?:kak|kakak|min|admin|bro|sis|gan|ya|dong|nih)?`;
-  return new RegExp(String.raw`^(?:selamat\s+)?${greetingToken}(?:\s+${greetingToken})*\s*${politeTail}$`, 'i').test(normalizedRepeats)
+  const greetingOnlyPattern = new RegExp(String.raw`^(?:${greetingToken}|selamat\s+(?:pagi|siang|sore|malam))(?:\s+(?:${greetingToken}|selamat\s+(?:pagi|siang|sore|malam)))*\s*${politeTail}$`, 'i');
+  return greetingOnlyPattern.test(normalizedRepeats)
     || /^(?:apa\s+kabar|gimana\s+kabarnya|bagaimana\s+kabarnya)(?:\s+(?:kak|kakak|min|admin))?$/i.test(normalizedRepeats)
     || /^(?:test|tes|testing|cek|ping)(?:\s+(?:bot|kak|min|admin))?$/i.test(normalizedRepeats)
     || /^(?:makasih|terima\s+kasih|thanks|thank\s+you)(?:\s+(?:kak|kakak|min|admin|ya))?$/i.test(normalizedRepeats)
