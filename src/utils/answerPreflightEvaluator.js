@@ -777,6 +777,16 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
         } else {
           if (process.env.PREFLIGHT_DEBUG_DETAILED) {
             console.log('[PREFLIGHT] BLOCKED by alignment mismatch:', alignmentAudit.reason);
+            try {
+              console.log('[PREFLIGHT] ALIGNMENT_AUDIT_DETAIL', {
+                reason: alignmentAudit.reason,
+                queryTerms: alignmentAudit.queryTerms,
+                requestedIntents: Array.from(detectIntentSet(userQuery || '')),
+                answeredIntents: Array.from(detectIntentSet(text || '')),
+                questionPreview: String(userQuery || '').slice(0, 200),
+                answerPreview: String(text || '').slice(0, 200)
+              });
+            } catch (e) {}
           }
           issues.push(alignmentAudit.reason || 'answer_query_mismatch');
           text = buildPreflightFallback(userQuery, 'intent_conflict');
@@ -786,6 +796,15 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
         if (intentAudit.conflict) {
           if (process.env.PREFLIGHT_DEBUG_DETAILED) {
             console.log('[PREFLIGHT] BLOCKED by intent conflict:', intentAudit);
+            try {
+              console.log('[PREFLIGHT] INTENT_AUDIT_DETAIL', {
+                requestedIntents: Array.from(detectIntentSet(userQuery || '')),
+                answeredIntents: Array.from(detectIntentSet(text || '')),
+                missingIntent: intentAudit.missingIntent || null,
+                questionPreview: String(userQuery || '').slice(0, 200),
+                answerPreview: String(text || '').slice(0, 200)
+              });
+            } catch (e) {}
           }
           issues.push('intent_conflict');
           text = buildPreflightFallback(userQuery, 'intent_conflict');

@@ -739,6 +739,31 @@ module.exports = function (provider) {
           } catch (e) {
             console.log('[TRACE_COST_RESPONSE_ERROR]', { err: e && e.message ? e.message : String(e), preview: String(cleaned || '').slice(0, 240) });
           }
+          // Persist lastRetrievedPrograms for multi-turn followups when we have a
+          // program-intent response and a visible program list in the final text.
+          try {
+            const finalTextForPrograms = String(cleaned || '');
+            const programListMatches = Array.from(finalTextForPrograms.matchAll(/^\s*-\s*([^\(\:\n]+)/gm)).map(m => String(m[1] || '').trim()).filter(Boolean);
+            if (programListMatches.length > 0) {
+              try {
+                if (!sessionData) sessionData = {};
+                sessionData.lastRetrievedPrograms = programListMatches;
+                const currentState = session ? session.state : 'root';
+                const newData = { ...(sessionData || {}) };
+                await prisma.session.upsert({ where: { chatId: toChatId }, create: { chatId: toChatId, state: currentState, data: newData }, update: { state: currentState, data: newData } });
+                // Also write a filesystem fallback so short-lived test runs can reuse context
+                try {
+                  const outDir = path.join(__dirname, '..', '..', 'tmp');
+                  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+                  const dumpPath = path.join(outDir, `lastRetrievedPrograms_${toChatId}.json`);
+                  fs.writeFileSync(dumpPath, JSON.stringify(programListMatches.slice(0, 50)), 'utf8');
+                } catch (e) {}
+                console.log('[DEBUG] persisted lastRetrievedPrograms', toChatId, programListMatches.slice(0,6));
+              } catch (e) {
+                logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] Failed to persist lastRetrievedPrograms');
+              }
+            }
+          } catch (e) {}
         } catch (e) {}
         // Snapshot session after preparing final message
         try {
@@ -1228,6 +1253,21 @@ module.exports = function (provider) {
     } catch (e) {
       sessionData = {};
     }
+    // If session DB didn't have persisted lastRetrievedPrograms, check tmp file fallback
+    try {
+      const outDir = path.join(__dirname, '..', '..', 'tmp');
+      const dumpPath = path.join(outDir, `lastRetrievedPrograms_${chatId}.json`);
+      if (fs.existsSync(dumpPath)) {
+        try {
+          const raw = fs.readFileSync(dumpPath, 'utf8');
+          const arr = JSON.parse(raw || '[]');
+          if (Array.isArray(arr) && arr.length) {
+            sessionData = sessionData || {};
+            if (!sessionData.lastRetrievedPrograms) sessionData.lastRetrievedPrograms = arr;
+          }
+        } catch (e) {}
+      }
+    } catch (e) {}
 
     // Comparison intent rewrite:
     // When users ask "beda/perbedaan/ti vs sk", rewrite the raw question to a
@@ -1294,6 +1334,22 @@ module.exports = function (provider) {
         divisionKey,
         effectiveQueryEntities
       });
+    } catch (e) {}
+
+    // If the user asked a follow-up like "jurusannya gimana?" and we have a
+    // recent `lastRetrievedPrograms` list in session, inject the top program
+    // into the effectiveQuestion to make RAG produce a program-specific answer.
+    try {
+      const followupProgSignals = /\b(jurusannya|jurusan\s+yang|bagaimana\s+jurusan|jurusannya\s+gimana|jurusannya\s+bagaimana|apa\s+jurusan)\b/i;
+      if ((!effectiveQueryEntities || !effectiveQueryEntities.program) && sessionData && Array.isArray(sessionData.lastRetrievedPrograms) && sessionData.lastRetrievedPrograms.length > 0) {
+        if (followupProgSignals.test(String(originalQuery || ''))) {
+          const prog = sessionData.lastRetrievedPrograms[0];
+          if (prog) {
+            effectiveQuestion = `Program Studi: ${prog}\n${effectiveQuestion}`;
+            console.log('[TRACE_PROGRAM_CONTEXT_APPLIED]', { chatId, appliedProgram: prog, effectiveQuestion: String(effectiveQuestion || '').slice(0,200) });
+          }
+        }
+      }
     } catch (e) {}
 
     // Enable verbose RAG debug output for tracing when configured in env.
@@ -7339,7 +7395,15 @@ module.exports = function (provider) {
 
         // If incoming intent is GENERAL/UNKNOWN or confidence is low, allow candidate to override
         if (!incomingIsHigh || incomingIsGeneral) {
-          if (candidateIntent && candidateIntent !== mappedIncomingIntent && candidateIntent !== 'general') {
+          // Conservative override: only allow candidate to override when it's one of
+          // the authoritative formatter intents (explicit domains like 'program','biaya', etc.)
+          // or when there is no mapped incoming intent at all. This prevents the
+          // humanizer from changing intent to a narrowly-specific candidate (e.g. international_double_degree)
+          // that doesn't match the user's original query.
+          const canOverride = candidateIntent && candidateIntent !== mappedIncomingIntent && candidateIntent !== 'general'
+            && (authoritativeFormatterIntents.has(candidateIntent) || !mappedIncomingIntent);
+
+          if (canOverride) {
             console.log('[TRACE_INTENT_OVERRIDE]', {
               action: 'overridden',
               incomingIntent,
@@ -7353,7 +7417,7 @@ module.exports = function (provider) {
             return candidateIntent;
           }
 
-          // Preserve mapped incoming intent if candidate is general or absent
+          // Preserve mapped incoming intent if candidate is general/absent or not allowed to override
           if (mappedIncomingIntent) {
             console.log('[TRACE_INTENT_PRESERVED]', {
               action: 'preserved',
@@ -7380,6 +7444,16 @@ module.exports = function (provider) {
         // Default fallback
         return mappedIncomingIntent || candidateIntent || 'general';
       })();
+
+      // Post-adjustment: if the user query contains clear program/learning signals
+      // prefer the `program` intent so responses focus on program definitions/curriculum
+      try {
+        const programSignals = /\b(belajar|apa\s+yang\s+dipelajarin|apa\s+aja\s+yang\s+dipelajarin|sks|mata\s+kuliah|kurikulum|bagaimana\s+belajar|gimana\s+belajar)\b/i;
+        if (programSignals.test(String(userQuery || '')) && (!finalIntent || !authoritativeFormatterIntents.has(finalIntent))) {
+          console.log('[TRACE_INTENT_POSTADJUST]', { from: finalIntent, to: 'program', userQuery: String(userQuery || '').slice(0,200) });
+          return 'program';
+        }
+      } catch (e) {}
 
       return finalIntent || 'general';
     } catch (e) {
@@ -8590,7 +8664,21 @@ module.exports = function (provider) {
     const chatId = req.body.chatId;
     let text = req.body.text;
     text = String(text || '').trim();
-    const incomingIntent = detectIntent(text);
+
+    // Map short greetings to SMALL_TALK intent so existing reply engine / AI handles them
+    try {
+      const greetingSignal = /^\s*(?:halo|hallo|hai|helo|hello|selamat\s+(?:pagi|siang|sore|malam))\b/i;
+      if (greetingSignal.test(text)) {
+        // Do not send reply here; instead set incoming intent to SMALL_TALK and continue
+        // so the existing replyEngine/AI pipeline produces the appropriate response.
+        // detectIntent will be invoked below; use a small override marker to influence routing.
+        text = text; // keep original text
+        req.body._forceIntent = 'SMALL_TALK';
+      }
+    } catch (e) {
+      // ignore and continue normal flow
+    }
+    const incomingIntent = (req.body && req.body._forceIntent) ? String(req.body._forceIntent).trim() : detectIntent(text);
     // Heuristic confidence and routing override for career guidance keywords
     const careerKeywords = /\b(coding|ngoding|programmer|software engineer|software\s+engineer|data analyst|ai engineer|ai\s+engineer|cyber security|cybersecurity)\b/i;
     let intentConfidence = 0.7;
