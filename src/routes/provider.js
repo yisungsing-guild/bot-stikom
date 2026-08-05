@@ -6033,8 +6033,8 @@ module.exports = function (provider) {
 
     // Keep it intentionally conservative: only short greetings.
     const greetings = [
-      'halo', 'hai', 'hi', 'hello',
-      'haloo', 'halooo',
+      'halo', 'hallo', 'hai', 'hi', 'hello',
+      'haloo', 'halooo', 'halloo', 'hallooo',
       'selamat pagi', 'pagi',
       'selamat siang', 'siang',
       'selamat sang',
@@ -6067,6 +6067,7 @@ module.exports = function (provider) {
       const startsWith = (prefix) => t === prefix || t.startsWith(prefix + ' ');
       if (
         startsWith('halo') ||
+        startsWith('hallo') ||
         startsWith('hai') ||
         startsWith('hi') ||
         startsWith('hello') ||
@@ -6128,8 +6129,8 @@ module.exports = function (provider) {
 
     // Strict greeting-only messages that should be treated as "start over".
     const baseGreetings = [
-      'halo', 'hai', 'hi', 'hello',
-      'haloo', 'halooo',
+      'halo', 'hallo', 'hai', 'hi', 'hello',
+      'haloo', 'halooo', 'halloo', 'hallooo',
       'selamat pagi', 'pagi',
       'pgi', 'pg',
       'selamat siang', 'siang',
