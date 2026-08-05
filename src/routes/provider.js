@@ -354,6 +354,7 @@ module.exports = function (provider) {
   function shouldSkipSemanticRagFirst(rawText, sessionData) {
     const text = String(rawText || '').trim();
     if (!text) return true;
+    if (isPureGreetingRestart(text)) return true;
     if (isHardSessionResetCommand(text)) return true;
     if (/^\d+$/.test(text)) return true;
 

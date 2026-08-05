@@ -204,4 +204,17 @@ describe('Provider route E2E simulation', () => {
     expect(allOk).toBe(true);
     expect(results.some((item) => item.lastMessage && item.lastMessage.length > 0)).toBe(true);
   }, 30000);
+
+  test('should respond with greeting reply for greeting-only input', async () => {
+    const response = await request(app)
+      .post('/provider/webhook')
+      .send({ chatId: 'greeting-01', text: 'Hallo selamat siang', ts: Date.now() });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(expect.objectContaining({ ok: true, source: 'greeting' }));
+
+    const messages = mockSentMessages.get('greeting-01') || [];
+    expect(messages.length).toBeGreaterThan(0);
+    expect(messages[0].toLowerCase()).toMatch(/halo|hallo|selamat siang|siang|baik, ada yang bisa saya bantu\?/i);
+  }, 30000);
 });
