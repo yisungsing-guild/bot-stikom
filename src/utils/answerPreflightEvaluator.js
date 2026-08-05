@@ -93,13 +93,13 @@ function hasRawFaqQnaDump(text) {
   const inlineFaqMarkerCount = (out.match(/\((?:F|Q|A)\)/gi) || []).length;
   const lineFaqMarkerCount = (out.match(/(?:^|\n)\s*(?:FAQ|QNA|Q|A|F|Question|Answer|Pertanyaan|Jawaban|Tanya|Jawab)\s*[:\-.]/gi) || []).length;
   const hasFaqHeaderWithQa = /(?:^|\n)\s*(?:FAQ|QNA)\s*[:\-.]/i.test(out) && lineFaqMarkerCount >= 2;
-  
+
   // Configurable thresholds: increased from 2,3 to 4,5 to reduce false positives
   const inlineFaqThreshold = parseInt(process.env.PREFLIGHT_INLINE_FAQ_THRESHOLD || '4', 10);
   const lineFaqThreshold = parseInt(process.env.PREFLIGHT_LINE_FAQ_THRESHOLD || '5', 10);
-  
+
   const result = inlineFaqMarkerCount >= inlineFaqThreshold || lineFaqMarkerCount >= lineFaqThreshold || hasFaqHeaderWithQa;
-  
+
   if (process.env.PREFLIGHT_DEBUG_DETAILED) {
     console.log('[PREFLIGHT] hasRawFaqQnaDump:', {
       inline: inlineFaqMarkerCount,
@@ -110,7 +110,7 @@ function hasRawFaqQnaDump(text) {
       result
     });
   }
-  
+
   return result;
 }
 function hasLikelyRawDocumentLeak(text) {
@@ -162,7 +162,7 @@ function hasLikelyRawDocumentLeak(text) {
   ];
   const structureMarkerCount = documentStructureMarkers.filter((re) => re.test(out)).length;
   const labelValueCount = (out.match(/\b[A-Za-z][A-Za-z0-9\s/().-]{2,38}\s*:\s*\S/g) || []).length;
-  
+
   // Configurable threshold: increased from 5 to 8 to reduce false positives on curriculum descriptions
   const labelValueThreshold = parseInt(process.env.PREFLIGHT_LABEL_VALUE_THRESHOLD || '8', 10);
   const denseInlineProfile = out.length > 550 && labelValueCount >= labelValueThreshold;
@@ -239,12 +239,12 @@ function hasLikelyRawDocumentLeak(text) {
   const rawAccreditationHeadingLike = out.length <= 180
     && /\bKONVERSI\s+PERINGKAT\s+AKREDITASI\s+PERGURUAN\s+TINGGI\b/i.test(out);
   const placeholderLike = /_{5,}|\.{8,}|:{3,}|\?{4,}|(?:nomor\s*:\s*(?:\.{4,}|\?{4,}|\([^)]*\)))|(?:E\s*-\s*mail\s*:::)/i.test(out);
-  
+
   // ISSUE #1 FIX: Detect curriculum descriptions to skip strict document leak checks
   // These are naturally dense with learning keywords and shouldn't trigger document leaks
   const looksLikeCurriculumDescription = /\b(?:belajar|mempelajari|fokus|skill|kompetensi|kemampuan|pengembangan|materi|mata\s+kuliah|skill\s+yang\s+dibangun|keahlian)\b/i.test(out)
     && /\b(?:pemrograman|data|keamanan|teknologi|sistem|bisnis|digital|marketing|analisis|development|infrastruktur|machine\s+learning|iot|arsitektur|basis\s+data|jaringan|cloud)\b/i.test(out);
-  
+
   // Skip strict document leak checks if curriculum description detected
   if (looksLikeCurriculumDescription) {
     if (process.env.PREFLIGHT_DEBUG_DETAILED) {
@@ -253,7 +253,7 @@ function hasLikelyRawDocumentLeak(text) {
     // Only check for most critical leaks (legal, OCR artifacts, placeholders)
     return legalMarkerCount >= 2 || ocrHtmlArtifactLike || ocrSourceLike || placeholderLike;
   }
-  
+
   return faqMarkerCount >= 2
     || inlineFaqMarkerCount >= 2
     || legalMarkerCount >= 2
@@ -659,7 +659,7 @@ function decidePreflightAction(issues, meta = {}) {
 }
 function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   const original = String(answer || '');
-  
+
   // Add detailed logging for debugging preflight decisions
   if (process.env.PREFLIGHT_DEBUG_DETAILED) {
     console.log('[PREFLIGHT] Starting evaluation:', {
@@ -668,7 +668,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
       source: meta && meta.source ? meta.source : 'unknown'
     });
   }
-  
+
   const rawFaqQnaDump = hasRawFaqQnaDump(original);
   let text = normalizeOutboundAnswerText(stripOptionalFollowupSuggestions(original));
   const issues = [];
@@ -787,7 +787,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
                 questionPreview: String(userQuery || '').slice(0, 200),
                 answerPreview: String(text || '').slice(0, 200)
               });
-            } catch (e) {}
+            } catch (e) { }
           }
           issues.push(alignmentAudit.reason || 'answer_query_mismatch');
           text = buildPreflightFallback(userQuery, 'intent_conflict');
@@ -805,7 +805,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
                 questionPreview: String(userQuery || '').slice(0, 200),
                 answerPreview: String(text || '').slice(0, 200)
               });
-            } catch (e) {}
+            } catch (e) { }
           }
           issues.push('intent_conflict');
           text = buildPreflightFallback(userQuery, 'intent_conflict');
@@ -813,7 +813,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
       }
     }
   }
-  
+
   // Log final decision if debugging
   if (process.env.PREFLIGHT_DEBUG_DETAILED) {
     const action = decidePreflightAction(issues, meta);
@@ -843,7 +843,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   }
   const action = decidePreflightAction(issues, meta);
   const blocked = action === 'regenerate' || action === 'fallback';
-  
+
   // ISSUE #1 FIX: Log final preflight decision for debugging
   if (process.env.PREFLIGHT_DEBUG_DETAILED) {
     console.log('[PREFLIGHT] Final decision:', {
