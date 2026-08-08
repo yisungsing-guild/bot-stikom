@@ -1,4 +1,6 @@
 const DEFAULT_MAX_EVIDENCE = 5;
+const { truncateEvidenceSafely } = require('../utils/contextTruncation');
+const { getEvidenceRequirements, isScholarshipAligned, containsCurrency } = require('../utils/evidenceRequirements');
 
 const STOPWORDS = new Set([
   'yang', 'dengan', 'dalam', 'oleh', 'dari', 'itu', 'ini', 'kak', 'kakak', 'min',
@@ -319,6 +321,8 @@ function hasRequiredPasalAlignment(text, question) {
   return new RegExp(`\\bpasal\\s+${match[1]}\\b`, 'i').test(String(text || ''));
 }
 
+const { createEvidenceDedupKey, deduplicateEvidence } = require('../utils/evidenceDedup');
+
 function dedupeKey(text) {
   return normalizeText(text).slice(0, 260);
 }
@@ -353,6 +357,10 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
           text: fullText,
           source: getSourceLabel(context, index),
           sourceId: getSourceId(context, index),
+          chunkId: context && context.chunkId ? context.chunkId : null,
+          documentId: context && context.documentId ? context.documentId : null,
+          pageNumber: context && context.pageNumber ? context.pageNumber : null,
+          sectionTitle: context && context.sectionTitle ? context.sectionTitle : null,
           relevanceScore: Number(relevance.toFixed(3)),
           entityScore: Number(ent.toFixed(3)),
           intentScore: Number(intentSc.toFixed(3)),
@@ -397,6 +405,10 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
         text,
         source: getSourceLabel(context, index),
         sourceId: getSourceId(context, index),
+        chunkId: context && context.chunkId ? context.chunkId : null,
+        documentId: context && context.documentId ? context.documentId : null,
+        pageNumber: context && context.pageNumber ? context.pageNumber : null,
+        sectionTitle: context && context.sectionTitle ? context.sectionTitle : null,
         relevanceScore: Number(relevanceScore.toFixed(3)),
         entityScore: Number(entityScore.toFixed(3)),
         intentScore: Number(intentScore.toFixed(3)),
@@ -436,6 +448,10 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
           text,
           source: getSourceLabel(context, index),
           sourceId: getSourceId(context, index),
+          chunkId: context && context.chunkId ? context.chunkId : null,
+          documentId: context && context.documentId ? context.documentId : null,
+          pageNumber: context && context.pageNumber ? context.pageNumber : null,
+          sectionTitle: context && context.sectionTitle ? context.sectionTitle : null,
           relevanceScore: Number(relevance.toFixed(3)),
           entityScore: Number(ent.toFixed(3)),
           intentScore: Number(intentSc.toFixed(3)),
@@ -454,17 +470,18 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
   }
 
   const seen = new Set();
-  const selected = candidates
-    .filter((item) => item.text)
-    .sort((a, b) => b._total - a._total || b.text.length - a.text.length)
-    .filter((item) => {
-      const key = dedupeKey(item.text);
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .slice(0, limit)
-    .map(({ _total, ...item }) => item);
+  // Use centralized dedup helper but preserve original ordering and limit
+  const sorted = candidates.filter((item) => item.text).sort((a, b) => b._total - a._total || b.text.length - a.text.length);
+  const { items: dedupedItems, meta } = deduplicateEvidence(sorted, {
+    keep: 'highest-score',
+    keyMode: 'text-only',
+    textField: 'text',
+    scoreField: '_total',
+    prefixLength: 240
+  });
+  const selected = dedupedItems.slice(0, limit).map(({ _total, ...item }) => item);
+  // Attach dedup meta for debug if needed
+  if (selected && selected.audit === undefined) Object.defineProperty(selected, 'dedupMeta', { value: meta, enumerable: false });
 
   Object.defineProperty(selected, 'audit', {
     value: {
@@ -492,6 +509,7 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
   const missingEvidence = [];
   const terms = getContentTerms(question);
   const q = String(question || '').trim().toLowerCase();
+  const rules = getEvidenceRequirements(detectedIntent, question);
 
   // Check for no content
   if (!terms.length && !isExplicitLegalQuestion(question, detectedIntent)) {
@@ -502,8 +520,8 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
   }
 
   // STRICT CHECKS: Specific query types that need structural validation
-  if (detectedIntent === 'fee') {
-    if (!/\b(?:Rp\.?|rupiah|\d[\d.,]+\s*(?:ribu|juta)|\d{5,})\b/i.test(text)) missingEvidence.push('fee_amount');
+  if (rules.requireCurrency || detectedIntent === 'fee') {
+    if (!containsCurrency(text)) missingEvidence.push('fee_amount');
     const requestedEntities = detectEntities(question).filter((entity) => /sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika/.test(entity));
     if (requestedEntities.length && requestedEntities.some((entity) => !detectEntities(text).includes(entity))) missingEvidence.push('requested_program_entity');
   }
@@ -543,6 +561,85 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
   };
 }
 
+function getEvidenceScores(item) {
+  const scoreKeys = [
+    'score',
+    'semanticScore',
+    'lexicalScore',
+    'bm25Score',
+    'bm25Contribution',
+    'relevanceScore',
+    'entityScore',
+    'intentScore',
+    'totalScore',
+    '_total',
+    'finalScore',
+    'compositeScore',
+    'attributeScore',
+    'metadataBoost'
+  ];
+  const scores = {};
+
+  for (const key of scoreKeys) {
+    if (item && Object.prototype.hasOwnProperty.call(item, key)) {
+      const value = item[key];
+      if (value !== undefined && value !== null) {
+        scores[key] = value;
+      }
+    }
+  }
+
+  return scores;
+}
+
+function buildStructuredEvidenceContext(selectedEvidence, options = {}) {
+  const list = Array.isArray(selectedEvidence) ? selectedEvidence.filter((item) => item && item.isSelectedEvidence === true) : [];
+  let used = 0;
+  const blocks = [];
+  const evidenceMap = {};
+  const maxChars = Number.isFinite(Number(options.maxChars)) ? Number(options.maxChars) : 9000;
+
+  for (let i = 0; i < list.length; i += 1) {
+    const item = list[i] || {};
+    const evidenceKey = `E${i + 1}`;
+    const evidenceId = item.id ?? item.sourceId ?? item.chunkId ?? item.trainingId ?? null;
+    const sourceId = item.sourceId ?? null;
+    const sourceLabel = item.source ?? item.sourceLabel ?? item.filename ?? null;
+    const documentId = item.documentId ?? (item.metadata && item.metadata.documentId) ?? item.trainingId ?? null;
+    const chunkId = item.chunkId ?? null;
+    const pageNumber = item.pageNumber ?? (item.metadata && item.metadata.pageNumber) ?? null;
+    const sectionTitle = item.sectionTitle ?? (item.metadata && item.metadata.sectionTitle) ?? null;
+    const text = compactText(item.text ?? item.chunk ?? item.content ?? '');
+    const scores = getEvidenceScores(item);
+
+    evidenceMap[evidenceKey] = {
+      evidenceId,
+      sourceId,
+      sourceLabel,
+      documentId,
+      chunkId,
+      pageNumber: pageNumber === undefined ? null : pageNumber,
+      sectionTitle,
+      text,
+      scores
+    };
+
+    if (!text) continue;
+
+    const sourceLine = sourceLabel || sourceId || evidenceId || `evidence-${i + 1}`;
+    const sectionLine = sectionTitle ? `Bagian: ${sectionTitle}` : 'Bagian: -';
+    const block = `[${evidenceKey}]\nSumber: ${sourceLine}\n${sectionLine}\nIsi: ${text}`;
+    if (used + block.length > maxChars) break;
+    blocks.push(block);
+    used += block.length;
+  }
+
+  return {
+    contextText: blocks.join('\n\n'),
+    evidenceMap
+  };
+}
+
 function buildSelectedEvidenceContext(selectedEvidence, maxChars = 9000) {
   const list = Array.isArray(selectedEvidence) ? selectedEvidence.filter((item) => item && item.isSelectedEvidence === true) : [];
   let used = 0;
@@ -550,12 +647,19 @@ function buildSelectedEvidenceContext(selectedEvidence, maxChars = 9000) {
   for (let i = 0; i < list.length; i += 1) {
     const item = list[i];
     const source = [item.source, item.sourceId].filter(Boolean).join(' | ') || `evidence-${i + 1}`;
-    const body = compactText(item.text).slice(0, 1600);
-    if (!body) continue;
-    const block = `[E${i + 1}] Sumber: ${source}\nEvidence: ${body}`;
+    const header = `[E${i + 1}] Sumber: ${source}\nEvidence: `;
+    const remaining = Number.isFinite(Number(maxChars)) ? Number(maxChars) - used : maxChars;
+    const separatorAllowance = blocks.length > 0 ? 2 : 0; // for \n\n between blocks
+    const available = remaining - header.length - separatorAllowance;
+    if (available <= 0) break;
+    const safeLimit = Math.min(1600, available);
+    const bodySource = String(item.text || item.chunk || item.content || '');
+    const body = truncateEvidenceSafely(bodySource, safeLimit).truncatedText;
+    if (!body) break;
+    const block = header + body;
     if (used + block.length > maxChars) break;
     blocks.push(block);
-    used += block.length;
+    used += block.length + separatorAllowance;
   }
   return blocks.join('\n\n');
 }
@@ -564,6 +668,7 @@ module.exports = {
   selectEvidenceFromContexts,
   evaluateEvidenceAnswerability,
   buildSelectedEvidenceContext,
+  buildStructuredEvidenceContext,
   detectEvidenceIntent: detectIntent,
   isExplicitLegalQuestion
 };

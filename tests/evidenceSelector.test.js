@@ -1,7 +1,8 @@
 const {
   selectEvidenceFromContexts,
   evaluateEvidenceAnswerability,
-  buildSelectedEvidenceContext
+  buildSelectedEvidenceContext,
+  buildStructuredEvidenceContext
 } = require('../src/engine/evidenceSelector');
 const { buildContextText } = require('../src/engine/semanticRagEngine');
 
@@ -232,6 +233,66 @@ describe('evidenceSelector', () => {
     expect(answerability.answerable).toBe(true);
   });
 
+  test('buildStructuredEvidenceContext returns structured evidenceMap and preserves legacy format', () => {
+    const selected = selectEvidenceFromContexts({
+      question: 'Apa saja program internasional yang dimiliki kampus?',
+      contexts: [
+        { chunk: 'GCCP adalah program internasional yang mendukung kesiapan mahasiswa untuk pengalaman global.', source: 'international-a.md', sourceId: 'gccp', chunkId: 'chunk-1', documentId: 'doc-1', pageNumber: 2, sectionTitle: 'Program Internasional' },
+        { chunk: 'BCCP adalah program internasional yang mendukung pengembangan wawasan bisnis mahasiswa.', source: 'international-b.md', sourceId: 'bccp', chunkId: 'chunk-2', documentId: 'doc-2', pageNumber: 3, sectionTitle: 'Program Internasional' }
+      ],
+      intent: 'international_program'
+    });
+    const legacyContext = buildSelectedEvidenceContext(selected);
+    const structured = buildStructuredEvidenceContext(selected, { maxChars: 9000 });
+
+    expect(typeof structured).toBe('object');
+    expect(typeof structured.contextText).toBe('string');
+    expect(typeof structured.evidenceMap).toBe('object');
+    expect(Object.keys(structured.evidenceMap)).toEqual(['E1', 'E2']);
+    expect(structured.evidenceMap.E1.evidenceId).toBe('gccp');
+    expect(structured.evidenceMap.E1.sourceId).toBe('gccp');
+    expect(structured.evidenceMap.E1.sourceLabel).toBe('international-a.md');
+    expect(structured.evidenceMap.E1.documentId).toBe('doc-1');
+    expect(structured.evidenceMap.E1.chunkId).toBe('chunk-1');
+    expect(structured.evidenceMap.E1.pageNumber).toBe(2);
+    expect(structured.evidenceMap.E1.sectionTitle).toBe('Program Internasional');
+    expect(structured.evidenceMap.E1.text).toMatch(/GCCP/);
+    expect(structured.evidenceMap.E1.scores).toBeDefined();
+    expect(structured.evidenceMap.E2.evidenceId).toBe('bccp');
+    expect(structured.evidenceMap.E2.chunkId).toBe('chunk-2');
+    expect(structured.evidenceMap.E2.documentId).toBe('doc-2');
+    expect(structured.evidenceMap.E2.pageNumber).toBe(3);
+    expect(structured.evidenceMap.E2.sectionTitle).toBe('Program Internasional');
+    expect(structured.evidenceMap.E2.text).toMatch(/BCCP/);
+    expect(legacyContext).toMatch(/\[E1\] Sumber: international-a.md \| gccp/);
+    expect(legacyContext).toMatch(/\[E2\] Sumber: international-b.md \| bccp/);
+    expect(selected).toHaveLength(2);
+    expect(selected[0].text).toMatch(/GCCP/);
+    expect(selected[1].text).toMatch(/BCCP/);
+    expect(structured.evidenceMap.E1.scores).not.toBeNull();
+    expect(selected[0].embedding).toBeUndefined();
+  });
+
+  test('structured builder handles missing metadata and does not mutate selectedEvidence', () => {
+    const contexts = [
+      { chunk: 'Kampus mendukung program internasional.', filename: 'generic.md', sourceId: 'misc', chunkId: 'chunk-misc' },
+      { chunk: 'Kampus memiliki double degree.', filename: 'generic.md', sourceId: 'dd', chunkId: 'chunk-dd' }
+    ];
+    const selected = selectEvidenceFromContexts({ question: 'Apa saja program internasional?', contexts, intent: 'international_program' });
+    const snapshot = JSON.parse(JSON.stringify(selected));
+    const structured = buildStructuredEvidenceContext(selected, { maxChars: 9000 });
+
+    expect(structured.evidenceMap.E1.documentId).toBeNull();
+    expect(structured.evidenceMap.E1.pageNumber).toBeNull();
+    expect(structured.evidenceMap.E1.sectionTitle).toBeNull();
+    expect(structured.evidenceMap.E1.sourceLabel).toBe('generic.md');
+    expect(structured.evidenceMap.E1.chunkId).toBe('chunk-misc');
+    expect(structured.evidenceMap.E2.sourceLabel).toBe('generic.md');
+    expect(structured.evidenceMap.E2.chunkId).toBe('chunk-dd');
+    expect(Object.keys(structured.evidenceMap)).toEqual(['E1', 'E2']);
+    expect(selected).toEqual(snapshot);
+  });
+
   test('definition-like questions are answerable from document evidence without requiring partner names', () => {
     const selected = selectEvidenceFromContexts({
       question: 'Apa itu Student Exchange di ITB STIKOM Bali?',
@@ -265,5 +326,59 @@ describe('evidenceSelector', () => {
     expect(finalContext).toMatch(/Pasal 9/i);
     expect(finalContext).not.toMatch(/RAW_CHUNK|chunk\s*:|Source \(/i);
     expect(finalContext).not.toMatch(/Pasal 1|Pasal 13|ADDENDUM|PIHAK KESATU|PIHAK KEDUA/i);
+  });
+
+  test('buildSelectedEvidenceContext preserves legacy output for short evidence and markers/order', () => {
+    const ev = [
+      { isSelectedEvidence: true, source: 'src-a.md', sourceId: 'a1', text: 'Halo dunia' },
+      { isSelectedEvidence: true, source: 'src-b.md', sourceId: 'b1', text: 'Konten kedua' }
+    ];
+    const before = JSON.parse(JSON.stringify(ev));
+    const ctx = buildSelectedEvidenceContext(ev, 2000);
+    // legacy expected per-item body uses compactText(...).slice(0,1600)
+    const compact = (s) => String(s || '').replace(/\u00a0/g, ' ').replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    const exp1 = `[E1] Sumber: src-a.md | a1\nEvidence: ${compact(ev[0].text).slice(0,1600)}`;
+    const exp2 = `[E2] Sumber: src-b.md | b1\nEvidence: ${compact(ev[1].text).slice(0,1600)}`;
+    expect(ctx).toMatch(new RegExp(`^${exp1.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+    expect(ctx).toMatch(new RegExp(`${exp2.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+    expect(ev).toEqual(before); // no mutation
+  });
+
+  test('buildSelectedEvidenceContext truncates long evidence without partial currency or numeric tokens', () => {
+    const long = ('Kalimat lengkap. ').repeat(20) + 'Biaya pendaftaran Rp500.000 untuk program ini.';
+    const ev = [{ isSelectedEvidence: true, source: 's', sourceId: 'sid', text: long }];
+    const ctx = buildSelectedEvidenceContext(ev, 80);
+    // should not end with a partial numeric or currency token
+    expect(/Rp\.?\s*\d+[.,]$/.test(ctx)).toBe(false);
+    expect(/\d[.,]$/.test(ctx)).toBe(false);
+    expect(ctx).toMatch(/\[E1\] Sumber: s \| sid\nEvidence:/);
+  });
+
+  test('buildSelectedEvidenceContext avoids partial table rows and preserves row pairing for gelombang', () => {
+    const tbl = '| Jenis | Biaya |\n| DPP | Rp14.000.000 |\n| UKT | Rp5.000.000 |\n';
+    const ev = [{ isSelectedEvidence: true, source: 't', sourceId: 'tid', text: tbl }];
+    const ctx = buildSelectedEvidenceContext(ev, 60);
+    // should not include partial nominal like 'Rp14.000.'
+    expect(/Rp\.?\s*\d+[.,]$/.test(ctx)).toBe(false);
+    // gelombang pairing
+    const gel = 'Gelombang 1A Rp2.000.000\nGelombang 1B Rp3.000.000\n';
+    const ev2 = [{ isSelectedEvidence: true, source: 'g', sourceId: 'gid', text: gel }];
+    const ctx2 = buildSelectedEvidenceContext(ev2, 50);
+    expect(/Rp\.?\s*\d+[.,]$/.test(ctx2)).toBe(false);
+  });
+
+  test('multiple evidence respects global maxChars and preserves order', () => {
+    const a = { isSelectedEvidence: true, source: 'A', sourceId: 'a', text: 'A'.repeat(500) };
+    const b = { isSelectedEvidence: true, source: 'B', sourceId: 'b', text: 'B'.repeat(500) };
+    const c = { isSelectedEvidence: true, source: 'C', sourceId: 'c', text: 'C'.repeat(500) };
+    const ev = [a, b, c];
+    const ctx = buildSelectedEvidenceContext(ev, 900);
+    expect(ctx.length).toBeLessThanOrEqual(900);
+    // ensure order preserved among included markers (trailing items may be dropped)
+    const idxA = ctx.indexOf('[E1]');
+    const idxB = ctx.indexOf('[E2]');
+    const idxC = ctx.indexOf('[E3]');
+    expect(idxA).toBeLessThan(idxB);
+    if (idxC !== -1) expect(idxB).toBeLessThan(idxC);
   });
 });

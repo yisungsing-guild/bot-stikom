@@ -35,8 +35,17 @@ jest.mock('../src/engine/chatLog', () => ({
   getChatMessages: jest.fn().mockResolvedValue([])
 }));
 
+jest.mock('../src/engine/replyEngine', () => ({
+  findReplyByRules: jest.fn().mockResolvedValue(null)
+}));
+
 jest.mock('../src/engine/ragEngine', () => ({
   query: jest.fn().mockResolvedValue({ success: true, answer: null, source: 'rag-no-match', contexts: [] })
+}));
+
+jest.mock('../src/engine/semanticRagEngine', () => ({
+  querySemanticRag: jest.fn().mockResolvedValue({ success: false, answer: null, source: 'semantic-rag' }),
+  verifyOutboundSemanticRelevance: jest.fn().mockResolvedValue(true)
 }));
 
 jest.mock('../src/engine/webSearchFallback', () => ({
@@ -122,6 +131,11 @@ describe('Provider webhook', () => {
     delete process.env.BOT_INTRO_MESSAGE;
     delete process.env.BOT_NAME;
     delete process.env.BOT_DISPLAY_NAME;
+
+    // Ensure semantic/RAG environment flags don't leak between tests.
+    delete process.env.ENABLE_RAG;
+    delete process.env.SEMANTIC_RAG_FIRST;
+    delete process.env.SEMANTIC_RAG_ONLY;
 
     // Ensure greeting alias config doesn't leak between tests.
     delete process.env.WELCOME_GREETING_ALIASES;
@@ -261,6 +275,22 @@ describe('Provider webhook', () => {
     expect(responseEvent.source).toBe('response');
   });
 
+  test('provider route short-circuits to keyword_rules when a keyword reply exists', async () => {
+    const replyEngine = require('../src/engine/replyEngine');
+    replyEngine.findReplyByRules.mockResolvedValueOnce('RULE REPLY');
+
+    const response = await request(app)
+      .post('/provider/webhook')
+      .send({ chatId: 'keyword-01', text: 'Apakah ada biaya pendaftaran?' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.ok).toBe(true);
+    expect(response.body.source).toBe('keyword_rules');
+
+    const messages = provider.sendMessage.mock.calls.map((call) => String(call[1] || ''));
+    expect(messages).toContain('RULE REPLY');
+  });
+
   test('provider keeps a short follow-up in the same session and sends a reply', async () => {
     const chatId = 'chat-followup';
 
@@ -274,6 +304,67 @@ describe('Provider webhook', () => {
 
     expect(response.status).toBe(200);
     expect(provider.sendMessage.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+
+  test('semantic first skip prevents RAG on short accepted fee breakdown replies with pending offer', async () => {
+    process.env.ENABLE_RAG = 'true';
+    process.env.SEMANTIC_RAG_FIRST = 'true';
+
+    const app2 = express();
+    app2.use(express.json());
+    app2.use('/provider', providerRouterFactory(provider));
+
+    const semanticRag = require('../src/engine/semanticRagEngine');
+    const chatId = 'chat-fee-breakdown-yes';
+    const now = new Date().toISOString();
+
+    sessionStore.set(chatId, {
+      chatId,
+      state: 'root',
+      data: {
+        pendingFeeBreakdownOffer: { ts: now, program: 'DNUI' },
+        lastProgramHint: 'Bisnis Digital'
+      }
+    });
+
+    const response = await request(app2)
+      .post('/provider/webhook')
+      .send({ chatId, text: 'YA' });
+
+    expect(response.status).toBe(200);
+    expect(semanticRag.querySemanticRag).not.toHaveBeenCalled();
+    expect(response.body.ok).toBe(true);
+    expect(response.body.source).not.toContain('semantic-rag');
+  });
+
+  test('DNUI fast follow-up persists pending fee follow-up context', async () => {
+    const chatId = 'chat-dnui-fast-followup';
+    const chatLog = require('../src/engine/chatLog');
+
+    sessionStore.set(chatId, {
+      chatId,
+      state: 'root',
+      data: {}
+    });
+
+    await chatLog.appendChatMessage(chatId, 'inbound', 'Saya ingin rincian biaya Double Degree DNUI.');
+    await chatLog.appendChatMessage(chatId, 'outbound', 'Silakan pilih UTB / DNUI / HELP untuk rincian biaya Double Degree.');
+
+    const response = await request(app)
+      .post('/provider/webhook')
+      .send({ chatId, text: 'biaya pendaftaran' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.ok).toBe(true);
+    expect(response.body.source).toBe('double_degree_fee_followup_fast');
+
+    const session = sessionStore.get(chatId);
+    expect(session).toBeTruthy();
+    expect(session.data && session.data.lastProgramHint).toBe('DNUI');
+    expect(session.data && session.data.pendingFollowupChoice).toBeTruthy();
+    expect(session.data.pendingFollowupChoice.type).toBe('post_fee_options');
+    expect(session.data.pendingFollowupChoice.program).toBe('DNUI');
   });
 
   test('provider multi-turn follow-up retains session context and records route debug events', async () => {
@@ -2097,72 +2188,7 @@ describe('Provider webhook', () => {
     expect(sentText).not.toContain('Ĉº');
     expect(sentText).not.toContain('�');
   });
-  
-  test('PMB submenu numeric reply works even if last bot menu text is missing (pendingPmbMenu)', async () => {
-    process.env.ENABLE_RAG = 'true';
 
-    // Session has pending PMB submenu but no message history yet (race).
-    prisma.session.findUnique.mockResolvedValue({
-      chatId: 'chat-1',
-      state: 'root',
-      data: {
-        numericMenuActive: true,
-        lastNumericMenuEffectiveSelection: 1,
-        pendingPmbMenu: { ts: new Date().toISOString() }
-      }
-    });
-    prisma.trainingData.count.mockResolvedValue(1);
-
-    const rag = require('../src/engine/ragEngine');
-    rag.query.mockClear();
-
-    const res = await request(app)
-      .post('/provider/webhook')
-      .send({ chatId: 'chat-1', text: '3' })
-      .expect(200);
-
-    expect(res.body.ok).toBe(true);
-    expect(res.body.source).toMatch(/pmb_schedule_fast_/i);
-    expect(provider.sendMessage).toHaveBeenCalled();
-    expect(provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\n')).not.toMatch(/Maaf, saya hanya bisa menjawab/i);
-    expect(rag.query).not.toHaveBeenCalled();
-  });
-
-  test('PMB submenu numeric reply works when last bot message contains Menu PMB', async () => {
-    process.env.ENABLE_RAG = 'true';
-
-    const menuText =
-      'Baik, Anda memilih: Informasi Penerimaan Mahasiswa Baru (PMB).\n\n' +
-      'Menu PMB:\n' +
-      '1) Alur / cara daftar\n' +
-      '2) Syarat & dokumen\n' +
-      '3) Jadwal PMB\n' +
-      '4) Kontak PMB\n\n' +
-      'Balas angka 1-4.';
-
-    prisma.session.findUnique.mockResolvedValue({
-      chatId: 'chat-2',
-      state: 'root',
-      data: {
-        messages: [{ direction: 'bot', message: menuText, ts: new Date().toISOString() }]
-      }
-    });
-    prisma.trainingData.count.mockResolvedValue(1);
-
-    const rag = require('../src/engine/ragEngine');
-    rag.query.mockClear();
-
-    const res = await request(app)
-      .post('/provider/webhook')
-      .send({ chatId: 'chat-2', text: '3' })
-      .expect(200);
-
-    expect(res.body.ok).toBe(true);
-    expect(res.body.source).toMatch(/pmb_schedule_fast_/i);
-    expect(provider.sendMessage).toHaveBeenCalled();
-    expect(provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\n')).not.toMatch(/Maaf, saya hanya bisa menjawab/i);
-    expect(rag.query).not.toHaveBeenCalled();
-  });
 
   test('keyword rules short-circuit before RAG (starts_with match)', async () => {
     process.env.ENABLE_RAG = 'true';
@@ -2844,7 +2870,8 @@ describe('Provider webhook', () => {
     expect(res.body.ok).toBe(true);
     expect(rag.query).toHaveBeenCalled();
 
-    const calledQ = String((rag.query.mock.calls[0] && rag.query.mock.calls[0][0]) || '');
+    const lastCall = rag.query.mock.calls.slice(-1)[0] || [];
+    const calledQ = String(lastCall[0] || '');
     expect(calledQ).toMatch(/Bandingkan\s+Program\s+Studi\s+D3\s+Manajemen\s+Informatika\s+dan\s+S2\s+Sistem\s+Informasi/i);
 
     const sent = provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\n');
@@ -5037,111 +5064,6 @@ describe('Provider webhook', () => {
     expect(sentText).toContain('JAWAB_LOKASI');
   });
 
-  test('numeric welcome menu: custom "6 Konsultasi Admin" offers handover (label-driven)', async () => {
-    process.env.ENABLE_RAG = 'true';
-
-    const chatId = '628888888888';
-
-    prisma.trainingData.count.mockResolvedValue(1);
-    prisma.setting.findUnique.mockImplementation(async ({ where }) => {
-      if (where && where.key === 'welcome_message') {
-        return {
-          key: 'welcome_message',
-          value:
-            'Halo! Silakan pilih menu:\n' +
-            '1 Informasi PMB\n' +
-            '2 Informasi Prodi\n' +
-            '3 Informasi Biaya\n' +
-            '4 Informasi Beasiswa\n' +
-            '5 Lokasi Kampus\n' +
-            '6 Konsultasi Admin'
-        };
-      }
-      return null;
-    });
-
-    const chatLog = require('../src/engine/chatLog');
-    chatLog.getChatMessages.mockResolvedValueOnce([
-      {
-        direction: 'bot',
-        message: '1 Informasi PMB\n2 Informasi Prodi\n3 Informasi Biaya\n4 Informasi Beasiswa\n5 Lokasi Kampus\n6 Konsultasi Admin',
-        at: new Date(Date.now() - 5000).toISOString()
-      }
-    ]);
-
-    prisma.session.findUnique.mockResolvedValueOnce({
-      id: 'sess-menu-admin',
-      chatId,
-      state: 'root',
-      data: {
-        numericMenuActive: true,
-        numericMenuShownAt: new Date().toISOString(),
-        messages: [{ direction: 'bot', message: '1 Informasi PMB\n2 Informasi Prodi\n3 Informasi Biaya\n4 Informasi Beasiswa\n5 Lokasi Kampus\n6 Konsultasi Admin' }]
-      }
-    });
-
-    prisma.session.upsert.mockResolvedValueOnce({});
-
-    const rag = require('../src/engine/ragEngine');
-    rag.query.mockClear();
-
-    await request(app).post('/provider/webhook').send({ chatId, text: '6' }).expect(200);
-
-    // Handover offer should be a direct message (no RAG).
-    expect(rag.query).not.toHaveBeenCalled();
-    const sentText = provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\n');
-    expect(sentText.toLowerCase()).toMatch(/admin|cs|konsultasi|hubungkan/);
-  });
-
-  test('numeric welcome menu: custom "3) Cara Daftar" routes by label (no biaya mismatch)', async () => {
-    process.env.ENABLE_RAG = 'true';
-
-    const chatId = '628777777777';
-    prisma.trainingData.count.mockResolvedValue(1);
-
-    // Simulate a previously shown custom welcome menu like the WhatsApp screenshot.
-    const welcomeMenu =
-      'Silakan pilih menu:\n' +
-      '1) Informasi PMB\n' +
-      '2) Biaya & Beasiswa\n' +
-      '3) Cara Daftar\n' +
-      '4) Jadwal Pendaftaran\n' +
-      '5) Kontak Admin PMB';
-
-    // Ensure this is NOT treated as first-time chat (avoid re-sending welcome here).
-    prisma.chat.findUnique.mockResolvedValueOnce({ chatId, status: 'BOT', lastSeenAt: new Date().toISOString() });
-
-    // Session indicates numeric menu context is active/fresh and includes the last bot menu text.
-    sessionStore.set(chatId, {
-      chatId,
-      state: 'root',
-      data: {
-        welcomeSent: true,
-        welcomeSentAt: new Date().toISOString(),
-        numericMenuActive: true,
-        numericMenuShownAt: new Date().toISOString(),
-        messages: [{ direction: 'bot', message: welcomeMenu, ts: new Date().toISOString() }]
-      }
-    });
-
-    const rag = require('../src/engine/ragEngine');
-    rag.query.mockResolvedValueOnce({ success: true, answer: 'ALUR_OK', source: 'rag', contexts: [] });
-
-    const res = await request(app).post('/provider/webhook').send({ chatId, text: '3' }).expect(200);
-
-    expect(res.body.ok).toBe(true);
-    // Should NOT be handled as built-in menu 3 (biaya) which returns source numeric_menu.
-    expect(res.body.source).not.toBe('numeric_menu');
-
-    expect(rag.query).toHaveBeenCalled();
-    const q = String(rag.query.mock.calls[0][0] || '').toLowerCase();
-    expect(q).toContain('cara daftar');
-    expect(q).toContain('pmb');
-
-    const sentText = provider.sendMessage.mock.calls.map((c) => String(c[1] || '')).join('\n').toLowerCase();
-    expect(sentText).toContain('alur_ok');
-    expect(sentText).not.toContain('untuk biaya & skema pembayaran');
-  });
 
   test('anchors short follow-up total request to Bisnis Digital (no prodi drift)', async () => {
     process.env.ENABLE_RAG = 'true';

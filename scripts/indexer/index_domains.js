@@ -56,10 +56,23 @@ async function upsertToPinecone(vectors, namespace) {
 
 function writeLocalVectors(outPath, vectors, namespace) {
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  const tempPath = `${outPath}.${process.pid}.${Date.now()}.tmp`;
   return new Promise((resolve, reject) => {
-    const stream = fs.createWriteStream(outPath, { flags: 'w', encoding: 'utf8' });
-    stream.on('error', reject);
-    stream.on('finish', resolve);
+    const stream = fs.createWriteStream(tempPath, { flags: 'w', encoding: 'utf8' });
+    stream.on('error', async (err) => {
+      try { fs.rmSync(tempPath, { force: true }); } catch (_) {}
+      reject(err);
+    });
+    stream.on('finish', () => {
+      try {
+        if (fs.existsSync(outPath)) fs.rmSync(outPath, { force: true });
+        fs.renameSync(tempPath, outPath);
+        resolve();
+      } catch (err) {
+        try { fs.rmSync(tempPath, { force: true }); } catch (_) {}
+        reject(err);
+      }
+    });
     for (const v of vectors) {
       const rec = Object.assign({}, v, { namespace });
       stream.write(JSON.stringify(rec) + '\n');

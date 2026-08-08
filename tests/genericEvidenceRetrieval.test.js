@@ -201,6 +201,24 @@ describe('generic evidence retrieval', () => {
     });
   });
 
+  describe('computeIntentCompatibility', () => {
+    test('returns neutral compatibility for general intent', () => {
+      const score = computeIntentCompatibility('This is general descriptive text.', 'general');
+      expect(score).toBeGreaterThanOrEqual(0.45);
+      expect(score).toBeLessThanOrEqual(0.55);
+    });
+
+    test('does not treat schedule-only content as fee-compatible', () => {
+      const score = computeIntentCompatibility('Jadwal pendaftaran Gelombang 1A: 1 Januari - 31 Maret 2026.', 'fee');
+      expect(score).toBeLessThan(0.5);
+    });
+
+    test('treats explicit fee evidence as fee-compatible', () => {
+      const score = computeIntentCompatibility('Biaya pendaftaran adalah Rp 500.000.', 'fee');
+      expect(score).toBe(1);
+    });
+  });
+
   describe('computePhraseOverlap', () => {
     test('computes phrase overlap score', () => {
       const score = computePhraseOverlap('biaya pendaftaran', 'biaya pendaftaran mahasiswa baru');

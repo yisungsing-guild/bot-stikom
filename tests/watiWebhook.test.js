@@ -55,6 +55,10 @@ describe('WATI webhook', () => {
     expect(axios.post.mock.calls[0][1]).toEqual(expect.objectContaining({
       chatId: '6281234567890',
       text: 'Halo bot',
+      normalizedText: 'halo bot',
+      searchText: 'halo bot',
+      tokens: ['halo', 'bot'],
+      urls: [],
       messageId: 'wamid.TEST123',
       watiEventId: 'wamid.TEST123'
     }));

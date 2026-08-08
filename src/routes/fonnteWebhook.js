@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const logger = require('../logger');
 const { requireWebhookToken } = require('../middleware/webhookToken');
+const { normalizeEventText } = require('../lib/normalizer');
 
 function normalizePhone(value) {
   const raw = String(value || '').trim();
@@ -159,9 +160,14 @@ async function handleFonnteWebhook(req, res) {
       return;
     }
 
+    const normalizedEvent = normalizeEventText(text, { preserveCase: false });
     await forwardToProvider({
       chatId: phone,
       text,
+      normalizedText: normalizedEvent.normalized,
+      searchText: normalizedEvent.searchText,
+      tokens: normalizedEvent.tokens,
+      urls: normalizedEvent.urls,
       messageId,
       fonnteMessageId: messageId,
       ts,

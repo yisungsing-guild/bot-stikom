@@ -233,9 +233,10 @@ async function main() {
     const chunksInIndex = indexStats.byTrainingId.get(String(row.id)) || 0;
     const compact = compactRow(row, chunksInIndex);
     if (chunksInIndex > 0) indexed.push(compact);
-    if (row.active && chunksInIndex === 0) missing.push(compact);
-    if (String(row.ragIngestStatus || '').toLowerCase() === 'failed') failed.push(compact);
-    if (String(row.ragIngestStatus || '').toLowerCase() === 'rejected') rejected.push(compact);
+    const ingestStatus = String(row.ragIngestStatus || '').toLowerCase();
+    if (row.active && chunksInIndex === 0 && ingestStatus !== 'rejected') missing.push(compact);
+    if (ingestStatus === 'failed') failed.push(compact);
+    if (ingestStatus === 'rejected') rejected.push(compact);
     if (!row.content || !String(row.content).trim()) emptyContent.push(compact);
     if (String(row.ragIngestStatus || '').toLowerCase() === 'success' && chunksInIndex === 0) successMissingIndex.push(compact);
     if (chunksInIndex > 0 && row.ragChunkCount && Number(row.ragChunkCount) !== chunksInIndex) chunkCountMismatch.push({ ...compact, expectedChunkCount: row.ragChunkCount, actualChunkCount: chunksInIndex });

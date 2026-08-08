@@ -25,6 +25,12 @@ const {
   tryContextualMultiProgramFeeAnswer
 } = require('./feeComparisonEngine');
 const { evaluateOutboundAnswer, hasLikelyRawDocumentLeak } = require('../utils/answerPreflightEvaluator');
+const { normalizeUserQuery } = require('../utils/queryNormalizer');
+const {
+  buildQueryUnderstanding,
+  rerankContexts,
+  processEvidence
+} = require('./ragTechniquePipeline');
 
 function envFlag(name, defaultValue = false) {
   const raw = process.env[name];
@@ -408,7 +414,7 @@ function extractGenericEntities(text) {
 }
 
 const QUERY_ANCHOR_STOPWORDS = new Set([
-  'apa', 'apakah', 'bagaimana', 'gimana', 'berapa', 'kapan', 'dimana', 'mana',
+  'apa', 'apakah', 'bagaimana', 'gimana', 'kapan', 'dimana', 'mana', 'berapa', 'cara', 'terus',
   'yang', 'dan', 'atau', 'untuk', 'dengan', 'pada', 'dari', 'ke', 'di', 'itu',
   'ini', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'saya', 'aku', 'kamu', 'kak',
   'kakak', 'min', 'admin', 'tolong', 'mohon', 'dong', 'ya', 'nih', 'nya',
@@ -419,7 +425,8 @@ const QUERY_ANCHOR_STOPWORDS = new Set([
 ]);
 
 function extractQueryAnchorTerms(text) {
-  const normalized = normalizeForLexicalMatch(text);
+  const query = normalizeUserQuery(text || '');
+  const normalized = normalizeForLexicalMatch(query.normalizedText);
   if (!normalized) return [];
 
   const anchors = [];
@@ -428,6 +435,7 @@ function extractQueryAnchorTerms(text) {
     if (v && !anchors.includes(v)) anchors.push(v);
   };
 
+  const anchorSource = query.normalizedText;
   const strongPatterns = [
     /\b(sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika)\b/gi,
     /\b(double\s+degree|dual\s+degree|student\s+exchange|international\s+program|program\s+internasional)\b/gi,
@@ -437,7 +445,7 @@ function extractQueryAnchorTerms(text) {
   ];
 
   for (const pattern of strongPatterns) {
-    for (const match of String(text || '').matchAll(pattern)) add(match[1] || match[0]);
+    for (const match of String(anchorSource || '').matchAll(pattern)) add(match[1] || match[0]);
   }
 
   for (const token of normalized.split(/\s+/).filter(Boolean)) {
@@ -466,15 +474,17 @@ function hasAnchorOverlap(question, content) {
 }
 // Generic intent detection from question
 function detectGenericIntent(question) {
-  const q = String(question).toLowerCase();
+  const q = normalizeUserQuery(question || '').normalizedText;
   
   if (/\b(pasal|ayat|force\s*majeure|addendum|perjanjian|klausul|isi\s+pasal|legal|hukum)\b/i.test(q)) return 'legal';
   // Check scholarship before fee to avoid misclassification
   if (/\b(beasiswa|bantuan\s+(?:biaya|biaya\s+bantuan)|potongan|kip|1k1s|skss)\b/i.test(q)) return 'scholarship';
   if (/\b(akreditasi|ban\s*-?\s*pt|peringkat)\b/i.test(q)) return 'accreditation';
   if (/\b(rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(q)) return 'rpl';
+  if (/\b(double\s*degree|dual\s*degree|dd)\b/i.test(q)) return 'dual_degree';
   if (/\b(visa\s+(?:study|studi|pelajar)|izin\s+belajar|study\s+permit|itas|kitas|sktt|mahasiswa\s+asing)\b/i.test(q)) return 'visa_study';
   if (/\b(prospek\s+kerja|karir|karier|lulusan|profesi|pekerjaan|kerja\s+apa|jadi\s+apa|peluang\s+kerja|career|career\s*center|pusat\s+karier|pusat\s+karir|lowongan|magang|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study|konsultasi\s+karier)\b/i.test(q)) return 'career';
+  if (/\b(?:cara\s+daftar|cara\s+pendaftaran|cara\s+registrasi|gimana\s+cara\s+daftar|bagaimana\s+cara\s+daftar|daftar\s+online|pendaftaran\s+online|registrasi\s+online|cara\s+daftar)\b/i.test(q)) return 'registration_how';
   if (/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|cicilan|nominal|fee|cost|price)\b/i.test(q)) return 'fee';
   if (/\b(jadwal|kapan|tanggal|periode|gelombang|jam|waktu|bulan\s+(?:ini|depan)|deadline)\b/i.test(q)) return 'schedule';
   if (/\b(syarat|persyaratan|dokumen|berkas|ketentuan|requirement)\b/i.test(q)) return 'requirement';
@@ -532,7 +542,7 @@ function computeIntentCompatibility(content, questionIntent) {
   
   const intentSignals = {
     legal: /\b(pasal|ayat|force\s*majeure|addendum|perjanjian|pihak|hukum)\b/i,
-    fee: /\b(Rp\.?|rupiah|biaya|dpp|ukt|semester|pendaftaran|registrasi|\d[\d.,]+\s*(?:ribu|juta))\b/i,
+    fee: /\b(Rp\.?|rupiah|idr|biaya|harga|tarif|pembayaran|bayar|ukt|dpp|uang(?:\s+kuliah|\s+pangkal)?|cicilan|nominal)\b/i,
     schedule: /\b(tanggal|jadwal|periode|gelombang|bulan|tahun|jam|\d{1,2}\s*(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember))\b/i,
     requirement: /\b(syarat|persyaratan|dokumen|berkas|ijazah|ktp|kk|foto|rapor)\b/i,
     international_program: /\b(internasional|international|double\s*degree|dual\s*degree|student\s+exchange|study\s+exchange|mitra|luar\s+negeri|dnui|dalian\s+neusoft|help(?:\s+university)?|utb|universitas\s+teknologi\s+bandung|gccp|bccp)\b/i,
@@ -547,7 +557,7 @@ function computeIntentCompatibility(content, questionIntent) {
     career: /\b(prospek\s+kerja|karir|karier|lulusan|profesi|pekerjaan|career\s*center|job|job\s*fair|campus\s*hiring|rekrutmen|lowongan|magang|tracer\s*study|konsultasi\s+karier)\b/i
   };
   
-  if (intent === 'general') return 0.1;
+  if (intent === 'general') return 0.5;
   
   const pattern = intentSignals[intent];
   return pattern ? (pattern.test(cNorm) ? 1 : 0.2) : 0.5;
@@ -1196,6 +1206,11 @@ function refineSemanticIntent(intent, entities, question = '') {
 function buildSemanticRoutingQuestions(question, rewrite) {
   const current = String(question || '').trim();
   const canonical = String(rewrite && rewrite.canonicalQuestion ? rewrite.canonicalQuestion : current).trim() || current;
+  const normalizedCanonical = normalizeUserQuery(canonical).normalizedText;
+  const normalizedCurrent = normalizeUserQuery(current).normalizedText;
+  const normalizedSearchQueries = rewrite && Array.isArray(rewrite.searchQueries)
+    ? rewrite.searchQueries.map((sq) => normalizeUserQuery(sq).normalizedText)
+    : [];
   const intent = rewrite && rewrite.intent ? rewrite.intent : 'unknown';
   const entities = rewrite && rewrite.entities ? rewrite.entities : {};
   const programs = entityText(entities, ['programs', 'program', 'prodi', 'major', 'majors']);
@@ -1273,10 +1288,13 @@ function buildSemanticRoutingQuestions(question, rewrite) {
   return uniqueList([
     semanticCue,
     canonical,
-    ...(rewrite && Array.isArray(rewrite.searchQueries) ? rewrite.searchQueries : []),
-    current
+    current,
+    normalizedCanonical,
+    ...normalizedSearchQueries,
+    normalizedCurrent
   ], 8);
 }
+
 // FAQ document keywords for direct lookup fallback
 const FAQ_KEYWORDS = {
   career: ['career center', 'lowongan kerja', 'magang', 'job fair', 'rekrutmen', 'campus hiring', 'tracer study', 'konsultasi karier', 'prospek kerja', 'kerja sama perusahaan', 'alumni', 'pekerjaan'],
@@ -1344,9 +1362,15 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
   const index = getCachedSemanticIndex();
   const topK = Number.isFinite(Number(options.topK)) ? Math.max(1, Number(options.topK)) : parseInt(process.env.SEMANTIC_RAG_TOP_K || process.env.RAG_TOP_K || '8', 10);
   const maxCandidates = Math.max(topK, parseInt(process.env.SEMANTIC_RAG_CANDIDATES || '1000', 10));
-  const queries = uniqueList(searchQueries, 4);
-  const question = options.question || queries[0] || '';
+  const preliminaryQueries = uniqueList(searchQueries, 8);
+  const question = options.question || preliminaryQueries[0] || '';
   const questionIntent = options.intent || detectGenericIntent(question);
+  const understanding = options.queryUnderstanding || buildQueryUnderstanding(question, {
+    canonicalQuestion: question,
+    searchQueries: preliminaryQueries,
+    intent: questionIntent
+  }, { intentHint: questionIntent });
+  const queries = uniqueList([...(understanding.searchQueries || []), ...preliminaryQueries], 8);
 
   // Get database candidates (generic scoring)
   const dbCandidates = await getDatabaseCandidates(queries, { ...options, question, intent: questionIntent });
@@ -1415,27 +1439,15 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
   // Merge semantic and database candidates
   const allCandidates = [...semanticScored, ...dbCandidates];
 
-  // Deduplicate by trainingId + chunk content hash
-  const seenSignatures = new Set();
-  const dedupedCandidates = [];
-  for (const candidate of allCandidates) {
-    const item = candidate.item;
-    const signature = `${item.trainingId || 'no-tid'}-${item.chunk.slice(0, 100)}`;
-
-    if (seenSignatures.has(signature)) {
-      // If duplicate, keep the one with higher score
-      const existingIdx = dedupedCandidates.findIndex(c => {
-        const existingSig = `${c.item.trainingId || 'no-tid'}-${c.item.chunk.slice(0, 100)}`;
-        return existingSig === signature;
-      });
-      if (existingIdx >= 0 && candidate.score > dedupedCandidates[existingIdx].score) {
-        dedupedCandidates[existingIdx] = candidate;
-      }
-    } else {
-      seenSignatures.add(signature);
-      dedupedCandidates.push(candidate);
-    }
-  }
+  // Deduplicate candidates using centralized helper (keep highest-score)
+  const { deduplicateEvidence } = require('../utils/evidenceDedup');
+  const candidateItems = allCandidates.map(c => ({ item: c.item, score: c.score, text: c.item && c.item.chunk ? c.item.chunk : '' }));
+  const dedupResult = deduplicateEvidence(candidateItems, { keep: 'highest-score', textField: 'text', scoreField: 'score', prefixLength: 240 });
+  const dedupedCandidates = dedupResult.items.map(c => {
+    // find original candidate by matching item reference or text
+    const found = allCandidates.find(ac => ac.item === c || (ac.item && ac.item.chunk && normalizeForLexicalMatch(ac.item.chunk).slice(0, 40) === normalizeForLexicalMatch(c.text).slice(0, 40)));
+    return found || null;
+  }).filter(Boolean);
 
   // Sort by combined score
   dedupedCandidates.sort((a, b) => b.score - a.score);
@@ -1465,8 +1477,8 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     return out;
   };
 
-  const candidateContexts = dedupedCandidates.slice(0, maxCandidates).map(toContext);
-  const dbCandidateContexts = dbCandidates.slice(0, maxCandidates).map(toContext);
+  const candidateContexts = rerankContexts(dedupedCandidates.slice(0, maxCandidates).map(toContext), understanding, { topK: maxCandidates });
+  const dbCandidateContexts = rerankContexts(dbCandidates.slice(0, maxCandidates).map(toContext), understanding, { topK: maxCandidates });
 
   // Apply quality-control filtering. If the filter removes every otherwise
   // relevant candidate, keep strong raw candidates instead of immediately
@@ -1520,7 +1532,11 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     rawContextCount: rawContexts.length,
     filteredContextCount: filteredCandidates.length,
     relaxedFallbackUsed: !filteredContexts.length && contexts.length > 0,
-    faqFallbackUsed: contexts.length > 0 && contexts[0].sourceType === 'faq-lookup'
+    faqFallbackUsed: contexts.length > 0 && contexts[0].sourceType === 'faq-lookup',
+    techniquePipeline: {
+      queryUnderstanding: understanding,
+      reranking: { enabled: true, candidateCount: candidateContexts.length, dbCandidateCount: dbCandidateContexts.length }
+    }
   };
 }
 
@@ -2799,6 +2815,8 @@ function evaluateGenericAnswerability(question, selectedEvidence, options = {}) 
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   const questionIntent = options.intent || detectGenericIntent(question);
   const questionAnchors = extractQueryAnchorTerms(question);
+  const { getEvidenceRequirements, isScholarshipAligned, containsCurrency } = require('../utils/evidenceRequirements');
+  const rules = getEvidenceRequirements(questionIntent, question);
   
   if (!evidence.length) {
     return { answerable: false, reason: 'no_selected_evidence', missingEvidence: ['selected_evidence'] };
@@ -2809,7 +2827,7 @@ function evaluateGenericAnswerability(question, selectedEvidence, options = {}) 
   
   // Check for required information type based on intent
   if (questionIntent === 'fee') {
-    if (!/\b(Rp\.?|rupiah|\d[\d.,]+\s*(?:ribu|juta)|\d{5,})\b/i.test(combinedText)) {
+    if (rules.requireCurrency && !containsCurrency(combinedText)) {
       missingEvidence.push('fee_amount');
     }
   }
@@ -2829,8 +2847,8 @@ function evaluateGenericAnswerability(question, selectedEvidence, options = {}) 
   }
   
   // Check for distinctive query anchors, not generic question words.
-  if (questionAnchors.length > 0 && !hasAnchorOverlap(question, combinedText)) {
-    missingEvidence.push('requested_anchor');
+  if ((rules.requireAnchorOverlap || questionIntent === 'general') && questionAnchors.length > 0 && !hasAnchorOverlap(question, combinedText)) {
+    missingEvidence.push(questionIntent === 'general' ? 'requested_entity' : 'requested_anchor');
   }
   
   // Check for list questions
@@ -3022,6 +3040,12 @@ function isGreetingOnly(normalizedText) {
   const timeWords = new Set(['pagi', 'siang', 'sore', 'malam']);
   const words = text.split(/\s+/).filter(Boolean);
   if (!words.length || words.length > 4) return false;
+
+  const addressTail = '(?:kak|kakak|min|admin|tiko|gan|agan|bro|sis|mas|mbak|pak|bu|bang|bos|boss|bli|mb|bot)';
+  const timeGreeting = '(?:pagi+|pgi|pg|siang+|siank|sang|sore+|malam+|malem+|mlm)';
+  if (new RegExp('^(?:halo|hallo|hai|hay|hi|hello|helo)\\s+selamat\\s+' + timeGreeting + '(?:\\s+' + addressTail + ')?$', 'i').test(text)) return true;
+  if (new RegExp('^selamat\\s+' + timeGreeting + '(?:\\s+' + addressTail + ')?$', 'i').test(text)) return true;
+  if (new RegExp('^met\\s+' + timeGreeting + '(?:\\s+' + addressTail + ')?$', 'i').test(text)) return true;
 
   const cleanWord = (word) => collapseRepeatedLetters(word).replace(/[^a-z]/g, '');
   const first = cleanWord(words[0]);
@@ -8961,6 +8985,90 @@ function runVettedDeterministicFallback(question, options, rewrite, routeStage) 
   if (!result || isUnsafeDeterministicFallback(question, result, rewrite)) return null;
   return result;
 }
+function tryAcademicSpecificNoDataAnswer(question) {
+  const raw = String(question || '').trim();
+  const q = raw.toLowerCase();
+  if (!raw) return null;
+
+  if (/\bfakultas\b/i.test(q) && !/\b(?:tugas\s+akhir|skripsi|tesis|halaman|minimal|jumlah\s+halaman)\b/i.test(q)) {
+    return {
+      answer: [
+        'Saya belum menemukan informasi fakultas untuk prodi tersebut yang tercantum jelas pada data yang tersedia.',
+        '',
+        'Data yang aman saya sebutkan saat ini adalah daftar program studi dan informasi PMB/prodi. Untuk struktur fakultas resmi, kakak sebaiknya konfirmasi ke admin kampus atau bagian akademik agar tidak keliru.'
+      ].join('\n'),
+      source: 'semantic-rag-academic-no-data',
+      frameSource: 'semantic-rag-academic-no-data'
+    };
+  }
+
+  if (/\bbisnis\s+digital\b/i.test(q) && /\bdigital\s+marketing\b|pemasaran\s+digital|marketing\s+digital/i.test(q)) {
+    return {
+      answer: [
+        'Ya, Kak. Pada data kurikulum yang tersedia, Bisnis Digital memuat materi yang berkaitan dengan digital marketing.',
+        '',
+        'Materi yang disebut antara lain manajemen pemasaran digital, social media strategy, search engine marketing, e-commerce, analitik bisnis, manajemen produk digital, dan business model innovation. Mahasiswa juga diarahkan mengerjakan proyek kampanye atau simulasi pengembangan produk digital.'
+      ].join('\n'),
+      source: 'semantic-rag-program-curriculum',
+      frameSource: 'semantic-rag-program-curriculum'
+    };
+  }
+
+  if (/\bseo\b|search\s+engine\s+optim(?:ization|isation)|optimasi\s+mesin\s+pencari/i.test(q)) {
+    return {
+      answer: [
+        'Untuk SEO secara spesifik, saya belum menemukan penyebutan yang benar-benar eksplisit pada data yang tersedia.',
+        '',
+        'Namun untuk Bisnis Digital, data kurikulum mencatat materi yang dekat dengan digital marketing, social media strategy, search engine marketing, analitik bisnis, dan e-commerce. Jadi topik mesin pencari/pemasaran digital ada konteksnya, tetapi detail apakah SEO diajarkan sebagai mata kuliah khusus sebaiknya dikonfirmasi ke prodi atau admin PMB.'
+      ].join('\n'),
+      source: 'semantic-rag-academic-no-data',
+      frameSource: 'semantic-rag-academic-no-data'
+    };
+  }
+
+  if (/\b(?:artificial\s+intelligence|ai\b|kecerdasan\s+buatan)\b/i.test(q) && /\bbisnis\s+digital\b/i.test(q)) {
+    return {
+      answer: [
+        'Untuk Bisnis Digital, saya belum menemukan penyebutan Artificial Intelligence/AI yang tercantum jelas pada data yang tersedia.',
+        '',
+        'Data yang aman saya sebutkan: Bisnis Digital memuat bisnis berbasis teknologi, digital marketing, e-commerce, strategi produk digital, analisis pasar, branding, data analytics, dan kewirausahaan digital. Untuk kepastian apakah ada materi AI khusus, kakak bisa konfirmasi ke prodi atau admin PMB.'
+      ].join('\n'),
+      source: 'semantic-rag-academic-no-data',
+      frameSource: 'semantic-rag-academic-no-data'
+    };
+  }
+
+  if (/\b(?:tugas\s+akhir|skripsi|tesis)\b/i.test(q) && /\b(?:halaman|minimal|jumlah\s+halaman)\b/i.test(q)) {
+    return {
+      answer: [
+        'Saya belum menemukan angka minimal halaman tugas akhir/skripsi yang tercantum jelas pada data yang tersedia.',
+        '',
+        'Untuk format, jumlah halaman, template, dan ketentuan teknis tugas akhir, kakak sebaiknya cek pedoman tugas akhir dari prodi/fakultas atau konfirmasi ke bagian akademik/prodi.'
+      ].join('\n'),
+      source: 'semantic-rag-academic-no-data',
+      frameSource: 'semantic-rag-academic-no-data'
+    };
+  }
+
+  return null;
+}
+function tryGenericFeeClarificationAnswer(question) {
+  const q = String(question || '').trim().toLowerCase();
+  if (!q) return null;
+  const asksFeeDetail = /\b(rincian\s+biaya|detail\s+biaya|biayanya|berapa\s+biaya|total\s+biaya|totalnya|harus\s+bayar)\b/i.test(q);
+  const hasProgram = /\b(sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi|dnui|help|utb)\b/i.test(q);
+  const hasWave = /\b(?:gelombang\s*)?(?:khusus|[1-4]\s*[a-d]?|i{1,3}\s*[a-d]?|iv\s*[a-d]?)\b/i.test(q);
+  if (!asksFeeDetail || hasProgram || hasWave) return null;
+  return {
+    answer: [
+      'Bisa, Kak. Untuk rincian biaya lengkap, saya perlu tahu dulu prodi/program dan gelombang pendaftaran yang kakak maksud.',
+      '',
+      'Contoh: "rincian biaya Sistem Informasi Gelombang 2B" atau "biaya Bisnis Digital Gelombang 1A".'
+    ].join('\n'),
+    source: 'semantic-rag-fee-clarification',
+    frameSource: 'semantic-rag-fee-clarification'
+  };
+}
 function tryAcademicCreditNoDataAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (!/\b(?:sks|satuan\s+kredit\s+semester|total\s+sks|jumlah\s+sks|beban\s+sks)\b/i.test(q)) return null;
@@ -8978,7 +9086,7 @@ function tryAcademicCreditNoDataAnswer(question) {
       '',
       'Data yang terbaca lebih banyak membahas SKS transfer/RPL atau konversi SKS program tertentu, bukan total SKS kurikulum reguler. Untuk angka resmi, kakak sebaiknya cek kurikulum prodi atau konfirmasi ke bagian akademik/prodi.'
     ].join('\n'),
-    source: 'semantic-rag-program-definition'
+    source: 'semantic-rag-academic-credit-no-data'
   };
 }
 async function querySemanticRag(question, options = {}) {
@@ -9045,9 +9153,15 @@ async function querySemanticRag(question, options = {}) {
   const smallTalk = trySmallTalkAnswer(question);
   const smallTalkWords = String(question || '').trim().split(/\s+/).filter(Boolean).length;
   // Only treat as small-talk when user message is very short (brief greeting/thanks/etc.).
-  if (smallTalk && smallTalk.answer && smallTalkWords <= 4) {
+  if (smallTalk && smallTalk.answer && smallTalkWords <= 6) {
     const smallTalkResp = buildDeterministicResponse(question, 'semantic-rag-small-talk', smallTalk, { routeStage: 'pre-ai-small-talk' });
     return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
+  }
+
+  const earlyAcademicSpecificNoData = strictDocumentOnly ? null : tryAcademicSpecificNoDataAnswer(question);
+  if (earlyAcademicSpecificNoData && earlyAcademicSpecificNoData.answer) {
+    const builtEarlyAcademicSpecificNoData = buildDeterministicResponse(question, earlyAcademicSpecificNoData.source || 'semantic-rag-academic-no-data', earlyAcademicSpecificNoData, { routeStage: 'pre-ai-early-academic-specific-no-data' });
+    return await finalizeSemanticResult(question, builtEarlyAcademicSpecificNoData, resultCacheKey);
   }
 
   const feedbackDirect = strictDocumentOnly ? null : tryFeedbackAnswer(question);
@@ -9108,10 +9222,22 @@ async function querySemanticRag(question, options = {}) {
       logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] legacy double degree fee bridge failed');
     }
   }
+  const academicSpecificNoData = strictDocumentOnly ? null : tryAcademicSpecificNoDataAnswer(question);
+  if (academicSpecificNoData && academicSpecificNoData.answer) {
+    const builtAcademicSpecificNoData = buildDeterministicResponse(question, academicSpecificNoData.source || 'semantic-rag-academic-no-data', academicSpecificNoData, { routeStage: 'pre-ai-academic-specific-no-data' });
+    return await finalizeSemanticResult(question, builtAcademicSpecificNoData, resultCacheKey);
+  }
+
   const academicCreditNoData = strictDocumentOnly ? null : tryAcademicCreditNoDataAnswer(question);
   if (academicCreditNoData && academicCreditNoData.answer) {
-    const builtAcademicCredit = buildDeterministicResponse(question, 'semantic-rag-program-definition', academicCreditNoData, { routeStage: 'pre-ai-academic-credit' });
+    const builtAcademicCredit = buildDeterministicResponse(question, academicCreditNoData.source || 'semantic-rag-academic-credit-no-data', academicCreditNoData, { routeStage: 'pre-ai-academic-credit' });
     return await finalizeSemanticResult(question, builtAcademicCredit, resultCacheKey);
+  }
+
+  const genericFeeClarification = strictDocumentOnly ? null : tryGenericFeeClarificationAnswer(question);
+  if (genericFeeClarification && genericFeeClarification.answer) {
+    const builtGenericFeeClarification = buildDeterministicResponse(question, genericFeeClarification.source || 'semantic-rag-fee-clarification', genericFeeClarification, { routeStage: 'pre-ai-fee-clarification' });
+    return await finalizeSemanticResult(question, builtGenericFeeClarification, resultCacheKey);
   }
 
   const hasDirectFeeSignal = hasExplicitFeeQuestionSignal(question);
@@ -9394,7 +9520,13 @@ async function querySemanticRag(question, options = {}) {
   }
 
 
-  const retrieved = await retrieveSemanticContexts(rewrite.searchQueries, { topK: options.topK, question, intent: rewrite.intent });
+  const queryUnderstanding = buildQueryUnderstanding(question, rewrite, { intentHint: options.intentHint || '' });
+  const retrieved = await retrieveSemanticContexts(queryUnderstanding.searchQueries, {
+    topK: options.topK,
+    question,
+    intent: rewrite.intent,
+    queryUnderstanding
+  });
   const minScoreRaw = Number(process.env.SEMANTIC_RAG_MIN_SCORE || '0.18');
   const minScore = Number.isFinite(minScoreRaw) ? minScoreRaw : 0.18;
   
@@ -9417,12 +9549,31 @@ async function querySemanticRag(question, options = {}) {
   
   // Evaluate generic answerability of selected evidence
   let answerabilityResult = null;
+  let evidenceProcessingResult = null;
   if (selectedEvidence.length > 0) {
     try {
       answerabilityResult = evaluateEvidenceAnswerability({ question, selectedEvidence, intent: rewrite.intent });
     } catch (e) {
       logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] evidence answerability evaluation failed, proceeding with generation');
     }
+  }
+  evidenceProcessingResult = processEvidence(selectedEvidence, answerabilityResult, queryUnderstanding);
+  const techniquePipelineDebug = {
+    queryUnderstanding,
+    retrieval: retrieved.techniquePipeline || null,
+    evidenceProcessing: evidenceProcessingResult
+  };
+
+  if (evidenceProcessingResult.conflicts.length && envFlag('SEMANTIC_RAG_BLOCK_CONFLICTING_EVIDENCE', false)) {
+    return {
+      success: true,
+      answer: buildSpecificInsufficientDataAnswer(question, ['conflicting_evidence']),
+      source: 'semantic-rag-conflicting-evidence',
+      contexts: selectedEvidence,
+      confidenceScore: retrieved.topScore,
+      confidenceTier: 'LOW',
+      debug: { rewrite, queryUnderstanding, evidenceProcessingResult }
+    };
   }
   
   if (!selectedEvidence.length) {
@@ -9828,7 +9979,7 @@ async function querySemanticRag(question, options = {}) {
       contexts: selectedEvidence,
       confidenceScore: retrieved.topScore,
       confidenceTier: retrieved.topScore >= 0.3 ? 'HIGH' : 'MEDIUM',
-      debug: { rewrite, indexSize: retrieved.indexSize, answerabilityResult, answerCategory, preflight }
+      debug: { rewrite, indexSize: retrieved.indexSize, answerabilityResult, answerCategory, preflight, techniquePipeline: techniquePipelineDebug }
     };
     if (debugTrace) {
       console.log('[TRACE FINAL] CACHING and RETURNING semantic-rag response:', {
@@ -10018,3 +10169,8 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
+
+
+
+
+

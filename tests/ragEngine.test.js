@@ -111,6 +111,17 @@ describe('ragEngine helpers', () => {
     expect(entities.feeType).toBeNull();
   });
 
+  test('buildSearchQueries decomposes compound fee and schedule questions into focused retrieval queries', () => {
+    const { buildSearchQueries } = require('../src/engine/ragEngine');
+    const queries = buildSearchQueries('berapa biaya pendaftaran dan jadwal gelombang 2A', { program: 'SI', intent: 'COST' });
+
+    expect(Array.isArray(queries)).toBe(true);
+    expect(queries.length).toBeGreaterThanOrEqual(3);
+    expect(queries.some((q) => /biaya/.test(q))).toBe(true);
+    expect(queries.some((q) => /jadwal|gelombang/.test(q))).toBe(true);
+    expect(queries.some((q) => /sistem informasi/.test(q))).toBe(true);
+  });
+
   test('chunkText respects size and overlap', () => {
     const text = 'A'.repeat(3000);
     const chunks = chunkText(text, 1000, 200);

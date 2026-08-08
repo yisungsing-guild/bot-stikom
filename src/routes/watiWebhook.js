@@ -4,6 +4,7 @@ const router = express.Router();
 const logger = require('../logger');
 const { requireWebhookToken } = require('../middleware/webhookToken');
 const prisma = require('../db');
+const { normalizeEventText } = require('../lib/normalizer');
 
 const DIAG_KEYS = {
   acceptedAt: 'wati_last_webhook_accepted_at',
@@ -429,9 +430,14 @@ async function watiWebhookHandler(req, res) {
       const internalPort = process.env.PORT || 4000;
       const timeoutMs = parseInt(process.env.WATI_FORWARD_TIMEOUT_MS || '60000', 10);
       const providerToken = (process.env.PROVIDER_WEBHOOK_TOKEN || '').toString().trim();
+      const normalizedEvent = normalizeEventText(text, { preserveCase: false });
       await axios.post(`http://${internalHost}:${internalPort}/provider/webhook`, {
         chatId: phone,
         text,
+        normalizedText: normalizedEvent.normalized,
+        searchText: normalizedEvent.searchText,
+        tokens: normalizedEvent.tokens,
+        urls: normalizedEvent.urls,
         messageId,
         whatsappMessageId,
         watiEventId: eventId,

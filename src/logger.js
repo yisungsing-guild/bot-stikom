@@ -17,9 +17,10 @@ function normalizeLevel(value, fallback) {
 
 function createLogger({ env, level, transport }) {
   const normalizedLevel = normalizeLevel(level, env === 'production' ? 'info' : 'debug');
+  const destination = env === 'test' ? pino.destination(2) : undefined;
 
   try {
-    return pino({ level: normalizedLevel, transport });
+    return pino({ level: normalizedLevel }, destination || transport);
   } catch (err) {
     const msg = String(err && err.message ? err.message : err);
     // In some environments, Pino may be configured with custom levels externally.
@@ -39,7 +40,7 @@ function createLogger({ env, level, transport }) {
       // Avoid hard-failing the whole server just due to logger config.
       // eslint-disable-next-line no-console
       console.warn(`[Logger] Pino init failed for level="${normalizedLevel}", falling back with standard levels. Error: ${msg}`);
-      return pino({ level: safeLevel, customLevels: standardLevels, useOnlyCustomLevels: false, transport });
+      return pino({ level: safeLevel, customLevels: standardLevels, useOnlyCustomLevels: false }, destination || transport);
     }
 
     throw err;
