@@ -1359,6 +1359,8 @@ module.exports = function (provider) {
     const questionForDivision = (typeof opts.answerQuestion === 'string' && opts.answerQuestion.trim())
       ? opts.answerQuestion
       : effectiveQuestion;
+    const explicitAcademicRagQuestion = /\b(?:program\s+internasional|international\s+class|double\s*degree|dual\s*degree|dnui|dalian|help\s+university|utb|prodi|program\s+studi|jurusan|fakultas|kurikulum|mata\s+kuliah|belajar|dipelajari|akreditasi|ban-pt|sks|tugas\s+akhir|skripsi|halaman|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen\s+informatika|sistem\s+komputer|manajemen|artificial\s+intelligence|\bai\b|seo)\b/i
+      .test(String(questionForDivision || question || effectiveQuestion || ''));
 
     const divisionKey = (typeof opts.divisionKey === 'string' && opts.divisionKey.trim())
       ? String(opts.divisionKey).toLowerCase().trim()
@@ -1545,7 +1547,7 @@ module.exports = function (provider) {
         try {
           // Honor an explicit session-level skip flag if set earlier in the
           // request processing pipeline.
-          if (sessionData && sessionData._skipRagForFastFee) {
+          if (sessionData && sessionData._skipRagForFastFee && !explicitAcademicRagQuestion) {
             shouldSkipRag = true;
             try {
               const outDir = path.join(__dirname, '..', '..', 'tmp');
@@ -1579,7 +1581,7 @@ module.exports = function (provider) {
           const pf = sessionData && sessionData.pendingFollowupChoice ? sessionData.pendingFollowupChoice : null;
           const pfTs = pf && pf.ts ? new Date(pf.ts) : null;
           const pfFresh = pfTs && !Number.isNaN(pfTs.getTime()) ? ((now - pfTs) / (1000 * 60)) <= 10 : false; // 10 minutes
-          if (pf && pfFresh) {
+          if (pf && pfFresh && !explicitAcademicRagQuestion) {
             shouldSkipRag = true;
             try { traceRagQueryWithEval('TRACE_PROVIDER_SKIP_RAG_PENDING_FOLLOWUP', { reason: 'pending_followup_choice', pending: pf && pf.type ? pf.type : null, chatId, query: String(qForDetLocal).slice(0, 200) }); } catch (e) { }
             // Signal to callers that RAG was intentionally skipped due to an
@@ -1605,7 +1607,7 @@ module.exports = function (provider) {
             (typeof isShortNegation === 'function' && isShortNegation(effectiveQuestion)) ||
             (typeof isShortContinueRequest === 'function' && isShortContinueRequest(effectiveQuestion));
 
-          if (
+          if (!explicitAcademicRagQuestion && (
             (typeof isGeneralSmallTalkQuestion === 'function' && isGeneralSmallTalkQuestion(effectiveQuestion, sessionData)) ||
             (shortAckReply && (
               !!(sessionData && sessionData.pendingFeeBreakdownOffer) ||
@@ -1614,7 +1616,7 @@ module.exports = function (provider) {
               !!(sessionData && sessionData.pendingMenuCost) ||
               !!(sessionData && sessionData.pendingFeeDetail)
             ))
-          ) {
+          )) {
             shouldSkipRag = true;
             traceRagQueryWithEval('TRACE_PROVIDER_SKIP_RAG_SMALL_TALK', { reason: shortAckReply ? 'short_ack_pending' : 'small_talk', effectiveQuestion: String(effectiveQuestion || '').slice(0, 200) });
             ragResult = {
