@@ -5728,7 +5728,7 @@ module.exports = function (provider) {
     if (!inbound || !outbound) return true;
     if (String(meta && meta.source || '').includes('timeout')) return true;
     const metaSource = String((meta && (meta.source || meta.ragSource || meta.finalPipeline)) || '');
-    if (/^(?:semantic-rag-(?:small-talk|program-list|program-comparison|program-definition|program-recommendation|student-concern|scholarship|rpl|campus-location|campus-main-location|ukm-list|generic-faq-qna|international-class-fallback|dual-degree|dual-degree-followup|pmb-info|pmb-requirements|feedback|fee-detail)|rag-(?:accreditation|program-comparison|campus-location|dual-degree-dpp-discount))/i.test(metaSource)) return true;
+    if (/^(?:semantic-rag-(?:small-talk|program-list|program-comparison|program-definition|program-curriculum|program-recommendation|student-concern|scholarship|rpl|campus-location|campus-main-location|ukm-list|generic-faq-qna|international-class-fallback|dual-degree|dual-degree-followup|pmb-info|pmb-requirements|academic|academic-credit|fee-clarification|feedback|fee-detail)|rag-(?:accreditation|program-comparison|campus-location|dual-degree-dpp-discount))/i.test(metaSource)) return true;
     if (isSafeDoubleDegreeOutboundAnswer(inbound, outbound, meta)) return true;
     if (isDoubleDegreeProcessQuestion(inbound)) return true;
     if (/^\s*(balas|pilih|ketik)\b/i.test(outbound)) return true;
@@ -8900,7 +8900,9 @@ module.exports = function (provider) {
       ts: inboundTs || requestReceivedAtMs,
       inboundTs: inboundTs || null
     };
+    const suppressStaleOutbound = String(process.env.PROVIDER_SUPPRESS_STALE_OUTBOUND || '').toLowerCase() === 'true';
     const isLatestInboundForThisRequest = (targetChatId = chatId) => {
+      if (!suppressStaleOutbound) return true;
       const latest = lastInboundByChat.get(targetChatId);
       if (!latest) return true;
       if (latest.norm !== requestInboundMarker.norm) return false;
@@ -9831,7 +9833,7 @@ module.exports = function (provider) {
             const ragQuestion = programHint ? `Program Studi: ${programHint}\n${text}` : text;
             const ragResult = await ragQueryWithEval(chatId, ragQuestion, topK, { answerQuestion: ragQuestion, minScore: 0, forceRag: true });
             if (ragResult && ragResult.success && ragResult.answer) {
-              await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer));
+              await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer), { source: ragResult.source || 'semantic-rag', ragSource: ragResult.source || null });
               return res.send({ ok: true, source: 'program_info_short_answer_rag', program: programHint, ragUsed: true });
             }
           }
@@ -16859,7 +16861,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               logger.warn({ err: e.message }, '[Provider] Web fallback after RAG failed');
             }
 
-            await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer));
+            await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer), { source: ragResult.source || 'semantic-rag', ragSource: ragResult.source || null });
 
             try {
               const answerText = String(ragResult.answer || '');
