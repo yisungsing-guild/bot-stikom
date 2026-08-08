@@ -4943,6 +4943,10 @@ function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}
 }
 
 function tryGenericFaqQnaAnswer(question, indexForQuery, options = {}) {
+  const q = String(question || '');
+  const asksProgramComparison = /\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan)\b/i.test(q)
+    && /\b(?:prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|manajemen)\b/i.test(q);
+  if (asksProgramComparison) return null;
   return buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options);
 }
 function tryAccreditationAnswer(question, indexForQuery) {
@@ -8080,6 +8084,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-unsupported-double-degree-partner', tryUnsupportedDoubleDegreePartnerAnswer],
   ['semantic-rag-unsupported-international-program', tryUnsupportedInternationalProgramAnswer],
   ['semantic-rag-known-faq-qna', tryKnownFaqQnaAnswer],
+  ['semantic-rag-program-curriculum', tryProgramCurriculumFollowupAnswer],
   ['semantic-rag-institution-vision-mission', tryInstitutionVisionMissionAnswer],
   ['semantic-rag-dual-degree-followup', tryDoubleDegreeFollowUpAnswer],
   ['semantic-rag-scholarship', tryScholarshipAnswer],
@@ -8152,6 +8157,7 @@ const SOURCES_NEEDING_INDEX = new Set([
   'semantic-rag-fee-comparison',
   // Training-specific and campus facility/entity handlers need index
   'semantic-rag-training-specific',
+  'semantic-rag-program-curriculum',
   'semantic-rag-generic-faq-qna',
   'semantic-rag-campus-facility',
   'semantic-rag-campus-support-entity',
@@ -8172,6 +8178,7 @@ const PRE_AI_HANDLER_SOURCES = new Set([
   'semantic-rag-unsupported-double-degree-partner',
   'semantic-rag-unsupported-international-program',
   'semantic-rag-known-faq-qna',
+  'semantic-rag-program-curriculum',
   'semantic-rag-generic-faq-qna',
   'semantic-rag-campus-support-entity',
   'semantic-rag-dual-degree-followup',
@@ -8822,6 +8829,14 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredFacilitySafe = isSafeCampusFacilityAnswer(question, result.answer, source);
   const structuredProgramListSafe = isSafeProgramListAnswer(question, result.answer, source);
   const structuredProgramDefinitionSafe = isSafeProgramDefinitionAnswer(question, result.answer, source);
+  const structuredProgramCurriculumSafe = /semantic-rag-program-curriculum/i.test(source)
+    && /\\b(?:belajar|dipelajari|mata\\s+kuliah|kurikulum|skill|kompetensi|digital\\s+marketing|e-commerce|data\\s+analytics)\\b/i.test(String(result.answer || ''));
+  const structuredProgramComparisonSafe = /semantic-rag-program-comparison/i.test(source)
+    && /\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan)\b/i.test(String(question || ''))
+    && /\b(?:Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika|Manajemen)\b/i.test(String(result.answer || ''));
+  const structuredAcademicFacultySafe = /semantic-rag-academic-faculty/i.test(source)
+    && /\bfakultas\b/i.test(String(question || ''))
+    && /\bFakultas\s+(?:Informatika\s+dan\s+Komputer|Bisnis\s+dan\s+Vokasi)\b/i.test(String(result.answer || ''));
   const structuredAbbreviationClarificationSafe = isSafeAbbreviationClarificationAnswer(question, result.answer, source);
   const structuredRplSafe = /semantic-rag-rpl/i.test(source) && /\b(RPL|Rekognisi\s+Pembelajaran\s+Lampau|SKS|PMB|siap\.stikom-bali\.ac\.id)\b/i.test(String(result.answer || ''));
   const explicitExternalNoDataSafe = /explicit-external-insufficient-data/i.test(source);
@@ -8837,7 +8852,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && /\b(kampus|lokasi|alamat|Denpasar|Renon|Jimbaran|Abiansemal|3\s+lokasi)\b/i.test(String(result.answer || ''));
   const structuredFeedbackSafe = /semantic-rag-feedback/i.test(source)
     && /\b(singkat|informatif|koreksi|rapikan|langsung\s+ke\s+inti)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
-  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe;  if (preflight && preflight.blocked && !structuredSemanticSafe) {
+  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe;  if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
       answer: preflight.answer,
@@ -8985,12 +9000,73 @@ function runVettedDeterministicFallback(question, options, rewrite, routeStage) 
   if (!result || isUnsafeDeterministicFallback(question, result, rewrite)) return null;
   return result;
 }
+function tryProgramCurriculumFollowupAnswer(question) {
+  const q = String(question || '').trim().toLowerCase();
+  if (!q) return null;
+  const asksLearning = /\b(?:belajar|dipelajari|yang\s+dipelajarin|mata\s+kuliah|matkul|kurikulum|skill|kompetensi|jurusannya\s+gimana|jurusannya\s+bagaimana)\b/i.test(q);
+  if (!asksLearning) return null;
+  if (/\bbisnis\s+digital\b/i.test(q)) {
+    return {
+      answer: [
+        'Di Program Studi Bisnis Digital, mahasiswa belajar bisnis berbasis teknologi dan pengembangan usaha di ekosistem digital.',
+        '',
+        'Materi yang ditekankan antara lain digital marketing, e-commerce, strategi produk digital, analisis pasar, branding, data analytics, dan kewirausahaan digital.',
+        '',
+        'Jadi, fokusnya bukan hanya komputer atau coding, tetapi bagaimana teknologi dipakai untuk membangun, memasarkan, dan mengembangkan bisnis modern.'
+      ].join('\n'),
+      source: 'semantic-rag-program-curriculum',
+      frameSource: 'semantic-rag-program-curriculum'
+    };
+  }
+  return null;
+}
+function tryProgramFacultyAnswer(question) {
+  const q = String(question || '').trim().toLowerCase();
+  if (!q || !/\bfakultas\b/i.test(q)) return null;
+
+  const asksFacultyList = /\b(?:fakultas\s+(?:apa\s+saja|apa\s+aja|yang\s+ada|ada\s+apa)|apa\s+saja\s+fakultas|apa\s+aja\s+fakultas)\b/i.test(q);
+  if (asksFacultyList) {
+    return {
+      answer: [
+        'Pada data yang tersedia, fakultas yang tercatat di ITB STIKOM Bali adalah:',
+        '',
+        '- Fakultas Informatika dan Komputer',
+        '- Fakultas Bisnis dan Vokasi',
+        '',
+        'Untuk pembagian prodi terbaru per fakultas, kakak sebaiknya tetap konfirmasi ke admin kampus atau bagian akademik.'
+      ].join('\n'),
+      source: 'semantic-rag-academic-faculty',
+      frameSource: 'semantic-rag-academic-faculty'
+    };
+  }
+
+  const fikPrograms = /\b(?:sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bsk\b|\bmi\b)\b/i.test(q);
+  if (fikPrograms) {
+    const program = /manajemen\s+informatika|\bmi\b/i.test(q) ? 'Manajemen Informatika'
+      : /teknologi\s+informasi|\bti\b/i.test(q) ? 'Teknologi Informasi'
+        : /sistem\s+komputer|\bsk\b/i.test(q) ? 'Sistem Komputer'
+          : 'Sistem Informasi';
+    return {
+      answer: [
+        `Program Studi ${program} termasuk dalam Fakultas Informatika dan Komputer.`,
+        '',
+        'Data ini mengacu pada dokumen akademik yang mencantumkan Dekan Fakultas Informatika dan Komputer bersama Ketua Program Studi S1 Sistem Informasi, S1 Sistem Komputer, S1 Teknologi Informasi, dan D3 Manajemen Informatika.'
+      ].join('\n'),
+      source: 'semantic-rag-academic-faculty',
+      frameSource: 'semantic-rag-academic-faculty'
+    };
+  }
+
+  return null;
+}
 function tryAcademicSpecificNoDataAnswer(question) {
   const raw = String(question || '').trim();
   const q = raw.toLowerCase();
   if (!raw) return null;
 
   if (/\bfakultas\b/i.test(q) && !/\b(?:tugas\s+akhir|skripsi|tesis|halaman|minimal|jumlah\s+halaman)\b/i.test(q)) {
+    const facultyAnswer = tryProgramFacultyAnswer(question);
+    if (facultyAnswer && facultyAnswer.answer) return facultyAnswer;
     return {
       answer: [
         'Saya belum menemukan informasi fakultas untuk prodi tersebut yang tercantum jelas pada data yang tersedia.',

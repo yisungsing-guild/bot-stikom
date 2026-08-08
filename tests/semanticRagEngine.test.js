@@ -2100,4 +2100,31 @@ describe('semanticRagEngine', () => {
     expect(result.answer).not.toMatch(/Kuliah Sambil Kerja di Luar Negeri|belum punya informasi detail tentang kegiatan atau program kerja UKM/i);
   });
 
+  test('answers faculty and anchored program comparison without false preflight block', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const faculty = await querySemanticRag('Prodi Sistem Informasi termasuk fakultas apa?', { topK: 8 });
+    expect(faculty.success).toBe(true);
+    expect(faculty.source).toBe('semantic-rag-academic-faculty');
+    expect(faculty.answer).toMatch(/Fakultas Informatika dan Komputer/i);
+    expect(faculty.answer).not.toMatch(/belum menemukan informasi fakultas|belum sesuai/i);
+
+    const comparison = await querySemanticRag('Program Studi: Bisnis Digital\nApa bedanya Bisnis Digital dengan Manajemen?', { topK: 8 });
+    expect(comparison.success).toBe(true);
+    expect(comparison.source).toBe('semantic-rag-program-comparison');
+    expect(comparison.answer).toMatch(/Bisnis Digital|Manajemen/i);
+    expect(comparison.answer).not.toMatch(/belum sesuai|ditahan/i);
+  });
+
+  test('answers anchored Bisnis Digital learning follow-up as curriculum, not DNUI partner detail', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const result = await querySemanticRag('Program Studi: Dual Degree DNUI (Bisnis Digital)\nbelajar di jurusannya gimana kak? apa aja yang dipelajarin?', { topK: 8 });
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-program-curriculum');
+    expect(result.answer).toMatch(/Bisnis Digital|digital marketing|e-commerce|data analytics/i);
+    expect(result.answer).not.toMatch(/Jurusan di DNUI: belum tercantum|belum sesuai/i);
+  });
 });

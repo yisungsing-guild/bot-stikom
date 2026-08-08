@@ -10,7 +10,7 @@ const { PrismaClient } = require('@prisma/client');
     const limit = limitFlag ? parseInt(limitFlag.split('=')[1], 10) : 1000;
 
     const keys = [
-      'pendingFollowupChoice','pendingProgramSelection','pendingMenuCost','pendingFeeBreakdownOffer',
+      '_skipRagForFastFee','pendingFollowupChoice','pendingProgramSelection','pendingMenuCost','pendingFeeBreakdownOffer',
       'pendingProgramInfoMenu','pendingFeeDetail','pendingScholarshipChoice','pendingTotalCost',
       'pendingScheduleWave','nonMarketingMenuActive','lastProgramHint'
     ];

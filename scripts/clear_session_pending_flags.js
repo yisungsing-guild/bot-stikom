@@ -52,6 +52,7 @@ async function main() {
 
   const data = (session && session.data) ? { ...session.data } : {};
   const keysToRemove = [
+    '_skipRagForFastFee',
     'pendingFeeBreakdownOffer',
     'pendingProgramSelection',
     'pendingFeeDetail',
