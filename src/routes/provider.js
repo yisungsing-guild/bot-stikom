@@ -11508,7 +11508,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
                     logger.warn({ err: e.message }, '[Provider] Failed to clear pendingTotalCost after RAG');
                   }
 
-                  await sendBotMessage(chatId, ragResult.answer);
+                  await sendBotMessage(chatId, ragResult.answer, { source: ragResult.source || 'rag', ragSource: ragResult.source || null });
                   return res.send({ ok: true, source: 'pending_total_cost_rag', gelombang: gel, ragUsed: true });
                 }
               }
@@ -12289,7 +12289,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
                       const q = `Program Studi: ${programHint}\n${answerQ}`;
                       const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: answerQ, minScore: 0 });
                       if (ragResult && ragResult.success && ragResult.answer) {
-                        await sendBotMessage(chatId, String(ragResult.answer || '').trim());
+                        await sendBotMessage(chatId, String(ragResult.answer || '').trim(), { source: ragResult.source || 'rag', ragSource: ragResult.source || null });
                         return res.send({ ok: true, source: 'fee_breakdown_offer_answer_rag', program: programHint, ragUsed: true });
                       }
                     }
@@ -13342,12 +13342,12 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
                 // Allow a slightly lower threshold for non-marketing program queries
                 // when RAG returns concrete contexts; this prefers an informative
                 // RAG response over a generic contact menu for user convenience.
-                if (ragResultOverride && ragResultOverride.success && ragResultOverride.answer && (ragScore >= minRagScore || (Array.isArray(ragResultOverride.contexts) && ragResultOverride.contexts.length > 0 && ragScore >= 0.45))) {
+                if (ragResultOverride && ragResultOverride.success && ragResultOverride.answer && (ragScore >= minRagScore || /^semantic-rag-(?:international|dual-degree|program-list|program-comparison|program-definition)/i.test(String(ragResultOverride.source || '')) || (Array.isArray(ragResultOverride.contexts) && ragResultOverride.contexts.length > 0 && ragScore >= 0.45))) {
                   // Return the RAG answer instead of the menu.
                   const unified = (typeof buildUnifiedResponse === 'function')
                     ? buildUnifiedResponse(null, ragResultOverride.answer, 'text')
                     : (`Baik, kak.\n\n${String(ragResultOverride.answer || '')}`);
-                  await sendBotMessage(chatId, String(unified || '').trim());
+                  await sendBotMessage(chatId, String(unified || '').trim(), { source: ragResultOverride.source || 'rag', ragSource: ragResultOverride.source || null });
                   return res.send({ ok: true, source: 'rag_non_marketing_override', ragUsed: true });
                 }
               }
@@ -13512,7 +13512,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
           // Fall back to retrieval but prefer ragQueryWithEval (so wrapper can evaluate guards)
           const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0, forceRag: true });
           if (ragResult && ragResult.success && ragResult.answer) {
-            await sendBotMessage(chatId, String(ragResult.answer || '').trim());
+            await sendBotMessage(chatId, String(ragResult.answer || '').trim(), { source: ragResult.source || 'rag', ragSource: ragResult.source || null });
             try {
               const currentState = session ? session.state : 'root';
               const prevData = sessionData || {};
@@ -13553,7 +13553,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               const q = `Program Studi: ${programInText}\n${trimmedTotalReq}`;
               const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0, forceRag: true });
               if (ragResult && ragResult.success && ragResult.answer) {
-                await sendBotMessage(chatId, String(ragResult.answer || '').trim());
+                await sendBotMessage(chatId, String(ragResult.answer || '').trim(), { source: ragResult.source || 'rag', ragSource: ragResult.source || null });
                 try {
                   const currentState = session ? session.state : 'root';
                   const prevData = sessionData || {};
@@ -14152,7 +14152,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
                 const q = `Program Studi: ${program}\nJelaskan ${topicLabel} yang tertulis di dokumen (sebutkan nominal dan ketentuan terkait jika ada).`;
                 const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q });
                 if (ragResult && ragResult.success && ragResult.answer) {
-                  await sendBotMessage(chatId, ragResult.answer);
+                  await sendBotMessage(chatId, ragResult.answer, { source: ragResult.source || 'rag', ragSource: ragResult.source || null });
                   // If RAG produced a structured fee answer, treat it like the fast-path
                   // so tests and downstream logic expecting the "fast" source continue
                   // to work even when we defer to the central RAG engine.
@@ -15014,7 +15014,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
             const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0, forceRag: true });
             logger.info({ ragResult }, '[Provider] RAG result for choose_program specific question');
             if (ragResult && ragResult.success && ragResult.answer) {
-              await sendBotMessage(chatId, String(ragResult.answer || '').trim());
+              await sendBotMessage(chatId, String(ragResult.answer || '').trim(), { source: ragResult.source || 'rag', ragSource: ragResult.source || null });
               try {
                 const currentState = session ? session.state : 'root';
                 const prevData = sessionData || {};
@@ -15650,7 +15650,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               source: decision.ragResult.source,
               preview: String(decision.ragResult.answer || '').slice(0, 200)
             });
-            await sendBotMessage(chatId, String(decision.ragResult.answer || '').trim());
+            await sendBotMessage(chatId, String(decision.ragResult.answer || '').trim(), { source: decision.ragResult.source || 'rag', ragSource: decision.ragResult.source || null });
             return res.send({ ok: true, source: 'rag_vs_rule', ragUsed: true });
           }
         }
@@ -16132,7 +16132,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
                   const q = `Program Studi: ${programPick}\n${trimmedEarly}`;
                   const ragResult = await ragQueryWithEval(chatId, q, topK, { answerQuestion: q, minScore: 0 });
                   if (ragResult && ragResult.success && ragResult.answer) {
-                    await sendBotMessage(chatId, ragResult.answer);
+                    await sendBotMessage(chatId, ragResult.answer, { source: ragResult.source || 'rag', ragSource: ragResult.source || null });
                     return res.send({ ok: true, source: 'program_pick_rag', program: programPick, ragUsed: true });
                   }
                 }
