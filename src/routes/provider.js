@@ -543,6 +543,12 @@ module.exports = function (provider) {
     return `Halo Kak, saya ${name}, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.`;
   }
 
+  function buildTimedBotIntroMessage(displayName, greetingTime) {
+    const name = String(displayName || 'Tiko').trim() || 'Tiko';
+    const time = String(greetingTime || '').trim().toLowerCase();
+    const greeting = /^(pagi|siang|sore|malam)$/.test(time) ? `Halo Kak, selamat ${time}.` : 'Halo Kak.';
+    return `${greeting} Saya ${name}, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.`;
+  }
   function normalizeBotIntroMessageText(value, displayName) {
     const text = String(value || '').trim();
     if (!text) return text;
@@ -6386,20 +6392,37 @@ module.exports = function (provider) {
   }
 
   function getWITAHourAndTime() {
-    // WITA = UTC+8 (Indonesia Tengah: Makassar, Bali, etc.)
-    const nowUtc = new Date(Date.now());
-    const witaMs = nowUtc.getTime() + 8 * 60 * 60 * 1000;
-    const hour = new Date(witaMs).getUTCHours();
+    const forced = String(process.env.BOT_GREETING_TIME_OVERRIDE || '').trim().toLowerCase();
+    if (/^(pagi|siang|sore|malam)$/.test(forced)) {
+      const forcedHour = forced === 'pagi' ? 8 : forced === 'siang' ? 12 : forced === 'sore' ? 16 : 20;
+      return { hour: forcedHour, time: forced };
+    }
 
-    let time = 'malam'; // default
-    if (hour >= 5 && hour < 11) time = 'pagi';       // 05:00 - 10:59
-    else if (hour >= 11 && hour < 15) time = 'siang'; // 11:00 - 14:59
-    else if (hour >= 15 && hour < 18) time = 'sore';  // 15:00 - 17:59
-    // else malam (18:00 - 04:59)
+    let hour = null;
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: process.env.BOT_TIMEZONE || 'Asia/Makassar',
+        hour: '2-digit',
+        hour12: false
+      }).formatToParts(new Date());
+      const value = parts.find((part) => part.type === 'hour');
+      hour = value && value.value ? Number(value.value) : null;
+      if (hour === 24) hour = 0;
+    } catch (e) {
+      const nowUtc = new Date(Date.now());
+      const witaMs = nowUtc.getTime() + 8 * 60 * 60 * 1000;
+      hour = new Date(witaMs).getUTCHours();
+    }
+
+    if (!Number.isFinite(hour)) hour = new Date().getHours();
+
+    let time = 'malam';
+    if (hour >= 5 && hour < 11) time = 'pagi';
+    else if (hour >= 11 && hour < 15) time = 'siang';
+    else if (hour >= 15 && hour < 18) time = 'sore';
 
     return { hour, time };
   }
-
   function extractGreetingTime(text) {
     const t = String(text || '')
       .replace(/[^\p{L}\p{N}\s]/gu, ' ')
@@ -6433,28 +6456,10 @@ module.exports = function (provider) {
     if (isIslamic || religiousGreeting) {
       return `${religiousGreeting || "Wa'alaikumsalam kak."} ${intro}`;
     }
-    const normalized = normalizeGreetingText(text);
-    const extraGreetings = getWelcomeGreetingAliases();
-    const aliasMatch = extraGreetings && extraGreetings.length ? extraGreetings.includes(normalized) : false;
-    const hasHaloWord = /\b(halo|hallo|hai|hi|hello)\b/.test(t) || /\bhal+o+\b/.test(t) || aliasMatch;
 
-    let time = extractGreetingTime(text);
-
-    // If no time detected in text, auto-detect from server WITA time
-    if (!time) {
-      const { time: serverTime } = getWITAHourAndTime();
-      time = serverTime;
-    }
-
-    let opening;
-    if (time && hasHaloWord) opening = intro;
-    else if (time) opening = `Selamat ${time}, kak.`;
-    else opening = intro;
-
-    if (opening === intro) return opening;
-    return `${opening} ${intro}`;
+    const { time } = getWITAHourAndTime();
+    return buildTimedBotIntroMessage(getBotDisplayName(), time);
   }
-
   function getReligiousGreetingReply(normalizedText) {
     const t = String(normalizedText || '').toLowerCase().trim();
     if (/\b(assalamualaikum|assalamu\s+alaikum)\b/.test(t)) return "Wa'alaikumsalam kak.";

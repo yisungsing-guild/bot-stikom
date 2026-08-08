@@ -206,6 +206,7 @@ describe('Provider route E2E simulation', () => {
   }, 30000);
 
   test('should respond with greeting reply for greeting-only input', async () => {
+    process.env.BOT_GREETING_TIME_OVERRIDE = 'pagi';
     const response = await request(app)
       .post('/provider/webhook')
       .send({ chatId: 'greeting-01', text: 'Hallo selamat siang', ts: Date.now() });
@@ -215,6 +216,7 @@ describe('Provider route E2E simulation', () => {
 
     const messages = mockSentMessages.get('greeting-01') || [];
     expect(messages.length).toBeGreaterThan(0);
-    expect(messages[0].toLowerCase()).toMatch(/halo|hallo|selamat siang|siang|baik, ada yang bisa saya bantu\?/i);
+    expect(messages[0].toLowerCase()).toMatch(/halo kak, selamat pagi/i);
+    expect(messages[0].toLowerCase()).not.toMatch(/selamat siang/i);
   }, 30000);
 });

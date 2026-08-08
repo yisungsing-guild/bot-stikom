@@ -81,6 +81,37 @@ function getSemanticTodayYmd() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getRuntimeGreetingTime() {
+  const forced = String(process.env.BOT_GREETING_TIME_OVERRIDE || '').trim().toLowerCase();
+  if (/^(pagi|siang|sore|malam)$/.test(forced)) return forced;
+
+  let hour = null;
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: process.env.BOT_TIMEZONE || 'Asia/Makassar',
+      hour: '2-digit',
+      hour12: false
+    }).formatToParts(new Date());
+    const value = parts.find((part) => part.type === 'hour');
+    hour = value && value.value ? Number(value.value) : null;
+    if (hour === 24) hour = 0;
+  } catch (e) {
+    const nowUtc = new Date(Date.now());
+    const witaMs = nowUtc.getTime() + 8 * 60 * 60 * 1000;
+    hour = new Date(witaMs).getUTCHours();
+  }
+
+  if (!Number.isFinite(hour)) hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) return 'pagi';
+  if (hour >= 11 && hour < 15) return 'siang';
+  if (hour >= 15 && hour < 18) return 'sore';
+  return 'malam';
+}
+
+function buildRuntimeGreetingIntro() {
+  const time = getRuntimeGreetingTime();
+  return `Halo Kak, selamat ${time}. Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.`;
+}
 function trimMapToMax(map, maxSize) {
   const max = Number.isFinite(maxSize) && maxSize > 0 ? maxSize : 200;
   while (map.size > max) {
@@ -3094,7 +3125,7 @@ function trySmallTalkAnswer(question) {
   const shortCheckInPattern = /^(p|tes|test|testing|cek|ping)(\s+(bot|kak|min|admin|tiko))?$/i;
   if (shortCheckInPattern.test(normalized)) {
     return {
-      answer: 'Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Ada yang bisa saya bantu seputar PMB, program studi, biaya, beasiswa, atau informasi kampus?'
+      answer: buildRuntimeGreetingIntro()
     };
   }
 
@@ -3188,7 +3219,7 @@ function trySmallTalkAnswer(question) {
   if (isGreetingOnly(normalized) || /^(selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam)(\s+(kak|min|admin|tiko|pagi|siang|sore|malam))*$/.test(normalized) || religiousGreeting) {
     const prefix = religiousGreeting ? `${religiousGreeting} ` : '';
     return {
-      answer: `${prefix}Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.`
+      answer: `${prefix}${buildRuntimeGreetingIntro()}`
     };
   }
 

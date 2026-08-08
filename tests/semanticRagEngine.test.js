@@ -9,6 +9,7 @@ describe('semanticRagEngine', () => {
     delete process.env.SEMANTIC_RAG_RESULT_CACHE_MS;
     delete process.env.SEMANTIC_RAG_SANITIZE_INDEX;
     delete process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS;
+    delete process.env.BOT_GREETING_TIME_OVERRIDE;
   });
 
   test('returns disabled result when OpenAI API key is missing', async () => {
@@ -76,24 +77,25 @@ describe('semanticRagEngine', () => {
   });
 
   test('answers greeting and wellbeing without calling semantic RAG', async () => {
+    process.env.BOT_GREETING_TIME_OVERRIDE = 'pagi';
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 
     const greeting = await querySemanticRag('Halo');
     expect(greeting.success).toBe(true);
     expect(greeting.source).toBe('semantic-rag-small-talk');
-    expect(greeting.answer).toBe('Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.');
+    expect(greeting.answer).toBe('Halo Kak, selamat pagi. Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.');
 
     const typoGreeting = await querySemanticRag('haalo');
     expect(typoGreeting.success).toBe(true);
     expect(typoGreeting.source).toBe('semantic-rag-small-talk');
-    expect(typoGreeting.answer).toBe('Halo Kak, saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.');
+    expect(typoGreeting.answer).toBe('Halo Kak, selamat pagi. Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.');
     expect(typoGreeting.answer).not.toMatch(/Saya jawab bagian|Kalau mau lanjut|Kesimpulan/i);
 
     for (const q of ['haaalooo kak', 'halloooo min', 'heellooo', 'hayyy admin']) {
       const fuzzyGreeting = await querySemanticRag(q);
       expect(fuzzyGreeting.success).toBe(true);
       expect(fuzzyGreeting.source).toBe('semantic-rag-small-talk');
-      expect(fuzzyGreeting.answer).toMatch(/Halo Kak, saya Tiko/i);
+      expect(fuzzyGreeting.answer).toMatch(/Halo Kak, selamat pagi\. Saya Tiko/i);
     }
 
     const greetingWithQuestion = await querySemanticRag('halo rincian biaya SI gelombang 2B?');
@@ -104,7 +106,7 @@ describe('semanticRagEngine', () => {
       const casualGreeting = await querySemanticRag(q);
       expect(casualGreeting.success).toBe(true);
       expect(casualGreeting.source).toBe('semantic-rag-small-talk');
-      expect(casualGreeting.answer).toMatch(/Halo Kak, saya Tiko/i);
+      expect(casualGreeting.answer).toMatch(/Halo Kak, selamat pagi\. Saya Tiko/i);
     }
 
     for (const q of ['bro rincian biaya SI gelombang 2B?', 'mas biaya SI berapa?', 'cuk biaya SI berapa?']) {
