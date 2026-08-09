@@ -6203,6 +6203,20 @@ function loadUkmNames() {
 function tryThesisFallback(question) {
   const q = String(question || '').toLowerCase();
   if (!/\b(skripsi|tugas\s+akhir|tesis|ajukan\s+skripsi|ajukan\s+tesis)\b/i.test(q)) return null;
+
+  if (/\b(topik|tema|judul|bidang|jenis\s+penelitian|penelitian\s+apa|apa\s+saja)\b/i.test(q) && /\b(skripsi|tugas\s+akhir|tesis)\b/i.test(q)) {
+    return {
+      answer: [
+        'Pada Pedoman Tugas Akhir S1, Tugas Akhir disusun berdasarkan hasil penelitian. Jenis/topik penelitian yang disebutkan meliputi:',
+        '',
+        '- Penelitian Dasar: untuk pengembangan ilmu pengetahuan atau pengujian teori/konsep. Contohnya analisis, pengujian, komparasi, identifikasi, audit, pengukuran, kajian, dan topik sejenis.',
+        '- Penelitian Terapan: untuk penerapan dan pengembangan ilmu dalam masalah nyata. Contohnya perekayasaan, rancang bangun, implementasi, pengembangan, dan topik sejenis.',
+        '',
+        'Untuk judul spesifik, kakak tetap perlu menyesuaikan dengan prodi, minat, dan arahan dosen pembimbing.'
+      ].join('\n'),
+      source: 'semantic-rag-thesis-topic-fallback'
+    };
+  }
   return {
     answer: [
       'Untuk pengajuan skripsi (tugas akhir), biasanya langkah umum adalah: (1) menghubungi prodi atau dosen pembimbing, (2) menyiapkan proposal penelitian, (3) mendaftar sidang/ujian sesuai jadwal akademik, dan (4) mengikuti persyaratan administrasi di bagian akademik.',

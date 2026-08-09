@@ -2146,6 +2146,23 @@ describe('semanticRagEngine', () => {
     expect(result.answer).not.toMatch(/Kuliah Sambil Kerja di Luar Negeri|belum punya informasi detail tentang kegiatan atau program kerja UKM/i);
   });
 
+  test('answers thesis topic questions from thesis topic guidance, not submission procedure', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => []),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('topik tugas akhir apa saja?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-thesis-topic-fallback');
+    expect(result.answer).toMatch(/Penelitian Dasar/i);
+    expect(result.answer).toMatch(/Penelitian Terapan/i);
+    expect(result.answer).not.toMatch(/pengajuan skripsi|mendaftar sidang/i);
+  });
   test('answers faculty and anchored program comparison without false preflight block', async () => {
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
