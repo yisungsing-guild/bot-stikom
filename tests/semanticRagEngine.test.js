@@ -783,6 +783,17 @@ describe('semanticRagEngine', () => {
     expect(result.answer).not.toMatch(/Saya tangkap|Kesimpulannya|Kakak bisa lanjut tanya/i);
   });
 
+  test('answers RPL definition without leaking raw PDF chunks', async () => {
+    jest.dontMock('../src/engine/ragEngine');
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const result = await querySemanticRag('apa itu program rpl?', { topK: 8 });
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-rpl');
+    expect(result.answer).toMatch(/RPL adalah Rekognisi Pembelajaran Lampau/i);
+    expect(result.answer).not.toMatch(/INSTITUT TEKNOLOGI DAN BISNIS|Kampus Denpasar|Kampus Jimbaran|Kampus Abiansemal|31 Raya|3anger|renim|\b10\.\s*11\.\s*12\.|SOURCE_CHUNKS|\[Sheet:/i);
+  });
   test('falls back to deterministic PMB answer when AI intent is unknown', async () => {
     process.env.OPENAI_API_KEY = 'test-key';
     jest.dontMock('../src/engine/ragEngine');

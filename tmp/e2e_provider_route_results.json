@@ -79,10 +79,7 @@
       "ragUsed": true,
       "semanticFirst": true
     },
-    "sentMessages": [
-      "Untuk Teknologi Informasi, saya mulai dari pengertian singkat dan arah skill yang dibangun. Saya jelaskan sebagai gambaran awal untuk calon mahasiswa.\n\nTeknologi Informasi adalah program studi yang menekankan pengembangan solusi perangkat lunak, infrastruktur komputasi, dan integrasi sistem modern. Mahasiswa dibimbing untuk memahami bagaimana membangun, mengelola, dan mengamankan layanan digital yang andal untuk kebutuhan industri.\n\nSingkatnya, prodi ini cocok untuk kakak yang tertarik pada coding, aplikasi, jaringan, cloud, keamanan, dan pengelolaan layanan digital.",
-      "Jadi, prospek kerja paling tepat dilihat dari fokus skill dan bidang industri prodi tersebut."
-    ],
-    "lastMessage": "Jadi, prospek kerja paling tepat dilihat dari fokus skill dan bidang industri prodi tersebut."
+    "sentMessages": [],
+    "lastMessage": null
   }
 ]

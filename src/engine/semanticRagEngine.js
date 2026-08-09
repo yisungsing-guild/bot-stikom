@@ -512,7 +512,7 @@ function detectGenericIntent(question) {
   if (/\b(beasiswa|bantuan\s+(?:biaya|biaya\s+bantuan)|potongan|kip|1k1s|skss)\b/i.test(q)) return 'scholarship';
   if (/\b(akreditasi|ban\s*-?\s*pt|peringkat)\b/i.test(q)) return 'accreditation';
   if (/\b(rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(q)) return 'rpl';
-  if (/\b(double\s*degree|dual\s*degree|dd)\b/i.test(q)) return 'dual_degree';
+  if (/\b(double\s*degree|dual\s*degree|dd)\b/i.test(q) && !/\bprogram\s+(?:double|dual)\s*degree\b/i.test(q)) return 'dual_degree';
   if (/\b(visa\s+(?:study|studi|pelajar)|izin\s+belajar|study\s+permit|itas|kitas|sktt|mahasiswa\s+asing)\b/i.test(q)) return 'visa_study';
   if (/\b(prospek\s+kerja|karir|karier|lulusan|profesi|pekerjaan|kerja\s+apa|jadi\s+apa|peluang\s+kerja|career|career\s*center|pusat\s+karier|pusat\s+karir|lowongan|magang|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study|konsultasi\s+karier)\b/i.test(q)) return 'career';
   if (/\b(?:cara\s+daftar|cara\s+pendaftaran|cara\s+registrasi|gimana\s+cara\s+daftar|bagaimana\s+cara\s+daftar|daftar\s+online|pendaftaran\s+online|registrasi\s+online|cara\s+daftar)\b/i.test(q)) return 'registration_how';
@@ -583,9 +583,7 @@ function isDocumentEvidenceFirstCandidate(question) {
   if (/\b(?:keunggulan|keuntungan|kelebihan|fokus\s+penelitian|visi|kelas\s+reguler)\b/i.test(q)
     && /\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(q)) return true;
 
-  const hasQuestionShape = /^(?:apa|apakah|berapa|bagaimana|gimana|kapan|dimana|jelaskan|info|informasi|tolong|minta)\b/i.test(q) || /\?$/.test(q);
-  const hasCampusDocSignal = /\b(?:prodi|program\s+studi|jurusan|fakultas|akademik|pascasarjana|pasca\s*sarjana|magister|s2|skripsi|tugas\s+akhir|tesis|yudisium|wisuda|kurikulum|mata\s+kuliah|akreditasi|internasional|student\s+exchange|double\s*degree|dual\s*degree|dnui|help\s+university|rpl|beasiswa|ukm|ormawa|career\s*center|inkubator|inbis)\b/i.test(q);
-  return hasQuestionShape && hasCampusDocSignal;
+  return false;
 }
 
 function buildStructuredTableFaqAnswerFromIndex(question, indexForQuery) {
@@ -9487,6 +9485,18 @@ async function querySemanticRag(question, options = {}) {
   }
 
   if (!strictDocumentOnly) {
+    const directRpl = tryRplAnswer(question);
+    if (directRpl && directRpl.answer) {
+      const builtRpl = buildDeterministicResponse(question, directRpl.source || 'semantic-rag-rpl', directRpl, { routeStage: 'pre-ai-direct-rpl' });
+      return await finalizeSemanticResult(question, builtRpl, resultCacheKey);
+    }
+
+    const directPmbInfo = tryPmbInfoAnswer(question);
+    if (directPmbInfo && directPmbInfo.answer) {
+      const builtPmbInfo = buildDeterministicResponse(question, directPmbInfo.source || 'semantic-rag-pmb-info', directPmbInfo, { routeStage: 'pre-ai-direct-pmb-info' });
+      return await finalizeSemanticResult(question, builtPmbInfo, resultCacheKey);
+    }
+
     const directCurriculum = tryProgramCurriculumFollowupAnswer(question);
     if (directCurriculum && directCurriculum.answer) {
       const builtCurriculum = buildDeterministicResponse(question, directCurriculum.source || 'semantic-rag-program-curriculum', directCurriculum, { routeStage: 'pre-ai-direct-curriculum' });
