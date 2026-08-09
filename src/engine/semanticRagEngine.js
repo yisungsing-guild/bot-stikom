@@ -529,6 +529,152 @@ function detectGenericIntent(question) {
 }
 
 // Generic phrase overlap scoring
+function detectFineGrainedIntent(question) {
+  const q = normalizeUserQuery(question || '').normalizedText;
+  if (!q) return { fineIntent: 'unknown', coarseIntent: 'general' };
+
+  const hasThesis = /\b(?:skripsi|tugas\s+akhir|tesis|proyek\s+akhir)\b/i.test(q);
+  if (hasThesis && /\b(?:topik|tema|judul|bidang|jenis\s+penelitian|penelitian\s+apa|apa\s+saja)\b/i.test(q)) return { fineIntent: 'thesis_topic', coarseIntent: 'general' };
+  if (hasThesis && /\b(?:halaman|lembar|jumlah\s+halaman|minimal|maksimal)\b/i.test(q)) return { fineIntent: 'thesis_page_count', coarseIntent: 'general' };
+  if (hasThesis && /\b(?:format|template|sistematika|penulisan|bab|margin|spasi)\b/i.test(q)) return { fineIntent: 'thesis_format', coarseIntent: 'general' };
+  if (hasThesis && /\b(?:daftar|pengajuan|ajukan|sidang|proposal|seminar|sempro|pembimbing)\b/i.test(q)) return { fineIntent: 'thesis_submission', coarseIntent: 'schedule' };
+
+  if (/\b(?:gelar|title|degree)\b/i.test(q) && /\b(?:lulusan|lulus|pascasarjana|pasca\s*sarjana|magister|s2|prodi|program\s+studi)\b/i.test(q)) return { fineIntent: 'degree_title', coarseIntent: 'program' };
+  if (/\b(?:berapa\s+lama|lama\s+(?:kuliah|studi)|masa\s+studi|durasi)\b/i.test(q)) return { fineIntent: 'study_duration', coarseIntent: 'program' };
+  if (/\b(?:fakultas|naungan|termasuk\s+ke\s+dalam\s+fakultas)\b/i.test(q)) return { fineIntent: 'program_faculty', coarseIntent: 'program' };
+  if (/\b(?:mata\s+kuliah|matkul|kurikulum|dipelajari|dipelajarin|belajar(?:\s+apa)?|apa\s+aja\s+yang\s+dipelajarin|jurusannya\s+(?:gimana|bagaimana)|skill|kompetensi)\b/i.test(q)) return { fineIntent: 'program_curriculum', coarseIntent: 'program' };
+  if (/\b(?:prospek|karier|karir|kerja\s+apa|pekerjaan|profesi)\b/i.test(q)) return { fineIntent: 'program_career', coarseIntent: 'career' };
+  if (/\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan)\b/i.test(q) && /\b(?:prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen)\b/i.test(q)) return { fineIntent: 'program_comparison', coarseIntent: 'program' };
+
+  if (/\b(?:program\s+internasional|kelas\s+internasional|international\s+program|student\s+exchange|double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(q)) {
+    if (/\b(?:syarat|persyaratan|ketentuan|dokumen|seleksi)\b/i.test(q)) return { fineIntent: 'international_program_requirement', coarseIntent: 'requirement' };
+    if (/\b(?:biaya|harga|ukt|dpp|bayar|pendaftaran)\b/i.test(q)) return { fineIntent: 'international_program_fee', coarseIntent: 'fee' };
+    return { fineIntent: 'international_program_list', coarseIntent: 'international_program' };
+  }
+
+  return { fineIntent: detectGenericIntent(q), coarseIntent: detectGenericIntent(q) };
+}
+
+function buildEvidenceFirstSearchQueries(question, fine) {
+  const q = String(question || '').trim();
+  const queries = [q];
+  const fineIntent = fine && fine.fineIntent;
+  if (fineIntent === 'degree_title') queries.push(`${q} gelar lulusan gelar akademik`);
+  if (fineIntent === 'study_duration') queries.push(`${q} masa studi semester lama studi`);
+  if (fineIntent === 'thesis_topic') queries.push(`${q} topik tugas akhir jenis penelitian penelitian dasar penelitian terapan`);
+  if (fineIntent === 'thesis_page_count') queries.push(`${q} minimal halaman jumlah halaman tugas akhir pedoman penulisan`);
+  if (fineIntent === 'program_faculty') queries.push(`${q} fakultas dekan ketua program studi`);
+  if (fineIntent === 'program_curriculum') queries.push(`${q} kurikulum mata kuliah apa yang dipelajari skill kompetensi`);
+  if (fineIntent === 'international_program_list') queries.push(`${q} program internasional double degree student exchange partner`);
+  return uniqueList(queries, 6);
+}
+
+function isDocumentEvidenceFirstCandidate(question) {
+  const q = String(question || '').trim();
+  if (!q || q.length < 8) return false;
+  if (isGreetingOnly(q)) return false;
+  if (/\\b(?:password|token|api\\s*key|secret|system\\s+prompt|database|data\\s+pribadi|hapus\\s+data|reset\\s+database)\\b/i.test(q)) return false;
+  if (/\\b(?:resep|masak|cuaca|politik|saham|crypto|film|lagu|game|olahraga)\\b/i.test(q) && !/\\b(?:stikom|kampus|kuliah|mahasiswa|prodi|program|akademik)\\b/i.test(q)) return false;
+  if (hasExplicitFeeQuestionSignal(q)) return false;
+
+  const fine = detectFineGrainedIntent(q);
+  if (['program_comparison', 'program_curriculum', 'program_faculty', 'program_career', 'international_program_list', 'international_program_requirement', 'international_program_fee'].includes(fine.fineIntent)) return false;
+  if (['degree_title', 'study_duration'].includes(fine.fineIntent)) return true;
+  if (/\b(?:keunggulan|keuntungan|kelebihan|fokus\s+penelitian|visi|kelas\s+reguler)\b/i.test(q)
+    && /\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(q)) return true;
+
+  const hasQuestionShape = /^(?:apa|apakah|berapa|bagaimana|gimana|kapan|dimana|jelaskan|info|informasi|tolong|minta)\b/i.test(q) || /\?$/.test(q);
+  const hasCampusDocSignal = /\b(?:prodi|program\s+studi|jurusan|fakultas|akademik|pascasarjana|pasca\s*sarjana|magister|s2|skripsi|tugas\s+akhir|tesis|yudisium|wisuda|kurikulum|mata\s+kuliah|akreditasi|internasional|student\s+exchange|double\s*degree|dual\s*degree|dnui|help\s+university|rpl|beasiswa|ukm|ormawa|career\s*center|inkubator|inbis)\b/i.test(q);
+  return hasQuestionShape && hasCampusDocSignal;
+}
+
+function buildStructuredTableFaqAnswerFromIndex(question, indexForQuery) {
+  const q = String(question || '').trim();
+  const index = Array.isArray(indexForQuery) ? indexForQuery : [];
+  if (!q || !index.length) return null;
+  const qNorm = normalizeFacilityTerm(q);
+  const qTokens = Array.from(new Set(faqComparableTokens(q)));
+  const scored = [];
+
+  for (const item of index) {
+    const chunk = String(item && item.chunk ? item.chunk : '');
+    if (!chunk || !chunk.includes('|')) continue;
+    const sourceText = `${item.filename || ''} ${item.sourceFile || ''} ${item.title || ''}`;
+    const rows = chunk.replace(/\r/g, '\n').split('\n').map((line) => line.trim()).filter((line) => line.includes('|'));
+    for (const row of rows) {
+      const columns = row.split(/\s*\|\s*/).map((part) => String(part || '').replace(/\s+/g, ' ').trim()).filter(Boolean);
+      for (let i = 0; i < columns.length - 1; i += 1) {
+        const questionText = columns[i];
+        if (!isLikelyFaqQuestionText(questionText)) continue;
+        const answer = cleanUserVisibleRagAnswerText(columns[i + 1]);
+        if (!answer || answer.length < 8) continue;
+        const rowNorm = normalizeFacilityTerm(`${sourceText} ${row} ${questionText} ${answer}`);
+        if (/\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(qNorm) && !/\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(rowNorm)) continue;
+        if (hasFaqAnswerDomainConflict(q, questionText, answer, sourceText)) continue;
+        const fTokens = Array.from(new Set(faqComparableTokens(questionText)));
+        const fSet = new Set(fTokens);
+        const overlap = qTokens.filter((token) => fSet.has(token)).length;
+        const score = scoreFaqQuestionMatch(q, questionText, '', [])
+          + overlap
+          + (normalizeFacilityTerm(sourceText).split(/\s+/).filter((token) => qTokens.includes(token)).length)
+          + (/upload/i.test(String(item && item.source ? item.source : '')) ? 2 : 0);
+        if (score >= 8) scored.push({ item, questionText, answer, score });
+      }
+    }
+  }
+
+  if (!scored.length) return null;
+  scored.sort((a, b) => b.score - a.score || a.answer.length - b.answer.length);
+  const best = scored[0];
+  return {
+    answer: best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer,
+    source: 'semantic-rag-generic-faq-qna',
+    frameSource: 'semantic-rag-training-specific',
+    matchedFaqQuestion: best.questionText,
+    matchedTrainingId: best.item && best.item.trainingId,
+    matchedItemSource: best.item && best.item.source,
+    matchedSource: best.item && (best.item.filename || best.item.sourceFile || best.item.id)
+  };
+}
+async function tryEvidenceFirstLocalDocumentAnswer(question, options = {}) {
+  if (!isDocumentEvidenceFirstCandidate(question)) return null;
+  const fine = detectFineGrainedIntent(question);
+  if ((fine.coarseIntent || detectGenericIntent(question)) === 'fee') return null;
+
+  const indexForQuery = getCachedSemanticIndex();
+  const tableFaqAnswer = buildStructuredTableFaqAnswerFromIndex(question, indexForQuery);
+  const faqAnswer = tableFaqAnswer || buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options);
+  if (faqAnswer && faqAnswer.answer) {
+    return {
+      success: true,
+      answer: formatNaturalAnswerFrame(question, faqAnswer.answer, faqAnswer.source || 'semantic-rag-generic-faq-qna'),
+      source: /upload/i.test(String(faqAnswer.matchedItemSource || '')) ? 'semantic-rag-uploaded-training-generic' : (faqAnswer.source || 'semantic-rag-generic-faq-qna'),
+      contexts: [],
+      confidenceScore: 0.84,
+      confidenceTier: 'HIGH',
+      debug: {
+        ...(faqAnswer.debug || {}),
+        routeStage: 'pre-ai-evidence-first-faq-index',
+        fineIntent: fine.fineIntent,
+        coarseIntent: fine.coarseIntent
+      }
+    };
+  }
+
+  const uploaded = await tryLocalUploadedTrainingGenericAnswer(question, options);
+  if (!uploaded || !uploaded.answer) return null;
+
+  return {
+    ...uploaded,
+    source: uploaded.source || 'semantic-rag-evidence-first',
+    debug: {
+      ...(uploaded.debug || {}),
+      routeStage: 'pre-ai-evidence-first-uploaded-training',
+      fineIntent: fine.fineIntent,
+      coarseIntent: fine.coarseIntent
+    }
+  };
+}
 function computePhraseOverlap(query, content) {
   const qNorm = normalizeForLexicalMatch(query);
   const cNorm = normalizeForLexicalMatch(content);
@@ -4663,6 +4809,25 @@ function extractFaqQaPairsFromChunk(chunk) {
 
   if (pairs.length) return pairs;
 
+  const pipeRows = raw
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map((line) => String(line || '').trim())
+    .filter((line) => line.includes('|'));
+  for (const row of pipeRows) {
+    const columns = row
+      .split(/\s*\|\s*/)
+      .map((part) => String(part || '').replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+    for (let i = 0; i < columns.length - 1; i += 1) {
+      const questionText = columns[i];
+      if (!isLikelyFaqQuestionText(questionText)) continue;
+      const answerText = cleanFaqAnswerText(columns[i + 1]);
+      if (questionText.length >= 4 && answerText.length >= 8) pairs.push({ questionText, answerText });
+    }
+  }
+  if (pairs.length) return pairs;
+
   const pipeSegments = raw
     .replace(/\r/g, '\n')
     .split(/\s*\|\s*/)
@@ -4977,7 +5142,10 @@ function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}
       if (score < 8) continue;
       const answer = cleanUserVisibleRagAnswerText(pair.answerText);
       if (!answer || answer.length < 8) continue;
-      if (hasFaqAnswerDomainConflict(q, pair.questionText, answer, '')) continue;
+      const evidenceNorm = normalizeFacilityTerm(`${sourceText} ${chunk} ${pair.questionText} ${answer}`);
+      const asksPostgraduate = /\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(qNorm);
+      if (asksPostgraduate && !/\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(evidenceNorm)) continue;
+      if (hasFaqAnswerDomainConflict(q, pair.questionText, answer, sourceText)) continue;
       const sourceBoost = /upload/i.test(String(item && item.source ? item.source : '')) ? 2 : 0;
       const sourceTermBoost = qTokens.filter((token) => normalizeFacilityTerm(sourceText).includes(token)).length;
       scored.push({ item, pair, answer, score: score + sourceBoost + sourceTermBoost + overlap, baseScore: score, overlap });
@@ -4998,12 +5166,15 @@ function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}
     frameSource: 'semantic-rag-training-specific',
     matchedFaqQuestion: best.pair.questionText,
     matchedTrainingId: best.item && best.item.trainingId,
+    matchedItemSource: best.item && best.item.source,
     matchedSource: best.item && (best.item.filename || best.item.sourceFile || best.item.id)
   };
 }
 
 function tryGenericFaqQnaAnswer(question, indexForQuery, options = {}) {
   const q = String(question || '');
+  const fine = detectFineGrainedIntent(q);
+  if (['program_comparison', 'program_curriculum', 'program_faculty', 'international_program_list', 'international_program_requirement', 'international_program_fee'].includes(fine.fineIntent)) return null;
   const asksProgramComparison = /\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan)\b/i.test(q)
     && /\b(?:prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|manajemen)\b/i.test(q);
   if (asksProgramComparison) return null;
@@ -8926,7 +9097,14 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && /\b(kampus|lokasi|alamat|Denpasar|Renon|Jimbaran|Abiansemal|3\s+lokasi)\b/i.test(String(result.answer || ''));
   const structuredFeedbackSafe = /semantic-rag-feedback/i.test(source)
     && /\b(singkat|informatif|koreksi|rapikan|langsung\s+ke\s+inti)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
-  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe;  if (preflight && preflight.blocked && !structuredSemanticSafe) {
+  const fineForSafety = detectFineGrainedIntent(question);
+  const documentEvidenceSourceSafe = /semantic-rag-(?:generic-faq-qna|uploaded-training-generic|evidence-first)|rag-/i.test(source)
+    && !hasNoDataAnswerPhrase(result.answer)
+    && isDocumentEvidenceFirstCandidate(question)
+    && !hasLikelyRawDocumentLeak(result.answer)
+    && /\b(?:pascasarjana|magister|s2|fakultas|program|prodi|jurusan|skripsi|tugas\s+akhir|internasional|student\s+exchange|double\s*degree|dual\s*degree|dnui|help|gelar|lulusan|masa\s+studi|semester|sks|kurikulum|mata\s+kuliah|akreditasi|keunggulan|penelitian)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
+  const fineIntentSafe = Boolean(fineForSafety.fineIntent) && documentEvidenceSourceSafe;
+  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe || documentEvidenceSourceSafe || fineIntentSafe;  if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
       answer: preflight.answer,
@@ -9308,6 +9486,29 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
   }
 
+  if (!strictDocumentOnly) {
+    const directCurriculum = tryProgramCurriculumFollowupAnswer(question);
+    if (directCurriculum && directCurriculum.answer) {
+      const builtCurriculum = buildDeterministicResponse(question, directCurriculum.source || 'semantic-rag-program-curriculum', directCurriculum, { routeStage: 'pre-ai-direct-curriculum' });
+      return await finalizeSemanticResult(question, builtCurriculum, resultCacheKey);
+    }
+
+    const fineRoute = detectFineGrainedIntent(question);
+    const priorityHandlers = [];
+    if (fineRoute.fineIntent === 'program_curriculum') priorityHandlers.push(['semantic-rag-program-curriculum', tryProgramCurriculumFollowupAnswer]);
+    if (fineRoute.fineIntent === 'program_comparison') priorityHandlers.push(['semantic-rag-program-comparison', tryProgramComparisonAnswer]);
+    if (fineRoute.fineIntent === 'program_faculty') priorityHandlers.push(['semantic-rag-academic-faculty', tryProgramFacultyAnswer]);
+    if (fineRoute.fineIntent === 'international_program_list') priorityHandlers.push(['semantic-rag-international-class-fallback', tryInternationalClassFallback]);
+    if (fineRoute.fineIntent === 'international_program_requirement') priorityHandlers.push(['semantic-rag-dual-degree', tryDualDegreeAnswer], ['semantic-rag-international-class-fallback', tryInternationalClassFallback]);
+    for (const [sourceName, handler] of priorityHandlers) {
+      const routed = handler(question, options);
+      if (routed && routed.answer) {
+        const builtRouted = buildDeterministicResponse(question, routed.source || sourceName, routed, { routeStage: 'pre-ai-fine-intent-priority', fineIntent: fineRoute.fineIntent });
+        return await finalizeSemanticResult(question, builtRouted, resultCacheKey);
+      }
+    }
+  }
+
   const earlyAcademicSpecificNoData = strictDocumentOnly ? null : tryAcademicSpecificNoDataAnswer(question);
   if (earlyAcademicSpecificNoData && earlyAcademicSpecificNoData.answer) {
     const builtEarlyAcademicSpecificNoData = buildDeterministicResponse(question, earlyAcademicSpecificNoData.source || 'semantic-rag-academic-no-data', earlyAcademicSpecificNoData, { routeStage: 'pre-ai-early-academic-specific-no-data' });
@@ -9420,6 +9621,23 @@ async function querySemanticRag(question, options = {}) {
   }
 
   await getActiveTrainingDataFromDb();
+  if (!strictDocumentOnly) {
+    try {
+      const evidenceFirstResult = await tryEvidenceFirstLocalDocumentAnswer(question, options);
+      if (evidenceFirstResult && evidenceFirstResult.answer) {
+        if (debugTrace) {
+          console.log('[TRACE PRE_AI] returning evidence-first document result:', {
+            source: evidenceFirstResult.source,
+            fineIntent: evidenceFirstResult.debug && evidenceFirstResult.debug.fineIntent,
+            answerPreview: String(evidenceFirstResult.answer).slice(0, 100)
+          });
+        }
+        return await finalizeSemanticResult(question, evidenceFirstResult, resultCacheKey);
+      }
+    } catch (e) {
+      try { console.warn('[SemanticRAG] evidence-first document probe failed', e && e.message ? e.message : String(e)); } catch (_) {}
+    }
+  }
   if (!strictDocumentOnly && /\b(pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(String(question || ''))) {
     const earlyUploadedTraining = await tryLocalUploadedTrainingGenericAnswer(question, options);
     if (earlyUploadedTraining && earlyUploadedTraining.answer) {
