@@ -3848,6 +3848,9 @@ function tryStructuredProgramRegistrationFeeAnswer(rawQuestion, opts) {
     const chunk = item && item.chunk ? String(item.chunk) : '';
     const trainingId = item && item.trainingId ? String(item.trainingId) : '';
     if (!chunk || !trainingId) continue;
+    const haystack = `${chunk} ${item && (item.filename || item.sourceFile || '')}`;
+    const asksRegularUndergrad = /^(?:SI|TI|BD|SK|MI)$/i.test(String(entry && entry.key ? entry.key : prog.key || ''));
+    if (asksRegularUndergrad && /\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(haystack)) continue;
     if (!keyRe.test(chunk)) continue;
 
     const hasFeeSignal =
@@ -3879,7 +3882,13 @@ function tryStructuredProgramRegistrationFeeAnswer(rawQuestion, opts) {
 
   const candidates = bestTrainingId
     ? fullIndex.filter(i => i && String(i.trainingId || '') === bestTrainingId).map(i => String(i.chunk || ''))
-    : fullIndex.map(i => String(i && i.chunk ? i.chunk : '')).filter(t => keyRe.test(t) && (/RINCIAN\s*BIAYA\s*PENDIDIKAN/i.test(t) || /RINCIANBIAYAPENDIDIKAN/i.test(t)));
+    : fullIndex.filter((i) => {
+        const t = String(i && i.chunk ? i.chunk : '');
+        const haystack = `${t} ${i && (i.filename || i.sourceFile || '')}`;
+        const asksRegularUndergrad = /^(?:SI|TI|BD|SK|MI)$/i.test(String(entry && entry.key ? entry.key : prog.key || ''));
+        if (asksRegularUndergrad && /\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(haystack)) return false;
+        return keyRe.test(t) && (/RINCIAN\s*BIAYA\s*PENDIDIKAN/i.test(t) || /RINCIANBIAYAPENDIDIKAN/i.test(t));
+      }).map(i => String(i.chunk || ''));
 
   if (!candidates || candidates.length === 0) return null;
 

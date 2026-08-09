@@ -6326,7 +6326,7 @@ function tryFinanceFallback(question) {
 
 function tryFeeFallback(question) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(biaya|uang\s*pangkal|uang\s*pangkalnya|dpp|uk t|ukt|uang\s*pangkal)\b/i.test(q)) return null;
+  if (!/\b(biaya|uang\s*pangkal|uang\s*pangkalnya|dpp|uk t|ukt|uang\s*pangkal|cicil|cicilan|nyicil|angsuran|diangsur)\b/i.test(q)) return null;
   return {
     answer: [
       'Informasi biaya masuk biasanya terdiri dari DPP (uang pangkal) dan UKT per semester, serta pengelompokan berdasarkan gelombang pendaftaran.',
@@ -8734,7 +8734,7 @@ const MEANING_STOPWORDS = new Set([
   'saya', 'aku', 'kak', 'kakak', 'min', 'admin', 'ingin', 'mau', 'tahu', 'tau', 'menanyakan', 'bertanya', 'maksudnya',
   'kalau', 'kalo', 'baik', 'iya', 'ya', 'nah', 'jadi', 'berarti', 'sekarang', 'saat', 'tahun', 'ada', 'sudah',
   'program', 'fasilitas', 'informasi', 'detail', 'jelaskan', 'bagaimana', 'gimana', 'berapa', 'kapan', 'dimana', 'mana',
-  'stikom', 'bali', 'itb', 'kampus', 'kuliah', 'mahasiswa', 'mahasiswi', 'tersebut', 'terima', 'kasih', 'mempersiapkan', 'mendapat', 'setelah', 'tamat', 'saja'
+  'stikom', 'bali', 'itb', 'kampus', 'kuliah', 'mahasiswa', 'mahasiswi', 'tersebut', 'terima', 'kasih', 'mempersiapkan', 'mendapat', 'setelah', 'tamat', 'saja', 'boleh'
 ]);
 
 function extractMeaningAnchors(question) {
@@ -8746,7 +8746,7 @@ function extractMeaningAnchors(question) {
     'j1', 'training 1 tahun', 'n4', 'jlpt n4', 'jepang', 'amerika', 'career center', 'inkubator bisnis', 'language learning center', 'kuliah sambil kerja',
     'magang berbayar', 'hi think', 'hithink', 'gccp', 'short course', 'double degree', 'dual degree', 'help university',
     'dnui', 'dalian neusoft', 'utb', 'universitas teknologi bandung', 'softskill', 'soft skill', 'pmb', 'gelombang',
-    'sistem informasi', 'teknologi informasi', 'bisnis digital', 'sistem komputer', 'manajemen informatika'
+    'sistem informasi', 'teknologi informasi', 'teknik informatika', 'bisnis digital', 'sistem komputer', 'manajemen informatika'
   ];
 
   const anchors = [];
@@ -8765,10 +8765,13 @@ function extractMeaningAnchors(question) {
   const aliases = [];
   if (anchors.includes('remidi')) aliases.push('remedial');
   if (anchors.includes('remedial')) aliases.push('remidi');
-  if (anchors.includes('pendaftaran') || anchors.includes('mendaftar') || anchors.includes('daftar')) aliases.push('pmb', 'pendaftaran', 'daftar');
+  if (anchors.includes('pendaftaran') || anchors.includes('mendaftar') || anchors.includes('daftar')) aliases.push('pmb', 'pendaftaran', 'daftar', 'mendaftar');
+  if (anchors.includes('ganti')) aliases.push('mengganti', 'ubah', 'diubah');
+  if (anchors.includes('jurusan')) aliases.push('prodi', 'program studi', 'pilihan prodi');
   if (anchors.includes('karier') || anchors.includes('karir')) aliases.push('career center', 'karier', 'karir');
   if (anchors.includes('pekerjaan') || anchors.includes('kerja')) aliases.push('career center', 'karier', 'magang', 'kerja');
   if (anchors.includes('amerika')) aliases.push('usa', 'america');
+  if (anchors.includes('teknik informatika')) aliases.push('teknologi informasi', 'ti');
 
   return uniqueList([...anchors, ...aliases], 12);
 }
@@ -8798,7 +8801,7 @@ function inferQuestionMeaningProfile(question) {
   if (/\b(pmb|penerimaan\s+mahasiswa\s+baru)\b/i.test(q) && /\b(apa\s+itu|tentang|bertanya|tanya|informasi|jelaskan|maksud)\b/i.test(q)) return { intent: 'pmb_info' };
   if (/\b(daftar|mendaftar|pendaftaran|registrasi)\b/i.test(q) && /\b(kuliah|pmb|stikom|camaba|mahasiswa\s+baru)\b/i.test(q)) return { intent: 'registration_info' };
   if (/\b(jurusan|prodi|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa)\b/i.test(q)) return { intent: 'program_list' };
-  if (/\b(apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan)\b/i.test(q) && /\b(sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i.test(q)) return { intent: 'program_definition' };
+  if (/\b(apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan)\b/i.test(q) && /\b(sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i.test(q)) return { intent: 'program_definition' };
   if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa)\b/i.test(q)) return { intent: 'career_readiness' };
   if (/\b(fasilitas|layanan|sarana|prasarana)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|unggulan|diunggulkan|tersedia|yang\s+ada|ada\s+apa)\b/i.test(q)) return { intent: 'facility_list' };
   if (/\b(program|training|magang|internship|kerja|bekerja|sertifikasi|kelas|kursus|bahasa)\b/i.test(q) && /\b(j\s*1|j-?1|n\s*[1-5]|jlpt|amerika|america|usa|jepang|japan|luar\s+negeri)\b/i.test(q)) return { intent: 'international_program_availability' };
@@ -8854,7 +8857,7 @@ function answerMatchesQuestionMeaning(question, answer, source = '') {
     if (/\bstudent\s+exchange\b/i.test(q)) return /\bstudent\s+exchange\b|pertukaran\s+mahasiswa/i.test(a);
     if (/\bsoft\s*skill\b|softskill/i.test(q)) return /\bsoft\s*skill\b|softskill/i.test(a);
     if (/\bsi\b|sistem\s+informasi/i.test(q)) return /sistem\s+informasi/i.test(a);
-    if (/\bti\b|teknologi\s+informasi/i.test(q)) return /teknologi\s+informasi/i.test(a);
+    if (/\bti\b|teknologi\s+informasi|teknik\s+informatika/i.test(q)) return /teknologi\s+informasi|teknik\s+informatika/i.test(a);
     if (/\bbd\b|bisnis\s+digital/i.test(q)) return /bisnis\s+digital/i.test(a);
     if (/\bsk\b|sistem\s+komputer/i.test(q)) return /sistem\s+komputer/i.test(a);
     if (/\bmi\b|manajemen\s+informatika/i.test(q)) return /manajemen\s+informatika/i.test(a);
@@ -8897,6 +8900,10 @@ function isMeaningMismatchAnswer(question, answer, source = '') {
   const asksAvailability = /\b(apakah|apa|ada|tersedia|sudah\s+ada|punya|memiliki)\b/i.test(qForAvailability) && /\b(program|layanan|fasilitas|kelas|kursus|sertifikasi|training|magang|kerja|beasiswa|komunitas|ukm|jalur)\b/i.test(qForAvailability);
   const asksRecommendationExplicitly = /\b(cocok|cocoknya|rekomendasi|saran|sarankan|jurusan\s+apa|prodi\s+apa|pilih\s+jurusan)\b/i.test(qForAvailability);
   if (srcForAvailability.includes('program-recommendation') && asksAvailability && !asksRecommendationExplicitly) return true;
+  if (srcForAvailability.includes('program-change')
+    && /\b(ganti|ubah|pindah|tukar)\b/i.test(qForAvailability)
+    && /\b(jurusan|prodi|program\s+studi|pilihan)\b/i.test(qForAvailability)
+    && /\b(setelah\s+daftar|sudah\s+daftar|pendaftaran|mendaftar)\b/i.test(qForAvailability)) return false;
 
   const meaningMatch = answerMatchesQuestionMeaning(question, answer, source);
   if (meaningMatch === true) return false;
@@ -9457,6 +9464,14 @@ async function querySemanticRag(question, options = {}) {
     const result = { answer: buildLanguageLearningAnswer(), source: 'semantic-rag-campus-facility', frameSource: 'semantic-rag-campus-facility' };
     return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-facility', result, { routeStage: 'pre-ai-support-abbreviation' }), resultCacheKey);
   }
+  if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && /\b(?:career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(earlySupportQuestion) && /\b(?:apa|itu|ngapain|fungsi|tugas|layanan|info(?:rmasi)?|tentang|jelaskan)\b/i.test(earlySupportQuestion)) {
+    const result = {
+      answer: 'Career Center ITB STIKOM Bali adalah layanan dukungan karier untuk mahasiswa dan alumni. Dari data yang tersedia, dukungannya mencakup informasi lowongan kerja, magang, campus hiring, job fair, konsultasi karier, dan tracer study. Untuk jadwal kegiatan atau lowongan yang sedang berjalan, kakak bisa cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.',
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', result, { routeStage: 'pre-ai-support-career-center' }), resultCacheKey);
+  }
   if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && /\bjob\s*fair\b/i.test(earlySupportQuestion)) {
     const result = {
       answer: 'Pada data Career Center yang tersedia, job fair tercantum sebagai salah satu bentuk dukungan karier untuk mahasiswa dan alumni, bersama informasi lowongan kerja, magang, campus hiring, konsultasi karier, dan tracer study. Untuk jadwal Job Fair yang sedang atau akan berjalan, kakak perlu cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.',
@@ -9516,6 +9531,40 @@ async function querySemanticRag(question, options = {}) {
         const builtRouted = buildDeterministicResponse(question, routed.source || sourceName, routed, { routeStage: 'pre-ai-fine-intent-priority', fineIntent: fineRoute.fineIntent });
         return await finalizeSemanticResult(question, builtRouted, resultCacheKey);
       }
+    }
+
+    const operationalFastHandlers = handlersForSources([
+      'semantic-rag-registration-data-correction',
+      'semantic-rag-program-change',
+      'semantic-rag-registration-info',
+      'semantic-rag-schedule-window',
+      'semantic-rag-current-open-waves',
+      'semantic-rag-pmb-contact',
+      'semantic-rag-pmb-requirements',
+      'semantic-rag-program-list',
+      'semantic-rag-program-definition',
+      'semantic-rag-program-comparison',
+      'semantic-rag-program-recommendation',
+      'semantic-rag-career',
+      'semantic-rag-dual-degree',
+      'semantic-rag-international-class-fallback',
+      'semantic-rag-bem',
+      'semantic-rag-campus-support-fallback',
+      'semantic-rag-career-fallback',
+      'semantic-rag-finance-fallback',
+      'semantic-rag-fee-fallback',
+      'semantic-rag-contact-lecturer',
+      'semantic-rag-graduation-registration',
+      'semantic-rag-academic-schedule',
+      'semantic-rag-academic-krs',
+      'semantic-rag-academic-grade',
+      'semantic-rag-academic-transcript',
+      'semantic-rag-certification',
+      'semantic-rag-thesis-fallback'
+    ]);
+    const operationalFastResult = runDeterministicHandlers(question, operationalFastHandlers, options, [question], { routeStage: 'pre-ai-operational-fast-lane' });
+    if (operationalFastResult && operationalFastResult.answer) {
+      return await finalizeSemanticResult(question, operationalFastResult, resultCacheKey);
     }
   }
 

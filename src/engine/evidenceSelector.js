@@ -528,6 +528,13 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
   if (detectedIntent === 'legal' && !hasRequiredPasalAlignment(text, question)) {
     missingEvidence.push('requested_legal_section');
   }
+  if (detectedIntent === 'schedule') {
+    const hasConcreteDateOrPeriod = /\b\d{1,2}\s*(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s*20\d{2}\b/i.test(text)
+      || /\b(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s*20\d{2}\b/i.test(text)
+      || /\b20\d{2}\s*(?:sampai|hingga|s\.d\.?|sd|-)\s*20\d{2}\b/i.test(text)
+      || /\b(?:mulai|dibuka|periode|masa\s+pendaftaran)\b[\s\S]{0,120}\b\d{1,2}\s*(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\b/i.test(text);
+    if (!hasConcreteDateOrPeriod) missingEvidence.push('date_or_period');
+  }
   // List queries must have concrete multiple items
   if (/\bapa\s+saja\b/i.test(q) && detectedIntent !== 'legal' && !hasConcreteList(text)) {
     missingEvidence.push('multiple_concrete_items');

@@ -93,12 +93,14 @@ function hasRawFaqQnaDump(text) {
   const inlineFaqMarkerCount = (out.match(/\((?:F|Q|A)\)/gi) || []).length;
   const lineFaqMarkerCount = (out.match(/(?:^|\n)\s*(?:FAQ|QNA|Q|A|F|Question|Answer|Pertanyaan|Jawaban|Tanya|Jawab)\s*[:\-.]/gi) || []).length;
   const hasFaqHeaderWithQa = /(?:^|\n)\s*(?:FAQ|QNA)\s*[:\-.]/i.test(out) && lineFaqMarkerCount >= 2;
+  const hasInlineFactQuestionAnswer = /\(F\)[\s\S]{0,500}\(Q\)[\s\S]{0,500}\(A\)/i.test(out)
+    || /\bF\s*[:.-][\s\S]{0,500}\bQ\s*[:.-][\s\S]{0,500}\bA\s*[:.-]/i.test(out);
 
   // Configurable thresholds: increased from 2,3 to 4,5 to reduce false positives
   const inlineFaqThreshold = parseInt(process.env.PREFLIGHT_INLINE_FAQ_THRESHOLD || '4', 10);
   const lineFaqThreshold = parseInt(process.env.PREFLIGHT_LINE_FAQ_THRESHOLD || '5', 10);
 
-  const result = inlineFaqMarkerCount >= inlineFaqThreshold || lineFaqMarkerCount >= lineFaqThreshold || hasFaqHeaderWithQa;
+  const result = hasInlineFactQuestionAnswer || inlineFaqMarkerCount >= inlineFaqThreshold || lineFaqMarkerCount >= lineFaqThreshold || hasFaqHeaderWithQa;
 
   if (process.env.PREFLIGHT_DEBUG_DETAILED) {
     console.log('[PREFLIGHT] hasRawFaqQnaDump:', {

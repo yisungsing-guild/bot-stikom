@@ -503,6 +503,10 @@ async function queryScoped({ query, category, topK, filters, options } = {}) {
           logger.info({ query: q, category, topScore, retrievedCategories, contextCount: contexts.length }, '[ragScoped] local domain retrieval, delegating to ragEngine');
           console.time('[perf] ragScoped.delegate');
           const delegated = await ragEngine.query(q, effectiveTopK, opts);
+          if ((!Array.isArray(delegated.contexts) || delegated.contexts.length === 0) && Array.isArray(contexts) && contexts.length > 0) {
+            delegated.contexts = contexts;
+            delegated.retrievalUsed = true;
+          }
           // Attach retrieval trace into delegated result so callers can inspect it
           if (retrievalTrace) {
             try {
@@ -542,6 +546,10 @@ async function queryScoped({ query, category, topK, filters, options } = {}) {
     try {
       console.time('[perf] ragScoped.delegate');
       const fallbackResult = await ragEngine.query(normalizedQuery || q, k, opts);
+      const shortcutLikeSource = /(?:^|[-_])(?:rag-)?(?:program-profile|prodi-overview|program-career-role|program-comparison|academic|accreditation-campus)(?:$|[-_])/i.test(String(fallbackResult && fallbackResult.source || ''));
+      if (shortcutLikeSource && (!Array.isArray(fallbackResult.contexts) || fallbackResult.contexts.length === 0)) {
+        fallbackResult.retrievalUsed = false;
+      }
       fallbackResult.debug = Object.assign({}, fallbackResult.debug || {}, { retrievalPath, localDomainRetrievalUsed });
       console.timeEnd('[perf] ragScoped.delegate');
       console.timeEnd('[perf] ragScoped.retrieve');
