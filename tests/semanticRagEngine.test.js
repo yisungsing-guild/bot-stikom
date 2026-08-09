@@ -1855,6 +1855,50 @@ describe('semanticRagEngine', () => {
     expect(result.answer).toMatch(/pendampingan mahasiswa|alumni|pengalaman industri|portofolio|jejaring profesional/i);
     expect(result.answer).not.toMatch(/belum menemukan informasi|belum bisa memastikan|tidak mempunyai jawaban/i);
   });
+  test('answers uploaded pipe-delimited FAQ spreadsheet content without OpenAI', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'pasca-faq-1',
+          trainingId: 'training-db-pasca',
+          filename: 'Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx',
+          source: 'upload',
+          chunk: '[Sheet: FAQ] Profil | Apa nama program pascasarjana? | Program Pascasarjana ITB STIKOM Bali menyelenggarakan Program Studi Magister Sistem Informasi (S2). | magister,s2,pasca Profil | Apa gelar lulusannya? | Lulusan memperoleh gelar Magister Komputer (M.Kom.). | gelar,mkom Profil | Berapa lama masa studi? | Masa studi normal adalah 4 semester dengan total 56 SKS. | semester,sks Fasilitas | Apa keunggulan program? | Kurikulum berbasis industri, dosen berpengalaman, akreditasi Baik Sekali, dan fokus Intelligent & Secure System. | keunggulan'
+        }
+      ]),
+      chunkText: jest.fn((text) => [String(text || '')]),
+      computeEmbedding: jest.fn(async () => []),
+      cleanAnswerLanguage: jest.fn((text) => String(text || '').trim())
+    }));
+    jest.doMock('../src/db', () => ({
+      trainingData: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'training-db-pasca',
+            filename: 'Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx',
+            content: '[Sheet: FAQ] Profil | Apa nama program pascasarjana? | Program Pascasarjana ITB STIKOM Bali menyelenggarakan Program Studi Magister Sistem Informasi (S2). | magister,s2,pasca Profil | Apa gelar lulusannya? | Lulusan memperoleh gelar Magister Komputer (M.Kom.). | gelar,mkom Profil | Berapa lama masa studi? | Masa studi normal adalah 4 semester dengan total 56 SKS. | semester,sks Fasilitas | Apa keunggulan program? | Kurikulum berbasis industri, dosen berpengalaman, akreditasi Baik Sekali, dan fokus Intelligent & Secure System. | keunggulan',
+            source: 'upload',
+            divisionKey: null,
+            ragIngestStatus: 'success',
+            ragChunkCount: 1,
+            createdAt: new Date('2026-08-04T00:00:00.000Z'),
+            updatedAt: new Date('2026-08-04T00:00:00.000Z'),
+            uploadedById: null
+          }
+        ])
+      }
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('Apa gelar lulusan pascasarjana Sistem Informasi?');
+
+    expect(result.success).toBe(true);
+    expect(result.source).toBe('semantic-rag-uploaded-training-generic');
+    expect(result.answer).toMatch(/Magister Komputer \(M\.Kom\.\)/i);
+    expect(result.answer).not.toMatch(/Software Developer|prospek kerja lulusan Teknologi Informasi|\[Sheet: FAQ\]/i);
+  });
   test('answers uploaded Athena and Ghost UKM profiles from DB using short UKM names', async () => {
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS = '1';
