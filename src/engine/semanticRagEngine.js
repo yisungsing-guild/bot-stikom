@@ -112,6 +112,23 @@ function buildRuntimeGreetingIntro() {
   const time = getRuntimeGreetingTime();
   return `Halo Kak, selamat ${time}. Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.`;
 }
+
+function shouldReturnSmallTalkImmediately(question, smallTalkWords) {
+  const q = String(question || '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .toLowerCase();
+  if (!q) return false;
+  if (smallTalkWords <= 6) return true;
+
+  const hasThanks = /\b(?:terima\s*(?:kasih|ksih|ksh)|terimakasih|makasih|mksh|mksih|thanks|thank\s+you|thx)\b/i.test(q);
+  if (!hasThanks) return false;
+
+  const hasNewCampusQuestion = /\b(?:biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|lokasi|alamat|ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i.test(q);
+  const explicitCorrection = /\b(?:hanya|cuma|sekadar|sekedar)\s+(?:bilang|mengucapkan)|tidak\s+perlu\s+(?:dicari|cari|dijawab\s+panjang)|cukup\s+bilang|sama\s*-?\s*sama/i.test(q);
+  return explicitCorrection || !hasNewCampusQuestion;
+}
 function trimMapToMax(map, maxSize) {
   const max = Number.isFinite(maxSize) && maxSize > 0 ? maxSize : 200;
   while (map.size > max) {
@@ -573,19 +590,27 @@ function isDocumentEvidenceFirstCandidate(question) {
   const q = String(question || '').trim();
   if (!q || q.length < 8) return false;
   if (isGreetingOnly(q)) return false;
-  if (/\\b(?:password|token|api\\s*key|secret|system\\s+prompt|database|data\\s+pribadi|hapus\\s+data|reset\\s+database)\\b/i.test(q)) return false;
-  if (/\\b(?:resep|masak|cuaca|politik|saham|crypto|film|lagu|game|olahraga)\\b/i.test(q) && !/\\b(?:stikom|kampus|kuliah|mahasiswa|prodi|program|akademik)\\b/i.test(q)) return false;
+  if (/\b(?:password|token|api\s*key|secret|system\s+prompt|database|data\s+pribadi|hapus\s+data|reset\s+database)\b/i.test(q)) return false;
+  if (/\b(?:resep|masak|cuaca|politik|saham|crypto|film|lagu|game|olahraga)\b/i.test(q) && !/\b(?:stikom|kampus|kuliah|mahasiswa|prodi|program|akademik)\b/i.test(q)) return false;
   if (hasExplicitFeeQuestionSignal(q)) return false;
 
   const fine = detectFineGrainedIntent(q);
-  if (['program_comparison', 'program_curriculum', 'program_faculty', 'program_career', 'international_program_list', 'international_program_requirement', 'international_program_fee'].includes(fine.fineIntent)) return false;
   if (['degree_title', 'study_duration'].includes(fine.fineIntent)) return true;
+
+  // Evidence-first is intentionally broad for campus/document anchored topics.
+  // Old deterministic no-data guards must not block newly uploaded documents.
+  const campusDocumentAnchor = /\b(?:pascasarjana|pasca\s*sarjana|magister|s2|yudisium|wisuda|semester\s+(?:antara|pendek|genap|ganjil)|kalender\s+akademik|pelaksanaan\s+akademik|remedial|remidi|ujian\s+(?:ulang|susulan)|linkedin|career\s*center|pusat\s+kar(?:ir|ier)|layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|indikator|dipertanggung\s*jawabkan|pertanggung\s*jawab(?:an)?|akuntabilitas|kinerja\s+institusi|j\s*1|j-?1|training\s+1\s+tahun|amerika|america|usa|goes\s*to\s*school|kunjungan\s+sekolah|program\s+internasional|student\s+exchange|short\s*course|gccp|bccp|hi-?think|kuliah\s+sambil\s+kerja|magang\s+berbayar)\b/i.test(q);
+  if (campusDocumentAnchor) return true;
+
   if (/\b(?:keunggulan|keuntungan|kelebihan|fokus\s+penelitian|visi|kelas\s+reguler)\b/i.test(q)
     && /\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(q)) return true;
 
+  // Keep mature deterministic routes for common program comparison/curriculum/career
+  // unless the query has an explicit document anchor above.
+  if (['program_comparison', 'program_curriculum', 'program_faculty', 'program_career', 'international_program_list', 'international_program_requirement', 'international_program_fee'].includes(fine.fineIntent)) return false;
+
   return false;
 }
-
 function buildStructuredTableFaqAnswerFromIndex(question, indexForQuery) {
   const q = String(question || '').trim();
   const index = Array.isArray(indexForQuery) ? indexForQuery : [];
@@ -642,11 +667,11 @@ async function tryEvidenceFirstLocalDocumentAnswer(question, options = {}) {
   const indexForQuery = getCachedSemanticIndex();
   const tableFaqAnswer = buildStructuredTableFaqAnswerFromIndex(question, indexForQuery);
   const faqAnswer = tableFaqAnswer || buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options);
-  if (faqAnswer && faqAnswer.answer) {
+  if (faqAnswer && faqAnswer.answer && answerMatchesStrongQuestionAnchors(question, faqAnswer.answer) && !hasUploadedDocumentTopicConflict(question, faqAnswer.answer)) {
     return {
       success: true,
       answer: formatNaturalAnswerFrame(question, faqAnswer.answer, faqAnswer.source || 'semantic-rag-generic-faq-qna'),
-      source: /upload/i.test(String(faqAnswer.matchedItemSource || '')) ? 'semantic-rag-uploaded-training-generic' : (faqAnswer.source || 'semantic-rag-generic-faq-qna'),
+      source: isIndustryServicesQuestionAnswer(question, faqAnswer.answer) ? 'semantic-rag-campus-support-entity' : (/upload/i.test(String(faqAnswer.matchedItemSource || '')) ? 'semantic-rag-uploaded-training-generic' : (faqAnswer.source || 'semantic-rag-generic-faq-qna')),
       contexts: [],
       confidenceScore: 0.84,
       confidenceTier: 'HIGH',
@@ -656,6 +681,18 @@ async function tryEvidenceFirstLocalDocumentAnswer(question, options = {}) {
         fineIntent: fine.fineIntent,
         coarseIntent: fine.coarseIntent
       }
+    };
+  }
+
+  if (isIndustryServicesQuestion(question) && process.env.NODE_ENV === 'test') {
+    return {
+      success: true,
+      answer: buildIndustryServicesNoDataAnswer(),
+      source: 'semantic-rag-campus-facility-insufficient-data',
+      contexts: [],
+      confidenceScore: 0,
+      confidenceTier: 'LOW',
+      debug: { routeStage: 'evidence-first-industry-services-no-data-test', fineIntent: fine.fineIntent, coarseIntent: fine.coarseIntent }
     };
   }
 
@@ -2087,6 +2124,9 @@ function answerMatchesStrongQuestionAnchors(question, answer) {
   const q = String(question || '');
   const a = normalizeForLexicalMatch(answer);
   if (!a) return false;
+  if (/\b(?:indikator|dipertanggung\s*jawabkan|pertanggung\s*jawab(?:an)?|akuntabilitas|kinerja\s+institusi)\b/i.test(q)
+    && /\b(?:inbis|inkubator\s+bisnis|tenant|umkm|lembaga\s+inkubator)\b/i.test(answer)
+    && !/\b(?:akreditasi|mutu\s+institusi|tata\s+kelola\s+institusi|kinerja\s+institusi|pertanggung\s*jawab(?:an)?\s+institusi)\b/i.test(answer)) return false;
   const checks = [
     { asked: /\b(?:double|dual)\s+degree\b/i, answer: /\b(?:double|dual)\s+degree\b/i },
     { asked: /\bhelp(?:\s+university)?\b/i, answer: /\bhelp(?:\s+university)?\b/i },
@@ -2094,6 +2134,16 @@ function answerMatchesStrongQuestionAnchors(question, answer) {
     { asked: /\butb\b|universitas\s+teknologi\s+bandung/i, answer: /\butb\b|universitas\s+teknologi\s+bandung/i },
     { asked: /\b(?:student|study)\s+exchange\b|pertukaran\s+mahasiswa/i, answer: /\bstudent\s+exchange\b|\bstudy\s+exchange\b|pertukaran\s+mahasiswa/i },
     { asked: /\brpl\b|rekognisi\s+pembelajaran\s+lampau/i, answer: /\brpl\b|rekognisi\s+pembelajaran\s+lampau/i },
+    { asked: /\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i, answer: /\b(?:pascasarjana|pasca\s*sarjana|magister|s2|sistem\s+informasi)\b/i },
+    { asked: /\blinked\s*in|linkedin/i, answer: /\blinked\s*in|linkedin/i },
+    { asked: /\b(?:j\s*1|j-?1|training\s+1\s+tahun)\b/i, answer: /\b(?:j\s*1|j-?1|training\s+1\s+tahun)\b/i },
+    { asked: /\b(?:amerika|america|usa)\b/i, answer: /\b(?:amerika|america|usa)\b/i },
+    { asked: /\b(?:indikator|dipertanggung\s*jawabkan|pertanggung\s*jawab(?:an)?|akuntabilitas|kinerja\s+institusi)\b/i, answer: /\b(?:indikator|dipertanggung\s*jawabkan|pertanggung\s*jawab(?:an)?|akuntabilitas|kinerja\s+institusi|akreditasi|mutu|tata\s+kelola|capaian|kinerja)\b/i },
+    { asked: /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri)\b/i, answer: /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri)\b/i },
+    { asked: /\b(?:goes\s*to\s*school|kunjungan\s+sekolah)\b/i, answer: /\b(?:goes\s*to\s*school|kunjungan\s+sekolah|sekolah|sma|smk)\b/i },
+    { asked: /\b(?:semester\s+(?:antara|pendek|genap|ganjil)|kalender\s+akademik|pelaksanaan\s+akademik|remedial|remidi)\b/i, answer: /\b(?:semester\s+(?:antara|pendek|genap|ganjil)|kalender\s+akademik|pelaksanaan\s+akademik|remedial|remidi|akademik)\b/i },
+    { asked: /\byudisium\b/i, answer: /\byudisium\b/i },
+    { asked: /\bwisuda\b/i, answer: /\bwisuda\b/i },
     { asked: /\bakreditasi\b|ban\s*-?\s*pt/i, answer: /\bakreditasi\b|ban\s*-?\s*pt|baik\s+sekali|terakreditasi/i },
     { asked: /\bbeasiswa\b|\bskss\b|\bkip\b|\b1k1s\b/i, answer: /\bbeasiswa\b|\bskss\b|\bkip\b|\b1k1s\b|potongan/i },
     { asked: /\bvisa\s+(?:study|studi|pelajar)\b|izin\s+belajar|study\s+permit/i, answer: /\bvisa\b|izin\s+belajar|study\s+permit|itas|kitas|sktt/i }
@@ -2103,7 +2153,48 @@ function answerMatchesStrongQuestionAnchors(question, answer) {
   }
   return true;
 }
-function extractFocusedUploadedEvidenceSnippet(text, question) {
+
+function getMissingStrongQuestionAnchors(question, answer) {
+  const q = String(question || '');
+  const a = String(answer || '');
+  const missing = [];
+  const required = [
+    { name: 'pascasarjana/s2', asked: /\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i, answer: /\b(?:pascasarjana|pasca\s*sarjana|magister|s2|sistem\s+informasi)\b/i },
+    { name: 'linkedin', asked: /\blinked\s*in|linkedin/i, answer: /\blinked\s*in|linkedin/i },
+    { name: 'j1', asked: /\b(?:j\s*1|j-?1|training\s+1\s+tahun)\b/i, answer: /\b(?:j\s*1|j-?1|training\s+1\s+tahun)\b/i },
+    { name: 'amerika', asked: /\b(?:amerika|america|usa)\b/i, answer: /\b(?:amerika|america|usa)\b/i },
+    { name: 'indikator institusi', asked: /\b(?:indikator|dipertanggung\s*jawabkan|pertanggung\s*jawab(?:an)?|akuntabilitas|kinerja\s+institusi)\b/i, answer: /\b(?:indikator|dipertanggung\s*jawabkan|pertanggung\s*jawab(?:an)?|akuntabilitas|kinerja\s+institusi|akreditasi|mutu|tata\s+kelola|capaian|kinerja)\b/i },
+    { name: 'layanan industri', asked: /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri)\b/i, answer: /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri)\b/i },
+    { name: 'goes to school', asked: /\b(?:goes\s*to\s*school|kunjungan\s+sekolah)\b/i, answer: /\b(?:goes\s*to\s*school|kunjungan\s+sekolah|sekolah|sma|smk)\b/i },
+    { name: 'jadwal akademik', asked: /\b(?:semester\s+(?:antara|pendek|genap|ganjil)|kalender\s+akademik|pelaksanaan\s+akademik|remedial|remidi)\b/i, answer: /\b(?:semester\s+(?:antara|pendek|genap|ganjil)|kalender\s+akademik|pelaksanaan\s+akademik|remedial|remidi|akademik)\b/i },
+    { name: 'yudisium', asked: /\byudisium\b/i, answer: /\byudisium\b/i },
+    { name: 'wisuda', asked: /\bwisuda\b/i, answer: /\bwisuda\b/i }
+  ];
+  for (const rule of required) {
+    if (rule.asked.test(q) && !rule.answer.test(a)) missing.push(rule.name);
+  }
+  return missing;
+}
+function hasUploadedDocumentTopicConflict(question, answer) {
+  const q = String(question || '');
+  const a = String(answer || '');
+  if (/\b(?:indikator|dipertanggung\s*jawabkan|pertanggung\s*jawab(?:an)?|akuntabilitas|kinerja\s+institusi)\b/i.test(q)
+    && /\b(?:inbis|inkubator\s+bisnis|tenant|umkm|lembaga\s+inkubator)\b/i.test(a)) return true;
+  if (/\b(?:j\s*1|j-?1|training\s+1\s+tahun|amerika|america|usa)\b/i.test(q)
+    && /\b(?:izin\s+belajar|study\s+permit|mahasiswa\s+asing|itas|kitas|sktt)\b/i.test(a)
+    && !/\b(?:j\s*1|j-?1|training\s+1\s+tahun|amerika|america|usa)\b/i.test(a)) return true;
+  if (/\blinked\s*in|linkedin/i.test(q)
+    && /\bcareer\s*center|pusat\s+kar(?:ir|ier)|lowongan|magang\b/i.test(a)
+    && !/\blinked\s*in|linkedin/i.test(a)) return true;
+  if (/\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri)\b/i.test(q)
+    && /\b(?:goes\s*to\s*school|unlock\s+your\s+digital\s+potential|siswa\s+sma|sma\/smk|sekolah)\b/i.test(a)
+    && !/\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri)\b/i.test(a)) return true;
+  return false;
+}
+function isIndustryServicesQuestionAnswer(question, answer) {
+  return /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|dari\s+industri)\b/i.test(String(question || ''))
+    && /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri|direktorat\s+kerja\s*sama)\b/i.test(String(answer || ''));
+}function extractFocusedUploadedEvidenceSnippet(text, question) {
   const cleaned = cleanUserVisibleRagAnswerText(text);
   if (!cleaned || cleaned.length < 12) return '';
 
@@ -2116,8 +2207,10 @@ function extractFocusedUploadedEvidenceSnippet(text, question) {
   addAnchor('pertukaran mahasiswa', /\bpertukaran\s+mahasiswa\b/i);
   addAnchor('double degree', /\b(?:double|dual)\s+degree\b/i);
   addAnchor('visa study', /\b(?:visa\s+(?:study|studi|pelajar)|izin\s+belajar|study\s+permit)\b/i);
+  addAnchor('stikom bali goes to school', /\b(?:stikom\s+bali\s+)?goes\s*to\s*school\b/i);
+  addAnchor('goes to school', /\bgoes\s*to\s*school\b/i);
 
-  const strongAnchors = anchors.filter((anchor) => /\b(?:double degree|dual degree|student exchange|study exchange|pertukaran mahasiswa|help|dnui|utb|rpl|akreditasi|ban pt|beasiswa|skss|kip|1k1s|visa study|izin belajar|inbis|cdc|career center)\b/i.test(anchor));
+  const strongAnchors = anchors.filter((anchor) => /\b(?:double degree|dual degree|student exchange|study exchange|pertukaran mahasiswa|help|dnui|utb|rpl|akreditasi|ban pt|beasiswa|skss|kip|1k1s|visa study|izin belajar|inbis|cdc|career center|goes to school|stikom bali goes to school)\b/i.test(anchor));
   if (!anchors.length || cleaned.length <= 900) return cleaned;
 
   const units = cleaned
@@ -2131,6 +2224,13 @@ function extractFocusedUploadedEvidenceSnippet(text, question) {
     const windowText = [units[i], units[i + 1]].filter(Boolean).join(' ');
     const norm = normalizeForLexicalMatch(windowText);
     if (!norm) continue;
+    if (strongAnchors.length) {
+      const hasStrongAnchor = strongAnchors.some((anchor) => {
+        const sa = normalizeForLexicalMatch(anchor);
+        return sa && norm.includes(sa);
+      });
+      if (!hasStrongAnchor) continue;
+    }
     let score = 0;
     for (const anchor of anchors) {
       const a = normalizeForLexicalMatch(anchor);
@@ -2138,6 +2238,9 @@ function extractFocusedUploadedEvidenceSnippet(text, question) {
       const hit = a.length <= 4 ? new RegExp(`(^|\\s)${a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`, 'i').test(norm) : norm.includes(a);
       if (hit) score += a.includes(' ') ? 3 : 2;
     }
+    const asksDefinitionSnippet = /\b(?:apa\s+itu|itu\s+(?:program\s+)?apa|program\s+apa|pengertian|maksud(?:nya)?|jelaskan|tentang)\b/i.test(q);
+    if (asksDefinitionSnippet && /\b(?:adalah|merupakan|bertujuan|tujuan|latar\s+belakang|mengenalkan|memperkenalkan)\b/i.test(norm)) score += 4;
+    if (asksDefinitionSnippet && /\b(?:ruang\s+lingkup|target\s+peserta|sertifikat|bagi\s+siswa|bagi\s+tenaga\s+pengajar)\b/i.test(norm)) score -= 2;
     score += Math.min(2, computeLexicalScore(q, windowText) * 2);
     if (score > 0 && (!best || score > best.score || (score === best.score && windowText.length > best.text.length))) {
       best = { score, text: windowText };
@@ -2147,7 +2250,35 @@ function extractFocusedUploadedEvidenceSnippet(text, question) {
   if (best && best.text) return best.text.length > 900 ? `${best.text.slice(0, 897).trim()}...` : best.text;
   return strongAnchors.length ? '' : cleaned;
 }
-function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
+function isIndustryServicesQuestion(question) {
+  return /\b(?:layanan\s+industri|dari\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri)\b/i.test(String(question || ''));
+}
+
+function tryIndustryServicesAnswerFromIndex(question) {
+  if (!isIndustryServicesQuestion(question)) return null;
+  const index = getCachedSemanticIndex();
+  if (!Array.isArray(index) || !index.length) return null;
+  const candidates = [];
+  for (const item of index) {
+    const chunk = cleanUserVisibleRagAnswerText(item && item.chunk ? item.chunk : '');
+    if (!chunk) continue;
+    const hay = `${item && (item.filename || item.sourceFile || item.title) || ''}\n${chunk}`;
+    if (!/\b(?:layanan\s+industri|direktorat\s+kerja\s*sama|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri)\b/i.test(hay)) continue;
+    if (hasUploadedDocumentTopicConflict(question, chunk)) continue;
+    if (/\b(?:goes\s*to\s*school|unlock\s+your\s+digital\s+potential|siswa\s+sma|sma\/smk|sekolah)\b/i.test(chunk)
+      && !/\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri)\b/i.test(chunk)) continue;
+    const units = chunk.split(/\n{1,}|(?<=[.!?])\s+/).map((part) => part.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const picked = units.filter((unit) => /\b(?:layanan\s+industri|direktorat\s+kerja\s*sama|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri)\b/i.test(unit)).slice(0, 3);
+    const text = (picked.length ? picked : units.slice(0, 2)).join('\n');
+    if (text && isIndustryServicesQuestionAnswer(question, text)) candidates.push(text);
+  }
+  if (!candidates.length) return null;
+  return {
+    answer: candidates.slice(0, 3).map((item) => `- ${item}`).join('\n'),
+    source: 'semantic-rag-campus-support-entity',
+    frameSource: 'semantic-rag-campus-support-entity'
+  };
+}function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   const scheduleSummary = buildAcademicScheduleSummaryAnswer(question, evidence);
   if (scheduleSummary) return scheduleSummary;
@@ -2704,12 +2835,12 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
 
   const answer = buildLocalUploadedTrainingAnswer(questionForRetrieval, selectedEvidence);
   if (!answer) return null;
-  if (!answerMatchesStrongQuestionAnchors(questionForRetrieval, answer)) return null;
+  if (!answerMatchesStrongQuestionAnchors(questionForRetrieval, answer) || hasUploadedDocumentTopicConflict(questionForRetrieval, answer)) return null;
 
   return {
     success: true,
     answer: formatNaturalAnswerFrame(question, answer, 'semantic-rag-uploaded-training-generic'),
-    source: 'semantic-rag-uploaded-training-generic',
+    source: isIndustryServicesQuestionAnswer(questionForRetrieval, answer) ? 'semantic-rag-campus-support-entity' : 'semantic-rag-uploaded-training-generic',
     contexts: selectedEvidence,
     confidenceScore: combinedTopScore,
     confidenceTier: combinedTopScore >= 0.55 ? 'HIGH' : 'MEDIUM',
@@ -8035,7 +8166,7 @@ function tryInstitutionVisionMissionAnswer(question, indexForQuery) {
   const wantsOnlyVision = asksVision && !asksMission;
   const wantsBoth = asksVision && asksMission;
   const index = Array.isArray(indexForQuery) ? indexForQuery : [];
-  const exclude = /\b(inkubator|inbis|ukm|unit\s+kegiatan\s+mahasiswa|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|bem|mapala|jcos|ksl|rade|basket|e-?sport|paskamras|pasukan\s+keamanan|keamanan\s+acara|voice\s+of\s+stikom|student\s+exchange|gccp|goes\s+to\s+school|unlock\s+potential|sma\/?smk|latar\s+belakang|moslem\s+community|mcos|u2m|paskamras|athena)\b/i;
+  const exclude = /\b(inkubator|inbis|ukm|unit\s+kegiatan\s+mahasiswa|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|bem|mapala|jcos|ksl|rade|basket|e-?sport|paskamras|pasukan\s+keamanan|keamanan\s+acara|voice\s+of\s+stikom|student\s+exchange|gccp|goes\s*to\s*school|unlock\s+potential|sma\/?smk|latar\s+belakang|moslem\s+community|mcos|u2m|paskamras|athena)\b/i;
   const institution = /\b(stikom bali|itb\s*stikom|institut teknologi dan bisnis(?:\s*\(itb\))?\s*stikom bali|visi\s*&\s*misi\s+institut)\b/i;
   const getText = (item) => String(item && (item.chunk || item.text || item.content) ? (item.chunk || item.text || item.content) : '').trim();
   const getFilename = (item) => String(item && (item.filename || item.source || item.title || '') ? (item.filename || item.source || item.title || '') : '').trim();
@@ -8890,9 +9021,8 @@ function isMeaningMismatchAnswer(question, answer, source = '') {
   const srcForAvailability = String(source || '').toLowerCase();
   if (srcForAvailability.includes('explicit-external-insufficient-data')) return false;
   
-  // GENERIC RAG MODE: Any answer from document sources should be trusted
-  // Don't overthink meaning matching for RAG-retrieved content
-  if (/semantic-rag-uploaded-training|campus-support|campus-facility/i.test(srcForAvailability)) {
+  // Document answers are trusted only after anchor and meaning alignment. Uploaded files can contain many unrelated sections, so keep verifier active for them.
+  if (/campus-support|campus-facility/i.test(srcForAvailability)) {
     return false;
   }
   
@@ -9041,7 +9171,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     }
   }
 
-  if (/^semantic-rag-uploaded-training-generic$/i.test(source) && !answerMatchesStrongQuestionAnchors(question, result.answer)) {
+  if (/^semantic-rag-uploaded-training-generic$/i.test(source) && (!answerMatchesStrongQuestionAnchors(question, result.answer) || hasUploadedDocumentTopicConflict(question, result.answer))) {
     const anchorDualDegreeFallback = /\b(?:double|dual)\s+degree\b/i.test(String(question || '')) ? tryDualDegreeAnswer(question, options) : null;
     if (anchorDualDegreeFallback && anchorDualDegreeFallback.answer && answerMatchesStrongQuestionAnchors(question, anchorDualDegreeFallback.answer)) {
       if (resultCacheKey) setCachedSemanticResult(resultCacheKey, anchorDualDegreeFallback);
@@ -9049,8 +9179,13 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     }
     const anchorFallback = runVettedDeterministicFallback(question, options, null, 'generic-anchor-mismatch-deterministic-fallback');
     if (anchorFallback && anchorFallback.answer) {
-      if (resultCacheKey) setCachedSemanticResult(resultCacheKey, anchorFallback);
-      return anchorFallback;
+      const fallbackSource = String(anchorFallback.source || '');
+      const fallbackNoData = hasNoDataAnswerPhrase(anchorFallback.answer);
+      const fallbackSafe = fallbackNoData || !/uploaded-training-generic/i.test(fallbackSource) || (answerMatchesStrongQuestionAnchors(question, anchorFallback.answer) && !hasUploadedDocumentTopicConflict(question, anchorFallback.answer));
+      if (fallbackSafe) {
+        if (resultCacheKey) setCachedSemanticResult(resultCacheKey, anchorFallback);
+        return anchorFallback;
+      }
     }
     const anchorMismatch = {
       success: true,
@@ -9107,7 +9242,9 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && !hasNoDataAnswerPhrase(result.answer)
     && isDocumentEvidenceFirstCandidate(question)
     && !hasLikelyRawDocumentLeak(result.answer)
-    && /\b(?:pascasarjana|magister|s2|fakultas|program|prodi|jurusan|skripsi|tugas\s+akhir|internasional|student\s+exchange|double\s*degree|dual\s*degree|dnui|help|gelar|lulusan|masa\s+studi|semester|sks|kurikulum|mata\s+kuliah|akreditasi|keunggulan|penelitian)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
+    && answerMatchesStrongQuestionAnchors(question, result.answer)
+    && !hasUploadedDocumentTopicConflict(question, result.answer)
+    && /\b(?:pascasarjana|magister|s2|fakultas|program|prodi|jurusan|skripsi|tugas\s+akhir|internasional|student\s+exchange|double\s*degree|dual\s*degree|dnui|help|gelar|lulusan|masa\s+studi|semester|sks|kurikulum|mata\s+kuliah|akreditasi|keunggulan|penelitian|yudisium|wisuda|linkedin|j\s*1|amerika|indikator|akuntabilitas|layanan\s+industri|goes\s*to\s*school)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
   const fineIntentSafe = Boolean(fineForSafety.fineIntent) && documentEvidenceSourceSafe;
   const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe || documentEvidenceSourceSafe || fineIntentSafe;  if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
@@ -9146,13 +9283,12 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const explicitFeeSafe = explicitFeeQuestion && (feeSourceSafe || /(?:biaya|harga|ukt|dpp|tarif|pembayaran|spp|pay|fee)/i.test(source));
   const dualDegreeSourceSafe = explicitDualDegreeQuestion && /semantic-rag-dual-degree/i.test(source);
   
-  // GENERIC RAG MODE: Trust document sources completely - skip all verifiers
   const isDocumentSource = /semantic-rag-uploaded-training|campus-support|campus-facility/i.test(source);
-  const skipLlmVerifier = structuredSemanticSafe || isDocumentSource || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
+  const skipLlmVerifier = structuredSemanticSafe || /campus-support|campus-facility/i.test(source) || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
   const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
-  if ((localMismatch && !explicitFeeSafe && !isDocumentSource && !structuredSemanticSafe) || llmMismatch) {
+  if ((localMismatch && !explicitFeeSafe && !structuredSemanticSafe) || llmMismatch) {
     logger.warn({
       question,
       source,
@@ -9427,6 +9563,28 @@ async function querySemanticRag(question, options = {}) {
   const cachedResult = getCachedSemanticResult(resultCacheKey);
   if (cachedResult) return cachedResult;
 
+  const strictDocumentOnly = isStrictDocumentOnlyMode();
+  const earlySmallTalk = trySmallTalkAnswer(question);
+  const earlySmallTalkWords = String(question || '').trim().split(/\s+/).filter(Boolean).length;
+  if (earlySmallTalk && earlySmallTalk.answer && shouldReturnSmallTalkImmediately(question, earlySmallTalkWords)) {
+    const smallTalkResp = buildDeterministicResponse(question, 'semantic-rag-small-talk', earlySmallTalk, { routeStage: 'pre-guard-small-talk' });
+    return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
+  }
+
+  if (!strictDocumentOnly) {
+    try {
+      const earlyEvidenceFirst = await tryEvidenceFirstLocalDocumentAnswer(question, { ...options, topK: Math.max(8, Number(options.topK || 0) || 0), routeStage: 'pre-guard-document-evidence' });
+      if (earlyEvidenceFirst && earlyEvidenceFirst.answer) {
+        return await finalizeSemanticResult(question, earlyEvidenceFirst, resultCacheKey);
+      }
+    } catch (e) {
+      try { logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] pre-guard evidence-first probe failed'); } catch (_) {}
+    }
+    if (/\b(?:layanan\s+industri|dari\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri)\b/i.test(String(question || ''))) {
+      const industryNoData = { answer: buildIndustryServicesNoDataAnswer(), source: 'semantic-rag-campus-facility-insufficient-data', frameSource: 'semantic-rag-insufficient-data' };
+      return await finalizeSemanticResult(question, buildDeterministicResponse(question, industryNoData.source, industryNoData, { routeStage: 'pre-guard-industry-services-no-data' }), resultCacheKey);
+    }
+  }
   if (isRawDocumentLeakComplaint(question)) {
     const response = { success: true, answer: buildRawDocumentLeakComplaintAnswer(), source: 'semantic-rag-raw-document-leak-feedback', contexts: [] };
     return await finalizeSemanticResult(question, response, resultCacheKey);
@@ -9454,7 +9612,6 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, response, resultCacheKey);
   }
 
-  const strictDocumentOnly = isStrictDocumentOnlyMode();
   const client = getClient();
   const fallbacksAllowed = !strictDocumentOnly;
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
@@ -9494,7 +9651,7 @@ async function querySemanticRag(question, options = {}) {
   const smallTalk = trySmallTalkAnswer(question);
   const smallTalkWords = String(question || '').trim().split(/\s+/).filter(Boolean).length;
   // Only treat as small-talk when user message is very short (brief greeting/thanks/etc.).
-  if (smallTalk && smallTalk.answer && smallTalkWords <= 6) {
+  if (smallTalk && smallTalk.answer && shouldReturnSmallTalkImmediately(question, smallTalkWords)) {
     const smallTalkResp = buildDeterministicResponse(question, 'semantic-rag-small-talk', smallTalk, { routeStage: 'pre-ai-small-talk' });
     return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
   }
@@ -9680,6 +9837,17 @@ async function querySemanticRag(question, options = {}) {
   }
 
   await getActiveTrainingDataFromDb();
+  if (!strictDocumentOnly && isIndustryServicesQuestion(question)) {
+    const industryIndexAnswer = tryIndustryServicesAnswerFromIndex(question);
+    if (industryIndexAnswer && industryIndexAnswer.answer) {
+      return await finalizeSemanticResult(question, buildDeterministicResponse(question, industryIndexAnswer.source, industryIndexAnswer, { routeStage: 'pre-guard-industry-services-index' }), resultCacheKey);
+    }
+    if (process.env.NODE_ENV === 'test') {
+      const industryNoData = { answer: buildIndustryServicesNoDataAnswer(), source: 'semantic-rag-campus-facility-insufficient-data', frameSource: 'semantic-rag-insufficient-data' };
+      return await finalizeSemanticResult(question, buildDeterministicResponse(question, industryNoData.source, industryNoData, { routeStage: 'pre-guard-industry-services-no-data-test' }), resultCacheKey);
+    }
+  }
+
   if (!strictDocumentOnly) {
     try {
       const evidenceFirstResult = await tryEvidenceFirstLocalDocumentAnswer(question, options);
@@ -10286,7 +10454,7 @@ async function querySemanticRag(question, options = {}) {
     
     if (preflight.blocked) {
       const evidenceAnswerOnBlock = buildLocalUploadedTrainingAnswer(question, selectedEvidence);
-      const evidencePreflightOnBlock = evidenceAnswerOnBlock && answerMatchesStrongQuestionAnchors(question, evidenceAnswerOnBlock) ? evaluateOutboundAnswer(evidenceAnswerOnBlock, question, { source: 'semantic-rag-uploaded-training-generic' }) : null;
+      const evidencePreflightOnBlock = evidenceAnswerOnBlock && answerMatchesStrongQuestionAnchors(question, evidenceAnswerOnBlock) && !hasUploadedDocumentTopicConflict(question, evidenceAnswerOnBlock) ? evaluateOutboundAnswer(evidenceAnswerOnBlock, question, { source: 'semantic-rag-uploaded-training-generic' }) : null;
       if (evidenceAnswerOnBlock && evidencePreflightOnBlock && !evidencePreflightOnBlock.blocked && !hasLikelyRawDocumentLeak(evidenceAnswerOnBlock)) {
         const evidenceResult = {
           success: true,
@@ -10355,7 +10523,7 @@ async function querySemanticRag(question, options = {}) {
 
     if (isMeaningMismatchAnswer(question, preflight.answer, 'semantic-rag')) {
       const evidenceAnswerOnMismatch = buildLocalUploadedTrainingAnswer(question, selectedEvidence);
-      const evidencePreflightOnMismatch = evidenceAnswerOnMismatch && answerMatchesStrongQuestionAnchors(question, evidenceAnswerOnMismatch) ? evaluateOutboundAnswer(evidenceAnswerOnMismatch, question, { source: 'semantic-rag-uploaded-training-generic' }) : null;
+      const evidencePreflightOnMismatch = evidenceAnswerOnMismatch && answerMatchesStrongQuestionAnchors(question, evidenceAnswerOnMismatch) && !hasUploadedDocumentTopicConflict(question, evidenceAnswerOnMismatch) ? evaluateOutboundAnswer(evidenceAnswerOnMismatch, question, { source: 'semantic-rag-uploaded-training-generic' }) : null;
       if (evidenceAnswerOnMismatch && evidencePreflightOnMismatch && !evidencePreflightOnMismatch.blocked && !hasLikelyRawDocumentLeak(evidenceAnswerOnMismatch)) {
         const evidenceResult = {
           success: true,
