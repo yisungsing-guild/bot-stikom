@@ -1967,6 +1967,7 @@ function buildContextText(contexts, options = {}) {
 function normalizeAcademicAdminQueryText(value) {
   return String(value || '')
     .replace(/\byudis(?:um|iun|uim|iumnya)\b/gi, 'yudisium')
+    .replace(/\bpenda(?:f|ft)aran\b/gi, 'pendaftaran')
     .replace(/\bproyek\s+ahir\b/gi, 'proyek akhir')
     .replace(/\btugas\s+ahir\b/gi, 'tugas akhir');
 }
@@ -2016,6 +2017,7 @@ function selectAcademicDocumentSection(question, evidence, mode = 'schedule') {
     if (topicPatterns.length && !topicPatterns.some((pattern) => pattern.test(hay))) continue;
     if (asksYudisium && /\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title) && !/\byudisium\b/i.test(title)) continue;
     if (asksThesisDefense && /\byudisium\b/i.test(title) && !/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title)) continue;
+    if (mode === 'schedule' && !wantsRequirement && /\b(persyaratan|syarat|ketentuan|dokumen|berkas)\b/i.test(title)) continue;
     let score = 0;
     if (wantsRequirement && /\b(persyaratan|syarat|ketentuan|dokumen|berkas)\b/i.test(section.title)) score += 5;
     if (wantsPelaksanaan && /\b(pelaksanaan|jadwal|waktu)\b/i.test(section.title)) score += 5;
@@ -2158,7 +2160,7 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const q = normalizeAcademicAdminQueryText(question);
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   if (!isAcademicAdminUploadedDocQuestion(q, 'schedule')) return '';
-  if (!/\b(kapan|jadwal|tanggal|deadline|terakhir|pendaftaran|daftar|registrasi|pukul|jam|pelaksanaan|dilaksanakan|berlangsung)\b/i.test(q)) return '';
+  if (!/\b(kapan|jadwal|tanggal|deadline|terakhir|pendaftaran|daftar|registrasi|pukul|jam|pelaksanaan|dilaksanakan|berlangsung|akan\s+datang|informasi(?:nya)?|info)\b/i.test(q)) return '';
 
   const combined = evidence.map((item) => cleanDocumentMarkers(String(item && item.text || ''))).join('\n\n');
   if (!combined.trim()) return '';
@@ -2532,7 +2534,7 @@ function hasAcademicAdminQuestionOverlap(question, content) {
   const asksYudisium = /\byudisium\b/i.test(q);
   const asksWisuda = /\bwisuda\b/i.test(q);
   const asksSempro = /\b(seminar\s+proposal|sempro)\b/i.test(q);
-  const asksSchedule = /\b(kapan|jadwal|tanggal|deadline|terakhir|pendaftaran|daftar|registrasi|pelaksanaan|dilaksanakan|berlangsung|pukul|jam|waktu)\b/i.test(q);
+  const asksSchedule = /\b(kapan|jadwal|tanggal|deadline|terakhir|pendaftaran|daftar|registrasi|pelaksanaan|dilaksanakan|berlangsung|pukul|jam|waktu|akan\s+datang|informasi(?:nya)?|info)\b/i.test(q);
 
   if (asksThesisDefense && !/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(c)) return false;
   if (asksThesisDefense && asksSchedule) {
@@ -4807,6 +4809,9 @@ function tryGraduationRegistrationAnswer(question) {
   const q = String(question || '').toLowerCase();
   // Must explicitly mention wisuda or yudisium to avoid matching general registration
   if (!/\b(wisuda|yudisium)\b/i.test(q)) {
+    return null;
+  }
+  if (/\b(?:kapan|jadwal|tanggal|hari|pukul|jam|waktu|tempat|lokasi|syarat|persyaratan|dokumen|berkas|ketentuan|deadline|batas|informasi|info|akan\s+datang)\b/i.test(q)) {
     return null;
   }
   return {
@@ -8650,6 +8655,10 @@ function trySafeGeneralCampusFallback(question) {
     return { answer: contextualizeSafeFallback('untuk MBKM, RPL, startup, atau Inkubator Bisnis, saya bisa bantu penjelasan umum berdasarkan data yang tersedia. Untuk syarat peserta, konversi SKS, cara daftar, dan PIC resmi, kakak sebaiknya konfirmasi ke admin kampus/unit terkait.') };
   }
 
+  if (/\b(?:yudisium|wisuda)\b/i.test(q)) {
+    return null;
+  }
+
   if (/\b(dosen\s+pembimbing|seminar\s+proposal|plagiarisme|surat\s+penelitian|surat\s+keterangan\s+lunas|yudisium|wisuda|alumni|ijazah|legalisir|surat\s+resmi|surat\s+rekomendasi|peminjaman\s+aula|proyektor|humas|kunjungan\s+sekolah|publikasi\s+kegiatan|berita\s+kegiatan|dokumentasi\s+kegiatan|nim)\b/i.test(q)) {
     return { answer: contextualizeSafeFallback('untuk urusan administrasi kampus seperti skripsi, pembimbing, surat, yudisium, wisuda, ijazah, legalisir, fasilitas kelas, humas, publikasi, dokumentasi, atau NIM, kakak perlu menghubungi admin/unit terkait agar diarahkan sesuai prosedur terbaru.') };
   }
@@ -9507,7 +9516,12 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && /\b(kampus|lokasi|alamat|Denpasar|Renon|Jimbaran|Abiansemal|3\s+lokasi)\b/i.test(String(result.answer || ''));
   const structuredFeedbackSafe = /semantic-rag-feedback/i.test(source)
     && /\b(singkat|informatif|koreksi|rapikan|langsung\s+ke\s+inti)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
-  const fineForSafety = detectFineGrainedIntent(question);
+  const structuredAcademicUploadSafe = /semantic-rag-uploaded-training-generic|semantic-rag-academic/i.test(source)
+    && /\b(?:yudisium|wisuda|sidang|tugas\s+akhir|proyek\s+akhir)\b/i.test(String(question || ''))
+    && /\b(?:yudisium|wisuda|sidang|tugas\s+akhir|proyek\s+akhir)\b/i.test(String(result.answer || ''))
+    && (/(?:Hari\s*\/?\s*Tanggal|Tanggal)\s*:/i.test(String(result.answer || '')) || /\b(?:Persyaratan|Syarat)\s+(?:Yudisium|Wisuda|akademik)\b/i.test(String(result.answer || '')))
+    && !hasLikelyRawDocumentLeak(result.answer)
+    && !hasUploadedDocumentTopicConflict(question, result.answer);  const fineForSafety = detectFineGrainedIntent(question);
   const documentEvidenceSourceSafe = /semantic-rag-(?:generic-faq-qna|uploaded-training-generic|evidence-first)|rag-/i.test(source)
     && !hasNoDataAnswerPhrase(result.answer)
     && isDocumentEvidenceFirstCandidate(question)
@@ -9516,7 +9530,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && !hasUploadedDocumentTopicConflict(question, result.answer)
     && /\b(?:pascasarjana|magister|s2|fakultas|program|prodi|jurusan|skripsi|tugas\s+akhir|internasional|student\s+exchange|double\s*degree|dual\s*degree|dnui|help|gelar|lulusan|masa\s+studi|semester|sks|kurikulum|mata\s+kuliah|akreditasi|keunggulan|penelitian|yudisium|wisuda|linkedin|j\s*1|amerika|indikator|akuntabilitas|layanan\s+industri|goes\s*to\s*school)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
   const fineIntentSafe = Boolean(fineForSafety.fineIntent) && documentEvidenceSourceSafe;
-  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe || documentEvidenceSourceSafe || fineIntentSafe;  if (preflight && preflight.blocked && !structuredSemanticSafe) {
+  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;  if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
       answer: preflight.answer,
