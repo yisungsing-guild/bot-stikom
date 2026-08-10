@@ -9559,13 +9559,17 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
   if ((localMismatch && !explicitFeeSafe && !structuredSemanticSafe) || llmMismatch) {
-    logger.warn({
-      question,
-      source,
-      localMismatch,
-      llmVerdict,
-      answerPreview: String(result.answer || '').slice(0, 220)
-    }, '[SemanticRAG] result blocked by general semantic relevance verifier');
+    try {
+      logger.warn({
+        question,
+        source,
+        localMismatch,
+        llmVerdict,
+        answerPreview: String(result.answer || '').slice(0, 220)
+      }, '[SemanticRAG] result blocked by general semantic relevance verifier');
+    } catch (e) {
+      try { console.warn('[SemanticRAG] result blocked by general semantic relevance verifier', e && e.message ? e.message : e); } catch (_) { }
+    }
 
     const blocked = {
       success: true,
