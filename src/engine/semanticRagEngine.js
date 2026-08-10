@@ -650,8 +650,12 @@ function buildStructuredTableFaqAnswerFromIndex(question, indexForQuery) {
   if (!scored.length) return null;
   scored.sort((a, b) => b.score - a.score || a.answer.length - b.answer.length);
   const best = scored[0];
+  const answer = best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer;
+  const source = /upload/i.test(String(best.item && best.item.source ? best.item.source : '')) ? 'semantic-rag-uploaded-training-generic' : 'semantic-rag-generic-faq-qna';
+  const preflight = evaluateOutboundAnswer(answer, q, { source });
+  if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer)) return null;
   return {
-    answer: best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer,
+    answer,
     source: 'semantic-rag-generic-faq-qna',
     frameSource: 'semantic-rag-training-specific',
     matchedFaqQuestion: best.questionText,
@@ -667,22 +671,28 @@ async function tryEvidenceFirstLocalDocumentAnswer(question, options = {}) {
 
   const indexForQuery = getCachedSemanticIndex();
   const tableFaqAnswer = buildStructuredTableFaqAnswerFromIndex(question, indexForQuery);
-  const faqAnswer = tableFaqAnswer || buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options);
-  if (faqAnswer && faqAnswer.answer && answerMatchesStrongQuestionAnchors(question, faqAnswer.answer) && !hasUploadedDocumentTopicConflict(question, faqAnswer.answer)) {
-    return {
-      success: true,
-      answer: formatNaturalAnswerFrame(question, faqAnswer.answer, faqAnswer.source || 'semantic-rag-generic-faq-qna'),
-      source: isIndustryServicesQuestionAnswer(question, faqAnswer.answer) ? 'semantic-rag-campus-support-entity' : (/upload/i.test(String(faqAnswer.matchedItemSource || '')) ? 'semantic-rag-uploaded-training-generic' : (faqAnswer.source || 'semantic-rag-generic-faq-qna')),
-      contexts: [],
-      confidenceScore: 0.84,
-      confidenceTier: 'HIGH',
-      debug: {
-        ...(faqAnswer.debug || {}),
-        routeStage: 'pre-ai-evidence-first-faq-index',
-        fineIntent: fine.fineIntent,
-        coarseIntent: fine.coarseIntent
-      }
-    };
+  const faqAnswer = tableFaqAnswer || buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options);  if (faqAnswer && faqAnswer.answer && answerMatchesStrongQuestionAnchors(question, faqAnswer.answer) && !hasUploadedDocumentTopicConflict(question, faqAnswer.answer)) {
+    const faqSource = (isIndustryServicesQuestionAnswer(question, faqAnswer.answer) || isCareerCenterQuestion(question))
+      ? 'semantic-rag-campus-support-entity'
+      : (/upload/i.test(String(faqAnswer.matchedItemSource || '')) ? 'semantic-rag-uploaded-training-generic' : (faqAnswer.source || 'semantic-rag-generic-faq-qna'));
+    const framedAnswer = formatNaturalAnswerFrame(question, faqAnswer.answer, faqAnswer.source || 'semantic-rag-generic-faq-qna');
+    const preflight = evaluateOutboundAnswer(framedAnswer, question, { source: faqSource });
+    if (!(preflight && preflight.blocked && /uploaded-training-generic/i.test(faqSource)) && !hasRawSpreadsheetFaqDump(framedAnswer)) {
+      return {
+        success: true,
+        answer: framedAnswer,
+        source: faqSource,
+        contexts: [],
+        confidenceScore: 0.84,
+        confidenceTier: 'HIGH',
+        debug: {
+          ...(faqAnswer.debug || {}),
+          routeStage: 'pre-ai-evidence-first-faq-index',
+          fineIntent: fine.fineIntent,
+          coarseIntent: fine.coarseIntent
+        }
+      };
+    }
   }
 
   if (isIndustryServicesQuestion(question) && process.env.NODE_ENV === 'test') {
@@ -2333,7 +2343,18 @@ function hasUploadedDocumentTopicConflict(question, answer) {
     && !/\b(?:j\s*1|j-?1|training\s+1\s+tahun|amerika|america|usa)\b/i.test(a)) return true;
   if (/\blinked\s*in|linkedin/i.test(q)
     && /\bcareer\s*center|pusat\s+kar(?:ir|ier)|lowongan|magang\b/i.test(a)
-    && !/\blinked\s*in|linkedin/i.test(a)) return true;
+    && !/\blinked\s*in|linkedin/i.test(a)) return true;  const requestedSemester = /\bsemester\s+(genap|ganjil|antara|pendek)\b/i.exec(q);
+  if (requestedSemester) {
+    const requested = requestedSemester[1].toLowerCase();
+    const answerSemester = /\bsemester\s+(genap|ganjil|antara|pendek)\b/i.exec(a);
+    if (answerSemester && answerSemester[1].toLowerCase() !== requested) return true;
+  }
+  const requestedAcademicYear = /\b(?:tahun\s+akademik\s*)?(20\d{2}\s*\/\s*20\d{2})\b/i.exec(q);
+  if (requestedAcademicYear) {
+    const requestedYear = requestedAcademicYear[1].replace(/\s+/g, '');
+    const answerYears = Array.from(new Set(Array.from(a.matchAll(/\b20\d{2}\s*\/\s*20\d{2}\b/g)).map(match => String(match[0] || '').replace(/\s+/g, ''))));
+    if (answerYears.length && !answerYears.includes(requestedYear)) return true;
+  }
   if (/\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri)\b/i.test(q)
     && /\b(?:goes\s*to\s*school|unlock\s+your\s+digital\s+potential|siswa\s+sma|sma\/smk|sekolah)\b/i.test(a)
     && !/\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri)\b/i.test(a)) return true;
@@ -2892,10 +2913,13 @@ async function tryDirectAcademicAdminUploadedSectionAnswer(question, options = {
 
   const answer = buildLocalUploadedTrainingAnswer(normalizedQuestion, contexts);
   if (!answer) return null;
+  const framedAnswer = formatNaturalAnswerFrame(question, answer, 'semantic-rag-uploaded-training-generic');
+  const preflight = evaluateOutboundAnswer(framedAnswer, question, { source: 'semantic-rag-uploaded-training-generic' });
+  if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer)) return null;
 
   return {
     success: true,
-    answer: formatNaturalAnswerFrame(question, answer, 'semantic-rag-uploaded-training-generic'),
+    answer: framedAnswer,
     source: 'semantic-rag-uploaded-training-generic',
     contexts,
     confidenceScore: 0.95,
@@ -2984,11 +3008,15 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   const answer = buildLocalUploadedTrainingAnswer(questionForRetrieval, selectedEvidence);
   if (!answer) return null;
   if (!answerMatchesStrongQuestionAnchors(questionForRetrieval, answer) || hasUploadedDocumentTopicConflict(questionForRetrieval, answer)) return null;
+  const source = (isIndustryServicesQuestionAnswer(questionForRetrieval, answer) || isCareerCenterQuestion(questionForRetrieval)) ? 'semantic-rag-campus-support-entity' : 'semantic-rag-uploaded-training-generic';
+  const framedAnswer = formatNaturalAnswerFrame(question, answer, source);
+  const preflight = evaluateOutboundAnswer(framedAnswer, questionForRetrieval, { source });
+  if ((preflight && preflight.blocked && /uploaded-training-generic/i.test(source)) || hasRawSpreadsheetFaqDump(framedAnswer)) return null;
 
   return {
     success: true,
-    answer: formatNaturalAnswerFrame(question, answer, 'semantic-rag-uploaded-training-generic'),
-    source: isIndustryServicesQuestionAnswer(questionForRetrieval, answer) ? 'semantic-rag-campus-support-entity' : 'semantic-rag-uploaded-training-generic',
+    answer: framedAnswer,
+    source,
     contexts: selectedEvidence,
     confidenceScore: combinedTopScore,
     confidenceTier: combinedTopScore >= 0.55 ? 'HIGH' : 'MEDIUM',
@@ -5143,6 +5171,13 @@ function cleanUserVisibleRagAnswerText(text) {
     .trim();
   return out;
 }
+function hasRawSpreadsheetFaqDump(text) {
+  const value = String(text || '');
+  if (!value.trim()) return false;
+  const pipeCount = (value.match(/\|/g) || []).length;
+  if (/\[Sheet:\s*(?:FAQ|QNA|Profil|Akademik|Sheet\d*)\]/i.test(value)) return true;
+  return pipeCount >= 6 && /\b(?:Profil|Akademik|Pertanyaan|Jawaban|Apa\s+nama|Apa\s+gelar|Program\s+Pascasarjana|magister|semester|akreditasi)\b/i.test(value);
+}
 function isLikelyFaqQuestionText(text) {
   const value = String(text || '').trim();
   if (!value) return false;
@@ -5436,9 +5471,12 @@ function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}
   const userNorm = normalizeFacilityTerm(q);
   const strongExactOrNearExact = bestNorm && userNorm && (userNorm.includes(bestNorm) || bestNorm.includes(userNorm));
   if (best.baseScore < 12 && !strongExactOrNearExact) return null;
-
+  const answer = best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer;
+  const source = /upload/i.test(String(best.item && best.item.source ? best.item.source : '')) ? 'semantic-rag-uploaded-training-generic' : 'semantic-rag-generic-faq-qna';
+  const preflight = evaluateOutboundAnswer(answer, q, { source });
+  if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer)) return null;
   return {
-    answer: best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer,
+    answer,
     source: 'semantic-rag-generic-faq-qna',
     frameSource: 'semantic-rag-training-specific',
     matchedFaqQuestion: best.pair.questionText,
@@ -9331,6 +9369,34 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     }
   }
 
+  const uploadedPreflight = /^semantic-rag-uploaded-training-generic$/i.test(source)
+    ? evaluateOutboundAnswer(result.answer, question, { source })
+    : null;
+  const uploadedCriticalLeak = Boolean(uploadedPreflight && uploadedPreflight.blocked && Array.isArray(uploadedPreflight.issues)
+    && uploadedPreflight.issues.some(issue => /raw_document_leak|technical_leak|excessive_raw_quotation/i.test(String(issue || ''))));
+  if (uploadedCriticalLeak) {
+    const deterministic = runVettedDeterministicFallback(question, options, null, 'generic-critical-leak-deterministic-recovery');
+    if (deterministic && deterministic.answer && !hasNoDataAnswerPhrase(deterministic.answer)) {
+      if (resultCacheKey) setCachedSemanticResult(resultCacheKey, deterministic);
+      return deterministic;
+    }
+    const blocked = {
+      success: true,
+      answer: uploadedPreflight.answer || buildPreflightFallback(question, 'raw_document_leak'),
+      source: 'semantic-rag-preflight-blocked',
+      contexts: Array.isArray(result.contexts) ? result.contexts : [],
+      confidenceScore: typeof result.confidenceScore === 'number' ? result.confidenceScore : 0,
+      confidenceTier: 'VERY_LOW',
+      debug: {
+        ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
+        blockedSource: source,
+        preflight: uploadedPreflight,
+        reason: 'uploaded_training_raw_or_technical_leak'
+      }
+    };
+    if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
+    return blocked;
+  }
   if (/^semantic-rag-uploaded-training-generic$/i.test(source) && Array.isArray(result.contexts) && result.contexts.length) {
     const compactAcademicSchedule = buildAcademicScheduleSummaryAnswer(question, result.contexts);
     const compactAcademicRequirement = compactAcademicSchedule ? '' : buildAcademicRequirementSummaryAnswer(question, result.contexts);
@@ -9755,6 +9821,10 @@ async function querySemanticRag(question, options = {}) {
       const builtLinkedIn = buildDeterministicResponse(question, linkedInSupport.source || 'semantic-rag-campus-support-entity', { ...linkedInSupport, source: linkedInSupport.source || 'semantic-rag-campus-support-entity' }, { routeStage: 'pre-guard-linkedin-career-center', normalizedRouting: normalizedRouting.changed });
       return await finalizeSemanticResult(question, builtLinkedIn, resultCacheKey);
     }
+  }
+  if (isRawDocumentLeakComplaint(question)) {
+    const response = { success: true, answer: buildRawDocumentLeakComplaintAnswer(), source: 'semantic-rag-raw-document-leak-feedback', contexts: [] };
+    return await finalizeSemanticResult(question, response, resultCacheKey);
   }
   if (!strictDocumentOnly) {
     const preGuardFineRoute = detectFineGrainedIntent(routingQuestion);
