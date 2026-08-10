@@ -594,6 +594,15 @@ function shouldDeferEarlyEvidenceFirstToStableRoute(question) {
     'rpl',
     'scholarship',
     'accreditation',
+    'career_readiness',
+    'facility_list',
+    'international_program_availability',
+    'degree_title',
+    'study_duration',
+    'thesis_topic',
+    'thesis_page_count',
+    'thesis_format',
+    'thesis_submission',
     'fee'
   ]);
   if (stableFineIntents.has(fineIntent)) return true;
@@ -9306,7 +9315,38 @@ function answerMatchesQuestionMeaning(question, answer, source = '') {
 
   return null;
 }
-function isMeaningMismatchAnswer(question, answer, source = '') {
+function isGenericEvidenceLikeSource(source = '') {
+  return /semantic-rag-(?:uploaded-training-generic|evidence-first|generic-faq-qna|campus-support-entity|campus-facility|training-specific)/i.test(String(source || ''));
+}
+
+function hasRawEvidenceSnippetShape(answer) {
+  const text = String(answer || '').trim();
+  if (!text) return false;
+  if (hasLikelyRawDocumentLeak(text)) return true;
+  if (/\b(?:SOURCE_CHUNKS|Sheet:|chunkId|trainingId|metadata|filename|sourceFile)\b/i.test(text)) return true;
+  if (/\b(?:Program Studi\s*:|No\s*:\s*\d+\s*\||INSTITUT TEKNOLOGI DAN BISNIS \(ITB\) STIKOM BALI Kampus|Kampus Denpasar\s+Kampus Jimbaran)\b/i.test(text)) return true;
+  const bulletCount = (text.match(/(?:^|\n|\s)-\s+/g) || []).length;
+  const startsWithBullet = /^[-*]\s+/.test(text);
+  const hasQuestionBullet = /(?:^|\n|\s)-\s*(?:\d+[.)]\s*)?(?:apa|apakah|kapan|bagaimana|gimana|berapa|di\s*mana|dimana|siapa)\b/i.test(text);
+  const hasFragmentedQaBullets = startsWithBullet && bulletCount >= 2 && (hasQuestionBullet || /\s-\s*(?:Ya|Tentu|Tidak|Career Center|Program|\d+[.)])/i.test(text));
+  const pipeDump = (text.match(/\|/g) || []).length >= 3 && /\b(?:No|Pertanyaan|Jawaban|Program|Biaya|Keterangan)\b/i.test(text);
+  return hasFragmentedQaBullets || pipeDump;
+}
+
+function shouldBlockGenericEvidenceAnswer(question, answer, source = '') {
+  if (!isGenericEvidenceLikeSource(source)) return false;
+  const text = String(answer || '').trim();
+  if (!text) return false;
+  if (hasNoDataAnswerPhrase(text)) return false;
+  if (hasRawEvidenceSnippetShape(text)) return true;
+  const meaning = answerMatchesQuestionMeaning(question, text, source);
+  if (meaning === false) return true;
+  if (hasUploadedDocumentTopicConflict(question, text)) return true;
+  const fine = detectFineGrainedIntent(question || '');
+  const stable = new Set(['program_list','program_definition','program_comparison','program_recommendation','program_curriculum','program_faculty','career_readiness','international_program_list','international_program_requirement','international_program_fee','fee','scholarship','accreditation','facility_list','academic_schedule','academic_requirement','registration_info','pmb_info']);
+  if (stable.has(String(fine.fineIntent || '').toLowerCase()) && !answerMatchesStrongQuestionAnchors(question, text)) return true;
+  return false;
+}function isMeaningMismatchAnswer(question, answer, source = '') {
   if (!String(answer || '').trim()) return false;
 
   const srcForAvailability = String(source || '').toLowerCase();
@@ -9438,6 +9478,30 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   if (!result || !result.answer) return result;
   const source = result.source || 'semantic-rag';
 
+  if (shouldBlockGenericEvidenceAnswer(question, result.answer, source)) {
+    const deterministic = runVettedDeterministicFallback(question, options, null, 'global-generic-evidence-guard');
+    if (deterministic && deterministic.answer && !shouldBlockGenericEvidenceAnswer(question, deterministic.answer, deterministic.source || '')) {
+      if (resultCacheKey) setCachedSemanticResult(resultCacheKey, deterministic);
+      return deterministic;
+    }
+    const blocked = {
+      success: true,
+      answer: buildMeaningMismatchFallbackAnswer(question),
+      source: 'semantic-rag-meaning-mismatch',
+      contexts: Array.isArray(result.contexts) ? result.contexts : [],
+      confidenceScore: typeof result.confidenceScore === 'number' ? result.confidenceScore : 0,
+      confidenceTier: 'VERY_LOW',
+      debug: {
+        ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
+        blockedSource: source,
+        reason: 'global_generic_evidence_guard',
+        meaningAnchors: extractMeaningAnchors(question)
+      }
+    };
+    if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
+    return blocked;
+  }
+
   if (/^semantic-rag-uploaded-training-generic$/i.test(source) && hasNoDataAnswerPhrase(result.answer)) {
     const deterministic = runVettedDeterministicFallback(question, options, null, 'generic-no-data-deterministic-recovery');
     if (deterministic && deterministic.answer && !hasNoDataAnswerPhrase(deterministic.answer)) {
@@ -9548,7 +9612,8 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredRplSafe = /semantic-rag-rpl/i.test(source) && /\b(RPL|Rekognisi\s+Pembelajaran\s+Lampau|SKS|PMB|siap\.stikom-bali\.ac\.id)\b/i.test(String(result.answer || ''));
   const explicitExternalNoDataSafe = /explicit-external-insufficient-data/i.test(source);
   const meaningProfile = inferQuestionMeaningProfile(question);
-  const structuredDefinitionSafe = meaningProfile.intent === 'definition_question' && /semantic-rag-uploaded-training-generic|campus-support-entity|campus-facility/i.test(source);
+  const rawGenericEvidenceShape = hasRawEvidenceSnippetShape(result.answer) && isGenericEvidenceLikeSource(source);
+  const structuredDefinitionSafe = meaningProfile.intent === 'definition_question' && /semantic-rag-uploaded-training-generic|campus-support-entity|campus-facility/i.test(source) && !rawGenericEvidenceShape;
   const structuredAccreditationSafe = /rag-accreditation|semantic-rag-accreditation/i.test(source)
     && /\b(BAN\s*-?\s*PT|akreditasi|Baik\s+Sekali|Baik)\b/i.test(String(result.answer || ''));
   const structuredScholarshipSafe = /semantic-rag-scholarship|rag-scholarship/i.test(source)
@@ -9568,6 +9633,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && !hasLikelyRawDocumentLeak(result.answer)
     && !hasUploadedDocumentTopicConflict(question, result.answer);  const fineForSafety = detectFineGrainedIntent(question);
   const documentEvidenceSourceSafe = /semantic-rag-(?:generic-faq-qna|uploaded-training-generic|evidence-first)|rag-/i.test(source)
+    && !rawGenericEvidenceShape
     && !hasNoDataAnswerPhrase(result.answer)
     && isDocumentEvidenceFirstCandidate(question)
     && !hasLikelyRawDocumentLeak(result.answer)
