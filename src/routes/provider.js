@@ -514,12 +514,20 @@ module.exports = function (provider) {
     // Explicit short program/partner picks should not be forced through the
     // semantic-first path, since they are already deterministic selection signals.
     const normalized = normalizeProgramSelectionText(text);
+    const compactText = normalized.toLowerCase();
+    const wordCount = compactText.split(/\s+/).filter(Boolean).length;
+    const isQuestionLikeProgramSentence =
+      /\b(?:apa|apakah|bagaimana|gimana|dimana|di\s*mana|kapan|berapa|kenapa|mengapa|beda|bedanya|perbedaan|jurusan|prodi|program|kuliah|daftar|mendaftar|pendaftaran|ingin|mau|pengen|tau|tahu|tentang|informasi|info|biaya|syarat|akreditasi|belajar|cocok|harus)\b/i.test(compactText);
+    const isBareProgramSelection =
+      wordCount <= 4 &&
+      !isQuestionLikeProgramSentence &&
+      /^(?:s1\s+)?(?:si|ti|bd|sk|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|s2|d3|mi|manajemen informatika|help|dnui|utb)$/i.test(compactText);
     const explicitProgramSelection =
       !!(extractSpecificProgramHint(text) || extractProgramHint(text) || extractDualDegreeHint(text) || parseS1ProgramChoice(text)) ||
       !!(extractSpecificProgramHint(normalized) || extractProgramHint(normalized) || extractDualDegreeHint(normalized) || parseS1ProgramChoice(normalized)) ||
       !!looksLikeProgramSelectionReply(text);
 
-    if (explicitProgramSelection) return true;
+    if (explicitProgramSelection && isBareProgramSelection) return true;
 
     // Keep explicit handover confirmations in the operational flow.
     if (sessionData && sessionData.handoverOffered) {
