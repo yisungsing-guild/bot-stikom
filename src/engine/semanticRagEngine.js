@@ -561,6 +561,7 @@ function detectFineGrainedIntent(question) {
   if (/\b(?:berapa\s+lama|lama\s+(?:kuliah|studi)|masa\s+studi|durasi)\b/i.test(q)) return { fineIntent: 'study_duration', coarseIntent: 'program' };
   if (/\b(?:fakultas|naungan|termasuk\s+ke\s+dalam\s+fakultas)\b/i.test(q)) return { fineIntent: 'program_faculty', coarseIntent: 'program' };
   if (/\b(?:mata\s+kuliah|matkul|kurikulum|dipelajari|dipelajarin|belajar(?:\s+apa)?|apa\s+aja\s+yang\s+dipelajarin|jurusannya\s+(?:gimana|bagaimana)|skill|kompetensi)\b/i.test(q)) return { fineIntent: 'program_curriculum', coarseIntent: 'program' };
+  if (/\b(?:mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|lowongan|job\s*fair|campus\s*hiring|magang|pelatihan|pembekalan|melamar\s+pekerjaan)\b/i.test(q) && /\b(?:program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa|mahasiswa|career\s*center|pusat\s+karier|pusat\s+karir|karier|karir|career|pekerjaan|kerja)\b/i.test(q)) return { fineIntent: 'career_readiness', coarseIntent: 'career' };
   if (/\b(?:prospek|karier|karir|kerja\s+apa|pekerjaan|profesi)\b/i.test(q)) return { fineIntent: 'program_career', coarseIntent: 'career' };
   if (/\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan)\b/i.test(q) && /\b(?:prodi|program\s+studi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen)\b/i.test(q)) return { fineIntent: 'program_comparison', coarseIntent: 'program' };
 
@@ -6428,11 +6429,30 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     contextResolved: resolved.fromRecent || undefined
   };
 }
-function tryCareerCenterSoftskillAnswer(question) {
+function isCareerReadinessQuestion(question) {
   const q = String(question || '').toLowerCase();
-  const asksSoftskill = /\b(soft\s*skill|softskill|pengembangan\s+softskill|keterampilan\s+kerja|pembekalan\s+kerja|kompetensi)\b/i.test(q);
+  return /\b(?:mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|lowongan|job\s*fair|campus\s*hiring|magang|pelatihan|pembekalan|bimbingan|konsultasi|melamar\s+pekerjaan)\b/i.test(q)
+    && /\b(?:program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa|mahasiswa|career\s*center|pusat\s+karier|pusat\s+karir|karier|karir|career|pekerjaan|kerja|melamar|dunia\s+kerja)\b/i.test(q);
+}
+
+function tryCareerReadinessAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const asksCareerCenterService = /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|cdc)\b/i.test(q)
+    && /\b(?:layanan|memberikan|fungsi|tugas|bantu|membantu|apa\s+saja|apa\s+aja|ngapain|untuk\s+apa)\b/i.test(q);
+  if (!isCareerReadinessQuestion(question) && !asksCareerCenterService) return null;
+  return {
+    answer: buildCareerReadinessProgramsAnswer(),
+    source: 'semantic-rag-career-readiness',
+    frameSource: 'semantic-rag-campus-support-entity'
+  };
+}function tryCareerCenterSoftskillAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const asksSoftskill = /\b(soft\s*skill|softskill|pengembangan\s+softskill|keterampilan\s+kerja|pembekalan\s+kerja|pelatihan\s+(?:kerja|karier|karir|career|sebelum\s+melamar)|bimbingan\s+(?:karier|karir|career|melamar)|persiapan\s+(?:kerja|karier|karir|career|melamar)|kompetensi)\b/i.test(q);
   const mentionsCareerCenter = /\b(career\s*center|pusat\s+karier|pusat\s+karir|karir|karier|career)\b/i.test(q);
-  if (!asksSoftskill || !mentionsCareerCenter) return null;
+  const asksCareerPrep = /\b(?:pelatihan|pembekalan|bimbingan|konsultasi|persiapan)\b/i.test(q)
+    && /\b(?:melamar|lamar(?:an)?|pekerjaan|kerja|karier|karir|career|profesional|dunia\s+kerja)\b/i.test(q);
+  if (!asksSoftskill && !asksCareerPrep) return null;
+  if (!mentionsCareerCenter && !asksCareerPrep) return null;
   return {
     answer: buildCareerSoftskillAnswer(),
     source: 'semantic-rag-career-softskill',
@@ -6464,7 +6484,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|incubator|inbis|softskill|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|hithink|gccp|gcpp|gcp|short\s*course|shortcourse|kursus\s+singkat|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
   if (!asksFacilities) return null;
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
-  if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa)\b/i.test(q)) {
+  if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang|pelatihan|pembekalan|melamar\s+pekerjaan)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa|mahasiswa)\b/i.test(q)) {
     return {
       answer: buildCareerReadinessProgramsAnswer(),
       source: 'semantic-rag-campus-facility',
@@ -8724,6 +8744,7 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-out-of-domain', tryOutOfDomainAnswer],
   ['semantic-rag-security-refusal', trySecurityRefusalAnswer],
   ['semantic-rag-student-concern', tryStudentConcernAnswer],
+  ['semantic-rag-career-readiness', tryCareerReadinessAnswer],
   ['semantic-rag-career-softskill', tryCareerCenterSoftskillAnswer],
   ['semantic-rag-unsupported-double-degree-partner', tryUnsupportedDoubleDegreePartnerAnswer],
   ['semantic-rag-unsupported-international-program', tryUnsupportedInternationalProgramAnswer],
@@ -9203,7 +9224,7 @@ function inferQuestionMeaningProfile(question) {
   if (/\b(daftar|mendaftar|pendaftaran|registrasi)\b/i.test(q) && /\b(kuliah|pmb|stikom|camaba|mahasiswa\s+baru)\b/i.test(q)) return { intent: 'registration_info' };
   if (/\b(jurusan|prodi|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa)\b/i.test(q)) return { intent: 'program_list' };
   if (/\b(apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan)\b/i.test(q) && /\b(sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i.test(q)) return { intent: 'program_definition' };
-  if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa)\b/i.test(q)) return { intent: 'career_readiness' };
+  if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang|pelatihan|pembekalan|melamar\s+pekerjaan)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa|mahasiswa)\b/i.test(q)) return { intent: 'career_readiness' };
   if (/\b(fasilitas|layanan|sarana|prasarana)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|unggulan|diunggulkan|tersedia|yang\s+ada|ada\s+apa)\b/i.test(q)) return { intent: 'facility_list' };
   if (/\b(program|training|magang|internship|kerja|bekerja|sertifikasi|kelas|kursus|bahasa)\b/i.test(q) && /\b(j\s*1|j-?1|n\s*[1-5]|jlpt|amerika|america|usa|jepang|japan|luar\s+negeri)\b/i.test(q)) return { intent: 'international_program_availability' };
   if (/\b(beasiswa|kip|1k1s|potongan|prestasi|yayasan)\b/i.test(q)) return { intent: 'scholarship' };
@@ -9899,6 +9920,17 @@ async function querySemanticRag(question, options = {}) {
     const response = { success: true, answer: buildRawDocumentLeakComplaintAnswer(), source: 'semantic-rag-raw-document-leak-feedback', contexts: [] };
     return await finalizeSemanticResult(question, response, resultCacheKey);
   }
+  if (!strictDocumentOnly
+    && /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|cdc)\b/i.test(String(routingQuestion || question || '').toLowerCase())
+    && /\b(?:layanan|memberikan|fungsi|tugas|bantu|membantu|apa\s+saja|apa\s+aja|ngapain|untuk\s+apa)\b/i.test(String(routingQuestion || question || '').toLowerCase())) {
+    const preGuardCareerCenter = {
+      answer: buildCareerReadinessProgramsAnswer(),
+      source: 'semantic-rag-career-readiness',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-career-readiness', preGuardCareerCenter, { routeStage: 'pre-guard-career-center-service', normalizedRouting: normalizedRouting.changed }), resultCacheKey);
+  }
+
   if (!strictDocumentOnly) {
     const preGuardFineRoute = detectFineGrainedIntent(routingQuestion);
     const preGuardInternationalListRequested = /\b(?:program\s+internasional|kelas\s+internasional|international\s+program)\b/i.test(routingQuestion);
@@ -9968,9 +10000,29 @@ async function querySemanticRag(question, options = {}) {
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   const earlySupportQuestion = String(question || '').toLowerCase();
   const deferEarlyKeywordFallbacks = Boolean(client) && shouldDeferDeterministicBeforeSemantic(question);
+  if (!strictDocumentOnly
+    && /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|cdc)\b/i.test(earlySupportQuestion)
+    && /\b(?:layanan|memberikan|fungsi|tugas|bantu|membantu|apa\s+saja|apa\s+aja|ngapain|untuk\s+apa)\b/i.test(earlySupportQuestion)) {
+    const result = {
+      answer: buildCareerReadinessProgramsAnswer(),
+      source: 'semantic-rag-career-readiness',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-career-readiness', result, { routeStage: 'pre-ai-support-career-center-service' }), resultCacheKey);
+  }
   if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && /\b(?:llc|language\s+learning\s+center)\b/i.test(earlySupportQuestion) && /\b(?:apa|itu|pengertian|maksud|tentang|info(?:rmasi)?|jelaskan)\b/i.test(earlySupportQuestion)) {
     const result = { answer: buildLanguageLearningAnswer(), source: 'semantic-rag-campus-facility', frameSource: 'semantic-rag-campus-facility' };
     return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-facility', result, { routeStage: 'pre-ai-support-abbreviation' }), resultCacheKey);
+  }
+  if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks
+    && /\b(?:pelatihan|pembekalan|bimbingan|konsultasi|persiapan)\b/i.test(earlySupportQuestion)
+    && /\b(?:melamar|lamar(?:an)?|pekerjaan|kerja|karier|karir|career|profesional|dunia\s+kerja)\b/i.test(earlySupportQuestion)) {
+    const result = {
+      answer: buildCareerSoftskillAnswer(),
+      source: 'semantic-rag-career-softskill',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-career-softskill', result, { routeStage: 'pre-ai-support-career-readiness' }), resultCacheKey);
   }
   if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && /\b(?:career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(earlySupportQuestion) && /\b(?:apa|itu|ngapain|fungsi|tugas|layanan|info(?:rmasi)?|tentang|jelaskan)\b/i.test(earlySupportQuestion)) {
     const result = {
@@ -10060,6 +10112,7 @@ async function querySemanticRag(question, options = {}) {
       else priorityHandlers.push(['semantic-rag-international-class-fallback', tryInternationalClassFallback]);
     }
     if (fineRoute.fineIntent === 'international_program_requirement') priorityHandlers.push(['semantic-rag-dual-degree', tryDualDegreeAnswer], ['semantic-rag-campus-support-entity', tryCampusSupportEntityAnswer], ['semantic-rag-international-class-fallback', tryInternationalClassFallback]);
+    if (fineRoute.fineIntent === 'career_readiness') priorityHandlers.push(['semantic-rag-career-readiness', tryCareerReadinessAnswer], ['semantic-rag-campus-facility', tryCampusFacilityAnswer], ['semantic-rag-career-softskill', tryCareerCenterSoftskillAnswer]);
     for (const [sourceName, handler] of priorityHandlers) {
       const routed = handler(routingQuestion, options);
       if (routed && routed.answer) {
@@ -10083,6 +10136,8 @@ async function querySemanticRag(question, options = {}) {
       'semantic-rag-program-comparison',
       'semantic-rag-program-recommendation',
       'semantic-rag-career',
+      'semantic-rag-career-readiness',
+      'semantic-rag-career-softskill',
       'semantic-rag-bem',
       'semantic-rag-campus-support-fallback',
       'semantic-rag-career-fallback',
