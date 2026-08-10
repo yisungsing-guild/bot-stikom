@@ -5940,6 +5940,19 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
 
+  const internationalMentionCount = [
+    /\b(?:short\s*course|shortcourse|kursus\s+singkat)\b/i,
+    /\b(?:student\s*exchange|students\s*exchange|studens\s*exchange|pertukaran\s+mahasiswa|exchange\s+program)\b/i,
+    /\bbccp\b/i,
+    /\b(?:gccp|gcpp|gcp)\b/i
+  ].filter((pattern) => pattern.test(q)).length;
+  if (internationalMentionCount >= 2 && /\b(?:ada|tersedia|punya|program|apa\s+saja|apa\s+aja|pilihan|opsi)\b/i.test(q)) {
+    return {
+      answer: buildCampusSupportTechnicalNoDataAnswer({ label: 'program internasional seperti short course, Student Exchange, GCCP, atau BCCP' }, q),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-insufficient-data'
+    };
+  }
   if (/\b(?:hi-?think|hithink)\b/i.test(q)) {
     return {
       answer: buildHiThinkAnswer(),
@@ -6015,6 +6028,17 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
       contextResolved: resolved.fromRecent || undefined
     };
   }
+  const earlyAsksStudentExchangeProgramOptions = resolved.entity.key === 'student-exchange'
+    && /\b(program\s+apa\s+saja|ada\s+program\s+apa\s+saja|pilihan\s+program|program\s+yang\s+tersedia|opsi\s+program|ada\s+pilihan\s+program|program\s+internasional|program\s+support|program\s+pendukung)\b/i.test(q);
+  if (earlyAsksStudentExchangeProgramOptions) {
+    return {
+      answer: buildStudentExchangeProgramOptionsAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   // Prefer the dedicated campus facility handler for general Career Center
   if (asksCampusSupportTechnicalDetail(question)) {
     return {
@@ -6047,6 +6071,10 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
   const asksDetail = asksCampusSupportDetail(question);
   if (!currentMentionsEntity && !hasFollowUpSignal && !asksDetail) return null;
 
+  const asksStudentExchangeDefinition = resolved.entity.key === 'student-exchange'
+    && /\b(?:apa\s+itu|itu\s+apa|definisi|pengertian|maksud(?:nya)?|jelaskan)\b/i.test(q)
+    && !/\b(?:syarat|cara|bagaimana|gimana|ikut|mengikuti|daftar|mendaftar|pendaftaran|registrasi|biaya|jadwal|kapan|program\s+apa\s+saja|apa\s+saja|apa\s+aja|pilihan|opsi)\b/i.test(q);
+  if (asksStudentExchangeDefinition) return null;
   const asksStudentExchangeProgramOptions = /\b(program\s+apa\s+saja|ada\s+program\s+apa\s+saja|pilihan\s+program|program\s+yang\s+tersedia|opsi\s+program|ada\s+pilihan\s+program|program\s+internasional|program\s+support|program\s+pendukung)\b/i.test(q);
   if (resolved.entity.key === 'student-exchange' && asksStudentExchangeProgramOptions) {
     return {
@@ -9564,11 +9592,30 @@ async function querySemanticRag(question, options = {}) {
   if (cachedResult) return cachedResult;
 
   const strictDocumentOnly = isStrictDocumentOnlyMode();
+  const normalizedRouting = normalizeUserQuery(question);
+  const routingQuestion = normalizedRouting && normalizedRouting.normalizedText ? normalizedRouting.normalizedText : question;
   const earlySmallTalk = trySmallTalkAnswer(question);
   const earlySmallTalkWords = String(question || '').trim().split(/\s+/).filter(Boolean).length;
   if (earlySmallTalk && earlySmallTalk.answer && shouldReturnSmallTalkImmediately(question, earlySmallTalkWords)) {
     const smallTalkResp = buildDeterministicResponse(question, 'semantic-rag-small-talk', earlySmallTalk, { routeStage: 'pre-guard-small-talk' });
     return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
+  }
+
+  if (!strictDocumentOnly) {
+    const preGuardFineRoute = detectFineGrainedIntent(routingQuestion);
+    const preGuardInternationalListRequested = /\b(?:program\s+internasional|kelas\s+internasional|international\s+program)\b/i.test(routingQuestion);
+    const preGuardDoubleDegreeRequested = /\b(?:double|dual)\s*degree\b/i.test(routingQuestion);
+    const preGuardSpecificInternationalEntity = /\b(?:student\s*exchange|students\s*exchange|pertukaran\s+mahasiswa|gccp|bccp|short\s*course|hi-?think|kuliah\s+sambil\s+kerja|magang\s+berbayar)\b/i.test(routingQuestion);
+    if (preGuardFineRoute.fineIntent === 'international_program_list' && (preGuardDoubleDegreeRequested || (preGuardInternationalListRequested && !preGuardSpecificInternationalEntity))) {
+      const preGuardInternational = preGuardDoubleDegreeRequested
+        ? tryDualDegreeAnswer(routingQuestion, options)
+        : tryInternationalClassFallback(routingQuestion, getCachedSemanticIndex(), options);
+      if (preGuardInternational && preGuardInternational.answer) {
+        const preGuardSource = preGuardDoubleDegreeRequested ? 'semantic-rag-dual-degree' : (preGuardInternational.source || 'semantic-rag-international-class-fallback');
+        const builtInternational = buildDeterministicResponse(question, preGuardSource, { ...preGuardInternational, source: preGuardSource }, { routeStage: 'pre-guard-international-program-list', normalizedRouting: normalizedRouting.changed });
+        return await finalizeSemanticResult(question, builtInternational, resultCacheKey);
+      }
+    }
   }
 
   if (!strictDocumentOnly) {
@@ -9675,17 +9722,21 @@ async function querySemanticRag(question, options = {}) {
       return await finalizeSemanticResult(question, builtCurriculum, resultCacheKey);
     }
 
-    const fineRoute = detectFineGrainedIntent(question);
+    const fineRoute = detectFineGrainedIntent(routingQuestion);
     const priorityHandlers = [];
     if (fineRoute.fineIntent === 'program_curriculum') priorityHandlers.push(['semantic-rag-program-curriculum', tryProgramCurriculumFollowupAnswer]);
     if (fineRoute.fineIntent === 'program_comparison') priorityHandlers.push(['semantic-rag-program-comparison', tryProgramComparisonAnswer]);
     if (fineRoute.fineIntent === 'program_faculty') priorityHandlers.push(['semantic-rag-academic-faculty', tryProgramFacultyAnswer]);
-    if (fineRoute.fineIntent === 'international_program_list') priorityHandlers.push(['semantic-rag-international-class-fallback', tryInternationalClassFallback]);
-    if (fineRoute.fineIntent === 'international_program_requirement') priorityHandlers.push(['semantic-rag-dual-degree', tryDualDegreeAnswer], ['semantic-rag-international-class-fallback', tryInternationalClassFallback]);
+    const fineRouteSpecificInternationalEntity = /\b(?:student\s*exchange|students\s*exchange|studens\s*exchange|pertukaran\s+mahasiswa|gccp|gcpp|gcp|bccp|short\s*course|shortcourse|hi-?think|kuliah\s+sambil\s+kerja|magang\s+berbayar)\b/i.test(routingQuestion);
+    if (fineRoute.fineIntent === 'international_program_list') {
+      if (fineRouteSpecificInternationalEntity) priorityHandlers.push(['semantic-rag-campus-support-entity', tryCampusSupportEntityAnswer]);
+      else priorityHandlers.push(['semantic-rag-international-class-fallback', tryInternationalClassFallback]);
+    }
+    if (fineRoute.fineIntent === 'international_program_requirement') priorityHandlers.push(['semantic-rag-dual-degree', tryDualDegreeAnswer], ['semantic-rag-campus-support-entity', tryCampusSupportEntityAnswer], ['semantic-rag-international-class-fallback', tryInternationalClassFallback]);
     for (const [sourceName, handler] of priorityHandlers) {
-      const routed = handler(question, options);
+      const routed = handler(routingQuestion, options);
       if (routed && routed.answer) {
-        const builtRouted = buildDeterministicResponse(question, routed.source || sourceName, routed, { routeStage: 'pre-ai-fine-intent-priority', fineIntent: fineRoute.fineIntent });
+        const builtRouted = buildDeterministicResponse(question, routed.source || sourceName, routed, { routeStage: 'pre-ai-fine-intent-priority', fineIntent: fineRoute.fineIntent, normalizedRouting: normalizedRouting.changed });
         return await finalizeSemanticResult(question, builtRouted, resultCacheKey);
       }
     }
@@ -9698,17 +9749,23 @@ async function querySemanticRag(question, options = {}) {
       'semantic-rag-current-open-waves',
       'semantic-rag-pmb-contact',
       'semantic-rag-pmb-requirements',
+      'semantic-rag-dual-degree',
+      'semantic-rag-campus-support-entity',
+      'semantic-rag-international-class-fallback',
       'semantic-rag-program-list',
       'semantic-rag-program-definition',
       'semantic-rag-program-comparison',
       'semantic-rag-program-recommendation',
       'semantic-rag-career',
-      'semantic-rag-dual-degree',
-      'semantic-rag-international-class-fallback',
       'semantic-rag-bem',
       'semantic-rag-campus-support-fallback',
       'semantic-rag-career-fallback',
       'semantic-rag-finance-fallback',
+      'semantic-rag-registration-fee',
+      'semantic-rag-fee-detail',
+      'semantic-rag-contextual-fee',
+      'semantic-rag-fee-general',
+      'semantic-rag-fee-comparison',
       'semantic-rag-fee-fallback',
       'semantic-rag-contact-lecturer',
       'semantic-rag-graduation-registration',

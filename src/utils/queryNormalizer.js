@@ -25,7 +25,17 @@ const SLANG_REPLACEMENTS = {
   jrsn: 'jurusan',
   gel: 'gelombang',
   apaan: 'apa',
-  dd: 'double degree'
+  dd: 'double degree',
+  doube: 'double',
+  duble: 'double',
+  dobel: 'double',
+  dabel: 'double',
+  degre: 'degree',
+  degreee: 'degree',
+  inernasional: 'internasional',
+  internasioal: 'internasional',
+  internationalnya: 'international',
+  internasionalnya: 'internasional'
 };
 
 const FILLER_TOKENS = new Set(['min', 'kak', 'bro', 'dong', 'nih', 'dah']);
@@ -45,7 +55,10 @@ const DOMAIN_FUZZY_VOCAB = [
   'fasilitas',
   'laboratorium',
   'double',
+  'dual',
   'degree',
+  'internasional',
+  'international',
   'daftar',
   'jurusan'
 ];
