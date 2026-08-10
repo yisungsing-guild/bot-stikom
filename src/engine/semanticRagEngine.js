@@ -26,6 +26,7 @@ const {
 } = require('./feeComparisonEngine');
 const { evaluateOutboundAnswer, hasLikelyRawDocumentLeak } = require('../utils/answerPreflightEvaluator');
 const { normalizeUserQuery } = require('../utils/queryNormalizer');
+const { classifyDocumentCategory } = require('./docCategoryClassifier');
 const {
   buildQueryUnderstanding,
   rerankContexts,
@@ -875,6 +876,128 @@ function computeDocumentFreshnessBoost(query, item) {
 
   return Math.max(-0.32, Math.min(0.26, boost));
 }
+function getRuntimeDocCategory(item) {
+  if (!item || typeof item !== 'object') return 'UNKNOWN';
+  const metadata = item.metadata && typeof item.metadata === 'object' ? item.metadata : {};
+  const stored = String(item.docCategory || metadata.docCategory || item.category || metadata.category || '').trim().toUpperCase();
+  const genericStored = !stored || ['UNKNOWN', 'GENERAL', 'PROGRAM_STUDI', 'PRODI', 'DOCUMENT', 'UPLOAD'].includes(stored);
+  if (stored && !genericStored) return stored;
+  try {
+    return classifyDocumentCategory(
+      String(item.chunk || item.text || item.content || ''),
+      String(item.filename || item.sourceFile || item.source || ''),
+      { sectionTitle: item.sectionTitle || metadata.sectionTitle, docType: item.chunkType || metadata.docType }
+    ) || stored || 'UNKNOWN';
+  } catch (_) {
+    return stored || 'UNKNOWN';
+  }
+}
+
+function inferKnowledgeDomainsFromText(value, category = '') {
+  const text = String(value || '').toLowerCase();
+  const cat = String(category || '').toUpperCase();
+  const domains = new Set();
+
+  if (/\b(?:double\s*degree|dual\s*degree|gelar\s+ganda|dnui|dalian\s+neusoft|help\s+university|universitas\s+teknologi\s+bandung|\butb\b)\b/i.test(text)) domains.add('double_degree');
+  if (/\b(?:program\s+internasional|kelas\s+internasional|international\s+class|student\s*exchange|students\s*exchange|pertukaran\s+mahasiswa|gccp|bccp|short\s*course|kuliah\s+sambil\s+kerja\s+di\s+luar\s+negeri|magang\s+berbayar\s+di\s+luar\s+negeri)\b/i.test(text)) domains.add('international_program');
+  if (/\b(?:izin\s+belajar|study\s+permit|visa\s+(?:study|studi|pelajar)|itas|kitas|sktt|mahasiswa\s+asing)\b/i.test(text)) domains.add('visa_study');
+  if (/\b(?:biaya|ukt|dpp|uang\s+kuliah|pembayaran|rp\.?\s*\d|rupiah|cicilan|angsuran|potongan)\b/i.test(text) || cat === 'BIAYA') domains.add('fee');
+  if (/\b(?:jadwal|gelombang|timeline|tanggal\s+(?:mulai|akhir)|deadline|pendaftaran\s+gelombang)\b/i.test(text) || cat === 'JADWAL') domains.add('schedule');
+  if (/\b(?:pmb|penerimaan\s+mahasiswa\s+baru|cara\s+daftar|mendaftar|syarat\s+pendaftaran|dokumen\s+pendaftaran|siap\.stikom)\b/i.test(text)) domains.add('pmb_registration');
+  if (/\b(?:beasiswa|kip|1k1s|skss|bantuan\s+biaya|yayasan|prestasi)\b/i.test(text) || cat === 'BEASISWA') domains.add('scholarship');
+  if (/\b(?:career\s*center|pusat\s+kar(?:i|ie)r|lowongan|magang|job\s*fair|tracer\s*study|linkedin|karier|karir)\b/i.test(text) || cat === 'PROSPEK_KERJA') domains.add('career');
+  if (/\b(?:inkubator\s+bisnis|inbis|hi-?think|goes\s*to\s*school|language\s+learning\s+center|softskill|layanan\s+industri)\b/i.test(text)) domains.add('campus_support');
+  if (/\b(?:ukm|ormawa|bem|dpm|hima|kelompok\s+studi|kmhd|ksl|athena|syntax)\b/i.test(text)) domains.add('student_activity');
+  if (/\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|program\s+studi|prodi|jurusan|kurikulum|mata\s+kuliah|sks|fakultas)\b/i.test(text) || ['PRODI_PROFILE', 'KURIKULUM', 'MATA_KULIAH'].includes(cat)) domains.add('academic_program');
+  if (/\b(?:akreditasi|ban\s*-?\s*pt|baik\s+sekali)\b/i.test(text) || cat === 'AKREDITASI') domains.add('accreditation');
+  if (/\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(text)) domains.add('rpl');
+  if (/\b(?:yudisium|wisuda|sidang|tugas\s+akhir|skripsi|semester\s+antara|remedial|remidi|krs|khs|transkrip)\b/i.test(text)) domains.add('academic_admin');
+
+  if (cat === 'PROGRAM_KHUSUS') domains.add('international_program');
+  if (cat === 'LOKASI') domains.add('location');
+  if (cat === 'SK' || cat === 'SURAT' || cat === 'MOU') domains.add('administrative_document');
+
+  return domains;
+}
+
+function inferQuestionDomains(question, intent = null) {
+  const q = normalizeUserQuery(question || '').normalizedText || String(question || '');
+  const domains = inferKnowledgeDomainsFromText(q, '');
+  const detectedIntent = intent || detectGenericIntent(q);
+  if (detectedIntent === 'fee') domains.add('fee');
+  if (detectedIntent === 'schedule') domains.add('schedule');
+  if (detectedIntent === 'requirement' && /\b(?:pmb|daftar|pendaftaran|registrasi|mahasiswa\s+baru)\b/i.test(q)) domains.add('pmb_registration');
+  if (detectedIntent === 'career') domains.add('career');
+  if (detectedIntent === 'international_program') domains.add('international_program');
+  if (detectedIntent === 'program') domains.add('academic_program');
+  return domains;
+}
+
+function inferItemDomains(item) {
+  const category = getRuntimeDocCategory(item);
+  const metadata = item && item.metadata && typeof item.metadata === 'object' ? item.metadata : {};
+  const haystack = [
+    item && (item.filename || item.sourceFile || item.source),
+    item && item.sectionTitle,
+    metadata.category,
+    metadata.topic,
+    Array.isArray(metadata.tags) ? metadata.tags.join(' ') : metadata.tags,
+    item && (item.chunk || item.text || item.content)
+  ].filter(Boolean).join(' ');
+  return { category, domains: inferKnowledgeDomainsFromText(haystack, category) };
+}
+
+function computeDomainAlignmentScore(query, item, questionIntent = null) {
+  const qDomains = inferQuestionDomains(query, questionIntent);
+  if (!qDomains.size) return { score: 0, queryDomains: [], itemDomains: [], runtimeDocCategory: getRuntimeDocCategory(item), reason: 'no_query_domain' };
+
+  const { category, domains: itemDomains } = inferItemDomains(item);
+  const q = normalizeUserQuery(query || '').normalizedText || String(query || '').toLowerCase();
+  const overlap = [...qDomains].filter((domain) => itemDomains.has(domain));
+  let score = 0;
+  const reasons = [];
+
+  if (overlap.length) {
+    score += Math.min(0.24, 0.12 * overlap.length);
+    reasons.push('domain_overlap:' + overlap.join(','));
+  }
+
+  const allow = (...names) => names.some((name) => itemDomains.has(name));
+  if (qDomains.has('double_degree')) {
+    if (allow('double_degree')) score += 0.28;
+    else if (allow('visa_study', 'administrative_document')) { score -= 0.62; reasons.push('double_degree_vs_offtopic_doc'); }
+    else if (!allow('international_program')) { score -= 0.22; reasons.push('double_degree_missing_domain'); }
+  }
+  if (qDomains.has('international_program') && !qDomains.has('visa_study')) {
+    if (allow('visa_study') && !allow('double_degree', 'international_program')) { score -= 0.5; reasons.push('international_vs_visa_study'); }
+    if (allow('international_program', 'double_degree', 'campus_support')) score += 0.14;
+  }
+  if (qDomains.has('visa_study') && allow('visa_study')) score += 0.24;
+  if (qDomains.has('fee')) {
+    if (allow('fee')) score += 0.22;
+    else if (allow('academic_program', 'double_degree') && /\b(?:biaya|ukt|dpp|bayar|rupiah|rp\.?)/i.test(String(item && item.chunk || ''))) score += 0.08;
+    else if (allow('schedule', 'visa_study', 'student_activity')) { score -= 0.26; reasons.push('fee_off_domain'); }
+  }
+  if (qDomains.has('career')) {
+    if (allow('career', 'campus_support', 'academic_program')) score += 0.16;
+    else if (allow('fee', 'schedule', 'visa_study')) { score -= 0.28; reasons.push('career_off_domain'); }
+  }
+  if (qDomains.has('academic_admin')) {
+    if (allow('academic_admin')) score += 0.2;
+    else if (allow('pmb_registration', 'fee')) { score -= 0.3; reasons.push('academic_admin_vs_pmb_fee'); }
+  }
+  if (qDomains.has('pmb_registration') && allow('pmb_registration')) score += 0.18;
+
+  if (!overlap.length && itemDomains.size && !/\b(?:apa|info|informasi|jelaskan|tentang)\b/i.test(q)) score -= 0.06;
+
+  return {
+    score: Math.max(-0.7, Math.min(0.42, score)),
+    queryDomains: [...qDomains],
+    itemDomains: [...itemDomains],
+    runtimeDocCategory: category,
+    reason: reasons.join(';') || (overlap.length ? 'domain_match' : 'domain_neutral')
+  };
+}
 function computeSourceIntentBoost(query, item, questionIntent = null) {
   const intent = questionIntent || detectGenericIntent(query);
   const filename = String((item && (item.filename || item.sourceFile)) || '').toLowerCase();
@@ -933,10 +1056,11 @@ function computeSourceIntentBoost(query, item, questionIntent = null) {
   }
 
   boost += computeDocumentFreshnessBoost(query, item);
+  boost += computeDomainAlignmentScore(query, item, intent).score;
 
   const sourceScore = computeLexicalScore(query, filename, filename);
   if (sourceScore >= 0.4) boost += Math.min(0.18, sourceScore * 0.18);
-  return Math.max(-0.85, Math.min(0.68, boost));
+  return Math.max(-1.0, Math.min(0.78, boost));
 }
 
 function computeGenericScore(query, content, questionIntent = null) {
@@ -974,24 +1098,28 @@ async function getDatabaseCandidates(searchQueries, options = {}) {
     for (const chunk of candidateChunks) {
       if (seenIds.has(chunk.id)) continue;
       seenIds.add(chunk.id);
+      const runtimeCategory = getRuntimeDocCategory(chunk);
+      const runtimeChunk = { ...chunk, docCategory: chunk.docCategory || runtimeCategory };
+      const domainAlignment = computeDomainAlignmentScore(question, runtimeChunk, questionIntent);
       
       let bestScore = 0;
       let bestLexicalScore = 0;
       for (const query of queries) {
-        const genericScore = computeGenericScore(query, chunk.chunk, questionIntent);
-        const lexicalScore = computeLexicalScore(query, chunk.chunk, chunk.filename);
+        const genericScore = computeGenericScore(query, runtimeChunk.chunk, questionIntent);
+        const lexicalScore = computeLexicalScore(query, runtimeChunk.chunk, runtimeChunk.filename);
         bestScore = Math.max(bestScore, genericScore);
         bestLexicalScore = Math.max(bestLexicalScore, lexicalScore);
       }
       
       if (bestScore > 0.15) { // Minimum threshold for generic match
         candidates.push({
-          item: chunk,
-          score: Math.max(0, Math.min(1, bestScore + computeSourceIntentBoost(question, chunk, questionIntent))),
+          item: runtimeChunk,
+          score: Math.max(0, Math.min(1, bestScore + computeSourceIntentBoost(question, runtimeChunk, questionIntent))),
           lexicalScore: bestLexicalScore,
           semanticScore: 0,
           sourceType: 'database',
-          intent: questionIntent
+          intent: questionIntent,
+          domainAlignment
         });
       }
     }
@@ -1606,7 +1734,10 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
 
     for (const item of index) {
       if (!item || !String(item.chunk || '').trim()) continue;
-      const emb = queryEmbeddings.length && Array.isArray(item.embedding) ? item.embedding : null;
+      const runtimeCategory = getRuntimeDocCategory(item);
+      const runtimeItem = { ...item, docCategory: item.docCategory || runtimeCategory };
+      const domainAlignment = computeDomainAlignmentScore(question, runtimeItem, questionIntent);
+      const emb = queryEmbeddings.length && Array.isArray(runtimeItem.embedding) ? runtimeItem.embedding : null;
 
       let bestSemanticScore = 0;
       if (emb) {
@@ -1618,15 +1749,15 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
       let bestGenericScore = 0;
       let bestLexicalScore = 0;
       for (const query of queries) {
-        const haystack = String(item.chunk || '') + ' ' + String(item.filename || item.sourceFile || '');
+        const haystack = String(runtimeItem.chunk || '') + ' ' + String(runtimeItem.filename || runtimeItem.sourceFile || '');
         const genericScore = computeGenericScore(query, haystack, questionIntent);
-        const lexicalScore = computeLexicalScore(query, item.chunk, item.filename || item.sourceFile || '');
+        const lexicalScore = computeLexicalScore(query, runtimeItem.chunk, runtimeItem.filename || runtimeItem.sourceFile || '');
         bestGenericScore = Math.max(bestGenericScore, genericScore);
         bestLexicalScore = Math.max(bestLexicalScore, lexicalScore);
       }
 
-      const sourceIntentBoost = computeSourceIntentBoost(question, item, questionIntent);
-      const topicBoost = getTopicBoost(item.filename || item.sourceFile || '', item.chunk);
+      const sourceIntentBoost = computeSourceIntentBoost(question, runtimeItem, questionIntent);
+      const topicBoost = getTopicBoost(runtimeItem.filename || runtimeItem.sourceFile || '', runtimeItem.chunk);
       const baseScore = emb
         ? (bestSemanticScore * 0.45 + bestGenericScore * 0.45 + bestLexicalScore * 0.1)
         : (bestGenericScore * 0.7 + bestLexicalScore * 0.3);
@@ -1634,7 +1765,7 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
 
       if (combinedScore > 0.1) {
         semanticScored.push({
-          item,
+          item: runtimeItem,
           score: combinedScore,
           lexicalScore: bestLexicalScore,
           semanticScore: bestSemanticScore,
@@ -1642,7 +1773,8 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
           sourceIntentBoost,
           topicBoost,
           sourceType: 'semantic',
-          intent: questionIntent
+          intent: questionIntent,
+          domainAlignment
         });
       }
     }
@@ -1671,9 +1803,14 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     filename: s.item.filename || s.item.sourceFile || null,
     trainingId: s.item.trainingId || null,
     divisionKey: s.item.divisionKey || null,
-    metadata: s.item.metadata || null,
+    metadata: {
+      ...(s.item.metadata || {}),
+      runtimeDocCategory: s.item.docCategory || getRuntimeDocCategory(s.item),
+      domainAlignment: s.domainAlignment || null
+    },
     intent: s.intent || questionIntent,
-    sourceType: s.sourceType || null
+    sourceType: s.sourceType || null,
+    domainAlignment: s.domainAlignment || null
   });
 
   const dedupeContexts = (list) => {
@@ -1747,7 +1884,18 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     faqFallbackUsed: contexts.length > 0 && contexts[0].sourceType === 'faq-lookup',
     techniquePipeline: {
       queryUnderstanding: understanding,
-      reranking: { enabled: true, candidateCount: candidateContexts.length, dbCandidateCount: dbCandidateContexts.length }
+      reranking: { enabled: true, candidateCount: candidateContexts.length, dbCandidateCount: dbCandidateContexts.length },
+      domainAlignment: {
+        queryDomains: [...inferQuestionDomains(question, questionIntent)],
+        topCandidates: dedupedCandidates.slice(0, 8).map((candidate) => ({
+          score: Number(Number(candidate.score || 0).toFixed(4)),
+          filename: candidate.item && (candidate.item.filename || candidate.item.sourceFile) || null,
+          runtimeDocCategory: candidate.item ? getRuntimeDocCategory(candidate.item) : 'UNKNOWN',
+          itemDomains: candidate.domainAlignment && candidate.domainAlignment.itemDomains || [],
+          alignmentScore: candidate.domainAlignment ? Number(Number(candidate.domainAlignment.score || 0).toFixed(4)) : 0,
+          reason: candidate.domainAlignment && candidate.domainAlignment.reason || ''
+        }))
+      }
     }
   };
 }
@@ -5087,7 +5235,7 @@ function hasFaqAnswerDomainConflict(userQuestion, faqQuestion, answer, sourceTex
 
 function isCareerCenterQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
-  return /\b(career center|pusat karier|pusat karir|karier|karir|lowongan|pekerjaan|peluang kerja|lulusan|alumni|magang|job fair|campus hiring|rekrutmen|perusahaan|kerja sama|kerjasama|pelatihan|pembekalan|tracer study|melamar kerja)\b/i.test(q);
+  return /\b(career center|pusat karier|pusat karir|karier|karir|lowongan|pekerjaan|peluang kerja|lulusan|magang|job fair|campus hiring|rekrutmen|perusahaan|kerja sama|kerjasama|pelatihan|pembekalan|tracer study|melamar kerja)\b/i.test(q);
 }
 function isOverseasWorkStudyQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
@@ -9601,6 +9749,13 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
   }
 
+  if (!strictDocumentOnly && /\b(?:linked\s*in|linkedin)\b/i.test(routingQuestion) && /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|career|karier|karir)\b/i.test(routingQuestion)) {
+    const linkedInSupport = tryCampusSupportEntityAnswer(routingQuestion, getCachedSemanticIndex(), options) || tryKnownFaqQnaAnswer(routingQuestion);
+    if (linkedInSupport && linkedInSupport.answer) {
+      const builtLinkedIn = buildDeterministicResponse(question, linkedInSupport.source || 'semantic-rag-campus-support-entity', { ...linkedInSupport, source: linkedInSupport.source || 'semantic-rag-campus-support-entity' }, { routeStage: 'pre-guard-linkedin-career-center', normalizedRouting: normalizedRouting.changed });
+      return await finalizeSemanticResult(question, builtLinkedIn, resultCacheKey);
+    }
+  }
   if (!strictDocumentOnly) {
     const preGuardFineRoute = detectFineGrainedIntent(routingQuestion);
     const preGuardInternationalListRequested = /\b(?:program\s+internasional|kelas\s+internasional|international\s+program)\b/i.test(routingQuestion);
@@ -9614,6 +9769,12 @@ async function querySemanticRag(question, options = {}) {
         const preGuardSource = preGuardDoubleDegreeRequested ? 'semantic-rag-dual-degree' : (preGuardInternational.source || 'semantic-rag-international-class-fallback');
         const builtInternational = buildDeterministicResponse(question, preGuardSource, { ...preGuardInternational, source: preGuardSource }, { routeStage: 'pre-guard-international-program-list', normalizedRouting: normalizedRouting.changed });
         return await finalizeSemanticResult(question, builtInternational, resultCacheKey);
+      }
+    }    if (preGuardSpecificInternationalEntity && /\b(?:ada|tersedia|punya|program|apa\s+saja|apa\s+aja|pilihan|opsi|ikut|mengikuti)\b/i.test(routingQuestion)) {
+      const preGuardSupport = tryCampusSupportEntityAnswer(routingQuestion, getCachedSemanticIndex(), options);
+      if (preGuardSupport && preGuardSupport.answer) {
+        const builtSupport = buildDeterministicResponse(question, preGuardSupport.source || 'semantic-rag-campus-support-entity', preGuardSupport, { routeStage: 'pre-guard-specific-international-support', normalizedRouting: normalizedRouting.changed });
+        return await finalizeSemanticResult(question, builtSupport, resultCacheKey);
       }
     }
   }
@@ -9750,7 +9911,6 @@ async function querySemanticRag(question, options = {}) {
       'semantic-rag-pmb-contact',
       'semantic-rag-pmb-requirements',
       'semantic-rag-dual-degree',
-      'semantic-rag-campus-support-entity',
       'semantic-rag-international-class-fallback',
       'semantic-rag-program-list',
       'semantic-rag-program-definition',
