@@ -1,4 +1,9 @@
 const { normalizeUserQuery } = require('../utils/queryNormalizer');
+const {
+  buildTechniqueEnvelope,
+  buildPromptPlan,
+  estimateFinalConfidence
+} = require('./queryTechniqueLayer');
 
 const PROGRAM_ALIASES = {
   'sistem informasi': ['si', 'sif', 'sisfo', 'information system'],
@@ -91,6 +96,7 @@ function inferLexicalIntent(text) {
 
 function buildQueryUnderstanding(rawQuestion, rewrite = {}, options = {}) {
   const normalized = normalizeUserQuery(rawQuestion);
+  const technique = buildTechniqueEnvelope(rawQuestion, { sessionData: options.sessionData || {} });
   const canonical = compactText(rewrite.canonicalQuestion || normalized.normalizedText || rawQuestion);
   const entities = extractAliasEntities(`${rawQuestion} ${canonical}`);
   const rewriteQueries = Array.isArray(rewrite.searchQueries) ? rewrite.searchQueries : [];
@@ -106,10 +112,14 @@ function buildQueryUnderstanding(rawQuestion, rewrite = {}, options = {}) {
   const intent = rewrite.intent && rewrite.intent !== 'unknown'
     ? rewrite.intent
     : (options.intentHint || inferLexicalIntent(`${rawQuestion} ${canonical}`));
+  const intentConfidence = Number.isFinite(Number(rewrite.confidence))
+    ? Math.max(0, Math.min(1, Number(rewrite.confidence)))
+    : Math.max(0.2, intent === 'unknown' ? 0.25 : 0.62);
 
   const searchQueries = uniqueList([
     canonical,
     normalized.normalizedText,
+    technique.stopwords && technique.stopwords.text,
     ...rewriteQueries,
     ...aliasExpansions
   ], 8);
@@ -117,18 +127,48 @@ function buildQueryUnderstanding(rawQuestion, rewrite = {}, options = {}) {
   return {
     rawQuestion: String(rawQuestion || ''),
     normalizedText: normalized.normalizedText,
+    normalizedQuery: technique.normalizedQuery || normalized.normalizedText,
     normalization: {
       changed: normalized.changed,
-      replacements: normalized.replacements || []
+      replacements: normalized.replacements || [],
+      unicode: true,
+      textCleaning: true,
+      stopwordHandling: {
+        enabled: true,
+        removed: technique.stopwords ? technique.stopwords.removed : [],
+        searchText: technique.stopwords ? technique.stopwords.text : ''
+      }
     },
     intent,
+    confidence: intentConfidence,
+    urgency: technique.urgency,
+    sentiment: technique.sentiment,
+    language: technique.language,
+    staticResponse: technique.staticResponse,
+    resetRequested: technique.resetRequested,
     entities,
-    followUp: followUpSignals,
+    followUp: followUpSignals || Boolean(technique.context && technique.context.followUp),
+    context: technique.context,
     canonicalQuestion: canonical,
     searchQueries,
+    metadataFilter: buildMetadataFilter({ intent, entities, options }),
+    promptPlan: buildPromptPlan({
+      conversationHistory: options.conversationHistory || '',
+      memory: options.memory || {}
+    }),
     needsClarification: rewrite.needsClarification === true,
     clarificationQuestion: compactText(rewrite.clarificationQuestion || '')
   };
+}
+
+function buildMetadataFilter({ intent, entities, options = {} } = {}) {
+  const filter = {};
+  if (intent && intent !== 'unknown') filter.intent = intent;
+  const programs = entities && Array.isArray(entities.programs) ? entities.programs : [];
+  if (programs.length) filter.programs = programs;
+  if (entities && entities.wave) filter.wave = entities.wave;
+  if (options.domain || options.category) filter.domain = options.domain || options.category;
+  return filter;
 }
 
 function termOverlapScore(a, b) {
@@ -272,7 +312,9 @@ function processEvidence(selectedEvidence, answerability, understanding = {}) {
 
 module.exports = {
   buildQueryUnderstanding,
+  buildMetadataFilter,
   rerankContexts,
   processEvidence,
-  detectEvidenceConflicts
+  detectEvidenceConflicts,
+  estimateFinalConfidence
 };

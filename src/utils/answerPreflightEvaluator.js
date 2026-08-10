@@ -1,3 +1,11 @@
+const {
+  detectSensitiveInformation,
+  maskPii,
+  validateBusinessRules,
+  validateCitation,
+  estimateFinalConfidence
+} = require('../engine/queryTechniqueLayer');
+
 function envFlag(name, fallback = false) {
   const raw = process.env[name];
   if (typeof raw === 'undefined') return fallback;
@@ -687,6 +695,16 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   }
 
   const sourceValue = meta && meta.source ? String(meta.source).trim().toLowerCase() : '';
+  const sensitiveAudit = detectSensitiveInformation(text);
+  const businessRuleAudit = validateBusinessRules(text, userQuery);
+  const citationAudit = validateCitation(text, meta || {});
+  if (sensitiveAudit.hasSensitiveInfo && sensitiveAudit.hits.some((hit) => hit === 'secret_or_token')) {
+    text = maskPii(text);
+    issues.push('sensitive_secret_masked');
+  }
+  if (!businessRuleAudit.ok) {
+    issues.push(...businessRuleAudit.issues.map((issue) => 'business_rule_' + issue));
+  }
   const preserveTrustedFeeAnswer = (
     (/^semantic-rag-(?:fee|contextual-fee|registration-fee)/i.test(sourceValue) || /(?:^|[-_])(fast_fee|fee_breakdown_offer_answer_fast|fee_breakdown_offer_answer|followup_compute_total)(?:$|[-_])/i.test(sourceValue))
     || (/\bRp\.?\s*\d/i.test(text) && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(text))
@@ -703,6 +721,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     && /\b(Pendampingan|Program inkubasi|mentoring|kewirausahaan|coworking|model bisnis|rintisan bisnis)\b/i.test(text)
     && !/\b(?:PROFIL\s+LEMBAGA|\[Sheet:|SOURCE_CHUNKS|CONFIDENCE|embedding|Identitas\s+Lembaga|Dasar\s+Hukum|Pembina\s*\/\s*Penanggung\s+Jawab|Struktur\s+Organisasi|DAFTAR\s+ISI)\b/i.test(text);
   if (
+    !sensitiveAudit.hits.includes('secret_or_token') &&
     (preserveTrustedFeeAnswer || preserveTrustedDualDegreeAnswer || preserveTrustedInkubatorAnswer) &&
     !rawFaqQnaDump &&
     !hasRawTechnicalLeak(text) &&
@@ -720,7 +739,16 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
         finalLength: text.length,
         trustedFeeBypass: preserveTrustedFeeAnswer,
         trustedDualDegreeBypass: preserveTrustedDualDegreeAnswer,
-        trustedInkubatorBypass: preserveTrustedInkubatorAnswer
+        trustedInkubatorBypass: preserveTrustedInkubatorAnswer,
+        sensitiveInformation: sensitiveAudit,
+        businessRuleValidation: businessRuleAudit,
+        citationValidation: citationAudit,
+        confidence: estimateFinalConfidence({
+          retrievalScore: meta && meta.confidenceScore,
+          intentConfidence: meta && meta.intentConfidence,
+          safetyIssues: issues,
+          answerable: true
+        })
       }
     };
   }
@@ -845,6 +873,12 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   }
   const action = decidePreflightAction(issues, meta);
   const blocked = action === 'regenerate' || action === 'fallback';
+  const finalConfidence = estimateFinalConfidence({
+    retrievalScore: meta && meta.confidenceScore,
+    intentConfidence: meta && meta.intentConfidence,
+    safetyIssues: issues,
+    answerable: !blocked
+  });
 
   // ISSUE #1 FIX: Log final preflight decision for debugging
   if (process.env.PREFLIGHT_DEBUG_DETAILED) {
@@ -866,7 +900,11 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     meta: {
       source: meta && meta.source ? meta.source : null,
       originalLength: original.length,
-      finalLength: text.length
+      finalLength: text.length,
+      sensitiveInformation: sensitiveAudit,
+      businessRuleValidation: businessRuleAudit,
+      citationValidation: citationAudit,
+      confidence: finalConfidence
     }
   };
 }

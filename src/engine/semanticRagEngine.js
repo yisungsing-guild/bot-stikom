@@ -1368,8 +1368,16 @@ async function rewriteQuestionWithLlm(client, question, options = {}) {
   }
 
   const conversation = getRecentConversation(sessionData);
+  const memoryHints = sessionData && typeof sessionData === 'object' ? [
+    sessionData.lastProgramHint ? `Program terakhir: ${sessionData.lastProgramHint}` : '',
+    sessionData.lastIntent ? `Intent terakhir: ${sessionData.lastIntent}` : '',
+    sessionData.pendingFollowupChoice ? 'Ada pending follow-up choice.' : '',
+    sessionData.pendingFeeDetail ? 'Ada pending fee detail.' : ''
+  ].filter(Boolean).join('\n') : '';
   const prompt = [
-    'Tugasmu memahami pertanyaan WhatsApp user dalam bahasa apa pun, termasuk typo, slang, singkatan, dan follow-up pendek.',
+    'LLM ORCHESTRATOR / QUERY UNDERSTANDING',
+    'Persona: TIKO, asisten informasi ITB STIKOM Bali yang ramah, ringkas, dan grounded.',
+    'Instruction: pahami pertanyaan WhatsApp user dalam bahasa apa pun, termasuk typo, slang, singkatan, dan follow-up pendek.',
     'Ubah menjadi intent, entitas, dan query pencarian knowledge-base yang jelas tanpa menjawab pertanyaan.',
     'Gunakan konteks percakapan hanya untuk menyelesaikan rujukan seperti "itu", "yang tadi", "berapa?", atau pilihan pendek.',
     'Balas HANYA JSON valid dengan field: canonicalQuestion, searchQueries, intent, entities, confidence, needsClarification, clarificationQuestion.',
@@ -1389,7 +1397,9 @@ async function rewriteQuestionWithLlm(client, question, options = {}) {
     '',
     programHint || intentHint ? `HINT SISTEM:\n${programHint ? `Program terkait: ${programHint}` : ''}${programHint && intentHint ? '\n' : ''}${intentHint ? `Intent terkait: ${intentHint}` : ''}` : 'HINT SISTEM: -',
     '',
-    conversation ? `KONTEKS PERCAKAPAN:\n${conversation}` : 'KONTEKS PERCAKAPAN: -',
+    conversation ? `CONVERSATION HISTORY:\n${conversation}` : 'CONVERSATION HISTORY: -',
+    '',
+    memoryHints ? `MEMORY:\n${memoryHints}` : 'MEMORY: -',
     '',
     `PERTANYAAN USER:\n${current}`
   ].join('\n');
@@ -10500,7 +10510,15 @@ async function querySemanticRag(question, options = {}) {
   }
 
 
-  const queryUnderstanding = buildQueryUnderstanding(question, rewrite, { intentHint: options.intentHint || '' });
+  const queryUnderstanding = buildQueryUnderstanding(question, rewrite, {
+    intentHint: options.intentHint || '',
+    sessionData: options.sessionData || {},
+    conversationHistory: getRecentConversation(options.sessionData || null),
+    memory: {
+      lastProgramHint: options.sessionData && options.sessionData.lastProgramHint || null,
+      lastIntent: options.sessionData && options.sessionData.lastIntent || null
+    }
+  });
   const retrieved = await retrieveSemanticContexts(queryUnderstanding.searchQueries, {
     topK: options.topK,
     question,
