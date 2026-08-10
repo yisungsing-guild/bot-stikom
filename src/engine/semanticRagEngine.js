@@ -573,6 +573,31 @@ function detectFineGrainedIntent(question) {
   return { fineIntent: detectGenericIntent(q), coarseIntent: detectGenericIntent(q) };
 }
 
+function shouldDeferEarlyEvidenceFirstToStableRoute(question) {
+  const fine = detectFineGrainedIntent(question || '');
+  const fineIntent = String(fine && fine.fineIntent ? fine.fineIntent : '').toLowerCase();
+  const coarseIntent = String(fine && fine.coarseIntent ? fine.coarseIntent : '').toLowerCase();
+  const stableFineIntents = new Set([
+    'registration_how',
+    'pmb_overview',
+    'program_list',
+    'program_definition',
+    'program_comparison',
+    'program_recommendation',
+    'program_curriculum',
+    'program_faculty',
+    'international_program_list',
+    'international_program_requirement',
+    'international_program_fee',
+    'dual_degree',
+    'rpl',
+    'scholarship',
+    'accreditation',
+    'fee'
+  ]);
+  if (stableFineIntents.has(fineIntent)) return true;
+  return ['program', 'international_program'].includes(coarseIntent);
+}
 function buildEvidenceFirstSearchQueries(question, fine) {
   const q = String(question || '').trim();
   const queries = [q];
@@ -2364,7 +2389,10 @@ function isIndustryServicesQuestionAnswer(question, answer) {
   return /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|dari\s+industri)\b/i.test(String(question || ''))
     && /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri|direktorat\s+kerja\s*sama)\b/i.test(String(answer || ''));
 }function extractFocusedUploadedEvidenceSnippet(text, question) {
-  const cleaned = cleanUserVisibleRagAnswerText(text);
+  const cleaned = cleanUserVisibleRagAnswerText(text)
+    .replace(/(?:^|\n)\s*[-*]?\s*(?:Program studi terlihat|Biaya pendidikan terlihat|Jadwal\/gelombang|UKT\s*\/\s*biaya per semester)\s*:\s*/gi, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
   if (!cleaned || cleaned.length < 12) return '';
 
   const q = String(question || '');
@@ -9849,7 +9877,7 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
-  if (!strictDocumentOnly) {
+  if (!strictDocumentOnly && !shouldDeferEarlyEvidenceFirstToStableRoute(routingQuestion)) {
     try {
       const earlyEvidenceFirst = await tryEvidenceFirstLocalDocumentAnswer(question, { ...options, topK: Math.max(8, Number(options.topK || 0) || 0), routeStage: 'pre-guard-document-evidence' });
       if (earlyEvidenceFirst && earlyEvidenceFirst.answer) {
