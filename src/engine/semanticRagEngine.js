@@ -5509,9 +5509,15 @@ function hasFaqAnswerDomainConflict(userQuestion, faqQuestion, answer, sourceTex
   return false;
 }
 
+function isCareerConsultationQuestion(question) {
+  const q = normalizeFacilityTerm(question || '');
+  return /\b(?:konsultasi|berkonsultasi|bimbingan|konseling)\b(?:\s+(?:mengenai|tentang|seputar|soal|terkait|untuk|di|ke|karier|karir|career)){0,8}\s+\b(?:karier|karir|career|pekerjaan|kerja)\b/i.test(q)
+    || /\b(?:karier|karir|career|pekerjaan|kerja)\b(?:\s+(?:mengenai|tentang|seputar|soal|terkait|untuk|di|ke|konsultasi)){0,8}\s+\b(?:konsultasi|berkonsultasi|bimbingan|konseling)\b/i.test(q);
+}
+
 function isCareerCenterQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
-  return /\b(career center|pusat karier|pusat karir|karier|karir|lowongan|pekerjaan|peluang kerja|lulusan|magang|job fair|campus hiring|rekrutmen|perusahaan|kerja sama|kerjasama|pelatihan|pembekalan|tracer study|melamar kerja)\b/i.test(q);
+  return isCareerConsultationQuestion(q) || /\b(career center|pusat karier|pusat karir|karier|karir|lowongan|pekerjaan|peluang kerja|lulusan|magang|job fair|campus hiring|rekrutmen|perusahaan|kerja sama|kerjasama|pelatihan|pembekalan|tracer study|melamar kerja)\b/i.test(q);
 }
 function isOverseasWorkStudyQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
@@ -10436,6 +10442,14 @@ async function querySemanticRag(question, options = {}) {
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   const earlySupportQuestion = String(question || '').toLowerCase();
   const deferEarlyKeywordFallbacks = Boolean(client) && shouldDeferDeterministicBeforeSemantic(question);
+  if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && isCareerConsultationQuestion(earlySupportQuestion)) {
+    const result = {
+      answer: 'Ya. Mahasiswa dapat berkonsultasi mengenai karier melalui Career Center ITB STIKOM Bali, termasuk terkait persiapan kerja, peluang karier, magang, dan proses melamar pekerjaan. Untuk jadwal layanan atau PIC yang sedang aktif, kakak bisa cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.',
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', result, { routeStage: 'pre-ai-support-career-consultation', normalizedRouting: normalizedRouting.changed }), resultCacheKey);
+  }
   if (!strictDocumentOnly
     && /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|cdc)\b/i.test(earlySupportQuestion)
     && /\b(?:layanan|memberikan|fungsi|tugas|bantu|membantu|apa\s+saja|apa\s+aja|ngapain|untuk\s+apa)\b/i.test(earlySupportQuestion)) {

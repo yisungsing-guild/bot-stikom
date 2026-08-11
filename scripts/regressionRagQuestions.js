@@ -30,6 +30,7 @@ const CASES = [
   { q: 'student exchange itu apa?', mustInclude: ['pertukaran mahasiswa'] },
   { q: 'inbis itu apa?', mustInclude: ['Inkubator Bisnis'] },
   { q: 'career center itu apa?', mustInclude: ['Career Center'] },
+  { q: 'Apakah mahasiswa bisa berkonsultasi mengenai karier?', mustInclude: ['berkonsultasi', 'Career Center'] },
   { q: 'LLC itu apa?', mustInclude: ['Language Learning Center'] },
   { q: 'kampus stikom ada berapa?', mustInclude: ['3'] },
   { q: 'akreditasi kampus ITB STIKOM Bali apa?', mustInclude: ['BAN-PT'] },
