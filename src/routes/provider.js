@@ -9172,8 +9172,11 @@ module.exports = function (provider) {
 
       const shouldDecorate = !isJestOrTestEnv() || String(process.env.FORCE_REPLY_DECORATION_TEST || '').toLowerCase() === 'true';
       const alreadyFormatted = /(?:^|\n)Topik:/i.test(String(messageText || '')) && /(?:^|\n)Kesimpulan:/i.test(String(messageText || ''));
-      messageText = guardOutboundMeaningBeforeSend(text, messageText);
-      messageText = await guardOutboundSemanticRelevanceBeforeSend(text, messageText, meta);
+      const feedbackCaptureOutbound = meta && /^feedback-capture$/i.test(String(meta.source || ''));
+      if (!feedbackCaptureOutbound) {
+        messageText = guardOutboundMeaningBeforeSend(text, messageText);
+        messageText = await guardOutboundSemanticRelevanceBeforeSend(text, messageText, meta);
+      }
       let decorated = String(messageText || '');
       try {
         const responseIntent = detectResponseIntent(messageText, text);
@@ -9310,9 +9313,12 @@ module.exports = function (provider) {
         } catch (e) { }
         const outboundSource = meta && meta.source ? String(meta.source || '') : '';
         const semanticRagOutbound = /^semantic-rag-/i.test(outboundSource) || looksLikeProtectedKnowledgeBaseAnswer(cleaned);
+        const feedbackCaptureOutboundFinal = /^feedback-capture$/i.test(outboundSource);
         const preflight = String(cleaned || '').trim() === 'WELCOME_MENU'
           ? { answer: cleaned, issues: [], action: 'send', blocked: false, meta: { source: 'welcome_literal_token' } }
-          : semanticRagOutbound
+          : feedbackCaptureOutboundFinal
+            ? { answer: cleaned, issues: [], action: 'send', blocked: false, meta: { source: outboundSource, feedbackCapturePreserved: true } }
+            : semanticRagOutbound
             ? { answer: cleaned, issues: [], action: 'send', blocked: false, meta: { source: outboundSource, semanticRagPreserved: true } }
             : evaluateOutboundAnswer(cleaned, text, {
               source: meta && meta.source ? meta.source : null
@@ -9344,9 +9350,12 @@ module.exports = function (provider) {
         // Fallback: send original decorated content if cleanup fails
         const outboundSource = meta && meta.source ? String(meta.source || '') : '';
         const semanticRagOutbound = /^semantic-rag-/i.test(outboundSource) || looksLikeProtectedKnowledgeBaseAnswer(decorated);
+        const feedbackCaptureOutboundFallback = /^feedback-capture$/i.test(outboundSource);
         const preflight = String(decorated || '').trim() === 'WELCOME_MENU'
           ? { answer: decorated, issues: [], action: 'send', blocked: false, meta: { source: 'welcome_literal_token' } }
-          : semanticRagOutbound
+          : feedbackCaptureOutboundFallback
+            ? { answer: decorated, issues: [], action: 'send', blocked: false, meta: { source: outboundSource, feedbackCapturePreserved: true } }
+            : semanticRagOutbound
             ? { answer: decorated, issues: [], action: 'send', blocked: false, meta: { source: outboundSource, semanticRagPreserved: true } }
             : evaluateOutboundAnswer(decorated, text, {
               source: meta && meta.source ? meta.source : null
