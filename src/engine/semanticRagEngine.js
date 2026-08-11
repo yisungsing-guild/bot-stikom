@@ -4,6 +4,12 @@ const path = require('path');
 const logger = require('../logger');
 const ragEngine = require('./ragEngine');
 const prisma = require('../db');
+const {
+  filterGovernedTrainingRows,
+  getTrainingGovernance,
+  recordRagTrace,
+  appendRuntimeAuditJsonl
+} = require('./runtimeGovernance');
 const { getLegacyRagIndexPath, getRagIndexPath } = require('../utils/ragPaths');
 const {
   selectEvidenceFromContexts,
@@ -228,27 +234,51 @@ async function getActiveTrainingDataFromDb() {
   if (ttlMs > 0 && trainingDbCache && (now - trainingDbCache.ts) <= ttlMs) {
     return trainingDbCache.data;
   }
-  
+
+  const baseSelect = {
+    id: true,
+    filename: true,
+    content: true,
+    source: true,
+    divisionKey: true,
+    createdAt: true,
+    ragIngestStatus: true,
+    ragChunkCount: true
+  };
+  const governanceSelect = {
+    ...baseSelect,
+    governanceStatus: true,
+    governanceOwner: true,
+    governanceVersion: true,
+    validFrom: true,
+    validTo: true,
+    governanceMetadata: true
+  };
+
   try {
-    const data = await prisma.trainingData.findMany({
-      where: { active: true },
-      select: {
-        id: true,
-        filename: true,
-        content: true,
-        source: true,
-        divisionKey: true,
-        createdAt: true,
-        ragIngestStatus: true,
-        ragChunkCount: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-    
-    if (ttlMs > 0) trainingDbCache = { ts: now, data };
-    return data;
+    let data = [];
+    try {
+      data = await prisma.trainingData.findMany({
+        where: { active: true },
+        select: governanceSelect,
+        orderBy: { createdAt: 'desc' }
+      });
+    } catch (selectErr) {
+      const msg = selectErr && selectErr.message ? String(selectErr.message) : '';
+      if (!/governanceStatus|governanceOwner|governanceVersion|validFrom|validTo|governanceMetadata|Unknown field|does not exist/i.test(msg)) throw selectErr;
+      try { logger.warn({ err: msg }, '[SemanticRAG] governance columns unavailable; using legacy TrainingData select'); } catch (_) { try { console.warn('[SemanticRAG] governance columns unavailable; using legacy TrainingData select', msg); } catch (__) {} }
+      data = await prisma.trainingData.findMany({
+        where: { active: true },
+        select: baseSelect,
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+
+    const governed = filterGovernedTrainingRows(data);
+    if (ttlMs > 0) trainingDbCache = { ts: now, data: governed };
+    return governed;
   } catch (err) {
-    logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to fetch TrainingData from database');
+    try { logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to fetch TrainingData from database'); } catch (_) { try { console.warn('[SemanticRAG] failed to fetch TrainingData from database', err && err.message ? err.message : String(err)); } catch (__) {} }
     return [];
   }
 }
@@ -343,7 +373,8 @@ function convertTrainingDataToCandidate(trainingData) {
     metadata: {
       source: 'database',
       ragIngestStatus: trainingData.ragIngestStatus || 'unknown',
-      createdAt: trainingData.createdAt
+      createdAt: trainingData.createdAt,
+      governance: getTrainingGovernance(trainingData)
     }
   }));
 }
@@ -9474,6 +9505,41 @@ async function verifyAnswerRelevanceWithLlm(client, question, answer, source = '
   }
 }
 
+async function traceAndCacheSemanticResult(question, result, resultCacheKey, stage = 'final') {
+  if (resultCacheKey) setCachedSemanticResult(resultCacheKey, result);
+  try {
+    const debug = result && result.debug && typeof result.debug === 'object' ? result.debug : {};
+    const normalized = normalizeUserQuery(question);
+    await recordRagTrace(prisma, {
+      chatId: debug.chatId || debug.providerChatId || null,
+      question,
+      normalizedQuestion: normalized && normalized.normalizedText ? normalized.normalizedText : null,
+      intent: debug.intent || debug.fineIntent || debug.routeIntent || null,
+      source: result && result.source ? result.source : null,
+      confidenceScore: result && typeof result.confidenceScore === 'number' ? result.confidenceScore : null,
+      confidenceTier: result && result.confidenceTier ? result.confidenceTier : null,
+      routeStage: debug.routeStage || stage,
+      contexts: result && Array.isArray(result.contexts) ? result.contexts : [],
+      debug: {
+        stage,
+        routeStage: debug.routeStage || null,
+        answerabilityResult: debug.answerabilityResult || null,
+        blockedSource: debug.blockedSource || null,
+        reason: debug.reason || null
+      }
+    });
+    appendRuntimeAuditJsonl('semantic_rag_trace.jsonl', {
+      stage,
+      question: String(question || '').slice(0, 300),
+      source: result && result.source ? result.source : null,
+      confidenceScore: result && typeof result.confidenceScore === 'number' ? result.confidenceScore : null,
+      contextCount: result && Array.isArray(result.contexts) ? result.contexts.length : 0
+    });
+  } catch (err) {
+    try { logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to persist final trace'); } catch (_) { try { console.warn('[SemanticRAG] failed to persist final trace', err && err.message ? err.message : String(err)); } catch (__) {} }
+  }
+  return result;
+}
 async function finalizeSemanticResult(question, result, resultCacheKey, options = {}) {
   if (!result || !result.answer) return result;
   const source = result.source || 'semantic-rag';
@@ -9481,8 +9547,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   if (shouldBlockGenericEvidenceAnswer(question, result.answer, source)) {
     const deterministic = runVettedDeterministicFallback(question, options, null, 'global-generic-evidence-guard');
     if (deterministic && deterministic.answer && !shouldBlockGenericEvidenceAnswer(question, deterministic.answer, deterministic.source || '')) {
-      if (resultCacheKey) setCachedSemanticResult(resultCacheKey, deterministic);
-      return deterministic;
+      return await traceAndCacheSemanticResult(question, deterministic, resultCacheKey, 'deterministic');
     }
     const blocked = {
       success: true,
@@ -9498,15 +9563,13 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
         meaningAnchors: extractMeaningAnchors(question)
       }
     };
-    if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
-    return blocked;
+    return await traceAndCacheSemanticResult(question, blocked, resultCacheKey, 'blocked');
   }
 
   if (/^semantic-rag-uploaded-training-generic$/i.test(source) && hasNoDataAnswerPhrase(result.answer)) {
     const deterministic = runVettedDeterministicFallback(question, options, null, 'generic-no-data-deterministic-recovery');
     if (deterministic && deterministic.answer && !hasNoDataAnswerPhrase(deterministic.answer)) {
-      if (resultCacheKey) setCachedSemanticResult(resultCacheKey, deterministic);
-      return deterministic;
+      return await traceAndCacheSemanticResult(question, deterministic, resultCacheKey, 'deterministic');
     }
   }
 
@@ -9518,8 +9581,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   if (uploadedCriticalLeak) {
     const deterministic = runVettedDeterministicFallback(question, options, null, 'generic-critical-leak-deterministic-recovery');
     if (deterministic && deterministic.answer && !hasNoDataAnswerPhrase(deterministic.answer)) {
-      if (resultCacheKey) setCachedSemanticResult(resultCacheKey, deterministic);
-      return deterministic;
+      return await traceAndCacheSemanticResult(question, deterministic, resultCacheKey, 'deterministic');
     }
     const blocked = {
       success: true,
@@ -9535,8 +9597,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
         reason: 'uploaded_training_raw_or_technical_leak'
       }
     };
-    if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
-    return blocked;
+    return await traceAndCacheSemanticResult(question, blocked, resultCacheKey, 'blocked');
   }
   if (/^semantic-rag-uploaded-training-generic$/i.test(source) && Array.isArray(result.contexts) && result.contexts.length) {
     const compactAcademicSchedule = buildAcademicScheduleSummaryAnswer(question, result.contexts);
@@ -9557,8 +9618,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   if (/^semantic-rag-uploaded-training-generic$/i.test(source) && (!answerMatchesStrongQuestionAnchors(question, result.answer) || hasUploadedDocumentTopicConflict(question, result.answer))) {
     const anchorDualDegreeFallback = /\b(?:double|dual)\s+degree\b/i.test(String(question || '')) ? tryDualDegreeAnswer(question, options) : null;
     if (anchorDualDegreeFallback && anchorDualDegreeFallback.answer && answerMatchesStrongQuestionAnchors(question, anchorDualDegreeFallback.answer)) {
-      if (resultCacheKey) setCachedSemanticResult(resultCacheKey, anchorDualDegreeFallback);
-      return anchorDualDegreeFallback;
+      return await traceAndCacheSemanticResult(question, anchorDualDegreeFallback, resultCacheKey, 'anchorDualDegreeFallback');
     }
     const anchorFallback = runVettedDeterministicFallback(question, options, null, 'generic-anchor-mismatch-deterministic-fallback');
     if (anchorFallback && anchorFallback.answer) {
@@ -9566,8 +9626,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
       const fallbackNoData = hasNoDataAnswerPhrase(anchorFallback.answer);
       const fallbackSafe = fallbackNoData || !/uploaded-training-generic/i.test(fallbackSource) || (answerMatchesStrongQuestionAnchors(question, anchorFallback.answer) && !hasUploadedDocumentTopicConflict(question, anchorFallback.answer));
       if (fallbackSafe) {
-        if (resultCacheKey) setCachedSemanticResult(resultCacheKey, anchorFallback);
-        return anchorFallback;
+        return await traceAndCacheSemanticResult(question, anchorFallback, resultCacheKey, 'anchorFallback');
       }
     }
     const anchorMismatch = {
@@ -9579,8 +9638,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
       confidenceTier: 'VERY_LOW',
       debug: { ...(result.debug && typeof result.debug === 'object' ? result.debug : {}), blockedSource: source, reason: 'strong_anchor_missing_in_generic_answer' }
     };
-    if (resultCacheKey) setCachedSemanticResult(resultCacheKey, anchorMismatch);
-    return anchorMismatch;
+    return await traceAndCacheSemanticResult(question, anchorMismatch, resultCacheKey, 'anchorMismatch');
   }
 
   const preflight = evaluateOutboundAnswer(result.answer, question, { source });
@@ -9657,8 +9715,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
         meaningAnchors: extractMeaningAnchors(question)
       }
     };
-    if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
-    return blocked;
+    return await traceAndCacheSemanticResult(question, blocked, resultCacheKey, 'blocked');
   }
   if (preflight && preflight.changed && preflight.answer && !structuredSemanticSafe) {
     result = {
@@ -9714,8 +9771,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
         meaningAnchors: extractMeaningAnchors(question)
       }
     };
-    if (resultCacheKey) setCachedSemanticResult(resultCacheKey, blocked);
-    return blocked;
+    return await traceAndCacheSemanticResult(question, blocked, resultCacheKey, 'blocked');
   }
 
   const finalized = llmVerdict ? {
@@ -9725,8 +9781,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
       llmMeaningVerifier: llmVerdict
     }
   } : result;
-  if (resultCacheKey) setCachedSemanticResult(resultCacheKey, finalized);
-  return finalized;
+  return await traceAndCacheSemanticResult(question, finalized, resultCacheKey, 'finalized');
 }
 function tryShortProgramDefinitionDirectAnswer(question) {
   const q = String(question || '').trim();

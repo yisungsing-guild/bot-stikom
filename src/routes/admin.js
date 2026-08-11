@@ -22,6 +22,7 @@ const { appendChatMessage, getChatMessages } = require('../engine/chatLog');
 const crypto = require('crypto');
 const fs = require('fs/promises');
 const AdmZip = require('adm-zip');
+const { buildDocumentGovernanceMetadata } = require('../engine/runtimeGovernance');
 
 // Helper: validasi field wajib
 function validateRequired(data, fields) {
@@ -43,6 +44,31 @@ function csvEscape(value) {
 module.exports = function (provider) {
   const router = express.Router();
 
+  async function applyTrainingGovernance(trainingId, input = {}) {
+    if (!trainingId) return null;
+    const governance = buildDocumentGovernanceMetadata(input);
+    try {
+      return await prisma.trainingData.update({
+        where: { id: trainingId },
+        data: {
+          governanceStatus: governance.status,
+          governanceOwner: governance.owner,
+          governanceVersion: governance.version,
+          validFrom: governance.validFrom ? new Date(governance.validFrom) : null,
+          validTo: governance.validTo ? new Date(governance.validTo) : null,
+          governanceMetadata: governance
+        }
+      });
+    } catch (err) {
+      const msg = err && err.message ? String(err.message) : '';
+      if (/governanceStatus|governanceOwner|governanceVersion|validFrom|validTo|governanceMetadata|Unknown arg|does not exist/i.test(msg)) {
+        logger.warn({ trainingId, err: msg }, '[TrainingGovernance] governance columns unavailable; skipping metadata update');
+        return null;
+      }
+      logger.warn({ trainingId, err: msg }, '[TrainingGovernance] failed to apply governance metadata');
+      return null;
+    }
+  }
   async function resolveUploaderId(req) {
     try {
       const adminIdCandidate = req && req.user && req.user.adminId ? String(req.user.adminId).trim() : '';
@@ -1254,9 +1280,15 @@ router.post(
         });
       }
 
+      await applyTrainingGovernance(result.trainingDataId, {
+        filename: req.uploadInfo.originalname,
+        divisionKey,
+        source: 'upload',
+        owner: divisionKey || (req.user && req.user.role ? req.user.role : null)
+      });
+
       console.log('[POST /admin/training/upload] File successfully processed:', result.trainingDataId);
-      
-      res.status(201).send({
+res.status(201).send({
         ok: true,
         trainingDataId: result.trainingDataId,
         filename: req.uploadInfo.originalname,
@@ -1289,7 +1321,8 @@ router.post(
             filename: req.uploadInfo.originalname,
             uploadedById: uploaderId,
             sourceUrl,
-            storageType: 'file'
+            storageType: 'file',
+            governance: buildDocumentGovernanceMetadata({ filename: req.uploadInfo.originalname, divisionKey, source: 'upload' })
           });
           console.log('[RAG] Ingestion result:', ing);
         } catch (err) {
@@ -1852,9 +1885,15 @@ router.post('/training/manual', async (req, res, next) => {
       });
     }
 
+    await applyTrainingGovernance(training.id, {
+      filename: training.filename,
+      divisionKey,
+      source: source || 'manual',
+      owner: divisionKey || (req.user && req.user.role ? req.user.role : null)
+    });
+
     console.log('[POST /admin/training/manual] Training created:', training.id);
-    
-    res.status(201).send({
+res.status(201).send({
       ok: true,
       trainingDataId: training.id,
       filename: training.filename,
@@ -1879,7 +1918,8 @@ router.post('/training/manual', async (req, res, next) => {
           divisionKey,
           filename: training.filename,
           uploadedById: uploaderId,
-          storageType: 'manual'
+          storageType: 'manual',
+          governance: buildDocumentGovernanceMetadata({ filename: training.filename, divisionKey, source: 'manual' })
         });
         console.log('[RAG] Ingestion result:', ing);
       } catch (err) {

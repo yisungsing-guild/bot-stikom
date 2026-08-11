@@ -154,6 +154,14 @@ const { buildHumanizedWhatsappReply } = require('../utils/whatsappFormatter');
 const { sendTelegramMessage } = require('../utils/telegram');
 const { createIncident, formatIncidentForTelegram } = require('../utils/incidentManager');
 const { SOURCE_TYPES } = require('./telemetryConstants');
+const {
+  rememberInboundEventPersistent,
+  detectUserFeedback,
+  recordUserFeedback,
+  extractLastBotMessage,
+  extractLastBotSource,
+  updateConversationMemory
+} = require('../engine/runtimeGovernance');
 
 // Helper to check bundled index availability (can be overridden in test env)
 function checkBundledIndexAvailable() {
@@ -8695,6 +8703,14 @@ module.exports = function (provider) {
           console.log('[DEBUG_TELEMETRY_ERROR]', { err: e && e.message ? e.message : String(e), chatId });
         }
       }
+      try {
+        await updateConversationMemory(prisma, chatId, {
+          answer: outboundText,
+          source: metaPayload.source || null,
+          confidenceScore: typeof metaPayload.confidenceScore === 'number' ? metaPayload.confidenceScore : null
+        });
+      } catch (e) { }
+
       // Call provider.sendMessage with metaPayload only if provider supports it.
       if (provider && typeof provider.sendMessage === 'function') {
         // If provider's sendMessage supports 3 args (chatId, text, meta), use it.
@@ -8931,6 +8947,29 @@ module.exports = function (provider) {
     recordRouteDebugEvent(chatId, { route: 'incoming', text, source: 'webhook' });
     if (!chatId || typeof text === 'undefined') return res.status(400).send({ error: 'chatId and text required' });
 
+    try {
+      const persistentDedupeTimeoutMsRaw = parseInt(process.env.PERSISTENT_INBOUND_DEDUPE_TIMEOUT_MS || '800', 10);
+      const persistentDedupeTimeoutMs = Number.isFinite(persistentDedupeTimeoutMsRaw) && persistentDedupeTimeoutMsRaw > 0 ? persistentDedupeTimeoutMsRaw : 800;
+      const persistentDedupe = await Promise.race([
+        rememberInboundEventPersistent(prisma, {
+          provider: req.body && req.body.source ? req.body.source : 'provider',
+          source: req.body && req.body.source ? req.body.source : 'provider',
+          chatId,
+          text,
+          normalizedText,
+          messageId,
+          inboundTs: inboundTs ? new Date(inboundTs) : null
+        }),
+        new Promise((resolve) => setTimeout(() => resolve({ duplicate: false, skipped: true, reason: 'persistent_dedupe_timeout' }), persistentDedupeTimeoutMs))
+      ]);
+      if (persistentDedupe && persistentDedupe.duplicate) {
+        logger.info({ chatId, messageId, reason: persistentDedupe.reason || 'persistent_dedupe' }, '[ProviderRoute] Duplicate inbound ignored by persistent dedupe');
+        recordRouteDebugEvent(chatId, { route: 'dedupe_persistent', text, source: 'provider' });
+        return res.send({ ok: true, deduped: true, reason: persistentDedupe.reason || 'persistent_dedupe' });
+      }
+    } catch (e) {
+      logger.warn({ err: e && e.message ? e.message : String(e), chatId }, '[ProviderRoute] persistent dedupe check failed; continuing with memory dedupe');
+    }
     const originalSend = res.send.bind(res);
     res.send = function (body) {
       try {
@@ -9352,6 +9391,40 @@ module.exports = function (provider) {
       );
       let sessionData = (session && session.data) ? session.data : {};
 
+      try {
+        await updateConversationMemory(prisma, chatId, {
+          userText: text,
+          source: 'inbound',
+          confidenceScore: intentConfidence
+        });
+      } catch (e) { }
+
+      try {
+        const feedbackType = detectUserFeedback(text);
+        if (feedbackType) {
+          const feedback = await recordUserFeedback(prisma, {
+            chatId,
+            feedbackType,
+            userText: text,
+            lastBotAnswer: extractLastBotMessage(sessionData),
+            lastBotSource: extractLastBotSource(sessionData),
+            metadata: {
+              incomingIntent,
+              routedIntent,
+              messageId,
+              normalizedText
+            }
+          });
+          recordRouteDebugEvent(chatId, { route: 'feedback_capture', text, source: 'provider', metadata: { feedbackType, recorded: !!(feedback && feedback.recorded) } });
+          const feedbackReply = feedbackType === 'positive'
+            ? 'Terima kasih, Kak. Senang kalau jawabannya sudah sesuai.'
+            : 'Terima kasih koreksinya, Kak. Saya catat jawaban sebelumnya sebagai bahan evaluasi agar tidak terulang. Kalau boleh, kirim ulang pertanyaannya dengan detail yang benar ingin kakak cari.';
+          await sendBotMessage(chatId, feedbackReply, { source: 'feedback-capture', sourceType: SOURCE_TYPES.RULE });
+          return res.send({ ok: true, source: 'feedback_capture', feedbackRecorded: !!(feedback && feedback.recorded) });
+        }
+      } catch (e) {
+        logger.warn({ err: e && e.message ? e.message : String(e), chatId }, '[ProviderRoute] feedback capture failed; continuing normal route');
+      }
       // Quick top-level anchored RAG: if user is in registrationFlow.choose_program (S1)
       // and asked a specific program total question, use the official wrapper
       // so the same evaluator/skip/fallback/logging pipeline is preserved.

@@ -83,6 +83,12 @@ model TrainingData {
   content   String   // extracted text content
   source    String   // "upload", "url", "manual", "video"
   divisionKey String?
+  governanceStatus String @default("approved") // "approved", "draft", "expired", "rejected"
+  governanceOwner String?
+  governanceVersion String?
+  validFrom DateTime?
+  validTo DateTime?
+  governanceMetadata Json?
   ragIngestStatus String @default("unknown") // "unknown", "processing", "success", "failed", "rejected"
   ragIngestError String?
   ragIngestedAt DateTime?
@@ -96,6 +102,62 @@ model TrainingData {
   processingStatus String? @default("pending")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([governanceStatus])
+  @@index([validTo])
+}
+
+model InboundEventDedupe {
+  id        String   @id
+  provider  String   @default("whatsapp")
+  chatId    String
+  messageId String?
+  dedupeKey String   @unique
+  textHash  String?
+  inboundTs DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([chatId])
+  @@index([messageId])
+  @@index([createdAt])
+}
+
+model UserFeedback {
+  id            String   @id @default(uuid())
+  chatId        String
+  feedbackType  String
+  userText      String
+  lastBotAnswer String?
+  lastBotSource String?
+  status        String   @default("open")
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([chatId])
+  @@index([feedbackType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RagTrace {
+  id                   String   @id @default(uuid())
+  chatId               String?
+  question             String
+  normalizedQuestion   String?
+  intent               String?
+  source               String?
+  confidenceScore      Float?
+  confidenceTier       String?
+  routeStage           String?
+  selectedContextCount Int      @default(0)
+  topSources           Json?
+  debug                Json?
+  createdAt            DateTime @default(now())
+
+  @@index([chatId])
+  @@index([source])
+  @@index([intent])
+  @@index([createdAt])
 }
 
 model AdminUser {

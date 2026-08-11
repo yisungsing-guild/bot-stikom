@@ -9896,7 +9896,7 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
     const fileHash = typeof opts.fileHash === 'string' ? opts.fileHash : null;
     const trainingVersion = typeof opts.trainingVersion === 'string' ? opts.trainingVersion : null;
     const uploadedById = typeof opts.uploadedById === 'string' ? opts.uploadedById : null;
-
+    const governance = (opts.governance && typeof opts.governance === 'object') ? opts.governance : null;
     logger.info({
       trainingId,
       source,
@@ -10039,7 +10039,8 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
             trainingVersion: trainingVersion || existingDuplicate.trainingVersion || null,
             uploadedById: uploadedById || existingDuplicate.uploadedById || null,
             duplicateAliasOf: existingDuplicate.id || null,
-            duplicateAliasTrainingId: existingDuplicate.trainingId || null
+            duplicateAliasTrainingId: existingDuplicate.trainingId || null,
+            governance: governance || existingDuplicate.governance || null
           };
           filteredIndex.push(aliasChunk);
           aliasedDuplicates++;
@@ -10075,6 +10076,7 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
         fileHash: fileHash || null,
         trainingVersion: trainingVersion || null,
         uploadedById: uploadedById || null,
+        governance: governance || null,
         program: detectedProgram,
         programName: structured.programName || null,
         programAliases: Array.isArray(structured.programAliases) ? structured.programAliases : [],
@@ -10128,7 +10130,8 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
           sourceFile: resolvedSourceFile || resolvedFilename || null,
           fileHash: fileHash || null,
           trainingVersion: trainingVersion || null,
-          uploadedById: uploadedById || null
+          uploadedById: uploadedById || null,
+          governance: governance || null
         };
         
         // Enrich summary chunk with document category
