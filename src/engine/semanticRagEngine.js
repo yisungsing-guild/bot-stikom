@@ -5989,35 +5989,36 @@ function buildLanguageLearningAnswer() {
 
 function buildCareerReadinessProgramsAnswer() {
   return [
-    'Program atau layanan yang relevan di Career Center ITB STIKOM Bali umumnya mencakup:',
+    'Ya, dari data Career Center yang tersedia, mahasiswa mendapat dukungan untuk persiapan karier dan melamar pekerjaan.',
     '',
-    '- Informasi lowongan kerja dan peluang karier.',
-    '- Informasi magang dan peluang pengalaman kerja.',
-    '- Job fair atau campus hiring jika tersedia di agenda kampus.',
-    '- Konsultasi karier dan bimbingan persiapan melamar pekerjaan.',
+    'Bentuk kegiatan atau layanannya mencakup:',
+    '',
+    '- Konsultasi atau bimbingan karier.',
     '- Pembekalan softskill dan keterampilan kerja.',
+    '- Persiapan melamar pekerjaan dan memasuki dunia profesional.',
+    '- Informasi lowongan kerja dan peluang karier.',
+    '- Informasi magang atau pengalaman kerja.',
+    '- Job fair atau campus hiring jika tersedia dalam agenda kampus.',
     '- Tracer study dan dukungan kesiapan kerja setelah lulus.',
-    '- Program pendukung karier internasional seperti Hi-Think, short course, atau peluang kerja/magang luar negeri sesuai data yang tersedia.',
     '',
-    'Jadi, kalau kakak menanyakan "apa saja program di Career Center?", jawabannya yang paling aman adalah layanan di atas, bukan hanya topik yang perlu ditanyakan lagi.'
+    'Untuk jadwal kegiatan, materi pelatihan rinci, formulir pendaftaran, atau program yang sedang berjalan, kakak sebaiknya cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.'
   ].join('\n');
 }
 function buildCareerSoftskillAnswer() {
   return [
-    'Dalam pengembangan softskill, Career Center ITB STIKOM Bali membantu mahasiswa dan alumni mempersiapkan diri masuk dunia kerja.',
+    'Ya, mahasiswa mendapat dukungan persiapan sebelum melamar pekerjaan melalui layanan Career Center dan program pengembangan softskill yang tercatat pada data kampus.',
     '',
-    'Hal yang aman saya sampaikan dari data yang tersedia meliputi:',
+    'Bentuk kegiatannya yang aman saya sampaikan:',
     '',
     '- Bimbingan atau konsultasi karier.',
-    '- Pembekalan dan pelatihan keterampilan kerja.',
-    '- Informasi lowongan kerja dan magang.',
-    '- Kegiatan pendukung seperti job fair atau campus hiring jika tersedia pada agenda kampus.',
-    '- Dukungan persiapan memasuki dunia profesional.',
+    '- Pembekalan softskill dan keterampilan kerja.',
+    '- Arahan kesiapan melamar pekerjaan dan memasuki dunia profesional.',
+    '- Informasi lowongan kerja, magang, job fair, atau campus hiring jika tersedia.',
+    '- Dukungan karier untuk mahasiswa dan alumni.',
     '',
-    'Untuk rincian teknis seperti jadwal pelatihan, daftar materi softskill, nama program, atau cara ikut kegiatan tertentu, saya belum menemukan detail lengkap pada data yang tersedia. Bagian itu sebaiknya dikonfirmasi ke Career Center/admin kampus.'
+    'Untuk detail teknis seperti jadwal pelatihan, nama kelas, materi per sesi, kuota, atau cara ikut, saya belum menemukan rincian lengkap pada data yang tersedia. Bagian itu sebaiknya dikonfirmasi ke Career Center/admin kampus.'
   ].join('\n');
 }
-
 function buildIndustryServicesNoDataAnswer() {
   return [
     'Saya belum menemukan daftar layanan industri khusus pada data yang tersedia.',
