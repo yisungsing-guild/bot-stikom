@@ -1244,6 +1244,18 @@ function getModel() {
 }
 
 function getClient() {
+  if (envFlag('SEMANTIC_RAG_FAKE_CLIENT_FOR_REGRESSION', false)) {
+    return {
+      chat: {
+        completions: {
+          create: async () => ({ choices: [{ message: { content: '{"verdict":"direct","confidence":1,"reason":"local regression fake client"}' } }] })
+        }
+      },
+      embeddings: {
+        create: async () => ({ data: [{ embedding: Array.from({ length: 64 }, () => 0) }] })
+      }
+    };
+  }
   const apiKey = String(process.env.OPENAI_API_KEY || '').trim();
   if (!apiKey || isPlaceholderOpenAiApiKey(apiKey)) return null;
   if (process.env.NODE_ENV === 'test' && apiKey !== 'test-key' && !envFlag('ALLOW_OPENAI_IN_TEST', false)) return null;
