@@ -36,6 +36,8 @@ const { classifyDocumentCategory } = require('./docCategoryClassifier');
 const {
   buildQueryUnderstanding,
   rerankContexts,
+  reciprocalRankFusion,
+  mmrDiversifyContexts,
   processEvidence
 } = require('./ragTechniquePipeline');
 
@@ -559,7 +561,7 @@ function detectGenericIntent(question) {
   if (/\b(pasal|ayat|force\s*majeure|addendum|perjanjian|klausul|isi\s+pasal|legal|hukum)\b/i.test(q)) return 'legal';
   // Check scholarship before fee to avoid misclassification
   if (/\b(beasiswa|bantuan\s+(?:biaya|biaya\s+bantuan)|potongan|kip|1k1s|skss)\b/i.test(q)) return 'scholarship';
-  if (/\b(akreditasi|ban\s*-?\s*pt|peringkat)\b/i.test(q)) return 'accreditation';
+  if (/\b(akreditasi|akrediasi|ban\s*-?\s*pt|peringkat)\b/i.test(q)) return 'accreditation';
   if (/\b(rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(q)) return 'rpl';
   if (/\b(double\s*degree|dual\s*degree|dd)\b/i.test(q) && !/\bprogram\s+(?:double|dual)\s*degree\b/i.test(q)) return 'dual_degree';
   if (/\b(visa\s+(?:study|studi|pelajar)|izin\s+belajar|study\s+permit|itas|kitas|sktt|mahasiswa\s+asing)\b/i.test(q)) return 'visa_study';
@@ -1728,6 +1730,141 @@ const FAQ_KEYWORDS = {
   izin_belajar: ['izin belajar', 'study permit', 'mahasiswa asing', 'visa pelajar', 'itas', 'kitas', 'sktt', 'perpanjangan izin', 'dokumen mahasiswa asing', 'pengurusan izin belajar']
 };
 
+let dynamicAliasDictionaryCache = { hash: '', aliases: [] };
+const dynamicAliasDictionaryPath = path.resolve(__dirname, '..', '..', 'data', 'runtime', 'dynamic_alias_dictionary.json');
+
+function readPersistedDynamicAliasDictionary(signature) {
+  try {
+    if (!fs.existsSync(dynamicAliasDictionaryPath)) return null;
+    const parsed = JSON.parse(fs.readFileSync(dynamicAliasDictionaryPath, 'utf8') || '{}');
+    if (!parsed || parsed.signature !== signature || !Array.isArray(parsed.aliases)) return null;
+    return parsed.aliases;
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to read dynamic alias dictionary');
+    return null;
+  }
+}
+
+function writePersistedDynamicAliasDictionary(signature, aliases) {
+  try {
+    fs.mkdirSync(path.dirname(dynamicAliasDictionaryPath), { recursive: true });
+    const payload = {
+      version: 1,
+      signature,
+      generatedAt: new Date().toISOString(),
+      aliasCount: Array.isArray(aliases) ? aliases.length : 0,
+      aliases: Array.isArray(aliases) ? aliases : []
+    };
+    fs.writeFileSync(dynamicAliasDictionaryPath, JSON.stringify(payload, null, 2), 'utf8');
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to write dynamic alias dictionary');
+  }
+}
+
+function normalizeDynamicAliasText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function titleCaseDynamicAlias(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map((word) => /^(s[123]|d[34]|si|ti|bd|sk|mi)$/i.test(word) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function canonicalizeDynamicProgramName(value) {
+  const text = String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  if (/\b(?:s2\s+sistem\s+informasi|magister\s+sistem\s+informasi)\b/i.test(text)) return 'S2 Sistem Informasi';
+  if (/\bsistem\s+informasi\b/i.test(text)) return 'Sistem Informasi';
+  if (/\bteknologi\s+informasi\b/i.test(text)) return 'Teknologi Informasi';
+  if (/\bbisnis\s+digital\b/i.test(text)) return 'Bisnis Digital';
+  if (/\bsistem\s+komputer\b/i.test(text)) return 'Sistem Komputer';
+  if (/\bmanajemen\s+informatika\b/i.test(text)) return 'Manajemen Informatika';
+  if (/\bdesain\s+komunikasi\s+visual\b/i.test(text)) return 'Desain Komunikasi Visual';
+  if (/\bteknologi\s+rekayasa\s+perangkat\s+lunak\b/i.test(text)) return 'Teknologi Rekayasa Perangkat Lunak';
+  if (/\bteknologi\s+komputer\b/i.test(text)) return 'Teknologi Komputer';
+  if (/\bdesain\s+grafis\b/i.test(text)) return 'Desain Grafis';
+  if (/\bmultimedia\b/i.test(text)) return 'Multimedia';
+  if (/\banimasi\b/i.test(text)) return 'Animasi';
+  return '';
+}
+
+function isUsefulDynamicProgramName(value) {
+  const text = String(value || '').toLowerCase();
+  if (!text.trim()) return false;
+  return /\b(?:s2\s+sistem\s+informasi|magister\s+sistem\s+informasi|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|desain\s+komunikasi\s+visual|teknologi\s+rekayasa\s+perangkat\s+lunak|teknologi\s+komputer|multimedia|animasi|desain\s+grafis)\b/i.test(text);
+}
+
+function addDynamicAlias(out, seen, alias, canonical, type, source) {
+  const aliasText = normalizeDynamicAliasText(alias);
+  const canonicalText = titleCaseDynamicAlias(canonical);
+  if (!aliasText || !canonicalText || aliasText === normalizeDynamicAliasText(canonicalText)) return;
+  if (aliasText.length < 2 || canonicalText.length < 3) return;
+  const key = aliasText + '->' + normalizeDynamicAliasText(canonicalText);
+  if (seen.has(key)) return;
+  seen.add(key);
+  out.push({ alias: aliasText, canonical: canonicalText, type: type || 'document_alias', source: source || null });
+}
+
+function buildDynamicAliasDictionary(index) {
+  const list = Array.isArray(index) ? index : [];
+  const signature = list.slice(0, 2500).map((item) => [item && item.id, item && item.trainingId, item && item.filename, item && item.sourceFile, String(item && item.chunk || '').length].join(':')).join('|');
+  if (dynamicAliasDictionaryCache.hash === signature) return dynamicAliasDictionaryCache.aliases;
+  const persistedAliases = readPersistedDynamicAliasDictionary(signature);
+  if (persistedAliases) {
+    dynamicAliasDictionaryCache = { hash: signature, aliases: persistedAliases };
+    return persistedAliases;
+  }
+
+  const out = [];
+  const seen = new Set();
+  for (const item of list.slice(0, 2500)) {
+    const source = item && (item.filename || item.sourceFile || item.trainingId || item.id) || null;
+    const text = String((item && (item.filename || item.sourceFile || '')) + '\n' + (item && item.chunk || '')).replace(/\s+/g, ' ').trim();
+    if (!text) continue;
+
+    const programMatches = Array.from(text.matchAll(/(?:program\s+studi|prodi|jurusan)\s+((?:S[123]|D[34])?\s*[A-Za-z][A-Za-z0-9\s/&.-]{2,70}?)(?=\s+(?:terakreditasi|akreditasi|semester|gelombang|tahun|biaya|adalah|:|-)|[.;,()\n]|$)/gi));
+    for (const match of programMatches) {
+      const canonical = String(match[1] || '').replace(/\b(?:di|pada|dengan|untuk|yang|adalah)\b.*$/i, '').trim();
+      if (!canonical || canonical.length > 80 || !isUsefulDynamicProgramName(canonical)) continue;
+      addDynamicAlias(out, seen, canonical, canonical, 'program', source);
+      const acronym = canonical.split(/\s+/).filter(Boolean).map((w) => w[0]).join('').toLowerCase();
+      if (acronym.length >= 2 && acronym.length <= 5) addDynamicAlias(out, seen, acronym, canonical, 'program', source);
+    }
+
+    const s2Match = text.match(/\b(S2\s+Sistem\s+Informasi|Magister\s+Sistem\s+Informasi)\b/i);
+    if (s2Match || (/\b(?:pascasarjana|pasca\s*sarjana|magister)\b/i.test(text) && /\bsistem\s+informasi\b/i.test(text))) {
+      const canonical = 'S2 Sistem Informasi';
+      for (const alias of ['s2', 's 2', 'pasca', 'pascasarjana', 'pasca sarjana', 'magister', 'master', 'program pascasarjana']) {
+        addDynamicAlias(out, seen, alias, canonical, 'degree_program', source);
+      }
+    }
+
+    const labeledPairs = Array.from(text.matchAll(/(?:nama\s+program|program|jenjang)\s*[:=-]\s*([^.;|\n]{3,80})/gi));
+    for (const match of labeledPairs) {
+      const canonical = String(match[1] || '').replace(/\s+/g, ' ').trim();
+      const canonicalProgram = canonicalizeDynamicProgramName(canonical);
+      if (canonicalProgram) {
+        const acronym = canonicalProgram.split(/\s+/).filter((w) => !/^(program|studi|prodi|jurusan)$/i.test(w)).map((w) => w[0]).join('').toLowerCase();
+        if (acronym.length >= 2 && acronym.length <= 5) addDynamicAlias(out, seen, acronym, canonicalProgram, 'program', source);
+      }
+    }
+
+    if (out.length >= 400) break;
+  }
+
+  dynamicAliasDictionaryCache = { hash: signature, aliases: out };
+  writePersistedDynamicAliasDictionary(signature, out);
+  return out;
+}
+
 function getTopicBoost(filename, chunk) {
   const haystack = `${filename || ''} ${chunk || ''}`.toLowerCase();
   let boost = 0;
@@ -1791,11 +1928,12 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
   const preliminaryQueries = uniqueList(searchQueries, 8);
   const question = options.question || preliminaryQueries[0] || '';
   const questionIntent = options.intent || detectGenericIntent(question);
+  const dynamicAliases = buildDynamicAliasDictionary(index);
   const understanding = options.queryUnderstanding || buildQueryUnderstanding(question, {
     canonicalQuestion: question,
     searchQueries: preliminaryQueries,
     intent: questionIntent
-  }, { intentHint: questionIntent });
+  }, { intentHint: questionIntent, dynamicAliases });
   const queries = uniqueList([...(understanding.searchQueries || []), ...preliminaryQueries], 8);
 
   // Get database candidates (generic scoring)
@@ -1914,15 +2052,26 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
 
   const candidateContexts = rerankContexts(dedupedCandidates.slice(0, maxCandidates).map(toContext), understanding, { topK: maxCandidates });
   const dbCandidateContexts = rerankContexts(dbCandidates.slice(0, maxCandidates).map(toContext), understanding, { topK: maxCandidates });
+  const rrfEnabled = envFlag('SEMANTIC_RAG_RRF_ENABLED', true);
+  const mmrEnabled = envFlag('SEMANTIC_RAG_MMR_ENABLED', true);
+  const rrfKRaw = Number(process.env.SEMANTIC_RAG_RRF_K || '60');
+  const rrfK = Number.isFinite(rrfKRaw) ? Math.max(1, rrfKRaw) : 60;
+  const mmrLambdaRaw = Number(process.env.SEMANTIC_RAG_MMR_LAMBDA || '0.72');
+  const mmrLambda = Number.isFinite(mmrLambdaRaw) ? Math.max(0, Math.min(1, mmrLambdaRaw)) : 0.72;
+  const fusedCandidateContexts = rrfEnabled
+    ? reciprocalRankFusion([candidateContexts, dbCandidateContexts], { k: rrfK, topK: maxCandidates })
+    : dedupeContexts([...candidateContexts, ...dbCandidateContexts]).sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  const diversifiedCandidateContexts = mmrEnabled
+    ? mmrDiversifyContexts(fusedCandidateContexts, understanding, { topK: maxCandidates, lambda: mmrLambda })
+    : fusedCandidateContexts;
 
   // Apply quality-control filtering. If the filter removes every otherwise
   // relevant candidate, keep strong raw candidates instead of immediately
   // falling back to a vague/no-data answer.
-  const rawContexts = candidateContexts.slice(0, topK);
+  const rawContexts = diversifiedCandidateContexts.slice(0, topK);
   const filteredCandidates = dedupeContexts([
-    ...filterSemanticContextsForQuestion(question, candidateContexts),
-    ...filterSemanticContextsForQuestion(question, dbCandidateContexts)
-  ]).sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+    ...filterSemanticContextsForQuestion(question, diversifiedCandidateContexts)
+  ]).sort((a, b) => Number(b.mmrScore || b.rrfScore || b.score || 0) - Number(a.mmrScore || a.rrfScore || a.score || 0));
   const filteredContexts = filteredCandidates.slice(0, topK);
   const relaxedMinRaw = Number(process.env.SEMANTIC_RAG_RELAXED_MIN_SCORE || '0.16');
   const relaxedMin = Number.isFinite(relaxedMinRaw) ? relaxedMinRaw : 0.16;
@@ -1936,7 +2085,7 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
 
   let contexts = filteredContexts.length
     ? filteredContexts
-    : (allowRelaxedFallback ? candidateContexts.filter((ctx) => Number(ctx && ctx.score) >= relaxedMin).slice(0, topK) : []);
+    : (allowRelaxedFallback ? diversifiedCandidateContexts.filter((ctx) => Number(ctx && ctx.score) >= relaxedMin).slice(0, topK) : []);
 
   if (minContextScore > 0 && contexts.length) {
     contexts = contexts.filter((ctx) => Number(ctx.score) >= minContextScore);
@@ -1970,7 +2119,10 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     faqFallbackUsed: contexts.length > 0 && contexts[0].sourceType === 'faq-lookup',
     techniquePipeline: {
       queryUnderstanding: understanding,
+      dynamicAliasCount: dynamicAliases.length,
       reranking: { enabled: true, candidateCount: candidateContexts.length, dbCandidateCount: dbCandidateContexts.length },
+      fusion: { rrfEnabled, rrfK, fusedCount: fusedCandidateContexts.length },
+      diversification: { mmrEnabled, mmrLambda, diversifiedCount: diversifiedCandidateContexts.length },
       domainAlignment: {
         queryDomains: [...inferQuestionDomains(question, questionIntent)],
         topCandidates: dedupedCandidates.slice(0, 8).map((candidate) => ({
@@ -5586,7 +5738,18 @@ function tryGenericFaqQnaAnswer(question, indexForQuery, options = {}) {
 }
 function tryAccreditationAnswer(question, indexForQuery) {
   const q = String(question || '');
-  if (!/\b(akreditasi(?:nya)?|akredit|terakreditasi|ban\s*-?\s*pt|peringkat\s+akreditasi|sertifikat\s+akreditasi|sk\s+akreditasi)\b/i.test(q)) return null;
+  if (!/\b(akreditasi(?:nya)?|akredit|akrediasi|terakreditasi|ban\s*-?\s*pt|peringkat\s+akreditasi|sertifikat\s+akreditasi|sk\s+akreditasi)\b/i.test(q)) return null;
+
+  const asksS2Accreditation = /\b(?:pasca|pascasarjana|pasca\s*sarjana|s2|s\s*2|magister|master)\b/i.test(q);
+  if (asksS2Accreditation) {
+    const structuredS2 = ragEngine.tryStructuredAccreditationAnswer('akreditasi S2 Sistem Informasi', indexForQuery);
+    if (structuredS2 && structuredS2.answer && structuredS2.source !== 'rag-accreditation-clarify') return structuredS2;
+    return {
+      answer: 'Akreditasi Prodi S2 Sistem Informasi belum saya temukan secara lengkap pada data akreditasi yang tersedia. Agar tidak salah menyebut peringkat, kakak sebaiknya konfirmasi ke Admin PMB atau bagian akademik.',
+      source: 'rag-accreditation-no-data',
+      frameSource: 'rag-accreditation'
+    };
+  }
 
   const asksProgramAccreditationOverview = /\b(program|prodi|program\s+studi|jurusan)\b/i.test(q)
     && /\b(apa\s+(?:aja|saja)|ada\s+apa|yang\s+ada|tersedia|gimana|bagaimana)\b/i.test(q);
@@ -10016,6 +10179,51 @@ function tryAcademicCreditNoDataAnswer(question) {
     source: 'semantic-rag-academic-credit-no-data'
   };
 }
+function tryGreetingPermissionAnswer(question) {
+  const q = String(question || '').trim().toLowerCase();
+  if (!q) return null;
+  const hasGreeting = /\b(?:halo|hallo|hai|hay|selamat\s+(?:pagi|siang|sore|malam)|permisi|assalamu'?alaikum)\b/i.test(q);
+  const asksToAsk = /\b(?:ingin|mau|boleh|bisa|izin|ijin)\b.{0,30}\b(?:bertanya|tanya|nanya)\b|\b(?:bertanya|tanya|nanya)\b/i.test(q);
+  if (!hasGreeting || !asksToAsk) return null;
+  const hasSpecificTopic = /\b(?:prodi|program\s+studi|jurusan|biaya|beasiswa|rpl|akreditasi|double\s*degree|dual\s*degree|dnui|help|utb|pendaftaran|pmb|gelombang|visa|izin\s+belajar|ukm|ormawa|organisasi|kampus|sks|kurikulum)\b/i.test(q);
+  if (hasSpecificTopic) return null;
+  return {
+    answer: 'Halo, Kak. Silakan, mau tanya seputar prodi, PMB, biaya, beasiswa, RPL, Double Degree, atau informasi kampus apa?',
+    source: 'semantic-rag-small-talk',
+    frameSource: 'semantic-rag-small-talk'
+  };
+}
+function tryDualDegreeFeeClarificationAnswer(question) {
+  const q = String(question || '').trim().toLowerCase();
+  if (!q) return null;
+  const asksDualDegree = /\b(?:double|dual)\s*degree\b|\bdd\b|\bdnui\b|\bhelp\s+university\b|\butb\b/i.test(q);
+  const asksFee = /\b(?:biaya|harga|tarif|bayar|pembayaran|dpp|ukt|potongan|diskon|rincian|nominal|total)\b/i.test(q);
+  if (!asksDualDegree || !asksFee) return null;
+  const partner = /\bdnui\b/i.test(q) ? 'DNUI'
+    : /\bhelp\s+university\b|\bhelp\b/i.test(q) ? 'HELP University'
+      : /\butb\b/i.test(q) ? 'UTB'
+        : '';
+  if (partner) {
+    return {
+      answer: [
+        `Untuk biaya atau potongan Double Degree ${partner}, saya belum menemukan angka lengkap yang aman untuk langsung disebutkan dari data yang tersedia.`,
+        '',
+        'Supaya tidak salah nominal, kakak sebaiknya konfirmasi ke Admin PMB dengan menyebut partner Double Degree dan gelombang pendaftaran yang dimaksud.'
+      ].join('\n'),
+      source: 'semantic-rag-dual-degree-fee-clarification',
+      frameSource: 'semantic-rag-fee-clarification'
+    };
+  }
+  return {
+    answer: [
+      'Untuk biaya atau potongan Double Degree, rinciannya bisa berbeda berdasarkan partner program.',
+      '',
+      'Agar tidak salah angka, pilih dulu program yang kakak maksud: Double Degree UTB, DNUI, atau HELP University. Kalau kakak tahu gelombang pendaftarannya, sertakan juga gelombangnya.'
+    ].join('\n'),
+    source: 'semantic-rag-dual-degree-fee-clarification',
+    frameSource: 'semantic-rag-fee-clarification'
+  };
+}
 async function querySemanticRag(question, options = {}) {
   const resultCacheKey = buildSemanticResultCacheKey(question, options);
   const cachedResult = getCachedSemanticResult(resultCacheKey);
@@ -10029,6 +10237,12 @@ async function querySemanticRag(question, options = {}) {
   if (earlySmallTalk && earlySmallTalk.answer && shouldReturnSmallTalkImmediately(question, earlySmallTalkWords)) {
     const smallTalkResp = buildDeterministicResponse(question, 'semantic-rag-small-talk', earlySmallTalk, { routeStage: 'pre-guard-small-talk' });
     return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
+  }
+
+  const greetingPermission = strictDocumentOnly ? null : tryGreetingPermissionAnswer(routingQuestion || question);
+  if (greetingPermission && greetingPermission.answer) {
+    const builtGreetingPermission = buildDeterministicResponse(question, greetingPermission.source || 'semantic-rag-small-talk', greetingPermission, { routeStage: 'pre-guard-greeting-permission', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
   }
 
   if (!strictDocumentOnly && /\b(?:linked\s*in|linkedin)\b/i.test(routingQuestion) && /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|career|karier|karir)\b/i.test(routingQuestion)) {
@@ -10053,6 +10267,43 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-career-readiness', preGuardCareerCenter, { routeStage: 'pre-guard-career-center-service', normalizedRouting: normalizedRouting.changed }), resultCacheKey);
   }
 
+
+  const preGuardDualDegreeFeeClarification = strictDocumentOnly ? null : tryDualDegreeFeeClarificationAnswer(routingQuestion || question);
+  if (preGuardDualDegreeFeeClarification && preGuardDualDegreeFeeClarification.answer) {
+    const builtDualDegreeFeeClarification = buildDeterministicResponse(question, preGuardDualDegreeFeeClarification.source || 'semantic-rag-dual-degree-fee-clarification', preGuardDualDegreeFeeClarification, { routeStage: 'pre-guard-dual-degree-fee-clarification', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtDualDegreeFeeClarification, resultCacheKey);
+  }
+
+  const preGuardAccreditation = strictDocumentOnly ? null : tryAccreditationAnswer(routingQuestion || question, getCachedSemanticIndex());
+  if (preGuardAccreditation && preGuardAccreditation.answer) {
+    const builtPreGuardAccreditation = buildDeterministicResponse(question, preGuardAccreditation.source || 'rag-accreditation', preGuardAccreditation, { routeStage: 'pre-guard-accreditation', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtPreGuardAccreditation, resultCacheKey);
+  }
+
+  const preGuardAcademicSpecificNoData = strictDocumentOnly ? null : tryAcademicSpecificNoDataAnswer(routingQuestion || question);
+  if (preGuardAcademicSpecificNoData && preGuardAcademicSpecificNoData.answer) {
+    const builtPreGuardAcademicSpecificNoData = buildDeterministicResponse(question, preGuardAcademicSpecificNoData.source || 'semantic-rag-academic-no-data', preGuardAcademicSpecificNoData, { routeStage: 'pre-guard-academic-specific-no-data', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtPreGuardAcademicSpecificNoData, resultCacheKey);
+  }
+
+  const preGuardUkmAnswer = strictDocumentOnly ? null : tryUkmAnswer(routingQuestion || question, getCachedSemanticIndex(), options);
+  if (preGuardUkmAnswer && preGuardUkmAnswer.answer) {
+    const builtPreGuardUkm = buildDeterministicResponse(question, preGuardUkmAnswer.source || 'semantic-rag-ukm-list', preGuardUkmAnswer, { routeStage: 'pre-guard-ukm', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtPreGuardUkm, resultCacheKey);
+  }
+
+  if (!strictDocumentOnly
+    && /\b(?:student\s*exchange|students\s*exchange|pertukaran\s+mahasiswa)\b/i.test(routingQuestion || question)
+    && /\b(?:apa\s+itu|itu\s+apa|tentang|jelaskan|maksud(?:nya)?|program\s+apa)\b/i.test(routingQuestion || question)) {
+    const studentExchangeDefinition = {
+      answer: 'Student Exchange adalah program pertukaran mahasiswa yang memberi kesempatan kepada mahasiswa ITB STIKOM Bali untuk belajar di kampus luar negeri dalam periode tertentu, sekaligus mendapatkan pengalaman akademik dan budaya internasional. Untuk detail negara tujuan, jadwal, kuota, syarat, biaya, dan alur pendaftaran, kakak sebaiknya konfirmasi ke admin kampus atau unit kerja sama internasional.',
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    const builtStudentExchangeDefinition = buildDeterministicResponse(question, studentExchangeDefinition.source, studentExchangeDefinition, { routeStage: 'pre-guard-student-exchange-definition', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtStudentExchangeDefinition, resultCacheKey);
+  }
+
   if (!strictDocumentOnly) {
     const preGuardFineRoute = detectFineGrainedIntent(routingQuestion);
     const preGuardInternationalListRequested = /\b(?:program\s+internasional|kelas\s+internasional|international\s+program)\b/i.test(routingQuestion);
@@ -10067,7 +10318,7 @@ async function querySemanticRag(question, options = {}) {
         const builtInternational = buildDeterministicResponse(question, preGuardSource, { ...preGuardInternational, source: preGuardSource }, { routeStage: 'pre-guard-international-program-list', normalizedRouting: normalizedRouting.changed });
         return await finalizeSemanticResult(question, builtInternational, resultCacheKey);
       }
-    }    if (preGuardSpecificInternationalEntity && /\b(?:ada|tersedia|punya|program|apa\s+saja|apa\s+aja|pilihan|opsi|ikut|mengikuti)\b/i.test(routingQuestion)) {
+    }    if (preGuardSpecificInternationalEntity && /\b(?:apa\s+itu|tentang|jelaskan|info(?:rmasi)?|ada|tersedia|punya|program|apa\s+saja|apa\s+aja|pilihan|opsi|ikut|mengikuti)\b/i.test(routingQuestion)) {
       const preGuardSupport = tryCampusSupportEntityAnswer(routingQuestion, getCachedSemanticIndex(), options);
       if (preGuardSupport && preGuardSupport.answer) {
         const builtSupport = buildDeterministicResponse(question, preGuardSupport.source || 'semantic-rag-campus-support-entity', preGuardSupport, { routeStage: 'pre-guard-specific-international-support', normalizedRouting: normalizedRouting.changed });

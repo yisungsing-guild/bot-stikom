@@ -61,6 +61,13 @@ baileys-auth/
 data/rag_index*.json
 data/vec_index/
 data/ingest/
+data/runtime/index_snapshots/
+data/runtime/*.log
+data/runtime/*.pid
+!data/runtime/
+!data/runtime/knowledge_source_registry.json
+!data/runtime/knowledge_preparation_manifest.jsonl
+!data/runtime/dynamic_alias_dictionary.json
 
 # Root-level debug/test scratch files
 /*.out

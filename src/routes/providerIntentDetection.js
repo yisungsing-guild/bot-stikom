@@ -127,7 +127,7 @@ function detectIntentDetails(question) {
   const feeSignal = /\b(?:biaya|harga|mahal|murah|dpp|ukt|spp|potongan|diskon|bayar|cicil|angsuran|uang\s*kuliah|tarif|tagihan|nominal|fee)\b/i.test(q);
   const scholarshipSignal = /\b(?:beasiswa|scholarship|kip|1k1s|skss|potongan|diskon|bantuan\s+pendidikan)\b/i.test(q);
   const scheduleSignal = /\b(?:jadwal|gelombang|tanggal|deadline|kapan|waktu|periode|registrasi|pendaftaran|daftar\s+ulang|tutup|mulai|penutupan)\b/i.test(q);
-  const accreditationSignal = /\b(?:akreditasi|peringkat|rank|ban\s*-?pt|sk\s+akreditasi|terakreditasi)\b/i.test(q);
+  const accreditationSignal = /\b(?:akreditasi|akrediasi|peringkat|rank|ban\s*-?pt|sk\s+akreditasi|terakreditasi)\b/i.test(q);
   const locationSignal = /\b(?:lokasi|alamat|kampus|denpasar|china|bali|malaysia|cabang)\b/i.test(q);
   const ukmSignal = /\b(?:ukm|ormawa|organisasi mahasiswa|unit kegiatan mahasiswa|esport|esports|musik|futsal|teater|teater biner|vos)\b/i.test(q);
   const academicSignal = /\b(?:apa\s+itu|apa\s+yang\s+dipelajari|belajar\s+apa|mata\s+kuliah|kurikulum|fokus|prospek\s+kerja|karir|skill|keahlian|bidang\s+keahlian|peluang|profesi|lulusan|mempelajari|dipelajari)\b/i.test(q);

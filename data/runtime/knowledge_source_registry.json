@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "authorities": [
+    {
+      "pattern": "akreditasi|ban\\s*-?pt|lam\\s*-?infokom|sk\\s+lam|surat\\s+keputusan",
+      "level": "high",
+      "reason": "official_accreditation_source"
+    },
+    {
+      "pattern": "pmb|pendaftaran|rincian\\s+biaya|biaya|gelombang|siap\\.stikom",
+      "level": "high",
+      "reason": "official_admission_source"
+    },
+    {
+      "pattern": "kurikulum|rps|sks|program\\s+studi|prodi|fakultas",
+      "level": "medium",
+      "reason": "academic_program_source"
+    },
+    {
+      "pattern": "hima|ukm|ormawa|dpm|bem|inkubator|inbis|career\\s+center|llc",
+      "level": "medium",
+      "reason": "student_service_source"
+    },
+    {
+      "pattern": "draft|template|contoh|sample|dummy|sementara",
+      "level": "low",
+      "reason": "draft_or_unapproved_source"
+    }
+  ]
+}

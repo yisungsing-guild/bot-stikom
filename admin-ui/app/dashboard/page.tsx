@@ -50,6 +50,28 @@ type HandoverRate = {
   handoverRate: number
 }
 
+type RetrievalQuality = {
+  days: number
+  totalTraces: number
+  retrievalHits: number
+  noAnswer: number
+  lowConfidence: number
+  retrievalHitRate: number
+  noAnswerRate: number
+  lowConfidenceRate: number
+}
+
+type KnowledgePreparationSummary = {
+  ok?: boolean
+  total: number
+  reviewRequired: number
+  autoApprovedCandidate: number
+  byQualityBand?: Record<string, number>
+  byCategory?: Record<string, number>
+  conflictSignals?: Record<string, number>
+  lowQualityReasons?: Record<string, number>
+}
+
 type QuestionsRecap = {
   sessionsScanned?: number
   totalUserMessages?: number
@@ -79,6 +101,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<AdminStatsResponse | null>(null)
   const [engagement, setEngagement] = useState<EngagementSummary | null>(null)
   const [handover, setHandover] = useState<HandoverRate | null>(null)
+  const [retrievalQuality, setRetrievalQuality] = useState<RetrievalQuality | null>(null)
+  const [knowledgePreparation, setKnowledgePreparation] = useState<KnowledgePreparationSummary | null>(null)
   const [recentChats, setRecentChats] = useState<ChatListItem[]>([])
   const [questionsRecap, setQuestionsRecap] = useState<QuestionsRecap | null>(null)
 
@@ -97,6 +121,8 @@ export default function DashboardPage() {
           adminFetchJson<AdminStatsResponse>('/admin/stats'),
           adminFetchJson<EngagementSummary>('/admin/analytics/engagement'),
           adminFetchJson<HandoverRate>('/admin/analytics/handover'),
+          adminFetchJson<RetrievalQuality>('/admin/analytics/retrieval-quality?days=30'),
+          adminFetchJson<KnowledgePreparationSummary>('/admin/analytics/knowledge-preparation?limit=500'),
           adminFetchJson<ChatListItem[]>('/admin/chats?limit=10'),
         ])
 
@@ -105,7 +131,9 @@ export default function DashboardPage() {
         const statsRes = results[0].status === 'fulfilled' ? results[0].value : null
         const engagementRes = results[1].status === 'fulfilled' ? results[1].value : null
         const handoverRes = results[2].status === 'fulfilled' ? results[2].value : null
-        const chatsRes = results[3].status === 'fulfilled' ? results[3].value : null
+        const retrievalRes = results[3].status === 'fulfilled' ? results[3].value : null
+        const knowledgePrepRes = results[5].status === 'fulfilled' ? results[5].value : null
+        const chatsRes = results[5].status === 'fulfilled' ? results[5].value : null
 
         if (statsRes) {
           setStats(statsRes)
@@ -120,10 +148,12 @@ export default function DashboardPage() {
         }
         if (engagementRes) setEngagement(engagementRes)
         if (handoverRes) setHandover(handoverRes)
+        if (retrievalRes) setRetrievalQuality(retrievalRes)
+        if (knowledgePrepRes) setKnowledgePreparation(knowledgePrepRes)
         if (Array.isArray(chatsRes)) {
           setRecentChats(chatsRes)
         } else {
-          const reason = results[3].status === 'rejected' ? results[3].reason : null
+          const reason = results[5].status === 'rejected' ? results[5].reason : null
           let msg = 'Failed to load /admin/chats.'
           if (reason instanceof AdminApiError) {
             msg = `Failed to load /admin/chats (${reason.status}).`
@@ -243,6 +273,18 @@ export default function DashboardPage() {
     ? `${Math.max(0, Math.min(100, 100 - handover.handoverRate)).toFixed(1)}%`
     : '—'
 
+  const retrievalHitRate = retrievalQuality && typeof retrievalQuality.retrievalHitRate === 'number'
+    ? `${retrievalQuality.retrievalHitRate.toFixed(1)}%`
+    : '---'
+
+  const noAnswerRate = retrievalQuality && typeof retrievalQuality.noAnswerRate === 'number'
+    ? `${retrievalQuality.noAnswerRate.toFixed(1)}%`
+    : '---'
+
+  const knowledgeReviewRequired = knowledgePreparation && typeof knowledgePreparation.reviewRequired === 'number'
+    ? knowledgePreparation.reviewRequired
+    : null
+
   const messagesReceived = totalSessions !== null ? totalSessions : 0
   const successPct = handover && typeof handover.handoverRate === 'number'
     ? Math.max(0, Math.min(100, 100 - handover.handoverRate))
@@ -270,7 +312,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-6">
         <StatCard
           title="Total Messages"
           value={totalSessions !== null ? totalSessions.toLocaleString() : '—'}
@@ -290,6 +332,21 @@ export default function DashboardPage() {
           title="Response Rate"
           value={responseRate}
           icon={TrendingUp}
+        />
+        <StatCard
+          title="Retrieval Hit"
+          value={retrievalHitRate}
+          icon={TrendingUp}
+        />
+        <StatCard
+          title="No Answer"
+          value={noAnswerRate}
+          icon={MessageSquare}
+        />
+        <StatCard
+          title="Knowledge Review"
+          value={knowledgeReviewRequired !== null ? knowledgeReviewRequired.toLocaleString() : '---'}
+          icon={MessageSquare}
         />
       </div>
 
@@ -379,6 +436,13 @@ export default function DashboardPage() {
                 <span className="text-sm text-muted-foreground">Database</span>
                 <Badge className={dbHealthy ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" : "bg-amber-500/20 text-amber-500 hover:bg-amber-500/30"}>
                   {dbHealthy ? 'Healthy' : 'Unknown'}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Knowledge Prep</span>
+                <Badge className={knowledgeReviewRequired && knowledgeReviewRequired > 0 ? "bg-amber-500/20 text-amber-500 hover:bg-amber-500/30" : "bg-green-500/20 text-green-500 hover:bg-green-500/30"}>
+                  {knowledgeReviewRequired && knowledgeReviewRequired > 0 ? `${knowledgeReviewRequired} review` : 'Clear'}
                 </Badge>
               </div>
 

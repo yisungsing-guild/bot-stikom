@@ -158,6 +158,7 @@ const {
   rememberInboundEventPersistent,
   detectUserFeedback,
   recordUserFeedback,
+  queueFeedbackForReview,
   extractLastBotMessage,
   extractLastBotSource,
   updateConversationMemory
@@ -9424,7 +9425,17 @@ module.exports = function (provider) {
               normalizedText
             }
           });
-          recordRouteDebugEvent(chatId, { route: 'feedback_capture', text, source: 'provider', metadata: { feedbackType, recorded: !!(feedback && feedback.recorded) } });
+          const feedbackReview = await queueFeedbackForReview(prisma, {
+            chatId,
+            feedbackId: feedback && feedback.id ? feedback.id : null,
+            feedbackType,
+            userText: text,
+            question: text,
+            lastBotAnswer: extractLastBotMessage(sessionData),
+            lastBotSource: extractLastBotSource(sessionData),
+            divisionKey: sessionData && sessionData.divisionKey ? sessionData.divisionKey : null
+          });
+          recordRouteDebugEvent(chatId, { route: 'feedback_capture', text, source: 'provider', metadata: { feedbackType, recorded: !!(feedback && feedback.recorded), reviewQueued: !!(feedbackReview && feedbackReview.queued) } });
           const feedbackReply = feedbackType === 'positive'
             ? 'Terima kasih, Kak. Senang kalau jawabannya sudah sesuai.'
             : 'Terima kasih koreksinya, Kak. Saya catat jawaban sebelumnya sebagai bahan evaluasi agar tidak terulang. Kalau boleh, kirim ulang pertanyaannya dengan detail yang benar ingin kakak cari.';
@@ -10409,6 +10420,15 @@ module.exports = function (provider) {
           if (incident) {
             void sendTelegramMessage(formatIncidentForTelegram(incident));
           }
+          await queueFeedbackForReview(prisma, {
+            chatId,
+            feedbackType: 'wrong_answer',
+            userText: text,
+            question: text,
+            lastBotAnswer: lastBot,
+            lastBotSource: extractLastBotSource(sessionData),
+            divisionKey: sessionData && sessionData.divisionKey ? sessionData.divisionKey : null
+          });
         } catch (e) {
           // ignore
         }

@@ -1731,6 +1731,15 @@ function normalizeAccreditationProgramFromQuestion(qLower) {
   if (!q.trim()) return null;
 
   // Keep this mapping intentionally small and aligned with how users ask on WhatsApp.
+  const hasS2 = /\b(s2|s\s*2|pasca|pascasarjana|pasca\s*sarjana|magister|master)\b/i.test(q);
+  if (hasS2) {
+    return {
+      label: 'S2 Sistem Informasi',
+      key: 's2',
+      aliases: ['s2 sistem informasi', 's2', 'pascasarjana', 'pasca sarjana', 'pasca', 'magister', 'magister sistem informasi', 'master', 'program pascasarjana']
+    };
+  }
+
   const hasBd = /\b(bd|bisnis\s+digital)\b/i.test(q);
   if (hasBd) {
     return {
@@ -1917,7 +1926,7 @@ function tryStructuredAccreditationAnswer(question, indexForQuery) {
   const qLower = normalizeIndonesianQuestionText(q);
   if (!qLower.trim()) return null;
 
-  if (!/\b(akreditasi|akredit|akred)\b|\bban\s*-?\s*pt\b|\bsertifikat\s+akreditasi\b/i.test(qLower)) return null;
+  if (!/\b(akreditasi|akredit|akred|akrediasi)\b|\bban\s*-?\s*pt\b|\bsertifikat\s+akreditasi\b/i.test(qLower)) return null;
 
   const prog = normalizeAccreditationProgramFromQuestion(qLower);
   if (!prog) {

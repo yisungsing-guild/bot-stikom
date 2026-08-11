@@ -84,6 +84,35 @@ function extractAliasEntities(text) {
   };
 }
 
+function findDynamicAliasMatches(text, dynamicAliases = []) {
+  const norm = ` ${normalizeForMatch(text)} `;
+  const out = [];
+  const seen = new Set();
+
+  for (const item of Array.isArray(dynamicAliases) ? dynamicAliases : []) {
+    const alias = compactText(item && item.alias);
+    const canonical = compactText(item && item.canonical);
+    if (!alias || !canonical) continue;
+    const aliasNorm = normalizeForMatch(alias);
+    if (!aliasNorm || aliasNorm.length < 2) continue;
+    const escapedAlias = aliasNorm.replace(/[.*+?^${}()|[]\\]/g, '\\$&');
+    const re = new RegExp(`\\b${escapedAlias}\\b`, 'i');
+    if (!re.test(norm)) continue;
+    const key = `${aliasNorm}->${normalizeForMatch(canonical)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      alias,
+      canonical,
+      type: item.type || 'document_alias',
+      source: item.source || null
+    });
+    if (out.length >= 10) break;
+  }
+
+  return out;
+}
+
 function inferLexicalIntent(text) {
   const norm = normalizeForMatch(text);
   let best = { intent: 'unknown', score: 0 };
@@ -99,12 +128,18 @@ function buildQueryUnderstanding(rawQuestion, rewrite = {}, options = {}) {
   const technique = buildTechniqueEnvelope(rawQuestion, { sessionData: options.sessionData || {} });
   const canonical = compactText(rewrite.canonicalQuestion || normalized.normalizedText || rawQuestion);
   const entities = extractAliasEntities(`${rawQuestion} ${canonical}`);
+  const dynamicAliasMatches = findDynamicAliasMatches(`${rawQuestion} ${canonical}`, options.dynamicAliases);
+  if (dynamicAliasMatches.length) entities.dynamicAliases = dynamicAliasMatches;
   const rewriteQueries = Array.isArray(rewrite.searchQueries) ? rewrite.searchQueries : [];
   const aliasExpansions = [];
   for (const program of entities.programs) {
     aliasExpansions.push(program, `program studi ${program}`);
   }
   if (entities.wave) aliasExpansions.push(`gelombang ${entities.wave}`);
+  for (const match of dynamicAliasMatches) {
+    aliasExpansions.push(match.canonical);
+    if (match.type === 'program' || match.type === 'degree_program') aliasExpansions.push(`program studi ${match.canonical}`);
+  }
 
   const followUpSignals = /\b(itu|tadi|yang\s+mana|berapa|gimana|lanjut|detailnya|bedanya)\b/i.test(String(rawQuestion || ''))
     || compactText(rawQuestion).split(/\s+/).length <= 3;
@@ -268,6 +303,106 @@ function rerankContexts(contexts, understanding, options = {}) {
   return scored.slice(0, Math.max(0, topK));
 }
 
+
+function contextIdentity(ctx) {
+  const metadata = ctx && ctx.metadata && typeof ctx.metadata === 'object' ? ctx.metadata : {};
+  const id = ctx && (ctx.id || ctx.trainingId || ctx.sourceId || metadata.documentId || metadata.trainingId);
+  if (id) return `id:${String(id)}`;
+  return `text:${normalizeForMatch(ctx && (ctx.chunk || ctx.text || '')).slice(0, 220)}`;
+}
+
+function reciprocalRankFusion(rankLists, options = {}) {
+  const lists = Array.isArray(rankLists) ? rankLists.filter(Array.isArray) : [];
+  const k = Number.isFinite(Number(options.k)) ? Math.max(1, Number(options.k)) : 60;
+  const topK = Number.isFinite(Number(options.topK)) ? Math.max(0, Number(options.topK)) : Infinity;
+  const fused = new Map();
+
+  for (let listIndex = 0; listIndex < lists.length; listIndex += 1) {
+    const list = lists[listIndex];
+    for (let rank = 0; rank < list.length; rank += 1) {
+      const ctx = list[rank];
+      if (!ctx || !(ctx.chunk || ctx.text)) continue;
+      const key = contextIdentity(ctx);
+      const contribution = 1 / (k + rank + 1);
+      const prev = fused.get(key);
+      if (!prev) {
+        fused.set(key, {
+          ctx: { ...ctx },
+          rrfScore: contribution,
+          ranks: [{ listIndex, rank: rank + 1 }]
+        });
+      } else {
+        prev.rrfScore += contribution;
+        prev.ranks.push({ listIndex, rank: rank + 1 });
+        if (Number(ctx.score || 0) > Number(prev.ctx.score || 0)) {
+          prev.ctx = { ...prev.ctx, ...ctx };
+        }
+      }
+    }
+  }
+
+  return Array.from(fused.values())
+    .map((entry) => ({
+      ...entry.ctx,
+      score: Math.max(Number(entry.ctx.score || 0), entry.rrfScore),
+      rrfScore: entry.rrfScore,
+      rrf: {
+        k,
+        contributingLists: entry.ranks.length,
+        ranks: entry.ranks
+      }
+    }))
+    .sort((a, b) => Number(b.rrfScore || 0) - Number(a.rrfScore || 0) || Number(b.score || 0) - Number(a.score || 0))
+    .slice(0, topK);
+}
+
+function mmrDiversifyContexts(contexts, understanding, options = {}) {
+  const list = Array.isArray(contexts) ? contexts.filter((ctx) => ctx && (ctx.chunk || ctx.text)) : [];
+  const topK = Number.isFinite(Number(options.topK)) ? Math.max(0, Number(options.topK)) : list.length;
+  if (!list.length || topK <= 0) return [];
+
+  const lambdaRaw = Number(options.lambda);
+  const lambda = Number.isFinite(lambdaRaw) ? Math.max(0, Math.min(1, lambdaRaw)) : 0.72;
+  const selected = [];
+  const remaining = list.map((ctx, index) => ({ ctx, index }));
+  const question = understanding && (understanding.canonicalQuestion || understanding.normalizedText || understanding.rawQuestion) || '';
+
+  while (selected.length < topK && remaining.length) {
+    let bestAt = 0;
+    let bestScore = -Infinity;
+
+    for (let i = 0; i < remaining.length; i += 1) {
+      const current = remaining[i].ctx;
+      const textValue = current.chunk || current.text || '';
+      const relevance = Math.max(
+        Number(current.rrfScore || 0),
+        Number(current.rerankScore || 0),
+        Number(current.score || 0),
+        termOverlapScore(question, textValue)
+      );
+      const redundancy = selected.length
+        ? Math.max(...selected.map((picked) => termOverlapScore(textValue, picked.chunk || picked.text || '')))
+        : 0;
+      const mmrScore = (lambda * relevance) - ((1 - lambda) * redundancy);
+      if (mmrScore > bestScore) {
+        bestScore = mmrScore;
+        bestAt = i;
+      }
+    }
+
+    const picked = remaining.splice(bestAt, 1)[0];
+    selected.push({
+      ...picked.ctx,
+      mmrScore: bestScore,
+      mmr: {
+        lambda,
+        selectedRank: selected.length + 1
+      }
+    });
+  }
+
+  return selected;
+}
 function detectEvidenceConflicts(selectedEvidence, understanding = {}) {
   const list = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   const text = list.map((item) => item && item.text || item && item.chunk || '').join('\n');
@@ -314,6 +449,8 @@ module.exports = {
   buildQueryUnderstanding,
   buildMetadataFilter,
   rerankContexts,
+  reciprocalRankFusion,
+  mmrDiversifyContexts,
   processEvidence,
   detectEvidenceConflicts,
   estimateFinalConfidence

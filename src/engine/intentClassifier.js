@@ -259,7 +259,7 @@ function classifyIntent(question) {
   }
 
   // AKREDITASI_PERINGKAT
-  if (/\b(akreditasi|akredit|peringkat|ranking|ban-pt|sertifikat\s+akreditasi|terakreditasi|sk\s+akreditasi)\b/i.test(q)) {
+  if (/\b(akreditasi|akredit|akrediasi|peringkat|ranking|ban-pt|sertifikat\s+akreditasi|terakreditasi|sk\s+akreditasi)\b/i.test(q)) {
     return 'AKREDITASI_PERINGKAT';
   }
 

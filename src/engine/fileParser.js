@@ -4,6 +4,7 @@ const os = require('os');
 const prisma = require('../db');
 const logger = require('../logger');
 const { OpenAI } = require('openai');
+const { prepareKnowledgeDocument, appendKnowledgePreparationManifest } = require('./knowledgePreparationPipeline');
 
 // File Parser - extract training data dari berbagai format file
 class FileParser {
@@ -710,6 +711,52 @@ class FileParser {
           throw e;
         }
         }
+      }
+
+      try {
+        const knowledgePreparation = prepareKnowledgeDocument({
+          content: contentToStore,
+          filename: safeFilename,
+          sourceUrl: safeSourceUrl,
+          trainingDataId: training.id,
+          divisionKey,
+          storageType
+        });
+        appendKnowledgePreparationManifest(knowledgePreparation);
+        try {
+          await prisma.trainingData.update({
+            where: { id: training.id },
+            data: {
+              governanceMetadata: {
+                ...(training.governanceMetadata && typeof training.governanceMetadata === 'object' ? training.governanceMetadata : {}),
+                knowledgePreparation: {
+                  version: knowledgePreparation.version,
+                  generatedAt: knowledgePreparation.generatedAt,
+                  category: knowledgePreparation.documentUnderstanding.category,
+                  quality: knowledgePreparation.qualityControl.quality,
+                  approval: knowledgePreparation.qualityControl.approval,
+                  aliasCount: knowledgePreparation.documentUnderstanding.aliases.length,
+                  factCandidateCount: knowledgePreparation.knowledgeExtraction.factCandidates.length,
+                  ruleCandidateCount: knowledgePreparation.knowledgeExtraction.ruleCandidates.length,
+                  faqCandidateCount: knowledgePreparation.knowledgeExtraction.faqCandidates.length,
+                  conflictSignals: knowledgePreparation.qualityControl.conflictSignals,
+                  duplicateSignals: knowledgePreparation.qualityControl.duplicateSignals,
+                  indexingPlan: knowledgePreparation.indexingPlan
+                }
+              }
+            }
+          });
+        } catch (metadataErr) {
+          logger.warn({ err: metadataErr && metadataErr.message ? metadataErr.message : String(metadataErr), trainingId: training.id }, '[KnowledgePrep] governance metadata update skipped');
+        }
+        logger.info({
+          trainingId: training.id,
+          category: knowledgePreparation.documentUnderstanding.category,
+          quality: knowledgePreparation.qualityControl.quality,
+          approval: knowledgePreparation.qualityControl.approval.status
+        }, '[KnowledgePrep] document prepared after upload');
+      } catch (prepErr) {
+        logger.warn({ err: prepErr && prepErr.message ? prepErr.message : String(prepErr), trainingId: training.id }, '[KnowledgePrep] preparation failed after upload');
       }
 
       logger.info({ trainingId: training.id }, '[FileParser] File parsed and stored');

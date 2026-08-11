@@ -23,6 +23,8 @@ const crypto = require('crypto');
 const fs = require('fs/promises');
 const AdmZip = require('adm-zip');
 const { buildDocumentGovernanceMetadata } = require('../engine/runtimeGovernance');
+const { MANIFEST_PATH: KNOWLEDGE_PREPARATION_MANIFEST_PATH } = require('../engine/knowledgePreparationPipeline');
+const KNOWLEDGE_PREPARATION_DECISION_LOG_PATH = path.resolve(__dirname, '..', '..', 'data', 'runtime', 'knowledge_preparation_decisions.jsonl');
 
 // Helper: validasi field wajib
 function validateRequired(data, fields) {
@@ -32,6 +34,65 @@ function validateRequired(data, fields) {
     }
   }
   return { valid: true };
+}
+
+async function readKnowledgePreparationManifestRows(limit = 500) {
+  try {
+    const raw = await fs.readFile(KNOWLEDGE_PREPARATION_MANIFEST_PATH, 'utf8');
+    const lines = raw.split(/\r?\n/).filter(Boolean);
+    return lines.slice(Math.max(0, lines.length - limit)).map((line) => {
+      try { return JSON.parse(line); } catch (_) { return null; }
+    }).filter(Boolean).reverse();
+  } catch (err) {
+    if (err && err.code === 'ENOENT') return [];
+    throw err;
+  }
+}
+
+async function appendKnowledgePreparationDecision(decision) {
+  await fs.mkdir(path.dirname(KNOWLEDGE_PREPARATION_DECISION_LOG_PATH), { recursive: true });
+  await fs.appendFile(KNOWLEDGE_PREPARATION_DECISION_LOG_PATH, JSON.stringify(decision) + '\n', 'utf8');
+}
+
+function knowledgePreparationDecisionFromRequest(req, status) {
+  const user = req.user || {};
+  return {
+    status,
+    decidedAt: new Date().toISOString(),
+    decidedBy: {
+      adminId: user.adminId || null,
+      username: user.username || null,
+      role: user.role || null
+    },
+    note: req.body && req.body.note ? String(req.body.note).slice(0, 500) : null
+  };
+}
+
+function summarizeKnowledgePreparationRows(rows = []) {
+  const summary = {
+    total: rows.length,
+    reviewRequired: 0,
+    autoApprovedCandidate: 0,
+    byQualityBand: {},
+    byCategory: {},
+    conflictSignals: {},
+    lowQualityReasons: {}
+  };
+  for (const row of rows) {
+    const approval = row && row.qualityControl && row.qualityControl.approval ? row.qualityControl.approval : {};
+    const status = String(approval.status || '').toLowerCase();
+    if (status === 'review_required') summary.reviewRequired += 1;
+    if (status === 'auto_approved_candidate') summary.autoApprovedCandidate += 1;
+    const band = row && row.qualityControl && row.qualityControl.quality ? String(row.qualityControl.quality.band || 'unknown') : 'unknown';
+    summary.byQualityBand[band] = (summary.byQualityBand[band] || 0) + 1;
+    const category = row && row.documentUnderstanding ? String(row.documentUnderstanding.category || 'UNKNOWN') : 'UNKNOWN';
+    summary.byCategory[category] = (summary.byCategory[category] || 0) + 1;
+    const conflicts = row && row.qualityControl && Array.isArray(row.qualityControl.conflictSignals) ? row.qualityControl.conflictSignals : [];
+    for (const signal of conflicts) summary.conflictSignals[signal] = (summary.conflictSignals[signal] || 0) + 1;
+    const reasons = row && row.qualityControl && row.qualityControl.quality && Array.isArray(row.qualityControl.quality.reasons) ? row.qualityControl.quality.reasons : [];
+    for (const reason of reasons) summary.lowQualityReasons[reason] = (summary.lowQualityReasons[reason] || 0) + 1;
+  }
+  return summary;
 }
 
 function csvEscape(value) {
@@ -246,6 +307,10 @@ module.exports = function (provider) {
         (method === 'GET' && path === '/analytics/engagement') ||
         (method === 'GET' && path === '/analytics/handover') ||
         (method === 'GET' && path === '/analytics/questions-recap') ||
+        (method === 'GET' && path === '/analytics/retrieval-quality') ||
+        (method === 'GET' && path === '/analytics/knowledge-preparation') ||
+        (method === 'GET' && path === '/knowledge-preparation/review-queue') ||
+        (method === 'POST' && /^\/knowledge-preparation\/[^/]+\/(?:approve|reject)$/.test(path)) ||
         (method === 'GET' && path === '/feature-flags/validation-file') ||
         (method === 'PUT' && path === '/feature-flags/validation-file') ||
         (method === 'GET' && (path === '/training' || /^\/training\//.test(path))) ||
@@ -3475,7 +3540,150 @@ router.get('/analytics/handover', async (req, res, next) => {
   }
 });
 
+
+// Get retrieval hit/no-answer quality metrics from persisted RAG traces
+router.get('/analytics/retrieval-quality', async (req, res, next) => {
+  try {
+    if (!prisma.ragTrace || typeof prisma.ragTrace.findMany !== 'function') {
+      return res.status(501).send({ error: 'RagTrace model not available (run migrations + prisma generate)' });
+    }
+
+    const daysRaw = (req.query.days || '').toString().trim();
+    const days = Math.min(Math.max(parseInt(daysRaw || '30', 10) || 30, 1), 365);
+    const since = new Date(Date.now() - days * 86400000);
+    const traces = await prisma.ragTrace.findMany({
+      where: { createdAt: { gte: since } },
+      select: {
+        source: true,
+        confidenceScore: true,
+        confidenceTier: true,
+        selectedContextCount: true,
+        createdAt: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10000
+    });
+
+    const noAnswerRe = /(?:no-context|unanswerable|insufficient|empty-answer|no-match|low-coverage|low-confidence|disabled|error|safe-general|out-of-domain)/i;
+    const total = traces.length;
+    const noAnswer = traces.filter((trace) => noAnswerRe.test(String(trace.source || ''))).length;
+    const retrievalHit = traces.filter((trace) => Number(trace.selectedContextCount || 0) > 0 && !noAnswerRe.test(String(trace.source || ''))).length;
+    const lowConfidence = traces.filter((trace) => /^(?:LOW|VERY_LOW)$/i.test(String(trace.confidenceTier || '')) || Number(trace.confidenceScore || 0) < 0.22).length;
+
+    res.send({
+      days,
+      totalTraces: total,
+      retrievalHits: retrievalHit,
+      noAnswer,
+      lowConfidence,
+      retrievalHitRate: total ? Number(((retrievalHit / total) * 100).toFixed(2)) : 0,
+      noAnswerRate: total ? Number(((noAnswer / total) * 100).toFixed(2)) : 0,
+      lowConfidenceRate: total ? Number(((lowConfidence / total) * 100).toFixed(2)) : 0
+    });
+  } catch (err) {
+    console.error('[GET /admin/analytics/retrieval-quality] Error:', err.message);
+    next(err);
+  }
+});
+
 // Get popular topics
+router.get('/analytics/knowledge-preparation', async (req, res, next) => {
+  try {
+    const limit = Math.max(1, Math.min(2000, Number(req.query.limit || 500) || 500));
+    const rows = await readKnowledgePreparationManifestRows(limit);
+    return res.json({ ok: true, manifestPath: KNOWLEDGE_PREPARATION_MANIFEST_PATH, limit, ...summarizeKnowledgePreparationRows(rows) });
+  } catch (err) {
+    console.error('[GET /admin/analytics/knowledge-preparation] Error:', err.message);
+    next(err);
+  }
+});
+
+router.get('/knowledge-preparation/review-queue', async (req, res, next) => {
+  try {
+    const limit = Math.max(1, Math.min(500, Number(req.query.limit || 100) || 100));
+    const rows = await readKnowledgePreparationManifestRows(Math.max(limit * 5, 500));
+    const queue = rows
+      .filter((row) => row && row.qualityControl && row.qualityControl.approval && row.qualityControl.approval.status === 'review_required')
+      .slice(0, limit)
+      .map((row) => ({
+        trainingDataId: row.trainingDataId || null,
+        filename: row.filename || null,
+        category: row.documentUnderstanding && row.documentUnderstanding.category || 'UNKNOWN',
+        quality: row.qualityControl && row.qualityControl.quality || null,
+        approval: row.qualityControl && row.qualityControl.approval || null,
+        conflictSignals: row.qualityControl && row.qualityControl.conflictSignals || [],
+        duplicateSignals: row.qualityControl && row.qualityControl.duplicateSignals || null,
+        sourceAuthority: row.documentIntake && row.documentIntake.sourceAuthority || null,
+        aliases: row.documentUnderstanding && row.documentUnderstanding.aliases || [],
+        factCandidateCount: row.knowledgeExtraction && row.knowledgeExtraction.factCandidates ? row.knowledgeExtraction.factCandidates.length : 0,
+        ruleCandidateCount: row.knowledgeExtraction && row.knowledgeExtraction.ruleCandidates ? row.knowledgeExtraction.ruleCandidates.length : 0,
+        faqCandidateCount: row.knowledgeExtraction && row.knowledgeExtraction.faqCandidates ? row.knowledgeExtraction.faqCandidates.length : 0,
+        generatedAt: row.generatedAt || null
+      }));
+    return res.json({ ok: true, total: queue.length, items: queue });
+  } catch (err) {
+    console.error('[GET /admin/knowledge-preparation/review-queue] Error:', err.message);
+    next(err);
+  }
+});
+
+router.post('/knowledge-preparation/:trainingDataId/approve', async (req, res, next) => {
+  try {
+    const trainingDataId = String(req.params.trainingDataId || '').trim();
+    if (!trainingDataId) return res.status(400).json({ ok: false, error: 'trainingDataId is required' });
+    const existing = await prisma.trainingData.findUnique({ where: { id: trainingDataId } });
+    if (!existing) return res.status(404).json({ ok: false, error: 'Training data not found' });
+
+    const decision = knowledgePreparationDecisionFromRequest(req, 'approved');
+    const governanceMetadata = existing.governanceMetadata && typeof existing.governanceMetadata === 'object' ? existing.governanceMetadata : {};
+    const updated = await prisma.trainingData.update({
+      where: { id: trainingDataId },
+      data: {
+        governanceStatus: 'approved',
+        governanceMetadata: {
+          ...governanceMetadata,
+          knowledgePreparationDecision: decision
+        }
+      },
+      select: { id: true, filename: true, governanceStatus: true, governanceMetadata: true }
+    });
+    await appendKnowledgePreparationDecision({ trainingDataId, filename: existing.filename, ...decision });
+    return res.json({ ok: true, item: updated, decision });
+  } catch (err) {
+    console.error('[POST /admin/knowledge-preparation/:trainingDataId/approve] Error:', err.message);
+    next(err);
+  }
+});
+
+router.post('/knowledge-preparation/:trainingDataId/reject', async (req, res, next) => {
+  try {
+    const trainingDataId = String(req.params.trainingDataId || '').trim();
+    if (!trainingDataId) return res.status(400).json({ ok: false, error: 'trainingDataId is required' });
+    const existing = await prisma.trainingData.findUnique({ where: { id: trainingDataId } });
+    if (!existing) return res.status(404).json({ ok: false, error: 'Training data not found' });
+
+    const decision = knowledgePreparationDecisionFromRequest(req, 'rejected');
+    const governanceMetadata = existing.governanceMetadata && typeof existing.governanceMetadata === 'object' ? existing.governanceMetadata : {};
+    const updated = await prisma.trainingData.update({
+      where: { id: trainingDataId },
+      data: {
+        governanceStatus: 'rejected',
+        ragIngestStatus: 'rejected',
+        governanceMetadata: {
+          ...governanceMetadata,
+          knowledgePreparationDecision: decision
+        }
+      },
+      select: { id: true, filename: true, governanceStatus: true, ragIngestStatus: true, governanceMetadata: true }
+    });
+    await appendKnowledgePreparationDecision({ trainingDataId, filename: existing.filename, ...decision });
+    return res.json({ ok: true, item: updated, decision, note: 'Index lama tidak dihapus otomatis; lakukan reingest/delete bila ingin mengeluarkan chunk dari retrieval.' });
+  } catch (err) {
+    console.error('[POST /admin/knowledge-preparation/:trainingDataId/reject] Error:', err.message);
+    next(err);
+  }
+});
+
 router.get('/analytics/topics', async (req, res, next) => {
   try {
     const topics = await AnalyticsEngine.getPopularTopics();

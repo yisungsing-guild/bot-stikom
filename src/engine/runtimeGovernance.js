@@ -222,6 +222,56 @@ async function recordUserFeedback(prisma, payload = {}) {
   }
 }
 
+
+async function queueFeedbackForReview(prisma, payload = {}) {
+  if (!prisma || !prisma.ragEvalItem || typeof prisma.ragEvalItem.upsert !== 'function') return { queued: false };
+  const feedbackType = payload.feedbackType || detectUserFeedback(payload.userText);
+  if (!feedbackType || feedbackType === 'positive') return { queued: false, skipped: true, feedbackType };
+  await ensureRuntimeAuditTables(prisma);
+
+  const rawQ = clamp(payload.question || payload.userText || 'User feedback requires review', 2000);
+  const normalized = clamp(String(rawQ || '').toLowerCase().replace(/s+/g, ' ').trim(), 2000) || 'feedback-review';
+  const reason = feedbackType === 'wrong_answer' ? 'feedback_wrong_answer' : `feedback_${feedbackType}`;
+  const keySeed = `${payload.divisionKey || 'global'}|${reason}|${normalized}|${payload.lastBotSource || ''}`;
+  const key = sha256(keySeed);
+  const contexts = {
+    chatId: payload.chatId || null,
+    feedbackId: payload.feedbackId || null,
+    feedbackType,
+    userText: clamp(payload.userText, 1200),
+    lastBotSource: payload.lastBotSource ? clamp(payload.lastBotSource, 180) : null,
+    lastBotAnswer: payload.lastBotAnswer ? clamp(payload.lastBotAnswer, 1800) : null,
+    reviewType: 'admin_review_queue'
+  };
+
+  try {
+    await prisma.ragEvalItem.upsert({
+      where: { key },
+      create: {
+        key,
+        question: rawQ || keySeed,
+        normalized: normalized || keySeed,
+        divisionKey: payload.divisionKey || null,
+        reason,
+        minScore: null,
+        topScore: null,
+        contexts
+      },
+      update: {
+        occurrences: { increment: 1 },
+        question: rawQ || undefined,
+        divisionKey: payload.divisionKey || null,
+        reason,
+        contexts,
+        resolvedAt: null
+      }
+    });
+    return { queued: true, reason, key };
+  } catch (err) {
+    safeWarn({ err: err && err.message ? err.message : String(err) }, '[RuntimeGovernance] failed to queue feedback review');
+    return { queued: false, reason };
+  }
+}
 function extractLastBotMessage(sessionData = {}) {
   const messages = Array.isArray(sessionData.messages) ? sessionData.messages : [];
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -340,6 +390,7 @@ module.exports = {
   rememberInboundEventPersistent,
   detectUserFeedback,
   recordUserFeedback,
+  queueFeedbackForReview,
   extractLastBotMessage,
   extractLastBotSource,
   updateConversationMemory,

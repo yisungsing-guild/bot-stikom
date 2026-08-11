@@ -23,6 +23,9 @@ const SLANG_REPLACEMENTS = {
   kpn: 'kapan',
   dftr: 'daftar',
   jrsn: 'jurusan',
+  akrediasi: 'akreditasi',
+  akreditai: 'akreditasi',
+  akredtasi: 'akreditasi',
   gel: 'gelombang',
   apaan: 'apa',
   dd: 'double degree',
@@ -60,7 +63,10 @@ const DOMAIN_FUZZY_VOCAB = [
   'internasional',
   'international',
   'daftar',
-  'jurusan'
+  'jurusan',
+  'akreditasi',
+  'pascasarjana',
+  'magister'
 ];
 
 function toString(raw) {
