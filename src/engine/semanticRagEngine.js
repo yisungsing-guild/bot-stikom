@@ -9295,6 +9295,25 @@ function buildDeterministicResponse(originalQuestion, source, result, debugExtra
   };
 }
 
+const GENERIC_FALLBACK_SOURCES = new Set([
+  'semantic-rag-career-fallback',
+  'semantic-rag-finance-fallback',
+  'semantic-rag-billing-change-fallback',
+  'semantic-rag-campus-support-fallback',
+  'semantic-rag-international-class-fallback',
+  'semantic-rag-thesis-fallback'
+]);
+
+function hasSpecificCampusQuestionIntent(question) {
+  const q = normalizeFacilityTerm(question || '');
+  return /\b(?:konsultasi|berkonsultasi|bimbingan|konseling|job\s*fair|campus\s*hiring|tracer\s*study|career\s*center|pusat\s+karier|pusat\s+karir|inbis|inkubator\s+bisnis|llc|language\s+learning|student\s+exchange|pertukaran\s+mahasiswa|dual\s+degree|double\s+degree|dnui|help|utb|rpl|rekognisi\s+pembelajaran\s+lampau|beasiswa|skss|1k1s|kip|pasca|pascasarjana|magister|s2|s\s*2|akreditasi|akrediasi|ban\s*-?\s*pt)\b/i.test(q);
+}
+
+function shouldSuppressGenericFallbackForQuestion(question, source) {
+  if (!GENERIC_FALLBACK_SOURCES.has(String(source || ''))) return false;
+  return hasSpecificCampusQuestionIntent(question);
+}
+
 function runDeterministicHandlers(originalQuestion, handlers, options = {}, variants = [], debugExtra = {}) {
   const trimmedOriginal = String(originalQuestion || '').trim();
   const questions = uniqueList([trimmedOriginal, ...(Array.isArray(variants) ? variants : [])], 8);
@@ -9340,6 +9359,16 @@ function runDeterministicHandlers(originalQuestion, handlers, options = {}, vari
           ...debugExtra,
           semanticVariant: variant !== String(originalQuestion || '').trim() ? variant : undefined
         });
+        if (shouldSuppressGenericFallbackForQuestion(originalQuestion, built.source)) {
+          if (debugTrace) {
+            console.log('[TRACE runDeterministicHandlers] SKIPPING generic fallback for specific question:', {
+              source,
+              builtSource: built.source,
+              builtAnswerPreview: String(built.answer).slice(0, 100)
+            });
+          }
+          continue;
+        }
         if (isMeaningMismatchAnswer(originalQuestion, built.answer, built.source)) {
           if (debugTrace) {
             console.log('[TRACE runDeterministicHandlers] SKIPPING meaning-mismatch handler:', {
