@@ -916,7 +916,7 @@ function tryProgramRecommendationAnswer(question) {
 
 function detectSpecificScholarshipTopic(question) {
   const q = String(question || '').toLowerCase();
-  if (/\b1\s*k\s*1\s*s\b|\b1k1s\b|satu\s+keluarga\s+satu\s+sarjana/.test(q)) {
+  if (/\b1\s*k\s*1\s*s\b|\b1k1s\b|\bskss\b|satu\s+keluarga\s+satu\s+sarjana/.test(q)) {
     return 'Beasiswa 1K1S (Satu Keluarga Satu Sarjana)';
   }
   if (/\bkip\b|kartu\s+indonesia\s+pintar/.test(q)) return 'Beasiswa KIP';
@@ -932,7 +932,7 @@ function detectSpecificScholarshipTopic(question) {
 
 function asksScholarshipDetail(question) {
   const q = String(question || '').toLowerCase();
-  return /\b(apa\s+itu|pengertian|maksud|jelaskan|penjelasan|syarat|persyaratan|ketentuan|cara|bagaimana|gimana|daftar|mengajukan|prosedur|alur|seleksi|nominal|berapa|cakupan|cover|ditanggung|benefit|manfaat)\b/.test(q);
+  return /\b(apa\s+itu|itu\s+apa|pengertian|maksud|jelaskan|penjelasan|syarat|persyaratan|ketentuan|cara|bagaimana|gimana|daftar|mengajukan|prosedur|alur|seleksi|nominal|berapa|cakupan|cover|ditanggung|benefit|manfaat)\b/.test(q);
 }
 
 function buildScholarshipNoTrainingAnswer(topic) {
@@ -949,7 +949,7 @@ function buildScholarshipNoTrainingAnswer(topic) {
 function tryScholarshipAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(double\s*degree|dual\s*degree|dd|utb|dnui|help\s+university)\b/.test(q)) return null;
-  if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
+  if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|skss|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
 
   if (/\b(seluruh|semua|full|penuh|100\s*%)\b/.test(q) && /\b(biaya|ditanggung|menanggung|cover|cakupan)\b/.test(q)) {
     return {

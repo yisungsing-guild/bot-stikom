@@ -2886,7 +2886,7 @@ function shouldProbeUploadedTrainingBeforeDeterministic(question) {
   const intent = detectGenericIntent(q);
   if (isAcademicAdminUploadedDocQuestion(q, intent) || isAcademicAdminUploadedDocQuestion(q, 'requirement')) return true;
   if (isStudyPermitQuestion(q) || isStudentExchangeQuestion(q) || isOverseasWorkStudyQuestion(q) || isPaidOverseasInternshipQuestion(q)) return true;
-  if (/\b(pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(q)) return true;
+  if (/\b(?:pasca|pascasarjana|pasca\s*sarjana|magister|s2|s\s*2)\b/i.test(q)) return true;
   return !isKnownSpecializedCampusQuestion(q);
 }
 function retrieveAcademicAdminUploadedContextsFromIndex(question, options = {}) {
@@ -5291,6 +5291,8 @@ function faqComparableTokens(text) {
     .split(/\s+/)
     .map((token) => token.replace(/(?:nya|annya)$/i, ''))
     .map((token) => token === 'kuliah' ? 'studi' : token)
+    .map((token) => ['prodi', 'jurusan'].includes(token) ? 'program' : token)
+    .map((token) => ['pasca', 'pascasarjana', 'magister', 'master'].includes(token) ? 's2' : token)
     .filter((token) => token.length >= 3 && !stop.has(token));
 }
 
@@ -5310,13 +5312,15 @@ function scoreFaqQuestionMatch(userQuestion, faqQuestion, target = '', targetTok
   const containment = (qNorm && fNorm && (qNorm.includes(fNorm) || fNorm.includes(qNorm))) ? 3 : 0;
   const userAsksDefinition = /\b(?:apa\s+itu|itu\s+apa|jelaskan|pengertian)\b/i.test(qNorm);
   const faqAsksDefinition = /\b(?:apa\s+itu|itu\s+apa|pengertian)\b/i.test(fNorm);
-  const intentTerms = ['keunggulan', 'keuntungan', 'manfaat', 'kegiatan', 'program kerja', 'syarat', 'biaya', 'kapan', 'bahasa', 'cocok', 'tujuan', 'daftar', 'pendaftaran', 'gelar', 'lulusan', 'lama', 'masa studi', 'studi'];
+  const intentTerms = ['keunggulan', 'keuntungan', 'manfaat', 'kegiatan', 'program kerja', 'syarat', 'biaya', 'kapan', 'bahasa', 'cocok', 'tujuan', 'daftar', 'pendaftaran', 'gelar', 'lulusan', 'lama', 'masa studi', 'studi', 'fokus penelitian', 'konsentrasi', 'akreditasi'];
   const intentHits = intentTerms.filter((term) => qNorm.includes(term) && fNorm.includes(term)).length * 4;
+  const programAliasBoost = /\b(?:program|prodi|jurusan)\b/i.test(qNorm) && /\b(?:program|prodi|jurusan)\b/i.test(fNorm) ? 3 : 0;
+  const postgradAliasBoost = /\b(?:pasca|pascasarjana|magister|master|s2)\b/i.test(qNorm) && /\b(?:pasca|pascasarjana|magister|master|s2)\b/i.test(fNorm) ? 3 : 0;
   const definitionBoost = userAsksDefinition && faqAsksDefinition ? 7 : 0;
   const definitionMismatchPenalty = userAsksDefinition && !faqAsksDefinition && /\b(?:kegiatan|manfaat|syarat|biaya|kapan|negara|jenis|keunggulan|keuntungan|tujuan)\b/i.test(fNorm) ? 4 : 0;
   const durationBoost = /\b(?:berapa\s+lama|lama\s+(?:kuliah|studi)|masa\s+studi|durasi)\b/i.test(qNorm) && /\b(?:berapa\s+lama|masa\s+studi|durasi)\b/i.test(fNorm) ? 8 : 0;
   const degreeBoost = /\b(?:gelar|lulusan)\b/i.test(qNorm) && /\b(?:gelar|lulusan)\b/i.test(fNorm) ? 8 : 0;
-  return (overlap * 2) + reverseOverlap + targetHits + exactTarget + containment + intentHits + definitionBoost + durationBoost + degreeBoost - definitionMismatchPenalty;
+  return (overlap * 2) + reverseOverlap + targetHits + exactTarget + containment + intentHits + programAliasBoost + postgradAliasBoost + definitionBoost + durationBoost + degreeBoost - definitionMismatchPenalty;
 }
 
 function extractFaqQaPairsFromChunk(chunk) {
@@ -5691,17 +5695,20 @@ function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}
       const shortSpecific = qTokens.length <= 2 && overlap >= 1;
       if (!nearExact && !shortSpecific && overlap < 2) continue;
 
-      const score = scoreFaqQuestionMatch(q, pair.questionText, '', []);
-      if (score < 8) continue;
       const answer = cleanUserVisibleRagAnswerText(pair.answerText);
       if (!answer || answer.length < 8) continue;
       const evidenceNorm = normalizeFacilityTerm(`${sourceText} ${chunk} ${pair.questionText} ${answer}`);
-      const asksPostgraduate = /\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(qNorm);
-      if (asksPostgraduate && !/\b(?:pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(evidenceNorm)) continue;
+      const asksPostgraduate = /\b(?:pasca|pascasarjana|pasca\s*sarjana|magister|master|s2|s\s*2)\b/i.test(qNorm);
+      if (asksPostgraduate && !/\b(?:pasca|pascasarjana|pasca\s*sarjana|magister|master|s2|s\s*2|magister\s+sistem\s+informasi|sistem\s+informasi)\b/i.test(evidenceNorm)) continue;
       if (hasFaqAnswerDomainConflict(q, pair.questionText, answer, sourceText)) continue;
+      const score = scoreFaqQuestionMatch(q, pair.questionText, '', []);
       const sourceBoost = /upload/i.test(String(item && item.source ? item.source : '')) ? 2 : 0;
       const sourceTermBoost = qTokens.filter((token) => normalizeFacilityTerm(sourceText).includes(token)).length;
-      scored.push({ item, pair, answer, score: score + sourceBoost + sourceTermBoost + overlap, baseScore: score, overlap });
+      const evidenceTermBoost = qTokens.filter((token) => evidenceNorm.includes(token)).length;
+      const postgraduateEvidenceBoost = asksPostgraduate ? 4 : 0;
+      const finalScore = score + sourceBoost + sourceTermBoost + evidenceTermBoost + postgraduateEvidenceBoost + overlap;
+      if (finalScore < 8) continue;
+      scored.push({ item, pair, answer, score: finalScore, baseScore: score, overlap });
     }
   }
 
@@ -5711,7 +5718,7 @@ function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}
   const bestNorm = normalizeFacilityTerm(best.pair.questionText);
   const userNorm = normalizeFacilityTerm(q);
   const strongExactOrNearExact = bestNorm && userNorm && (userNorm.includes(bestNorm) || bestNorm.includes(userNorm));
-  if (best.baseScore < 12 && !strongExactOrNearExact) return null;
+  if (best.score < 12 && best.baseScore < 8 && !strongExactOrNearExact) return null;
   const answer = best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer;
   const source = /upload/i.test(String(best.item && best.item.source ? best.item.source : '')) ? 'semantic-rag-uploaded-training-generic' : 'semantic-rag-generic-faq-qna';
   const preflight = evaluateOutboundAnswer(answer, q, { source });
@@ -5736,6 +5743,50 @@ function tryGenericFaqQnaAnswer(question, indexForQuery, options = {}) {
   if (asksProgramComparison) return null;
   return buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options);
 }
+function tryPostgraduateProfileAnswer(question) {
+  const q = String(question || '');
+  if (!/\b(?:pasca|pascasarjana|pasca\s*sarjana|s2|s\s*2|magister|master)\b/i.test(q)) return null;
+
+  const answer = (text) => ({
+    answer: text,
+    source: 'semantic-rag-postgraduate-profile',
+    frameSource: 'semantic-rag-training-specific'
+  });
+
+  if (/\b(?:keunggulan|unggulan|kelebihan|manfaat|kenapa\s+(?:memilih|ambil)|alasan\s+memilih)\b/i.test(q)) {
+    return answer([
+      'Keunggulan Program Pascasarjana / S2 Sistem Informasi ITB STIKOM Bali antara lain:',
+      '',
+      '- Kurikulumnya berbasis industri dan diarahkan pada kebutuhan bidang sistem informasi modern.',
+      '- Didukung dosen berpengalaman.',
+      '- Program Studi S2 Sistem Informasi memiliki akreditasi Baik Sekali dari LAM INFOKOM.',
+      '- Fokus pengembangannya pada Intelligent & Secure System.',
+      '- Fokus penelitian yang tersedia mencakup Cyber Security, Data Science, Enterprise System, dan Medical Informatics.',
+      '- Masa studi normal 4 semester dengan total 56 SKS.',
+      '',
+      'Jadi, program ini cocok untuk lulusan S1 yang ingin memperdalam keahlian sistem informasi, data, keamanan, enterprise system, atau riset terapan di bidang teknologi.'
+    ].join('\n'));
+  }
+
+  if (/\b(?:fokus\s+penelitian|konsentrasi|bidang\s+riset|riset)\b/i.test(q)) {
+    return answer('Fokus penelitian Program Pascasarjana / S2 Sistem Informasi ITB STIKOM Bali mencakup Cyber Security, Data Science, Enterprise System, dan Medical Informatics.');
+  }
+
+  if (/\b(?:gelar|title)\b/i.test(q)) {
+    return answer('Lulusan Program Pascasarjana / S2 Sistem Informasi ITB STIKOM Bali memperoleh gelar Magister Komputer (M.Kom.).');
+  }
+
+  if (/\b(?:lama|masa\s+studi|berapa\s+semester|total\s+sks|sks)\b/i.test(q)) {
+    return answer('Masa studi normal Program Pascasarjana / S2 Sistem Informasi ITB STIKOM Bali adalah 4 semester dengan total 56 SKS.');
+  }
+
+  if (/\b(?:apa\s+itu|profil|tentang|program\s+apa|nama\s+program)\b/i.test(q)) {
+    return answer('Program Pascasarjana ITB STIKOM Bali menyelenggarakan Program Studi Magister Sistem Informasi atau S2 Sistem Informasi. Program ini berfokus pada penguatan keahlian sistem informasi tingkat lanjut, dengan arah Intelligent & Secure System.');
+  }
+
+  return null;
+}
+
 function tryAccreditationAnswer(question, indexForQuery) {
   const q = String(question || '');
   if (!/\b(akreditasi(?:nya)?|akredit|akrediasi|terakreditasi|ban\s*-?\s*pt|peringkat\s+akreditasi|sertifikat\s+akreditasi|sk\s+akreditasi)\b/i.test(q)) return null;
@@ -7025,7 +7076,7 @@ function tryInternationalClassFallback(question) {
       '',
       'Saya tidak mencampur daftar ini dengan prodi reguler. Untuk syarat, kuota, jadwal, dan alur final, kakak bisa konfirmasi ke Admin PMB atau bagian kerja sama/international office kampus.'
     ].join('\n'),
-    source: 'semantic-rag-international-class-fallback'
+    source: 'semantic-rag-international-program-list'
   };
 }
 function tryCareerFallback(question) {
@@ -10280,6 +10331,18 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtPreGuardAccreditation, resultCacheKey);
   }
 
+  const preGuardScholarship = strictDocumentOnly ? null : tryScholarshipAnswer(routingQuestion || question, getCachedSemanticIndex(), options);
+  if (preGuardScholarship && preGuardScholarship.answer) {
+    const builtPreGuardScholarship = buildDeterministicResponse(question, preGuardScholarship.source || 'semantic-rag-scholarship', preGuardScholarship, { routeStage: 'pre-guard-scholarship', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtPreGuardScholarship, resultCacheKey);
+  }
+
+  const preGuardPostgraduateProfile = strictDocumentOnly ? null : tryPostgraduateProfileAnswer(routingQuestion || question);
+  if (preGuardPostgraduateProfile && preGuardPostgraduateProfile.answer) {
+    const builtPostgraduateProfile = buildDeterministicResponse(question, preGuardPostgraduateProfile.source || 'semantic-rag-postgraduate-profile', preGuardPostgraduateProfile, { routeStage: 'pre-guard-postgraduate-profile', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtPostgraduateProfile, resultCacheKey);
+  }
+
   const preGuardAcademicSpecificNoData = strictDocumentOnly ? null : tryAcademicSpecificNoDataAnswer(routingQuestion || question);
   if (preGuardAcademicSpecificNoData && preGuardAcademicSpecificNoData.answer) {
     const builtPreGuardAcademicSpecificNoData = buildDeterministicResponse(question, preGuardAcademicSpecificNoData.source || 'semantic-rag-academic-no-data', preGuardAcademicSpecificNoData, { routeStage: 'pre-guard-academic-specific-no-data', normalizedRouting: normalizedRouting.changed });
@@ -10676,7 +10739,11 @@ async function querySemanticRag(question, options = {}) {
       try { console.warn('[SemanticRAG] evidence-first document probe failed', e && e.message ? e.message : String(e)); } catch (_) {}
     }
   }
-  if (!strictDocumentOnly && /\b(pascasarjana|pasca\s*sarjana|magister|s2)\b/i.test(String(question || ''))) {
+  if (!strictDocumentOnly && /\b(?:pasca|pascasarjana|pasca\s*sarjana|magister|s2|s\s*2)\b/i.test(String(question || ''))) {
+    const postgraduateProfile = tryPostgraduateProfileAnswer(question);
+    if (postgraduateProfile && postgraduateProfile.answer) {
+      return await finalizeSemanticResult(question, buildDeterministicResponse(question, postgraduateProfile.source, postgraduateProfile, { routeStage: 'pre-ai-postgraduate-profile' }), resultCacheKey);
+    }
     const earlyUploadedTraining = await tryLocalUploadedTrainingGenericAnswer(question, options);
     if (earlyUploadedTraining && earlyUploadedTraining.answer) {
       if (debugTrace) {
