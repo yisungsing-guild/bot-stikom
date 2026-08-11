@@ -10442,7 +10442,7 @@ async function querySemanticRag(question, options = {}) {
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   const earlySupportQuestion = String(question || '').toLowerCase();
   const deferEarlyKeywordFallbacks = Boolean(client) && shouldDeferDeterministicBeforeSemantic(question);
-  if (!strictDocumentOnly && !client && !deferEarlyKeywordFallbacks && isCareerConsultationQuestion(earlySupportQuestion)) {
+  if (!strictDocumentOnly && isCareerConsultationQuestion(earlySupportQuestion)) {
     const result = {
       answer: 'Ya. Mahasiswa dapat berkonsultasi mengenai karier melalui Career Center ITB STIKOM Bali, termasuk terkait persiapan kerja, peluang karier, magang, dan proses melamar pekerjaan. Untuk jadwal layanan atau PIC yang sedang aktif, kakak bisa cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.',
       source: 'semantic-rag-campus-support-entity',
