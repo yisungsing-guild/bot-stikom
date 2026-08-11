@@ -10430,6 +10430,7 @@ async function querySemanticRag(question, options = {}) {
   const careerRoutingQuestion = `${String(routingQuestion || '')} ${String(question || '')}`.toLowerCase();
   if (!strictDocumentOnly
     && !isCareerConsultationQuestion(careerRoutingQuestion)
+    && !(/\b(?:apa\s+itu|itu\s+apa|pengertian|maksud|tentang|jelaskan|fungsi|layanan)\b/i.test(careerRoutingQuestion) && /\b(?:career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(careerRoutingQuestion))
     && /\b(?:lowongan|loker|peluang\s+kerja|prospek\s+kerja|karier|karir|career|tracer\s*study|campus\s*hiring|job\s*fair)\b/i.test(careerRoutingQuestion)
     && /\b(?:mahasiswa|alumni|lulusan|kampus|itb\s*stikom\s*bali|stikom\s+bali|career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(careerRoutingQuestion)) {
     const result = {
