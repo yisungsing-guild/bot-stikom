@@ -7097,16 +7097,8 @@ function tryInternationalClassFallback(question) {
     source: 'semantic-rag-international-program-list'
   };
 }
-function tryCareerFallback(question) {
-  const q = String(question || '').toLowerCase();
-  if (!/\b(loker|lowongan|lowongan\s+kerja|lowongan\s+pekerjaan|career|karier|karir|kerja)\b/i.test(q)) return null;
-  return {
-    answer: [
-      'Untuk info lowongan atau peluang kerja dari kampus, biasanya cek bagian Career Center atau kanal resmi kemahasiswaan. Career Center sering mengumpulkan lowongan magang dan kerja untuk mahasiswa dan alumni.',
-      'Silakan hubungi Career Center atau cek kanal pengumuman kampus untuk daftar lowongan dan prosedur pendaftaran.'
-    ].join(' '),
-    source: 'semantic-rag-career-fallback'
-  };
+function tryCareerFallback(_question) {
+  return null;
 }
 
 const UKM_INTEREST_PROFILES = [
@@ -9038,7 +9030,6 @@ const DETERMINISTIC_HANDLERS = [
   ['semantic-rag-campus-support-entity', tryCampusSupportEntityAnswer],
   ['semantic-rag-campus-facility', tryCampusFacilityAnswer],
   ['semantic-rag-generic-faq-qna', tryGenericFaqQnaAnswer],
-  ['semantic-rag-career-fallback', tryCareerFallback],
   ['semantic-rag-billing-change-fallback', require('./billingFallback').tryBillingChangeFallback],
   ['semantic-rag-finance-fallback', tryFinanceFallback],
   ['semantic-rag-ukm-list', tryUkmAnswer],
@@ -9296,7 +9287,6 @@ function buildDeterministicResponse(originalQuestion, source, result, debugExtra
 }
 
 const GENERIC_FALLBACK_SOURCES = new Set([
-  'semantic-rag-career-fallback',
   'semantic-rag-finance-fallback',
   'semantic-rag-billing-change-fallback',
   'semantic-rag-campus-support-fallback',
@@ -10437,6 +10427,19 @@ async function querySemanticRag(question, options = {}) {
     }
   }
 
+  const careerRoutingQuestion = `${String(routingQuestion || '')} ${String(question || '')}`.toLowerCase();
+  if (!strictDocumentOnly
+    && !isCareerConsultationQuestion(careerRoutingQuestion)
+    && /\b(?:lowongan|loker|peluang\s+kerja|prospek\s+kerja|karier|karir|career|tracer\s*study|campus\s*hiring|job\s*fair)\b/i.test(careerRoutingQuestion)
+    && /\b(?:mahasiswa|alumni|lulusan|kampus|itb\s*stikom\s*bali|stikom\s+bali|career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(careerRoutingQuestion)) {
+    const result = {
+      answer: 'Peluang kerja lulusan ITB STIKOM Bali didukung oleh kurikulum yang relevan dengan kebutuhan industri serta layanan Career Center. Dari data yang tersedia, dukungan Career Center mencakup informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study untuk mahasiswa/alumni. Jika kakak ingin lebih spesifik, sebutkan prodinya agar saya jelaskan prospek kerja per prodi.',
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', result, { routeStage: 'pre-guard-career-support', normalizedRouting: normalizedRouting.changed }), resultCacheKey);
+  }
+
   if (!strictDocumentOnly && !shouldDeferEarlyEvidenceFirstToStableRoute(routingQuestion)) {
     try {
       const earlyEvidenceFirst = await tryEvidenceFirstLocalDocumentAnswer(question, { ...options, topK: Math.max(8, Number(options.topK || 0) || 0), routeStage: 'pre-guard-document-evidence' });
@@ -10641,7 +10644,6 @@ async function querySemanticRag(question, options = {}) {
       'semantic-rag-career-softskill',
       'semantic-rag-bem',
       'semantic-rag-campus-support-fallback',
-      'semantic-rag-career-fallback',
       'semantic-rag-finance-fallback',
       'semantic-rag-registration-fee',
       'semantic-rag-fee-detail',
