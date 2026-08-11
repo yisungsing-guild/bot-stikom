@@ -9306,7 +9306,7 @@ const GENERIC_FALLBACK_SOURCES = new Set([
 
 function hasSpecificCampusQuestionIntent(question) {
   const q = normalizeFacilityTerm(question || '');
-  return /\b(?:konsultasi|berkonsultasi|bimbingan|konseling|job\s*fair|campus\s*hiring|tracer\s*study|career\s*center|pusat\s+karier|pusat\s+karir|inbis|inkubator\s+bisnis|llc|language\s+learning|student\s+exchange|pertukaran\s+mahasiswa|dual\s+degree|double\s+degree|dnui|help|utb|rpl|rekognisi\s+pembelajaran\s+lampau|beasiswa|skss|1k1s|kip|pasca|pascasarjana|magister|s2|s\s*2|akreditasi|akrediasi|ban\s*-?\s*pt)\b/i.test(q);
+  return /\b(?:konsultasi|berkonsultasi|bimbingan|konseling|job\s*fair|campus\s*hiring|tracer\s*study|career\s*center|pusat\s+karier|pusat\s+karir|peluang\s+kerja|prospek\s+kerja|lulusan|inbis|inkubator\s+bisnis|llc|language\s+learning|student\s+exchange|pertukaran\s+mahasiswa|dual\s+degree|double\s+degree|dnui|help|utb|rpl|rekognisi\s+pembelajaran\s+lampau|beasiswa|skss|1k1s|kip|pasca|pascasarjana|magister|s2|s\s*2|akreditasi|akrediasi|ban\s*-?\s*pt)\b/i.test(q);
 }
 
 function shouldSuppressGenericFallbackForQuestion(question, source) {
@@ -10483,6 +10483,16 @@ async function querySemanticRag(question, options = {}) {
   const debugTrace = envFlag('DEBUG_SEMANTIC_HANDLER_TRACE', false);
   const earlySupportQuestion = String(question || '').toLowerCase();
   const deferEarlyKeywordFallbacks = Boolean(client) && shouldDeferDeterministicBeforeSemantic(question);
+  if (!strictDocumentOnly
+    && /\b(?:peluang\s+kerja|prospek\s+kerja)\b/i.test(earlySupportQuestion)
+    && /\b(?:lulusan|alumni|itb\s*stikom\s*bali|stikom\s+bali|kampus)\b/i.test(earlySupportQuestion)) {
+    const result = {
+      answer: 'Peluang kerja lulusan ITB STIKOM Bali didukung oleh kurikulum yang relevan dengan kebutuhan industri serta dukungan Career Center. Dari data yang tersedia, dukungan karier mencakup informasi lowongan kerja, magang, job fair, campus hiring, konsultasi karier, dan tracer study. Untuk peluang per prodi, kakak bisa sebutkan prodinya, misalnya Sistem Informasi, Teknologi Informasi, Bisnis Digital, Sistem Komputer, Manajemen Informatika, atau S2 Sistem Informasi.',
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', result, { routeStage: 'pre-ai-support-career-opportunity', normalizedRouting: normalizedRouting.changed }), resultCacheKey);
+  }
   if (!strictDocumentOnly && isCareerConsultationQuestion(earlySupportQuestion)) {
     const result = {
       answer: 'Ya. Mahasiswa dapat berkonsultasi mengenai karier melalui Career Center ITB STIKOM Bali, termasuk terkait persiapan kerja, peluang karier, magang, dan proses melamar pekerjaan. Untuk jadwal layanan atau PIC yang sedang aktif, kakak bisa cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.',

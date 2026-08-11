@@ -31,6 +31,7 @@ const CASES = [
   { q: 'inbis itu apa?', mustInclude: ['Inkubator Bisnis'], productionLike: true },
   { q: 'career center itu apa?', mustInclude: ['Career Center'], productionLike: true },
   { q: 'Apakah mahasiswa bisa berkonsultasi mengenai karier?', mustInclude: ['berkonsultasi', 'Career Center'], productionLike: true },
+  { q: 'Bagaimana peluang kerja lulusan ITB STIKOM Bali?', mustInclude: ['Peluang kerja lulusan', 'Career Center'], productionLike: true },
   { q: 'LLC itu apa?', mustInclude: ['Language Learning Center'], productionLike: true },
   { q: 'kampus stikom ada berapa?', mustInclude: ['3'] },
   { q: 'akreditasi kampus ITB STIKOM Bali apa?', mustInclude: ['BAN-PT'], productionLike: true },
