@@ -1958,12 +1958,75 @@ const FAQ_KEYWORDS = {
 let dynamicAliasDictionaryCache = { hash: '', aliases: [] };
 const dynamicAliasDictionaryPath = path.resolve(__dirname, '..', '..', 'data', 'runtime', 'dynamic_alias_dictionary.json');
 
+const DYNAMIC_ALIAS_RESERVED_CANONICALS = new Map([
+  ['si', 'Sistem Informasi'],
+  ['ti', 'Teknologi Informasi'],
+  ['bd', 'Bisnis Digital'],
+  ['sk', 'Sistem Komputer'],
+  ['mi', 'Manajemen Informatika'],
+  ['s2', 'S2 Sistem Informasi'],
+  ['s 2', 'S2 Sistem Informasi'],
+  ['pasca', 'S2 Sistem Informasi'],
+  ['pascasarjana', 'S2 Sistem Informasi'],
+  ['pasca sarjana', 'S2 Sistem Informasi'],
+  ['magister', 'S2 Sistem Informasi'],
+  ['master', 'S2 Sistem Informasi'],
+  ['program pascasarjana', 'S2 Sistem Informasi'],
+  ['dkv', 'Desain Komunikasi Visual'],
+  ['trpl', 'Teknologi Rekayasa Perangkat Lunak'],
+  ['tk', 'Teknologi Komputer'],
+  ['mm', 'Multimedia'],
+  ['an', 'Animasi'],
+  ['dg', 'Desain Grafis']
+]);
+
+function acronymForDynamicCanonical(canonical) {
+  const text = canonicalizeDynamicProgramName(canonical) || String(canonical || '').trim();
+  if (!text) return '';
+  if (/^s2\s+sistem\s+informasi$/i.test(text)) return 's2';
+  return text.split(/\s+/).filter(Boolean).map((word) => word[0]).join('').toLowerCase();
+}
+
+function sanitizeDynamicAliasEntries(aliases) {
+  const list = Array.isArray(aliases) ? aliases : [];
+  const out = [];
+  const seenAlias = new Set();
+  const seenPair = new Set();
+  for (const item of list) {
+    const aliasText = normalizeDynamicAliasText(item && item.alias);
+    const canonicalProgram = canonicalizeDynamicProgramName(item && item.canonical);
+    if (!aliasText || !canonicalProgram) continue;
+    if (aliasText.length < 2 || aliasText.length > 28) continue;
+    if (aliasText === normalizeDynamicAliasText(canonicalProgram)) continue;
+
+    const reservedCanonical = DYNAMIC_ALIAS_RESERVED_CANONICALS.get(aliasText);
+    if (reservedCanonical && normalizeDynamicAliasText(reservedCanonical) !== normalizeDynamicAliasText(canonicalProgram)) continue;
+
+    if (!reservedCanonical && /^[a-z0-9\s]{2,5}$/i.test(aliasText)) {
+      const acronym = acronymForDynamicCanonical(canonicalProgram);
+      if (aliasText.replace(/\s+/g, '') !== acronym.replace(/\s+/g, '')) continue;
+    }
+
+    if (seenAlias.has(aliasText)) continue;
+    const key = aliasText + '->' + normalizeDynamicAliasText(canonicalProgram);
+    if (seenPair.has(key)) continue;
+    seenAlias.add(aliasText);
+    seenPair.add(key);
+    out.push({
+      alias: aliasText,
+      canonical: titleCaseDynamicAlias(canonicalProgram),
+      type: item && item.type ? String(item.type) : 'document_alias',
+      source: item && item.source ? item.source : null
+    });
+  }
+  return out;
+}
 function readPersistedDynamicAliasDictionary(signature) {
   try {
     if (!fs.existsSync(dynamicAliasDictionaryPath)) return null;
     const parsed = JSON.parse(fs.readFileSync(dynamicAliasDictionaryPath, 'utf8') || '{}');
     if (!parsed || parsed.signature !== signature || !Array.isArray(parsed.aliases)) return null;
-    return parsed.aliases;
+    return sanitizeDynamicAliasEntries(parsed.aliases);
   } catch (err) {
     logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to read dynamic alias dictionary');
     return null;
@@ -2085,9 +2148,10 @@ function buildDynamicAliasDictionary(index) {
     if (out.length >= 400) break;
   }
 
-  dynamicAliasDictionaryCache = { hash: signature, aliases: out };
-  writePersistedDynamicAliasDictionary(signature, out);
-  return out;
+  const sanitizedOut = sanitizeDynamicAliasEntries(out);
+  dynamicAliasDictionaryCache = { hash: signature, aliases: sanitizedOut };
+  writePersistedDynamicAliasDictionary(signature, sanitizedOut);
+  return sanitizedOut;
 }
 
 function getTopicBoost(filename, chunk) {

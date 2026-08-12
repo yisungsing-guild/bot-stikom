@@ -37,6 +37,63 @@ function isUsefulProgramName(value) {
   return /\b(?:s2\s+sistem\s+informasi|magister\s+sistem\s+informasi|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|desain\s+komunikasi\s+visual|teknologi\s+rekayasa\s+perangkat\s+lunak|teknologi\s+komputer|multimedia|animasi|desain\s+grafis)\b/i.test(text);
 }
 
+const RESERVED_CANONICALS = new Map([
+  ['si', 'Sistem Informasi'],
+  ['ti', 'Teknologi Informasi'],
+  ['bd', 'Bisnis Digital'],
+  ['sk', 'Sistem Komputer'],
+  ['mi', 'Manajemen Informatika'],
+  ['s2', 'S2 Sistem Informasi'],
+  ['s 2', 'S2 Sistem Informasi'],
+  ['pasca', 'S2 Sistem Informasi'],
+  ['pascasarjana', 'S2 Sistem Informasi'],
+  ['pasca sarjana', 'S2 Sistem Informasi'],
+  ['magister', 'S2 Sistem Informasi'],
+  ['master', 'S2 Sistem Informasi'],
+  ['program pascasarjana', 'S2 Sistem Informasi'],
+  ['dkv', 'Desain Komunikasi Visual'],
+  ['trpl', 'Teknologi Rekayasa Perangkat Lunak'],
+  ['tk', 'Teknologi Komputer'],
+  ['mm', 'Multimedia'],
+  ['an', 'Animasi'],
+  ['dg', 'Desain Grafis']
+]);
+
+function acronymForCanonical(canonical) {
+  const text = canonicalizeProgramName(canonical) || String(canonical || '').trim();
+  if (!text) return '';
+  if (/^s2\s+sistem\s+informasi$/i.test(text)) return 's2';
+  return text.split(/\s+/).filter(Boolean).map((word) => word[0]).join('').toLowerCase();
+}
+
+function sanitizeAliases(aliases) {
+  const out = [];
+  const seenAlias = new Set();
+  const seenPair = new Set();
+  for (const item of Array.isArray(aliases) ? aliases : []) {
+    const aliasText = normalizeAlias(item && item.alias);
+    const canonicalProgram = canonicalizeProgramName(item && item.canonical);
+    if (!aliasText || !canonicalProgram) continue;
+    if (aliasText.length < 2 || aliasText.length > 28) continue;
+    if (aliasText === normalizeAlias(canonicalProgram)) continue;
+
+    const reservedCanonical = RESERVED_CANONICALS.get(aliasText);
+    if (reservedCanonical && normalizeAlias(reservedCanonical) !== normalizeAlias(canonicalProgram)) continue;
+
+    if (!reservedCanonical && /^[a-z0-9\s]{2,5}$/i.test(aliasText)) {
+      const acronym = acronymForCanonical(canonicalProgram);
+      if (aliasText.replace(/\s+/g, '') !== acronym.replace(/\s+/g, '')) continue;
+    }
+
+    if (seenAlias.has(aliasText)) continue;
+    const key = aliasText + '->' + normalizeAlias(canonicalProgram);
+    if (seenPair.has(key)) continue;
+    seenAlias.add(aliasText);
+    seenPair.add(key);
+    out.push({ alias: aliasText, canonical: titleCase(canonicalProgram), type: item && item.type ? String(item.type) : 'document_alias', source: item && item.source ? item.source : null });
+  }
+  return out;
+}
 function addAlias(out, seen, alias, canonical, type, source) {
   const aliasText = normalizeAlias(alias);
   const canonicalText = titleCase(canonical);
@@ -77,7 +134,8 @@ function build(index) {
     if (out.length >= 400) break;
   }
 
-  return { version: 1, signature, generatedAt: new Date().toISOString(), aliasCount: out.length, aliases: out };
+  const sanitized = sanitizeAliases(out);
+  return { version: 1, signature, generatedAt: new Date().toISOString(), aliasCount: sanitized.length, aliases: sanitized };
 }
 
 const index = ragEngine.loadIndex();
