@@ -484,6 +484,8 @@ function answerMentionsEntity(answer, entity) {
   const aliases = {
     'language learning center': ['language learning center', 'llc', 'belajar bahasa', 'kemampuan bahasa'],
     'career center': ['career center', 'pusat karier', 'pusat karir'],
+    'hi-think': ['hi think', 'hithink', 'jepang', 'industri teknologi'],
+    'inkubator bisnis': ['inkubator bisnis', 'inbis', 'startup', 'usaha', 'bisnis'],
     ukm: ['ukm', 'ormawa', 'unit kegiatan mahasiswa', 'organisasi mahasiswa', 'kegiatan mahasiswa', 'wadah mahasiswa', 'komunitas mahasiswa', 'himpunan mahasiswa', 'kelompok studi'],
     athena: ['athena', 'athena esport', 'athena esports'],
     esport: ['esport', 'esports', 'athena esport', 'athena esports', 'kompetisi game', 'gaming'],
@@ -549,6 +551,8 @@ function detectIntentConflict(answer, userQuery = '') {
   for (const intent of requested) {
     const accepted = new Set([intent, ...(compatible.get(intent) || [])]);
     if (Array.from(accepted).some((item) => answered.has(item))) continue;
+    if (intent === 'schedule' && requested.has('facility') && answered.has('facility')) continue;
+    if (intent === 'registration' && requested.has('facility') && answered.has('facility')) continue;
     const offTopic = OFF_TOPIC_INTENTS[intent] || [];
     if (hasAnyIntent(answered, offTopic)) {
       return {
@@ -569,6 +573,8 @@ function extractFallbackTopicLabel(userQuery) {
     { label: 'BCCP', re: /\bbccp\b/i },
     { label: 'GCCP', re: /\bgccp\b/i },
     { label: 'program LinkedIn di Career Center', re: /\blinked\s*in|linkedin\b/i },
+    { label: 'program Hi-Think', re: /\bhi-?think|hithink\b/i },
+    { label: 'Inkubator Bisnis', re: /\binbis|inkubator\s+bisnis\b/i },
     { label: 'Career Center', re: /\bcareer\s*center|pusat\s+karier|pusat\s+karir\b/i },
     { label: 'pengembangan softskill', re: /\bsoftskill|pengembangan\s+soft\s*skill\b/i },
     { label: 'fasilitas belajar bahasa atau Language Learning Center', re: /\bbahasa|belajar\s+bahasa|kemampuan\s+bahasa|language\s+learning\s+center|llc\b/i },
