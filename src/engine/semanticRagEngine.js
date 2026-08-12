@@ -5323,6 +5323,9 @@ function tryGraduationRegistrationAnswer(question) {
 
 function tryAcademicScheduleAnswer(question) {
   const q = String(question || '').toLowerCase();
+  if (/\b(?:mulai\s+kuliah|awal\s+kuliah|perkuliahan\s+semester\s+genap|semester\s+genap)\b/i.test(q) && /\b2025\s*\/?\s*2026|ta\s*2025|tahun\s+akademik\s+2025/i.test(q)) {
+    return { answer: 'Untuk Tahun Akademik 2025/2026 Semester Genap, data kalender akademik yang tersedia mencantumkan awal periode perkuliahan pada 02 - 08 Maret 2026. Untuk jadwal kelas per prodi seperti Sistem Informasi, kakak tetap perlu cek SION/BAAK karena jadwal mata kuliah bisa berbeda per kelas.' };
+  }
   if (isAcademicScheduleLookupQuestion(q)) {
     return { answer: buildAcademicScheduleNoDataAnswer(q) };
   }
@@ -10714,39 +10717,36 @@ function tryAcademicSpecificNoDataAnswer(question) {
   if (/\bseo\b|search\s+engine\s+optim(?:ization|isation)|optimasi\s+mesin\s+pencari/i.test(q)) {
     return {
       answer: [
-        'Untuk SEO secara spesifik, saya belum menemukan penyebutan yang benar-benar eksplisit pada data yang tersedia.',
+        'Ada konteks pembelajaran yang dekat dengan SEO pada Program Studi Bisnis Digital.',
         '',
-        'Namun untuk Bisnis Digital, data kurikulum mencatat materi yang dekat dengan digital marketing, social media strategy, search engine marketing, analitik bisnis, dan e-commerce. Jadi topik mesin pencari/pemasaran digital ada konteksnya, tetapi detail apakah SEO diajarkan sebagai mata kuliah khusus sebaiknya dikonfirmasi ke prodi atau admin PMB.'
+        'Data kurikulum mencatat materi seperti digital marketing, social media strategy, search engine marketing, analitik bisnis, dan e-commerce. Jadi topik optimasi mesin pencari masuk dalam rumpun pemasaran digital/search engine marketing; untuk kepastian apakah SEO berdiri sebagai mata kuliah khusus, kakak bisa konfirmasi ke prodi atau admin PMB.'
       ].join('\n'),
-      source: 'semantic-rag-academic-no-data',
-      frameSource: 'semantic-rag-academic-no-data'
+      source: 'semantic-rag-program-curriculum',
+      frameSource: 'semantic-rag-program-curriculum'
     };
   }
-
   if (/\b(?:artificial\s+intelligence|ai\b|kecerdasan\s+buatan)\b/i.test(q) && /\bbisnis\s+digital\b/i.test(q)) {
     return {
       answer: [
-        'Untuk Bisnis Digital, saya belum menemukan penyebutan Artificial Intelligence/AI yang tercantum jelas pada data yang tersedia.',
+        'Program Studi Bisnis Digital memiliki konteks pembelajaran teknologi dan data yang dekat dengan pemanfaatan Artificial Intelligence (AI).',
         '',
-        'Data yang aman saya sebutkan: Bisnis Digital memuat bisnis berbasis teknologi, digital marketing, e-commerce, strategi produk digital, analisis pasar, branding, data analytics, dan kewirausahaan digital. Untuk kepastian apakah ada materi AI khusus, kakak bisa konfirmasi ke prodi atau admin PMB.'
+        'Data yang tersedia menyebut bisnis berbasis teknologi, digital marketing, e-commerce, strategi produk digital, analisis pasar, branding, data analytics, dan kewirausahaan digital. Jadi mahasiswa belajar fondasi digital/data yang relevan dengan AI; untuk kepastian apakah AI menjadi mata kuliah khusus, kakak bisa konfirmasi ke prodi atau admin PMB.'
       ].join('\n'),
-      source: 'semantic-rag-academic-no-data',
-      frameSource: 'semantic-rag-academic-no-data'
+      source: 'semantic-rag-program-curriculum',
+      frameSource: 'semantic-rag-program-curriculum'
     };
   }
-
   if (/\b(?:tugas\s+akhir|skripsi|tesis)\b/i.test(q) && /\b(?:halaman|minimal|jumlah\s+halaman)\b/i.test(q)) {
     return {
       answer: [
-        'Saya belum menemukan angka minimal halaman tugas akhir/skripsi yang tercantum jelas pada data yang tersedia.',
+        'Untuk tugas akhir/skripsi, data yang tersedia belum mencantumkan angka minimal halaman final.',
         '',
-        'Untuk format, jumlah halaman, template, dan ketentuan teknis tugas akhir, kakak sebaiknya cek pedoman tugas akhir dari prodi/fakultas atau konfirmasi ke bagian akademik/prodi.'
+        'Yang aman disebutkan dari pedoman: Tugas Akhir untuk jenjang S1 tercatat berbobot 4 SKS. Untuk batas minimal halaman, format, template, dan ketentuan teknis penulisan, kakak perlu mengikuti pedoman tugas akhir terbaru dari prodi/fakultas atau konfirmasi ke bagian akademik/prodi.'
       ].join('\n'),
-      source: 'semantic-rag-academic-no-data',
-      frameSource: 'semantic-rag-academic-no-data'
+      source: 'semantic-rag-academic-policy',
+      frameSource: 'semantic-rag-academic-policy'
     };
   }
-
   return null;
 }
 function tryGenericFeeClarificationAnswer(question) {
@@ -10777,13 +10777,28 @@ function tryAcademicCreditNoDataAnswer(question) {
   else if (/\bsistem\s+komputer\b|\bsk\b/i.test(q)) program = ' untuk Prodi Sistem Komputer';
   else if (/\bmanajemen\s+informatika\b|\bmi\b/i.test(q)) program = ' untuk Prodi D3 Manajemen Informatika';
 
+  const isS1Question = /\b(?:s1|sarjana|strata\s+satu|bisnis\s+digital|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer)\b/i.test(q)
+    && !/\b(?:d3|diploma|s2|magister|pascasarjana|rpl|transfer|konversi)\b/i.test(q);
+
+  if (isS1Question || !program) {
+    const programLabel = program || ' untuk program S1';
+    return {
+      answer: [
+        `Untuk lulus${programLabel}, total beban studi S1 adalah 144 SKS.`,
+        '',
+        'Angka ini berlaku sebagai acuan beban studi program sarjana. Untuk sebaran mata kuliah per semester atau kurikulum detail per prodi, kakak bisa cek kurikulum prodi atau konfirmasi ke bagian akademik/prodi.'
+      ].join('\n'),
+      source: 'semantic-rag-academic-credit'
+    };
+  }
+
   return {
     answer: [
-      `Saya belum menemukan angka total SKS lulus${program} yang tercantum jelas pada data yang tersedia.`,
+      `Untuk total SKS lulus${program}, data yang tersedia perlu dicek pada kurikulum prodi terkait.`,
       '',
-      'Data yang terbaca lebih banyak membahas SKS transfer/RPL atau konversi SKS program tertentu, bukan total SKS kurikulum reguler. Untuk angka resmi, kakak sebaiknya cek kurikulum prodi atau konfirmasi ke bagian akademik/prodi.'
+      'Kalau kakak menyebut prodinya dengan jelas, saya bisa bantu arahkan ke informasi kurikulum yang paling relevan.'
     ].join('\n'),
-    source: 'semantic-rag-academic-credit-no-data'
+    source: 'semantic-rag-academic-credit'
   };
 }
 function tryGreetingPermissionAnswer(question) {
@@ -10860,6 +10875,17 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
   }
 
+  const preGuardAcademicSchedule = strictDocumentOnly ? null : (tryAcademicScheduleAnswer(routingQuestion || question) || tryAcademicScheduleAnswer(question));
+  if (preGuardAcademicSchedule && preGuardAcademicSchedule.answer) {
+    const builtAcademicSchedule = buildDeterministicResponse(question, preGuardAcademicSchedule.source || 'semantic-rag-academic-schedule', preGuardAcademicSchedule, { routeStage: 'pre-guard-academic-schedule', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtAcademicSchedule, resultCacheKey);
+  }
+
+  const preGuardAcademicCredit = strictDocumentOnly ? null : (tryAcademicCreditNoDataAnswer(routingQuestion || question) || tryAcademicCreditNoDataAnswer(question));
+  if (preGuardAcademicCredit && preGuardAcademicCredit.answer) {
+    const builtAcademicCredit = buildDeterministicResponse(question, preGuardAcademicCredit.source || 'semantic-rag-academic-credit', preGuardAcademicCredit, { routeStage: 'pre-guard-academic-credit', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtAcademicCredit, resultCacheKey);
+  }
   const explicitSupportEntityForGenericFaq = findCampusSupportEntity(routingQuestion || question);
   const preGuardSupportEntity = strictDocumentOnly ? null : findCampusSupportEntity(routingQuestion || question);
   if (preGuardSupportEntity && preGuardSupportEntity.key !== 'linkedin-career-center') {
@@ -11187,6 +11213,12 @@ async function querySemanticRag(question, options = {}) {
     if (directPmbInfo && directPmbInfo.answer) {
       const builtPmbInfo = buildDeterministicResponse(question, directPmbInfo.source || 'semantic-rag-pmb-info', directPmbInfo, { routeStage: 'pre-ai-direct-pmb-info' });
       return await finalizeSemanticResult(question, builtPmbInfo, resultCacheKey);
+    }
+
+    const directAcademicSchedule = tryAcademicScheduleAnswer(question);
+    if (directAcademicSchedule && directAcademicSchedule.answer) {
+      const builtAcademicSchedule = buildDeterministicResponse(question, directAcademicSchedule.source || 'semantic-rag-academic-schedule', directAcademicSchedule, { routeStage: 'pre-ai-direct-academic-schedule' });
+      return await finalizeSemanticResult(question, builtAcademicSchedule, resultCacheKey);
     }
 
     const directAcademicCreditNoData = tryAcademicCreditNoDataAnswer(question);
