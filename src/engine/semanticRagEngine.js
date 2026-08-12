@@ -10802,9 +10802,20 @@ async function querySemanticRag(question, options = {}) {
     const preGuardSupportEntityAnswer = tryCampusSupportEntityAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
       || tryCampusSupportEntityAnswer(question, getCachedSemanticIndex(), options);
     if (preGuardSupportEntityAnswer && preGuardSupportEntityAnswer.answer) {
+      const supportSource = preGuardSupportEntityAnswer.source || 'semantic-rag-campus-support-entity';
+      if (/insufficient-data|no-data/i.test(String(supportSource))) {
+        try {
+          const supportEvidenceFirst = await tryEvidenceFirstLocalDocumentAnswer(question, { ...options, topK: Math.max(8, Number(options.topK || 0) || 0), routeStage: 'pre-guard-support-insufficient-evidence-first' });
+          if (supportEvidenceFirst && supportEvidenceFirst.answer) {
+            return await finalizeSemanticResult(question, supportEvidenceFirst, resultCacheKey);
+          }
+        } catch (e) {
+          try { logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] support insufficient evidence-first probe failed'); } catch (_) {}
+        }
+      }
       const builtSupportEntity = buildDeterministicResponse(
         question,
-        preGuardSupportEntityAnswer.source || 'semantic-rag-campus-support-entity',
+        supportSource,
         preGuardSupportEntityAnswer,
         { routeStage: 'pre-guard-support-entity', normalizedRouting: normalizedRouting.changed }
       );
@@ -11447,9 +11458,7 @@ async function querySemanticRag(question, options = {}) {
       }
     }
 
-    let localUploadedTraining = shouldProbeUploadedTrainingBeforeDeterministic(question)
-      ? await tryLocalUploadedTrainingGenericAnswer(question, options)
-      : null;
+    let localUploadedTraining = await tryLocalUploadedTrainingGenericAnswer(question, options);
     if (localUploadedTraining && localUploadedTraining.answer) {
       // If the uploaded-training result addresses explicit academic/admin topics
       // such as yudisium or wisuda, normalize the source to an academic tag
