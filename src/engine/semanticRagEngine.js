@@ -5601,7 +5601,7 @@ function isNonPmbFaqDomainQuestion(question) {
 function tryKnownFaqQnaAnswer(question) {
   const q = normalizeFacilityTerm(question || '');
   if (!q) return null;
-  const answer = (value, source = 'semantic-rag-generic-faq-qna', frameSource = 'semantic-rag-training-specific') => ({
+  const answer = (value, source = 'semantic-rag-known-faq-qna', frameSource = 'semantic-rag-training-specific') => ({
     answer: value,
     source,
     frameSource,
@@ -5694,7 +5694,7 @@ function tryKnownFaqQnaAnswer(question) {
     }
   }
 
-  if (/\b(mengapa memilih|kenapa memilih|alasan memilih)\b/i.test(q) && /\b(stikom bali|itb stikom)\b/i.test(q)) {
+  if (/\b(?:mengapa|kenapa|alasan)\b[\s\S]{0,40}\b(?:memilih|pilih)\b/i.test(q) && /\b(stikom bali|itb stikom)\b/i.test(q)) {
     return answer('ITB STIKOM Bali dapat dipilih karena menyediakan pendidikan berbasis teknologi dan bisnis yang didukung program karier, magang, kerja sama industri, kegiatan mahasiswa, program internasional, serta layanan pendukung seperti Career Center untuk membantu mahasiswa mempersiapkan masa depan.');
   }
 
@@ -9981,7 +9981,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && (/(?:Hari\s*\/?\s*Tanggal|Tanggal)\s*:/i.test(String(result.answer || '')) || /\b(?:Persyaratan|Syarat)\s+(?:Yudisium|Wisuda|akademik)\b/i.test(String(result.answer || '')))
     && !hasLikelyRawDocumentLeak(result.answer)
     && !hasUploadedDocumentTopicConflict(question, result.answer);  const fineForSafety = detectFineGrainedIntent(question);
-  const documentEvidenceSourceSafe = /semantic-rag-(?:generic-faq-qna|uploaded-training-generic|evidence-first)|rag-/i.test(source)
+  const documentEvidenceSourceSafe = /semantic-rag-(?:known-faq-qna|generic-faq-qna|uploaded-training-generic|evidence-first)|rag-/i.test(source)
     && !rawGenericEvidenceShape
     && !hasNoDataAnswerPhrase(result.answer)
     && isDocumentEvidenceFirstCandidate(question)
@@ -9990,7 +9990,11 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && !hasUploadedDocumentTopicConflict(question, result.answer)
     && /\b(?:pascasarjana|magister|s2|fakultas|program|prodi|jurusan|skripsi|tugas\s+akhir|internasional|student\s+exchange|double\s*degree|dual\s*degree|dnui|help|gelar|lulusan|masa\s+studi|semester|sks|kurikulum|mata\s+kuliah|akreditasi|keunggulan|penelitian|yudisium|wisuda|linkedin|j\s*1|amerika|indikator|akuntabilitas|layanan\s+industri|goes\s*to\s*school)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
   const fineIntentSafe = Boolean(fineForSafety.fineIntent) && documentEvidenceSourceSafe;
-  const structuredSemanticSafe = structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
+  const deterministicKnownFaqSafe = /semantic-rag-known-faq-qna/i.test(source)
+    && !hasNoDataAnswerPhrase(result.answer)
+    && !hasLikelyRawDocumentLeak(result.answer)
+    && !hasUploadedDocumentTopicConflict(question, result.answer);
+  const structuredSemanticSafe = deterministicKnownFaqSafe || structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
@@ -10030,7 +10034,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const isDocumentSource = /semantic-rag-uploaded-training|campus-support|campus-facility/i.test(source);
   const academicNoDataSourceSafe = hasNoDataAnswerPhrase(result.answer)
     && /semantic-rag-academic-(?:credit-no-data|schedule|no-data)|semantic-rag-meaning-mismatch/i.test(source);
-  const skipLlmVerifier = structuredSemanticSafe || academicNoDataSourceSafe || /campus-support|campus-facility/i.test(source) || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
+  const skipLlmVerifier = structuredSemanticSafe || academicNoDataSourceSafe || /known-faq-qna|campus-support|campus-facility/i.test(source) || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
   const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
@@ -10370,6 +10374,17 @@ async function querySemanticRag(question, options = {}) {
   if (greetingPermission && greetingPermission.answer) {
     const builtGreetingPermission = buildDeterministicResponse(question, greetingPermission.source || 'semantic-rag-small-talk', greetingPermission, { routeStage: 'pre-guard-greeting-permission', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
+  }
+
+  const preGuardKnownFaqQna = strictDocumentOnly ? null : (tryKnownFaqQnaAnswer(routingQuestion || question) || tryKnownFaqQnaAnswer(question));
+  if (preGuardKnownFaqQna && preGuardKnownFaqQna.answer) {
+    const builtKnownFaqQna = buildDeterministicResponse(
+      question,
+      preGuardKnownFaqQna.source || 'semantic-rag-generic-faq-qna',
+      preGuardKnownFaqQna,
+      { routeStage: 'pre-guard-known-faq-qna', normalizedRouting: normalizedRouting.changed }
+    );
+    return await finalizeSemanticResult(question, builtKnownFaqQna, resultCacheKey);
   }
 
   if (!strictDocumentOnly && /\b(?:linked\s*in|linkedin)\b/i.test(routingQuestion) && /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|career|karier|karir)\b/i.test(routingQuestion)) {
