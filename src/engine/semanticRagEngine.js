@@ -611,6 +611,7 @@ function detectFineGrainedIntent(question) {
 }
 
 function shouldDeferEarlyEvidenceFirstToStableRoute(question) {
+  if (isIndustryServicesQuestion(question)) return true;
   const fine = detectFineGrainedIntent(question || '');
   const fineIntent = String(fine && fine.fineIntent ? fine.fineIntent : '').toLowerCase();
   const coarseIntent = String(fine && fine.coarseIntent ? fine.coarseIntent : '').toLowerCase();
@@ -666,6 +667,7 @@ function isDocumentEvidenceFirstCandidate(question) {
   if (/\b(?:password|token|api\s*key|secret|system\s+prompt|database|data\s+pribadi|hapus\s+data|reset\s+database)\b/i.test(q)) return false;
   if (/\b(?:resep|masak|cuaca|politik|saham|crypto|film|lagu|game|olahraga)\b/i.test(q) && !/\b(?:stikom|kampus|kuliah|mahasiswa|prodi|program|akademik)\b/i.test(q)) return false;
   if (hasExplicitFeeQuestionSignal(q)) return false;
+  if (isOperationalAcademicPolicyQuestion(q)) return false;
   if (findCampusSupportEntity(q)) return false;
 
   const fine = detectFineGrainedIntent(q);
@@ -2967,11 +2969,18 @@ function tryIndustryServicesAnswerFromIndex(question) {
   }
   if (!candidates.length) return null;
   return {
-    answer: candidates.slice(0, 3).map((item) => `- ${item}`).join('\n'),
+    answer: [
+      'Layanan Industri ITB STIKOM Bali berkaitan dengan fasilitasi kerja sama kampus dengan pihak industri atau mitra eksternal.',
+      '',
+      'Dari data yang terbaca, konteks layanan ini mencakup kerja sama industri, akses mitra eksternal, rekrutmen/campus hiring, magang, pelatihan, atau kolaborasi yang mendukung pembelajaran dan pengembangan karier mahasiswa.',
+      '',
+      'Untuk daftar layanan resmi, alur pengajuan kerja sama, PIC, atau dokumen yang diperlukan, kakak sebaiknya konfirmasi ke admin kampus atau unit kerja sama terkait.'
+    ].join('\n'),
     source: 'semantic-rag-campus-support-entity',
     frameSource: 'semantic-rag-campus-support-entity'
   };
-}function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
+}
+function buildLocalUploadedTrainingAnswer(question, selectedEvidence) {
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   const scheduleSummary = buildAcademicScheduleSummaryAnswer(question, evidence);
   if (scheduleSummary) return scheduleSummary;
@@ -7269,12 +7278,17 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
 
   if (/\b(layanan\s+industri|dari\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri)\b/i.test(q)) {
     return {
-      answer: buildIndustryServicesNoDataAnswer(),
-      source: 'semantic-rag-campus-facility-insufficient-data',
-      frameSource: 'semantic-rag-insufficient-data'
+      answer: [
+        'Layanan Industri ITB STIKOM Bali berkaitan dengan fasilitasi kerja sama kampus dengan pihak industri atau mitra eksternal.',
+        '',
+        'Konteks yang aman saya sampaikan mencakup kerja sama industri, rekrutmen atau campus hiring, magang, pelatihan, dan kolaborasi yang mendukung pembelajaran serta pengembangan karier mahasiswa.',
+        '',
+        'Untuk daftar layanan resmi, alur pengajuan kerja sama, PIC, atau dokumen yang diperlukan, kakak sebaiknya konfirmasi ke admin kampus atau unit kerja sama terkait.'
+      ].join('\n'),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
     };
   }
-
   if (/\b(?:goes\s*to\s*school|goestoschool|stikom\s+bali\s+goes)\b/i.test(q)) {
     return {
       answer: buildGoesToSchoolAnswer(),
@@ -11118,7 +11132,7 @@ async function querySemanticRag(question, options = {}) {
   }
 
   if (/\b(pks|pasal\s+\d+|addendum|pihak\s+(?:pertama|kedua|kesatu)|nama\s+mitra|template\s+pks|perjanjian\s+kerja\s*sama)\b/i.test(String(question || ''))) {
-    const response = { success: true, answer: null, source: 'semantic-rag-admin-legal-no-answer', contexts: [] };
+    const response = { success: true, answer: 'Untuk informasi PKS/perjanjian kerja sama, saya tidak menampilkan atau menafsirkan detail dokumen legal melalui bot. Jika kakak membutuhkan template, isi pasal, nama mitra, atau addendum, sebaiknya konfirmasi langsung ke admin kampus atau unit kerja sama terkait agar sesuai dokumen resmi.', source: 'semantic-rag-admin-legal-no-answer', contexts: [] };
     return await finalizeSemanticResult(question, response, resultCacheKey);
   }
 
