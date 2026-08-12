@@ -1392,7 +1392,10 @@ module.exports = function (provider) {
     const merged = {
       ...opts,
       divisionKey: divisionKey || null,
-      includeGlobal: opts.includeGlobal === undefined ? true : !!opts.includeGlobal
+      includeGlobal: opts.includeGlobal === undefined ? true : !!opts.includeGlobal,
+      sessionData,
+      programHint: opts.programHint || sessionData.lastProgramHint || sessionData.currentProgramHint || null,
+      intentHint: opts.intentHint || sessionData.lastIntent || null
     };
     if (comparisonMeta && typeof merged === 'object') {
       merged._comparisonMeta = comparisonMeta;

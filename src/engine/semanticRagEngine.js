@@ -1482,6 +1482,114 @@ function getLastUserMessage(sessionData) {
   return '';
 }
 
+function getRecentConversationTextForResolution(sessionData) {
+  const parts = [];
+  const recent = getRecentConversation(sessionData);
+  if (recent) parts.push(recent);
+  if (sessionData && typeof sessionData === 'object') {
+    [
+      sessionData.lastQuestion,
+      sessionData.lastUserQuestion,
+      sessionData.lastAnswer,
+      sessionData.lastBotAnswer,
+      sessionData.lastIntent,
+      sessionData.lastProgramHint,
+      sessionData.currentProgramHint,
+      sessionData.programHint
+    ].forEach((value) => {
+      const text = String(value || '').trim();
+      if (text) parts.push(text);
+    });
+    [
+      sessionData.pendingFeeDetail,
+      sessionData.pendingTotalCost,
+      sessionData.pendingRegistrationCostOffer,
+      sessionData.registrationFlow
+    ].forEach((value) => {
+      if (!value || typeof value !== 'object') return;
+      const text = Object.values(value).map((v) => String(v || '').trim()).filter(Boolean).join(' ');
+      if (text) parts.push(text);
+    });
+    if (Array.isArray(sessionData.lastRetrievedPrograms)) {
+      parts.push(sessionData.lastRetrievedPrograms.filter(Boolean).join(' '));
+    }
+  }
+  return parts.join('\n').toLowerCase();
+}
+
+function hasExplicitContextAnchor(question) {
+  const q = String(question || '').toLowerCase();
+  if (!q) return false;
+  return /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen\s+informatika|sistem\s+komputer|s2|magister|pasca\s*sarjana|pascasarjana|rpl|double\s*degree|dual\s*degree|dnui|dalian|utb|help\s+university|career\s*center|pusat\s+karier|pusat\s+karir|tracer\s*study|inbis|inkubator\s+bisnis|hi-?think|language\s+learning\s+center|\bllc\b|mahasiswa\s+asing|izin\s+belajar|visa\s*study|student\s*exchange|bccp|gccp|short\s*course|beasiswa|skss|kampus|akreditasi|prodi|jurusan)\b/i.test(q);
+}
+
+function isContextualSemanticFollowup(question) {
+  const q = String(question || '').toLowerCase().trim();
+  if (!q || hasExplicitContextAnchor(q)) return false;
+  const words = q.split(/\s+/).filter(Boolean);
+  if (words.length <= 4 && /\b(?:apa|itu|ini|tadi|gimana|bagaimana|caranya|syaratnya|dokumennya|biayanya|rincian(?:nya)?|detail(?:nya)?|kapan|dimana|mana|harus|ikut|daftar|potongan(?:nya)?|bedanya|keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?)\b/i.test(q)) {
+    return true;
+  }
+  return /\b(?:yang\s+(?:itu|tadi|mana)|lanjut(?:kan)?|kalau\s+yang\s+itu|terus\s+gimana|lalu\s+gimana|apa\s+saja\s+syaratnya|apa\s+aja\s+dokumennya|rincian\s+biayanya|detail\s+biayanya|harus\s+ke\s+sana|harus\s+ke\s+china|bisa\s+ikut\s+kapan|mulai\s+kapan)\b/i.test(q);
+}
+
+function inferContextTopicFromSession(sessionData) {
+  const recent = getRecentConversationTextForResolution(sessionData);
+  if (!recent) return null;
+  const topics = [
+    { key: 'dual_degree_dnui', label: 'Program Dual Degree DNUI', re: /\b(?:dnui|dalian|china|tiongkok)\b/ },
+    { key: 'dual_degree_help', label: 'Program Dual Degree HELP University', re: /\b(?:help\s+university|malaysia)\b/ },
+    { key: 'dual_degree_utb', label: 'Program Dual Degree UTB', re: /\b(?:utb|universitas\s+teknologi\s+bandung|dkv)\b/ },
+    { key: 'dual_degree', label: 'Program Dual Degree ITB STIKOM Bali', re: /\b(?:double\s*degree|dual\s*degree)\b/ },
+    { key: 'foreign_student', label: 'mahasiswa asing, Izin Belajar, dan Visa Study', re: /\b(?:mahasiswa\s+asing|izin\s+belajar|visa\s*study|study\s+permit|foreign\s+student)\b/ },
+    { key: 'hi_think', label: 'program Hi-Think Jepang', re: /\bhi-?think\b/ },
+    { key: 'career_center', label: 'Career Center ITB STIKOM Bali', re: /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|tracer\s*study|job\s*fair|campus\s*hiring|lowongan\s+kerja|magang|rekrutmen|karier|karir)\b/ },
+    { key: 'inbis', label: 'Inkubator Bisnis ITB STIKOM Bali', re: /\b(?:inbis|inkubator\s+bisnis)\b/ },
+    { key: 'llc', label: 'Language Learning Center ITB STIKOM Bali', re: /\b(?:language\s+learning\s+center|\bllc\b)\b/ },
+    { key: 'rpl', label: 'jalur RPL ITB STIKOM Bali', re: /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/ },
+    { key: 'postgraduate', label: 'Prodi S2 Sistem Informasi ITB STIKOM Bali', re: /\b(?:s2|magister|pasca\s*sarjana|pascasarjana)\b/ },
+    { key: 'program_list', label: 'daftar prodi ITB STIKOM Bali', re: /\b(?:prodi|program\s+studi|jurusan)\b/ },
+    { key: 'business_digital', label: 'Prodi Bisnis Digital ITB STIKOM Bali', re: /\b(?:bisnis\s+digital|\bbd\b)\b/ },
+    { key: 'information_system', label: 'Prodi Sistem Informasi ITB STIKOM Bali', re: /\b(?:sistem\s+informasi|\bsi\b)\b/ },
+    { key: 'information_technology', label: 'Prodi Teknologi Informasi ITB STIKOM Bali', re: /\b(?:teknologi\s+informasi|\bti\b)\b/ },
+    { key: 'computer_system', label: 'Prodi Sistem Komputer ITB STIKOM Bali', re: /\b(?:sistem\s+komputer|\bsk\b)\b/ },
+    { key: 'informatics_management', label: 'Prodi D3 Manajemen Informatika ITB STIKOM Bali', re: /\b(?:manajemen\s+informatika|\bmi\b)\b/ }
+  ];
+  return topics.find((topic) => topic.re.test(recent)) || null;
+}
+
+function resolveSemanticFollowupQuestion(question, options = {}) {
+  const original = String(question || '').trim();
+  if (!original || !isContextualSemanticFollowup(original)) {
+    return { changed: false, question: original, topic: null };
+  }
+  const topic = inferContextTopicFromSession(options && options.sessionData);
+  if (!topic) return { changed: false, question: original, topic: null };
+  const q = original.toLowerCase();
+  let resolved = `${topic.label}: ${original}`;
+  if (/\b(?:biaya|bayar|harga|uang|potongan|diskon|rincian)\b/i.test(q)) {
+    resolved = `Rincian biaya dan potongan untuk ${topic.label}`;
+  } else if (/\b(?:syarat(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?)\b/i.test(q)) {
+    resolved = `Syarat dan dokumen untuk ${topic.label}`;
+  } else if (/\b(?:cara|alur|proses|daftar|mengurus)\b/i.test(q)) {
+    resolved = `Cara, alur, atau proses untuk ${topic.label}`;
+  } else if (/\b(?:kapan|mulai|ikut|mengikuti)\b/i.test(q)) {
+    resolved = `Kapan mahasiswa bisa mengikuti ${topic.label}`;
+  } else if (/\b(?:harus|wajib|ke\s+sana|ke\s+china|ke\s+luar)\b/i.test(q)) {
+    resolved = `Apakah ${topic.label} harus dilakukan ke luar negeri atau ke negara partner`;
+  } else if (/\b(?:keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?|untung|keuntungan(?:nya)?|bagus|kenapa|mengapa)\b/i.test(q)) {
+    resolved = `Keunggulan dan manfaat ${topic.label}`;
+  } else if (/\b(?:apa|itu|ini|maksud)\b/i.test(q)) {
+    resolved = `Apa itu ${topic.label}`;
+  }
+  return {
+    changed: resolved.trim().toLowerCase() !== original.toLowerCase(),
+    question: resolved.trim(),
+    topic: topic.key,
+    topicLabel: topic.label,
+    originalQuestion: original
+  };
+}
 function isEnglishQuestion(question) {
   const q = String(question || '').toLowerCase();
   if (!q) return false;
@@ -5762,7 +5870,7 @@ function tryKnownFaqQnaAnswer(question) {
     if (/\b(siapa|diurus|siapa yang mengurus|kampus yang mengurus|mahasiswa yang mengurus)\b/i.test(q)) {
       return answer('Pengurusan Izin Belajar dibantu oleh kampus/unit terkait, sementara mahasiswa wajib menyiapkan dan melengkapi dokumen yang diminta. Jadi prosesnya dilakukan melalui kerja sama antara mahasiswa dan kampus.');
     }
-    if (/\b(dokumen|berkas|persyaratan|diperlukan|pengajuan)\b/i.test(q)) {
+    if (/\b(dokumen(?:nya)?|berkas(?:nya)?|persyaratan|syarat(?:nya)?|diperlukan|pengajuan)\b/i.test(q)) {
       return answer('Dokumen yang diperlukan untuk pengajuan Izin Belajar umumnya meliputi identitas/paspor mahasiswa asing, dokumen penerimaan atau status studi di kampus, pas foto, dan dokumen pendukung lain sesuai ketentuan pengajuan. Untuk daftar final, mahasiswa perlu mengikuti arahan kampus karena persyaratan dapat mengikuti ketentuan pemerintah yang berlaku.');
     }
     if (/\b(proses|prosedur|pengurusan dokumen|dokumen mahasiswa asing)\b/i.test(q)) {
@@ -10660,7 +10768,15 @@ function tryDualDegreeFeeClarificationAnswer(question) {
   };
 }
 async function querySemanticRag(question, options = {}) {
-  const resultCacheKey = buildSemanticResultCacheKey(question, options);
+  const originalQuestion = String(question || '').trim();
+  const followupResolution = resolveSemanticFollowupQuestion(originalQuestion, options);
+  if (followupResolution && followupResolution.changed && followupResolution.question) {
+    question = followupResolution.question;
+  }
+  const resultCacheQuestion = followupResolution && followupResolution.changed
+    ? `${originalQuestion}\n[resolved_context:${followupResolution.question}]`
+    : question;
+  const resultCacheKey = buildSemanticResultCacheKey(resultCacheQuestion, options);
   const cachedResult = getCachedSemanticResult(resultCacheKey);
   if (cachedResult) return cachedResult;
 
@@ -12133,5 +12249,6 @@ module.exports = {
   computeAdminPenalty,
   computeGenericScore,
   selectEvidenceByCompatibility,
-  evaluateGenericAnswerability
+  evaluateGenericAnswerability,
+  resolveSemanticFollowupQuestion
 };

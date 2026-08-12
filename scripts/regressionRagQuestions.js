@@ -14,6 +14,7 @@ const CASES = [
   { q: 'Apa visi program studi pascasarjana?', mustInclude: ['2030'] },
   { q: 'Lulusan pasca bisa bekerja sebagai apa?', mustInclude: ['System Analyst'] },
   { q: 'akrediasi pasca sarjana atau s2 apa?', mustInclude: ['Baik Sekali'], productionLike: true },
+  { q: 'keunggulannya apa?', mustInclude: ['Keunggulan', 'S2 Sistem Informasi'], productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'Apa itu program pascasarjana atau S2 di ITB STIKOM Bali?' }, { direction: 'bot', message: 'ITB STIKOM Bali memiliki Prodi S2 Sistem Informasi.' }] } },
   { q: 'apa saja prodi yg ada di stikom?', mustInclude: ['Sistem Informasi', 'Bisnis Digital', 'Manajemen Informatika'], productionLike: true },
   { q: 'jurusan di stikom ada apa aja?', mustInclude: ['Sistem Informasi', 'Teknologi Informasi'] },
   { q: 'apa yang dipelajari di sistem informasi?', mustInclude: ['Sistem Informasi'] },
@@ -26,6 +27,8 @@ const CASES = [
   { q: 'beasiswa SKSS itu apa?', mustInclude: ['1K1S', 'belum ada di data training'], productionLike: true },
   { q: 'jalur RPL itu apa?', mustInclude: ['Rekognisi Pembelajaran Lampau'], productionLike: true },
   { q: 'program dual degree DNUI harus ke China?', mustInclude: ['DNUI'], productionLike: true },
+  { q: 'harus ke sana?', mustInclude: ['DNUI'], productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'Program Dual Degree DNUI itu apa?' }, { direction: 'bot', message: 'Program Dual Degree DNUI adalah program internasional dengan Dalian Neusoft University of Information di China.' }] } },
+  { q: 'rincian biayanya?', mustInclude: ['Double Degree'], productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'Saya mau tanya program Dual Degree DNUI' }, { direction: 'bot', message: 'Program Dual Degree DNUI adalah kerja sama internasional ITB STIKOM Bali.' }] } },
   { q: 'program internasional apa saja?', mustInclude: ['Double Degree', 'Student Exchange'], productionLike: true },
   { q: 'student exchange itu apa?', mustInclude: ['pertukaran mahasiswa'], productionLike: true },
   { q: 'inbis itu apa?', mustInclude: ['Inkubator Bisnis'], productionLike: true },
@@ -33,6 +36,7 @@ const CASES = [
   { q: 'Apa keuntungan menjadi mahasiswa ITB STIKOM Bali dari sisi karier?', mustInclude: ['Keuntungan', 'karier'], productionLike: true },
   { q: 'Apakah ITB STIKOM Bali membantu lulusannya mendapatkan pekerjaan?', mustInclude: ['membantu', 'Career Center'], productionLike: true },
   { q: 'Apakah ada program magang?', mustInclude: ['magang', 'Career Center'], productionLike: true },
+  { q: 'kapan bisa mulai ikut?', mustInclude: ['mahasiswa aktif', 'Career Center'], productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'Apa itu Career Center ITB STIKOM Bali?' }, { direction: 'bot', message: 'Career Center ITB STIKOM Bali membantu mahasiswa dan alumni terkait karier, magang, job fair, dan campus hiring.' }] } },
   { q: 'Apakah perusahaan sering datang ke kampus untuk rekrutmen?', mustInclude: ['Perusahaan', 'rekrutmen'], productionLike: true },
   { q: 'Apakah ada Job Fair di ITB STIKOM Bali?', mustInclude: ['job fair', 'Career Center'], productionLike: true },
   { q: 'Kapan mahasiswa bisa mulai mengikuti program Career Center?', mustInclude: ['mahasiswa aktif', 'Career Center'], productionLike: true },
@@ -47,11 +51,13 @@ const CASES = [
   { q: 'Bagaimana peluang kerja lulusan ITB STIKOM Bali?', mustInclude: ['Peluang kerja lulusan', 'Career Center'], productionLike: true },
   { q: 'Bagaimana cara mengurus Izin Belajar dan Visa Study?', mustInclude: ['Izin Belajar', 'kampus'], productionLike: true },
   { q: 'Dokumen apa saja untuk mahasiswa asing?', mustInclude: ['paspor', 'mahasiswa asing'], productionLike: true },
+  { q: 'dokumennya apa aj?', mustInclude: ['paspor', 'mahasiswa asing'], productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'Bagaimana cara mengurus Izin Belajar dan Visa Study untuk mahasiswa asing?' }, { direction: 'bot', message: 'Pengurusan Izin Belajar dan Visa Study untuk mahasiswa asing dibantu sesuai ketentuan kampus.' }] } },
   { q: 'dokumen mhs asing apa aj?', mustInclude: ['paspor', 'mahasiswa asing'], productionLike: true },
   { q: 'Apa itu Hi-Think?', mustInclude: ['Hi-Think', 'Jepang'], productionLike: true },
   { q: 'hi-think gmn kak?', mustInclude: ['Hi-Think', 'Jepang'], productionLike: true },
   { q: 'Bagaimana program Hi-Think membantu karier mahasiswa?', mustInclude: ['Hi-Think', 'peluang kerja'], productionLike: true },
   { q: 'Kapan saya bisa mengikuti program Hi-Think?', mustInclude: ['Hi-Think', 'Semester 5'], productionLike: true },
+  { q: 'kapan bisa ikut?', mustInclude: ['Hi-Think', 'Semester 5'], productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'Apa itu Hi-Think?' }, { direction: 'bot', message: 'Hi-Think adalah program Jepang yang dapat mendukung peluang kerja mahasiswa.' }] } },
   { q: 'Apakah program Hi-Think sulit?', mustInclude: ['Hi-Think', 'menantang'], productionLike: true },
   { q: 'LLC itu apa?', mustInclude: ['Language Learning Center'], productionLike: true },
   { q: 'kampus stikom ada berapa?', mustInclude: ['3'] },
@@ -64,14 +70,14 @@ const MODES = [
     name: 'no-provider',
     apiKey: '',
     cases: () => CASES,
-    options: (testCase) => ({ topK: 8, mode: 'regression-no-provider', chatId: `regression:${testCase.q}` })
+    options: (testCase) => ({ topK: 8, mode: 'regression-no-provider', chatId: `regression:${testCase.q}`, sessionData: testCase.sessionData || {} })
   },
   {
     name: 'production-like-provider',
     apiKey: '',
     fakeClient: true,
     cases: () => CASES.filter((testCase) => testCase.productionLike),
-    options: (testCase) => ({ topK: 8, mode: 'regression-production-like', chatId: `regression-prod:${testCase.q}`, sessionData: {}, intentHint: '' })
+    options: (testCase) => ({ topK: 8, mode: 'regression-production-like', chatId: `regression-prod:${testCase.q}`, sessionData: testCase.sessionData || {}, intentHint: '' })
   }
 ];
 
