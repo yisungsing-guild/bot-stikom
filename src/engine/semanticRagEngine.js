@@ -376,7 +376,10 @@ function convertTrainingDataToCandidate(trainingData) {
       source: 'database',
       ragIngestStatus: trainingData.ragIngestStatus || 'unknown',
       createdAt: trainingData.createdAt,
-      governance: getTrainingGovernance(trainingData)
+      governance: {
+        ...getTrainingGovernance(trainingData),
+        ...(trainingData.governanceMetadata && typeof trainingData.governanceMetadata === 'object' ? trainingData.governanceMetadata : {})
+      }
     }
   }));
 }
@@ -1076,6 +1079,41 @@ function computeDomainAlignmentScore(query, item, questionIntent = null) {
     reason: reasons.join(';') || (overlap.length ? 'domain_match' : 'domain_neutral')
   };
 }
+function getKnowledgePreparationMeta(item) {
+  if (!item || typeof item !== 'object') return null;
+  if (item.governance && item.governance.knowledgePreparation && typeof item.governance.knowledgePreparation === 'object') return item.governance.knowledgePreparation;
+  const metadata = item.metadata && typeof item.metadata === 'object' ? item.metadata : null;
+  if (metadata && metadata.governance && metadata.governance.knowledgePreparation && typeof metadata.governance.knowledgePreparation === 'object') return metadata.governance.knowledgePreparation;
+  if (metadata && metadata.knowledgePreparation && typeof metadata.knowledgePreparation === 'object') return metadata.knowledgePreparation;
+  return null;
+}
+
+function computeKnowledgePreparationBoost(item) {
+  const prep = getKnowledgePreparationMeta(item);
+  if (!prep) return 0;
+  let boost = 0;
+  const authority = prep.sourceAuthority && typeof prep.sourceAuthority === 'object' ? prep.sourceAuthority : null;
+  const authorityLevel = String(authority && authority.level || '').toLowerCase();
+  if (authorityLevel === 'high') boost += 0.16;
+  else if (authorityLevel === 'medium') boost += 0.06;
+  else if (authorityLevel === 'low') boost -= 0.24;
+
+  const quality = prep.quality && typeof prep.quality === 'object' ? prep.quality : null;
+  const band = String(quality && quality.band || '').toLowerCase();
+  if (band === 'high') boost += 0.1;
+  else if (band === 'medium') boost += 0.04;
+  else if (band === 'low') boost -= 0.16;
+
+  const approval = prep.approval && typeof prep.approval === 'object' ? prep.approval : null;
+  const approvalStatus = String(approval && approval.status || '').toLowerCase();
+  if (approvalStatus === 'auto_approved_candidate') boost += 0.04;
+  if (approvalStatus === 'review_required') boost -= 0.08;
+
+  const conflictSignals = Array.isArray(prep.conflictSignals) ? prep.conflictSignals : [];
+  if (conflictSignals.length) boost -= Math.min(0.14, conflictSignals.length * 0.05);
+  return Math.max(-0.35, Math.min(0.24, boost));
+}
+
 function computeSourceIntentBoost(query, item, questionIntent = null) {
   const intent = questionIntent || detectGenericIntent(query);
   const filename = String((item && (item.filename || item.sourceFile)) || '').toLowerCase();
@@ -1135,6 +1173,7 @@ function computeSourceIntentBoost(query, item, questionIntent = null) {
 
   boost += computeDocumentFreshnessBoost(query, item);
   boost += computeDomainAlignmentScore(query, item, intent).score;
+  boost += computeKnowledgePreparationBoost(item);
 
   const sourceScore = computeLexicalScore(query, filename, filename);
   if (sourceScore >= 0.4) boost += Math.min(0.18, sourceScore * 0.18);

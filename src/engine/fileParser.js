@@ -4,7 +4,7 @@ const os = require('os');
 const prisma = require('../db');
 const logger = require('../logger');
 const { OpenAI } = require('openai');
-const { prepareKnowledgeDocument, appendKnowledgePreparationManifest } = require('./knowledgePreparationPipeline');
+const { prepareKnowledgeDocument, buildKnowledgePreparationGovernance, appendKnowledgePreparationManifest } = require('./knowledgePreparationPipeline');
 
 // File Parser - extract training data dari berbagai format file
 class FileParser {
@@ -713,6 +713,7 @@ class FileParser {
         }
       }
 
+      let knowledgePreparationGovernance = null;
       try {
         const knowledgePreparation = prepareKnowledgeDocument({
           content: contentToStore,
@@ -723,27 +724,15 @@ class FileParser {
           storageType
         });
         appendKnowledgePreparationManifest(knowledgePreparation);
+        knowledgePreparationGovernance = buildKnowledgePreparationGovernance(
+          knowledgePreparation,
+          training.governanceMetadata && typeof training.governanceMetadata === 'object' ? training.governanceMetadata : {}
+        );
         try {
           await prisma.trainingData.update({
             where: { id: training.id },
             data: {
-              governanceMetadata: {
-                ...(training.governanceMetadata && typeof training.governanceMetadata === 'object' ? training.governanceMetadata : {}),
-                knowledgePreparation: {
-                  version: knowledgePreparation.version,
-                  generatedAt: knowledgePreparation.generatedAt,
-                  category: knowledgePreparation.documentUnderstanding.category,
-                  quality: knowledgePreparation.qualityControl.quality,
-                  approval: knowledgePreparation.qualityControl.approval,
-                  aliasCount: knowledgePreparation.documentUnderstanding.aliases.length,
-                  factCandidateCount: knowledgePreparation.knowledgeExtraction.factCandidates.length,
-                  ruleCandidateCount: knowledgePreparation.knowledgeExtraction.ruleCandidates.length,
-                  faqCandidateCount: knowledgePreparation.knowledgeExtraction.faqCandidates.length,
-                  conflictSignals: knowledgePreparation.qualityControl.conflictSignals,
-                  duplicateSignals: knowledgePreparation.qualityControl.duplicateSignals,
-                  indexingPlan: knowledgePreparation.indexingPlan
-                }
-              }
+              governanceMetadata: knowledgePreparationGovernance
             }
           });
         } catch (metadataErr) {

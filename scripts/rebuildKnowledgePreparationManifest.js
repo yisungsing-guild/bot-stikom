@@ -3,6 +3,7 @@ const prisma = require('../src/db');
 const {
   MANIFEST_PATH,
   prepareKnowledgeDocument,
+  buildKnowledgePreparationGovernance,
   appendKnowledgePreparationManifest
 } = require('../src/engine/knowledgePreparationPipeline');
 
@@ -51,23 +52,10 @@ async function main() {
         await prisma.trainingData.update({
           where: { id: row.id },
           data: {
-            governanceMetadata: {
-              ...(row.governanceMetadata && typeof row.governanceMetadata === 'object' ? row.governanceMetadata : {}),
-              knowledgePreparation: {
-                version: record.version,
-                generatedAt: record.generatedAt,
-                category: record.documentUnderstanding.category,
-                quality: record.qualityControl.quality,
-                approval: record.qualityControl.approval,
-                aliasCount: record.documentUnderstanding.aliases.length,
-                factCandidateCount: record.knowledgeExtraction.factCandidates.length,
-                ruleCandidateCount: record.knowledgeExtraction.ruleCandidates.length,
-                faqCandidateCount: record.knowledgeExtraction.faqCandidates.length,
-                conflictSignals: record.qualityControl.conflictSignals,
-                duplicateSignals: record.qualityControl.duplicateSignals,
-                indexingPlan: record.indexingPlan
-              }
-            }
+            governanceMetadata: buildKnowledgePreparationGovernance(
+              record,
+              row.governanceMetadata && typeof row.governanceMetadata === 'object' ? row.governanceMetadata : {}
+            )
           }
         });
       } catch (err) {

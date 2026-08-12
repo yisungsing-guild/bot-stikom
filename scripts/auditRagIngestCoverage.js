@@ -57,10 +57,20 @@ function countBy(list, getKey) {
   return out;
 }
 
+function getChunkKnowledgePreparation(chunk) {
+  if (!chunk || typeof chunk !== 'object') return null;
+  if (chunk.governance && chunk.governance.knowledgePreparation && typeof chunk.governance.knowledgePreparation === 'object') return chunk.governance.knowledgePreparation;
+  const metadata = chunk.metadata && typeof chunk.metadata === 'object' ? chunk.metadata : null;
+  if (metadata && metadata.governance && metadata.governance.knowledgePreparation && typeof metadata.governance.knowledgePreparation === 'object') return metadata.governance.knowledgePreparation;
+  if (metadata && metadata.knowledgePreparation && typeof metadata.knowledgePreparation === 'object') return metadata.knowledgePreparation;
+  return null;
+}
+
 function buildIndexStats(index) {
   const byTrainingId = new Map();
   const byFilename = new Map();
   const categories = {};
+  const knowledgePreparation = { sourceAuthority: {}, qualityBand: {}, approvalStatus: {}, pipelineVersion: {}, missingMetadataChunks: 0 };
   for (const chunk of Array.isArray(index) ? index : []) {
     if (!chunk || typeof chunk !== 'object') continue;
     const tid = chunk.trainingId ? String(chunk.trainingId) : '';
@@ -69,8 +79,21 @@ function buildIndexStats(index) {
     if (filename) byFilename.set(filename, (byFilename.get(filename) || 0) + 1);
     const cat = String(chunk.docCategory || chunk.category || (chunk.metadata && chunk.metadata.docCategory) || 'UNKNOWN');
     categories[cat] = (categories[cat] || 0) + 1;
+    const prep = getChunkKnowledgePreparation(chunk);
+    if (!prep) {
+      knowledgePreparation.missingMetadataChunks += 1;
+    } else {
+      const authority = prep.sourceAuthority && typeof prep.sourceAuthority === 'object' ? String(prep.sourceAuthority.level || 'unknown') : 'unknown';
+      const band = prep.quality && typeof prep.quality === 'object' ? String(prep.quality.band || 'unknown') : 'unknown';
+      const approval = prep.approval && typeof prep.approval === 'object' ? String(prep.approval.status || 'unknown') : 'unknown';
+      const pipelineVersion = prep.indexVersion && prep.indexVersion.pipelineVersion ? String(prep.indexVersion.pipelineVersion) : String(prep.version || 'unknown');
+      knowledgePreparation.sourceAuthority[authority] = (knowledgePreparation.sourceAuthority[authority] || 0) + 1;
+      knowledgePreparation.qualityBand[band] = (knowledgePreparation.qualityBand[band] || 0) + 1;
+      knowledgePreparation.approvalStatus[approval] = (knowledgePreparation.approvalStatus[approval] || 0) + 1;
+      knowledgePreparation.pipelineVersion[pipelineVersion] = (knowledgePreparation.pipelineVersion[pipelineVersion] || 0) + 1;
+    }
   }
-  return { byTrainingId, byFilename, categories };
+  return { byTrainingId, byFilename, categories, knowledgePreparation };
 }
 
 function compactRow(row, chunksInIndex) {
@@ -208,7 +231,8 @@ async function main() {
         chunks: index.length,
         uniqueTrainingIds: indexStats.byTrainingId.size,
         uniqueFilenames: indexStats.byFilename.size,
-        categories: indexStats.categories
+        categories: indexStats.categories,
+        knowledgePreparation: indexStats.knowledgePreparation
       },
       dbError: err && err.message ? err.message : String(err)
     };
@@ -222,6 +246,7 @@ async function main() {
   const missing = [];
   const failed = [];
   const rejected = [];
+  const heldForReview = [];
   const emptyContent = [];
   const successMissingIndex = [];
   const chunkCountMismatch = [];
@@ -234,9 +259,10 @@ async function main() {
     const compact = compactRow(row, chunksInIndex);
     if (chunksInIndex > 0) indexed.push(compact);
     const ingestStatus = String(row.ragIngestStatus || '').toLowerCase();
-    if (row.active && chunksInIndex === 0 && ingestStatus !== 'rejected') missing.push(compact);
+    if (row.active && chunksInIndex === 0 && !['rejected', 'held_for_review'].includes(ingestStatus)) missing.push(compact);
     if (ingestStatus === 'failed') failed.push(compact);
     if (ingestStatus === 'rejected') rejected.push(compact);
+    if (ingestStatus === 'held_for_review') heldForReview.push(compact);
     if (!row.content || !String(row.content).trim()) emptyContent.push(compact);
     if (String(row.ragIngestStatus || '').toLowerCase() === 'success' && chunksInIndex === 0) successMissingIndex.push(compact);
     if (chunksInIndex > 0 && row.ragChunkCount && Number(row.ragChunkCount) !== chunksInIndex) chunkCountMismatch.push({ ...compact, expectedChunkCount: row.ragChunkCount, actualChunkCount: chunksInIndex });
@@ -258,7 +284,8 @@ async function main() {
       chunks: index.length,
       uniqueTrainingIds: indexStats.byTrainingId.size,
       uniqueFilenames: indexStats.byFilename.size,
-      categories: indexStats.categories
+      categories: indexStats.categories,
+      knowledgePreparation: indexStats.knowledgePreparation
     },
     trainingData: {
       scannedRows: rows.length,
@@ -267,6 +294,7 @@ async function main() {
       missingActiveRows: missing.length,
       failedRows: failed.length,
       rejectedRows: rejected.length,
+      heldForReviewRows: heldForReview.length,
       emptyContentRows: emptyContent.length,
       successMissingIndexRows: successMissingIndex.length,
       chunkCountMismatchRows: chunkCountMismatch.length,
@@ -280,6 +308,7 @@ async function main() {
     missingActiveRows: missing,
     failedRows: failed,
     rejectedRows: rejected,
+    heldForReviewRows: heldForReview,
     emptyContentRows: emptyContent,
     successMissingIndexRows: successMissingIndex,
     chunkCountMismatchRows: chunkCountMismatch,
@@ -297,8 +326,9 @@ async function main() {
     console.log('RAG INGEST AUDIT');
     console.log(`Index: ${indexFile.path}`);
     console.log(`Chunks: ${report.index.chunks}, indexed training IDs: ${report.index.uniqueTrainingIds}, filenames: ${report.index.uniqueFilenames}`);
+    console.log(`KnowledgePrep metadata missing chunks: ${report.index.knowledgePreparation.missingMetadataChunks}`);
     console.log(`TrainingData scanned: ${report.trainingData.scannedRows}, active: ${report.trainingData.activeRows}, indexed: ${report.trainingData.indexedRows}`);
-    console.log(`Missing active: ${report.trainingData.missingActiveRows}, failed: ${report.trainingData.failedRows}, rejected: ${report.trainingData.rejectedRows}, empty content: ${report.trainingData.emptyContentRows}`);
+    console.log(`Missing active: ${report.trainingData.missingActiveRows}, failed: ${report.trainingData.failedRows}, rejected: ${report.trainingData.rejectedRows}, held review: ${report.trainingData.heldForReviewRows}, empty content: ${report.trainingData.emptyContentRows}`);
     console.log(`Success missing from index: ${report.trainingData.successMissingIndexRows}, chunk count mismatch: ${report.trainingData.chunkCountMismatchRows}`);
     console.log(`Version conflict groups: ${report.trainingData.versionConflictGroups}, stale version candidates: ${report.trainingData.staleVersionCandidates}`);
     if (versionConflicts.length) console.log('\nVersion conflicts / stale candidates:\n' + versionConflicts.slice(0, 12).map((g) => `- ${g.topicKey} | years=${g.academicYears.join(', ')} | stale=${g.staleCandidates.length}`).join('\n'));

@@ -123,6 +123,7 @@ async function main() {
       source: true,
       uploadedById: true,
       createdAt: true,
+      governanceMetadata: true,
       content: true
     }
   });
@@ -184,6 +185,7 @@ async function main() {
         filename: row.filename,
         uploadedById: row.uploadedById || null,
         trainingCreatedAt: row.createdAt ? new Date(row.createdAt).toISOString() : null,
+        governance: row.governanceMetadata && typeof row.governanceMetadata === 'object' ? row.governanceMetadata : null,
         allowDuplicateTrainingAlias: true
       });
       if (result && result.success) {

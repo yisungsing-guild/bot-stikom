@@ -1387,7 +1387,10 @@ res.status(201).send({
             uploadedById: uploaderId,
             sourceUrl,
             storageType: 'file',
-            governance: buildDocumentGovernanceMetadata({ filename: req.uploadInfo.originalname, divisionKey, source: 'upload' })
+            governance: {
+              ...buildDocumentGovernanceMetadata({ filename: req.uploadInfo.originalname, divisionKey, source: 'upload' }),
+              ...(result.governanceMetadata && typeof result.governanceMetadata === 'object' ? result.governanceMetadata : {})
+            }
           });
           console.log('[RAG] Ingestion result:', ing);
         } catch (err) {

@@ -1483,10 +1483,56 @@ function validateFinalAnswer(answer, ragResult, question) {
 }
 
 // **VALIDATOR 6: Source Trust Scoring** - rank by source quality
+function getKnowledgePreparationMeta(chunk) {
+  if (!chunk || typeof chunk !== 'object') return null;
+  if (chunk.governance && chunk.governance.knowledgePreparation && typeof chunk.governance.knowledgePreparation === 'object') return chunk.governance.knowledgePreparation;
+  const metadata = chunk.metadata && typeof chunk.metadata === 'object' ? chunk.metadata : null;
+  if (metadata && metadata.governance && metadata.governance.knowledgePreparation && typeof metadata.governance.knowledgePreparation === 'object') return metadata.governance.knowledgePreparation;
+  if (metadata && metadata.knowledgePreparation && typeof metadata.knowledgePreparation === 'object') return metadata.knowledgePreparation;
+  return null;
+}
+
+function scoreKnowledgePreparationTrust(chunk) {
+  const prep = getKnowledgePreparationMeta(chunk);
+  if (!prep) return 0;
+  let score = 0;
+  const authority = prep.sourceAuthority && typeof prep.sourceAuthority === 'object' ? prep.sourceAuthority : null;
+  const authorityLevel = String(authority && authority.level || '').toLowerCase();
+  if (authorityLevel === 'high') score += 28;
+  else if (authorityLevel === 'medium') score += 10;
+  else if (authorityLevel === 'low') score -= 32;
+
+  const quality = prep.quality && typeof prep.quality === 'object' ? prep.quality : null;
+  const band = String(quality && quality.band || '').toLowerCase();
+  if (band === 'high') score += 16;
+  else if (band === 'medium') score += 6;
+  else if (band === 'low') score -= 22;
+
+  const approval = prep.approval && typeof prep.approval === 'object' ? prep.approval : null;
+  const approvalStatus = String(approval && approval.status || '').toLowerCase();
+  if (approvalStatus === 'auto_approved_candidate') score += 6;
+  if (approvalStatus === 'review_required') score -= 12;
+
+  const indexVersion = prep.indexVersion && typeof prep.indexVersion === 'object' ? prep.indexVersion : null;
+  const generatedAt = indexVersion && indexVersion.generatedAt ? indexVersion.generatedAt : prep.generatedAt;
+  if (generatedAt) {
+    const ms = new Date(generatedAt).getTime();
+    if (Number.isFinite(ms)) {
+      const ageDays = (Date.now() - ms) / (1000 * 60 * 60 * 24);
+      if (ageDays <= 90) score += 6;
+      if (ageDays > 730) score -= 8;
+    }
+  }
+
+  const conflictSignals = Array.isArray(prep.conflictSignals) ? prep.conflictSignals : [];
+  if (conflictSignals.length) score -= Math.min(18, conflictSignals.length * 6);
+  return score;
+}
+
 function scoreSourceTrust(chunk) {
   if (!chunk || typeof chunk !== 'object') return 0;
   
-  let score = 0;
+  let score = scoreKnowledgePreparationTrust(chunk);
   
   const fname = String(chunk.filename || chunk.sourceFile || '').toLowerCase();
   if (/(?:pmb|official|resmi|regulasi|biaya|rincian|jadwal)/i.test(fname)) score += 50;
@@ -9889,6 +9935,14 @@ function invalidateSemanticRagCaches(reason, details = {}) {
   return { success: false };
 }
 
+function ragEnvFlag(name, defaultValue = false) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === null) return defaultValue;
+  const value = String(raw).trim().toLowerCase();
+  if (!value) return defaultValue;
+  return value === 'true' || value === '1' || value === 'yes' || value === 'y' || value === 'on';
+}
+
 async function ingestTrainingData(trainingId, text, source = 'upload', options = null) {
   try {
     await updateTrainingRagIngestStatus(trainingId, {
@@ -9942,6 +9996,45 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
       source,
       divisionKey
     }, '[TRACE_INGEST_OPTS_RESOLVED]');
+
+    const knowledgePreparation = governance && governance.knowledgePreparation && typeof governance.knowledgePreparation === 'object'
+      ? governance.knowledgePreparation
+      : null;
+    const preparationDecision = governance && governance.knowledgePreparationDecision && typeof governance.knowledgePreparationDecision === 'object'
+      ? String(governance.knowledgePreparationDecision.status || '').toLowerCase()
+      : '';
+    const approvalStatus = knowledgePreparation && knowledgePreparation.approval
+      ? String(knowledgePreparation.approval.status || '').toLowerCase()
+      : '';
+    const indexEligibility = knowledgePreparation && knowledgePreparation.indexingPlan
+      ? String(knowledgePreparation.indexingPlan.indexEligibility || '').toLowerCase()
+      : '';
+    const requireApproval = ragEnvFlag('KNOWLEDGE_PREP_REQUIRE_APPROVAL', false);
+    const explicitlyRejected = preparationDecision === 'rejected';
+    const heldForReview = requireApproval && preparationDecision !== 'approved' && (approvalStatus === 'review_required' || indexEligibility === 'hold_for_review');
+
+    if (explicitlyRejected || heldForReview) {
+      const heldIndex = loadIndex();
+      const filteredHeldIndex = Array.isArray(heldIndex) ? heldIndex.filter(item => item && item.trainingId !== trainingId) : [];
+      if (filteredHeldIndex.length !== (Array.isArray(heldIndex) ? heldIndex.length : 0)) saveIndex(filteredHeldIndex);
+      const status = explicitlyRejected ? 'rejected' : 'held_for_review';
+      const reason = explicitlyRejected ? 'knowledge preparation rejected by admin' : 'knowledge preparation requires human approval';
+      await updateTrainingRagIngestStatus(trainingId, {
+        status,
+        error: reason,
+        chunkCount: 0,
+        ingestedAt: null
+      });
+      logger.warn({ trainingId, source, status, approvalStatus, indexEligibility, preparationDecision }, '[RAG] KnowledgePrep approval gate blocked ingestion');
+      return {
+        success: false,
+        status,
+        reason,
+        approvalStatus,
+        indexEligibility,
+        preparationDecision
+      };
+    }
 
     const index = loadIndex();
 
