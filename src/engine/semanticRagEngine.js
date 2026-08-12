@@ -10627,9 +10627,21 @@ function runVettedDeterministicFallback(question, options, rewrite, routeStage) 
 function tryProgramCurriculumFollowupAnswer(question) {
   const q = String(question || '').trim().toLowerCase();
   if (!q) return null;
-  const asksLearning = /\b(?:belajar|dipelajari|yang\s+dipelajarin|mata\s+kuliah|matkul|kurikulum|skill|kompetensi|jurusannya\s+gimana|jurusannya\s+bagaimana)\b/i.test(q);
+  const asksLearning = /\b(?:belajar|dipelajari|yang\s+dipelajarin|mata\s+kuliah|matkul|kurikulum|skill|kompetensi|jurusannya\s+gimana|jurusannya\s+bagaimana|jago\s+komputer|jago\s+coding|harus\s+(?:bisa|jago|mahir).*?(?:komputer|coding|ngoding)|coding|ngoding|komputer)\b/i.test(q);
   if (!asksLearning) return null;
-  if (/\bbisnis\s+digital\b/i.test(q)) {
+  if (/\bbisnis\s+digital\b/i.test(q) && /\b(?:jago\s+komputer|jago\s+coding|harus\s+(?:bisa|jago|mahir).*?(?:komputer|coding|ngoding)|coding|ngoding|komputer)\b/i.test(q)) {
+    return {
+      answer: [
+        'Tidak harus sudah jago komputer atau coding dari awal, Kak.',
+        '',
+        'Pada Program Studi Bisnis Digital, fokus belajarnya adalah bisnis berbasis teknologi: digital marketing, e-commerce, strategi produk digital, analisis pasar, branding, data analytics, dan kewirausahaan digital. Jadi kemampuan komputer tetap membantu, tetapi bukan berarti calon mahasiswa harus masuk dengan kemampuan coding yang kuat seperti prodi yang lebih teknis.',
+        '',
+        'Yang lebih penting adalah minat pada bisnis, pemasaran digital, data, kreativitas, dan pengembangan usaha di ekosistem digital.'
+      ].join('\n'),
+      source: 'semantic-rag-program-curriculum',
+      frameSource: 'semantic-rag-program-curriculum'
+    };
+  }  if (/\bbisnis\s+digital\b/i.test(q)) {
     return {
       answer: [
         'Di Program Studi Bisnis Digital, mahasiswa belajar bisnis berbasis teknologi dan pengembangan usaha di ekosistem digital.',
@@ -10739,9 +10751,11 @@ function tryAcademicSpecificNoDataAnswer(question) {
   if (/\b(?:tugas\s+akhir|skripsi|tesis)\b/i.test(q) && /\b(?:halaman|minimal|jumlah\s+halaman)\b/i.test(q)) {
     return {
       answer: [
-        'Untuk tugas akhir/skripsi, data yang tersedia belum mencantumkan angka minimal halaman final.',
+        'Untuk pertanyaan minimal halaman total Tugas Akhir/Skripsi, saya tidak menemukan angka minimal total halaman yang tercantum eksplisit pada Pedoman Tugas Akhir S1 yang tersedia.',
         '',
-        'Yang aman disebutkan dari pedoman: Tugas Akhir untuk jenjang S1 tercatat berbobot 4 SKS. Untuk batas minimal halaman, format, template, dan ketentuan teknis penulisan, kakak perlu mengikuti pedoman tugas akhir terbaru dari prodi/fakultas atau konfirmasi ke bagian akademik/prodi.'
+        'Yang tercantum di pedoman adalah ketentuan penulisan dan beberapa batas bagian tertentu, misalnya abstrak wajib minimal 150 kata dan maksimal 200 kata, kata pengantar sebaiknya tidak melebihi 1 halaman, penomoran bagian awal memakai angka Romawi kecil, bagian isi memakai angka Arab, serta daftar pustaka mengikuti standar IEEE. Pedoman juga mencatat Tugas Akhir S1 berbobot 4 SKS.',
+        '',
+        'Jadi, untuk jumlah halaman total, jawaban paling aman: ikuti template/pedoman TA terbaru dari prodi/fakultas atau konfirmasi ke bagian akademik/prodi, karena angka minimal total halaman tidak terbaca eksplisit pada data yang tersedia.'
       ].join('\n'),
       source: 'semantic-rag-academic-policy',
       frameSource: 'semantic-rag-academic-policy'
@@ -10885,6 +10899,11 @@ async function querySemanticRag(question, options = {}) {
   if (preGuardAcademicCredit && preGuardAcademicCredit.answer) {
     const builtAcademicCredit = buildDeterministicResponse(question, preGuardAcademicCredit.source || 'semantic-rag-academic-credit', preGuardAcademicCredit, { routeStage: 'pre-guard-academic-credit', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtAcademicCredit, resultCacheKey);
+  }
+  const preGuardProgramCurriculum = strictDocumentOnly ? null : (tryProgramCurriculumFollowupAnswer(routingQuestion || question) || tryProgramCurriculumFollowupAnswer(question));
+  if (preGuardProgramCurriculum && preGuardProgramCurriculum.answer) {
+    const builtProgramCurriculum = buildDeterministicResponse(question, preGuardProgramCurriculum.source || 'semantic-rag-program-curriculum', preGuardProgramCurriculum, { routeStage: 'pre-guard-program-curriculum', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtProgramCurriculum, resultCacheKey);
   }
   const explicitSupportEntityForGenericFaq = findCampusSupportEntity(routingQuestion || question);
   const preGuardSupportEntity = strictDocumentOnly ? null : findCampusSupportEntity(routingQuestion || question);

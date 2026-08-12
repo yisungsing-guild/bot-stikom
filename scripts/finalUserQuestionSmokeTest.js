@@ -82,6 +82,16 @@ const cases = [
 
 const weakAnswerRe = /mohon maaf|tidak mempunyai jawaban|belum menemukan data yang cukup|belum menemukan rincian|tidak cukup aman/i;
 const badSourceRe = /disabled|no-data|insufficient|out-of-domain|meaning-mismatch|clarify-suppressed/i;
+const caseExpectations = {
+  bd_coding: {
+    source: /semantic-rag-program-curriculum/i,
+    answer: /tidak harus sudah jago komputer atau coding|tidak harus.*coding dari awal/i
+  },
+  ta_min_pages_si: {
+    source: /semantic-rag-academic-policy/i,
+    answer: /minimal halaman total|150 kata|200 kata|4 SKS/i
+  }
+};
 
 function compact(value, max = 900) {
   const text = String(value || '').replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
@@ -99,8 +109,11 @@ async function main() {
       intentHint: item.intentHint || ''
     });
     const answer = String(result && result.answer ? result.answer : '').trim();
-    const weak = !answer || weakAnswerRe.test(answer) || badSourceRe.test(String(result && result.source || ''));
-    results.push({ id: item.id, question: item.q, source: result && result.source || null, weak, answer });
+    const source = String(result && result.source || '');
+    const expectation = caseExpectations[item.id] || null;
+    const expectationMiss = expectation && ((expectation.source && !expectation.source.test(source)) || (expectation.answer && !expectation.answer.test(answer)));
+    const weak = !answer || weakAnswerRe.test(answer) || badSourceRe.test(source) || Boolean(expectationMiss);
+    results.push({ id: item.id, question: item.q, source: result && result.source || null, weak, answer, expectationMiss: Boolean(expectationMiss) });
     console.log(`${weak ? 'WEAK' : 'PASS'} | ${result && result.source || 'no-source'} | ${item.q}`);
     if (weak) console.log(`  answer=${compact(answer, 240)}`);
   }
