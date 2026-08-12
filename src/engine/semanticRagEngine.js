@@ -10146,12 +10146,54 @@ function hasRawEvidenceSnippetShape(answer) {
   return hasFragmentedQaBullets || pipeDump;
 }
 
+function hasUploadedTrainingAnswerGrounding(question, answer) {
+  const q = normalizeForLexicalMatch(question || '');
+  const a = normalizeForLexicalMatch(answer || '');
+  if (!q || !a) return false;
+
+  const meaning = answerMatchesQuestionMeaning(question, answer, 'semantic-rag-uploaded-training-generic');
+  if (meaning === true) return true;
+  if (meaning === false) return false;
+
+  if (getMissingStrongQuestionAnchors(question, answer).length > 0) return false;
+  if (hasUploadedDocumentTopicConflict(question, answer)) return false;
+
+  const stop = new Set([
+    'apa', 'apakah', 'bagaimana', 'gimana', 'berapa', 'kapan', 'dimana', 'mana', 'siapa', 'yang', 'dan', 'atau', 'dari', 'dengan', 'untuk', 'pada', 'dalam', 'bisa', 'dapat', 'punya', 'memiliki', 'ada', 'tersedia', 'tentang', 'info', 'informasi', 'jelaskan', 'detail', 'saya', 'aku', 'kak', 'min', 'itu', 'ini', 'nya', 'aja', 'saja', 'mau', 'ingin', 'pengen', 'kalau', 'harus', 'kampus', 'itb', 'stikom', 'bali', 'mahasiswa', 'kuliah', 'program', 'prodi', 'program studi', 'jurusan'
+  ]);
+  const tokens = Array.from(new Set(q.split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 4 && !stop.has(token))));
+  if (!tokens.length) return answerMatchesStrongQuestionAnchors(question, answer);
+
+  const hits = tokens.filter((token) => a.includes(token));
+  if (hits.length >= 1) return true;
+
+  const acronymPairs = [
+    ['rpl', /rekognisi\s+pembelajaran\s+lampau/i],
+    ['inbis', /inkubator\s+bisnis/i],
+    ['llc', /language\s+learning\s+center/i],
+    ['pmb', /penerimaan\s+mahasiswa\s+baru|pendaftaran/i],
+    ['s2', /pascasarjana|magister/i],
+    ['bd', /bisnis\s+digital/i],
+    ['si', /sistem\s+informasi/i],
+    ['ti', /teknologi\s+informasi/i],
+    ['sk', /sistem\s+komputer/i],
+    ['mi', /manajemen\s+informatika/i]
+  ];
+  for (const [abbr, full] of acronymPairs) {
+    if (new RegExp(`(^|\\s)${abbr}(\\s|$)`, 'i').test(q) && full.test(answer)) return true;
+  }
+
+  return false;
+}
 function shouldBlockGenericEvidenceAnswer(question, answer, source = '') {
   if (!isGenericEvidenceLikeSource(source)) return false;
   const text = String(answer || '').trim();
   if (!text) return false;
   if (hasNoDataAnswerPhrase(text)) return false;
   if (hasRawEvidenceSnippetShape(text)) return true;
+  if (/^semantic-rag-uploaded-training-generic$/i.test(String(source || '')) && !hasUploadedTrainingAnswerGrounding(question, text)) return true;
   const meaning = answerMatchesQuestionMeaning(question, text, source);
   if (meaning === false) return true;
   if (hasUploadedDocumentTopicConflict(question, text)) return true;
