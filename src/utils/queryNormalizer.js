@@ -21,13 +21,42 @@ const SLANG_REPLACEMENTS = {
   dmn: 'dimana',
   dmna: 'dimana',
   kpn: 'kapan',
+  utk: 'untuk',
+  aj: 'saja',
+  aja: 'saja',
+  mhs: 'mahasiswa',
+  maba: 'mahasiswa baru',
+  milih: 'memilih',
   dftr: 'daftar',
   jrsn: 'jurusan',
   akrediasi: 'akreditasi',
   akreditai: 'akreditasi',
   akredtasi: 'akreditasi',
+  akreditasinya: 'akreditasi',
+  akrediasinya: 'akreditasi',
+  karir: 'karier',
+  karirnya: 'karier',
+  kariernya: 'karier',
+  loker: 'lowongan',
+  rekruitmen: 'rekrutmen',
+  rekrutmenya: 'rekrutmen',
+  kerjasama: 'kerja sama',
+  kerjasamanya: 'kerja sama',
+  magangny: 'magang',
+  alumninya: 'alumni',
+  lulusanny: 'lulusan',
   gel: 'gelombang',
+  gelombangnya: 'gelombang',
   apaan: 'apa',
+  prodi2: 'program studi',
+  jurusannya: 'jurusan',
+  prodinya: 'program studi',
+  pasca: 'pascasarjana',
+  pascasarjananya: 'pascasarjana',
+  magisternya: 'magister',
+  s2nya: 's2',
+  inbis: 'inkubator bisnis',
+  hithink: 'hi think',
   dd: 'double degree',
   doube: 'double',
   duble: 'double',
@@ -66,7 +95,12 @@ const DOMAIN_FUZZY_VOCAB = [
   'jurusan',
   'akreditasi',
   'pascasarjana',
-  'magister'
+  'magister',
+  'karier',
+  'lowongan',
+  'rekrutmen',
+  'inkubator',
+  'think'
 ];
 
 function toString(raw) {
@@ -79,6 +113,12 @@ function normalizeUserQuery(text) {
   normalized = normalized.replace(/\r\n|\r|\t+/g, ' ');
   normalized = normalized.replace(/[^\p{L}\p{N}\s]/gu, ' ');
   normalized = normalizeWhitespace(normalized.toLowerCase());
+  normalized = normalized
+    .replace(/\bpasca\s+sarjana\b/g, 'pascasarjana')
+    .replace(/\bhi[-\s]*think\b/g, 'hi think')
+    .replace(/\bjob\s+fair\b/g, 'job fair')
+    .replace(/\bcampus\s+hiring\b/g, 'campus hiring')
+    .replace(/\bcareer\s+center\b/g, 'career center');
 
   const tokens = normalized.split(' ').filter(Boolean);
   const replacements = [];

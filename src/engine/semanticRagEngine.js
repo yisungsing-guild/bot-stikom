@@ -646,7 +646,7 @@ function shouldDeferEarlyEvidenceFirstToStableRoute(question) {
 }
 function buildEvidenceFirstSearchQueries(question, fine) {
   const q = String(question || '').trim();
-  const queries = [q];
+  const queries = buildAdaptiveQueryVariants(q, { limit: 8 });
   const fineIntent = fine && fine.fineIntent;
   if (fineIntent === 'degree_title') queries.push(`${q} gelar lulusan gelar akademik`);
   if (fineIntent === 'study_duration') queries.push(`${q} masa studi semester lama studi`);
@@ -662,12 +662,16 @@ function isDocumentEvidenceFirstCandidate(question) {
   const q = String(question || '').trim();
   if (!q || q.length < 8) return false;
   if (isGreetingOnly(q)) return false;
+  if (isCampusChoiceReasonQuestion(q)) return false;
   if (/\b(?:password|token|api\s*key|secret|system\s+prompt|database|data\s+pribadi|hapus\s+data|reset\s+database)\b/i.test(q)) return false;
   if (/\b(?:resep|masak|cuaca|politik|saham|crypto|film|lagu|game|olahraga)\b/i.test(q) && !/\b(?:stikom|kampus|kuliah|mahasiswa|prodi|program|akademik)\b/i.test(q)) return false;
   if (hasExplicitFeeQuestionSignal(q)) return false;
+  if (findCampusSupportEntity(q)) return false;
 
   const fine = detectFineGrainedIntent(q);
+  if (['list', 'program', 'program_list'].includes(fine.fineIntent) || fine.coarseIntent === 'program') return false;
   if (['degree_title', 'study_duration'].includes(fine.fineIntent)) return true;
+  if (isBroadCampusDocumentQuestion(q)) return true;
 
   // Evidence-first is intentionally broad for campus/document anchored topics.
   // Old deterministic no-data guards must not block newly uploaded documents.
@@ -682,6 +686,66 @@ function isDocumentEvidenceFirstCandidate(question) {
   if (['program_comparison', 'program_curriculum', 'program_faculty', 'program_career', 'international_program_list', 'international_program_requirement', 'international_program_fee'].includes(fine.fineIntent)) return false;
 
   return false;
+}
+function buildAdaptiveQueryVariants(question, options = {}) {
+  const raw = String(question || '').trim();
+  if (!raw) return [];
+  const normalized = normalizeUserQuery(raw).normalizedText || raw;
+  const norm = normalizeForLexicalMatch(normalized);
+  const variants = [raw, normalized];
+  const add = (value) => {
+    const text = String(value || '').replace(/\s+/g, ' ').trim();
+    if (text) variants.push(text);
+  };
+
+  const aliasList = Array.isArray(options.dynamicAliases)
+    ? options.dynamicAliases
+    : buildDynamicAliasDictionary(getCachedSemanticIndex());
+  const hay = normalizeDynamicAliasText(`${raw} ${normalized}`);
+  for (const item of aliasList.slice(0, 80)) {
+    const alias = normalizeDynamicAliasText(item && item.alias);
+    const canonical = String(item && item.canonical || '').trim();
+    if (!alias || !canonical) continue;
+    const aliasRe = new RegExp(`(^|\\s)${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`, 'i');
+    if (aliasRe.test(hay)) {
+      add(canonical);
+      add(normalized.replace(aliasRe, ` ${canonical} `));
+      if (/program|degree/i.test(String(item.type || ''))) add(`program studi ${canonical}`);
+    }
+  }
+
+  const expansions = [
+    { re: /\b(?:karier|career|kerja|pekerjaan|lowongan|magang|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study)\b/i, text: 'Career Center lowongan kerja magang job fair campus hiring rekrutmen tracer study konsultasi karier' },
+    { re: /\b(?:kerja\s*sama|kerjasama|perusahaan|industri|mitra\s+industri|rekrutmen)\b/i, text: 'kerja sama industri perusahaan mitra industri rekrutmen campus hiring Career Center' },
+    { re: /\b(?:mengapa\s+memilih|kenapa\s+memilih|keunggulan|keuntungan|kelebihan)\b/i, text: 'keunggulan ITB STIKOM Bali teknologi karier fasilitas program studi industri' },
+    { re: /\b(?:inbis|inkubator\s+bisnis|incubator)\b/i, text: 'Inkubator Bisnis INBIS startup kewirausahaan usaha mahasiswa' },
+    { re: /\b(?:hi\s*think|hithink|hi-?think|jepang|n4|jlpt)\b/i, text: 'Hi-Think Jepang JLPT N4 kuliah sambil kerja magang berbayar peluang kerja' },
+    { re: /\b(?:mahasiswa\s+asing|visa|izin\s+belajar|study\s+permit|itas|kitas|sktt)\b/i, text: 'mahasiswa asing izin belajar visa study permit ITAS KITAS SKTT paspor dokumen' },
+    { re: /\b(?:internasional|international|student\s*exchange|gccp|bccp|short\s*course|double\s*degree|dual\s*degree)\b/i, text: 'program internasional student exchange double degree dual degree GCCP BCCP short course DNUI HELP UTB' },
+    { re: /\b(?:pascasarjana|pasca\s*sarjana|magister|s2|s\s*2)\b/i, text: 'S2 Sistem Informasi pascasarjana magister akreditasi kurikulum keunggulan prospek kerja' },
+    { re: /\b(?:akreditasi|ban\s*-?pt|lam\s*infokom|peringkat)\b/i, text: 'akreditasi BAN-PT LAM INFOKOM peringkat akreditasi program studi' },
+    { re: /\b(?:llc|language\s+learning|bahasa)\b/i, text: 'Language Learning Center LLC kemampuan bahasa pelatihan bahasa' }
+  ];
+  for (const item of expansions) {
+    if (item.re.test(raw) || item.re.test(normalized) || item.re.test(norm)) add(`${normalized} ${item.text}`);
+  }
+
+  return uniqueList(variants, Number(options.limit || 8));
+}
+
+function isCampusChoiceReasonQuestion(question) {
+  const q = normalizeUserQuery(question || '').normalizedText || String(question || '').toLowerCase();
+  return /\b(?:mengapa|kenapa|alasan)\b[\s\S]{0,50}\b(?:memilih|pilih)\b/i.test(q)
+    && /\b(?:stikom\s+bali|itb\s*stikom|kampus)\b/i.test(q);
+}
+function isBroadCampusDocumentQuestion(question) {
+  const normalized = normalizeUserQuery(question || '').normalizedText;
+  const q = String(normalized || question || '').trim();
+  if (!q || q.length < 8) return false;
+  if (isGreetingOnly(q) || hasExplicitFeeQuestionSignal(q)) return false;
+  const campusAnchor = /\b(?:stikom|itb\s*stikom|kampus|kuliah|mahasiswa|alumni|lulusan|prodi|program\s+studi|jurusan|akademik|pmb|pascasarjana|magister|s2|akreditasi|beasiswa|rpl|career\s*center|karier|lowongan|magang|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study|inkubator\s+bisnis|inbis|hi\s*think|hithink|student\s*exchange|internasional|mahasiswa\s+asing|visa|izin\s+belajar|language\s+learning|llc|kerja\s*sama|perusahaan|industri)\b/i.test(q);
+  const questionShape = /\b(?:apa|apakah|bagaimana|gimana|mengapa|kenapa|kapan|dimana|berapa|jelaskan|info|informasi|ada|tersedia|bisa|membantu|mendapat|memiliki|punya|mengikuti|keunggulan|keuntungan|peluang|syarat|dokumen|cara)\b/i.test(q);
+  return campusAnchor && questionShape;
 }
 function buildStructuredTableFaqAnswerFromIndex(question, indexForQuery) {
   const q = String(question || '').trim();
@@ -1987,7 +2051,7 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     searchQueries: preliminaryQueries,
     intent: questionIntent
   }, { intentHint: questionIntent, dynamicAliases });
-  const queries = uniqueList([...(understanding.searchQueries || []), ...preliminaryQueries], 8);
+  const queries = uniqueList([...(understanding.searchQueries || []), ...buildAdaptiveQueryVariants(question, { dynamicAliases, limit: 8 }), ...preliminaryQueries], 12);
 
   // Get database candidates (generic scoring)
   const dbCandidates = await getDatabaseCandidates(queries, { ...options, question, intent: questionIntent });
@@ -3235,7 +3299,8 @@ async function tryLocalUploadedTrainingGenericAnswer(question, options = {}) {
   if (directAcademicSection && directAcademicSection.answer) return directAcademicSection;
   if (['schedule', 'requirement'].includes(intent) && !isAcademicAdminUploadedDocQuestion(question, intent)) return null;
 
-  const retrieved = await retrieveSemanticContexts([questionForRetrieval], {
+  const adaptiveQueries = buildAdaptiveQueryVariants(questionForRetrieval, { limit: 8 });
+  const retrieved = await retrieveSemanticContexts(adaptiveQueries.length ? adaptiveQueries : [questionForRetrieval], {
     topK: options.topK,
     question: questionForRetrieval,
     intent
@@ -4265,7 +4330,7 @@ function tryOutOfDomainAnswer(question) {
 
   const partnerDoubleDegreeContext = /\b((double|dual)\s*degree|dd)\b/.test(q) && /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university)\b/.test(q);
   const mentionsKnownOtherCampus = /\b(universitas\s+udayana|udayana|unud|universitas\s+indonesia|ui\b|universitas\s+gadjah\s+mada|ugm\b|universitas\s+airlangga|unair\b|institut\s+pertanian\s+bogor|ipb\b|universitas\s+pendidikan\s+ganesha|undiksha\b|politeknik\s+negeri\s+bali|pnb\b|universitas\s+terbuka|institut\s+teknologi\s+bandung|itb\b(?!\s*stikom)|binus|telkom\s+university|undiknas|warmadewa|unud)\b/.test(q);
-  const mentionsGenericOtherCampus = /\b(universitas|institut|politeknik|kampus)\s+(?!(teknologi\s+dan\s+bisnis\s+)?stikom\b|itb\s+stikom\b|teknologi\s+bandung\b|dalian\b|help\b|renon\b|jimbaran\b|abiansemal\b)[a-z0-9]+/i.test(q) && !/\b(stikom|itb\s*stikom)\b/.test(q);
+  const mentionsGenericOtherCampus = /\b(universitas|institut|politeknik)\s+(?!(teknologi\s+dan\s+bisnis\s+)?stikom\b|itb\s+stikom\b|teknologi\s+bandung\b|dalian\b|help\b|renon\b|jimbaran\b|abiansemal\b)[a-z0-9]+/i.test(q) && !/\b(stikom|itb\s*stikom)\b/.test(q);
   const mentionsOtherCampus = !partnerDoubleDegreeContext && (mentionsKnownOtherCampus || mentionsGenericOtherCampus);
   const asksCampusPrograms = /\b(jurusan|prodi|program\s+studi|fakultas|biaya|pendaftaran|akreditasi|kuliah)\b/.test(q);
   if (!mentionsOtherCampus || !asksCampusPrograms) return null;
@@ -4336,7 +4401,7 @@ function detectExplicitExternalEntity(question) {
     if (pattern.test(q)) return label;
   }
 
-  const generic = q.match(/\b(universitas|institut|politeknik|kampus)\s+(?!(?:teknologi\s+dan\s+bisnis\s+)?stikom\b|itb\s+stikom\b|stikom\s+bali\b|renon\b|jimbaran\b|abiansemal\b)([a-z0-9][a-z0-9\s]{2,60})/i);
+  const generic = q.match(/\b(universitas|institut|politeknik)\s+(?!(?:teknologi\s+dan\s+bisnis\s+)?stikom\b|itb\s+stikom\b|stikom\s+bali\b|renon\b|jimbaran\b|abiansemal\b)([a-z0-9][a-z0-9\s]{2,60})/i);
   if (generic && !/\b(stikom|itb\s*stikom)\b/i.test(q)) return `${generic[1]} ${generic[2]}`.trim();
   return null;
 }
@@ -5697,11 +5762,11 @@ function tryKnownFaqQnaAnswer(question) {
     if (/\b(siapa|diurus|siapa yang mengurus|kampus yang mengurus|mahasiswa yang mengurus)\b/i.test(q)) {
       return answer('Pengurusan Izin Belajar dibantu oleh kampus/unit terkait, sementara mahasiswa wajib menyiapkan dan melengkapi dokumen yang diminta. Jadi prosesnya dilakukan melalui kerja sama antara mahasiswa dan kampus.');
     }
-    if (/\b(proses|prosedur|pengurusan dokumen|dokumen mahasiswa asing)\b/i.test(q)) {
-      return answer('Pengurusan dokumen mahasiswa asing di ITB STIKOM Bali dilakukan dengan menghubungi bagian kerja sama atau international office kampus. Mahasiswa menyiapkan dokumen persyaratan, kemudian kampus membantu proses pengajuan dan koordinasi administrasi sampai dokumen selesai sesuai ketentuan yang berlaku.');
-    }
     if (/\b(dokumen|berkas|persyaratan|diperlukan|pengajuan)\b/i.test(q)) {
       return answer('Dokumen yang diperlukan untuk pengajuan Izin Belajar umumnya meliputi identitas/paspor mahasiswa asing, dokumen penerimaan atau status studi di kampus, pas foto, dan dokumen pendukung lain sesuai ketentuan pengajuan. Untuk daftar final, mahasiswa perlu mengikuti arahan kampus karena persyaratan dapat mengikuti ketentuan pemerintah yang berlaku.');
+    }
+    if (/\b(proses|prosedur|pengurusan dokumen|dokumen mahasiswa asing)\b/i.test(q)) {
+      return answer('Pengurusan dokumen mahasiswa asing di ITB STIKOM Bali dilakukan dengan menghubungi bagian kerja sama atau international office kampus. Mahasiswa menyiapkan dokumen persyaratan, kemudian kampus membantu proses pengajuan dan koordinasi administrasi sampai dokumen selesai sesuai ketentuan yang berlaku.');
     }
     if (/\b(cara|bagaimana|mengurus|urus)\b/i.test(q)) {
       return answer('Pengurusan Izin Belajar dilakukan melalui kampus. Mahasiswa menyiapkan dokumen persyaratan mahasiswa asing, menyerahkannya ke pihak kampus/unit terkait, lalu kampus membantu proses pengajuan Izin Belajar sesuai prosedur pemerintah.');
@@ -6711,20 +6776,19 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
       frameSource: 'semantic-rag-insufficient-data'
     };
   }
-  if (/\b(?:hi-?think|hithink)\b/i.test(q)) {
-    const specificHiThink = buildSpecificFacilityAnswerFromIndex(question, indexForQuery);
-    if (specificHiThink && specificHiThink.answer) {
-      return {
-        ...specificHiThink,
-        answer: ensureNamedCampusSupportContextInAnswer(question, specificHiThink.answer),
-        source: 'semantic-rag-campus-support-entity',
-        frameSource: specificHiThink.frameSource || 'semantic-rag-campus-support-entity'
-      };
+  if (/\b(?:hi[-\s]?think|hithink)\b/i.test(q)) {
+    let hiThinkAnswer = buildHiThinkAnswer();
+    if (/\b(?:kapan|mulai|semester|ikut|mengikuti|daftar|mendaftar)\b/i.test(q)) {
+      hiThinkAnswer = 'Mahasiswa dapat mengikuti Program Hi-Think mulai Semester 5. Program ini berkaitan dengan persiapan belajar dan karier di lingkungan industri teknologi Jepang, termasuk penguatan kompetensi dan bahasa Jepang. Untuk jadwal pembukaan, kuota, dan alur pendaftaran yang sedang berjalan, kakak sebaiknya konfirmasi ke admin kampus atau pengelola program.';
+    } else if (/\b(?:karier|karir|career|peluang\s+kerja|kerja|membantu|manfaat)\b/i.test(q)) {
+      hiThinkAnswer = 'Program Hi-Think membantu karier mahasiswa dengan menyiapkan kompetensi yang relevan dengan industri teknologi Jepang, termasuk pembelajaran bahasa Jepang dan kesiapan kerja. Dari data yang tersedia, program ini memberi peluang kerja di perusahaan Hi-Think, baik di Indonesia, China, maupun Jepang.';
+    } else if (/\b(?:sulit|menantang|berat|susah)\b/i.test(q)) {
+      hiThinkAnswer = 'Program Hi-Think termasuk menantang karena berbasis industri dan berkaitan dengan persiapan kerja di lingkungan teknologi Jepang. Namun program ini juga memberi pengalaman belajar, penguatan bahasa Jepang, dan peluang karier yang besar bagi mahasiswa yang siap mengikuti prosesnya.';
     }
     return {
-      answer: buildHiThinkAnswer(),
-      source: 'semantic-rag-campus-facility',
-      frameSource: 'semantic-rag-campus-facility'
+      answer: hiThinkAnswer,
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
     };
   }
 
@@ -9674,6 +9738,7 @@ function shouldPreferTrainingBeforeDeterministic(rewrite) {
 function shouldDeferDeterministicBeforeSemantic(question) {
   const q = String(question || '').trim();
   if (!q || q.length < 12) return false;
+  if (isBroadCampusDocumentQuestion(q) && !hasExplicitFeeQuestionSignal(q)) return true;
 
   const directQuestionStarts = /^(?:apa|siapa|kapan|dimana|bagaimana|gimana|berapa|apakah|jelaskan|tolong|minta|info|informasi|bisakah|bisa|apaan|maksud|pengertian|ceritakan|detail)\b/i;
   const clearDomainSignals = /\b(?:biaya(?:nya)?|harga(?:nya)?|ukt|spp|tarif|daftar|pendaftaran|registrasi|program(?:\s+studi)?|jurusan|beasiswa|prodi|jadwal|kelas|fasilitas|magang|training|sertifikat|syarat|seleksi|kampus|kuliah)\b/i;
@@ -10615,7 +10680,22 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
   }
 
-  const preGuardGenericFaqQna = strictDocumentOnly ? null : (
+  const explicitSupportEntityForGenericFaq = findCampusSupportEntity(routingQuestion || question);
+  const preGuardSupportEntity = strictDocumentOnly ? null : findCampusSupportEntity(routingQuestion || question);
+  if (preGuardSupportEntity && preGuardSupportEntity.key !== 'linkedin-career-center') {
+    const preGuardSupportEntityAnswer = tryCampusSupportEntityAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+      || tryCampusSupportEntityAnswer(question, getCachedSemanticIndex(), options);
+    if (preGuardSupportEntityAnswer && preGuardSupportEntityAnswer.answer) {
+      const builtSupportEntity = buildDeterministicResponse(
+        question,
+        preGuardSupportEntityAnswer.source || 'semantic-rag-campus-support-entity',
+        preGuardSupportEntityAnswer,
+        { routeStage: 'pre-guard-support-entity', normalizedRouting: normalizedRouting.changed }
+      );
+      return await finalizeSemanticResult(question, builtSupportEntity, resultCacheKey);
+    }
+  }
+  const preGuardGenericFaqQna = strictDocumentOnly || isCampusChoiceReasonQuestion(question) || explicitSupportEntityForGenericFaq ? null : (
     tryGenericFaqQnaAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
     || tryGenericFaqQnaAnswer(question, getCachedSemanticIndex(), options)
   );
@@ -11399,6 +11479,7 @@ async function querySemanticRag(question, options = {}) {
 
   const queryUnderstanding = buildQueryUnderstanding(question, rewrite, {
     intentHint: options.intentHint || '',
+    dynamicAliases: buildDynamicAliasDictionary(getCachedSemanticIndex()),
     sessionData: options.sessionData || {},
     conversationHistory: getRecentConversation(options.sessionData || null),
     memory: {
@@ -11874,7 +11955,7 @@ async function querySemanticRag(question, options = {}) {
     }
     return await finalizeSemanticResult(question, response, resultCacheKey);
   } catch (err) {
-    logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] answer generation failed');
+    try { logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] answer generation failed'); } catch (_) {}
     if (!fallbacksAllowed) {
       const errorResult = {
         success: true,
@@ -12054,8 +12135,3 @@ module.exports = {
   selectEvidenceByCompatibility,
   evaluateGenericAnswerability
 };
-
-
-
-
-
