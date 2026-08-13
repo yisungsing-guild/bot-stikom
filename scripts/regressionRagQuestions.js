@@ -79,7 +79,9 @@ const CASES = [
   { q: 'LLC itu apa?', mustInclude: ['Language Learning Center'], productionLike: true },
   { q: 'kampus stikom ada berapa?', mustInclude: ['3'] },
   { q: 'akreditasi kampus ITB STIKOM Bali apa?', mustInclude: ['BAN-PT'], productionLike: true },
-  { q: 'akreditasi sistem komputer apa?', mustInclude: ['Baik Sekali'] }
+  { q: 'akreditasi sistem komputer apa?', mustInclude: ['Baik Sekali'] },
+  { q: 'halo apa kabar?', mustInclude: ['baik-baik saja'], productionLike: true },
+  { q: 'Apa kabarnya?', mustInclude: ['baik-baik saja'], productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'Berapa gelar Double Degree HELP?' }, { direction: 'bot', message: 'Pada Program Double Degree HELP University Malaysia, mahasiswa memperoleh dua gelar: Sarjana Komputer (S.Kom) dan Bachelor of Information Technology (BIT).' }] } }
 ];
 
 const MODES = [

@@ -1561,6 +1561,11 @@ function inferContextTopicFromSession(sessionData) {
 
 function resolveSemanticFollowupQuestion(question, options = {}) {
   const original = String(question || '').trim();
+  const smallTalkWords = original.split(/\s+/).filter(Boolean).length;
+  const smallTalk = trySmallTalkAnswer(original);
+  if (smallTalk && smallTalk.answer && shouldReturnSmallTalkImmediately(original, smallTalkWords)) {
+    return { changed: false, question: original, topic: null, smallTalkOnly: true };
+  }
   if (!original || !isContextualSemanticFollowup(original)) {
     return { changed: false, question: original, topic: null };
   }
@@ -4374,7 +4379,7 @@ function trySmallTalkAnswer(question) {
     };
   }
 
-  if (/\b(apa\s+kabar|apa\s+khabar|kabar\s+apa|khabar\s+apa|gimana\s+kabar|gimana\s+khabar|kabar\s+kamu|khabar\s+kamu|kbr|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|bagaimana\s+kabar|bagaimana\s+khabar)\b/i.test(normalized)) {
+  if (/\b(apa\s+kabar(?:nya)?|apa\s+khabar(?:nya)?|kabar(?:nya)?\s+apa|khabar(?:nya)?\s+apa|gimana\s+kabar(?:nya)?|gimana\s+khabar(?:nya)?|kabar(?:nya)?\s+kamu|khabar(?:nya)?\s+kamu|kbr|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|bagaimana\s+kabar(?:nya)?|bagaimana\s+khabar(?:nya)?)\b/i.test(normalized)) {
     return {
       answer: 'Saya baik-baik saja, terima kasih. Ada yang bisa saya bantu seputar ITB STIKOM Bali?'
     };
