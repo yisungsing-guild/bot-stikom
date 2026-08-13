@@ -1521,15 +1521,13 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
   const dpp = profile.dpp || profile.registrasi || 0;
   const dppDiscount = calculateDppDiscount(dpp, discounts, wave.group);
   const jasTopi = profile.atribut ? null : null;
-  const equipmentTotal = profile.atribut || 0;
+  const equipmentTotal = program.family === 'd3' ? 0 : (profile.atribut || 0);
 
   let jas = null;
   let kaos = null;
   if (program.family === 's1' || program.family === 'sk') {
     jas = 750000;
     kaos = 750000;
-  } else if (program.family === 'd3') {
-    jas = profile.registrasi || null;
   }
 
   const subtotalPerlengkapan = [jas, kaos].filter((n) => Number.isFinite(n)).reduce((sum, n) => sum + n, 0) || equipmentTotal;
@@ -1582,7 +1580,7 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
   if (subtotalPerlengkapan > 0) {
     lines.push(`Subtotal biaya awal masuk: ${formatRp(subtotalPerlengkapan)}`);
   }
-  lines.push(`- DPP: ${formatRp(dpp)}`);
+  lines.push(`${program.family === 'd3' ? '- Biaya registrasi/DPP' : '- DPP'}: ${formatRp(dpp)}`);
   lines.push(`- Potongan biaya DPP (${wave.display}): ${formatRp(dppDiscount.total)}${dppDiscount.note}`);
   lines.push(`Total awal masuk setelah potongan (${wave.display}): ${formatRp(totalAwal)}`);
   lines.push('');

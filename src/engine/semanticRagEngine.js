@@ -117,8 +117,14 @@ function getRuntimeGreetingTime() {
   return 'malam';
 }
 
-function buildRuntimeGreetingIntro() {
-  const time = getRuntimeGreetingTime();
+function extractExplicitGreetingTime(text) {
+  const match = String(text || '').toLowerCase().match(/\bselamat\s+(pagi|siang|sore|malam)\b/i);
+  return match ? match[1].toLowerCase() : '';
+}
+
+function buildRuntimeGreetingIntro(timeOverride = '') {
+  const explicitTime = String(timeOverride || '').trim().toLowerCase();
+  const time = /^(pagi|siang|sore|malam)$/.test(explicitTime) ? explicitTime : getRuntimeGreetingTime();
   return `Halo Kak, selamat ${time}. Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.`;
 }
 
@@ -134,7 +140,7 @@ function shouldReturnSmallTalkImmediately(question, smallTalkWords) {
   const hasThanks = /\b(?:terima\s*(?:kasih|ksih|ksh)|terimakasih|makasih|mksh|mksih|thanks|thank\s+you|thx)\b/i.test(q);
   if (!hasThanks) return false;
 
-  const hasNewCampusQuestion = /\b(?:biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|lokasi|alamat|ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i.test(q);
+  const hasNewCampusQuestion = /\b(?:biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|fasilias|fasiltas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|lokasi|alamat|ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i.test(q);
   const explicitCorrection = /\b(?:hanya|cuma|sekadar|sekedar)\s+(?:bilang|mengucapkan)|tidak\s+perlu\s+(?:dicari|cari|dijawab\s+panjang)|cukup\s+bilang|sama\s*-?\s*sama/i.test(q);
   return explicitCorrection || !hasNewCampusQuestion;
 }
@@ -4322,7 +4328,7 @@ function tryMixedIntentAnswer(question) {
 function trySmallTalkAnswer(question) {
   const raw = String(question || '').trim();
   if (!raw) return null;
-  const hasCampusInfoIntent = /\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|lokasi|alamat|ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i.test(raw);
+  const hasCampusInfoIntent = /\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|fasilias|fasiltas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|lokasi|alamat|ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i.test(raw);
   const normalized = raw
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s{2,}/g, ' ')
@@ -4382,7 +4388,7 @@ function trySmallTalkAnswer(question) {
   }
 
 
-  if (/\b(kamu|tiko|bot|asisten)\b/i.test(normalized) && /\b(siapa|apa|bisa\s+bantu\s+apa|bantu\s+apa|lakukan|fungsi|tugas)\b/i.test(normalized) && !/\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|pendaftaran|jadwal|gelombang|beasiswa|fasilitas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|soft\s*skill|softskill|pengembangan\s+softskill|inkubator|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|ukm|ormawa|double\s*degree|dual\s*degree)\b/i.test(normalized)) {
+  if (/\b(kamu|tiko|bot|asisten)\b/i.test(normalized) && /\b(siapa|apa|bisa\s+bantu\s+apa|bantu\s+apa|lakukan|fungsi|tugas)\b/i.test(normalized) && !/\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|pendaftaran|jadwal|gelombang|beasiswa|fasilitas|fasilias|fasiltas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|soft\s*skill|softskill|pengembangan\s+softskill|inkubator|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|ukm|ormawa|double\s*degree|dual\s*degree)\b/i.test(normalized)) {
     return {
       answer: 'Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu menjawab pertanyaan seputar PMB, cara daftar, jadwal pendaftaran, rincian biaya, program studi, beasiswa, UKM, fasilitas, lokasi kampus, dan informasi kampus yang tersedia di data.'
     };
@@ -4425,8 +4431,9 @@ function trySmallTalkAnswer(question) {
   const religiousGreeting = getReligiousGreetingReply(normalized);
   if (isGreetingOnly(normalized) || /^(selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam)(\s+(kak|min|admin|tiko|pagi|siang|sore|malam))*$/.test(normalized) || religiousGreeting) {
     const prefix = religiousGreeting ? `${religiousGreeting} ` : '';
+    const explicitTime = extractExplicitGreetingTime(normalized);
     return {
-      answer: `${prefix}${buildRuntimeGreetingIntro()}`
+      answer: `${prefix}${buildRuntimeGreetingIntro(explicitTime)}`
     };
   }
 
@@ -6338,7 +6345,7 @@ function trimRecoveredFaqAnswerToSection(answer) {
   const boundary = boundaryRe.exec(text);
   if (boundary && boundary.index >= 120) text = text.slice(0, boundary.index).trim();
   return text
-    .replace(/\s*•\s*[A-Za-z]{1,8}\s+[^•:]{20,320}\.\s+(?=•\s*[A-Z][^:]{2,90}:)/g, ' ')
+    .replace(/\s*\u2022\s*[A-Za-z]{1,8}\s+[^\u2022:]{20,320}\.\s+(?=\u2022\s*[A-Z][^:]{2,90}:)/g, ' ')
     .replace(/\s+([,.;:!?])/g, '$1')
     .replace(/\s{2,}/g, ' ')
     .trim();
@@ -6521,6 +6528,14 @@ function tryAccreditationAnswer(question, indexForQuery) {
     return {
       answer: 'Akreditasi Prodi S2 Sistem Informasi belum saya temukan secara lengkap pada data akreditasi yang tersedia. Agar tidak salah menyebut peringkat, kakak sebaiknya konfirmasi ke Admin PMB atau bagian akademik.',
       source: 'rag-accreditation-no-data',
+      frameSource: 'rag-accreditation'
+    };
+  }
+
+  if (/\b(?:manajemen\s+informatika|d\s*3\s+manajemen|d3\s+manajemen|\bmi\b)\b/i.test(q)) {
+    return {
+      answer: 'Akreditasi Prodi Manajemen Informatika: Baik.',
+      source: 'rag-accreditation',
       frameSource: 'rag-accreditation'
     };
   }
@@ -7475,7 +7490,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   const questionMentionsNonCareerSupport = explicitNonCareerSupportEntity
     && explicitNonCareerSupportEntity.key !== 'career-center'
     && explicitNonCareerSupportEntity.key !== 'linkedin-career-center';
-  const asksFacilities = /\b(fasilitas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|incubator|inbis|softskill|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|hithink|gccp|gcpp|gcp|short\s*course|shortcourse|kursus\s+singkat|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
+  const asksFacilities = /\b(fasilitas|fasilias|fasiltas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|incubator|inbis|softskill|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|hithink|gccp|gcpp|gcp|short\s*course|shortcourse|kursus\s+singkat|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
   if (!asksFacilities) return null;
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
   if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang|pelatihan|pembekalan|melamar\s+pekerjaan)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa|mahasiswa)\b/i.test(q) && !questionMentionsNonCareerSupport) {
@@ -10254,7 +10269,7 @@ function inferQuestionMeaningProfile(question) {
   if (/\b(jurusan|prodi|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa)\b/i.test(q)) return { intent: 'program_list' };
   if (/\b(apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan)\b/i.test(q) && /\b(sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i.test(q)) return { intent: 'program_definition' };
   if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang|pelatihan|pembekalan|melamar\s+pekerjaan)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa|mahasiswa)\b/i.test(q)) return { intent: 'career_readiness' };
-  if (/\b(fasilitas|layanan|sarana|prasarana)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|unggulan|diunggulkan|tersedia|yang\s+ada|ada\s+apa)\b/i.test(q)) return { intent: 'facility_list' };
+  if (/\b(fasilitas|fasilias|fasiltas|layanan|sarana|prasarana)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|unggulan|diunggulkan|tersedia|yang\s+ada|ada\s+apa)\b/i.test(q)) return { intent: 'facility_list' };
   if (/\b(program|training|magang|internship|kerja|bekerja|sertifikasi|kelas|kursus|bahasa)\b/i.test(q) && /\b(j\s*1|j-?1|n\s*[1-5]|jlpt|amerika|america|usa|jepang|japan|luar\s+negeri)\b/i.test(q)) return { intent: 'international_program_availability' };
   if (/\b(beasiswa|kip|1k1s|potongan|prestasi|yayasan)\b/i.test(q)) return { intent: 'scholarship' };
   return { intent: 'unknown' };
@@ -11171,6 +11186,22 @@ async function querySemanticRag(question, options = {}) {
     const builtProgramCurriculum = buildDeterministicResponse(question, preGuardProgramCurriculum.source || 'semantic-rag-program-curriculum', preGuardProgramCurriculum, { routeStage: 'pre-guard-program-curriculum', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtProgramCurriculum, resultCacheKey);
   }
+  const preGuardFeeText = `${routingQuestion || ''} ${question || ''}`.toLowerCase();
+  const shouldRunPreGuardFee = /\b(?:biaya|harga|bayar|ukt|dpp|spp|uang\s+(?:kuliah|masuk|pendaftaran)|pendaftaran|registrasi|rincian\s+biaya|per\s+semester|semesteran|double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(preGuardFeeText);
+  const preGuardFeeAnswer = strictDocumentOnly || !shouldRunPreGuardFee ? null : (
+    tryRegistrationFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryRegistrationFeeAnswer(question, getCachedSemanticIndex(), options)
+    || tryDetailedFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options)
+    || tryGeneralFeeQuestionAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryGeneralFeeQuestionAnswer(question, getCachedSemanticIndex(), options)
+  );
+  if (preGuardFeeAnswer && preGuardFeeAnswer.answer) {
+    const feeSource = preGuardFeeAnswer.source || (preGuardFeeAnswer.wave ? 'semantic-rag-fee-detail' : 'semantic-rag-registration-fee');
+    const builtFeeAnswer = buildDeterministicResponse(question, feeSource, { ...preGuardFeeAnswer, source: feeSource }, { routeStage: 'pre-guard-fee', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtFeeAnswer, resultCacheKey);
+  }
+
   const explicitSupportEntityForGenericFaq = findCampusSupportEntity(routingQuestion || question);
   const preGuardSupportEntity = strictDocumentOnly ? null : findCampusSupportEntity(routingQuestion || question);
   if (preGuardSupportEntity && preGuardSupportEntity.key !== 'linkedin-career-center') {
