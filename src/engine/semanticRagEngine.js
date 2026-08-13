@@ -116,15 +116,8 @@ function getRuntimeGreetingTime() {
   if (hour >= 15 && hour < 18) return 'sore';
   return 'malam';
 }
-
-function extractExplicitGreetingTime(text) {
-  const match = String(text || '').toLowerCase().match(/\bselamat\s+(pagi|siang|sore|malam)\b/i);
-  return match ? match[1].toLowerCase() : '';
-}
-
-function buildRuntimeGreetingIntro(timeOverride = '') {
-  const explicitTime = String(timeOverride || '').trim().toLowerCase();
-  const time = /^(pagi|siang|sore|malam)$/.test(explicitTime) ? explicitTime : getRuntimeGreetingTime();
+function buildRuntimeGreetingIntro() {
+  const time = getRuntimeGreetingTime();
   return `Halo Kak, selamat ${time}. Saya Tiko, asisten informasi ITB STIKOM Bali. Saya bisa bantu seputar PMB, rincian biaya, program studi, jadwal pendaftaran, beasiswa, dan informasi kampus.`;
 }
 
@@ -4431,9 +4424,8 @@ function trySmallTalkAnswer(question) {
   const religiousGreeting = getReligiousGreetingReply(normalized);
   if (isGreetingOnly(normalized) || /^(selamat\s+pagi|selamat\s+siang|selamat\s+sore|selamat\s+malam)(\s+(kak|min|admin|tiko|pagi|siang|sore|malam))*$/.test(normalized) || religiousGreeting) {
     const prefix = religiousGreeting ? `${religiousGreeting} ` : '';
-    const explicitTime = extractExplicitGreetingTime(normalized);
     return {
-      answer: `${prefix}${buildRuntimeGreetingIntro(explicitTime)}`
+      answer: `${prefix}${buildRuntimeGreetingIntro()}`
     };
   }
 
@@ -6170,6 +6162,9 @@ function tryKnownFaqQnaAnswer(question) {
       return answer('Pengurusan dokumen mahasiswa asing di ITB STIKOM Bali dilakukan dengan menghubungi bagian kerja sama atau international office kampus. Mahasiswa menyiapkan dokumen persyaratan, kemudian kampus membantu proses pengajuan dan koordinasi administrasi sampai dokumen selesai sesuai ketentuan yang berlaku.');
     }
     if (/\b(cara|bagaimana|mengurus|urus)\b/i.test(q)) {
+      if (/\bvisa\s*(?:study|studi|pelajar)?\b/i.test(q)) {
+        return answer('Pengurusan Izin Belajar dan Visa Study untuk mahasiswa asing dilakukan melalui kampus/unit terkait. Mahasiswa menyiapkan dokumen persyaratan, menyerahkannya ke pihak kampus, lalu kampus membantu proses pengajuan Izin Belajar dan arahan administrasi Visa Study sesuai prosedur pemerintah yang berlaku.');
+      }
       return answer('Pengurusan Izin Belajar dilakukan melalui kampus. Mahasiswa menyiapkan dokumen persyaratan mahasiswa asing, menyerahkannya ke pihak kampus/unit terkait, lalu kampus membantu proses pengajuan Izin Belajar sesuai prosedur pemerintah.');
     }
 
@@ -11200,6 +11195,35 @@ async function querySemanticRag(question, options = {}) {
     const feeSource = preGuardFeeAnswer.source || (preGuardFeeAnswer.wave ? 'semantic-rag-fee-detail' : 'semantic-rag-registration-fee');
     const builtFeeAnswer = buildDeterministicResponse(question, feeSource, { ...preGuardFeeAnswer, source: feeSource }, { routeStage: 'pre-guard-fee', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtFeeAnswer, resultCacheKey);
+  }
+
+  const preGuardStudyPermit = strictDocumentOnly || !isStudyPermitQuestion(routingQuestion || question) ? null : (
+    tryKnownFaqQnaAnswer(routingQuestion || question) || tryKnownFaqQnaAnswer(question)
+  );
+  if (preGuardStudyPermit && preGuardStudyPermit.answer) {
+    const builtStudyPermit = buildDeterministicResponse(question, preGuardStudyPermit.source || 'semantic-rag-known-faq-qna', preGuardStudyPermit, { routeStage: 'pre-guard-study-permit', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtStudyPermit, resultCacheKey);
+  }
+
+  const preGuardRegistrationText = `${routingQuestion || ''} ${question || ''}`.toLowerCase();
+  const shouldRunPreGuardRegistrationHow = /\b(?:daftar|mendaftar|pendaftaran|registrasi|pmb|penerimaan\s+mahasiswa\s+baru)\b/i.test(preGuardRegistrationText)
+    && !/\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(preGuardRegistrationText);
+  const preGuardRegistrationHow = strictDocumentOnly || !shouldRunPreGuardRegistrationHow ? null : (
+    tryRegistrationHowAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryRegistrationHowAnswer(question, getCachedSemanticIndex(), options)
+  );
+  if (preGuardRegistrationHow && preGuardRegistrationHow.answer) {
+    const builtRegistrationHow = buildDeterministicResponse(question, preGuardRegistrationHow.source || 'semantic-rag-registration-info', preGuardRegistrationHow, { routeStage: 'pre-guard-registration-how', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtRegistrationHow, resultCacheKey);
+  }
+
+  const preGuardAccreditationEarly = strictDocumentOnly ? null : (
+    tryAccreditationAnswer(routingQuestion || question, getCachedSemanticIndex())
+    || tryAccreditationAnswer(question, getCachedSemanticIndex())
+  );
+  if (preGuardAccreditationEarly && preGuardAccreditationEarly.answer) {
+    const builtPreGuardAccreditation = buildDeterministicResponse(question, preGuardAccreditationEarly.source || 'rag-accreditation', preGuardAccreditationEarly, { routeStage: 'pre-guard-accreditation-early', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtPreGuardAccreditation, resultCacheKey);
   }
 
   const explicitSupportEntityForGenericFaq = findCampusSupportEntity(routingQuestion || question);

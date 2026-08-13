@@ -83,6 +83,18 @@ const cases = [
 const weakAnswerRe = /mohon maaf|tidak mempunyai jawaban|belum menemukan data yang cukup|belum menemukan rincian|tidak cukup aman/i;
 const badSourceRe = /disabled|no-data|insufficient|out-of-domain|meaning-mismatch|clarify-suppressed/i;
 const caseExpectations = {
+  foreign_student_permit: {
+    source: /semantic-rag-known-faq-qna/i,
+    answer: /Izin Belajar[\s\S]*Visa Study|Visa Study[\s\S]*Izin Belajar/i
+  },
+  rpl_info_1: {
+    source: /semantic-rag-rpl/i,
+    answer: /Rekognisi Pembelajaran Lampau|RPL/i
+  },
+  rpl_info_2: {
+    source: /semantic-rag-rpl/i,
+    answer: /Rekognisi Pembelajaran Lampau|RPL/i
+  },
   bd_coding: {
     source: /semantic-rag-program-curriculum/i,
     answer: /tidak harus sudah jago komputer atau coding|tidak harus.*coding dari awal/i
