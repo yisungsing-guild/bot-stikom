@@ -6111,11 +6111,199 @@ function isStudyPermitQuestion(question) {
   return /\b(izin belajar|study permit|mahasiswa asing|foreign student|visa (?:study|studi|pelajar)|itas|kitas|sktt)\b/i.test(q);
 }
 
+function getAdministrativeInfoTopic(question) {
+  const q = normalizeFacilityTerm(question || '');
+  if (!q) return null;
+  const has = (re) => re.test(q);
+  if (has(/\b(?:sktt|surat keterangan tempat tinggal)\b/i)) return { key: has(/\b(?:perpanjang|perpanjangan|expired|kedaluwarsa|kadaluarsa)\b/i) ? 'sktt_extension' : 'sktt', label: 'SKTT', required: [/\bsktt\b/i], reject: [/\bizin belajar\b/i, /\bvisa\s*e30b\b/i] };
+  if (has(/\b(?:itas|kitas|e kitas|e-kitas)\b/i)) return { key: has(/\b(?:perpanjang|perpanjangan|expired|kedaluwarsa|kadaluarsa|overstay|denda)\b/i) ? 'itas_extension' : 'itas_kitas', label: 'ITAS/KITAS', required: [/\bitas\b/i, /\bkitas\b/i], reject: [/\bizin belajar adalah\b/i, /\bvisa\s*e30b\b/i] };
+  if (has(/\b(?:visa\s*e\s*30\s*b|e\s*30\s*b|visa pelajar|visa study|visa studi|vitas)\b/i) || (has(/\bvisa\b/i) && has(/\b(?:kuliah|studi|belajar|mahasiswa asing|pelajar)\b/i))) return { key: 'visa_e30b', label: 'Visa E30B', required: [/\bvisa\b/i, /\be\s*30\s*b\b/i], reject: [/\bbiaya awal masuk\b/i, /\bukt\b/i, /\bdpp\b/i] };
+  if (has(/\bizin belajar|study permit\b/i)) return { key: has(/\b(?:perpanjang|perpanjangan|expired|kedaluwarsa|kadaluarsa)\b/i) ? 'study_permit_extension' : 'study_permit', label: 'Izin Belajar', required: [/\bizin belajar\b/i, /\bstudy permit\b/i], reject: [] };
+  if (has(/\bmahasiswa asing|foreign student\b/i)) return { key: 'foreign_student_docs', label: 'Mahasiswa Asing', required: [/\bmahasiswa asing\b/i, /\bpaspor\b/i, /\bdokumen\b/i], reject: [] };
+  return null;
+}
+
+function adminTopicMatchesText(topic, text) {
+  if (!topic) return true;
+  const normalized = normalizeFacilityTerm(text || '');
+  if (!normalized) return false;
+  const required = Array.isArray(topic.required) ? topic.required : [];
+  if (required.length && !required.some((re) => re.test(normalized))) return false;
+  const reject = Array.isArray(topic.reject) ? topic.reject : [];
+  if (reject.some((re) => re.test(normalized))) return false;
+  return true;
+}
+
+function buildAdministrativeCanonicalAnswer(question) {
+  const topic = getAdministrativeInfoTopic(question);
+  if (!topic) return null;
+  const q = normalizeFacilityTerm(question || '');
+  const has = (re) => re.test(q);
+  const answer = (value) => ({ answer: value, source: 'semantic-rag-admin-topic-composer', frameSource: 'semantic-rag-training-specific', adminTopic: topic.key });
+
+  if (topic.key === 'foreign_student_docs') {
+    return answer('Untuk mahasiswa asing, dokumen administrasi yang perlu diperhatikan mencakup Izin Belajar/Study Permit, Visa E30B atau visa pelajar, ITAS/KITAS, dan SKTT. Mahasiswa menyiapkan dokumen pribadi seperti paspor dan dokumen pendukung studi, lalu prosesnya dibantu oleh kampus/International Office sesuai ketentuan yang berlaku.');
+  }
+  if (topic.key === 'study_permit') {
+    if (has(/\b(?:apa itu|pengertian|maksud)\b/i)) return answer('Izin Belajar atau Study Permit adalah dokumen resmi yang menyatakan mahasiswa asing diperbolehkan menempuh pendidikan di Indonesia.');
+    if (has(/\b(?:wajib|harus|perlu)\b/i)) return answer('Ya. Mahasiswa asing wajib memiliki Izin Belajar/Study Permit sebagai salah satu dokumen resmi untuk studi di Indonesia.');
+    if (has(/\b(?:financial statement)\b/i)) return answer('Ya. Financial Statement termasuk dokumen yang diperlukan untuk pengajuan Izin Belajar mahasiswa asing.');
+    if (has(/\b(?:statement letter)\b/i)) return answer('Ya. Statement Letter termasuk dokumen yang diperlukan untuk pengajuan Izin Belajar mahasiswa asing.');
+    if (has(/\b(?:medical statement)\b/i)) return answer('Ya. Medical Statement termasuk dokumen yang diperlukan untuk pengajuan Izin Belajar mahasiswa asing.');
+    if (has(/\b(?:loa|letter of acceptance)\b/i)) return answer('Ya. Letter of Acceptance atau LOA diperlukan untuk pengajuan Izin Belajar mahasiswa asing.');
+    if (has(/\b(?:ijazah|transkrip)\b/i)) return answer('Ya. Ijazah dan transkrip akademik termasuk dokumen pendukung untuk pengajuan Izin Belajar mahasiswa asing.');
+    if (has(/\b(?:foto|photo)\b/i)) return answer('Ya. Foto formal diperlukan sebagai salah satu dokumen pengajuan Izin Belajar mahasiswa asing.');
+    if (has(/\b(?:paspor|passport)\b/i)) return answer('Ya. Paspor diperlukan untuk pengajuan Izin Belajar mahasiswa asing.');
+    if (has(/\b(?:dokumen|berkas|syarat|persyaratan|diperlukan|pengajuan)\b/i)) return answer('Dokumen pengajuan Izin Belajar mahasiswa asing meliputi foto formal, scan paspor, Financial Statement, Statement Letter, Medical Statement, Letter of Acceptance/LOA, ijazah, dan transkrip.');
+    if (has(/\b(?:berapa lama|lama proses|waktu|durasi|minggu|1\s*-?\s*2|1 sampai 2|satu sampai dua)\b/i)) return answer('Proses pembuatan Izin Belajar umumnya membutuhkan waktu sekitar 1-2 minggu kerja, bergantung pada kelengkapan dokumen dan proses verifikasi.');
+    if (has(/\b(?:biaya|bayar|gratis)\b/i)) return answer('Pengurusan Izin Belajar tidak dikenakan biaya dari data yang tersedia.');
+    if (has(/\b(?:siapa|international office|kampus|sendiri|dibantu)\b/i)) return answer('Pengurusan Izin Belajar dibantu oleh kampus/International Office. Mahasiswa menyiapkan dokumen yang diminta, lalu kampus membantu proses pengajuannya.');
+    return answer('Pengurusan Izin Belajar dilakukan dengan menyiapkan dokumen persyaratan mahasiswa asing, lalu kampus/International Office membantu proses pengajuannya sesuai prosedur pemerintah.');
+  }
+  if (topic.key === 'study_permit_extension') {
+    if (has(/\b(?:expired|kedaluwarsa|kadaluarsa)\b/i)) return answer('Jika Izin Belajar sudah expired, mahasiswa perlu mengurus Izin Belajar baru sesuai arahan kampus/International Office.');
+    if (has(/\b(?:berapa lama|lama proses)\b/i)) return answer('Proses perpanjangan Izin Belajar umumnya membutuhkan waktu sekitar 1-2 minggu kerja, bergantung pada kelengkapan dokumen dan proses verifikasi.');
+    if (has(/\b(?:dokumen|berkas|syarat|persyaratan|paspor|passport|kitas|itas|transkrip|sktt)\b/i)) return answer('Dokumen perpanjangan Izin Belajar meliputi paspor, KITAS/ITAS, transkrip akademik, dan SKTT.');
+    return answer('Perpanjangan Izin Belajar dapat diajukan sekitar 30 hari sebelum masa berlaku dokumen berakhir dan dibantu oleh kampus/International Office.');
+  }
+  if (topic.key === 'visa_e30b') {
+    if (has(/\bizin belajar\b/i) && has(/\b(?:dokumen|berkas|syarat|persyaratan)\b/i)) return answer('Dokumen untuk pengurusan Izin Belajar dan Visa E30B/Visa Study mahasiswa asing mencakup paspor, Letter of Acceptance/LOA, dokumen pendukung studi, serta dokumen lain yang diminta kampus/International Office sesuai prosedur pengajuan.');
+    if (has(/\bizin belajar\b/i)) return answer('Pengurusan Izin Belajar dan Visa E30B/Visa Study untuk mahasiswa asing dibantu oleh kampus/International Office. Mahasiswa menyiapkan dokumen persyaratan termasuk paspor, lalu kampus membantu proses pengajuan Izin Belajar dan arahan administrasi visa pelajar sesuai prosedur yang berlaku.');
+    if (has(/\b(?:apa itu|jenis visa|visa apa|digunakan|untuk kuliah|untuk studi)\b/i)) return answer('Visa E30B adalah visa pelajar/studi yang digunakan mahasiswa asing untuk masuk dan menempuh studi di Indonesia.');
+    if (has(/\b(?:masa berlaku paspor|minimal.*paspor|passport validity)\b/i)) return answer('Untuk pengajuan Visa E30B, paspor diperlukan dan masa berlaku paspor harus memenuhi ketentuan imigrasi. Jika masa berlaku paspor kurang, mahasiswa perlu memperpanjang paspor terlebih dahulu sebelum pengajuan.');
+    if (has(/\b(?:guarantee letter|surat jaminan|sponsor)\b/i)) return answer('Guarantee letter atau surat jaminan diperlukan untuk pengajuan Visa E30B dan disediakan/dibantu oleh pihak kampus sesuai prosedur mahasiswa asing.');
+    if (has(/\b(?:loa|letter of acceptance)\b/i)) return answer('Ya. Letter of Acceptance atau LOA diperlukan untuk pengajuan Visa E30B.');
+    if (has(/\b(?:paspor|passport)\b/i)) return answer('Ya. Paspor diperlukan untuk pengajuan Visa E30B mahasiswa asing.');
+    if (has(/\b(?:dokumen|berkas|syarat|persyaratan)\b/i)) return answer('Dokumen untuk Visa E30B mahasiswa asing mencakup paspor, Letter of Acceptance/LOA, guarantee letter atau surat jaminan dari kampus, serta dokumen pendukung lain sesuai ketentuan pengajuan.');
+    if (has(/\b(?:berapa lama|lama proses)\b/i)) return answer('Proses pengajuan Visa E30B umumnya membutuhkan waktu sekitar 1-2 minggu kerja setelah pembayaran dan dokumen dinyatakan lengkap.');
+    if (has(/\b(?:biaya|harga|bayar|1 tahun|2 tahun|4 tahun)\b/i)) return answer('Biaya Visa E30B mengikuti pilihan masa tinggal dan ketentuan resmi yang berlaku. Untuk nominal 1 tahun, 2 tahun, atau 4 tahun, mahasiswa sebaiknya mengacu pada informasi biaya terbaru dari International Office/admin kampus agar tidak salah angka.');
+    return answer('Pengajuan Visa E30B dibantu oleh kampus/International Office. Mahasiswa menyiapkan dokumen visa pelajar, lalu kampus membantu proses pengajuannya.');
+  }
+  if (topic.key === 'itas_kitas') {
+    if (has(/\b(?:apa itu|pengertian|maksud|perbedaan)\b/i)) return answer('ITAS/KITAS adalah izin tinggal terbatas bagi warga negara asing di Indonesia. Visa berfungsi sebagai izin masuk, sedangkan ITAS/KITAS berfungsi sebagai izin tinggal selama mahasiswa asing menjalani studi.');
+    if (has(/\b(?:wajib|harus|perlu|tanpa)\b/i)) return answer('Ya. Mahasiswa asing wajib memiliki ITAS/KITAS sebagai izin tinggal selama menempuh studi di Indonesia.');
+    if (has(/\b(?:masa berlaku|mengikuti visa)\b/i)) return answer('Masa berlaku ITAS/KITAS mengikuti masa berlaku izin/visa yang diberikan.');
+    return answer('ITAS/KITAS adalah dokumen izin tinggal terbatas yang wajib dimiliki mahasiswa asing selama tinggal dan belajar di Indonesia.');
+  }
+  if (topic.key === 'itas_extension') {
+    if (has(/\b(?:expired|overstay|denda)\b/i)) return answer('Jika ITAS/KITAS expired, mahasiswa berisiko terkena ketentuan overstay atau denda sesuai aturan imigrasi. Segera hubungi kampus/International Office agar diarahkan proses penanganannya.');
+    if (has(/\b(?:kantor imigrasi|imigrasi|biometrik|foto|sidik jari)\b/i)) return answer('Dalam proses perpanjangan ITAS/KITAS, mahasiswa dapat diminta datang ke kantor Imigrasi untuk verifikasi data, foto, atau biometrik sesuai arahan.');
+    if (has(/\b(?:keluar indonesia|tanpa keluar)\b/i)) return answer('Perpanjangan ITAS/KITAS dapat diproses tanpa harus keluar Indonesia selama memenuhi ketentuan dan dokumen diajukan tepat waktu.');
+    if (has(/\b(?:dokumen|berkas|syarat|surat sponsor|permohonan|ktp sponsor|izin belajar|paspor|e-kitas|ekitas|sktt|pas foto)\b/i)) return answer('Dokumen perpanjangan ITAS/KITAS meliputi surat sponsor/permohonan dari kampus, KTP sponsor, Izin Belajar, paspor, E-KITAS sebelumnya, SKTT, dan pas foto sesuai arahan pengajuan.');
+    return answer('Perpanjangan ITAS/KITAS sebaiknya diajukan sekitar 30 hari sebelum masa berlaku berakhir dan dibantu oleh kampus/International Office melalui prosedur imigrasi/e-visa.');
+  }
+  if (topic.key === 'sktt' || topic.key === 'sktt_extension') {
+    if (has(/\b(?:apa itu|kepanjangan|fungsi|bukti domisili)\b/i)) return answer('SKTT adalah Surat Keterangan Tempat Tinggal, yaitu bukti domisili resmi bagi warga negara asing yang tinggal sementara di Indonesia, termasuk mahasiswa asing.');
+    if (has(/\b(?:dokumen|berkas|syarat|paspor|passport|itas|kitas|form|f1-01|f1 01)\b/i)) return answer('Dokumen untuk mengurus SKTT meliputi paspor, ITAS/KITAS, dan Form F1-01 atau formulir kependudukan yang diminta oleh Disdukcapil.');
+    if (has(/\b(?:cara|mengurus|website|disdukcapil|di mana|dimana)\b/i)) return answer('SKTT diurus melalui Disdukcapil sesuai domisili mahasiswa asing, dan dapat mengikuti mekanisme layanan/website Disdukcapil jika tersedia. Mahasiswa dapat meminta arahan kampus/International Office untuk prosesnya.');
+    if (has(/\b(?:berapa lama|lama proses)\b/i)) return answer('Proses pembuatan SKTT umumnya sekitar 1 minggu kerja setelah dokumen dinyatakan lengkap dan diverifikasi.');
+    if (has(/\b(?:expired|kedaluwarsa|kadaluarsa|perpanjang)\b/i)) return answer('Jika SKTT sudah expired, mahasiswa perlu memperpanjang atau mengurus kembali SKTT sesuai arahan Disdukcapil dan kampus/International Office.');
+    return answer('SKTT diperlukan sebagai dokumen domisili resmi mahasiswa asing dan dapat menjadi dokumen pendukung untuk perpanjangan Izin Belajar maupun ITAS/KITAS.');
+  }
+  return null;
+}
+function tryAnchoredAdministrativeFaqAnswer(question, indexForQuery) {
+  const topic = getAdministrativeInfoTopic(question);
+  if (!topic || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
+  const q = String(question || '').trim();
+  const qTokens = Array.from(new Set(faqComparableTokens(q)));
+  const scored = [];
+  for (let itemIndex = 0; itemIndex < indexForQuery.length; itemIndex += 1) {
+    const item = indexForQuery[itemIndex];
+    const chunk = String(item && item.chunk ? item.chunk : '').trim();
+    if (!chunk) continue;
+    const sourceText = `${item.filename || ''} ${item.sourceFile || ''} ${item.title || ''}`;
+    const continuation = buildChunkContinuationText(indexForQuery, itemIndex, 8);
+    if (!adminTopicMatchesText(topic, `${sourceText} ${chunk}`)) continue;
+    const pairs = extractFaqQaPairsFromChunk(chunk);
+    for (const pair of pairs) {
+      const questionText = String(pair.questionText || '').trim();
+      if (!questionText) continue;
+      if (!adminTopicMatchesText(topic, `${sourceText} ${questionText} ${pair.answerText}`)) continue;
+      let answer = cleanUserVisibleRagAnswerText(pair.answerText);
+      answer = trimRecoveredFaqAnswerToSection(recoverFaqAnswerAcrossChunkBoundary(continuation, questionText, answer));
+      if (!answer || answer.length < 8) continue;
+      if (!adminTopicMatchesText(topic, `${questionText} ${answer}`)) continue;
+      const questionNorm = normalizeFacilityTerm(questionText);
+      const answerNorm = normalizeFacilityTerm(answer);
+      const score = scoreFaqQuestionMatch(q, questionText, '', []) + qTokens.filter((token) => questionNorm.includes(token)).length + qTokens.filter((token) => answerNorm.includes(token)).length + 6;
+      if (score < 7) continue;
+      scored.push({ item, questionText, answer, score });
+    }
+  }
+  if (!scored.length) return null;
+  scored.sort((a, b) => b.score - a.score || a.answer.length - b.answer.length);
+  const best = scored[0];
+  const answer = best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer;
+  return { answer, source: 'semantic-rag-admin-anchored-faq', frameSource: 'semantic-rag-training-specific', matchedFaqQuestion: best.questionText, matchedTrainingId: best.item && best.item.trainingId, matchedSource: best.item && (best.item.filename || best.item.sourceFile || best.item.id), adminTopic: topic.key };
+}
 function isStudentExchangeQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
   return /\b(student exchange|pertukaran mahasiswa|gccp|global cross cultural program|credit transfer|summer program|short program|short course|shortcourse|kursus singkat)\b/i.test(q);
 }
 
+function getInternationalProgramTopic(question) {
+  const q = normalizeFacilityTerm(question || '');
+  if (!q) return null;
+  const has = (re) => re.test(q);
+  if (has(/\b(?:hi\s*-?\s*think|hithink|bahasa jepang|n2|jepang)\b/i) && has(/\b(?:hi\s*-?\s*think|hithink|program|bahasa|n2|kerja|karier|kurikulum|semester|jepang)\b/i)) return { key: 'hi_think', label: 'Hi-Think' };
+  if (has(/\b(?:student exchange|pertukaran mahasiswa|gccp|global cross cultural program|credit transfer|summer program|short program|short course)\b/i)) return { key: 'student_exchange', label: 'Student Exchange' };
+  if (has(/\b(?:help university|help|bachelor of information technology|\bbit\b)\b/i)) return { key: 'double_degree_help', label: 'Double Degree HELP University' };
+  if (has(/\b(?:dnui|dalian|neusoft|e-commerce|e commerce|bachelor of management|\bbm\b|s\.\s*bns|sbns|dormitory|china)\b/i) && has(/\b(?:double|dual|degree|dnui|dalian|neusoft|e-commerce|e commerce|bachelor|management|dormitory|tahun|china)\b/i)) return { key: 'double_degree_dnui', label: 'Double Degree DNUI' };
+  return null;
+}
+
+function buildInternationalCanonicalAnswer(question) {
+  const topic = getInternationalProgramTopic(question);
+  if (!topic) return null;
+  const q = normalizeFacilityTerm(question || '');
+  const has = (re) => re.test(q);
+  const answer = (value) => ({ answer: value, source: 'semantic-rag-international-topic-composer', frameSource: 'semantic-rag-training-specific', internationalTopic: topic.key });
+  if (has(/\b(?:biaya|harga|bayar|rincian biaya|pendaftaran|dpp|ukt)\b/i)) return null;
+
+  if (topic.key === 'double_degree_help') {
+    if (has(/\b(?:gelar|degree|s\.\s*kom|skom|bachelor of information technology|\bbit\b|dua gelar)\b/i)) return answer('Pada Program Double Degree HELP University Malaysia, mahasiswa memperoleh dua gelar: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia.');
+    if (has(/\b(?:harus.*malaysia|kuliah di malaysia|tanpa.*malaysia|di mana|dimana|offline|indonesia)\b/i)) return answer('Program Double Degree HELP University dapat diikuti tanpa harus kuliah di Malaysia. Perkuliahan dilaksanakan secara offline di ITB STIKOM Bali dengan kurikulum yang mengacu pada kerja sama program.');
+    if (has(/\b(?:program studi|prodi)\b/i)) return answer('Program Double Degree HELP University menggunakan Program Studi Sistem Informasi di ITB STIKOM Bali.');
+    if (has(/\b(?:berapa lama|durasi|lama)\b/i)) return answer('Durasi Program Double Degree HELP University mengikuti masa studi sarjana, yaitu sekitar 4 tahun.');
+    if (has(/\b(?:kurikulum|dipelajari|belajar|keunggulan|manfaat)\b/i)) return answer('Program Double Degree HELP University memadukan pembelajaran Sistem Informasi di ITB STIKOM Bali dengan standar internasional HELP University Malaysia, sehingga mahasiswa mendapat pengalaman pendidikan internasional dan peluang memperoleh dua gelar.');
+    return answer('Program Double Degree ITB STIKOM Bali dengan HELP University Malaysia adalah program internasional pada Prodi Sistem Informasi yang memberi peluang mahasiswa memperoleh gelar S.Kom dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University.');
+  }
+
+  if (topic.key === 'double_degree_dnui') {
+    if (has(/\b(?:tahun pertama|tahun kedua)\b/i)) return answer('Pada skema Double Degree DNUI, tahun pertama dan tahun kedua dilaksanakan di ITB STIKOM Bali.');
+    if (has(/\b(?:tahun ketiga|online|kurikulum)\b/i)) return answer('Pada tahun ketiga Program Double Degree DNUI, perkuliahan menggunakan kurikulum DNUI dan dilaksanakan secara online sesuai skema program.');
+    if (has(/\b(?:dormitory|tempat tinggal|shared room|gratis)\b/i)) return answer('Pada Program Double Degree DNUI, mahasiswa mendapatkan fasilitas dormitory selama kuliah di China. Dormitory tersedia dengan sistem shared room sesuai ketentuan program.');
+    if (has(/\b(?:tahun keempat|pergi ke china|harus ke china|onsite|kuliah di china)\b/i)) return answer('Ya. Pada tahun keempat Program Double Degree DNUI, mahasiswa mengikuti perkuliahan secara onsite di Dalian Neusoft University of Information (DNUI), China.');
+    if (has(/\b(?:program studi|prodi|bisnis digital|e-commerce|e commerce)\b/i)) return answer('Pada Program Double Degree DNUI, prodi di ITB STIKOM Bali adalah Bisnis Digital, sedangkan program di DNUI China adalah E-Commerce.');
+    if (has(/\b(?:gelar|degree|s\.\s*bns|sbns|bachelor of management|\bbm\b|dua gelar)\b/i)) return answer('Setelah menyelesaikan Program Double Degree DNUI, mahasiswa memperoleh dua gelar: Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Bachelor of Management (BM) dari DNUI China.');
+    if (has(/\b(?:berapa lama|durasi|lama)\b/i)) return answer('Program Double Degree DNUI berlangsung sekitar 4 tahun dengan skema perkuliahan bertahap antara ITB STIKOM Bali dan DNUI China.');
+    return answer('Program Double Degree DNUI adalah kerja sama ITB STIKOM Bali dengan Dalian Neusoft University of Information, China. Prodi di ITB STIKOM Bali adalah Bisnis Digital dan program di DNUI adalah E-Commerce, dengan skema hingga tahun keempat onsite di China.');
+  }
+
+  if (topic.key === 'hi_think') {
+    if (has(/\b(?:semester|year 3|tahun ke|mulai kapan|kapan)\b/i)) return answer('Program Hi-Think dapat diikuti mulai Semester 5 atau Year 3.');
+    if (has(/\b(?:n2|minimal n2|level kemampuan|belum mencapai n2|syarat.*jepang)\b/i)) return answer('Untuk jalur kerja di Jepang pada Program Hi-Think, kemampuan bahasa Jepang minimal N2 menjadi syarat penting. Jika belum mencapai N2, mahasiswa tetap dapat diarahkan pada peluang kerja di Jakarta atau China sambil meningkatkan kemampuan bahasa Jepang.');
+    if (has(/\b(?:kerja|karier|peluang|jakarta|china|jepang)\b/i)) return answer('Program Hi-Think memiliki jalur karier dan peluang kerja setelah lulus. Peserta berkesempatan bekerja di Jepang, China, atau Jakarta, dengan ketentuan kemampuan bahasa Jepang terutama untuk jalur Jepang.');
+    if (has(/\b(?:sulit|menantang|tantangan)\b/i)) return answer('Program Hi-Think termasuk menantang karena berbasis industri Jepang, project-based learning, pelatihan bahasa Jepang, dan persiapan peluang kerja setelah lulus.');
+    if (has(/\b(?:project|industry|konsep|kurikulum|dipelajari|pelatihan bahasa|bahasa jepang)\b/i)) return answer('Program Hi-Think menggabungkan kurikulum ITB STIKOM Bali dengan kurikulum berbasis industri Jepang, menggunakan project-based dan industry-oriented learning, serta memberikan pelatihan bahasa Jepang.');
+    if (has(/\b(?:manfaat|keunggulan|tujuan|pengalaman internasional)\b/i)) return answer('Keunggulan Program Hi-Think adalah memberi pengalaman belajar berorientasi industri Jepang, meningkatkan keterampilan teknis, bahasa Jepang, kesiapan profesional, dan peluang karier internasional.');
+    if (has(/\b(?:biaya|mekanisme pendaftaran|daftar|informasi|hubungi)\b/i)) return answer('Untuk informasi biaya, mekanisme pendaftaran, dan jadwal Program Hi-Think, mahasiswa dapat menghubungi admin kampus atau unit/program terkait karena detail teknis dapat mengikuti periode pembukaan program.');
+    return null;
+  }
+
+  if (topic.key === 'student_exchange') {
+    if (has(/\b(?:ada program apa saja|program apa saja)\b/i)) return null;
+    if (has(/\b(?:jenis|program.*tersedia|pilihan|apa saja jenis|perbedaan)\b/i)) return answer('Jenis program Student Exchange yang tersedia meliputi Exchange Reguler atau Credit Transfer, Short Program / Summer Program, dan Global Cross Cultural Program (GCCP).');
+    if (has(/\b(?:gccp|global cross cultural)\b/i)) return answer('GCCP atau Global Cross Cultural Program adalah program yang memiliki kegiatan outbound dan inbound, interaksi dengan mahasiswa internasional, kegiatan akademik, kegiatan budaya, komunikasi global, dan teamwork.');
+    if (has(/\b(?:negara|china|thailand|malaysia|filipina|philippines)\b/i)) return answer('Program Student Exchange tersedia ke negara mitra seperti China, Thailand, Malaysia, dan Filipina/Philippines. Negara tujuan dapat berubah sesuai kerja sama internasional yang aktif.');
+    if (has(/\b(?:syarat|persyaratan|ipk|bahasa inggris|seleksi|wawancara|mahasiswa aktif)\b/i)) return answer('Syarat umum Student Exchange mencakup mahasiswa aktif ITB STIKOM Bali, memenuhi ketentuan IPK, memiliki kemampuan bahasa asing/Bahasa Inggris, serta mengikuti seleksi administrasi dan wawancara jika diminta.');
+    if (has(/\b(?:informasi|mendaftar|pendaftaran|di mana|dimana|media sosial|pengumuman|direktorat)\b/i)) return answer('Informasi dan pendaftaran Student Exchange dapat diperoleh melalui Direktorat Urusan Internasional ITB STIKOM Bali, media sosial resmi kampus, atau pengumuman internal kampus.');
+    if (has(/\b(?:tujuan|manfaat|lingkungan internasional|bahasa asing|wawasan global|lintas budaya|jaringan|percaya diri|mandiri|karier)\b/i)) return answer('Student Exchange memberi pengalaman belajar di lingkungan internasional, meningkatkan kemampuan bahasa asing, wawasan global, pengalaman lintas budaya, kepercayaan diri, kemandirian, jaringan internasional, dan nilai tambah untuk karier.');
+    return null;
+  }
+  return null;
+}
 function isNonPmbFaqDomainQuestion(question) {
   const q = String(question || '').toLowerCase();
   const asksCampusIdentity = /\b(?:apa\s+itu|profil|jelaskan\s+(?:tentang\s+)?(?:kampus\s+)?|informasi\s+tentang)\b/i.test(q)
@@ -10724,6 +10912,11 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && /\b(beasiswa|KIP|1K1S|prestasi|yayasan|potongan|PMB)\b/i.test(String(result.answer || ''));
   const structuredVisaStudySafe = /semantic-rag-(?:generic-faq-qna|uploaded-training-generic)|rag-/i.test(source)
     && /\b(izin\s+belajar|visa|mahasiswa\s+asing|dokumen|kampus|unit\s+terkait)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
+  const structuredAdminInternationalSafe = /semantic-rag-(?:admin|international)-topic-composer/i.test(source)
+    && !hasNoDataAnswerPhrase(result.answer)
+    && !hasLikelyRawDocumentLeak(result.answer)
+    && !hasUploadedDocumentTopicConflict(question, result.answer)
+    && /\b(?:izin\s+belajar|study\s+permit|visa|e\s*30\s*b|itas|kitas|sktt|mahasiswa\s+asing|student\s+exchange|gccp|double\s*degree|dual\s*degree|help\s+university|dnui|dalian|hi\s*-?\s*think|jepang|bachelor|gelar|dormitory)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
   const structuredCampusLocationSafe = /semantic-rag-campus-location|rag-campus-location/i.test(source)
     && /\b(kampus|lokasi|alamat|Denpasar|Renon|Jimbaran|Abiansemal|3\s+lokasi)\b/i.test(String(result.answer || ''));
   const structuredFeedbackSafe = /semantic-rag-feedback/i.test(source)
@@ -10749,7 +10942,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && !hasNoDataAnswerPhrase(result.answer)
     && !hasLikelyRawDocumentLeak(result.answer)
     && !hasUploadedDocumentTopicConflict(question, result.answer);
-  const structuredSemanticSafe = deterministicKnownFaqSafe || structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredPostgraduateProfileSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
+  const structuredSemanticSafe = deterministicKnownFaqSafe || structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredPostgraduateProfileSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredAdminInternationalSafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
@@ -11181,23 +11374,61 @@ async function querySemanticRag(question, options = {}) {
     const builtProgramCurriculum = buildDeterministicResponse(question, preGuardProgramCurriculum.source || 'semantic-rag-program-curriculum', preGuardProgramCurriculum, { routeStage: 'pre-guard-program-curriculum', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtProgramCurriculum, resultCacheKey);
   }
+  const preGuardInternationalCanonical = strictDocumentOnly ? null : (
+    buildInternationalCanonicalAnswer(routingQuestion || question)
+    || buildInternationalCanonicalAnswer(question)
+  );
+  if (preGuardInternationalCanonical && preGuardInternationalCanonical.answer) {
+    const builtInternationalCanonical = buildDeterministicResponse(question, preGuardInternationalCanonical.source || 'semantic-rag-international-topic-composer', preGuardInternationalCanonical, { routeStage: 'pre-guard-international-topic-composer', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtInternationalCanonical, resultCacheKey);
+  }
   const preGuardFeeText = `${routingQuestion || ''} ${question || ''}`.toLowerCase();
-  const shouldRunPreGuardFee = /\b(?:biaya|harga|bayar|ukt|dpp|spp|uang\s+(?:kuliah|masuk|pendaftaran)|pendaftaran|registrasi|rincian\s+biaya|per\s+semester|semesteran|double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(preGuardFeeText);
-  const preGuardFeeAnswer = strictDocumentOnly || !shouldRunPreGuardFee ? null : (
+  const shouldRunPreGuardFee = /\b(?:biaya|harga|bayar|ukt|dpp|spp|uang\s+(?:kuliah|masuk|pendaftaran)|pendaftaran|registrasi|rincian\s+biaya|per\s+semester|semesteran|double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(preGuardFeeText) && !/\b(?:visa|e\s*30\s*b|itas|kitas|sktt|izin\s+belajar|study\s+permit|mahasiswa\s+asing)\b/i.test(preGuardFeeText);
+  const preferDetailedDoubleDegreeFee = /\b(?:double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(preGuardFeeText)
+    && /\b(?:biaya\s+kuliah|rincian|total|dpp|ukt|pendidikan|subject|semester)\b/i.test(preGuardFeeText);
+  const preGuardFeeAnswer = strictDocumentOnly || !shouldRunPreGuardFee ? null : (preferDetailedDoubleDegreeFee ? (
+    tryDetailedFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options)
+    || tryRegistrationFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryRegistrationFeeAnswer(question, getCachedSemanticIndex(), options)
+    || tryGeneralFeeQuestionAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryGeneralFeeQuestionAnswer(question, getCachedSemanticIndex(), options)
+  ) : (
     tryRegistrationFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
     || tryRegistrationFeeAnswer(question, getCachedSemanticIndex(), options)
     || tryDetailedFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
     || tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options)
     || tryGeneralFeeQuestionAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
     || tryGeneralFeeQuestionAnswer(question, getCachedSemanticIndex(), options)
-  );
+  ));
   if (preGuardFeeAnswer && preGuardFeeAnswer.answer) {
-    const feeSource = preGuardFeeAnswer.source || (preGuardFeeAnswer.wave ? 'semantic-rag-fee-detail' : 'semantic-rag-registration-fee');
+    const feeLooksDetailed = /\b(?:Rincian\s+biaya\s+program\s+Double\s+Degree|DPP|Dana\s+Pendidikan\s+Pokok|Biaya\s+Pendidikan\s*&\s*Ujian|Subject|UKT|awal\s+masuk)\b/i.test(String(preGuardFeeAnswer.answer || ''));
+    let feeSource = preGuardFeeAnswer.source || (preGuardFeeAnswer.wave || feeLooksDetailed ? 'semantic-rag-fee-detail' : 'semantic-rag-registration-fee');
+    if (/semantic-rag-registration-fee/i.test(feeSource) && feeLooksDetailed) feeSource = 'semantic-rag-fee-detail';
     const builtFeeAnswer = buildDeterministicResponse(question, feeSource, { ...preGuardFeeAnswer, source: feeSource }, { routeStage: 'pre-guard-fee', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtFeeAnswer, resultCacheKey);
   }
 
-  const preGuardStudyPermit = strictDocumentOnly || !isStudyPermitQuestion(routingQuestion || question) ? null : (
+  const preGuardAdministrativeCanonical = strictDocumentOnly ? null : (
+    buildAdministrativeCanonicalAnswer(routingQuestion || question)
+    || buildAdministrativeCanonicalAnswer(question)
+  );
+  if (preGuardAdministrativeCanonical && preGuardAdministrativeCanonical.answer) {
+    const builtAdministrativeCanonical = buildDeterministicResponse(question, preGuardAdministrativeCanonical.source || 'semantic-rag-admin-topic-composer', preGuardAdministrativeCanonical, { routeStage: 'pre-guard-admin-topic-composer', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtAdministrativeCanonical, resultCacheKey);
+  }
+
+  const preGuardAdministrativeFaq = strictDocumentOnly ? null : (
+    tryAnchoredAdministrativeFaqAnswer(routingQuestion || question, getCachedSemanticIndex())
+    || tryAnchoredAdministrativeFaqAnswer(question, getCachedSemanticIndex())
+  );
+  if (preGuardAdministrativeFaq && preGuardAdministrativeFaq.answer) {
+    const builtAdministrativeFaq = buildDeterministicResponse(question, preGuardAdministrativeFaq.source || 'semantic-rag-admin-anchored-faq', preGuardAdministrativeFaq, { routeStage: 'pre-guard-admin-anchored-faq', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtAdministrativeFaq, resultCacheKey);
+  }
+
+  const administrativeTopicForKnownFaq = getAdministrativeInfoTopic(routingQuestion || question);
+  const preGuardStudyPermit = strictDocumentOnly || !isStudyPermitQuestion(routingQuestion || question) || (administrativeTopicForKnownFaq && !/^(study_permit|study_permit_extension|foreign_student_docs)$/.test(administrativeTopicForKnownFaq.key)) ? null : (
     tryKnownFaqQnaAnswer(routingQuestion || question) || tryKnownFaqQnaAnswer(question)
   );
   if (preGuardStudyPermit && preGuardStudyPermit.answer) {
