@@ -10799,6 +10799,19 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   if (!result || !result.answer) return result;
   const source = result.source || 'semantic-rag';
 
+  if (/^semantic-rag-uploaded-training-generic$/i.test(source) && /\b(?:goes\s*to\s*school|goestoschool|stikom\s+bali\s+goes)\b/i.test(String(question || ''))) {
+    const goesToSchoolResult = {
+      success: true,
+      answer: buildGoesToSchoolAnswer(),
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity',
+      contexts: Array.isArray(result.contexts) ? result.contexts : [],
+      confidenceScore: typeof result.confidenceScore === 'number' ? result.confidenceScore : 0.9,
+      confidenceTier: 'HIGH',
+      debug: { ...(result.debug && typeof result.debug === 'object' ? result.debug : {}), routeStage: 'uploaded-training-goes-to-school-structured-recovery' }
+    };
+    return await traceAndCacheSemanticResult(question, goesToSchoolResult, resultCacheKey, 'deterministic');
+  }
   if (shouldBlockGenericEvidenceAnswer(question, result.answer, source)) {
     const deterministic = runVettedDeterministicFallback(question, options, null, 'global-generic-evidence-guard');
     if (deterministic && deterministic.answer && !shouldBlockGenericEvidenceAnswer(question, deterministic.answer, deterministic.source || '')) {
@@ -11479,6 +11492,7 @@ async function querySemanticRag(question, options = {}) {
     const builtPreGuardAccreditation = buildDeterministicResponse(question, preGuardAccreditationEarly.source || 'rag-accreditation', preGuardAccreditationEarly, { routeStage: 'pre-guard-accreditation-early', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtPreGuardAccreditation, resultCacheKey);
   }
+
 
   const explicitSupportEntityForGenericFaq = findCampusSupportEntity(routingQuestion || question);
   const preGuardSupportEntity = strictDocumentOnly ? null : findCampusSupportEntity(routingQuestion || question);
