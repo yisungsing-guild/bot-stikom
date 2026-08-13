@@ -1620,21 +1620,199 @@ function extractJsonObject(text) {
   return null;
 }
 
+function buildHeuristicSemanticRewrite(question, options = {}) {
+  const current = String(question || '').trim();
+  const q = normalizeUserQuery(current).normalizedText || current.toLowerCase();
+  const programHint = String(options && options.programHint ? options.programHint : '').trim();
+  const intentHint = String(options && options.intentHint ? options.intentHint : '').trim();
+  const entities = {};
+  const queries = [current];
+  const signals = [];
+  let canonicalQuestion = current;
+  let intent = normalizeSemanticIntent(intentHint) || 'unknown';
+  let confidence = intent !== 'unknown' ? 0.5 : 0;
+
+  const setIntent = (nextIntent, nextConfidence, signal) => {
+    const normalized = normalizeSemanticIntent(nextIntent);
+    if (!normalized || normalized === 'unknown') return;
+    if (nextConfidence >= confidence || intent === 'unknown') {
+      intent = normalized;
+      confidence = Math.max(confidence, nextConfidence);
+    }
+    if (signal) signals.push(signal);
+  };
+  const addQuery = (value) => {
+    const clean = String(value || '').replace(/\s+/g, ' ').trim();
+    if (clean) queries.push(clean);
+  };
+  const setEntity = (key, value) => {
+    const clean = String(value || '').trim();
+    if (!clean) return;
+    if (!entities[key]) entities[key] = [];
+    if (Array.isArray(entities[key])) entities[key].push(clean);
+    else entities[key] = [String(entities[key]), clean].filter(Boolean);
+  };
+
+  const programAliasPairs = [
+    [/\b(?:sistem\s+informasi|si)\b/i, 'Sistem Informasi'],
+    [/\b(?:teknologi\s+informasi|teknik\s+informatika|ti)\b/i, 'Teknologi Informasi'],
+    [/\b(?:bisnis\s+digital|bd)\b/i, 'Bisnis Digital'],
+    [/\b(?:sistem\s+komputer|sk)\b/i, 'Sistem Komputer'],
+    [/\b(?:manajemen\s+informatika|mi)\b/i, 'Manajemen Informatika'],
+    [/\b(?:s2|s\s*2|pasca(?:sarjana|\s+sarjana)?|magister)\b/i, 'S2 Sistem Informasi'],
+    [/\b(?:dkv|desain\s+komunikasi\s+visual)\b/i, 'DKV']
+  ];
+  for (const [pattern, canonical] of programAliasPairs) {
+    if (pattern.test(q) || pattern.test(current)) setEntity('programs', canonical);
+  }
+  if (programHint) setEntity('programs', programHint);
+
+  if (/^(?:halo+|hai+|hay+|selamat\s+(?:pagi|siang|sore|malam)|permisi|kak|admin)\b/i.test(q) && q.split(/\s+/).length <= 5) setIntent('small_talk', 0.88, 'small_talk_greeting');
+
+  if (/\b(biaya|harga|tarif|ongkos|uang|bayar|dpp|ukt|spp|cicilan|angsuran|potongan|diskon|rincian\s+biaya)\b/i.test(q)) {
+    setIntent(/\b(banding|perbandingan|beda|lebih\s+murah|termurah|mahal|hemat)\b/i.test(q) ? 'fee_comparison' : 'fee_detail', 0.86, 'fee_terms');
+    canonicalQuestion = `Rincian biaya ${entityText(entities, ['programs']) || current}`;
+    addQuery(`${canonicalQuestion} pendaftaran DPP UKT biaya awal masuk`);
+  }
+
+  if (/\b(akreditasi|terakreditasi|ban-?pt|lam-?infokom|peringkat)\b/i.test(q)) {
+    setIntent('requirements', 0.72, 'accreditation_terms');
+    addQuery(`akreditasi ${entityText(entities, ['programs']) || current} BAN-PT LAM-INFOKOM peringkat SK`);
+  }
+
+  if (/\b(jurusan|prodi|program\s+studi|program\s+kuliah|pilihan\s+program)\b/i.test(q) && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa|apa\s+aj)\b/i.test(q)) {
+    setIntent('program_list', 0.9, 'program_list_terms');
+    canonicalQuestion = 'Apa saja program studi atau jurusan yang tersedia di ITB STIKOM Bali';
+    addQuery('daftar prodi jurusan program studi S1 D3 S2 Double Degree ITB STIKOM Bali');
+  }
+
+  if (/\b(apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan|tentang)\b/i.test(q) && entityText(entities, ['programs'])) {
+    setIntent('program_definition', 0.82, 'program_definition_terms');
+    canonicalQuestion = `Apa itu Program Studi ${entityText(entities, ['programs'])}`;
+    addQuery(`${canonicalQuestion} apa yang dipelajari prospek`);
+  }
+
+  if (/\b(beda|perbedaan|bedanya|banding|perbandingan|versus|vs)\b/i.test(q) && /\b(jurusan|prodi|program|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi)\b/i.test(q) && !hasSemanticFeeSignal(q)) {
+    setIntent('program_comparison', 0.86, 'program_comparison_terms');
+    canonicalQuestion = `Perbedaan program studi ${entityText(entities, ['programs']) || current}`;
+    addQuery(`${canonicalQuestion} fokus kurikulum prospek kerja`);
+  }
+
+  if (/\b(cocok|cocoknya|rekomendasi|saran|sarankan|pilih\s+jurusan|jurusan\s+apa|prodi\s+apa|minat|suka|hobi|live|tiktok|sosial\s+media|konten|content|desain|coding|programming|komputer|bisnis|marketing)\b/i.test(q)) {
+    setIntent('program_recommendation', 0.82, 'program_recommendation_terms');
+    setEntity('interest', current);
+    canonicalQuestion = `Rekomendasi program studi ITB STIKOM Bali berdasarkan minat: ${current}`;
+    addQuery(`${canonicalQuestion} sosial media konten digital marketing desain teknologi bisnis`);
+  }
+
+  if (/\b(beasiswa|kip|skss|1k1s|prestasi|yayasan|bantuan\s+biaya)\b/i.test(q)) {
+    setIntent('scholarship', 0.9, 'scholarship_terms');
+    canonicalQuestion = `Informasi beasiswa ${current}`;
+    addQuery('jenis beasiswa KIP SKSS 1K1S prestasi yayasan potongan biaya');
+  }
+
+  if (/\b(rpl|rekognisi\s+pembelajaran\s+lampau|pengalaman\s+kerja|konversi\s+sks)\b/i.test(q)) {
+    setIntent('requirements', 0.84, 'rpl_terms');
+    canonicalQuestion = 'Informasi jalur RPL Rekognisi Pembelajaran Lampau ITB STIKOM Bali';
+    addQuery(`${canonicalQuestion} syarat biaya cara daftar`);
+  }
+
+  if (/\b(double\s*degree|dual\s*degree|dnui|dalian|help\s+university|utb|universitas\s+teknologi\s+bandung|program\s+internasional|international\s+class|student\s+exchange|visa|izin\s+belajar|mahasiswa\s+asing)\b/i.test(q)) {
+    setIntent(/\b(biaya|harga|bayar|dpp|ukt|potongan)\b/i.test(q) ? 'fee_detail' : (/\b(dokumen|berkas|syarat|persyaratan|visa|izin\s+belajar|mahasiswa\s+asing|study\s+permit)\b/i.test(q) ? 'requirements' : 'dual_degree'), 0.86, 'international_dual_degree_terms');
+    canonicalQuestion = `Informasi program internasional atau Dual Degree: ${current}`;
+    addQuery('program internasional double degree dual degree DNUI HELP UTB student exchange mahasiswa asing visa study');
+  }
+
+  if (/\b(?:mengapa|kenapa|alasan)\b/i.test(q) && /\b(?:memilih|pilih|milih|kuliah\s+di)\b/i.test(q) && /\b(?:stikom|itb\s+stikom\s+bali|kampus)\b/i.test(q)) {
+    setIntent('pmb_overview', 0.78, 'campus_value_terms');
+    canonicalQuestion = 'Mengapa memilih ITB STIKOM Bali';
+    addQuery('Mengapa memilih ITB STIKOM Bali keunggulan kampus karier magang industri program internasional kegiatan mahasiswa');
+  }
+  if (/\b(career\s*center|pusat\s+karier|karier|karir|kerja|pekerjaan|lulusan|prospek|magang|job\s*fair|campus\s*hiring|rekrutmen|perusahaan|lowongan|tracer\s+study|konsultasi\s+karier|melamar\s+kerja|pelatihan\s+kerja)\b/i.test(q)) {
+    setIntent('career', 0.88, 'career_terms');
+    canonicalQuestion = `Informasi karier, Career Center, magang, lowongan, tracer study, atau campus hiring: ${current}`;
+    addQuery('Career Center konsultasi karier magang lowongan kerja job fair campus hiring tracer study alumni perusahaan');
+  }
+
+  if (/\b(inbis|inkubator\s+bisnis|hi[- ]?think|hithink|llc|language\s+learning\s+center|ukm|ormawa|organisasi\s+mahasiswa|bem|dpm|hima|komunitas|kegiatan\s+mahasiswa)\b/i.test(q)) {
+    setIntent(/\b(ukm|ormawa|organisasi|bem|dpm|hima|komunitas|kegiatan\s+mahasiswa)\b/i.test(q) ? 'ukm' : 'program_definition', 0.86, 'campus_support_terms');
+    canonicalQuestion = `Informasi layanan atau kegiatan kampus: ${current}`;
+    addQuery('Inkubator Bisnis Inbis Hi-Think LLC Language Learning Center UKM organisasi mahasiswa layanan kampus');
+  }
+
+  if (/\b(kampus|alamat|lokasi|cabang|jumlah\s+kampus|denpasar|jimbaran|renon)\b/i.test(q) && /\b(berapa|dimana|di\s+mana|lokasi|alamat|ada\s+berapa|jumlah)\b/i.test(q)) {
+    setIntent('campus_location', 0.86, 'campus_location_terms');
+    canonicalQuestion = `Lokasi dan jumlah kampus ITB STIKOM Bali: ${current}`;
+    addQuery('alamat lokasi kampus Denpasar Jimbaran ITB STIKOM Bali');
+  }
+
+  if (/\b(syarat|persyaratan|dokumen|berkas|cara\s+mengurus|izin\s+belajar|visa|study\s+permit|mahasiswa\s+asing)\b/i.test(q)) {
+    setIntent('requirements', 0.82, 'requirements_terms');
+    canonicalQuestion = `Syarat, dokumen, atau prosedur: ${current}`;
+    addQuery(`${canonicalQuestion} persyaratan dokumen berkas prosedur`);
+  }
+
+  const finalIntent = refineSemanticIntent(intent, entities, current);
+  return {
+    canonicalQuestion,
+    searchQueries: uniqueList([canonicalQuestion].concat(queries), 4),
+    intent: finalIntent,
+    entities: normalizeSemanticEntities(entities),
+    confidence: Math.max(0, Math.min(1, confidence)),
+    needsClarification: false,
+    clarificationQuestion: '',
+    heuristic: true,
+    heuristicSignals: uniqueList(signals, 12)
+  };
+}
+
+function mergeSemanticRewriteWithHeuristic(llmRewrite, heuristicRewrite, originalQuestion) {
+  const llm = llmRewrite && typeof llmRewrite === 'object' ? llmRewrite : {};
+  const heuristic = heuristicRewrite && typeof heuristicRewrite === 'object' ? heuristicRewrite : buildHeuristicSemanticRewrite(originalQuestion);
+  const llmConfidence = Number.isFinite(Number(llm.confidence)) ? Number(llm.confidence) : 0;
+  const heuristicConfidence = Number.isFinite(Number(heuristic.confidence)) ? Number(heuristic.confidence) : 0;
+  const llmIntent = normalizeSemanticIntent(llm.intent);
+  const heuristicIntent = normalizeSemanticIntent(heuristic.intent);
+  const shouldPreferHeuristic = heuristicIntent !== 'unknown' && (
+    llmIntent === 'unknown' ||
+    llmConfidence < 0.45 ||
+    (llm.needsClarification === true && heuristicConfidence >= 0.72)
+  );
+  const base = shouldPreferHeuristic ? heuristic : llm;
+  const mergedEntities = Object.assign({}, heuristic.entities || {}, llm.entities || {});
+  if (shouldPreferHeuristic) Object.assign(mergedEntities, heuristic.entities || {});
+  const canonicalQuestion = String(base.canonicalQuestion || heuristic.canonicalQuestion || llm.canonicalQuestion || originalQuestion || '').trim();
+  return {
+    canonicalQuestion,
+    searchQueries: uniqueList([canonicalQuestion]
+      .concat(base.searchQueries || [])
+      .concat(heuristic.searchQueries || [])
+      .concat(llm.searchQueries || [])
+      .concat(originalQuestion || []), 4),
+    intent: shouldPreferHeuristic ? heuristicIntent : refineSemanticIntent(llmIntent, mergedEntities, originalQuestion),
+    entities: normalizeSemanticEntities(mergedEntities),
+    confidence: Math.max(llmConfidence, heuristicConfidence),
+    needsClarification: shouldPreferHeuristic ? false : llm.needsClarification === true,
+    clarificationQuestion: shouldPreferHeuristic ? '' : String(llm.clarificationQuestion || '').trim(),
+    heuristicSignals: uniqueList([].concat(heuristic.heuristicSignals || []), 12),
+    intentEnsemble: {
+      selected: shouldPreferHeuristic ? 'heuristic' : 'llm',
+      llmIntent,
+      llmConfidence,
+      heuristicIntent,
+      heuristicConfidence,
+      signals: heuristic.heuristicSignals || []
+    }
+  };
+}
 async function rewriteQuestionWithLlm(client, question, options = {}) {
   const current = String(question || '').trim();
   const sessionData = options && options.sessionData ? options.sessionData : null;
   const programHint = String(options && options.programHint ? options.programHint : '').trim();
   const intentHint = String(options && options.intentHint ? options.intentHint : '').trim();
+  const heuristicRewrite = buildHeuristicSemanticRewrite(current, options);
   if (!client || !current) {
-    return {
-      canonicalQuestion: current,
-      searchQueries: [current],
-      intent: 'unknown',
-      entities: {},
-      confidence: 0,
-      needsClarification: false,
-      clarificationQuestion: ''
-    };
+    return heuristicRewrite;
   }
 
   const conversation = getRecentConversation(sessionData);
@@ -1693,7 +1871,7 @@ async function rewriteQuestionWithLlm(client, question, options = {}) {
     const intent = normalizeSemanticIntent(obj.intent);
     const entities = normalizeSemanticEntities(obj.entities);
     const confidence = Number.isFinite(Number(obj.confidence)) ? Math.max(0, Math.min(1, Number(obj.confidence))) : 0;
-    return {
+    return mergeSemanticRewriteWithHeuristic({
       canonicalQuestion,
       searchQueries: searchQueries.length ? searchQueries : [canonicalQuestion],
       intent: refineSemanticIntent(intent, entities, current),
@@ -1701,19 +1879,10 @@ async function rewriteQuestionWithLlm(client, question, options = {}) {
       confidence,
       needsClarification: obj.needsClarification === true,
       clarificationQuestion: String(obj.clarificationQuestion || '').trim()
-    };
+    }, heuristicRewrite, current);
   } catch (err) {
     logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] query rewrite failed; using raw question');
-    // Always return an object with canonicalQuestion set to original question
-    return {
-      canonicalQuestion: current,
-      searchQueries: [current],
-      intent: 'unknown',
-      entities: {},
-      confidence: 0,
-      needsClarification: false,
-      clarificationQuestion: ''
-    };
+    return heuristicRewrite;
   }
 }
 
@@ -3895,6 +4064,47 @@ function evaluateGenericAnswerability(question, selectedEvidence, options = {}) 
   };
 }
 
+function classifySemanticRagFailure({ question, rewrite, retrieved, selectedEvidence, answerabilityResult, stage, extra } = {}) {
+  const contexts = retrieved && Array.isArray(retrieved.contexts) ? retrieved.contexts : [];
+  const selected = Array.isArray(selectedEvidence) ? selectedEvidence : [];
+  const topScore = retrieved && Number.isFinite(Number(retrieved.topScore)) ? Number(retrieved.topScore) : 0;
+  let reason = String(stage || 'unknown');
+
+  if (stage === 'no_context') {
+    reason = contexts.length ? 'evidence_selector_filtered_all_contexts' : 'retrieval_returned_no_context';
+  } else if (stage === 'unanswerable') {
+    reason = answerabilityResult && Array.isArray(answerabilityResult.missingEvidence) && answerabilityResult.missingEvidence.length
+      ? 'selected_evidence_missing_required_information'
+      : 'selected_evidence_not_answerable';
+  } else if (stage === 'empty_answer') {
+    reason = 'llm_or_generator_returned_empty_answer';
+  } else if (stage === 'insufficient_context') {
+    reason = 'llm_declared_insufficient_context';
+  } else if (stage === 'preflight_blocked') {
+    reason = 'outbound_preflight_blocked_answer';
+  } else if (stage === 'meaning_mismatch') {
+    reason = 'answer_topic_alignment_failed';
+  } else if (stage === 'generation_error') {
+    reason = 'answer_generation_error';
+  }
+
+  return {
+    reason,
+    stage: stage || 'unknown',
+    rewriteIntent: rewrite && rewrite.intent || 'unknown',
+    rewriteConfidence: rewrite && Number.isFinite(Number(rewrite.confidence)) ? Number(rewrite.confidence) : 0,
+    intentEnsemble: rewrite && rewrite.intentEnsemble || null,
+    heuristicSignals: rewrite && Array.isArray(rewrite.heuristicSignals) ? rewrite.heuristicSignals : [],
+    topScore,
+    retrievedContextCount: contexts.length,
+    selectedEvidenceCount: selected.length,
+    indexSize: retrieved && retrieved.indexSize || 0,
+    answerabilityReason: answerabilityResult && answerabilityResult.reason || null,
+    missingEvidence: answerabilityResult && Array.isArray(answerabilityResult.missingEvidence) ? answerabilityResult.missingEvidence : [],
+    questionAnchors: extractMeaningAnchors(question || '').slice(0, 8),
+    extra: extra || null
+  };
+}
 function appendAnswerQualityLog(answer, metadata = {}) {
   const timestamp = new Date().toISOString();
   
@@ -11852,7 +12062,7 @@ async function querySemanticRag(question, options = {}) {
         contexts: selectedEvidence,
         confidenceScore: retrieved.topScore,
         confidenceTier: retrieved.topScore >= veryLowThreshold ? 'LOW' : 'VERY_LOW',
-        debug: { rewrite, minScore, veryLowThreshold, indexSize: retrieved.indexSize, answerabilityResult, strictDocumentOnly: true }
+        debug: { rewrite, minScore, veryLowThreshold, indexSize: retrieved.indexSize, answerabilityResult, failureReason: failureReason('no_context'), strictDocumentOnly: true }
       };
       if (debugTrace) {
         console.log('[TRACE RAG_NO_CONTEXT] STRICT_DOCUMENT_ONLY returning no-context result');
@@ -11896,7 +12106,7 @@ async function querySemanticRag(question, options = {}) {
       contexts: selectedEvidence,
       confidenceScore: retrieved.topScore,
       confidenceTier: retrieved.topScore >= veryLowThreshold ? 'LOW' : 'VERY_LOW',
-      debug: { rewrite, minScore, veryLowThreshold, indexSize: retrieved.indexSize, answerabilityResult }
+      debug: { rewrite, minScore, veryLowThreshold, indexSize: retrieved.indexSize, answerabilityResult, failureReason: failureReason('no_context') }
     };
     if (debugTrace) {
       console.log('[TRACE RAG_NO_CONTEXT] RETURNING no-context result');
@@ -11918,7 +12128,7 @@ async function querySemanticRag(question, options = {}) {
         contexts: selectedEvidence,
         confidenceScore: retrieved.topScore,
         confidenceTier: 'LOW',
-        debug: { rewrite, answerabilityResult, strictDocumentOnly: true }
+        debug: { rewrite, answerabilityResult, failureReason: failureReason('unanswerable'), strictDocumentOnly: true }
       };
       if (debugTrace) {
         console.log('[TRACE UNANSWERABLE] STRICT_DOCUMENT_ONLY returning unanswerable result');
@@ -11961,7 +12171,7 @@ async function querySemanticRag(question, options = {}) {
       contexts: selectedEvidence,
       confidenceScore: retrieved.topScore,
       confidenceTier: 'LOW',
-      debug: { rewrite, answerabilityResult }
+      debug: { rewrite, answerabilityResult, failureReason: failureReason('unanswerable') }
     };
     if (debugTrace) {
       console.log('[TRACE UNANSWERABLE] RETURNING unanswerable result');
@@ -11990,7 +12200,7 @@ async function querySemanticRag(question, options = {}) {
           contexts: selectedEvidence,
           confidenceScore: retrieved.topScore,
           confidenceTier: 'VERY_LOW',
-          debug: { rewrite, answerabilityResult, strictDocumentOnly: true }
+          debug: { rewrite, answerabilityResult, failureReason: failureReason('empty_answer'), strictDocumentOnly: true }
         };
         if (debugTrace) {
           console.log('[TRACE EMPTY_ANSWER] STRICT_DOCUMENT_ONLY returning empty-answer result');
@@ -12025,7 +12235,7 @@ async function querySemanticRag(question, options = {}) {
         setCachedSemanticResult(resultCacheKey, generalFallbackResult);
         return generalFallbackResult;
       }
-      const emptyAnswerResult = { success: true, answer: buildInsufficientDataAnswer('very_low'), source: 'semantic-rag-empty-answer', contexts: selectedEvidence, confidenceScore: retrieved.topScore, confidenceTier: 'VERY_LOW', debug: { rewrite, answerabilityResult } };
+      const emptyAnswerResult = { success: true, answer: buildInsufficientDataAnswer('very_low'), source: 'semantic-rag-empty-answer', contexts: selectedEvidence, confidenceScore: retrieved.topScore, confidenceTier: 'VERY_LOW', debug: { rewrite, answerabilityResult, failureReason: failureReason('empty_answer') } };
       if (debugTrace) {
         console.log('[TRACE EMPTY_ANSWER] RETURNING empty-answer result');
       }
@@ -12051,7 +12261,7 @@ async function querySemanticRag(question, options = {}) {
           source: 'semantic-rag-insufficient-context',
           contexts: selectedEvidence,
           confidenceScore: retrieved.topScore,
-          debug: { rewrite, answerabilityResult }
+          debug: { rewrite, answerabilityResult, failureReason: failureReason('insufficient_context') }
         };
         if (debugTrace) {
           console.log('[TRACE INSUFFICIENT_CONTEXT] STRICT_DOCUMENT_ONLY returning insufficient-context result');
@@ -12087,7 +12297,7 @@ async function querySemanticRag(question, options = {}) {
         source: 'semantic-rag-insufficient-context',
         contexts: selectedEvidence,
         confidenceScore: retrieved.topScore,
-        debug: { rewrite, answerabilityResult }
+        debug: { rewrite, answerabilityResult, failureReason: failureReason('insufficient_context') }
       };
       if (debugTrace) {
         console.log('[TRACE INSUFFICIENT_CONTEXT] RETURNING insufficient-context result');
@@ -12147,7 +12357,7 @@ async function querySemanticRag(question, options = {}) {
           contexts: selectedEvidence,
           confidenceScore: retrieved.topScore,
           confidenceTier: 'VERY_LOW',
-          debug: { rewrite, preflight, answerabilityResult }
+          debug: { rewrite, preflight, answerabilityResult, failureReason: failureReason('preflight_blocked', { issues: preflight.issues, action: preflight.action }) }
         };
         if (debugTrace) {
           console.log('[TRACE PREFLIGHT_BLOCKED] STRICT_DOCUMENT_ONLY returning preflight-blocked result');
@@ -12168,7 +12378,7 @@ async function querySemanticRag(question, options = {}) {
         contexts: selectedEvidence,
         confidenceScore: retrieved.topScore,
         confidenceTier: 'VERY_LOW',
-        debug: { rewrite, preflight, answerabilityResult }
+        debug: { rewrite, preflight, answerabilityResult, failureReason: failureReason('preflight_blocked', { issues: preflight.issues, action: preflight.action }) }
       };
       if (debugTrace) {
         console.log('[TRACE PREFLIGHT_BLOCKED] RETURNING preflight-blocked result');
@@ -12212,7 +12422,7 @@ async function querySemanticRag(question, options = {}) {
         contexts: selectedEvidence,
         confidenceScore: retrieved.topScore,
         confidenceTier: 'VERY_LOW',
-        debug: { rewrite, preflight, answerabilityResult, meaningAnchors: extractMeaningAnchors(question) }
+        debug: { rewrite, preflight, answerabilityResult, failureReason: failureReason('meaning_mismatch'), meaningAnchors: extractMeaningAnchors(question) }
       };
       setCachedSemanticResult(resultCacheKey, meaningMismatchResult);
       return meaningMismatchResult;
