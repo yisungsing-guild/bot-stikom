@@ -644,6 +644,66 @@ function shouldDeferEarlyEvidenceFirstToStableRoute(question) {
   if (stableFineIntents.has(fineIntent)) return true;
   return ['program', 'international_program'].includes(coarseIntent);
 }
+
+function hasStableFastLaneIntent(question) {
+  const q = String(question || '').trim();
+  if (!q) return true;
+  if (isGreetingOnly(q)) return true;
+  if (trySmallTalkAnswer(q)) return true;
+  if (hasExplicitFeeQuestionSignal(q) && !/\\b(?:visa|e\\s*30\\s*b|itas|kitas|sktt|izin\\s+belajar|study\\s+permit|mahasiswa\\s+asing)\\b/i.test(q)) return true;
+  if (/\b(?:akreditasi|terakreditasi|ban\s*-?\s*pt|lam\s*infokom)\b/i.test(q)) return true;
+  if (/\b(?:daftar|mendaftar|pendaftaran|registrasi|pmb|penerimaan\s+mahasiswa\s+baru|gelombang)\b/i.test(q)
+    && !/\b(?:yudisium|wisuda|sidang|tugas\s+akhir|izin\s+belajar|study\s+permit|visa|itas|kitas|sktt|mahasiswa\s+asing|student\s+exchange|hi-?think|goes\s*to\s*school|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis)\b/i.test(q)) return true;
+  const fine = detectFineGrainedIntent(q);
+  if ([
+    'program_list',
+    'program_definition',
+    'program_comparison',
+    'program_recommendation',
+    'program_curriculum',
+    'program_faculty',
+    'rpl',
+    'scholarship',
+    'accreditation'
+  ].includes(fine && fine.fineIntent)) return true;
+  return false;
+}
+
+function hasExplicitDocumentEvidenceAnchor(question) {
+  const q = String(question || '').trim();
+  if (!q || q.length < 8) return false;
+  if (/\b(?:mahasiswa\s+asing|foreign\s+student|izin\s+belajar|study\s+permit|visa\s*(?:study|pelajar)?|e\s*30\s*b|itas|kitas|sktt)\b/i.test(q)) return true;
+  if (/\b(?:career\s*center|pusat\s+kar(?:ir|ier)|tracer\s*study|job\s*fair|campus\s*hiring|lowongan|loker|magang|rekrutmen|konsultasi\s+kar(?:ir|ier))\b/i.test(q)) return true;
+  if (/\b(?:inkubator\s+bisnis|inkubator|inbis|incubator)\b/i.test(q)) return true;
+  if (/\b(?:hi-?think|hithink|program\s+jepang|bahasa\s+jepang|n2)\b/i.test(q)) return true;
+  if (/\b(?:student\s+exchange|pertukaran\s+mahasiswa|global\s+cross\s+cultural|gccp|bccp|short\s*course|summer\s+program|credit\s+transfer)\b/i.test(q)) return true;
+  if (/\b(?:goes\s*to\s*school|kunjungan\s+sekolah|sekolah\s+binaan)\b/i.test(q)) return true;
+  if (/\b(?:yudisium|wisuda|sidang|tugas\s+akhir|skripsi|krs|khs|transkrip|sion|baak|kalender\s+akademik|semester\s+(?:antara|pendek|genap|ganjil)|remedial|remidi|ujian\s+(?:ulang|susulan))\b/i.test(q)) return true;
+  return false;
+}
+
+function shouldTryDocumentEvidenceBeforePreGuards(question) {
+  const q = String(question || '').trim();
+  if (!q || q.length < 8) return false;
+  if (hasStableFastLaneIntent(q)) return false;
+  return hasExplicitDocumentEvidenceAnchor(q) || isDocumentEvidenceFirstCandidate(q);
+}
+function preserveAdministrativeAnswerAnchor(question, answer) {
+  const q = String(question || '');
+  const text = String(answer || '').trim();
+  if (!text) return text;
+  const pairs = [
+    { re: /\b(?:izin\s+belajar|study\s+permit)\b/i, label: 'Izin Belajar' },
+    { re: /\b(?:visa\s*(?:study|pelajar)?|e\s*30\s*b)\b/i, label: 'Visa Study/Visa E30B' },
+    { re: /\b(?:itas|kitas)\b/i, label: 'ITAS/KITAS' },
+    { re: /\bsktt\b/i, label: 'SKTT' },
+    { re: /\bmahasiswa\s+asing\b/i, label: 'mahasiswa asing' }
+  ];
+  const topic = pairs.find((item) => item.re.test(q));
+  if (!topic || topic.re.test(text)) return text;
+  const lowered = text.charAt(0).toLowerCase() + text.slice(1);
+  return `Untuk ${topic.label}, ${lowered}`;
+}
 function buildEvidenceFirstSearchQueries(question, fine) {
   const q = String(question || '').trim();
   const queries = buildAdaptiveQueryVariants(q, { limit: 8 });
@@ -667,7 +727,7 @@ function isDocumentEvidenceFirstCandidate(question) {
   if (/\b(?:resep|masak|cuaca|politik|saham|crypto|film|lagu|game|olahraga)\b/i.test(q) && !/\b(?:stikom|kampus|kuliah|mahasiswa|prodi|program|akademik)\b/i.test(q)) return false;
   if (hasExplicitFeeQuestionSignal(q)) return false;
   if (isOperationalAcademicPolicyQuestion(q)) return false;
-  if (findCampusSupportEntity(q)) return false;
+  if (findCampusSupportEntity(q) && !hasExplicitDocumentEvidenceAnchor(q)) return false;
 
   const fine = detectFineGrainedIntent(q);
   if (['list', 'program', 'program_list'].includes(fine.fineIntent) || fine.coarseIntent === 'program') return false;
@@ -812,7 +872,7 @@ async function tryEvidenceFirstLocalDocumentAnswer(question, options = {}) {
   if (faqAnswer && faqAnswer.answer && (answerMatchesStrongQuestionAnchors(question, faqAnswer.answer) || faqQuestionStrongMatch) && !hasUploadedDocumentTopicConflict(question, faqAnswer.answer)) {
     const faqSource = (isIndustryServicesQuestionAnswer(question, faqAnswer.answer) || isCareerCenterQuestion(question))
       ? 'semantic-rag-campus-support-entity'
-      : (/upload/i.test(String(faqAnswer.matchedItemSource || '')) ? 'semantic-rag-uploaded-training-generic' : (faqAnswer.source || 'semantic-rag-generic-faq-qna'));
+      : (faqAnswer.source || 'semantic-rag-generic-faq-qna');
     const framedAnswer = formatNaturalAnswerFrame(question, faqAnswer.answer, faqAnswer.source || 'semantic-rag-generic-faq-qna');
     const preflight = evaluateOutboundAnswer(framedAnswer, question, { source: faqSource });
     if (!(preflight && preflight.blocked && /uploaded-training-generic/i.test(faqSource)) && !hasRawSpreadsheetFaqDump(framedAnswer)) {
@@ -11394,6 +11454,16 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
   }
 
+  if (!strictDocumentOnly && shouldTryDocumentEvidenceBeforePreGuards(question)) {
+    try {
+      const earlyDocumentFirst = await tryEvidenceFirstLocalDocumentAnswer(question, { ...options, topK: Math.max(8, Number(options.topK || 0) || 0), routeStage: 'pre-guard-document-first' });
+      if (earlyDocumentFirst && earlyDocumentFirst.answer) {
+        return await finalizeSemanticResult(question, earlyDocumentFirst, resultCacheKey);
+      }
+    } catch (e) {
+      try { logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] document-first pre-guard probe failed'); } catch (_) {}
+    }
+  }
   const preGuardAcademicSchedule = strictDocumentOnly ? null : (tryAcademicScheduleAnswer(routingQuestion || question) || tryAcademicScheduleAnswer(question));
   if (preGuardAcademicSchedule && preGuardAcademicSchedule.answer) {
     const builtAcademicSchedule = buildDeterministicResponse(question, preGuardAcademicSchedule.source || 'semantic-rag-academic-schedule', preGuardAcademicSchedule, { routeStage: 'pre-guard-academic-schedule', normalizedRouting: normalizedRouting.changed });
@@ -11445,6 +11515,16 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtFeeAnswer, resultCacheKey);
   }
 
+  const preGuardAdministrativeFaq = strictDocumentOnly ? null : (
+    tryAnchoredAdministrativeFaqAnswer(routingQuestion || question, getCachedSemanticIndex())
+    || tryAnchoredAdministrativeFaqAnswer(question, getCachedSemanticIndex())
+  );
+  if (preGuardAdministrativeFaq && preGuardAdministrativeFaq.answer) {
+    const anchoredAdministrativeFaq = { ...preGuardAdministrativeFaq, answer: preserveAdministrativeAnswerAnchor(question, preGuardAdministrativeFaq.answer), source: 'semantic-rag-generic-faq-qna' };
+    const builtAdministrativeFaq = buildDeterministicResponse(question, 'semantic-rag-generic-faq-qna', anchoredAdministrativeFaq, { routeStage: 'pre-guard-admin-anchored-faq', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtAdministrativeFaq, resultCacheKey);
+  }
+
   const preGuardAdministrativeCanonical = strictDocumentOnly ? null : (
     buildAdministrativeCanonicalAnswer(routingQuestion || question)
     || buildAdministrativeCanonicalAnswer(question)
@@ -11453,16 +11533,6 @@ async function querySemanticRag(question, options = {}) {
     const builtAdministrativeCanonical = buildDeterministicResponse(question, preGuardAdministrativeCanonical.source || 'semantic-rag-admin-topic-composer', preGuardAdministrativeCanonical, { routeStage: 'pre-guard-admin-topic-composer', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtAdministrativeCanonical, resultCacheKey);
   }
-
-  const preGuardAdministrativeFaq = strictDocumentOnly ? null : (
-    tryAnchoredAdministrativeFaqAnswer(routingQuestion || question, getCachedSemanticIndex())
-    || tryAnchoredAdministrativeFaqAnswer(question, getCachedSemanticIndex())
-  );
-  if (preGuardAdministrativeFaq && preGuardAdministrativeFaq.answer) {
-    const builtAdministrativeFaq = buildDeterministicResponse(question, preGuardAdministrativeFaq.source || 'semantic-rag-admin-anchored-faq', preGuardAdministrativeFaq, { routeStage: 'pre-guard-admin-anchored-faq', normalizedRouting: normalizedRouting.changed });
-    return await finalizeSemanticResult(question, builtAdministrativeFaq, resultCacheKey);
-  }
-
   const administrativeTopicForKnownFaq = getAdministrativeInfoTopic(routingQuestion || question);
   const preGuardStudyPermit = strictDocumentOnly || !isStudyPermitQuestion(routingQuestion || question) || (administrativeTopicForKnownFaq && !/^(study_permit|study_permit_extension|foreign_student_docs)$/.test(administrativeTopicForKnownFaq.key)) ? null : (
     tryKnownFaqQnaAnswer(routingQuestion || question) || tryKnownFaqQnaAnswer(question)

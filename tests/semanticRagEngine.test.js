@@ -919,6 +919,57 @@ describe('semanticRagEngine', () => {
       expect(result.answer).not.toMatch(/Lokasi kampus|syarat dan dokumen pendaftaran|siap\.stikom|gelombang|Izin Belajar yang dimaksud/i);
     }
   });
+  test('document anchors use evidence before stale context or broad guards', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'misleading-double-degree',
+          chunk: 'Program Double Degree HELP University Malaysia adalah program internasional. Cara mendaftar Double Degree dilakukan melalui Admin PMB.',
+          filename: 'FAQ Double Degree.docx',
+          source: 'upload',
+          trainingId: 'training-dd',
+          embedding: [1, 0, 0]
+        },
+        {
+          id: 'student-exchange-faq',
+          chunk: 'Q: Apa itu Student Exchange di ITB STIKOM Bali? A: Student Exchange adalah program pertukaran mahasiswa yang memberikan kesempatan kepada mahasiswa ITB STIKOM Bali untuk belajar di kampus luar negeri dalam periode tertentu.',
+          filename: 'FAQ Student Exchange.docx',
+          source: 'upload',
+          trainingId: 'training-exchange',
+          embedding: [1, 0, 0]
+        },
+        {
+          id: 'academic-yudisium',
+          chunk: 'Pelaksanaan Yudisium dilaksanakan pada Rabu, 14 Oktober 2026. Informasi ini termasuk kalender akademik dan yudisium mahasiswa.',
+          filename: 'Kalender Akademik.docx',
+          source: 'upload',
+          trainingId: 'training-yudisium',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((value) => String(value || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const sessionData = {
+      history: [
+        { role: 'user', content: 'apa ada program double degree?' },
+        { role: 'assistant', content: 'Ya, ada program Double Degree HELP, DNUI, dan UTB.' }
+      ]
+    };
+
+    const exchange = await querySemanticRag('Apa itu Student Exchange di ITB STIKOM Bali?', { topK: 5, sessionData });
+    expect(exchange.success).toBe(true);
+    expect(exchange.answer).toMatch(/Student Exchange adalah program pertukaran mahasiswa/i);
+    expect(exchange.answer).not.toMatch(/Cara mendaftar Double Degree|Admin PMB/i);
+
+    const yudisium = await querySemanticRag('pelaksanaan yudisium kapan?', { topK: 5, sessionData });
+    expect(yudisium.success).toBe(true);
+    expect(yudisium.answer).toMatch(/Yudisium|14 Oktober 2026/i);
+    expect(yudisium.answer).not.toMatch(/Double Degree|Admin PMB/i);
+  });
   test('rewrites informal user question and answers from retrieved training context', async () => {
     process.env.OPENAI_API_KEY = 'test-key';
     process.env.SEMANTIC_RAG_MIN_SCORE = '0.01';
