@@ -1521,7 +1521,7 @@ function getRecentConversationTextForResolution(sessionData) {
 function hasExplicitContextAnchor(question) {
   const q = String(question || '').toLowerCase();
   if (!q) return false;
-  return /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen\s+informatika|sistem\s+komputer|s2|magister|pasca\s*sarjana|pascasarjana|rpl|double\s*degree|dual\s*degree|dnui|dalian|utb|help\s+university|career\s*center|pusat\s+karier|pusat\s+karir|tracer\s*study|inbis|inkubator\s+bisnis|hi-?think|language\s+learning\s+center|\bllc\b|mahasiswa\s+asing|izin\s+belajar|visa\s*study|student\s*exchange|bccp|gccp|short\s*course|beasiswa|skss|kampus|akreditasi|prodi|jurusan)\b/i.test(q);
+  return /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen\s+informatika|sistem\s+komputer|s2|magister|pasca\s*sarjana|pascasarjana|rpl|double\s*degree|dual\s*degree|dnui|dalian|utb|help\s+university|career\s*center|pusat\s+karier|pusat\s+karir|tracer\s*study|inbis|inkubator\s+bisnis|hi-?think|language\s+learning\s+center|\bllc\b|mahasiswa\s+asing|izin\s+belajar|visa\s*study|student\s*exchange|bccp|gccp|short\s*course|beasiswa|skss|kampus|akreditasi|prodi|jurusan|yudisium|wisuda|sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|krs|khs|transkrip|sion|baak|semester\s+(?:ganjil|genap|antara|pendek)|kalender\s+akademik|jadwal\s+akademik|remedial|remidi|ujian\s+(?:ulang|susulan))\b/i.test(q);
 }
 
 function isContextualSemanticFollowup(question) {

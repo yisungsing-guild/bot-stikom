@@ -81,6 +81,7 @@ const CASES = [
   { q: 'akreditasi kampus ITB STIKOM Bali apa?', mustInclude: ['BAN-PT'], productionLike: true },
   { q: 'akreditasi sistem komputer apa?', mustInclude: ['Baik Sekali'] },
   { q: 'biayanya?', mustInclude: ['biaya program Career Center', 'belum menemukan informasi'], allowNoData: true, productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'Apa itu Career Center ITB STIKOM Bali?' }, { direction: 'bot', message: 'Career Center ITB STIKOM Bali membantu mahasiswa dan alumni terkait karier, magang, job fair, dan campus hiring.' }] } },
+  { q: 'pelaksanaan yudisium kapan?', mustInclude: ['Yudisium', '14 Oktober 2026'], productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'cara daftar double degree gimana?' }, { direction: 'bot', message: 'Untuk mengikuti program Double Degree, kakak perlu mendaftar melalui PMB/admin kampus.' }] } },
   { q: 'halo apa kabar?', mustInclude: ['baik-baik saja'], productionLike: true },
   { q: 'Apa kabarnya?', mustInclude: ['baik-baik saja'], productionLike: true, sessionData: { messages: [{ direction: 'user', message: 'Berapa gelar Double Degree HELP?' }, { direction: 'bot', message: 'Pada Program Double Degree HELP University Malaysia, mahasiswa memperoleh dua gelar: Sarjana Komputer (S.Kom) dan Bachelor of Information Technology (BIT).' }] } }
 ];
