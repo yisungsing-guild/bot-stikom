@@ -1528,7 +1528,8 @@ function isContextualSemanticFollowup(question) {
   const q = String(question || '').toLowerCase().trim();
   if (!q || hasExplicitContextAnchor(q)) return false;
   const words = q.split(/\s+/).filter(Boolean);
-  if (words.length <= 4 && /\b(?:apa|itu|ini|tadi|gimana|bagaimana|caranya|syaratnya|dokumennya|biayanya|rincian(?:nya)?|detail(?:nya)?|kapan|dimana|mana|harus|ikut|daftar|potongan(?:nya)?|bedanya|keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?)\b/i.test(q)) {
+  if (/^(?:apa|gimana|bagaimana)\s+ya\??$/i.test(q) || /^(?:terus|lalu)\s+gimana\??$/i.test(q)) return false;
+  if (words.length <= 4 && /\b(?:itu|ini|tadi|caranya|syaratnya|dokumennya|berkasnya|biayanya|harganya|bayarnya|rincian(?:nya)?|detail(?:nya)?|kapan|dimana|mana|harus|ikut|daftar|potongan(?:nya)?|diskonnya|bedanya|keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?)\b/i.test(q)) {
     return true;
   }
   return /\b(?:yang\s+(?:itu|tadi|mana)|lanjut(?:kan)?|kalau\s+yang\s+itu|terus\s+gimana|lalu\s+gimana|apa\s+saja\s+syaratnya|apa\s+aja\s+dokumennya|rincian\s+biayanya|detail\s+biayanya|harus\s+ke\s+sana|harus\s+ke\s+china|bisa\s+ikut\s+kapan|mulai\s+kapan)\b/i.test(q);
@@ -1559,6 +1560,14 @@ function inferContextTopicFromSession(sessionData) {
   return topics.find((topic) => topic.re.test(recent)) || null;
 }
 
+function canResolveFeeFollowupForTopic(topicKey) {
+  return /^(?:dual_degree(?:_dnui|_help|_utb)?|foreign_student|rpl|postgraduate|program_list|business_digital|information_system|information_technology|computer_system|informatics_management)$/i.test(String(topicKey || ''));
+}
+
+function canResolveRequirementFollowupForTopic(topicKey) {
+  return !/^(?:career_center|inbis|llc)$/i.test(String(topicKey || ''));
+}
+
 function resolveSemanticFollowupQuestion(question, options = {}) {
   const original = String(question || '').trim();
   const smallTalkWords = original.split(/\s+/).filter(Boolean).length;
@@ -1573,10 +1582,18 @@ function resolveSemanticFollowupQuestion(question, options = {}) {
   if (!topic) return { changed: false, question: original, topic: null };
   const q = original.toLowerCase();
   let resolved = `${topic.label}: ${original}`;
-  if (/\b(?:biaya|bayar|harga|uang|potongan|diskon|rincian)\b/i.test(q)) {
-    resolved = `Rincian biaya dan potongan untuk ${topic.label}`;
+  if (/\b(?:biaya(?:nya)?|bayar(?:nya)?|harga(?:nya)?|uang(?:nya)?|potongan(?:nya)?|diskon(?:nya)?|rincian(?:nya)?|detail(?:nya)?)\b/i.test(q)) {
+    if (!canResolveFeeFollowupForTopic(topic.key)) {
+      resolved = `Biaya untuk ${topic.label}`;
+    } else {
+      resolved = `Rincian biaya dan potongan untuk ${topic.label}`;
+    }
   } else if (/\b(?:syarat(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?)\b/i.test(q)) {
-    resolved = `Syarat dan dokumen untuk ${topic.label}`;
+    if (!canResolveRequirementFollowupForTopic(topic.key)) {
+      resolved = `Syarat atau dokumen untuk ${topic.label}`;
+    } else {
+      resolved = `Syarat dan dokumen untuk ${topic.label}`;
+    }
   } else if (/\b(?:cara|alur|proses|daftar|mengurus)\b/i.test(q)) {
     resolved = `Cara, alur, atau proses untuk ${topic.label}`;
   } else if (/\b(?:kapan|mulai|ikut|mengikuti)\b/i.test(q)) {
@@ -5696,7 +5713,7 @@ function asksCampusSupportOwner(question) {
 
 function asksCampusSupportTechnicalDetail(question) {
   const q = String(question || '').toLowerCase();
-  return /\b(?:cara(?:nya)?|bagaimana|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|proses(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?|kuota|kouta|seleksi|interview|wawancara|biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp|formulir|form(?:nya)?|link(?:nya)?|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengelola(?:nya)?|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
+  return /\b(?:cara(?:nya)?|bagaimana|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|proses(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?|kuota|kouta|seleksi|interview|wawancara|biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp|formulir|form(?:nya)?|link(?:nya)?|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengelola(?:nya)?|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
 }
 
 function buildCampusSupportTechnicalNoDataAnswer(entity, question = '') {
@@ -5705,8 +5722,8 @@ function buildCampusSupportTechnicalNoDataAnswer(entity, question = '') {
   let detail = 'detail teknis seperti syarat, jadwal, biaya, kontak, atau alur pendaftaran';
   if (/\b(?:cara|bagaimana|gimana|alur|prosedur|mekanisme|proses|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
     detail = 'alur/cara mengikuti atau mendaftar';
-  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?|kuota|kouta|seleksi|interview|wawancara)\b/i.test(q)) {
-    detail = 'syarat, kuota, atau proses seleksi peserta';
+  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?|kuota|kouta|seleksi|interview|wawancara)\b/i.test(q)) {
+    detail = 'syarat, dokumen, kuota, atau proses seleksi peserta';
   } else if (/\b(?:jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?)\b/i.test(q)) {
     detail = 'jadwal, deadline, atau periode pelaksanaan';
   } else if (/\b(?:biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp)\b/i.test(q)) {
@@ -6267,6 +6284,7 @@ function buildInternationalCanonicalAnswer(question) {
   if (has(/\b(?:biaya|harga|bayar|rincian biaya|pendaftaran|dpp|ukt)\b/i)) return null;
 
   if (topic.key === 'double_degree_help') {
+    if (has(/\b(?:syarat|persyaratan|dokumen|berkas|kapan|mulai)\b/i)) return null;
     if (has(/\b(?:gelar|degree|s\.\s*kom|skom|bachelor of information technology|\bbit\b|dua gelar)\b/i)) return answer('Pada Program Double Degree HELP University Malaysia, mahasiswa memperoleh dua gelar: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia.');
     if (has(/\b(?:harus.*malaysia|kuliah di malaysia|tanpa.*malaysia|di mana|dimana|offline|indonesia)\b/i)) return answer('Program Double Degree HELP University dapat diikuti tanpa harus kuliah di Malaysia. Perkuliahan dilaksanakan secara offline di ITB STIKOM Bali dengan kurikulum yang mengacu pada kerja sama program.');
     if (has(/\b(?:program studi|prodi)\b/i)) return answer('Program Double Degree HELP University menggunakan Program Studi Sistem Informasi di ITB STIKOM Bali.');
@@ -8290,7 +8308,7 @@ function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
 }
 function asksUkmTechnicalDetail(question) {
   const q = String(question || '').toLowerCase();
-  return /\b(?:cara(?:nya)?|bagaimana\s+cara|bagaimana|gimana\s+cara|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|proses(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?|kuota|kouta|seleksi|interview|wawancara|biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp|formulir|form(?:nya)?|link(?:nya)?|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|pembina(?:nya)?|pelatih|coach|penanggung\s+jawab|admin(?:nya)?|pengurus(?:nya)?|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
+  return /\b(?:cara(?:nya)?|bagaimana\s+cara|bagaimana|gimana\s+cara|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|proses(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?|kuota|kouta|seleksi|interview|wawancara|biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp|formulir|form(?:nya)?|link(?:nya)?|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|pembina(?:nya)?|pelatih|coach|penanggung\s+jawab|admin(?:nya)?|pengurus(?:nya)?|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
 }
 
 function buildUkmTechnicalNoDataAnswer(ukmName, question = '') {
@@ -8299,7 +8317,7 @@ function buildUkmTechnicalNoDataAnswer(ukmName, question = '') {
   let detail = 'detail teknis seperti syarat, jadwal, kontak, pembina, atau alur pendaftaran';
   if (/\b(?:cara|bagaimana\s+cara|bagaimana|gimana\s+cara|gimana|alur|prosedur|mekanisme|proses|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
     detail = 'alur/cara bergabung atau mendaftar';
-  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?|kuota|kouta|seleksi|interview|wawancara)\b/i.test(q)) {
+  } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?|kuota|kouta|seleksi|interview|wawancara)\b/i.test(q)) {
     detail = 'syarat anggota, kuota, atau proses seleksi';
   } else if (/\b(?:jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?)\b/i.test(q)) {
     detail = 'jadwal kegiatan, deadline, atau periode pendaftaran';
