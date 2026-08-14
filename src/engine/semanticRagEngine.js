@@ -1001,7 +1001,7 @@ function buildStructuredTableFaqAnswerFromIndex(question, indexForQuery) {
   const answer = best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer;
   const source = /upload/i.test(String(best.item && best.item.source ? best.item.source : '')) ? 'semantic-rag-uploaded-training-generic' : 'semantic-rag-generic-faq-qna';
   const preflight = evaluateOutboundAnswer(answer, q, { source });
-  if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer)) return null;
+  if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer) || hasRawEvidenceSnippetShape(answer)) return null;
   return {
     answer,
     source: 'semantic-rag-generic-faq-qna',
@@ -1844,10 +1844,11 @@ function isContextualSemanticFollowup(question) {
   if (!q || hasExplicitContextAnchor(q)) return false;
   const words = q.split(/\s+/).filter(Boolean);
   if (/^(?:apa|gimana|bagaimana)\s+ya\??$/i.test(q) || /^(?:terus|lalu)\s+gimana\??$/i.test(q)) return false;
-  if (words.length <= 4 && /\b(?:itu|ini|tadi|caranya|syaratnya|dokumennya|berkasnya|biayanya|harganya|bayarnya|rincian(?:nya)?|detail(?:nya)?|kapan|dimana|mana|harus|ikut|daftar|potongan(?:nya)?|diskonnya|bedanya|keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?)\b/i.test(q)) {
+  const shortFollowup = /\b(?:itu|ini|tadi|caranya|alurnya|prosesnya|syaratnya|dokumennya|berkasnya|biayanya|harganya|bayarnya|rincian(?:nya)?|detail(?:nya)?|kapan|dimana|mana|harus|wajib|ikut|daftar|mendaftar|potongan(?:nya)?|diskonnya|bedanya|perbedaannya|keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?|tujuan(?:nya)?|kegiatan(?:nya)?|jenis(?:nya)?|pilihan(?:nya)?|negara(?:nya)?|lokasi(?:nya)?|tempat(?:nya)?|durasi(?:nya)?|lamanya|berapa\s+lama|gelar(?:nya)?|kurikulum(?:nya)?|dipelajari|belajarnya|kerjanya|karier(?:nya)?|prospek(?:nya)?|akreditasi(?:nya)?)\b/i;
+  if (words.length <= 5 && shortFollowup.test(q)) {
     return true;
   }
-  return /\b(?:yang\s+(?:itu|tadi|mana)|lanjut(?:kan)?|kalau\s+yang\s+itu|terus\s+gimana|lalu\s+gimana|apa\s+saja\s+syaratnya|apa\s+aja\s+dokumennya|rincian\s+biayanya|detail\s+biayanya|harus\s+ke\s+sana|harus\s+ke\s+china|bisa\s+ikut\s+kapan|mulai\s+kapan)\b/i.test(q);
+  return /\b(?:yang\s+(?:itu|tadi|mana)|lanjut(?:kan)?|kalau\s+yang\s+itu|terus\s+gimana|lalu\s+gimana|apa\s+saja\s+syaratnya|apa\s+aja\s+dokumennya|apa\s+saja\s+jenisnya|apa\s+aja\s+pilihannya|rincian\s+biayanya|detail\s+biayanya|harus\s+ke\s+sana|harus\s+ke\s+china|bisa\s+ikut\s+kapan|mulai\s+kapan|berapa\s+lama|gelarnya\s+apa|tujuannya\s+apa|manfaatnya\s+apa)\b/i.test(q);
 }
 
 function inferContextTopicFromSession(sessionData) {
@@ -1915,8 +1916,22 @@ function resolveSemanticFollowupQuestion(question, options = {}) {
     resolved = `Kapan mahasiswa bisa mengikuti ${topic.label}`;
   } else if (/\b(?:harus|wajib|ke\s+sana|ke\s+china|ke\s+luar)\b/i.test(q)) {
     resolved = `Apakah ${topic.label} harus dilakukan ke luar negeri atau ke negara partner`;
-  } else if (/\b(?:keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?|untung|keuntungan(?:nya)?|bagus|kenapa|mengapa)\b/i.test(q)) {
-    resolved = `Keunggulan dan manfaat ${topic.label}`;
+  } else if (/\b(?:gelar(?:nya)?|title)\b/i.test(q)) {
+    resolved = `Gelar yang diperoleh dari ${topic.label}`;
+  } else if (/\b(?:durasi(?:nya)?|lamanya|berapa\s+lama|masa\s+studi)\b/i.test(q)) {
+    resolved = `Durasi atau masa studi ${topic.label}`;
+  } else if (/\b(?:negara(?:nya)?|tujuan\s+negara|ke\s+mana|kemana)\b/i.test(q)) {
+    resolved = `Negara tujuan atau lokasi pelaksanaan ${topic.label}`;
+  } else if (/\b(?:jenis(?:nya)?|pilihan(?:nya)?|opsi(?:nya)?|apa\s+saja)\b/i.test(q)) {
+    resolved = `Jenis atau pilihan yang tersedia pada ${topic.label}`;
+  } else if (/\b(?:kurikulum(?:nya)?|dipelajari|belajarnya|materi(?:nya)?)\b/i.test(q)) {
+    resolved = `Kurikulum dan materi yang dipelajari pada ${topic.label}`;
+  } else if (/\b(?:kerja(?:nya)?|karier(?:nya)?|karir(?:nya)?|prospek(?:nya)?)\b/i.test(q)) {
+    resolved = `Peluang kerja atau karier terkait ${topic.label}`;
+  } else if (/\b(?:akreditasi(?:nya)?|akredit)\b/i.test(q)) {
+    resolved = `Akreditasi ${topic.label}`;
+  } else if (/\b(?:keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?|tujuan(?:nya)?|kegiatan(?:nya)?|untung|keuntungan(?:nya)?|bagus|kenapa|mengapa)\b/i.test(q)) {
+    resolved = `Tujuan, keunggulan, manfaat, atau kegiatan pada ${topic.label}`;
   } else if (/\b(?:apa|itu|ini|maksud)\b/i.test(q)) {
     resolved = `Apa itu ${topic.label}`;
   }
@@ -3953,7 +3968,7 @@ async function tryDirectAcademicAdminUploadedSectionAnswer(question, options = {
   if (!answer) return null;
   const framedAnswer = formatNaturalAnswerFrame(question, answer, 'semantic-rag-uploaded-training-generic');
   const preflight = evaluateOutboundAnswer(framedAnswer, question, { source: 'semantic-rag-uploaded-training-generic' });
-  if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer)) return null;
+  if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer) || hasRawEvidenceSnippetShape(answer)) return null;
 
   return {
     success: true,
@@ -6148,13 +6163,31 @@ function faqComparableTokens(text) {
   const stop = new Set([
     'apa','apakah','bagaimana','gimana','berapa','kapan','dimana','mana','siapa','mengapa','kenapa','yang','dan','atau','dari','untuk','dengan','pada','di','ke','itu','ini','adalah','ada','saja','aja','ya','kak','min','admin','saya','aku','mau','ingin','tentang','jelaskan','detail','informasi','info','program','stikom','bali','itb'
   ]);
-  return normalizeFacilityTerm(stripFaqQaLabel(text))
+  const baseTokens = normalizeFacilityTerm(stripFaqQaLabel(text))
     .split(/\s+/)
     .map((token) => token.replace(/(?:nya|annya)$/i, ''))
     .map((token) => token === 'kuliah' ? 'studi' : token)
     .map((token) => ['prodi', 'jurusan'].includes(token) ? 'program' : token)
     .map((token) => ['pasca', 'pascasarjana', 'magister', 'master'].includes(token) ? 's2' : token)
     .filter((token) => token.length >= 3 && !stop.has(token));
+  const expanded = [];
+  for (const token of baseTokens) {
+    expanded.push(token);
+    if (['rekrutmen', 'rekrut', 'perekrutan'].includes(token)) expanded.push('campus', 'hiring', 'lowongan');
+    if (['perusahaan', 'industri', 'dundi'].includes(token)) expanded.push('campus', 'hiring', 'kerja');
+    if (['lowongan', 'loker'].includes(token)) expanded.push('kerja', 'karier', 'career');
+    if (['karir', 'karier', 'career'].includes(token)) expanded.push('kerja', 'lowongan');
+    if (['magang', 'internship'].includes(token)) expanded.push('kerja', 'industri');
+    if (['visa', 'vitas', 'e30b'].includes(token)) expanded.push('study', 'permit', 'itas');
+    if (['itas', 'kitas'].includes(token)) expanded.push('izin', 'tinggal');
+    if (['sktt'].includes(token)) expanded.push('domisili');
+    if (['asing', 'foreign'].includes(token)) expanded.push('international', 'mahasiswa');
+    if (['exchange', 'pertukaran'].includes(token)) expanded.push('student', 'internasional');
+    if (['hi', 'hithink'].includes(token)) expanded.push('think', 'jepang');
+    if (['tujuan', 'manfaat', 'keuntungan', 'keunggulan'].includes(token)) expanded.push('benefit');
+    if (['durasi', 'lama'].includes(token)) expanded.push('masa', 'studi');
+  }
+  return Array.from(new Set(expanded));
 }
 
 function scoreFaqQuestionMatch(userQuestion, faqQuestion, target = '', targetTokens = []) {
@@ -6597,11 +6630,18 @@ function getInternationalProgramTopic(question) {
 }
 
 function buildInternationalCanonicalAnswer(question) {
-  const topic = getInternationalProgramTopic(question);
-  if (!topic) return null;
   const q = normalizeFacilityTerm(question || '');
+  const topic = getInternationalProgramTopic(question);
+  if (!topic) {
+    if (/\b(?:program\s+internasional|kelas\s+internasional|international\s+program|international\s+class)\b/i.test(q)
+      && /\b(?:apa\s+saja|apa\s+aja|ada|tersedia|pilihan|list|daftar)\b/i.test(q)) {
+      return tryInternationalClassFallback(question);
+    }
+    return null;
+  }
   const has = (re) => re.test(q);
   const answer = (value) => ({ answer: value, source: 'semantic-rag-international-topic-composer', frameSource: 'semantic-rag-training-specific', internationalTopic: topic.key });
+  const noData = (value = 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu.') => ({ answer: value, source: 'semantic-rag-insufficient-data', frameSource: 'semantic-rag-training-specific', internationalTopic: topic.key });
   if (has(/\b(?:biaya|harga|bayar|rincian biaya|pendaftaran|dpp|ukt)\b/i)) return null;
 
   if (topic.key === 'double_degree_help') {
@@ -6626,6 +6666,7 @@ function buildInternationalCanonicalAnswer(question) {
   }
 
   if (topic.key === 'hi_think') {
+    if (has(/\b(?:berapa\s+lama|durasi|lama|masa\s+studi|gelar|degree|title)\b/i)) return noData('Saya belum menemukan data yang sesuai untuk durasi atau gelar Program Hi-Think.');
     if (has(/\b(?:semester|year 3|tahun ke|mulai kapan|kapan)\b/i)) return answer('Program Hi-Think dapat diikuti mulai Semester 5 atau Year 3.');
     if (has(/\b(?:n2|minimal n2|level kemampuan|belum mencapai n2|syarat.*jepang)\b/i)) return answer('Untuk jalur kerja di Jepang pada Program Hi-Think, kemampuan bahasa Jepang minimal N2 menjadi syarat penting. Jika belum mencapai N2, mahasiswa tetap dapat diarahkan pada peluang kerja di Jakarta atau China sambil meningkatkan kemampuan bahasa Jepang.');
     if (has(/\b(?:kerja|karier|peluang|jakarta|china|jepang)\b/i)) return answer('Program Hi-Think memiliki jalur karier dan peluang kerja setelah lulus. Peserta berkesempatan bekerja di Jepang, China, atau Jakarta, dengan ketentuan kemampuan bahasa Jepang terutama untuk jalur Jepang.');
@@ -6977,7 +7018,7 @@ function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}
   const answer = best.answer.length > 1100 ? `${best.answer.slice(0, 1097).trim()}...` : best.answer;
   const source = /upload/i.test(String(best.item && best.item.source ? best.item.source : '')) ? 'semantic-rag-uploaded-training-generic' : 'semantic-rag-generic-faq-qna';
   const preflight = evaluateOutboundAnswer(answer, q, { source });
-  if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer)) return null;
+  if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer) || hasRawEvidenceSnippetShape(answer)) return null;
   return {
     answer,
     source: 'semantic-rag-generic-faq-qna',
@@ -6989,10 +7030,18 @@ function buildGenericFaqQnaAnswerFromIndex(question, indexForQuery, options = {}
   };
 }
 
+function hasSpecificFaqQnaEntity(question) {
+  const q = String(question || '').toLowerCase();
+  if (!q) return false;
+  if (findCampusSupportEntity(q)) return true;
+  return /\b(?:dnui|dalian|help\s+university|utb|universitas\s+teknologi\s+bandung|mahasiswa\s+asing|foreign\s+student|izin\s+belajar|study\s+permit|visa\s*(?:study|studi|pelajar)?|e\s*30\s*b|itas|kitas|sktt|career\s*center|pusat\s+kar(?:ir|ier)|tracer\s*study|job\s*fair|campus\s*hiring|inkubator\s+bisnis|inbis|hi-?think|hithink|student\s+exchange|pertukaran\s+mahasiswa|gccp|bccp|short\s*program|summer\s+program|credit\s+transfer)\b/i.test(q);
+}
 function tryGenericFaqQnaAnswer(question, indexForQuery, options = {}) {
   const q = String(question || '');
   const fine = detectFineGrainedIntent(q);
-  if (['program_comparison', 'program_curriculum', 'program_faculty', 'international_program_list', 'international_program_requirement', 'international_program_fee'].includes(fine.fineIntent)) return null;
+  const specificFaqEntity = hasSpecificFaqQnaEntity(q);
+  if (['program_comparison', 'program_curriculum', 'program_faculty'].includes(fine.fineIntent)) return null;
+  if (['international_program_list', 'international_program_requirement', 'international_program_fee'].includes(fine.fineIntent) && !specificFaqEntity) return null;
   const asksProgramDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|maksud(?:nya)?|jelaskan)\b/i.test(q)
     && /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i.test(q);
   if (asksProgramDefinition) return null;
@@ -8372,7 +8421,7 @@ function tryInternationalClassFallback(question) {
       '',
       'Saya tidak mencampur daftar ini dengan prodi reguler. Untuk syarat, kuota, jadwal, dan alur final, kakak bisa konfirmasi ke Admin PMB atau bagian kerja sama/international office kampus.'
     ].join('\n'),
-    source: 'semantic-rag-international-program-list'
+    source: 'semantic-rag-international-class-fallback'
   };
 }
 function tryCareerFallback(_question) {
@@ -10888,6 +10937,9 @@ function hasRawEvidenceSnippetShape(answer) {
   if (hasLikelyRawDocumentLeak(text)) return true;
   if (/\b(?:SOURCE_CHUNKS|Sheet:|chunkId|trainingId|metadata|filename|sourceFile)\b/i.test(text)) return true;
   if (/\b(?:Program Studi\s*:|No\s*:\s*\d+\s*\||INSTITUT TEKNOLOGI DAN BISNIS \(ITB\) STIKOM BALI Kampus|Kampus Denpasar\s+Kampus Jimbaran)\b/i.test(text)) return true;
+  const embeddedQuestionCount = (text.match(/\b(?:apa\s+itu|apakah|bagaimana|gimana|berapa|kapan|di\s*mana|dimana|siapa|dokumen\s+apa|apa\s+saja)\b[^?]{4,180}\?/gi) || []).length;
+  if (embeddedQuestionCount >= 2) return true;
+  if (embeddedQuestionCount >= 1 && /\b(?:izin\s+belajar|study\s+permit|visa|itas|kitas|sktt|mahasiswa\s+asing)\b/i.test(text) && text.length > 350) return true;
   const bulletCount = (text.match(/(?:^|\n|\s)-\s+/g) || []).length;
   const startsWithBullet = /^[-*]\s+/.test(text);
   const hasQuestionBullet = /(?:^|\n|\s)-\s*(?:\d+[.)]\s*)?(?:apa|apakah|kapan|bagaimana|gimana|berapa|di\s*mana|dimana|siapa)\b/i.test(text);
@@ -10937,12 +10989,40 @@ function hasUploadedTrainingAnswerGrounding(question, answer) {
 
   return false;
 }
+function failsExpectedAnswerShape(question, answer) {
+  const q = String(question || '').toLowerCase();
+  const a = String(answer || '').toLowerCase();
+  if (!q || !a || hasNoDataAnswerPhrase(a)) return false;
+
+  if (/\b(?:kapan|tanggal|jadwal|pukul|jam|deadline|batas|periode|gelombang\s+berapa)\b/i.test(q)) {
+    return !/\b(?:\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)|20\d{2}|pukul|jam|wita|wib|wit|semester|gelombang|periode|minggu|bulan|hari|tanggal)\b/i.test(a);
+  }
+
+  if (/\b(?:berapa|nominal|harga|biaya|ukt|dpp|sks|semester|durasi|lama|total|jumlah)\b/i.test(q)) {
+    return !/\b(?:rp\.?\s*\d|\d+\s*(?:sks|semester|tahun|bulan|minggu|hari|orang|prodi|program|juta|ribu)|\d+[,.]?\d*)\b/i.test(a);
+  }
+
+  if (/\b(?:dokumen|berkas|syarat|persyaratan|diperlukan|dibutuhkan|perlu\s+diurus)\b/i.test(q)) {
+    return !/\b(?:dokumen|berkas|syarat|persyaratan|paspor|passport|foto|loa|letter\s+of\s+acceptance|ijazah|transkrip|financial\s+statement|statement\s+letter|medical\s+statement|surat|form|kitas|itas|sktt|visa|izin\s+belajar)\b/i.test(a);
+  }
+
+  if (/\b(?:gelar|title|degree)\b/i.test(q)) {
+    return !/\b(?:gelar|s\.kom|s\.?kom|s\.bns|s\.?bns|m\.kom|m\.?kom|bachelor|bit|bm|sarjana|magister)\b/i.test(a);
+  }
+
+  if (/\b(?:negara|china|tiongkok|malaysia|jepang|thailand|filipina|philippines|luar\s+negeri|lokasi|di\s+mana|dimana)\b/i.test(q)) {
+    return !/\b(?:china|tiongkok|malaysia|jepang|japan|thailand|filipina|philippines|indonesia|denpasar|jimbaran|kampus|dnui|help\s+university|luar\s+negeri|onsite|online|offline)\b/i.test(a);
+  }
+
+  return false;
+}
 function shouldBlockGenericEvidenceAnswer(question, answer, source = '') {
   if (!isGenericEvidenceLikeSource(source)) return false;
   const text = String(answer || '').trim();
   if (!text) return false;
   if (hasNoDataAnswerPhrase(text)) return false;
   if (hasRawEvidenceSnippetShape(text)) return true;
+  if (failsExpectedAnswerShape(question, text)) return true;
   if (/^semantic-rag-uploaded-training-generic$/i.test(String(source || '')) && !hasUploadedTrainingAnswerGrounding(question, text)) return true;
   const meaning = answerMatchesQuestionMeaning(question, text, source);
   if (meaning === false) return true;
@@ -10951,11 +11031,14 @@ function shouldBlockGenericEvidenceAnswer(question, answer, source = '') {
   const stable = new Set(['program_list','program_definition','program_comparison','program_recommendation','program_curriculum','program_faculty','career_readiness','international_program_list','international_program_requirement','international_program_fee','fee','scholarship','accreditation','facility_list','academic_schedule','academic_requirement','registration_info','pmb_info']);
   if (stable.has(String(fine.fineIntent || '').toLowerCase()) && !answerMatchesStrongQuestionAnchors(question, text)) return true;
   return false;
-}function isMeaningMismatchAnswer(question, answer, source = '') {
+}
+
+function isMeaningMismatchAnswer(question, answer, source = '') {
   if (!String(answer || '').trim()) return false;
 
   const srcForAvailability = String(source || '').toLowerCase();
   if (srcForAvailability.includes('explicit-external-insufficient-data')) return false;
+  if (srcForAvailability.includes('program-list-contextual') || srcForAvailability.includes('program-scope-clarification-choice')) return false;
   
   // Document answers are trusted only after anchor and meaning alignment. Uploaded files can contain many unrelated sections, so keep verifier active for them.
   if (/campus-support|campus-facility/i.test(srcForAvailability)) {
@@ -10963,6 +11046,7 @@ function shouldBlockGenericEvidenceAnswer(question, answer, source = '') {
   }
   
   const qForAvailability = String(question || '').toLowerCase();
+  if (!/small-talk|clarification|feedback|out-of-domain|no-data|insufficient/i.test(srcForAvailability) && failsExpectedAnswerShape(question, answer)) return true;
   const asksAvailability = /\b(apakah|apa|ada|tersedia|sudah\s+ada|punya|memiliki)\b/i.test(qForAvailability) && /\b(program|layanan|fasilitas|kelas|kursus|sertifikasi|training|magang|kerja|beasiswa|komunitas|ukm|jalur)\b/i.test(qForAvailability);
   const asksRecommendationExplicitly = /\b(cocok|cocoknya|rekomendasi|saran|sarankan|jurusan\s+apa|prodi\s+apa|pilih\s+jurusan)\b/i.test(qForAvailability);
   if (srcForAvailability.includes('program-recommendation') && asksAvailability && !asksRecommendationExplicitly) return true;
@@ -11709,7 +11793,38 @@ function tryDualDegreeFeeClarificationAnswer(question) {
     frameSource: 'semantic-rag-fee-clarification'
   };
 }
+function normalizeSemanticQueryOptions(options = {}) {
+  const normalized = options && typeof options === 'object' ? { ...options } : {};
+  const sessionData = normalized.sessionData && typeof normalized.sessionData === 'object'
+    ? { ...normalized.sessionData }
+    : {};
+  const history = Array.isArray(normalized.conversationHistory) ? normalized.conversationHistory : [];
+  if (history.length && !Array.isArray(sessionData.messages)) {
+    const mapped = history
+      .map((m) => {
+        const role = String((m && (m.role || m.direction)) || '').toLowerCase();
+        const message = String((m && (m.message || m.content || m.text)) || '').trim();
+        if (!message) return null;
+        return {
+          role: role || 'message',
+          direction: role === 'assistant' || role === 'bot' || role === 'outgoing' ? 'outgoing' : 'incoming',
+          message
+        };
+      })
+      .filter(Boolean);
+    if (mapped.length) {
+      sessionData.messages = mapped;
+      const lastUser = [...mapped].reverse().find((m) => m.direction === 'incoming');
+      const lastBot = [...mapped].reverse().find((m) => m.direction === 'outgoing');
+      if (lastUser && !sessionData.lastQuestion) sessionData.lastQuestion = lastUser.message;
+      if (lastBot && !sessionData.lastAnswer) sessionData.lastAnswer = lastBot.message;
+    }
+  }
+  if (Object.keys(sessionData).length) normalized.sessionData = sessionData;
+  return normalized;
+}
 async function querySemanticRag(question, options = {}) {
+  options = normalizeSemanticQueryOptions(options);
   const originalQuestion = String(question || '').trim();
   const preStrictDocumentOnly = isStrictDocumentOnlyMode();
   const immediateProgramScopeChoice = preStrictDocumentOnly ? null : tryProgramScopeClarificationChoiceAnswer(originalQuestion, options);
@@ -11759,8 +11874,19 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtProgramScopeClarification, resultCacheKey);
   }
 
+  const preGuardGeneralInternationalText = `${routingQuestion || ''} ${question || ''}`.toLowerCase();
+  const shouldRunPreGuardGeneralInternationalList = /\b(?:program\s+internasional|kelas\s+internasional|international\s+program|international\s+class)\b/i.test(preGuardGeneralInternationalText)
+    && /\b(?:apa\s+saja|apa\s+aja|ada|tersedia|pilihan|list|daftar)\b/i.test(preGuardGeneralInternationalText);
+  const preGuardGeneralInternationalList = strictDocumentOnly || !shouldRunPreGuardGeneralInternationalList ? null : (
+    tryInternationalClassFallback(routingQuestion || question)
+    || tryInternationalClassFallback(question)
+  );
+  if (preGuardGeneralInternationalList && preGuardGeneralInternationalList.answer) {
+    const builtGeneralInternationalList = buildDeterministicResponse(question, preGuardGeneralInternationalList.source || 'semantic-rag-international-class-fallback', preGuardGeneralInternationalList, { routeStage: 'pre-guard-general-international-list', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtGeneralInternationalList, resultCacheKey);
+  }
   const earlyAdministrativeTopic = strictDocumentOnly ? null : getAdministrativeInfoTopic(question);
-  const earlyAdministrativeCanonical = !earlyAdministrativeTopic || !/^(visa_e30b|itas_kitas|itas_extension|sktt|sktt_extension)$/.test(earlyAdministrativeTopic.key) ? null : buildAdministrativeCanonicalAnswer(question);
+  const earlyAdministrativeCanonical = !earlyAdministrativeTopic || !/^(foreign_student_docs|study_permit|study_permit_extension|visa_e30b|itas_kitas|itas_extension|sktt|sktt_extension)$/.test(earlyAdministrativeTopic.key) ? null : buildAdministrativeCanonicalAnswer(question);
   if (earlyAdministrativeCanonical && earlyAdministrativeCanonical.answer) {
     const builtEarlyAdministrative = buildDeterministicResponse(question, earlyAdministrativeCanonical.source || 'semantic-rag-admin-topic-composer', earlyAdministrativeCanonical, { routeStage: 'pre-guard-admin-specific-topic', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtEarlyAdministrative, resultCacheKey);
@@ -11818,15 +11944,6 @@ async function querySemanticRag(question, options = {}) {
     const builtAdministrativeCanonical = buildDeterministicResponse(question, preGuardAdministrativeCanonical.source || 'semantic-rag-admin-topic-composer', preGuardAdministrativeCanonical, { routeStage: 'pre-guard-admin-topic-composer', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtAdministrativeCanonical, resultCacheKey);
   }
-  const preGuardDualDegreeStructured = strictDocumentOnly ? null : (
-    tryDualDegreeAnswer(question, options)
-    || tryDualDegreeAnswer(routingQuestion || question, options)
-  );
-  if (preGuardDualDegreeStructured && preGuardDualDegreeStructured.answer) {
-    const builtDualDegreeStructured = buildDeterministicResponse(question, 'semantic-rag-dual-degree', { ...preGuardDualDegreeStructured, source: 'semantic-rag-dual-degree' }, { routeStage: 'pre-guard-dual-degree-structured', normalizedRouting: normalizedRouting.changed });
-    return await finalizeSemanticResult(question, builtDualDegreeStructured, resultCacheKey);
-  }
-
   const preGuardInternationalCanonical = strictDocumentOnly ? null : (
     buildInternationalCanonicalAnswer(routingQuestion || question)
     || buildInternationalCanonicalAnswer(question)
@@ -11834,6 +11951,15 @@ async function querySemanticRag(question, options = {}) {
   if (preGuardInternationalCanonical && preGuardInternationalCanonical.answer) {
     const builtInternationalCanonical = buildDeterministicResponse(question, preGuardInternationalCanonical.source || 'semantic-rag-international-topic-composer', preGuardInternationalCanonical, { routeStage: 'pre-guard-international-topic-composer', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtInternationalCanonical, resultCacheKey);
+  }
+
+  const preGuardDualDegreeStructured = strictDocumentOnly ? null : (
+    tryDualDegreeAnswer(question, options)
+    || tryDualDegreeAnswer(routingQuestion || question, options)
+  );
+  if (preGuardDualDegreeStructured && preGuardDualDegreeStructured.answer) {
+    const builtDualDegreeStructured = buildDeterministicResponse(question, 'semantic-rag-dual-degree', { ...preGuardDualDegreeStructured, source: 'semantic-rag-dual-degree' }, { routeStage: 'pre-guard-dual-degree-structured', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtDualDegreeStructured, resultCacheKey);
   }
   const preGuardFeeText = `${routingQuestion || ''} ${question || ''}`.toLowerCase();
   const shouldRunPreGuardFee = /\b(?:biaya|harga|bayar|ukt|dpp|spp|uang\s+(?:kuliah|masuk|pendaftaran)|pendaftaran|registrasi|rincian\s+biaya|per\s+semester|semesteran|double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(preGuardFeeText) && !/\b(?:visa|e\s*30\s*b|itas|kitas|sktt|izin\s+belajar|study\s+permit|mahasiswa\s+asing)\b/i.test(preGuardFeeText);
@@ -11894,6 +12020,23 @@ async function querySemanticRag(question, options = {}) {
 
 
   const explicitSupportEntityForGenericFaq = findCampusSupportEntity(routingQuestion || question);
+  const preGuardSpecificEntityFaqQna = strictDocumentOnly || !explicitSupportEntityForGenericFaq || isStudyPermitQuestion(question) ? null : (
+    tryGenericFaqQnaAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryGenericFaqQnaAnswer(question, getCachedSemanticIndex(), options)
+  );
+  if (preGuardSpecificEntityFaqQna && preGuardSpecificEntityFaqQna.answer) {
+    let entityFaqAnswerText = ensureNamedCampusSupportContextInAnswer(question, preGuardSpecificEntityFaqQna.answer);
+    entityFaqAnswerText = enrichCareerFaqAnswerWithQuestionContext(question, entityFaqAnswerText);
+    if (answerMatchesStrongQuestionAnchors(question, entityFaqAnswerText) && !hasUploadedDocumentTopicConflict(question, entityFaqAnswerText) && !hasRawEvidenceSnippetShape(entityFaqAnswerText)) {
+      const builtSpecificEntityFaq = buildDeterministicResponse(
+        question,
+        preGuardSpecificEntityFaqQna.source || 'semantic-rag-generic-faq-qna',
+        { ...preGuardSpecificEntityFaqQna, answer: entityFaqAnswerText, source: preGuardSpecificEntityFaqQna.source || 'semantic-rag-generic-faq-qna' },
+        { routeStage: 'pre-guard-specific-entity-faq-qna', normalizedRouting: normalizedRouting.changed }
+      );
+      return await finalizeSemanticResult(question, builtSpecificEntityFaq, resultCacheKey);
+    }
+  }
   const preGuardSupportEntity = strictDocumentOnly ? null : findCampusSupportEntity(routingQuestion || question);
   if (preGuardSupportEntity && preGuardSupportEntity.key !== 'linkedin-career-center') {
     const preGuardSupportEntityAnswer = tryCampusSupportEntityAnswer(routingQuestion || question, getCachedSemanticIndex(), options)

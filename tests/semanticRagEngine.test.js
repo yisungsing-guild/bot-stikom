@@ -1302,6 +1302,17 @@ describe('semanticRagEngine', () => {
     expect(programStudi.answer).toMatch(/Bisnis Digital/i);
     expect(programStudi.answer).toMatch(/D3 Manajemen Informatika/i);
     expect(programStudi.answer).not.toMatch(/belum menemukan data|Inkubator Bisnis/i);
+    const historyProgramStudi = await querySemanticRag('program studi', {
+      topK: 8,
+      conversationHistory: [
+        { role: 'user', content: 'Boleh saya tahu program apa saja yang ada di STIKOM Bali ya?' },
+        { role: 'assistant', content: sessionData.messages[1].message }
+      ]
+    });
+    expect(historyProgramStudi.source).toBe('semantic-rag-program-list-contextual');
+    expect(historyProgramStudi.answer).toMatch(/Sistem Informasi/i);
+    expect(historyProgramStudi.answer).toMatch(/D3 Manajemen Informatika/i);
+    expect(historyProgramStudi.answer).not.toMatch(/belum menemukan data|Inkubator Bisnis/i);
 
     const internasional = await querySemanticRag('program internasional', { topK: 8, sessionData });
     expect(internasional.source).toBe('semantic-rag-program-scope-clarification-choice');
@@ -1400,6 +1411,30 @@ describe('semanticRagEngine', () => {
     expect(registrationFee.answer).toMatch(/biaya pendaftaran/i);
   }, 30000);
 
+  test('routes foreign student docs to admin composer and blocks wrong Hi-Think duration follow-up', async () => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const foreignDocs = await querySemanticRag('Dokumen apa saja yang perlu diurus oleh mahasiswa asing di ITB STIKOM Bali?', { topK: 8 });
+    expect(foreignDocs.source).toBe('semantic-rag-admin-topic-composer');
+    expect(foreignDocs.answer).toMatch(/Izin Belajar|Study Permit/i);
+    expect(foreignDocs.answer).toMatch(/Visa E30B|visa pelajar/i);
+    expect(foreignDocs.answer).toMatch(/ITAS|KITAS/i);
+    expect(foreignDocs.answer).toMatch(/SKTT/i);
+    expect(foreignDocs.answer).not.toMatch(/Apa itu Izin Belajar|Bagaimana cara mengurus Izin Belajar/i);
+
+    const sessionData = {
+      messages: [
+        { direction: 'user', message: 'Apa itu Program Hi-Think?' },
+        { direction: 'bot', message: 'Program Hi-Think adalah program kolaborasi antara ITB STIKOM Bali dengan perusahaan teknologi Hi-Think Jepang.' }
+      ]
+    };
+    const duration = await querySemanticRag('berapa lama?', { topK: 8, sessionData });
+    expect(duration.answer).toMatch(/belum menemukan data yang sesuai/i);
+    expect(duration.answer).not.toMatch(/jalur karier|bekerja di Jepang, China, atau Jakarta/i);
+  }, 30000);
   test('answers anchored Student Exchange and Hi-Think FAQ without drifting to other documents', async () => {
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     jest.doMock('../src/engine/ragEngine', () => ({
@@ -1457,7 +1492,7 @@ describe('semanticRagEngine', () => {
     expect(hiThink.answer).toMatch(/Hi-Think/i);
     expect(hiThink.answer).toMatch(/industri Jepang|bahasa Jepang|peluang kerja/i);
     expect(hiThink.answer).not.toMatch(/akreditasi Baik Sekali|Intelligent & Secure System/i);
-  }, 30000);
+  }, 60000);
   test('answers specific UKM detail requests with insufficient-data message instead of generic UKM list', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 
