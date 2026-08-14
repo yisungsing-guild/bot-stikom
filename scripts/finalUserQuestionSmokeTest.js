@@ -84,8 +84,8 @@ const weakAnswerRe = /mohon maaf|tidak mempunyai jawaban|belum menemukan data ya
 const badSourceRe = /disabled|no-data|insufficient|out-of-domain|meaning-mismatch|clarify-suppressed/i;
 const caseExpectations = {
   foreign_student_permit: {
-    source: /semantic-rag-known-faq-qna/i,
-    answer: /Izin Belajar[\s\S]*Visa Study|Visa Study[\s\S]*Izin Belajar/i
+    source: /semantic-rag-(?:known-faq-qna|generic-faq-qna|admin-topic-composer)/i,
+    answer: /Izin Belajar[\s\S]*(?:Visa Study|Visa E30B)|(?:Visa Study|Visa E30B)[\s\S]*Izin Belajar/i
   },
   rpl_info_1: {
     source: /semantic-rag-rpl/i,

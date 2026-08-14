@@ -1238,6 +1238,94 @@ describe('semanticRagEngine', () => {
     expect(arts.answer).toMatch(/Vos/i);
     expect(arts.answer).not.toMatch(/Badan Eksekutif Mahasiswa|Himaprodi/i);
   });
+  test('keeps foreign-student visa and ITAS admin questions out of PMB fee routes', async () => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const visaDocs = await querySemanticRag('apa saja yang dibutuhkan untuk visa?', { topK: 8 });
+    expect(visaDocs.source).toBe('semantic-rag-admin-topic-composer');
+    expect(visaDocs.answer).toMatch(/Visa E30B/i);
+    expect(visaDocs.answer).toMatch(/paspor|passport/i);
+    expect(visaDocs.answer).toMatch(/Letter of Acceptance|LOA/i);
+    expect(visaDocs.answer).not.toMatch(/siap.stikom-bali|PMB|biaya awal masuk|UKT|DPP/i);
+
+    const visaFee = await querySemanticRag('Berapa biaya pembuatan visa?', { topK: 8 });
+    expect(visaFee.source).toBe('semantic-rag-admin-topic-composer');
+    expect(visaFee.answer).toMatch(/Rp6\.000\.000|Rp\.?\s*6\.000\.000/i);
+    expect(visaFee.answer).toMatch(/Rp8\.500\.000|Rp\.?\s*8\.500\.000/i);
+    expect(visaFee.answer).toMatch(/Rp12\.000\.000|Rp\.?\s*12\.000\.000/i);
+    expect(visaFee.answer).not.toMatch(/biaya pendaftaran|DPP|UKT/i);
+
+    const itas = await querySemanticRag('Kapan saya harus mengurus ITAS?', { topK: 8 });
+    expect(itas.source).toBe('semantic-rag-admin-topic-composer');
+    expect(itas.answer).toMatch(/Visa E30B/i);
+    expect(itas.answer).toMatch(/setelah mahasiswa asing sampai di Indonesia|released/i);
+
+    const registrationFee = await querySemanticRag('berapa biaya pendaftaran si?', { topK: 8 });
+    expect(registrationFee.source).toBe('semantic-rag-registration-fee');
+    expect(registrationFee.answer).toMatch(/biaya pendaftaran/i);
+  }, 30000);
+
+  test('answers anchored Student Exchange and Hi-Think FAQ without drifting to other documents', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    jest.doMock('../src/engine/ragEngine', () => ({
+      loadIndex: jest.fn(() => [
+        {
+          id: 'student-exchange-faq',
+          chunk: [
+            'Q: Apa tujuan dari program Student Exchange?',
+            'A: Program ini bertujuan untuk memberikan pengalaman belajar di lingkungan internasional, meningkatkan kemampuan bahasa asing, mengembangkan wawasan global dan lintas budaya, serta membangun jaringan internasional.',
+            'Q: Apa manfaat mengikuti Student Exchange?',
+            'A: Manfaat yang didapatkan antara lain pengalaman belajar internasional, peningkatan kepercayaan diri dan kemandirian, memperluas jaringan global, serta nilai tambah untuk karier di masa depan.'
+          ].join('\n'),
+          filename: 'Apa itu Student Exchange di ITB STIKOM Bali.docx',
+          source: 'upload',
+          trainingId: 'training-student-exchange',
+          embedding: [1, 0, 0]
+        },
+        {
+          id: 'hithink-faq',
+          chunk: [
+            'Q: Apa keunggulan program ini?',
+            'A: Mahasiswa akan mendapatkan kurikulum berbasis industri Jepang, pengalaman belajar internasional, kursus bahasa Jepang, dan peluang kerja di perusahaan Hi-Think di Indonesia, China, atau Jepang.',
+            'Q: Kapan saya bisa mengikuti program ini?',
+            'A: Program ini dapat diikuti mulai Semester 5 atau Year 3.'
+          ].join('\n'),
+          filename: 'QNA Bot - Hi-Think.docx',
+          source: 'upload',
+          trainingId: 'training-hithink',
+          embedding: [1, 0, 0]
+        },
+        {
+          id: 'postgrad-misleading',
+          chunk: 'Q: Apa keunggulan program ini? A: Kurikulum berbasis industri, dosen berpengalaman, akreditasi Baik Sekali, dan fokus Intelligent & Secure System.',
+          filename: 'Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx',
+          source: 'upload',
+          trainingId: 'training-postgrad',
+          embedding: [1, 0, 0]
+        }
+      ]),
+      computeEmbedding: jest.fn(async () => [1, 0, 0]),
+      cleanAnswerLanguage: jest.fn((value) => String(value || '').trim())
+    }));
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const exchange = await querySemanticRag('Apa manfaat mengikuti Student Exchange?', { topK: 8 });
+    expect(exchange.success).toBe(true);
+    expect(exchange.source).toMatch(/semantic-rag-(generic-faq-qna|international-topic-composer)/);
+    expect(exchange.answer).toMatch(/Student Exchange/i);
+    expect(exchange.answer).toMatch(/pengalaman belajar internasional|jaringan global|nilai tambah/i);
+    expect(exchange.answer).not.toMatch(/persyaratan umum/i);
+
+    const hiThink = await querySemanticRag('Apa keunggulan Program Hi-Think?', { topK: 8 });
+    expect(hiThink.success).toBe(true);
+    expect(hiThink.answer).toMatch(/Hi-Think/i);
+    expect(hiThink.answer).toMatch(/industri Jepang|bahasa Jepang|peluang kerja/i);
+    expect(hiThink.answer).not.toMatch(/akreditasi Baik Sekali|Intelligent & Secure System/i);
+  }, 30000);
   test('answers specific UKM detail requests with insufficient-data message instead of generic UKM list', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 
