@@ -384,6 +384,12 @@ function convertTrainingDataToCandidate(trainingData) {
 }
 
 // Generic document-format marker cleaning
+function stripRawOutlineNumbering(text) {
+  return String(text || '')
+    .replace(/(^|\n)\s*(?:[-*]\s*)?\d{1,3}[.)]\s+(?=(?:Program|Prodi|Fakultas|Jurusan|Biaya|Syarat|Dokumen|Jadwal|Kurikulum|Akreditasi|Beasiswa|Career|Student|Double|Dual|Visa|ITAS|KITAS|SKTT)\b)/gi, '$1- ')
+    .replace(/\s+-\s+\d{1,3}[.)]\s+(?=(?:Program|Double|Dual|Student|Visa|ITAS|KITAS|SKTT)\b)/gi, ' - ');
+}
+
 function cleanDocumentMarkers(text) {
   if (!text) return '';
   
@@ -408,6 +414,7 @@ function cleanDocumentMarkers(text) {
     cleaned = cleaned.replace(pattern, '');
   }
   
+  cleaned = stripRawOutlineNumbering(cleaned);
   return cleaned.trim();
 }
 
@@ -655,6 +662,7 @@ function hasStableFastLaneIntent(question) {
   if (isGreetingOnly(q)) return true;
   if (trySmallTalkAnswer(q)) return true;
   if (hasExplicitFeeQuestionSignal(q) && !/\b(?:visa|e\s*30\s*b|itas|kitas|sktt|izin\s+belajar|study\s+permit|mahasiswa\s+asing)\b/i.test(q)) return true;
+  if (/\b(?:double\s*degree|dual\s*degree|gelar\s+ganda)\b/i.test(q) && !hasExplicitFeeQuestionSignal(q)) return true;
   if (/\b(?:akreditasi|terakreditasi|ban\s*-?\s*pt|lam\s*infokom)\b/i.test(q)) return true;
   if (/\b(?:mulai\s+kuliah|awal\s+kuliah|perkuliahan\s+semester\s+genap|semester\s+genap)\b/i.test(q) && /\b(?:2025\s*\/?\s*2026|ta\s*2025|tahun\s+akademik\s+2025)\b/i.test(q)) return true;
   if (/\b(?:daftar|mendaftar|pendaftaran|registrasi|pmb|penerimaan\s+mahasiswa\s+baru|gelombang)\b/i.test(q)
@@ -11670,6 +11678,15 @@ async function querySemanticRag(question, options = {}) {
     const builtAdministrativeCanonical = buildDeterministicResponse(question, preGuardAdministrativeCanonical.source || 'semantic-rag-admin-topic-composer', preGuardAdministrativeCanonical, { routeStage: 'pre-guard-admin-topic-composer', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtAdministrativeCanonical, resultCacheKey);
   }
+  const preGuardDualDegreeStructured = strictDocumentOnly ? null : (
+    tryDualDegreeAnswer(question, options)
+    || tryDualDegreeAnswer(routingQuestion || question, options)
+  );
+  if (preGuardDualDegreeStructured && preGuardDualDegreeStructured.answer) {
+    const builtDualDegreeStructured = buildDeterministicResponse(question, 'semantic-rag-dual-degree', { ...preGuardDualDegreeStructured, source: 'semantic-rag-dual-degree' }, { routeStage: 'pre-guard-dual-degree-structured', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtDualDegreeStructured, resultCacheKey);
+  }
+
   const preGuardInternationalCanonical = strictDocumentOnly ? null : (
     buildInternationalCanonicalAnswer(routingQuestion || question)
     || buildInternationalCanonicalAnswer(question)

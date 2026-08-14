@@ -1238,6 +1238,25 @@ describe('semanticRagEngine', () => {
     expect(arts.answer).toMatch(/Vos/i);
     expect(arts.answer).not.toMatch(/Badan Eksekutif Mahasiswa|Himaprodi/i);
   });
+  test('answers Double Degree international structurally and keeps pure greetings as small talk', async () => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const international = await querySemanticRag('apakah ada program double degree internasional?', { topK: 8 });
+    expect(international.source).toBe('semantic-rag-dual-degree');
+    expect(international.answer).toMatch(/Double Degree internasional/i);
+    expect(international.answer).toMatch(/DNUI|Dalian Neusoft/i);
+    expect(international.answer).toMatch(/HELP University/i);
+    expect(international.answer).not.toMatch(/\b\d{1,3}[.)]\s+Program/i);
+
+    const greeting = await querySemanticRag('Selamat pagi', { topK: 8 });
+    expect(greeting.source).toBe('semantic-rag-small-talk');
+    expect(greeting.answer).toMatch(/selamat pagi/i);
+    expect(greeting.answer).not.toMatch(/belum menemukan data|Double Degree|PMB adalah/i);
+  }, 30000);
+
   test('blocks wrong deterministic route domains before answers reach users', async () => {
     delete process.env.OPENAI_API_KEY;
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
