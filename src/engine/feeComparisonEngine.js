@@ -917,7 +917,7 @@ function tryProgramRecommendationAnswer(question) {
 function detectSpecificScholarshipTopic(question) {
   const q = String(question || '').toLowerCase();
   if (/\b1\s*k\s*1\s*s\b|\b1k1s\b|\bskss\b|satu\s+keluarga\s+satu\s+sarjana/.test(q)) {
-    return 'Beasiswa 1K1S (Satu Keluarga Satu Sarjana)';
+    return 'Beasiswa 1K1S/SKSS (Satu Keluarga Satu Sarjana)';
   }
   if (/\bkip\b|kartu\s+indonesia\s+pintar/.test(q)) return 'Beasiswa KIP';
   if (/\bprestasi\b|berprestasi|juara|ranking|rangking/.test(q)) return 'Beasiswa Prestasi';
@@ -998,7 +998,7 @@ function tryScholarshipAnswer(question) {
       'Ya, ada beberapa pilihan beasiswa/program bantuan yang bisa ditanyakan di ITB STIKOM Bali:',
       '',
       '- Beasiswa KIP',
-      '- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)',
+      '- Beasiswa 1K1S/SKSS (Satu Keluarga Satu Sarjana)',
       '- Beasiswa Prestasi',
       '- Beasiswa Yayasan',
       '- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global',

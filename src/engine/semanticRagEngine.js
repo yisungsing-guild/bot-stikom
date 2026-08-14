@@ -765,7 +765,6 @@ function buildProgramScopeInternationalChoiceAnswer() {
 }
 
 function tryProgramScopeClarificationChoiceAnswer(question, options = {}) {
-  if (!hasPendingProgramScopeClarification(options && options.sessionData)) return null;
   const q = String(question || '').toLowerCase().trim().replace(/[?.!,;:]+$/g, '').replace(/\s+/g, ' ');
   if (!q || q.split(/\s+/).length > 5) return null;
 
@@ -8405,6 +8404,7 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
 function tryCampusLocationAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (isStudyPermitQuestion(question) || isCareerCenterQuestion(question) || isStudentExchangeQuestion(question)) return null;
+  if (/\b(?:akreditasi|akrediasi|ban\s*-?pt|lam\s*infokom|peringkat)\b/i.test(q)) return null;
   if (!/\b(lokasi(?:nya)?|alamat(?:nya)?|kampus(?:nya)?|dimana|di\s*mana|where|letak(?:nya)?|maps?|google\s+maps|rute|arah|patokan|pin\s+lokasi|share\s*loc|shareloc)\b/i.test(q)) return null;
   if (/\b(fasilitas|layanan|sarana|prasarana|ukm|ormawa|organisasi|kegiatan\s+mahasiswa|komunitas|hobi|minat)\b/i.test(q)) return null;
   const asksMainCampus = /\b(kampus\s+(?:utama|pusat)|utama(?:nya)?|pusat(?:nya)?)\b/i.test(q);
@@ -8449,6 +8449,24 @@ function tryCampusLocationAnswer(question) {
 
 function tryCampusSupportFallback(question) {
   const q = String(question || '').toLowerCase();
+  if (/\b(?:organisasi|ormawa|ukm|unit\s+kegiatan|kegiatan\s+mahasiswa)\b/i.test(q) && /\b(?:tersedia|ada|mendukung|minat|formal|pembelajaran|luar)\b/i.test(q)) {
+    return {
+      answer: [
+        'Ya, tersedia organisasi mahasiswa dan kegiatan nonformal yang bisa mendukung minat mahasiswa di ITB STIKOM Bali.',
+        '',
+        '- Badan Eksekutif Mahasiswa',
+        '- Dewan Perwakilan Mahasiswa',
+        '- Himaprodi BD',
+        '- Himaprodi SI',
+        '- Himaprodi SK',
+        '- Himaprodi TI',
+        '- Himas Jimbaran',
+        '',
+        'Untuk detail UKM/minat khusus seperti seni, olahraga, teknologi, jadwal kegiatan, atau pendaftaran anggota, kakak sebaiknya konfirmasi ke bagian kemahasiswaan atau pengurus organisasi terkait.'
+      ].join('\\n'),
+      source: 'semantic-rag-campus-support-fallback'
+    };
+  }
   if (!/\b(lomba|kompetisi|kompetisi nasional|kompetisi internasional|dukung|mendukung|sponsor|mendanai|ikut lomba)\b/i.test(q)) return null;
   return {
     answer: [
@@ -8562,6 +8580,7 @@ function tryInternationalClassFallback(question) {
       '- Double Degree Internasional DNUI - Dalian Neusoft University of Information, China. Prodi di STIKOM Bali: Bisnis Digital.',
       '- Double Degree Internasional HELP University, Malaysia. Prodi di STIKOM Bali: Sistem Informasi.',
       '- Student Exchange / pertukaran mahasiswa, jika dibuka sesuai kerja sama dan ketentuan kampus.',
+      '- Program Hi-Think Jepang, yaitu program berbasis industri/karier internasional yang tercatat pada data kampus.',
       '',
       'Saya tidak mencampur daftar ini dengan prodi reguler. Untuk syarat, kuota, jadwal, dan alur final, kakak bisa konfirmasi ke Admin PMB atau bagian kerja sama/international office kampus.'
     ].join('\n'),
@@ -11967,10 +11986,11 @@ function tryDualDegreeFeeClarificationAnswer(question) {
 }
 function normalizeSemanticQueryOptions(options = {}) {
   const normalized = options && typeof options === 'object' ? { ...options } : {};
-  const sessionData = normalized.sessionData && typeof normalized.sessionData === 'object'
-    ? { ...normalized.sessionData }
-    : {};
-  const history = Array.isArray(normalized.conversationHistory) ? normalized.conversationHistory : [];
+  const rawSessionData = normalized.sessionData && typeof normalized.sessionData === 'object'
+    ? normalized.sessionData
+    : (normalized.session && typeof normalized.session === 'object' ? normalized.session : {});
+  const sessionData = rawSessionData && typeof rawSessionData === 'object' ? { ...rawSessionData } : {};
+  const history = Array.isArray(normalized.conversationHistory) ? normalized.conversationHistory : (Array.isArray(normalized.history) ? normalized.history : []);
   if (history.length && !Array.isArray(sessionData.messages)) {
     const mapped = history
       .map((m) => {
