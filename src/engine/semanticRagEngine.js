@@ -1462,6 +1462,66 @@ function isRouteDomainCompatible(question, result) {
   return ok('domain_neutral');
 }
 
+function hasConcreteDateOrPeriod(value) {
+  return /\b(?:\d{1,2}\s*(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|20\d{2}(?:\s*\/\s*20\d{2})?|gelombang\s+(?:khusus|[ivx]+|\d+)\s*[a-c]?|semester\s+(?:genap|ganjil|antara|pendek)|bulan\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)|\b(?:senin|selasa|rabu|kamis|jumat|jum\'at|sabtu|minggu)\b|\bpukul\s*\d{1,2}|\b\d{1,2}\.\d{2}\s*(?:wita|wib|wit)?)\b/i.test(String(value || ''));
+}
+
+function hasConcreteNumberOrAmount(value) {
+  return /\b(?:rp\.?\s*\d|\d+[.,]?\d*\s*(?:juta|ribu|sks|semester|tahun|bulan|hari|minggu|orang|kali|%)|\d{1,3}(?:\.\d{3})+|\d+\s*\/\s*\d+)\b/i.test(String(value || ''));
+}
+
+function hasListLikeAnswer(value) {
+  const text = String(value || '');
+  const bullets = (text.match(/(?:^|\n)\s*(?:[-*]|\d+[.)])\s+\S/g) || []).length;
+  if (bullets >= 2) return true;
+  if (/\b(?:antara lain|mencakup|meliputi|pilihan(?:nya)?|terdiri dari|sebagai berikut)\b/i.test(text)) return true;
+  const commaItems = text.split(',').map(part => part.trim()).filter(part => part.length >= 3);
+  return commaItems.length >= 3;
+}
+
+function inferQuestionAnswerNeeds(question) {
+  const q = normalizeUserQuery(question || '').normalizedText || String(question || '').toLowerCase();
+  const needs = new Set();
+  if (/\b(?:kapan|jadwal|tanggal|pelaksanaan|dilaksanakan|deadline|batas\s+akhir|mulai|berakhir)\b/i.test(q)) needs.add('date_or_period');
+  if (/\b(?:berapa|nominal|jumlah|total|rincian\s+biaya|biaya|harga|ukt|dpp|sks|lama|durasi)\b/i.test(q)) needs.add('number_or_amount');
+  if (/\b(?:apa\s+saja|apa\s+aja|daftar|list|pilihan|sebutkan|program\s+apa\s+saja|jurusan\s+apa\s+saja)\b/i.test(q)) needs.add('list');
+  if (/\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan|dibandingkan|antara)\b/i.test(q)) needs.add('comparison');
+  if (/\b(?:cocok|rekomendasi|sarankan|pilih\s+jurusan|jurusan\s+apa|prodi\s+apa|suka|minat|bekerja\s+di\s+bidang|ingin\s+(?:jadi|bekerja))\b/i.test(q)) needs.add('program_recommendation');
+  if (/\b(?:apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan|tentang)\b/i.test(q)) needs.add('definition');
+  if (/\b(?:syarat|persyaratan|dokumen|berkas|ketentuan)\b/i.test(q)) needs.add('requirements');
+  return needs;
+}
+
+function evaluateAnswerShapeCompatibility(question, result) {
+  const source = String(result && result.source || '');
+  const answer = String(result && result.answer || '');
+  const q = String(question || '');
+  const needs = inferQuestionAnswerNeeds(q);
+  const missing = [];
+  if (!needs.size) return { ok: true, needs: [], missing: [], reason: 'no_specific_answer_shape_needed' };
+  if (hasNoDataAnswerPhrase(answer) || /clarification|small-talk|greeting|out-of-domain|feedback/i.test(source)) {
+    return { ok: true, needs: [...needs], missing: [], reason: 'safe_non_answer_or_clarification' };
+  }
+
+  if (needs.has('date_or_period') && !hasConcreteDateOrPeriod(answer)) missing.push('date_or_period');
+  if (needs.has('number_or_amount') && !hasConcreteNumberOrAmount(answer)) missing.push('number_or_amount');
+  if (needs.has('list') && !hasListLikeAnswer(answer)) missing.push('list_items');
+  if (needs.has('comparison') && !/\b(?:perbedaan|beda|sedangkan|sementara|dibandingkan|S1|D3|Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika)\b/i.test(answer)) missing.push('comparison_content');
+  if (needs.has('program_recommendation') && !/\b(?:Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika|prodi|program\s+studi|jurusan)\b/i.test(answer)) missing.push('program_recommendation');
+  if (needs.has('definition')) {
+    const anchors = extractQueryAnchorTerms(q).filter(anchor => !/^(?:apa|itu|pengertian|maksud|jelaskan|tentang|program|studi|prodi|jurusan|kampus|stikom|bali)$/i.test(anchor));
+    if (anchors.length && !hasAnchorOverlap(q, answer)) missing.push('definition_anchor');
+  }
+  if (needs.has('requirements') && !/\b(?:syarat|persyaratan|dokumen|berkas|ketentuan|ijazah|ktp|kk|foto|paspor|transkrip|loa|statement|form|surat)\b/i.test(answer)) missing.push('requirements');
+
+  return {
+    ok: missing.length === 0,
+    needs: [...needs],
+    missing,
+    reason: missing.length ? 'answer_shape_mismatch' : 'answer_shape_ok'
+  };
+}
+
 function isRouteDomainGuardApplicable(source) {
   return /semantic-rag-|rag-/i.test(String(source || ''));
 }
@@ -11398,6 +11458,34 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     return await traceAndCacheSemanticResult(question, anchorMismatch, resultCacheKey, 'anchorMismatch');
   }
 
+  const answerShapeCheck = isRouteDomainGuardApplicable(source) ? evaluateAnswerShapeCompatibility(question, result) : { ok: true };
+  if (answerShapeCheck && answerShapeCheck.ok === false) {
+    const deterministic = runVettedDeterministicFallback(question, options, null, 'answer-shape-guard');
+    const deterministicDomainCheck = deterministic && deterministic.answer ? isRouteDomainCompatible(question, deterministic) : null;
+    const deterministicShapeCheck = deterministic && deterministic.answer ? evaluateAnswerShapeCompatibility(question, deterministic) : null;
+    if (deterministic && deterministic.answer
+      && deterministicDomainCheck && deterministicDomainCheck.ok !== false
+      && deterministicShapeCheck && deterministicShapeCheck.ok !== false) {
+      return await traceAndCacheSemanticResult(question, deterministic, resultCacheKey, 'answerShapeFallback');
+    }
+    const blocked = {
+      success: true,
+      answer: buildMeaningMismatchFallbackAnswer(question),
+      source: 'semantic-rag-answer-shape-mismatch',
+      contexts: Array.isArray(result.contexts) ? result.contexts : [],
+      confidenceScore: typeof result.confidenceScore === 'number' ? result.confidenceScore : 0,
+      confidenceTier: 'VERY_LOW',
+      debug: {
+        ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
+        blockedSource: source,
+        answerShapeCheck,
+        deterministicDomainCheck,
+        deterministicShapeCheck,
+        reason: 'answer_shape_guard'
+      }
+    };
+    return await traceAndCacheSemanticResult(question, blocked, resultCacheKey, 'blocked');
+  }
   const preflight = evaluateOutboundAnswer(result.answer, question, { source });
   const compactScheduleSafe = Boolean(result.debug && result.debug.compactAcademicSchedule)
     && isSafeCompactAcademicScheduleAnswer(question, result.answer);
@@ -11934,6 +12022,11 @@ async function querySemanticRag(question, options = {}) {
   if (preGuardStudyLevelComparison && preGuardStudyLevelComparison.answer) {
     const builtStudyLevelComparison = buildDeterministicResponse(question, preGuardStudyLevelComparison.source || 'semantic-rag-study-level-comparison', preGuardStudyLevelComparison, { routeStage: 'pre-guard-study-level-comparison', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtStudyLevelComparison, resultCacheKey);
+  }
+  const preGuardExplicitSupportEntity = strictDocumentOnly ? null : tryCampusSupportEntityAnswer(routingQuestion || question, getCachedSemanticIndex(), options);
+  if (preGuardExplicitSupportEntity && preGuardExplicitSupportEntity.answer && /semantic-rag-campus-(?:support-entity|facility)/i.test(String(preGuardExplicitSupportEntity.source || ''))) {
+    const builtExplicitSupportEntity = buildDeterministicResponse(question, preGuardExplicitSupportEntity.source || 'semantic-rag-campus-support-entity', preGuardExplicitSupportEntity, { routeStage: 'pre-guard-explicit-campus-support-entity', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtExplicitSupportEntity, resultCacheKey);
   }
   const preGuardProgramScopeChoice = strictDocumentOnly ? null : (tryProgramScopeClarificationChoiceAnswer(routingQuestion || question, options) || tryProgramScopeClarificationChoiceAnswer(question, options));
   if (preGuardProgramScopeChoice && preGuardProgramScopeChoice.answer) {
