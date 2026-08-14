@@ -1238,6 +1238,28 @@ describe('semanticRagEngine', () => {
     expect(arts.answer).toMatch(/Vos/i);
     expect(arts.answer).not.toMatch(/Badan Eksekutif Mahasiswa|Himaprodi/i);
   });
+  test('blocks wrong deterministic route domains before answers reach users', async () => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const yudisium = await querySemanticRag('pelaksanaan yudisium kapan?', { topK: 8 });
+    expect(yudisium.source).not.toMatch(/dual-degree|double-degree|fee-comparison|pmb-requirements/i);
+    expect(yudisium.answer).toMatch(/yudisium/i);
+    expect(yudisium.answer).not.toMatch(/Double Degree|DNUI|HELP University/i);
+
+    const visaFee = await querySemanticRag('Berapa biaya pembuatan visa?', { topK: 8 });
+    expect(visaFee.source).toBe('semantic-rag-admin-topic-composer');
+    expect(visaFee.answer).toMatch(/Visa E30B/i);
+    expect(visaFee.answer).not.toMatch(/biaya awal masuk|UKT|DPP|Sistem Informasi (S1)/i);
+
+    const ukm = await querySemanticRag('apa ada ukm seni?', { topK: 8 });
+    expect(ukm.source).toBe('semantic-rag-ukm-list');
+    expect(ukm.answer).toMatch(/Musik|Tari|Tabuh|Teater/i);
+    expect(ukm.answer).not.toMatch(/Double Degree|biaya pendaftaran/i);
+  }, 30000);
+
   test('keeps foreign-student visa and ITAS admin questions out of PMB fee routes', async () => {
     delete process.env.OPENAI_API_KEY;
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';

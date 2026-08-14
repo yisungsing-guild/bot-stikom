@@ -1179,6 +1179,107 @@ function inferItemDomains(item) {
   return { category, domains: inferKnowledgeDomainsFromText(haystack, category) };
 }
 
+function inferRouteDomainsFromSource(source, answer = '') {
+  const src = String(source || '').toLowerCase();
+  const domains = inferKnowledgeDomainsFromText(String(answer || ''), '');
+  const add = (name) => { if (name) domains.add(name); };
+  if (/small-talk|greeting/i.test(src)) add('small_talk');
+  if (/registration-fee|fee-detail|fee-comparison|fee-general|contextual-fee|finance-fallback/i.test(src)) add('fee');
+  if (/pmb|registration-info|registration-how|registration-data|requirements/i.test(src)) add('pmb_registration');
+  if (/dual-degree|double-degree/i.test(src)) { add('double_degree'); add('international_program'); }
+  if (/international-topic|international-class/i.test(src)) add('international_program');
+  if (/admin-topic|study-permit|visa|foreign-student/i.test(src)) add('visa_study');
+  if (/career/i.test(src)) add('career');
+  if (/campus-support|inbis|goes-to-school|hi-think|student-exchange/i.test(src)) add('campus_support');
+  if (/ukm|student-activity|ormawa/i.test(src)) add('student_activity');
+  if (/academic|yudisium|wisuda|schedule|credit|transcript|grade|krs|policy/i.test(src)) add('academic_admin');
+  if (/program-list|program-definition|program-comparison|program-curriculum|academic-faculty|program-recommendation/i.test(src)) add('academic_program');
+  if (/accreditation/i.test(src)) add('accreditation');
+  if (/scholarship/i.test(src)) add('scholarship');
+  if (/rpl/i.test(src)) add('rpl');
+  if (/campus-location|location/i.test(src)) add('location');
+  if (/generic-faq-qna|known-faq-qna|uploaded-training-generic|evidence-first|rag-/i.test(src)) {
+    // Evidence-like sources depend primarily on their answer text; no forced domain here.
+  }
+  return domains;
+}
+
+function hasDomain(domains, ...names) {
+  return names.some((name) => domains && domains.has(name));
+}
+
+function isRouteDomainCompatible(question, result) {
+  const qDomains = inferQuestionDomains(question);
+  if (!qDomains || !qDomains.size) return { ok: true, qDomains: [], routeDomains: [], reason: 'no_question_domain' };
+  const source = String(result && result.source || '');
+  const answer = String(result && result.answer || '');
+  const routeDomains = inferRouteDomainsFromSource(source, answer);
+  const q = normalizeUserQuery(question || '').normalizedText || String(question || '').toLowerCase();
+  const overlap = [...qDomains].filter((domain) => routeDomains.has(domain));
+  const hasQ = (...names) => hasDomain(qDomains, ...names);
+  const hasR = (...names) => hasDomain(routeDomains, ...names);
+  const ok = (reason) => ({ ok: true, qDomains: [...qDomains], routeDomains: [...routeDomains], reason });
+  const bad = (reason) => ({ ok: false, qDomains: [...qDomains], routeDomains: [...routeDomains], reason });
+
+  if (/meaning-mismatch|insufficient|no-data|clarification|feedback|small-talk|out-of-domain/i.test(source)) return ok('safe_meta_source');
+  if (overlap.length) return ok('domain_overlap:' + overlap.join(','));
+
+  if (hasQ('visa_study')) {
+    if (hasR('visa_study', 'administrative_document')) return ok('visa_route');
+    return bad('visa_question_wrong_route');
+  }
+  if (hasQ('academic_admin')) {
+    if (hasR('academic_admin')) return ok('academic_admin_route');
+    if (/\b(?:yudisium|wisuda|sidang|tugas\s+akhir|skripsi|krs|khs|transkrip|semester\s+(?:genap|ganjil|antara|pendek)|remedial|remidi)\b/i.test(answer)) return ok('academic_admin_answer_anchor');
+    return bad('academic_admin_wrong_route');
+  }
+  if (hasQ('career')) {
+    if (hasR('career', 'campus_support', 'academic_program')) return ok('career_compatible_route');
+    return bad('career_wrong_route');
+  }
+  if (hasQ('student_activity')) {
+    if (hasR('student_activity', 'campus_support')) return ok('student_activity_route');
+    return bad('student_activity_wrong_route');
+  }
+  if (hasQ('campus_support')) {
+    if (hasR('campus_support', 'career', 'international_program')) return ok('campus_support_route');
+    return bad('campus_support_wrong_route');
+  }
+  if (hasQ('double_degree')) {
+    if (hasQ('fee') && hasR('fee', 'double_degree', 'international_program')) return ok('double_degree_fee_route');
+    if (hasR('double_degree', 'international_program')) return ok('double_degree_route');
+    return bad('double_degree_wrong_route');
+  }
+  if (hasQ('international_program')) {
+    if (hasQ('fee') && hasR('fee', 'international_program', 'double_degree')) return ok('international_fee_route');
+    if (hasR('international_program', 'double_degree', 'campus_support')) return ok('international_route');
+    return bad('international_wrong_route');
+  }
+  if (hasQ('fee')) {
+    if (hasR('fee')) return ok('fee_route');
+    return bad('fee_wrong_route');
+  }
+  if (hasQ('pmb_registration')) {
+    if (hasR('pmb_registration', 'schedule')) return ok('pmb_route');
+    if (/\b(?:pmb|pendaftaran|siap\.stikom-bali\.ac\.id|gelombang)\b/i.test(answer)) return ok('pmb_answer_anchor');
+    return bad('pmb_wrong_route');
+  }
+  if (hasQ('academic_program')) {
+    if (hasR('academic_program', 'fee', 'accreditation')) return ok('academic_program_route');
+    return bad('academic_program_wrong_route');
+  }
+  if (hasQ('scholarship')) return hasR('scholarship', 'fee', 'pmb_registration') ? ok('scholarship_route') : bad('scholarship_wrong_route');
+  if (hasQ('rpl')) return hasR('rpl', 'pmb_registration') ? ok('rpl_route') : bad('rpl_wrong_route');
+  if (hasQ('accreditation')) return hasR('accreditation', 'academic_program') ? ok('accreditation_route') : bad('accreditation_wrong_route');
+  if (hasQ('location')) return hasR('location') ? ok('location_route') : bad('location_wrong_route');
+
+  return ok('domain_neutral');
+}
+
+function isRouteDomainGuardApplicable(source) {
+  return /semantic-rag-|rag-/i.test(String(source || ''));
+}
+
 function computeDomainAlignmentScore(query, item, questionIntent = null) {
   const qDomains = inferQuestionDomains(query, questionIntent);
   if (!qDomains.size) return { score: 0, queryDomains: [], itemDomains: [], runtimeDocCategory: getRuntimeDocCategory(item), reason: 'no_query_domain' };
@@ -10903,6 +11004,31 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     };
     return await traceAndCacheSemanticResult(question, goesToSchoolResult, resultCacheKey, 'deterministic');
   }
+  const routeDomainCheck = isRouteDomainGuardApplicable(source) ? isRouteDomainCompatible(question, result) : { ok: true };
+  if (routeDomainCheck && routeDomainCheck.ok === false) {
+    const deterministic = runVettedDeterministicFallback(question, options, null, 'route-domain-guard');
+    const deterministicCheck = deterministic && deterministic.answer ? isRouteDomainCompatible(question, deterministic) : null;
+    if (deterministic && deterministic.answer && deterministicCheck && deterministicCheck.ok !== false) {
+      return await traceAndCacheSemanticResult(question, deterministic, resultCacheKey, 'routeDomainFallback');
+    }
+    const blocked = {
+      success: true,
+      answer: buildMeaningMismatchFallbackAnswer(question),
+      source: 'semantic-rag-route-domain-mismatch',
+      contexts: Array.isArray(result.contexts) ? result.contexts : [],
+      confidenceScore: typeof result.confidenceScore === 'number' ? result.confidenceScore : 0,
+      confidenceTier: 'VERY_LOW',
+      debug: {
+        ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
+        blockedSource: source,
+        routeDomainCheck,
+        deterministicCheck,
+        reason: 'route_domain_guard'
+      }
+    };
+    return await traceAndCacheSemanticResult(question, blocked, resultCacheKey, 'blocked');
+  }
+
   if (shouldBlockGenericEvidenceAnswer(question, result.answer, source)) {
     const deterministic = runVettedDeterministicFallback(question, options, null, 'global-generic-evidence-guard');
     if (deterministic && deterministic.answer && !shouldBlockGenericEvidenceAnswer(question, deterministic.answer, deterministic.source || '')) {
