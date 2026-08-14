@@ -1284,6 +1284,33 @@ describe('semanticRagEngine', () => {
     expect(prodi.answer).not.toMatch(/maksud "program"/i);
   }, 30000);
 
+  test('resolves short replies to pending program scope clarification', async () => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const sessionData = {
+      messages: [
+        { direction: 'user', message: 'Boleh saya tahu program apa saja yang ada di STIKOM Bali ya?' },
+        { direction: 'bot', message: 'Kak, maksud "program" yang ingin ditanyakan yang mana?\n\n- Program studi/jurusan: S2 Sistem Informasi, S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital, Sistem Komputer, dan D3 Manajemen Informatika.\n- Program internasional: Double Degree DNUI/HELP, Double Degree UTB, Student Exchange, dan Hi-Think.\n- Program pendukung kampus: beasiswa, UKM/organisasi mahasiswa, Career Center, Inkubator Bisnis, fasilitas kampus, atau program kampus lainnya.' }
+      ]
+    };
+
+    const programStudi = await querySemanticRag('program studi', { topK: 8, sessionData });
+    expect(programStudi.source).toBe('semantic-rag-program-list-contextual');
+    expect(programStudi.answer).toMatch(/Sistem Informasi/i);
+    expect(programStudi.answer).toMatch(/Bisnis Digital/i);
+    expect(programStudi.answer).toMatch(/D3 Manajemen Informatika/i);
+    expect(programStudi.answer).not.toMatch(/belum menemukan data|Inkubator Bisnis/i);
+
+    const internasional = await querySemanticRag('program internasional', { topK: 8, sessionData });
+    expect(internasional.source).toBe('semantic-rag-program-scope-clarification-choice');
+    expect(internasional.answer).toMatch(/Double Degree Internasional/i);
+    expect(internasional.answer).toMatch(/DNUI/i);
+    expect(internasional.answer).toMatch(/HELP University/i);
+    expect(internasional.answer).toMatch(/Student Exchange/i);
+    expect(internasional.answer).not.toMatch(/belum menemukan data|Inkubator Bisnis/i);
+  }, 30000);
   test('uses PMB context for ambiguous program follow-ups but clarifies without context', async () => {
     delete process.env.OPENAI_API_KEY;
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';

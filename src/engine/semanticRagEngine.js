@@ -725,6 +725,62 @@ function buildContextualProgramStudyListAnswer(question) {
   };
 }
 
+function hasPendingProgramScopeClarification(sessionData) {
+  const parts = [];
+  const recentAll = getRecentConversationTextForResolution(sessionData);
+  if (recentAll) parts.push(recentAll);
+  if (sessionData && typeof sessionData === 'object') {
+    const messages = Array.isArray(sessionData.messages) ? sessionData.messages.slice(-8) : [];
+    messages.forEach((m) => {
+      const text = String((m && (m.message || m.content || m.text)) || '').trim();
+      if (text) parts.push(text);
+    });
+    [sessionData.lastAnswer, sessionData.lastBotAnswer].forEach((value) => {
+      const text = String(value || '').trim();
+      if (text) parts.push(text);
+    });
+  }
+  const text = parts.join('\n').toLowerCase();
+  if (!text) return false;
+  return /\bmaksud\b[\s\S]{0,120}\bprogram\b/i.test(text)
+    && /\b(?:program\s+studi|prodi|jurusan)\b/i.test(text)
+    && /\bprogram\s+internasional\b/i.test(text);
+}
+
+function buildProgramScopeInternationalChoiceAnswer() {
+  const fallback = tryInternationalClassFallback('apa ada program internasional di stikom bali?');
+  if (fallback && fallback.answer) {
+    return {
+      ...fallback,
+      confidence: 0.95,
+      tier: 'HIGH',
+      source: 'semantic-rag-program-scope-clarification-choice'
+    };
+  }
+  return null;
+}
+
+function tryProgramScopeClarificationChoiceAnswer(question, options = {}) {
+  if (!hasPendingProgramScopeClarification(options && options.sessionData)) return null;
+  const q = String(question || '').toLowerCase().trim().replace(/[?.!,;:]+$/g, '').replace(/\s+/g, ' ');
+  if (!q || q.split(/\s+/).length > 5) return null;
+
+  if (/^(?:program\s+studi|prodi|jurusan|program\s+kuliah|jurusan\s+kuliah)$/i.test(q)) {
+    const contextualList = buildContextualProgramStudyListAnswer(question);
+    if (contextualList && contextualList.answer) {
+      return {
+        ...contextualList,
+        source: 'semantic-rag-program-list-contextual'
+      };
+    }
+  }
+
+  if (/^(?:program\s+internasional|internasional|international|kelas\s+internasional)$/i.test(q)) {
+    return buildProgramScopeInternationalChoiceAnswer();
+  }
+
+  return null;
+}
 function buildAmbiguousProgramScopeAnswer() {
   return [
     'Kak, maksud "program" yang ingin ditanyakan yang mana?',
@@ -11655,6 +11711,16 @@ function tryDualDegreeFeeClarificationAnswer(question) {
 }
 async function querySemanticRag(question, options = {}) {
   const originalQuestion = String(question || '').trim();
+  const preStrictDocumentOnly = isStrictDocumentOnlyMode();
+  const immediateProgramScopeChoice = preStrictDocumentOnly ? null : tryProgramScopeClarificationChoiceAnswer(originalQuestion, options);
+  if (immediateProgramScopeChoice && immediateProgramScopeChoice.answer) {
+    const immediateCacheKey = buildSemanticResultCacheKey(originalQuestion, options);
+    const cachedImmediate = getCachedSemanticResult(immediateCacheKey);
+    if (cachedImmediate) return cachedImmediate;
+    const builtImmediateChoice = buildDeterministicResponse(originalQuestion, immediateProgramScopeChoice.source || 'semantic-rag-program-scope-clarification-choice', immediateProgramScopeChoice, { routeStage: 'pre-followup-program-scope-choice' });
+    return await finalizeSemanticResult(originalQuestion, builtImmediateChoice, immediateCacheKey);
+  }
+
   const followupResolution = resolveSemanticFollowupQuestion(originalQuestion, options);
   if (followupResolution && followupResolution.changed && followupResolution.question) {
     question = followupResolution.question;
@@ -11666,7 +11732,7 @@ async function querySemanticRag(question, options = {}) {
   const cachedResult = getCachedSemanticResult(resultCacheKey);
   if (cachedResult) return cachedResult;
 
-  const strictDocumentOnly = isStrictDocumentOnlyMode();
+  const strictDocumentOnly = preStrictDocumentOnly;
   const normalizedRouting = normalizeUserQuery(question);
   const routingQuestion = normalizedRouting && normalizedRouting.normalizedText ? normalizedRouting.normalizedText : question;
   const earlySmallTalk = trySmallTalkAnswer(question);
@@ -11682,6 +11748,11 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
   }
 
+  const preGuardProgramScopeChoice = strictDocumentOnly ? null : (tryProgramScopeClarificationChoiceAnswer(routingQuestion || question, options) || tryProgramScopeClarificationChoiceAnswer(question, options));
+  if (preGuardProgramScopeChoice && preGuardProgramScopeChoice.answer) {
+    const builtProgramScopeChoice = buildDeterministicResponse(question, preGuardProgramScopeChoice.source || 'semantic-rag-program-scope-clarification-choice', preGuardProgramScopeChoice, { routeStage: 'pre-guard-program-scope-choice', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtProgramScopeChoice, resultCacheKey);
+  }
   const preGuardProgramScopeClarification = strictDocumentOnly ? null : (tryAmbiguousProgramScopeAnswer(routingQuestion || question, options) || tryAmbiguousProgramScopeAnswer(question, options));
   if (preGuardProgramScopeClarification && preGuardProgramScopeClarification.answer) {
     const builtProgramScopeClarification = buildDeterministicResponse(question, preGuardProgramScopeClarification.source || 'semantic-rag-program-scope-clarification', preGuardProgramScopeClarification, { routeStage: 'pre-guard-program-scope-clarification', normalizedRouting: normalizedRouting.changed });
