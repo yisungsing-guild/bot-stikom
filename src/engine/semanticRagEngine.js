@@ -3544,7 +3544,46 @@ function hasUploadedDocumentTopicConflict(question, answer) {
 function isIndustryServicesQuestionAnswer(question, answer) {
   return /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|dari\s+industri)\b/i.test(String(question || ''))
     && /\b(?:layanan\s+industri|kerja\s*sama\s+industri|kerjasama\s+industri|perusahaan|rekrutmen|pelatihan\s+industri|direktorat\s+kerja\s*sama)\b/i.test(String(answer || ''));
-}function extractFocusedUploadedEvidenceSnippet(text, question) {
+}
+
+function hasUnrequestedSensitiveDomainLeak(question, answer) {
+  const q = String(question || '').toLowerCase();
+  const a = String(answer || '').toLowerCase();
+  if (!q || !a || hasNoDataAnswerPhrase(a)) return false;
+
+  const allows = {
+    visa: /\b(?:visa|vitas|e\s*30\s*b|itas|kitas|sktt|izin\s+belajar|study\s+permit|mahasiswa\s+asing|foreign\s+student)\b/i.test(q),
+    rpl: /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau|konversi\s+sks|pengakuan\s+sks|pindahan|transfer\s+sks)\b/i.test(q),
+    doubleDegree: /\b(?:double\s*degree|dual\s*degree|dnui|dalian|help\s+university|utb|gelar\s+ganda)\b/i.test(q),
+    accreditation: /\b(?:akreditasi|akrediasi|ban\s*-?pt|lam\s*infokom|peringkat)\b/i.test(q),
+    career: /\b(?:career\s*center|karier|karir|pekerjaan|lowongan|magang|job\s*fair|campus\s*hiring|tracer\s*study|peluang\s+kerja|prospek\s+kerja)\b/i.test(q),
+    academicAdmin: /\b(?:yudisium|wisuda|sidang|tugas\s+akhir|skripsi|tesis|krs|khs|transkrip|semester\s+(?:genap|ganjil|antara|pendek)|kalender\s+akademik|jadwal\s+akademik|remedial|remidi)\b/i.test(q)
+  };
+
+  const leaked = [];
+  const addLeak = (key, allowed, pattern) => {
+    if (!allowed && pattern.test(a)) leaked.push(key);
+  };
+
+  addLeak('visa', allows.visa, /\b(?:visa|vitas|e\s*30\s*b|itas|kitas|sktt|izin\s+belajar|study\s+permit|mahasiswa\s+asing)\b/i);
+  addLeak('rpl', allows.rpl, /\b(?:rekognisi\s+pembelajaran\s+lampau|\brpl\b|konversi\s+sks|pengakuan\s+sks|d1\s*,?\s*d2|d3\s*:\s*antara\s*\d|\b85\s*s\/d\s*100\s*sks\b)\b/i);
+  addLeak('double_degree', allows.doubleDegree, /\b(?:double\s*degree|dual\s*degree|dnui|dalian\s+neusoft|help\s+university|utb|universitas\s+teknologi\s+bandung)\b/i);
+  addLeak('accreditation', allows.accreditation, /\b(?:ban\s*-?pt|lam\s*infokom|nomor\s+sk|akreditasi\s+prodi|terakreditasi)\b/i);
+  addLeak('career', allows.career, /\b(?:career\s*center|job\s*fair|campus\s*hiring|tracer\s*study|lowongan\s+kerja)\b/i);
+  addLeak('academic_admin', allows.academicAdmin, /\b(?:yudisium|wisuda|sidang\s+tugas\s+akhir|pendaftaran\s+ujian\s+proposal|seminar\s+terbuka|sion|baak)\b/i);
+
+  const asksS1D3Comparison = /\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan)\b/i.test(q)
+    && /\bs\s*1\b|sarjana/i.test(q)
+    && /\bd\s*3\b|diploma/i.test(q);
+  if (asksS1D3Comparison && leaked.length) return true;
+
+  if (leaked.includes('visa')) return true;
+  if (leaked.includes('rpl') && !/\b(?:sks|d3|diploma)\b/i.test(q)) return true;
+  if (leaked.includes('double_degree') && !/\b(?:program\s+(?:apa|apa\s+saja|apa\s+aja|studi)|prodi|jurusan|internasional|pmb|pendaftaran|mahasiswa\s+baru)\b/i.test(q)) return true;
+  return leaked.length >= 2;
+}
+
+function extractFocusedUploadedEvidenceSnippet(text, question) {
   const cleaned = cleanUserVisibleRagAnswerText(text)
     .replace(/(?:^|\n)\s*[-*]?\s*(?:Program studi terlihat|Biaya pendidikan terlihat|Jadwal\/gelombang|UKT\s*\/\s*biaya per semester)\s*:\s*/gi, '\n')
     .replace(/\n{3,}/g, '\n\n')
@@ -11121,7 +11160,7 @@ function hasUploadedTrainingAnswerGrounding(question, answer) {
   if (meaning === false) return false;
 
   if (getMissingStrongQuestionAnchors(question, answer).length > 0) return false;
-  if (hasUploadedDocumentTopicConflict(question, answer)) return false;
+  if (hasUploadedDocumentTopicConflict(question, answer) || hasUnrequestedSensitiveDomainLeak(question, answer)) return false;
 
   const stop = new Set([
     'apa', 'apakah', 'bagaimana', 'gimana', 'berapa', 'kapan', 'dimana', 'mana', 'siapa', 'yang', 'dan', 'atau', 'dari', 'dengan', 'untuk', 'pada', 'dalam', 'bisa', 'dapat', 'punya', 'memiliki', 'ada', 'tersedia', 'tentang', 'info', 'informasi', 'jelaskan', 'detail', 'saya', 'aku', 'kak', 'min', 'itu', 'ini', 'nya', 'aja', 'saja', 'mau', 'ingin', 'pengen', 'kalau', 'harus', 'kampus', 'itb', 'stikom', 'bali', 'mahasiswa', 'kuliah', 'program', 'prodi', 'program studi', 'jurusan'
@@ -11189,7 +11228,7 @@ function shouldBlockGenericEvidenceAnswer(question, answer, source = '') {
   if (/^semantic-rag-uploaded-training-generic$/i.test(String(source || '')) && !hasUploadedTrainingAnswerGrounding(question, text)) return true;
   const meaning = answerMatchesQuestionMeaning(question, text, source);
   if (meaning === false) return true;
-  if (hasUploadedDocumentTopicConflict(question, text)) return true;
+  if (hasUploadedDocumentTopicConflict(question, text) || hasUnrequestedSensitiveDomainLeak(question, text)) return true;
   const fine = detectFineGrainedIntent(question || '');
   const stable = new Set(['program_list','program_definition','program_comparison','program_recommendation','program_curriculum','program_faculty','career_readiness','international_program_list','international_program_requirement','international_program_fee','fee','scholarship','accreditation','facility_list','academic_schedule','academic_requirement','registration_info','pmb_info']);
   if (stable.has(String(fine.fineIntent || '').toLowerCase()) && !answerMatchesStrongQuestionAnchors(question, text)) return true;
@@ -11559,7 +11598,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredRplSafe = /semantic-rag-rpl/i.test(source) && /\b(RPL|Rekognisi\s+Pembelajaran\s+Lampau|SKS|PMB|siap\.stikom-bali\.ac\.id)\b/i.test(String(result.answer || ''));
   const explicitExternalNoDataSafe = /explicit-external-insufficient-data/i.test(source);
   const meaningProfile = inferQuestionMeaningProfile(question);
-  const rawGenericEvidenceShape = hasRawEvidenceSnippetShape(result.answer) && isGenericEvidenceLikeSource(source);
+  const rawGenericEvidenceShape = (hasRawEvidenceSnippetShape(result.answer) || hasUnrequestedSensitiveDomainLeak(question, result.answer)) && isGenericEvidenceLikeSource(source);
   const structuredDefinitionSafe = meaningProfile.intent === 'definition_question' && /semantic-rag-uploaded-training-generic|campus-support-entity|campus-facility/i.test(source) && !rawGenericEvidenceShape;
   const structuredAccreditationSafe = /rag-accreditation|semantic-rag-accreditation/i.test(source)
     && /\b(BAN\s*-?\s*PT|akreditasi|Baik\s+Sekali|Baik)\b/i.test(String(result.answer || ''));
