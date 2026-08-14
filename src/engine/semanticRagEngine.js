@@ -842,6 +842,29 @@ function tryAmbiguousCampusProductAnswer(question) {
   };
 }
 
+function isExplicitProgramRecommendationQuestion(question) {
+  const q = normalizeUserQuery(question || '').normalizedText || String(question || '').toLowerCase();
+  if (!q.trim()) return false;
+  if (/\b(?:career\s*center|pusat\s+kar(?:ir|ier)|job\s*fair|campus\s*hiring|tracer\s*study|lowongan|loker|konsultasi\s+kar(?:ir|ier))\b/i.test(q)) return false;
+  if (/\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan|dibandingkan|antara)\b/i.test(q)) return false;
+  const programScope = /\b(?:s\s*1|sarjana|prodi|program\s+studi|jurusan|kuliah|mahasiswa\s+baru|calon\s+mahasiswa)\b/i.test(q);
+  const fitIntent = /\b(?:cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|pilihan|yang\s+mana|ambil|mengambil|jurusan\s+apa|prodi\s+apa|program\s+apa)\b/i.test(q);
+  const workOrInterest = /\b(?:bekerja\s+di\s+bidang|kerja\s+di\s+bidang|ingin\s+(?:jadi|bekerja)|mau\s+(?:jadi|bekerja)|pengen\s+(?:jadi|bekerja)|minat|suka|hobi|hobby|pemasaran|marketing|digital\s+marketing|sosial\s+media|social\s+media|tiktok|live|konten|content|jualan|bisnis|e-commerce|data|analisis|analyst|coding|ngoding|programming|aplikasi|software|developer|jaringan|network|cloud|cyber|security|hardware|iot|robot|desain|design|ui\s*\/?\s*ux)\b/i.test(q);
+  return programScope && fitIntent && workOrInterest;
+}
+
+function tryExplicitProgramRecommendationPreGuard(question) {
+  if (!isExplicitProgramRecommendationQuestion(question)) return null;
+  const direct = tryProgramRecommendationAnswer(question);
+  if (!direct || !direct.answer) return null;
+  return {
+    ...direct,
+    source: 'semantic-rag-program-recommendation',
+    frameSource: direct.frameSource || 'semantic-rag-program-recommendation',
+    confidence: direct.confidence || 0.96,
+    tier: direct.tier || 'HIGH'
+  };
+}
 function tryStudyLevelComparisonAnswer(question) {
   const q = String(question || '');
   const asksComparison = /\b(?:beda|bedanya|perbedaan|membedakan|banding|dibandingkan|antara)\b/i.test(q);
@@ -12023,9 +12046,21 @@ async function querySemanticRag(question, options = {}) {
     const builtStudyLevelComparison = buildDeterministicResponse(question, preGuardStudyLevelComparison.source || 'semantic-rag-study-level-comparison', preGuardStudyLevelComparison, { routeStage: 'pre-guard-study-level-comparison', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtStudyLevelComparison, resultCacheKey);
   }
-  const preGuardExplicitSupportEntity = strictDocumentOnly ? null : tryCampusSupportEntityAnswer(routingQuestion || question, getCachedSemanticIndex(), options);
+  const preGuardProgramRecommendationIntent = strictDocumentOnly ? null : (tryExplicitProgramRecommendationPreGuard(routingQuestion || question) || tryExplicitProgramRecommendationPreGuard(question));
+  if (preGuardProgramRecommendationIntent && preGuardProgramRecommendationIntent.answer) {
+    const builtProgramRecommendationIntent = buildDeterministicResponse(question, preGuardProgramRecommendationIntent.source || 'semantic-rag-program-recommendation', preGuardProgramRecommendationIntent, { routeStage: 'pre-guard-program-recommendation-intent', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtProgramRecommendationIntent, resultCacheKey);
+  }
+  const preGuardExplicitSupportQuestion = String(routingQuestion || question || '').toLowerCase();
+  const preGuardExplicitSupportEntityKey = findCampusSupportEntity(preGuardExplicitSupportQuestion);
+  const preGuardExplicitSupportAllowed = preGuardExplicitSupportEntityKey
+    && (
+      preGuardExplicitSupportEntityKey.key !== 'career-center'
+      || /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|cdc)\b/i.test(preGuardExplicitSupportQuestion)
+    );
+  const preGuardExplicitSupportEntity = strictDocumentOnly || !preGuardExplicitSupportAllowed ? null : tryCampusSupportEntityAnswer(routingQuestion || question, getCachedSemanticIndex(), options);
   if (preGuardExplicitSupportEntity && preGuardExplicitSupportEntity.answer && /semantic-rag-campus-(?:support-entity|facility)/i.test(String(preGuardExplicitSupportEntity.source || ''))) {
-    const builtExplicitSupportEntity = buildDeterministicResponse(question, preGuardExplicitSupportEntity.source || 'semantic-rag-campus-support-entity', preGuardExplicitSupportEntity, { routeStage: 'pre-guard-explicit-campus-support-entity', normalizedRouting: normalizedRouting.changed });
+    const builtExplicitSupportEntity = buildDeterministicResponse(question, preGuardExplicitSupportEntity.source || 'semantic-rag-campus-support-entity', preGuardExplicitSupportEntity, { routeStage: 'pre-guard-explicit-campus-support-entity', normalizedRouting: normalizedRouting.changed, supportEntityKey: preGuardExplicitSupportEntityKey.key });
     return await finalizeSemanticResult(question, builtExplicitSupportEntity, resultCacheKey);
   }
   const preGuardCampusLocation = strictDocumentOnly ? null : (tryCampusLocationAnswer(routingQuestion || question) || tryCampusLocationAnswer(question));
@@ -12075,6 +12110,14 @@ async function querySemanticRag(question, options = {}) {
   if (preGuardAdministrativeCompound && preGuardAdministrativeCompound.answer) {
     const builtAdministrativeCompound = buildDeterministicResponse(question, preGuardAdministrativeCompound.source || 'semantic-rag-admin-topic-composer', preGuardAdministrativeCompound, { routeStage: 'pre-guard-admin-compound-topic', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtAdministrativeCompound, resultCacheKey);
+  }
+  if (!strictDocumentOnly && isCareerConsultationQuestion(routingQuestion || question)) {
+    const preGuardCareerConsultation = {
+      answer: 'Ya. Mahasiswa dapat berkonsultasi mengenai karier melalui Career Center ITB STIKOM Bali, termasuk terkait persiapan kerja, peluang karier, magang, dan proses melamar pekerjaan. Untuk jadwal layanan atau PIC yang sedang aktif, kakak bisa cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.',
+      source: 'semantic-rag-campus-support-entity',
+      frameSource: 'semantic-rag-campus-support-entity'
+    };
+    return await finalizeSemanticResult(question, buildDeterministicResponse(question, 'semantic-rag-campus-support-entity', preGuardCareerConsultation, { routeStage: 'pre-guard-career-consultation', normalizedRouting: normalizedRouting.changed }), resultCacheKey);
   }
   if (!strictDocumentOnly && shouldTryDocumentEvidenceBeforePreGuards(question)) {
     try {
