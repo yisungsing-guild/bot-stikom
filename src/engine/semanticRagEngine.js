@@ -686,6 +686,43 @@ function hasStableFastLaneIntent(question) {
   return false;
 }
 
+function isAmbiguousProgramScopeQuestion(question) {
+  const q = String(question || '').trim();
+  if (!q) return false;
+  if (!/\bprogram\b/i.test(q)) return false;
+  const asksList =
+    /\b(?:program\s+(?:apa|apa\s+saja|apa\s+aja|yang\s+ada|tersedia)|ada\s+program\s+(?:apa|apa\s+saja|apa\s+aja)|programnya\s+(?:apa|apa\s+saja|apa\s+aja))\b/i.test(q) ||
+    /\b(?:boleh|bisa|mau|ingin|pengen)\b.{0,50}\b(?:tahu|tau|lihat|cek)\b.{0,40}\bprogram\b/i.test(q);
+  if (!asksList) return false;
+
+  const explicitScope = /\b(?:program\s+studi|prodi|jurusan|fakultas|s1|s2|d3|sarjana|pascasarjana|magister|diploma|double\s*degree|dual\s*degree|gelar\s+ganda|internasional|international|student\s+exchange|pertukaran\s+mahasiswa|gccp|hi-?think|hithink|goes\s*to\s*school|beasiswa|skss|rpl|pmb|pendaftaran|biaya|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis|ukm|organisasi|ormawa|fasilitas|kampus\s+mengajar)\b/i;
+  if (explicitScope.test(q)) return false;
+
+  return true;
+}
+
+function buildAmbiguousProgramScopeAnswer() {
+  return [
+    'Kak, maksud "program" yang ingin ditanyakan yang mana?',
+    '',
+    '- Program studi/jurusan: S2 Sistem Informasi, S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital, Sistem Komputer, dan D3 Manajemen Informatika.',
+    '- Program internasional: Double Degree DNUI/HELP, Double Degree UTB, Student Exchange, dan Hi-Think.',
+    '- Program pendukung kampus: beasiswa, UKM/organisasi mahasiswa, Career Center, Inkubator Bisnis, fasilitas kampus, atau program kampus lainnya.',
+    '',
+    'Kakak bisa balas, misalnya: "program studi", "program internasional", "program beasiswa", atau nama program yang ingin ditanyakan.'
+  ].join('\n');
+}
+
+function tryAmbiguousProgramScopeAnswer(question) {
+  if (!isAmbiguousProgramScopeQuestion(question)) return null;
+  return {
+    answer: buildAmbiguousProgramScopeAnswer(),
+    confidence: 0.93,
+    tier: 'HIGH',
+    source: 'semantic-rag-program-scope-clarification'
+  };
+}
+
 function hasExplicitDocumentEvidenceAnchor(question) {
   const q = String(question || '').trim();
   if (!q || q.length < 8) return false;
@@ -4452,7 +4489,7 @@ function buildSpecificInsufficientDataAnswer(question, missingEvidence = []) {
     return 'Mohon maaf, saya belum menemukan daftar lengkap yang diminta. Data yang tersedia belum cukup untuk menyebutkan semua item secara spesifik.';
   }
   
-  return 'Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi untuk menjawab pertanyaan tersebut. Mungkin Anda bisa mengubah pertanyaannya atau menanyakan hal lain.';
+  return 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu.';
 }
 
 function collapseRepeatedLetters(value) {
@@ -10590,10 +10627,7 @@ function hasExplicitFeeQuestionSignal(question) {
   return /\b(per\s+semester|semesteran|uang\s+kuliah|uang\s+masuk|awal(?:nya)?\s+masuk|biaya\s+masuk)\b/i.test(q);
 }
 function buildInsufficientDataAnswer(kind = 'very_low') {
-  if (kind === 'low') {
-    return 'Saya belum menemukan data yang cukup aman untuk menjawab pertanyaan itu. Agar tidak keliru, kakak bisa cek pengumuman resmi kampus/SION atau konfirmasi ke admin/unit terkait.';
-  }
-  return 'Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi, untuk menjawab pertanyaan anda. Mungkin anda bisa mengubah pertanyaannya atau menanyakan hal lain yang ingin diketahui.';
+  return 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu.';
 }
 function buildMeaningMismatchFallbackAnswer(question) {
   if (isAcademicAdminUploadedDocQuestion(question, 'schedule') || isAcademicScheduleLookupQuestion(question)) return buildAcademicScheduleNoDataAnswer(question);
@@ -10895,7 +10929,7 @@ function extractAvailabilityTopic(question) {
 function buildGeneralAvailabilityNoDataAnswer(question) {
   const topic = extractAvailabilityTopic(question);
   return [
-    `Saya belum menemukan data yang cukup aman tentang ${topic} pada informasi ITB STIKOM Bali yang tersedia saat ini.`,
+    `Saya belum menemukan data yang sesuai tentang ${topic} pada informasi ITB STIKOM Bali yang tersedia saat ini.`,
     '',
     'Agar tidak keliru menyebut ketersediaan, syarat, jadwal, biaya, atau unit pengelolanya, kakak sebaiknya konfirmasi ke admin kampus/unit terkait.',
     '',
@@ -11617,6 +11651,12 @@ async function querySemanticRag(question, options = {}) {
   if (greetingPermission && greetingPermission.answer) {
     const builtGreetingPermission = buildDeterministicResponse(question, greetingPermission.source || 'semantic-rag-small-talk', greetingPermission, { routeStage: 'pre-guard-greeting-permission', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
+  }
+
+  const preGuardProgramScopeClarification = strictDocumentOnly ? null : (tryAmbiguousProgramScopeAnswer(routingQuestion || question) || tryAmbiguousProgramScopeAnswer(question));
+  if (preGuardProgramScopeClarification && preGuardProgramScopeClarification.answer) {
+    const builtProgramScopeClarification = buildDeterministicResponse(question, preGuardProgramScopeClarification.source || 'semantic-rag-program-scope-clarification', preGuardProgramScopeClarification, { routeStage: 'pre-guard-program-scope-clarification', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtProgramScopeClarification, resultCacheKey);
   }
 
   const earlyAdministrativeTopic = strictDocumentOnly ? null : getAdministrativeInfoTopic(question);

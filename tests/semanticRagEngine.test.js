@@ -1257,6 +1257,33 @@ describe('semanticRagEngine', () => {
     expect(greeting.answer).not.toMatch(/belum menemukan data|Double Degree|PMB adalah/i);
   }, 30000);
 
+  test('clarifies ambiguous program scope instead of leaking raw RAG or no-data', async () => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    for (const question of [
+      'Boleh saya tahu program apa saja yang ada di STIKOM Bali ya?',
+      'program apa saja yang ada di stikom bali?',
+      'ada program apa saja?'
+    ]) {
+      const result = await querySemanticRag(question, { topK: 8 });
+      expect(result.source).toBe('semantic-rag-program-scope-clarification');
+      expect(result.answer).toMatch(/maksud "program"/i);
+      expect(result.answer).toMatch(/Program studi\/jurusan/i);
+      expect(result.answer).toMatch(/Program internasional/i);
+      expect(result.answer).toMatch(/Program pendukung kampus/i);
+      expect(result.answer).not.toMatch(/belum menemukan data|\b\d{1,3}[.)]\s+Program/i);
+    }
+
+    const prodi = await querySemanticRag('apa saja prodi yg ada di stikom?', { topK: 8 });
+    expect(prodi.source).toBe('semantic-rag-program-list');
+    expect(prodi.answer).toMatch(/Sistem Informasi/i);
+    expect(prodi.answer).toMatch(/Bisnis Digital/i);
+    expect(prodi.answer).not.toMatch(/maksud "program"/i);
+  }, 30000);
+
   test('blocks wrong deterministic route domains before answers reach users', async () => {
     delete process.env.OPENAI_API_KEY;
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
