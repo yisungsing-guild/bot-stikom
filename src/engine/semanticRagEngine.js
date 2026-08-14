@@ -1467,7 +1467,7 @@ function hasConcreteDateOrPeriod(value) {
 }
 
 function hasConcreteNumberOrAmount(value) {
-  return /\b(?:rp\.?\s*\d|\d+[.,]?\d*\s*(?:juta|ribu|sks|semester|tahun|bulan|hari|minggu|orang|kali|%)|\d{1,3}(?:\.\d{3})+|\d+\s*\/\s*\d+)\b/i.test(String(value || ''));
+  return /\b(?:rp\.?\s*\d|\d+[.,]?\d*\s*(?:juta|ribu|sks|semester|tahun|bulan|hari|minggu|orang|kali|lokasi|kampus|cabang|%)|\d{1,3}(?:\.\d{3})+|\d+\s*\/\s*\d+)\b/i.test(String(value || ''));
 }
 
 function hasListLikeAnswer(value) {
@@ -12027,6 +12027,17 @@ async function querySemanticRag(question, options = {}) {
   if (preGuardExplicitSupportEntity && preGuardExplicitSupportEntity.answer && /semantic-rag-campus-(?:support-entity|facility)/i.test(String(preGuardExplicitSupportEntity.source || ''))) {
     const builtExplicitSupportEntity = buildDeterministicResponse(question, preGuardExplicitSupportEntity.source || 'semantic-rag-campus-support-entity', preGuardExplicitSupportEntity, { routeStage: 'pre-guard-explicit-campus-support-entity', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtExplicitSupportEntity, resultCacheKey);
+  }
+  const preGuardCampusLocation = strictDocumentOnly ? null : (tryCampusLocationAnswer(routingQuestion || question) || tryCampusLocationAnswer(question));
+  if (preGuardCampusLocation && preGuardCampusLocation.answer) {
+    const builtCampusLocation = buildDeterministicResponse(question, preGuardCampusLocation.source || 'semantic-rag-campus-location', preGuardCampusLocation, { routeStage: 'pre-guard-campus-location', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtCampusLocation, resultCacheKey);
+  }
+
+  const preGuardProgramAccreditationOverview = strictDocumentOnly ? null : (tryAccreditationAnswer(routingQuestion || question, getCachedSemanticIndex()) || tryAccreditationAnswer(question, getCachedSemanticIndex()));
+  if (preGuardProgramAccreditationOverview && preGuardProgramAccreditationOverview.answer && /rag-accreditation/i.test(String(preGuardProgramAccreditationOverview.source || ''))) {
+    const builtProgramAccreditationOverview = buildDeterministicResponse(question, preGuardProgramAccreditationOverview.source || 'rag-accreditation', preGuardProgramAccreditationOverview, { routeStage: 'pre-guard-program-accreditation-overview', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtProgramAccreditationOverview, resultCacheKey);
   }
   const preGuardProgramScopeChoice = strictDocumentOnly ? null : (tryProgramScopeClarificationChoiceAnswer(routingQuestion || question, options) || tryProgramScopeClarificationChoiceAnswer(question, options));
   if (preGuardProgramScopeChoice && preGuardProgramScopeChoice.answer) {
