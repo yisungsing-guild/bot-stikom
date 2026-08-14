@@ -8,6 +8,7 @@ const { SOURCE_TYPES, PIPELINE_TYPES, buildFinalPipeline } = require('./telemetr
 const { safeSessionUpsert } = require('../utils/sessionUpsert');
 const { sanitizeWhatsappText } = require('../utils/textSanitizer');
 const { buildWhatsappConversationalReply, isProgramOverviewQuestion } = require('../utils/whatsappFormatter');
+const { evaluateOutboundAnswer } = require('../utils/answerPreflightEvaluator');
 const { updateUserProfile } = require('../engine/userProfileManager');
 
 function createComposerPipeline({
@@ -251,7 +252,7 @@ function createComposerPipeline({
     // If caller requests a deterministic/system response, bypass composer/humanizer
     // and send literal text when deterministic mode is requested.
     if (responseMode === 'deterministic') {
-      const finalText = String((ruleReply && ruleReply.text) || (ragResult && ragResult.answer) || '').trim();
+      let finalText = String((ruleReply && ruleReply.text) || (ragResult && ragResult.answer) || '').trim();
       const bypassPipeline = source === 'intro' ? buildFinalPipeline(PIPELINE_TYPES.COMPOSER, PIPELINE_TYPES.HUMANIZER) : null;
       state.replyAlreadySent = true;
       state.composerCompleted = true;
@@ -269,6 +270,17 @@ function createComposerPipeline({
             console.log(finalText);
           }
         } catch (e) {}
+        const deterministicPreflight = evaluateOutboundAnswer(finalText, text, {
+          source,
+          sourceType: effectiveSourceType,
+          confidenceScore: ragResult && ragResult.confidenceScore,
+          intentConfidence: intentConf,
+          responseMode: 'deterministic'
+        });
+        finalText = String(deterministicPreflight && deterministicPreflight.answer ? deterministicPreflight.answer : finalText);
+        if (deterministicPreflight && deterministicPreflight.blocked) {
+          logger && logger.warn && logger.warn({ chatId, source, sourceType: effectiveSourceType, issues: deterministicPreflight.issues }, '[OutboundGuard] Deterministic reply replaced by preflight fallback');
+        }
         await sendBotMessageOriginal(chatId, finalText, {
           sentViaComposer: source === 'intro',
           source,
@@ -465,6 +477,23 @@ function createComposerPipeline({
       finalText = sanitizeWhatsappText(finalText);
     } catch (e) {}
 
+    let outputPreflight = null;
+    try {
+      outputPreflight = evaluateOutboundAnswer(finalText, text, {
+        source,
+        sourceType: effectiveSourceType,
+        confidenceScore: ragResult && ragResult.confidenceScore,
+        intentConfidence: intentConf,
+        responseMode: 'composer'
+      });
+      finalText = String(outputPreflight && outputPreflight.answer ? outputPreflight.answer : finalText);
+      if (outputPreflight && outputPreflight.blocked) {
+        logger && logger.warn && logger.warn({ chatId, source, sourceType: effectiveSourceType, issues: outputPreflight.issues }, '[OutboundGuard] Composer reply replaced by preflight fallback');
+      }
+    } catch (e) {
+      logger && logger.warn && logger.warn({ err: e && e.message ? e.message : String(e), source }, '[OutboundGuard] Composer preflight failed open');
+    }
+
     try {
       // Emit detailed intent/retrieval tracing for debugging runtime issues
       try {
@@ -527,7 +556,7 @@ function createComposerPipeline({
       timeoutTriggered: !!state.timeoutTriggered,
       duplicateSendPrevented: !!state.duplicateSendPrevented,
       contextReused: !!state.contextReused,
-      composerMeta: composeResult && composeResult.meta ? Object.assign({}, composeResult.meta, { userQuery: text, finalText: finalText }) : { userQuery: text, finalText: finalText }
+      composerMeta: composeResult && composeResult.meta ? Object.assign({}, composeResult.meta, { userQuery: text, finalText: finalText, outputPreflight }) : { userQuery: text, finalText: finalText, outputPreflight }
     });
     state.outboundSent = true;
     clearReplyDeadline();

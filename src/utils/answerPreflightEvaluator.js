@@ -383,7 +383,7 @@ function isConversationalQuery(userQuery) {
   const politeTail = String.raw`(?:kak|kakak|min|admin|bro|sis|gan|ya|dong|nih)?`;
   const greetingOnlyPattern = new RegExp(String.raw`^(?:${greetingToken}|selamat\s+(?:pagi|siang|sore|malam))(?:\s+(?:${greetingToken}|selamat\s+(?:pagi|siang|sore|malam)))*\s*${politeTail}$`, 'i');
   return greetingOnlyPattern.test(normalizedRepeats)
-    || /^(?:apa\s+kabar|gimana\s+kabarnya|bagaimana\s+kabarnya)(?:\s+(?:kak|kakak|min|admin))?$/i.test(normalizedRepeats)
+    || /^(?:(?:halo|hallo|hello|helo|hai|hi|hey|kak|min|admin)\s+)*(?:apa\s+kabar|apa\s+khabar|gimana\s+kabarnya|bagaimana\s+kabarnya)(?:\s+(?:kak|kakak|min|admin))?$/i.test(normalizedRepeats)
     || /^(?:test|tes|testing|cek|ping)(?:\s+(?:bot|kak|min|admin))?$/i.test(normalizedRepeats)
     || /^(?:makasih|terima\s+kasih|thanks|thank\s+you)(?:\s+(?:kak|kakak|min|admin|ya))?$/i.test(normalizedRepeats)
     || /^(?:ok|oke|okey|okay|siap|baik|noted|mantap)(?:\s+(?:kak|kakak|min|admin|ya))?$/i.test(normalizedRepeats)
@@ -405,8 +405,96 @@ function buildConversationalFallback(userQuery) {
   return 'Halo kak, ada yang bisa saya bantu seputar ITB STIKOM Bali?';
 }
 
+function detectCrossDomainAnswerLeak(answer, userQuery = '') {
+  const q = normalizeForAlignment(userQuery);
+  const a = normalizeForAlignment(answer);
+  if (!q.trim() || !a.trim() || isConversationalQuery(userQuery)) {
+    return { leak: false, leakedDomains: [] };
+  }
+
+  const requested = {
+    visa: /\b(?:visa|vitas|itas|kitas|sktt|izin belajar|study permit|mahasiswa asing|international office|imigrasi|paspor)\b/i.test(q),
+    rpl: /\b(?:rpl|rekognisi|konversi|alih kredit|transfer sks|jumlah sks diakui|d1|d2)\b/i.test(q),
+    doubleDegree: /\b(?:double degree|dual degree|gelar ganda|dnui|dalian|help university|utb|malaysia|china|cina|dkv)\b/i.test(q),
+    accreditation: /\b(?:akreditasi|ban pt|ban-pt|lam infokom|peringkat akreditasi|nomor sk)\b/i.test(q),
+    career: /\b(?:career center|karier|karir|kerja|magang|job fair|campus hiring|tracer study|rekrutmen|lowongan)\b/i.test(q),
+    academicAdmin: /\b(?:yudisium|wisuda|sion|baak|kalender akademik|semester|perkuliahan|kuliah|jadwal kuliah|mulai kuliah)\b/i.test(q),
+    fee: /\b(?:biaya|ukt|dpp|pendaftaran|potongan|diskon|cicilan|nominal|gelombang)\b/i.test(q),
+    program: /\b(?:prodi|program studi|jurusan|s1|s2|d3|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika)\b/i.test(q),
+    campusSupport: /\b(?:ukm|ormawa|organisasi|fasilitas|inkubator|inbis|student exchange|hi think|hithink|goes to school)\b/i.test(q)
+  };
+
+  const answerDomains = {
+    visa: /\b(?:visa|vitas|itas|kitas|sktt|izin belajar|study permit|imigrasi|paspor|e30b)\b/i.test(a),
+    rpl: /\b(?:rpl|rekognisi|konversi|alih kredit|transfer sks|85\s+s\s*d\s+100\s+sks|d1|d2)\b/i.test(a),
+    doubleDegree: /\b(?:double degree|dual degree|gelar ganda|dnui|dalian|help university|utb|malaysia|china|cina|dkv)\b/i.test(a),
+    accreditation: /\b(?:akreditasi|ban pt|ban-pt|lam infokom|nomor sk|peringkat akreditasi)\b/i.test(a),
+    career: /\b(?:career center|karier|karir|magang|job fair|campus hiring|tracer study|rekrutmen|lowongan)\b/i.test(a),
+    academicAdmin: /\b(?:yudisium|wisuda|sion|baak|kalender akademik|semester genap|semester ganjil|jadwal kuliah)\b/i.test(a)
+  };
+
+  const allowed = new Set();
+  if (requested.visa) allowed.add('visa');
+  if (requested.rpl) allowed.add('rpl');
+  if (requested.doubleDegree) allowed.add('doubleDegree');
+  if (requested.accreditation) allowed.add('accreditation');
+  if (requested.career) allowed.add('career');
+  if (requested.academicAdmin) allowed.add('academicAdmin');
+  if (requested.fee) allowed.add('fee');
+  if (requested.program) {
+    allowed.add('program');
+    allowed.add('career');
+    allowed.add('doubleDegree');
+    allowed.add('accreditation');
+  }
+  if (requested.campusSupport) {
+    allowed.add('campusSupport');
+    allowed.add('career');
+    allowed.add('doubleDegree');
+  }
+
+  const requestedAny = Object.values(requested).some(Boolean);
+  const leakedDomains = Object.entries(answerDomains)
+    .filter(([domain, present]) => present && !allowed.has(domain))
+    .map(([domain]) => domain);
+
+  if (!requestedAny && leakedDomains.length) {
+    return { leak: true, leakedDomains };
+  }
+  if (!leakedDomains.length) return { leak: false, leakedDomains: [] };
+
+  const answerDomainCount = Object.values(answerDomains).filter(Boolean).length;
+  const strongLeak = leakedDomains.some((domain) => {
+    if (domain === 'visa') return /\b(?:visa|itas|kitas|sktt|izin belajar|imigrasi|paspor|e30b)\b/i.test(a);
+    if (domain === 'rpl') return /\b(?:rpl|rekognisi|konversi|85\s+s\s*d\s+100\s+sks|d1|d2)\b/i.test(a);
+    if (domain === 'doubleDegree') return /\b(?:double degree|dual degree|dnui|help university|utb|dalian)\b/i.test(a);
+    return true;
+  });
+
+  return {
+    leak: strongLeak || answerDomainCount >= 2,
+    leakedDomains
+  };
+}
+function detectProgramRecommendationDrift(answer, userQuery = '') {
+  const q = normalizeForAlignment(userQuery);
+  const a = normalizeForAlignment(answer);
+  const asksRecommendation = /\b(?:cocok|cocoknya|pilih|ambil|rekomendasi|saran|sebaiknya|bagusnya)\b/i.test(q);
+  const asksStudyChoice = /\b(?:jurusan|prodi|program studi|s1|d3|kuliah|anak saya|saya berasal|smk|sma)\b/i.test(q);
+  const asksInterestOrCareer = /\b(?:kerja|bekerja|karier|karir|minat|suka|pemasaran|marketing|sosial media|live|tiktok|coding|komputer|data|bisnis|hardware|jaringan|game|desain)\b/i.test(q);
+  if (!(asksRecommendation && asksStudyChoice && asksInterestOrCareer)) {
+    return { drift: false, reason: null };
+  }
+  const mentionsProgram = /\b(?:sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika|\bsi\b|\bti\b|\bbd\b|\bsk\b|\bmi\b)\b/i.test(a);
+  const genericCareerOnly = /\b(?:career center|lowongan|job fair|campus hiring|tracer study|konsultasi karier|persiapan kerja)\b/i.test(a)
+    && !mentionsProgram;
+  if (!mentionsProgram || genericCareerOnly) {
+    return { drift: true, reason: genericCareerOnly ? 'career_service_without_program' : 'missing_program_recommendation' };
+  }
+  return { drift: false, reason: null };
+}
 function isGenericRecoveryFallbackText(answer) {
-  return /\b(?:belum\s+mempunyai\s+jawaban\s+yang\s+cukup\s+aman|jawaban\s+yang\s+terbentuk\s+belum\s+sesuai|sistem\s+kami\s+sedang\s+kendala|pesan\s+tadi\s+belum\s+terbaca|belum\s+kebaca\s+dengan\s+benar|belum\s+menemukan\s+informasi\s+yang\s+cukup)\b/i.test(String(answer || ''));
+  return /\b(?:belum\s+mempunyai\s+jawaban\s+yang\s+cukup\s+aman|jawaban\s+yang\s+terbentuk\s+belum\s+sesuai|sistem\s+kami\s+sedang\s+kendala|pesan\s+tadi\s+belum\s+terbaca|belum\s+kebaca\s+dengan\s+benar|belum\s+menemukan\s+(?:data|informasi)\s+yang\s+cukup)\b/i.test(String(answer || ''));
 }
 
 function detectIntentSet(text) {
@@ -662,7 +750,11 @@ function decidePreflightAction(issues, meta = {}) {
     'no_query_term_overlap',
     'placeholder_or_ocr_noise',
     'answer_query_mismatch',
-    'apa_saja_without_concrete_items'
+    'apa_saja_without_concrete_items',
+    'cross_domain_answer_leak',
+    'career_service_without_program',
+    'missing_program_recommendation',
+    'program_recommendation_drift'
   ]);
   if (issues.some((issue) => hardIssues.has(issue))) {
     const regenerationCount = Number(meta.regenerationCount || meta.regenCount || 0);
@@ -704,6 +796,21 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   const sensitiveAudit = detectSensitiveInformation(text);
   const businessRuleAudit = validateBusinessRules(text, userQuery);
   const citationAudit = validateCitation(text, meta || {});
+  const rawLeakPrecheck = rawFaqQnaDump
+    || hasRawTechnicalLeak(text)
+    || hasDocumentSourceLeak(text)
+    || hasUnsafeAdministrativeLeak(text, userQuery)
+    || hasLikelyRawDocumentLeak(text);
+  const crossDomainAudit = detectCrossDomainAnswerLeak(text, userQuery);
+  if (crossDomainAudit.leak && !rawLeakPrecheck) {
+    issues.push('cross_domain_answer_leak');
+    text = buildPreflightFallback(userQuery, 'intent_conflict');
+  }
+  const programRecommendationAudit = detectProgramRecommendationDrift(text, userQuery);
+  if (programRecommendationAudit.drift) {
+    issues.push(programRecommendationAudit.reason || 'program_recommendation_drift');
+    text = buildPreflightFallback(userQuery, 'intent_conflict');
+  }
   if (sensitiveAudit.hasSensitiveInfo && sensitiveAudit.hits.some((hit) => hit === 'secret_or_token')) {
     text = maskPii(text);
     issues.push('sensitive_secret_masked');
@@ -727,6 +834,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     && /\b(Pendampingan|Program inkubasi|mentoring|kewirausahaan|coworking|model bisnis|rintisan bisnis)\b/i.test(text)
     && !/\b(?:PROFIL\s+LEMBAGA|\[Sheet:|SOURCE_CHUNKS|CONFIDENCE|embedding|Identitas\s+Lembaga|Dasar\s+Hukum|Pembina\s*\/\s*Penanggung\s+Jawab|Struktur\s+Organisasi|DAFTAR\s+ISI)\b/i.test(text);
   if (
+    !issues.length &&
     !sensitiveAudit.hits.includes('secret_or_token') &&
     (preserveTrustedFeeAnswer || preserveTrustedDualDegreeAnswer || preserveTrustedInkubatorAnswer) &&
     !rawFaqQnaDump &&
@@ -910,6 +1018,8 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
       sensitiveInformation: sensitiveAudit,
       businessRuleValidation: businessRuleAudit,
       citationValidation: citationAudit,
+      crossDomainAnswerLeak: typeof crossDomainAudit !== 'undefined' ? crossDomainAudit : null,
+      programRecommendationDrift: typeof programRecommendationAudit !== 'undefined' ? programRecommendationAudit : null,
       confidence: finalConfidence
     }
   };
@@ -923,5 +1033,7 @@ module.exports = {
   hasLikelyRawDocumentLeak,
   isConversationalQuery,
   detectIntentConflict,
-  detectAnswerQueryMismatch
+  detectAnswerQueryMismatch,
+  detectCrossDomainAnswerLeak,
+  detectProgramRecommendationDrift
 };

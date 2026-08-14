@@ -1,6 +1,7 @@
 const { createComposerPipeline } = require('./composerPipeline');
 const { SOURCE_TYPES, PIPELINE_TYPES } = require('./telemetryConstants');
 const { safeSessionUpsert } = require('../utils/sessionUpsert');
+const { evaluateOutboundAnswer } = require('../utils/answerPreflightEvaluator');
 const { classifyResponseRoute, shouldBypassComposer, isConversationalFlow } = require('./routingPolicy');
 
 function createOutbound({
@@ -174,7 +175,7 @@ function createOutbound({
           console.warn(`[DEV WARNING] Outbound direct send used for chatId=${toChatId} source=${source} reason=${resolvedReason}`);
         } catch (e) {}
       }
-      const outboundText = String(messageText || (effectiveRuleReply && effectiveRuleReply.text) || (ragResult && ragResult.answer) || '');
+      let outboundText = String(messageText || (effectiveRuleReply && effectiveRuleReply.text) || (ragResult && ragResult.answer) || '');
       const meta = {
         sentViaComposer: source === 'intro',
         source,
@@ -190,6 +191,37 @@ function createOutbound({
         triggerReason: effectiveRoute.triggerReason,
         conversational: effectiveRoute.conversational
       };
+      try {
+        const userQuery = String((typeof getText === 'function' ? getText() : '') || '').trim();
+        const preflight = evaluateOutboundAnswer(outboundText, userQuery, {
+          source,
+          sourceType,
+          confidenceScore: ragResult && ragResult.confidenceScore,
+          intentConfidence: typeof intentConfidence === 'function' ? intentConfidence(userQuery) : null,
+          responseMode,
+          routeType: effectiveRoute.routeType
+        });
+        outboundText = String(preflight && preflight.answer ? preflight.answer : outboundText);
+        meta.outputPreflight = {
+          action: preflight && preflight.action,
+          blocked: preflight && preflight.blocked,
+          changed: preflight && preflight.changed,
+          issues: preflight && Array.isArray(preflight.issues) ? preflight.issues : []
+        };
+        if (preflight && preflight.blocked) {
+          logger && logger.warn && logger.warn({
+            chatId: toChatId,
+            source,
+            sourceType,
+            userQuery,
+            issues: meta.outputPreflight.issues,
+            action: meta.outputPreflight.action
+          }, '[OutboundGuard] Direct reply replaced by preflight fallback');
+        }
+      } catch (e) {
+        logger && logger.warn && logger.warn({ err: e && e.message ? e.message : String(e), source }, '[OutboundGuard] Direct preflight failed open');
+      }
+
       if (outboundDebug) {
         try {
           logger && logger.info && logger.info({ chatId: toChatId, outboundText: outboundText.slice(0, 200), meta }, '[Outbound DEBUG] direct send');

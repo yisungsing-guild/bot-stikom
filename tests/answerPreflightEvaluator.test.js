@@ -364,4 +364,40 @@ describe('answerPreflightEvaluator', () => {
     expect(fee.blocked).toBe(false);
     expect(fee.answer).toMatch(/Teknologi Informasi|gelombang 1C|DPP/i);
   });
+  test('blocks cross-domain answer leaks before outbound send', () => {
+    const result = evaluateOutboundAnswer(
+      'Visa adalah izin masuk ke Indonesia, sedangkan ITAS/KITAS adalah izin tinggal terbatas bagi mahasiswa asing selama studi.',
+      'Perbedaan antara program S1 dan D3 apa ya?'
+    );
+    expect(result.blocked).toBe(true);
+    expect(result.issues).toContain('cross_domain_answer_leak');
+    expect(result.answer).not.toMatch(/visa|ITAS|7\.000\.000|85\s*s\/d\s*100/i);
+  });
+
+  test('blocks career-service-only replies for study-program recommendations', () => {
+    const result = evaluateOutboundAnswer(
+      'Career Center di ITB STIKOM Bali membantu mahasiswa dan lulusan mempersiapkan diri masuk dunia kerja melalui lowongan, magang, dan job fair.',
+      'Kalau S1 yang cocok untuk bekerja di bidang pemasaran yang mana ya?'
+    );
+    expect(result.blocked).toBe(true);
+    expect(result.issues).toContain('career_service_without_program');
+
+    const good = evaluateOutboundAnswer(
+      'Untuk minat pemasaran, S1 Bisnis Digital paling relevan karena fokus pada digital marketing, e-commerce, analisis pasar, dan pengembangan bisnis.',
+      'Kalau S1 yang cocok untuk bekerja di bidang pemasaran yang mana ya?'
+    );
+    expect(good.blocked).toBe(false);
+    expect(good.answer).toMatch(/Bisnis Digital/i);
+  });
+
+  test('recovers combined greeting and how-are-you fallback text', () => {
+    const result = evaluateOutboundAnswer(
+      'Saya belum menemukan data yang cukup aman untuk menjawab pertanyaan itu.',
+      'halo apa kabar?'
+    );
+    expect(result.blocked).toBe(false);
+    expect(result.issues).toContain('recovered_conversation_fallback');
+    expect(result.answer).toMatch(/Baik|bantu/i);
+    expect(result.answer).not.toMatch(/belum menemukan data/i);
+  });
 });
