@@ -34,6 +34,10 @@ const { evaluateOutboundAnswer, hasLikelyRawDocumentLeak } = require('../utils/a
 const { normalizeUserQuery } = require('../utils/queryNormalizer');
 const { classifyDocumentCategory } = require('./docCategoryClassifier');
 const {
+  deriveQueryMetadataConstraints,
+  applyKnowledgeMetadataHardGate
+} = require('./hardMetadataGates');
+const {
   buildQueryUnderstanding,
   rerankContexts,
   reciprocalRankFusion,
@@ -4294,6 +4298,7 @@ function selectEvidenceByCompatibility(question, contexts, options = {}) {
   
   const questionIntent = options.intent || detectGenericIntent(question);
   const questionAnchors = extractQueryAnchorTerms(question);
+  const metadataConstraints = deriveQueryMetadataConstraints(question, { intent: questionIntent });
   const isLegalQuestion = /\b(pasal|ayat|force\s*majeure|addendum|perjanjian|klausul|isi\s+pasal|legal|hukum)\b/i.test(question);
   const maxEvidence = options.maxEvidence || 5;
   
@@ -4314,6 +4319,10 @@ function selectEvidenceByCompatibility(question, contexts, options = {}) {
         continue;
       }
       
+      // Hard metadata gate: reject obvious wrong-domain evidence before scoring.
+      const metadataGate = applyKnowledgeMetadataHardGate({ ...ctx, chunk: cleaned }, metadataConstraints);
+      if (!metadataGate.pass) continue;
+
       // Generic compatibility scoring
       const genericScore = computeGenericScore(question, cleaned, questionIntent);
       if (genericScore < 0.25) continue;

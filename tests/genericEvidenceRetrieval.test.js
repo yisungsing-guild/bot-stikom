@@ -494,6 +494,17 @@ describe('generic evidence retrieval', () => {
       // May include both if generic words overlap, but should prioritize TI
     });
 
+    test('hard metadata gate rejects wrong-domain generic evidence', () => {
+      const contexts = [
+        { chunk: 'Program Double Degree DNUI memiliki kegiatan internasional dan skema kuliah di China.', filename: 'double-degree-dnui.pdf' },
+        { chunk: 'Pelaksanaan Yudisium: Hari/Tanggal Rabu, 14 Oktober 2026 pukul 14.00 WITA di Aula STIKOM Bali.', filename: 'Informasi Pelaksanaan Yudisium.pdf' }
+      ];
+
+      const selected = selectEvidenceByCompatibility('pelaksanaan yudisium kapan?', contexts, { intent: 'schedule' });
+      expect(selected.length).toBeGreaterThan(0);
+      expect(selected.some((item) => /Yudisium/i.test(item.text))).toBe(true);
+      expect(selected.every((item) => !/Double Degree|DNUI|China/i.test(item.text))).toBe(true);
+    });
     test('intent compatibility filters irrelevant content', () => {
       const contexts = [
         { chunk: 'Jadwal pendaftaran Gelombang 1A: 1 Januari - 31 Maret 2026.', filename: 'schedule.txt' },

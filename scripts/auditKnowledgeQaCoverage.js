@@ -1,4 +1,4 @@
-﻿/* eslint-disable no-console */
+/* eslint-disable no-console */
 
 /**
  * Audit FAQ/QNA answer coverage across active TrainingData documents.
@@ -10,6 +10,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const {
+  deriveQueryMetadataConstraints,
+  applyKnowledgeMetadataHardGate
+} = require('../src/engine/hardMetadataGates');
 
 process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
 process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS || 'false';
@@ -126,6 +130,9 @@ function getExpectedTerms(pair) {
 function evaluateAnswer(pair, result) {
   const answer = compact(result && result.answer);
   const source = String(result && result.source ? result.source : '');
+  const contexts = result && Array.isArray(result.contexts) ? result.contexts : [];
+  const constraints = deriveQueryMetadataConstraints(pair && pair.question, {});
+  const wrongDomain = constraints.strict && contexts.length > 0 && contexts.every((ctx) => !applyKnowledgeMetadataHardGate(ctx, constraints).pass);
   const expectedTerms = getExpectedTerms(pair);
   const answerNorm = normalize(answer);
   const hits = expectedTerms.filter((term) => answerNorm.includes(term));
@@ -133,10 +140,11 @@ function evaluateAnswer(pair, result) {
     || /meaning-mismatch|preflight-blocked|no-context|unanswerable|insufficient|no-data/i.test(source)
     || /\b(?:mohon maaf|belum menemukan data|belum mempunyai jawaban|tidak mempunyai jawaban|tidak cukup aman)\b/i.test(answer);
   const hitRatio = expectedTerms.length ? hits.length / expectedTerms.length : 1;
-  const ok = !weakAnswer && (expectedTerms.length < 3 || hitRatio >= 0.25);
+  const ok = !weakAnswer && !wrongDomain && (expectedTerms.length < 3 || hitRatio >= 0.25);
   return {
     ok,
     source,
+    wrongDomain,
     hitRatio: Number(hitRatio.toFixed(2)),
     expectedTerms,
     matchedTerms: hits,
@@ -158,6 +166,7 @@ function summarizeDoc(row, pairs, results, options = {}) {
   const reviewReasons = [];
   if (options.nonPublic) reviewReasons.push('non_public_or_governance_document');
   else if (!pairs.length) reviewReasons.push('no_faq_qna_pairs_detected');
+  if (results.some((item) => item.wrongDomain)) reviewReasons.push('wrong_domain_evidence_detected');
   if (results.length && coverage < 0.8) reviewReasons.push('runtime_answer_coverage_below_80_percent');
   if (String(row.ragIngestStatus || '').toLowerCase() !== 'success') reviewReasons.push('rag_ingest_status_not_success');
   return {

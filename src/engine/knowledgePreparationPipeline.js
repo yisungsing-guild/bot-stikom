@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { chunkText } = require('./chunker');
+const { chunkText, extractFaqPairsDetailed } = require('./chunker');
 const { classifyDocumentCategoryDetailed } = require('./docCategoryClassifier');
 
 const RUNTIME_DIR = path.resolve(__dirname, '..', '..', 'data', 'runtime');
@@ -371,12 +371,20 @@ function prepareKnowledgeDocument({ content, filename, sourceUrl, trainingDataId
   const structuredTables = extractStructuredTables(cleanedText || rawText);
   const categoryDetailed = classifyDocumentCategoryDetailed(text, filename || '', { sourceUrl, divisionKey, storageType });
   const category = categoryDetailed && (categoryDetailed.category || categoryDetailed.bestCategory) || 'UNKNOWN';
+  const faqPairsDetailed = extractFaqPairsDetailed(cleanedText || text);
   const chunks = chunkText(text, { minSize: 300, maxSize: 800 });
   const entities = extractEntities(text);
   const aliases = extractAliases(entities);
   const facts = extractFacts(cleanedText || text);
   const rules = extractRules(cleanedText || text);
-  const faqCandidates = extractFaqCandidates(cleanedText || text);
+  const faqCandidateValues = [
+    ...faqPairsDetailed.map((pair) => [pair.question, pair.answer].filter(Boolean).join(' ')),
+    ...extractFaqCandidates(cleanedText || text).map((pair) => [pair.question, pair.answer].filter(Boolean).join(' '))
+  ];
+  const faqCandidates = unique(faqCandidateValues, 40).map((value) => {
+    const questionMatch = value.match(/^(.+?\?)\s+(.+)$/);
+    return questionMatch ? { question: questionMatch[1], answer: questionMatch[2].slice(0, 500) } : { question: value.slice(0, 220), answer: value.slice(0, 500) };
+  });
   const authority = detectSourceAuthority(filename, sourceUrl, text);
   const versions = extractVersionSignals(text, filename);
   const effectiveDates = extractEffectiveDates(text);
@@ -419,11 +427,21 @@ function prepareKnowledgeDocument({ content, filename, sourceUrl, trainingDataId
       entities,
       aliases
     },
-    knowledgeExtraction: { factCandidates: facts, ruleCandidates: rules, faqCandidates },
+    knowledgeExtraction: {
+      factCandidates: facts,
+      ruleCandidates: rules,
+      faqCandidates,
+      knowledgeUnits: {
+        faqPairCount: faqPairsDetailed.length,
+        chunkingStrategy: faqPairsDetailed.length ? 'faq_qna_pair_chunking' : (structuredTables.length ? 'table_or_section_aware_chunking' : 'semantic_sentence_chunking')
+      }
+    },
     qualityControl: { duplicateSignals, conflictSignals, quality, approval },
     indexingPlan: {
       chunkCount: chunks.length,
       chunkMinMax: { minSize: 300, maxSize: 800 },
+      chunkingStrategy: faqPairsDetailed.length ? 'faq_qna_pair_chunking' : (structuredTables.length ? 'table_or_section_aware_chunking' : 'semantic_sentence_chunking'),
+      qaPairCount: faqPairsDetailed.length,
       embeddingRequired: true,
       indexVersioningRequired: true,
       indexEligibility: approval.status === 'auto_approved_candidate' ? 'eligible' : 'hold_for_review'
@@ -453,6 +471,8 @@ function buildKnowledgePreparationGovernance(record, baseMetadata = {}) {
       factCandidateCount: Array.isArray(extraction.factCandidates) ? extraction.factCandidates.length : 0,
       ruleCandidateCount: Array.isArray(extraction.ruleCandidates) ? extraction.ruleCandidates.length : 0,
       faqCandidateCount: Array.isArray(extraction.faqCandidates) ? extraction.faqCandidates.length : 0,
+      qaPairCount: extraction.knowledgeUnits && Number.isFinite(Number(extraction.knowledgeUnits.faqPairCount)) ? Number(extraction.knowledgeUnits.faqPairCount) : 0,
+      chunkingStrategy: extraction.knowledgeUnits && extraction.knowledgeUnits.chunkingStrategy || (prep.indexingPlan && prep.indexingPlan.chunkingStrategy) || null,
       structuredTableCount: Array.isArray(understanding.structuredTables) ? understanding.structuredTables.length : 0,
       structuredTableDomains: understanding.structure && Array.isArray(understanding.structure.structuredTableDomains)
         ? understanding.structure.structuredTableDomains

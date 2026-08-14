@@ -342,6 +342,176 @@ function logMetadataGateApplication(query, originalChunks, filteredChunks, gateR
   return log;
 }
 
+
+// ============================================================================
+// KNOWLEDGE DOMAIN / TOPIC HARD GATES
+// ============================================================================
+
+function normalizeGateText(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9\u00c0-\u024f\s]/gi, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function getNestedMetadata(chunk) {
+  if (!chunk || typeof chunk !== 'object') return {};
+  const metadata = chunk.metadata && typeof chunk.metadata === 'object' ? chunk.metadata : {};
+  const governance = chunk.governance && typeof chunk.governance === 'object' ? chunk.governance : (metadata.governance && typeof metadata.governance === 'object' ? metadata.governance : {});
+  const prep = governance.knowledgePreparation && typeof governance.knowledgePreparation === 'object'
+    ? governance.knowledgePreparation
+    : (metadata.knowledgePreparation && typeof metadata.knowledgePreparation === 'object' ? metadata.knowledgePreparation : {});
+  return { metadata, governance, prep };
+}
+
+function inferKnowledgeDomainFromText(text, filename = '', metadata = {}) {
+  const explicit = String(metadata.domain || metadata.knowledgeDomain || metadata.topicDomain || '').trim().toLowerCase();
+  if (explicit) return explicit;
+
+  const category = String(metadata.docCategory || metadata.category || metadata.documentCategory || '').toUpperCase();
+  if (category === 'BIAYA') return 'fee';
+  if (category === 'JADWAL') return 'schedule';
+  if (category === 'AKREDITASI') return 'accreditation';
+  if (category === 'KURIKULUM') return 'curriculum';
+  if (category === 'PRODI_PROFILE') return 'program';
+  if (category === 'PROSPEK_KERJA') return 'career';
+  if (category === 'PROGRAM_KHUSUS') return 'international';
+  if (category === 'ADMINISTRASI' || category === 'SURAT') return 'administration';
+  if (category === 'SK') return 'governance';
+
+  const hay = normalizeGateText([filename, text].filter(Boolean).join(' '));
+  if (/\b(?:biaya|ukt|dpp|spp|rp|angsuran|potongan)\b/.test(hay) || (/\bgelombang\b/.test(hay) && /\b(?:biaya|pendaftaran|rp|potongan)\b/.test(hay))) return 'fee';
+  if (/\b(?:akreditasi|ban pt|lam infokom|nomor sk|peringkat)\b/.test(hay)) return 'accreditation';
+  if (/\b(?:yudisium|wisuda|sidang|tugas akhir|proyek akhir|kalender akademik|jadwal kuliah|semester genap|semester ganjil|krs|sion)\b/.test(hay)) return 'academic';
+  if (/\b(?:izin belajar|study permit|visa|e30b|itas|kitas|sktt|mahasiswa asing|international office)\b/.test(hay)) return 'foreign_student_admin';
+  if (/\b(?:double degree|dual degree|dnui|dalian|help university|student exchange|pertukaran mahasiswa|gccp|hi think|hithink|international class|program internasional)\b/.test(hay)) return 'international';
+  if (/\b(?:career center|pusat karir|pusat karier|tracer study|job fair|campus hiring|lowongan|magang)\b/.test(hay)) return 'career';
+  if (/\b(?:inkubator bisnis|inbis|startup|rintisan bisnis|kewirausahaan)\b/.test(hay)) return 'inbis';
+  if (/\b(?:ukm|ormawa|organisasi mahasiswa|bem|dpm|himaprodi|himpunan mahasiswa|futsal|musik|teater|tari)\b/.test(hay)) return 'student_org';
+  if (/\b(?:beasiswa|kip|skss|1k1s|prestasi|potongan beasiswa)\b/.test(hay)) return 'scholarship';
+  if (/\b(?:program studi|prodi|jurusan|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika|kurikulum|sks)\b/.test(hay)) return 'program';
+  if (/\b(?:fasilitas|laboratorium|lab|perpustakaan|parkir|kantin|aula|kampus denpasar|kampus jimbaran)\b/.test(hay)) return 'facility';
+  if (/\b(?:pmb|penerimaan mahasiswa baru|cara daftar|daftar kuliah|syarat pendaftaran|siap stikom)\b/.test(hay)) return 'pmb';
+  return 'unknown';
+}
+
+function deriveQueryMetadataConstraints(question, options = {}) {
+  const q = normalizeGateText(question);
+  const intent = normalizeGateText(options.intent || '');
+  const domains = new Set();
+  const entities = new Set();
+  const intents = new Set(intent ? [intent] : []);
+
+  const addDomain = (domain) => { if (domain) domains.add(domain); };
+  const addEntity = (entity) => { if (entity) entities.add(entity); };
+
+  if (/\b(?:biaya|harga|ukt|dpp|spp|rp|bayar|pendaftaran|gelombang|potongan)\b/.test(q) || intent === 'fee') addDomain('fee');
+  if (/\b(?:kapan|jadwal|tanggal|pukul|yudisium|wisuda|sidang|kalender akademik|mulai kuliah)\b/.test(q) || intent === 'schedule') addDomain('academic');
+  if (/\b(?:akreditasi|ban pt|lam infokom|peringkat)\b/.test(q)) addDomain('accreditation');
+  if (/\b(?:izin belajar|study permit|visa|e30b|itas|kitas|sktt|mahasiswa asing|international office)\b/.test(q)) addDomain('foreign_student_admin');
+  if (/\b(?:double degree|dual degree|dnui|dalian|help university|student exchange|pertukaran mahasiswa|gccp|hi think|hithink|program internasional|kelas internasional)\b/.test(q)) addDomain('international');
+  if (/\b(?:career center|pusat karir|pusat karier|tracer study|job fair|campus hiring|lowongan|magang|karier|karir)\b/.test(q)) addDomain('career');
+  if (/\b(?:inkubator bisnis|inbis|startup|rintisan bisnis|kewirausahaan)\b/.test(q)) addDomain('inbis');
+  if (/\b(?:ukm|ormawa|organisasi mahasiswa|bem|dpm|himaprodi|himpunan|futsal|musik|teater|tari|olahraga|seni)\b/.test(q)) addDomain('student_org');
+  if (/\b(?:beasiswa|kip|skss|1k1s|prestasi)\b/.test(q)) addDomain('scholarship');
+  if (/\b(?:program studi|prodi|jurusan|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika|kurikulum|sks|fakultas)\b/.test(q)) addDomain('program');
+  if (/\b(?:fasilitas|laboratorium|lab|perpustakaan|parkir|kantin|aula|kampus)\b/.test(q)) addDomain('facility');
+  if (/\b(?:pmb|penerimaan mahasiswa baru|cara daftar|daftar kuliah|mendaftar|syarat pendaftaran)\b/.test(q)) addDomain('pmb');
+
+  const entityRules = [
+    ['sistem_informasi', /\b(?:sistem informasi|\bsi\b)\b/],
+    ['teknologi_informasi', /\b(?:teknologi informasi|\bti\b)\b/],
+    ['bisnis_digital', /\b(?:bisnis digital|\bbd\b)\b/],
+    ['sistem_komputer', /\b(?:sistem komputer|\bsk\b)\b/],
+    ['manajemen_informatika', /\b(?:manajemen informatika|\bmi\b)\b/],
+    ['s2_sistem_informasi', /\b(?:s2|pascasarjana|pasca sarjana|magister)\b/],
+    ['dnui', /\b(?:dnui|dalian)\b/],
+    ['help_university', /\bhelp university\b|\bhelp\b/],
+    ['utb', /\butb\b|universitas teknologi bandung/],
+    ['student_exchange', /student exchange|pertukaran mahasiswa/],
+    ['hi_think', /hi think|hithink|hi-think/],
+    ['career_center', /career center|pusat karir|pusat karier/],
+    ['inbis', /inkubator bisnis|\binbis\b/],
+    ['ukm_ormawa', /\bukm\b|ormawa|organisasi mahasiswa/],
+    ['yudisium', /yudisium/],
+    ['wisuda', /wisuda/],
+    ['visa_itas_sktt', /visa|e30b|itas|kitas|sktt|izin belajar|study permit/]
+  ];
+  for (const [entity, re] of entityRules) if (re.test(q)) addEntity(entity);
+
+  return {
+    domains: Array.from(domains),
+    entities: Array.from(entities),
+    intents: Array.from(intents),
+    specificity: domains.size + entities.size + intents.size,
+    strict: domains.size > 0 || entities.size > 0
+  };
+}
+
+function extractKnowledgeMetadataFromChunk(chunk) {
+  const { metadata, prep } = getNestedMetadata(chunk);
+  const filename = chunk && (chunk.filename || chunk.sourceFile || chunk.source || metadata.filename || metadata.sourceFile) || '';
+  const text = chunk && (chunk.chunk || chunk.text || chunk.content) || '';
+  const prepCategory = prep.category || (prep.documentUnderstanding && prep.documentUnderstanding.category) || null;
+  const entities = new Set();
+  const rawEntities = metadata.entities || prep.entities || (prep.documentUnderstanding && prep.documentUnderstanding.entities) || {};
+  for (const value of Object.values(rawEntities || {})) {
+    if (Array.isArray(value)) value.forEach((v) => entities.add(normalizeGateText(v).replace(/\s+/g, '_')));
+  }
+  const domain = inferKnowledgeDomainFromText(text, filename, {
+    ...metadata,
+    category: metadata.category || metadata.docCategory || prepCategory || chunk.category || chunk.docCategory
+  });
+  return {
+    domain,
+    topic: metadata.topic || metadata.knowledgeTopic || prep.topic || null,
+    entities: Array.from(entities),
+    intentSupported: metadata.intentSupported || metadata.intents || prep.intentSupported || [],
+    sourceFile: filename || null,
+    effectiveDate: metadata.effectiveDate || prep.effectiveDate || null,
+    authority: metadata.authority || prep.sourceAuthority || null,
+    qaPairId: metadata.qaPairId || prep.qaPairId || null,
+    category: metadata.category || metadata.docCategory || prepCategory || chunk.category || chunk.docCategory || null
+  };
+}
+
+function areKnowledgeDomainsCompatible(queryDomains, chunkDomain) {
+  const domains = Array.isArray(queryDomains) ? queryDomains.filter(Boolean) : [];
+  const domain = String(chunkDomain || 'unknown');
+  if (!domains.length || !domain || domain === 'unknown') return true;
+  if (domains.includes(domain)) return true;
+  if (domains.includes('academic') && ['schedule', 'curriculum'].includes(domain)) return true;
+  if (domains.includes('program') && ['curriculum', 'career'].includes(domain)) return true;
+  if (domains.includes('international') && ['foreign_student_admin'].includes(domain)) return false;
+  if (domains.includes('fee') && domain === 'pmb') return true;
+  if (domains.includes('pmb') && ['fee', 'program', 'scholarship'].includes(domain)) return true;
+  return false;
+}
+
+function applyKnowledgeMetadataHardGate(chunk, queryConstraints) {
+  const constraints = queryConstraints && typeof queryConstraints === 'object' ? queryConstraints : {};
+  if (!constraints.strict) return { pass: true, reason: 'no_strict_knowledge_constraints' };
+  const meta = extractKnowledgeMetadataFromChunk(chunk);
+  if (!areKnowledgeDomainsCompatible(constraints.domains || [], meta.domain)) {
+    return {
+      pass: false,
+      reason: 'knowledge_domain_mismatch',
+      expectedDomains: constraints.domains || [],
+      foundDomain: meta.domain,
+      metadata: meta
+    };
+  }
+  return { pass: true, reason: 'knowledge_metadata_compatible', metadata: meta };
+}
+
+function filterByKnowledgeMetadataGates(chunks, queryConstraints) {
+  if (!Array.isArray(chunks)) return { filtered: [], rejected: 0, rejections: [] };
+  const filtered = [];
+  const rejections = [];
+  for (const chunk of chunks) {
+    const result = applyKnowledgeMetadataHardGate(chunk, queryConstraints);
+    if (result.pass) filtered.push(chunk);
+    else rejections.push({ chunkId: chunk && (chunk.id || chunk.chunkId || chunk.trainingId) || null, reason: result.reason, detail: result });
+  }
+  return { filtered, rejected: rejections.length, originalCount: chunks.length, rejections: rejections.slice(0, 20) };
+}
 // ============================================================================
 // EXPORTS
 // ============================================================================
@@ -360,5 +530,12 @@ module.exports = {
   checkMetadataConsistencyAcrossChunks,
 
   // Logging
-  logMetadataGateApplication
+  logMetadataGateApplication,
+
+  // Knowledge domain gates
+  deriveQueryMetadataConstraints,
+  extractKnowledgeMetadataFromChunk,
+  inferKnowledgeDomainFromText,
+  applyKnowledgeMetadataHardGate,
+  filterByKnowledgeMetadataGates
 };

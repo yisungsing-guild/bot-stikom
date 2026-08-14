@@ -1,4 +1,4 @@
-const { chunkText, cleanDocumentMarkers } = require('../src/engine/chunker');
+const { chunkText, cleanDocumentMarkers, extractFaqPairsDetailed } = require('../src/engine/chunker');
 
 describe('chunker', () => {
   test('keeps FAQ/QNA pairs as separate cleaned chunks', () => {
@@ -30,6 +30,18 @@ describe('chunker', () => {
     expect(chunks.join('\n')).not.toMatch(/Pertanyaan:|Jawaban:/i);
   });
 
+  test('extracts flat question-answer FAQ blocks into separate pairs', () => {
+    const pairs = extractFaqPairsDetailed('Apa itu Student Exchange? Student Exchange adalah program pertukaran mahasiswa. Apa manfaat mengikuti Student Exchange? Manfaatnya meningkatkan wawasan global dan jaringan internasional.');
+    expect(pairs).toHaveLength(2);
+    expect(pairs[0].question).toMatch(/Apa itu Student Exchange\?/i);
+    expect(pairs[0].answer).toMatch(/program pertukaran mahasiswa/i);
+    expect(pairs[1].question).toMatch(/Apa manfaat mengikuti Student Exchange\?/i);
+    expect(pairs[1].answer).toMatch(/wawasan global/i);
+
+    const chunks = chunkText('Apa itu Student Exchange? Student Exchange adalah program pertukaran mahasiswa. Apa manfaat mengikuti Student Exchange? Manfaatnya meningkatkan wawasan global dan jaringan internasional.', { minSize: 10, maxSize: 260 });
+    expect(chunks).toHaveLength(2);
+    expect(chunks[0]).not.toMatch(/manfaat mengikuti/i);
+  });
   test('cleanDocumentMarkers still strips FAQ labels for outbound-safe text', () => {
     expect(cleanDocumentMarkers('Pertanyaan: Apa ini? Jawaban: Ini jawaban')).toBe('Apa ini? Ini jawaban');
   });

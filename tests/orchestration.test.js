@@ -243,6 +243,21 @@ describe('hardMetadataGates', () => {
     expect(result.reason).toBe('ocr_quality_too_low_for_financial');
   });
 
+  test('knowledge domain gate rejects obvious wrong-domain evidence', () => {
+    const constraints = gates.deriveQueryMetadataConstraints('pelaksanaan yudisium kapan?', { intent: 'schedule' });
+    const wrong = gates.applyKnowledgeMetadataHardGate({
+      filename: 'Program Double Degree DNUI.pdf',
+      chunk: 'Program Double Degree DNUI memiliki skema kuliah di China dan Indonesia.'
+    }, constraints);
+    const right = gates.applyKnowledgeMetadataHardGate({
+      filename: 'Informasi Pendaftaran dan Pelaksanaan Yudisium.pdf',
+      chunk: 'Pelaksanaan Yudisium: Hari/Tanggal Rabu, 14 Oktober 2026 pukul 14.00 WITA.'
+    }, constraints);
+
+    expect(wrong.pass).toBe(false);
+    expect(wrong.reason).toBe('knowledge_domain_mismatch');
+    expect(right.pass).toBe(true);
+  });
   test('filters chunks by metadata gates', () => {
     const chunks = [
       {
