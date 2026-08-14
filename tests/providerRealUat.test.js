@@ -189,6 +189,38 @@ describe('Provider real UAT via Fonnte webhook (no ragEngine mock)', () => {
     expect(joined).not.toMatch(/Ditemukan beberapa data berbeda/i);
   });
 
+  test('real WhatsApp flow keeps repeated greetings and ambiguous program query out of no-data fallback', async () => {
+    const chatId = `6281777${Date.now()}`;
+    sessionStore.set(chatId, { chatId, state: 'root', data: { welcomeSent: true, introSent: true } });
+    const turns = [
+      'Hallo',
+      'Selamat pagi',
+      'Apa kabarnya?',
+      'Selamat pagi',
+      'Boleh saya tahu program apa saja yang ada di STIKOM Bali ya?'
+    ];
+    const outputs = [];
+    for (const [i, text] of turns.entries()) {
+      const beforeForChat = provider.sendMessage.mock.calls.filter(c => String(c[0]) === chatId).length;
+      await request(app).post('/fonnte/webhook').send({ sender: chatId, message: text, id: `greet-program-${i}-${chatId}` }).expect(200);
+      const started = Date.now();
+      while (provider.sendMessage.mock.calls.filter(c => String(c[0]) === chatId).length <= beforeForChat && Date.now() - started < 15000) {
+        await new Promise(r => setTimeout(r, 50));
+      }
+      const chatCalls = provider.sendMessage.mock.calls.filter(c => String(c[0]) === chatId);
+      outputs.push(chatCalls.slice(beforeForChat).map(c => String(c[1] || '')).join('\n'));
+    }
+
+    expect(outputs[0]).toMatch(/Halo Kak|selamat/i);
+    expect(outputs[1]).toMatch(/Halo Kak|selamat pagi/i);
+    expect(outputs[2]).toMatch(/baik-baik saja|bisa saya bantu/i);
+    expect(outputs[3]).toMatch(/Halo Kak|selamat pagi/i);
+    expect(outputs[4]).toMatch(/maksud \"program\"|Program studi\/jurusan|Program studi yang tersedia|Sistem Informasi/i);
+
+    const joined = outputs.join('\n---\n');
+    expect(joined).not.toMatch(/belum menemukan data yang cukup aman|belum menemukan data yang sesuai untuk menjawab pertanyaan itu/i);
+  }, 30000);
+
   test.each(['apa itu','bagaimana','jadwal','biaya','berapa biayanya'])('Ambiguous prompt %s does not expose resolver internals', async (text) => {
     const answer = await sendFonnte(text, 'amb');
     expect(answer).not.toMatch(/Ditemukan beberapa data berbeda|Satuan Kredit Semester/i);

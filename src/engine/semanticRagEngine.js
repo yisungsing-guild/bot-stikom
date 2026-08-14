@@ -4915,7 +4915,7 @@ function tryUnsupportedInternationalProgramAnswer(question) {
   if (mentionsJapaneseLevel && mentionsJapan) {
     return {
       answer: [
-        'Saya belum menemukan data yang cukup aman bahwa ITB STIKOM Bali memiliki program N4/JLPT N4 ke Jepang pada dokumen yang tersedia saat ini.',
+        'Saya belum menemukan data yang sesuai bahwa ITB STIKOM Bali memiliki program N4/JLPT N4 ke Jepang pada dokumen yang tersedia saat ini.',
         '',
         'Data yang tersedia baru menunjukkan program Hi-Think yang berkaitan dengan Jepang dan kursus bahasa Jepang sebagai bagian dari persiapan belajar/karier di lingkungan industri Jepang.',
         '',
@@ -4927,7 +4927,7 @@ function tryUnsupportedInternationalProgramAnswer(question) {
   }
   return {
     answer: [
-      'Saya belum menemukan data yang cukup aman bahwa ITB STIKOM Bali memiliki program J1/training 1 tahun ke Amerika pada dokumen yang tersedia saat ini.',
+      'Saya belum menemukan data yang sesuai bahwa ITB STIKOM Bali memiliki program J1/training 1 tahun ke Amerika pada dokumen yang tersedia saat ini.',
       '',
       'Agar tidak salah menyebut program, syarat, negara tujuan, durasi, biaya, atau mitra, bagian ini sebaiknya dikonfirmasi ke admin kampus atau unit kerja sama internasional.',
       '',

@@ -30,7 +30,7 @@ function isWeakProviderRagResult(res) {
   const source = String(res.source || '').toLowerCase();
   const answer = String(res.answer || '').toLowerCase();
   if (/no-ai|no-match|low-confidence|low-coverage|answer-rejected|preflight|insufficient|disabled|no-answer/i.test(source)) return true;
-  if (/engine ai belum dikonfigurasi|belum menemukan data yang cukup aman|data yang saya pegang belum cukup lengkap|tidak akan menebak/i.test(answer)) return true;
+  if (/engine ai belum dikonfigurasi|belum menemukan data yang cukup aman|belum menemukan data yang sesuai|data yang saya pegang belum cukup lengkap|tidak akan menebak/i.test(answer)) return true;
   return false;
 }
 
@@ -5772,7 +5772,7 @@ module.exports = function (provider) {
 
   function buildFinalSemanticMismatchFallback(inboundUserText) {
     if (isAcademicScheduleLookupQuestion(inboundUserText)) return buildProviderAcademicScheduleNoDataAnswer(inboundUserText);
-    return 'Saya belum menemukan data yang cukup aman untuk menjawab pertanyaan itu. Agar tidak keliru, kakak bisa cek informasi resmi kampus atau konfirmasi ke admin/unit terkait.';
+    return 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu.';
   }
 
   async function guardOutboundSemanticRelevanceBeforeSend(inboundUserText, outboundText, meta = {}) {
@@ -6515,7 +6515,7 @@ module.exports = function (provider) {
     if (hasProgramQuestion) return false;
 
     const domainKeywords = /\b(stikom|itb\s*stikom|pmb|pendaftaran|registrasi|prodi|program\s+studi|jadwal|gelombang|biaya|dpp|ukt|beasiswa|kontak|lokasi|alamat|akreditasi|kampus|fasilitas|perkuliahan|semester|ukm|jurusan|program)\b/i;
-    const generalPatterns = /\b(?:apa\s+kabar|kabar\s+apa|gimana\s+kabar|kabar\s+kamu(?:\s+gimana)?|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|apa\s+kabar\s+kamu|bagaimana\s+kabar|bagaimana\s+kabarmu|siapa\s+kamu|kamu\s+siapa|nama\s+kamu|ceritakan\s+tentang\s+dirimu|ceritakan\s+dirimu|cerita|ngobrol|ngobrolin|obrol|film|lagu|musik|hobi|olahraga|cuaca|berita|main\s+game|game|mau\s+ngobrol)\b/i;
+    const generalPatterns = /\b(?:apa\s+kabar(?:nya)?|apa\s+khabar(?:nya)?|kabar(?:nya)?\s+apa|khabar(?:nya)?\s+apa|gimana\s+kabar(?:nya)?|gimana\s+khabar(?:nya)?|kabar\s+kamu(?:\s+gimana)?|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|apa\s+kabar\s+kamu|bagaimana\s+kabar|bagaimana\s+kabarmu|siapa\s+kamu|kamu\s+siapa|nama\s+kamu|ceritakan\s+tentang\s+dirimu|ceritakan\s+dirimu|cerita|ngobrol|ngobrolin|obrol|film|lagu|musik|hobi|olahraga|cuaca|berita|main\s+game|game|mau\s+ngobrol)\b/i;
 
     if (domainKeywords.test(t)) return false;
     if (generalPatterns.test(t)) return true;
@@ -6555,7 +6555,7 @@ module.exports = function (provider) {
     const raw = String(text || '').trim();
     const t = raw.toLowerCase();
 
-    if (/\b(apa\s+kabar|apa\s+khabar|kabar\s+apa|khabar\s+apa|gimana\s+kabar|gimana\s+khabar|kabar\s+kamu|khabar\s+kamu|kabar\s+kamu\s+gimana|khabar\s+kamu\s+gimana|kamu\s+gimana|gimana\s+kabarmu|gimana\s+khabarmu|apa\s+kabarmu|apa\s+khabarmu|apa\s+kabar\s+kamu|apa\s+khabar\s+kamu|bagaimana\s+kabar|bagaimana\s+khabar|bagaimana\s+kabarmu|bagaimana\s+khabarmu)\b/i.test(t)) {
+    if (/\b(apa\s+kabar(?:nya)?|apa\s+khabar(?:nya)?|kabar(?:nya)?\s+apa|khabar(?:nya)?\s+apa|gimana\s+kabar(?:nya)?|gimana\s+khabar(?:nya)?|kabar\s+kamu|khabar\s+kamu|kabar\s+kamu\s+gimana|khabar\s+kamu\s+gimana|kamu\s+gimana|gimana\s+kabarmu|gimana\s+khabarmu|apa\s+kabarmu|apa\s+khabarmu|apa\s+kabar\s+kamu|apa\s+khabar\s+kamu|bagaimana\s+kabar|bagaimana\s+khabar|bagaimana\s+kabarmu|bagaimana\s+khabarmu)\b/i.test(t)) {
       return 'Baik, ada yang bisa saya bantu?';
     }
 
@@ -9338,7 +9338,7 @@ module.exports = function (provider) {
         }
         try {
           const sentText = String(preflight.answer || '');
-          const isFailureFallback = /(?:Saya belum menemukan data yang cukup aman|Mohon maaf, saya kemungkinan tidak mempunyai jawaban|Maaf, data yang Anda minta tidak tersedia|jawaban yang terbentuk belum sesuai|\[\s*Hubungi Admin\s*\])/i.test(sentText);
+          const isFailureFallback = /(?:Saya belum menemukan data yang cukup aman|Saya belum menemukan data yang sesuai|Mohon maaf, saya kemungkinan tidak mempunyai jawaban|Maaf, data yang Anda minta tidak tersedia|jawaban yang terbentuk belum sesuai|\[\s*Hubungi Admin\s*\])/i.test(sentText);
           if (!isFailureFallback && isLatestInboundForThisRequest(toChatId)) {
             const latestSession = await prisma.session.findUnique({ where: { chatId: toChatId } }).catch(() => null);
             const latestData = latestSession && latestSession.data && typeof latestSession.data === 'object' ? latestSession.data : {};
@@ -9891,7 +9891,7 @@ module.exports = function (provider) {
             const fallback = await prisma.setting.findUnique({ where: { key: 'fallback_message' } }).catch(() => null);
             const fallbackText = (fallback && fallback.value)
               ? String(fallback.value || '').trim()
-              : 'Maaf, saya belum menemukan jawaban yang cukup jelas dari data yang tersedia. Boleh tulis ulang pertanyaannya dengan detail yang ingin dicek?';
+              : 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu.';
 
             await prisma.chat.upsert({
               where: { chatId },
