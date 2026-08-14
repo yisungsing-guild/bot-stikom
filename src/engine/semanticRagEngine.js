@@ -812,6 +812,58 @@ function tryAmbiguousProgramScopeAnswer(question, options = {}) {
   };
 }
 
+
+function isAmbiguousCampusProductQuestion(question) {
+  const q = String(question || '').trim();
+  if (!q || !/\bproduk\b/i.test(q)) return false;
+  const campusContext = /\b(?:stikom|itb\s+stikom|kampus|pmb|kuliah|prodi|jurusan|program)\b/i.test(q);
+  const asksList = /\b(?:apa\s+saja|apa\s+aja|yang\s+ada|ada\s+apa|tersedia|boleh|bisa|mau|ingin|pengen|tahu|tau)\b/i.test(q);
+  return campusContext && asksList;
+}
+
+function buildAmbiguousCampusProductAnswer() {
+  return [
+    'Kak, maksud “produk” di sini yang mana ya?',
+    '',
+    '- Kalau maksudnya program yang tersedia di ITB STIKOM Bali, pilihannya bisa berupa program studi/jurusan, program internasional, beasiswa, UKM/organisasi mahasiswa, Career Center, Inkubator Bisnis, atau fasilitas kampus.',
+    '- Kalau maksudnya produk/hasil karya dari Inkubator Bisnis, kakak bisa balas “produk Inkubator Bisnis” atau “produk INBIS”.',
+    '',
+    'Kakak bisa balas, misalnya: “program studi”, “program internasional”, “program kampus”, atau “produk Inkubator Bisnis”.'
+  ].join('\n');
+}
+
+function tryAmbiguousCampusProductAnswer(question) {
+  if (!isAmbiguousCampusProductQuestion(question)) return null;
+  return {
+    answer: buildAmbiguousCampusProductAnswer(),
+    confidence: 0.94,
+    tier: 'HIGH',
+    source: 'semantic-rag-product-scope-clarification'
+  };
+}
+
+function tryStudyLevelComparisonAnswer(question) {
+  const q = String(question || '');
+  const asksComparison = /\b(?:beda|bedanya|perbedaan|membedakan|banding|dibandingkan|antara)\b/i.test(q);
+  const mentionsS1 = /\b(?:s1|sarjana|strata\s+satu)\b/i.test(q);
+  const mentionsD3 = /\b(?:d3|diploma\s*3|diploma\s+tiga)\b/i.test(q);
+  if (!asksComparison || !mentionsS1 || !mentionsD3) return null;
+  return {
+    answer: [
+      'Perbedaan utama program S1 dan D3 ada pada jenjang, lama studi, dan fokus pembelajarannya.',
+      '',
+      '- S1/Sarjana: masa studi normal sekitar 4 tahun atau 8 semester. Fokusnya lebih luas, mencakup teori, analisis, perancangan solusi, pengembangan sistem/bisnis digital, dan peluang lanjut ke jenjang S2.',
+      '- D3/Diploma: masa studi normal sekitar 3 tahun atau 6 semester. Fokusnya lebih praktis dan terapan, sehingga cocok untuk mahasiswa yang ingin lebih cepat masuk dunia kerja dengan skill operasional/teknis.',
+      '',
+      'Di ITB STIKOM Bali, pilihan S1 mencakup Sistem Informasi, Teknologi Informasi, Bisnis Digital, dan Sistem Komputer. Untuk D3, program yang tersedia adalah Manajemen Informatika.',
+      '',
+      'Jadi, kalau ingin pendalaman akademik dan jenjang karier lebih luas, S1 lebih cocok. Kalau ingin jalur yang lebih singkat dan praktis, D3 bisa dipertimbangkan.'
+    ].join('\n'),
+    confidence: 0.96,
+    tier: 'HIGH',
+    source: 'semantic-rag-study-level-comparison'
+  };
+}
 function hasExplicitDocumentEvidenceAnchor(question) {
   const q = String(question || '').trim();
   if (!q || q.length < 8) return false;
@@ -4598,7 +4650,7 @@ function buildSpecificInsufficientDataAnswer(question, missingEvidence = []) {
     return 'Mohon maaf, saya belum menemukan daftar lengkap yang diminta. Data yang tersedia belum cukup untuk menyebutkan semua item secara spesifik.';
   }
   
-  return 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu.';
+  return 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu. Agar tidak keliru, kakak bisa cek informasi resmi kampus atau konfirmasi ke admin/unit terkait.';
 }
 
 function collapseRepeatedLetters(value) {
@@ -6650,7 +6702,7 @@ function buildInternationalCanonicalAnswer(question) {
   }
   const has = (re) => re.test(q);
   const answer = (value) => ({ answer: value, source: 'semantic-rag-international-topic-composer', frameSource: 'semantic-rag-training-specific', internationalTopic: topic.key });
-  const noData = (value = 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu.') => ({ answer: value, source: 'semantic-rag-insufficient-data', frameSource: 'semantic-rag-training-specific', internationalTopic: topic.key });
+  const noData = (value = 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu. Agar tidak keliru, kakak bisa cek informasi resmi kampus atau konfirmasi ke admin/unit terkait.') => ({ answer: value, source: 'semantic-rag-insufficient-data', frameSource: 'semantic-rag-training-specific', internationalTopic: topic.key });
   if (has(/\b(?:biaya|harga|bayar|rincian biaya|pendaftaran|dpp|ukt)\b/i)) return null;
 
   if (topic.key === 'double_degree_help') {
@@ -10770,7 +10822,7 @@ function hasExplicitFeeQuestionSignal(question) {
   return /\b(per\s+semester|semesteran|uang\s+kuliah|uang\s+masuk|awal(?:nya)?\s+masuk|biaya\s+masuk)\b/i.test(q);
 }
 function buildInsufficientDataAnswer(kind = 'very_low') {
-  return 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu.';
+  return 'Saya belum menemukan data yang sesuai untuk menjawab pertanyaan itu. Agar tidak keliru, kakak bisa cek informasi resmi kampus atau konfirmasi ke admin/unit terkait.';
 }
 function buildMeaningMismatchFallbackAnswer(question) {
   if (isAcademicAdminUploadedDocQuestion(question, 'schedule') || isAcademicScheduleLookupQuestion(question)) return buildAcademicScheduleNoDataAnswer(question);
@@ -11872,6 +11924,17 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
   }
 
+  const preGuardProductScopeClarification = strictDocumentOnly ? null : (tryAmbiguousCampusProductAnswer(routingQuestion || question) || tryAmbiguousCampusProductAnswer(question));
+  if (preGuardProductScopeClarification && preGuardProductScopeClarification.answer) {
+    const builtProductScope = buildDeterministicResponse(question, preGuardProductScopeClarification.source || 'semantic-rag-product-scope-clarification', preGuardProductScopeClarification, { routeStage: 'pre-guard-product-scope-clarification', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtProductScope, resultCacheKey);
+  }
+
+  const preGuardStudyLevelComparison = strictDocumentOnly ? null : (tryStudyLevelComparisonAnswer(routingQuestion || question) || tryStudyLevelComparisonAnswer(question));
+  if (preGuardStudyLevelComparison && preGuardStudyLevelComparison.answer) {
+    const builtStudyLevelComparison = buildDeterministicResponse(question, preGuardStudyLevelComparison.source || 'semantic-rag-study-level-comparison', preGuardStudyLevelComparison, { routeStage: 'pre-guard-study-level-comparison', normalizedRouting: normalizedRouting.changed });
+    return await finalizeSemanticResult(question, builtStudyLevelComparison, resultCacheKey);
+  }
   const preGuardProgramScopeChoice = strictDocumentOnly ? null : (tryProgramScopeClarificationChoiceAnswer(routingQuestion || question, options) || tryProgramScopeClarificationChoiceAnswer(question, options));
   if (preGuardProgramScopeChoice && preGuardProgramScopeChoice.answer) {
     const builtProgramScopeChoice = buildDeterministicResponse(question, preGuardProgramScopeChoice.source || 'semantic-rag-program-scope-clarification-choice', preGuardProgramScopeChoice, { routeStage: 'pre-guard-program-scope-choice', normalizedRouting: normalizedRouting.changed });

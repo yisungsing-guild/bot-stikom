@@ -1284,6 +1284,27 @@ describe('semanticRagEngine', () => {
     expect(prodi.answer).not.toMatch(/maksud "program"/i);
   }, 30000);
 
+  test('clarifies ambiguous campus product wording and answers S1/D3 level comparison', async () => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const product = await querySemanticRag('Boleh saya tahu produk apa saja yang ada di STIKOM Bali ya?', { topK: 8 });
+    expect(product.source).toBe('semantic-rag-product-scope-clarification');
+    expect(product.answer).toMatch(/maksud.*produk/i);
+    expect(product.answer).toMatch(/program studi|program internasional/i);
+    expect(product.answer).toMatch(/produk.*Inkubator Bisnis|produk.*INBIS/i);
+    expect(product.answer).not.toMatch(/belum menemukan data/i);
+
+    const levelComparison = await querySemanticRag('Perbedaan antara program S1 dan D3 apa ya?', { topK: 8 });
+    expect(levelComparison.source).toBe('semantic-rag-study-level-comparison');
+    expect(levelComparison.answer).toMatch(/S1\/Sarjana/i);
+    expect(levelComparison.answer).toMatch(/D3\/Diploma/i);
+    expect(levelComparison.answer).toMatch(/4 tahun|8 semester/i);
+    expect(levelComparison.answer).toMatch(/3 tahun|6 semester/i);
+    expect(levelComparison.answer).not.toMatch(/Visa adalah izin masuk|ITAS/i);
+  }, 30000);
   test('resolves short replies to pending program scope clarification', async () => {
     delete process.env.OPENAI_API_KEY;
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
