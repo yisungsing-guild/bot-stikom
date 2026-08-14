@@ -1284,6 +1284,43 @@ describe('semanticRagEngine', () => {
     expect(prodi.answer).not.toMatch(/maksud "program"/i);
   }, 30000);
 
+  test('uses PMB context for ambiguous program follow-ups but clarifies without context', async () => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const pmbFollowup = await querySemanticRag('program apa saja?', {
+      topK: 8,
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'saya ingin bertanya tentang pmb' },
+          { direction: 'bot', message: 'PMB adalah Penerimaan Mahasiswa Baru. Kakak bisa bertanya tentang pendaftaran, jadwal, program studi, biaya, beasiswa, dan syarat dokumen.' }
+        ]
+      }
+    });
+    expect(pmbFollowup.source).toBe('semantic-rag-program-list-contextual');
+    expect(pmbFollowup.answer).toMatch(/Sistem Informasi/i);
+    expect(pmbFollowup.answer).toMatch(/D3 Manajemen Informatika/i);
+    expect(pmbFollowup.answer).not.toMatch(/maksud "program"/i);
+
+    const noContext = await querySemanticRag('program apa saja tanpa konteks?', { topK: 8 });
+    expect(noContext.source).toBe('semantic-rag-program-scope-clarification');
+    expect(noContext.answer).toMatch(/maksud "program"/i);
+
+    const internationalContext = await querySemanticRag('program apa saja?', {
+      topK: 8,
+      sessionData: {
+        messages: [
+          { direction: 'user', message: 'apa ada program internasional?' },
+          { direction: 'bot', message: 'Ada program internasional seperti Double Degree dan Student Exchange.' }
+        ]
+      }
+    });
+    expect(internationalContext.source).toBe('semantic-rag-program-scope-clarification');
+    expect(internationalContext.answer).toMatch(/Program internasional/i);
+  }, 30000);
+
   test('blocks wrong deterministic route domains before answers reach users', async () => {
     delete process.env.OPENAI_API_KEY;
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';

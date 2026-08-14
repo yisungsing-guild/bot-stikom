@@ -701,6 +701,30 @@ function isAmbiguousProgramScopeQuestion(question) {
   return true;
 }
 
+function hasRecentProgramStudyScopeContext(sessionData) {
+  const recentUser = getRecentUserConversation(sessionData).toLowerCase();
+  const recentAll = getRecentConversationTextForResolution(sessionData);
+  const contextText = recentUser || recentAll;
+  if (!contextText) return false;
+
+  const programStudyContext = /\b(?:pmb|penerimaan\s+mahasiswa\s+baru|daftar\s+kuliah|mendaftar\s+kuliah|pendaftaran\s+(?:kuliah|mahasiswa)|calon\s+mahasiswa|mahasiswa\s+baru|program\s+studi|prodi|jurusan|pilihan\s+kuliah)\b/i;
+  if (!programStudyContext.test(contextText)) return false;
+
+  const competingUserScope = /\b(?:double\s*degree|dual\s*degree|gelar\s+ganda|internasional|international|student\s+exchange|pertukaran\s+mahasiswa|gccp|hi-?think|hithink|goes\s*to\s*school|beasiswa|skss|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis|ukm|organisasi|ormawa|fasilitas)\b/i;
+  return !competingUserScope.test(recentUser);
+}
+
+function buildContextualProgramStudyListAnswer(question) {
+  const programList = tryProgramListAnswer('apa saja program studi yang ada di stikom bali?');
+  if (!programList || !programList.answer) return null;
+  return {
+    answer: programList.answer,
+    confidence: 0.95,
+    tier: 'HIGH',
+    source: 'semantic-rag-program-list-contextual'
+  };
+}
+
 function buildAmbiguousProgramScopeAnswer() {
   return [
     'Kak, maksud "program" yang ingin ditanyakan yang mana?',
@@ -713,8 +737,13 @@ function buildAmbiguousProgramScopeAnswer() {
   ].join('\n');
 }
 
-function tryAmbiguousProgramScopeAnswer(question) {
+function tryAmbiguousProgramScopeAnswer(question, options = {}) {
   if (!isAmbiguousProgramScopeQuestion(question)) return null;
+  const topic = inferContextTopicFromSession(options && options.sessionData);
+  if ((topic && topic.key === 'program_list') || hasRecentProgramStudyScopeContext(options && options.sessionData)) {
+    const contextualList = buildContextualProgramStudyListAnswer(question);
+    if (contextualList && contextualList.answer) return contextualList;
+  }
   return {
     answer: buildAmbiguousProgramScopeAnswer(),
     confidence: 0.93,
@@ -11653,7 +11682,7 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
   }
 
-  const preGuardProgramScopeClarification = strictDocumentOnly ? null : (tryAmbiguousProgramScopeAnswer(routingQuestion || question) || tryAmbiguousProgramScopeAnswer(question));
+  const preGuardProgramScopeClarification = strictDocumentOnly ? null : (tryAmbiguousProgramScopeAnswer(routingQuestion || question, options) || tryAmbiguousProgramScopeAnswer(question, options));
   if (preGuardProgramScopeClarification && preGuardProgramScopeClarification.answer) {
     const builtProgramScopeClarification = buildDeterministicResponse(question, preGuardProgramScopeClarification.source || 'semantic-rag-program-scope-clarification', preGuardProgramScopeClarification, { routeStage: 'pre-guard-program-scope-clarification', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtProgramScopeClarification, resultCacheKey);
