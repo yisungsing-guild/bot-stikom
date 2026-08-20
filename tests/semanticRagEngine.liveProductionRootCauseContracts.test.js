@@ -84,4 +84,21 @@ describe('live production root-cause semantic contracts', () => {
     expect(result.answer).not.toMatch(/Career Center|PRAGINA|PROFILE ORMAWA/i);
   });
 
+  test('keeps deterministic schedule answers safe from provider relevance false rejection', async () => {
+    const rejectingClient = {
+      chat: {
+        completions: {
+          create: jest.fn(async () => ({
+            choices: [{ message: { content: '{"verdict":"mismatch","confidence":0.99,"reason":"test forced rejection"}' } }]
+          }))
+        }
+      }
+    };
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const result = await querySemanticRag('gelombang 1 masih buka tanggal 7 juli 2026?', { topK: 8, client: rejectingClient });
+    expect(result.source).toBe('semantic-rag-schedule-window');
+    expect(result.answer).toMatch(/Per 7 Juli 2026|Gelombang I/i);
+    expect(result.answer).not.toMatch(/belum menemukan data yang sesuai/i);
+  });
+
 });

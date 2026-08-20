@@ -11752,6 +11752,10 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && isSafeCompactAcademicGeneralAnswer(question, result.answer);
   const compactAcademicSafe = compactScheduleSafe || compactRequirementSafe || compactGeneralSafe;
   const structuredSmallTalkSafe = /small-talk/i.test(source);
+  const structuredScheduleSafe = /semantic-rag-schedule-window/i.test(source)
+    && hasConcreteDateOrPeriod(result.answer)
+    && /\b(?:PMB|pendaftaran|gelombang|Per\s+\d{1,2}|Untuk\s+(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember))\b/i.test(String(question || '') + ' ' + String(result.answer || ''))
+    && !hasLikelyRawDocumentLeak(result.answer);
   const structuredPmbSafe = (/pmb-info/i.test(source) && isSafePmbOverviewAnswer(question, result.answer)) || (/pmb-requirements/i.test(source) && /\b(syarat|persyaratan|dokumen|berkas|pendaftaran|siap\.stikom-bali\.ac\.id|pmb)\b/i.test(String(result.answer || '')));
   const structuredDualDegreeSafe = /dual-degree/i.test(source) && isSafeDualDegreeAnswer(question, result.answer);
   const structuredFacilitySafe = isSafeCampusFacilityAnswer(question, result.answer, source);
@@ -11814,7 +11818,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && !hasNoDataAnswerPhrase(result.answer)
     && !hasLikelyRawDocumentLeak(result.answer)
     && !hasUploadedDocumentTopicConflict(question, result.answer);
-  const structuredSemanticSafe = deterministicKnownFaqSafe || structuredSmallTalkSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredPostgraduateProfileSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredAdminInternationalSafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredCertificationSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
+  const structuredSemanticSafe = deterministicKnownFaqSafe || structuredSmallTalkSafe || structuredScheduleSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredPostgraduateProfileSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredAdminInternationalSafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredCertificationSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,

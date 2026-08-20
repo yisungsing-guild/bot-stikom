@@ -378,3 +378,7 @@ Fixed three live production semantic defects without query hardcodes: S2 curricu
 ### Production Smoke Follow-Up Safety Patch
 
 Initial production smoke of `1480ddf` found two remaining safety/output issues in the same raw-leak/profile-cleanup class. Added general short raw-leak complaint marker detection and stricter UKM profile dangling-fragment filtering. Local gates after patch remain PASS: focused root-cause/raw-leak 6/6, golden 0 WRONG, semantic 13/13, retrieval 110/110, document-safety 6/6, evidence 56/56, npm test natural PASS.
+
+### Production Smoke Follow-Up Schedule Verifier Patch
+
+Production smoke of `cafc321` found a provider-enabled false rejection for deterministic explicit-date schedule answers: local no-provider schedule routing passed, but live provider verifier returned `semantic-rag-meaning-verifier-blocked`. Added a narrow structured schedule safety condition for trusted `semantic-rag-schedule-window` answers that preserve concrete date/period information and pass document-safety checks. Local gates after patch remain PASS: focused live/P0 15/15, golden 0 WRONG, semantic 13/13, retrieval 110/110, document-safety 6/6, evidence 56/56, npm test natural PASS.

@@ -91,3 +91,30 @@ Post-fix local validation:
 - `npm run test:document-safety`: PASS, 6/6.
 - `npm run test:evidence`: PASS, 56/56.
 - `npm test`: PASS natural, unit 330/330 and contract 94/94.
+
+## Production Smoke Follow-Up Schedule Verifier Finding
+
+Railway semantic smoke after commit `cafc321` exposed a production-only false rejection:
+
+- Explicit-date schedule queries such as `gelombang 1 masih buka tanggal 7 juli 2026?` returned `semantic-rag-meaning-verifier-blocked`.
+- Equivalent local production-mode/no-provider execution returned the correct deterministic `semantic-rag-schedule-window` answer.
+- Production smoke variants showed the failure depended on the provider/LLM verifier path, not schedule parsing or route selection.
+
+Root cause:
+
+- The final meaning verifier could overrule trusted deterministic schedule-window answers even when the answer contained a concrete schedule period/date and preserved the user's explicit reference date.
+
+General fix:
+
+- Added a narrow structured schedule safety condition for `semantic-rag-schedule-window` answers that contain concrete schedule/date information and are still clean under the document-safety guards.
+- This does not bypass verifier globally; it protects only deterministic schedule-window answers already produced by the trusted schedule handler.
+
+Post-fix local validation:
+
+- Focused live root-cause + P0 contracts: PASS, 15/15.
+- Golden smoke: PASS, 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG; `pmb_still_open` 1300ms.
+- `npm run test:semantic`: PASS, 13/13.
+- `npm run test:retrieval`: PASS, 110/110.
+- `npm run test:document-safety`: PASS, 6/6.
+- `npm run test:evidence`: PASS, 56/56.
+- `npm test`: PASS natural, unit 330/330 and contract 94/94.
