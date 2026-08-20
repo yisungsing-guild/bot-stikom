@@ -23,4 +23,25 @@ describe('semanticRag short definition regression', () => {
     expect(secondResult.answer).not.toMatch(/^Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
     expect(secondResult.source).not.toBe('semantic-rag-evidence-not-answerable');
   });
+  test('generalizes short canonical program definition aliases without matching unrelated terms', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    const variants = [
+      { q: 'pengertian TI?', must: /Teknologi Informasi/i },
+      { q: 'halo apa itu BD?', must: /Bisnis Digital/i },
+      { q: 'jelasin SK itu apa', must: /Sistem Komputer/i }
+    ];
+
+    for (const item of variants) {
+      const result = await querySemanticRag(item.q, { topK: 3 });
+      expect(result.success).toBe(true);
+      expect(result.source).toMatch(/program-definition/i);
+      expect(result.answer).toMatch(item.must);
+    }
+
+    const negative = await querySemanticRag('apa itu SIM card?', { topK: 3 });
+    expect(negative.success).toBe(true);
+    expect(negative.source).not.toMatch(/program-definition/i);
+    expect(String(negative.answer || '')).not.toMatch(/Sistem Informasi/i);
+  });
 });

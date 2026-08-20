@@ -28,20 +28,26 @@ describe('document leak regression test', () => {
     jest.resetModules();
     delete process.env.OPENAI_API_KEY;
     process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'false';
-    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '300000';
+    process.env.SEMANTIC_RAG_INDEX_CACHE_MS = '300000';
+    process.env.SEMANTIC_RAG_TRAINING_DB_CACHE_MS = '300000';
+    process.env.RAG_TRACE_PERSIST = 'false';
     process.env.SEMANTIC_RAG_TODAY_YMD = '2026-07-22';
     process.env.SEMANTIC_RAG_DB_CONTENT_FALLBACK = 'false';
+    ({ querySemanticRag } = require('../src/engine/semanticRagEngine'));
   });
 
-  afterEach(() => {
+  afterAll(() => {
     delete process.env.SEMANTIC_RAG_TODAY_YMD;
     delete process.env.SEMANTIC_RAG_DB_CONTENT_FALLBACK;
     delete process.env.SEMANTIC_RAG_RESULT_CACHE_MS;
+    delete process.env.SEMANTIC_RAG_INDEX_CACHE_MS;
+    delete process.env.SEMANTIC_RAG_TRAINING_DB_CACHE_MS;
+    delete process.env.RAG_TRACE_PERSIST;
     delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
   });
 
   test('critical language-facility question does not leak legal documents', async () => {
-    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
     const result = await querySemanticRag(criticalQuestion, { topK: 8 });
     
     expect(result.success).toBe(true);
@@ -72,7 +78,6 @@ describe('document leak regression test', () => {
   });
 
   test('critical language-facility question uses relevant evidence when available', async () => {
-    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
     const result = await querySemanticRag(criticalQuestion, { topK: 8 });
     
     expect(result.success).toBe(true);
@@ -100,7 +105,6 @@ describe('document leak regression test', () => {
   });
 
   test('critical language-facility question rejects cooperation-agreement evidence', async () => {
-    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
     const result = await querySemanticRag(criticalQuestion, { topK: 8 });
     
     expect(result.success).toBe(true);
@@ -125,7 +129,6 @@ describe('document leak regression test', () => {
   });
 
   test('language facility variants do not leak legal documents', async () => {
-    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
     
     const variants = [
       "apakah ada layanan untuk mahasiswa yang mau belajar bahasa asing?",
@@ -154,3 +157,5 @@ describe('document leak regression test', () => {
     }
   });
 });
+
+

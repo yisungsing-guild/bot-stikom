@@ -509,7 +509,7 @@ function tryProgramDefinitionAnswer(question) {
 
 function tryProgramComparisonAnswer(question) {
   const q = String(question || '').toLowerCase();
-  const asksDifference = /\b(beda|bedanya|bedain|perbedaan|bandingkan|perbandingan|apa\s+yang\s+membedakan|mana\s+bedanya|bingung\s+pilih)\b/.test(q);
+  const asksDifference = /\b(beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|apa\s+yang\s+membedakan|mana\s+bedanya|bingung\s+pilih|vs|versus)\b/.test(q);
   if (!asksDifference) return null;
   if (/\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|termurah|termahal|murah|mahal|hemat)\b/.test(q)) return null;
   const mentioned = detectMentionedPrograms(question);
@@ -613,10 +613,10 @@ function tryProgramComparisonAnswer(question) {
 function tryProgramListAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(syarat|persyaratan|dokumen|berkas|ketentuan)\b/.test(q) && /\b(daftar|mendaftar|pendaftaran|program\s+studi|prodi|jurusan|pmb|mahasiswa\s+baru|kuliah)\b/.test(q)) return null;
-  const asksProgramList = /\b(jurusan(?:nya)?|prodi|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan|fakultas)\b/.test(q);
-  const asksAvailable = /\b(apa\s+saja|apa\s+aja|ada\s+apa|tersedia|yang\s+ada|di\s+stikom|stikom)\b/.test(q);
+  const asksProgramList = /\b(jurusan(?:nya)?|prodi(?:nya)?|program\s+studi|program\s+kuliah|pilihan\s+jurusan|daftar\s+jurusan|fakultas)\b/.test(q);
+  const asksAvailable = /\b(apa\s+saja|apa\s+aja|apa\s+aj|ada\s+apa|tersedia|yang\s+ada|di\s+stikom|stikom)\b/.test(q);
   const recommendationIntent = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|ingin|mau|pengen|bekerja|kerja|karir|karier|minat|hobi)\b/.test(q);
-  const explicitListIntent = asksProgramList && asksAvailable && /\b(apa\s+saja|apa\s+aja|daftar|tersedia|yang\s+ada|ada\s+apa|yg\s+ada)\b/.test(q);
+  const explicitListIntent = asksProgramList && asksAvailable && /\b(apa\s+saja|apa\s+aja|apa\s+aj|daftar|tersedia|yang\s+ada|ada\s+apa|yg\s+ada)\b/.test(q);
   const asksProgramDetailOverview = asksProgramList && /\b(detail|masing(?:-masing)?|dipelajari|dipelajarin|pelajarin|belajar|kurikulum|mata\s+kuliah|matkul|skill|kemampuan)\b/.test(q);
   if (recommendationIntent && !explicitListIntent) return null;
   if (!asksProgramList || (!asksAvailable && !asksProgramDetailOverview)) return null;
@@ -1142,7 +1142,7 @@ function isRegistrationFeeQuestion(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(cara|gimana|bagaimana|dimana|di\s*mana)\b.*\b(daftar|mendaftar|pendaftaran|registrasi)\b/.test(q)) return false;
   if (/\b(rincian|detail)\b/.test(q)) return false;
-  const hasRegistration = /\b(biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|pendaftaran\s+(?:berapa|rp|mahal|murah)|daftar\s+(?:berapa|rp))\b/.test(q);
+  const hasRegistration = /\b(biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|biaya\s+daftar|uang\s+daftar|bayar\s+daftar|pendaftaran\s+(?:berapa|rp|mahal|murah)|daftar\s+(?:berapa|rp))\b/.test(q);
   const asksAmount = /\b(berapa|biaya|harga|bayar|uang|rp|nominal)\b/.test(q);
   return hasRegistration && asksAmount;
 }

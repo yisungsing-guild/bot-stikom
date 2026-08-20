@@ -1,29 +1,32 @@
 describe('semanticRag real user phrasing regression', () => {
+  let querySemanticRag;
+  let clearSemanticCaches;
   const badAnswerPattern = /\[NO ANSWER\]|Gunakan nama file|jawaban yang terbentuk belum sesuai|belum mempunyai jawaban yang cukup aman|belum bisa mengambil jawaban/i;
 
-  beforeEach(() => {
-    jest.resetModules();
+  beforeAll(() => {
     delete process.env.OPENAI_API_KEY;
     process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'false';
-    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '300000';
     process.env.SEMANTIC_RAG_TODAY_YMD = '2026-07-22';
     process.env.SEMANTIC_RAG_DB_CONTENT_FALLBACK = 'false';
-    process.env.SEMANTIC_RAG_INDEX_CACHE_MS = '0';
-    process.env.SEMANTIC_RAG_TRAINING_DB_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_INDEX_CACHE_MS = '300000';
+    process.env.SEMANTIC_RAG_TRAINING_DB_CACHE_MS = '300000';
+    process.env.RAG_TRACE_PERSIST = 'false';
+    ({ querySemanticRag, clearSemanticCaches } = require('../src/engine/semanticRagEngine'));
+    clearSemanticCaches();
   });
 
-  afterEach(() => {
+  afterAll(() => {
     delete process.env.SEMANTIC_RAG_TODAY_YMD;
     delete process.env.SEMANTIC_RAG_DB_CONTENT_FALLBACK;
     delete process.env.SEMANTIC_RAG_RESULT_CACHE_MS;
     delete process.env.SEMANTIC_RAG_INDEX_CACHE_MS;
     delete process.env.SEMANTIC_RAG_TRAINING_DB_CACHE_MS;
+    delete process.env.RAG_TRACE_PERSIST;
     delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
   });
 
   async function ask(question, options = {}) {
-    const { querySemanticRag, clearSemanticCaches } = require('../src/engine/semanticRagEngine');
-    clearSemanticCaches();
     const result = await querySemanticRag(question, { topK: 5, ...options });
     const answer = String(result.answer || '[NO ANSWER]').replace(/\s+/g, ' ').trim();
     expect(result.success).toBe(true);
@@ -111,3 +114,4 @@ describe('semanticRag real user phrasing regression', () => {
     }
   });
 });
+

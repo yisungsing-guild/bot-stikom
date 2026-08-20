@@ -112,12 +112,14 @@ describe('answer category functions', () => {
 
     test('returns generic message for unknown missing evidence', () => {
       const answer = buildSpecificInsufficientDataAnswer('test', ['unknown_type']);
-      expect(answer).toContain('tidak mempunyai jawaban yang mencukupi');
+      expect(answer).toContain('Saya belum menemukan data yang sesuai');
+      expect(answer).toContain('Agar tidak keliru');
     });
 
     test('returns generic message for empty missing evidence array', () => {
       const answer = buildSpecificInsufficientDataAnswer('test', []);
-      expect(answer).toContain('tidak mempunyai jawaban yang mencukupi');
+      expect(answer).toContain('Saya belum menemukan data yang sesuai');
+      expect(answer).toContain('Agar tidak keliru');
     });
 
     test('handles multiple missing evidence types (uses first match)', () => {
@@ -126,3 +128,4 @@ describe('answer category functions', () => {
     });
   });
 });
+

@@ -400,4 +400,21 @@ describe('answerPreflightEvaluator', () => {
     expect(result.answer).toMatch(/Baik|bantu/i);
     expect(result.answer).not.toMatch(/belum menemukan data/i);
   });
+  test('preserves structured academic no-data answers with supporting facts', () => {
+    const answer = [
+      'Untuk pertanyaan minimal halaman total Tugas Akhir/Skripsi, saya tidak menemukan angka minimal total halaman yang tercantum eksplisit pada Pedoman Tugas Akhir S1 yang tersedia.',
+      '',
+      'Yang tercantum di pedoman adalah ketentuan penulisan dan beberapa batas bagian tertentu, misalnya abstrak wajib minimal 150 kata dan maksimal 200 kata, kata pengantar sebaiknya tidak melebihi 1 halaman, penomoran bagian awal memakai angka Romawi kecil, bagian isi memakai angka Arab, serta daftar pustaka mengikuti standar IEEE. Pedoman juga mencatat Tugas Akhir S1 berbobot 4 SKS.',
+      '',
+      'Jadi, untuk jumlah halaman total, jawaban paling aman: ikuti template/pedoman TA terbaru dari prodi/fakultas atau konfirmasi ke bagian akademik/prodi, karena angka minimal total halaman tidak terbaca eksplisit pada data yang tersedia.'
+    ].join('\n');
+    const result = evaluateOutboundAnswer(answer, 'berapa halaman minimal dibuat untuk tugas akhir di prodi SI atau fakultas infokom', { source: 'semantic-rag-academic-policy' });
+    expect(result.blocked).toBe(false);
+    expect(result.action).toBe('send');
+    expect(result.answer).toMatch(/minimal halaman total|Tugas Akhir|Skripsi/i);
+    expect(result.answer).toMatch(/150 kata/i);
+    expect(result.answer).toMatch(/200 kata/i);
+    expect(result.answer).toMatch(/4 SKS/i);
+  });
+
 });

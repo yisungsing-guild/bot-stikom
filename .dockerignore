@@ -31,3 +31,14 @@ Thumbs.db
 
 # Binaries
 ngrok-v3-stable-windows-amd64
+
+# Local audit/report artifacts
+tests
+tmp
+.agents
+reports
+test_documents
+outputs
+.traces
+*.log
+*.md

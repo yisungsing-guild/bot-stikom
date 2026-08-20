@@ -28,6 +28,17 @@ describe('semanticRagEngine', () => {
     expect(result.source).toBe('semantic-rag-disabled');
   });
 
+  test('returns a safe fallback for vague or unknown-intent questions instead of guessing', async () => {
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+    for (const question of ['mau tanya sesuatu', 'kak bisa bantu?', 'apa itu', 'gimana?']) {
+      const result = await querySemanticRag(question);
+      expect(result.success).toBe(true);
+      expect(['semantic-rag-unknown-intent-safe-fallback', 'semantic-rag-clarify', 'semantic-rag-safe-general-fallback']).toContain(result.source);
+      expect(String(result.answer || '')).toMatch(/tidak cukup jelas|jelaskan|spesifik|maksud|mau tanya|konteks|bisa bantu|topik/i);
+    }
+  }, 30000);
+
   test('keeps explicit fee requests from being rejected by the general meaning verifier', async () => {
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');

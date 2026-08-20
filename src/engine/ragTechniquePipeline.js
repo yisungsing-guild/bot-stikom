@@ -5,6 +5,46 @@ const {
   estimateFinalConfidence
 } = require('./queryTechniqueLayer');
 
+// ========== ROOT CAUSE OPTIMIZATION: MMR Caching & Precomputation ==========
+// Avoid recreating regexes and normalizing text repeatedly in MMR loop
+const termRegexCache = new Map();
+const MAX_TERM_CACHE = 1000;
+
+function getCachedTermRegex(term) {
+  if (termRegexCache.has(term)) return termRegexCache.get(term);
+  const pattern = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+  if (termRegexCache.size >= MAX_TERM_CACHE) {
+    const firstKey = termRegexCache.keys().next().value;
+    termRegexCache.delete(firstKey);
+  }
+  termRegexCache.set(term, pattern);
+  return pattern;
+}
+
+function precomputeContextTokens(ctx) {
+  if (ctx._mmrPrecomputed) return ctx._mmrPrecomputed;
+  const textValue = ctx.chunk || ctx.text || '';
+  const normalized = normalizeForMatch(textValue).split(/\s+/).filter(t => t.length >= 3);
+  const normStr = normalizeForMatch(textValue);
+  ctx._mmrPrecomputed = {
+    textValue,
+    normalized,
+    normStr,
+    normSet: new Set(normalized)
+  };
+  return ctx._mmrPrecomputed;
+}
+
+function termOverlapScoreFast(aTermsArray, bNormStr) {
+  if (!Array.isArray(aTermsArray) || !bNormStr) return 0;
+  const hits = aTermsArray.filter((term) => {
+    const pattern = getCachedTermRegex(term);
+    return pattern.test(bNormStr);
+  }).length;
+  return Math.min(1, hits / Math.max(1, Math.min(aTermsArray.length, 8)));
+}
+// ===========================================================================
+
 const PROGRAM_ALIASES = {
   'sistem informasi': ['si', 'sif', 'sisfo', 'information system'],
   'teknologi informasi': ['ti', 'it', 'tekinfo', 'information technology'],
@@ -356,32 +396,57 @@ function reciprocalRankFusion(rankLists, options = {}) {
     .slice(0, topK);
 }
 
-function mmrDiversifyContexts(contexts, understanding, options = {}) {
+function mmrDiversifyContexts(contexts, understanding, options = {}, metrics = null) {
+  const mmrStart = Date.now();
   const list = Array.isArray(contexts) ? contexts.filter((ctx) => ctx && (ctx.chunk || ctx.text)) : [];
   const topK = Number.isFinite(Number(options.topK)) ? Math.max(0, Number(options.topK)) : list.length;
+  
+  if (process.env.DEBUG_MMR_OPTIMIZATION) {
+    console.log(`[mmrDiversifyContexts] Start with ${list.length} contexts, topK=${topK}`);
+  }
+  
   if (!list.length || topK <= 0) return [];
+
+  // ===== ROOT CAUSE OPTIMIZATION: Precompute tokens for all contexts =====
+  for (const ctx of list) {
+    precomputeContextTokens(ctx);
+  }
+  // =======================================================================
 
   const lambdaRaw = Number(options.lambda);
   const lambda = Number.isFinite(lambdaRaw) ? Math.max(0, Math.min(1, lambdaRaw)) : 0.72;
   const selected = [];
   const remaining = list.map((ctx, index) => ({ ctx, index }));
   const question = understanding && (understanding.canonicalQuestion || understanding.normalizedText || understanding.rawQuestion) || '';
+  const questionTerms = normalizeForMatch(question).split(/\s+/).filter(t => t.length >= 3);
+
+  let totalComparisons = 0;
+  let iterations = 0;
 
   while (selected.length < topK && remaining.length) {
+    iterations++;
     let bestAt = 0;
     let bestScore = -Infinity;
 
     for (let i = 0; i < remaining.length; i += 1) {
       const current = remaining[i].ctx;
-      const textValue = current.chunk || current.text || '';
+      const precomp = current._mmrPrecomputed;
+      
+      // ===== ROOT CAUSE OPTIMIZATION: Use precomputed representation =====
       const relevance = Math.max(
         Number(current.rrfScore || 0),
         Number(current.rerankScore || 0),
         Number(current.score || 0),
-        termOverlapScore(question, textValue)
+        termOverlapScoreFast(questionTerms, precomp.normStr)
       );
+      // ===================================================================
+      
       const redundancy = selected.length
-        ? Math.max(...selected.map((picked) => termOverlapScore(textValue, picked.chunk || picked.text || '')))
+        ? Math.max(...selected.map((picked) => {
+            const pickedPrecomp = picked._mmrPrecomputed;
+            totalComparisons++;
+            return termOverlapScoreFast(precomp.normalized, pickedPrecomp.normStr);
+          }))
         : 0;
       const mmrScore = (lambda * relevance) - ((1 - lambda) * redundancy);
       if (mmrScore > bestScore) {
@@ -399,6 +464,18 @@ function mmrDiversifyContexts(contexts, understanding, options = {}) {
         selectedRank: selected.length + 1
       }
     });
+  }
+
+  // Record metrics if provided
+  if (metrics) {
+    metrics.mmrMetrics.iterations = iterations;
+    metrics.mmrMetrics.totalComparisons = totalComparisons;
+    metrics.mmrMetrics.finalSelected = selected.length;
+  }
+
+  const mmrDuration = Date.now() - mmrStart;
+  if (process.env.DEBUG_MMR_OPTIMIZATION) {
+    console.log(`[mmrDiversifyContexts] Complete in ${mmrDuration}ms: ${iterations} iterations, ${selected.length} selected`);
   }
 
   return selected;

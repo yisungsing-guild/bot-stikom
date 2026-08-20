@@ -363,7 +363,21 @@ function getNestedMetadata(chunk) {
 
 function inferKnowledgeDomainFromText(text, filename = '', metadata = {}) {
   const explicit = String(metadata.domain || metadata.knowledgeDomain || metadata.topicDomain || '').trim().toLowerCase();
-  if (explicit) return explicit;
+  if (explicit) {
+    const aliases = {
+      karier: 'career',
+      karir: 'career',
+      layanan_karier: 'career',
+      layanan: 'campus_support',
+      fasilitas: 'facility',
+      beasiswa: 'scholarship',
+      biaya: 'fee',
+      jadwal: 'schedule',
+      akademik: 'academic',
+      administrasi: 'administration'
+    };
+    return aliases[explicit] || explicit;
+  }
 
   const category = String(metadata.docCategory || metadata.category || metadata.documentCategory || '').toUpperCase();
   if (category === 'BIAYA') return 'fee';
@@ -377,8 +391,8 @@ function inferKnowledgeDomainFromText(text, filename = '', metadata = {}) {
   if (category === 'SK') return 'governance';
 
   const hay = normalizeGateText([filename, text].filter(Boolean).join(' '));
-  if (/\b(?:biaya|ukt|dpp|spp|rp|angsuran|potongan)\b/.test(hay) || (/\bgelombang\b/.test(hay) && /\b(?:biaya|pendaftaran|rp|potongan)\b/.test(hay))) return 'fee';
   if (/\b(?:akreditasi|ban pt|lam infokom|nomor sk|peringkat)\b/.test(hay)) return 'accreditation';
+  if (/\b(?:biaya|ukt|dpp|spp|rp|angsuran|potongan)\b/.test(hay) || (/\bgelombang\b/.test(hay) && /\b(?:biaya|pendaftaran|rp|potongan)\b/.test(hay))) return 'fee';
   if (/\b(?:yudisium|wisuda|sidang|tugas akhir|proyek akhir|kalender akademik|jadwal kuliah|semester genap|semester ganjil|krs|sion)\b/.test(hay)) return 'academic';
   if (/\b(?:izin belajar|study permit|visa|e30b|itas|kitas|sktt|mahasiswa asing|international office)\b/.test(hay)) return 'foreign_student_admin';
   if (/\b(?:double degree|dual degree|dnui|dalian|help university|student exchange|pertukaran mahasiswa|gccp|hi think|hithink|international class|program internasional)\b/.test(hay)) return 'international';

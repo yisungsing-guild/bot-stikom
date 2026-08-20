@@ -14,6 +14,24 @@ jest.mock('../src/db', () => ({
 
 const prisma = require('../src/db');
 
+beforeAll(() => {
+  process.env.SEMANTIC_RAG_INDEX_CACHE_MS = '300000';
+  process.env.SEMANTIC_RAG_TRAINING_DB_CACHE_MS = '300000';
+  process.env.SEMANTIC_RAG_CANDIDATES = '25';
+  process.env.SEMANTIC_RAG_RRF_ENABLED = 'false';
+  process.env.SEMANTIC_RAG_MMR_ENABLED = 'false';
+  process.env.RAG_TRACE_PERSIST = 'false';
+});
+
+afterAll(() => {
+  delete process.env.SEMANTIC_RAG_INDEX_CACHE_MS;
+  delete process.env.SEMANTIC_RAG_TRAINING_DB_CACHE_MS;
+  delete process.env.SEMANTIC_RAG_CANDIDATES;
+  delete process.env.SEMANTIC_RAG_RRF_ENABLED;
+  delete process.env.SEMANTIC_RAG_MMR_ENABLED;
+  delete process.env.RAG_TRACE_PERSIST;
+});
+
 // Clear cache before each test
 beforeEach(() => {
   jest.clearAllMocks();
@@ -98,7 +116,13 @@ describe('database candidate retrieval', () => {
           divisionKey: true,
           createdAt: true,
           ragIngestStatus: true,
-          ragChunkCount: true
+          ragChunkCount: true,
+          governanceStatus: true,
+          governanceOwner: true,
+          governanceVersion: true,
+          validFrom: true,
+          validTo: true,
+          governanceMetadata: true
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -312,3 +336,5 @@ describe('database candidate retrieval', () => {
     });
   });
 });
+
+

@@ -30,14 +30,14 @@
     "maint:run:dry": "node scripts/maintenanceScheduler.js --immediate --dry-run",
     "maint:scheduler": "node scripts/maintenanceScheduler.js",
     "maint:clean:sessions": "node scripts/clear_session_pending_flags.js --chatId=all",
-    "test": "npm run test:unit",
+    "test": "npm run test:unit && npm run test:contract",
     "rag:web-sync": "node scripts/ingestWebRag.js",
     "rag:audit-ingest": "node scripts/auditRagIngestCoverage.js",
     "rag:rebuild": "node scripts/rebuildRagIndex.js",
     "rag:evaluate-local-domain": "node scripts/evaluate_local_domain_retrieval.js",
     "rag:evaluate-rag-retrieval": "node scripts/evaluate_rag_retrieval.js",
     "answer-quality:weekly": "node scripts/auditAnswerQualityWeekly.js",
-    "test:unit": "jest --runInBand --testPathIgnorePatterns=providerRealUat --testPathIgnorePatterns=run21 --testPathIgnorePatterns=providerWebhook --testPathIgnorePatterns=messageExamples --testPathIgnorePatterns=semanticRagEngine --testPathIgnorePatterns=ragEngine --testPathIgnorePatterns=registrationDiscount --testPathIgnorePatterns=parse_fee_numbering --testPathIgnorePatterns=debug_fee_output --testPathIgnorePatterns=bug-audit --testPathIgnorePatterns=productionRuntime --testPathIgnorePatterns=providerRoute --testPathIgnorePatterns=provider_ --testPathIgnorePatterns=feeComparisonEngine --testPathIgnorePatterns=admin --testPathIgnorePatterns=integrationRuntime --testPathIgnorePatterns=ragRetrieval --testPathIgnorePatterns=retrieval --testPathIgnorePatterns=traceRuntime --testPathIgnorePatterns=fonnte --testPathIgnorePatterns=wati --testPathIgnorePatterns=serverRuntime --testPathIgnorePatterns=fileParser --testPathIgnorePatterns=webSearchFallback",
+    "test:unit": "jest --runInBand --testPathIgnorePatterns=providerRealUat --testPathIgnorePatterns=run21 --testPathIgnorePatterns=providerWebhook --testPathIgnorePatterns=messageExamples --testPathIgnorePatterns=semanticRagEngine --testPathIgnorePatterns=semanticRagRealUserPhrasing --testPathIgnorePatterns=semanticRagShortDefinitionRegression --testPathIgnorePatterns=semanticSmallTalkGuard --testPathIgnorePatterns=semanticRawLeakComplaint --testPathIgnorePatterns=semanticFaqQnaInline --testPathIgnorePatterns=ragEngine --testPathIgnorePatterns=registrationDiscount --testPathIgnorePatterns=parse_fee_numbering --testPathIgnorePatterns=debug_fee_output --testPathIgnorePatterns=bug-audit --testPathIgnorePatterns=productionRuntime --testPathIgnorePatterns=providerRoute --testPathIgnorePatterns=provider_ --testPathIgnorePatterns=feeComparisonEngine --testPathIgnorePatterns=admin --testPathIgnorePatterns=integrationRuntime --testPathIgnorePatterns=ragRetrieval --testPathIgnorePatterns=retrieval --testPathIgnorePatterns=traceRuntime --testPathIgnorePatterns=fonnte --testPathIgnorePatterns=wati --testPathIgnorePatterns=serverRuntime --testPathIgnorePatterns=fileParser --testPathIgnorePatterns=webSearchFallback --testPathIgnorePatterns=databaseCandidateRetrieval --testPathIgnorePatterns=unseenEntityGeneralization --testPathIgnorePatterns=documentLeakRegression --testPathIgnorePatterns=scheduleReadiness --testPathIgnorePatterns=genericRagIntegration --testPathIgnorePatterns=genericEvidenceRetrieval --testPathIgnorePatterns=comprehensiveAnswerAudit",
     "test:evidence": "jest --runInBand tests/evidenceSelector.test.js tests/semanticEvidenceSelection.test.js tests/answerPreflightEvaluator.test.js",
     "test:rag": "jest --runInBand tests/ragEngine.test.js tests/semanticRagEngine.test.js tests/registrationDiscount.cases.test.js tests/registrationDiscount.regression.test.js tests/parse_fee_numbering.test.js",
     "test:integration": "jest --runInBand tests/providerWebhook.test.js tests/messageExamples.test.js",
@@ -46,7 +46,14 @@
     "diagnostic:run21": "node scripts/run21Diagnostic.js",
     "rag:health": "node scripts/auditRagIngestCoverage.js --failOnMissing",
     "rag:health:json": "node scripts/auditRagIngestCoverage.js --json --failOnMissing",
-    "rag:audit-qa": "node scripts/auditKnowledgeQaCoverage.js"
+    "rag:audit-qa": "node scripts/auditKnowledgeQaCoverage.js",
+    "test:contract": "jest --runInBand --testTimeout=120000 tests/queryUnderstanding.canonical.test.js tests/semanticRagEngine.p0RootCauseContracts.test.js tests/semanticRagEngine.p1CanonicalContracts.test.js tests/semanticRagEngine.p3AcademicContracts.test.js tests/semanticRagEngine.performanceAsyncContracts.test.js tests/semanticRagShortDefinitionRegression.test.js tests/semanticSmallTalkGuard.test.js tests/evidenceSelector.test.js tests/semanticEvidenceSelection.test.js tests/answerPreflightEvaluator.test.js",
+    "test:semantic": "jest --runInBand --testTimeout=120000 tests/semanticRagRealUserPhrasing.test.js tests/semanticRawLeakComplaint.test.js tests/semanticFaqQnaInline.test.js tests/semanticRagShortDefinitionRegression.test.js tests/semanticSmallTalkGuard.test.js",
+    "test:rag:legacy": "jest --runInBand tests/ragEngine.test.js tests/semanticRagEngine.test.js tests/registrationDiscount.cases.test.js tests/registrationDiscount.regression.test.js tests/parse_fee_numbering.test.js",
+    "test:all": "npm test && npm run test:retrieval && npm run test:document-safety && npm run test:schedule && npm run test:semantic && npm run test:rag:legacy && npm run test:integration",
+    "test:retrieval": "jest --runInBand --testTimeout=120000 tests/databaseCandidateRetrieval.test.js tests/unseenEntityGeneralization.test.js tests/genericEvidenceRetrieval.test.js tests/genericRagIntegration.test.js",
+    "test:document-safety": "jest --runInBand --testTimeout=120000 tests/documentLeakRegression.test.js tests/semanticRawLeakComplaint.test.js",
+    "test:schedule": "jest --runInBand --testTimeout=120000 tests/scheduleReadiness.test.js"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -94,3 +101,4 @@
     "seed": "node prisma/seed.js"
   }
 }
+
