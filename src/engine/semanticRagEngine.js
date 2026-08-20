@@ -1507,7 +1507,7 @@ function hasConcreteDateOrPeriod(value) {
 }
 
 function hasConcreteNumberOrAmount(value) {
-  return /\b(?:rp\.?\s*\d|gelombang\s+(?:khusus|sisipan\s*\d+|[ivx]+|\d+)\s*[a-c]?|\d+[.,]?\d*\s*(?:juta|ribu|sks|semester|tahun|bulan|hari|minggu|orang|kali|lokasi|kampus|cabang|%)|\d{1,3}(?:\.\d{3})+|\d+\s*\/\s*\d+)\b/i.test(String(value || ''));
+  return /\b(?:rp\.?\s*\d|gelombang\s+(?:khusus|sisipan\s*\d+|[ivx]+|\d+)\s*[a-c]?|\d+[.,]?\d*\s*(?:juta|ribu|sks|semester|tahun|bulan|hari|minggu|orang|kali|lokasi|kampus|cabang|ukm|ormawa|organisasi|unit|prodi|program|jurusan|beasiswa|fasilitas|layanan|%)|\d{1,3}(?:\.\d{3})+|\d+\s*\/\s*\d+)\b/i.test(String(value || ''));
 }
 
 function hasListLikeAnswer(value) {
@@ -8883,6 +8883,10 @@ function cleanUkmProfileChunkText(chunk) {
     .join(' ')
     .replace(/^SY\s*\W\s*/i, '')
     .replace(/^PROFILE\s+ORGANISASI\s+/i, '')
+    .replace(/^PROFILE\s+ORMAWA\s+/i, '')
+    .replace(/^PROFIL\s+ORMAWA\s+/i, '')
+    .replace(/^PROFILE\s+UKM\s+/i, '')
+    .replace(/^PROFIL\s+UKM\s+/i, '')
     .replace(/^PROFILE\s+SINGKAT\s+/i, '')
     .replace(/^PROFIL\s+SINGKAT\s+/i, '')
     .replace(/^Berikut\s+adalah\s+profil\s+singkat\s+mengenai\s+/i, '')
@@ -8905,6 +8909,16 @@ function normalizeUkmProfileSentence(sentence) {
   return out;
 }
 
+function isBrokenUkmProfileSentence(line) {
+  const text = String(line || '').replace(/\s+/g, ' ').trim();
+  if (!text) return true;
+  if (/^(?:profile|profil)\s+(?:ormawa|ukm|organisasi)\b/i.test(text)) return true;
+  if (/\b(?:diprakarsai|didirikan|berawal|diinisiasi).*\b(?:Prof|Dr|Ir|Bapak|Ibu)\.$/i.test(text)) return true;
+  if (/^(?:Dari awal|Pada awal|Awalnya|Sejarah|Beserta|Sehingga|Dan|Yang|Dengan)\b/i.test(text)) return true;
+  if (text.length < 50 && !/\b(?:adalah|merupakan|wadah|bergerak|berfokus|kegiatan|latihan|kompetisi|pengembangan|organisasi|mahasiswa)\b/i.test(text)) return true;
+  return false;
+}
+
 function summarizeUkmProfileBody(body, ukmTitle) {
   const raw = String(body || '').trim();
   if (!raw) return '';
@@ -8919,6 +8933,7 @@ function summarizeUkmProfileBody(body, ukmTitle) {
     .split(/(?<=[.!?])\s+|\n+/u)
     .map(normalizeUkmProfileSentence)
     .filter((line) => line.length >= 35)
+    .filter((line) => !isBrokenUkmProfileSentence(line))
     .filter((line) => !/^(visi|misi|catatan|identitas\s+organisasi|sejarah\s+singkat)\b/i.test(line))
     .filter((line) => !/\b(?:email|instagram|@|http|www\.)\b/i.test(line));
 
@@ -9170,13 +9185,13 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic && !asksUkmTechnicalDetail(q)) return null;
   if (!hasUkmSignal && !hasUkmContext) return null;
 
+  const asksUkmCount = /\b(?:berapa\s+(?:banyak|jumlah|ada)|ada\s+berapa|jumlah(?:nya)?|total(?:nya)?|berapa\s+unit|berapa\s+organisasi)\b/i.test(q)
+    && /\b(?:ukm|ormawa|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|kegiatan\s+mahasiswa)\b/i.test(q);
+
   const asksUkmList = (
     /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(q)
     && /\b(ada|tersedia|punya|memiliki|apa|daftar|list|sebutkan|mana|saja|aja|jenis|pilihan)\b/i.test(q)
   ) || /\b(ada\s+ukm|ukm\s+apa|apa\s+saja\s+ukm|daftar\s+ukm|list\s+ukm|sebutkan\s+ukm|ada\s+ormawa|daftar\s+ormawa)\b/i.test(q);
-
-  const recommendation = tryUkmInterestRecommendation(question, options);
-  if (recommendation) return recommendation;
 
   const followUpUsesRecentUkm = !currentMentionedUkm && !asksUkmList && (!hasExplicitDifferentTopic || asksUkmTechnicalDetail(q)) && shouldUseRecentEntityContext(q) && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|deadline(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?|join(?:nya)?|link(?:nya)?|form(?:nya)?|kontak|\bcp\b|pic|admin(?:nya)?|apa\s+saja|gimana|bagaimana)\b/i.test(q);
   const mentionedUkm = currentMentionedUkm || (followUpUsesRecentUkm ? recentMentionedUkm : null);
@@ -9214,13 +9229,25 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
       source: 'semantic-rag-ukm-specific-insufficient-data'
     };
   }
-  if (!asksUkmList) return null;
+  if (!asksUkmList && !asksUkmCount) {
+    const recommendation = tryUkmInterestRecommendation(question, options);
+    if (recommendation) return recommendation;
+    return null;
+  }
 
   const list = loadUkmList();
   if (!list || !list.text) {
     return {
       answer: 'Maaf, saya belum menemukan daftar UKM/Ormawa pada data yang tersedia. Kakak bisa hubungi admin kampus untuk daftar terbaru.',
       source: 'semantic-rag-ukm-no-data'
+    };
+  }
+
+  if (asksUkmCount) {
+    return {
+      answer: 'Ada ' + list.total + ' UKM/Ormawa yang tercatat di ITB STIKOM Bali berdasarkan daftar kampus yang tersedia. Kalau kakak ingin melihat namanya satu per satu, saya bisa tampilkan daftar UKM/Ormawa tersebut.',
+      source: 'semantic-rag-ukm-count',
+      frameSource: 'semantic-rag-ukm-list'
     };
   }
 
@@ -11950,8 +11977,21 @@ function runVettedDeterministicFallback(question, options, rewrite, routeStage) 
 function tryProgramCurriculumFollowupAnswer(question) {
   const q = String(question || '').trim().toLowerCase();
   if (!q) return null;
-  const asksLearning = /\b(?:belajar|dipelajari|yang\s+dipelajarin|mata\s+kuliah|matkul|kurikulum|skill|kompetensi|jurusannya\s+gimana|jurusannya\s+bagaimana|jago\s+komputer|jago\s+coding|harus\s+(?:bisa|jago|mahir).*?(?:komputer|coding|ngoding)|coding|ngoding|komputer)\b/i.test(q);
+  const asksLearning = /\b(?:belajar|dipelajari|yang\s+dipelajarin|perkuliahan|kuliah(?:nya)?|mata\s+kuliah|matkul|materi|course|kurikulum|skill|kompetensi|jurusannya\s+gimana|jurusannya\s+bagaimana|jago\s+komputer|jago\s+coding|harus\s+(?:bisa|jago|mahir).*?(?:komputer|coding|ngoding)|coding|ngoding|komputer)\b/i.test(q);
   if (!asksLearning) return null;
+  if (/\b(?:s2|s\s*2|pascasarjana|pasca\s*sarjana|magister|master)\b/i.test(q) && !/\b(?:hi-?think|hithink|jepang|student\s*exchange|double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(q)) {
+    return {
+      answer: [
+        'Untuk Program Pascasarjana / S2 Sistem Informasi, data yang tersedia menjelaskan arah perkuliahan dan fokus kurikulumnya, bukan daftar mata kuliah rinci per semester.',
+        '',
+        'Informasi yang aman saya sampaikan: kurikulumnya berbasis industri, fokus pengembangannya pada Intelligent & Secure System, dan area penguatan/riset yang disebutkan mencakup Cyber Security, Data Science, Enterprise System, dan Medical Informatics.',
+        '',
+        'Masa studi normalnya 4 semester dengan total 56 SKS. Untuk daftar mata kuliah lengkap per semester, kakak sebaiknya konfirmasi ke prodi Pascasarjana atau bagian akademik agar tidak keliru.'
+      ].join('\n'),
+      source: 'semantic-rag-postgraduate-profile',
+      frameSource: 'semantic-rag-program-curriculum'
+    };
+  }
   if (/\bbisnis\s+digital\b/i.test(q) && /\b(?:jago\s+komputer|jago\s+coding|harus\s+(?:bisa|jago|mahir).*?(?:komputer|coding|ngoding)|coding|ngoding|komputer)\b/i.test(q)) {
     return {
       answer: [
@@ -12544,6 +12584,16 @@ async function querySemanticRag(question, options = {}) {
       return await finalizeSemanticResult(question, builtEarlyDualDegree, resultCacheKey);
     }
   }
+  const preGuardCanonicalOrganizationCount = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_organization_count') ? null : (
+    tryUkmAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryUkmAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryUkmAnswer(question, getCachedSemanticIndex(), options)
+  );
+  if (preGuardCanonicalOrganizationCount && preGuardCanonicalOrganizationCount.answer) {
+    const builtCanonicalOrganizationCount = buildDeterministicResponse(question, preGuardCanonicalOrganizationCount.source || 'semantic-rag-ukm-count', preGuardCanonicalOrganizationCount, { routeStage: 'pre-guard-canonical-organization-count', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
+    return await finalizeSemanticResult(question, builtCanonicalOrganizationCount, resultCacheKey);
+  }
+
   if (!strictDocumentOnly && shouldTryDocumentEvidenceBeforePreGuards(question)) {
     try {
       const earlyDocumentFirst = await tryEvidenceFirstLocalDocumentAnswer(question, { ...options, topK: Math.max(8, Number(options.topK || 0) || 0), routeStage: 'pre-guard-document-first' });

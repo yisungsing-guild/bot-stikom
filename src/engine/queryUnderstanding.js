@@ -201,6 +201,18 @@ function resolveProgramEntities(rawText) {
       });
     }
   }
+  const hasS2Level = /\b(?:s\s*2|pascasarjana|pasca\s+sarjana|magister|master)\b/i.test(normalized);
+  const hasProgramStudyContext = /\b(?:program|program\s+studi|prodi|jurusan|kuliah|perkuliahan|mata\s+kuliah|matkul|kurikulum|belajar|dipelajari|kelas|course|sks|gelar|masa\s+studi|semester|fokus\s+penelitian|riset)\b/i.test(normalized);
+  if (hasS2Level && hasProgramStudyContext && !matches.some(entity => entity.canonical === 'S2 Sistem Informasi')) {
+    matches.push({
+      type: 'program',
+      canonical: 'S2 Sistem Informasi',
+      code: 'S2 SI',
+      surface: 's2',
+      confidence: 0.82,
+      source: 'canonical-program-level-context'
+    });
+  }
   const seen = new Set();
   return matches.filter(entity => {
     if (seen.has(entity.canonical)) return false;
@@ -234,9 +246,11 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     || Boolean(temporal.explicitDate || temporal.requestedMonth || temporal.requestedWave);
   const hasFacility = /\b(?:fasilitas|fasilias|fasiltas|layanan|sarana|prasarana|laboratorium|lab|perpustakaan|ruang|kantin|parkir|wifi|inkubator|inbis|language\s+learning|llc|hi\s*think|hithink|career\s*center|pusat\s+karier|pusat\s+karir)\b/i.test(q);
   const hasCareer = /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|karier|karir|prospek\s+kerja|peluang\s+kerja|lowongan|magang|job\s*fair|campus\s*hiring|tracer\s*study|persiapan\s+kerja|siap\s+kerja|dunia\s+kerja|pembekalan|melamar\s+pekerjaan|bantuan\s+persiapan)\b/i.test(q);
-  const asksLearning = /\b(?:belajar|dipelajari|mata\s+kuliah|matkul|kurikulum|skill|kompetensi|coding|ngoding|ai|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(q);
+  const asksLearning = /\b(?:belajar|dipelajari|perkuliahan|kuliah(?:nya)?(?:\s+(?:apa|apa\s+saja|apa\s+aja|yang\s+ada|membahas))?|mata\s+kuliah|matkul|materi|course|kelas|kurikulum|skill|kompetensi|coding|ngoding|ai|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(q);
   const asksAdvice = /\b(?:kurang|tidak|ga|gak|nggak|belum)\s+(?:cakap|jago|mahir|bisa|paham)|\b(?:apa\s+yang\s+harus|harus\s+bagaimana|saran|cocok|minat)\b/i.test(q);
   const asksList = /\b(?:apa\s+saja|apa\s+aja|daftar|list|pilihan|macam|sebutkan)\b/i.test(q);
+  const asksCount = /\b(?:berapa\s+(?:banyak|jumlah|ada)|ada\s+berapa|jumlah(?:nya)?|total(?:nya)?|berapa\s+unit|berapa\s+organisasi)\b/i.test(q);
+  const hasOrganization = /\b(?:ormawa|ukm|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi\s+kampus|kegiatan\s+mahasiswa)\b/i.test(q);
   const hasScholarship = /\b(?:beasiswa|kip|1k1s|skss|bantuan\s+biaya|potongan)\b/i.test(q) && !hasFee;
   const hasAcademic = /\b(?:sks|skripsi|tugas\s+akhir|tesis|\bta\b|krs|wisuda|yudisium|kalender\s+akademik|baak)\b/i.test(q);
   const hasThesisTerm = /\b(?:skripsi|tugas\s+akhir|tesis|ta)\b/i.test(q);
@@ -284,6 +298,10 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_scholarship';
     primaryDomain = 'scholarship';
     answerExpectation = asksList ? 'list' : 'specific_fact_or_fallback';
+  } else if (hasOrganization && asksCount) {
+    primaryIntent = 'ask_organization_count';
+    primaryDomain = 'student_organization';
+    answerExpectation = 'count';
   } else if (hasProgramList) {
     primaryIntent = 'ask_program_list';
     primaryDomain = 'program';
@@ -326,7 +344,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
       comparisonTarget: /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(q) ? 'program' : null,
       academicTopic
     },
-    questionType: asksList ? 'list' : (/\b(?:apakah|apa|ada|punya|tersedia)\b/i.test(q) ? 'yes_no_or_explain' : 'informational'),
+    questionType: asksCount ? 'count' : (asksList ? 'list' : (/\b(?:apakah|apa|ada|punya|tersedia)\b/i.test(q) ? 'yes_no_or_explain' : 'informational')),
     answerExpectation,
     ambiguity: []
   };
@@ -338,6 +356,7 @@ function buildRoutingQuery(normalizedQuery, entities, classification) {
   if (classification.constraints.feeType) additions.push(classification.constraints.feeType);
   if (classification.intent.primary === 'ask_program_comparison') additions.push('perbedaan program studi');
   if (classification.intent.primary === 'ask_program_curriculum') additions.push('kurikulum');
+  if (classification.intent.primary === 'ask_organization_count') additions.push('jumlah UKM Ormawa organisasi mahasiswa');
   if (classification.intent.primary === 'ask_registration_how') additions.push('pendaftaran');
   if (classification.intent.primary === 'ask_facility_list') additions.push('fasilitas');
   if (classification.constraints.academicTopic) additions.push(classification.constraints.academicTopic.replace(/_/g, ' '));
