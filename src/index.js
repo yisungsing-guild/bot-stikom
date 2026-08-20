@@ -156,7 +156,7 @@ const adminRouterFactory = require('./routes/admin');
 const videoTrainingRoutes = require('./routes/videoTrainingRoutes');
 const watiWebhookRouter = require('./routes/watiWebhook');
 const fonnteWebhookRouter = require('./routes/fonnteWebhook');
-const { prewarmSemanticRag } = require('./engine/semanticRagEngine');
+const { prewarmSemanticRag, querySemanticRag } = require('./engine/semanticRagEngine');
 
 // Middleware: auth, validation, rate limit
 const { verifyToken, createAuthRoute } = require('./middleware/auth');
@@ -586,6 +586,66 @@ if (isFonnteMode) {
 // Telegram webhook for incident alerts + interactive repair confirmation
 app.use('/telegram', telegramRouterFactory(provider));
 
+app.post('/internal/semantic-smoke', async (req, res, next) => {
+  try {
+    const expectedToken = String(process.env.SEMANTIC_SMOKE_TOKEN || '').trim();
+    if (!expectedToken || expectedToken.length < 32) {
+      return res.status(404).send({ error: 'not_found' });
+    }
+
+    const auth = String(req.headers.authorization || '').trim();
+    const bearer = auth.replace(/^Bearer\s+/i, '').trim();
+    const providedToken = String(req.headers['x-semantic-smoke-token'] || bearer || '').trim();
+    if (!providedToken || providedToken !== expectedToken) {
+      return res.status(403).send({ error: 'forbidden' });
+    }
+
+    const queries = Array.isArray(req.body && req.body.queries) ? req.body.queries : [];
+    const cleanQueries = queries
+      .map((item) => (typeof item === 'string' ? { query: item } : item))
+      .filter((item) => item && typeof item.query === 'string' && item.query.trim())
+      .slice(0, 30);
+
+    if (!cleanQueries.length) {
+      return res.status(400).send({ error: 'queries required' });
+    }
+
+    const indexHealth = await prewarmSemanticRag();
+    const results = [];
+    for (const item of cleanQueries) {
+      const query = String(item.query || '').trim();
+      const id = item.id ? String(item.id) : null;
+      const startedAt = Date.now();
+      const result = await querySemanticRag(query, { topK: 8, mode: 'production_semantic_smoke' });
+      results.push({
+        id,
+        query,
+        durationMs: Date.now() - startedAt,
+        source: result && result.source ? result.source : null,
+        confidenceScore: result && result.confidenceScore !== undefined ? result.confidenceScore : null,
+        confidenceTier: result && result.confidenceTier ? result.confidenceTier : null,
+        answer: result && result.answer ? String(result.answer) : '',
+        contexts: Array.isArray(result && result.contexts)
+          ? result.contexts.slice(0, 3).map((ctx) => ({
+              source: ctx && (ctx.source || ctx.filename || ctx.file) ? String(ctx.source || ctx.filename || ctx.file) : null,
+              text: ctx && (ctx.text || ctx.chunk) ? String(ctx.text || ctx.chunk).slice(0, 240) : ''
+            }))
+          : []
+      });
+    }
+
+    return res.send({
+      ok: true,
+      generatedAt: new Date().toISOString(),
+      diagnosticOnly: true,
+      outboundProviderBypassed: true,
+      indexHealth,
+      results
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
 // Mount admin routes dengan JWT verification
 // Endpoint: /admin/* (semua admin endpoint harus punya token)
 const adminRateLimitMax = parseInt(process.env.RATE_LIMIT_ADMIN_MAX_REQUESTS || '50', 10);
@@ -794,6 +854,7 @@ process.on('unhandledRejection', (reason, promise) => {
     // ignore
   }
 });
+
 
 
 
