@@ -69,3 +69,25 @@ No deployment or production behavior change has been pushed yet in this report s
 ## Verdict
 
 LOCAL_REMEDIATION_VALIDATED_PENDING_DEPLOYMENT_SMOKE
+
+## Production Smoke Follow-Up Finding
+
+Initial Railway semantic smoke after commit `1480ddf` exposed two safety/output issues still in the same defect class:
+
+- Short raw-leak complaint `jawaban tadi bocor potongan dokumen mentah seperti PROFILE ORMAWA dan bullet patah` routed to `semantic-rag-campus-support-entity` instead of the raw document leak feedback guard.
+- `Profil ukm tari` no longer leaked `PROFILE ORMAWA`, `Prof.`, or `Beserta Istrinya`, but still included a dangling history fragment: `Dari waktu ke waktu ... di dampingi.`
+
+Additional general fix:
+
+- Raw-leak complaint guard now recognizes short complaints containing one strong raw marker such as `PROFILE ORMAWA`, `potongan dokumen`, `dokumen mentah`, or `bullet patah`.
+- UKM profile cleanup rejects broader raw history starts (`Dari waktu`, `Perjalanan`, `Seiring`) and dangling fragments such as `di dampingi.`.
+
+Post-fix local validation:
+
+- Focused live root-cause + raw leak tests: PASS, 6/6.
+- Golden smoke: PASS, 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG; `pmb_still_open` 1838ms.
+- `npm run test:semantic`: PASS, 13/13.
+- `npm run test:retrieval`: PASS, 110/110.
+- `npm run test:document-safety`: PASS, 6/6.
+- `npm run test:evidence`: PASS, 56/56.
+- `npm test`: PASS natural, unit 330/330 and contract 94/94.

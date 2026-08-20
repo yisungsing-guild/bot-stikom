@@ -374,3 +374,7 @@ Final active Railway deployment after disabling smoke token: `4195a08c-49fb-4b98
 ## Live Production Root-Cause Remediation - 2026-08-20
 
 Fixed three live production semantic defects without query hardcodes: S2 curriculum precedence, ORMAWA/UKM count requestType, and UKM profile fragment cleanup. Added focused unseen/negative contract coverage in `tests/semanticRagEngine.liveProductionRootCauseContracts.test.js`. Local gates remain PASS: golden 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG, semantic 13/13, retrieval 110/110, document-safety 6/6, evidence 56/56, schedule 12/12, npm test natural PASS.
+
+### Production Smoke Follow-Up Safety Patch
+
+Initial production smoke of `1480ddf` found two remaining safety/output issues in the same raw-leak/profile-cleanup class. Added general short raw-leak complaint marker detection and stricter UKM profile dangling-fragment filtering. Local gates after patch remain PASS: focused root-cause/raw-leak 6/6, golden 0 WRONG, semantic 13/13, retrieval 110/110, document-safety 6/6, evidence 56/56, npm test natural PASS.

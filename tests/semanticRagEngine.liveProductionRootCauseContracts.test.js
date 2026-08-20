@@ -60,7 +60,7 @@ describe('live production root-cause semantic contracts', () => {
     expect(result.source).toBe('semantic-rag-ukm-list');
     expect(result.answer).toMatch(/Tari|PRAGINA|Seni Tradisional/i);
     expect(result.answer).not.toMatch(/PROFILE\s+(?:ORMAWA|UKM|ORGANISASI)|Teks hasil OCR|Ringkasan Dokumen/i);
-    expect(result.answer).not.toMatch(/diprakarsai oleh Prof\.|Beserta Istrinya|^.*-\s*Dari awal/im);
+    expect(result.answer).not.toMatch(/diprakarsai oleh Prof\.|Beserta Istrinya|^.*-\s*Dari awal|^.*-\s*Dari waktu|di\s+dampingi\./im);
   }
 
   test('cleans UKM profile evidence fragments across profile phrasing', async () => {
@@ -77,4 +77,11 @@ describe('live production root-cause semantic contracts', () => {
     expect(unknown.source).toMatch(/ukm-unknown|insufficient|meaning-mismatch|preflight/i);
     expect(unknown.answer).not.toMatch(/PRAGINA|Tari Tradisional/i);
   });
+  test('routes short raw document leak complaints before support/entity handlers', async () => {
+    const result = await ask('jawaban tadi bocor potongan dokumen mentah seperti PROFILE ORMAWA dan bullet patah');
+    expect(result.source).toBe('semantic-rag-raw-document-leak-feedback');
+    expect(result.answer).toMatch(/dokumen mentah|tidak seharusnya terkirim/i);
+    expect(result.answer).not.toMatch(/Career Center|PRAGINA|PROFILE ORMAWA/i);
+  });
+
 });

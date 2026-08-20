@@ -1888,7 +1888,7 @@ function isConversationRawDocumentQuote(text) {
   if (!value) return false;
   if (hasLikelyRawDocumentLeak(value)) return true;
   const markerGroups = [
-    /\b(?:PROFIL|PROFILE)\s+(?:LEMBAGA|ORGANISASI|DIVISI|UNIT|UKM|PROGRAM|FAKULTAS|BAGIAN)\b/i,
+    /(?:PROFIL|PROFILE)\s+(?:LEMBAGA|ORGANISASI|ORMAWA|DIVISI|UNIT|UKM|PROGRAM|FAKULTAS|BAGIAN)\b/i,
     /\b(?:Identitas\s+(?:Lembaga|Organisasi|Program)|Nama\s+(?:Lembaga|Organisasi|Program|Perguruan\s+Tinggi)|Tahun\s+Berdiri|Dasar\s+Hukum|Pembina\s*\/\s*Penanggung\s+Jawab|Ringkasan\s+Capaian|Struktur\s+Organisasi|Susunan\s+Pengurus)\b/i,
     /\b(?:SURAT\s+KEPUTUSAN|KEPUTUSAN\s+(?:REKTOR|KETUA|DIREKTUR)|Nomor\s*SK|Menimbang|Mengingat|Memutuskan|Ditetapkan\s+di|Pada\s+tanggal|Tembusan|Lampiran|Pasal\s+\d+)\b/i,
     /\b(?:NOTA\s+KESEPAHAMAN|PERJANJIAN\s+KERJA\s*SAMA|MOU|MOA|ADDENDUM|PIHAK\s+PERTAMA|PIHAK\s+KEDUA|PARA\s+PIHAK|FORCE\s+MAJEURE)\b/i,
@@ -1906,9 +1906,10 @@ function isConversationRawDocumentQuote(text) {
 function isRawDocumentLeakComplaint(question) {
   const value = String(question || '').trim();
   if (!value) return false;
-  const complaint = /\b(?:kenapa|kok|mengapa|loh|lah|aneh|salah|bocor|full\s*dokumen|dokumen\s+mentah|raw|nyangkut|ngawur|tidak\s+nyambung|ga\s+nyambung|gak\s+nyambung|nggak\s+nyambung|jadi\s+begini|seperti\s+ini)\b/i.test(value);
+  const complaint = /\b(?:kenapa|kok|mengapa|loh|lah|aneh|salah|bocor|full\s*dokumen|dokumen\s+mentah|potongan\s+dokumen|kutipan\s+dokumen|raw|fragmen|fragment|bullet\s+patah|patah|nyangkut|ngawur|tidak\s+nyambung|ga\s+nyambung|gak\s+nyambung|nggak\s+nyambung|jadi\s+begini|seperti\s+ini)\b/i.test(value);
   if (!complaint) return false;
-  return isConversationRawDocumentQuote(value) || value.length > 500;
+  const shortRawMarker = /\b(?:PROFIL|PROFILE)\s+(?:LEMBAGA|ORGANISASI|ORMAWA|DIVISI|UNIT|UKM|PROGRAM|FAKULTAS|BAGIAN)\b|\b(?:bullet\s+patah|potongan\s+dokumen|dokumen\s+mentah|kutipan\s+dokumen|teks\s+hasil\s+ocr|raw\s+fragment)\b/i.test(value);
+  return shortRawMarker || isConversationRawDocumentQuote(value) || value.length > 500;
 }
 
 function buildRawDocumentLeakComplaintAnswer() {
@@ -8914,7 +8915,8 @@ function isBrokenUkmProfileSentence(line) {
   if (!text) return true;
   if (/^(?:profile|profil)\s+(?:ormawa|ukm|organisasi)\b/i.test(text)) return true;
   if (/\b(?:diprakarsai|didirikan|berawal|diinisiasi).*\b(?:Prof|Dr|Ir|Bapak|Ibu)\.$/i.test(text)) return true;
-  if (/^(?:Dari awal|Pada awal|Awalnya|Sejarah|Beserta|Sehingga|Dan|Yang|Dengan)\b/i.test(text)) return true;
+  if (/^(?:Dari awal|Dari waktu|Pada awal|Awalnya|Sejarah|Perjalanan|Seiring|Beserta|Sehingga|Dan|Yang|Dengan)\b/i.test(text)) return true;
+  if (/\b(?:di\s+dampingi|didampingi|mempunyai\s+minat,?\s+bakat)\.$/i.test(text)) return true;
   if (text.length < 50 && !/\b(?:adalah|merupakan|wadah|bergerak|berfokus|kegiatan|latihan|kompetisi|pengembangan|organisasi|mahasiswa)\b/i.test(text)) return true;
   return false;
 }
