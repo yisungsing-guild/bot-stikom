@@ -3247,7 +3247,11 @@ function isSafePmbOverviewAnswer(question, answer) {
 function isSafeDualDegreeAnswer(question, answer) {
   const q = String(question || '').toLowerCase();
   const a = String(answer || '').trim();
-  if (!a || !/\b(double\s*degree|dual\s*degree|gelar\s+ganda|dd)\b/i.test(q)) return false;
+  const explicitDualDegreeQuestion = /\b(double\s*degree|dual\s*degree|gelar\s+ganda|dd)\b/i.test(q);
+  const implicitUtbDkvRelationQuestion = /\b(?:utb|universitas\s+teknologi\s+bandung)\b/i.test(q)
+    && /\b(?:dkv|desain\s+komunikasi\s+visual)\b/i.test(q)
+    && /\b(?:stikom|stikom\s+bali|itb\s*stikom|sisi\s+stikom|prodi\s+stikom|jurusan\s+stikom|di\s+stikom)\b/i.test(q);
+  if (!a || (!explicitDualDegreeQuestion && !implicitUtbDkvRelationQuestion)) return false;
   if (!/\b(Double|Dual)\s*Degree\b/i.test(a)) return false;
   const mentionsKnownPartner = /\b(UTB|Universitas\s+Teknologi\s+Bandung|DNUI|Dalian\s+Neusoft|HELP\s+University|HELP)\b/i.test(a);
   const mentionsKnownProgram = /\b(Bisnis\s+Digital|Sistem\s+Informasi|DKV|Desain\s+Komunikasi\s+Visual)\b/i.test(a);
@@ -5194,8 +5198,23 @@ function tryShortClarificationAnswer(question) {
 }
 function detectUnsupportedDoubleDegreePartner(question) {
   const q = normalizeFacilityTerm(question);
-  if (!/\b(double\s*degree|dual\s*degree|dd)\b/i.test(q)) return null;
+  const hasExplicitDoubleDegreeSignal = /\b(double\s*degree|dual\s*degree|dd)\b/i.test(q);
+  const hasImplicitPartnerRelationSignal = /\b(?:sisi\s+stikom|di\s+stikom|prodi\s+stikom|jurusan\s+stikom|stikom\s+bali)\b/i.test(q)
+    && /\b(?:jurusan|prodi|program\s+studi|pasangan|padanan|sisi|ambil|mengambil|diambil|desain|dkv)\b/i.test(q);
+  if (!hasExplicitDoubleDegreeSignal && !hasImplicitPartnerRelationSignal) return null;
   const knownPartner = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help\b)\b/i.test(q);
+  const implicitPartnerRelation = /\b(?:sisi\s+stikom|di\s+stikom|prodi\s+stikom|jurusan\s+stikom|stikom\s+bali)\b/i.test(q)
+    && /\b(?:jurusan|prodi|program\s+studi|pasangan|padanan|sisi|ambil|mengambil|diambil|desain|dkv)\b/i.test(q);
+  if (implicitPartnerRelation && !knownPartner) {
+    const implicitMatch = q.match(/\b(?:di|dengan|bersama|mitra|partner)\s+([a-z][a-z0-9.-]{2,}(?:\s+[a-z][a-z0-9.-]{2,}){0,3})\s+(?:sisi|prodi|jurusan|di)?\s*stikom\b/i)
+      || q.match(/\b([a-z][a-z0-9.-]{2,}(?:\s+[a-z][a-z0-9.-]{2,}){0,3})\s+(?:sisi|prodi|jurusan)\s+stikom\b/i);
+    if (implicitMatch && implicitMatch[1]) {
+      const rawImplicit = implicitMatch[1].replace(/\b(?:itu|yang|ambil|diambil|jurusan|prodi|program|apa|berapa|gimana|bagaimana|ya|sisi|stikom)\b.*$/i, '').trim();
+      if (rawImplicit && !/\b(?:utb|universitas teknologi bandung|dnui|dalian neusoft|help university|help|stikom|itb)\b/i.test(normalizeFacilityTerm(rawImplicit))) {
+        return rawImplicit.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+      }
+    }
+  }
   if (/\bessex\b/i.test(q)) return 'Essex University';
   const directPartnerMatch = q.match(/\b(?:double\s*degree|dual\s*degree|dd)\s+(?!itu\b|apa\b|program\b|kelas\b|nasional\b|internasional\b|di\b|untuk\b)([a-z][a-z0-9.-]{2,}(?:\s+[a-z][a-z0-9.-]{2,}){0,3})\b/i);
   if (directPartnerMatch && !knownPartner) {
@@ -5804,6 +5823,7 @@ function tryScheduleWindowAnswer(question, _indexForQuery, options = {}) {
   const referenceDate = temporal.referenceDate;
   const referenceDateLabel = formatYmdIndonesian(referenceDate);
   const asksAvailability = /\b(masih\s+buka|masih\s+dibuka|masih\s+menerima|menerima\s+pendaftaran|terima\s+pendaftaran|buka|dibuka|bisa|pilih|yang\s+mana|aktif|berjalan|masuk|termasuk|ikut|mengikuti|sekarang|hari\s+ini|saat\s+ini|cara|gimana|bagaimana)\b/i.test(qLower);
+  const explicitMonthSummaryRequested = /\b(?:bulan|sebulan|selama\s+bulan|ringkasan\s+bulan|overview\s+bulan|bulan\s+apa\s+saja)\b/i.test(qLower) && !/\b(?:tanggal|tgl|per\s+tanggal|pada\s+tanggal|di\s+tanggal)\b/i.test(qLower);
   const asksClosing = /\b(kapan|sampai\s+kapan|deadline|ditutup|tutup|penutupan|batas\s+akhir)\b/i.test(qLower) && registrationKeyword.test(qLower);
   const asksEntranceTest = /\b(tes\s+masuk|test\s+masuk|testing|ujian\s+masuk)\b/i.test(qLower);
 
@@ -5875,7 +5895,7 @@ function tryScheduleWindowAnswer(question, _indexForQuery, options = {}) {
     };
   }
 
-  if (requestedDate && !requestedWave && asksAvailability) {
+  if (requestedDate && !requestedWave && (asksAvailability || !explicitMonthSummaryRequested)) {
     const open = openWindowsOnDate(windows, requestedDate);
     if (open.length) {
       return {
@@ -9172,7 +9192,13 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   };
   const currentMentionedUkm = findMentionedUkm(q);
   const recentMentionedUkm = findMentionedUkm(recent);
-  const explicitUnknownUkmName = !currentMentionedUkm ? extractExplicitUnknownUkmName(q) : '';
+  const earlyAsksUkmCount = /\b(?:berapa\s+(?:banyak|jumlah|ada)|ada\s+berapa|jumlah(?:nya)?|total(?:nya)?|berapa\s+unit|berapa\s+organisasi)\b/i.test(q)
+    && /\b(?:ukm|ormawa|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|kegiatan\s+mahasiswa)\b/i.test(q);
+  const earlyAsksUkmList = (
+    /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(q)
+    && /\b(ada|tersedia|punya|memiliki|apa|daftar|list|sebutkan|mana|saja|aja|jenis|pilihan)\b/i.test(q)
+  ) || /\b(ada\s+ukm|ukm\s+apa|apa\s+saja\s+ukm|daftar\s+ukm|list\s+ukm|sebutkan\s+ukm|ada\s+ormawa|daftar\s+ormawa)\b/i.test(q);
+  const explicitUnknownUkmName = !currentMentionedUkm && !earlyAsksUkmList && !earlyAsksUkmCount ? extractExplicitUnknownUkmName(q) : '';
   if (explicitUnknownUkmName) {
     return {
       answer: `Saya belum menemukan data UKM/Ormawa bernama ${explicitUnknownUkmName} pada daftar UKM/Ormawa ITB STIKOM Bali yang tersedia. Jadi saya belum bisa menjelaskan profil, kegiatan, pembina, atau program kerjanya. Untuk memastikan apakah UKM tersebut ada atau merupakan nama baru, sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau admin kampus.`,
@@ -9187,13 +9213,9 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   if (!hasUkmSignal && hasUkmContext && hasExplicitDifferentTopic && !asksUkmTechnicalDetail(q)) return null;
   if (!hasUkmSignal && !hasUkmContext) return null;
 
-  const asksUkmCount = /\b(?:berapa\s+(?:banyak|jumlah|ada)|ada\s+berapa|jumlah(?:nya)?|total(?:nya)?|berapa\s+unit|berapa\s+organisasi)\b/i.test(q)
-    && /\b(?:ukm|ormawa|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|kegiatan\s+mahasiswa)\b/i.test(q);
+  const asksUkmCount = earlyAsksUkmCount;
 
-  const asksUkmList = (
-    /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(q)
-    && /\b(ada|tersedia|punya|memiliki|apa|daftar|list|sebutkan|mana|saja|aja|jenis|pilihan)\b/i.test(q)
-  ) || /\b(ada\s+ukm|ukm\s+apa|apa\s+saja\s+ukm|daftar\s+ukm|list\s+ukm|sebutkan\s+ukm|ada\s+ormawa|daftar\s+ormawa)\b/i.test(q);
+  const asksUkmList = earlyAsksUkmList;
 
   const followUpUsesRecentUkm = !currentMentionedUkm && !asksUkmList && (!hasExplicitDifferentTopic || asksUkmTechnicalDetail(q)) && shouldUseRecentEntityContext(q) && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|deadline(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?|join(?:nya)?|link(?:nya)?|form(?:nya)?|kontak|\bcp\b|pic|admin(?:nya)?|apa\s+saja|gimana|bagaimana)\b/i.test(q);
   const mentionedUkm = currentMentionedUkm || (followUpUsesRecentUkm ? recentMentionedUkm : null);
@@ -10529,6 +10551,23 @@ function tryInstitutionVisionMissionAnswer(question, indexForQuery) {
     frameSource: 'semantic-rag-institution-vision-mission'
   };
 }
+function isInstitutionProfileQuestion(question) {
+  const q = normalizeFacilityTerm(question || '');
+  if (!/\b(?:visi|misi|tujuan|profil|profile|identitas)\b/i.test(q)) return false;
+  if (/\b(?:ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|bem|inbis|inkubator|career\s*center|pusat\s+karier|pusat\s+karir|student\s+exchange|double\s*degree|dual\s*degree|prodi|program\s+studi|jurusan)\b/i.test(q)) return false;
+  return /\b(?:kampus|institusi|lembaga|itb\s*stikom|stikom\s+bali|institut)\b/i.test(q);
+}
+
+function tryInstitutionProfileAnswer(question, indexForQuery) {
+  const visionMission = tryInstitutionVisionMissionAnswer(question, indexForQuery);
+  if (visionMission && visionMission.answer) return visionMission;
+  if (!isInstitutionProfileQuestion(question)) return null;
+  return {
+    answer: 'Maaf, Kak. Saya belum menemukan profil, tujuan, atau identitas resmi ITB STIKOM Bali yang cukup aman pada data yang tersedia, jadi saya tidak mau mengarang. Untuk teks resmi terbaru, kakak sebaiknya konfirmasi ke admin kampus atau kanal resmi ITB STIKOM Bali.',
+    source: 'semantic-rag-institution-profile',
+    frameSource: 'semantic-rag-institution-profile'
+  };
+}
 function trySecurityRefusalAnswer(question) {
   const raw = String(question || '').trim();
   if (!raw) return null;
@@ -11766,7 +11805,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredProgramCurriculumSafe = /semantic-rag-program-curriculum/i.test(source)
     && /\\b(?:belajar|dipelajari|mata\\s+kuliah|kurikulum|skill|kompetensi|digital\\s+marketing|e-commerce|data\\s+analytics)\\b/i.test(String(result.answer || ''));
   const structuredProgramComparisonSafe = /semantic-rag-program-comparison/i.test(source)
-    && /\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan)\b/i.test(String(question || ''))
+    && /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(String(question || ''))
     && /\b(?:Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika|Manajemen)\b/i.test(String(result.answer || ''));
   const structuredAcademicFacultySafe = /semantic-rag-academic-faculty/i.test(source)
     && /\bfakultas\b/i.test(String(question || ''))
@@ -11906,7 +11945,7 @@ function tryShortProgramDefinitionDirectAnswer(question, canonical = null) {
   const q = String(question || '').trim();
   if (!q) return null;
   const normalized = q.toLowerCase();
-  const asksDefinitionShape = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(normalized);
+  const asksDefinitionShape = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa)\b/i.test(normalized);
   const mentionsProgramKey = /\b(?:sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi|dkv|desain\s+komunikasi\s+visual)\b/i.test(normalized);
   if (!asksDefinitionShape || !mentionsProgramKey) return null;
   if (/\bdkv\b|desain\s+komunikasi\s+visual/i.test(normalized)) {
@@ -12362,6 +12401,15 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, builtGreetingPermission, resultCacheKey);
   }
 
+  const preGuardCanonicalInstitutionProfile = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary === 'institution_profile') ? null : (
+    tryInstitutionProfileAnswer(question, getCachedSemanticIndex())
+    || tryInstitutionProfileAnswer(routingQuestion || question, getCachedSemanticIndex())
+    || tryInstitutionProfileAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex())
+  );
+  if (preGuardCanonicalInstitutionProfile && preGuardCanonicalInstitutionProfile.answer) {
+    const builtCanonicalInstitutionProfile = buildDeterministicResponse(question, preGuardCanonicalInstitutionProfile.source || 'semantic-rag-institution-profile', preGuardCanonicalInstitutionProfile, { routeStage: 'pre-guard-canonical-institution-profile', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
+    return await finalizeSemanticResult(question, builtCanonicalInstitutionProfile, resultCacheKey);
+  }
   const preGuardProductScopeClarification = strictDocumentOnly ? null : (tryAmbiguousCampusProductAnswer(routingQuestion || question) || tryAmbiguousCampusProductAnswer(question));
   if (preGuardProductScopeClarification && preGuardProductScopeClarification.answer) {
     const builtProductScope = buildDeterministicResponse(question, preGuardProductScopeClarification.source || 'semantic-rag-product-scope-clarification', preGuardProductScopeClarification, { routeStage: 'pre-guard-product-scope-clarification', normalizedRouting: normalizedRouting.changed });
@@ -12373,6 +12421,14 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, preGuardShortDefinition, resultCacheKey);
   }
 
+  const preGuardCanonicalProgramDefinition = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_program_definition') ? null : (
+    tryShortProgramDefinitionDirectAnswer(canonicalRoutingQuestion || routingQuestion || question, canonicalUnderstanding)
+    || tryShortProgramDefinitionDirectAnswer(routingQuestion || question, canonicalUnderstanding)
+    || tryShortProgramDefinitionDirectAnswer(question, canonicalUnderstanding)
+  );
+  if (preGuardCanonicalProgramDefinition && preGuardCanonicalProgramDefinition.answer) {
+    return await finalizeSemanticResult(question, preGuardCanonicalProgramDefinition, resultCacheKey);
+  }
   const preGuardStudyLevelComparison = strictDocumentOnly ? null : (tryStudyLevelComparisonAnswer(routingQuestion || question) || tryStudyLevelComparisonAnswer(question));
   if (preGuardStudyLevelComparison && preGuardStudyLevelComparison.answer) {
     const builtStudyLevelComparison = buildDeterministicResponse(question, preGuardStudyLevelComparison.source || 'semantic-rag-study-level-comparison', preGuardStudyLevelComparison, { routeStage: 'pre-guard-study-level-comparison', normalizedRouting: normalizedRouting.changed });
@@ -12398,6 +12454,15 @@ async function querySemanticRag(question, options = {}) {
     const narrowProgramListFrame = /\b(?:jurusan(?:nya)?|prodi(?:nya)?|program\s+studi)\b/i.test(String(question || '')) && !/\b(?:double\s*degree|dual\s*degree|kelas\s+internasional|program\s+internasional|international|utb|dnui|help)\b/i.test(String(question || ''));
     const builtCanonicalProgramList = buildDeterministicResponse(question, 'semantic-rag-program-list', { ...preGuardCanonicalProgramList, answer: canonicalProgramListAnswer, source: 'semantic-rag-program-list', frameSource: narrowProgramListFrame ? 'semantic-rag-program-list-contextual' : 'semantic-rag-program-list' }, { routeStage: 'pre-guard-canonical-program-list', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
     return await finalizeSemanticResult(question, builtCanonicalProgramList, resultCacheKey);
+  }
+  const preGuardCanonicalRelationPairing = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_relation_pairing') ? null : (
+    tryDualDegreeAnswer(canonicalRoutingQuestion || routingQuestion || question, options)
+    || tryDualDegreeAnswer(routingQuestion || question, options)
+    || tryDualDegreeAnswer(question, options)
+  );
+  if (preGuardCanonicalRelationPairing && preGuardCanonicalRelationPairing.answer) {
+    const builtCanonicalRelationPairing = buildDeterministicResponse(question, preGuardCanonicalRelationPairing.source || 'semantic-rag-dual-degree', { ...preGuardCanonicalRelationPairing, source: preGuardCanonicalRelationPairing.source || 'semantic-rag-dual-degree' }, { routeStage: 'pre-guard-canonical-relation-pairing', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
+    return await finalizeSemanticResult(question, builtCanonicalRelationPairing, resultCacheKey);
   }
   const preGuardProgramRecommendationIntent = strictDocumentOnly ? null : (tryExplicitProgramRecommendationPreGuard(routingQuestion || question) || tryExplicitProgramRecommendationPreGuard(question));
   if (preGuardProgramRecommendationIntent && preGuardProgramRecommendationIntent.answer) {

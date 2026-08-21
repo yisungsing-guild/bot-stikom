@@ -22,6 +22,18 @@ function clamp(value, max = 500) {
   return s.length > max ? s.slice(0, max) : s;
 }
 
+function safeWarn(meta, message) {
+  try {
+    if (logger && typeof logger.warn === 'function') {
+      logger.warn(meta, message);
+      return;
+    }
+  } catch (_) {}
+  try {
+    console.warn(message, meta);
+  } catch (_) {}
+}
+
 function normalizeStatus(value) {
   const status = String(value || '').trim().toLowerCase();
   if (['approved', 'active', 'published', 'valid'].includes(status)) return 'approved';

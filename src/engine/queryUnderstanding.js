@@ -175,14 +175,8 @@ function buildTemporalUnderstanding(rawQuery) {
 function aliasMatchesText(text, alias) {
   const a = String(alias || '').toLowerCase();
   if (!a) return false;
-  if (a.length <= 2) {
-    if (a === 'ti' && /\b(?:tiada|setiap|hati|nanti|arti|seperti)\b/i.test(text)) return false;
-    if (a === 'si' && /\b(?:situ|sini|siswa|visi|misi|isi)\b/i.test(text)) return false;
-    if (a === 'sk' && /\b(?:sks|skema|sktt|surat\s+keputusan)\b/i.test(text)) return false;
-    if (a === 'mi' && /\b(?:minta|minat|kami|semi)\b/i.test(text)) return false;
-    return new RegExp(`(^|\\s)${escapeRegex(a)}(\\s|$)`, 'i').test(text);
-  }
-  return new RegExp(`(^|\\s)${escapeRegex(a)}(\\s|$)`, 'i').test(text);
+  const boundary = new RegExp(`(^|[^a-z0-9])${escapeRegex(a)}([^a-z0-9]|$)`, 'i');
+  return boundary.test(text);
 }
 
 function resolveProgramEntities(rawText) {
@@ -260,13 +254,27 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     : (hasThesisTerm ? 'thesis_general' : null);
   const hasProgramComparison = /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(q) && entities.programs.length >= 2 && !hasFee;
   const hasProgramList = /\b(?:jurusan(?:nya)?|prodi(?:nya)?|program\s+studi)\b/i.test(q) && asksList;
-  const asksProgramDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q) && entities.programs.length > 0;
-
+  const asksProgramDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa)\b/i.test(q) && entities.programs.length > 0;
+  const hasInstitutionProfile = /\b(?:visi|misi|tujuan|profil|profile|identitas)\b/i.test(q)
+    && /\b(?:kampus|institusi|lembaga|itb\s*stikom|stikom\s+bali|institut)\b/i.test(q)
+    && !/\b(?:ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|bem|inbis|inkubator|career\s*center|pusat\s+karier|student\s+exchange|double\s*degree|dual\s*degree|prodi|program\s+studi|jurusan)\b/i.test(q);
+  const hasDualDegreeRelation = /\b(?:utb|universitas\s+teknologi\s+bandung)\b/i.test(q)
+    && /\b(?:dkv|desain\s+komunikasi\s+visual)\b/i.test(q)
+    && /\b(?:stikom|stikom\s+bali|itb\s*stikom|sisi\s+stikom|di\s+stikom|prodi\s+stikom|jurusan\s+stikom)\b/i.test(q)
+    && /\b(?:jurusan|prodi|program\s+studi|pasangan|padanan|sisi|diambil|ambil|yang\s+diambil|apa)\b/i.test(q);
   let primaryIntent = 'ask_general';
   let primaryDomain = 'general';
   let answerExpectation = 'safe_answer_or_fallback';
 
-  if (hasProgramComparison) {
+  if (hasInstitutionProfile) {
+    primaryIntent = /\b(?:visi|misi)\b/i.test(q) ? 'ask_institution_vision_mission' : 'ask_institution_profile';
+    primaryDomain = 'institution_profile';
+    answerExpectation = /\b(?:visi|misi)\b/i.test(q) ? 'institution_vision_mission' : 'institution_profile_or_fallback';
+  } else if (hasDualDegreeRelation) {
+    primaryIntent = 'ask_relation_pairing';
+    primaryDomain = 'double_degree';
+    answerExpectation = 'relation_pairing';
+  } else if (hasProgramComparison) {
     primaryIntent = 'ask_program_comparison';
     primaryDomain = 'program';
     answerExpectation = 'comparison';
@@ -302,6 +310,10 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_organization_count';
     primaryDomain = 'student_organization';
     answerExpectation = 'count';
+  } else if (hasOrganization && asksList) {
+    primaryIntent = 'ask_organization_list';
+    primaryDomain = 'student_organization';
+    answerExpectation = 'list';
   } else if (hasProgramList) {
     primaryIntent = 'ask_program_list';
     primaryDomain = 'program';
@@ -332,6 +344,20 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     answerExpectation = 'specific_fact_or_fallback';
   }
 
+  const explicitPointInTime = temporal.explicitDate && !/\b(?:bulan|sebulan|selama\s+bulan|ringkasan\s+bulan|overview\s+bulan|bulan\s+apa\s+saja)\b/i.test(q);
+  const questionType = asksCount
+    ? 'count'
+    : (hasDualDegreeRelation
+      ? 'relation_pairing'
+      : (hasInstitutionProfile
+        ? 'profile'
+        : (explicitPointInTime
+          ? 'temporal_point_in_time'
+          : (asksList
+            ? 'list'
+            : (asksProgramDefinition
+              ? 'definition'
+              : (/\b(?:apakah|apa|ada|punya|tersedia)\b/i.test(q) ? 'yes_no_or_explain' : 'informational'))))));
   return {
     intent: { primary: primaryIntent, secondary: [], confidence: primaryIntent === 'ask_general' ? 0.45 : 0.82 },
     domain: { primary: primaryDomain, confidence: primaryDomain === 'general' ? 0.45 : 0.82 },
@@ -342,9 +368,12 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
       locationIntent: hasLocationIntent,
       physicalAttribute: hasPhysicalAttribute,
       comparisonTarget: /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(q) ? 'program' : null,
-      academicTopic
+      academicTopic,
+      relationType: hasDualDegreeRelation ? 'double_degree_partner_program_pairing' : null,
+      institutionTopic: hasInstitutionProfile ? (/\b(?:visi|misi)\b/i.test(q) ? 'vision_mission' : (/\btujuan\b/i.test(q) ? 'purpose' : 'profile')) : null,
+      temporalMode: temporal.explicitDate && !/\b(?:bulan|sebulan|selama\s+bulan|ringkasan\s+bulan|overview\s+bulan|bulan\s+apa\s+saja)\b/i.test(q) ? 'point_in_time' : (temporal.requestedMonth ? 'month_overview' : null)
     },
-    questionType: asksCount ? 'count' : (asksList ? 'list' : (/\b(?:apakah|apa|ada|punya|tersedia)\b/i.test(q) ? 'yes_no_or_explain' : 'informational')),
+    questionType,
     answerExpectation,
     ambiguity: []
   };
@@ -356,7 +385,11 @@ function buildRoutingQuery(normalizedQuery, entities, classification) {
   if (classification.constraints.feeType) additions.push(classification.constraints.feeType);
   if (classification.intent.primary === 'ask_program_comparison') additions.push('perbedaan program studi');
   if (classification.intent.primary === 'ask_program_curriculum') additions.push('kurikulum');
+  if (classification.intent.primary === 'ask_program_definition') additions.push('definisi program studi');
   if (classification.intent.primary === 'ask_organization_count') additions.push('jumlah UKM Ormawa organisasi mahasiswa');
+  if (classification.intent.primary === 'ask_organization_list') additions.push('daftar UKM Ormawa organisasi mahasiswa');
+  if (classification.intent.primary === 'ask_relation_pairing') additions.push('Double Degree UTB DKV Bisnis Digital pasangan prodi');
+  if (classification.domain.primary === 'institution_profile') additions.push('visi misi profil institusi ITB STIKOM Bali');
   if (classification.intent.primary === 'ask_registration_how') additions.push('pendaftaran');
   if (classification.intent.primary === 'ask_facility_list') additions.push('fasilitas');
   if (classification.constraints.academicTopic) additions.push(classification.constraints.academicTopic.replace(/_/g, ' '));

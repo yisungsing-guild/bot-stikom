@@ -1705,11 +1705,11 @@ function tryDualDegreeAnswer(question) {
   const hasDoubleDegreeSignal = /\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd)\b/.test(q);
   const hasInternationalProgramSignal = /\b(program\s+internasional|kelas\s+internasional|international\s+(?:program|class)|study\s+abroad|student\s+exchange|pertukaran\s+mahasiswa)\b/.test(q);
   const hasPartnerSignal = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help)\b/.test(q);
-  const asksPartnerProgram = /\b(jurusan|prodi|program\s+studi|padanan|pasangan|di\s+stikom|stikom\s+bali|di\s+sana|disana|mitra|partner|yang\s+diambil|harus\s+diambil)\b/.test(q);
+  const asksPartnerProgram = /\b(jurusan|prodi|program\s+studi|padanan|pasangan|sisi|sisi\s+stikom|di\s+stikom|stikom\s+bali|di\s+sana|disana|mitra|partner|ambil|mengambil|diambil|yang\s+diambil|harus\s+diambil)\b/.test(q);
   if (!hasDoubleDegreeSignal && !hasInternationalProgramSignal && !(hasPartnerSignal && asksPartnerProgram)) return null;
   const asksInternational = hasInternationalProgramSignal || /\b(internasional|international|luar\s+negeri|dnui|help|china|malaysia)\b/.test(q);
   const asksNational = /\b(nasional|national|utb|bandung)\b/.test(q);
-  const asksUtbPair = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(padanan|pasangan|di\s+stikom|stikom\s+bali|harus\s+diambil|jurusan\s+apa\s+dan\s+jurusan\s+apa)\b/.test(q);
+  const asksUtbPair = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(padanan|pasangan|sisi|sisi\s+stikom|di\s+stikom|stikom\s+bali|ambil|mengambil|diambil|yang\s+diambil|harus\s+diambil|jurusan\s+apa\s+dan\s+jurusan\s+apa)\b/.test(q);
   const asksAllPairs = /\b(jurusan\s+apa\s+dan\s+jurusan\s+apa|yang\s+lain|lainnya|semua|dnui|help|di\s+sana|disana)\b/.test(q) && (hasDoubleDegreeSignal || hasPartnerSignal);
   const asksUtbMajor = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(jurusan|prodi|mengambil|ambil|dapat|dapet|di\s+utb|utb\s+nya|utbnya)\b/.test(q);
   const asksUtbSpecific = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(seperti\s+apa|spesifik|khusus|dibanding|beda|bedanya|perbedaan|program\s+lain)\b/.test(q);
