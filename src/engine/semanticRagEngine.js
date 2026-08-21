@@ -3265,8 +3265,10 @@ function isSafeAbbreviationClarificationAnswer(question, answer, source = '') {
   const a = String(answer || '').trim();
   const src = String(source || '').toLowerCase();
   if (!a || !src.includes('abbreviation-clarification')) return false;
-  if (!/\b(?:apa\s+itu|itu\s+apa|maksud(?:nya)?|kepanjangan|singkatan|tentang|info(?:rmasi)?|jelaskan)\b/i.test(q)) return false;
-  if (!/\bsingkatan\s+"?[A-Z0-9]{2,6}"?\s+yang\s+dimaksud\s+itu\s+apa\s+ya/i.test(a)) return false;
+  const asksDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa)\b/i.test(q);
+  const asksExistence = /\b(?:ada|tersedia|punya|memiliki)\b/i.test(q) && /\b(?:jurusan|prodi|program\s+studi)\b/i.test(q);
+  if (!asksDefinition && !asksExistence) return false;
+  const asksKnownProgram = /\b(?:sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|informatika|prodi\s+informatika|jurusan\s+informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi)\b/i.test(q);
   if (!/\b(?:kepanjangannya|konteksnya|prodi|fasilitas|layanan|organisasi|PMB|akademik|RAG)\b/i.test(a)) return false;
   return a.length <= 500;
 }
