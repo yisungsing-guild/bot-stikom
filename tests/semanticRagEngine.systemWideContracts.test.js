@@ -20,6 +20,11 @@ describe('system-wide semantic contracts', () => {
     expect(result.source).toBe('semantic-rag-program-definition');
     expect(result.answer).toMatch(/Teknologi Informasi/i);
     expect(result.answer).not.toMatch(/INBIS|inkubator|Student Exchange/i);
+
+    const existence = await querySemanticRag('jurusan informatika ada?');
+    expect(existence.source).toBe('semantic-rag-program-definition');
+    expect(existence.answer).toMatch(/Teknologi Informasi/i);
+    expect(existence.answer).not.toMatch(/Tenant tersebar|INBIS|inkubator/i);
   });
 
   test('informal reordered program comparison is trusted when deterministic answer is structured', async () => {

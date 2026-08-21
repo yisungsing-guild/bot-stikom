@@ -283,7 +283,7 @@ function detectProgram(question) {
   if (/\b(s2|pascasarjana|magister|master)\b/.test(q)) return { key: 's2', label: 'S2 Sistem Informasi', family: 's2' };
   if (/\bsistem\s+komputer\b/.test(q)) return { key: 'sk', label: 'Sistem Komputer', family: 'sk' };
   if (/\bsistem\s+(?:informasi|infomrasi|infromasi)\b/.test(q)) return { key: 'si', label: 'Sistem Informasi', family: 's1' };
-  if (/\b(?:teknologi\s+informasi|teknik\s+informatika|tek\s*info|tekinfo)\b/.test(q)) return { key: 'ti', label: 'Teknologi Informasi', family: 's1' };
+  if (/\b(?:teknologi\s+informasi|teknik\s+informatika|informatika|prodi\s+informatika|jurusan\s+informatika|tek\s*info|tekinfo)\b/.test(q)) return { key: 'ti', label: 'Teknologi Informasi', family: 's1' };
   if (/\b(?:bisnis|binis|bisinis)\s+digital\b/.test(q)) return { key: 'bd', label: 'Bisnis Digital', family: 's1' };
   if (/\b(manajemen\s+informatika|d3|diploma(?:\s+(?:3|tiga))?|informatic\s+diploma)\b/.test(q)) return { key: 'mi', label: 'Manajemen Informatika', family: 'd3' };
   if (/\bti\b/.test(q)) return { key: 'ti', label: 'Teknologi Informasi', family: 's1' };
@@ -369,7 +369,7 @@ function detectMentionedPrograms(question) {
     { key: 'utb', label: 'Double Degree UTB', re: /\b(utb|universitas\s+teknologi\s+bandung)\b/ },
     { key: 's2', label: 'S2 Sistem Informasi', re: /\b(s2|pascasarjana|magister|master)\b/ },
     { key: 'si', label: 'Sistem Informasi', re: /\b(sistem\s+informasi|sistem\s+infomrasi|sistem\s+infromasi|si\b(?!\s+sistem))\b/ },
-    { key: 'ti', label: 'Teknologi Informasi', re: /\b(ti|teknologi\s+informasi|teknik\s+informatika|tek\s*info|tekinfo)\b/ },
+    { key: 'ti', label: 'Teknologi Informasi', re: /\b(ti|teknologi\s+informasi|teknik\s+informatika|informatika|prodi\s+informatika|jurusan\s+informatika|tek\s*info|tekinfo)\b/ },
     { key: 'bd', label: 'Bisnis Digital', re: /\b(bd|(?:bisnis|binis|bisinis)\s+digital)\b/ },
     { key: 'sk', label: 'Sistem Komputer', re: /\b(sk|sistem\s+komputer)\b/ },
     { key: 'mi', label: 'Manajemen Informatika', re: /\b(mi|manajemen\s+informatika|d3|diploma(?:\s+(?:3|tiga))?|informatic\s+diploma)\b/ }
@@ -457,7 +457,7 @@ function tryProgramDefinitionAnswer(question) {
   const q = String(question || '').toLowerCase();
   const asksCurriculum = /\b(mata\s+kuliah|matkul|kurikulum|dipelajari|yang\s+dipelajari|belajar\s+apa|ngulik\s+apa|skill|kemampuan|kompetensi)\b/.test(q);
   const asksEntrySkillConcern = /\b(harus|wajib|perlu|butuh|apa(?:kah)?|bisa|boleh)\b[\s\S]{0,60}\b(jago|mahir|cakap|bisa)\b[\s\S]{0,40}\b(komputer|coding|ngoding|teknologi\s+informasi|it\b)\b|\b(kurang|belum|tidak|nggak|gak)\s+(?:jago|mahir|cakap|bisa)\b[\s\S]{0,40}\b(komputer|coding|ngoding|teknologi\s+informasi|it\b)\b/i.test(q);
-  if (!asksCurriculum && !asksEntrySkillConcern && !/\b(apa\s+itu|itu\s+apa|apaan|maksudnya|jelaskan|tentang|pengertian|arahnya\s+(?:ke)?mana|kemana|tuh|sebenernya|sebenarnya)\b/.test(q)) return null;
+  if (!asksCurriculum && !asksEntrySkillConcern && !/\b(apa\s+itu|itu\s+apa|apaan|maksudnya|jelaskan|tentang|pengertian|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa|arahnya\s+(?:ke)?mana|kemana|tuh|sebenernya|sebenarnya)\b/.test(q)) return null;
   const program = detectProgram(question);
   if (!program) return null;
   const domain = readProgramDomain(program.key);

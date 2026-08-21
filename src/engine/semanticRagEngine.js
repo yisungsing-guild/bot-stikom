@@ -12040,8 +12040,11 @@ function tryShortProgramDefinitionDirectAnswer(question, canonical = null) {
   if (!q) return null;
   const normalized = q.toLowerCase();
   const asksDefinitionShape = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa)\b/i.test(normalized);
+  const asksProgramExistenceShape = /\b(?:ada|tersedia|punya|memiliki)\b/i.test(normalized)
+    && /\b(?:jurusan|prodi|program\s+studi)\b/i.test(normalized)
+    && !/\b(?:biaya|harga|bayar|ukt|dpp|pendaftaran|daftar|gelombang|jadwal|beasiswa)\b/i.test(normalized);
   const mentionsProgramKey = /\b(?:sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi|dkv|desain\s+komunikasi\s+visual)\b/i.test(normalized);
-  if (!asksDefinitionShape || !mentionsProgramKey) return null;
+  if ((!asksDefinitionShape && !asksProgramExistenceShape) || !mentionsProgramKey) return null;
   if (/\bdkv\b|desain\s+komunikasi\s+visual/i.test(normalized)) {
     const answer = [
       'DKV adalah singkatan dari Desain Komunikasi Visual.',
@@ -12056,13 +12059,14 @@ function tryShortProgramDefinitionDirectAnswer(question, canonical = null) {
   }
   const result = tryProgramDefinitionAnswer(q);
   const canonicalProgram = canonical
-    && canonical.intent
-    && canonical.intent.primary === 'ask_program_definition'
     && canonical.entities
     && Array.isArray(canonical.entities.programs)
     && canonical.entities.programs[0]
     && canonical.entities.programs[0].canonical;
-  const canonicalResult = (!result || !result.answer) && canonicalProgram
+  const canUseCanonicalProgramProfile = canonicalProgram
+    && canonical.intent
+    && (canonical.intent.primary === 'ask_program_definition' || asksProgramExistenceShape);
+  const canonicalResult = (!result || !result.answer) && canUseCanonicalProgramProfile
     ? tryProgramDefinitionAnswer(`Apa itu Program Studi ${canonicalProgram}`)
     : null;
   const finalResult = result && result.answer ? result : canonicalResult;
