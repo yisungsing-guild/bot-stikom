@@ -3290,8 +3290,11 @@ function isSafeProgramDefinitionAnswer(question, answer, source = '') {
   const a = String(answer || '').trim();
   const src = String(source || '').toLowerCase();
   if (!a || !src.includes('program-definition')) return false;
-  if (!/\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q)) return false;
-  const asksKnownProgram = /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi)\b/i.test(q);
+  const asksDefinitionShape = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa)\b/i.test(q);
+  const asksExistenceShape = /\b(?:ada|tersedia|punya|memiliki)\b/i.test(q)
+    && /\b(?:jurusan|prodi|program\s+studi|program\s+kuliah)\b/i.test(q);
+  if (!asksDefinitionShape && !asksExistenceShape) return false;
+  const asksKnownProgram = /\b(?:sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|informatika|prodi\s+informatika|jurusan\s+informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi)\b/i.test(q);
   if (!asksKnownProgram) return false;
   const mentionsKnownProgram = /\b(?:Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika)\b/i.test(a);
   const hasDefinitionShape = /\b(?:adalah|merupakan|fokus|berfokus|program\s+studi|prodi|mempelajari|skill|kemampuan|karier)\b/i.test(a);
@@ -3299,7 +3302,6 @@ function isSafeProgramDefinitionAnswer(question, answer, source = '') {
   if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
   return a.length <= 1800;
 }
-
 function isSafeCompactAcademicGeneralAnswer(question, answer) {
   const q = normalizeAcademicAdminQueryText(question);
   const a = String(answer || '').trim();
