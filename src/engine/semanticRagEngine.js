@@ -8987,6 +8987,97 @@ function getCachedTrainingDbIndexForUkm() {
   return records.flatMap((record) => convertTrainingDataToCandidate(record) || []);
 }
 
+function extractUkmVisionMissionSections(text) {
+  const raw = String(text || '').replace(/\r/g, '\n').replace(/\s+/g, ' ').trim();
+  if (!raw || !/\b(?:visi|misi)\b/i.test(raw)) return { vision: '', mission: '' };
+  const cleanPart = (value) => {
+    let out = String(value || '')
+      .replace(/\s+/g, ' ')
+      .replace(/^(?:dan|adalah|:|-)+\s*/i, '')
+      .trim();
+    out = out.replace(/\b(?:catatan|identitas\s+organisasi|sejarah\s+singkat|profil|profile|fungsi\s+organisasi|fokus\s*&\s*kegiatan\s+utama)\b[\s\S]*$/i, '').trim();
+    if (out.length > 320) out = out.slice(0, 317).trim() + '...';
+    if (!out || out.length < 18) return '';
+    return normalizeUkmProfileSentence(out);
+  };
+  const extract = (label) => {
+    const next = label === 'visi' ? 'misi' : 'visi|tujuan|profil|profile|identitas|sejarah|fungsi|fokus|kegiatan|program';
+    const re = new RegExp('\\b' + label + '\\b\\s*(?:dan\\s+misi)?\\s*[:\\-]?\\s*([\\s\\S]+?)(?=\\s+\\b(?:' + next + ')\\b\\s*[:\\-]?|$)', 'i');
+    const match = raw.match(re);
+    return cleanPart(match && match[1]);
+  };
+  return { vision: extract('visi'), mission: extract('misi') };
+}
+
+function buildUkmVisionMissionAnswerFromIndex(ukmName, indexForQuery) {
+  const name = String(ukmName || '').trim();
+  if (!name) return null;
+  const target = normalizeFacilityTerm(name);
+  const aliases = buildUkmProfileAliases(name, target);
+  const indexes = [];
+  if (Array.isArray(indexForQuery) && indexForQuery.length) indexes.push(indexForQuery);
+  const dbIndex = getCachedTrainingDbIndexForUkm();
+  if (dbIndex.length) indexes.push(dbIndex);
+  try {
+    const fullIndex = ragEngine.loadIndex();
+    if (Array.isArray(fullIndex) && fullIndex.length) indexes.push(fullIndex);
+  } catch (err) {
+    logger.warn({ err: err && err.message ? err.message : String(err), ukmName: name }, '[SemanticRAG] failed to load full index for UKM vision/mission');
+  }
+
+  const seenIds = new Set();
+  const matches = [];
+  for (const index of indexes) {
+    for (const item of index) {
+      if (!item || seenIds.has(item.id)) continue;
+      seenIds.add(item.id);
+      const filename = String(item.filename || item.sourceFile || '');
+      const chunk = String(item.chunk || '').trim();
+      if (!chunk || !/\b(?:visi|misi)\b/i.test(chunk)) continue;
+      const haystack = normalizeFacilityTerm(filename + ' ' + chunk);
+      const filenameNorm = normalizeFacilityTerm(filename);
+      const hasUkmSignal = /\bukm\b/i.test(filename) || /\bukm\b/i.test(chunk) || /\bunit\s+kegiatan\s+mahasiswa\b/i.test(chunk);
+      const filenameMatch = aliases.some((alias) => filenameNorm.includes(alias) || filenameNorm.includes('ukm ' + alias));
+      const structuredNameMatch = aliases.some((alias) => {
+        const value = normalizeFacilityTerm(alias);
+        if (!value) return false;
+        return filenameNorm.includes(value)
+          || filenameNorm.includes('ukm ' + value)
+          || haystack.includes('ukm ' + value)
+          || haystack.includes('ormawa ' + value)
+          || haystack.includes('profile ukm ' + value)
+          || haystack.includes('profil ukm ' + value)
+          || haystack.includes('profile ormawa ' + value)
+          || haystack.includes('profil ormawa ' + value);
+      });
+      if (!hasUkmSignal || (!structuredNameMatch && !filenameMatch)) continue;
+      const sections = extractUkmVisionMissionSections(chunk);
+      if (!sections.vision && !sections.mission) continue;
+      const score = (filenameMatch ? 8 : 0) + (sections.vision ? 4 : 0) + (sections.mission ? 4 : 0) + (/profile|profil/i.test(filename) ? 2 : 0);
+      matches.push({ item, sections, score });
+    }
+  }
+
+  const title = name.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  if (!matches.length) {
+    return {
+      answer: `Saya belum menemukan teks visi atau misi resmi UKM ${title} secara lengkap pada data yang tersedia. Agar tidak keliru, kakak bisa konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.`,
+      source: 'semantic-rag-ukm-specific-insufficient-data',
+      frameSource: 'semantic-rag-insufficient-data'
+    };
+  }
+  matches.sort((a, b) => b.score - a.score);
+  const best = matches[0];
+  const lines = [`Berikut informasi visi/misi UKM ${title} dari data yang tersedia:`];
+  if (best.sections.vision) lines.push('', 'Visi:', `- ${best.sections.vision}`);
+  if (best.sections.mission) lines.push('', 'Misi:', `- ${best.sections.mission}`);
+  return {
+    answer: lines.join('\n'),
+    source: 'semantic-rag-ukm-specific',
+    frameSource: 'semantic-rag-ukm-specific',
+    debug: { source: 'semantic-rag-ukm-specific-vision-mission', filename: best.item.filename || best.item.sourceFile || null }
+  };
+}
 function buildUkmProfileAnswerFromIndex(ukmName, indexForQuery) {
   const name = String(ukmName || '').trim();
   if (!name) return null;
@@ -9172,7 +9263,7 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const extractExplicitUnknownUkmName = (text) => {
     const normalizedText = normalizeFacilityTerm(text || '');
     const patterns = [
-      /\b(?:apa\s+itu|itu\s+apa|tentang|detail|profil|kegiatan|aktivitas|program\s+kerja|proker|pembina|visi\s+misi)\s+ukm\s+([a-z0-9][a-z0-9\s._-]{1,50})\b/i,
+      /\b(?:apa\s+itu|itu\s+apa|tentang|detail|profil|kegiatan|aktivitas|program\s+kerja|proker|pembina|visi|misi|visi\s+misi)\s+ukm\s+([a-z0-9][a-z0-9\s._-]{1,50})\b/i,
       /\bukm\s+([a-z0-9][a-z0-9\s._-]{1,50})\s+(?:itu|ini|adalah|punya|bergerak|kegiatan|aktivitas|program|proker|pembina|visi|misi|apa|gimana|bagaimana)\b/i
     ];
     for (const re of patterns) {
@@ -9194,10 +9285,10 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
   const recentMentionedUkm = findMentionedUkm(recent);
   const earlyAsksUkmCount = /\b(?:berapa\s+(?:banyak|jumlah|ada)|ada\s+berapa|jumlah(?:nya)?|total(?:nya)?|berapa\s+unit|berapa\s+organisasi)\b/i.test(q)
     && /\b(?:ukm|ormawa|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|kegiatan\s+mahasiswa)\b/i.test(q);
-  const earlyAsksUkmList = (
+  const earlyAsksUkmList = !/\b(?:visi|misi)\b/i.test(q) && ((
     /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(q)
     && /\b(ada|tersedia|punya|memiliki|apa|daftar|list|sebutkan|mana|saja|aja|jenis|pilihan)\b/i.test(q)
-  ) || /\b(ada\s+ukm|ukm\s+apa|apa\s+saja\s+ukm|daftar\s+ukm|list\s+ukm|sebutkan\s+ukm|ada\s+ormawa|daftar\s+ormawa)\b/i.test(q);
+  ) || /\b(ada\s+ukm|ukm\s+apa|apa\s+saja\s+ukm|daftar\s+ukm|list\s+ukm|sebutkan\s+ukm|ada\s+ormawa|daftar\s+ormawa)\b/i.test(q));
   const explicitUnknownUkmName = !currentMentionedUkm && !earlyAsksUkmList && !earlyAsksUkmCount ? extractExplicitUnknownUkmName(q) : '';
   if (explicitUnknownUkmName) {
     return {
@@ -9219,6 +9310,9 @@ function tryUkmAnswer(question, _indexForQuery, options = {}) {
 
   const followUpUsesRecentUkm = !currentMentionedUkm && !asksUkmList && (!hasExplicitDifferentTopic || asksUkmTechnicalDetail(q)) && shouldUseRecentEntityContext(q) && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|deadline(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?|join(?:nya)?|link(?:nya)?|form(?:nya)?|kontak|\bcp\b|pic|admin(?:nya)?|apa\s+saja|gimana|bagaimana)\b/i.test(q);
   const mentionedUkm = currentMentionedUkm || (followUpUsesRecentUkm ? recentMentionedUkm : null);
+  if (mentionedUkm && /\b(?:visi|misi)\b/i.test(q)) {
+    return buildUkmVisionMissionAnswerFromIndex(mentionedUkm, _indexForQuery);
+  }
   if (mentionedUkm && asksUkmTechnicalDetail(q)) {
 
     return {
@@ -11946,7 +12040,7 @@ function tryShortProgramDefinitionDirectAnswer(question, canonical = null) {
   if (!q) return null;
   const normalized = q.toLowerCase();
   const asksDefinitionShape = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa)\b/i.test(normalized);
-  const mentionsProgramKey = /\b(?:sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi|dkv|desain\s+komunikasi\s+visual)\b/i.test(normalized);
+  const mentionsProgramKey = /\b(?:sistem\s+informasi|teknologi\s+informasi|teknik\s+informatika|informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi|dkv|desain\s+komunikasi\s+visual)\b/i.test(normalized);
   if (!asksDefinitionShape || !mentionsProgramKey) return null;
   if (/\bdkv\b|desain\s+komunikasi\s+visual/i.test(normalized)) {
     const answer = [

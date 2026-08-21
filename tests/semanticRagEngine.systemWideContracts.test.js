@@ -65,8 +65,16 @@ describe('system-wide semantic contracts', () => {
 
   test('domain terms inside negative controls do not hijack specialized contracts', async () => {
     const ukmVision = await querySemanticRag('visi UKM JCOS apa?');
+    expect(ukmVision.source).toMatch(/semantic-rag-ukm-specific/);
+    expect(ukmVision.answer).toMatch(/visi|misi|JCOS/i);
     expect(ukmVision.source).not.toBe('semantic-rag-institution-profile');
     expect(ukmVision.source).not.toBe('semantic-rag-institution-vision-mission');
+    expect(ukmVision.source).not.toBe('semantic-rag-ukm-list');
+
+    const unknownUkmVision = await querySemanticRag('visi UKM robot terbang apa?');
+    expect(unknownUkmVision.source).toBe('semantic-rag-ukm-unknown-insufficient-data');
+    expect(unknownUkmVision.answer).toMatch(noDataRe);
+    expect(unknownUkmVision.answer).not.toMatch(/32 UKM|Athena Esports/i);
 
     const exchangeBarter = await querySemanticRag('apa manfaat exchange barang bekas?');
     expect(exchangeBarter.source).not.toBe('semantic-rag-international-topic-composer');
