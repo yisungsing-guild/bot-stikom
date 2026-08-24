@@ -9140,7 +9140,11 @@ module.exports = function (provider) {
 
           timeoutFired = true;
           outboundSent = true;
-          timeoutSendPromise = sendBotMessageOriginal(chatId, timeoutFallbackMessage, meta);
+          timeoutSendPromise = sendBotMessageOriginal(chatId, timeoutFallbackMessage, {
+            source: 'reply_deadline_fallback',
+            sourceType: SOURCE_TYPES.UNKNOWN,
+            sentViaComposer: false
+          });
           await timeoutSendPromise;
         } catch (e) {
           logger.error({ err: e && e.message ? e.message : String(e) }, '[ProviderRoute] reply deadline fallback failed');
@@ -9867,11 +9871,18 @@ module.exports = function (provider) {
           });
 
           if (semantic && semantic.success && semantic.answer) {
-            await prisma.chat.upsert({
-              where: { chatId },
-              create: { chatId, lastSeenAt: now },
-              update: { lastSeenAt: now }
-            });
+            try {
+              await prisma.chat.upsert({
+                where: { chatId },
+                create: { chatId, lastSeenAt: now },
+                update: { lastSeenAt: now }
+              });
+            } catch (persistErr) {
+              logger.warn({
+                err: persistErr && persistErr.message ? persistErr.message : String(persistErr),
+                chatId
+              }, '[Provider] Semantic RAG chat persistence failed; sending validated semantic answer');
+            }
 
             await sendBotMessage(chatId, String(semantic.answer || '').trim(), {
               source: semantic.source || 'semantic-rag',
@@ -16932,7 +16943,12 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
 
           // Early allow-fast evaluation for ragQuestion to avoid retrieval when possible
           try {
-            const allowFastEarlyLocal = HAS_BUNDLED_RAG_INDEX && (typeof allowFastFeeFor === 'function') && allowFastFeeFor(ragQuestion, { feeChoice: false, pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer) });
+            const earlyFeeChoiceLocal = (typeof parseFeeDetailChoice === 'function') ? parseFeeDetailChoice(ragQuestion) : null;
+            const earlyDetailedFeeLocal = (typeof isDetailedFeeQuery === 'function') ? isDetailedFeeQuery(ragQuestion) : false;
+            const allowFastEarlyLocal = HAS_BUNDLED_RAG_INDEX
+              && !earlyDetailedFeeLocal
+              && (typeof allowFastFeeFor === 'function')
+              && allowFastFeeFor(ragQuestion, { feeChoice: !!(earlyFeeChoiceLocal === 'breakdown'), pendingFeeBreakdownOffer: !!(sessionData && sessionData.pendingFeeBreakdownOffer) });
             try {
               const outDir = path.join(__dirname, '..', '..', 'tmp');
               if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
@@ -17374,6 +17390,7 @@ module.exports._test = {
   detectIntent,
   detectIntentDetails
 };
+
 
 
 

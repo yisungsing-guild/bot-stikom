@@ -283,6 +283,8 @@ function detectProgram(question) {
   if (/\b(s2|pascasarjana|magister|master)\b/.test(q)) return { key: 's2', label: 'S2 Sistem Informasi', family: 's2' };
   if (/\bsistem\s+komputer\b/.test(q)) return { key: 'sk', label: 'Sistem Komputer', family: 'sk' };
   if (/\bsistem\s+(?:informasi|infomrasi|infromasi)\b/.test(q)) return { key: 'si', label: 'Sistem Informasi', family: 's1' };
+  // D3/MI must outrank broad informatika, which otherwise belongs to TI.
+  if (/\b(manajemen\s+informatika|d3|diploma(?:\s+(?:3|tiga))?|informatic\s+diploma)\b/.test(q)) return { key: 'mi', label: 'Manajemen Informatika', family: 'd3' };
   if (/\b(?:teknologi\s+informasi|teknik\s+informatika|informatika|prodi\s+informatika|jurusan\s+informatika|tek\s*info|tekinfo)\b/.test(q)) return { key: 'ti', label: 'Teknologi Informasi', family: 's1' };
   if (/\b(?:bisnis|binis|bisinis)\s+digital\b/.test(q)) return { key: 'bd', label: 'Bisnis Digital', family: 's1' };
   if (/\b(manajemen\s+informatika|d3|diploma(?:\s+(?:3|tiga))?|informatic\s+diploma)\b/.test(q)) return { key: 'mi', label: 'Manajemen Informatika', family: 'd3' };
@@ -949,6 +951,7 @@ function buildScholarshipNoTrainingAnswer(topic) {
 function tryScholarshipAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(double\s*degree|dual\s*degree|dd|utb|dnui|help\s+university)\b/.test(q)) return null;
+  if (/\b(?:astronot|antariksa|alien|luar\s+angkasa|joki|palsu)\b/i.test(q)) return null;
   if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|skss|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
 
   if (/\b(seluruh|semua|full|penuh|100\s*%)\b/.test(q) && /\b(biaya|ditanggung|menanggung|cover|cakupan)\b/.test(q)) {

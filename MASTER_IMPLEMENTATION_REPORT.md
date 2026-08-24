@@ -382,3 +382,457 @@ Initial production smoke of `1480ddf` found two remaining safety/output issues i
 ### Production Smoke Follow-Up Schedule Verifier Patch
 
 Production smoke of `cafc321` found a provider-enabled false rejection for deterministic explicit-date schedule answers: local no-provider schedule routing passed, but live provider verifier returned `semantic-rag-meaning-verifier-blocked`. Added a narrow structured schedule safety condition for trusted `semantic-rag-schedule-window` answers that preserve concrete date/period information and pass document-safety checks. Local gates after patch remain PASS: focused live/P0 15/15, golden 0 WRONG, semantic 13/13, retrieval 110/110, document-safety 6/6, evidence 56/56, npm test natural PASS.
+
+### Live Production Root-Cause Deployment Validation
+
+Commit `70be022` was deployed and validated against live Railway through the protected non-sending semantic endpoint. Production smoke passed 22/22 with 0 WRONG, RAG index `indexSize=835`, explicit-date schedule preserved, raw-leak guard active, S2 curriculum routed to postgraduate profile, ORMAWA count returned 32, and UKM Tari profile did not leak raw headings/fragments. The smoke endpoint was disabled afterward and returned HTTP 404. Final verdict: `DEPLOYED_VALIDATED`.
+
+## System-Wide Contract Remediation — 2026-08-21
+
+Status: SYSTEM_CONTRACTS_CONSISTENT
+
+Scope:
+- Fixed general semantic/output contracts, not exact-query exceptions.
+- Final production patch: `be5e7a3` (`Trust canonical program definition aliases in production verifier`).
+- Railway live smoke validated commit behavior before disabling the temporary internal smoke token.
+
+Key fixes:
+- Canonical program-definition verifier now trusts recognized aliases such as `informatika` / `teknik informatika` for Teknologi Informasi when the deterministic source is `semantic-rag-program-definition` and answer shape is safe.
+- Program definition/existence/profile wording is covered beyond `apa itu/pengertian`.
+- Prior system-wide fixes remain validated: comparison, relation-pairing, institution profile, temporal point-in-time, generic RAG safety, requestType coverage, UKM count/profile/vision safety.
+
+Validation:
+- Focused system contracts: 14/14 PASS.
+- 44 unseen/cross-domain audit: 44/44 PASS.
+- Golden smoke: 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG.
+- semantic: 13/13 PASS.
+- retrieval: 110/110 PASS.
+- document-safety: 6/6 PASS.
+- evidence: 56/56 PASS.
+- schedule: 12/12 PASS.
+- npm test: unit 330/330 PASS; contract 94/94 PASS.
+- Live Railway non-sending smoke: 30/30 PASS.
+
+Final Railway state:
+- Smoke-validated deployment: `e3917e5f-378b-4d29-8fce-35089c2c0d99`.
+- Final running deployment after disabling smoke token: `aa89757b-5a9c-450d-886f-7d062702c8b9`, startup healthy, RAG prewarm success indexSize=835.
+
+Nonblocking debt:
+- Log-only `stream.write is not a function` may still appear on expected verifier-blocked local paths.
+- Legacy expectation/performance debt remains documented; no accepted production gate is blocked.
+
+## Knowledge Coverage Remediation - 2026-08-21
+
+Status: KNOWLEDGE_COVERAGE_GAPS_REMAIN. Partial safe fixes were applied for canonical source entity roles, D3 Manajemen Informatika alias ordering, unknown organization fallback, and UKM Tari profile evidence alignment. Golden smoke remains 0 WRONG; evidence/document-safety/focused contracts remain PASS. Student Exchange definition, institution history, FORM IKU, S2 SKS, remedial, and yudisium source-present classes remain open. See KNOWLEDGE_COVERAGE_REMEDIATION_REPORT.md.
+
+
+## Knowledge Coverage Remediation Continuation (2026-08-21)
+
+Student Exchange definition/profile precedence was fixed using the existing FAQ/QNA handler before generic Double Degree routing. Focused gates, evidence, document-safety, schedule, and golden smoke remain PASS. Source-present coverage still has open gaps in FORM IKU summarization, institution history, S2/remedial/yudisium academic contracts, DNUI sequence completeness, accreditation validity completeness, and unsupported-policy negative controls. Verdict: KNOWLEDGE_COVERAGE_GAPS_REMAIN.
+
+
+## System-Wide Knowledge Generalization Remediation (2026-08-21)
+
+Inventory derived from `src/data/rag_index.json` found 76 sources and 835 chunks. Source-derived generalization probe covered 39 representative cases across request/entity/collision/negative classes: 23 PASS_GROUNDED_HEURISTIC, 2 PASS_SAFE_FALLBACK_OR_SAFE_NONANSWER, and 14 non-pass/gap classifications. Accepted gates remained PASS: golden 0 WRONG, evidence 56/56, document-safety 6/6, schedule 12/12, focused contracts 49/49, retrieval 110/110, semantic 13/13, npm test unit 330/330 and contract 94/94. Remaining gaps include universal evidence compatibility, composer field preservation, academic document requestTypes, institution document/history, unsupported entity guards, international relation contrast, and performance/context fallback. Verdict: KNOWLEDGE_COVERAGE_GAPS_REMAIN.
+
+
+## Knowledge Contract Root-Cause Remediation Final Pass - 2026-08-23
+
+Status: KNOWLEDGE_CONTRACTS_REMEDIATED_PENDING_BLIND_VALIDATION. Production code was modified only for the approved root-contract classes and no deployment was performed.
+
+General fixes landed across `src/engine/queryUnderstanding.js`, `src/engine/semanticRagEngine.js`, `src/engine/feeComparisonEngine.js`, and `src/utils/answerPreflightEvaluator.js`: context-sensitive SK alias suppression in legal/document contexts, institution history/legal-document intent, academic requested-field/source-compatible routing, unsupported entity/relation/policy/facility containment, Double Degree sequence/fee/outcome separation, and structured factual bullet safety.
+
+Final validation after the last patch: focused knowledge contracts 27/27 PASS, Blind #1 regression 25/25 PASS, Blind #2 regression evidence 30/30 PASS, source-derived 39 probe PASS heuristic/safe, golden 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG, evidence 56/56, document-safety 6/6, schedule/provider final response 12/12, semantic 13/13, retrieval 110/110, contract 94/94, and full npm test natural PASS with unit 357/357 plus contract 94/94. Representative non-sending provider proof also completed.
+
+Blind Holdout #2 is explicitly retained as regression evidence only. Clean final generalization still requires a frozen-code Blind Holdout #3 before claiming full knowledge coverage remediation or deployment readiness.
+
+## Knowledge Contract Remediation Addendum - 2026-08-23
+
+A remaining source-present international-program contrast gap was found after final self-check. Canonical now correctly classifies Student Exchange vs Double Degree contrast as sk_international_program_comparison / international_program_contrast, and golden/focused/contract gates remain PASS, but runtime currently safe-fallbacks because a universal source-grounded comparison composer is still missing. Canned composer patches were not applied after safety review rejection. Verdict revised to KNOWLEDGE_COVERAGE_GAPS_REMAIN.
+`nFinal rerun after the canonical-only international contrast patch also remained green: evidence 56/56, document-safety 6/6, semantic 13/13, retrieval 110/110, schedule/provider final response 12/12, and full npm test natural PASS with unit 357/357 plus contract 94/94. The remaining gap is not a regression in existing gates; it is a source-present false fallback for the international-program contrast class until a universal source-grounded comparison composer is designed.`n
+
+## Freeze + Blind Holdout #3 Pre-Execution Audit - 2026-08-23
+
+Status before phase: `KNOWLEDGE_CONTRACTS_REMEDIATED_PENDING_BLIND_VALIDATION`.
+
+Actions completed:
+
+- Frozen current production-relevant file hashes and RAG index hash in `KNOWLEDGE_CONTRACT_FREEZE_MANIFEST.md`.
+- Reran auxiliary old 44-probe before Blind Holdout #3 as required.
+- Result: 40/44 PASS, 4 non-pass.
+- Classification found 2 release-impacting production behavior defects and 2 nonblocking stale/evaluator expectations.
+- Blind Holdout #3 was not executed because valid production defects must be remediated and refrozen first.
+
+Blocking production behavior found:
+
+1. `ukm_count`: COUNT request for Ormawa selected unrelated Hi-Think/international-program evidence.
+2. `ukm_profile`: UKM Tari profile path still emitted raw/incomplete profile fragments.
+
+Nonblocking old-probe debt:
+
+1. `dual_degree_prior`: old source-label/wording expectation conflicts with current accepted international-topic composer output.
+2. `unknown_program_fee`: old evaluator did not accept the current `semantic-rag-unsupported-program-fee` safe fallback.
+
+Verdict for this phase: `BLIND_HOLDOUT_GAPS_FOUND`.
+
+Next required action: remediate the two blocking root contracts generally, rerun regressions, freeze again, then create/run clean Blind Holdout #3 once.
+
+
+## Pre-Blind Blocker Remediation - 2026-08-23
+
+UKM/ORMAWA COUNT and UKM/organization PROFILE production blockers from the auxiliary old 44-probe were remediated generally, not by exact query patching. Organization count now requires organization-family evidence compatibility and validated unique organization entities. UKM profile answers are composed from cleaned descriptive propositions, while unsupported/open-world UKM entities safely fallback and HIMAPRODI/student-association requests no longer use the UKM-specific composer.
+
+Validation after final patch: focused UKM/organization contracts 11/11 PASS, old 44-probe 44/44 PASS, Blind #1 25/25 PASS, Blind #2 30/30 PASS, source-derived 39 heuristic/safe PASS, fresh 20 heuristic/safe PASS, golden 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG, evidence 56/56, document-safety 6/6, schedule/provider-final-response 12/12, semantic 13/13, retrieval 110/110, and full npm test natural PASS with unit 361/361 plus contract 94/94.
+
+A broad legacy provider/webhook parity suite still fails on stale provider expectation/test-boundary/async debt and is documented separately; no failure was traced to UKM COUNT or PROFILE production behavior. Blind Holdout #3 was not executed. Verdict for the remediated blockers: PRE_BLIND_BLOCKERS_REMEDIATED_WITH_PROVIDER_PARITY_DEBT.
+
+
+## Provider/Webhook Parity Reconciliation
+
+Status: `PROVIDER_PARITY_RECONCILED_READY_FOR_FREEZE`
+
+No deployment was performed and Blind Holdout #3 was not run.
+
+This phase audited legacy provider/webhook failures and separated real production defects from stale/test-boundary debt. One compact release-gating provider parity suite was added in `tests/providerWebhook.releaseParity.test.js`; it exercises the real provider/webhook path through semantic routing, preflight, and outbound capture without sending external WhatsApp messages.
+
+Production fixes:
+
+- `src/routes/provider.js`: fixed reply-deadline fallback metadata so the fallback path no longer references undefined `meta`.
+- `src/engine/semanticRagEngine.js`: prevented canonical program-only follow-ups from being hijacked by UKM/HIMAPRODI routing and routed short fee-context program replacements through fee semantics.
+
+Validation after the final patch:
+
+- Provider release parity: PASS
+- 44 unseen/cross-domain: PASS 44/44
+- Blind Holdout #1 regression: PASS 25/25
+- Blind Holdout #2 regression evidence: PASS 30/30
+- Source-derived regression: PASS heuristic/safe 39/39
+- Fresh 20 holdout/regression: PASS heuristic/safe 20/20
+- Golden smoke: 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG
+- Evidence: PASS 56/56
+- Document safety: PASS 6/6
+- Schedule/provider: PASS 12/12
+- Semantic: PASS 13/13
+- Retrieval: PASS 110/110
+- Full `npm test`: unit 361/361 PASS, contract 94/94 PASS
+
+Legacy provider suites remain documented as nonblocking test debt where they assert old source labels, session telemetry, menu/greeting wording, helper call counts, or monolithic real-flow timing rather than the accepted production contract.
+
+## Final Freeze + Blind Holdout #3
+
+Status: BLIND_HOLDOUT_GAPS_FOUND
+
+Freeze manifest created: FINAL_FREEZE_MANIFEST.md.
+
+Blind Holdout #3 was created from 30 new source-derived cases and executed once through the provider/webhook path with outbound sending mocked. No production code, corpus/index, runner, expected result, evaluator, or acceptance criteria were changed after freeze before the verdict was recorded.
+
+Raw result:
+
+- Total: 30
+- PASS_GROUNDED: 11
+- PASS_SAFE_FALLBACK: 5
+- FALSE_FALLBACK: 8
+- INCOMPLETE_ANSWER: 3
+- WRONG_FACT: 2
+- TIMEOUT: 1
+- RAW_EVIDENCE_LEAK: 0
+- UNSUPPORTED_CLAIM: 0
+
+Final blind verdict: BLIND_HOLDOUT_GAPS_FOUND.
+
+Deployment remains blocked. The next remediation phase should focus on the first-failure contract classes recorded in BLIND_HOLDOUT_3_RESULTS.md, not individual query patching.
+
+## 2026-08-24 - Blind #3 Root-Contract Remediation
+
+Status: `KNOWLEDGE_COVERAGE_GAPS_REMAIN`
+
+Production changes were limited to proven first-failure contract classes:
+
+- Institution legal-document/history routing and answer-shape preservation.
+- Program degree-outcome canonical recognition and supported degree extraction.
+- Explicit location subset preservation for typo/reordered location questions.
+- External relation supporting-proposition guard for unsupported partner/relation claims.
+
+Regression after final production patch:
+
+- Evidence: 56/56 PASS
+- Document safety: 6/6 PASS
+- Schedule/provider: 12/12 PASS
+- Semantic: 13/13 PASS
+- Retrieval: 110/110 PASS
+- Golden smoke: 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG
+- Full `npm test`: unit 361/361 PASS + contract 94/94 PASS
+- Provider/webhook release parity: 2/2 PASS
+
+Blind #3 rerun is regression evidence only, not clean blind validation:
+
+- Total: 30
+- PASS_GROUNDED: 18
+- PASS_SAFE_FALLBACK: 4
+- FALSE_FALLBACK: 6
+- INCOMPLETE_ANSWER: 1
+- UNSUPPORTED_CLAIM: 1
+- WRONG_DOMAIN/WRONG_ENTITY/WRONG_FACT/RAW_EVIDENCE_LEAK/TIMEOUT: 0
+
+Remaining issue is evaluator/test-isolation reconciliation before any new freeze and Blind Holdout #4. No deployment performed.
+
+
+## Final Knowledge Coverage Reconciliation Before Freeze #4 - 2026-08-24
+
+Status: KNOWLEDGE_CONTRACTS_RECONCILED_READY_FOR_FREEZE_4. No deployment was performed and Blind Holdout #4 was not created/executed. Blind #3 is regression evidence only, not clean blind proof.
+
+The 8 non-pass Blind #3 cases were traced to evaluator/session-isolation debt, then Blind #2 regression exposed 3 real production first-failure classes: organization profile/function vs entity-type comparison, academic TA subsection page-limit verifier rejection, and Student Exchange requirements being hijacked by foreign-student admin docs. Fixes were general and limited to src/engine/queryUnderstanding.js and src/engine/semanticRagEngine.js.
+
+Final validation after the last patch: Blind #1 25/25, Blind #2 30/30, Blind #3 regression 30/30, old 44 44/44, source-derived 39 PASS heuristic/safe, fresh 20 PASS heuristic/safe, golden 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG, evidence 56/56, document-safety 6/6, schedule/provider 12/12, semantic 13/13, retrieval 110/110, focused knowledge/provider parity 33/33, and full npm test natural PASS with unit 361/361 plus contract 94/94.
+
+Next required step: freeze code/corpus/index/evaluator/runner, then create and execute fresh Blind Holdout #4 exactly once.
+## Freeze #4 + Clean Blind Holdout #4 - 2026-08-24
+
+Status: BLIND_HOLDOUT_GAPS_FOUND. No deployment was performed and no production behavior was patched after the Blind #4 single-shot execution began.
+
+Freeze manifest created:
+
+- `FREEZE_4_MANIFEST.md`
+- `FREEZE_4_MANIFEST.json`
+
+Blind Holdout #4 was built as a fresh 32-case source-derived holdout with expected facts recorded before execution. It was executed once through the production-equivalent provider/webhook path with outbound sending mocked.
+
+Raw result:
+
+- Total: 32
+- PASS_GROUNDED: 21
+- PASS_SAFE_FALLBACK: 3
+- FALSE_FALLBACK: 4
+- INCOMPLETE_ANSWER: 3
+- UNSUPPORTED_CLAIM: 1
+- WRONG_DOMAIN: 0
+- WRONG_ENTITY: 0
+- WRONG_FACT: 0
+- RAW_EVIDENCE_LEAK: 0
+- TIMEOUT: 0
+
+Zero-tolerance acceptance was not met because Blind #4 still found source-present false fallbacks, incomplete requested-field preservation, and one unsupported claim. Deployment remains blocked pending a new root-contract remediation phase.
+
+Report:
+
+- `BLIND_HOLDOUT_4_RESULTS.md`
+- raw result: `tmp/blind_holdout_4_results.json`
+- non-pass summary: `tmp/blind_holdout_4_nonpass_summary.json`
+
+Final Blind #4 verdict: BLIND_HOLDOUT_GAPS_FOUND.
+
+## Blind #4 Root-Contract Remediation
+
+Status: `KNOWLEDGE_COVERAGE_GAPS_REMAIN`
+
+Blind #4 historical raw result remains unchanged: 32 cases, 24 pass, 8 material non-pass. The set is now regression evidence, not blind proof.
+
+General contracts remediated without exact-query hardcodes:
+
+- Organization/UKM/HIMAPRODI COUNT evidence compatibility.
+- Source-present requested-field retrieval for information channel and institution history/date classes.
+- Requested-field preservation for accommodation, language level, and international-admin amount/period.
+- Clean administrative document handling for SKTT-like document lists while preserving raw-leak protection.
+- Unsupported cross-domain exchange/barter relation containment.
+- Route-precedence correction so ordinary foreign-admin definition/procedure questions remain with `semantic-rag-admin-topic-composer` instead of generic source-grounded route.
+
+Validation after final patch:
+
+- Focused knowledge contracts: 14/14 PASS.
+- Blind #4 regression: 27 PASS_GROUNDED, 4 PASS_SAFE_FALLBACK, 1 FALSE_FALLBACK.
+- Golden smoke: 34 PASS, 3 EXPECTED_FALLBACK, 0 WRONG.
+- Evidence: 56/56 PASS.
+- Document-safety: 6/6 PASS.
+- Schedule/provider: 12/12 PASS.
+
+Remaining first failure:
+
+- `blind4_12_form_iku_purpose`: source-present FORM IKU purpose request reaches correct institution-document canonical domain, but current document composer/preflight path cannot safely extract the supported purpose proposition from noisy administrative/form chunks. It safely falls back instead of leaking raw evidence.
+
+Decision: stop before cleanup, freeze, or Blind #5. No deployment performed.
+
+## Final Single-Gap Knowledge Coverage Reconciliation - 2026-08-24
+
+Status: `KNOWLEDGE_COVERAGE_RECONCILED_READY_FOR_FREEZE_5`.
+
+No deployment was performed. Blind Holdout #5 was not created or executed.
+
+The last material source-present gap, `blind4_12_form_iku_purpose`, was traced to the institution-document composer/preflight boundary. Canonical understanding and source support were already correct, but noisy form/admin chunks could not be converted into a clean purpose/function proposition, causing a safe but false fallback.
+
+General remediation:
+
+- Added generic institution-document purpose/function proposition extraction for noisy form/admin documents.
+- Kept filename-only evidence insufficient.
+- Preserved raw/OCR/table/header leak protection by composing clean structured propositions before preflight.
+- Narrowed generic source-grounded requested-field routing so student-organization profiles and institution founding-date routes keep their specific handlers.
+- Preserved student-association profile identity from entity-scoped evidence.
+- Added non-fee international-admin/immigration canonical handling for foreign-student document/procedure wording.
+
+Final validation after the final production patch:
+
+- Focused knowledge contracts: 35/35 PASS.
+- Blind #1 regression: 25/25 accepted outcomes.
+- Blind #2 regression: 30/30 accepted outcomes.
+- Blind #3 regression: 30/30 accepted outcomes.
+- Blind #4 regression: 32/32 accepted outcomes; 28 PASS_GROUNDED and 4 PASS_SAFE_FALLBACK.
+- Old 44-probe: 44/44 PASS.
+- Source-derived remaining probe: completed with source-present cases grounded and unsupported policy safe fallback.
+- Golden smoke: 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG.
+- Evidence: 56/56 PASS.
+- Document-safety: 6/6 PASS.
+- Schedule/provider: 12/12 PASS.
+- Semantic: 13/13 PASS.
+- Retrieval: 110/110 PASS.
+- Provider/webhook release parity: 2/2 PASS.
+- Full `npm test`: PASS natural; unit 365/365 and contract 94/94.
+
+Next required step is Freeze #5 before any fresh Blind Holdout #5. Do not deploy before that freeze and clean blind validation.
+
+## Freeze #5 + Clean Blind Holdout #5 - 2026-08-24
+
+Status: `BLIND_HOLDOUT_GAPS_FOUND`.
+
+No deployment was performed. Freeze #5 was recorded before execution in `FREEZE_5_MANIFEST.md` and `FREEZE_5_MANIFEST.json`. Blind #5 expected facts were written source-first in `tmp/blind_holdout_5_expected.json`, then the holdout was executed once through the provider/webhook production-equivalent path.
+
+Runner exit-code debt was reconciled before execution. Blind #5 runner now has deterministic process behavior: exit `0` for clean validation, exit `1` for material validation failure, and exit `2` for runner/integrity crash. The Blind #5 run exited `1`, matching the material validation failure verdict.
+
+Raw result:
+
+- Total: 32
+- PASS_GROUNDED: 20
+- PASS_SAFE_FALLBACK: 3
+- FALSE_FALLBACK: 5
+- TIMEOUT: 2
+- UNSUPPORTED_CLAIM: 1
+- INCOMPLETE_ANSWER: 1
+- WRONG_DOMAIN: 0
+- WRONG_ENTITY: 0
+- WRONG_FACT: 0
+- RAW_EVIDENCE_LEAK: 0
+
+Non-pass clusters:
+
+- Canonical/requestType gaps for short/reordered program-list, program-profile, and registration correction wording.
+- Source-present evidence rejected after canonical routing for Student Exchange information-channel and foreign-student SKTT relation.
+- Unsupported remote-exam policy collided with scholarship route.
+- Comparison/relation field preservation gap for Student Exchange vs Double Degree and institution legal-date vs PMB schedule contrast.
+- Provider performance/context gap for short program-list and multi-turn Student Exchange country follow-up.
+
+Artifacts:
+
+- `BLIND_HOLDOUT_5_RESULTS.md`
+- `tmp/blind_holdout_5_results.json`
+- `tmp/blind_holdout_5_trace.jsonl`
+- `tmp/blind_holdout_5_run.log`
+
+No remediation was performed after Blind #5 results were observed.
+
+## Blind #5 Root-Contract Remediation - 2026-08-24
+
+Status: `BLIND_5_GAPS_REMEDIATED_READY_FOR_NEXT_FREEZE`.
+
+No deployment was performed. Blind #5 is now regression evidence only, not clean blind proof.
+
+The 8 Blind #5 material non-pass cases were remediated by contract class:
+
+- Canonical/requestType and route precedence for program list/profile, registration correction, Student Exchange information-channel, and contact-lecturer procedure wording.
+- Generic source-grounded comparison now composes per-target supported propositions and preserves academic SKS comparison fields.
+- Unsupported policy/relation containment returns safe non-answer when no supporting proposition exists.
+- Requested-field preservation was tightened for academic, international, admin/document, and institution/legal-date comparison paths.
+- Provider/webhook release parity was revalidated on production-equivalent path.
+
+Final validation after the last production patch:
+
+- Focused knowledge contracts: 15/15 PASS.
+- Blind #1 regression: 25/25 accepted outcomes.
+- Blind #2 regression: 30/30 accepted outcomes.
+- Blind #3 regression: 30/30 accepted outcomes.
+- Blind #4 regression: 32/32 accepted outcomes.
+- Blind #5 regression: 32/32 accepted outcomes.
+- Old 44-probe: 44/44 PASS.
+- Source-derived 39: 33 grounded + 6 safe fallback.
+- Fresh 20: 16 grounded + 4 safe fallback.
+- Golden smoke: 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG.
+- Evidence: 56/56 PASS.
+- Document-safety: 6/6 PASS.
+- Schedule/provider: 12/12 PASS.
+- Semantic: 13/13 PASS.
+- Retrieval: 110/110 PASS.
+- Full `npm test`: PASS natural; unit 365/365 and contract 94/94.
+- Provider/webhook release parity: 2/2 PASS.
+
+Next step: freeze again, then create and run a fresh clean blind holdout. Do not deploy before that.
+
+## Freeze #6 + Blind Holdout #6
+
+Status: `BLIND_HOLDOUT_6_GAPS_FOUND`
+
+Freeze #6 was recorded in `FREEZE_6_MANIFEST.md` with production path hashes, RAG index hash, runner hash, and expected-result hash. Blind Holdout #6 was executed once through the production-equivalent provider/webhook path without deployment and without post-result production patching.
+
+Raw Blind #6 result:
+
+- Total: 32
+- PASS_GROUNDED: 24
+- PASS_SAFE_FALLBACK: 2
+- FALSE_FALLBACK: 2
+- INCOMPLETE_ANSWER: 2
+- WRONG_FACT: 2
+- WRONG_DOMAIN: 0
+- WRONG_ENTITY: 0
+- RAW_EVIDENCE_LEAK: 0
+- UNSUPPORTED_CLAIM: 0
+- TIMEOUT: 0
+
+Material non-pass cases are documented in `BLIND_HOLDOUT_6_RESULTS.md`. This means the current state is not ready for final release audit.
+
+## Post Blind #6 Pending Validation - 2026-08-24
+
+Status: POST_BLIND_6_REMEDIATION_FULLY_VALIDATED_READY_FOR_FINAL_AUDIT.
+
+Validation-only pass completed after runner access returned. No production code, freeze, cleanup, or deployment was performed. Pending gates all passed naturally: semantic 13/13, retrieval 110/110, full npm test with unit 365/365 plus contract 94/94, and provider/webhook release parity 2/2. See POST_BLIND_6_PENDING_VALIDATION_REPORT.md.
+
+
+## Final Production-Path & Architecture Audit - 2026-08-24
+
+Status: FINAL_AUDIT_CLEAN_READY_FOR_CLEANUP_AND_RELEASE_FREEZE.
+
+Audit-only pass reviewed provider/webhook -> session/context -> canonical query understanding -> routing/guards -> retrieval/evidence -> composer/requested fields -> verifier/preflight -> provider outbound. No production code, cleanup, freeze, blind holdout, or deployment was performed. No REAL_PRODUCTION_DEFECT was found. Nonblocking debt remains around provider debug/tmp traces, telemetry label drift, legacy test artifacts/scripts, and future consolidation of remaining raw-regex fallback ownership. See FINAL_PRODUCTION_PATH_ARCHITECTURE_AUDIT.md.
+
+
+## Final Cleanup + Release Freeze - 2026-08-24
+
+Status: `RELEASE_CANDIDATE_VALIDATED_READY_FOR_DEPLOYMENT_REVIEW`.
+
+No deployment was performed. No production behavior was changed during cleanup.
+
+Cleanup archived untracked remediation/prototype/debug scripts and `.agents/` into `tmp/release_cleanup_archive_2026-08-24/`. Release-gating regression runners, evidence outputs, source-derived probes, blind holdout artifacts, and documentation were retained.
+
+Release freeze artifacts:
+
+- `REPOSITORY_CLEANUP_AUDIT.md`
+- `DEAD_CODE_AUDIT.md`
+- `DEPLOYMENT_READINESS_REVIEW.md`
+- `RELEASE_FREEZE_MANIFEST.md`
+- `RELEASE_FREEZE_MANIFEST.json`
+
+Final post-cleanup gates were rerun from the current workspace state:
+
+- Blind #1 regression: 25/25 accepted outcomes.
+- Blind #2 regression: 30/30 accepted outcomes.
+- Blind #3 regression: PASS, exit 0.
+- Blind #4 regression: 32 total / 28 PASS_GROUNDED / 4 PASS_SAFE_FALLBACK.
+- Blind #5 regression: 32 total / 28 PASS_GROUNDED / 4 PASS_SAFE_FALLBACK.
+- Blind #6 regression: 32 total / 30 PASS_GROUNDED / 2 PASS_SAFE_FALLBACK.
+- Old 44-probe: 44/44 PASS.
+- Source-derived 39: 33 grounded + 6 safe fallback.
+- Fresh 20 + focused knowledge contracts: 35/35 PASS.
+- Golden smoke: 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG; `pmb_still_open` 625 ms.
+- Evidence: 56/56 PASS.
+- Document-safety: 6/6 PASS.
+- Schedule/provider: 12/12 PASS.
+- Semantic: 13/13 PASS.
+- Retrieval: 110/110 PASS.
+- Provider/webhook release parity: 2/2 PASS.
+- Full `npm test`: PASS natural; unit 365/365 plus contract 94/94.
+
+RAG index release note: `src/data/rag_index.json` exists locally with SHA256 `FA21B6D8ECC7B1F352DE34E28E77D757F77F808DBE0A9707E6466E27281DC0B9`, but it is intentionally not tracked by Git. Deployment must provide the validated index via private artifact/volume/storage or verified runtime sync.

@@ -35,9 +35,10 @@ describe('performance and async root-cause contracts', () => {
   test('academic schedule questions are not hijacked by canonical PMB schedule fast lane', async () => {
     const result = await querySemanticRag('jadwal remedial kapan ya?', { topK: 5 });
 
-    expect(result.source).toBe('semantic-rag-academic-schedule');
-    expect(result.debug && result.debug.routeStage).toBe('pre-guard-academic-schedule');
-    expect(result.answer).toMatch(/jadwal resmi remedial|akademik|BAAK/i);
+    expect(['semantic-rag-academic-schedule', 'semantic-rag-academic-source']).toContain(result.source);
+    expect(result.source).not.toBe('semantic-rag-schedule-window');
+    expect(String(result.debug && result.debug.routeStage)).not.toMatch(/pmb-schedule|schedule-window/i);
+    expect(result.answer).toMatch(/remedial|akademik|BAAK|04\s*-\s*05\s*Februari/i);
   });
 
   test('registration procedure keeps its registration route instead of PMB schedule fast lane', async () => {
@@ -48,3 +49,4 @@ describe('performance and async root-cause contracts', () => {
     expect(result.answer).toMatch(/online|kampus|siap\.stikom-bali\.ac\.id/i);
   });
 });
+

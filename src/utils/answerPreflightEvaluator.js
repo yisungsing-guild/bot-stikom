@@ -15,6 +15,8 @@ function envFlag(name, fallback = false) {
 function stripDocumentSourceReferences(text) {
   let out = String(text || '');
   const fileExt = String.raw`(?:pdf|docx?|xlsx?|pptx?|txt|csv|jpg|jpeg|png|webp|mp4|mp3)`;
+  out = out.replace(/(?:^|\n)\s*-\s*(?:Ringkasan\s+dokumen|Program\s+studi\s+terlihat|Tanggal\s+dokumen|Nama\s+dokumen)\s*:[^\n]*/gi, '');
+  out = out.replace(/\b(?:Ringkasan\s+dokumen|Program\s+studi\s+terlihat|Tanggal\s+dokumen|Nama\s+dokumen)\s*:[^\n]*/gi, '');
   out = out.replace(new RegExp(String.raw`\s*\((?:sumber|source|file|filename|sourceFile|dokumen|document)\s*[:=-]\s*[^)]*\.${fileExt}\b[^)]*\)`, 'gi'), ' ');
   out = out.replace(new RegExp(String.raw`(?:^|\n)\s*(?:sumber|source|file|filename|sourceFile|dokumen|document)\s*[:=-]\s*[^\n]*\.${fileExt}\b[^\n]*`, 'gi'), '\n');
   out = out.replace(new RegExp(String.raw`\b(?:berdasarkan|mengacu pada|diambil dari|dari)\s+(?:dokumen|file|konteks\s+training|training\s+data|data\s+training)\s+[^\n.]{0,160}\.${fileExt}\b[^\n.]*[.]?`, 'gi'), '');
@@ -191,7 +193,7 @@ function hasLikelyRawDocumentLeak(text) {
   const formTableMarkers = [
     /\bFORM\s+IKU\b/i,
     /\bPersentase\s+PTS\b/i,
-    /\bPerguruan\s+Tinggi\b/i,
+    /\b(?:Nama|Kode)\s+Perguruan\s+Tinggi\s*:/i,
     /\bJumlah\s+Total\b/i,
     /\bYa\s*\/\s*Tidak\b/i,
     /\b(?:A|B|C)\.\s+[A-Z][A-Za-z\s]{8,}/,
@@ -200,13 +202,19 @@ function hasLikelyRawDocumentLeak(text) {
   const formTableMarkerCount = formTableMarkers.filter((re) => re.test(out)).length;
   const fragmentedLineCount = out.split(/\n+/).filter((line) => {
     const t = line.trim();
-    return t.length > 0 && t.length <= 38 && !/[.!?]$/.test(t);
+    return t.length > 0 && t.length <= 38 && !/^[-*•]|\d+[.)]/.test(t) && !/[.!?]$/.test(t);
   }).length;
   const residualQnaLike = (questionMarkCount >= 2
     || /\?\s+(?:Dokumen|Syarat|Visa|Biaya|Masa|Tidak|Umumnya|Proses|SKTT|ITAS|Izin|Program|Mahasiswa|Apakah|Bagaimana|Berapa)\b/i.test(out))
     && /\b(?:dokumen|syarat|visa|itas|izin\s+belajar|mahasiswa\s+asing|biaya|program|passport|passpor|kitas|sktt)\b/i.test(out);
+  const adminDocumentMarkerCount = (out.match(/\b(?:Passport|Passpor|KITAS|ITAS|SKTT|VITAS|LoA|Financial\s+Statement|Medical\s+Statement|Statement\s+Letter|Academic\s+Transcripts|Form\s+F1-01)\b/gi) || []).length;
+  const cleanAdministrativeSummary = adminDocumentMarkerCount >= 3
+    && out.length <= 420
+    && /\b(?:dokumen|berkas|syarat|prosedur)\b[^.?!]{0,120}\b(?:mencakup|meliputi|terdiri\s+dari|yang\s+disebut)\b/i.test(out)
+    && !/\b(?:FAQ|QNA|Jawaban\s*:|Answer\s*:|Question\s*:|sbb\s*:|SOURCE_CHUNKS|Sheet:|chunkId|metadata|filename|sourceFile)\b/i.test(out)
+    && !/^\s*(?:Passport|Passpor|KITAS|ITAS|SKTT|VITAS|LoA|Form\s+F1-01)\b/im.test(out);
   const documentChecklistLike = /\bsbb\s*:/i.test(out)
-    || ((out.match(/\b(?:Passport|Passpor|KITAS|ITAS|SKTT|VITAS|LoA|Financial\s+Statement|Medical\s+Statement|Statement\s+Letter|Academic\s+Transcripts|Form\s+F1-01)\b/gi) || []).length >= 3);
+    || (adminDocumentMarkerCount >= 3 && !cleanAdministrativeSummary);
   const tableRowLike = /^\s*\d+\s*\|/m.test(out) || /\bmeliputi\s*:\s*(?:\n|\s)*\d+[.)]/i.test(out);
   const institutionalFormLike = /\b(?:PTS|Perguruan\s+Tinggi|Program\s+Studi)\b/i.test(out) && /\b(?:Persentase|Jumlah\s+Total|Ya\s*\/\s*Tidak|kegiatan\s+pembelajaran\s+di\s+luar)\b/i.test(out);
   const spreadsheetExtractionLike = /^\s*\[Sheet:\s*[^\]]+\]/i.test(out)
@@ -230,12 +238,15 @@ function hasLikelyRawDocumentLeak(text) {
   const institutionalCriteriaLike = /\b(?:perguruan\s+tinggi|program\s+studi|prodi|mahasiswa\s+inbound)\b/i.test(out)
     && /\b(?:Jumlah|Kriteria|Indikator|Triwulan|Akreditasi|pembelajaran\s+di\s+luar\s+program|QS200)\b/i.test(out)
     && ((out.match(/\b\d+[.)]/g) || []).length >= 2 || /\b[a-e]\)/i.test(out));
-  const choppedFragmentLike = out.length > 180
+  // Lower threshold from 180 to 120 — short chopped fragments starting lowercase with no terminal punct
+  const choppedFragmentLike = out.length > 120
     && /^[a-z]/.test(out.trim())
     && !/[.!?)]\s*$/.test(out.trim());
   const ocrHtmlArtifactLike = /&(?:amp|lt|gt|nbsp);/i.test(out)
     || /\b(?:k\s+ekuatan|Tri\s+d\s+arma|startup\s+compang|1ain)\b/i.test(out);
-  const ocrSourceLike = /\b(?:Teks\s+hasil\s+OCR|hasil\s+OCR\s+gambar|CATATAN\s+UNTUK|bahan\s+referensi\s*\/\s*(?:administrasi|koordinasi))\b/i.test(out);
+  const ocrSourceLike = /\b(?:Teks\s+hasil\s+OCR|hasil\s+OCR\s+gambar|CATATAN\s+UNTUK|bahan\s+referensi\s*\/\s*(?:administrasi|koordinasi)|Teks\s+hasil\s+ekstraksi)\b/i.test(out)
+    || /\[Tabel\s*\d+\]/i.test(out)
+    || /\[Gambar\s*\d+\]/i.test(out);
   const rawProfileTitleOnlyLike = out.length <= 180
     && /^\s*(?:PROFIL|PROFILE|Company\s+profile|Profiling)\b/i.test(out)
     && !/[.!?]/.test(out);
@@ -270,6 +281,21 @@ function hasLikelyRawDocumentLeak(text) {
     }
     // Only check for most critical leaks (legal, OCR artifacts, placeholders)
     return legalMarkerCount >= 2 || ocrHtmlArtifactLike || ocrSourceLike || placeholderLike;
+  }
+
+  const structuredAccreditationStatusAnswer = out.length <= 360
+    && /\b(?:terakreditasi|peringkat\s+akreditasi|akreditasi\s+(?:institusi|kampus|perguruan\s+tinggi))\b/i.test(out)
+    && /\b(?:Nomor\s+SK|BAN-PT|LAM\s+INFOKOM|Ak\.Ppj)\b/i.test(out)
+    && !/\b(?:SURAT\s+KEPUTUSAN|MENIMBANG\s*:|MENGINGAT\s*:|MEMUTUSKAN\s*:|Ditetapkan\s+di|Lampiran\s+Keputusan|menyatakan\s+bahwa)\b/i.test(out);
+  if (structuredAccreditationStatusAnswer) {
+    return ocrHtmlArtifactLike || ocrSourceLike || placeholderLike || spreadsheetExtractionLike;
+  }
+  const looksLikeStructuredProcedureAnswer = /\b(?:mahasiswa\s+asing|keimigrasian|dokumen\s+(?:yang\s+)?(?:wajib|perlu|diperlukan|diurus|disiapkan))\b/i.test(out)
+    && !/\[(?:Sheet|Tabel|Gambar):/i.test(out)
+    && !/^\s*\d+\s*\|/m.test(out)
+    && !/\b(?:FAQ|QNA)\b/i.test(out);
+  if (looksLikeStructuredProcedureAnswer) {
+    return legalMarkerCount >= 2 || ocrHtmlArtifactLike || ocrSourceLike || placeholderLike || /^\s*\d+\s*\|/m.test(out) || spreadsheetExtractionLike;
   }
 
   return faqMarkerCount >= 2
@@ -310,7 +336,13 @@ function hasLikelyRawDocumentLeak(text) {
     || (profileMarkerCount >= 2 && out.length > 700)
     || (structureMarkerCount >= 2 && out.length > 900)
     || (legalMarkerCount >= 1 && placeholderLike)
-    || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'));
+    || (lower.includes('pasal') && lower.includes('pihak pertama') && lower.includes('pihak kedua'))
+    // Training-phase metadata artifact patterns — must never appear in final answers
+    || /(?:^|\n)Ringkasan\s+dokumen\s*:/i.test(out)
+    || /(?:^|\n)Program\s+studi\s+terlihat\s*:/i.test(out)
+    || /(?:^|\n)Program\s+internasional\s*\/\s*kerja\s+sama\s+internasional\s*:/i.test(out)
+    || /Ringkasan\s*:\s*\[\[image:/i.test(out)
+    || /Jadwal\/gelombang\s*:\s*•/i.test(out);
 }
 
 
@@ -413,10 +445,16 @@ function buildConversationalFallback(userQuery) {
   return 'Halo kak, ada yang bisa saya bantu seputar ITB STIKOM Bali?';
 }
 
-function detectCrossDomainAnswerLeak(answer, userQuery = '') {
+function detectCrossDomainAnswerLeak(answer, userQuery = '', options = {}) {
   const q = normalizeForAlignment(userQuery);
   const a = normalizeForAlignment(answer);
   if (!q.trim() || !a.trim() || isConversationalQuery(userQuery)) {
+    return { leak: false, leakedDomains: [] };
+  }
+  if (options && options.source && /out-of-domain|unsupported-program|unsupported-facility|unsupported-policy|safe-fallback/i.test(String(options.source || ''))) {
+    return { leak: false, leakedDomains: [] };
+  }
+  if (/tidak memiliki program studi|belum menemukan data biaya untuk program studi|hanya menyelenggarakan program studi/i.test(a)) {
     return { leak: false, leakedDomains: [] };
   }
 
@@ -426,8 +464,8 @@ function detectCrossDomainAnswerLeak(answer, userQuery = '') {
     doubleDegree: /\b(?:double degree|dual degree|gelar ganda|dnui|dalian|help university|utb|malaysia|china|cina)\b/i.test(q),
     accreditation: /\b(?:akreditasi|ban pt|ban-pt|lam infokom|peringkat akreditasi|nomor sk)\b/i.test(q),
     career: /\b(?:career center|karier|karir|kerja|magang|job fair|campus hiring|tracer study|rekrutmen|lowongan)\b/i.test(q),
-    academicAdmin: /\b(?:yudisium|wisuda|sion|baak|kalender akademik|semester|perkuliahan|kuliah|jadwal kuliah|mulai kuliah)\b/i.test(q),
-    fee: /\b(?:biaya|ukt|dpp|pendaftaran|potongan|diskon|cicilan|nominal|gelombang)\b/i.test(q),
+    academicAdmin: /\b(?:yudisium|wisuda|sion|baak|kalender akademik|jadwal akademik|informasi akademik|akademik|remedial|remidi|semester|perkuliahan|kuliah|jadwal kuliah|mulai kuliah)\b/i.test(q),
+    fee: /\b(?:biaya|ukt|dpp|potongan|diskon|cicilan|nominal|gelombang)\b/i.test(q) || (/\bpendaftaran\b/i.test(q) && !/\bbukan\s+(?:jadwal\s+)?(?:pmb|pendaftaran)\b/i.test(q)),
     program: /\b(?:prodi(?:nya)?|program studi|jurusan(?:nya)?|s1|s2|d3|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika|dkv|desain komunikasi visual)\b/i.test(q),
     campusSupport: /\b(?:ukm|ormawa|organisasi|fasilitas|inkubator|inbis|student exchange|hi think|hithink|goes to school)\b/i.test(q)
   };
@@ -438,7 +476,7 @@ function detectCrossDomainAnswerLeak(answer, userQuery = '') {
     doubleDegree: /\b(?:double degree|dual degree|gelar ganda|dnui|dalian|help university|utb|malaysia|china|cina)\b/i.test(a),
     accreditation: /\b(?:akreditasi|ban pt|ban-pt|lam infokom|nomor sk|peringkat akreditasi)\b/i.test(a),
     career: /\b(?:career center|karier|karir|magang|job fair|campus hiring|tracer study|rekrutmen|lowongan)\b/i.test(a),
-    academicAdmin: /\b(?:yudisium|wisuda|sion|baak|kalender akademik|semester genap|semester ganjil|jadwal kuliah)\b/i.test(a)
+    academicAdmin: /\b(?:yudisium|wisuda|sion|baak|kalender akademik|jadwal akademik|remedial|remidi|semester genap|semester ganjil|jadwal kuliah)\b/i.test(a)
   };
 
   const regularProgramListAnswer = requested.program
@@ -508,6 +546,32 @@ function detectProgramRecommendationDrift(answer, userQuery = '') {
 }
 function isGenericRecoveryFallbackText(answer) {
   return /\b(?:belum\s+mempunyai\s+jawaban\s+yang\s+cukup\s+aman|jawaban\s+yang\s+terbentuk\s+belum\s+sesuai|sistem\s+kami\s+sedang\s+kendala|pesan\s+tadi\s+belum\s+terbaca|belum\s+kebaca\s+dengan\s+benar|belum\s+menemukan\s+(?:data|informasi)\s+yang\s+cukup)\b/i.test(String(answer || ''));
+}
+
+/**
+ * Policy Yes-No Guard — Absence of evidence must not become permission.
+ * If the query is a yes/no policy/eligibility question and the answer contains only
+ * generic procedure without an explicit yes or no statement, flag it.
+ */
+function detectPolicyYesNoWithoutDirectAnswer(answer, userQuery) {
+  const q = normalizeForAlignment(userQuery);
+  const a = normalizeForAlignment(answer);
+  if (!q || !a) return false;
+
+  // Yes/no policy question signals
+  const isYesNoPolicyQuestion = /\b(?:apakah\s+(?:bisa|boleh|mungkin|diperbolehkan|dapat)|bisa(?:kah)?\s+(?:saya|mahasiswa)|boleh(?:kah)?|apakah\s+(?:ada|tersedia|terdapat)|apakah\s+mahasiswa)\b/i.test(q)
+    && /\b(?:sertifikat|konversi|pengganti|ganti|tukar|joki|kecurangan|barista|kuliah\s+sambil|bekerja\s+sambil|boleh\s+lulus|bypass|tanpa\s+(?:skripsi|ujian|sidang|ta)|skripsi|tugas\s+akhir|kebijakan|aturan|ketentuan|diizinkan|izin)\b/i.test(q);
+
+  if (!isYesNoPolicyQuestion) return false;
+
+  // Check if answer has explicit yes/no statement
+  const hasExplicitYesNo = /\b(?:ya(?:,|\s+(?:bisa|boleh|dapat|diperbolehkan|memungkinkan))|tidak\s+(?:bisa|boleh|dapat|diperbolehkan|diizinkan|memungkinkan)|bisa(?:,|\s+(?:namun|dengan\s+catatan|asalkan|jika))|tidak(?:,|\s+(?:ada|diizinkan|diperbolehkan|diatur|ada\s+ketentuan))|belum\s+(?:ada|menemukan|ditemukan)\s+(?:ketentuan|kebijakan|informasi|data|aturan))\b/i.test(a);
+
+  // Check if answer is only generic procedure without a yes/no claim
+  const hasOnlyGenericProcedure = /\b(?:untuk\s+konfirmasi|hubungi\s+(?:baak|prodi|admin)|cek\s+(?:ke\s+)?(?:prodi|baak|admin|kemahasiswaan)|silakan\s+(?:hubungi|konfirmasi|tanya))\b/i.test(a)
+    && !hasExplicitYesNo;
+
+  return hasOnlyGenericProcedure;
 }
 
 function detectIntentSet(text) {
@@ -832,7 +896,8 @@ function decidePreflightAction(issues, meta = {}) {
     'cross_domain_answer_leak',
     'career_service_without_program',
     'missing_program_recommendation',
-    'program_recommendation_drift'
+    'program_recommendation_drift',
+    'unsupported_policy_assumption'
   ]);
   if (issues.some((issue) => hardIssues.has(issue))) {
     const regenerationCount = Number(meta.regenerationCount || meta.regenCount || 0);
@@ -880,7 +945,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     || hasUnsafeAdministrativeLeak(text, userQuery)
     || hasLikelyRawDocumentLeak(text)
     || hasInlineRawBulletLeak(text);
-  const crossDomainAudit = detectCrossDomainAnswerLeak(text, userQuery);
+  const crossDomainAudit = detectCrossDomainAnswerLeak(text, userQuery, meta);
   if (crossDomainAudit.leak && !rawLeakPrecheck) {
     issues.push('cross_domain_answer_leak');
     text = buildPreflightFallback(userQuery, 'intent_conflict');
@@ -889,6 +954,11 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   if (programRecommendationAudit.drift) {
     issues.push(programRecommendationAudit.reason || 'program_recommendation_drift');
     text = buildPreflightFallback(userQuery, 'intent_conflict');
+  }
+  // Policy yes-no guard: absence of evidence must not become permission
+  if (!issues.length && detectPolicyYesNoWithoutDirectAnswer(text, userQuery)) {
+    issues.push('unsupported_policy_assumption');
+    text = buildPreflightFallback(userQuery, 'unsupported_policy');
   }
   if (sensitiveAudit.hasSensitiveInfo && sensitiveAudit.hits.some((hit) => hit === 'secret_or_token')) {
     text = maskPii(text);
@@ -1015,7 +1085,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
           issues.push(alignmentAudit.reason || 'answer_query_mismatch');
           text = buildPreflightFallback(userQuery, 'intent_conflict');
         }
-      } else {
+      } else if (!/out-of-domain|unsupported-program/i.test(String(meta.source || '')) && !/tidak memiliki program studi|belum menemukan data biaya untuk program studi/i.test(text)) {
         const intentAudit = detectIntentConflict(text, userQuery);
         if (intentAudit.conflict) {
           if (process.env.PREFLIGHT_DEBUG_DETAILED) {

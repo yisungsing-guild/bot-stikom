@@ -1,0 +1,74 @@
+﻿{
+  "generatedAt": "2026-08-24T00:00:00+08:00",
+  "status": "RELEASE_FREEZE_RECORDED_NO_DEPLOY",
+  "git": {
+    "headAtValidation": "be5e7a3b5d8e91b1d3bc1e1061471380eb4ec3bb",
+    "publicRagIndexTrackedByGit": false,
+    "worktreeStatusAtValidation": [
+      "M BEFORE_AFTER_ROOT_CAUSE_MATRIX.md",
+      "M LIVE_PRODUCTION_ROOT_CAUSE_REMEDIATION_REPORT.md",
+      "M MASTER_IMPLEMENTATION_REPORT.md",
+      "M src/engine/feeComparisonEngine.js",
+      "M src/engine/queryUnderstanding.js",
+      "M src/engine/semanticRagEngine.js",
+      "M src/routes/provider.js",
+      "M src/utils/answerPreflightEvaluator.js",
+      "M tests/semanticRagEngine.performanceAsyncContracts.test.js",
+      "M tmp/provider_real_flow_results.json"
+    ]
+  },
+  "runtime": {
+    "package": "whatsapp-bot-system",
+    "entrypoint": "src/index.js",
+    "productionStartCommand": "npm run start:prod",
+    "nodeEngine": ">=20.0.0",
+    "secretPolicy": "Secrets must be provided by platform environment and must not be committed."
+  },
+  "rag": {
+    "localRuntimeIndex": "src/data/rag_index.json",
+    "localRuntimeIndexSha256": "FA21B6D8ECC7B1F352DE34E28E77D757F77F808DBE0A9707E6466E27281DC0B9",
+    "trackedInGit": false,
+    "deploymentStrategy": "Provide via private artifact/volume/storage or verified runtime sync; do not publish production-derived index to public Git.",
+    "corpusHashes": {
+      "data/runtime/dynamic_alias_dictionary.json": "A5C642CD55A05CC89607FE627C02A0966F36E006EA7A4D90D6A176C7C1156650",
+      "data/runtime/knowledge_source_registry.json": "CEC99041CDC268A37ABDEFE6C8D5C3D50B150257B77B15991601CAD6963160EB",
+      "data/runtime/knowledge_preparation_manifest.jsonl": "F982E97ACDE2B2CD3CA9D7FC4536BFEBACCE667E4CE82B83F7B05389970609AA",
+      "src/data/vec_index/domains_vectors.jsonl": "EA8E54A236DD2C41BD51E22F5A9E4C349C51DEF18ADB6B499F12249487DF8A16",
+      "src/data/ingest/domains_chunks.jsonl": "B4D65FDACEA6C8F3BFFE98C98EC61C14DE85927671CDF92AE15C83A4E4273E1A"
+    }
+  },
+  "fileHashes": {
+    "package.json": "FD3DA4076A721324BB19379006B99DF8698CA1AAAA3D90A913C1ED95E5A9C877",
+    "package-lock.json": "C2CC3CE67BF9734A0C59FB053A3229CD576B949E911CA6E939FD7F72DBD2FE19",
+    "src/index.js": "02C90C7659C2CD6030DEF63DA7F87908EA75A478753766619118813A9BFD6A28",
+    "src/routes/provider.js": "1DC5AC49261D268F43080EA8E3BA33D651EDB3FB0512C61D628742E9959E7886",
+    "src/engine/queryUnderstanding.js": "60D98D18F841F9F3C6BE8497F174F74C04EF2926B9AE0C719B99D9FF23EE4728",
+    "src/engine/semanticRagEngine.js": "AE8712A246B077A26EE57CCB530D3148C34FD42B81F37930A532C3860069EBD1",
+    "src/engine/feeComparisonEngine.js": "8327C8469B890A328997848D1E426850895D67B1DBF2BEFE8C2041F9C32B43CD",
+    "src/engine/hardMetadataGates.js": "F7DA46805BF42BEF5DC6AFE9ECE5DA8C13E2C79947C9BBFBD05A42BF505DBE22",
+    "src/engine/ragTechniquePipeline.js": "696C585CBE3FF2181159AF9A60F3D2E6BF4EB3EA09D8ACCD18EF3FC8F5EFEDC0",
+    "src/engine/ragEngine.js": "706D3094055241187FF8B9AEC0E871716EEC8DD4079BFF9DF2F885328C36BAAE",
+    "src/engine/ragScoped.js": "0DE7FCBD52319C4027B2D83DC3EDBD08CD2753F5FA3A0160B2A669C34DE35A9E",
+    "src/utils/answerPreflightEvaluator.js": "35734974EC83220FB210814847629DDFB86CFD745FBCFFFD4345DDE36260CA5F"
+  },
+  "releaseGateSummary": {
+    "blind1": "25/25 accepted outcomes",
+    "blind2": "30/30 accepted outcomes",
+    "blind3": "PASS exit 0",
+    "blind4": "32 total / 28 PASS_GROUNDED / 4 PASS_SAFE_FALLBACK",
+    "blind5": "32 total / 28 PASS_GROUNDED / 4 PASS_SAFE_FALLBACK",
+    "blind6": "32 total / 30 PASS_GROUNDED / 2 PASS_SAFE_FALLBACK",
+    "old44": "44/44 PASS",
+    "sourceDerived39": "33 grounded + 6 safe fallback",
+    "fresh20AndKnowledgeContracts": "35/35 PASS",
+    "goldenSmoke": "37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG; pmb_still_open 625 ms",
+    "evidence": "56/56 PASS",
+    "documentSafety": "6/6 PASS",
+    "scheduleProvider": "12/12 PASS",
+    "semantic": "13/13 PASS",
+    "retrieval": "110/110 PASS",
+    "providerWebhookParity": "2/2 PASS",
+    "npmTest": "unit 365/365 PASS + contract 94/94 PASS"
+  },
+  "finalVerdict": "RELEASE_CANDIDATE_VALIDATED_READY_FOR_DEPLOYMENT_REVIEW"
+}

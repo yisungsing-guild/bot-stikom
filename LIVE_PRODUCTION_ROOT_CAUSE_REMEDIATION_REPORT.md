@@ -118,3 +118,61 @@ Post-fix local validation:
 - `npm run test:document-safety`: PASS, 6/6.
 - `npm run test:evidence`: PASS, 56/56.
 - `npm test`: PASS natural, unit 330/330 and contract 94/94.
+
+## Live Production Root-Cause Deployment Validation - 2026-08-20
+
+Deployment sequence:
+
+- Code commit deployed for smoke: `70be022` (`Protect deterministic schedule from verifier false rejects`).
+- Smoke deployment: `e535a0f1-fed4-4b25-b043-87bd6b8efc80`, status `SUCCESS`.
+- Smoke endpoint disabled after validation by setting `SEMANTIC_SMOKE_TOKEN=disabled`.
+- Active post-disable deployment: `796c1af3-fb6f-4f0b-8953-fb20dc3beaea`, status `SUCCESS`.
+- Endpoint verification after disable: `POST /internal/semantic-smoke` returned HTTP 404.
+
+Production non-sending semantic smoke result:
+
+| Case | Route/Source | Duration | Result |
+|---|---|---:|---|
+| PMB current status | `semantic-rag-schedule-window` | 1676ms | PASS |
+| Explicit-date schedule | `semantic-rag-schedule-window` | 365ms | PASS, preserved `Per 7 Juli 2026` |
+| Explicit-date unseen schedule | `semantic-rag-schedule-window` | 343ms | PASS, preserved `Per 5 Juli 2026` |
+| Registration how-to | `semantic-rag-registration-info` | 206ms | PASS |
+| Registration fee | `semantic-rag-registration-fee` | 245ms | PASS |
+| UKT | `semantic-rag-fee-detail` | 222ms | PASS |
+| Program list | `semantic-rag-program-list` | 189ms | PASS |
+| SI vs TI comparison | `semantic-rag-program-comparison` | 189ms | PASS |
+| BD curriculum | `semantic-rag-program-curriculum` | 188ms | PASS |
+| Academic SKS | `semantic-rag-academic-credit` | 190ms | PASS |
+| Facility | `semantic-rag-campus-facility` | 193ms | PASS |
+| Career Center | `semantic-rag-campus-support-entity` | 188ms | PASS |
+| Student Exchange benefit | `semantic-rag-international-topic-composer` | 191ms | PASS |
+| UTB/DKV Double Degree | `semantic-rag-dual-degree` | 190ms | PASS |
+| Unsupported Double Degree partner | `semantic-rag-unsupported-double-degree-partner` | 187ms | PASS |
+| Unknown program fee | `semantic-rag-meaning-verifier-blocked` | 192ms | PASS, safe fallback |
+| Physical-attribute fallback | `semantic-rag-campus-physical-attribute-insufficient-data` | 188ms | PASS |
+| Raw-document leak complaint | `semantic-rag-raw-document-leak-feedback` | 195ms | PASS |
+| Small talk | `semantic-rag-small-talk` | 189ms | PASS |
+| S2 curriculum live failure | `semantic-rag-postgraduate-profile` | 189ms | PASS |
+| ORMAWA count live failure | `semantic-rag-ukm-count` | 193ms | PASS |
+| UKM Tari profile live failure | `semantic-rag-ukm-list` | 344ms | PASS |
+
+Validator summary:
+
+- 22/22 PASS.
+- 0 WRONG.
+- RAG index loaded with `indexSize=835`.
+- No raw evidence leak in inspected critical answers.
+- No unsupported entity substitution.
+- Explicit dates preserved after the verifier patch.
+- PMB current-status latency remained acceptable at 1676ms.
+
+Log review:
+
+- Startup used `npm run start:prod` / `node --max-old-space-size=4096 src/index.js`.
+- RAG prewarm succeeded with `indexSize=835` on both smoke and post-disable deployments.
+- No sampled startup crash, missing module, unhandled rejection, repeated RAG initialization, provider loop, or stream-write crash.
+- One intermittent `Redis Rate Limit Error: fetch failed` remained nonblocking; server stayed online and semantic smoke passed.
+
+Final verdict for this remediation:
+
+`DEPLOYED_VALIDATED`
