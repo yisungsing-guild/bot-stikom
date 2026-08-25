@@ -211,3 +211,5 @@ pm test PASS natural; production semantic/retrieval gates PASS; dedicated provid
 
 
 | RFR-001 | Final cleanup and release freeze readiness | release candidate workspace after blind/regression remediation | RELEASE_FREEZE_RECORDED | cleanup/report/manifest only | Untracked remediation scripts archived; production behavior unchanged; all mandatory gates rerun after cleanup | RELEASE_CANDIDATE_VALIDATED_READY_FOR_DEPLOYMENT_REVIEW |
+
+| PDB-001 | Organization/ORMAWA COUNT answers were blocked by meaning verifier despite validated collection/count evidence | `Jumlah ormawa di ITB STIKOM Bali ada berapa?` plus UKM/HIMAPRODI/count wording variants | REAL_PRODUCTION_DEFECT_FIXED | `src/engine/semanticRagEngine.js` | Before: production route `semantic-rag-meaning-verifier-blocked` returned safe fallback; After: structured organization-count verifier trusts only compatible `ukm-count` answers and rejects wrong/fabricated counts | Focused org-count 5/5; old44 44/44; Blind #1-#6; golden/evidence/document/semantic/retrieval/npm/provider PASS | FIXED_PENDING_DEPLOYMENT |

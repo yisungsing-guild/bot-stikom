@@ -836,3 +836,15 @@ Final post-cleanup gates were rerun from the current workspace state:
 - Full `npm test`: PASS natural; unit 365/365 plus contract 94/94.
 
 RAG index release note: `src/data/rag_index.json` exists locally with SHA256 `FA21B6D8ECC7B1F352DE34E28E77D757F77F808DBE0A9707E6466E27281DC0B9`, but it is intentionally not tracked by Git. Deployment must provide the validated index via private artifact/volume/storage or verified runtime sync.
+
+## Post-Deployment Organization Count Verifier Remediation - 2026-08-25
+
+Status: `ORGANIZATION_COUNT_VERIFIER_REMEDIATED_PENDING_DEPLOYMENT`.
+
+Production smoke on deployed commit `4aae882cc06e1d9e02016462b8e40b1c7621db0b` exposed one material semantic blocker: ORMAWA/organization COUNT answers were produced by the grounded `semantic-rag-ukm-count` route but rejected by the meaning verifier and replaced by safe fallback. The first failure was the verifier boundary, not canonical understanding, retrieval, source data, provider, or RAG index.
+
+The remediation adds structured organization-count semantics in `src/engine/semanticRagEngine.js`: count answers are trusted only when the source is the UKM/organization count route, the user asked an organization-family count, the final answer contains the compatible organization family and numeric count, subset scope is preserved, and wrong-domain/raw-document markers are absent. Fabricated counts, unrelated-domain evidence, unsupported counts, and wrong subset/category answers remain rejected.
+
+Validation after the final patch: focused organization/count 5/5 PASS; old 44 44/44 PASS; Blind #1 25/25, #2 30/30, #3 30/30, #4 32/32, #5 32/32, #6 32/32 PASS; source-derived 39 = 33 grounded + 6 safe fallback; fresh 20 = 16 grounded + 4 safe fallback; golden 37 total / 34 PASS / 3 EXPECTED_FALLBACK / 0 WRONG; evidence 56/56; document-safety 6/6; schedule/provider 12/12; semantic 13/13; retrieval 110/110; full `npm test` PASS natural with unit 365/365 + contract 94/94; provider/webhook release parity 2/2 PASS.
+
+Next step: commit this release candidate, push/deploy that exact commit, then rerun protected non-sending production smoke. Do not reuse the failed production smoke as proof of success.

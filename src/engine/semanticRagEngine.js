@@ -3378,6 +3378,25 @@ function isSafeCampusFacilityAnswer(question, answer, source = '') {
   if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(a)) return false;
   return a.length <= 1800;
 }
+function isSafeOrganizationCountAnswer(question, answer, source = '') {
+  const q = String(question || '').toLowerCase();
+  const a = String(answer || '').trim();
+  const src = String(source || '').toLowerCase();
+  if (!a || !src.includes('ukm-count')) return false;
+  if (!/\b(?:berapa|jumlah|total|ada\s+berapa|tercatat\s+berapa)\b/i.test(q)) return false;
+  if (!/\b(?:ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan\s+mahasiswa|unit\s+kegiatan|himaprodi|hima(?:s)?|himpunan\s+mahasiswa)\b/i.test(q)) return false;
+  if (!/\b(?:UKM|Ormawa|ORMAWA|organisasi\s+mahasiswa|unit\s+kegiatan\s+mahasiswa|HIMAPRODI|HIMA|Himpunan\s+mahasiswa)\b/i.test(a)) return false;
+  if (!/\b\d+\b/.test(a)) return false;
+  if (/\b(?:Hi-?Think|Student\s+Exchange|Double\s*Degree|Dual\s*Degree|DNUI|HELP\s+University|UKT|DPP|biaya|Gelombang)\b/i.test(a)) return false;
+  if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan|SOURCE_CHUNKS|chunkId|metadata|filename|sourceFile)\b/i.test(a)) return false;
+
+  const asksHimaprodiSubset = /\b(?:himaprodi|himpunan\s+mahasiswa\s+(?:program\s+studi|prodi))\b/i.test(q);
+  const asksHimaSubset = asksHimaprodiSubset || /\b(?:hima(?:s)?|himpunan\s+mahasiswa)\b/i.test(q);
+  if (asksHimaprodiSubset && !/\bHIMAPRODI\b/i.test(a)) return false;
+  if (asksHimaSubset && !/\b(?:HIMAPRODI|HIMA|Himpunan\s+mahasiswa)\b/i.test(a)) return false;
+  if (!asksHimaSubset && /\bHIMAPRODI\b/i.test(a) && !/\b(?:UKM|Ormawa|ORMAWA|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(a)) return false;
+  return a.length <= 4500;
+}
 function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const q = normalizeAcademicAdminQueryText(question);
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
@@ -12078,6 +12097,7 @@ function isMeaningMismatchAnswer(question, answer, source = '') {
   if (srcForAvailability.includes('program-list-contextual') || srcForAvailability.includes('program-scope-clarification-choice')) return false;
   if (srcForAvailability.includes('program-comparison') && /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(qForAvailability)) return false;
   if (srcForAvailability.includes('source-grounded-comparison') && /\b(?:sama|persis|beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(qForAvailability)) return false;
+  if (srcForAvailability.includes('ukm-count')) return !isSafeOrganizationCountAnswer(question, answer, source);
   
   // Document answers are trusted only after anchor and meaning alignment. Uploaded files can contain many unrelated sections, so keep verifier active for them.
   if (/campus-support|campus-facility|academic-source|cross-domain-comparison|international-topic-composer|source-grounded-retrieval|source-grounded-comparison/i.test(srcForAvailability)) {
@@ -12501,6 +12521,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const structuredPmbSafe = (/pmb-info/i.test(source) && isSafePmbOverviewAnswer(question, result.answer)) || (/pmb-requirements/i.test(source) && /\b(syarat|persyaratan|dokumen|berkas|pendaftaran|siap\.stikom-bali\.ac\.id|pmb)\b/i.test(String(result.answer || '')));
   const structuredDualDegreeSafe = /dual-degree/i.test(source) && isSafeDualDegreeAnswer(question, result.answer);
   const structuredFacilitySafe = isSafeCampusFacilityAnswer(question, result.answer, source);
+  const structuredOrganizationCountSafe = isSafeOrganizationCountAnswer(question, result.answer, source);
   const structuredProgramListSafe = isSafeProgramListAnswer(question, result.answer, source);
   const structuredProgramDefinitionSafe = isSafeProgramDefinitionAnswer(question, result.answer, source);
   const structuredPostgraduateProfileSafe = /semantic-rag-postgraduate-profile/i.test(source)
@@ -12568,7 +12589,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
       || (/\b(?:daftar\s+pustaka|referensi|bibliography|sitasi)\b/i.test(String(question || '')) && /\b(?:IEEE|daftar\s+pustaka|referensi)\b/i.test(String(result.answer || '')))
     )
     && !hasLikelyRawDocumentLeak(result.answer);
-  const structuredSemanticSafe = structuredExtractiveSourceSafe || structuredAcademicPolicyFieldSafe || deterministicKnownFaqSafe || structuredSmallTalkSafe || structuredScheduleSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredPostgraduateProfileSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredAdminInternationalSafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredCertificationSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
+  const structuredSemanticSafe = structuredExtractiveSourceSafe || structuredAcademicPolicyFieldSafe || deterministicKnownFaqSafe || structuredSmallTalkSafe || structuredScheduleSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredOrganizationCountSafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredPostgraduateProfileSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredAdminInternationalSafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredCertificationSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
@@ -16755,7 +16776,17 @@ async function verifyOutboundSemanticRelevance(question, answer, source = 'provi
   if (!q || !a) return { ok: true, skipped: true, reason: 'empty_question_or_answer' };
   const src = String(source || '').trim() || 'provider-outbound';
 
-  const localMismatch = isMeaningMismatchAnswer(q, a, src);
+  const structuredCountSafeBeforeMismatch = isSafeOrganizationCountAnswer(q, a, src);
+  if (/ukm-count/i.test(src) && !structuredCountSafeBeforeMismatch) {
+    return {
+      ok: false,
+      localMismatch: true,
+      llmVerdict: null,
+      reason: 'organization_count_semantics_failed',
+      meaningAnchors: extractMeaningAnchors(q)
+    };
+  }
+  const localMismatch = structuredCountSafeBeforeMismatch ? false : isMeaningMismatchAnswer(q, a, src);
   if (localMismatch) {
     return {
       ok: false,
@@ -16777,6 +16808,7 @@ async function verifyOutboundSemanticRelevance(question, answer, source = 'provi
       || (/pmb-info/i.test(src) && isSafePmbOverviewAnswer(q, a))
       || (/dual-degree/i.test(src) && isSafeDualDegreeAnswer(q, a))
       || isSafeCampusFacilityAnswer(q, a, src)
+      || structuredCountSafeBeforeMismatch
       || isSafeProgramDefinitionAnswer(q, a, src)
       || isSafeAbbreviationClarificationAnswer(q, a, src);
     const unsafeSemanticOutput = !structuredOutboundSafe && (Boolean(preflight && preflight.blocked)
