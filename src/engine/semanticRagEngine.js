@@ -34,6 +34,7 @@ const { evaluateOutboundAnswer, hasLikelyRawDocumentLeak, buildPreflightFallback
 const { deduplicateEvidence } = require('../utils/evidenceDedup');
 const { normalizeUserQuery } = require('../utils/queryNormalizer');
 const { buildCanonicalQueryUnderstanding } = require('./queryUnderstanding');
+const { verifyAnswerAgainstContract } = require('./semanticContract');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
 const { classifyDocumentCategory } = require('./docCategoryClassifier');
 const {
@@ -9288,9 +9289,10 @@ function tryCampusSupportFallback(question) {
     };
   }
   if (!/\b(lomba|kompetisi|kompetisi nasional|kompetisi internasional|dukung|mendukung|sponsor|mendanai|ikut lomba)\b/i.test(q)) return null;
+  const competitionScope = /\bnasional\b/i.test(q) ? ' nasional' : (/\binternasional|international\b/i.test(q) ? ' internasional' : '');
   return {
     answer: [
-      'Untuk dukungan lomba/kompetisi, biasanya kampus menyediakan beberapa jalur, seperti BEM, UKM, Career Center, atau prodi terkait.',
+      'Untuk dukungan lomba/kompetisi' + competitionScope + ', biasanya kampus menyediakan beberapa jalur, seperti BEM, UKM, Career Center, atau prodi terkait.',
       '',
       'Saran: tanyakan ke BEM atau ketua UKM terkait lomba, atau hubungi bagian kemahasiswaan untuk prosedur pendanaan dan dukungan.',
       '',
@@ -12472,6 +12474,8 @@ async function traceAndCacheSemanticResult(question, result, resultCacheKey, sta
       debug: {
         stage,
         routeStage: debug.routeStage || null,
+        semanticContract: debug.semanticContract || null,
+        contractVerification: debug.contractVerification || null,
         answerabilityResult: debug.answerabilityResult || null,
         blockedSource: debug.blockedSource || null,
         reason: debug.reason || null
@@ -12482,7 +12486,9 @@ async function traceAndCacheSemanticResult(question, result, resultCacheKey, sta
       question: String(question || '').slice(0, 300),
       source: result && result.source ? result.source : null,
       confidenceScore: result && typeof result.confidenceScore === 'number' ? result.confidenceScore : null,
-      contextCount: result && Array.isArray(result.contexts) ? result.contexts.length : 0
+      contextCount: result && Array.isArray(result.contexts) ? result.contexts.length : 0,
+      semanticContract: debug.semanticContract || null,
+      firstFailure: debug.contractVerification && debug.contractVerification.ok === false ? 'FINAL_VERIFIER' : null
     });
   } catch (err) {
     try { logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to persist final trace'); } catch (_) { try { console.warn('[SemanticRAG] failed to persist final trace', err && err.message ? err.message : String(err)); } catch (__) {} }
@@ -12525,6 +12531,37 @@ function hasUnsafeGenericRagRawFragment(answer) {
 async function finalizeSemanticResult(question, result, resultCacheKey, options = {}) {
   if (!result || !result.answer) return result;
   const source = result.source || 'semantic-rag';
+  const semanticContract = options.semanticContract
+    || options.__semanticContract
+    || (result.debug && (result.debug.semanticContract || result.debug.canonicalContract))
+    || (buildCanonicalQueryUnderstanding(question).contract);
+  const contractVerification = verifyAnswerAgainstContract(semanticContract, result.answer, Array.isArray(result.contexts) ? result.contexts : []);
+  if (contractVerification && contractVerification.ok === false) {
+    const blocked = {
+      success: true,
+      answer: buildMeaningMismatchFallbackAnswer(question),
+      source: 'semantic-rag-contract-verifier-blocked',
+      contexts: Array.isArray(result.contexts) ? result.contexts : [],
+      confidenceScore: typeof result.confidenceScore === 'number' ? result.confidenceScore : 0,
+      confidenceTier: 'VERY_LOW',
+      debug: {
+        ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
+        semanticContract,
+        contractVerification,
+        blockedSource: source,
+        reason: 'canonical_contract_verifier'
+      }
+    };
+    return await traceAndCacheSemanticResult(question, blocked, resultCacheKey, 'contractVerifierBlocked');
+  }
+  result = {
+    ...result,
+    debug: {
+      ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
+      semanticContract,
+      contractVerification
+    }
+  };
 
   // Universal raw-leak + training artifact guard — applies to ALL routes including training-specific
   const rawArtifactDetected = result.answer && (hasRawEvidenceSnippetShape(result.answer) || hasTrainingMetadataArtifact(result.answer));
@@ -14938,8 +14975,10 @@ async function querySemanticRag(question, options = {}) {
   const normalizedRouting = normalizeUserQuery(question);
   const routingQuestion = normalizedRouting && normalizedRouting.normalizedText ? normalizedRouting.normalizedText : question;
   const canonicalUnderstanding = buildCanonicalQueryUnderstanding(question, { normalizedQuery: routingQuestion });
-  const canonicalRoutingQuestion = canonicalUnderstanding && canonicalUnderstanding.routingQuery ? canonicalUnderstanding.routingQuery : routingQuestion;
+  const canonicalContract = canonicalUnderstanding && canonicalUnderstanding.contract ? canonicalUnderstanding.contract : null;
+  const canonicalRoutingQuestion = canonicalContract && canonicalContract.routingQuery ? canonicalContract.routingQuery : (canonicalUnderstanding && canonicalUnderstanding.routingQuery ? canonicalUnderstanding.routingQuery : routingQuestion);
   options.__canonicalQueryUnderstanding = canonicalUnderstanding;
+  options.__semanticContract = canonicalContract;
   if (!strictDocumentOnly && isRawDocumentLeakComplaint(question)) {
     const response = { success: true, answer: buildRawDocumentLeakComplaintAnswer(), source: 'semantic-rag-raw-document-leak-feedback', contexts: [] };
     return await finalizeSemanticResult(question, response, resultCacheKey);
@@ -16465,6 +16504,33 @@ async function querySemanticRag(question, options = {}) {
       };
     }
   }
+  if (canonicalContract) {
+    const contractIntentByType = {
+      registration_channel: 'registration_how',
+      procedure: canonicalContract.domain === 'registration' ? 'registration_how' : rewrite.intent,
+      fee: canonicalContract.domain === 'fee' || canonicalContract.intent === 'ask_fee' ? 'fee_detail' : rewrite.intent,
+      schedule: 'schedule_window',
+      requirements: 'requirements',
+      list: canonicalContract.domain === 'program' ? 'program_list' : (canonicalContract.domain === 'student_organization' ? 'ukm' : rewrite.intent),
+      count: canonicalContract.domain === 'student_organization' ? 'ukm' : rewrite.intent,
+      definition: canonicalContract.domain === 'program' ? 'program_definition' : rewrite.intent,
+      comparison: canonicalContract.domain === 'program' ? 'program_comparison' : rewrite.intent,
+      recommendation: 'program_recommendation',
+      availability: canonicalContract.domain === 'double_degree' || canonicalContract.domain === 'international_program' ? 'dual_degree' : rewrite.intent,
+      topic_opening: canonicalContract.domain === 'registration' ? 'pmb_overview' : rewrite.intent
+    };
+    const contractPrograms = (canonicalContract.entities || []).filter(entity => entity.group === 'programs').map(entity => entity.canonical);
+    rewrite = {
+      ...(rewrite && typeof rewrite === 'object' ? rewrite : {}),
+      intent: contractIntentByType[canonicalContract.requestType] || rewrite.intent,
+      entities: { ...(rewrite && rewrite.entities && typeof rewrite.entities === 'object' ? rewrite.entities : {}), ...(contractPrograms.length ? { programs: contractPrograms } : {}) },
+      searchQueries: uniqueList([canonicalRoutingQuestion, canonicalUnderstanding.normalizedQuery, question].concat((rewrite && rewrite.searchQueries) || []), 4),
+      semanticContract: canonicalContract,
+      canonicalQuestion: canonicalRoutingQuestion || (rewrite && rewrite.canonicalQuestion) || question,
+      needsClarification: canonicalContract.requestType === 'topic_opening' ? false : rewrite.needsClarification
+    };
+  }
+
   if (rewrite.needsClarification && rewrite.clarificationQuestion) {
     if (isGenericSemanticClarification(question, rewrite.clarificationQuestion)) {
       const response = {
@@ -16472,7 +16538,7 @@ async function querySemanticRag(question, options = {}) {
         answer: null,
         source: 'semantic-rag-clarify-suppressed',
         contexts: [],
-        debug: { rewrite, reason: 'generic_or_unsupported_clarification' }
+        debug: { rewrite, semanticContract: canonicalContract, reason: 'generic_or_unsupported_clarification' }
       };
       setCachedSemanticResult(resultCacheKey, response);
       return response;
@@ -16483,7 +16549,7 @@ async function querySemanticRag(question, options = {}) {
       answer: rewrite.clarificationQuestion,
       source: 'semantic-rag-clarify',
       contexts: [],
-      debug: { rewrite }
+      debug: { rewrite, semanticContract: canonicalContract }
     };
     return await finalizeSemanticResult(question, response, resultCacheKey);
   }
@@ -16547,7 +16613,7 @@ async function querySemanticRag(question, options = {}) {
   let selectedEvidence = [];
   if (retrieved.contexts.length > 0) {
     try {
-      selectedEvidence = selectEvidenceFromContexts({ question, contexts: retrieved.contexts, intent: rewrite.intent, maxEvidence: 5 });
+      selectedEvidence = selectEvidenceFromContexts({ question, contexts: retrieved.contexts, intent: rewrite.intent, maxEvidence: 5, semanticContract: canonicalContract });
     } catch (e) {
       logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] evidence selector failed, using raw contexts');
       selectedEvidence = retrieved.contexts.map(ctx => ({
@@ -16565,7 +16631,7 @@ async function querySemanticRag(question, options = {}) {
   let evidenceProcessingResult = null;
   if (selectedEvidence.length > 0) {
     try {
-      answerabilityResult = evaluateEvidenceAnswerability({ question, selectedEvidence, intent: rewrite.intent });
+      answerabilityResult = evaluateEvidenceAnswerability({ question, selectedEvidence, intent: rewrite.intent, semanticContract: canonicalContract });
     } catch (e) {
       logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] evidence answerability evaluation failed, proceeding with generation');
     }
@@ -16573,6 +16639,7 @@ async function querySemanticRag(question, options = {}) {
   evidenceProcessingResult = processEvidence(selectedEvidence, answerabilityResult, queryUnderstanding);
   const techniquePipelineDebug = {
     queryUnderstanding,
+    semanticContract: canonicalContract,
     retrieval: retrieved.techniquePipeline || null,
     evidenceProcessing: evidenceProcessingResult
   };
@@ -17194,4 +17261,6 @@ module.exports = {
   evaluateGenericAnswerability,
   resolveSemanticFollowupQuestion
 };
+
+
 

@@ -1,6 +1,7 @@
-const DEFAULT_MAX_EVIDENCE = 5;
+﻿const DEFAULT_MAX_EVIDENCE = 5;
 const { truncateEvidenceSafely } = require('../utils/contextTruncation');
 const { getEvidenceRequirements, isScholarshipAligned, containsCurrency } = require('../utils/evidenceRequirements');
+const { verifyAnswerAgainstContract } = require('./semanticContract');
 
 const STOPWORDS = new Set([
   'yang', 'dengan', 'dalam', 'oleh', 'dari', 'itu', 'ini', 'kak', 'kakak', 'min',
@@ -112,10 +113,10 @@ function isPlaceholderOrOcrNoise(text) {
   const value = String(text || '');
   const normalized = normalizeText(value);
   if (!normalized || normalized.length < 18) return true;
-  if (/_{4,}|\.{6,}|:{3,}|…{2,}|(?:\(\s*nama\s+mitra\s*\))|(?:nomor\s*:\s*(?:\.{4,}|…+))/i.test(value)) return true;
+  if (/_{4,}|\.{6,}|:{3,}|â€¦{2,}|(?:\(\s*nama\s+mitra\s*\))|(?:nomor\s*:\s*(?:\.{4,}|â€¦+))/i.test(value)) return true;
   if (/\b(?:left|right)\s+-?\d{3,}\b/i.test(value) || /\blogo\s+mitra\b/i.test(value)) return true;
   const alpha = (value.match(/[a-zA-Z\p{L}]/gu) || []).length;
-  const punct = (value.match(/[._:;,\-–—…]/g) || []).length;
+  const punct = (value.match(/[._:;,\-â€“â€”â€¦]/g) || []).length;
   return alpha > 0 && punct / Math.max(alpha, 1) > 0.7;
 }
 
@@ -123,7 +124,7 @@ function isLegalBoilerplate(text) {
   return /\b(?:pasal\s+\d+|ayat\s*\(\d+\)|pihak\s+kesatu|pihak\s+pertama|pihak\s+kedua|para\s+pihak|force\s+majeure|addendum|bermeterai|mempunyai\s+kekuatan\s+hukum|nomor\s*:|alamat\s+telepon\s+e\s*-?\s*mail|tanda\s+tangan|perjanjian\s+kerja\s+sama|nota\s+kesepahaman|korespondensi)\b/i.test(String(text || ''));
 }
 
-// Deteksi dokumen mentaw yang lebih ketat — pola yang menandakan chunk berisi
+// Deteksi dokumen mentaw yang lebih ketat â€” pola yang menandakan chunk berisi
 // dokumen hukum/administratif mentaw (bukan ringkasan yang sudah diproses).
 // Digunakan di lax fallback dan sebagai lapisan pertahanan tambahan.
 function isLikelyRawDocument(text) {
@@ -155,7 +156,7 @@ function isLikelyRawDocument(text) {
   if (markerCount >= 2) return true;
 
   // Jika ada satu marker kuat + placeholder noise, anggap dokumen mentaw
-  const placeholderLike = /_{5,}|\.{6,}|:{3,}|…{2,}|(?:nomor\s*:\s*(?:\.{4,}|…+))/i.test(value);
+  const placeholderLike = /_{5,}|\.{6,}|:{3,}|â€¦{2,}|(?:nomor\s*:\s*(?:\.{4,}|â€¦+))/i.test(value);
   if (markerCount >= 1 && placeholderLike) return true;
 
   // Deteksi dokumen mentaw dengan pola "Pasal X ... PIHAK KESATU ... PIHAK KEDUA"
@@ -180,7 +181,7 @@ function splitSentences(paragraph) {
   if (!value) return [];
   if (value.length <= 420) return [value];
   return value
-    .split(/(?<=[.!?])\s+(?=[A-Z0-9A-ZÀ-ÖØ-Þ\u00c0-\u024f])/u)
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9])/)
     .map(compactText)
     .filter((part) => part.length >= 18);
 }
@@ -272,7 +273,7 @@ function scoreIntentAlignment(text, detectedIntent) {
     schedule: /\b(tanggal|jadwal|periode|gelombang|bulan|tahun|jam|\d{1,2}\s*(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember))\b/i,
     requirement: /\b(syarat|persyaratan|dokumen|berkas|ijazah|ktp|kk|foto|rapor)\b/i,
     international_program: /\b(internasional|international|double\s*degree|dual\s*degree|student\s+exchange|study\s+exchange|mitra|luar\s+negeri|utb|dnui|help|gccp|bccp)\b/i,
-    list: /(?:^|\n)\s*(?:[-*•]|\d+\.)\s+\S|\b(?:terdiri\s+dari|meliputi|antara\s+lain)\b/i,
+    list: /(?:^|\n)\s*(?:[-*â€¢]|\d+\.)\s+\S|\b(?:terdiri\s+dari|meliputi|antara\s+lain)\b/i,
     program: /\b(program\s+studi|prodi|jurusan|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer)\b/i,
     scholarship: /\b(beasiswa|bantuan\s+biaya|potongan|kip|1k1s|skss)\b/i,
     accreditation: /\b(akreditasi|ban\s*-?\s*pt|baik\s+sekali|unggul|terakreditasi)\b/i,
@@ -327,7 +328,7 @@ function dedupeKey(text) {
   return normalizeText(text).slice(0, 260);
 }
 
-function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } = {}) {
+function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence, semanticContract } = {}) {
   const list = Array.isArray(contexts) ? contexts : [];
   const detectedIntent = detectIntent(question, intent);
   const requiredEntities = detectEntities(question);
@@ -351,6 +352,11 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
       const ent = scoreEntities(fullText, requiredEntities);
       const intentSc = scoreIntentAlignment(fullText, detectedIntent);
       if (!hasRequiredTopicEntityAlignment(fullText, requiredEntities)) return;
+      const contractCheck = semanticContract ? verifyAnswerAgainstContract(semanticContract, fullText, [context]) : { ok: true };
+      if (contractCheck && contractCheck.ok === false) {
+        rejected.push({ source: getSourceLabel(context, index), reason: 'contract_' + contractCheck.reason, preview: fullText.slice(0, 180) });
+        return;
+      }
       const total = relevance * 0.6 + ent * 0.2 + intentSc * 0.2;
       if (total > 0.20) { // slightly higher early threshold than the fallback later
         candidates.push({
@@ -393,6 +399,11 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
         rejected.push({ source: getSourceLabel(context, index), reason: 'missing_required_topic_entity', preview: text.slice(0, 180) });
         return;
       }
+      const contractCheck = semanticContract ? verifyAnswerAgainstContract(semanticContract, text, [context]) : { ok: true };
+      if (contractCheck && contractCheck.ok === false) {
+        rejected.push({ source: getSourceLabel(context, index), reason: 'contract_' + contractCheck.reason, preview: text.slice(0, 180) });
+        return;
+      }
       const entityScore = scoreEntities(text, requiredEntities);
       const intentScore = scoreIntentAlignment(text, detectedIntent);
       const total = relevanceScore * 0.45 + entityScore * 0.25 + intentScore * 0.3;
@@ -432,7 +443,7 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
       if (splitFaqEvidenceUnits(rawText).length) return;
       const text = cleanFaqMarkers(rawText);
       if (!text) return;
-      // CRITICAL: filter dokumen mentaw juga di lax fallback — jangan pernah pilih
+      // CRITICAL: filter dokumen mentaw juga di lax fallback â€” jangan pernah pilih
       // chunks yang berisi pasal, legal boilerplate, atau OCR noise.
       const rejection = shouldRejectEvidenceUnit(text, question, detectedIntent);
       if (rejection.reject) return;
@@ -441,6 +452,8 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
       const ent = scoreEntities(text, requiredEntities);
       const intentSc = scoreIntentAlignment(text, detectedIntent);
       if (!hasRequiredTopicEntityAlignment(text, requiredEntities)) return;
+      const contractCheck = semanticContract ? verifyAnswerAgainstContract(semanticContract, text, [context]) : { ok: true };
+      if (contractCheck && contractCheck.ok === false) return;
       const total = relevance * 0.6 + ent * 0.2 + intentSc * 0.2;
       // threshold dinaikkan dari 0.18 ke 0.25 untuk mengurangi noise
       if (total > 0.25) {
@@ -487,7 +500,8 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
     value: {
       detectedIntent,
       rejectedContextCount: rejected.length,
-      rejected
+      rejected,
+      semanticContract: semanticContract || null
     },
     enumerable: false
   });
@@ -496,13 +510,13 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence } 
 
 function hasConcreteList(text) {
   const value = String(text || '');
-  const bulletCount = (value.match(/(?:^|\n)\s*(?:[-*•]|\d+\.)\s+\S/g) || []).length;
+  const bulletCount = (value.match(/(?:^|\n)\s*(?:[-*â€¢]|\d+\.)\s+\S/g) || []).length;
   const namedPrograms = (value.match(/\b(?:GCCP|BCCP|Double\s*Degree|Dual\s*Degree|Student\s+Exchange|UTB|DNUI|HELP|Language\s+Learning\s+Center|Career\s+Center)\b/gi) || []).length;
   const commaItems = value.split(/[,;]/).filter((part) => getContentTerms(part).length >= 1).length;
   return bulletCount >= 2 || namedPrograms >= 2 || commaItems >= 3;
 }
 
-function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = {}) {
+function evaluateEvidenceAnswerability({ question, selectedEvidence, intent, semanticContract } = {}) {
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence.filter((item) => item && item.isSelectedEvidence === true) : [];
   const text = evidence.map((item) => item.text).join('\n');
   const detectedIntent = detectIntent(question, intent);
@@ -510,6 +524,10 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent } = 
   const terms = getContentTerms(question);
   const q = String(question || '').trim().toLowerCase();
   const rules = getEvidenceRequirements(detectedIntent, question);
+  const contractAnswerability = semanticContract ? verifyAnswerAgainstContract(semanticContract, text, evidence) : { ok: true };
+  if (contractAnswerability && contractAnswerability.ok === false) {
+    return { answerable: false, reason: 'contract_incompatible_evidence', missingEvidence: [contractAnswerability.reason], contractAnswerability };
+  }
 
   // Check for no content
   if (!terms.length && !isExplicitLegalQuestion(question, detectedIntent)) {
@@ -679,3 +697,6 @@ module.exports = {
   detectEvidenceIntent: detectIntent,
   isExplicitLegalQuestion
 };
+
+
+

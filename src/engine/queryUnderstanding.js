@@ -1,4 +1,5 @@
 const { normalizeUserQuery } = require('../utils/queryNormalizer');
+const { buildSemanticContract } = require('./semanticContract');
 
 const ID_MONTH_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -300,8 +301,8 @@ function resolveSourceDomainEntities(rawText) {
   const isGenericOpenWorldOrgName = (value) => {
     const candidate = String(value || '').trim().toLowerCase();
     if (!candidate) return true;
-    if (/^(?:kampus|stikom|itb|bali|ada|apa|saja|aja|di|itu|ini|yang|daftar|cara|bagaimana|gimana)(?:\s|$)/i.test(candidate)) return true;
-    if (/\b(?:ada|apa|saja|aja|kampus|stikom|itb|bali)\b/i.test(candidate)) return true;
+    if (/^(?:kampus|stikom|itb|bali|ada|apa|saja|aja|di|itu|ini|yang|daftar|cara|bagaimana|gimana|berapa|brp|brapa|jumlah|total|totalnya|banyak|semua|seluruh)(?:\s|$)/i.test(candidate)) return true;
+    if (/\b(?:ada|apa|saja|aja|kampus|stikom|itb|bali|berapa|brp|brapa|jumlah|total|totalnya|banyak|semua|seluruh)\b/i.test(candidate)) return true;
     return false;
   };
   // Open-world entity regex matching for generic UKMs/Himaprodi
@@ -395,10 +396,7 @@ function normalizeSlangTokens(input) {
     .replace(/\btitel\b/gi, 'gelar')
     .replace(/\bjmbarn\b/gi, 'jimbaran')
     .replace(/\bdr\b/gi, 'dari')
-    .replace(/\bbgt\b/gi, 'banget')
-    .replace(/\bga\b/gi, 'tidak')
-    .replace(/\bgak\b/gi, 'tidak')
-    .replace(/\bnggak\b/gi, 'tidak');
+    .replace(/\bbgt\b/gi, 'banget');
 }
 
 function extractExternalRelationConstraint(rawText) {
@@ -440,11 +438,23 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && /\b(?:data|form|formulir|biodata|nama|nik|nomor|email|kontak|pendaftaran|daftar|registrasi|pmb|camaba|mahasiswa\s+baru)\b/i.test(q)
     && /\b(?:daftar|pendaftaran|registrasi|pmb|camaba|mahasiswa\s+baru|form|formulir)\b/i.test(q)
     && !hasFee;
-  const asksRegistrationHow = /\b(?:cara|gimana|bagaimana|lewat|link|online|mau|ingin|pengen|pengin|bisa|how|where|apply|application|admission)\b/i.test(q)
+  const hasRegistrationTopicOpening = /\b(?:mau|ingin|pengen|pengin|boleh|izin|permisi|info(?:rmasi)?)\b/i.test(q)
+    && /\b(?:tanya|bertanya|nanya|menanyakan|soal|tentang|mengenai|info(?:rmasi)?)\b/i.test(q)
+    && /\b(?:pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|maba)\b/i.test(q)
+    && !hasFee
+    && !hasScholarship
+    && !hasAvailabilityStatus;
+  const hasPmbDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|definisi|maksud(?:nya)?|jelaskan)\b/i.test(q)
+    && /\b(?:pmb|penerimaan\s+mahasiswa\s+baru)\b/i.test(q);
+  const asksRegistrationHow = /\b(?:cara|gimana|bagaimana|alur|prosedur|langkah|lewat|online|how|where|apply|application|admission)\b/i.test(q)
     && /\b(?:daftar(?:nya)?|mendaftar|pendaftaran|registrasi|kuliah|pmb|mahasiswa\s+baru|camaba|maba)\b/i.test(q)
     && !hasFee
     && !hasScholarship
     && !hasAvailabilityStatus;
+  const asksRegistrationChannel = /\b(?:link|tautan|url|website|situs|channel|kanal|kontak|nomor|whatsapp|wa|lewat\s+mana|dimana|di\s+mana)\b/i.test(q)
+    && /\b(?:daftar(?:nya)?|pendaftaran|pendaftarannya|registrasi|pmb|mahasiswa\s+baru|camaba|maba)\b/i.test(q)
+    && !hasFee
+    && !hasScholarship;
   const hasSchedule = (/\b(?:jadwal|gelombang|gbg|bulan\s+depan|bulan\s+ini|bulan\s+lalu|deadline|tanggal|tgl|kapan|ditutup|tutup|buka|dibuka|aktif)\b/i.test(q)
     || Boolean(temporal.explicitDate || temporal.requestedMonth || temporal.requestedWave))
     && !/\b(?:berlaku|masa\s+berlaku|valid(?:itas)?|kedaluwarsa|expired)\b/i.test(q);
@@ -464,6 +474,8 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const asksList = /\b(?:apa\s+saja|apa\s+aja|daftar|list|pilihan|macam|sebutkan)\b/i.test(q);
   const asksCount = /\b(?:berapa\s+(?:banyak|jumlah(?:nya)?|total(?:nya)?|ada)|ada\s+berapa|jumlah(?:nya)?|total(?:nya)?|berapa\s+unit|berapa\s+organisasi)\b/i.test(q);
   const hasOrganization = /\b(?:ormawa|ukm|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi\s+kampus|kegiatan\s+mahasiswa|himaprodi|hima|himpunan\s+mahasiswa)\b/i.test(q);
+  const hasStudentSupport = /\b(?:lomba|kompetisi|prestasi|kegiatan\s+mahasiswa|kemahasiswaan|minat\s+dan\s+bakat|ormawa|ukm)\b/i.test(q)
+    && /\b(?:dukung|mendukung|dukungan|bantu|membantu|fasilitasi|fasilitas|ikut|mengikuti|ada|tersedia|program)\b/i.test(q);
   const hasAcademic = /\b(?:sks|skripsi|tugas\s+akhir|tesis|\bta\b|krs|wisuda|yudisium|kalender\s+akademik|baak|remedial|remidi|fokus\s+penelitian|riset)\b/i.test(q);
   const hasAcademicSchedule = hasAcademic
     && /\b(?:jadwal|kalender|kapan|tanggal|tgl|periode|pendaftaran|pelaksanaan|semester|ganjil|genap)\b/i.test(q);
@@ -505,12 +517,13 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && (hasInstitutionEntity || !hasNonInstitutionEntityScope);
   // International program + degree outcome: international/partner program entity + degree outcome token
   // Must be checked BEFORE generic hasProgramDegreeOutcome to avoid intent displacement
+  const asksExplicitCredentialOutcome = /\b(?:gelar(?:nya)?|ijazah(?:nya)?|titel(?:nya)?|credential|bachelor|lulusan\s+(?:dapat|dapet|dpt|mendapat)|(?:dapat|dapet|dpt|diperoleh|memperoleh|mendapat(?:kan)?)\s+(?:gelar|ijazah|titel|credential|bachelor))\b/i.test(q);
   const hasInternationalProgramDegreeOutcome = !hasFee
     && (entities.internationalPrograms.length > 0 || /\b(?:double\s*degree|dual\s*degree|utb|help|dnui)\b/i.test(q))
-    && /\b(?:gelar|degree|ijazah|titel|lulus(?:an)?\s+(?:dapat|dapet|dpt|mendapat)|gelarnya|gelar\s+apa|credential|bachelor)\b/i.test(q);
+    && asksExplicitCredentialOutcome;
   // Program degree outcome signal: [prodi/program/jurusan] + [gelar/degree/lulus] + question
   const hasProgramDegreeOutcome = (entities.programs.length > 0 || /\b(?:prodi|jurusan|program\s+studi|fakultas|kuliah\s+di)\b/i.test(q))
-    && /\b(?:gelar|degree|ijazah|titel|lulus(?:an)?\s+(?:dapat|dapet|dpt|mendapat)|gelarnya|gelar\s+apa)\b/i.test(q);
+    && asksExplicitCredentialOutcome;
   // Determine institution-history subtype for requestedFields
   const institutionHistorySubtype = (!hasInstitutionHistory || hasAccreditation) ? null
     : /\b(?:pendiri|tokoh\s+pendiri|siapa\s+yang\s+mendirikan|didirikan\s+oleh|penggagas|perintis|menginisiasi|inisiasi)\b/i.test(q) ? 'FOUNDING_PEOPLE'
@@ -622,7 +635,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && /\b(?:jurusan|prodi|program\s+studi|pasangan|padanan|sisi|diambil|ambil|yang\s+diambil|apa)\b/i.test(q);
   // Double degree outcome: partner program + degree/credential outcome — no hardcoded partner names
   const hasDoubleDegreeOutcome = /\b(?:double\s*degree|dual\s*degree|program\s+ganda|kuliah\s+ganda)\b/i.test(q)
-    && /\b(?:gelar|ijazah|degree|credential|sertifikat|dapat|diperoleh|lulusan\s+dapat|mendapatkan|kelulusan|lulus\s+dapat|peroleh)\b/i.test(q)
+    && asksExplicitCredentialOutcome
     && !hasDoubleDegreeSequence;
   // Cross-domain comparison query
   const hasComparisonQuery = /\b(?:sama(?:kah)?\s+dengan|apakah\s+sama|beda(?:kah)?\s+dengan|dibandingkan|vs|versus|sama\s+atau\s+berbeda|apa\s+bedanya)\b/i.test(q)
@@ -675,13 +688,17 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryDomain = 'student_organization';
     answerExpectation = 'count';
   } else if (asksOrganizationList) {
-    primaryIntent = 'ask_organization_profile';
+    primaryIntent = 'ask_organization_list';
     primaryDomain = 'student_organization';
     answerExpectation = 'list';
   } else if (hasOrganizationProfile) {
     primaryIntent = /\b(?:visi|misi)\b/i.test(q) ? 'ask_organization_vision_mission' : 'ask_organization_profile';
     primaryDomain = 'student_organization';
     answerExpectation = /\b(?:visi|misi)\b/i.test(q) ? 'vision_mission' : 'profile';
+  } else if (hasStudentSupport) {
+    primaryIntent = 'ask_student_support';
+    primaryDomain = 'student_support';
+    answerExpectation = 'support_availability';
   } else if (hasCareer) {
     primaryIntent = 'ask_career_service';
     primaryDomain = 'career';
@@ -766,11 +783,23 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_fee';
     primaryDomain = 'fee';
     answerExpectation = 'amount_or_breakdown';
+  } else if (hasPmbDefinition) {
+    primaryIntent = 'ask_definition';
+    primaryDomain = 'registration';
+    answerExpectation = 'definition';
+  } else if (hasRegistrationTopicOpening) {
+    primaryIntent = 'ask_general';
+    primaryDomain = 'registration';
+    answerExpectation = 'topic_opening';
+  } else if (entities.internationalPrograms.length > 0) {
+    primaryIntent = 'ask_availability';
+    primaryDomain = entities.internationalPrograms.some((entity) => String(entity.role || '') === 'double_degree') ? 'double_degree' : 'international_program';
+    answerExpectation = 'availability_or_safe_fallback';
   } else if (hasRegistrationDataCorrection) {
     primaryIntent = 'ask_registration_data_correction';
     primaryDomain = 'registration';
     answerExpectation = 'procedure';
-  } else if (asksRegistrationHow) {
+  } else if (asksRegistrationChannel || asksRegistrationHow) {
     primaryIntent = 'ask_registration_how';
     primaryDomain = 'registration';
     answerExpectation = 'procedure';
@@ -1117,8 +1146,11 @@ function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
     unknown: []
   };
   const classification = classifyIntentDomain(raw, normalizedQuery, entities, temporal);
-  const requestedFields = extractRequestedFields(raw, normalizedQuery, classification);
-  return {
+  let requestedFields = extractRequestedFields(raw, normalizedQuery, classification);
+  if (classification.intent && classification.intent.primary === 'ask_general' && classification.answerExpectation === 'topic_opening') {
+    requestedFields = requestedFields.filter(field => field !== 'procedureSteps');
+  }
+  const understanding = {
     rawQuery: raw,
     normalizedQuery,
     intent: classification.intent,
@@ -1134,6 +1166,8 @@ function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
     routingQuery: buildRoutingQuery(normalizedQuery, entities, classification),
     confidence: Math.min(classification.intent.confidence, classification.domain.confidence)
   };
+  understanding.contract = buildSemanticContract(understanding);
+  return understanding;
 }
 
 module.exports = {
@@ -1147,6 +1181,15 @@ module.exports = {
   resolveSourceDomainEntities,
   detectFeeType
 };
+
+
+
+
+
+
+
+
+
 
 
 
