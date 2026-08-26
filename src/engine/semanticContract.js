@@ -42,6 +42,7 @@ function inferRequestType(canonical) {
   if (/definition/.test(intent) || qType === 'definition' || fields.has('definition')) return 'definition';
   if (/link|tautan|url|website|situs|channel|kanal|lewat mana/.test(raw) && /daftar|pendaftaran|pendaftarannya|registrasi|pmb|mahasiswa baru|camaba/.test(raw)) return 'registration_channel';
   if (/fee/.test(intent) || fields.has('amount')) return 'fee';
+  if (intent === 'ask_contact' || fields.has('contact') || fields.has('phone') || fields.has('channel')) return 'contact';
   if ((canonical && canonical.constraints && canonical.constraints.relationType === 'double_degree_sequence') || qType === 'sequence') return 'sequence';
   if (/schedule|current_wave/.test(intent) || qType === 'schedule') return 'schedule';
   if (/registration_how|data_correction/.test(intent) || fields.has('procedureSteps')) return 'procedure';
@@ -86,7 +87,8 @@ function buildSemanticContract(canonical) {
       count: 'count',
       comparison: 'contrast',
       recommendation: 'recommendation',
-      availability: 'yes_no_or_no_data'
+      availability: 'yes_no_or_no_data',
+      contact: 'contact_or_no_data'
     }[requestType] || 'direct_answer',
     routingQuery: source.routingQuery || source.normalizedQuery || source.rawQuery || '',
     confidence: source.confidence || 0
@@ -112,7 +114,9 @@ function hasEntity(text, entity) {
     'double degree': ['dual degree', 'program ganda'],
     'double degree dnui': ['dnui', 'dalian'],
     'double degree help university': ['help university', 'help'],
-    'dual degree utb': ['utb', 'universitas teknologi bandung']
+    'dual degree utb': ['utb', 'universitas teknologi bandung'],
+    'bem-pm itb stikom bali': ['bem', 'bem pm', 'badan eksekutif mahasiswa', 'kemahasiswaan'],
+    'bem pm itb stikom bali': ['bem', 'bem pm', 'badan eksekutif mahasiswa', 'kemahasiswaan']
   };
   return (aliases[canonical] || []).some(alias => {
     const a = normalizeText(alias);
@@ -121,7 +125,14 @@ function hasEntity(text, entity) {
 }
 
 function isNoDataAnswer(answer) {
-  return /\b(?:belum|tidak)\s+(?:menemukan|tersedia|ada|mendapatkan|tercantum|memiliki)|tidak\s+cukup\s+data|konfirmasi\s+(?:ke|langsung)|tidak\s+memiliki\s+(?:program\s+studi|prodi|jurusan|program)/i.test(String(answer || ''));
+  const text = String(answer || '').trim();
+  if (!text) return false;
+  const positiveEvidence = /\b(?:ya,?\s+ada|berikut|berdasarkan\s+data|tersedia\s*:|program\s+double\s+degree|prodi\s+di\s+stikom)\b/i.test(text);
+  if (positiveEvidence && /\b(?:belum\s+tercantum|belum\s+tersedia|belum\s+ada)\b/i.test(text)) return false;
+  return /^(?:maaf[,\s]*)?(?:saya\s+)?(?:belum|tidak)\s+(?:menemukan|tersedia|ada|mendapatkan|tercantum|memiliki)\b/i.test(text)
+    || /^(?:maaf[,\s]*)?(?:saya\s+)?tidak\s+cukup\s+data\b/i.test(text)
+    || /^.*\bkonfirmasi\s+(?:ke|langsung)\b.*$/i.test(text) && !positiveEvidence
+    || /^(?:maaf[,\s]*)?(?:saya\s+)?tidak\s+memiliki\s+(?:program\s+studi|prodi|jurusan|program)\b/i.test(text);
 }
 function verifyAnswerAgainstContract(contract, answer, evidence = []) {
   if (!contract || typeof contract !== 'object') return { ok: true, reason: 'no_contract' };
@@ -131,8 +142,9 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
   const combined = text + '\n' + toArray(evidence).map(item => String(item && (item.text || item.chunk || item.content) || '')).join('\n');
   const missingEntities = toArray(contract.entities).filter(entity => entity.group !== 'unknown' && !hasEntity(combined, entity));
   if (missingEntities.length) return { ok: false, reason: 'missing_contract_entity', missingEntities: missingEntities.map(e => e.canonical) };
-  if (/\bnasional\b/i.test(contract.raw) && !/\bnasional\b/i.test(text)) return { ok: false, reason: 'missing_national_constraint' };
-  if (/\binternasional|international\b/i.test(contract.raw) && !/\binternasional|international|luar\s+negeri|malaysia|china|tional\b/i.test(text)) return { ok: false, reason: 'missing_international_constraint' };
+  const contractScope = String((contract.constraints && (contract.constraints.programScope || contract.constraints.geographicScope)) || '').toLowerCase();
+  if ((contractScope === 'national' || /\bnasional\b/i.test(contract.raw)) && !/\bnasional|national|utb|universitas\s+teknologi\s+bandung|indonesia\b/i.test(text)) return { ok: false, reason: 'missing_national_constraint' };
+  if ((contractScope === 'international' || /\binternasional|international\b/i.test(contract.raw)) && !/\binternasional|international|luar\s+negeri|malaysia|china|dnui|help\s+university\b/i.test(text)) return { ok: false, reason: 'missing_international_constraint' };
   if (contract.constraints && contract.constraints.registrationWave && contract.constraints.registrationWave.key) {
     const wave = contract.constraints.registrationWave;
     const key = String(wave.key || '').trim();

@@ -333,10 +333,16 @@ function resolveSourceDomainEntities(rawText) {
   }
   if (/\b(?:double\s*degree|dual\s*degree|program\s+ganda)\b/i.test(normalized)) {
     let partner = 'Double Degree';
+    let programScope = /\b(?:nasional|national)\b/i.test(normalized) ? 'national'
+      : (/\b(?:internasional|international|luar\s+negeri)\b/i.test(normalized) ? 'international' : null);
+    let country = null;
     if (/\bhelp\b/i.test(normalized)) partner = 'Double Degree HELP University';
     else if (/\bdnui|dalian\b/i.test(normalized)) partner = 'Double Degree DNUI';
     else if (/\butb\b/i.test(normalized)) partner = 'Dual Degree UTB';
-    addUnique(internationalPrograms, { canonical: partner, type: 'international_program', role: 'double_degree', confidence: 0.93, source: 'canonical-source-entity' });
+    if (/help/i.test(partner)) { programScope = 'international'; country = 'Malaysia'; }
+    if (/dnui/i.test(partner)) { programScope = 'international'; country = 'China'; }
+    if (/utb/i.test(partner)) { programScope = 'national'; country = 'Indonesia'; }
+    addUnique(internationalPrograms, { canonical: partner, type: 'international_program', role: 'double_degree', scope: programScope, country, confidence: 0.93, source: 'canonical-source-entity' });
   }
   if (/\b(?:form\s+iku|iku\s+pts|indikator\s+kinerja)\b/i.test(normalized)) {
     addUnique(documents, { canonical: 'FORM IKU PTS 2024 LLDIKTI', type: 'academic_document', role: 'institution_performance_document', confidence: 0.9, source: 'canonical-source-entity' });
@@ -438,6 +444,9 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && /\b(?:data|form|formulir|biodata|nama|nik|nomor|email|kontak|pendaftaran|daftar|registrasi|pmb|camaba|mahasiswa\s+baru)\b/i.test(q)
     && /\b(?:daftar|pendaftaran|registrasi|pmb|camaba|mahasiswa\s+baru|form|formulir)\b/i.test(q)
     && !hasFee;
+  const hasContactRequest = /\b(?:kontak|hubungi|menghubungi|nomor|no\.?\s*(?:wa|telp|telepon)?|wa\b|whatsapp|telepon|telp|phone|cs|customer\s*service|helpdesk)\b/i.test(q)
+    && /\b(?:kampus|stikom|itb|admin|pmb|kontak|nomor|telepon|telp|wa|whatsapp|hubungi|helpdesk)\b/i.test(q)
+    && !hasRegistrationDataCorrection;
   const hasRegistrationTopicOpening = /\b(?:mau|ingin|pengen|pengin|boleh|izin|permisi|info(?:rmasi)?)\b/i.test(q)
     && /\b(?:tanya|bertanya|nanya|menanyakan|soal|tentang|mengenai|info(?:rmasi)?)\b/i.test(q)
     && /\b(?:pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|maba)\b/i.test(q)
@@ -498,7 +507,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     );
   const hasAccreditation = /\b(?:akreditasi|akrediasi|ban\s*-?pt|lam\s*infokom|peringkat\s+akreditasi|sertifikat\s+akreditasi)\b/i.test(q);
   const hasDoubleDegreeSequence = /\b(?:dnui|dalian\s+neusoft|double\s*degree|dual\s*degree)\b/i.test(q)
-    && /\b(?:skema|tahapan|tahun\s+(?:ke-?\s*)?(?:1|2|3|4|pertama|kedua|ketiga|keempat|3|4)|bertahap|harus\s+ke|wajib\s+ke|pergi\s+ke|kuliah\s+di|onsite|online|offline|luar\s+negeri|negara\s+partner)\b/i.test(q);
+    && /\b(?:skema|tahapan|tahun\s+(?:ke-?\s*)?(?:1|2|3|4|pertama|kedua|ketiga|keempat|3|4)|bertahap|harus\s+ke|wajib\s+ke|pergi\s+ke|kuliah\s+di|onsite|online|offline)\b/i.test(q);
   // Institution-history semantic class — requires institution entity context before resolving subtype
   const hasInstitutionEntity = /\b(?:stikom|itb\s*stikom|kampus\s+(?:ini|stikom|itb)|institut\s+teknologi|itb)\b/i.test(q)
     || (entities.programs.length === 0 && entities.organizations.length === 0 && /\b(?:kampus|universitas|perguruan\s+tinggi|institusi|lembaga\s+pendidikan)\b/i.test(q));
@@ -637,6 +646,10 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const hasDoubleDegreeOutcome = /\b(?:double\s*degree|dual\s*degree|program\s+ganda|kuliah\s+ganda)\b/i.test(q)
     && asksExplicitCredentialOutcome
     && !hasDoubleDegreeSequence;
+  const doubleDegreeScope = /\b(?:nasional|national)\b/i.test(q) ? 'national'
+    : (/\b(?:internasional|international|luar\s+negeri)\b/i.test(q) ? 'international'
+      : (/\b(?:help|dnui|dalian|china|malaysia)\b/i.test(q) ? 'international'
+        : (/\b(?:utb|universitas\s+teknologi\s+bandung|bandung)\b/i.test(q) ? 'national' : null)));
   // Cross-domain comparison query
   const hasComparisonQuery = /\b(?:sama(?:kah)?\s+dengan|apakah\s+sama|beda(?:kah)?\s+dengan|dibandingkan|vs|versus|sama\s+atau\s+berbeda|apa\s+bedanya)\b/i.test(q)
     && /\b(?:jadwal|tanggal|gelombang|wisuda|yudisium|pmb|pendaftaran|akademik|dpp|ukt)\b/i.test(q);
@@ -771,6 +784,10 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_scholarship';
     primaryDomain = 'scholarship';
     answerExpectation = asksList ? 'list' : 'specific_fact_or_fallback';
+  } else if (hasContactRequest) {
+    primaryIntent = 'ask_contact';
+    primaryDomain = 'campus_contact';
+    answerExpectation = 'contact';
   } else if (hasInternationalAdminFee) {
     primaryIntent = 'ask_international_admin_fee';
     primaryDomain = 'international_admin';
@@ -869,6 +886,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   else if (hasDoubleDegreeOutcome || hasProgramDegreeOutcome) questionType = 'degree_outcome';
   else if (hasCareerGoalRecommendation) questionType = 'recommendation';
   else if (/\b(?:berlaku(?:nya)?\s+sampai|masa\s+berlaku(?:nya)?|valid(?:ity)?|sampai\s+kapan|sampai\s+tahun\s+berapa)\b/i.test(q)) questionType = 'validity';
+  else if (hasContactRequest) questionType = 'contact';
   else if (hasInstitutionHistory) questionType = institutionHistorySubtype ? institutionHistorySubtype.toLowerCase() : 'historical_state';
   else if (hasIkuDocument) questionType = 'definition';
   else if (careerTopic === 'definition' || asksProgramDefinition) questionType = 'definition';
@@ -886,6 +904,8 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
       registrationWave: temporal.requestedWave || null,
       academicLevel: academicLevels.length === 1 ? academicLevels[0] : null,
       academicLevels,
+      programScope: doubleDegreeScope,
+      geographicScope: doubleDegreeScope,
       locationIntent: hasLocationIntent,
       physicalAttribute: hasPhysicalAttribute,
       comparisonTarget: hasAcademicLevelComparison ? 'academic_level' : (hasLegalDocumentVsPmbComparison ? 'institution_legal_document_vs_pmb_schedule' : (hasInternationalProgramComparison ? 'international_program' : (hasFeeComponentComparison ? 'fee_component' : (hasAcademicCreditComparison ? 'academic_credit' : (hasEntityTypeComparison ? 'entity_type' : (/\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(q) ? 'program' : null)))))),
@@ -985,6 +1005,11 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
     fields.add('dataCorrection');
     fields.add('procedureSteps');
   }
+  if (intent === 'ask_contact' || domain === 'campus_contact') {
+    fields.add('contact');
+    fields.add('phone');
+    fields.add('channel');
+  }
   if (intent === 'ask_program_list') {
     fields.add('programList');
     if (/\b(?:jenjang|d3|s1|s\s*1|s2|s\s*2|diploma|sarjana|pascasarjana|magister)\b/i.test(q)) fields.add('academicLevel');
@@ -996,6 +1021,13 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
   if (intent === 'ask_international_program_comparison' || relationType === 'international_program_contrast') {
     fields.add('contrast');
     fields.add('programType');
+  }
+  if (domain === 'double_degree' || /\b(?:double\s*degree|dual\s*degree|program\s+ganda)\b/i.test(q)) {
+    fields.add('availability');
+    fields.add('partner');
+    fields.add('program');
+    if (classification && classification.constraints && classification.constraints.programScope) fields.add('programScope');
+    if (classification && classification.constraints && classification.constraints.geographicScope) fields.add('geographicScope');
   }
   if (relationType === 'institution_legal_document_vs_pmb_schedule') {
     fields.add('documentDate');
