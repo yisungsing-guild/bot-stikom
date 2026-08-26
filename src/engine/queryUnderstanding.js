@@ -445,8 +445,9 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && !hasFee
     && !hasScholarship
     && !hasAvailabilityStatus;
-  const hasSchedule = /\b(?:jadwal|gelombang|gbg|bulan\s+depan|bulan\s+ini|bulan\s+lalu|deadline|tanggal|tgl|kapan|ditutup|tutup|buka|dibuka|aktif)\b/i.test(q)
-    || Boolean(temporal.explicitDate || temporal.requestedMonth || temporal.requestedWave);
+  const hasSchedule = (/\b(?:jadwal|gelombang|gbg|bulan\s+depan|bulan\s+ini|bulan\s+lalu|deadline|tanggal|tgl|kapan|ditutup|tutup|buka|dibuka|aktif)\b/i.test(q)
+    || Boolean(temporal.explicitDate || temporal.requestedMonth || temporal.requestedWave))
+    && !/\b(?:berlaku|masa\s+berlaku|valid(?:itas)?|kedaluwarsa|expired)\b/i.test(q);
   const hasFacility = /\b(?:fasilitas|fasilias|fasiltas|layanan|sarana|prasarana|laboratorium|lab|perpustakaan|ruang|kantin|parkir|wifi|inkubator|inbis|language\s+learning|llc|hi\s*think|hithink)\b/i.test(q);
   const hasCareer = /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|cdc|karier|karir|prospek\s+kerja|peluang\s+kerja|lowongan|magang|job\s*fair|campus\s*hiring|tracer\s*study|persiapan\s+kerja|siap\s+kerja|dunia\s+kerja|pembekalan|melamar\s+pekerjaan|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|mencari\s+kerja|mencari\s+pekerjaan|bantuan\s+(?:persiapan|kerja|pekerjaan|karier|karir)|lulusan.*(?:pekerjaan|kerja|karier|karir)|alumni.*(?:pekerjaan|kerja|karier|karir))\b/i.test(q);
   const careerTopic = !hasCareer ? null

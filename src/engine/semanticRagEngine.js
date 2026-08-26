@@ -2091,10 +2091,15 @@ function inferContextTopicFromSession(sessionData) {
     { key: 'informatics_management', label: 'Prodi D3 Manajemen Informatika ITB STIKOM Bali', re: /\b(?:manajemen\s+informatika|\bmi\b)\b/ },
     { key: 'program_list', label: 'daftar prodi ITB STIKOM Bali', re: /\b(?:prodi|program\s+studi|jurusan)\b/ }
   ];
-  const lastUserMsg = String(getLastUserMessage(sessionData) || '').toLowerCase();
-  if (lastUserMsg) {
-    const matchedRecent = topics.find((topic) => topic.re.test(lastUserMsg));
-    if (matchedRecent) return matchedRecent;
+  const messages = sessionData && Array.isArray(sessionData.messages) ? sessionData.messages : [];
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const m = messages[i];
+    const direction = String((m && (m.direction || m.role)) || '').toLowerCase();
+    if (direction && direction !== 'user' && direction !== 'incoming' && direction !== 'inbound') continue;
+    const msgText = String((m && (m.message || m.content || m.text)) || '').toLowerCase();
+    if (!msgText || isConversationRawDocumentQuote(msgText)) continue;
+    const matched = topics.find((topic) => topic.re.test(msgText));
+    if (matched) return matched;
   }
   const recent = getRecentConversationTextForResolution(sessionData);
   if (!recent) return null;
