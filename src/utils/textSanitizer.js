@@ -18,6 +18,7 @@ function normalizeMojibakePunctuationForWhatsapp(input) {
 
     // Common CP1252-style mojibake (UTF-8 bytes mis-decoded as CP1252)
     [/â€”|â€“/g, '-'],
+    [/\u00e2\u20ac\u00a2/g, '-'],
     [/â€¦/g, '...'],
     [/â€œ|â€/g, '"'],
     [/â€˜|â€™/g, "'"],
@@ -55,7 +56,7 @@ function normalizeInlineBulletLists(input) {
   text = text.replace(/(:)\s+([-\u2022\u00b7])\s+(?=\S)/g, '$1\n$2 ');
 
   // Split subsequent inline bullets, but avoid touching hyphenated words or URLs.
-  text = text.replace(/([.!?])\s+([-\u2022\u00b7])\s+(?=[A-Za-z�-�0-9])/g, '$1\n$2 ');
+  text = text.replace(/([.!?])\s+([-\u2022\u00b7])\s+(?=[A-Za-z�-�0-9])/g, '$1\n$2 ');
 
   // Normalize bullet spacing after splitting.
   text = text.replace(/(^|\n)\s*[-\u2022\u00b7]\s*/g, '$1- ');

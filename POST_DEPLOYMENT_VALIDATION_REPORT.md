@@ -162,3 +162,67 @@ Local validation after patch:
 - Provider/webhook release parity: PASS, 2/2.
 
 Deployment validation must be rerun from a new release candidate commit. Current production verdict remains `DEPLOYMENT_VALIDATION_FAILED` until the remediated commit is deployed and protected non-sending smoke passes.
+
+## Remediated Release Deployment Validation - 2026-08-25
+
+Release candidate deployed from GitHub source:
+
+- Commit: `75ff3f13fb9cb53aa4f053e997d6398e0ef092e2`
+- Remote `main`: verified at `75ff3f13fb9cb53aa4f053e997d6398e0ef092e2`
+- Railway service: `bot-stikom`
+- Railway production deployment from remediated source: `cafdd825-a3fb-487f-be32-72e7c035e83d`
+- Temporary smoke-token deployment: `651a2ce8-6473-4b37-af26-d05ae0a7f3ab`
+- Final token-disabled cleanup deployment: `f3081333-3601-43d4-823d-750edad1860f`
+
+Runtime readiness:
+
+- Service status: Online.
+- Root health: HTTP 200.
+- Fonnte webhook safe GET: HTTP 200.
+- Runtime command: `npm run start:prod` -> `node --max-old-space-size=4096 src/index.js`.
+- Semantic RAG prewarm: success, `indexSize=835`.
+- Protected smoke endpoint was enabled only with temporary `SEMANTIC_SMOKE_TOKEN`, then token was deleted and the endpoint returned HTTP 404 again.
+- No live WhatsApp/Fonnte outbound message was sent.
+
+Protected non-sending semantic smoke:
+
+| ID | Source / Route | Latency | Result |
+|---|---|---:|---|
+| `pmb_current` | `semantic-rag-schedule-window` | 1664 ms | PASS |
+| `schedule_explicit` | `semantic-rag-schedule-window` | 396 ms | PASS, explicit `7 Juli 2026` preserved |
+| `registration_how` | `semantic-rag-registration-info` | 395 ms | PASS |
+| `registration_fee` | `semantic-rag-registration-fee` | 238 ms | PASS |
+| `ukt_ti` | `semantic-rag-fee-detail` | 245 ms | PASS |
+| `program_definition` | `semantic-rag-program-definition` | 189 ms | PASS |
+| `academic_sks` | `semantic-rag-academic-source` | 189 ms | PASS |
+| `academic_procedure` | `semantic-rag-academic-source` | 186 ms | PASS |
+| `student_exchange` | `semantic-rag-international-topic-composer` | 186 ms | PASS |
+| `ukm_count` | `semantic-rag-ukm-count` | 187 ms | PASS |
+| `ukm_profile` | `semantic-rag-ukm-list` | 352 ms | PASS |
+| `comparison_fee` | `semantic-rag-cross-domain-comparison` | 186 ms | PASS |
+| `comparison_program` | `semantic-rag-program-comparison` | 186 ms | PASS |
+| `double_degree` | `semantic-rag-dual-degree` | 186 ms | PASS |
+| `unsupported_entity` | `semantic-rag-unsupported-program-fee` | 2713 ms | PASS safe fallback |
+| `unsupported_relation` | `semantic-rag-explicit-external-insufficient-data` | 183 ms | PASS safe fallback |
+| `physical_fallback` | `semantic-rag-campus-physical-attribute-insufficient-data` | 182 ms | PASS safe fallback |
+| `raw_leak_guard` | `semantic-rag-raw-document-leak-feedback` | 186 ms | PASS |
+| `small_talk` | `semantic-rag-small-talk` | 190 ms | PASS |
+| `multi_turn_style` | `semantic-rag-program-comparison` | 185 ms | PASS |
+
+Organization count blocker verification:
+
+- Before: `Jumlah ormawa di ITB STIKOM Bali ada berapa?` returned `semantic-rag-meaning-verifier-blocked` and safe fallback.
+- After: same semantic class returns `semantic-rag-ukm-count` with grounded organization count answer.
+- Production latency after fix: 187 ms.
+- No wrong domain/entity/fact observed.
+- No raw evidence leak observed.
+- No unsupported claim observed.
+
+Log review:
+
+- Startup/module/provider/RAG prewarm logs clean.
+- One post-runtime `Redis Rate Limit Error: fetch failed` log was observed. Health remained 200 and smoke passed; classified as nonblocking infrastructure/log debt, not semantic correctness failure.
+
+Final deployment validation status:
+
+`DEPLOYED_VALIDATED`

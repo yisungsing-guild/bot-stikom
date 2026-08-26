@@ -1,4 +1,4 @@
-﻿const {
+const {
   querySemanticRag,
   verifyOutboundSemanticRelevance
 } = require('../src/engine/semanticRagEngine');
@@ -71,6 +71,19 @@ describe('organization count verifier contract', () => {
     expect(fabricated.ok).toBe(false);
   });
 
+  test('safe-fallbacks unsupported specific organization count instead of substituting total collection', async () => {
+    const unsupportedSpecific = await ask('berapa jumlah UKM paralayang di STIKOM Bali?');
+    expect(unsupportedSpecific.source).not.toBe('semantic-rag-ukm-count');
+    expect(unsupportedSpecific.answer).toMatch(/belum menemukan|belum bisa|konfirmasi/i);
+    expect(unsupportedSpecific.answer).not.toMatch(/32\s+(?:UKM|ORMAWA|Ormawa)/i);
+    expect(unsupportedSpecific.answer).not.toMatch(/Student Exchange|Hi-?Think|Double Degree/i);
+  }, 30000);
+
+  test('keeps cross-domain count wording out of organization-count contract', async () => {
+    const internationalCount = await ask('jumlah program Student Exchange ada berapa?');
+    expect(internationalCount.source).not.toBe('semantic-rag-ukm-count');
+    expect(internationalCount.answer).not.toMatch(/32\s+(?:UKM|ORMAWA|Ormawa)/i);
+  }, 30000);
   test('does not hijack non-organization count requests', async () => {
     const facilityCount = await ask('ada berapa lokasi kampus?');
     expect(facilityCount.source).not.toBe('semantic-rag-ukm-count');
