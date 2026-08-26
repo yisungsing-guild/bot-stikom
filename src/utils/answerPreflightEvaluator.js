@@ -451,7 +451,7 @@ function detectCrossDomainAnswerLeak(answer, userQuery = '', options = {}) {
   if (!q.trim() || !a.trim() || isConversationalQuery(userQuery)) {
     return { leak: false, leakedDomains: [] };
   }
-  if (options && options.source && /out-of-domain|unsupported-program|unsupported-facility|unsupported-policy|safe-fallback/i.test(String(options.source || ''))) {
+  if (options && options.source && /out-of-domain|unsupported-program|unsupported-facility|unsupported-policy|safe-fallback|program-recommendation/i.test(String(options.source || ''))) {
     return { leak: false, leakedDomains: [] };
   }
   if (/tidak memiliki program studi|belum menemukan data biaya untuk program studi|hanya menyelenggarakan program studi/i.test(a)) {

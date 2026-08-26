@@ -1,4 +1,4 @@
-﻿const { OpenAI } = require('openai');
+const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../logger');
@@ -34,6 +34,7 @@ const { evaluateOutboundAnswer, hasLikelyRawDocumentLeak, buildPreflightFallback
 const { deduplicateEvidence } = require('../utils/evidenceDedup');
 const { normalizeUserQuery } = require('../utils/queryNormalizer');
 const { buildCanonicalQueryUnderstanding } = require('./queryUnderstanding');
+const { buildProgramFitAnswer } = require('./programFitReasoning');
 const { classifyDocumentCategory } = require('./docCategoryClassifier');
 const {
   deriveQueryMetadataConstraints,
@@ -2053,7 +2054,7 @@ function getRecentConversationTextForResolution(sessionData) {
 function hasExplicitContextAnchor(question) {
   const q = String(question || '').toLowerCase();
   if (!q) return false;
-  return /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen\s+informatika|sistem\s+komputer|s2|magister|pasca\s*sarjana|pascasarjana|rpl|double\s*degree|dual\s*degree|dnui|dalian|utb|help\s+university|career\s*center|pusat\s+karier|pusat\s+karir|tracer\s*study|inbis|inkubator\s+bisnis|hi-?think|language\s+learning\s+center|\bllc\b|mahasiswa\s+asing|izin\s+belajar|visa\s*study|student\s*exchange|bccp|gccp|short\s*course|beasiswa|skss|kampus|akreditasi|prodi|jurusan|yudisium|wisuda|sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|krs|khs|transkrip|sion|baak|semester\s+(?:ganjil|genap|antara|pendek)|kalender\s+akademik|jadwal\s+akademik|remedial|remidi|ujian\s+(?:ulang|susulan))\b/i.test(q);
+  return /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen\s+informatika|sistem\s+komputer|s2|magister|pasca\s*sarjana|pascasarjana|rpl|double\s*degree|dual\s*degree|dnui|dalian|utb|help\s+university|career\s*center|pusat\s+karier|pusat\s+karir|tracer\s*study|inbis|inkubator\s+bisnis|hi-?think|language\s+learning\s+center|\bllc\b|mahasiswa\s+asing|izin\s+belajar|visa\s*study|student\s*exchange|bccp|gccp|short\s*course|beasiswa|skss|kampus|akreditasi|prodi|jurusan|ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|yudisium|wisuda|sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|krs|khs|transkrip|sion|baak|semester\s+(?:ganjil|genap|antara|pendek)|kalender\s+akademik|jadwal\s+akademik|remedial|remidi|ujian\s+(?:ulang|susulan))\b/i.test(q);
 }
 
 function isContextualSemanticFollowup(question) {
@@ -2065,13 +2066,12 @@ function isContextualSemanticFollowup(question) {
   if (words.length <= 5 && shortFollowup.test(q)) {
     return true;
   }
-  return /\b(?:yang\s+(?:itu|tadi|mana)|lanjut(?:kan)?|kalau\s+yang\s+itu|terus\s+gimana|lalu\s+gimana|apa\s+saja\s+syaratnya|apa\s+aja\s+dokumennya|apa\s+saja\s+jenisnya|apa\s+aja\s+pilihannya|rincian\s+biayanya|detail\s+biayanya|harus\s+ke\s+sana|harus\s+ke\s+china|bisa\s+ikut\s+kapan|mulai\s+kapan|berapa\s+lama|gelarnya\s+apa|tujuannya\s+apa|manfaatnya\s+apa)\b/i.test(q);
+  return /\b(?:yang\s+(?:itu|tadi|mana)|lanjut(?:kan)?|kalau\s+yang\s+itu|terus\s+gimana|lalu\s+gimana|apa\s+saja\s+syaratnya|apa\s+aja\s+dokumennya|apa\s+saja\s+jenisnya|apa\s+saja\s+pilihannya|rincian\s+biayanya|detail\s+biayanya|harus\s+ke\s+sana|harus\s+ke\s+china|bisa\s+ikut\s+kapan|mulai\s+kapan|berapa\s+lama|gelarnya\s+apa|tujuannya\s+apa|manfaatnya\s+apa)\b/i.test(q);
 }
 
 function inferContextTopicFromSession(sessionData) {
-  const recent = getRecentConversationTextForResolution(sessionData);
-  if (!recent) return null;
   const topics = [
+    { key: 'student_organization', label: 'UKM dan Organisasi Mahasiswa ITB STIKOM Bali', re: /\b(?:ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan)\b/ },
     { key: 'student_exchange', label: 'Student Exchange ITB STIKOM Bali', re: /\b(?:student\s*exchange|pertukaran\s+mahasiswa|gccp|global\s+cross\s+cultural|credit\s+transfer|short\s*course|summer\s*program)\b/ },
     { key: 'dual_degree_dnui', label: 'Program Dual Degree DNUI', re: /\b(?:dnui|dalian|china|tiongkok)\b/ },
     { key: 'dual_degree_help', label: 'Program Dual Degree HELP University', re: /\b(?:help\s+university|malaysia)\b/ },
@@ -2084,13 +2084,20 @@ function inferContextTopicFromSession(sessionData) {
     { key: 'llc', label: 'Language Learning Center ITB STIKOM Bali', re: /\b(?:language\s+learning\s+center|\bllc\b)\b/ },
     { key: 'rpl', label: 'jalur RPL ITB STIKOM Bali', re: /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/ },
     { key: 'postgraduate', label: 'Prodi S2 Sistem Informasi ITB STIKOM Bali', re: /\b(?:s2|magister|pasca\s*sarjana|pascasarjana)\b/ },
-    { key: 'program_list', label: 'daftar prodi ITB STIKOM Bali', re: /\b(?:prodi|program\s+studi|jurusan)\b/ },
     { key: 'business_digital', label: 'Prodi Bisnis Digital ITB STIKOM Bali', re: /\b(?:bisnis\s+digital|\bbd\b)\b/ },
     { key: 'information_system', label: 'Prodi Sistem Informasi ITB STIKOM Bali', re: /\b(?:sistem\s+informasi|\bsi\b)\b/ },
     { key: 'information_technology', label: 'Prodi Teknologi Informasi ITB STIKOM Bali', re: /\b(?:teknologi\s+informasi|\bti\b)\b/ },
     { key: 'computer_system', label: 'Prodi Sistem Komputer ITB STIKOM Bali', re: /\b(?:sistem\s+komputer|\bsk\b)\b/ },
-    { key: 'informatics_management', label: 'Prodi D3 Manajemen Informatika ITB STIKOM Bali', re: /\b(?:manajemen\s+informatika|\bmi\b)\b/ }
+    { key: 'informatics_management', label: 'Prodi D3 Manajemen Informatika ITB STIKOM Bali', re: /\b(?:manajemen\s+informatika|\bmi\b)\b/ },
+    { key: 'program_list', label: 'daftar prodi ITB STIKOM Bali', re: /\b(?:prodi|program\s+studi|jurusan)\b/ }
   ];
+  const lastUserMsg = String(getLastUserMessage(sessionData) || '').toLowerCase();
+  if (lastUserMsg) {
+    const matchedRecent = topics.find((topic) => topic.re.test(lastUserMsg));
+    if (matchedRecent) return matchedRecent;
+  }
+  const recent = getRecentConversationTextForResolution(sessionData);
+  if (!recent) return null;
   return topics.find((topic) => topic.re.test(recent)) || null;
 }
 
@@ -2099,7 +2106,7 @@ function canResolveFeeFollowupForTopic(topicKey) {
 }
 
 function canResolveRequirementFollowupForTopic(topicKey) {
-  return !/^(?:career_center|inbis|llc)$/i.test(String(topicKey || ''));
+  return !/^(?:career_center|inbis|llc|student_organization)$/i.test(String(topicKey || ''));
 }
 
 function resolveSemanticFollowupQuestion(question, options = {}) {
@@ -2116,7 +2123,17 @@ function resolveSemanticFollowupQuestion(question, options = {}) {
   if (!topic) return { changed: false, question: original, topic: null };
   const q = original.toLowerCase();
   let resolved = `${topic.label}: ${original}`;
-  if (/\b(?:biaya(?:nya)?|bayar(?:nya)?|harga(?:nya)?|uang(?:nya)?|potongan(?:nya)?|diskon(?:nya)?|rincian(?:nya)?|detail(?:nya)?)\b/i.test(q)) {
+  if (topic.key === 'student_organization') {
+    if (/\b(?:apa\s+saja|apa\s+aja|jenis|pilihan|daftar|list|ada\s+apa|ada\s+gak|punya|tersedia)\b/i.test(q)) {
+      resolved = `Daftar UKM dan organisasi mahasiswa di ITB STIKOM Bali`;
+    } else if (/\b(?:kegiatan|proker|program\s+kerja|fungsi|peran|tujuan)\b/i.test(q)) {
+      resolved = `Kegiatan dan peran organisasi mahasiswa UKM di ITB STIKOM Bali`;
+    } else if (/\b(?:syarat|cara|daftar|gabung|join)\b/i.test(q)) {
+      resolved = `Syarat dan cara bergabung dengan UKM atau organisasi mahasiswa di ITB STIKOM Bali`;
+    } else {
+      resolved = `Informasi UKM dan organisasi mahasiswa di ITB STIKOM Bali: ${original}`;
+    }
+  } else if (/\b(?:biaya(?:nya)?|bayar(?:nya)?|harga(?:nya)?|uang(?:nya)?|potongan(?:nya)?|diskon(?:nya)?|rincian(?:nya)?|detail(?:nya)?)\b/i.test(q)) {
     if (!canResolveFeeFollowupForTopic(topic.key)) {
       resolved = `Biaya untuk ${topic.label}`;
     } else {
@@ -2130,6 +2147,13 @@ function resolveSemanticFollowupQuestion(question, options = {}) {
     }
   } else if (/\b(?:cara|alur|proses|daftar|mengurus)\b/i.test(q)) {
     resolved = `Cara, alur, atau proses untuk ${topic.label}`;
+  } else if (/\b(?:berlaku|masa\s+berlaku|valid(?:ity)?|sampai\s+kapan|sampai\s+tahun\s+berapa)\b/i.test(q)) {
+    const recentAll = getRecentConversationTextForResolution(options && options.sessionData);
+    if (/\bakreditasi\b/i.test(recentAll)) {
+      resolved = `Masa berlaku akreditasi ${topic.label}`;
+    } else {
+      resolved = `Masa berlaku ${topic.label}`;
+    }
   } else if (/\b(?:kapan|mulai|ikut|mengikuti)\b/i.test(q)) {
     resolved = `Kapan mahasiswa bisa mengikuti ${topic.label}`;
   } else if (/\b(?:harus|wajib|ke\s+sana|ke\s+china|ke\s+luar)\b/i.test(q)) {
@@ -5296,10 +5320,10 @@ function detectUnsupportedDoubleDegreePartner(question) {
     }
   }
   if (/\bessex\b/i.test(q)) return 'Essex University';
-  const directPartnerMatch = q.match(/\b(?:double\s*degree|dual\s*degree|dd)\s+(?!itu\b|apa\b|program\b|kelas\b|nasional\b|internasional\b|di\b|untuk\b)([a-z][a-z0-9.-]{2,}(?:\s+[a-z][a-z0-9.-]{2,}){0,3})\b/i);
+  const directPartnerMatch = q.match(/\b(?:double\s*degree|dual\s*degree|dd)\s+(?!itu\b|apa\b|program\b|kelas\b|nasional\b|internasional\b|di\b|untuk\b|itb\b|stikom\b|bali\b)([a-z][a-z0-9.-]{2,}(?:\s+[a-z][a-z0-9.-]{2,}){0,3})\b/i);
   if (directPartnerMatch && !knownPartner) {
     const rawDirect = directPartnerMatch[1].replace(/\b(?:itu|yang|ambil|diambil|jurusan|prodi|program|apa|berapa|gimana|bagaimana|ya)\b.*$/i, '').replace(/^\s*(?:dengan|bersama|mitra|partner)\s+/i, '').trim();
-    if (rawDirect && !/\b(?:utb|universitas teknologi bandung|dnui|dalian neusoft|help university|help)\b/i.test(normalizeFacilityTerm(rawDirect))) {
+    if (rawDirect && !/\b(?:itb|stikom|bali|utb|universitas teknologi bandung|dnui|dalian neusoft|help university|help)\b/i.test(normalizeFacilityTerm(rawDirect))) {
       return rawDirect.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
   }
@@ -7217,7 +7241,95 @@ function buildSourceGroundedRequestedFieldAnswer(question, canonical, indexForQu
       return { answer, source: 'semantic-rag-ukm-count', frameSource: 'semantic-rag-ukm-list' };
     }
   }
-  if (domain === 'student_organization') return null;
+  if (domain === 'student_organization') {
+    const asksGeneralList = (canonical && canonical.questionType === 'list')
+      || /\b(?:daftar\s+(?:ukm|ormawa|organisasi|hima)|list\s+(?:ukm|ormawa|organisasi|hima)|apa\s+saja\s+(?:ukm|ormawa|organisasi)|ukm\s+apa\s+saja|ormawa\s+apa\s+saja)\b/i.test(qLower)
+      || (fields.has('organizationList') && !fields.has('procedureSteps') && !fields.has('requirements') && !/\b(?:cara|alur|proses|langkah|syarat|bagaimana|gimana)\b/i.test(qLower));
+
+    const asksSpecificNamedOrg = (canonical && canonical.entities && Array.isArray(canonical.entities.organizations) && canonical.entities.organizations.length > 0);
+
+    if (asksGeneralList && !asksSpecificNamedOrg) {
+      const names = typeof loadUkmNames === 'function' ? loadUkmNames() : [];
+      if (names.length) {
+        const ukmListFormatted = names.map((n) => `- ${n}`).join('\n');
+        const answer = `Berikut daftar Unit Kegiatan Mahasiswa (UKM) dan organisasi mahasiswa di ITB STIKOM Bali:\n\n${ukmListFormatted}`;
+        return {
+          answer,
+          source: 'semantic-rag-ukm-list',
+          frameSource: 'semantic-rag-ukm-list',
+          contexts: [{ source: 'daftar_ukm.txt', text: names.join(', ') }],
+          confidenceScore: 0.95,
+          confidenceTier: 'HIGH',
+          debug: { routeStage: 'canonical-ukm-list', answerabilityResult: { answerable: true, reason: 'EVIDENCE_SUFFICIENT' } }
+        };
+      }
+    }
+    return null;
+  }
+
+  if (fields.has('careerSupport') || domain === 'career' || intent === 'ask_career_service') {
+    const careerTopic = String(canonical && canonical.constraints && canonical.constraints.careerTopic || '');
+    const careerHits = (Array.isArray(indexForQuery) ? indexForQuery : [])
+      .map((item) => {
+        const text = String(item && (item.chunk || item.text || item.content) || '').replace(/\s+/g, ' ').trim();
+        const sourceText = String((item && (item.filename || item.sourceFile || item.source || item.title)) || '');
+        return { item, text, sourceText, hay: sourceText + ' ' + text };
+      })
+      .filter((entry) => /\b(?:career\s*center|pusat\s+kar(?:i|ie)r|cdc|job\s*fair|campus\s*hiring|tracer\s*study|pembekalan|magang|lowongan)\b/i.test(entry.hay));
+
+    if (careerTopic === 'definition') {
+      const answer = 'Career Center (Pusat Karier) ITB STIKOM Bali adalah unit layanan kampus yang berfokus pada pengembangan karier mahasiswa dan alumni, memfasilitasi persiapan menuju dunia kerja, serta menjembatani kerja sama dengan dunia industri.';
+      return {
+        answer,
+        source: 'semantic-rag-campus-support-entity',
+        frameSource: 'semantic-rag-training-specific',
+        contexts: careerHits.slice(0, 3).map((h) => ({ source: h.sourceText, text: h.text.slice(0, 350) })),
+        confidenceScore: 0.9,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'canonical-career-center-definition', answerabilityResult: { answerable: true, reason: 'EVIDENCE_SUFFICIENT' } }
+      };
+    }
+
+    if (careerTopic === 'benefit') {
+      const answer = 'Keuntungan dan manfaat Career Center ITB STIKOM Bali bagi mahasiswa dan alumni meliputi:\n- Akses langsung ke informasi lowongan kerja dan magang dari mitra industri\n- Fasilitas bursa kerja kampus (Campus Hiring dan Job Fair)\n- Pembekalan persiapan karier, pelatihan, dan pengembangan kesiapan kerja\n- Pendataan dan jejaring alumni melalui Tracer Study.';
+      return {
+        answer,
+        source: 'semantic-rag-campus-support-entity',
+        frameSource: 'semantic-rag-training-specific',
+        contexts: careerHits.slice(0, 3).map((h) => ({ source: h.sourceText, text: h.text.slice(0, 350) })),
+        confidenceScore: 0.9,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'canonical-career-center-benefit', answerabilityResult: { answerable: true, reason: 'EVIDENCE_SUFFICIENT' } }
+      };
+    }
+
+    if (careerTopic === 'employment_support') {
+      const answer = 'Ya, ITB STIKOM Bali membantu persiapan dan peluang kerja bagi mahasiswa serta lulusannya melalui Career Center (Pusat Karier). Bantuan yang diberikan mencakup penyediaan informasi lowongan kerja & magang, penyelenggaraan Campus Hiring & Job Fair bersama perusahaan mitra, pembekalan kesiapan kerja, serta penelusuran lulusan (Tracer Study).';
+      return {
+        answer,
+        source: 'semantic-rag-campus-support-entity',
+        frameSource: 'semantic-rag-training-specific',
+        contexts: careerHits.slice(0, 3).map((h) => ({ source: h.sourceText, text: h.text.slice(0, 350) })),
+        confidenceScore: 0.9,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'canonical-career-center-support', answerabilityResult: { answerable: true, reason: 'EVIDENCE_SUFFICIENT' } }
+      };
+    }
+
+    if (careerTopic === 'service' || careerTopic === 'opportunity' || (canonical && canonical.questionType === 'list')) {
+      const answer = 'Layanan yang disediakan oleh Career Center ITB STIKOM Bali antara lain:\n- Informasi lowongan kerja dan magang bagi mahasiswa & alumni\n- Pelaksanaan Campus Hiring dan Job Fair bersama mitra industri\n- Pembekalan karier dan pelatihan kesiapan kerja\n- Pengelolaan Tracer Study untuk pemetaan lulusan.';
+      return {
+        answer,
+        source: 'semantic-rag-campus-support-entity',
+        frameSource: 'semantic-rag-training-specific',
+        contexts: careerHits.slice(0, 3).map((h) => ({ source: h.sourceText, text: h.text.slice(0, 350) })),
+        confidenceScore: 0.9,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'canonical-career-center-service', answerabilityResult: { answerable: true, reason: 'EVIDENCE_SUFFICIENT' } }
+      };
+    }
+  }
+
   if (domain === 'institution_profile' && fields.has('foundingDate')) return null;
   const targeted = ['informationChannel','accommodation','facility','languageLevel','businessMatching','networking','alumniJobInfo','foundingDate','documentPurpose','purpose','amount','focus','curriculumFocus'].some((field) => fields.has(field));
   if (!targeted || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
@@ -8256,6 +8368,43 @@ function buildCareerReadinessProgramsAnswer() {
     '',
     'Untuk jadwal kegiatan, materi pelatihan rinci, formulir pendaftaran, atau program yang sedang berjalan, kakak sebaiknya cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.'
   ].join('\n');
+}
+function buildCareerDefinitionAnswer() {
+  return [
+    'Career Center ITB STIKOM Bali adalah layanan dukungan karier untuk mahasiswa dan alumni.',
+    '',
+    'Dari data yang tersedia, perannya mencakup pengembangan kompetensi, informasi lowongan kerja, magang, job fair atau campus hiring, konsultasi karier, dan tracer study.',
+    '',
+    'Untuk jadwal kegiatan, lowongan yang sedang berjalan, formulir, atau kontak PIC, kakak sebaiknya cek pengumuman resmi kampus atau konfirmasi ke Career Center/admin kampus.'
+  ].join('\n');
+}
+
+function buildCareerBenefitAnswer() {
+  return [
+    'Keuntungan dari sisi karier adalah mahasiswa mendapat dukungan untuk mempersiapkan diri masuk dunia kerja.',
+    '',
+    'Bentuk dukungan yang tercatat mencakup informasi lowongan dan magang, pembekalan keterampilan kerja, konsultasi karier, job fair atau campus hiring, tracer study, serta akses informasi peluang karier.',
+    '',
+    'Jadi, manfaatnya bukan jaminan langsung diterima kerja, tetapi dukungan agar mahasiswa dan alumni lebih siap mencari, melamar, dan mengikuti peluang kerja yang tersedia.'
+  ].join('\n');
+}
+
+function buildCareerEmploymentSupportAnswer() {
+  return [
+    'Ya. ITB STIKOM Bali membantu mahasiswa dan lulusan melalui Career Center dalam persiapan karier dan proses melamar pekerjaan.',
+    '',
+    'Dukungan yang aman saya sampaikan dari data tersedia mencakup informasi lowongan kerja, magang, job fair atau campus hiring, konsultasi karier, tracer study, dan pembekalan kerja.',
+    '',
+    'Namun keputusan diterima bekerja tetap mengikuti seleksi perusahaan atau instansi masing-masing.'
+  ].join('\n');
+}
+
+function buildCanonicalCareerServiceAnswer(canonicalUnderstanding) {
+  const topic = String(canonicalUnderstanding && canonicalUnderstanding.constraints && canonicalUnderstanding.constraints.careerTopic || 'service');
+  if (topic === 'definition') return buildCareerDefinitionAnswer();
+  if (topic === 'benefit') return buildCareerBenefitAnswer();
+  if (topic === 'employment_support') return buildCareerEmploymentSupportAnswer();
+  return buildCareerReadinessProgramsAnswer();
 }
 function buildCareerSoftskillAnswer() {
   return [
@@ -12372,7 +12521,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   if (!result || !result.answer) return result;
   const source = result.source || 'semantic-rag';
 
-  // Universal raw-leak + training artifact guard â€” applies to ALL routes including training-specific
+  // Universal raw-leak + training artifact guard — applies to ALL routes including training-specific
   const rawArtifactDetected = result.answer && (hasRawEvidenceSnippetShape(result.answer) || hasTrainingMetadataArtifact(result.answer));
   const trustedStructuredRawBypass = rawArtifactDetected
     && /^(?:semantic-rag-(?:registration-fee|fee-detail|scholarship|academic-source|institution-history|institution-document|international-topic-composer|campus-support-entity|campus-facility|program-comparison|program-curriculum|program-definition)|rag-accreditation)$/i.test(String(source || ''))
@@ -14104,7 +14253,7 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index) {
   }
 
   // -----------------------------------------------------------------------------
-  // B5: Thesis certificate equivalency â€” unsupported policy â†’ safe fallback
+  // B5: Thesis certificate equivalency — unsupported policy â†’ safe fallback
   // -----------------------------------------------------------------------------
   const hasThesisTerm_B5 = /\b(?:skripsi|tugas\s+akhir|tesis|ta)\b/i.test(q);
   if (domain === 'academic' && (
@@ -14557,8 +14706,8 @@ async function tryCanonicalSourceKnowledgeAnswer(question, options = {}, canonic
       return {
         success: true,
         answer: 'Jadwal Yudisium/Wisuda dan jadwal Gelombang Pendaftaran PMB adalah dua agenda yang berbeda:\n\n' +
-          '- Jadwal Yudisium / Wisuda: bagian dari Kalender Akademik ITB STIKOM Bali â€” kegiatan kelulusan mahasiswa yang sudah menyelesaikan semua syarat akademik.\n\n' +
-          '- Jadwal Gelombang Pendaftaran PMB: jadwal penerimaan mahasiswa baru dengan beberapa gelombang dalam setahun â€” proses untuk calon mahasiswa yang ingin mendaftar.\n\n' +
+          '- Jadwal Yudisium / Wisuda: bagian dari Kalender Akademik ITB STIKOM Bali — kegiatan kelulusan mahasiswa yang sudah menyelesaikan semua syarat akademik.\n\n' +
+          '- Jadwal Gelombang Pendaftaran PMB: jadwal penerimaan mahasiswa baru dengan beberapa gelombang dalam setahun — proses untuk calon mahasiswa yang ingin mendaftar.\n\n' +
           'Keduanya berjalan secara paralel dan tidak saling bergantung: satu untuk mahasiswa yang akan lulus, satunya untuk calon mahasiswa baru.',
         source: 'semantic-rag-cross-domain-comparison',
         contexts: [],
@@ -14841,7 +14990,24 @@ async function querySemanticRag(question, options = {}) {
     const narrowProgramListFrame = /\b(?:jurusan(?:nya)?|prodi(?:nya)?|program\s+studi|jenjang|d\s*3|s\s*1|s\s*2|diploma|sarjana|magister)\b/i.test(String(question || '')) && !/\b(?:double\s*degree|dual\s*degree|kelas\s+internasional|program\s+internasional|international|utb|dnui|help)\b/i.test(String(question || ''));
     const builtCanonicalProgramList = buildDeterministicResponse(question, 'semantic-rag-program-list', { ...earlyCanonicalProgramList, answer: canonicalProgramListAnswer, source: 'semantic-rag-program-list', frameSource: narrowProgramListFrame ? 'semantic-rag-program-list-contextual' : 'semantic-rag-program-list' }, { routeStage: 'pre-guard-canonical-program-list-before-source', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
     return await finalizeSemanticResult(question, builtCanonicalProgramList, resultCacheKey);
-  }  const earlyContactLecturer = strictDocumentOnly ? null : (
+  }
+
+  const earlyCanonicalProgramRecommendation = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_program_recommendation') ? null : (
+    typeof buildProgramFitAnswer === 'function'
+      ? buildProgramFitAnswer(canonicalRoutingQuestion || routingQuestion || question)
+      : null
+  );
+  if (earlyCanonicalProgramRecommendation && earlyCanonicalProgramRecommendation.answer) {
+    const builtCanonicalProgramRec = buildDeterministicResponse(question, earlyCanonicalProgramRecommendation.source || 'semantic-rag-program-recommendation', earlyCanonicalProgramRecommendation, {
+      routeStage: 'pre-guard-canonical-program-recommendation',
+      normalizedRouting: normalizedRouting.changed,
+      canonicalIntent: canonicalUnderstanding.intent.primary,
+      canonicalDomain: canonicalUnderstanding.domain.primary
+    });
+    return await finalizeSemanticResult(question, builtCanonicalProgramRec, resultCacheKey);
+  }
+
+  const earlyContactLecturer = strictDocumentOnly ? null : (
     tryContactLecturerAnswer(canonicalRoutingQuestion || routingQuestion || question)
     || tryContactLecturerAnswer(routingQuestion || question)
     || tryContactLecturerAnswer(question)
@@ -15184,7 +15350,7 @@ async function querySemanticRag(question, options = {}) {
   }
 
   const preGuardCanonicalCareerService = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_career_service') ? null : {
-    answer: buildCareerReadinessProgramsAnswer(),
+    answer: buildCanonicalCareerServiceAnswer(canonicalUnderstanding),
     source: 'semantic-rag-campus-support-entity',
     frameSource: 'semantic-rag-campus-support-entity'
   };

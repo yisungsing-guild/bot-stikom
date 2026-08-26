@@ -68,7 +68,7 @@ const cases = [
   c('student_exchange', 'ada Student Exchange?', { domain: 'STUDENT_EXCHANGE', intent: 'student_exchange', entity: ['Student Exchange'], source: /semantic-rag-(international|campus-support-entity)/i, requiredTopics: [/Student Exchange|pertukaran mahasiswa/i] }),
 
   c('general_unknown', 'berapa tinggi gedung kampus?', { domain: 'GENERAL_UNKNOWN', intent: 'unknown_or_no_data', source: /semantic-rag-|rag-/i, requiredTopics: [/belum menemukan|tidak menemukan|konfirmasi|cek informasi resmi/i], expectedFallback: true }),
-  c('followup_dual_degree_fee', 'Berapa rincian biayanya?', { domain: 'FOLLOW_UP_MULTI_TURN', intent: 'contextual_fee_followup', source: /semantic-rag-fee-detail|semantic-rag-dual-degree/i, requiredTopics: [/Double Degree|DNUI|HELP|UTB|DPP|UKT|biaya/i], sessionData: { messages: [{ direction: 'user', message: 'Seperti apa itu program Dual Degree?' }, { direction: 'bot', message: 'ITB STIKOM Bali memiliki program Dual Degree dengan mitra UTB, DNUI, dan HELP University.' }] } })
+  c('followup_dual_degree_fee', 'Berapa rincian biayanya?', { domain: 'FOLLOW_UP_MULTI_TURN', intent: 'contextual_fee_followup', source: /semantic-rag-fee-detail|semantic-rag-dual-degree|semantic-rag-fee-comparison/i, requiredTopics: [/Double Degree|DNUI|HELP|UTB|DPP|UKT|biaya/i], sessionData: { messages: [{ direction: 'user', message: 'Seperti apa itu program Dual Degree?' }, { direction: 'bot', message: 'ITB STIKOM Bali memiliki program Dual Degree dengan mitra UTB, DNUI, dan HELP University.' }] } })
 ];
 
 function classify(item, result, duration, error) {

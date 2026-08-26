@@ -115,6 +115,26 @@ const EVIDENCE_PATTERNS = {
     ],
     minLength: 80,
     forbiddenPatterns: [/\brincian\s+biaya\s+(?!.*?(double degree|international|khusus))\b/i]
+  },
+
+  CAREER_CENTER: {
+    // Must contain Career Center or job placement info
+    patterns: [
+      /\b(career\s*center|pusat\s+kar(?:i|ie)r|cdc|alumni|lulusan|job\s*fair|campus\s*hiring|tracer\s*study|pembekalan|persiapan\s+kerja|dunia\s+kerja)\b/i,
+      /\b(lowongan|magang|rekrutmen|mitra\s+industri|penyaluran\s+kerja|bantuan\s+kerja)\b/i
+    ],
+    minLength: 50,
+    forbiddenPatterns: [/\brincian\s+biaya\s+kuliah\b/i, /\bsk\s+akreditasi\b/i]
+  },
+
+  ORGANISASI_MAHASISWA: {
+    // Must contain student organization or UKM info
+    patterns: [
+      /\b(ukm|ormawa|organisasi\s+mahasiswa|himpunan|himaprodi|unit\s+kegiatan|bem|dpm)\b/i,
+      /\b(kegiatan\s+mahasiswa|daftar\s+ukm|minat\s+bakat|pengembangan\s+diri)\b/i
+    ],
+    minLength: 50,
+    forbiddenPatterns: [/\brincian\s+biaya\s+kuliah\b/i]
   }
 };
 

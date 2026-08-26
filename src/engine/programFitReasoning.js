@@ -263,7 +263,7 @@ function buildProgramFitAnswer(question, options = {}) {
   return {
     answer: lines.join('\n'),
     candidates: selected,
-    source: 'program-fit-reasoning'
+    source: 'semantic-rag-program-recommendation'
   };
 }
 
