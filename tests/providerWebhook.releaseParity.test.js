@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const request = require('supertest');
 
 process.env.NODE_ENV = 'test';
@@ -30,11 +30,14 @@ function buildApp() {
   return { app, provider, sent };
 }
 
+const TEST_RUN_ID = 'rp-' + Date.now() + '-' + Math.floor(Math.random() * 100000) + '-';
+
 async function ask(ctx, chatId, text) {
+  const isolatedChatId = `${TEST_RUN_ID}${chatId}`;
   const before = ctx.sent.length;
   const res = await request(ctx.app)
     .post('/provider/webhook')
-    .send({ chatId, text, ts: Date.now() })
+    .send({ chatId: isolatedChatId, text, ts: Date.now() })
     .expect(200);
   const newMessages = ctx.sent.slice(before).map((m) => m.text).join('\n');
   return { res, text: newMessages, allText: ctx.sent.map((m) => m.text).join('\n') };

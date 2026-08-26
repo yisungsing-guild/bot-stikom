@@ -1586,7 +1586,7 @@ function evaluateAnswerShapeCompatibility(question, result) {
   const needs = inferQuestionAnswerNeeds(q);
   const missing = [];
   if (!needs.size) return { ok: true, needs: [], missing: [], reason: 'no_specific_answer_shape_needed' };
-  if (hasNoDataAnswerPhrase(answer) || /clarification|small-talk|greeting|out-of-domain|feedback|cross-domain|comparison/i.test(source)) {
+  if (hasNoDataAnswerPhrase(answer) || /clarification|small-talk|greeting|out-of-domain|feedback|cross-domain|comparison|program-recommendation/i.test(source)) {
     return { ok: true, needs: [...needs], missing: [], reason: 'safe_non_answer_or_clarification' };
   }
   const isComparisonQuery = /\b(?:sama(?:kah)?\s+dengan|apakah\s+sama|beda(?:kah)?\s+dengan|dibandingkan)\b/i.test(q);
@@ -1623,7 +1623,7 @@ function evaluateAnswerShapeCompatibility(question, result) {
 
 function isRouteDomainGuardApplicable(source) {
   const src = String(source || '');
-  if (/unsupported-program|insufficient-data|preflight-blocked|meaning-mismatch|safe-fallback|out-of-domain|academic-source|international-topic-composer|cross-domain-comparison/i.test(src)) return false;
+  if (/unsupported-program|insufficient-data|preflight-blocked|meaning-mismatch|safe-fallback|out-of-domain|academic-source|international-topic-composer|cross-domain-comparison|program-recommendation/i.test(src)) return false;
   return /semantic-rag-|rag-/i.test(src);
 }
 
