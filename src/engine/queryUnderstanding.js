@@ -426,6 +426,58 @@ function extractExternalRelationConstraint(rawText) {
   };
 }
 
+
+function titleCaseCandidate(value) {
+  return String(value || '')
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.length <= 3 ? part.toUpperCase() : part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function normalizeUnsupportedProgramCandidate(value) {
+  let candidate = (normalizeUserQuery(value || '').normalizedText || String(value || '').toLowerCase())
+    .replace(/\b(?:di|ke|dari|untuk|stikom|itb|bali|kampus|prodi|program\s+studi|jurusan|program|kuliah)\b/g, ' ')
+    .replace(/\b(?:biaya|harga|bayar|ukt|dpp|spp|uang|pendaftaran|daftar|akreditasi|profil|profile|lama|studi|semester|berapa|gimana|bagaimana|apa|itu|ya|kak|min|admin)\b.*$/i, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!candidate || candidate.length < 3) return '';
+  if (/^(?:ada|punya|tersedia|apa|apa\s+saja|apa\s+aja|aja|saja|daftar|list|semua|pilihan|jenis|macam|setelah|sebelum|bisa|dapat|boleh|ganti|ubah|diubah|diganti)$/i.test(candidate)) return '';
+  if (/^(?:setelah|sebelum|bisa|dapat|boleh|ganti|ubah|diubah|diganti|pilihan|awal|waktu|pertama|kali|didirikan|berdiri|saat)\b/i.test(candidate)) return '';
+  if (/\\b(?:apa\s+saja|apa\s+aja|daftar|list|semua|pilihan)\\b/i.test(candidate)) return '';
+  return titleCaseCandidate(candidate);
+}
+
+function resolveUnsupportedProgramEntities(text, knownPrograms = []) {
+  const source = String(text || '');
+  const normalized = normalizeUserQuery(source).normalizedText || source.toLowerCase();
+  if (/\b(?:surat\s+keputusan|menimbang\s+bahwa|mengingat\s+undang|memutuskan\s+pasal|lampiran\s+keputusan|\[sheet:|form\s+iku|q:\s*apa\s+itu|a:\s*program|profil\s+organisasi|nama\s+organisasi|nama\s+dokumen|kode\s+dokumen|dokumen\s+mentah|bocor\s+seperti\s+ini)\b/i.test(source)) return [];
+  if (/\b(?:himpunan\s+mahasiswa\s+prodi|himaprodi|hima\b|ukm\b|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan\s+mahasiswa)\b/i.test(normalized)) return [];
+  if (!/\b(?:jurusan|prodi|program\s+studi|kuliah\s+di|ambil\s+jurusan|pilih\s+jurusan)\b/i.test(normalized)) return [];
+  const supportedLabels = new Set((Array.isArray(knownPrograms) ? knownPrograms : []).map((program) => (normalizeUserQuery(program && program.canonical || '').normalizedText || String(program && program.canonical || '').toLowerCase()).trim()).filter(Boolean));
+  if (supportedLabels.size > 0) return [];
+  const patterns = [
+    /\b(?:jurusan|prodi|program\s+studi)\s+([a-z0-9\p{L}][a-z0-9\p{L}\s._-]{1,60}?)(?:\s+(?:di|ke|untuk|biaya|harga|bayar|ukt|dpp|spp|uang|pendaftaran|daftar|akreditasi|profil|profile|lama|studi|semester|berapa|gimana|bagaimana|apa|itu|ya|kak|min|admin)\b|[?.!,]|$)/iu,
+    /\b(?:kuliah\s+di|ambil\s+jurusan|pilih\s+jurusan)\s+([a-z0-9\p{L}][a-z0-9\p{L}\s._-]{1,60}?)(?:\s+(?:di|ke|untuk|biaya|harga|bayar|ukt|dpp|spp|uang|pendaftaran|daftar|akreditasi|profil|profile|lama|studi|semester|berapa|gimana|bagaimana|apa|itu|ya|kak|min|admin)\b|[?.!,]|$)/iu
+  ];
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    const candidate = match && normalizeUnsupportedProgramCandidate(match[1]);
+    if (!candidate) continue;
+    const candidateKey = (normalizeUserQuery(candidate).normalizedText || String(candidate || '').toLowerCase()).trim();
+    if (supportedLabels.has(candidateKey)) return [];
+    return [{
+      canonical: candidate,
+      surface: match[1],
+      type: 'program',
+      role: 'unsupported_entity_candidate',
+      confidence: 0.78,
+      source: 'canonical-open-world-unsupported-program'
+    }];
+  }
+  return [];
+}
 function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const qRaw = String(normalizedQuery || rawQuery || '').toLowerCase();
   const q = normalizeSlangTokens(qRaw);
@@ -1152,6 +1204,7 @@ function buildRoutingQuery(normalizedQuery, entities, classification) {
       additions.push('pendiri tokoh penggagas perintis inisiasi Prof Made Bandem Dadang Hermawan');
     }
   }
+  for (const unsupported of (entities.unsupported || [])) additions.push(unsupported.canonical);
   if (classification.intent.primary === 'ask_international_degree_outcome') additions.push('Double Degree gelar lulusan degree Bachelor S.Kom BIT program mitra');
   if (classification.intent.primary === 'ask_cross_domain_comparison') additions.push('perbandingan jadwal wisuda yudisium PMB pendaftaran gelombang akademik');
   if (classification.constraints && classification.constraints.academicTopic === 'thesis_abstract_limit') additions.push('abstrak tugas akhir skripsi jumlah kata batas maksimal minimal');
@@ -1183,6 +1236,7 @@ function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
   const temporal = buildTemporalUnderstanding(raw);
   const programEntities = resolveProgramEntities(`${raw} ${normalizedQuery}`);
   const sourceEntities = resolveSourceDomainEntities(`${raw} ${normalizedQuery}`);
+  const unsupportedProgramEntities = resolveUnsupportedProgramEntities(raw + ' ' + normalizedQuery, programEntities);
   const entities = {
     programs: programEntities,
     campuses: [],
@@ -1191,9 +1245,19 @@ function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
     people: [],
     documents: sourceEntities.documents,
     internationalPrograms: sourceEntities.internationalPrograms,
+    unsupported: unsupportedProgramEntities,
     unknown: []
   };
   const classification = classifyIntentDomain(raw, normalizedQuery, entities, temporal);
+  if (unsupportedProgramEntities[0]) {
+    classification.constraints.unsupportedEntityCandidate = {
+      type: unsupportedProgramEntities[0].type,
+      canonical: unsupportedProgramEntities[0].canonical,
+      surface: unsupportedProgramEntities[0].surface,
+      role: unsupportedProgramEntities[0].role,
+      source: unsupportedProgramEntities[0].source
+    };
+  }
   let requestedFields = extractRequestedFields(raw, normalizedQuery, classification);
   if (classification.intent && classification.intent.primary === 'ask_general' && classification.answerExpectation === 'topic_opening') {
     requestedFields = requestedFields.filter(field => field !== 'procedureSteps');

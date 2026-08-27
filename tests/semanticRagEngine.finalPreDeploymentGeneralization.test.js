@@ -63,13 +63,68 @@ describe('semantic RAG final pre-deployment generalization contracts', () => {
 
     const medical = await ask('jurusan kedokteran di STIKOM biayanya berapa?');
     expect(medical.source).toBe('semantic-rag-out-of-domain');
-    expect(medical.answer).toMatch(/tidak memiliki program studi kedokteran/i);
+    expect(medical.debug.semanticContract.constraints.unsupportedEntityCandidate.canonical).toBe('Kedokteran');
+    expect(medical.debug.semanticContract.entities).toEqual(expect.arrayContaining([expect.objectContaining({ canonical: 'Kedokteran', role: 'unsupported_entity_candidate', group: 'unsupported' })]));
+    expect(medical.debug.routeStage).toBe('pre-guard-canonical-unsupported-entity');
+    expect(medical.debug.contractVerification.reason).toBe('unsupported_entity_no_data_preserved');
+    expect(medical.answer).toMatch(/tidak memiliki program studi Kedokteran/i);
     expect(medical.answer).not.toMatch(/UKT|DPP|Rp\.\s*6\.500\.000/i);
 
     const unsupportedPartner = await ask('double degree Harvard itu ambil jurusan apa?');
     expect(unsupportedPartner.source).toBe('semantic-rag-unsupported-double-degree-partner');
     expect(unsupportedPartner.answer).toMatch(/belum menemukan data kerja sama Double Degree/i);
     expect(unsupportedPartner.answer).toMatch(/UTB|DNUI|HELP/i);
+  });
+
+  test('preserves explicit unsupported program candidates across requested fields without substitution', async () => {
+    const { buildCanonicalQueryUnderstanding } = require('../src/engine/queryUnderstanding');
+    const unsupportedEntities = ['Kedokteran', 'Teknik Sipil', 'Hukum', 'Psikologi', 'Farmasi', 'Arsitektur'];
+    const fieldTemplates = [
+      { label: 'biaya', build: (entity) => `jurusan ${entity} di STIKOM biayanya berapa?`, requestType: 'fee' },
+      { label: 'akreditasi', build: (entity) => `akreditasi prodi ${entity} di STIKOM apa?` },
+      { label: 'cara daftar', build: (entity) => `cara daftar program studi ${entity} di STIKOM gimana?` },
+      { label: 'profil', build: (entity) => `profil jurusan ${entity} di STIKOM seperti apa?` },
+      { label: 'lama studi', build: (entity) => `lama studi prodi ${entity} berapa semester?` }
+    ];
+
+    for (const entity of unsupportedEntities) {
+      for (const field of fieldTemplates) {
+        const q = field.build(entity);
+        const canonical = buildCanonicalQueryUnderstanding(q).contract;
+        expect(canonical.entities).toEqual(expect.arrayContaining([expect.objectContaining({ canonical: entity, type: 'program', role: 'unsupported_entity_candidate', group: 'unsupported' })]));
+        expect(canonical.constraints.unsupportedEntityCandidate).toEqual(expect.objectContaining({ canonical: entity, type: 'program' }));
+        if (field.requestType) expect(canonical.requestType).toBe(field.requestType);
+
+        const result = await ask(q);
+        expect(result.source).toBe('semantic-rag-out-of-domain');
+        expect(result.debug.routeStage).toBe('pre-guard-canonical-unsupported-entity');
+        expect(result.debug.semanticContract.constraints.unsupportedEntityCandidate).toEqual(expect.objectContaining({ canonical: entity, type: 'program' }));
+        expect(result.debug.contractVerification.reason).toBe('unsupported_entity_no_data_preserved');
+        expect(result.answer).toEqual(expect.stringContaining(entity));
+        expect(result.answer).toMatch(/tidak memiliki program studi|tidak akan mengganti jawaban dengan prodi lain/i);
+        expect(result.answer).not.toMatch(/Rp\.?\s*(?:6\.500\.000|14\.000\.000)|UKT|DPP|Sistem Informasi|Teknologi Informasi|Bisnis Digital|Manajemen Informatika/i);
+      }
+    }
+  });
+
+  test('supported program aliases remain on normal routes and are not unsupported candidates', async () => {
+    const { buildCanonicalQueryUnderstanding } = require('../src/engine/queryUnderstanding');
+    const controls = [
+      { q: 'biaya SI berapa?', entity: 'Sistem Informasi', notSource: 'semantic-rag-out-of-domain' },
+      { q: 'akreditasi TI apa?', entity: 'Teknologi Informasi', notSource: 'semantic-rag-out-of-domain' },
+      { q: 'cara daftar BD gimana?', entity: 'Bisnis Digital', notSource: 'semantic-rag-out-of-domain' },
+      { q: 'profil MI itu apa?', entity: 'Manajemen Informatika', notSource: 'semantic-rag-out-of-domain' },
+      { q: 'lama studi S2 Sistem Informasi berapa semester?', entity: 'S2 Sistem Informasi', notSource: 'semantic-rag-out-of-domain' }
+    ];
+
+    for (const item of controls) {
+      const canonical = buildCanonicalQueryUnderstanding(item.q).contract;
+      expect(canonical.constraints.unsupportedEntityCandidate).toBeUndefined();
+      expect(canonical.entities).toEqual(expect.arrayContaining([expect.objectContaining({ canonical: item.entity, group: 'programs' })]));
+      const result = await ask(item.q);
+      expect(result.source).not.toBe(item.notSource);
+      expect(result.debug.semanticContract.constraints.unsupportedEntityCandidate).toBeUndefined();
+    }
   });
 
   test('keeps cross-domain exchange negative control away from Student Exchange', async () => {

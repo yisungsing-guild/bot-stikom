@@ -220,6 +220,13 @@ describe('provider webhook release parity', () => {
     expect(careerSupport.text).not.toMatch(/Magister Komputer|M\.Kom/i);
     expectNoRawLeak(careerSupport.text);
 
+    const unsupportedProgram = await ask(ctx, 'release-real-user-unsupported-program-entity', 'jurusan Arsitektur di STIKOM biayanya berapa?');
+    expect(unsupportedProgram.res.body.ok).toBe(true);
+    expect(unsupportedProgram.text).toMatch(/tidak memiliki program studi Arsitektur|Arsitektur.*tidak tersedia/i);
+    expect(unsupportedProgram.text).toMatch(/tidak akan mengganti jawaban dengan prodi lain|tidak mengganti/i);
+    expect(unsupportedProgram.text).not.toMatch(/Rp\.?\s*(?:6\.500\.000|14\.000\.000)|UKT|DPP|Sistem Informasi|Teknologi Informasi|Bisnis Digital|Manajemen Informatika/i);
+    expectNoRawLeak(unsupportedProgram.text);
+
     const doubleDegree = await ask(ctx, 'release-real-user-encoding', 'Double Degree itu gelarnya apa saja?');
     expect(doubleDegree.res.body.ok).toBe(true);
     expect(doubleDegree.text).toMatch(/Double Degree|gelar|degree/i);

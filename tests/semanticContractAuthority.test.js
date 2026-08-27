@@ -40,6 +40,37 @@ describe('end-to-end semantic contract authority', () => {
     expect(contractOf('kapan pendaftaran dibuka?').requestType).toBe('schedule');
   });
 
+  test('canonical contract preserves explicit unsupported program entity separately from no entity', () => {
+    const unsupportedEntities = ['Kedokteran', 'Teknik Sipil', 'Hukum', 'Psikologi', 'Farmasi', 'Arsitektur'];
+    for (const entity of unsupportedEntities) {
+      const c = contractOf(`jurusan ${entity} di STIKOM biayanya berapa?`);
+      expect(c.domain).toBe('fee');
+      expect(c.intent).toBe('ask_fee');
+      expect(c.requestType).toBe('fee');
+      expect(c.constraints.unsupportedEntityCandidate).toEqual(expect.objectContaining({ canonical: entity, type: 'program', role: 'unsupported_entity_candidate' }));
+      expect(c.entities).toEqual(expect.arrayContaining([expect.objectContaining({ canonical: entity, type: 'program', role: 'unsupported_entity_candidate', group: 'unsupported' })]));
+    }
+
+    const noEntity = contractOf('berapa biaya pendaftaran?');
+    expect(noEntity.constraints.unsupportedEntityCandidate).toBeUndefined();
+    expect(noEntity.entities).toEqual([]);
+
+    const organizationProdiContext = contractOf('total himpunan mahasiswa prodi yang tercatat ada berapa?');
+    expect(organizationProdiContext.domain).toBe('student_organization');
+    expect(organizationProdiContext.constraints.unsupportedEntityCandidate).toBeUndefined();
+    expect(organizationProdiContext.entities).not.toEqual(expect.arrayContaining([expect.objectContaining({ role: 'unsupported_entity_candidate' })]));
+
+    for (const [q, entity] of [
+      ['biaya SI berapa?', 'Sistem Informasi'],
+      ['profil MI itu apa?', 'Manajemen Informatika'],
+      ['apa itu S2 Sistem Informasi?', 'S2 Sistem Informasi']
+    ]) {
+      const c = contractOf(q);
+      expect(c.constraints.unsupportedEntityCandidate).toBeUndefined();
+      expect(c.entities).toEqual(expect.arrayContaining([expect.objectContaining({ canonical: entity, group: 'programs' })]));
+    }
+  });
+
   test('Double Degree availability constraints route to the requested scope', async () => {
     const nationalContract = contractOf('apakah ada double degree nasional?');
     expect(nationalContract.domain).toBe('double_degree');

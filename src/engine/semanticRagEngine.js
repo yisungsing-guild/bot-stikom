@@ -12688,6 +12688,39 @@ async function traceAndCacheSemanticResult(question, result, resultCacheKey, sta
   }
   return result;
 }
+
+function getCanonicalUnsupportedEntityCandidate(canonicalUnderstanding) {
+  const candidate = canonicalUnderstanding
+    && canonicalUnderstanding.constraints
+    && canonicalUnderstanding.constraints.unsupportedEntityCandidate;
+  if (!candidate || !candidate.canonical) return null;
+  return candidate;
+}
+
+function describeUnsupportedRequestedField(canonicalUnderstanding) {
+  const requestType = String(canonicalUnderstanding && canonicalUnderstanding.contract && canonicalUnderstanding.contract.requestType || '').toLowerCase();
+  const intent = String(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary || '').toLowerCase();
+  if (requestType === 'fee' || /fee/.test(intent)) return 'biaya';
+  if (requestType === 'schedule' || /schedule/.test(intent)) return 'jadwal';
+  if (requestType === 'procedure' || /procedure|registration_how/.test(intent)) return 'cara daftar';
+  if (String(canonicalUnderstanding && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary || '').toLowerCase() === 'accreditation' || /accreditation|akreditasi/.test(intent)) return 'akreditasi';
+  if (requestType === 'definition' || /definition|profile/.test(intent)) return 'profil';
+  if ((canonicalUnderstanding && canonicalUnderstanding.requestedFields || []).some((field) => /duration|lama|studyDuration/i.test(String(field || '')))) return 'lama studi';
+  return 'informasi spesifik';
+}
+
+function buildCanonicalUnsupportedEntityAnswer(canonicalUnderstanding) {
+  const candidate = getCanonicalUnsupportedEntityCandidate(canonicalUnderstanding);
+  if (!candidate) return null;
+  const label = String(candidate.canonical || '').trim();
+  const fieldLabel = describeUnsupportedRequestedField(canonicalUnderstanding);
+  return {
+    answer: `ITB STIKOM Bali tidak memiliki program studi ${label} pada daftar prodi yang tersedia. Karena entitas yang diminta tidak tersedia di data kampus, saya tidak akan mengganti jawaban dengan prodi lain untuk informasi ${fieldLabel}.`,
+    source: 'semantic-rag-out-of-domain',
+    frameSource: 'semantic-rag-insufficient-data',
+    reason: 'UNSUPPORTED_ENTITY_CANDIDATE'
+  };
+}
 function hasUnsupportedProgramFeeEntity(question, canonicalUnderstanding = null) {
   const q = String(question || '').toLowerCase();
   if (!/\b(?:biaya|harga|bayar|ukt|dpp|spp|uang\s+(?:kuliah|masuk)|per\s+semester|semesteran|fee|cost)\b/i.test(q)) return false;
@@ -15216,6 +15249,11 @@ async function querySemanticRag(question, options = {}) {
     return await finalizeSemanticResult(question, response, resultCacheKey);
   }
 
+  const earlyCanonicalUnsupportedEntity = strictDocumentOnly ? null : buildCanonicalUnsupportedEntityAnswer(canonicalUnderstanding);
+  if (earlyCanonicalUnsupportedEntity && earlyCanonicalUnsupportedEntity.answer) {
+    const builtUnsupportedEntity = buildDeterministicResponse(question, earlyCanonicalUnsupportedEntity.source, earlyCanonicalUnsupportedEntity, { routeStage: 'pre-guard-canonical-unsupported-entity', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary, semanticContract: canonicalContract });
+    return await finalizeSemanticResult(question, builtUnsupportedEntity, resultCacheKey, { semanticContract: canonicalContract });
+  }
   const earlyExplicitExternalNoData = strictDocumentOnly ? null : tryExplicitExternalEntityNoDataAnswer(question);
   if (earlyExplicitExternalNoData && earlyExplicitExternalNoData.answer) {
     const builtExternalNoData = buildDeterministicResponse(question, earlyExplicitExternalNoData.source || 'semantic-rag-explicit-external-no-data', earlyExplicitExternalNoData, { routeStage: 'pre-guard-explicit-external-relation', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });

@@ -144,6 +144,15 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
   if (!contract || typeof contract !== 'object') return { ok: true, reason: 'no_contract' };
   const text = String(answer || '');
   if (!text.trim()) return { ok: false, reason: 'empty_answer' };
+  const unsupportedCandidate = contract.constraints && contract.constraints.unsupportedEntityCandidate;
+  if (unsupportedCandidate && unsupportedCandidate.canonical) {
+    const candidateText = normalizeText(unsupportedCandidate.canonical);
+    const combinedUnsupported = normalizeText(text + '\n' + toArray(evidence).map(item => String(item && (item.text || item.chunk || item.content) || '')).join('\n'));
+    const mentionsCandidate = candidateText && combinedUnsupported.includes(candidateText);
+    const unsupportedNoData = isNoDataAnswer(text) || /\b(?:tidak\s+memiliki|belum\s+menemukan|belum\s+tersedia|tidak\s+tersedia|di\s+luar\s+data|tidak\s+akan\s+menebak)\b/i.test(text);
+    if (mentionsCandidate && unsupportedNoData) return { ok: true, reason: 'unsupported_entity_no_data_preserved' };
+    return { ok: false, reason: 'unsupported_entity_not_preserved', unsupportedEntityCandidate: unsupportedCandidate.canonical };
+  }
   if (isNoDataAnswer(text)) return { ok: true, reason: 'explicit_no_data' };
   const combined = text + '\n' + toArray(evidence).map(item => String(item && (item.text || item.chunk || item.content) || '')).join('\n');
   const missingEntities = toArray(contract.entities).filter(entity => entity.group !== 'unknown' && !hasEntity(combined, entity));
