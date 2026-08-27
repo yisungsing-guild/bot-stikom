@@ -472,11 +472,11 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const careerTopic = !hasCareer ? null
     : /\b(?:apa\s+itu|itu\s+apa|pengertian|definisi|maksud(?:nya)?|jelaskan|tentang)\b/i.test(q)
       && /\b(?:career\s*center|karier\s*center|karir\s*center|pusat\s+karier|pusat\s+karir|cdc)\b/i.test(q) ? 'definition'
-    : /\b(?:keuntungan|manfaat|benefit|nilai\s+tambah|sisi\s+karier)\b/i.test(q) ? 'benefit'
-    : /\b(?:membantu.*(?:pekerjaan|kerja)|mendapat(?:kan)?\s+(?:pekerjaan|kerja)|dapat\s+kerja|mencari\s+(?:pekerjaan|kerja)|bantuan\s+(?:mencari|mendapat|persiapan|kerja|pekerjaan)|lulusan.*(?:kerja|pekerjaan)|alumni.*(?:kerja|pekerjaan))\b/i.test(q) ? 'employment_support'
-    : /\b(?:lowongan|loker|magang|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study)\b/i.test(q) ? 'opportunity'
-    : /\b(?:layanan|fungsi|tugas|ngapain|untuk\s+apa|apa\s+saja|apa\s+aja|memberikan|bantu|membantu)\b/i.test(q) ? 'service'
-    : 'service';
+      : /\b(?:keuntungan|manfaat|benefit|nilai\s+tambah|sisi\s+karier)\b/i.test(q) ? 'benefit'
+        : /\b(?:membantu.*(?:pekerjaan|kerja)|mendapat(?:kan)?\s+(?:pekerjaan|kerja)|dapat\s+kerja|mencari\s+(?:pekerjaan|kerja)|bantuan\s+(?:mencari|mendapat|persiapan|kerja|pekerjaan)|lulusan.*(?:kerja|pekerjaan)|alumni.*(?:kerja|pekerjaan))\b/i.test(q) ? 'employment_support'
+          : /\b(?:lowongan|loker|magang|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study)\b/i.test(q) ? 'opportunity'
+            : /\b(?:layanan|fungsi|tugas|ngapain|untuk\s+apa|apa\s+saja|apa\s+aja|memberikan|bantu|membantu)\b/i.test(q) ? 'service'
+              : 'service';
   const externalRelation = extractExternalRelationConstraint(rawQuery || normalizedQuery);
   const asksLearning = /\b(?:belajar|dipelajari|perkuliahan|kuliah(?:nya)?(?:\s+(?:apa|apa\s+saja|apa\s+aja|yang\s+ada|membahas))?|mata\s+kuliah|matkul|materi|course|kelas|kurikulum|skill|kompetensi|coding|ngoding|ai|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(q);
   const asksAdvice = /\b(?:kurang|tidak|ga|gak|nggak|belum)\s+(?:cakap|jago|mahir|bisa|paham)|\b(?:apa\s+yang\s+harus|harus\s+bagaimana|saran|cocok|minat)\b/i.test(q);
@@ -536,11 +536,11 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   // Determine institution-history subtype for requestedFields
   const institutionHistorySubtype = (!hasInstitutionHistory || hasAccreditation) ? null
     : /\b(?:pendiri|tokoh\s+pendiri|siapa\s+yang\s+mendirikan|didirikan\s+oleh|penggagas|perintis|menginisiasi|inisiasi)\b/i.test(q) ? 'FOUNDING_PEOPLE'
-    : /\b(?:kapan|tanggal|berapa|tahun|hari|tanggal\s+berapa|tanggal\s+resmi)\b/i.test(q) ? 'FOUNDING_DATE'
-    : /\b(?:sk\s+mendiknas|surat\s+keputusan|izin\s+operasional|nomor\s+sk|no\.?\s*sk)\b/i.test(q) ? 'LEGAL_ESTABLISHMENT_DOCUMENT'
-    : /\b(?:sejarah\s+awal|asal\s+mula|awal\s+mula|awal\s+berdiri|awalnya)\b/i.test(q) ? 'ORIGIN_HISTORY'
-    : /\b(?:sejarah)\b/i.test(q) ? 'HISTORICAL_MILESTONE'
-    : 'FOUNDING_EVENT';
+      : /\b(?:kapan|tanggal|berapa|tahun|hari|tanggal\s+berapa|tanggal\s+resmi)\b/i.test(q) ? 'FOUNDING_DATE'
+        : /\b(?:sk\s+mendiknas|surat\s+keputusan|izin\s+operasional|nomor\s+sk|no\.?\s*sk)\b/i.test(q) ? 'LEGAL_ESTABLISHMENT_DOCUMENT'
+          : /\b(?:sejarah\s+awal|asal\s+mula|awal\s+mula|awal\s+berdiri|awalnya)\b/i.test(q) ? 'ORIGIN_HISTORY'
+            : /\b(?:sejarah)\b/i.test(q) ? 'HISTORICAL_MILESTONE'
+              : 'FOUNDING_EVENT';
   const hasIkuDocument = /\b(?:form\s+iku|iku\s+pts|indikator\s+kinerja|lldikti)\b/i.test(q);
   const hasStudentExchangeTopic = /\b(?:student\s+exchange|pertukaran\s+mahasiswa)\b/i.test(q);
   const hasOrganizationProfile = (entities.organizations.length > 0
@@ -567,13 +567,13 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && /\b(?:syarat|ketentuan|aturan|semester|berlaku|batas|maksimal|minimum|dapat|boleh|apakah\s+bisa)\b/i.test(q);
   const academicTopic = hasThesisAbstractTerm ? 'thesis_abstract_limit'
     : (hasThesisAdvisorChange ? 'thesis_advisor_change'
-    : (hasThesisCertificateEquivalency ? 'thesis_certificate_equivalency'
-    : (hasThesisSubmissionProcedure ? 'thesis_submission_procedure'
-    : (hasThesisBibliographyStandard ? 'thesis_bibliography_standard'
-    : (hasThesisIntroPageLimit ? 'thesis_intro_page_limit'
-    : (hasThesisRemedialPolicy ? 'thesis_remedial_policy'
-    : (hasThesisTerm && hasThesisPageTerm ? 'thesis_page_count'
-    : (hasThesisTerm ? 'thesis_general' : null))))))));
+      : (hasThesisCertificateEquivalency ? 'thesis_certificate_equivalency'
+        : (hasThesisSubmissionProcedure ? 'thesis_submission_procedure'
+          : (hasThesisBibliographyStandard ? 'thesis_bibliography_standard'
+            : (hasThesisIntroPageLimit ? 'thesis_intro_page_limit'
+              : (hasThesisRemedialPolicy ? 'thesis_remedial_policy'
+                : (hasThesisTerm && hasThesisPageTerm ? 'thesis_page_count'
+                  : (hasThesisTerm ? 'thesis_general' : null))))))));
   const strongProgramComparisonContext = /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus|sama\s+.*\b(?:ti|sk|si|bd|mi)\b|\b(?:ti|sk|si|bd|mi)\b\s+sama\s+\b(?:ti|sk|si|bd|mi)\b)\b/i.test(q);
   if (strongProgramComparisonContext && /\bsk\b/i.test(q) && !entities.programs.some((entity) => entity.canonical === 'Sistem Komputer') && !/\b(?:surat\s+keputusan|nomor\s+sk|no\.?\s*sk|sk\s+mendiknas|izin\s+operasional|legal|dokumen)\b/i.test(q)) {
     entities.programs.push({ type: 'program', canonical: 'Sistem Komputer', code: 'SK', surface: 'sk', confidence: 0.84, source: 'canonical-program-alias-comparison-context' });
@@ -927,8 +927,8 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
             : (hasAcademicSchedule ? 'academic_schedule' : null))),
       relationType: hasUnsupportedExchangeBarterRelation ? 'unsupported_exchange_barter'
         : (hasUnsupportedAcademicPolicy ? 'unsupported_academic_policy'
-        : (hasLegalDocumentVsPmbComparison ? 'institution_legal_document_vs_pmb_schedule'
-        : (externalRelation ? externalRelation.relationType : (hasInternationalProgramComparison ? 'international_program_contrast' : (hasFeeComponentComparison ? 'fee_component_contrast' : (hasAcademicCreditComparison ? 'academic_credit_comparison' : (hasEntityTypeComparison ? 'entity_type_distinction' : (hasDualDegreeRelation ? 'double_degree_partner_program_pairing' : (hasDoubleDegreeSequence ? 'double_degree_sequence' : (hasDoubleDegreeOutcome || hasInternationalProgramDegreeOutcome ? 'double_degree_outcome' : null)))))))))),
+          : (hasLegalDocumentVsPmbComparison ? 'institution_legal_document_vs_pmb_schedule'
+            : (externalRelation ? externalRelation.relationType : (hasInternationalProgramComparison ? 'international_program_contrast' : (hasFeeComponentComparison ? 'fee_component_contrast' : (hasAcademicCreditComparison ? 'academic_credit_comparison' : (hasEntityTypeComparison ? 'entity_type_distinction' : (hasDualDegreeRelation ? 'double_degree_partner_program_pairing' : (hasDoubleDegreeSequence ? 'double_degree_sequence' : (hasDoubleDegreeOutcome || hasInternationalProgramDegreeOutcome ? 'double_degree_outcome' : null)))))))))),
       externalRelation,
       institutionHistorySubtype: institutionHistorySubtype || null,
       institutionTopic: hasInstitutionProfile ? (/\b(?:visi|misi)\b/i.test(q) ? 'vision_mission' : (/\btujuan\b/i.test(q) ? 'purpose' : 'profile')) : null,

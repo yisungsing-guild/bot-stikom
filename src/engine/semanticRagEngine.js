@@ -5349,46 +5349,113 @@ function tryShortClarificationAnswer(question) {
   return null;
 }
 function detectUnsupportedDoubleDegreePartner(question) {
-  const q = normalizeFacilityTerm(question);
-  const hasExplicitDoubleDegreeSignal = /\b(double\s*degree|dual\s*degree|dd)\b/i.test(q);
+  const rawQ = String(question || '').trim();
+  const q = normalizeFacilityTerm(rawQ);
+  const isKnownPartner = /\b(?:utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help\b)\b/i.test(q);
+  if (isKnownPartner) return null;
+
+  const hasExplicitDoubleDegreeSignal = /\b(?:double\s*degree|dual\s*degree|dd)\b/i.test(q);
   const hasImplicitPartnerRelationSignal = /\b(?:sisi\s+stikom|di\s+stikom|prodi\s+stikom|jurusan\s+stikom|stikom\s+bali)\b/i.test(q)
-    && /\b(?:jurusan|prodi|program\s+studi|pasangan|padanan|sisi|ambil|mengambil|diambil|desain|dkv)\b/i.test(q);
+    && /\b(?:jurusan|prodi|program\s+studi|pasangan|padanan|sisi|ambil|mengambil|diambil)\b/i.test(q);
   if (!hasExplicitDoubleDegreeSignal && !hasImplicitPartnerRelationSignal) return null;
-  const knownPartner = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help\b)\b/i.test(q);
-  const implicitPartnerRelation = /\b(?:sisi\s+stikom|di\s+stikom|prodi\s+stikom|jurusan\s+stikom|stikom\s+bali)\b/i.test(q)
-    && /\b(?:jurusan|prodi|program\s+studi|pasangan|padanan|sisi|ambil|mengambil|diambil|desain|dkv)\b/i.test(q);
-  if (implicitPartnerRelation && !knownPartner) {
+
+  const NON_PARTNER_KEYWORDS = new Set([
+    'apa', 'apakah', 'bagaimana', 'gimana', 'dimana', 'di mana', 'kapan', 'siapa', 'kenapa', 'mengapa', 'berapa', 'mana', 'itu', 'ini', 'yang', 'dan', 'atau', 'dengan', 'untuk', 'dari', 'pada', 'di', 'ke', 'ya', 'kah', 'dong', 'saja', 'aja', 'bisa', 'ada', 'punya', 'tersedia', 'seperti', 'tersebut',
+    'jadwal', 'gelombang', 'gbg', 'tanggal', 'tgl', 'periode', 'waktu', 'hari', 'bulan', 'tahun', 'buka', 'dibuka', 'tutup', 'ditutup', 'mulai', 'dimulai', 'berakhir', 'deadline', 'batas', 'sekarang', 'saat ini', 'nanti', 'besok', 'lusa', 'kemarin', 'januari', 'februari', 'maret', 'april', 'mei', 'juni', 'juli', 'agustus', 'september', 'oktober', 'november', 'desember', 'satu', 'dua', 'tiga', 'empat',
+    'cara', 'alur', 'prosedur', 'langkah', 'tahapan', 'syarat', 'persyaratan', 'seleksi', 'ujian', 'tes', 'berkas', 'dokumen', 'formulir', 'daftar', 'pendaftaran', 'mendaftar', 'registrasi', 'ikut', 'mengikuti', 'masuk', 'penerimaan', 'pmb', 'camaba', 'maba', 'mahasiswa', 'kuliah', 'info', 'informasi', 'penjelasan', 'tentang', 'terkait', 'mengenai',
+    'biaya', 'uang', 'harga', 'tarif', 'bayar', 'pembayaran', 'dpp', 'spp', 'ukt', 'bpp', 'gedung', 'angsuran', 'cicilan', 'potongan', 'diskon', 'beasiswa',
+    'double', 'dual', 'degree', 'dd', 'program', 'prodi', 'jurusan', 'studi', 'kelas', 'nasional', 'national', 'internasional', 'international', 'luar', 'negeri', 'dalam', 'stikom', 'itb', 'bali', 'gelar', 'ijazah', 'titel', 'title', 'bachelor', 'sarjana', 'diploma', 'magister', 's1', 's2', 'd3', 'kurikulum', 'materi', 'fokus', 'akreditasi', 'skema', 'perkuliahan', 'pilihan', 'daftar', 'sisi', 'padanan', 'pasangan'
+  ]);
+
+  const KNOWN_INSTITUTION_KEYWORDS = /\b(?:university|universitas|univ|college|institute|institut|academy|akademi|polytechnic|politeknik)\b/i;
+  const KNOWN_FOREIGN_UNIVERSITIES = /\b(?:essex|harvard|oxford|cambridge|mit|stanford|monash|nus|ntu|tsinghua|peking|melbourne|sydney|uq|anu|yale|columbia|berkeley|ucla)\b/i;
+
+  function cleanCandidate(raw) {
+    if (!raw) return null;
+    let s = String(raw).trim().replace(/[?,.!;:]+$/g, '');
+    while (/^\s*(?:program|double\s*degree|dual\s*degree|dd|dengan|bersama|mitra|partner|di|kampus)\b/i.test(s)) {
+      s = s.replace(/^\s*(?:program|double\s*degree|dual\s*degree|dd|dengan|bersama|mitra|partner|di|kampus)\s+/i, '').trim();
+    }
+    s = s.replace(/\b(?:itu|yang|ambil|diambil|jurusan|prodi|program|apa|mana|aja|saja|berapa|gimana|bagaimana|ya|kah|kapan|dibuka|ditutup|mulai|tersedia|ada|sisi|stikom)\b.*$/i, '').trim();
+    if (!s) return null;
+
+    const words = s.toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return null;
+    const allNonPartner = words.every(w => NON_PARTNER_KEYWORDS.has(w));
+    if (allNonPartner) return null;
+
+    if (/\b(?:utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help)\b/i.test(s)) return null;
+    if (/\b(?:stikom|itb\s+stikom|stikom\s+bali)\b/i.test(s)) return null;
+
+    const hasInstMarker = KNOWN_INSTITUTION_KEYWORDS.test(s) || KNOWN_FOREIGN_UNIVERSITIES.test(s);
+    return { text: s, hasInstMarker };
+  }
+
+  function wordsInDictionary(text) {
+    const words = text.toLowerCase().split(/\s+/).filter(Boolean);
+    return words.every(w => NON_PARTNER_KEYWORDS.has(w));
+  }
+
+  function formatPartnerName(raw) {
+    return raw.split(/\s+/).map(w => w.length <= 4 && !/^[A-Z][a-z]+$/.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  // 1. Explicit university / institution phrase
+  const instMatch = q.match(/\b((?:[a-z0-9.-]+\s+){0,3}(?:university|universitas|univ|college|institute|institut|academy|akademi|polytechnic|politeknik)(?:\s+[a-z0-9.-]+){0,3})\b/i);
+  if (instMatch) {
+    const cand = cleanCandidate(instMatch[1]);
+    if (cand && cand.text) return formatPartnerName(cand.text);
+  }
+
+  // 2. Explicit partner relation markers: 'dengan', 'bersama', 'mitra', 'partner'
+  const partnerRelMatch = q.match(/\b(?:dengan|bersama|mitra|partner)\s+([a-z0-9.-]+(?:\s+[a-z0-9.-]+){0,3})\b/i);
+  if (partnerRelMatch) {
+    const cand = cleanCandidate(partnerRelMatch[1]);
+    if (cand && cand.text && (cand.hasInstMarker || !wordsInDictionary(cand.text))) {
+      return formatPartnerName(cand.text);
+    }
+  }
+
+  // 3. Preposition 'di <Campus>' with double degree
+  const diCampusMatch = q.match(/\b(?:double\s*degree|dual\s*degree|dd)\s+di\s+([a-z0-9.-]+(?:\s+[a-z0-9.-]+){0,2})\b/i);
+  if (diCampusMatch) {
+    const cand = cleanCandidate(diCampusMatch[1]);
+    if (cand && cand.text && (cand.hasInstMarker || !wordsInDictionary(cand.text))) {
+      return formatPartnerName(cand.text);
+    }
+  }
+
+  // 4. Preposed partner: '<Partner> double degree'
+  const preposedMatch = q.match(/\b([a-z0-9.-]+(?:\s+[a-z0-9.-]+){0,2})\s+(?:double\s*degree|dual\s*degree|dd)\b/i);
+  if (preposedMatch) {
+    const cand = cleanCandidate(preposedMatch[1]);
+    if (cand && cand.text && (cand.hasInstMarker || !wordsInDictionary(cand.text))) {
+      return formatPartnerName(cand.text);
+    }
+  }
+
+  // 5. Direct partner match after 'double degree <Partner>' (e.g. 'double degree Harvard', 'double degree Essex')
+  const directMatch = q.match(/\b(?:double\s*degree|dual\s*degree|dd)\s+([a-z0-9.-]+(?:\s+[a-z0-9.-]+){0,2})\b/i);
+  if (directMatch) {
+    const cand = cleanCandidate(directMatch[1]);
+    if (cand && cand.text && (cand.hasInstMarker || (!wordsInDictionary(cand.text) && cand.text.length >= 3))) {
+      return formatPartnerName(cand.text);
+    }
+  }
+
+  // 6. Implicit partner relation pairing: e.g. "kalau desain di Stanford sisi stikom apa?", "mitra Harvard sisi stikom apa?"
+  if (hasImplicitPartnerRelationSignal) {
     const implicitMatch = q.match(/\b(?:di|dengan|bersama|mitra|partner)\s+([a-z][a-z0-9.-]{2,}(?:\s+[a-z][a-z0-9.-]{2,}){0,3})\s+(?:sisi|prodi|jurusan|di)?\s*stikom\b/i)
       || q.match(/\b([a-z][a-z0-9.-]{2,}(?:\s+[a-z][a-z0-9.-]{2,}){0,3})\s+(?:sisi|prodi|jurusan)\s+stikom\b/i);
     if (implicitMatch && implicitMatch[1]) {
-      const rawImplicit = implicitMatch[1].replace(/\b(?:itu|yang|ambil|diambil|jurusan|prodi|program|apa|berapa|gimana|bagaimana|ya|sisi|stikom)\b.*$/i, '').trim();
-      if (rawImplicit && !/\b(?:utb|universitas teknologi bandung|dnui|dalian neusoft|help university|help|stikom|itb)\b/i.test(normalizeFacilityTerm(rawImplicit))) {
-        return rawImplicit.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+      const cand = cleanCandidate(implicitMatch[1]);
+      if (cand && cand.text && (cand.hasInstMarker || !wordsInDictionary(cand.text))) {
+        return formatPartnerName(cand.text);
       }
     }
   }
-  if (/\bessex\b/i.test(q)) return 'Essex University';
-  const directPartnerMatch = q.match(/\b(?:double\s*degree|dual\s*degree|dd)\s+(?!itu\b|apa\b|mana\b|aja\b|saja\b|program\b|kelas\b|nasional\b|national\b|internasional\b|international\b|luar\b|negeri\b|di\b|untuk\b|itb\b|stikom\b|bali\b)([a-z][a-z0-9.-]{2,}(?:\s+[a-z][a-z0-9.-]{2,}){0,3})\b/i);
-  if (directPartnerMatch && !knownPartner) {
-    const rawDirect = directPartnerMatch[1].replace(/\b(?:itu|yang|ambil|diambil|jurusan|prodi|program|apa|mana|aja|saja|berapa|gimana|bagaimana|ya|kah)\b.*$/i, '').replace(/^\s*(?:dengan|bersama|mitra|partner)\s+/i, '').trim();
-    if (rawDirect && !/\b(?:itb|stikom|bali|utb|universitas teknologi bandung|dnui|dalian neusoft|help university|help|nasional|national|internasional|international|luar\s+negeri)\b/i.test(normalizeFacilityTerm(rawDirect))) {
-      return rawDirect.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    }
-  }
-  const namedPartnerMatch = q.match(/\b(?:dengan|bersama|mitra|partner)\s+([a-z][a-z0-9.-]{2,}(?:\s+[a-z][a-z0-9.-]{2,}){0,3})\b/i);
-  if (namedPartnerMatch && !knownPartner) {
-    const rawNamed = namedPartnerMatch[1].replace(/\b(?:itu|yang|ditargetkan|target|calon|mahasiswa|seperti|apa|ya|untuk|program|prodi|jurusan|gelar)\b.*$/i, '').trim();
-    if (rawNamed && !/\b(?:double|dual|degree|program|kelas|nasional|internasional|stikom|itb|utb|universitas teknologi bandung|dnui|dalian neusoft|help university|help)\b/i.test(normalizeFacilityTerm(rawNamed))) {
-      return rawNamed.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    }
-  }
-  const partnerMatch = q.match(/\b(?:dengan|bersama|mitra|partner)\s+([a-z0-9\s]{3,70}?\b(?:university|universitas|college|institute|institut)\b(?:\s+[a-z0-9]+){0,4})/i);
-  if (!partnerMatch || knownPartner) return null;
-  const raw = partnerMatch[1].replace(/\b(?:itu|yang|ditargetkan|target|calon|mahasiswa|seperti|apa|ya)\b.*$/i, '').trim();
-  if (!raw) return null;
-  const normalized = normalizeFacilityTerm(raw);
-  if (/\b(utb|universitas teknologi bandung|dnui|dalian neusoft|help university|help)\b/i.test(normalized)) return null;
-  return raw.split(/\s+/).map((word) => word.length <= 4 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+  return null;
 }
 
 function tryUnsupportedDoubleDegreePartnerAnswer(question) {
@@ -5630,8 +5697,8 @@ function detectExplicitExternalEntity(question) {
   const q = normalizeFacilityTerm(question || '');
   if (!q.trim()) return null;
   if (/\b(?:fasilitas|sarana|prasarana|lokasi|alamat|jumlah\s+kampus|berapa\s+kampus|program|layanan|ukm|ormawa)\b/i.test(q) && /\b(?:kampus|stikom|itb\s*stikom|stikom\s+bali)\b/i.test(q)) return null;
-  const partnerDoubleDegreeContext = /\b((double|dual)\s*degree|dd)\b/.test(q) && /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university)\b/.test(q);
-  if (partnerDoubleDegreeContext) return null;
+  const isDoubleDegreeContext = /\b((?:double|dual)\s*degree|dd)\b/i.test(q);
+  if (isDoubleDegreeContext) return null;
 
   const known = [
     ['UGM', /\b(?:ugm|universitas\s+gadjah\s+mada)\b/i],
