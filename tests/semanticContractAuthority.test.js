@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const request = require('supertest');
 const { buildCanonicalQueryUnderstanding } = require('../src/engine/queryUnderstanding');
 const { querySemanticRag, verifyOutboundSemanticRelevance } = require('../src/engine/semanticRagEngine');
@@ -252,5 +252,131 @@ describe('end-to-end semantic contract authority', () => {
     expect(internationalAfterNational).not.toMatch(/UTB|Universitas Teknologi Bandung|DKV|belum menemukan data|tidak dapat merangkumnya/i);
   });
 
+
+  test('self-contained current-turn contracts are invariant across irrelevant long history', async () => {
+    const staleMiContract = contractOf('apa itu Manajemen Informatika?');
+    const staleInternationalContract = contractOf('apakah ada program double degree internasional?');
+    const histories = [
+      {
+        label: 'stale_mi_program',
+        sessionData: {
+          lastProgramHint: 'Manajemen Informatika',
+          currentProgramHint: 'Manajemen Informatika',
+          composerLastSource: 'semantic-rag-program-definition',
+          lastSemanticSource: 'semantic-rag-program-definition',
+          lastSemanticContract: staleMiContract,
+          messages: [
+            { direction: 'incoming', message: 'apa itu mi?' },
+            { direction: 'outgoing', message: 'Manajemen Informatika adalah program D3.' }
+          ]
+        }
+      },
+      {
+        label: 'stale_double_degree',
+        sessionData: {
+          composerLastSource: 'semantic-rag-dual-degree',
+          lastSemanticSource: 'semantic-rag-dual-degree',
+          lastSemanticContract: staleInternationalContract,
+          messages: [
+            { direction: 'incoming', message: 'apakah ada program double degree internasional?' },
+            { direction: 'outgoing', message: 'Double Degree internasional tersedia dengan DNUI dan HELP.' }
+          ]
+        }
+      },
+      {
+        label: 'stale_fee_pending',
+        sessionData: {
+          lastProgramHint: 'Sistem Komputer',
+          pendingFeeDetail: { program: 'Sistem Komputer', ts: new Date(0).toISOString() },
+          lastSemanticContract: contractOf('rincian biaya Sistem Komputer')
+        }
+      }
+    ];
+
+    const selfContained = [
+      { q: 'apa itu S2 Sistem Informasi (SI)?', source: 'semantic-rag-postgraduate-profile', domain: 'program', requestType: 'definition', must: /S2 Sistem Informasi|Magister Sistem Informasi|Pascasarjana/i, mustNot: /belum menemukan data|Program Studi Sistem Informasi adalah program studi yang berfokus/i },
+      { q: 'apa itu mi?', source: 'semantic-rag-program-definition', domain: 'program', requestType: 'definition', must: /Manajemen Informatika.*D3/i, mustNot: /daftar program studi|Program studi\/prodi yang tersedia/i },
+      { q: 'bagaimana cara mendaftar stikom?', source: 'semantic-rag-registration-info', domain: 'registration', requestType: 'procedure', must: /daftar|pendaftaran|PMB|online|offline/i, mustNot: /Manajemen Informatika adalah|program D3 yang berfokus|belum menemukan data/i },
+      { q: 'kapan pendaftaran dibuka?', source: 'semantic-rag-schedule-window', domain: 'pmb_schedule', requestType: 'schedule', must: /PMB|pendaftaran|gelombang|20\d{2}/i, mustNot: /Manajemen Informatika|belum menemukan data/i },
+      { q: 'Kalau S1 yang cocok untuk bekerja di bidang pemasaran yang mana ya?', source: 'semantic-rag-program-recommendation', domain: 'program_recommendation', requestType: 'recommendation', must: /Bisnis Digital|marketing|pemasaran/i, mustNot: /Manajemen Informatika|belum menemukan data/i }
+    ];
+
+    for (const item of selfContained) {
+      const fresh = await querySemanticRag(item.q, { topK: 8 });
+      expect(fresh.source).toBe(item.source);
+      expect(fresh.debug.semanticContract.raw).toBe(item.q);
+      expect(fresh.debug.semanticContract.domain).toBe(item.domain);
+      expect(fresh.debug.semanticContract.requestType).toBe(item.requestType);
+      expect(fresh.debug.contractVerification.reason).toBe('contract_preserved');
+      expect(fresh.answer).toMatch(item.must);
+      expect(fresh.answer).not.toMatch(item.mustNot);
+
+      for (const history of histories) {
+        const contaminated = await querySemanticRag(item.q, {
+          topK: 8,
+          chatId: `self-contained-${history.label}-${item.source}`,
+          sessionData: history.sessionData
+        });
+        expect(contaminated.source).toBe(fresh.source);
+        expect(contaminated.debug.semanticContract.raw).toBe(item.q);
+        expect(contaminated.debug.semanticContract.domain).toBe(item.domain);
+        expect(contaminated.debug.semanticContract.requestType).toBe(item.requestType);
+        expect(contaminated.debug.contractVerification.reason).toBe('contract_preserved');
+        expect(contaminated.answer).toMatch(item.must);
+        expect(contaminated.answer).not.toMatch(item.mustNot);
+      }
+    }
+  });
+
+  test('elliptical follow-up inherits only with a relevant parent, while self-contained PMB ignores parent', async () => {
+    const parent = contractOf('apakah ada program double degree internasional?');
+    const inherited = await querySemanticRag('kalau yang nasional ada?', {
+      topK: 8,
+      sessionData: {
+        lastSemanticSource: 'semantic-rag-dual-degree',
+        composerLastSource: 'semantic-rag-dual-degree',
+        lastSemanticContract: parent
+      }
+    });
+    expect(inherited.source).toBe('semantic-rag-dual-degree-followup');
+    expect(inherited.debug.semanticContract.domain).toBe('double_degree');
+    expect(inherited.debug.semanticContract.constraints.programScope).toBe('national');
+    expect(inherited.answer).toMatch(/UTB|Universitas Teknologi Bandung|DKV/i);
+
+    const selfContained = await querySemanticRag('kapan pendaftaran dibuka?', {
+      topK: 8,
+      sessionData: {
+        lastSemanticSource: 'semantic-rag-dual-degree',
+        composerLastSource: 'semantic-rag-dual-degree',
+        lastSemanticContract: parent
+      }
+    });
+    expect(selfContained.source).toBe('semantic-rag-schedule-window');
+    expect(selfContained.debug.semanticContract.domain).toBe('pmb_schedule');
+    expect(selfContained.debug.semanticContract.raw).toBe('kapan pendaftaran dibuka?');
+    expect(selfContained.answer).toMatch(/PMB|pendaftaran|gelombang/i);
+    expect(selfContained.answer).not.toMatch(/DNUI|HELP University|UTB|belum menemukan data/i);
+  });
+
+  test('provider webhook keeps self-contained queries independent after Manajemen Informatika history', async () => {
+    const ctx = buildProviderApp();
+    const chatId = 'contract-authority-self-contained-' + Date.now();
+
+    const mi = await askProvider(ctx, chatId, 'apa itu mi?');
+    expect(mi).toMatch(/Manajemen Informatika.*D3/i);
+    expect(mi).not.toMatch(/daftar program studi|belum menemukan data/i);
+
+    const registration = await askProvider(ctx, chatId, 'bagaimana cara mendaftar stikom?');
+    expect(registration).toMatch(/daftar|pendaftaran|PMB|online|offline/i);
+    expect(registration).not.toMatch(/Manajemen Informatika adalah|program D3 yang berfokus|belum menemukan data/i);
+
+    const schedule = await askProvider(ctx, chatId, 'kapan pendaftaran dibuka?');
+    expect(schedule).toMatch(/PMB|pendaftaran|gelombang|20\d{2}/i);
+    expect(schedule).not.toMatch(/Manajemen Informatika|belum menemukan data/i);
+
+    const recommendation = await askProvider(ctx, chatId, 'Kalau S1 yang cocok untuk bekerja di bidang pemasaran yang mana ya?');
+    expect(recommendation).toMatch(/Bisnis Digital|marketing|pemasaran/i);
+    expect(recommendation).not.toMatch(/Manajemen Informatika|belum menemukan data/i);
+  });
 });
 

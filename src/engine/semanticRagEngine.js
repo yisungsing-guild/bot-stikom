@@ -2059,7 +2059,45 @@ function getRecentConversationTextForResolution(sessionData) {
 function hasExplicitContextAnchor(question) {
   const q = String(question || '').toLowerCase();
   if (!q) return false;
-  return /\b(?:sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen\s+informatika|sistem\s+komputer|s2|magister|pasca\s*sarjana|pascasarjana|rpl|double\s*degree|dual\s*degree|dnui|dalian|utb|help\s+university|career\s*center|pusat\s+karier|pusat\s+karir|tracer\s*study|inbis|inkubator\s+bisnis|hi-?think|language\s+learning\s+center|\bllc\b|mahasiswa\s+asing|izin\s+belajar|visa\s*study|student\s*exchange|bccp|gccp|short\s*course|beasiswa|skss|kampus|akreditasi|prodi|jurusan|ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|yudisium|wisuda|sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|krs|khs|transkrip|sion|baak|semester\s+(?:ganjil|genap|antara|pendek)|kalender\s+akademik|jadwal\s+akademik|remedial|remidi|ujian\s+(?:ulang|susulan))\b/i.test(q);
+  return /\b(?:itb\s+stikom\s+bali|stikom|pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran|mendaftar|daftar|registrasi|camaba|s1|sarjana|d3|diploma|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|manajemen\s+informatika|sistem\s+komputer|s2|magister|pasca\s*sarjana|pascasarjana|rpl|double\s*degree|dual\s*degree|dnui|dalian|utb|help\s+university|career\s*center|pusat\s+karier|pusat\s+karir|tracer\s*study|pemasaran|marketing|digital\s+marketing|inbis|inkubator\s+bisnis|hi-?think|language\s+learning\s+center|\bllc\b|mahasiswa\s+asing|izin\s+belajar|visa\s*study|student\s*exchange|bccp|gccp|short\s*course|beasiswa|skss|kampus|akreditasi|prodi|jurusan|ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|yudisium|wisuda|sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|krs|khs|transkrip|sion|baak|semester\s+(?:ganjil|genap|antara|pendek)|kalender\s+akademik|jadwal\s+akademik|remedial|remidi|ujian\s+(?:ulang|susulan))\b/i.test(q);
+}
+
+function hasExplicitCurrentTurnSemanticAuthority(question, contract = null) {
+  const q = String(question || '').toLowerCase().trim();
+  if (!q) return false;
+  if (hasExplicitContextAnchor(q)) return true;
+  if (/\b(?:si|ti|sk|bd|mi)\b/i.test(q) && /\b(?:apa\s+itu|biaya|ukt|dpp|semester|akreditasi|belajar|kurikulum|prospek|kerja|karier|karir)\b/i.test(q)) {
+    return true;
+  }
+  const hasAnaphoricSlot = /\b(?:itu|ini|tadi|tersebut|caranya|alurnya|prosesnya|syaratnya|dokumennya|berkasnya|biayanya|harganya|bayarnya|rinciannya|detailnya|gelarnya|kurikulumnya|belajarnya|kerjanya|kariernya|prospeknya|akreditasinya|bergabung|gabung|join)\b/i.test(q);
+  if (hasAnaphoricSlot) return false;
+  const c = contract && typeof contract === 'object' ? contract : null;
+  if (!c) return false;
+  const domain = String(c.domain || '').toLowerCase();
+  const requestType = String(c.requestType || '').toLowerCase();
+  const entityCount = Array.isArray(c.entities) ? c.entities.filter(entity => entity && entity.group !== 'unknown').length : 0;
+  const fields = Array.isArray(c.requestedFields) ? c.requestedFields : [];
+  const constraints = c.constraints && typeof c.constraints === 'object' ? c.constraints : {};
+  const hasExplicitConstraint = Boolean(
+    constraints.academicLevel
+    || (Array.isArray(constraints.academicLevels) && constraints.academicLevels.length)
+    || constraints.registrationWave
+    || constraints.feeType
+    || constraints.programScope
+    || constraints.geographicScope
+    || constraints.careerTopic
+    || constraints.academicTopic
+  );
+  if (domain && domain !== 'general' && domain !== 'unknown') {
+    if (entityCount > 0 || fields.length > 0 || hasExplicitConstraint) return true;
+    if (/^(?:registration|pmb_schedule|program_recommendation|double_degree|program|fee|career)$/i.test(domain) && requestType && requestType !== 'unknown') return true;
+  }
+  return false;
+}
+
+function shouldResolveContextFromSession(question, contract = null) {
+  if (!isContextualSemanticFollowup(question)) return false;
+  return !hasExplicitCurrentTurnSemanticAuthority(question, contract);
 }
 
 function isContextualSemanticFollowup(question) {
@@ -13088,12 +13126,25 @@ function tryShortProgramDefinitionDirectAnswer(question, canonical = null) {
       routeStage: 'short-definition-direct'
     });
   }
+  const canonicalAcademicLevel = canonical && canonical.constraints ? String(canonical.constraints.academicLevel || '').toLowerCase() : '';
+  if (canonicalAcademicLevel === 's2') {
+    const postgraduate = tryPostgraduateProfileAnswer(q) || tryPostgraduateProfileAnswer('Apa itu Program Studi S2 Sistem Informasi');
+    if (postgraduate && postgraduate.answer) {
+      return buildDeterministicResponse(q, postgraduate.source || 'semantic-rag-postgraduate-profile', postgraduate, {
+        routeStage: 'short-definition-direct'
+      });
+    }
+  }
   const result = tryProgramDefinitionAnswer(q);
-  const canonicalProgram = canonical
+  const canonicalPrograms = canonical
     && canonical.entities
     && Array.isArray(canonical.entities.programs)
-    && canonical.entities.programs[0]
-    && canonical.entities.programs[0].canonical;
+    ? canonical.entities.programs
+    : [];
+  const canonicalProgramEntity = canonicalAcademicLevel === 's2'
+    ? canonicalPrograms.find(entity => /\b(?:s2|magister|pascasarjana|pasca\s*sarjana)\b/i.test(String(entity && entity.canonical || '')))
+    : canonicalPrograms[0];
+  const canonicalProgram = canonicalProgramEntity && canonicalProgramEntity.canonical;
   const canUseCanonicalProgramProfile = canonicalProgram
     && canonical.intent
     && (canonical.intent.primary === 'ask_program_definition' || asksProgramExistenceShape);
@@ -15070,8 +15121,11 @@ async function querySemanticRag(question, options = {}) {
     const builtImmediateChoice = buildDeterministicResponse(originalQuestion, immediateProgramScopeChoice.source || 'semantic-rag-program-scope-clarification-choice', immediateProgramScopeChoice, { routeStage: 'pre-followup-program-scope-choice' });
     return await finalizeSemanticResult(originalQuestion, builtImmediateChoice, immediateCacheKey);
   }
-
-  const followupResolution = resolveSemanticFollowupQuestion(originalQuestion, options);
+  const currentTurnUnderstanding = buildCanonicalQueryUnderstanding(originalQuestion);
+  const currentTurnContract = currentTurnUnderstanding && currentTurnUnderstanding.contract ? currentTurnUnderstanding.contract : null;
+  const followupResolution = shouldResolveContextFromSession(originalQuestion, currentTurnContract)
+    ? resolveSemanticFollowupQuestion(originalQuestion, options)
+    : { changed: false, question: originalQuestion, topic: null, skipped: 'current_turn_semantic_authority' };
   if (followupResolution && followupResolution.changed && followupResolution.question) {
     question = followupResolution.question;
   }

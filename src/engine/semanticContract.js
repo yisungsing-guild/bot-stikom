@@ -101,6 +101,12 @@ function hasEntity(text, entity) {
   if (!canonical) return true;
   if (canonical.length <= 3) return new RegExp(`(^|\\s)${canonical}(\\s|$)`, 'i').test(normalized);
   if (normalized.includes(canonical)) return true;
+  if (canonical === 's2 sistem informasi') {
+    const hasS2Level = /(^|\s)(?:s2|magister|pascasarjana|pasca\s*sarjana|master)(\s|$)/i.test(normalized);
+    const hasSiProgram = normalized.includes('sistem informasi') || /(^|\s)si(\s|$)/i.test(normalized);
+    if (hasS2Level && hasSiProgram) return true;
+  }
+  if (canonical === 'manajemen informatika' && /(^|\s)(?:mi|d3\s+manajemen\s+informatika)(\s|$)/i.test(normalized)) return true;
   const aliases = {
     'sistem informasi': ['si'],
     'teknologi informasi': ['ti', 'informatika'],
