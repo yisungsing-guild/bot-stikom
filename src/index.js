@@ -157,6 +157,7 @@ const videoTrainingRoutes = require('./routes/videoTrainingRoutes');
 const watiWebhookRouter = require('./routes/watiWebhook');
 const fonnteWebhookRouter = require('./routes/fonnteWebhook');
 const { prewarmSemanticRag, querySemanticRag } = require('./engine/semanticRagEngine');
+const { buildSemanticSmokeTrace } = require('./utils/semanticSmokeTrace');
 
 // Middleware: auth, validation, rate limit
 const { verifyToken, createAuthRoute } = require('./middleware/auth');
@@ -630,7 +631,8 @@ app.post('/internal/semantic-smoke', async (req, res, next) => {
               source: ctx && (ctx.source || ctx.filename || ctx.file) ? String(ctx.source || ctx.filename || ctx.file) : null,
               text: ctx && (ctx.text || ctx.chunk) ? String(ctx.text || ctx.chunk).slice(0, 240) : ''
             }))
-          : []
+          : [],
+        trace: buildSemanticSmokeTrace({ query, result })
       });
     }
 
