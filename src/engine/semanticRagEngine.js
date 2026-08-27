@@ -5414,7 +5414,24 @@ function tryDoubleDegreeFollowUpAnswer(question, _indexForQuery, options = {}) {
 
   const recent = getRecentConversation(options && options.sessionData);
   const hint = String(options && options.intentHint ? options.intentHint : '');
-  const hasDoubleDegreeContext = /\b(double\s*degree|dual\s*degree|dd)\b/i.test(`${recent}\n${hint}`);
+  const sessionData = options && options.sessionData && typeof options.sessionData === 'object'
+    ? options.sessionData
+    : {};
+  const lastContract = sessionData.lastSemanticContract && typeof sessionData.lastSemanticContract === 'object'
+    ? sessionData.lastSemanticContract
+    : (sessionData.semanticContract && typeof sessionData.semanticContract === 'object' ? sessionData.semanticContract : null);
+  const contractDomain = lastContract && lastContract.domain ? String(lastContract.domain) : '';
+  const contractEntityText = lastContract && Array.isArray(lastContract.entities)
+    ? lastContract.entities.map((entity) => [entity && entity.canonical, entity && entity.type, entity && entity.role].filter(Boolean).join(' ')).join(' ')
+    : '';
+  const sessionSourceText = [
+    sessionData.composerLastSource,
+    sessionData.lastRagSource,
+    sessionData.lastSemanticSource,
+    sessionData.composerTelemetry && sessionData.composerTelemetry.source
+  ].filter(Boolean).join(' ');
+  const hasDoubleDegreeContext = /\b(double\s*degree|dual\s*degree|dd)\b/i.test(`${recent}\n${hint}\n${contractDomain}\n${contractEntityText}`)
+    || /\bsemantic-rag-dual-degree(?:-followup)?\b/i.test(sessionSourceText);
   if (!hasDoubleDegreeContext) return null;
 
   const expanded = asksInternational

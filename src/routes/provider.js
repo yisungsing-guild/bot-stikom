@@ -8694,12 +8694,19 @@ module.exports = function (provider) {
             welcomeSuppressed: !!metaPayload.welcomeSuppressed,
             ts: nowIso
           };
+          const semanticContractToPersist = metaPayload.semanticContract && typeof metaPayload.semanticContract === 'object'
+            ? metaPayload.semanticContract
+            : null;
           const newData = {
             ...prevData,
             composerLastSource: metaPayload.source || prevData.composerLastSource || null,
             composerUsedAt: nowIso,
             composerSentVia: 'composer',
-            composerTelemetry: composerTelemetryToSet
+            composerTelemetry: composerTelemetryToSet,
+            ...(semanticContractToPersist ? {
+              lastSemanticContract: semanticContractToPersist,
+              lastSemanticSource: metaPayload.source || prevData.lastSemanticSource || null
+            } : {})
           };
           await safeSessionUpsert(chatId, newData, currentState);
         } catch (e) {
@@ -9955,7 +9962,11 @@ module.exports = function (provider) {
             const ragQuestion = programHint ? `Program Studi: ${programHint}\n${text}` : text;
             const ragResult = await ragQueryWithEval(chatId, ragQuestion, topK, { answerQuestion: ragQuestion, minScore: 0, forceRag: true });
             if (ragResult && ragResult.success && ragResult.answer) {
-              await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer), { source: ragResult.source || 'semantic-rag', ragSource: ragResult.source || null });
+              await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer), {
+                source: ragResult.source || 'semantic-rag',
+                ragSource: ragResult.source || null,
+                semanticContract: ragResult && ragResult.debug ? (ragResult.debug.semanticContract || ragResult.debug.canonicalContract || null) : null
+              });
               return res.send({ ok: true, source: 'program_info_short_answer_rag', program: programHint, ragUsed: true });
             }
           }
@@ -16997,7 +17008,11 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               logger.warn({ err: e.message }, '[Provider] Web fallback after RAG failed');
             }
 
-            await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer), { source: ragResult.source || 'semantic-rag', ragSource: ragResult.source || null });
+            await sendBotMessage(chatId, maybeAppendCostDetailOffer(text, ragResult.answer), {
+              source: ragResult.source || 'semantic-rag',
+              ragSource: ragResult.source || null,
+              semanticContract: ragResult && ragResult.debug ? (ragResult.debug.semanticContract || ragResult.debug.canonicalContract || null) : null
+            });
 
             try {
               const answerText = String(ragResult.answer || '');
