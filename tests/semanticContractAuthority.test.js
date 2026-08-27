@@ -1,7 +1,7 @@
 ﻿const express = require('express');
 const request = require('supertest');
 const { buildCanonicalQueryUnderstanding } = require('../src/engine/queryUnderstanding');
-const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+const { querySemanticRag, verifyOutboundSemanticRelevance } = require('../src/engine/semanticRagEngine');
 const { selectEvidenceFromContexts, evaluateEvidenceAnswerability } = require('../src/engine/evidenceSelector');
 
 process.env.NODE_ENV = 'test';
@@ -171,5 +171,86 @@ describe('end-to-end semantic contract authority', () => {
     expect(nationalAfterInternational).toMatch(/Double Degree nasional|UTB|Universitas Teknologi Bandung|DKV/i);
     expect(nationalAfterInternational).not.toMatch(/HELP University|DNUI|Bachelor of/i);
   });
+
+  test('PMB registration-fee paraphrases preserve contract through verifier', async () => {
+    for (const q of ['biaya daftar berapa', 'berapa uang pendaftaran', 'berapa biaya pendaftaran?']) {
+      const canonical = contractOf(q);
+      expect(['registration', 'fee']).toContain(canonical.domain);
+      expect(canonical.requestType).toBe('fee');
+      expect(canonical.requestedFields.some((field) => /^(?:fee|amount)$/i.test(String(field)))).toBe(true);
+
+      const result = await querySemanticRag(q, { topK: 8 });
+      expect(result.source).toBe('semantic-rag-registration-fee');
+      expect(result.debug.semanticContract.requestType).toBe('fee');
+      expect(result.debug.contractVerification.reason).toBe('contract_preserved');
+      expect(result.answer).toMatch(/Biaya pendaftaran|Rp\.\s*500\.000/i);
+
+      const verifier = await verifyOutboundSemanticRelevance(q, result.answer, result.source, {
+        semanticContract: result.debug.semanticContract,
+        contexts: result.contexts || []
+      });
+      expect(verifier.ok).toBe(true);
+    }
+  });
+
+  test('Double Degree scoped follow-ups inherit parent contract and only switch scope', async () => {
+    const parentInternational = contractOf('apakah ada program double degree internasional?');
+    const parentNational = contractOf('apakah ada program double degree nasional?');
+    const baseSession = (parent) => ({
+      lastSemanticSource: 'semantic-rag-dual-degree',
+      composerLastSource: 'semantic-rag-dual-degree',
+      lastSemanticContract: parent
+    });
+    const cases = [
+      { parent: parentInternational, q: 'yang nasional ada tidak', scope: 'national', must: /UTB|Universitas Teknologi Bandung|DKV/i, mustNot: /HELP University|DNUI|Bachelor of/i },
+      { parent: parentInternational, q: 'kalau versi nasional?', scope: 'national', must: /UTB|Universitas Teknologi Bandung|DKV/i, mustNot: /HELP University|DNUI|Bachelor of/i },
+      { parent: parentNational, q: 'kalau internasional?', scope: 'international', must: /DNUI|HELP University|Malaysia|China/i, mustNot: /UTB|Universitas Teknologi Bandung|DKV/i },
+      { parent: parentNational, q: 'yang luar negeri apa saja', scope: 'international', must: /DNUI|HELP University|Malaysia|China/i, mustNot: /UTB|Universitas Teknologi Bandung|DKV/i }
+    ];
+
+    for (const item of cases) {
+      const currentCanonical = contractOf(item.q);
+      expect(currentCanonical.domain).toBe('general');
+      expect(currentCanonical.constraints.programScope).toBe(item.scope);
+
+      const result = await querySemanticRag(item.q, { topK: 8, sessionData: baseSession(item.parent) });
+      const inherited = result.debug.semanticContract;
+      expect(inherited.domain).toBe('double_degree');
+      expect(inherited.contextReference.mode).toBe('inherited_current_scope_override');
+      expect(inherited.constraints.programScope).toBe(item.scope);
+      expect(result.source).toBe('semantic-rag-dual-degree-followup');
+      expect(result.debug.routeStage).toBe('pre-followup-dual-degree-scope');
+      expect(result.debug.contractVerification.reason).toBe('contract_preserved');
+      expect(result.answer).toMatch(item.must);
+      expect(result.answer).not.toMatch(item.mustNot);
+
+      const verifier = await verifyOutboundSemanticRelevance(item.q, result.answer, result.source, {
+        semanticContract: inherited,
+        contexts: result.contexts || []
+      });
+      expect(verifier.ok).toBe(true);
+    }
+  });
+
+  test('provider persistent session preserves Double Degree scope in both directions', async () => {
+    const ctx = buildProviderApp();
+
+    const chatA = 'contract-authority-dd-a-' + Date.now();
+    const international = await askProvider(ctx, chatA, 'apakah ada program double degree internasional?');
+    expect(international).toMatch(/Double Degree internasional|DNUI|HELP University/i);
+    expect(international).not.toMatch(/UTB|Universitas Teknologi Bandung|DKV/i);
+    const national = await askProvider(ctx, chatA, 'yang nasional ada tidak');
+    expect(national).toMatch(/Double Degree nasional|UTB|Universitas Teknologi Bandung|DKV/i);
+    expect(national).not.toMatch(/HELP University|DNUI|Bachelor of|belum menemukan data|tidak dapat merangkumnya/i);
+
+    const chatB = 'contract-authority-dd-b-' + Date.now();
+    const nationalFirst = await askProvider(ctx, chatB, 'apakah ada program double degree nasional?');
+    expect(nationalFirst).toMatch(/Double Degree nasional|UTB|Universitas Teknologi Bandung|DKV/i);
+    expect(nationalFirst).not.toMatch(/HELP University|DNUI|Bachelor of/i);
+    const internationalAfterNational = await askProvider(ctx, chatB, 'yang luar negeri apa saja');
+    expect(internationalAfterNational).toMatch(/Double Degree internasional|DNUI|HELP University/i);
+    expect(internationalAfterNational).not.toMatch(/UTB|Universitas Teknologi Bandung|DKV|belum menemukan data|tidak dapat merangkumnya/i);
+  });
+
 });
 

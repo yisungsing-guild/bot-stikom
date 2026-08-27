@@ -5756,7 +5756,7 @@ module.exports = function (provider) {
     if (!inbound || !outbound) return true;
     if (String(meta && meta.source || '').includes('timeout')) return true;
     const metaSource = String((meta && (meta.source || meta.ragSource || meta.finalPipeline)) || '');
-    if (/^(?:semantic-rag-(?:small-talk|program-list|program-comparison|program-definition|program-curriculum|program-recommendation|student-concern|scholarship|rpl|campus-location|campus-main-location|ukm-list|generic-faq-qna|international-class-fallback|dual-degree|dual-degree-followup|pmb-info|pmb-requirements|academic|academic-credit|fee-clarification|feedback|fee-detail)|rag-(?:accreditation|program-comparison|campus-location|dual-degree-dpp-discount))/i.test(metaSource)) return true;
+    if (/^(?:semantic-rag-(?:small-talk|program-list|program-comparison|program-definition|program-curriculum|program-recommendation|student-concern|scholarship|rpl|campus-location|campus-main-location|ukm-list|generic-faq-qna|international-class-fallback|dual-degree|dual-degree-followup|pmb-info|pmb-requirements|academic|academic-credit|fee-clarification|feedback|registration-fee|fee-detail)|rag-(?:accreditation|program-comparison|campus-location|dual-degree-dpp-discount))/i.test(metaSource)) return true;
     if (isSafeDoubleDegreeOutboundAnswer(inbound, outbound, meta)) return true;
     if (isDoubleDegreeProcessQuestion(inbound)) return true;
     if (/^\s*(balas|pilih|ketik)\b/i.test(outbound)) return true;
@@ -5791,7 +5791,7 @@ module.exports = function (provider) {
     }
 
     try {
-      const verdict = await verifyOutboundSemanticRelevance(inboundUserText, original, source);
+      const verdict = await verifyOutboundSemanticRelevance(inboundUserText, original, source, meta || {});
       if (verdict && verdict.ok === false) {
         logger.warn({
           source,

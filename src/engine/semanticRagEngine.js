@@ -5404,11 +5404,55 @@ function tryUnsupportedInternationalProgramAnswer(question) {
     frameSource: 'semantic-rag-insufficient-data'
   };
 }
+function getLastSemanticContractFromSession(sessionData) {
+  if (!sessionData || typeof sessionData !== 'object') return null;
+  if (sessionData.lastSemanticContract && typeof sessionData.lastSemanticContract === 'object') return sessionData.lastSemanticContract;
+  if (sessionData.semanticContract && typeof sessionData.semanticContract === 'object') return sessionData.semanticContract;
+  if (sessionData.composerTelemetry && sessionData.composerTelemetry.semanticContract && typeof sessionData.composerTelemetry.semanticContract === 'object') return sessionData.composerTelemetry.semanticContract;
+  return null;
+}
+
+function buildInheritedDoubleDegreeScopeContract(question, parentContract, scope) {
+  const base = parentContract && typeof parentContract === 'object'
+    ? JSON.parse(JSON.stringify(parentContract))
+    : buildCanonicalQueryUnderstanding('apakah ada program double degree?').contract;
+  const raw = String(question || '').trim();
+  const normalized = normalizeUserQuery(raw).normalizedText || raw.toLowerCase();
+  const scopedLabel = scope === 'international' ? 'Double Degree internasional' : 'Double Degree nasional';
+  const asksCollection = /\b(?:apa\s+saja|apa\s+aja|pilihan|daftar|list|versi)\b/i.test(raw);
+  return {
+    ...base,
+    raw,
+    normalized,
+    domain: 'double_degree',
+    intent: 'ask_availability',
+    requestType: asksCollection ? 'list' : 'availability',
+    requestedFields: Array.from(new Set([...(Array.isArray(base.requestedFields) ? base.requestedFields : []), 'availability', 'partner', 'programScope'])),
+    entities: [{ canonical: scopedLabel, type: 'program', role: 'target' }],
+    entityType: ['program'],
+    relations: Array.isArray(base.relations) ? base.relations : [],
+    constraints: {
+      ...(base.constraints && typeof base.constraints === 'object' ? base.constraints : {}),
+      programScope: scope,
+      geographicScope: scope === 'international' ? 'international' : 'national',
+      locationIntent: false
+    },
+    contextReference: {
+      mode: 'inherited_current_scope_override',
+      resolvedFrom: 'previous_double_degree_contract',
+      parentScope: parentContract && parentContract.constraints ? parentContract.constraints.programScope || parentContract.constraints.geographicScope || null : null
+    },
+    answerShape: asksCollection ? 'list' : 'direct_answer',
+    routingQuery: scopedLabel,
+    confidence: Math.max(Number(base.confidence || 0), 0.9)
+  };
+}
+
 function tryDoubleDegreeFollowUpAnswer(question, _indexForQuery, options = {}) {
   const raw = String(question || '').trim();
   const q = raw.toLowerCase();
-  const asksInternational = /\b(internasional|international|luar\s+negeri)\b/i.test(q);
-  const asksNational = /\b(nasional|national)\b/i.test(q);
+  const asksInternational = /\b(internasional|international|luar\s+negeri|asing|overseas)\b/i.test(q);
+  const asksNational = /\b(nasional|national|dalam\s+negeri|lokal)\b/i.test(q);
   if (!asksInternational && !asksNational) return null;
   if (/\b(biaya|harga|tarif|ukt|dpp|jadwal|syarat|daftar|pendaftaran|registrasi|beasiswa)\b/i.test(q)) return null;
 
@@ -5417,9 +5461,7 @@ function tryDoubleDegreeFollowUpAnswer(question, _indexForQuery, options = {}) {
   const sessionData = options && options.sessionData && typeof options.sessionData === 'object'
     ? options.sessionData
     : {};
-  const lastContract = sessionData.lastSemanticContract && typeof sessionData.lastSemanticContract === 'object'
-    ? sessionData.lastSemanticContract
-    : (sessionData.semanticContract && typeof sessionData.semanticContract === 'object' ? sessionData.semanticContract : null);
+  const lastContract = getLastSemanticContractFromSession(sessionData);
   const contractDomain = lastContract && lastContract.domain ? String(lastContract.domain) : '';
   const contractEntityText = lastContract && Array.isArray(lastContract.entities)
     ? lastContract.entities.map((entity) => [entity && entity.canonical, entity && entity.type, entity && entity.role].filter(Boolean).join(' ')).join(' ')
@@ -5430,15 +5472,28 @@ function tryDoubleDegreeFollowUpAnswer(question, _indexForQuery, options = {}) {
     sessionData.lastSemanticSource,
     sessionData.composerTelemetry && sessionData.composerTelemetry.source
   ].filter(Boolean).join(' ');
-  const hasDoubleDegreeContext = /\b(double\s*degree|dual\s*degree|dd)\b/i.test(`${recent}\n${hint}\n${contractDomain}\n${contractEntityText}`)
-    || /\bsemantic-rag-dual-degree(?:-followup)?\b/i.test(sessionSourceText);
+  const hasDoubleDegreeContext = /\b(double\s*degree|dual\s*degree|dd)\b/i.test([recent, hint, contractDomain, contractEntityText].join('\n'))
+    || /\bsemantic-rag-dual-degree(?:-followup)?\b/i.test(sessionSourceText)
+    || (lastContract && String(lastContract.domain || '') === 'double_degree');
   if (!hasDoubleDegreeContext) return null;
 
-  const expanded = asksInternational
+  const scope = asksInternational ? 'international' : 'national';
+  const expanded = scope === 'international'
     ? 'Double Degree internasional'
     : 'Double Degree nasional';
   const result = tryDualDegreeAnswer(expanded);
-  return result && result.answer ? { ...result, source: 'semantic-rag-dual-degree-followup' } : null;
+  if (!result || !result.answer) return null;
+  const inheritedContract = buildInheritedDoubleDegreeScopeContract(raw, lastContract, scope);
+  return {
+    ...result,
+    source: 'semantic-rag-dual-degree-followup',
+    debug: {
+      ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
+      semanticContract: inheritedContract,
+      inheritedFrom: 'previous_double_degree_contract',
+      inheritedScope: scope
+    }
+  };
 }
 function getReligiousGreetingReply(normalizedText) {
   const t = String(normalizedText || '').toLowerCase().trim();
@@ -14999,6 +15054,15 @@ async function querySemanticRag(question, options = {}) {
   const originalQuestion = String(question || '').trim();
   const preStrictDocumentOnly = isStrictDocumentOnlyMode();
   const immediateProgramScopeChoice = preStrictDocumentOnly ? null : tryProgramScopeClarificationChoiceAnswer(originalQuestion, options);
+  const immediateDoubleDegreeScopeFollowup = preStrictDocumentOnly ? null : tryDoubleDegreeFollowUpAnswer(originalQuestion, null, options);
+  if (immediateDoubleDegreeScopeFollowup && immediateDoubleDegreeScopeFollowup.answer) {
+    const immediateCacheKey = buildSemanticResultCacheKey(originalQuestion, options);
+    const cachedImmediate = getCachedSemanticResult(immediateCacheKey);
+    if (cachedImmediate) return cachedImmediate;
+    const inheritedContract = immediateDoubleDegreeScopeFollowup.debug && immediateDoubleDegreeScopeFollowup.debug.semanticContract ? immediateDoubleDegreeScopeFollowup.debug.semanticContract : null;
+    const builtImmediateFollowup = buildDeterministicResponse(originalQuestion, immediateDoubleDegreeScopeFollowup.source || 'semantic-rag-dual-degree-followup', immediateDoubleDegreeScopeFollowup, { routeStage: 'pre-followup-dual-degree-scope', semanticContract: inheritedContract });
+    return await finalizeSemanticResult(originalQuestion, builtImmediateFollowup, immediateCacheKey, { semanticContract: inheritedContract });
+  }
   if (immediateProgramScopeChoice && immediateProgramScopeChoice.answer) {
     const immediateCacheKey = buildSemanticResultCacheKey(originalQuestion, options);
     const cachedImmediate = getCachedSemanticResult(immediateCacheKey);
@@ -17183,7 +17247,7 @@ async function querySemanticRag(question, options = {}) {
     return errorResult;
   }
 }
-async function verifyOutboundSemanticRelevance(question, answer, source = 'provider-outbound') {
+async function verifyOutboundSemanticRelevance(question, answer, source = 'provider-outbound', meta = {}) {
   const q = String(question || '').trim();
   const a = String(answer || '').trim();
   if (!q || !a) return { ok: true, skipped: true, reason: 'empty_question_or_answer' };
@@ -17217,7 +17281,16 @@ async function verifyOutboundSemanticRelevance(question, answer, source = 'provi
       && /\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|Persyaratan)\b/i.test(a)
       && ((a.match(/(?:^|\n|\s)\b[A-Z]\.\s+/g) || []).length >= 2 || (a.match(/\b(?:Hari\/Tanggal|Pukul|Tempat|Waktu)\s*:/gi) || []).length >= 4);
     const compactOutboundAcademicSafe = isSafeCompactAcademicScheduleAnswer(q, a) || isSafeCompactAcademicRequirementAnswer(q, a) || isSafeCompactAcademicGeneralAnswer(q, a);
+    const semanticContract = meta && meta.semanticContract && typeof meta.semanticContract === 'object' ? meta.semanticContract : null;
+    const contractVerification = semanticContract ? verifyAnswerAgainstContract(semanticContract, a, Array.isArray(meta && meta.contexts) ? meta.contexts : []) : null;
+    const contractPreserved = contractVerification && contractVerification.ok !== false;
+    const safeRegistrationFeeAnswer = /registration-fee/i.test(src)
+      && /\b(?:biaya|uang|harga|tarif)\s+pendaftaran\b/i.test(a)
+      && /\bRp\.?\s*\d/i.test(a)
+      && /\b(?:pendaftaran|pmb)\b/i.test(a);
     const structuredOutboundSafe = compactOutboundAcademicSafe
+      || contractPreserved
+      || safeRegistrationFeeAnswer
       || (/pmb-info/i.test(src) && isSafePmbOverviewAnswer(q, a))
       || (/dual-degree/i.test(src) && isSafeDualDegreeAnswer(q, a))
       || isSafeCampusFacilityAnswer(q, a, src)
