@@ -159,9 +159,12 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
     const compactKey = key.replace(/\s+/g, '\\s*');
     const spacedKey = group && suffix ? `${group}\\s*${suffix}` : compactKey;
     const numericGroupMap = { I: '1', II: '2', III: '3', IV: '4', V: '5' };
+    const wordGroupMap = { I: 'satu', II: 'dua', III: 'tiga', IV: 'empat' };
     const numeric = numericGroupMap[group.toUpperCase()] || '';
-    const numericKey = numeric && suffix ? `${numeric}\\s*${suffix}` : '';
-    const variants = [compactKey, spacedKey, numericKey].filter(Boolean);
+    const numericKey = numeric && suffix ? `${numeric}\\s*${suffix}` : numeric;
+    const wordNum = wordGroupMap[group.toUpperCase()] || '';
+    const wordKey = wordNum && suffix ? `${wordNum}\\s*${suffix}` : wordNum;
+    const variants = [compactKey, spacedKey, numericKey, wordKey].filter(Boolean);
     const waveRe = new RegExp(`\\b(?:gel(?:ombang)?\\s*)?(?:${variants.join('|')})\\b`, 'i');
     if (!waveRe.test(combined)) return { ok: false, reason: 'missing_registration_wave', registrationWave: contract.constraints.registrationWave.key };
   }

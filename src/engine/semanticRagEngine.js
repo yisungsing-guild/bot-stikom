@@ -5983,17 +5983,17 @@ function parseRequestedMonth(question) {
 function romanToWaveGroup(raw) {
   const s = String(raw || '').trim().toUpperCase();
   if (!s) return '';
-  if (s === '1' || s === 'I') return 'I';
-  if (s === '2' || s === 'II') return 'II';
-  if (s === '3' || s === 'III') return 'III';
-  if (s === '4' || s === 'IV') return 'IV';
+  if (s === '1' || s === 'I' || s === 'SATU') return 'I';
+  if (s === '2' || s === 'II' || s === 'DUA') return 'II';
+  if (s === '3' || s === 'III' || s === 'TIGA') return 'III';
+  if (s === '4' || s === 'IV' || s === 'EMPAT') return 'IV';
   if (s === 'KHUSUS') return 'KHUSUS';
   return '';
 }
 
 function parseRequestedScheduleWave(question) {
   const q = String(question || '');
-  const matches = Array.from(q.matchAll(/\b(?:gel(?:ombang)?|gbg)\s*(khusus|[1-4]|i{1,3}|iv)\s*([a-c])?\b/gi));
+  const matches = Array.from(q.matchAll(/\b(?:gel(?:ombang)?|gbg)\s*(khusus|[1-4]|i{1,3}|iv|satu|dua|tiga|empat)\s*([a-c])?\b/gi));
   const m = matches.length ? matches[matches.length - 1] : null;
   if (!m) return null;
   const group = romanToWaveGroup(m[1]);
@@ -13547,7 +13547,7 @@ function isCanonicalSourceKnowledgeRequest(canonical, question = '') {
   if (domain === 'campus_facility') return true;
   if (domain === 'accreditation' && (qt === 'validity' || /\b(?:berlaku(?:nya)?\s+sampai|masa\s+berlaku(?:nya)?|valid|sampai\s+kapan|sampai\s+tahun\s+berapa)\b/i.test(q))) return true;
   if (domain === 'academic' && (qt === 'numeric' || /\b(?:remedial|remidi|yudisium|wisuda|s2|magister|pascasarjana|sks|beban|bobot|daftar\s+pustaka|referensi|sitasi|pedoman\s+ta|tugas\s+akhir|skripsi|halaman|abstrak)\b/i.test(q))) return true;
-  if (domain === 'double_degree' && (qt === 'sequence' || /\b(?:skema|tahapan|tahun\s+(?:ke-?\s*)?(?:1|2|3|4|pertama|kedua|ketiga|keempat|3|4))\b/i.test(q))) return true;
+  if (domain === 'double_degree' && (qt === 'schedule' || intent === 'ask_schedule' || qt === 'sequence' || /\b(?:skema|tahapan|tahun\s+(?:ke-?\s*)?(?:1|2|3|4|pertama|kedua|ketiga|keempat|3|4)|jadwal|kapan|dibuka|ditutup|periode|mulai)\b/i.test(q))) return true;
   if (domain === 'double_degree' && (qt === 'degree_outcome' || /\b(?:gelar|ijazah|degree|credential|lulusan\s+dapat|diperoleh|peroleh)\b/i.test(q))) return true;
   if (domain === 'institution_profile' && (qt === 'founding_people' || qt === 'founding_date' || qt === 'origin_history' || qt === 'historical_milestone' || qt === 'founding_event' || /\b(?:pendiri|tokoh\s+pendiri|menginisiasi|penggagas|perintis|didirikan\s+oleh)\b/i.test(q))) return true;
   if (domain === 'program' && (qt === 'degree_outcome' || /\b(?:gelar|degree|ijazah|titel)\b/i.test(q))) return true;

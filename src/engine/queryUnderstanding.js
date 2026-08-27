@@ -164,16 +164,16 @@ function parseRequestedMonth(raw, currentDate) {
 
 function romanToWaveGroup(raw) {
   const s = String(raw || '').trim().toUpperCase();
-  if (s === '1' || s === 'I') return 'I';
-  if (s === '2' || s === 'II') return 'II';
-  if (s === '3' || s === 'III') return 'III';
-  if (s === '4' || s === 'IV') return 'IV';
+  if (s === '1' || s === 'I' || s === 'SATU') return 'I';
+  if (s === '2' || s === 'II' || s === 'DUA') return 'II';
+  if (s === '3' || s === 'III' || s === 'TIGA') return 'III';
+  if (s === '4' || s === 'IV' || s === 'EMPAT') return 'IV';
   if (s === 'KHUSUS') return 'KHUSUS';
   return '';
 }
 
 function parseRequestedWave(raw) {
-  const matches = Array.from(String(raw || '').matchAll(/\b(?:gel(?:ombang)?|gbg)\s*(khusus|[1-4]|i{1,3}|iv)\s*([a-c])?\b/gi));
+  const matches = Array.from(String(raw || '').matchAll(/\b(?:gel(?:ombang)?|gbg)\s*(khusus|[1-4]|i{1,3}|iv|satu|dua|tiga|empat)\s*([a-c])?\b/gi));
   const m = matches.length ? matches[matches.length - 1] : null;
   if (!m) return null;
   const group = romanToWaveGroup(m[1]);
@@ -464,7 +464,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && /\b(?:daftar(?:nya)?|pendaftaran|pendaftarannya|registrasi|pmb|mahasiswa\s+baru|camaba|maba)\b/i.test(q)
     && !hasFee
     && !hasScholarship;
-  const hasSchedule = (/\b(?:jadwal|gelombang|gbg|bulan\s+depan|bulan\s+ini|bulan\s+lalu|deadline|tanggal|tgl|kapan|ditutup|tutup|buka|dibuka|aktif)\b/i.test(q)
+  const hasSchedule = (/\b(?:jadwal|gelombang|gbg|bulan\s+depan|bulan\s+ini|bulan\s+lalu|deadline|tanggal|tgl|kapan|ditutup|tutup|buka|dibuka|mulai|dimulai|aktif)\b/i.test(q)
     || Boolean(temporal.explicitDate || temporal.requestedMonth || temporal.requestedWave))
     && !/\b(?:berlaku|masa\s+berlaku|valid(?:itas)?|kedaluwarsa|expired)\b/i.test(q);
   const hasFacility = /\b(?:fasilitas|fasilias|fasiltas|layanan|sarana|prasarana|laboratorium|lab|perpustakaan|ruang|kantin|parkir|wifi|inkubator|inbis|language\s+learning|llc|hi\s*think|hithink)\b/i.test(q);
@@ -622,8 +622,16 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const hasInternationalProgramComparison = INTERNATIONAL_CONTRAST_SIGNAL.test(q)
     && entities.internationalPrograms.length >= 2
     && /\b(?:student\s*exchange|pertukaran\s+mahasiswa|double\s*degree|dual\s*degree|dnui|dalian|help|utb|hi[-\s]?think|hithink|program\s+internasional)\b/i.test(q);
+  const isDoubleDegree = entities.internationalPrograms.some((entity) => String(entity.role || '') === 'double_degree')
+    || /\b(?:double\s*degree|dual\s*degree|program\s+ganda|kuliah\s+ganda)\b/i.test(q);
+  const isInternational = entities.internationalPrograms.length > 0 || isDoubleDegree;
+  const hasInternationalProgramSchedule = isInternational && hasSchedule && !hasFee;
+  const asksInternationalProcedureSignal = /\b(?:syarat|persyaratan|seleksi(?:nya)?|perlu\s+apa|butuh\s+apa|dokumen|cara|alur|prosedur|langkah|tahapan|lewat\s+mana|kanal|channel|pengumuman)\b/i.test(q)
+    || (/\b(?:ikut|mengikuti|daftar|pendaftaran)\b/i.test(q) && !hasSchedule);
   const hasInternationalProgramProcedure = entities.internationalPrograms.length > 0
-    && /\b(?:syarat|persyaratan|seleksi(?:nya)?|perlu\s+apa|butuh\s+apa|dokumen|cara|alur|prosedur|ikut|mengikuti|daftar|pendaftaran|informasi|info|lewat\s+mana|kanal|channel|pengumuman)\b/i.test(q);
+    && asksInternationalProcedureSignal
+    && !hasInternationalProgramSchedule
+    && !hasFee;
   const hasProgramLevelList = /\b(?:jenjang|level\s+kuliah|strata|diploma|sarjana|pascasarjana|magister|d3|s1|s\s*1|s2|s\s*2)\b/i.test(q)
     && /\b(?:apa\s+saja|apa\s+aja|ada|tersedia|pilihan|daftar|list|program|prodi|jurusan)\b/i.test(q)
     && !hasFee
@@ -728,6 +736,10 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_international_program_comparison';
     primaryDomain = 'international_program';
     answerExpectation = 'comparison';
+  } else if (hasInternationalProgramSchedule) {
+    primaryIntent = 'ask_schedule';
+    primaryDomain = isDoubleDegree ? 'double_degree' : 'international_program';
+    answerExpectation = 'date_or_period';
   } else if (hasInternationalProgramProcedure) {
     primaryIntent = 'ask_international_program_procedure';
     primaryDomain = 'international_program';
@@ -879,8 +891,8 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   if (asksCount) questionType = 'count';
   else if (hasAcademicLevelComparison || hasFeeComponentComparison || hasAcademicCreditComparison || hasEntityTypeComparison || hasLegalDocumentVsPmbComparison) questionType = 'comparison';
   else if (hasAcademicNumeric) questionType = 'numeric';
+  else if (hasInternationalProgramSchedule || hasAcademicSchedule) questionType = 'schedule';
   else if (hasAcademicProcedure || hasThesisSubmissionProcedure || hasInternationalProgramProcedure || hasRegistrationDataCorrection) questionType = 'procedure';
-  else if (hasAcademicSchedule) questionType = 'schedule';
   else if (hasInternationalProgramComparison) questionType = 'comparison';
   else if (hasDualDegreeRelation) questionType = 'relation_pairing';
   else if (hasDoubleDegreeOutcome || hasProgramDegreeOutcome) questionType = 'degree_outcome';
@@ -1026,6 +1038,10 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
     fields.add('availability');
     fields.add('partner');
     fields.add('program');
+    if (intent === 'ask_schedule' || (classification && classification.questionType === 'schedule')) {
+      fields.add('schedule');
+      fields.add('date');
+    }
     if (classification && classification.constraints && classification.constraints.programScope) fields.add('programScope');
     if (classification && classification.constraints && classification.constraints.geographicScope) fields.add('geographicScope');
   }
