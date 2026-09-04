@@ -1,6 +1,6 @@
 {
   "name": "whatsapp-bot-system",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "_comment": "File ini adalah manifest proyek Node.js. Field yang diawali '_' hanyalah untuk dokumentasi lokal (komentar Bahasa Indonesia). Jangan diandalkan sebagai konfigurasi runtime.",
   "main": "src/index.js",
