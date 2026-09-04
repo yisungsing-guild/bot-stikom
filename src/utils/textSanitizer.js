@@ -2,35 +2,22 @@ function normalizeMojibakePunctuationForWhatsapp(input) {
   let text = String(input || '');
   if (!text) return text;
 
-  // Common mojibake sequences we’ve observed in outbound WhatsApp messages.
-  // These typically come from double-encoding (UTF-8 bytes interpreted as Latin-1/CP1252 and re-saved).
-  // Keep replacements conservative and readability-focused.
-  const replacements = [
-    // Frequently observed in this repo (these are the literal mojibake strings)
-    [/ΓÇö/g, '-'], // em dash artifact
-    [/ΓÇô/g, '-'], // en dash artifact
-    [/ΓÇª/g, '...'], // ellipsis artifact
-    [/ΓÇ£/g, '"'],
-    [/ΓÇ¥/g, '"'],
-    [/ΓÇÿ/g, "'"],
-    [/ΓÇÖ/g, "'"],
-    [/ΓÇó/g, '-'], // bullet artifact
+  // 1. OCR / Tesseract artifacts like 'G' or 'G\uFFFD\uFFFD'
+  text = text.replace(/\bG\uFFFD{1,2}\b|\bG\b/g, '-');
+  text = text.replace(/\s+G\uFFFD{1,2}\s+|\s+G\s+/g, ' - ');
 
-    // Common CP1252-style mojibake (UTF-8 bytes mis-decoded as CP1252)
-    [/â€”|â€“/g, '-'],
-    [/\u00e2\u20ac\u00a2/g, '-'],
-    [/â€¦/g, '...'],
-    [/â€œ|â€/g, '"'],
-    [/â€˜|â€™/g, "'"],
+  // 2. Replacement character artifacts: \uFFFD, ï¿½
+  text = text.replace(/(\d)\s*(?:\uFFFD|ï¿½)\s*(\d)/g, '$1-$2');
+  text = text.replace(/(\S)\s+(?:\uFFFD|ï¿½)\s+(\S)/g, '$1 - $2');
+  text = text.replace(/^(?:\uFFFD|ï¿½)\s+/gm, '- ');
+  text = text.replace(/(?:\uFFFD|ï¿½)+/g, '');
 
-    // Observed in WhatsApp output screenshot (dash/bullet artifact)
-    [/Ĉº/g, '-']
-  ];
+  // 3. Multi-byte nested mojibake (e.g. ÃƒÆ’Ã†â€™... or Ã¢â‚¬...)
+  // Handle any multi-byte mojibake cluster BEFORE breaking it apart with single-stage replacements!
+  text = text.replace(/(\d)\s*(?:[\u00C3\u00C2][\u0080-\uFFFF]{2,})\s*(\d)/g, '$1-$2');
+  text = text.replace(/[\u00C3\u00C2][\u0080-\uFFFF]{4,}/g, '-');
 
-  for (const [re, replacement] of replacements) {
-    text = text.replace(re, replacement);
-  }
-
+  // 4. Multi-byte quotes / apostrophe
   const mojibakeOpenQuote = String.fromCharCode(0x00c3, 0x00a2, 0x00e2, 0x201a, 0x00ac, 0x00c5, 0x201c);
   const mojibakeCloseQuote = String.fromCharCode(0x00c3, 0x00a2, 0x00e2, 0x201a, 0x00ac, 0x00c2, 0x009d);
   const mojibakeApostrophe = String.fromCharCode(0x00c3, 0x00a2, 0x00e2, 0x201a, 0x00ac, 0x00e2, 0x201e, 0x00a2);
@@ -38,8 +25,44 @@ function normalizeMojibakePunctuationForWhatsapp(input) {
     .replaceAll(mojibakeOpenQuote, '"')
     .replaceAll(mojibakeCloseQuote, '"')
     .replaceAll(mojibakeApostrophe, "'");
-  // Cleanup: collapse some common spacing artifacts (keep conservative).
-  // Use [ \t] instead of \s to avoid matching newlines; preserve intentional blank lines.
+
+  // 5. Single-stage CP1252 quotes
+  text = text.replace(/\u00e2\u20ac\u0153/g, '"'); // â€œ
+  text = text.replace(/\u00e2\u20ac[\u009d\u009c]/g, '"'); // â€\u009d
+  text = text.replace(/â€œ/g, '"');
+  text = text.replace(/â€[ \t]/g, '" ');
+  text = text.replace(/â€(?=[\s\.,!?:;\)\]\n]|$)/g, '"');
+  text = text.replace(/â€˜|â€™|\u00e2\u20ac\u02dc|\u00e2\u20ac\u2122/g, "'");
+
+  // 6. Single-stage CP1252 dashes, bullets, ellipses
+  text = text.replace(/â€”|â€“|\u00e2\u20ac\u201d|\u00e2\u20ac\u201c/g, '-');
+  text = text.replace(/\u00e2\u20ac\u00a2|â€¢/g, '-');
+  text = text.replace(/â€¦|\u00e2\u20ac\u00a6/g, '...');
+
+  // 7. Stray non-breaking space artifacts: Â (U+00C2), Ã‚ (U+00C3 U+0082)
+  text = text.replace(/Ã‚Â/g, ' ');
+  text = text.replace(/Ã‚(?=[\s\.,:;\-!])/g, '');
+  text = text.replace(/Â(?=[\s\.,:;\-!])/g, '');
+  text = text.replace(/\s+Â\s+/g, ' ');
+
+  // 8. Terminal / console mojibake sequences
+  const terminalReplacements = [
+    [/ΓÇö/g, '-'],
+    [/ΓÇô/g, '-'],
+    [/ΓÇª/g, '...'],
+    [/ΓÇ£/g, '"'],
+    [/ΓÇ¥/g, '"'],
+    [/ΓÇÿ/g, "'"],
+    [/ΓÇÖ/g, "'"],
+    [/ΓÇó/g, '-'],
+    [/Ĉº/g, '-']
+  ];
+  for (const [re, rep] of terminalReplacements) {
+    text = text.replace(re, rep);
+  }
+
+  // 9. Normalize multiple consecutive dashes or spaces resulting from replacements
+  text = text.replace(/-\s*-\s*/g, '-');
   text = text.replace(/[ \t]+\n/g, '\n');
   text = text.replace(/\n[ \t]+/g, '\n');
   text = text.replace(/[ \t]{2,}/g, ' ');

@@ -133,8 +133,18 @@ function hasInlineRawBulletLeak(text) {
   const startsMidSentenceBullet = /^\s*[-*]\s+(?:dan|atau|serta|selain|sehingga|untuk|dengan|yang|pada|dalam|ke-)\b/i.test(out);
   return inlineBullet || danglingThenBullet || startsMidSentenceBullet;
 }
+
+function extractCoreAnswerBody(text) {
+  let out = String(text || '').trim();
+  out = out.replace(/(?:\r?\n\s*|\r?\n|^)(?:Topik\s+lanjutan|Kalau\s+mau\s+lanjut[^\n:]*|Rekomendasi\s+pertanyaan[^\n:]*|Saran\s+pertanyaan)\s*:\s*(?:\r?\n\s*[-*•]\s*[^\n]+)+$/i, '');
+  out = out.replace(/\n\s*(?:Kalau mau lanjut, kakak bisa tanya|Rekomendasi pertanyaan berikutnya):[\s\S]*$/i, '');
+  out = out.replace(/\n\s*Kalau Kakak ingin tahu lebih lanjut, mungkin pertanyaan berikut(?:nya)? juga bisa membantu:[\s\S]*$/i, '');
+  return out.trim();
+}
+
 function hasLikelyRawDocumentLeak(text) {
-  const out = String(text || '');
+  const raw = String(text || '');
+  const out = extractCoreAnswerBody(raw);
   const lower = out.toLowerCase();
   const legalMarkers = [
     /\bpasal\s+\d+/i,
@@ -505,6 +515,12 @@ function detectCrossDomainAnswerLeak(answer, userQuery = '', options = {}) {
   }
 
   const requestedAny = Object.values(requested).some(Boolean);
+  if (!requestedAny && options && /uploaded-training/i.test(String(options.source || ''))) {
+    const stop = new Set(['apa', 'apakah', 'itu', 'ini', 'yang', 'dan', 'atau', 'untuk', 'dengan', 'dari', 'pada', 'di', 'ke', 'kak', 'min', 'tentang', 'jelaskan', 'info', 'informasi']);
+    const qTerms = q.split(/\s+/).filter((term) => term.length >= 3 && !stop.has(term));
+    const overlap = qTerms.filter((term) => new RegExp('(^|\\s)' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\s|$)', 'i').test(a)).length;
+    if (qTerms.length && overlap >= Math.min(2, qTerms.length)) return { leak: false, leakedDomains: [] };
+  }
   const leakedDomains = Object.entries(answerDomains)
     .filter(([domain, present]) => present && !allowed.has(domain))
     .map(([domain]) => domain);
@@ -827,11 +843,17 @@ function lacksConcreteItemsForApaSaja(answer, userQuery) {
   return bulletCount < 2 && namedItems < 2 && !hasListLanguage;
 }
 
+function isDeterministicProtocolSource(source) {
+  const value = String(source || '').trim().toLowerCase();
+  if (!value) return false;
+  return /(?:^|[-_])(numeric_menu|numeric_menu_handover|handover|welcome|first_message_welcome|greeting|general_small_talk|keyword_rules|campus_location_fast|dual_degree_location_fast|program_list_fast|non_marketing_dept_offer|non_marketing_menu|feedback-capture|fsm_menu|directSend|pmb_fee_fast_early|fee_other_besides_semester|schedule_direct|fast_fee|intro|welcome_only|program_list)(?:$|[-_])/i.test(value);
+}
+
 function isTrustedSemanticAlignmentSource(source) {
   const value = String(source || '').trim().toLowerCase();
   if (!value) return false;
-  const trustedSemanticPrefix = /^semantic-rag-(?:uploaded-training|registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|linkedin|institution|operational|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification)/i;
-  const trustedProviderSource = /(?:^|[-_])(double_degree_process|fast_fee|fee_breakdown_offer_answer_fast|followup_compute_total|study_mode|dkv_available|fee_breakdown_offer_need_program|fee_breakdown_offer_answer|general_small_talk|greeting|permission_to_ask|pmb_info|provider_outbound)(?:$|[-_])/i;
+  const trustedSemanticPrefix = /^semantic-rag-(?:uploaded-training|registration|pmb|current|program|fee|scholarship|rpl|academic|finance|student|international|lecturer|administration|career|campus|ukm|dual|linkedin|institution|operational|accreditation|akreditasi|small-talk|out-of-domain|unsupported|clarification|source-grounded)/i;
+  const trustedProviderSource = /(?:^|[-_])(double_degree_process|fast_fee|fee_breakdown_offer_answer_fast|followup_compute_total|study_mode|dkv_available|fee_breakdown_offer_need_program|fee_breakdown_offer_answer|general_small_talk|greeting|permission_to_ask|pmb_info|provider_outbound|keyword_rules|numeric_menu|numeric_menu_handover|handover|welcome|first_message_welcome|registration_followup|tuition_fee_program_pick_fast|tuition_fee_need_program|program_pick_prompt|campus_location_fast|dual_degree_location_fast|non_marketing_dept_offer|non_marketing_menu|feedback-capture|fsm_menu|scholarship_rule_direct|scholarship_followup_ranking|schedule_wave_direct|directSend)(?:$|[-_])/i;
   return trustedSemanticPrefix.test(value) || trustedProviderSource.test(value);
 }
 
@@ -945,8 +967,31 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     || hasUnsafeAdministrativeLeak(text, userQuery)
     || hasLikelyRawDocumentLeak(text)
     || hasInlineRawBulletLeak(text);
+
+  if (isDeterministicProtocolSource(sourceValue) && !rawLeakPrecheck && !sensitiveAudit.hits.includes('secret_or_token')) {
+    return {
+      answer: text,
+      changed: text !== original,
+      issues,
+      action: 'send',
+      blocked: false,
+      meta: {
+        source: meta && meta.source ? meta.source : null,
+        originalLength: original.length,
+        finalLength: text.length,
+        isDeterministicProtocolBypass: true,
+        sensitiveInformation: sensitiveAudit,
+        businessRuleValidation: businessRuleAudit,
+        citationValidation: citationAudit,
+        confidence: 1.0
+      }
+    };
+  }
+  const feeCompatibleText = /\bRp\.?\s*\d/i.test(text)
+    && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(text)
+    && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan|bayar|kuliah|fee)\b/i.test(String(userQuery || ''));
   const crossDomainAudit = detectCrossDomainAnswerLeak(text, userQuery, meta);
-  if (crossDomainAudit.leak && !rawLeakPrecheck) {
+  if (crossDomainAudit.leak && !rawLeakPrecheck && !feeCompatibleText) {
     issues.push('cross_domain_answer_leak');
     text = buildPreflightFallback(userQuery, 'intent_conflict');
   }
@@ -969,7 +1014,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   }
   const preserveTrustedFeeAnswer = (
     (/^semantic-rag-(?:fee|contextual-fee|registration-fee)/i.test(sourceValue) || /(?:^|[-_])(fast_fee|fee_breakdown_offer_answer_fast|fee_breakdown_offer_answer|followup_compute_total)(?:$|[-_])/i.test(sourceValue))
-    || (/\bRp\.?\s*\d/i.test(text) && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(text))
+    || feeCompatibleText
   )
     && /\bRp\.?\s*\d/i.test(text)
     && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(text);
@@ -982,10 +1027,15 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     && /^Ya, ITB STIKOM Bali memiliki Inkubator Bisnis\b/i.test(text)
     && /\b(Pendampingan|Program inkubasi|mentoring|kewirausahaan|coworking|model bisnis|rintisan bisnis)\b/i.test(text)
     && !/\b(?:PROFIL\s+LEMBAGA|\[Sheet:|SOURCE_CHUNKS|CONFIDENCE|embedding|Identitas\s+Lembaga|Dasar\s+Hukum|Pembina\s*\/\s*Penanggung\s+Jawab|Struktur\s+Organisasi|DAFTAR\s+ISI)\b/i.test(text);
+  const preserveTrustedNonMarketingOffer = /(?:^|[-_])non_marketing_dept_offer(?:$|[-_])/i.test(sourceValue)
+    && /\b(?:ranah|kontak\s+admin|arah(?:kan)?\s+ke\s+kontak|YA|TIDAK)\b/i.test(text)
+    && !rawFaqQnaDump
+    && !hasRawTechnicalLeak(text)
+    && !hasDocumentSourceLeak(text);
   if (
     !issues.length &&
     !sensitiveAudit.hits.includes('secret_or_token') &&
-    (preserveTrustedFeeAnswer || preserveTrustedDualDegreeAnswer || preserveTrustedInkubatorAnswer) &&
+    (preserveTrustedFeeAnswer || preserveTrustedDualDegreeAnswer || preserveTrustedInkubatorAnswer || preserveTrustedNonMarketingOffer) &&
     !rawFaqQnaDump &&
     !hasRawTechnicalLeak(text) &&
     !hasDocumentSourceLeak(text)
@@ -1003,6 +1053,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
         trustedFeeBypass: preserveTrustedFeeAnswer,
         trustedDualDegreeBypass: preserveTrustedDualDegreeAnswer,
         trustedInkubatorBypass: preserveTrustedInkubatorAnswer,
+        trustedNonMarketingOfferBypass: preserveTrustedNonMarketingOffer,
         sensitiveInformation: sensitiveAudit,
         businessRuleValidation: businessRuleAudit,
         citationValidation: citationAudit,

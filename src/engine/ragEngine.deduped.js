@@ -4850,7 +4850,7 @@ function extractAccreditationFromIndex(indexForQuery, programInfo) {
     for (const re of dateRangePatterns) {
       const m = re.exec(txt);
       if (m && m[1] && m[2]) {
-        validity = `${String(m[1]).trim()} G�� ${String(m[2]).trim()}`;
+        validity = `${String(m[1]).trim()} - ${String(m[2]).trim()}`;
         break;
       }
     }
@@ -5446,7 +5446,7 @@ async function tryStructuredProgramRecommendationAnswer(rawQuestion, indexForQue
   return {
     answer:
       'Biar aku bisa cocokin jurusan yang paling pas, hobinya lebih sering ngapain ya? ' +
-      'Cukup balas 2G��3 contoh aktivitas spesifik (mis. "jualan online", "edit video", "ngoding", "analisis data", "merakit elektronik").',
+      'Cukup balas 2-3 contoh aktivitas spesifik (mis. "jualan online", "edit video", "ngoding", "analisis data", "merakit elektronik").',
     source: 'rag-major-recommendation',
     contexts: [],
     confidenceTier: 'LOW',
@@ -6078,7 +6078,7 @@ function tryStructuredProgramComparisonAnswer(rawQuestion) {
     const mostExpensivePrice = sortedByCost[sortedByCost.length - 1].priceRangeStr || 'N/A';
     
     for (const prog of sortedByCost) {
-      lines.push(`- ${prog.label}: Total biaya � ${prog.priceRangeStr || 'N/A'}`);
+      lines.push(`- ${prog.label}: Total biaya ~ ${prog.priceRangeStr || 'N/A'}`);
     }
     lines.push('');
     lines.push(`? Pilihan termurah: ${cheapestLabel} (${cheapestPrice})`);
@@ -6087,7 +6087,7 @@ function tryStructuredProgramComparisonAnswer(rawQuestion) {
     lines.push('Catatan: Range harga adalah estimasi total biaya awal (pendaftaran + DPP). Harga akhir bisa berbeda tergantung gelombang, potongan, dan komponen biaya lainnya.');
   } else {
     for (const d of toCompare) {
-      lines.push(`- ${d.label}: Total biaya � ${d.priceRangeStr || 'N/A'} - ${d.desc}`);
+      lines.push(`- ${d.label}: Total biaya ~ ${d.priceRangeStr || 'N/A'} - ${d.desc}`);
     }
 
     if (wantsCostCompare) {
@@ -6416,7 +6416,7 @@ function tryStructuredDualDegreeFeeAnswer(question, indexForQuery) {
   lines.push('* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
   lines.push('* Beasiswa Prestasi');
   lines.push('* Beasiswa Yayasan');
-  lines.push('* Beasiswa khusus untuk alumni � silakan hubungi PMB untuk detail');
+  lines.push('* Beasiswa khusus untuk alumni - silakan hubungi PMB untuk detail');
   lines.push('* Kuliah Sambil Kerja di Luar Negeri');
   lines.push('');
   lines.push('Apakah Kakak ingin dijelaskan tentang?');
@@ -13899,8 +13899,8 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
 
       const formatParts = (pair) => {
         const parts = [];
-        if (typeof pair.r13 === 'number') parts.push(`Ranking 1G��3: potongan DPP ${pair.r13}%`);
-        if (typeof pair.r410 === 'number') parts.push(`Ranking 4G��10: potongan DPP ${pair.r410}%`);
+        if (typeof pair.r13 === 'number') parts.push(`Ranking 1-3: potongan DPP ${pair.r13}%`);
+        if (typeof pair.r410 === 'number') parts.push(`Ranking 4-10: potongan DPP ${pair.r410}%`);
         return parts;
       };
 
@@ -13929,7 +13929,7 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
       lines.push('');
       lines.push('Catatan seleksi:');
       if (noWrittenTest) {
-        lines.push('- Untuk ranking 1G��15 besar kelas XII semester 1/2: tidak mengikuti tes tulis, hanya tes wawancara.');
+        lines.push('- Untuk ranking 1-15 besar kelas XII semester 1/2: tidak mengikuti tes tulis, hanya tes wawancara.');
       }
       if (needsProof) {
         lines.push('- Biasanya perlu bukti rapor yang dilegalisir atau surat keterangan dari sekolah.');

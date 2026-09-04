@@ -15,6 +15,35 @@ const { querySemanticRag, verifyOutboundSemanticRelevance } = require('../engine
 const { getRagIndexPath, getRagDataDir } = require('../utils/ragPaths');
 const { detectIntent, detectIntentDetails } = require('./providerIntentDetection');
 
+async function resolveKeywordRule(text) {
+  try {
+    const reply = await findReplyByRules(text);
+    if (reply) return reply;
+  } catch (_) {}
+  if (prisma && prisma.keywordReply && typeof prisma.keywordReply.findMany === 'function') {
+    try {
+      const rawRules = await prisma.keywordReply.findMany({ where: { active: true }, orderBy: { priority: 'desc' } });
+      if (Array.isArray(rawRules) && rawRules.length > 0) {
+        const lowered = String(text || '').trim().toLowerCase();
+        for (const r of rawRules) {
+          if (!r || !r.keyword) continue;
+          const kw = String(r.keyword).trim().toLowerCase();
+          const matchType = String(r.matchType || 'contains').toLowerCase();
+          if (matchType === 'exact' && lowered === kw) return r.response;
+          if (matchType === 'starts_with' && lowered.startsWith(kw)) return r.response;
+          if (matchType === 'contains' && lowered.includes(kw)) return r.response;
+          if (matchType === 'regex') {
+            try {
+              if (new RegExp(r.keyword, 'i').test(text)) return r.response;
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_) {}
+  }
+  return null;
+}
+
 // Wrapper around ragEngine.query that records calls/results so later stages
 // can inspect any prior RAG responses (helps when multiple RAG calls occur
 // during a single webhook handling and tests mock only a single call).
@@ -597,8 +626,8 @@ module.exports = function (provider) {
   function getBotToneConfig() {
     const toneRaw = (process.env.BOT_TONE || process.env.BOT_CHAT_STYLE || '').toString().trim().toLowerCase();
     const enabled = envFlag('BOT_FRIENDLY_TONE', false) || ['casual', 'santai', 'friendly'].includes(toneRaw);
-    const opening = (process.env.BOT_FRIENDLY_OPENING || 'Siap! Aku bantu ya ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¹Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â').toString().trim();
-    const closing = (process.env.BOT_FRIENDLY_CLOSING || 'Kalau masih bingung, bilang ajaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âaku bantu lagi ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ').toString().trim();
+    const opening = (process.env.BOT_FRIENDLY_OPENING || 'Siap! Aku bantu ya').toString().trim();
+    const closing = (process.env.BOT_FRIENDLY_CLOSING || 'Kalau masih bingung, bilang aja, aku bantu lagi').toString().trim();
     return { enabled, opening: opening || '', closing: closing || '' };
   }
 
@@ -626,7 +655,7 @@ module.exports = function (provider) {
     const shouldBypassAutoTone =
       looksLikeNumericFeeAnswer ||
       rawNorm.includes('tunggu sebentar ya, saya sedang mencari informasi yang tepat untuk anda') ||
-      /\[\s*ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬\s*hubungi\s+admin\s*\]/i.test(raw);
+      /hubungi\s+admin/i.test(raw);
 
     if (shouldBypassAutoTone) return raw;
     if (!isAutoToneEnabled()) return raw;
@@ -672,7 +701,7 @@ module.exports = function (provider) {
         const styles = ['casual', 'enthusiastic', 'succinct', 'formal'];
         const pick = styles[Math.floor(Math.random() * styles.length)];
         if (pick === 'enthusiastic') {
-          out = out + (out.endsWith('!') ? ' ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨' : ' ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨');
+          out = out + (out.endsWith('!') ? '' : '');
         } else if (pick === 'succinct') {
           out = String(out || '').split(/\r?\n/)[0];
         } else if (pick === 'formal') {
@@ -812,7 +841,7 @@ module.exports = function (provider) {
   }
 
   function buildFriendlyProcessingMessage() {
-    return 'Tunggu sebentar ya, saya sedang mencari informasi yang tepat untuk Anda ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³';
+    return 'Tunggu sebentar ya, saya sedang mencari informasi yang tepat untuk Anda...';
   }
 
   function buildHandoverOfferMessage() {
@@ -850,7 +879,7 @@ module.exports = function (provider) {
     const header = tone.enabled ? 'Mau pilih yang mana?' : 'Mau pilih yang mana, kak?';
     return (
       `${header}\n` +
-      '1) Hitung total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4)\n' +
+      '1) Hitung total biaya awal masuk (butir 1-4)\n' +
       '2) Jelaskan skema potongan per gelombang'
     );
   }
@@ -3107,8 +3136,8 @@ module.exports = function (provider) {
       const hasHelp = /help\s+university/i.test(raw) && /dual\s*degree/i.test(raw);
 
       if (hasUtb) add('Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) - di UTB mengambil DKV (Desain Komunikasi Visual)');
-      if (hasDnui) add('Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Prodi: Bisnis Digital');
-      if (hasHelp) add('Dual Degree (International Class) dengan HELP University, Malaysia ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Prodi: Sistem Informasi');
+      if (hasDnui) add('Dual Degree (International Class) dengan Dalian Neusoft University of Information (DNUI), China - Prodi: Bisnis Digital');
+      if (hasHelp) add('Dual Degree (International Class) dengan HELP University, Malaysia - Prodi: Sistem Informasi');
 
       cachedDualDegreeList = out.length ? out : null;
       cachedDualDegreeListMtimeMs = mtimeMs;
@@ -4134,25 +4163,25 @@ module.exports = function (provider) {
       table = feeBasics.dnui;
       if (!table || !table.pendaftaran || !table.dpp || !table.bahasa) return null;
       baseTotal = table.pendaftaran + table.dpp + table.bahasa;
-      butirLabel = 'butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ3';
+      butirLabel = 'butir 1-3';
     } else if (isHelp) {
       discountKey = 'help';
       table = feeBasics.help;
       if (!table || !table.pendaftaran || !table.dpp || !table.bahasa) return null;
       baseTotal = table.pendaftaran + table.dpp + table.bahasa;
-      butirLabel = 'butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ3';
+      butirLabel = 'butir 1-3';
     } else if (isUtb) {
       discountKey = 'utb';
       table = feeBasics.utb;
       baseTotal = table && typeof table.totalAwalMasuk === 'number' ? table.totalAwalMasuk : null;
-      butirLabel = 'butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4';
+      butirLabel = 'butir 1-4';
     } else if (isD3) {
       discountKey = 'd3';
       table = feeBasics.d3;
       if (table && table.pendaftaran && table.registrasi) {
         baseTotal = table.pendaftaran + table.registrasi;
       }
-      butirLabel = 'butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ2';
+      butirLabel = 'butir 1-2';
     } else if (isS2) {
       discountKey = 's2';
       table = feeBasics.s2;
@@ -4162,12 +4191,12 @@ module.exports = function (provider) {
       discountKey = 'sk';
       table = feeBasics.sk;
       baseTotal = table && typeof table.totalAwalMasuk === 'number' ? table.totalAwalMasuk : null;
-      butirLabel = 'butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4';
+      butirLabel = 'butir 1-4';
     } else if (isS1Group) {
       discountKey = 's1';
       table = feeBasics.s1;
       baseTotal = table && typeof table.totalAwalMasuk === 'number' ? table.totalAwalMasuk : null;
-      butirLabel = 'butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4';
+      butirLabel = 'butir 1-4';
     } else {
       return null;
     }
@@ -4377,7 +4406,7 @@ module.exports = function (provider) {
     try {
       const options = (opts && typeof opts === 'object') ? opts : {};
       const orig = options.originalQuery || options.routeText || null;
-      if (orig && isDetailedFeeQuery(orig) && choice !== 'breakdown' && choice !== 'semester') {
+      if (orig && isDetailedFeeQuery(orig) && choice !== 'breakdown' && choice !== 'semester' && choice !== 'pendaftaran') {
         try { console.log('[FAST_FEE_GUARD] buildFastFeeAnswer refusing due to originalQuery detailed match', { program, choice, orig: String(orig).slice(0, 200) }); } catch (e) { }
         return null;
       }
@@ -5705,7 +5734,7 @@ module.exports = function (provider) {
     const t = String(rawText || '').replace(/\s{2,}/g, ' ').trim();
     if (!t) return '';
     if (t.length <= maxLen) return t;
-    return t.slice(0, Math.max(0, maxLen - 1)).trimEnd() + 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦';
+    return t.slice(0, Math.max(0, maxLen - 1)).trimEnd() + '...';
   }
 
   function isAcademicScheduleLookupQuestion(rawText) {
@@ -5885,8 +5914,8 @@ module.exports = function (provider) {
     return (
       header +
       (tone.enabled
-        ? 'Pilih menu yang tersedia atau ketik pertanyaan kamu ya ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â \n\n'
-        : 'Silakan pilih menu yang tersedia atau ketik pertanyaan kamu ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â \n\n') +
+        ? 'Pilih menu yang tersedia atau ketik pertanyaan kamu ya\n\n'
+        : 'Silakan pilih menu yang tersedia atau ketik pertanyaan kamu\n\n') +
       'Ketik angka menu berikut:\n\n' +
       '1) Akademik & Kemahasiswaan\n' +
       '2) Keuangan\n' +
@@ -6514,7 +6543,7 @@ module.exports = function (provider) {
     );
     if (hasProgramQuestion) return false;
 
-    const domainKeywords = /\b(stikom|itb\s*stikom|pmb|pendaftaran|registrasi|prodi|program\s+studi|jadwal|gelombang|biaya|dpp|ukt|beasiswa|kontak|lokasi|alamat|akreditasi|kampus|fasilitas|perkuliahan|semester|ukm|jurusan|program)\b/i;
+    const domainKeywords = /\b(stikom|itb\s*stikom|pmb|pendaftaran|registrasi|prodi|program\s+studi|jadwal|gelombang|biaya|dpp|ukt|beasiswa|promo|diskon|potongan|syarat|kontak|lokasi|alamat|akreditasi|kampus|fasilitas|perkuliahan|semester|ukm|jurusan|program)\b/i;
     const generalPatterns = /\b(?:apa\s+kabar(?:nya)?|apa\s+khabar(?:nya)?|kabar(?:nya)?\s+apa|khabar(?:nya)?\s+apa|gimana\s+kabar(?:nya)?|gimana\s+khabar(?:nya)?|kabar\s+kamu(?:\s+gimana)?|kamu\s+gimana|gimana\s+kabarmu|apa\s+kabarmu|apa\s+kabar\s+kamu|bagaimana\s+kabar|bagaimana\s+kabarmu|siapa\s+kamu|kamu\s+siapa|nama\s+kamu|ceritakan\s+tentang\s+dirimu|ceritakan\s+dirimu|cerita|ngobrol|ngobrolin|obrol|film|lagu|musik|hobi|olahraga|cuaca|berita|main\s+game|game|mau\s+ngobrol)\b/i;
 
     if (domainKeywords.test(t)) return false;
@@ -6639,7 +6668,7 @@ module.exports = function (provider) {
       // If topic is basically just the campus name, treat as no specific topic.
       const tl = topic.toLowerCase();
       if (/^(itb\s*stikom\s*bali|stikom\s*bali|itb\s*stikom|stikom)$/i.test(tl)) topic = null;
-      if (topic && topic.length > 140) topic = topic.slice(0, 140) + 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦';
+      if (topic && topic.length > 140) topic = topic.slice(0, 140) + '...';
     }
 
     return { topic };
@@ -7238,7 +7267,7 @@ module.exports = function (provider) {
     const entryBullets = first4.filter((b) => !isSemesterBullet(b));
     if (entryBullets.length < 3) return null;
 
-    // Require strong signals of the real cost components (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4).
+    // Require strong signals of the real cost components (butir 1-4).
     const hasPendaftaran = entryBullets.some((b) => /\bpendaftaran\b/i.test(b));
     const hasDpp = entryBullets.some((b) => /\b(dpp|dana\s+pendidikan\s+pokok|dana\s+pengembangan\s+pendidikan)\b/i.test(b));
     if (!hasPendaftaran || !hasDpp) return null;
@@ -8399,38 +8428,6 @@ module.exports = function (provider) {
         PROVIDER_DB_TIMEOUT_MS,
         `${label} timed out`
       );
-      // After appending an inbound user message, persist a lightweight composer hint
-      // so Composer tests can deterministically restore reasoning context.
-      if (direction === 'user') {
-        try {
-          const sessionLookup = await withTimeout(
-            prisma.session.findUnique({ where: { chatId } }),
-            PROVIDER_DB_TIMEOUT_MS,
-            'Session lookup before persisting hint failed'
-          );
-          const prevData = (sessionLookup && sessionLookup.data) ? sessionLookup.data : {};
-          const hasPending = prevData && (prevData.pendingRagCandidate || prevData.pendingRuleReply || prevData.pendingWebCandidate || prevData.pendingSemanticSuggestion);
-          const msgStr = String(message || '').trim();
-          const nowIso = new Date().toISOString();
-          // Always persist the last inbound user text so composer can deterministically
-          // recover the original user query even if the chat log contains bot replies.
-          const newBase = Object.assign({}, prevData || {}, { composerInputText: msgStr, composerInputAt: nowIso });
-
-          const shortLen = parseInt(process.env.CONTEXT_FOLLOWUP_MAX_LEN || '80', 10);
-          const isShort = msgStr.length <= (Number.isFinite(shortLen) ? shortLen : 80);
-          const isQuestionLike = /\?\s*$/.test(msgStr) || /\b(berapa|biaya|beasiswa|kalau|gimana|apa|kapan|dimana|di\s+mana)\b/i.test(msgStr);
-
-          // Only add a pendingRagCandidate when heuristic suggests a short question-like follow-up
-          if (!hasPending && isShort && isQuestionLike) {
-            newBase.pendingRagCandidate = { answer: msgStr, meta: null, source: 'provider_hint', ts: nowIso };
-          }
-
-          const currentState = (sessionLookup && sessionLookup.state) ? sessionLookup.state : 'root';
-          await safeSessionUpsert(chatId, newBase, currentState);
-        } catch (e) {
-          logger.warn({ err: e && e.message ? e.message : String(e), chatId }, '[Provider] Failed to persist composer hint after append');
-        }
-      }
       return true;
     } catch (err) {
       logger.warn(
@@ -8762,7 +8759,7 @@ module.exports = function (provider) {
       }
 
       // Keep it compact to avoid bloating Session.data.messages
-      if (reason && reason.length > 220) reason = reason.slice(0, 220) + 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦';
+      if (reason && reason.length > 220) reason = reason.slice(0, 220) + '...';
 
       await appendChatMessageBestEffort(
         chatId,
@@ -8833,7 +8830,7 @@ module.exports = function (provider) {
       }
 
       // Keep it compact to avoid bloating Session.data.messages
-      if (reason && reason.length > 220) reason = reason.slice(0, 220) + 'ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦';
+      if (reason && reason.length > 220) reason = reason.slice(0, 220) + '...';
 
       await appendChatMessageBestEffort(
         chatId,
@@ -9395,15 +9392,6 @@ module.exports = function (provider) {
     // If anything below throws, send a brief apology + recovery instruction.
     try {
 
-      // Log incoming user message into session history
-      try {
-        const outDir = path.join(__dirname, '..', '..', 'tmp');
-        if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-        try {
-          const beforeSession = await prisma.session.findUnique({ where: { chatId } }).catch(() => null);
-          fs.appendFileSync(path.join(outDir, 'provider_traces.log'), JSON.stringify({ ts: new Date().toISOString(), tag: 'TRACE_SESSION_BEFORE', chatId, session: (beforeSession && beforeSession.data) ? beforeSession.data : null }) + '\n');
-        } catch (e) { }
-      } catch (e) { }
       await appendChatMessageBestEffort(chatId, 'user', text, { label: 'append inbound user message' });
 
       // Reload session AFTER appending chat log so Session.data is up-to-date.
@@ -10177,8 +10165,9 @@ module.exports = function (provider) {
           const t = String(text || '').toLowerCase();
           const mentionsCost = /\b(?:biaya|uang\s+kuliah|ukt|spp|semester|pendaftaran|registrasi|dpp|rincian\s+biaya|potongan|diskon)\b/i.test(t);
           const mentionsDetail = /\b(?:gelombang|prodi|rincian|detail|dpp|ukt|perlengkapan|potongan|komponen|semester)\b/i.test(t);
-          const hasProgramHint = /\b(?:si|ti|bd|sk|s1|s2|d3|dnui|help|utb)\b/i.test(t);
-          return (intentLabel === 'COST' && mentionsCost) || (mentionsCost && mentionsDetail) || (mentionsCost && hasProgramHint);
+          const hasProgramHint = /\b(?:si|ti|bd|sk|s1|s2|d3|dnui|help|utb|sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika)\b/i.test(t);
+          const hasWave = (typeof parseGelombang === 'function') && !!parseGelombang(t);
+          return (mentionsCost && hasProgramHint) || (mentionsCost && hasWave) || (mentionsCost && mentionsDetail && (hasProgramHint || hasWave));
         })();
 
         // If a high-confidence rule candidate exists, short-circuit and prefer
@@ -10853,6 +10842,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           const currentState = session ? session.state : 'root';
           const clearedData = { ...sessionData };
           delete clearedData.pendingFollowupChoice;
+          if (sessionData) delete sessionData.pendingFollowupChoice;
 
           if (choice === 'other_programs') {
             try {
@@ -10885,7 +10875,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             lines.push('- Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
             lines.push('- Beasiswa Prestasi');
             lines.push('- Beasiswa Yayasan');
-            lines.push('- Beasiswa khusus untuk alumni ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â silakan hubungi PMB untuk detail');
+            lines.push('- Beasiswa khusus untuk alumni - silakan hubungi PMB untuk detail');
             lines.push('- Kuliah Sambil Kerja di Luar Negeri');
             lines.push('');
             lines.push('Kakak mau penjelasan beasiswa yang mana? Balas nama beasiswa atau angka.');
@@ -10943,6 +10933,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
           const currentState = session ? session.state : 'root';
           const clearedData = { ...sessionData };
           delete clearedData.pendingFollowupChoice;
+          if (sessionData) delete sessionData.pendingFollowupChoice;
 
           if (choice === 'total') {
             const ctx = await getConversationContext(chatId, text, sessionData);
@@ -10950,8 +10941,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             if (computed && computed.items && computed.items.length >= 3) {
               const program = extractProgramHint(ctx.lastBot) || extractProgramHint(ctx.lastUser);
               const header = program
-                ? `Baik, saya hitungkan total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4) untuk ${program}:`
-                : 'Baik, saya hitungkan total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4):';
+                ? `Baik, saya hitungkan total biaya awal masuk (butir 1-4) untuk ${program}:`
+                : 'Baik, saya hitungkan total biaya awal masuk (butir 1-4):';
               const lines = [
                 header,
                 ...computed.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`),
@@ -11005,27 +10996,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
 
                 const ragResult = await ragQueryWithEval(chatId, anchored, topK, { conversationContext: ctx.transcript || '', answerQuestion: answerQ });
                 if (ragResult && ragResult.success && ragResult.answer) {
-                  // Persist RAG answer candidate as a hint for Composer; do NOT send directly.
-                  try {
-                    const currentState_local = session ? session.state : 'root';
-                    const prev_local = sessionData || {};
-                    const newData_local = {
-                      ...prev_local,
-                      pendingRagCandidate: {
-                        answer: String(ragResult.answer || '').trim(),
-                        meta: ragResult.meta || null,
-                        source: ragResult.source || null,
-                        contexts: Array.isArray(ragResult.contexts) ? ragResult.contexts.slice(0, 6).map(c => ({ id: c.id || null, score: c.score || null })) : null,
-                        ts: new Date().toISOString()
-                      }
-                    };
-                    await safeSessionUpsert({ where: { chatId }, create: { chatId, state: currentState_local, data: newData_local }, update: { state: currentState_local, data: newData_local } });
-                    sessionData = newData_local;
-                    logger.info({ chatId }, '[Provider] persisted pendingRagCandidate for Composer (discount_gelombang)');
-                  } catch (e) {
-                    logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] Failed to persist pendingRagCandidate');
-                  }
-                  return res.send({ ok: true, source: 'pending_rag_candidate', ragUsed: true });
+                  await sendBotMessage(chatId, String(ragResult.answer || '').trim(), { source: 'followup_discount_gelombang', sourceType: SOURCE_TYPES.RAG });
+                  return res.send({ ok: true, source: 'followup_discount_gelombang', ragUsed: true });
                 }
               }
             }
@@ -11062,6 +11034,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
               create: { chatId, state: currentState, data: clearedData },
               update: { state: currentState, data: clearedData }
             });
+            if (sessionData) delete sessionData.pendingFollowupChoice;
             // Otherwise, continue normal flow below.
           }
         }
@@ -11375,7 +11348,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
               const lines = [
                 header,
                 ...analysis.base.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`),
-                `Total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4): ${formatRupiah(analysis.base.total)}`
+                `Total biaya awal masuk (butir 1-4): ${formatRupiah(analysis.base.total)}`
               ];
 
               const perSemSum = Array.isArray(analysis.perSemester)
@@ -11398,7 +11371,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
                 ? analysis.otherOneTime.reduce((acc, x) => acc + (x && x.amount ? x.amount : 0), 0)
                 : 0;
               if (otherSum > 0) {
-                lines.push('', 'Komponen lain (sekali bayar, di luar butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4):');
+                lines.push('', 'Komponen lain (sekali bayar, di luar butir 1-4):');
                 for (const x of analysis.otherOneTime) lines.push(`- ${x.raw}`);
                 lines.push(`Subtotal komponen lain: ${formatRupiah(otherSum)}`);
               }
@@ -11522,8 +11495,37 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
       // If user previously asked to calculate total, and the bot asked for gelombang,
       // then a reply like "Gelombang 1" should trigger the computation instead of starting a new menu.
       try {
-        const gel = parseGelombang(text);
-        if (gel) {
+        let gel = parseGelombang(text);
+        if (!gel) {
+          const mBare = /^\s*(khusus|[1-4]|i{1,3}|iv)\s*([a-c])?\s*$/i.exec(String(text || '').trim());
+          if (mBare) {
+            let base = mBare[1].toUpperCase();
+            const suffix = mBare[2] ? mBare[2].toUpperCase() : '';
+            const digitToRoman = { '1': 'I', '2': 'II', '3': 'III', '4': 'IV' };
+            if (digitToRoman[base]) base = digitToRoman[base];
+            gel = `${base}${suffix}`;
+          }
+        }
+
+        const isSubstantiveSchedule = (typeof isAdmissionScheduleQuestion === 'function' && isAdmissionScheduleQuestion(text)) ||
+          /\b(jadwal|kapan|tanggal|periode|buka|tutup|berakhir|mulai)\b/i.test(String(text || ''));
+        const isSubstantiveOther = (typeof looksLikeNewTopicQuestion === 'function' && looksLikeNewTopicQuestion(text)) ||
+          /\b(beasiswa|syarat|dokumen|fasilitas|prodi|jurusan|lokasi|kampus|kontak|biaya\s+kuliah|ukt\b)/i.test(String(text || ''));
+        const isSubstantiveOverride = (isSubstantiveSchedule || isSubstantiveOther) && !isTotalCostRequest(text);
+
+        if (isSubstantiveOverride) {
+          // Explicit-current override: substantive question wins and clears pendingTotalCost
+          if (sessionData && sessionData.pendingTotalCost) {
+            delete sessionData.pendingTotalCost;
+            delete sessionData.pendingFollowupChoice;
+            const currentState = session ? session.state : 'root';
+            await prisma.session.upsert({
+              where: { chatId },
+              create: { chatId, state: currentState, data: sessionData },
+              update: { state: currentState, data: sessionData }
+            }).catch(() => null);
+          }
+        } else if (gel) {
           const gelLabel = formatGelombangLabel(gel) || `Gelombang ${gel}`;
           const pending = sessionData && sessionData.pendingTotalCost ? sessionData.pendingTotalCost : null;
           const pendingTs = pending && pending.ts ? new Date(pending.ts) : null;
@@ -11568,7 +11570,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
 
             const breakdown = findLastInitialEntryCostBreakdownFromSessionData(sessionData);
             const discounts = extractPendaftaranDiscountsByGelombangFromSessionData(sessionData);
-            const discountAmt = discounts && Object.prototype.hasOwnProperty.call(discounts, gel) ? discounts[gel] : null;
+            const baseWave = String(gel || '').replace(/[A-C]$/i, '');
+            const discountAmt = discounts && (Object.prototype.hasOwnProperty.call(discounts, gel) ? discounts[gel] : (Object.prototype.hasOwnProperty.call(discounts, baseWave) ? discounts[baseWave] : null));
 
             if (breakdown && breakdown.computed) {
               const base = breakdown.computed;
@@ -11582,8 +11585,8 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
                 null;
 
               const header = program
-                ? `Baik, saya hitungkan total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4) untuk ${program} (${gelLabel}):`
-                : `Baik, saya hitungkan total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4) (${gelLabel}):`;
+                ? `Baik, saya hitungkan total biaya awal masuk (butir 1–4) untuk ${program} (${gelLabel}):`
+                : `Baik, saya hitungkan total biaya awal masuk (butir 1–4) (${gelLabel}):`;
 
               const lines = [
                 header,
@@ -11632,7 +11635,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
                   `${program ? `Program Studi: ${program}\n` : ''}` +
                   `User ingin dihitungkan total biaya awal masuk/total bayar untuk mendaftar.\n` +
                   `Gelombang: ${String(gelLabel).replace(/^Gelombang\s+/i, '')}.\n` +
-                  `Tolong hitungkan total yang perlu dibayar (awal masuk / butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4 jika tersedia), masukkan potongan biaya pendaftaran untuk gelombang tersebut bila ada, dan tampilkan perhitungannya.`;
+                  `Tolong hitungkan total yang perlu dibayar (awal masuk / butir 1-4 jika tersedia), masukkan potongan biaya pendaftaran untuk gelombang tersebut bila ada, dan tampilkan perhitungannya.`;
 
                 const ragResult = await ragQueryWithEval(chatId, q, topK, { conversationContext: JSON.stringify((sessionData && sessionData.messages) ? sessionData.messages : []).slice(0, 1200), answerQuestion: q });
                 if (ragResult && ragResult.success && ragResult.answer) {
@@ -11659,7 +11662,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             // If we cannot compute, ask for the missing breakdown explicitly.
             await sendBotMessage(
               chatId,
-              `Siap, kak (Gelombang ${gel}). Untuk menghitung totalnya, saya perlu rincian komponen biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4) yang kakak maksud.\n` +
+              `Siap, kak (Gelombang ${gel}). Untuk menghitung totalnya, saya perlu rincian biaya awal masuk (butir 1–4) yang kakak maksud.\n` +
               'Boleh kirimkan daftar biayanya (pendaftaran, DPP, biaya semester awal, dll) atau screenshot/teks rincian tersebut?'
             );
             return res.send({ ok: true, source: 'pending_total_cost_need_breakdown', gelombang: gel });
@@ -11671,7 +11674,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
 
       // Deterministic total-payment computation:
       // If user asks "hitung total pembayaran" and we recently sent a cost breakdown with bullets,
-      // compute the initial-entry total (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4) and show additional components separately.
+      // compute the initial-entry total (butir 1-4) and show additional components separately.
       try {
         if (isTotalCostRequest(text)) {
           // Special-case: user asks "jadi berapa saya harus bayar" with program + gelombang in one message.
@@ -11757,7 +11760,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
             const lines = [
               header,
               ...analysis.base.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`),
-              `Total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4): ${formatRupiah(analysis.base.total)}`
+              `Total biaya awal masuk (butir 1-4): ${formatRupiah(analysis.base.total)}`
             ];
 
             const perSemSum = Array.isArray(analysis.perSemester)
@@ -11781,7 +11784,7 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
               ? analysis.otherOneTime.reduce((acc, x) => acc + (x && x.amount ? x.amount : 0), 0)
               : 0;
             if (otherSum > 0) {
-              lines.push('', 'Komponen lain (sekali bayar, di luar butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4):');
+              lines.push('', 'Komponen lain (sekali bayar, di luar butir 1-4):');
               for (const x of analysis.otherOneTime) {
                 lines.push(`- ${x.raw}`);
               }
@@ -13763,8 +13766,8 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
 
                   const gelLabelLocal = gelLabel || (gelFromText ? (formatGelombangLabel(gelFromText) || `Gelombang ${gelFromText}`) : null);
                   const header = program
-                    ? `Baik, saya hitungkan total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4) untuk ${program} (${gelLabelLocal || ''}):`.replace(/\s+\(\):$/, ':')
-                    : `Baik, saya hitungkan total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4) (${gelLabelLocal || ''}):`.replace(/\s+\(\):$/, ':');
+                    ? `Baik, saya hitungkan total biaya awal masuk (butir 1-4) untuk ${program} (${gelLabelLocal || ''}):`.replace(/\s+\(\):$/, ':')
+                    : `Baik, saya hitungkan total biaya awal masuk (butir 1-4) (${gelLabelLocal || ''}):`.replace(/\s+\(\):$/, ':');
 
                   const lines = [header, ...base.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`)];
 
@@ -13924,14 +13927,14 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               const showProgramLabel = !!programFromText;
               const feeBasicsEarly = extractFeeBasicsFromBundledIndex();
               // internal debug removed
-              const effectiveChoiceEarly = (programFromText && 'pendaftaran') ? 'breakdown' : 'pendaftaran';
+              const effectiveChoiceEarly = 'pendaftaran';
               const routeTextEarly = String(trimmed || text || '').trim();
               const allowFastEarly = allowFastFeeFor(routeTextEarly, { feeChoice: true, pendingFeeDetail: !!(sessionData && sessionData.pendingFeeDetail) });
               logRouteDecision(routeTextEarly, programFast, (typeof detectIntent === 'function' ? detectIntent(routeTextEarly) : null), isExplicitFeeQuestion(routeTextEarly), allowFastEarly ? 'fee_fast' : 'skip_fee_fast');
               let fastEarly = null;
               if (allowFastEarly) {
                 const _guardText = (typeof anchored !== 'undefined' && anchored) || (typeof routeText !== 'undefined' && routeText) || (typeof q !== 'undefined' && q) || '';
-                if (!isDetailedFeeQuery(_guardText)) {
+                if (!isDetailedFeeQuery(_guardText) || effectiveChoiceEarly === 'pendaftaran') {
                   fastEarly = buildFastFeeAnswer(programFast, effectiveChoiceEarly, feeBasicsEarly, { showProgramLabel, originalQuery: _guardText });
                 } else {
                   try { console.log('[FAST_FEE_GUARD] skipping fastEarly (detailed query)', { chatId, guardText: String(_guardText).slice(0, 200) }); } catch (e) { }
@@ -14613,7 +14616,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
                 chatId,
                 imgPrefix +
                 'Oke, untuk S1 Reguler.\n\n' +
-                'Form pendaftaran (ringkas) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â data yang biasanya diisi:\n' +
+                'Form pendaftaran (ringkas) - data yang biasanya diisi:\n' +
                 '- Data diri (nama, NIK, tempat/tanggal lahir, alamat)\n' +
                 '- Kontak (HP, email)\n' +
                 '- Pendidikan asal (asal sekolah/kampus, jurusan/jenjang, tahun lulus)\n' +
@@ -14640,7 +14643,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               chatId,
               imgPrefix +
               'Oke, untuk S2 / Pascasarjana.\n\n' +
-              'Form pendaftaran (ringkas) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â data yang biasanya diisi:\n' +
+              'Form pendaftaran (ringkas) - data yang biasanya diisi:\n' +
               '- Data diri & kontak\n' +
               '- Pendidikan asal\n' +
               '- Pilihan program/kelas & kampus\n\n' +
@@ -14677,7 +14680,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
             chatId,
             imgPrefix +
             'Siap, kak. Untuk S1 Reguler.\n\n' +
-            'Form pendaftaran (ringkas) ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â data yang biasanya diisi:\n' +
+            'Form pendaftaran (ringkas) - data yang biasanya diisi:\n' +
             '- Data diri (nama, NIK, tempat/tanggal lahir, alamat)\n' +
             '- Kontak (HP, email)\n' +
             '- Pendidikan asal (asal sekolah/kampus, jurusan/jenjang, tahun lulus)\n' +
@@ -14931,8 +14934,8 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               await sendBotMessage(
                 chatId,
                 'Siap, kak. Biar saya pastikan potongannya, kakak termasuk kategori yang mana?\n' +
-                '1) Juara 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ3 tingkat Nasional\n' +
-                '2) Harapan 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ3 / Favorit tingkat Nasional\n\n' +
+                '1) Juara 1-3 tingkat Nasional\n' +
+                '2) Harapan 1-3 / Favorit tingkat Nasional\n\n' +
                 'Balas: 1 atau 2 (atau tulis langsung kategorinya).'
               );
               return res.send({ ok: true, source: 'scholarship_followup_category' });
@@ -15053,6 +15056,42 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
       if (isStudyModeQuestion(text)) {
         await sendBotMessage(chatId, buildStudyModeAnswerMessage());
         return res.send({ ok: true, source: 'study_mode' });
+      }
+
+      // Keyword rules short-circuit before RAG/AI when no stronger explicit semantic owner claims the turn.
+      // Required precedence:
+      // 1. Explicit semantic ownership (program-specific fee/info, wave-specific schedule)
+      // 2. Compatible pending prompt (follow-up choice, breakdown offer, etc.)
+      // 3. Documented protocol/menu (active menu digits)
+      // 4. Keyword rules
+      // 5. Fallback / general RAG
+      if (!isAcademicProgramQuery && !envFlag('DISABLE_KEYWORD_RULES', false)) {
+        const hasProgramExplicit = !!(
+          (typeof extractSpecificProgramHint === 'function' && extractSpecificProgramHint(text)) ||
+          (typeof extractProgramHint === 'function' && extractProgramHint(text)) ||
+          (typeof extractDualDegreeHint === 'function' && extractDualDegreeHint(text))
+        );
+        const hasWaveExplicit = (typeof parseGelombang === 'function') && !!parseGelombang(text);
+        const hasPendingCompatible = !!(
+          sessionData && (
+            sessionData.pendingFollowupChoice ||
+            sessionData.pendingFeeBreakdownOffer ||
+            sessionData.pendingScheduleWave ||
+            sessionData.pendingProgramSelection ||
+            sessionData.pendingFeeDetail ||
+            sessionData.pendingMenuCost ||
+            sessionData.pendingScholarshipChoice
+          )
+        );
+        const isMenuDigit = /^[1-7]$/.test(String(text || '').trim()) && !!(sessionData && sessionData.numericMenuActive);
+
+        if (!hasProgramExplicit && !hasWaveExplicit && !hasPendingCompatible && !isMenuDigit) {
+          const keywordMatch = await resolveKeywordRule(text);
+          if (keywordMatch) {
+            await sendBotMessage(chatId, String(keywordMatch).trim(), { source: 'keyword_rules', sourceType: SOURCE_TYPES.RULE });
+            return res.send({ ok: true, source: 'keyword_rules', ragUsed: false });
+          }
+        }
       }
 
       // Delegate short program/profile and PMB info to ragEngine early rules so provider
@@ -15348,7 +15387,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
             let fast = null;
             if (allowFastMain) {
               const _guardText = (typeof routeTextFast !== 'undefined' && routeTextFast) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
-              if (!isDetailedFeeQuery(_guardText) || feeChoice === 'breakdown' || feeChoice === 'semester') {
+              if (!isDetailedFeeQuery(_guardText) || feeChoice === 'breakdown' || feeChoice === 'semester' || feeChoice === 'pendaftaran') {
                 fast = buildFastFeeAnswer(programFast, feeChoice, feeBasics, { showProgramLabel, originalQuery: _guardText });
               } else {
                 try { console.log('[FAST_FEE_GUARD] skipping fastMain (detailed query)', { chatId, guardText: String(_guardText).slice(0, 200) }); } catch (e) { }
@@ -15382,7 +15421,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               const out =
                 String(maybeAppendCostDetailOffer(trimmedFee, fast) || '').trim() +
                 (shouldOfferFeeBreakdown ? buildFeeBreakdownOfferPrompt(offerProgramLabel) : '');
-              await sendBotMessage(chatId, out.trim());
+              await sendBotMessage(chatId, out.trim(), { source: 'fast_fee', sourceType: SOURCE_TYPES.RULE });
 
               // Do not persist DNUI pendingFeeBreakdownOffer here.
               // Persistence should only occur when the outbound message
@@ -15698,7 +15737,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
       // Keyword replies (exact / starts_with / contains / regex)
       // Use to short-circuit before RAG/AI to save credits.
       if (!isAcademicProgramQuery && !envFlag('DISABLE_KEYWORD_RULES', false)) {
-        const keywordReply = await findReplyByRules(text);
+        const keywordReply = await resolveKeywordRule(text);
         if (keywordReply) {
           addRuleCandidate({ source: 'keyword_rules', answer: keywordReply, confidence: 0.65 });
         }
@@ -15782,7 +15821,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
         if (decision) {
           if (decision.winner === 'rule' && decision.answer) {
             await commitChosenRuleCandidate(decision.candidate);
-            await sendBotMessage(chatId, String(decision.answer || '').trim());
+            await sendBotMessage(chatId, String(decision.answer || '').trim(), { source: decision.candidate.source, sourceType: SOURCE_TYPES.RULE });
             return res.send({ ok: true, source: decision.candidate.source, ragUsed: false });
           }
           if ((decision.winner === 'rag' || decision.winner === 'rag-structured' || decision.winner === 'rag-inference') && decision.ragResult && decision.ragResult.answer) {
@@ -16351,7 +16390,11 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
             const isReferential = /\b(?:yang\s+tadi|yang\s+sebelumnya|lanjut|lanjutkan|terus|trus|detail|rincian|biayanya|detailnya|rinciannya)\b/i.test(trimmed)
               || (/\\bitu\\b/i.test(trimmed) && !/^\\s*apa\\s+itu\\b/i.test(trimmed));
             const contextualShortMax = parseInt(process.env.CONTEXT_FOLLOWUP_MAX_LEN || '80', 10);
-            const isContextualShortFollowup = trimmed.length <= contextualShortMax
+            const hasExplicitProgramInTrimmed = !!((typeof extractSpecificProgramHint === 'function' && extractSpecificProgramHint(trimmed)) || (typeof extractProgramHint === 'function' && extractProgramHint(trimmed)));
+            const hasQuestionWordInTrimmed = /\b(berapa|apa|kapan|dimana|di\s*mana|bagaimana|gimana)\b/i.test(trimmed);
+            const isExplicitStandaloneFeeQuestion = hasExplicitProgramInTrimmed && hasQuestionWordInTrimmed;
+            const isContextualShortFollowup = !isExplicitStandaloneFeeQuestion
+              && trimmed.length <= contextualShortMax
               && (isReferential || isShortContinueRequest(trimmed) || !!parseFeeDetailChoice(trimmed));
 
             // Special: if the bot just asked for 2ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ3 hobby/activity examples,
@@ -16386,14 +16429,14 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               if (computed && computed.items && computed.items.length >= 3) {
                 const program = extractProgramHint(ctx.lastBot) || extractProgramHint(ctx.lastUser) || getActiveProgram({ chatId, userText: (ctx && ctx.lastUser) ? ctx.lastUser : (ctx && ctx.lastBot) ? ctx.lastBot : '', sessionData }).activeProgram || null;
                 const header = program
-                  ? `Baik, saya hitungkan total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4) untuk ${program}:`
-                  : 'Baik, saya hitungkan total biaya awal masuk (butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4):';
+                  ? `Baik, saya hitungkan total biaya awal masuk (butir 1-4) untuk ${program}:`
+                  : 'Baik, saya hitungkan total biaya awal masuk (butir 1-4):';
                 const lines = [
                   header,
                   ...computed.items.map(it => `- ${it.label}: ${formatRupiah(it.amount)}`),
                   `Total biaya awal masuk: ${formatRupiah(computed.total)}`,
                   '',
-                  'Catatan: total di atas hanya untuk butir 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4 (komponen awal masuk). Biaya per semester/komponen lain dibayar sesuai ketentuan di dokumen.'
+                  'Catatan: total di atas hanya untuk butir 1-4 (komponen awal masuk). Biaya per semester/komponen lain dibayar sesuai ketentuan di dokumen.'
                 ].join('\n');
                 await sendBotMessage(chatId, lines);
                 return res.send({ ok: true, source: 'followup_compute_total', program: program || null });
@@ -16406,7 +16449,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               const anchored = program ? `Program Studi: ${program}\n${answerQ}` : answerQ;
               ragQuestion = anchored;
               ragOptions = { conversationContext: ctx.transcript || '', answerQuestion: answerQ };
-            } else if ((isUltraShort || isContextualShortFollowup) && (isShortAffirmation(trimmed) || isReferential || isShortContinueRequest(trimmed) || !!parseFeeDetailChoice(trimmed))) {
+            } else if (!isExplicitStandaloneFeeQuestion && (isUltraShort || isContextualShortFollowup) && (isShortAffirmation(trimmed) || isReferential || isShortContinueRequest(trimmed) || !!parseFeeDetailChoice(trimmed))) {
               // Important: don't use a long transcript as the retrieval query (can drift to other similar docs).
               // Instead, anchor retrieval on the pending intent + program hint from the last bot reply,
               // while still passing conversation transcript for answer generation.
@@ -16440,8 +16483,8 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
                 await sendBotMessage(
                   chatId,
                   'Siap, kak. Biar saya pastikan potongannya, kakak termasuk kategori yang mana?\n' +
-                  '1) Juara 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ3 tingkat Nasional\n' +
-                  '2) Harapan 1ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ3 / Favorit tingkat Nasional\n\n' +
+                  '1) Juara 1-3 tingkat Nasional\n' +
+                  '2) Harapan 1-3 / Favorit tingkat Nasional\n\n' +
                   'Balas: 1 atau 2 (atau tulis langsung kategorinya).'
                 );
                 return res.send({ ok: true, source: 'scholarship_followup_category' });
@@ -16866,7 +16909,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               let fast = null;
               if (allowFastMain) {
                 const _guardText = (typeof routeTextFast !== 'undefined' && routeTextFast) || (typeof q !== 'undefined' && q) || (typeof text !== 'undefined' && text) || '';
-                if (!isDetailedFeeQuery(_guardText)) {
+                if (!isDetailedFeeQuery(_guardText) || feeChoice === 'pendaftaran') {
                   fast = buildFastFeeAnswer(programFast, feeChoice, feeBasics, { showProgramLabel, originalQuery: _guardText });
                 } else {
                   try { console.log('[FAST_FEE_GUARD] skipping fastMain (detailed query)', { chatId, guardText: String(_guardText).slice(0, 200) }); } catch (e) { }
@@ -16918,7 +16961,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
                 const out =
                   String(maybeAppendCostDetailOffer(text, fast) || '').trim() +
                   (shouldOfferFeeBreakdown ? buildFeeBreakdownOfferPrompt(offerProgramLabel) : '');
-                await sendBotMessage(chatId, out.trim());
+                await sendBotMessage(chatId, out.trim(), { source: 'fast_fee', sourceType: SOURCE_TYPES.RULE });
                 if (shouldOfferFeeBreakdown) {
                   try {
                     const currentState = session ? session.state : 'root';
@@ -17323,7 +17366,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
         out = out.trim() + '\n\n' + 'Agar saya bisa membantu lebih baik, coba tuliskan pertanyaan dengan lebih spesifik.';
       }
       if (!/\badmin\b/i.test(outLower)) {
-        out = out.trim() + '\n\n' + '[ ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ Hubungi Admin ]';
+        out = out.trim() + '\n\n' + '[ Hubungi Admin ]';
       }
 
       await sendBotMessage(chatId, out);

@@ -4,6 +4,28 @@ const path = require('path');
 const logger = require('../logger');
 
 const ensuredRuntimeTables = new Set();
+const failedRuntimeTables = new Map();
+let ragTracePersistFailureUntil = 0;
+
+function numberEnv(name, defaultValue) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value >= 0 ? value : defaultValue;
+}
+
+function envExplicitlySet(name) {
+  return process.env[name] !== undefined && process.env[name] !== null && String(process.env[name]).trim() !== '';
+}
+
+function withTimeout(promise, timeoutMs, timeoutValue) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return promise;
+  let timeoutId;
+  return Promise.race([
+    promise.finally(() => { if (timeoutId) clearTimeout(timeoutId); }),
+    new Promise((resolve) => {
+      timeoutId = setTimeout(() => resolve(timeoutValue), timeoutMs);
+    })
+  ]);
+}
 
 function envFlag(name, defaultValue = false) {
   const raw = process.env[name];
@@ -103,10 +125,21 @@ function filterGovernedTrainingRows(rows = []) {
 
 async function safeEnsureRuntimeTable(prisma, tableName, sql) {
   if (!prisma || !tableName || !sql || ensuredRuntimeTables.has(tableName)) return;
+  const now = Date.now();
+  const failedUntil = failedRuntimeTables.get(tableName) || 0;
+  if (failedUntil > now) return;
+  const timeoutMs = numberEnv('RUNTIME_AUDIT_DB_TIMEOUT_MS', 750);
+  const failureTtlMs = numberEnv('RUNTIME_AUDIT_FAILURE_TTL_MS', 60000);
   try {
-    await prisma.$executeRawUnsafe(sql);
+    const result = await withTimeout(prisma.$executeRawUnsafe(sql), timeoutMs, { timeout: true });
+    if (result && result.timeout) {
+      failedRuntimeTables.set(tableName, Date.now() + failureTtlMs);
+      safeWarn({ tableName, timeoutMs }, '[RuntimeGovernance] skipped runtime table ensure after timeout');
+      return;
+    }
     ensuredRuntimeTables.add(tableName);
   } catch (err) {
+    failedRuntimeTables.set(tableName, Date.now() + failureTtlMs);
     safeWarn({ tableName, err: err && err.message ? err.message : String(err) }, '[RuntimeGovernance] failed to ensure runtime table');
   }
 }
@@ -316,6 +349,7 @@ function inferMemoryTopic(text = '') {
 
 async function updateConversationMemory(prisma, chatId, patch = {}) {
   if (!prisma || !chatId) return false;
+  if (!envFlag('CONVERSATION_MEMORY_ENABLED', process.env.NODE_ENV !== 'test')) return false;
   try {
     const session = await prisma.session.findUnique({ where: { chatId } });
     const currentState = session && session.state ? session.state : 'root';
@@ -357,8 +391,10 @@ function buildTopSources(contexts = []) {
 }
 
 async function recordRagTrace(prisma, payload = {}) {
-  if (!envFlag('RAG_TRACE_PERSIST', true)) return { recorded: false, skipped: true };
+  const persistDefault = process.env.NODE_ENV === 'test' && !envExplicitlySet('RAG_TRACE_PERSIST') ? false : true;
+  if (!envFlag('RAG_TRACE_PERSIST', persistDefault)) return { recorded: false, skipped: true };
   if (!prisma || !payload.question) return { recorded: false };
+  if (ragTracePersistFailureUntil > Date.now()) return { recorded: false, skipped: true, reason: 'recent_trace_persist_failure' };
   await ensureRuntimeAuditTables(prisma);
   const id = crypto.randomUUID ? crypto.randomUUID() : sha256(`${Date.now()}:${Math.random()}`);
   const data = {
@@ -376,9 +412,17 @@ async function recordRagTrace(prisma, payload = {}) {
     debug: payload.debug && typeof payload.debug === 'object' ? payload.debug : {}
   };
   try {
-    await prisma.ragTrace.create({ data });
+    const timeoutMs = numberEnv('RAG_TRACE_PERSIST_TIMEOUT_MS', numberEnv('RUNTIME_AUDIT_DB_TIMEOUT_MS', 750));
+    const failureTtlMs = numberEnv('RUNTIME_AUDIT_FAILURE_TTL_MS', 60000);
+    const result = await withTimeout(prisma.ragTrace.create({ data }), timeoutMs, { timeout: true });
+    if (result && result.timeout) {
+      ragTracePersistFailureUntil = Date.now() + failureTtlMs;
+      safeWarn({ timeoutMs }, '[RuntimeGovernance] skipped RAG trace persistence after timeout');
+      return { recorded: false, timeout: true };
+    }
     return { recorded: true, id };
   } catch (err) {
+    ragTracePersistFailureUntil = Date.now() + numberEnv('RUNTIME_AUDIT_FAILURE_TTL_MS', 60000);
     safeWarn({ err: err && err.message ? err.message : String(err) }, '[RuntimeGovernance] failed to record RAG trace');
     return { recorded: false };
   }

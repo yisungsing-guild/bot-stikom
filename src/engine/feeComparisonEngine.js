@@ -1,10 +1,11 @@
 const ragEngine = require('./ragEngine');
+const { parseCompactRupiahNumber } = require('../utils/rupiahParser');
 const fs = require('fs');
 const path = require('path');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
 
 function parseAmount(raw) {
-  return ragEngine.parseCompactRupiahNumber(raw);
+  return parseCompactRupiahNumber(raw);
 }
 
 const PROGRAM_META = {
@@ -964,7 +965,7 @@ function tryScholarshipAnswer(question) {
     };
   }
 
-  if (/\b(cara|bagaimana|gimana|mendapatkan|dapat|mengajukan|daftar|prosedur|alur)\b/.test(q) && /\b(beasiswa(?:nya)?|bantuan\s+biaya|potongan)\b/.test(q)) {
+  if (/\b(cara|mendapatkan|mengajukan|daftar|mendaftar|prosedur|alur)\b/.test(q) && /\b(beasiswa(?:nya)?|bantuan\s+biaya|potongan)\b/.test(q)) {
     return {
       answer: [
         'Untuk mendapatkan beasiswa, kakak perlu memilih jalur beasiswa yang ingin diajukan lalu mengikuti arahan PMB/kampus.',

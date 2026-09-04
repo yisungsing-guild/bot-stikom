@@ -7,6 +7,11 @@ const SLANG_REPLACEMENTS = {
   klo: 'kalau',
   kalo: 'kalau',
   kl: 'kalau',
+  mw: 'mau',
+  tny: 'tanya',
+  donk: 'dong',
+  biayany: 'biaya',
+  biayanya: 'biaya',
   trs: 'terus',
   trus: 'terus',
   msh: 'masih',
@@ -24,6 +29,7 @@ const SLANG_REPLACEMENTS = {
   maba: 'mahasiswa baru',
   milih: 'memilih',
   dftr: 'daftar',
+  dta: 'data',
   jrsn: 'jurusan',
   akrediasi: 'akreditasi',
   akreditai: 'akreditasi',
@@ -68,6 +74,11 @@ const SLANG_REPLACEMENTS = {
 
 const FILLER_TOKENS = new Set(['min', 'kak', 'bro', 'dong', 'nih', 'dah']);
 
+const FUZZY_PROTECTED_VALID_TOKENS = new Set([
+  'data',
+  'mata'
+]);
+
 const DOMAIN_FUZZY_VOCAB = [
   'teknologi',
   'informasi',
@@ -88,6 +99,7 @@ const DOMAIN_FUZZY_VOCAB = [
   'internasional',
   'international',
   'daftar',
+  'data',
   'jurusan',
   'akreditasi',
   'pascasarjana',
@@ -175,6 +187,7 @@ function normalizeUserQuery(text) {
 
 function fuzzyNormalizeDomainToken(token) {
   if (!token || token.length < 4) return token;
+  if (FUZZY_PROTECTED_VALID_TOKENS.has(token)) return token;
 
   let bestMatch = token;
   let bestDistance = Infinity;

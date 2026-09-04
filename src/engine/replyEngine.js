@@ -56,6 +56,7 @@ function normalizeForKeywordMatchLoose(input) {
 }
 
 function parseCacheTtlMs() {
+  if (process.env.NODE_ENV === 'test') return 0;
   const raw = process.env.KEYWORD_RULES_CACHE_TTL_MS;
   if (raw === undefined || raw === null) return 5000;
   const n = Number.parseInt(String(raw), 10);

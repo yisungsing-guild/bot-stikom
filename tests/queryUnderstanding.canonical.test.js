@@ -103,3 +103,48 @@ describe('canonical query understanding', () => {
     expect(academic.entities.programs[0].canonical).toBe('Sistem Informasi');
   });
 });
+
+
+test('separates career-goal program recommendation from catalogue/list intent', () => {
+  const positive = [
+    'Saya ingin kerja mengolah data, jurusan mana yang cocok?',
+    'Kalau mau jadi data analyst sebaiknya ambil prodi apa?',
+    'Saya suka analisis bisnis dan teknologi, jurusan yang cocok apa?',
+    'Kalau target kerja di digital marketing, pilih jurusan apa?'
+  ];
+
+  for (const query of positive) {
+    const canonical = buildCanonicalQueryUnderstanding(query);
+    expect(canonical.intent.primary).toBe('ask_program_recommendation');
+    expect(canonical.domain.primary).toBe('program_recommendation');
+    expect(canonical.requestedFields).toEqual(expect.arrayContaining(['programRecommendation', 'careerGoal']));
+    expect(canonical.requestedFields).not.toContain('programList');
+    expect(canonical.constraints.unsupportedEntityCandidate).toBeFalsy();
+  }
+
+  const catalogue = [
+    'Daftar jurusan apa saja?',
+    'Ada prodi apa saja?',
+    'Sebutkan semua program S1.'
+  ];
+
+  for (const query of catalogue) {
+    const canonical = buildCanonicalQueryUnderstanding(query);
+    expect(canonical.intent.primary).toBe('ask_program_list');
+    expect(canonical.domain.primary).toBe('program');
+    expect(canonical.requestedFields).toContain('programList');
+  }
+
+  const neighboring = [
+    'Apa itu data?',
+    'Daftar ulang kapan?',
+    'Mata kuliah pengolahan data ada?',
+    'Program mana yang paling murah?'
+  ];
+
+  for (const query of neighboring) {
+    const canonical = buildCanonicalQueryUnderstanding(query);
+    expect(canonical.intent.primary).not.toBe('ask_program_recommendation');
+    expect(canonical.domain.primary).not.toBe('program_recommendation');
+  }
+});

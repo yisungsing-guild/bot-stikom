@@ -16,6 +16,7 @@ const {
 } = require('./evidenceSelector');
 const { enrichChunkWithCategory } = require('./docCategoryClassifier');
 const { auditLogger } = require('./ragAuditLogger');
+const { parseCompactRupiahNumber } = require('../utils/rupiahParser');
 const {
   getRagDataDir,
   getRagIndexPath,
@@ -234,6 +235,9 @@ function trySimpleGuardAnswer(question) {
     .replace(/\s{2,}/g, ' ')
     .trim()
     .toLowerCase();
+  if (/(beasiswa|ranking|rangking|peringkat|potongan)/i.test(normalized) && /(sekolah|lampiran|daftar)/i.test(normalized)) {
+    return null;
+  }
 
   if (/\b(terima\s*(?:kasih|ksih|ksh)|terimakasih|makasih|mksh|mksih|thanks|thank\s+you|thx)\b/i.test(normalized)) {
     return {
@@ -1926,7 +1930,7 @@ function extractAccreditationFromIndex(indexForQuery, programInfo) {
     for (const re of dateRangePatterns) {
       const m = re.exec(txt);
       if (m && m[1] && m[2]) {
-        validity = `${String(m[1]).trim()} G�� ${String(m[2]).trim()}`;
+        validity = `${String(m[1]).trim()} - ${String(m[2]).trim()}`;
         break;
       }
     }
@@ -2021,6 +2025,13 @@ function tryStructuredCampusLocationAnswer(question, indexForQuery) {
     if (/jimbaran/i.test(lower)) foundLocations.push('Jimbaran');
     if (/abiansemal/i.test(lower)) foundLocations.push('Abiansemal');
     if (/renon/i.test(lower)) foundLocations.push('Renon');
+
+    const campusNameMatches = chunk.match(/\bKampus\s+([A-Z][\p{L}\p{M}0-9-]{2,}(?:\s+[A-Z][\p{L}\p{M}0-9-]{2,}){0,2})\b/gu) || [];
+    for (const match of campusNameMatches) {
+      const name = match.replace(/^Kampus\s+/i, '').replace(/\s+/g, ' ').trim();
+      if (!name || /ITB|STIKOM|Bali|utama|satelit/i.test(name)) continue;
+      foundLocations.push(name);
+    }
   }
 
   const uniqueLocations = [...new Set(foundLocations.filter(Boolean))];
@@ -2028,7 +2039,7 @@ function tryStructuredCampusLocationAnswer(question, indexForQuery) {
 
   const locationText = uniqueLocations.join(', ');
   const lines = [];
-  lines.push('ITB STIKOM Bali memiliki 3 lokasi kampus utama yang terdeteksi dari sumber yang tersedia.');
+  lines.push(`ITB STIKOM Bali memiliki ${uniqueLocations.length} lokasi kampus yang terdeteksi dari sumber yang tersedia.`);
   lines.push(`Lokasi yang terdeteksi dari sumber yang tersedia: ${locationText}.`);
   lines.push('Untuk alamat lengkap dan rute, kakak bisa cek dokumen resmi atau hubungi admin kampus.');
 
@@ -2522,7 +2533,7 @@ async function tryStructuredProgramRecommendationAnswer(rawQuestion, indexForQue
   return {
     answer:
       'Biar aku bisa cocokin jurusan yang paling pas, hobinya lebih sering ngapain ya? ' +
-      'Cukup balas 2G��3 contoh aktivitas spesifik (mis. "jualan online", "edit video", "ngoding", "analisis data", "merakit elektronik").',
+      'Cukup balas 2-3 contoh aktivitas spesifik (mis. "jualan online", "edit video", "ngoding", "analisis data", "merakit elektronik").',
     source: 'rag-major-recommendation',
     contexts: [],
     confidenceTier: 'LOW',
@@ -3154,7 +3165,7 @@ function tryStructuredProgramComparisonAnswer(rawQuestion) {
     const mostExpensivePrice = sortedByCost[sortedByCost.length - 1].priceRangeStr || 'N/A';
     
     for (const prog of sortedByCost) {
-      lines.push(`- ${prog.label}: Total biaya � ${prog.priceRangeStr || 'N/A'}`);
+      lines.push(`- ${prog.label}: Total biaya ~ ${prog.priceRangeStr || 'N/A'}`);
     }
     lines.push('');
     lines.push(`? Pilihan termurah: ${cheapestLabel} (${cheapestPrice})`);
@@ -3163,7 +3174,7 @@ function tryStructuredProgramComparisonAnswer(rawQuestion) {
     lines.push('Catatan: Range harga adalah estimasi total biaya awal (pendaftaran + DPP). Harga akhir bisa berbeda tergantung gelombang, potongan, dan komponen biaya lainnya.');
   } else {
     for (const d of toCompare) {
-      lines.push(`- ${d.label}: Total biaya � ${d.priceRangeStr || 'N/A'} - ${d.desc}`);
+      lines.push(`- ${d.label}: Total biaya ~ ${d.priceRangeStr || 'N/A'} - ${d.desc}`);
     }
 
     if (wantsCostCompare) {
@@ -3492,7 +3503,7 @@ function tryStructuredDualDegreeFeeAnswer(question, indexForQuery) {
   lines.push('* Beasiswa 1K1S (Satu Keluarga Satu Sarjana)');
   lines.push('* Beasiswa Prestasi');
   lines.push('* Beasiswa Yayasan');
-  lines.push('* Beasiswa khusus untuk alumni � silakan hubungi PMB untuk detail');
+  lines.push('* Beasiswa khusus untuk alumni - silakan hubungi PMB untuk detail');
   lines.push('* Kuliah Sambil Kerja di Luar Negeri');
   lines.push('');
   lines.push('Apakah Kakak ingin dijelaskan tentang?');
@@ -3774,7 +3785,7 @@ function tryStructuredCurrentOpenWavesAnswer(question) {
   const mentionsWave = /\bgelombang\b/i.test(qLower) || /\bgbg\b/i.test(qLower);
   if (!mentionsWave) return null;
 
-  const asksNow = /(sekarang|saat\s+ini|hari\s+ini|lagi\s+buka|yang\s+sedang\s+buka|terbuka|dibuka|open|masih\s+buka|masih\s+dibuka)/i.test(qLower) ||
+  const asksNow = /(sekarang|skrg|skrng|saat\s+ini|hari\s+ini|lagi\s+buka|lg\s+buka|yang\s+sedang\s+buka|terbuka|kebuka|dibuka|open|masih\s+buka|masih\s+dibuka)/i.test(qLower) ||
     /sekarang\s+gelombang\s+berapa/i.test(qLower);
   const asksNext = /\bgelombang\b.*\bberikutnya\b/i.test(qLower) || /\bkapan\b.*\bgelombang\b/i.test(qLower);
   
@@ -4463,7 +4474,7 @@ function tryStructuredScheduleAnswer(question, top) {
   // Perhatikan: backslash harus di-escape dua kali di string JS.
   // Kolom terakhir (registrasi ulang) kita paksa mengandung teks "s/d" supaya
   // tidak tertangkap versi yang terpotong (misalnya hanya "21").
-  const pattern = `${escapeRegex(waveKey)}\\s*\\|\\s*([^|]+)\\|\\s*([^|]+)\\|\\s*([^|]+)\\|\\s*([^\\n]*?s/d[^\\n]*)`;
+  const pattern = `${escapeRegex(waveKey)}\\s*\\|\\s*([^|]+)\\|\\s*([^|]+)\\|\\s*([^|]+)\\|\\s*([^|\\n]+)`;
   const rowRegex = new RegExp(pattern, 'i');
   const m = rowRegex.exec(combinedText);
   // Normalisasi sederhana agar konsisten di WhatsApp (hindari spasi acak sekitar s/d).
@@ -4477,7 +4488,7 @@ function tryStructuredScheduleAnswer(question, top) {
   const isRomanOnly = /^[IVX]{1,5}$/i.test(String(waveKey || '').trim());
   if ((!m || !m[1] || !m[2] || !m[3] || !m[4]) && isRomanOnly) {
     const base = String(waveKey || '').trim().toUpperCase();
-    const subPattern = `${escapeRegex(base)}\\s*([A-D])\\s*\\|\\s*([^|]+)\\|\\s*([^|]+)\\|\\s*([^|]+)\\|\\s*([^\\n]*?s/d[^\\n]*)`;
+    const subPattern = `${escapeRegex(base)}\\s*([A-D])\\s*\\|\\s*([^|]+)\\|\\s*([^|]+)\\|\\s*([^|]+)\\|\\s*([^|\\n]+)`;
     const subRegex = new RegExp(subPattern, 'ig');
     const found = [];
     let mm;
@@ -7927,281 +7938,236 @@ function extractRegistrationDiscountFromChunk(item, queryEntities) {
   return null;
 }
 
-function buildDeterministicFeeAnswer(feeStruct, queryEntities) {
-  if (!feeStruct || typeof feeStruct !== 'object') return null;
-  const lines = [];
-  const explicitProgram = queryEntities && queryEntities.program ? String(queryEntities.program).trim() : '';
-  const expandedProgram = explicitProgram ? (getDisplayProgramName(explicitProgram) || explicitProgram) : '';
-  const displayProgram = expandedProgram
-    ? `${expandedProgram}${feeStruct.programName && feeStruct.programName !== explicitProgram && feeStruct.programName !== expandedProgram ? ` (${feeStruct.programName})` : ''}`
-    : (feeStruct.programName ? `${feeStruct.programName}${feeStruct.program ? ` (${feeStruct.program})` : ''}` : (feeStruct.program || 'Program Studi'));
-  const displayWave = queryEntities.wave || feeStruct.wave || 'Gelombang';
-  const displayAcademicYear = feeStruct.academicYear || 'Tahun Akademik tidak tersedia';
-  const displayWaveGroup = feeStruct.waveGroup || normalizeWaveGroup(displayWave);
+function buildFeeRequestContract(question, queryEntities = {}) {
+  const currentQ = extractCurrentUserQuestionText(question);
+  const qLower = String(currentQ || question || '').toLowerCase();
+  const feeType = queryEntities && queryEntities.feeType ? String(queryEntities.feeType).toUpperCase() : normalizeFeeType(qLower);
+  const wantsRegistration = feeType === 'REGISTRATION' || /(?:biaya|uang|tarif|nominal)\s+(?:pendaftaran|daftar|registrasi)|(?:pendaftaran|registrasi)\s+(?:berapa|brp|nominal|tarif)/i.test(qLower);
+  const wantsSemester = feeType === 'UKT' || /\b(ukt|spp|uang\s+kuliah|biaya\s+(?:kuliah|pendidikan|per\s*)?semester|per\s*semester)\b/i.test(qLower);
+  const wantsDiscount = feeType === 'DISCOUNT' || /\b(potongan|diskon|discount|keringanan)\b/i.test(qLower);
+  const wantsBreakdown = /\b(rincian|detail|lengkap|komponen|breakdown|apa\s+saja|biaya\s+lain|lainnya|skema\s+pembayaran)\b/i.test(qLower);
+  const wantsTotal = /\b(total|keseluruhan|semua|full)\b/i.test(qLower);
 
-  const parseAmount = (str) => str ? parseInt(str.replace(/\D/g, ''), 10) : 0;
-  const formatRp = (n) => 'Rp ' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  const requestedWaveGroup = queryEntities && queryEntities.wave ? normalizeWaveGroup(queryEntities.wave) : null;
-  const requestedWaveLabel = queryEntities && queryEntities.wave ? normalizeWaveLabel(queryEntities.wave) : null;
-  const extractBestWaveAmountFromSources = (sourceItems, kind) => {
-    const amounts = [];
-    const texts = [];
-    for (const sourceItem of Array.isArray(sourceItems) ? sourceItems : []) {
-      const text = String((sourceItem && sourceItem.chunk) || '');
-      if (text) texts.push(text);
-    }
-    for (const text of texts) {
-      const lines = String(text || '').split(/\r?\n/);
-      for (const rawLine of lines) {
-        const line = String(rawLine || '').trim();
-        if (!line) continue;
+  let answerShape = 'full';
+  if (wantsRegistration && !wantsBreakdown && !wantsTotal && !wantsSemester) answerShape = 'registration-only';
+  else if (wantsSemester && !wantsBreakdown && !wantsTotal && !wantsRegistration) answerShape = 'semester-only';
+  else if (wantsDiscount && !wantsBreakdown && !wantsTotal) answerShape = 'discount';
+  else if (wantsBreakdown) answerShape = 'breakdown';
+  else if (wantsTotal) answerShape = 'total';
 
-        const looksLikeRegistrationLine = /(pendaftaran|registrasi)/i.test(line);
-        const looksLikeDppLine = /(dpp|dana\s+pendidikan\s+pokok)/i.test(line);
-        if (kind === 'registration' && !looksLikeRegistrationLine) continue;
-        if (kind === 'dpp' && !looksLikeDppLine) continue;
-
-        for (const match of line.matchAll(/Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?[^\n]{0,120}?Rp\.?\s*([0-9][0-9\s\.,]{1,40})/gi)) {
-          const waveLabel = normalizeWaveLabel(`${match[1] || ''}${match[2] || ''}`);
-          if (!waveLabel) continue;
-          if (requestedWaveLabel && waveLabel === requestedWaveLabel) {
-            amounts.push(parseAmount(`Rp ${match[3]}`));
-            continue;
-          }
-          if (requestedWaveGroup && normalizeWaveGroup(waveLabel) === requestedWaveGroup) {
-            amounts.push(parseAmount(`Rp ${match[3]}`));
-          }
-        }
-        for (const match of line.matchAll(/Rp\.?\s*([0-9][0-9\s\.,]{1,40})[^\n]{0,120}?Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?/gi)) {
-          const waveLabel = normalizeWaveLabel(`${match[2] || ''}${match[3] || ''}`);
-          if (!waveLabel) continue;
-          if (requestedWaveLabel && waveLabel === requestedWaveLabel) {
-            amounts.push(parseAmount(`Rp ${match[1]}`));
-            continue;
-          }
-          if (requestedWaveGroup && normalizeWaveGroup(waveLabel) === requestedWaveGroup) {
-            amounts.push(parseAmount(`Rp ${match[1]}`));
-          }
-        }
-      }
-    }
-    return amounts.length ? (kind === 'registration' ? Math.min(...amounts) : Math.max(...amounts)) : 0;
+  return {
+    domain: 'fee',
+    program: queryEntities && queryEntities.program ? queryEntities.program : null,
+    partner: queryEntities && queryEntities.partner ? queryEntities.partner : null,
+    wave: queryEntities && queryEntities.wave ? queryEntities.wave : null,
+    waveGroup: queryEntities && (queryEntities.waveGroup || normalizeWaveGroup(queryEntities.wave)) || null,
+    requestedFeeFields: [
+      wantsRegistration ? 'registration' : null,
+      wantsSemester ? 'semester' : null,
+      wantsDiscount ? 'discount' : null,
+      wantsBreakdown ? 'breakdown' : null,
+      wantsTotal ? 'total' : null
+    ].filter(Boolean),
+    feeType,
+    discountScope: wantsDiscount ? (wantsRegistration ? 'registration' : (qLower.includes('dpp') ? 'dpp' : 'any')) : null,
+    answerShape
   };
-
-  const sourceRegistrationDiscount = extractBestWaveAmountFromSources(feeStruct.sourceChunks, 'registration');
-  const sourceDppDiscount = extractBestWaveAmountFromSources(feeStruct.sourceChunks, 'dpp');
-  const registrationDiscountAmount = sourceRegistrationDiscount > 0
-    ? sourceRegistrationDiscount
-    : parseAmount(feeStruct.registrationDiscount);
-  const dppDiscountAmount = sourceDppDiscount > 0
-    ? sourceDppDiscount
-    : parseAmount(feeStruct.dppDiscount);
-  const formatRupiahLocal = (value) => {
-    const n = Number(value);
-    if (!Number.isFinite(n) || n <= 0) return null;
-    return 'Rp ' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  };
-  const registrationFeeAmount = parseAmount(feeStruct.registrationFee);
-  const defaultRegistrationDiscountByWave = { KHUSUS: 300000, '1': 250000, '2': 200000, '3': 150000, '4': 100000, SISIPAN: 0 };
-  let adjustedRegistrationDiscountAmount = (
-    String(queryEntities && queryEntities.program || '').toUpperCase() === 'SI' &&
-    requestedWaveGroup === '1' &&
-    registrationDiscountAmount > 0 &&
-    registrationDiscountAmount < 250000
-  ) ? 250000 : registrationDiscountAmount;
-  if (registrationFeeAmount > 0 && adjustedRegistrationDiscountAmount > registrationFeeAmount) {
-    const defaultDiscount = defaultRegistrationDiscountByWave[String(requestedWaveGroup || '').toUpperCase()];
-    adjustedRegistrationDiscountAmount = Number.isFinite(defaultDiscount) ? defaultDiscount : 0;
-  }
-  const registrationNet = Math.max(0, registrationFeeAmount - adjustedRegistrationDiscountAmount);
-  if (adjustedRegistrationDiscountAmount > 0) {
-    feeStruct.registrationDiscount = formatRupiahLocal(adjustedRegistrationDiscountAmount) || feeStruct.registrationDiscount;
-    feeStruct.registrationTotal = formatRupiahLocal(registrationNet) || 'Rp 0';
-  } else if (registrationFeeAmount > 0 && feeStruct.registrationDiscount && parseAmount(feeStruct.registrationDiscount) > registrationFeeAmount) {
-    feeStruct.registrationDiscount = null;
-    feeStruct.registrationTotal = formatRupiahLocal(registrationFeeAmount) || feeStruct.registrationTotal;
-  }
-  const dppNet = Math.max(0, parseAmount(feeStruct.dpp) - dppDiscountAmount);
-
-  const subtotalAwalMasukAmt = parseAmount(feeStruct.subtotalAwalMasuk);
-  const totalBiayaMasukAmt = parseAmount(feeStruct.totalBiayaMasuk);
-  const uktAmt = parseAmount(feeStruct.ukt);
-
-  lines.push(`Program Studi: ${displayProgram}`);
-  // Keep the colon in the deterministic full-fee formatter so tests
-  // that expect 'Gelombang: 1A' continue to pass.
-  lines.push(`Gelombang: ${displayWave}`);
-  lines.push(`Tahun Akademik: ${displayAcademicYear}`);
-  lines.push('');
-
-  // Build requested structured WA formatter for parsed fee fields.
-  const registrationSection = [];
-  // Avoid repeating the full word "Gelombang" in section labels when
-  // we've already displayed the wave header above. Use a short "(Gel X)"
-  // notation so the word 'Gelombang' appears only once in the final answer.
-  const registrationDiscountLabel = requestedWaveGroup ? `Potongan Pendaftaran (Gel ${requestedWaveGroup})` : 'Potongan Pendaftaran';
-  const dppDiscountLabel = requestedWaveGroup ? `Potongan DPP (Gel ${requestedWaveGroup})` : 'Potongan DPP';
-  if (feeStruct.registrationFee || feeStruct.registrationDiscount || feeStruct.registrationTotal) {
-    // Use explicit 'Biaya Pendaftaran' heading to match expected test strings
-    registrationSection.push('Biaya Pendaftaran:');
-    if (feeStruct.registrationFee) {
-      registrationSection.push(`Biaya Pendaftaran:\n${feeStruct.registrationFee}`);
-    }
-    if (feeStruct.registrationDiscount) {
-      registrationSection.push(`${registrationDiscountLabel}:\n${feeStruct.registrationDiscount}`);
-    }
-    if (feeStruct.registrationTotal) {
-      registrationSection.push(`Total Pendaftaran:\n${feeStruct.registrationTotal}`);
-    }
-  }
-
-  const dppSection = [];
-  if (feeStruct.dpp || feeStruct.dppDiscount) {
-    dppSection.push('DPP:');
-    if (feeStruct.dpp) {
-      dppSection.push(`${feeStruct.dpp}`);
-    }
-    if (feeStruct.dppDiscount) {
-      dppSection.push(`${dppDiscountLabel}:\n${feeStruct.dppDiscount}`);
-    }
-  }
-
-  const feeItemLines = [];
-  const perl = [
-    { k: 'uniformFee', label: 'Jas almamater' },
-    { k: 'capFee', label: 'Topi' },
-    { k: 'shirtFee', label: 'Kaos' },
-    { k: 'gmtiFee', label: 'GMTI' },
-    { k: 'bagFee', label: 'Tas' }
-  ];
-  for (const p of perl) {
-    if (feeStruct[p.k]) {
-      feeItemLines.push(`- ${p.label}: ${feeStruct[p.k]}`);
-    }
-  }
-
-  if (feeStruct.initialCostItems && Array.isArray(feeStruct.initialCostItems) && feeStruct.initialCostItems.length) {
-    // classify parsed cost items when available
-    const registrationItems = [];
-    const dppItems = [];
-    const semesterItems = [];
-    const onboardingItems = [];
-
-    for (const it of feeStruct.initialCostItems) {
-      const label = String((it && it.label) || '').trim();
-      const timing = String((it && it.timing) || '').trim();
-      const llabel = `${label}`.toLowerCase();
-      const ltiming = `${timing}`.toLowerCase();
-
-      if (/\b(jas|almamater|almameter|almamet(er)?|topi|kaos|tas|seragam|gmti|g?gmt)\b/.test(llabel) || /registrasi/.test(ltiming)) {
-        onboardingItems.push(it);
-        continue;
-      }
-      if (/\bpendaftaran\b/.test(llabel)) {
-        registrationItems.push(it);
-        continue;
-      }
-      if (/\b(dpp|dana\s+pendidikan\s+pokok|dana\s+pendidikan)\b/.test(llabel)) {
-        dppItems.push(it);
-        continue;
-      }
-      if (/\b(semester|per\s+semester|spp|biaya\s+pendidikan\s+per\s+semester)\b/.test(llabel)) {
-        semesterItems.push(it);
-        continue;
-      }
-    }
-
-    feeStruct.classifiedInitialCostItems = {
-      registrationItems,
-      dppItems,
-      semesterItems,
-      onboardingItems
-    };
-
-    for (const it of feeStruct.classifiedInitialCostItems.onboardingItems) {
-      if (it && it.amount) {
-        const dispAmt = String(it.amount).replace(/^Rp\s*/i, '');
-        feeItemLines.push(`- ${it.label}: Rp ${dispAmt}`);
-      }
-    }
-  }
-
-  if (registrationSection.length) {
-    lines.push('');
-    lines.push(...registrationSection);
-  }
-
-  if (dppSection.length) {
-    lines.push('');
-    lines.push(...dppSection);
-  }
-
-  if (feeItemLines.length) {
-    lines.push('');
-    lines.push('Biaya Perlengkapan:');
-    lines.push(...feeItemLines);
-  }
-
-  if (subtotalAwalMasukAmt > 0) {
-    lines.push('');
-    lines.push(`Subtotal Awal Masuk: ${formatRp(subtotalAwalMasukAmt)}`);
-  }
-  if (totalBiayaMasukAmt > 0) {
-    lines.push('');
-    lines.push(`Total Biaya Masuk: ${formatRp(totalBiayaMasukAmt)}`);
-  }
-  if (uktAmt > 0) {
-    lines.push('');
-    lines.push(`Biaya Pendidikan per Semester (UKT): ${formatRp(uktAmt)}`);
-  }
-
-  const sources = new Set();
-  if (feeStruct.sourceFile) sources.add(feeStruct.sourceFile);
-  if (feeStruct.sourceChunk && feeStruct.sourceChunk.filename) sources.add(feeStruct.sourceChunk.filename);
-  if (feeStruct.sourceChunk && feeStruct.sourceChunk.trainingVersion) sources.add(`trainingVersion: ${feeStruct.sourceChunk.trainingVersion}`);
-  if (feeStruct.sourceChunks && Array.isArray(feeStruct.sourceChunks)) {
-    for (const sourceItem of feeStruct.sourceChunks) {
-      if (sourceItem && sourceItem.filename) sources.add(sourceItem.filename);
-      if (sourceItem && sourceItem.trainingVersion) sources.add(`trainingVersion: ${sourceItem.trainingVersion}`);
-    }
-  }
-  if (sources.size > 0) {
-    lines.push('Sumber:');
-    for (const source of Array.from(sources)) {
-      lines.push(`- ${source}`);
-    }
-  }
-  // Debug logs: expose the canonical fee record and select fields for tracing
-  try {
-    const record = feeStruct;
-    feeParseTrace('FEE_RECORD_RAW', JSON.stringify(record, null, 2));
-    feeParseTrace('FEE_FIELDS', {
-      registrationFee: record?.registrationFee,
-      dpp: record?.dpp,
-      jas: record?.uniformFee || record?.atribut1 || record?.registrasi || null,
-      topi: record?.capFee || null,
-      kaos: record?.shirtFee || record?.atribut2 || null,
-      gmti: record?.gmtiFee || record?.gmti || null,
-      tas: record?.bagFee || null,
-      gelombang: record?.wave || record?.gelombang || null,
-      program: record?.program || record?.programName || null
-    });
-      try {
-        feeParseTrace('FEE_FIELD_SOURCES', {
-          registrationFee: record?.fieldSources ? (record.fieldSources.registrationFee ? { id: record.fieldSources.registrationFee.id, filename: record.fieldSources.registrationFee.filename } : null) : null,
-          dpp: record?.fieldSources ? (record.fieldSources.dpp ? { id: record.fieldSources.dpp.id, filename: record.fieldSources.dpp.filename } : null) : null,
-          registrationDiscount: record?.fieldSources ? (record.fieldSources.registrationDiscount ? { id: record.fieldSources.registrationDiscount.id, filename: record.fieldSources.registrationDiscount.filename } : null) : null,
-          dppDiscount: record?.fieldSources ? (record.fieldSources.dppDiscount ? { id: record.fieldSources.dppDiscount.id, filename: record.fieldSources.dppDiscount.filename } : null) : null
-        });
-      } catch (e) {}
-      try {
-        feeParseTrace('MONEY_CANDIDATES', Array.isArray(record?.moneyCandidates) ? record.moneyCandidates.slice(0, 30) : []);
-      } catch (e) {}
-  } catch (e) {}
-  return lines.join('\n').trim();
 }
 
+function getFeeAnswerSourceForShape(answerShape) {
+  if (answerShape === 'semester-only') return 'rag-fee-semester-only';
+  if (answerShape === 'registration-only') return 'rag-fee-registration-only';
+  if (answerShape === 'discount') return 'rag-fee-discount-breakdown';
+  if (answerShape === 'breakdown') return 'rag-fee-breakdown';
+  return 'rag-fee-structured';
+}
+function buildDeterministicFeeAnswer(feeStruct, queryEntities, feeContract = null) {
+  if (!feeStruct || typeof feeStruct !== 'object') return null;
+  const contract = feeContract || buildFeeRequestContract(queryEntities && queryEntities.question ? queryEntities.question : '', queryEntities || {});
+  const answerShape = contract.answerShape || 'full';
+  const lines = [];
+  const parseAmount = (str) => str ? parseInt(String(str).replace(/\D/g, ''), 10) || 0 : 0;
+  const formatRp = (n) => {
+    const num = Number(n);
+    if (!Number.isFinite(num) || num <= 0) return null;
+    return 'Rp ' + String(Math.round(num)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+  const cleanRp = (value) => {
+    if (!value) return null;
+    const n = parseAmount(value);
+    return n > 0 ? formatRp(n) : null;
+  };
+
+  const explicitProgram = queryEntities && queryEntities.program ? String(queryEntities.program).trim() : '';
+  const expandedProgram = explicitProgram ? (getDisplayProgramName(explicitProgram) || explicitProgram) : '';
+  const partner = queryEntities && queryEntities.partner ? String(queryEntities.partner).trim().toUpperCase() : (feeStruct.partner ? String(feeStruct.partner).trim().toUpperCase() : '');
+  const partnerLabel = partner ? (normalizePartnerLabel(partner) || partner) : '';
+  const displayProgram = partnerLabel
+    ? `Dual Degree ${partnerLabel}`
+    : (expandedProgram
+      ? `${expandedProgram}${feeStruct.programName && feeStruct.programName !== explicitProgram && feeStruct.programName !== expandedProgram ? ` (${feeStruct.programName})` : ''}`
+      : (feeStruct.programName ? `${feeStruct.programName}${feeStruct.program ? ` (${feeStruct.program})` : ''}` : (feeStruct.program || 'Program Studi')));
+  const displayWave = queryEntities && queryEntities.wave ? queryEntities.wave : (feeStruct.wave || null);
+  const displayAcademicYear = feeStruct.academicYear || null;
+  const requestedWaveGroup = queryEntities && queryEntities.wave ? normalizeWaveGroup(queryEntities.wave) : (feeStruct.waveGroup || null);
+
+  const sourceChunks = Array.isArray(feeStruct.sourceChunks) ? feeStruct.sourceChunks : [];
+  const discountLineLooksApplicable = (line, kind) => {
+    const text = String(line || '');
+    if (!/\b(potongan|diskon|jika\s+(?:registrasi|mendaftar)|keringanan)\b/i.test(text)) return false;
+    if (kind === 'registration' && !/\b(pendaftaran|registrasi|mendaftar)\b/i.test(text)) return false;
+    if (kind === 'dpp' && !/\b(dpp|dana\s+pendidikan)\b/i.test(text)) return false;
+    if (!requestedWaveGroup) return true;
+    const label = normalizeWaveLabel(text);
+    const group = normalizeWaveGroup(label || text);
+    return !group || group === requestedWaveGroup;
+  };
+  const bestDiscountFromSources = (kind) => {
+    const values = [];
+    for (const ch of sourceChunks) {
+      for (const rawLine of String(ch && ch.chunk || '').split(/\r?\n/)) {
+        const line = String(rawLine || '').trim();
+        if (!discountLineLooksApplicable(line, kind)) continue;
+        for (const m of line.matchAll(/Rp\.?\s*([0-9][0-9\s\.,]{1,40})|\b([0-9]{1,3}(?:\.[0-9]{3})+)\b/gi)) {
+          const parsed = parseMoneyText(m[1] || m[2]);
+          const n = parseAmount(parsed);
+          if (n > 0) values.push(n);
+        }
+      }
+    }
+    if (!values.length) return 0;
+    return kind === 'registration' ? Math.max(...values) : Math.max(...values);
+  };
+
+  const registrationFeeAmount = parseAmount(feeStruct.registrationFee);
+  const fieldSourceText = (field) => String(feeStruct.fieldSources && feeStruct.fieldSources[field] && feeStruct.fieldSources[field].sourceText || '');
+  const trustedParsedDiscount = (field) => /\b(potongan|diskon|jika\s+(?:registrasi|mendaftar)|keringanan)\b/i.test(fieldSourceText(field));
+  const registrationDiscountAmount = Math.max(trustedParsedDiscount('registrationDiscount') ? parseAmount(feeStruct.registrationDiscount) : 0, bestDiscountFromSources('registration'));
+  const dppAmount = parseAmount(feeStruct.dpp);
+  const dppDiscountAmount = Math.max(trustedParsedDiscount('dppDiscount') ? parseAmount(feeStruct.dppDiscount) : 0, bestDiscountFromSources('dpp'));
+  const extractAmountNearFeeLabelFromSources = (labelRe) => {
+    const values = [];
+    for (const ch of sourceChunks) {
+      const text = String(ch && ch.chunk || '').replace(/\r?\n/g, ' ');
+      const matches = [...text.matchAll(/Rp\.?\s*([0-9][0-9\s\.,]{1,40})|\b([0-9]{1,3}(?:\.[0-9]{3})+)\b/gi)];
+      for (const match of matches) {
+        const index = typeof match.index === 'number' ? match.index : text.indexOf(match[0]);
+        const window = text.slice(Math.max(0, index - 90), Math.min(text.length, index + 90));
+        if (!labelRe.test(window)) continue;
+        if (/\b(potongan|diskon|beasiswa|keringanan)\b/i.test(window)) continue;
+        const parsed = parseMoneyText(match[1] || match[2]);
+        const n = parseAmount(parsed);
+        if (n > 0) values.push(n);
+      }
+    }
+    return values.length ? values[values.length - 1] : 0;
+  };
+  const uktAmount = parseAmount(feeStruct.ukt || feeStruct.semester) || extractAmountNearFeeLabelFromSources(/\b(biaya\s+pendidikan\s+per\s+semester|biaya\s+per\s+semester|ukt|spp)\b/i);
+  const registrationNet = registrationFeeAmount > 0
+    ? Math.max(0, registrationFeeAmount - Math.min(registrationFeeAmount, registrationDiscountAmount))
+    : 0;
+  const dppNet = dppAmount > 0
+    ? Math.max(0, dppAmount - Math.min(dppAmount, dppDiscountAmount))
+    : 0;
+
+  const onboardingItems = [];
+  const seenOnboarding = new Set();
+  const addOnboarding = (label, amount) => {
+    const amt = cleanRp(amount);
+    if (!amt) return;
+    const key = `${String(label || '').toLowerCase()}|${amt}`;
+    if (seenOnboarding.has(key)) return;
+    seenOnboarding.add(key);
+    onboardingItems.push({ label, amount: amt });
+  };
+  addOnboarding('Jas almamater', feeStruct.uniformFee);
+  addOnboarding('Topi', feeStruct.capFee);
+  addOnboarding('Kaos', feeStruct.shirtFee);
+  addOnboarding('GMTI', feeStruct.gmtiFee);
+  addOnboarding('Tas', feeStruct.bagFee);
+  if (Array.isArray(feeStruct.initialCostItems)) {
+    for (const item of feeStruct.initialCostItems) {
+      const label = String(item && item.label || '').trim();
+      if (!label || /\b(pendaftaran|dpp|dana\s+pendidikan|semester|ukt|spp)\b/i.test(label)) continue;
+      if (/\b(jas|almamater|topi|kaos|tas|gmti|gmt|bahasa|mandarin|inggris|industri|ujian|sertifikasi|wisuda|asuransi)\b/i.test(label)) {
+        addOnboarding(label, item.amount);
+      }
+    }
+  }
+
+  lines.push(partnerLabel ? `Program: ${displayProgram}` : `Program Studi: ${displayProgram}`);
+  if (displayWave) lines.push(`Gelombang: ${displayWave}`);
+  if (displayAcademicYear) lines.push(`Tahun Akademik: ${displayAcademicYear}`);
+  lines.push('');
+
+  const addRegistration = () => {
+    if (!registrationFeeAmount && !registrationDiscountAmount) return false;
+    lines.push('Biaya Pendaftaran:');
+    if (registrationFeeAmount) lines.push(`- Biaya pendaftaran: ${formatRp(registrationFeeAmount)}`);
+    if (registrationDiscountAmount) lines.push(`- Potongan Pendaftaran${requestedWaveGroup ? ` (Gel ${requestedWaveGroup})` : ''}: ${formatRp(registrationDiscountAmount)}`);
+    if (registrationFeeAmount && registrationDiscountAmount) lines.push(`- Total Pendaftaran: ${formatRp(registrationNet) || 'Rp 0'}`);
+    return true;
+  };
+  const addDpp = () => {
+    if (!dppAmount && !dppDiscountAmount) return false;
+    lines.push('DPP:');
+    if (dppAmount) lines.push(`- Dana Pendidikan Pokok: ${formatRp(dppAmount)}`);
+    if (dppDiscountAmount) lines.push(`- Potongan DPP${requestedWaveGroup ? ` (Gel ${requestedWaveGroup})` : ''}: ${formatRp(dppDiscountAmount)}`);
+    if (dppAmount && dppDiscountAmount) lines.push(`- Total DPP setelah potongan: ${formatRp(dppNet) || 'Rp 0'}`);
+    return true;
+  };
+  const addOnboardingSection = () => {
+    if (!onboardingItems.length) return false;
+    lines.push('Biaya Awal Masuk/Perlengkapan:');
+    for (const item of onboardingItems) lines.push(`- ${item.label}: ${item.amount}`);
+    return true;
+  };
+  const addSemester = () => {
+    if (!uktAmount) return false;
+    lines.push(`Biaya Pendidikan per Semester (UKT): ${formatRp(uktAmount)}`);
+    return true;
+  };
+
+  const sectionAdded = [];
+  const addBlock = (fn) => {
+    if (sectionAdded.length) lines.push('');
+    const before = lines.length;
+    const ok = fn();
+    if (!ok) lines.splice(before, lines.length - before);
+    else sectionAdded.push(true);
+    return ok;
+  };
+
+  if (answerShape === 'registration-only') {
+    if (!addBlock(addRegistration)) return null;
+  } else if (answerShape === 'semester-only') {
+    if (!addBlock(addSemester)) return null;
+  } else if (answerShape === 'discount') {
+    const any = addBlock(addRegistration) || addBlock(addDpp);
+    if (!any) return null;
+  } else {
+    addBlock(addRegistration);
+    addBlock(addDpp);
+    addBlock(addOnboardingSection);
+    addBlock(addSemester);
+    if (!sectionAdded.length) return null;
+  }
+
+  if ((answerShape === 'full' || answerShape === 'total' || answerShape === 'breakdown') && (registrationNet || dppNet || onboardingItems.length || uktAmount)) {
+    const onboardingTotal = onboardingItems.reduce((sum, item) => sum + parseAmount(item.amount), 0);
+    const initialTotal = registrationNet + dppNet + onboardingTotal;
+    if (answerShape !== 'semester-only' && initialTotal > 0) {
+      lines.push('');
+      lines.push(`Total Awal Masuk: ${formatRp(initialTotal)}`);
+    }
+  }
+
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
 function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, topK, qEmb) {
+  const originalQuestion = question;
+  question = extractCurrentUserQuestionText(question) || question;
+  const feeContract = buildFeeRequestContract(question, queryEntities || {});
   if (!queryEntities || (queryEntities.intent !== 'COST' && queryEntities.academicIntent !== 'BIAYA')) return null;
   const strictCostMode = true;
   const q = String(question || '').toLowerCase();
@@ -8908,6 +8874,15 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
     });
   } catch (e) {}
   const topChunks = candidates.slice(0, Math.min(topK || 3, candidates.length)).map(c => c.item);
+  try {
+    for (const item of Array.isArray(indexForQuery) ? indexForQuery : []) {
+      if (!item || !item.chunk) continue;
+      if (!isGlobalWaveDiscountChunk(item.chunk) && !isExplicitRegistrationDiscountChunk(item.chunk)) continue;
+      if (topChunks.includes(item)) continue;
+      const base = topChunks[0] || item;
+      if (canMergeFeeChunks(base, item)) topChunks.push(item);
+    }
+  } catch (e) {}
   for (const candidate of candidates) {
     if (candidate.isGlobalDiscount && !topChunks.includes(candidate.item)) {
       topChunks.push(candidate.item);
@@ -9214,6 +9189,12 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
           if (!trust || !trust.trusted) continue;
           const regDiscount = extractRegistrationDiscountFromChunk(chunkItem, queryEntities);
           if (!regDiscount) continue;
+          const discountChunkEntities = getChunkEntities(chunkItem);
+          const requestedWaveForDiscount = queryEntities && queryEntities.wave ? normalizeWaveLabel(queryEntities.wave) : null;
+          const chunkWaveForDiscount = discountChunkEntities && discountChunkEntities.wave ? normalizeWaveLabel(discountChunkEntities.wave) : null;
+          if (requestedWaveForDiscount && chunkWaveForDiscount && requestedWaveForDiscount !== chunkWaveForDiscount && normalizeWaveGroup(requestedWaveForDiscount) !== normalizeWaveGroup(chunkWaveForDiscount)) {
+            continue;
+          }
 
           // Try to enrich programName and academicYear from other chunks in the same training
           let enrichedProgramName = chunkItem.programName || getChunkEntities(chunkItem).program || null;
@@ -9258,7 +9239,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
             sourceChunk: chunkItem
           };
 
-          const answer = buildDeterministicFeeAnswer(fallbackFeeStruct, queryEntities);
+          const answer = buildDeterministicFeeAnswer(fallbackFeeStruct, Object.assign({}, queryEntities, { question }), feeContract);
           if (!answer) continue;
 
           // Determine confidence tier promotion conditions
@@ -9306,13 +9287,47 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
       answer: 'Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.',
       source: 'rag-answer-rejected',
       contexts: topChunks,
-      confidenceScore: candidates[0].totalScore,
+      confidenceScore: candidates[0] && typeof candidates[0].totalScore === 'number' ? candidates[0].totalScore : 0,
       confidenceTier: 'LOW',
       debug: { entity: queryEntities, matchedChunks: topChunks.map(c => ({ id: c.id, filename: c.filename, updatedAt: c.updatedAt })), reason: 'fee_structure_parse_failed' }
     };
   }
 
-  const answer = buildDeterministicFeeAnswer(feeStruct, queryEntities);
+  try {
+    const requestedWave = queryEntities && queryEntities.wave ? normalizeWaveLabel(queryEntities.wave) : null;
+    const sourceChunksForWave = Array.isArray(feeStruct.sourceChunks) && feeStruct.sourceChunks.length ? feeStruct.sourceChunks : (feeStruct.sourceChunk ? [feeStruct.sourceChunk] : []);
+    const sourceWaves = sourceChunksForWave
+      .map(chunk => getChunkEntities(chunk).wave)
+      .filter(Boolean)
+      .map(normalizeWaveLabel)
+      .filter(Boolean);
+    if (requestedWave && sourceWaves.length > 0 && !sourceWaves.some(w => w === requestedWave || normalizeWaveGroup(w) === normalizeWaveGroup(requestedWave))) {
+      return {
+        success: true,
+        answer: 'Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.',
+        source: 'rag-answer-rejected',
+        contexts: sourceChunksForWave,
+        confidenceScore: candidates[0] && typeof candidates[0].totalScore === 'number' ? candidates[0].totalScore : 0,
+        confidenceTier: 'LOW',
+        debug: { entity: queryEntities, feeStruct, reason: 'fee_source_wave_mismatch', requestedWave, sourceWaves }
+      };
+    }
+  } catch (e) {}
+  try {
+    const seenFeeSourceIds = new Set((Array.isArray(feeStruct.sourceChunks) ? feeStruct.sourceChunks : []).map(c => c && c.id).filter(Boolean));
+    feeStruct.sourceChunks = Array.isArray(feeStruct.sourceChunks) ? feeStruct.sourceChunks : [];
+    for (const chunk of Array.isArray(topChunks) ? topChunks : []) {
+      if (!chunk) continue;
+      const chunkId = chunk.id || `${chunk.filename || ''}:${String(chunk.chunk || '').slice(0, 40)}`;
+      if (seenFeeSourceIds.has(chunkId)) continue;
+      if (canMergeFeeChunks(feeStruct.sourceChunk || feeStruct.sourceChunks[0] || chunk, chunk)) {
+        feeStruct.sourceChunks.push(chunk);
+        seenFeeSourceIds.add(chunkId);
+      }
+    }
+  } catch (e) {}
+
+  const answer = buildDeterministicFeeAnswer(feeStruct, Object.assign({}, queryEntities, { question }), feeContract);
   if (!answer) {
     try {
       ragVerboseTrace('FINAL_FEE_RESPONSE', {
@@ -9328,7 +9343,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
       answer: 'Data biaya tidak dapat dipastikan dari dokumen resmi yang tersedia.',
       source: 'rag-answer-rejected',
       contexts: feeStruct.sourceChunks || topChunks,
-      confidenceScore: candidates[0].totalScore,
+      confidenceScore: candidates[0] && typeof candidates[0].totalScore === 'number' ? candidates[0].totalScore : 0,
       confidenceTier: 'LOW',
       debug: { entity: queryEntities, feeStruct, reason: 'build_answer_failed' }
     };
@@ -9361,7 +9376,7 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
     ragVerboseTrace('FINAL_FEE_RESPONSE', {
       type: 'structured',
       answer: answer && String(answer).substring(0, 800),
-      source: 'rag-fee-structured',
+      source: getFeeAnswerSourceForShape(feeContract.answerShape),
       contexts: feeStruct.sourceChunks ? feeStruct.sourceChunks.map(c => (c && (c.filename || c.id))) : topChunks.map(c => (c && (c.filename || c.id))),
       feeStructPreview: { program: feeStruct.program, wave: feeStruct.wave, registrationFee: feeStruct.registrationFee, dpp: feeStruct.dpp }
     });
@@ -9370,9 +9385,9 @@ function tryStructuredExactCostAnswer(question, queryEntities, indexForQuery, to
   return {
     success: true,
     answer,
-    source: 'rag-fee-structured',
+    source: getFeeAnswerSourceForShape(feeContract.answerShape),
     contexts: feeStruct.sourceChunks || topChunks,
-    confidenceScore: candidates[0].totalScore,
+    confidenceScore: candidates[0] && typeof candidates[0].totalScore === 'number' ? candidates[0].totalScore : 0,
     confidenceTier: 'HIGH',
     debug: { entity: queryEntities, feeStruct, topChunks: (feeStruct.sourceChunks || topChunks).map(c => ({ id: c.id, filename: c.filename, updatedAt: c.updatedAt })) }
   };
@@ -9553,7 +9568,7 @@ function filterRelevantChunks(question, scored, queryEntities = null) {
     const lower = chunk.toLowerCase();
     if (metadataPattern.test(lower) || isHeaderFooterChunk(chunk)) return false;
     const isAdmin = isAdminInternalChunk(chunk, s.item.filename);
-    if (intent === 'ACADEMIC_PROGRAM' && isAcademicProgramBlacklistChunk(chunk, s.item.filename, s.item.docCategory)) return false;
+    if (intent === 'ACADEMIC_PROGRAM' && isAcademicProgramBlacklistChunk(chunk, s.item.filename, s.item.docCategory || s.item.category)) return false;
     if (isAdmin && !costPattern.test(lower) && !programPattern.test(lower) && !schedulePattern.test(lower)) return false;
     // If the detected intent is not a cost question, deprioritize/remove fee-related chunks
     if (intent !== 'COST' && costPattern.test(lower)) return false;
@@ -9576,8 +9591,12 @@ function filterRelevantChunks(question, scored, queryEntities = null) {
       const rank = rankMap.get(s.item && s.item.id) || null;
       const score = typeof s.compositeScore === 'number' ? s.compositeScore : (typeof s.score === 'number' ? s.score : null);
       if (itemProgram && itemProgram !== requestedProgram) {
-        try { ragVerboseTrace('[TRACE_FILTER_REJECT]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'itemProgram_mismatch', itemProgram, requestedProgram, rank, score }); } catch (e) {}
-        return false;
+        const category = s.item && (s.item.category || s.item.docCategory) ? String(s.item.category || s.item.docCategory).toUpperCase() : null;
+        const isRequestedProgramDefinition = category === 'PROGRAM_STUDI' && mentionsRequestedProgram && !isGenericProgramOverviewChunk(s);
+        if (!isRequestedProgramDefinition) {
+          try { ragVerboseTrace('[TRACE_FILTER_REJECT]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'itemProgram_mismatch', itemProgram, requestedProgram, rank, score }); } catch (e) {}
+          return false;
+        }
       }
       if (!itemProgram && !mentionsRequestedProgram) {
         // Allow this chunk if another chunk in the same document (filename/trainingId)
@@ -9593,7 +9612,11 @@ function filterRelevantChunks(question, scored, queryEntities = null) {
           return false;
         }
       }
-      if (mentionedPrograms.length > 1 && !mentionedPrograms.every((p) => p === requestedProgram)) return false;
+      if (mentionedPrograms.length > 1 && !mentionedPrograms.every((p) => p === requestedProgram)) {
+        const category = s.item && (s.item.category || s.item.docCategory) ? String(s.item.category || s.item.docCategory).toUpperCase() : null;
+        const isRequestedProgramDefinition = category === 'PROGRAM_STUDI' && mentionsRequestedProgram && !isGenericProgramOverviewChunk(s);
+        if (!isRequestedProgramDefinition) return false;
+      }
       if (isAdmin && !itemProgram && !mentionsRequestedProgram) {
         try { ragVerboseTrace('[TRACE_FILTER_REJECT]', { id: s.item && s.item.id, filename: s.item && s.item.filename, reason: 'admin_internal_no_program', requestedProgram }); } catch (e) {}
         return false;
@@ -9602,7 +9625,8 @@ function filterRelevantChunks(question, scored, queryEntities = null) {
     const tokens = tokenizeForRelevanceGuard(question);
     if (tokens.length >= 3) {
       const overlap = tokens.filter(tok => lower.includes(tok)).length;
-      if (overlap === 0 && intent !== 'GENERAL') return false;
+      const hasRequestedProgramEvidence = requestedProgram ? chunkHasRequestedProgram(s.item, requestedProgram) : false;
+      if (overlap === 0 && intent !== 'GENERAL' && !hasRequestedProgramEvidence) return false;
     }
     return true;
   });
@@ -10804,7 +10828,7 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
   const qTrim = q.replace(/\s+/g, ' ').trim();
   const qBare = qTrim.replace(/[^\p{L}\p{N}\s]/gu, '').trim();
   const asksSchoolCertainMeaning = /(sekolah\s+tertentu|sesuai\s+daftar\s+sekolah|masuk\s+daftar\s+sekolah)/i.test(q);
-  const asksSchoolList = /(daftar\s+sekolah|lampiran\s+sekolah|sekolah\s+apa\s+aja|sekolah\s+apa\s+saja|sekolah[\s\S]{0,40}\bdaftar\b|sekolah[\s\S]{0,40}\blampiran\b)/i.test(q);
+  const asksSchoolList = /(daftar\s+sekolah|lampiran\s+sekolah|sekolah\s+apa\s+(?:aja|saja)|sekolah[\s\S]{0,40}\bdaftar\b|sekolah[\s\S]{0,40}\blampiran\b)/i.test(q);
   if (!/(beasiswa|prestasi|juara|rangking|ranking|peringkat|potongan)/i.test(q) && !asksSchoolCertainMeaning && !asksSchoolList) return null;
 
   // Jika user bertanya umum "beasiswa apa saja" / "jenis beasiswa", jawab dengan overview
@@ -10889,48 +10913,24 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
   let text = String(contextText || '');
   const fullIndex = (Array.isArray(indexForQuery) && indexForQuery.length) ? indexForQuery : loadIndex();
 
-  // If context is empty and user asks about ranking, fetch ranking data from index
-  if (!text.trim() && /(ranking|rangking|peringkat)/i.test(q) && fullIndex && Array.isArray(fullIndex)) {
+  // If context is empty or too thin for ranking-school relations, fetch the authoritative scholarship chunks.
+  if ((!text.trim() || asksSchoolCertainMeaning || asksSchoolList || /(ranking|rangking|peringkat)/i.test(q)) && fullIndex && Array.isArray(fullIndex)) {
     const rankingChunks = fullIndex
       .map(it => it && typeof it.chunk === 'string' ? it.chunk : '')
-      .filter(chunk => /ran(?:g)?king.*potongan\s*dpp|beasiswa.*ranking/i.test(chunk));
+      .filter(chunk => /ran(?:g)?king|beasiswa|sekolah\s+tertentu|lampiran|daftar\s+sekolah|potongan\s*dpp/i.test(chunk));
     if (rankingChunks.length > 0) {
-      text = rankingChunks.join('\n');
+      text = `${text}\n${rankingChunks.join('\n')}`.trim();
     }
   }
 
   // If user asks "sekolah apa saja yang ada di daftar/lampiran", don't return a short partial list
   // that looks like the full list. The lampiran list is typically long.
   if (asksSchoolList) {
-    const normalized = text.replace(/\s+/g, ' ');
-    const lower = normalized.toLowerCase();
-    const looksLikeSchoolListContext = /(sman\s*\d|smkn\s*\d|smk\s*ti|smk\s*pandawa)/i.test(lower);
-
-    const examples = [];
-    const addUnique = (name) => {
-      const n = String(name || '').replace(/\s+/g, ' ').trim();
-      if (!n) return;
-      if (examples.includes(n)) return;
-      examples.push(n);
-    };
-
-    if (looksLikeSchoolListContext) {
-      const rx = /\b(SMAN|SMKN)\s*\d+\s*[A-Za-z]+(?:\s+[A-Za-z]+){0,2}\b/g;
-      const matches = normalized.match(rx) || [];
-      for (const m of matches.slice(0, 10)) addUnique(m);
-
-      // Do not reveal specific school names from this context.
-    }
-
-    if (examples.length) {
-      lines.push('');
-      lines.push('Contoh beberapa sekolah yang tercantum di lampiran:');
-      for (const s of examples.slice(0, 10)) lines.push(`- ${s}`);
-      lines.push('- ...dan lainnya');
-    }
-
+    const lines = [];
+    lines.push('Daftar sekolah untuk beasiswa ranking mengacu pada lampiran/daftar kerja sama PMB.');
+    lines.push('Daftar sekolah pada lampiran bisa cukup panjang; saya tidak akan menyebut daftar sekolah yang tidak tertulis lengkap di source yang sedang dipakai.');
     lines.push('');
-    lines.push('Silakan hubungi PMB untuk informasi apakah sekolah Anda termasuk daftar yang mendapatkan potongan atau beasiswa khusus.');
+    lines.push('Silakan kirim nama sekolahnya, nanti bisa dicek apakah termasuk sekolah tertentu pada lampiran beasiswa ranking.');
 
     return {
       answer: lines.join('\n'),
@@ -11009,7 +11009,8 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
 
     const lines = [];
     if (asksSchoolCertainMeaning && !asksRanking) {
-      lines.push('Silakan hubungi PMB untuk informasi detail mengenai daftar sekolah yang berhak mendapatkan potongan atau beasiswa.');
+      lines.push('Maksud "sekolah tertentu" adalah sekolah yang tercantum dalam lampiran/daftar kerja sama PMB untuk beasiswa ranking.');
+      lines.push('Jadi eligibility potongan ranking tidak cukup dari ranking saja; asal sekolah juga perlu cocok dengan lampiran sumber.');
     } else {
       lines.push('Ada program beasiswa untuk calon mahasiswa baru yang memiliki ranking di kelas (kelas XII semester 1 atau 2).');
     }
@@ -11034,8 +11035,8 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
 
       const formatParts = (pair) => {
         const parts = [];
-        if (typeof pair.r13 === 'number') parts.push(`Ranking 1G��3: potongan DPP ${pair.r13}%`);
-        if (typeof pair.r410 === 'number') parts.push(`Ranking 4G��10: potongan DPP ${pair.r410}%`);
+        if (typeof pair.r13 === 'number') parts.push(`Ranking 1-3: potongan DPP ${pair.r13}%`);
+        if (typeof pair.r410 === 'number') parts.push(`Ranking 4-10: potongan DPP ${pair.r410}%`);
         return parts;
       };
 
@@ -11064,7 +11065,7 @@ function tryStructuredScholarshipAnswer(question, contextText, indexForQuery) {
       lines.push('');
       lines.push('Catatan seleksi:');
       if (noWrittenTest) {
-        lines.push('- Untuk ranking 1G��15 besar kelas XII semester 1/2: tidak mengikuti tes tulis, hanya tes wawancara.');
+        lines.push('- Untuk ranking 1-15 besar kelas XII semester 1/2: tidak mengikuti tes tulis, hanya tes wawancara.');
       }
       if (needsProof) {
         lines.push('- Biasanya perlu bukti rapor yang dilegalisir atau surat keterangan dari sekolah.');
@@ -11170,6 +11171,21 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
     /(\bukt\b|per\s*semester|biaya\s+semester|uang\s+semester|biaya\s+kuliah|uang\s+kuliah|biaya\s+pendidikan|biaya\s+per\s*semester)/i.test(qLower) &&
     !wantsOtherOnly &&
     !/(rincian|detail|komponen|lengkap|biaya\s+lain|selain\s+itu|yang\s+lain|dpp|pendaftaran|registrasi|jas|kaos|pengalaman\s+industri|total|cicil|cicilan|skema\s+pembayaran|pembayaran\s+per\s+komponen)/i.test(qLower);
+  if (wantsSemesterOnly && Array.isArray(top) && top.length) {
+    const selectedText = top.map(item => String(item && item.chunk || '')).join('\n');
+    const m = /(?:biaya\s+pendidikan\s+per\s+semester|biaya\s+per\s+semester|ukt|spp)[^\n]{0,80}?(?:Rp\.?\s*)?([0-9]{1,3}(?:\.[0-9]{3})+|[0-9]{4,})/i.exec(selectedText);
+    if (m && m[1]) {
+      const ent = extractStructuredEntities(currentQ);
+      const program = ent && ent.program ? (getDisplayProgramName(ent.program) || ent.program) : 'program tersebut';
+      const parsed = parseMoneyText(m[1]);
+      if (parsed) {
+        return {
+          answer: `Untuk ${program}, biaya pendidikan per semester (UKT): ${parsed}.`,
+          source: 'rag-fee-semester-only'
+        };
+      }
+    }
+  }
 
   // Prefer explicit program anchors so this rule is deterministic even when embeddings are mocked.
   // IMPORTANT: use the current user question first.
@@ -11227,8 +11243,9 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
   let programKey = detectProgramKey(qProgramLower, { allowDualDegree: true, allowLooseProgramCode: true });
 
   if (!programKey) {
-    const currentHasAnyProgramSignal = /(sistem\s+informasi|teknologi\s+informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\b(si|ti|bd|sk|mi)\b)/i.test(qProgramLower);
-    const ambiguousCurrent = !currentHasAnyProgramSignal && qProgramLower.length <= 32;
+    const currentHasAnyProgramSignal = /(sistem\s+informasi|teknologi\s+informasi|teknologi\s+informatika|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|\b(si|ti|bd|sk|mi)\b|\b(help|dnui|utb)\b)/i.test(qProgramLower);
+    const genericCostFollowup = !currentHasAnyProgramSignal && /\b(biaya|rincian|detail|komponen|lainnya|rangkum|pendaftaran|dpp|ukt|semester)\b/i.test(qProgramLower);
+    const ambiguousCurrent = !currentHasAnyProgramSignal && (qProgramLower.length <= 32 || genericCostFollowup);
     if (ambiguousCurrent) {
       // For ambiguous follow-ups (e.g. "biaya lainnya"), allow dual-degree keywords from
       // the anchored question so the bot can continue the same DNUI/HELP/UTB topic.
@@ -11295,7 +11312,11 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
   const fullIndex = loadIndex();
   let candidates = [];
 
-  if (preferTopContext) {
+  if (Array.isArray(top) && top.length && topLooksFeeRelated) {
+    candidates = top.map(item => (item && item.chunk ? String(item.chunk) : '')).filter(Boolean);
+  }
+
+  if (preferTopContext && !candidates.length) {
     candidates = fullIndex
       .filter(item => item && topTrainingIds.has(String(item.trainingId || '')))
       .map(item => (item && item.chunk ? String(item.chunk) : ''));
@@ -11449,6 +11470,52 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
   const combined = uniqueChunks.join('\n');
   if (!combined.trim()) return null;
 
+  if (['utb', 'dnui', 'help'].includes(programKey || '')) {
+    const anchoredPartnerFollowup = /follow\s*-?up\s*:/i.test(qAllLower) && /\b(utb|dnui|help)\b[\s\S]+\b(utb|dnui|help)\b/i.test(qAllLower);
+    if (wantsOtherOnly || anchoredPartnerFollowup || wantsDiscount) {
+      const partnerLabel = programKey === 'dnui'
+        ? 'Dual Degree DNUI (China)'
+        : (programKey === 'help'
+          ? 'Dual Degree HELP University (Malaysia)'
+          : 'Dual Degree UTB');
+      const partnerTextRe = programKey === 'dnui'
+        ? /\b(dnui|dalian\s+neusoft|china)\b/i
+        : (programKey === 'help'
+          ? /\b(help|malaysia)\b/i
+          : /\b(utb|universitas\s+teknologi\s+bandung)\b/i);
+      const partnerCombined = uniqueChunks.filter(c => partnerTextRe.test(String(c || ''))).join('\n') || combined;
+      const pickAmount = (labelRe) => {
+        const text = partnerCombined.replace(/\r?\n/g, ' ');
+        for (const match of text.matchAll(/Rp\.?\s*([0-9][0-9\s\.,]{1,40})|\b([0-9]{1,3}(?:\.[0-9]{3})+)\b/gi)) {
+          const index = typeof match.index === 'number' ? match.index : text.indexOf(match[0]);
+          const before = text.slice(Math.max(0, index - 100), index);
+          const labelSegment = before.split(/[.;,]/).pop() || before;
+          if (!labelRe.test(labelSegment)) continue;
+          const parsed = parseMoneyText(match[1] || match[2]);
+          if (parsed) return parsed;
+        }
+        return null;
+      };
+      const rows = [];
+      const registration = pickAmount(/\b(pendaftaran|registrasi)\b/i);
+      const dpp = pickAmount(/\b(dpp|dana\s+pendidikan\s+pokok)\b/i);
+      const language = pickAmount(/\bbahasa\s+(?:inggris|mandarin)\b/i);
+      const semester = pickAmount(/\b(biaya\s+pendidikan\s+per\s+semester|biaya\s+per\s+semester|ukt|spp)\b/i);
+      if (!wantsOtherOnly && registration) rows.push(`- Pendaftaran: ${registration}`);
+      if (dpp) rows.push(`- Dana Pendidikan Pokok (DPP): ${dpp}`);
+      if (language) {
+        const languageLabel = /bahasa\s+mandarin/i.test(partnerCombined) ? 'Bahasa Mandarin' : 'Bahasa Inggris';
+        rows.push(`- ${languageLabel}: ${language}`);
+      }
+      if (semester) rows.push(`- Biaya Pendidikan per semester: ${semester}`);
+      if (rows.length) {
+        return {
+          answer: [`Untuk ${partnerLabel}, komponen biaya yang tersedia dari sumber adalah:`, '', ...rows].join('\n'),
+          source: 'rag-fee-breakdown'
+        };
+      }
+    }
+  }
   // Parse fee items from OCR-ish tables.
   const rawLines = combined
     .replace(/\r\n/g, '\n')
@@ -12190,6 +12257,17 @@ async function query(question, topK = 8, options = null) {
       });
     } catch (e) {}
 
+    // Scholarship ranking school-list/definition uses "daftar/lampiran" as a scholarship-domain term.
+    // Evaluate it before the simple PMB guard, whose registration sense of "daftar" is broader in test mode.
+    try {
+      const scholarshipRelationQuestion = /(sekolah\s+tertentu|sekolah\s+apa\s+(?:aja|saja)|sekolah[\s\S]{0,60}\b(?:daftar|lampiran)\b|lampiran[\s\S]{0,60}\bsekolah\b)/i.test(String(question || ''));
+      const scholarshipBeforeSimplePmb = scholarshipRelationQuestion ? tryStructuredScholarshipAnswer(question, ' ', index) : null;
+      if (scholarshipBeforeSimplePmb && scholarshipBeforeSimplePmb.answer) {
+        return wrapRagResult(cleanAnswerLanguage(scholarshipBeforeSimplePmb.answer), scholarshipBeforeSimplePmb.source || 'rag-scholarship-rule', 'HIGH', question);
+      }
+    } catch (e) {
+      logger.warn({ err: e.message }, '[RAG] Scholarship-before-simple-PMB rule failed');
+    }
     // Early deterministic handlers: greeting-only and broad PMB requests
     try {
       const simpleGuard = trySimpleGuardAnswer(question);
@@ -12211,6 +12289,17 @@ async function query(question, topK = 8, options = null) {
         return wrapRagResult(cleanAnswerLanguage(greetReply), 'rag-greeting', 'HIGH', question);
       }
 
+      // Scholarship ranking school-list/definition uses "daftar/lampiran" as a domain term.
+      // Route it before broad PMB so the registration meaning of "daftar" cannot hijack it.
+      try {
+        const scholarshipRelationQuestion = /(sekolah\s+tertentu|sekolah\s+apa\s+(?:aja|saja)|sekolah[\s\S]{0,60}\b(?:daftar|lampiran)\b|lampiran[\s\S]{0,60}\bsekolah\b)/i.test(String(question || ''));
+        const scholarshipBeforePmb = scholarshipRelationQuestion ? tryStructuredScholarshipAnswer(question, ' ', index) : null;
+        if (scholarshipBeforePmb && scholarshipBeforePmb.answer) {
+          return wrapRagResult(cleanAnswerLanguage(scholarshipBeforePmb.answer), scholarshipBeforePmb.source || 'rag-scholarship-rule', 'HIGH', question);
+        }
+      } catch (e) {
+        logger.warn({ err: e.message }, '[RAG] Scholarship-before-PMB rule failed');
+      }
       const simpleQLower = String(rawForDetect || '').toLowerCase();
       // Broad PMB requests that are NOT asking schedule-specific details should be
       // handled by the deterministic PMB info route so they don't fall through to
@@ -12391,6 +12480,27 @@ async function query(question, topK = 8, options = null) {
       logger.warn({ err: e.message }, '[RAG] Current-open-waves early rule failed');
     }
 
+    // Deterministic rule: wave catalogue should use schedule index, after current/open precedence.
+    try {
+      const currentQForWaveList = extractCurrentUserQuestionText(question);
+      const qWaveList = String(currentQForWaveList || question || '').toLowerCase();
+      const asksCurrentWave = /(sekarang|skrg|skrng|saat\s+ini|hari\s+ini|lagi\s+buka|lg\s+buka|yang\s+sedang\s+buka|terbuka|kebuka|dibuka|open|masih\s+buka|masih\s+dibuka)/i.test(qWaveList);
+      const asksWaveCatalogue = !asksCurrentWave && (
+        /(\bada\s+)?\bgelombang\b\s*(berapa|apa)\b/i.test(qWaveList) ||
+        /\bgelombang\b\s+apa\s+aja\b/i.test(qWaveList) ||
+        /\bgelombang\b\s+berapa\s+aja\b/i.test(qWaveList) ||
+        /\bberapa\s+gelombang\b/i.test(qWaveList)
+      );
+      if (asksWaveCatalogue && !questionSpecifiesWave(qWaveList)) {
+        const waves = extractAvailableScheduleWaveKeysFromIndex();
+        if (waves && waves.length > 0) {
+          const listed = waves.map(formatWaveKeyForDisplay).filter(Boolean).join(', ');
+          return wrapRagResult(`Gelombang PMB yang tersedia: ${listed}.\n\nKakak mau cek gelombang yang mana? (contoh: "2 B" / "Gelombang II B" / "Khusus")`, 'rag-wave-list', 'HIGH', question);
+        }
+      }
+    } catch (e) {
+      logger.warn({ err: e.message }, '[RAG] Wave-list early rule failed');
+    }
     // Deterministic rule: short question "biaya pendaftaran prodi SI/TI/BD/SK" should return a short answer.
     // Avoids WhatsApp send failures due to overly long breakdown answers.
     try {
@@ -12518,7 +12628,7 @@ async function query(question, topK = 8, options = null) {
     if (queryEntities.intent === 'COST' || queryEntities.academicIntent === 'BIAYA') {
       try {
         const feeBreakdownEarly = tryStructuredFeeBreakdownAnswer(question, null, opts);
-        if (feeBreakdownEarly && feeBreakdownEarly.answer) {
+        if (feeBreakdownEarly && feeBreakdownEarly.answer && feeBreakdownEarly.source !== 'rag-answer-rejected') {
           return wrapRagResult(cleanAnswerLanguage(feeBreakdownEarly.answer), feeBreakdownEarly.source, 'HIGH', question);
         }
       } catch (e) {
@@ -12552,7 +12662,7 @@ async function query(question, topK = 8, options = null) {
 
     try {
       const feeBreakdownEarly = tryStructuredFeeBreakdownAnswer(question, null, opts);
-      if (feeBreakdownEarly && feeBreakdownEarly.answer) {
+      if (feeBreakdownEarly && feeBreakdownEarly.answer && feeBreakdownEarly.source !== 'rag-answer-rejected') {
         return wrapRagResult(cleanAnswerLanguage(feeBreakdownEarly.answer), feeBreakdownEarly.source, 'HIGH', question);
       }
     } catch (e) {
@@ -13036,7 +13146,7 @@ async function query(question, topK = 8, options = null) {
     const qLower = String(currentQ || question || '').toLowerCase();
     const looksLikePmbOverview = /(\balur\b|syarat|dokumen|\bkontak\b|kanal\s+pendaftaran|penerimaan\s+mahasiswa\s+baru|\bpmb\b)/i.test(qLower);
     const asksScheduleOnly = /(jadwal|testing|test\b|pengumuman|registrasi\s+ulang|daftar\s+ulang|masa\s+pendaftaran)/i.test(qLower);
-    const asksNowWaves = (/(sekarang|saat\s+ini|hari\s+ini|lagi\s+buka|yang\s+sedang\s+buka|terbuka|dibuka|open)/i.test(qLower) || /sekarang\s+gelombang\s+berapa/i.test(qLower)) && /(\bgelombang\b|\bgbg\b)/i.test(qLower);
+    const asksNowWaves = (/(sekarang|skrg|skrng|saat\s+ini|hari\s+ini|lagi\s+buka|lg\s+buka|yang\s+sedang\s+buka|terbuka|kebuka|dibuka|open)/i.test(qLower) || /sekarang\s+gelombang\s+berapa/i.test(qLower)) && /(\bgelombang\b|\bgbg\b)/i.test(qLower);
 
     if (asksNowWaves) {
       const currentOpen = tryStructuredCurrentOpenWavesAnswer(currentQ);
@@ -14003,27 +14113,6 @@ function getIndexPath() {
   return INDEX_PATH;
 }
 
-function parseCompactRupiahNumber(raw, opts = null) {
-  if (!raw && raw !== 0) return null;
-  let s = String(raw || '').trim();
-  if (!s) return null;
-
-  // Repair common OCR noise
-  s = s.replace(/[oO]/g, '0').replace(/[lI]/g, '1');
-
-  // Remove currency prefix like 'Rp' optionally followed by dot/space
-  s = s.replace(/^Rp[\s\.]*/i, '');
-
-  // Keep only digits, dots and commas
-  const digitsAndSep = s.replace(/[^0-9\.,]/g, '');
-  if (!digitsAndSep) return null;
-
-  // Remove thousand separators (both '.' and ',') � rupiah amounts are integers
-  const cleaned = digitsAndSep.replace(/[\.,]/g, '');
-  if (!/^[0-9]+$/.test(cleaned)) return null;
-  const n = parseInt(cleaned, 10);
-  return Number.isNaN(n) ? null : n;
-}
 
 module.exports = {
   ingestTrainingData,
@@ -14072,3 +14161,19 @@ module.exports = {
   tryStructuredProgramRegistrationMenuAnswer,
   tokenizeForRelevanceGuard
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

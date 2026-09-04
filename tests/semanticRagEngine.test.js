@@ -9,7 +9,15 @@ describe('semanticRagEngine', () => {
     delete process.env.SEMANTIC_RAG_RESULT_CACHE_MS;
     delete process.env.SEMANTIC_RAG_SANITIZE_INDEX;
     delete process.env.SEMANTIC_RAG_TRAINING_DB_INDEX_CACHE_MS;
+    delete process.env.SEMANTIC_RAG_TRAINING_DB_CACHE_MS;
+    delete process.env.SEMANTIC_RAG_DIAG_TIMING;
+    delete process.env.SEMANTIC_RAG_DIAG_SKIP_DB;
+    delete process.env.SEMANTIC_RAG_DIAG_SKIP_EVIDENCE_FIRST;
+    delete process.env.SEMANTIC_RAG_DIAG_SKIP_UPLOADED;
+    delete process.env.SEMANTIC_RAG_DIAG_SKIP_RETRIEVAL;
+    delete process.env.SEMANTIC_RAG_DIAG_SKIP_SOURCE_GROUNDED;
     delete process.env.BOT_GREETING_TIME_OVERRIDE;
+    delete process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS;
   });
 
   test('returns disabled result when OpenAI API key is missing', async () => {
@@ -34,11 +42,88 @@ describe('semanticRagEngine', () => {
     for (const question of ['mau tanya sesuatu', 'kak bisa bantu?', 'apa itu', 'gimana?']) {
       const result = await querySemanticRag(question);
       expect(result.success).toBe(true);
-      expect(['semantic-rag-unknown-intent-safe-fallback', 'semantic-rag-clarify', 'semantic-rag-safe-general-fallback']).toContain(result.source);
+      expect(['semantic-rag-unknown-intent-safe-fallback', 'semantic-rag-clarify', 'semantic-rag-safe-general-fallback', 'semantic-rag-small-talk']).toContain(result.source);
       expect(String(result.answer || '')).toMatch(/tidak cukup jelas|jelaskan|spesifik|maksud|mau tanya|konteks|bisa bantu|topik/i);
     }
   }, 30000);
 
+  test('does not probe uploaded training for vague queries without semantic anchors', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_DIAG_TIMING = '1';
+    const diagnosticEvents = [];
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation((tag, payload) => {
+      if (tag === '[SEMANTIC_RAG_DIAG]') {
+        try { diagnosticEvents.push(JSON.parse(payload)); } catch (_) {}
+      }
+    });
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const run = async (question, options = {}) => {
+      diagnosticEvents.length = 0;
+      const result = await querySemanticRag(question, options);
+      return { result, events: diagnosticEvents.slice() };
+    };
+    const countStage = (events, stage) => events.filter((event) => event.stage === stage).length;
+    const expectNoEvidenceProbe = (events) => {
+      expect(countStage(events, 'uploaded-document fallback')).toBe(0);
+      expect(countStage(events, 'retrieval')).toBe(0);
+      expect(countStage(events, 'DB training-data load')).toBe(0);
+      expect(countStage(events, 'source-grounded/document probe')).toBe(0);
+    };
+
+    try {
+      for (const question of ['mau tanya sesuatu', 'apa itu', 'gimana?']) {
+        const vague = await run(question);
+        expect(vague.result.source).toBe('semantic-rag-clarify');
+        expect(vague.result.debug && vague.result.debug.routeStage).toBe('pre-guard-vague-clarification');
+        expectNoEvidenceProbe(vague.events);
+      }
+
+      process.env.SEMANTIC_RAG_DIAG_SKIP_RETRIEVAL = '1';
+      const explicitDocument = await run('berdasarkan dokumen, apa itu BCCP?');
+      delete process.env.SEMANTIC_RAG_DIAG_SKIP_RETRIEVAL;
+      expect(countStage(explicitDocument.events, 'source-grounded/document probe')).toBeGreaterThan(0);
+
+      const scholarshipPdf = await run('di PDF terbaru ada info beasiswa apa?');
+      expect(scholarshipPdf.result.source).toMatch(/scholarship|beasiswa/i);
+      expect(scholarshipPdf.result.debug && scholarshipPdf.result.debug.routeStage).not.toBe('pre-guard-vague-clarification');
+
+      const campusKnowledge = await run('UKM fotografi ada?');
+      expect(campusKnowledge.result.debug && campusKnowledge.result.debug.routeStage).not.toBe('pre-guard-vague-clarification');
+
+      const anchoredFollowUp = await run('syaratnya apa?', { sessionData: { programHint: 'Sistem Informasi', lastIntent: 'registration' } });
+      expect(anchoredFollowUp.result.source).toBe('semantic-rag-pmb-requirements');
+      expect(anchoredFollowUp.result.debug && anchoredFollowUp.result.debug.routeStage).not.toBe('pre-guard-vague-clarification');
+
+      const unsupportedEntity = await run('apakah ada prodi D2 farmasi?');
+      expect(unsupportedEntity.result.source).toMatch(/unsupported|no-data|blocked|fallback|out-of-domain/i);
+      expect(unsupportedEntity.result.debug && unsupportedEntity.result.debug.routeStage).not.toBe('pre-guard-vague-clarification');
+
+      const contaminatedVague = await run('mau tanya sesuatu', {
+        sessionData: {
+          recentMessages: [
+            { direction: 'user', message: 'Saya tadi tanya Double Degree HELP' },
+            { direction: 'assistant', message: 'Double Degree HELP terkait partner Malaysia dan biaya partner.' }
+          ]
+        }
+      });
+      expect(contaminatedVague.result.debug && contaminatedVague.result.debug.routeStage).toBe('pre-guard-vague-clarification');
+      expectNoEvidenceProbe(contaminatedVague.events);
+
+      const topicSwitch = await run('apa saja program studi di stikom?', {
+        sessionData: {
+          recentMessages: [
+            { direction: 'user', message: 'Saya tadi tanya Double Degree HELP' },
+            { direction: 'assistant', message: 'Double Degree HELP terkait partner Malaysia dan biaya partner.' }
+          ]
+        }
+      });
+      expect(topicSwitch.result.source).toBe('semantic-rag-program-list');
+      expect(topicSwitch.result.debug && topicSwitch.result.debug.routeStage).not.toBe('pre-guard-vague-clarification');
+    } finally {
+      consoleSpy.mockRestore();
+    }
+  }, 30000);
   test('keeps explicit fee requests from being rejected by the general meaning verifier', async () => {
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
@@ -1706,6 +1791,71 @@ describe('semanticRagEngine', () => {
       expect(follow.answer).not.toMatch(/siap\.stikom-bali\.ac\.id|daftar kuliah|gelombang yang sedang buka|Gelombang IV|S1 \(Sarjana\)|D3 \(Diploma\)/i);
     }
   });
+  test('returns explicit campus-support safe no-data before broad document probes', async () => {
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.SEMANTIC_RAG_DIAG_TIMING = '1';
+    const diagnosticEvents = [];
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation((tag, payload) => {
+      if (tag === '[SEMANTIC_RAG_DIAG]') {
+        try { diagnosticEvents.push(JSON.parse(payload)); } catch (_) {}
+      }
+    });
+
+    const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+    const run = async (question) => {
+      diagnosticEvents.length = 0;
+      const result = await querySemanticRag(question);
+      return { result, events: diagnosticEvents.slice() };
+    };
+    const countStage = (events, stage) => events.filter((event) => event.stage === stage).length;
+    const expectNoBroadDocumentProbe = (events) => {
+      expect(countStage(events, 'uploaded-document fallback')).toBe(0);
+      expect(countStage(events, 'retrieval')).toBe(0);
+    };
+
+    try {
+      const withData = await run('Students exchange?');
+      expect(withData.result.debug.routeStage).toBe('pre-guard-explicit-campus-support-entity');
+      expect(withData.result.debug.routeClass).toBe('campus_support');
+      expectNoBroadDocumentProbe(withData.events);
+
+      const noData = await run('Apakah ada program BCCP?');
+      expect(noData.result.debug.routeStage).toBe('pre-guard-explicit-campus-support-entity');
+      expect(noData.result.debug.routeClass).toBe('campus_support');
+      expect(noData.result.debug.answerability).toBe('insufficient_data');
+      expect(noData.result.debug.groundingStatus).toBe('safe_no_data');
+      expectNoBroadDocumentProbe(noData.events);
+
+      const noDataParaphrase = await run('Kalau program BCCP itu untuk orang asing?');
+      expect(noDataParaphrase.result.debug.routeStage).toBe('pre-guard-explicit-campus-support-entity');
+      expect(noDataParaphrase.result.debug.routeClass).toBe('campus_support');
+      expect(noDataParaphrase.result.debug.answerability).toBe('insufficient_data');
+      expect(noDataParaphrase.result.debug.groundingStatus).toBe('safe_no_data');
+      expectNoBroadDocumentProbe(noDataParaphrase.events);
+
+      const anotherSupportEntity = await run('Apa itu program Jaminan Konsultasi?');
+      expect(anotherSupportEntity.result.debug.routeStage).toBe('pre-guard-explicit-campus-support-entity');
+      expect(anotherSupportEntity.result.debug.routeClass).toBe('campus_support');
+      expect(anotherSupportEntity.result.debug.answerability).toBe('answerable');
+      expect(anotherSupportEntity.result.debug.groundingStatus).toBe('grounded_answer');
+      expectNoBroadDocumentProbe(anotherSupportEntity.events);
+
+      process.env.SEMANTIC_RAG_DIAG_SKIP_RETRIEVAL = '1';
+      const explicitDocument = await run('berdasarkan dokumen, apakah ada program BCCP?');
+      delete process.env.SEMANTIC_RAG_DIAG_SKIP_RETRIEVAL;
+      expect(countStage(explicitDocument.events, 'source-grounded/document probe')).toBeGreaterThan(0);
+
+      const unrelatedProgram = await run('apa saja program studi di stikom?');
+      expect(unrelatedProgram.result.source).toBe('semantic-rag-program-list');
+      expectNoBroadDocumentProbe(unrelatedProgram.events);
+
+      const unsupportedCampusTopic = await run('apakah parkiran helikopter tersedia?');
+      expect(unsupportedCampusTopic.result.debug && unsupportedCampusTopic.result.debug.routeStage).not.toBe('pre-guard-explicit-campus-support-entity');
+      expect(String(unsupportedCampusTopic.result.answer || '')).toMatch(/belum|tidak|spesifik|konfirmasi|data/i);
+    } finally {
+      consoleSpy.mockRestore();
+    }
+  }, 30000);
   test('does not answer campus support program variants with generic academic program list', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
@@ -1713,7 +1863,8 @@ describe('semanticRagEngine', () => {
     for (const question of ['Apakah ada program BCCP?', 'Short course ada?', 'Students exchange?']) {
       const result = await querySemanticRag(question);
       expect(result.success).toBe(true);
-      expect(result.source).toBe('semantic-rag-campus-support-entity');
+      expect(String(result.source || '')).toMatch(/semantic-rag-campus-(?:support|facility)/);
+      expect(result.debug && result.debug.routeClass).toBe('campus_support');
       if (/students?\s+exchange/i.test(question)) {
         expect(result.answer).toMatch(/Student Exchange|pertukaran mahasiswa|internasional/i);
       } else {
