@@ -99,9 +99,9 @@ export function Sidebar() {
   }, [role])
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-background pt-20">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border/80 bg-card/40 backdrop-blur-xl pt-20">
       <div className="flex flex-col h-full px-4 py-6">
-        <nav className="flex-1 space-y-2">
+        <nav className="flex-1 space-y-1.5">
           {visibleNavItems.map((item) => {
             const Icon = item.icon
             const isActive = normalizedPathname === item.href
@@ -111,16 +111,16 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-slate-900 text-foreground shadow-inner shadow-slate-950/40'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-primary/10 text-primary font-semibold border border-primary/20 shadow-sm shadow-primary/5'
+                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:translate-x-0.5'
                 )}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
+                <Icon className={cn('h-4.5 w-4.5 flex-shrink-0 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
                 <span>{item.title}</span>
                 {isActive && (
-                  <ChevronRight className="absolute right-3 h-4 w-4" />
+                  <ChevronRight className="absolute right-3 h-4 w-4 text-primary" />
                 )}
               </Link>
             )
@@ -130,4 +130,3 @@ export function Sidebar() {
     </aside>
   )
 }
-

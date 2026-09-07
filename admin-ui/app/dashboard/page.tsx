@@ -3,7 +3,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
-import { MessageSquare, Users, Send, TrendingUp } from 'lucide-react'
+import {
+  MessageSquare,
+  Users,
+  Send,
+  TrendingUp,
+  Sparkles,
+  AlertCircle,
+  Database,
+  ShieldCheck,
+  Activity,
+  ArrowUpRight,
+  Clock,
+  HelpCircle,
+} from 'lucide-react'
 import { StatCard } from '@/components/stat-card'
 import { Card } from '@/components/ui/card'
 import {
@@ -132,7 +145,7 @@ export default function DashboardPage() {
         const engagementRes = results[1].status === 'fulfilled' ? results[1].value : null
         const handoverRes = results[2].status === 'fulfilled' ? results[2].value : null
         const retrievalRes = results[3].status === 'fulfilled' ? results[3].value : null
-        const knowledgePrepRes = results[5].status === 'fulfilled' ? results[5].value : null
+        const knowledgePrepRes = results[4].status === 'fulfilled' ? results[4].value : null
         const chatsRes = results[5].status === 'fulfilled' ? results[5].value : null
 
         if (statsRes) {
@@ -302,301 +315,389 @@ export default function DashboardPage() {
   const dbHealthy = apiOk && stats && stats.databaseUrlPresent === true
 
   return (
-    <div className="space-y-8 p-8">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Welcome back! Here's your bot performance overview.</p>
-        {statsError ? (
-          <p className="text-sm text-muted-foreground mt-2">{statsError}</p>
-        ) : null}
+    <div className="space-y-8 p-6 sm:p-8 max-w-[1600px] mx-auto">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-foreground/95 to-foreground/75 bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+            Ringkasan performa dan kesehatan bot WhatsApp secara real-time.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            Live Production System
+          </span>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-6">
+      {statsError ? (
+        <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          {statsError}
+        </div>
+      ) : null}
+
+      {/* Stats Grid: Overflow-proof and color-coded */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3.5 sm:gap-4">
         <StatCard
           title="Total Messages"
           value={totalSessions !== null ? totalSessions.toLocaleString() : '—'}
           icon={MessageSquare}
+          variant="violet"
         />
         <StatCard
           title="Active Chats"
           value={activeLastWeek !== null ? activeLastWeek.toLocaleString() : (totalChats !== null ? totalChats.toLocaleString() : '—')}
           icon={Users}
+          variant="emerald"
         />
         <StatCard
           title="Messages Sent"
           value={totalBroadcasts !== null ? totalBroadcasts.toLocaleString() : '—'}
           icon={Send}
+          variant="sky"
         />
         <StatCard
           title="Response Rate"
           value={responseRate}
           icon={TrendingUp}
+          variant="blue"
         />
         <StatCard
           title="Retrieval Hit"
           value={retrievalHitRate}
-          icon={TrendingUp}
+          icon={Sparkles}
+          variant="amber"
         />
         <StatCard
           title="No Answer"
           value={noAnswerRate}
-          icon={MessageSquare}
+          icon={AlertCircle}
+          variant="rose"
         />
         <StatCard
           title="Knowledge Review"
           value={knowledgeReviewRequired !== null ? knowledgeReviewRequired.toLocaleString() : '---'}
-          icon={MessageSquare}
+          icon={Database}
+          variant="fuchsia"
         />
       </div>
 
+      {/* Middle Grid: Activity Overview & System Status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity Chart */}
-        <Card className="lg:col-span-2 p-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Activity Overview</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/history')}
-              >
-                View more
-              </Button>
+        <div className="lg:col-span-2 rounded-2xl border border-border/80 bg-card/70 p-6 backdrop-blur-md shadow-sm space-y-6">
+          <div className="flex items-center justify-between pb-2 border-b border-border/40">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                <Activity className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold tracking-tight">Activity Overview</h3>
+                <p className="text-xs text-muted-foreground">Volume pesan masuk & efisiensi respons AI</p>
+              </div>
             </div>
-            
-            <div className="space-y-3 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8 gap-1.5 rounded-lg border-border/70 hover:bg-muted"
+              onClick={() => router.push('/history')}
+            >
+              <span>Detail Riwayat</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          
+          <div className="space-y-4 pt-1">
+            <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-blue-500" />
-                  <span>Messages Received</span>
+                  <div className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
+                  <span className="font-medium text-foreground/90">Messages Received</span>
                 </div>
-                <span className="font-semibold">{messagesReceived.toLocaleString()}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Total masuk</span>
+                  <span className="font-bold text-foreground font-mono">{messagesReceived.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-blue-500" style={{ width: '100%' }} />
+              <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden p-[1px]">
+                <div className="h-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-400 shadow-sm shadow-blue-500/30 transition-all duration-500" style={{ width: '100%' }} />
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span>Successful Responses</span>
+                  <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
+                  <span className="font-medium text-foreground/90">Successful Responses</span>
                 </div>
-                <span className="font-semibold">{successfulResponses.toLocaleString()}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 font-mono">
+                    {successPct !== null ? `${successPct.toFixed(1)}%` : '100%'}
+                  </span>
+                  <span className="font-bold text-foreground font-mono">{successfulResponses.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden p-[1px]">
                 <div
-                  className="h-full bg-green-500"
-                  style={{ width: `${successPct !== null ? successPct : 0}%` }}
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 shadow-sm shadow-emerald-500/30 transition-all duration-500"
+                  style={{ width: `${successPct !== null ? successPct : 100}%` }}
                 />
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-amber-500" />
-                  <span>Failed Responses</span>
+                  <div className="h-2.5 w-2.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
+                  <span className="font-medium text-foreground/90">Failed Responses</span>
                 </div>
-                <span className="font-semibold">{failedResponses.toLocaleString()}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 font-mono">
+                    {successPct !== null ? `${Math.max(0, 100 - successPct).toFixed(1)}%` : '0%'}
+                  </span>
+                  <span className="font-bold text-foreground font-mono">{failedResponses.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden p-[1px]">
                 <div
-                  className="h-full bg-amber-500"
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-rose-500 shadow-sm shadow-amber-500/30 transition-all duration-500"
                   style={{ width: `${successPct !== null ? Math.max(0, 100 - successPct) : 0}%` }}
                 />
               </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* System Status */}
-        <Card className="p-6">
+        <div className="rounded-2xl border border-border/80 bg-card/70 p-6 backdrop-blur-md shadow-sm space-y-5 flex flex-col justify-between">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">System Status</h3>
+            <div className="flex items-center justify-between pb-2 border-b border-border/40">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                <h3 className="text-base font-semibold tracking-tight">System Status</h3>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Active
+              </span>
+            </div>
             
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Bot Status</span>
-                <Badge className={apiOk ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" : "bg-amber-500/20 text-amber-500 hover:bg-amber-500/30"}>
+            <div className="space-y-2.5 divide-y divide-border/30">
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-sm text-muted-foreground font-medium">Bot Status</span>
+                <Badge className={apiOk ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 font-semibold text-xs" : "bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold text-xs"}>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mr-1.5 inline-block" />
                   {apiOk ? 'Online' : 'Unknown'}
                 </Badge>
               </div>
               
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">API Connection</span>
-                <Badge className={apiOk ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" : "bg-amber-500/20 text-amber-500 hover:bg-amber-500/30"}>
+              <div className="flex items-center justify-between pt-2.5">
+                <span className="text-sm text-muted-foreground font-medium">API Connection</span>
+                <Badge className={apiOk ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 font-semibold text-xs" : "bg-rose-500/15 text-rose-400 border border-rose-500/30 font-semibold text-xs"}>
                   {apiOk ? 'Connected' : 'Error'}
                 </Badge>
               </div>
               
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Database</span>
-                <Badge className={dbHealthy ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" : "bg-amber-500/20 text-amber-500 hover:bg-amber-500/30"}>
+              <div className="flex items-center justify-between pt-2.5">
+                <span className="text-sm text-muted-foreground font-medium">Database</span>
+                <Badge className={dbHealthy ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 font-semibold text-xs" : "bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold text-xs"}>
                   {dbHealthy ? 'Healthy' : 'Unknown'}
                 </Badge>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Knowledge Prep</span>
-                <Badge className={knowledgeReviewRequired && knowledgeReviewRequired > 0 ? "bg-amber-500/20 text-amber-500 hover:bg-amber-500/30" : "bg-green-500/20 text-green-500 hover:bg-green-500/30"}>
-                  {knowledgeReviewRequired && knowledgeReviewRequired > 0 ? `${knowledgeReviewRequired} review` : 'Clear'}
+              <div className="flex items-center justify-between pt-2.5">
+                <span className="text-sm text-muted-foreground font-medium">Knowledge Prep</span>
+                <Badge className={knowledgeReviewRequired && knowledgeReviewRequired > 0 ? "bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold text-xs" : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 font-semibold text-xs"}>
+                  {knowledgeReviewRequired && knowledgeReviewRequired > 0 ? `${knowledgeReviewRequired} Review` : 'Clear'}
                 </Badge>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Last Sync</span>
-                <span className="text-xs text-muted-foreground">{lastSyncText}</span>
               </div>
             </div>
           </div>
-        </Card>
+
+          <div className="pt-3 border-t border-border/40 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground/80 shrink-0" />
+              <span>Last Sync</span>
+            </div>
+            <span className="text-xs font-mono font-medium text-foreground/80 bg-muted/60 px-2 py-0.5 rounded-md border border-border/40 truncate max-w-[170px]" title={lastSyncText}>
+              {lastSyncText}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Recent Messages Table */}
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Recent Messages</h3>
-            <Button variant="ghost" size="sm">View all</Button>
+      <div className="rounded-2xl border border-border/80 bg-card/70 p-6 backdrop-blur-md shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-primary" />
+            <h3 className="text-base font-semibold tracking-tight">Recent Messages</h3>
+            <span className="text-xs text-muted-foreground bg-muted/70 px-2 py-0.5 rounded-full font-mono">
+              {recentMessages.length}
+            </span>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-8 text-muted-foreground hover:text-foreground"
+            onClick={() => router.push('/live-chat')}
+          >
+            Buka Live Chat
+          </Button>
+        </div>
 
-          <div className="rounded-lg border border-border overflow-hidden">
+        <div className="rounded-xl border border-border/60 overflow-hidden bg-background/50">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="font-semibold text-xs uppercase tracking-wider">Sender</TableHead>
+                <TableHead className="font-semibold text-xs uppercase tracking-wider">Message</TableHead>
+                <TableHead className="font-semibold text-xs uppercase tracking-wider">Time</TableHead>
+                <TableHead className="font-semibold text-xs uppercase tracking-wider">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentChatsError ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-sm text-destructive py-6 text-center">
+                    {recentChatsError}
+                  </TableCell>
+                </TableRow>
+              ) : null}
+
+              {!recentChatsError && recentMessages.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-sm text-muted-foreground py-8 text-center">
+                    Belum ada pesan terbaru.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+
+              {recentMessages.map((msg) => (
+                <TableRow key={msg.id} className="hover:bg-muted/30 transition-colors">
+                  <TableCell className="font-mono text-xs font-semibold text-foreground/90">{msg.sender}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm max-w-xs truncate">
+                    {msg.message || '—'}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground font-mono">{msg.time}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        msg.status === 'resolved'
+                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          : msg.status === 'in-progress'
+                            ? 'bg-sky-500/15 text-sky-400 border-sky-500/30'
+                            : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                      }
+                    >
+                      {msg.status.charAt(0).toUpperCase() + msg.status.slice(1)}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Frequently Asked Questions */}
+      <div className="rounded-2xl border border-border/80 bg-card/70 p-6 backdrop-blur-md shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <HelpCircle className="h-4 w-4 text-primary" />
+            <h3 className="text-base font-semibold tracking-tight">Frequently Asked Questions</h3>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-8 text-muted-foreground hover:text-foreground"
+            onClick={() => router.push('/training-data')}
+          >
+            Kelola Training Data
+          </Button>
+        </div>
+
+        {questionGroups.length ? (
+          <div className="space-y-6 pt-1">
+            {questionGroups.map((g) => (
+              <div key={g.key} className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold tracking-wide text-foreground/90">{g.title}</p>
+                  <Badge variant="secondary" className="shrink-0 text-xs font-mono">
+                    {g.top.length} pertanyaan
+                  </Badge>
+                </div>
+
+                {g.top.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-2">Belum ada rekap pertanyaan.</p>
+                ) : (
+                  <div className="rounded-xl border border-border/60 overflow-hidden bg-background/50">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/40 hover:bg-muted/40">
+                          <TableHead className="font-semibold text-xs uppercase tracking-wider">Pertanyaan</TableHead>
+                          <TableHead className="w-28 font-semibold text-xs uppercase tracking-wider text-right">Frekuensi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {g.top.map((q) => (
+                          <TableRow key={`${g.key}:${q.question}`} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="font-medium text-sm max-w-xl truncate text-foreground/90" title={q.question}>
+                              {q.question}
+                            </TableCell>
+                            <TableCell className="text-right font-mono text-xs font-bold text-primary">
+                              {q.count}x
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : topQuestions.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">Belum ada data pertanyaan terdeteksi.</p>
+        ) : (
+          <div className="rounded-xl border border-border/60 overflow-hidden bg-background/50">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Sender</TableHead>
-                  <TableHead>Message</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Status</TableHead>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="font-semibold text-xs uppercase tracking-wider">Pertanyaan</TableHead>
+                  <TableHead className="w-28 font-semibold text-xs uppercase tracking-wider text-right">Frekuensi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentChatsError ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-sm text-muted-foreground">
-                      {recentChatsError}
+                {topQuestions.map((q) => (
+                  <TableRow key={q.question} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-medium text-sm max-w-xl truncate text-foreground/90" title={q.question}>
+                      {q.question}
                     </TableCell>
-                  </TableRow>
-                ) : null}
-
-                {!recentChatsError && recentMessages.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-sm text-muted-foreground">
-                      No recent messages yet.
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-
-                {recentMessages.map((msg) => (
-                  <TableRow key={msg.id}>
-                    <TableCell className="font-medium">{msg.sender}</TableCell>
-                    <TableCell className="text-muted-foreground max-w-xs truncate">
-                      {msg.message}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{msg.time}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          msg.status === 'resolved'
-                            ? 'default'
-                            : msg.status === 'in-progress'
-                              ? 'secondary'
-                              : 'outline'
-                        }
-                      >
-                        {msg.status.charAt(0).toUpperCase() +
-                          msg.status.slice(1)}
-                      </Badge>
+                    <TableCell className="text-right font-mono text-xs font-bold text-primary">
+                      {q.count}x
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
-        </div>
-      </Card>
+        )}
 
-      {/* Frequently Asked Questions */}
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Frequently Asked Questions</h3>
-            <Button variant="ghost" size="sm">View more</Button>
-          </div>
-
-          {questionGroups.length ? (
-            <div className="space-y-6">
-              {questionGroups.map((g) => (
-                <div key={g.key} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{g.title}</p>
-                    <Badge variant="secondary" className="shrink-0">
-                      {g.top.length} items
-                    </Badge>
-                  </div>
-
-                  {g.top.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No recap data yet.</p>
-                  ) : (
-                    <div className="rounded-lg border border-border overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Question</TableHead>
-                            <TableHead className="w-32">Count</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {g.top.map((q) => (
-                            <TableRow key={`${g.key}:${q.question}`}>
-                              <TableCell className="font-medium max-w-xl truncate" title={q.question}>
-                                {q.question}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">{q.count}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : topQuestions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No recap data yet.</p>
-          ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Question</TableHead>
-                    <TableHead className="w-32">Count</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {topQuestions.map((q) => (
-                    <TableRow key={q.question}>
-                      <TableCell className="font-medium max-w-xl truncate" title={q.question}>
-                        {q.question}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{q.count}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-
-          {questionsRecap && typeof questionsRecap.sessionsScanned === 'number' && (
-            <p className="text-xs text-muted-foreground">
-              Based on {questionsRecap.sessionsScanned.toLocaleString()} sessions.
-            </p>
-          )}
-        </div>
-      </Card>
+        {questionsRecap && typeof questionsRecap.sessionsScanned === 'number' && (
+          <p className="text-xs text-muted-foreground pt-2">
+            Berdasarkan analisis {questionsRecap.sessionsScanned.toLocaleString()} sesi obrolan WhatsApp.
+          </p>
+        )}
+      </div>
     </div>
   )
 }
