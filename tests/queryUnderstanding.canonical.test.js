@@ -148,3 +148,92 @@ test('separates career-goal program recommendation from catalogue/list intent', 
     expect(canonical.domain.primary).not.toBe('program_recommendation');
   }
 });
+
+describe('Indonesian morphology and requested-field object precedence', () => {
+  function contractFor(query) {
+    const contract = buildCanonicalQueryUnderstanding(query);
+    return {
+      intent: contract.intent && contract.intent.primary,
+      domain: contract.domain && contract.domain.primary,
+      programs: (contract.entities && contract.entities.programs || []).map((program) => program.canonical),
+      fields: contract.requestedFields || [],
+      feeType: contract.constraints && contract.constraints.feeType,
+      scholarshipSubtype: contract.constraints && contract.constraints.scholarshipRequestSubtype
+    };
+  }
+
+  test('registration fee morphology keeps equivalent contracts across suffixes, slang, and reordered wording', () => {
+    [
+      'TI berapa biaya pendaftaran?',
+      'TI brp biaya daftar?',
+      'TI berapa daftarnya?',
+      'biaya daftarnya TI berapa?',
+      'pendaftarannya TI berapa?'
+    ].forEach((query) => {
+      const c = contractFor(query);
+      expect(c.intent).toBe('ask_fee');
+      expect(c.domain).toBe('fee');
+      expect(c.programs).toContain('Teknologi Informasi');
+      expect(c.fields).toEqual(expect.arrayContaining(['amount', 'registrationFee']));
+      expect(c.feeType).toBe('registration_fee');
+    });
+  });
+
+  test('learning-content object outranks generic apa saja catalogue detection', () => {
+    [
+      ['apa saja mata kuliahnya TI?', 'Teknologi Informasi'],
+      ['belajar apa di Sistem Informasi?', 'Sistem Informasi'],
+      ['kurikulumnya bagaimana di Bisnis Digital?', 'Bisnis Digital'],
+      ['materi apa yang dipelajari S2?', 'S2 Sistem Informasi'],
+      ['nanti belajar apa saja di TI?', 'Teknologi Informasi'],
+      ['pelajarannya apa di Sistem Komputer?', 'Sistem Komputer']
+    ].forEach(([query, expectedProgram]) => {
+      const c = contractFor(query);
+      expect(c.intent).toBe('ask_program_curriculum');
+      expect(c.domain).toBe('program_curriculum');
+      expect(c.programs).toContain(expectedProgram);
+      expect(c.fields).toEqual(expect.arrayContaining(['focus', 'curriculumFocus']));
+      expect(c.fields).not.toContain('programList');
+    });
+
+    const s2 = contractFor('Apa saja yang di pelajari di s2?');
+    expect(s2.intent).toBe('ask_program_curriculum');
+    expect(s2.domain).toBe('program_curriculum');
+    expect(s2.fields).toEqual(expect.arrayContaining(['focus', 'curriculumFocus']));
+    expect(s2.fields).not.toContain('programList');
+  });
+
+  test('catalogue and neighboring requested objects remain distinct', () => {
+    ['apa saja prodinya?', 'Ada prodi apa saja?', 'Sebutkan semua program S1.'].forEach((query) => {
+      const c = contractFor(query);
+      expect(c.intent).toBe('ask_program_list');
+      expect(c.domain).toBe('program');
+      expect(c.fields).toContain('programList');
+    });
+
+    const requirements = contractFor('apa saja syaratnya daftar?');
+    expect(requirements.intent).toBe('ask_registration_requirements');
+    expect(requirements.domain).toBe('registration');
+    expect(requirements.fields).toContain('requirements');
+
+    const scholarship = contractFor('apa saja beasiswanya?');
+    expect(scholarship.intent).toBe('ask_scholarship');
+    expect(scholarship.domain).toBe('scholarship');
+    expect(scholarship.fields).toContain('scholarshipList');
+    expect(scholarship.scholarshipSubtype).toBe('list_overview');
+  });
+
+  test('negative controls prevent over-normalization and wrong career/list routing', () => {
+    const procedure = contractFor('cara daftar bagaimana?');
+    expect(procedure.intent).toBe('ask_registration_how');
+    expect(procedure.domain).toBe('registration');
+    expect(procedure.feeType).toBeNull();
+
+    const ulang = contractFor('daftar ulang kapan?');
+    expect(ulang.domain).toBe('pmb_schedule');
+    expect(ulang.feeType).toBeNull();
+
+    expect(contractFor('apa itu data?').intent).not.toBe('ask_program_recommendation');
+    expect(contractFor('Program mana yang paling murah?').intent).not.toBe('ask_program_recommendation');
+  });
+});

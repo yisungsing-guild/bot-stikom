@@ -1035,7 +1035,7 @@ function hasDoubleDegreePartnerFeeTarget(question) {
 function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
   const q = String(question || '').toLowerCase().trim();
   if (!q) return null;
-  const asksFee = /\b(biaya(?:nya)?|harga(?:nya)?|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|ukt|dpp|pendaftaran|rincian\s+biaya|biaya\s+s1|s1|angsuran|cicil|cicilan|dicicil|nyicil|pembayaran|tagihan|total(?:an)?|berapa)\b/.test(q);
+  const asksFee = /\b(biaya(?:nya)?|harga(?:nya)?|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|ukt|dpp|pendaftaran(?:nya)?|daftar(?:nya)?|registrasi(?:nya)?|rincian\s+biaya|biaya\s+s1|s1|angsuran(?:nya)?|cicil(?:an(?:nya)?)?|dicicil|nyicil|pembayaran|tagihan|potongan(?:nya)?|diskon(?:nya)?|total(?:an)?|berapa)\b/.test(q);
   if (!asksFee) return null;
   if (hasDoubleDegreePartnerFeeTarget(question)) return null;
 
@@ -1045,7 +1045,7 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
   const asksOnlyFee = /^(ada\s+biaya|biaya|biaya\s+kuliah|biaya\s+s1|rincian\s+biaya\s*(?:[1-4]|i{1,3}|iv)?\s*[a-c]?)\??$/i.test(raw);
   const asksFeeComponents = /\b(biaya\s+(?:apa\s+aja|apa\s+saja|yang\s+dibayar|masuk)|bayar\s+apa\s+aja|komponen\s+biaya)\b/i.test(raw);
 
-  if (/\b(cicil|cicilan|dicicil|nyicil|angsuran|skema\s+pembayaran)\b/.test(q)) {
+  if (/\b(cicil(?:an(?:nya)?)?|dicicil|nyicil|angsuran(?:nya)?|skema\s+pembayaran|pembayaran\s+bertahap|bertahap)\b/.test(q)) {
     return {
       answer: [
         'Untuk skema cicilan/pembayaran, data yang tersedia menunjukkan biaya dapat memiliki ketentuan pembayaran bertahap, tetapi detail finalnya perlu mengikuti ketentuan PMB/keuangan.',
@@ -1055,6 +1055,15 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
     };
   }
 
+  if (/\b(potongan(?:nya)?|diskon(?:nya)?|discount)\b/.test(q) && !hasProgram) {
+    return {
+      answer: [
+        'Potongan biaya bergantung pada prodi, gelombang pendaftaran, dan komponen biaya yang dimaksud.',
+        '',
+        'Kalau kakak sebutkan prodi dan gelombangnya, misalnya "potongan TI Gelombang II" atau "rincian biaya SI Gelombang I B", saya bisa hitungkan dari data biaya yang tersedia.'
+      ].join('\n')
+    };
+  }
   if (/\buang\s+pangkal(?:nya)?\b/.test(q)) {
     return {
       answer: [
@@ -1146,11 +1155,10 @@ function isRegistrationFeeQuestion(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(cara|gimana|bagaimana|dimana|di\s*mana)\b.*\b(daftar|mendaftar|pendaftaran|registrasi)\b/.test(q)) return false;
   if (/\b(rincian|detail)\b/.test(q)) return false;
-  const hasRegistration = /\b(biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|biaya\s+daftar|uang\s+daftar|bayar\s+daftar|pendaftaran\s+(?:berapa|rp|mahal|murah)|daftar\s+(?:berapa|rp))\b/.test(q);
-  const asksAmount = /\b(berapa|biaya|harga|bayar|uang|rp|nominal)\b/.test(q);
-  return hasRegistration && asksAmount;
+  const hasRegistrationComponent = /\b(biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|biaya\s+daftar|uang\s+daftar|bayar\s+daftar|pendaftaran(?:nya)?|daftar(?:nya)?|registrasi(?:nya)?)\b/.test(q);
+  const asksAmount = /\b(berapa|brapa|brp|biaya|harga|bayar|uang|rp|rupiah|nominal|mahal|murah)\b/.test(q);
+  return hasRegistrationComponent && asksAmount;
 }
-
 function renderRegistrationDiscountLines(base, discounts) {
   return [
     '- Gelombang Khusus: potongan ' + formatRp(discounts.pendaftaran.Khusus || 0) + ', total ' + formatRp(Math.max(0, base - (discounts.pendaftaran.Khusus || 0))),
@@ -1719,6 +1727,7 @@ function tryDualDegreeAnswer(question) {
   const asksUtbSpecific = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(seperti\s+apa|spesifik|khusus|dibanding|beda|bedanya|perbedaan|program\s+lain)\b/.test(q);
   const asksHowToJoin = /\b(cara|bagaimana|gimana|gmn|mengikuti|ikut|daftar|mendaftar|alur|prosedur|syarat|persyaratan)\b/.test(q);
   const asksMeaning = /\b(apa\s+itu|maksudnya|pengertian|jelaskan|seperti\s+apa)\b/.test(q);
+  const asksCredentialOutcome = /\b(?:gelar(?:nya)?|ijazah(?:nya)?|titel(?:nya)?|title(?:nya)?|credential|bachelor|dua\s+gelar)\b/.test(q) || (/\bdegree\b/.test(q) && !/\b(?:double|dual)\s*degree\b/.test(q));
 
   const pairLines = [
     '- UTB - Universitas Teknologi Bandung: Prodi di STIKOM Bali adalah Bisnis Digital; jurusan di UTB adalah DKV (Desain Komunikasi Visual).',
@@ -1734,6 +1743,18 @@ function tryDualDegreeAnswer(question) {
   ];
   const asksDnui = /\b(dnui|dalian\s+neusoft)\b/.test(q);
   const asksHelp = /\b(help\s+university|help\b.*malaysia|help)\b/.test(q);
+
+  if (asksCredentialOutcome && asksDnui && !asksHelp && !asksNational) {
+    return {
+      answer: 'Pada Program Double Degree DNUI, mahasiswa memperoleh dua gelar: Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Bachelor of Management (BM) dari DNUI China.'
+    };
+  }
+
+  if (asksCredentialOutcome && asksHelp && !asksDnui && !asksNational) {
+    return {
+      answer: 'Pada Program Double Degree HELP University Malaysia, mahasiswa memperoleh dua gelar: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia.'
+    };
+  }
 
   if (asksDnui && !asksHelp && !asksNational) {
     return {

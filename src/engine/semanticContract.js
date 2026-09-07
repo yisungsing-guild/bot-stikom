@@ -161,6 +161,18 @@ function hasEntity(text, entity) {
   });
 }
 
+function isRedundantContainedEntity(entity, entities, combinedText) {
+  const canonical = normalizeText(entity && entity.canonical);
+  if (!canonical || canonical.length <= 3) return false;
+  return toArray(entities).some(other => {
+    if (other === entity) return false;
+    if (String(other && other.group || '') !== String(entity && entity.group || '')) return false;
+    const otherCanonical = normalizeText(other && other.canonical);
+    if (!otherCanonical || otherCanonical === canonical || !otherCanonical.includes(canonical)) return false;
+    return hasEntity(combinedText, other);
+  });
+}
+
 function hasCompatibleCampusCountEvidence(value) {
   const text = normalizeText(value);
   if (!/\b(?:kampus|lokasi|cabang|alamat|denpasar|renon|jimbaran|abiansemal)\b/i.test(text)) return false;
@@ -240,7 +252,8 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
   }
   const isGeneralDomain = contract.domain === 'general' && contract.intent === 'ask_general';
   if (!isGeneralDomain) {
-    const missingEntities = toArray(contract.entities).filter(entity => entity.group !== 'unknown' && !hasEntity(combined, entity));
+    const contractEntities = toArray(contract.entities);
+    const missingEntities = contractEntities.filter(entity => entity.group !== 'unknown' && !hasEntity(combined, entity) && !isRedundantContainedEntity(entity, contractEntities, combined));
     if (missingEntities.length) return { ok: false, reason: 'missing_contract_entity', missingEntities: missingEntities.map(e => e.canonical) };
   }
   const contractScope = String((contract.constraints && (contract.constraints.programScope || contract.constraints.geographicScope)) || '').toLowerCase();

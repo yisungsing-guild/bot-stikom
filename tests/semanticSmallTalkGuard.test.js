@@ -1,4 +1,5 @@
 const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+const prisma = require('../src/db');
 
 describe('semantic small-talk guard', () => {
   const oldApiKey = process.env.OPENAI_API_KEY;
@@ -22,6 +23,55 @@ describe('semantic small-talk guard', () => {
       expect(result.success).toBe(true);
       expect(result.source).toBe('semantic-rag-small-talk');
       expect(result.answer).toMatch(/Silakan tulis pertanyaannya/i);
+    }
+  });
+
+  test('answers clear conversational small-talk before expensive knowledge paths', async () => {
+    const originalTrainingData = prisma.trainingData;
+    let trainingCalls = 0;
+    prisma.trainingData = {
+      count: jest.fn(async () => { trainingCalls += 1; return 0; }),
+      findFirst: jest.fn(async () => { trainingCalls += 1; return null; }),
+      findMany: jest.fn(async () => { trainingCalls += 1; return []; })
+    };
+
+    try {
+      const cases = [
+        'apa kabar?',
+        'kabar kamu gimana?',
+        'gimana kabarnya?',
+        'kamu gimana?',
+        'kamu baik?',
+        'sehat?',
+        'halo, apa kabar?',
+        'pagi min',
+        'selamat malam',
+        'makasih ya',
+        'terima kasih infonya',
+        'oke makasih',
+        'sip',
+        'mantap',
+        'saya mau tanya',
+        'mau tanya sesuatu',
+        'gmn kabarnya?',
+        'km gimana?',
+        'kabar min?',
+        'mksh min',
+        'thx min'
+      ];
+
+      for (const query of cases) {
+        trainingCalls = 0;
+        const start = Date.now();
+        const result = await querySemanticRag(query);
+        expect(result.success).toBe(true);
+        expect(result.source).toMatch(/semantic-rag-(small-talk|clarify)/);
+        expect(result.answer).toBeTruthy();
+        expect(trainingCalls).toBe(0);
+        expect(Date.now() - start).toBeLessThan(5000);
+      }
+    } finally {
+      prisma.trainingData = originalTrainingData;
     }
   });
 

@@ -801,7 +801,15 @@ function normalizePreflightMatchText(value) {
 
 function isStructuredAcademicNoDataWithSupportingFacts(answer, userQuery, meta = {}) {
   const source = String(meta && meta.source ? meta.source : '').toLowerCase();
-  if (!source.includes('semantic-rag-academic-policy')) return false;
+  const isAcademicPolicySource = source.includes('semantic-rag-academic-policy')
+    || source.includes('semantic-rag-operational-academic-policy-no-answer');
+  if (!isAcademicPolicySource) return false;
+  if (source.includes('semantic-rag-operational-academic-policy-no-answer')) {
+    const text = normalizePreflightMatchText(answer);
+    const isSafeNoData = /\b(?:belum|tidak)\s+(?:menemukan|mempunyai|memiliki)\b/i.test(text)
+      && /\b(?:kebijakan\s+akademik|baak|konfirmasi|admin\s+akademik)\b/i.test(text);
+    return isSafeNoData && !hasRawTechnicalLeak(answer) && !hasDocumentSourceLeak(answer) && !hasInlineRawBulletLeak(answer) && !hasPlaceholderOrOcrNoise(answer);
+  }
   const q = normalizePreflightMatchText(userQuery);
   const text = normalizePreflightMatchText(answer);
   const asksThesis = /\b(?:tugas\s+akhir|skripsi|tesis|ta)\b/i.test(q);
@@ -990,8 +998,9 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
   const feeCompatibleText = /\bRp\.?\s*\d/i.test(text)
     && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(text)
     && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan|bayar|kuliah|fee)\b/i.test(String(userQuery || ''));
+  const preserveStructuredAcademicNoDataEarly = isStructuredAcademicNoDataWithSupportingFacts(text, userQuery, meta || {});
   const crossDomainAudit = detectCrossDomainAnswerLeak(text, userQuery, meta);
-  if (crossDomainAudit.leak && !rawLeakPrecheck && !feeCompatibleText) {
+  if (crossDomainAudit.leak && !rawLeakPrecheck && !feeCompatibleText && !preserveStructuredAcademicNoDataEarly) {
     issues.push('cross_domain_answer_leak');
     text = buildPreflightFallback(userQuery, 'intent_conflict');
   }
@@ -1177,7 +1186,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
 
   const maxSoftLen = parseInt(process.env.BOT_PREFLIGHT_SOFT_MAX_CHARS || '3200', 10);
   if (Number.isFinite(maxSoftLen) && maxSoftLen > 0 && text.length > maxSoftLen) issues.push('long_answer_split_expected');
-  const preserveStructuredAcademicNoData = isStructuredAcademicNoDataWithSupportingFacts(text, userQuery, meta || {});
+  const preserveStructuredAcademicNoData = preserveStructuredAcademicNoDataEarly || isStructuredAcademicNoDataWithSupportingFacts(text, userQuery, meta || {});
   if (!preserveStructuredAcademicNoData && (hasExcessiveRawQuotation(original) || hasInlineRawBulletLeak(original))) issues.push('excessive_raw_quotation');
   if (isTooLongForQuestion(original, userQuery)) issues.push('too_long_for_query');
 

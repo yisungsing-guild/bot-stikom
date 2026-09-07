@@ -12,6 +12,13 @@ const { findReplyByRules } = require('../engine/replyEngine');
 const _ragEngine = require('../engine/ragEngine');
 const extractStructuredEntities = _ragEngine.extractStructuredEntities;
 const { querySemanticRag, verifyOutboundSemanticRelevance } = require('../engine/semanticRagEngine');
+const { buildCanonicalQueryUnderstanding } = require('../engine/queryUnderstanding');
+const { tryDualDegreeAnswer } = require('../engine/feeComparisonEngine');
+const {
+  resolveAdmissionScheduleEvidence: resolveProviderAdmissionScheduleEvidence,
+  formatAdmissionScheduleOverviewMessage: formatProviderAdmissionScheduleOverviewMessage,
+  formatAdmissionScheduleWaveDetailMessage: formatProviderAdmissionScheduleWaveDetailMessage
+} = require('../engine/scheduleEvidenceResolver');
 const { getRagIndexPath, getRagDataDir } = require('../utils/ragPaths');
 const { detectIntent, detectIntentDetails } = require('./providerIntentDetection');
 
@@ -210,6 +217,37 @@ function checkBundledIndexAvailable() {
 
 const HAS_BUNDLED_RAG_INDEX = checkBundledIndexAvailable();
 
+async function persistScheduleWavePromptState(chatId) {
+  try {
+    if (!chatId || !prisma || !prisma.session || typeof prisma.session.upsert !== 'function') return;
+    let prev = null;
+    try {
+      if (typeof prisma.session.findUnique === 'function') {
+        prev = await prisma.session.findUnique({ where: { chatId } });
+      }
+    } catch (_) {
+      prev = null;
+    }
+    const prevData = prev && prev.data && typeof prev.data === 'object' ? prev.data : {};
+    const state = prev && prev.state ? prev.state : 'root';
+    const data = {
+      ...prevData,
+      pendingScheduleWave: {
+        ts: new Date().toISOString(),
+        type: 'schedule_wave_selection',
+        expectedSlot: 'wave',
+        domain: 'pmb_schedule'
+      }
+    };
+    await prisma.session.upsert({
+      where: { chatId },
+      create: { chatId, state, data },
+      update: { state, data }
+    });
+  } catch (e) {
+    logger.warn({ err: e && e.message ? e.message : String(e), chatId }, '[Provider] Failed to persist pendingScheduleWave from schedule executor');
+  }
+}
 async function trySendAdmissionScheduleFastPath(chatId, rawText, res, sendFn, options = {}) {
   const text = String(rawText || '').trim();
   const { skipQuestionPredicate = false, scheduleQuestionFlag: passedScheduleQuestionFlag = undefined } = options || {};
@@ -230,6 +268,31 @@ async function trySendAdmissionScheduleFastPath(chatId, rawText, res, sendFn, op
   }
 
   const sendMessage = (typeof sendFn === 'function') ? sendFn : sendBotMessageRaw;
+
+  try {
+    if (typeof resolveProviderAdmissionScheduleEvidence === 'function') {
+      const evidence = resolveProviderAdmissionScheduleEvidence({
+        question: text,
+        currentDate: process.env.SEMANTIC_RAG_TODAY_YMD || new Date().toISOString().slice(0, 10)
+      });
+      let resolverMessage = '';
+      if (evidence && Array.isArray(evidence.matches) && evidence.matches.length) {
+        resolverMessage = formatProviderAdmissionScheduleWaveDetailMessage(evidence.matches[0]);
+      } else if (evidence && Array.isArray(evidence.windows) && evidence.windows.length && !evidence.requestedWave) {
+        resolverMessage = formatProviderAdmissionScheduleOverviewMessage(evidence);
+      } else if (evidence && evidence.status === 'NO_COMPATIBLE_EVIDENCE') {
+        resolverMessage = 'Saya belum menemukan data kalender PMB yang cukup lengkap untuk menjawab jadwal tersebut secara aman.';
+      }
+      if (resolverMessage) {
+        await sendMessage(chatId, resolverMessage);
+        if (evidence && evidence.status !== 'NO_COMPATIBLE_EVIDENCE') await persistScheduleWavePromptState(chatId);
+        if (res && typeof res.send === 'function') return res.send({ ok: true, source: 'pmb_schedule_fast_resolver' });
+        return true;
+      }
+    }
+  } catch (e) {
+    logger.warn({ err: e && e.message ? e.message : String(e), chatId }, '[Provider] Shared schedule evidence resolver failed; trying legacy schedule fast path');
+  }
 
   let cal = null;
   if (HAS_BUNDLED_RAG_INDEX) {
@@ -557,9 +620,9 @@ module.exports = function (provider) {
     const isQuestionLikeProgramSentence =
       /\b(?:apa|apakah|bagaimana|gimana|dimana|di\s*mana|kapan|berapa|kenapa|mengapa|beda|bedanya|perbedaan|jurusan|prodi|program|kuliah|daftar|mendaftar|pendaftaran|ingin|mau|pengen|tau|tahu|tentang|informasi|info|biaya|syarat|akreditasi|belajar|cocok|harus)\b/i.test(compactText);
     const isBareProgramSelection =
-      wordCount <= 4 &&
-      !isQuestionLikeProgramSentence &&
-      /^(?:s1\s+)?(?:si|ti|bd|sk|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|s2|d3|mi|manajemen informatika|help|dnui|utb)$/i.test(compactText);
+      wordCount <= 5 &&
+      !/\b(?:apa|apakah|bagaimana|gimana|dimana|di\s*mana|kapan|berapa|kenapa|mengapa|beda|bedanya|perbedaan|biaya|syarat|akreditasi|belajar|cocok|harus|jadwal|gelombang|daftar|pendaftaran|registrasi)\b/i.test(compactText) &&
+      /^(?:(?:prodi|program\s+studi|jurusan)\s+)?(?:s1\s+)?(?:si|ti|bd|sk|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|s2|d3|mi|manajemen informatika|help|dnui|utb)$/i.test(compactText);
     const explicitProgramSelection =
       !!(extractSpecificProgramHint(text) || extractProgramHint(text) || extractDualDegreeHint(text) || parseS1ProgramChoice(text)) ||
       !!(extractSpecificProgramHint(normalized) || extractProgramHint(normalized) || extractDualDegreeHint(normalized) || parseS1ProgramChoice(normalized)) ||
@@ -5398,12 +5461,6 @@ module.exports = function (provider) {
   }
 
   function numericMenusEnabled() {
-    // Keep numeric menu support available behind an explicit runtime guard so
-    // deterministic menu flows can still be used in controlled environments
-    // (e.g. tests/CI) without reintroducing the legacy menu everywhere.
-    const envFlag = String(process.env.ENABLE_NUMERIC_MENU || '').trim().toLowerCase();
-    if (envFlag === '1' || envFlag === 'true' || envFlag === 'yes') return true;
-    if (String(process.env.NODE_ENV || '').trim().toLowerCase() === 'test') return true;
     return false;
   }
 
@@ -6560,7 +6617,10 @@ module.exports = function (provider) {
     if (!raw) return null;
 
     const t = raw.toLowerCase();
-    if (!/^\s*apa\s+itu\b/i.test(t)) return null;
+    const normalized = normalizeProgramSelectionText(raw).toLowerCase();
+    const isDefinitionQuestion = /^\s*apa\s+itu\b/i.test(t);
+    const isBareProgramContext = /^(?:(?:prodi|program\s+studi|jurusan)\s+)?(?:s1\s+)?(?:si|ti|bd|sk|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|s2|d3|mi|manajemen informatika|help|dnui|utb)$/i.test(normalized);
+    if (!isDefinitionQuestion && !isBareProgramContext) return null;
 
     const program = extractSpecificProgramHint(raw) || extractProgramHint(raw) || null;
     if (!program) return null;
@@ -7694,6 +7754,21 @@ module.exports = function (provider) {
     return null;
   }
 
+  function parsePendingScholarshipSelection(text) {
+    const raw = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!raw || raw.length > 80) return null;
+    const rawNoSpace = raw.replace(/\s+/g, '');
+    if (/^(beasiswa\s+)?(ranking|rangking|peringkat)(\s+kelas)?$/.test(raw)) return 'beasiswa ranking kelas';
+    if (/^(beasiswa\s+)?prestasi\s+lokal$/.test(raw) || raw === 'lokal' || raw === 'prestasi lokal') return 'beasiswa prestasi lokal';
+    if (/^(beasiswa\s+)?prestasi\s+nasional$/.test(raw) || raw === 'nasional' || raw === 'prestasi nasional') return 'beasiswa prestasi nasional';
+    if (/^(beasiswa\s+)?prestasi$/.test(raw)) return 'beasiswa prestasi';
+    if (/^(beasiswa\s+)?prestasi\s+internasional$/.test(raw) || raw === 'internasional' || raw === 'prestasi internasional') return 'beasiswa prestasi internasional';
+    if (/^(beasiswa\s+)?kip$/.test(raw) || raw === 'kip') return 'beasiswa kip';
+    if (rawNoSpace === '1k1s' || rawNoSpace === 'beasiswa1k1s') return 'beasiswa 1k1s';
+    if (/^(beasiswa\s+)?yayasan$/.test(raw)) return 'beasiswa apa saja';
+    if (/^(potongan|diskon)(\s+pendaftaran)?$/.test(raw) || raw === 'potongan pendaftaran' || raw === 'pendaftaran') return 'potongan biaya pendaftaran';
+    return null;
+  }
   function isPureS1ProgramSelection(text) {
     const t = String(text || '').trim().toLowerCase();
     if (!t) return false;
@@ -9572,6 +9647,7 @@ module.exports = function (provider) {
           const hasPendingFeeDetail = !!(sessionData && sessionData.pendingFeeDetail);
           const hasPendingFeeBreakdownOffer = !!(sessionData && sessionData.pendingFeeBreakdownOffer);
           const hasPendingFollowupChoice = !!(sessionData && sessionData.pendingFollowupChoice);
+          const hasPendingScholarshipChoice = !!(sessionData && sessionData.pendingScholarshipChoice);
 
           const looksLikeProgramPick = typeof looksLikeProgramSelectionReply === 'function'
             ? !!looksLikeProgramSelectionReply(String(text || '').trim())
@@ -9592,14 +9668,26 @@ module.exports = function (provider) {
             ? !!isAcknowledgementOnly(String(text || ''))
             : /^(ok|oke|sip|siap|baik|ya|iya|y|ok\s*ya)$/i.test(String(text || '').trim());
 
+          const pendingFollowupChoiceValue = hasPendingFollowupChoice && sessionData && sessionData.pendingFollowupChoice
+            ? sessionData.pendingFollowupChoice
+            : null;
+          const looksLikePendingFollowupChoicePick = !!(
+            pendingFollowupChoiceValue && pendingFollowupChoiceValue.type === 'total_vs_discount' && parseTotalOrDiscountChoice(String(text || ''))
+          ) || !!(
+            pendingFollowupChoiceValue && pendingFollowupChoiceValue.type === 'post_fee_options' && parsePostFeeFollowupChoice(String(text || ''))
+          );
+
+          const looksLikeScholarshipChoicePick = hasPendingScholarshipChoice && !!parsePendingScholarshipSelection(String(text || ''));
+
           const keepEphemeralBecauseFollowupShape =
+            (hasPendingScholarshipChoice && looksLikeScholarshipChoicePick) ||
             (hasPendingProgramSelection && looksLikeProgramPick) ||
             (hasPendingProgramInfoMenu && /\b(biaya|jadwal|syarat|persyaratan|dokumen|berkas|formulir|kontak|alur)\b/i.test(String(text || ''))) ||
             (hasPendingScheduleWave && (looksLikeScheduleWavePick || looksLikeBareWavePick)) ||
             (hasPendingTotalCost && (((typeof parseGelombang === 'function') ? !!parseGelombang(String(text || '')) : false) || looksLikeBareWavePick)) ||
             (hasPendingFeeDetail && looksLikeFeeChoicePick) ||
             (hasPendingFeeBreakdownOffer && (looksLikeYesNo || looksLikeProgramPick || !!parseS1ProgramChoice(String(text || '').trim()) || !!extractDualDegreeHint(String(text || '').trim()))) ||
-            (hasPendingFollowupChoice && (looksLikeYesNo || isAckOnly)) ||
+            (hasPendingFollowupChoice && (looksLikePendingFollowupChoicePick || looksLikeYesNo || isAckOnly)) ||
             (hasPendingFollowupChoice && askedFollowup && (!looksLikeNewTopic || isAckOnly));
 
           // Don't auto-clear if the inbound is a bare numeric selection (menu reply),
@@ -9845,9 +9933,117 @@ module.exports = function (provider) {
       const allowIndexFallbackNoDb = HAS_BUNDLED_RAG_INDEX && !hasAnyTrainingData;
       const allowBundledIndex = HAS_BUNDLED_RAG_INDEX && (hasActiveTrainingData || !hasAnyTrainingData);
 
+      // Pending schedule replies are protocol-owned before semantic-first RAG.
+      // A bare wave reply such as "2 b" is semantically meaningful only because
+      // the previous route asked for a schedule wave; otherwise semantic-first
+      // correctly treats it as underspecified.
+      try {
+        const pending = sessionData && sessionData.pendingScheduleWave ? sessionData.pendingScheduleWave : null;
+        const pendingTs = pending && pending.ts ? new Date(pending.ts) : null;
+        const pendingFresh = pendingTs && !Number.isNaN(pendingTs.getTime())
+          ? ((now - pendingTs) / (1000 * 60)) <= 30
+          : false;
+        if (pending && !pendingFresh) {
+          try {
+            const currentState = session ? session.state : 'root';
+            const clearedData = { ...(sessionData || {}) };
+            delete clearedData.pendingScheduleWave;
+            await prisma.session.upsert({
+              where: { chatId },
+              create: { chatId, state: currentState, data: clearedData },
+              update: { state: currentState, data: clearedData }
+            });
+            sessionData = clearedData;
+          } catch (e) {
+            logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] Failed to clear stale pendingScheduleWave before semantic-first');
+          }
+        } else if (pending && pendingFresh) {
+          const trimmed = String(text || '').trim();
+          const waveKey = parseScheduleWaveKey(trimmed);
+          const looksLikeWaveReply = looksLikeScheduleWaveSelectionReply(trimmed);
+          const wantsAllWaves = (() => {
+            const tt = String(trimmed || '').toLowerCase().replace(/\s{2,}/g, ' ').trim();
+            if (!tt || tt.length > 80) return false;
+            if (/^(semua(nya)?|seluruh(nya)?|all)(\s+(aja|dong|min|kak))?$/.test(tt)) return true;
+            return /\b(semua|semuanya|seluruh|all)\b/.test(tt) && /\bgelombang\b/.test(tt);
+          })();
+          const isExplicitWaveWord = /\b(gelombang|gel\.?|gbg)\b/i.test(trimmed);
+          const isSpecialWave = waveKey === 'KHUSUS' || /^SISIPAN\s+/i.test(String(waveKey || ''));
+          const hasLetter = /\b[A-C]\b/.test(String(waveKey || ''));
+          const acceptWave = (isSpecialWave || hasLetter) && (looksLikeWaveReply || isExplicitWaveWord);
+          const wantsCost = /(biaya|dpp|tanpa\s+potongan|pembayaran|cicil|cicilan)/i.test(trimmed);
+          const wantsDiscount = /(potongan|diskon)/i.test(trimmed);
+          const programFromText = extractSpecificProgramHint(trimmed) || parseS1ProgramChoice(trimmed) || null;
+          const explicitNewTopic = looksLikeNewTopicQuestion(trimmed) && !looksLikeWaveReply && !wantsAllWaves;
+
+          if ((wantsAllWaves || (acceptWave && waveKey)) && !wantsCost && !wantsDiscount && !programFromText) {
+            const scheduleText = wantsAllWaves ? 'jadwal PMB semua gelombang' : trimmed;
+            const handled = await trySendAdmissionScheduleFastPath(chatId, scheduleText, res, sendBotMessageRaw, {
+              skipQuestionPredicate: true,
+              scheduleQuestionFlag: true
+            });
+            if (handled) {
+              try {
+                const currentState = session ? session.state : 'root';
+                const clearedData = { ...(sessionData || {}) };
+                delete clearedData.pendingScheduleWave;
+                await prisma.session.upsert({
+                  where: { chatId },
+                  create: { chatId, state: currentState, data: clearedData },
+                  update: { state: currentState, data: clearedData }
+                });
+                sessionData = clearedData;
+              } catch (e) {
+                logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] Failed to clear pendingScheduleWave after early schedule handoff');
+              }
+              return;
+            }
+          } else if (explicitNewTopic || wantsCost || wantsDiscount || programFromText) {
+            const currentState = session ? session.state : 'root';
+            const clearedData = { ...(sessionData || {}) };
+            delete clearedData.pendingScheduleWave;
+            await prisma.session.upsert({
+              where: { chatId },
+              create: { chatId, state: currentState, data: clearedData },
+              update: { state: currentState, data: clearedData }
+            });
+            sessionData = clearedData;
+          }
+        }
+      } catch (e) {
+        logger.warn({ err: e && e.message ? e.message : String(e), chatId }, '[Provider] Pending schedule-wave early handoff failed');
+      }
+
+      // Scholarship selection replies are owned by the scholarship prompt before
+      // semantic-first vague clarification. Longer explicit questions continue
+      // through the normal semantic route and may use stable scholarship context.
+      try {
+        const pending = sessionData && sessionData.pendingScholarshipChoice ? sessionData.pendingScholarshipChoice : null;
+        const pendingTs = pending && pending.ts ? new Date(pending.ts) : null;
+        const pendingFresh = pendingTs && !Number.isNaN(pendingTs.getTime())
+          ? ((now - pendingTs) / (1000 * 60)) <= 120
+          : false;
+        if (pending && pendingFresh) {
+          const expandedScholarshipSelection = parsePendingScholarshipSelection(text);
+          if (expandedScholarshipSelection) {
+            const currentState = session ? session.state : 'root';
+            const clearedData = { ...(sessionData || {}) };
+            delete clearedData.pendingScholarshipChoice;
+            await prisma.session.upsert({
+              where: { chatId },
+              create: { chatId, state: currentState, data: clearedData },
+              update: { state: currentState, data: clearedData }
+            });
+            sessionData = clearedData;
+            text = expandedScholarshipSelection;
+          }
+        }
+      } catch (e) {
+        logger.warn({ err: e && e.message ? e.message : String(e), chatId }, '[Provider] Pending scholarship early handoff failed');
+      }
+
       // Semantic-first RAG mode:
-      // Let an LLM understand arbitrary user wording, rewrite it into semantic
-      // retrieval queries, then answer strictly from training chunks.
+      // Let an LLM understand arbitrary user wording, rewrite it into semantic      // retrieval queries, then answer strictly from training chunks.
       // Run before legacy rule/regex/fast paths so knowledge answers are not
       // hijacked by older deterministic routing. Set SEMANTIC_RAG_ONLY=true to
       // stop here when no grounded answer is found.
@@ -9867,6 +10063,85 @@ module.exports = function (provider) {
 
           if (semantic && semantic.success && semantic.answer) {
             try {
+              const semanticContractForSession = semantic && semantic.debug
+                ? (semantic.debug.semanticContract || semantic.debug.canonicalContract || null)
+                : null;
+              const semanticDomain = String((semanticContractForSession && semanticContractForSession.domain) || '').toLowerCase();
+              const semanticFields = new Set(Array.isArray(semanticContractForSession && semanticContractForSession.requestedFields)
+                ? semanticContractForSession.requestedFields.map(field => String(field || '').toLowerCase())
+                : []);
+              const scholarshipSubtype = String(semanticContractForSession && semanticContractForSession.constraints && semanticContractForSession.constraints.scholarshipRequestSubtype || '').toLowerCase();
+              const isScholarshipAnswer = semanticDomain === 'scholarship'
+                || /^semantic-rag-scholarship\b/i.test(String(semantic.source || ''));
+              if (isScholarshipAnswer) {
+                const currentState = session ? session.state : 'root';
+                const prevData = sessionData || {};
+                const nowIso = new Date().toISOString();
+                const isScholarshipOverview = String(semanticContractForSession && semanticContractForSession.requestType || '').toLowerCase() === 'list'
+                  || semanticFields.has('scholarshiplist')
+                  || scholarshipSubtype === 'list_overview';
+                const newData = {
+                  ...prevData,
+                  stableSemanticContext: {
+                    domain: 'scholarship',
+                    entity: 'scholarship',
+                    requestedFields: ['scholarship'],
+                    establishedAt: nowIso,
+                    sourceTurn: String(text || '').trim(),
+                    source: semantic.source || 'semantic-rag-scholarship'
+                  },
+                  lastSemanticContract: semanticContractForSession || prevData.lastSemanticContract || null,
+                  lastSemanticSource: semantic.source || prevData.lastSemanticSource || null,
+                  ...(isScholarshipOverview ? {
+                    pendingScholarshipChoice: {
+                      ts: nowIso,
+                      type: 'scholarship_selection',
+                      expectedSlot: 'scholarshipSubtype',
+                      domain: 'scholarship'
+                    }
+                  } : {})
+                };
+                await prisma.session.upsert({
+                  where: { chatId },
+                  create: { chatId, state: currentState, data: newData },
+                  update: { state: currentState, data: newData }
+                });
+                sessionData = newData;
+              }
+
+              const isScheduleAnswer = semanticDomain === 'pmb_schedule'
+                || semanticDomain === 'schedule'
+                || /^semantic-rag-schedule\b/i.test(String(semantic.source || ''));
+              if (isScheduleAnswer) {
+                const currentState = session ? session.state : 'root';
+                const prevData = sessionData || {};
+                const nowIso = new Date().toISOString();
+                const newData = {
+                  ...prevData,
+                  lastSemanticContract: semanticContractForSession || prevData.lastSemanticContract || null,
+                  lastSemanticSource: semantic.source || prevData.lastSemanticSource || null,
+                  pendingScheduleWave: {
+                    ts: nowIso,
+                    type: 'schedule_wave_selection',
+                    expectedSlot: 'wave',
+                    domain: 'pmb_schedule'
+                  }
+                };
+                await prisma.session.upsert({
+                  where: { chatId },
+                  create: { chatId, state: currentState, data: newData },
+                  update: { state: currentState, data: newData }
+                });
+                sessionData = newData;
+              }
+            } catch (persistErr) {
+              logger.warn({
+                err: persistErr && persistErr.message ? persistErr.message : String(persistErr),
+                chatId
+              }, '[Provider] Failed to persist scholarship semantic context');
+            }
+
+            try {
               await prisma.chat.upsert({
                 where: { chatId },
                 create: { chatId, lastSeenAt: now },
@@ -9882,7 +10157,8 @@ module.exports = function (provider) {
             await sendBotMessage(chatId, String(semantic.answer || '').trim(), {
               source: semantic.source || 'semantic-rag',
               sourceType: SOURCE_TYPES.RAG,
-              finalPipeline: 'semantic-rag->humanizer'
+              finalPipeline: 'semantic-rag->humanizer',
+              semanticContract: semantic && semantic.debug ? (semantic.debug.semanticContract || semantic.debug.canonicalContract || null) : null
             });
 
             return res.send({
@@ -9945,7 +10221,10 @@ module.exports = function (provider) {
         }
 
         try {
-          if (isRagEnabled()) {
+          const normalizedShortProgramText = normalizeProgramSelectionText(text).toLowerCase();
+          const bareProgramContextTurn = /^(?:(?:prodi|program\s+studi|jurusan)\s+)?(?:s1\s+)?(?:si|ti|bd|sk|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|s2|d3|mi|manajemen informatika|help|dnui|utb)$/i.test(normalizedShortProgramText)
+            && !/^\s*apa\s+itu\b/i.test(String(text || ''));
+          if (isRagEnabled() && !bareProgramContextTurn) {
             const topK = parseInt(process.env.RAG_TOP_K || '6', 10);
             const ragQuestion = programHint ? `Program Studi: ${programHint}\n${text}` : text;
             const ragResult = await ragQueryWithEval(chatId, ragQuestion, topK, { answerQuestion: ragQuestion, minScore: 0, forceRag: true });
@@ -11052,26 +11331,11 @@ Pertanyaan terakhir yang tidak bisa dijawab bot:
         // Keep this generous: users often reply much later after reading.
         const pendingFresh = pendingTs && !Number.isNaN(pendingTs.getTime()) ? ((now - pendingTs) / (1000 * 60)) <= 120 : false; // 2 hours
 
-        if (numericMenusEnabled() && pending && pendingFresh) {
+        if (pending && pendingFresh) {
           const raw = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
           const rawNoSpace = raw.replace(/\s+/g, '');
 
-          let expanded = null;
-          if (/^(beasiswa\s+)?(ranking|rangking|peringkat)(\s+kelas)?$/.test(raw)) {
-            expanded = 'beasiswa ranking kelas';
-          } else if (/^(beasiswa\s+)?prestasi\s+lokal$/.test(raw) || raw === 'lokal' || raw === 'prestasi lokal') {
-            expanded = 'beasiswa prestasi lokal';
-          } else if (/^(beasiswa\s+)?prestasi(\s+nasional)?$/.test(raw) || raw === 'nasional' || raw === 'prestasi nasional') {
-            expanded = 'beasiswa prestasi nasional';
-          } else if (/^(beasiswa\s+)?prestasi\s+internasional$/.test(raw) || raw === 'internasional' || raw === 'prestasi internasional') {
-            expanded = 'beasiswa prestasi internasional';
-          } else if (/^(beasiswa\s+)?kip$/.test(raw) || raw === 'kip') {
-            expanded = 'beasiswa kip';
-          } else if (rawNoSpace === '1k1s' || rawNoSpace === 'beasiswa1k1s') {
-            expanded = 'beasiswa 1k1s';
-          } else if (/^(potongan|diskon)(\s+pendaftaran)?$/.test(raw) || raw === 'potongan pendaftaran' || raw === 'pendaftaran') {
-            expanded = 'potongan biaya pendaftaran';
-          }
+          const expanded = parsePendingScholarshipSelection(raw);
 
           if (expanded) {
             // Clear pending flag and rewrite inbound text for the normal flow below.
@@ -15052,6 +15316,27 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
         }
       }
 
+      // Double Degree location relation: a current canonical DD+location contract is
+      // deterministic and should not fall through to generic fallback when RAG is off.
+      try {
+        const ddLocationCanonical = buildCanonicalQueryUnderstanding(text);
+        const ddFields = new Set(Array.isArray(ddLocationCanonical && ddLocationCanonical.requestedFields) ? ddLocationCanonical.requestedFields : []);
+        const ddIsLocation = ddLocationCanonical
+          && ddLocationCanonical.domain
+          && ddLocationCanonical.domain.primary === 'double_degree'
+          && ((ddLocationCanonical.intent && ddLocationCanonical.intent.primary === 'ask_location') || ddFields.has('location') || ddFields.has('campusLocation'));
+        if (ddIsLocation) {
+          const ddAnswer = tryDualDegreeAnswer(text);
+          if (ddAnswer && ddAnswer.answer) {
+            const body = String(ddAnswer.answer || '').trim();
+            const prefixed = /^Dual\/?Double\s+Degree/i.test(body) ? body : `Dual/Double Degree ITB STIKOM Bali:\n\n${body}`;
+            await sendBotMessage(chatId, prefixed);
+            return res.send({ ok: true, source: 'dual_degree_location_fast', ragUsed: false });
+          }
+        }
+      } catch (e) {
+        logger.warn({ err: e && e.message ? e.message : String(e) }, '[Provider] Double Degree location handoff failed');
+      }
       // Study mode (offline/online/hybrid) info: answer directly.
       if (isStudyModeQuestion(text)) {
         await sendBotMessage(chatId, buildStudyModeAnswerMessage());
@@ -17448,6 +17733,14 @@ module.exports._test = {
   detectIntent,
   detectIntentDetails
 };
+
+
+
+
+
+
+
+
 
 
 
