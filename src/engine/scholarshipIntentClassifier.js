@@ -13,6 +13,7 @@
 const logger = require('../logger');
 
 const KNOWN_SCHOLARSHIPS = [
+  { name: 'Ranking', keywords: ['ranking', 'rangking', 'peringkat'], description: null },
   { 
     name: 'KIP',
     keywords: ['kip', 'kartu indonesia pintar', 'kartu pintar'],
@@ -20,12 +21,12 @@ const KNOWN_SCHOLARSHIPS = [
   },
   { 
     name: '1K1S',
-    keywords: ['1k1s', 'satu keluarga satu sarjana', 'satu keluarga'],
+    keywords: ['1k1s', 'skss', 'satu keluarga satu sarjana', 'satu keluarga'],
     description: 'Beasiswa untuk satu keluarga satu sarjana'
   },
   { 
     name: 'Prestasi',
-    keywords: ['prestasi', 'berprestasi', 'juara', 'academic excellence'],
+    keywords: ['prestasi', 'berprestasi', 'juara', 'academic excellence', 'akademik', 'non-akademik', 'non akademik'],
     description: 'Beasiswa berdasarkan prestasi akademik dan non-akademik'
   },
   { 
@@ -39,6 +40,27 @@ const KNOWN_SCHOLARSHIPS = [
     description: 'Program kuliah sambil kerja di luar negeri'
   }
 ];
+
+// The requested relation is independent of the scholarship being discussed.
+function detectScholarshipRequestSubtype(query) {
+  const q = String(query || '').toLowerCase();
+  if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?|ketentuan(?:nya)?|kriteria(?:nya)?|dokumen|berkas|eligibility|eligible)\b/i.test(q)) return 'requirements';
+  if (/\b(?:nominal(?:nya)?|berapa|besaran(?:nya)?|jumlah(?:nya)?)\b/i.test(q)) return 'amount';
+  if (/\b(?:cara|prosedur|alur|mengajukan|mendaftar|daftarnya|pendaftarannya|registrasinya|mendapatkan)\b/i.test(q)
+    || /\b(?:bagaimana|gimana)\b.*\b(?:daftar|registrasi|pendaftaran)\b/i.test(q)) return 'procedure';
+  if (/\b(?:ada|tersedia|punya|apakah)\b/i.test(q)) return 'availability';
+  if (extractScholarshipName(q)) return 'detail';
+  if (/\b(?:apa\s+saja|apa\s+aja|daftar|list|jenis|pilihan|macam|gimana|bagaimana|overview|info(?:rmasi)?)\b/i.test(q)) return 'list_overview';
+  return 'overview';
+}
+
+function isScholarshipSelectionReply(query) {
+  const q = String(query || '').toLowerCase().replace(/[?!.]/g, '').trim();
+  return KNOWN_SCHOLARSHIPS.some(scholarship => scholarship.keywords.some(keyword => {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('^(?:beasiswa\\s+)?' + escaped + '(?:\\s+(?:kelas|paralel|lokal|nasional|internasional))?$','i').test(q);
+  }));
+}
 
 /**
  * Classify scholarship intent
@@ -201,6 +223,8 @@ function filterScholarshipAnswerForIntent(answer, userQuery) {
 }
 
 module.exports = {
+  isScholarshipSelectionReply,
+  detectScholarshipRequestSubtype,
   classifyScholarshipIntent,
   isSpecificScholarshipQuestion,
   extractScholarshipName,

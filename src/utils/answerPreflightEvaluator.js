@@ -5,6 +5,7 @@ const {
   validateCitation,
   estimateFinalConfidence
 } = require('../engine/queryTechniqueLayer');
+const { projectClarificationAssertions } = require('./answerOutputContract');
 
 function envFlag(name, fallback = false) {
   const raw = process.env[name];
@@ -999,8 +1000,11 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
     && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan)\b/i.test(text)
     && /\b(biaya|pendaftaran|dpp|ukt|semester|potongan|total|cicilan|bayar|kuliah|fee)\b/i.test(String(userQuery || ''));
   const preserveStructuredAcademicNoDataEarly = isStructuredAcademicNoDataWithSupportingFacts(text, userQuery, meta || {});
-  const crossDomainAudit = detectCrossDomainAnswerLeak(text, userQuery, meta);
-  if (crossDomainAudit.leak && !rawLeakPrecheck && !feeCompatibleText && !preserveStructuredAcademicNoDataEarly) {
+  const clarificationAudit = projectClarificationAssertions({
+    answer: text, outputType: meta.outputType, clarification: meta.clarification
+  }, meta.semanticContract);
+  const crossDomainAudit = detectCrossDomainAnswerLeak(clarificationAudit.text, userQuery, meta);
+  if (crossDomainAudit.leak && !rawLeakPrecheck && !preserveStructuredAcademicNoDataEarly) {
     issues.push('cross_domain_answer_leak');
     text = buildPreflightFallback(userQuery, 'intent_conflict');
   }
@@ -1240,6 +1244,7 @@ function evaluateOutboundAnswer(answer, userQuery = '', meta = {}) {
       businessRuleValidation: businessRuleAudit,
       citationValidation: citationAudit,
       crossDomainAnswerLeak: typeof crossDomainAudit !== 'undefined' ? crossDomainAudit : null,
+      clarificationOptions: { validated: !!clarificationAudit.validation?.ok, optionLines: clarificationAudit.optionLines },
       programRecommendationDrift: typeof programRecommendationAudit !== 'undefined' ? programRecommendationAudit : null,
       confidence: finalConfidence
     }

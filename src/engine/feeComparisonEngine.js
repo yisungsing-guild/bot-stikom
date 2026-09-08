@@ -3,6 +3,8 @@ const { parseCompactRupiahNumber } = require('../utils/rupiahParser');
 const fs = require('fs');
 const path = require('path');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
+const { detectScholarshipRequestSubtype, extractScholarshipName, KNOWN_SCHOLARSHIPS } = require('./scholarshipIntentClassifier');
+const { hasRawTechnicalLeak, hasLikelyRawDocumentLeak } = require('../utils/answerPreflightEvaluator');
 
 function parseAmount(raw) {
   return parseCompactRupiahNumber(raw);
@@ -919,6 +921,8 @@ function tryProgramRecommendationAnswer(question) {
 
 function detectSpecificScholarshipTopic(question) {
   const q = String(question || '').toLowerCase();
+  const namedScholarship = extractScholarshipName(q);
+  if (namedScholarship) return 'Beasiswa ' + namedScholarship;
   if (/\b1\s*k\s*1\s*s\b|\b1k1s\b|\bskss\b|satu\s+keluarga\s+satu\s+sarjana/.test(q)) {
     return 'Beasiswa 1K1S/SKSS (Satu Keluarga Satu Sarjana)';
   }
@@ -949,11 +953,76 @@ function buildScholarshipNoTrainingAnswer(topic) {
   ].join('\n');
 }
 
-function tryScholarshipAnswer(question) {
+function selectScholarshipEvidence(index, scholarshipType, relation) {
+  const namedTypes = KNOWN_SCHOLARSHIPS.map(type => ({ name: type.name,
+    pattern: new RegExp('\\b(?:beasiswa|scholarship|potongan)\\s+(?:' + type.keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'i') }));
+  const relationPatterns = {
+    requirements: /\b(?:syarat|persyaratan|ketentuan|kriteria|wajib|harus|eligible|eligibility|diberikan\s+untuk|diperuntukkan|berhak|sekolah\s+tertentu)\b/i,
+    procedure: /\b(?:prosedur|alur|mengajukan|ajukan|mengisi|isi\s+formulir|unggah|mengunggah|menyerahkan|serahkan|mendaftar|pendaftaran\s+melalui)\b/i,
+    amount: /(?:\bRp\.?\s*\d|\d[\d.,]*\s*(?:%|persen|juta|ribu|rupiah))/i,
+    availability: /\b(?:tersedia|diberikan|mendapat|menerima|merupakan|adalah|program|beasiswa|potongan)\b/i,
+    detail: /\b(?:diberikan|mendapat|menerima|merupakan|adalah|ditujukan|diperuntukkan|syarat|persyaratan|ketentuan|wajib|harus|melalui|mencakup|sebesar|potongan|bantuan)\b/i
+  };
+  const candidates = [];
+  const selected = [];
+  const seen = new Set();
+  for (const record of Array.isArray(index) ? index : []) {
+    const text = String(record && record.chunk || '').trim();
+    if (!text || record.lowConfidence || hasRawTechnicalLeak(text) || hasLikelyRawDocumentLeak(text)) continue;
+    if (/%PDF-|\bendstream\b|\/Type\s*\/(?:Catalog|Page)|\b\d+\s+\d+\s+obj\b/i.test(text)) continue;
+    if (!/\b(?:beasiswa|scholarship|potongan\s+ranking|potongan\s+peringkat)\b/i.test(text)) continue;
+    if (!namedTypes.some(type => type.name === scholarshipType && type.pattern.test(text))) continue;
+    candidates.push(record.id || record.trainingId || record.filename || null);
+    const facts = text.split(/\r?\n|(?<=[.!?])\s+(?=[A-Z])/).map(s => s.trim()).filter(Boolean);
+    let localType = null;
+    const compatible = [];
+    for (const fact of facts) {
+      const explicitTypes = namedTypes.filter(type => type.pattern.test(fact));
+      if (explicitTypes.length > 1) { localType = null; continue; }
+      if (explicitTypes.length) localType = explicitTypes[0].name;
+      else if (/\b(?:beasiswa|scholarship)\b/i.test(fact)) localType = null;
+      if (localType !== scholarshipType) continue;
+      if (/\b(?:meliputi|pilihan|jenis)\b.*(?:,|\bdan\b)/i.test(fact)) continue;
+      if (!(relationPatterns[relation] || relationPatterns.detail).test(fact)) continue;
+      const key = fact.toLowerCase().replace(/\s+/g, ' ');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      compatible.push(fact);
+    }
+    if (compatible.length) selected.push({ ...record, chunk: compatible.join('\n') });
+  }
+  return { candidates, selected };
+}
+
+function tryScholarshipAnswer(question, index, options = {}) {
   const q = String(question || '').toLowerCase();
+  const canonical = options.__canonicalQueryUnderstanding;
+  const requestSubtype = canonical && canonical.domain && canonical.domain.primary === 'scholarship'
+    ? canonical.constraints.scholarshipRequestSubtype
+    : detectScholarshipRequestSubtype(q);
   if (/\b(double\s*degree|dual\s*degree|dd|utb|dnui|help\s+university)\b/.test(q)) return null;
   if (/\b(?:astronot|antariksa|alien|luar\s+angkasa|joki|palsu)\b/i.test(q)) return null;
   if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|skss|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
+
+  const scholarshipType = canonical?.constraints?.scholarshipType || extractScholarshipName(question);
+  if (scholarshipType && !['overview', 'list_overview'].includes(requestSubtype)) {
+    const evidence = selectScholarshipEvidence(index, scholarshipType, requestSubtype);
+    const debug = { scholarshipType, requestSubtype, evidenceCandidates: evidence.candidates,
+      compatibleEvidenceCount: evidence.selected.length };
+    if (evidence.selected.length) return {
+      answer: 'Beasiswa ' + scholarshipType + ':\n\n' + evidence.selected.map(r => r.chunk).join('\n\n'),
+      source: 'semantic-rag-scholarship-detail',
+      contexts: evidence.selected,
+      answerProvenance: 'indexed_scholarship_evidence',
+      debug
+    };
+    return {
+      answer: 'Saya belum menemukan data yang sesuai untuk ' + requestSubtype + ' Beasiswa ' + scholarshipType + '. Silakan konfirmasi ketentuan resmi ke Admin PMB ITB STIKOM Bali.',
+      source: 'semantic-rag-scholarship-no-training-detail',
+      contexts: [],
+      debug
+    };
+  }
 
   if (/\b(seluruh|semua|full|penuh|100\s*%)\b/.test(q) && /\b(biaya|ditanggung|menanggung|cover|cakupan)\b/.test(q)) {
     return {
@@ -965,7 +1034,7 @@ function tryScholarshipAnswer(question) {
     };
   }
 
-  if (/\b(cara|mendapatkan|mengajukan|daftar|mendaftar|prosedur|alur)\b/.test(q) && /\b(beasiswa(?:nya)?|bantuan\s+biaya|potongan)\b/.test(q)) {
+  if (requestSubtype === 'procedure' && /\b(beasiswa(?:nya)?|bantuan\s+biaya|potongan)\b/.test(q) && !detectSpecificScholarshipTopic(question)) {
     return {
       answer: [
         'Untuk mendapatkan beasiswa, kakak perlu memilih jalur beasiswa yang ingin diajukan lalu mengikuti arahan PMB/kampus.',
@@ -983,16 +1052,24 @@ function tryScholarshipAnswer(question) {
   }
 
   const specificTopic = detectSpecificScholarshipTopic(question);
-  if (specificTopic && /\b(ada|tersedia|punya|apakah)\b/.test(q) && !asksScholarshipDetail(question)) {
+  if (specificTopic && requestSubtype === 'availability' && !asksScholarshipDetail(question)) {
     return {
       answer: specificTopic + ' tercatat sebagai salah satu pilihan beasiswa/program bantuan di ITB STIKOM Bali. Untuk syarat, prosedur, dan kuota resminya, kakak perlu konfirmasi ke Admin PMB.',
       source: 'semantic-rag-scholarship-availability'
     };
   }
 
-  if (specificTopic && asksScholarshipDetail(question)) {
+  if (specificTopic && (requestSubtype !== 'availability' || asksScholarshipDetail(question))) {
     return {
       answer: buildScholarshipNoTrainingAnswer(specificTopic),
+      source: 'semantic-rag-scholarship-no-training-detail'
+    };
+  }
+
+  if (requestSubtype === 'requirements' || requestSubtype === 'amount') {
+    const field = requestSubtype === 'amount' ? 'nominal' : 'persyaratan';
+    return {
+      answer: 'Untuk ' + field + ' beasiswa, sebutkan jenis beasiswa yang dimaksud agar ketentuannya tidak tertukar. Saya belum memiliki rincian yang cukup untuk menetapkan ' + field + ' tanpa jenis beasiswa dan data pendukungnya. Silakan konfirmasi ketentuan resmi ke Admin PMB.',
       source: 'semantic-rag-scholarship-no-training-detail'
     };
   }
@@ -1032,7 +1109,7 @@ function hasDoubleDegreePartnerFeeTarget(question) {
   const hasPartner = /\b(?:help(?:\s+(?:uni|university))?|help\s+uni(?:versity)?\s+malaysia|dnui|dalian\s+neusoft|utb|universitas\s+teknologi\s+bandung)\b/i.test(q);
   return hasFee && hasDoubleDegree && hasPartner;
 }
-function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
+function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex(), options = {}) {
   const q = String(question || '').toLowerCase().trim();
   if (!q) return null;
   const asksFee = /\b(biaya(?:nya)?|harga(?:nya)?|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|ukt|dpp|pendaftaran(?:nya)?|daftar(?:nya)?|registrasi(?:nya)?|rincian\s+biaya|biaya\s+s1|s1|angsuran(?:nya)?|cicil(?:an(?:nya)?)?|dicicil|nyicil|pembayaran|tagihan|potongan(?:nya)?|diskon(?:nya)?|total(?:an)?|berapa)\b/.test(q);
@@ -1042,11 +1119,22 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
   const hasProgram = !!detectProgram(question);
   const hasWave = !!normalizeWave(question);
   const raw = String(question || '').trim();
+  const missingSlots = [...(!hasProgram ? ['program'] : []), ...(!hasWave ? ['wave'] : [])];
+  const clarificationMetadata = { outputType: 'CLARIFICATION', clarification: { domain: 'fee', missingSlots } };
+  if (options.__canonicalQueryUnderstanding?.constraints?.feeType === 'total_estimate' && missingSlots.length) {
+    return { ...clarificationMetadata,
+      answer: 'Untuk menghitung total pembayaran, sebutkan ' + missingSlots.map(slot => slot === 'program' ? 'prodi atau program' : 'gelombang pendaftaran').join(' dan ') + ' yang dimaksud. Perhitungan memerlukan rincian biaya yang sesuai.' };
+  }
+  if (options.__canonicalQueryUnderstanding?.constraints?.feeType === 'ukt' && !hasProgram) {
+    return { outputType: 'CLARIFICATION', clarification: { domain: 'fee', missingSlots: ['program'] },
+      answer: 'Untuk biaya pendidikan per semester, prodi atau program mana yang kakak maksud?' };
+  }
   const asksOnlyFee = /^(ada\s+biaya|biaya|biaya\s+kuliah|biaya\s+s1|rincian\s+biaya\s*(?:[1-4]|i{1,3}|iv)?\s*[a-c]?)\??$/i.test(raw);
   const asksFeeComponents = /\b(biaya\s+(?:apa\s+aja|apa\s+saja|yang\s+dibayar|masuk)|bayar\s+apa\s+aja|komponen\s+biaya)\b/i.test(raw);
 
   if (/\b(cicil(?:an(?:nya)?)?|dicicil|nyicil|angsuran(?:nya)?|skema\s+pembayaran|pembayaran\s+bertahap|bertahap)\b/.test(q)) {
     return {
+      ...(missingSlots.length ? clarificationMetadata : {}),
       answer: [
         'Untuk skema cicilan/pembayaran, data yang tersedia menunjukkan biaya dapat memiliki ketentuan pembayaran bertahap, tetapi detail finalnya perlu mengikuti ketentuan PMB/keuangan.',
         '',
@@ -1057,6 +1145,7 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
 
   if (/\b(potongan(?:nya)?|diskon(?:nya)?|discount)\b/.test(q) && !hasProgram) {
     return {
+      ...clarificationMetadata,
       answer: [
         'Potongan biaya bergantung pada prodi, gelombang pendaftaran, dan komponen biaya yang dimaksud.',
         '',
@@ -1064,8 +1153,9 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
       ].join('\n')
     };
   }
-  if (/\buang\s+pangkal(?:nya)?\b/.test(q)) {
+  if (/\buang\s+pangkal(?:nya)?\b/.test(q) && missingSlots.length) {
     return {
+      ...clarificationMetadata,
       answer: [
         'Di data PMB, istilah yang paling dekat dengan uang pangkal adalah DPP/biaya awal masuk.',
         '',
@@ -1076,6 +1166,7 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
 
   if (/\btotal\s+biaya(?:\s+kuliah)?\b/.test(q) && !hasProgram) {
     return {
+      ...clarificationMetadata,
       answer: [
         'Total biaya kuliah tergantung prodi, gelombang pendaftaran, dan komponen yang ingin dihitung.',
         '',
@@ -1087,6 +1178,7 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
   }
   if (hasWave && !hasProgram) {
     return {
+      ...clarificationMetadata,
       answer: [
         'Bisa, Kak. Untuk menghitung rincian biaya berdasarkan gelombang, saya perlu tahu prodi yang kakak maksud dulu.',
         '',
@@ -1135,6 +1227,7 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex()) {
 
   if ((asksOnlyFee || asksFeeComponents) && !hasProgram) {
     return {
+      ...clarificationMetadata,
       answer: [
         'Ada biaya pendaftaran, biaya awal masuk/DPP, dan biaya pendidikan per semester. Namun untuk angka yang tepat, saya perlu tahu prodi dan gelombangnya dulu.',
         '',
@@ -1358,6 +1451,11 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
       };
     }
 
+    const canonicalFee = options.__canonicalQueryUnderstanding;
+    if (canonicalFee?.intent?.primary === 'ask_fee' && canonicalFee?.constraints?.feeType === 'ukt'
+      && !canonicalFee.entities?.programs?.length && !canonicalFee.constraints?.academicLevel) {
+      return tryGeneralFeeQuestionAnswer(question, index, options);
+    }
     const available = profiles
       .filter((p) => Number.isFinite(p.semester))
       .sort((a, b) => {
@@ -1382,6 +1480,8 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
 
   if (wantsFullDetail && (!found || !found.program || !found.profile)) {
     return {
+      outputType: 'CLARIFICATION',
+      clarification: { domain: 'fee', missingSlots: ['program'] },
       answer: [
         'Bisa, Kak. Untuk rincian biaya lengkap, saya perlu tahu dulu prodi/program yang kakak maksud.',
         '',
@@ -1718,7 +1818,11 @@ function tryDualDegreeAnswer(question) {
   const hasInternationalProgramSignal = /\b(program\s+internasional|kelas\s+internasional|international\s+(?:program|class)|study\s+abroad|student\s+exchange|pertukaran\s+mahasiswa)\b/.test(q);
   const hasPartnerSignal = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help)\b/.test(q);
   const asksPartnerProgram = /\b(jurusan|prodi|program\s+studi|padanan|pasangan|sisi|sisi\s+stikom|di\s+stikom|stikom\s+bali|di\s+sana|disana|mitra|partner|ambil|mengambil|diambil|yang\s+diambil|harus\s+diambil)\b/.test(q);
-  if (!hasDoubleDegreeSignal && !hasInternationalProgramSignal && !(hasPartnerSignal && asksPartnerProgram)) return null;
+  const hasGenericPartnerRelation = (
+    /\b(?:partner(?:nya)?|mitra(?:nya)?|kampus\s+partner(?:nya)?|partner\s+kampus(?:nya)?|universitas\s+(?:mitra|partner)|mitra\s+kampus(?:nya)?)\b/i.test(q)
+    && /\b(?:siapa|apa|mana|yang\s+mana|dimana|di\s*mana|list|daftar|ada\s+apa|apa\s+saja)\b/i.test(q)
+  ) || /\b(?:(?:bekerja\s*sama|kerja\s*sama|kerjasama)?\s*dengan\s+universitas\s+mana)\b/i.test(q);
+  if (!hasDoubleDegreeSignal && !hasInternationalProgramSignal && !(hasPartnerSignal && asksPartnerProgram) && !hasGenericPartnerRelation) return null;
   const asksInternational = hasInternationalProgramSignal || /\b(internasional|international|luar\s+negeri|dnui|help|china|malaysia)\b/.test(q);
   const asksNational = /\b(nasional|national|utb|bandung)\b/.test(q);
   const asksUtbPair = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(padanan|pasangan|sisi|sisi\s+stikom|di\s+stikom|stikom\s+bali|ambil|mengambil|diambil|yang\s+diambil|harus\s+diambil|jurusan\s+apa\s+dan\s+jurusan\s+apa)\b/.test(q);

@@ -14,6 +14,7 @@ const extractStructuredEntities = _ragEngine.extractStructuredEntities;
 const { querySemanticRag, verifyOutboundSemanticRelevance } = require('../engine/semanticRagEngine');
 const { buildCanonicalQueryUnderstanding } = require('../engine/queryUnderstanding');
 const { tryDualDegreeAnswer } = require('../engine/feeComparisonEngine');
+const { resolveContextualFeeTotal } = require('../engine/contextualFeeTotal');
 const {
   resolveAdmissionScheduleEvidence: resolveProviderAdmissionScheduleEvidence,
   formatAdmissionScheduleOverviewMessage: formatProviderAdmissionScheduleOverviewMessage,
@@ -10040,6 +10041,20 @@ module.exports = function (provider) {
         }
       } catch (e) {
         logger.warn({ err: e && e.message ? e.message : String(e), chatId }, '[Provider] Pending scholarship early handoff failed');
+      }
+
+      const contextualTotal = resolveContextualFeeTotal(text, sessionData || {}, () => _ragEngine.loadIndex());
+      if (contextualTotal) {
+        await sendBotMessage(chatId, contextualTotal.answer, {
+          source: contextualTotal.source,
+          outputType: contextualTotal.outputType,
+          clarification: contextualTotal.clarification,
+          semanticContract: contextualTotal.semanticContract,
+          answerProvenance: contextualTotal.answerProvenance,
+          calculationScope: contextualTotal.calculationScope
+        });
+        return res.send({ ok: true, source: contextualTotal.source, outputType: contextualTotal.outputType,
+          semanticContract: contextualTotal.semanticContract, calculation: contextualTotal.debug });
       }
 
       // Semantic-first RAG mode:
