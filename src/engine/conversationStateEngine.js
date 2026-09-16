@@ -1004,12 +1004,13 @@ function buildTurnConversationState(priorSessionOrState, turnData = {}, options 
   const priorState = normalizeConversationState(priorSessionOrState, now);
   const isFresh = isConversationStateFresh(priorState, now, options.maxAgeMs);
 
-  const result = (turnData.result && typeof turnData.result === 'object') ? turnData.result : null;
-  const meta = (turnData.meta && typeof turnData.meta === 'object') ? turnData.meta : {};
+  const safeTurn = (turnData && typeof turnData === 'object') ? turnData : {};
+  const result = (safeTurn.result && typeof safeTurn.result === 'object') ? safeTurn.result : null;
+  const meta = (safeTurn.meta && typeof safeTurn.meta === 'object') ? safeTurn.meta : {};
   const debug = (result && result.debug && typeof result.debug === 'object') ? result.debug : {};
-  const userQuery = String(turnData.userQuery || turnData.text || meta.userQuery || meta.rawText || '').trim();
-  const outboundText = String(turnData.outboundText || result?.answer || meta.answer || '').trim();
-  const source = String(turnData.source || result?.source || meta.source || '').trim();
+  const userQuery = String(safeTurn.userQuery || safeTurn.text || meta.userQuery || meta.rawText || '').trim();
+  const outboundText = String(safeTurn.outboundText || result?.answer || meta.answer || '').trim();
+  const source = String(safeTurn.source || result?.source || meta.source || '').trim();
 
   // 1. Structured result metadata (Highest Priority)
   const directState = turnData.conversationState || meta.conversationState || debug.conversationState;
@@ -1077,8 +1078,22 @@ function buildTurnConversationState(priorSessionOrState, turnData = {}, options 
   }
 
   // Resolve activeEntity
+  // Resolve activeEntity
+  const candidatePrograms = (contract && Array.isArray(contract.entities) ? contract.entities : [])
+    .concat(understanding && understanding.entities && Array.isArray(understanding.entities.programs) ? understanding.entities.programs : [])
+    .filter(e => {
+      const g = String(e && e.group || '');
+      const t = String(e && e.type || '');
+      return g !== 'academicScopes' && t !== 'academic_level' && t !== 'academic_scope';
+    });
+  const distinctProgramNames = Array.from(new Set(candidatePrograms.map(e => String(e && (e.canonical || e.name || e) || '').trim().toLowerCase()).filter(Boolean)));
+  const isComparisonQuery = /\b(?:beda|bedanya|perbedaan|vs|versus|atau|bandingkan|perbandingan|antara)\b/i.test(userQuery || '');
+  const isMultiEntityTurn = distinctProgramNames.length > 1 || (distinctProgramNames.length >= 2 && isComparisonQuery);
+
   let activeEntity = null;
-  if (directState && directState.activeEntity) {
+  if (isMultiEntityTurn) {
+    activeEntity = null;
+  } else if (directState && directState.activeEntity) {
     activeEntity = directState.activeEntity;
   } else if (contextRepair && contextRepair.activeEntity) {
     activeEntity = contextRepair.activeEntity;

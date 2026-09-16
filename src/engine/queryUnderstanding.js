@@ -785,9 +785,9 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const interestProfiles = typeof resolveCanonicalInterestProfiles === 'function' ? resolveCanonicalInterestProfiles(q) : [];
   const hasCampusCount = asksCount && /\b(?:kampus(?:nya)?|lokasi(?:nya)?|cabang)\b/i.test(q) && !hasPhysicalAttribute && !/\b(?:ukm|ormawa|organisasi|unit\s+kegiatan\s+mahasiswa|kegiatan\s+mahasiswa|himaprodi|hima|himpunan\s+mahasiswa|biaya|ukt|dpp|sks|semester|beasiswa|prodi|program\s+studi|jurusan)\b/i.test(q);
   const hasOrganization = /\b(?:ormawa|ukm|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi\s+kampus|kegiatan\s+mahasiswa|himaprodi|hima|himpunan\s+mahasiswa|kelompok\s+mahasiswa|komunitas\s+mahasiswa|ekskul|klub)\b/i.test(q)
-    || (/\borganisasi\b/i.test(q) && /\b(?:ikut|mengikuti|gabung|bergabung|join|masuk|daftar|mendaftar|tersedia|ada\s+apa|apa\s+saja|apa\s+aja)\b/i.test(q))
-    || (organizationCategory && /\b(?:organisasi|komunitas|unit\s+kegiatan|kegiatan|kelompok|ekskul|klub)\b/i.test(q) && /\b(?:minat|suka|hobi|hobby|tertarik|ikut|mengikuti|buat|untuk|ada|tersedia)\b/i.test(q))
-    || (interestProfiles.length > 0 && /\b(?:ikutan|gabung|daftar|klub|ekskul|komunitas|kegiatan)\b/i.test(q));
+    || (/\borganisasi(?:nya)?\b/i.test(q) && /\b(?:ikut|ikutan|mengikuti|gabung|bergabung|join|masuk|daftar|mendaftar|tersedia|ada\s+apa|ada\s+ngga(?:k)?|ada\s+tidak|ada|apa\s+saja|apa\s+aja)\b/i.test(q))
+    || (organizationCategory && /\b(?:organisasi(?:nya)?|komunitas|unit\s+kegiatan|kegiatan|kelompok|ekskul|klub)\b/i.test(q) && /\b(?:minat|suka|hobi|hobby|tertarik|ikut|mengikuti|buat|untuk|ada|tersedia)\b/i.test(q))
+    || (interestProfiles.length > 0 && /\b(?:ikut|ikutan|mengikuti|gabung|bergabung|daftar|mendaftar|klub|ekskul|komunitas|organisasi(?:nya)?|ukm(?:nya)?|wadah|kegiatan)\b/i.test(q));
   const hasStudentSupport = !/\bbeasiswa\b/i.test(q)
     && /\b(?:lomba|kompetisi|prestasi|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|kemahasiswaan|minat\s+dan\s+bakat|minat|ormawa|ukm)\b/i.test(q)
     && /\b(?:dukung|mendukung|dukungan|bantu|membantu|fasilitasi|fasilitas|ikut|mengikuti|ada|tersedia|program)\b/i.test(q);
@@ -1081,7 +1081,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_organization_count';
     primaryDomain = 'student_organization';
     answerExpectation = 'count';
-  } else if (hasOrganization && organizationCategory) {
+  } else if (hasOrganization && (organizationCategory || (interestProfiles.length > 0) || /\b(?:suka|hobi|minat|tertarik|ikut|ikutan|gabung|wadah)\b/i.test(q))) {
     primaryIntent = 'ask_organization_profile';
     primaryDomain = 'student_organization';
     answerExpectation = 'availability_or_category';

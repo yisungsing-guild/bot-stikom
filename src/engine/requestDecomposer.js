@@ -85,6 +85,18 @@ function detectDistributedPredicate(rawText) {
   const match = text.match(distRe);
   if (!match) return null;
 
+  const clause1 = match[1].trim();
+  const clause2 = match[3].trim();
+
+  // If clause1 has a terminal question word before the conjunction (e.g. "akreditasi SI apa dan ...", "biaya TI berapa dan ...")
+  // or clause2 contains its own explicit predicate/interrogative, this is NOT a distributed predicate!
+  const hasTerminalInterrogative1 = /\b(?:apa(?:kah)?|berapa(?:an)?|gimana|bagaimana)\b[?.!]?$/i.test(clause1);
+  const clause2HasDistinctPredicate = /\b(?:biaya|uang\s+kuliah|spp|ukt|dpp|akreditasi|kurikulum|mata\s+kuliah|belajar\s+apa|prospek|peluang\s+kerja|lulusan|syarat|persyaratan|sks|konversi|rpl|beasiswa|kip|lab|laboratorium|fasilitas|perpustakaan|ukm|ormawa|kuota|daya\s+tampung|jadwal|daftar|pendaftaran)\b/i.test(clause2);
+
+  if (hasTerminalInterrogative1 || (clause2HasDistinctPredicate && hasInterrogativePredicate(clause2))) {
+    return null;
+  }
+
   const hasMasingMasing = /\bmasing[\s-]*masing\b/i.test(text);
   const entities = matchCanonicalEntities(text);
   const academicEntities = entities.filter(e => e.family === 'academic_program' || e.type === 'program');
@@ -315,8 +327,9 @@ function buildResolvedSubrequests(clauses, fullText, connector) {
 
     // Coordinate predicate inheritance: ONLY for coordinate entity clauses like "Akreditasi SI dan Bisnis Digital masing-masing apa?"
     const clauseExplicitEntities = matchCanonicalEntities(clauseText);
-    const hasOnlyEntity = clauseExplicitEntities.length === 1 && !hasInterrogativePredicate(clauseText) && !/\b(?:ada|apakah|bisa|fasilitas|lab|ukm|biaya|syarat|prospek|kuota|diskon)\b/i.test(clauseText);
-    const isCoordinateEntityClause = (/\b(?:masing-masing|kedua|keduanya)\b/i.test(clauseText) && clauseExplicitEntities.length > 0) || hasOnlyEntity;
+    const hasExplicitPredicate = /\b(?:biaya|uang\s+kuliah|spp|ukt|dpp|pendaftaran|daftar|akreditasi|kurikulum|mata\s+kuliah|belajar|prospek|peluang\s+kerja|lulusan|syarat|persyaratan|sks|konversi|rpl|beasiswa|kip|lab|laboratorium|fasilitas|perpustakaan|ukm|ormawa|kuota|daya\s+tampung|jadwal|bayar|pembayaran)\b/i.test(clauseText);
+    const hasOnlyEntity = clauseExplicitEntities.length === 1 && !hasInterrogativePredicate(clauseText) && !hasExplicitPredicate && !/\b(?:ada|apakah|bisa|fasilitas|lab|ukm|biaya|syarat|prospek|kuota|diskon)\b/i.test(clauseText);
+    const isCoordinateEntityClause = (/\b(?:masing-masing|kedua|keduanya)\b/i.test(clauseText) && clauseExplicitEntities.length > 0 && !hasExplicitPredicate) || hasOnlyEntity;
     const clause0PredicateMatch = clauses[0].match(/^(akreditasi|biaya\s+kuliah|prospek\s+kerja)\b/i);
     if (i > 0 && isCoordinateEntityClause && clause0PredicateMatch && !new RegExp(`\\b${clause0PredicateMatch[1]}\\b`, 'i').test(resolvedText)) {
       resolvedText = `${clause0PredicateMatch[1]} ${resolvedText}`;

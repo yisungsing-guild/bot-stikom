@@ -292,19 +292,20 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
   }
   if (isNoDataAnswer(text)) return { ok: true, reason: 'explicit_no_data' };
   const combined = text + '\n' + toArray(evidence).map(item => String(item && (item.text || item.chunk || item.content) || '')).join('\n');
+  const reqFields = Array.isArray(contract.requestedFields) ? contract.requestedFields : [];
   const family = String(contract.constraints && contract.constraints.entityFamily || '').toLowerCase();
-  if ((family === 'campus' || contract.requestedFields.includes('campusCount')) && contract.requestType === 'count' && !hasCompatibleCampusCountEvidence(combined)) {
+  if ((family === 'campus' || reqFields.includes('campusCount')) && contract.requestType === 'count' && !hasCompatibleCampusCountEvidence(combined)) {
     return { ok: false, reason: 'campus_count_evidence_mismatch' };
   }
   const curriculumTopic = contract.constraints && contract.constraints.curriculumTopic;
-  if (curriculumTopic && contract.requestedFields.includes('curriculumTopicPresence') && !hasTopicToken(combined, curriculumTopic)) {
+  if (curriculumTopic && reqFields.includes('curriculumTopicPresence') && !hasTopicToken(combined, curriculumTopic)) {
     return { ok: false, reason: 'curriculum_topic_not_evidenced', topic: curriculumTopic.label || curriculumTopic.key };
   }
   const organizationCategory = contract.constraints && contract.constraints.organizationCategory;
-  if (organizationCategory && contract.requestedFields.includes('organizationCategory') && !hasOrganizationCategoryEvidence(combined, organizationCategory)) {
+  if (organizationCategory && reqFields.includes('organizationCategory') && !hasOrganizationCategoryEvidence(combined, organizationCategory)) {
     return { ok: false, reason: 'organization_category_not_evidenced', category: organizationCategory.label || organizationCategory.key };
   }
-  if (contract.domain === 'scholarship' && contract.requestedFields.includes('scholarshipList') && !/\b(?:beasiswa\s+kip|1k1s|skss|beasiswa\s+prestasi|beasiswa\s+yayasan)\b/i.test(combined)) {
+  if (contract.domain === 'scholarship' && reqFields.includes('scholarshipList') && !/\b(?:beasiswa\s+kip|1k1s|skss|beasiswa\s+prestasi|beasiswa\s+yayasan)\b/i.test(combined)) {
     return { ok: false, reason: 'scholarship_catalogue_not_evidenced' };
   }
   const isGeneralDomain = contract.domain === 'general' && contract.intent === 'ask_general';
@@ -316,7 +317,17 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
       && entity.type !== 'academic_scope'
     ));
     const missingEntities = answerBearingEntities.filter(entity => !hasEntity(combined, entity) && !isRedundantContainedEntity(entity, answerBearingEntities, combined));
-    if (missingEntities.length) return { ok: false, reason: 'missing_contract_entity', missingEntities: missingEntities.map(e => e.canonical) };
+    if (missingEntities.length) {
+      const supportedCount = answerBearingEntities.length - missingEntities.length;
+      return {
+        ok: false,
+        reason: 'missing_contract_entity',
+        missingEntities: missingEntities.map(e => e.canonical),
+        partialCoverage: supportedCount > 0,
+        supportedCount,
+        totalEntityCount: answerBearingEntities.length
+      };
+    }
   }
   const contractScope = String((contract.constraints && (contract.constraints.programScope || contract.constraints.geographicScope)) || '').toLowerCase();
   const registrationApplicationAnswerSatisfiesAudienceScope = contract.domain === 'registration'
