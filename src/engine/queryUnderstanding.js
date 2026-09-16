@@ -782,10 +782,12 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const organizationCategory = detectOrganizationCategory(String(rawQuery || '') + ' ' + qRaw + ' ' + q);
   const curriculumTopic = detectCurriculumTopic(String(rawQuery || '') + ' ' + qRaw + ' ' + q);
   const scholarshipRequestSubtype = detectScholarshipRequestSubtype(q);
+  const interestProfiles = typeof resolveCanonicalInterestProfiles === 'function' ? resolveCanonicalInterestProfiles(q) : [];
   const hasCampusCount = asksCount && /\b(?:kampus(?:nya)?|lokasi(?:nya)?|cabang)\b/i.test(q) && !hasPhysicalAttribute && !/\b(?:ukm|ormawa|organisasi|unit\s+kegiatan\s+mahasiswa|kegiatan\s+mahasiswa|himaprodi|hima|himpunan\s+mahasiswa|biaya|ukt|dpp|sks|semester|beasiswa|prodi|program\s+studi|jurusan)\b/i.test(q);
-  const hasOrganization = /\b(?:ormawa|ukm|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi\s+kampus|kegiatan\s+mahasiswa|himaprodi|hima|himpunan\s+mahasiswa|kelompok\s+mahasiswa|komunitas\s+mahasiswa)\b/i.test(q)
+  const hasOrganization = /\b(?:ormawa|ukm|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi\s+kampus|kegiatan\s+mahasiswa|himaprodi|hima|himpunan\s+mahasiswa|kelompok\s+mahasiswa|komunitas\s+mahasiswa|ekskul|klub)\b/i.test(q)
     || (/\borganisasi\b/i.test(q) && /\b(?:ikut|mengikuti|gabung|bergabung|join|masuk|daftar|mendaftar|tersedia|ada\s+apa|apa\s+saja|apa\s+aja)\b/i.test(q))
-    || (organizationCategory && /\b(?:organisasi|komunitas|unit\s+kegiatan|kegiatan|kelompok)\b/i.test(q) && /\b(?:minat|suka|hobi|hobby|tertarik|ikut|mengikuti|buat|untuk|ada|tersedia)\b/i.test(q));
+    || (organizationCategory && /\b(?:organisasi|komunitas|unit\s+kegiatan|kegiatan|kelompok|ekskul|klub)\b/i.test(q) && /\b(?:minat|suka|hobi|hobby|tertarik|ikut|mengikuti|buat|untuk|ada|tersedia)\b/i.test(q))
+    || (interestProfiles.length > 0 && /\b(?:ikutan|gabung|daftar|klub|ekskul|komunitas|kegiatan)\b/i.test(q));
   const hasStudentSupport = !/\bbeasiswa\b/i.test(q)
     && /\b(?:lomba|kompetisi|prestasi|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|kemahasiswaan|minat\s+dan\s+bakat|minat|ormawa|ukm)\b/i.test(q)
     && /\b(?:dukung|mendukung|dukungan|bantu|membantu|fasilitasi|fasilitas|ikut|mengikuti|ada|tersedia|program)\b/i.test(q);

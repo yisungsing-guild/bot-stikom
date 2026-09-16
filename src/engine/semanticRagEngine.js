@@ -60,6 +60,8 @@ const {
   mmrDiversifyContexts,
   processEvidence
 } = require('./ragTechniquePipeline');
+const { decomposeSemanticRequests } = require('./requestDecomposer');
+const { composeMultiAnswer } = require('./multiAnswerComposer');
 
 function envFlag(name, defaultValue = false) {
   const raw = process.env[name];
@@ -7810,7 +7812,7 @@ function buildInternationalCanonicalAnswer(question) {
       }
       return answer('GCCP atau Global Cross Cultural Program adalah program yang memiliki kegiatan outbound dan inbound, interaksi dengan mahasiswa internasional, kegiatan akademik, kegiatan budaya, komunikasi global, dan teamwork.');
     }
-    if (has(/\b(?:negara|china|thailand|malaysia|filipina|philippines)\b/i)) return answer('Program Student Exchange tersedia ke negara mitra seperti China, Thailand, Malaysia, dan Filipina/Philippines. Negara tujuan dapat berubah sesuai kerja sama internasional yang aktif.');
+    if (has(/\b(?:negara|china|thailand|malaysia|filipina|philippines|kemana|ke\s+mana)\b/i)) return answer('Program Student Exchange tersedia ke negara mitra seperti China, Thailand, Malaysia, dan Filipina/Philippines. Negara tujuan dapat berubah sesuai kerja sama internasional yang aktif.');
     if (has(/\b(?:syarat|persyaratan|ipk|bahasa inggris|seleksi(?:nya)?|wawancara|mahasiswa aktif|perlu apa|butuh apa|dokumen)\b/i)) return answer('Syarat umum Student Exchange mencakup mahasiswa aktif ITB STIKOM Bali, memenuhi ketentuan IPK, memiliki kemampuan bahasa asing/Bahasa Inggris, serta mengikuti seleksi administrasi dan wawancara jika diminta.');
     if (has(/\b(?:informasi|mendaftar|pendaftaran|di mana|dimana|media sosial|pengumuman|direktorat)\b/i)) return answer('Informasi dan pendaftaran Student Exchange dapat diperoleh melalui Direktorat Urusan Internasional ITB STIKOM Bali, media sosial resmi kampus, atau pengumuman internal kampus.');
     if (has(/\b(?:tujuan|manfaat(?:nya)?|keuntungan|benefit(?:nya)?|dapat\s+apa|lingkungan internasional|bahasa asing|wawasan global|lintas budaya|jaringan|percaya diri|mandiri|karier)\b/i)) return answer('Student Exchange memberi pengalaman belajar di lingkungan internasional, meningkatkan kemampuan bahasa asing, wawasan global, pengalaman lintas budaya, kepercayaan diri, kemandirian, jaringan internasional, dan nilai tambah untuk karier.');
@@ -7921,7 +7923,7 @@ function buildSourceGroundedRequestedFieldAnswer(question, canonical, indexForQu
     if (hiThink && hiThink.answer) return hiThink;
   }
 
-  if ((!hasSpecificProgramEntity || hasExplicitCareerCenterMention) && (fields.has('careerSupport') || domain === 'career' || intent === 'ask_career_service')) {
+  if (!/\b(?:hi\s*-?\s*think|hithink)\b/i.test(question) && (!hasSpecificProgramEntity || hasExplicitCareerCenterMention) && (fields.has('careerSupport') || domain === 'career' || intent === 'ask_career_service')) {
     if (/\b(?:inkubator(?:\s+bisnis)?|incubator(?:\s+bisnis)?|inbis)\b/i.test(question)) {
       const answer = 'Ya, ITB STIKOM Bali memiliki fasilitas Inkubator Bisnis (INBIS) dan Career Center untuk mendukung mahasiswa:\n- Inkubator Bisnis (INBIS): Memfasilitasi inkubasi bisnis, pendampingan kewirausahaan, serta pengembangan startup dan ide bisnis mahasiswa.\n- Career Center (Pusat Karier): Memfasilitasi persiapan kerja, info lowongan & magang, bursa kerja (Campus Hiring & Job Fair), pelatihan karier, dan jejaring alumni.';
       return {
@@ -10287,7 +10289,13 @@ function resolveOfficialUkmForInterest(profile, indexForQuery) {
     }, 0);
     const canonicalEntry = findCanonicalEntity(name);
     const officialName = canonicalEntry && canonicalEntry.family === 'student_organization' ? canonicalEntry.canonical : name;
-    candidates.push({ name: officialName, matchedTerms, score, evidence: evidence.slice(0, 3) });
+    const nameMatchesProfile = profile.terms.some(term => {
+      const termNorm = normalizeFacilityTerm(term);
+      return normalizeFacilityTerm(officialName).includes(termNorm)
+        || aliases.some(a => normalizeFacilityTerm(a).includes(termNorm));
+    });
+    const finalScore = score + (nameMatchesProfile ? 15 : 0);
+    candidates.push({ name: officialName, matchedTerms, score: finalScore, evidence: evidence.slice(0, 3) });
   }
 
   candidates.sort((a, b) => b.score - a.score || b.matchedTerms.length - a.matchedTerms.length || a.name.localeCompare(b.name));
@@ -10314,7 +10322,7 @@ function tryUkmInterestRecommendation(question, options = {}) {
     ? canonicalProfiles.map(item => CANONICAL_INTEREST_PROFILES.find(profile => profile.key === item.key)).filter(Boolean)
     : resolveCanonicalInterestProfiles(q).map(item => CANONICAL_INTEREST_PROFILES.find(profile => profile.key === item.key)).filter(Boolean);
   const hasUkmContext = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan|kelompok\s+mahasiswa|relawan|komunitas|klub|ekskul)\b/i.test(q + ' ' + recent);
-  const asksUkm = /\b(ukm(?:nya)?|ormawa(?:nya)?|organisasi|unit\s+kegiatan|komunitas|himpunan|hima|kelompok\s+mahasiswa|relawan)\b/i.test(q) || hasUkmContext;
+  const asksUkm = /\b(ukm(?:nya)?|ormawa(?:nya)?|organisasi|unit\s+kegiatan|komunitas|himpunan|hima|kelompok\s+mahasiswa|relawan|klub|ekskul)\b/i.test(q) || hasUkmContext;
   const asksRecommendation = /\b(cocok|rekomendasi|saran|pilih|ikut|gabung|masuk|hobi|suka|minat|ada|apa|mana|nama|bidang|kategori|jenis)\b/i.test(q);
   if (!asksUkm || !asksRecommendation) return null;
   const hasDescriptiveInterestRequest = isDescriptiveOrganizationInterestRequest(q);
@@ -10359,10 +10367,10 @@ function tryUkmInterestRecommendation(question, options = {}) {
       '',
       unique.map(item => '- ' + item.candidate.name + ' (' + item.profile.label + ')').join('\n'),
       '',
-      'Identitas organisasi diambil dari daftar resmi dan kecocokannya diperiksa terhadap deskripsi kegiatan pada evidence.'
+      'Informasi organisasi diambil dari data resmi kampus ITB STIKOM Bali.'
     ].join('\n'),
     ...(evidenceResolvedContract ? { semanticContract: evidenceResolvedContract } : {}),
-    source: 'semantic-rag-ukm-interest-evidence',
+    source: 'semantic-rag-ukm-list',
     frameSource: 'semantic-rag-ukm-list',
     contexts: unique.flatMap(item => item.candidate.evidence).map(item => ({ source: item.filename, text: item.chunk })).slice(0, 6),
     debug: {
@@ -13562,7 +13570,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   // Universal raw-leak + training artifact guard — applies to ALL routes including training-specific
   const rawArtifactDetected = result.answer && (hasRawEvidenceSnippetShape(result.answer) || hasTrainingMetadataArtifact(result.answer));
   const trustedStructuredRawBypass = rawArtifactDetected
-    && /^(?:semantic-rag-(?:registration-fee|fee-detail|fee-discount|scholarship|academic-source|academic-policy|academic-credit|institution-history|institution-document|international-topic-composer|campus-support-entity|campus-facility|program-comparison|program-curriculum|program-definition|pmb-info|program-list|program-list-contextual|program-scope-clarification-choice|ukm-(?:list|count|specific))|rag-accreditation)$/i.test(String(source || ''))
+    && /^(?:semantic-rag-(?:registration-fee|fee-detail|fee-discount|scholarship|academic-source|academic-policy|academic-credit|institution-history|institution-document|international-topic-composer|campus-support-entity|campus-facility|program-comparison|program-curriculum|program-definition|pmb-info|program-list|program-list-contextual|program-scope-clarification-choice|ukm-(?:list|count|specific|interest-evidence))|rag-accreditation)$/i.test(String(source || ''))
     && !hasTrainingMetadataArtifact(result.answer)
     && !/\b(?:SOURCE_CHUNKS|Sheet:|chunkId|trainingId|metadata|filename|sourceFile|MENIMBANG\s*:|MENGINGAT\s*:|MEMUTUSKAN\s*:|SURAT\s+KEPUTUSAN\s+REKTOR|Teks\s+hasil\s+OCR|\[Tabel\s*\d+\]|\[Gambar\s*\d+\])\b/i.test(String(result.answer || ''));
   const trustedUnknownOrganizationFallbackBypass = rawArtifactDetected
@@ -16325,9 +16333,100 @@ function normalizeSemanticQueryOptions(options = {}) {
   }
   if (Object.keys(sessionData).length) normalized.sessionData = sessionData;
   return normalized;
-}async function querySemanticRag(question, options = {}) {
+}
+
+async function executeCompoundRequests(originalQuestion, decomp, options = {}) {
+  const basePriorState = options.sessionState
+    || options.sessionData
+    || options.session
+    || (options.sessionData && options.sessionData.sessionState)
+    || null;
+
+  const subResults = [];
+
+  for (let i = 0; i < decomp.requests.length; i++) {
+    const sub = decomp.requests[i];
+    let subSessionState = basePriorState;
+
+    // Message-local compatible anchor inheritance:
+    // If subrequest has inheritedLocalAnchors and NO explicit entities of its own
+    if (Array.isArray(sub.inheritedLocalAnchors) && sub.inheritedLocalAnchors.length > 0 &&
+        (!Array.isArray(sub.explicitEntities) || sub.explicitEntities.length === 0)) {
+      const rawAnchor = sub.inheritedLocalAnchors[0];
+      const anchorCanonical = typeof rawAnchor === 'string' ? rawAnchor : (rawAnchor?.canonical || rawAnchor?.name || String(rawAnchor || ''));
+      const unwrapPrior = basePriorState && typeof basePriorState === 'object'
+        ? (basePriorState.sessionData || basePriorState.data || basePriorState.session || basePriorState)
+        : basePriorState;
+      subSessionState = {
+        ...(unwrapPrior && typeof unwrapPrior === 'object' ? unwrapPrior : {}),
+        activeEntity: {
+          canonical: anchorCanonical,
+          entityType: 'program',
+          source: 'message_local_anchor'
+        },
+        activeDomain: 'program',
+        verified: true,
+        status: 'active',
+        updatedAt: Date.now()
+      };
+    }
+
+    const subOptions = {
+      ...options,
+      __isSubRequest: true,
+      sessionState: subSessionState,
+      sessionData: subSessionState ? { ...(options.sessionData || {}), sessionState: subSessionState } : options.sessionData
+    };
+
+    try {
+      const result = await querySemanticRag(sub.text, subOptions);
+      subResults.push({
+        requestText: sub.text,
+        subRequest: sub,
+        answer: result?.answer || '',
+        source: result?.source || 'unknown',
+        success: result?.success !== false,
+        contexts: result?.contexts || result?.selectedEvidence || [],
+        debug: result?.debug || {},
+        semanticContract: result?.debug?.semanticContract || result?.debug?.canonicalContract || null,
+        result
+      });
+    } catch (err) {
+      logger.warn({ err: err?.message || String(err), subQuery: sub.text }, '[SemanticRag] Sub-request failed');
+      subResults.push({
+        requestText: sub.text,
+        subRequest: sub,
+        answer: 'Informasi untuk bagian ini belum tersedia dalam basis data resmi.',
+        source: 'semantic-rag-subrequest-error',
+        success: false,
+        contexts: [],
+        debug: {
+          answerabilityResult: { answerable: false }
+        },
+        semanticContract: null,
+        result: {
+          success: false,
+          answer: 'Informasi untuk bagian ini belum tersedia dalam basis data resmi.',
+          source: 'semantic-rag-subrequest-error'
+        }
+      });
+    }
+  }
+
+  // Compose multi-answer
+  return composeMultiAnswer(subResults, { originalQuestion });
+}
+
+async function querySemanticRag(question, options = {}) {
   options = normalizeSemanticQueryOptions(options);
   const originalQuestion = String(question || '').trim();
+
+  if (!options.__isSubRequest) {
+    const decomp = decomposeSemanticRequests(originalQuestion, options);
+    if (decomp && decomp.isCompound && Array.isArray(decomp.requests) && decomp.requests.length > 1) {
+      return await executeCompoundRequests(originalQuestion, decomp, options);
+    }
+  }
   const preStrictDocumentOnly = isStrictDocumentOnlyMode();
   const immediateProgramScopeChoice = preStrictDocumentOnly ? null : tryProgramScopeClarificationChoiceAnswer(originalQuestion, options);
   const immediateDoubleDegreeScopeFollowup = preStrictDocumentOnly ? null : tryDoubleDegreeFollowUpAnswer(originalQuestion, null, options);
@@ -16711,7 +16810,8 @@ function normalizeSemanticQueryOptions(options = {}) {
     || canonicalOrganizationHasCategoryOrList
     || (canonicalOrganizationIsKnownFamily && /ask_organization_(?:profile|vision_mission)/.test(canonicalOrganizationIntent))
   )) ? null : (
-    canonicalOrganizationProfileAnswer
+    (canonicalUnderstanding && canonicalUnderstanding.constraints && Array.isArray(canonicalUnderstanding.constraints.interestProfiles) && canonicalUnderstanding.constraints.interestProfiles.length > 0 ? tryUkmInterestRecommendation(question, { ...options, __canonicalQueryUnderstanding: canonicalUnderstanding }) : null)
+    || canonicalOrganizationProfileAnswer
     || tryBemAnswer(canonicalRoutingQuestion || routingQuestion || question)
     || tryBemAnswer(question)
     || tryUkmAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
@@ -17053,6 +17153,22 @@ function normalizeSemanticQueryOptions(options = {}) {
       debug: { routeStage: 'pre-guard-unsupported-policy', answerabilityResult: { answerable: false, reason: 'UNSUPPORTED_POLICY', missingEvidence: ['policy_document'] } }
     };
     return await finalizeSemanticResult(question, builtUnsupportedPolicy, resultCacheKey);
+  }
+
+  const quotaQuestionText = String(question || '');
+  const asksAdmissionQuota = /\b(?:kuota|daya\s+tampung)\b/i.test(quotaQuestionText)
+    || (/\bjumlah\s+(?:pasti\s+)?(?:mahasiswa\s+baru|maba|penerimaan)\b/i.test(quotaQuestionText) && /\b(?:berapa|target|pasti|penerimaan|kuota)\b/i.test(quotaQuestionText));
+  if (asksAdmissionQuota) {
+    const builtUnsupportedQuota = {
+      success: true,
+      answer: 'Informasi mengenai kuota atau daya tampung penerimaan mahasiswa baru belum ditemukan pada data resmi yang tersedia. Untuk kepastian kuota atau daya tampung terkini, silakan konfirmasi langsung ke Admin PMB ITB STIKOM Bali.',
+      source: 'semantic-rag-unsupported-quota-safe-fallback',
+      contexts: [],
+      confidenceScore: 0.45,
+      confidenceTier: 'LOW',
+      debug: { routeStage: 'pre-guard-unsupported-quota', answerabilityResult: { answerable: false, reason: 'UNSUPPORTED_ADMISSION_QUOTA', missingEvidence: ['admission_quota'] } }
+    };
+    return await finalizeSemanticResult(question, builtUnsupportedQuota, resultCacheKey);
   }
 
   const earlyUnsupportedDoubleDegreePartner = strictDocumentOnly || typeof tryUnsupportedDoubleDegreePartnerAnswer !== 'function'

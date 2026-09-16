@@ -95,7 +95,10 @@ const SLANG_REPLACEMENTS = {
   brapa: 'berapa',
   prtama: 'pertama',
   pertm: 'pertama',
-  mwnny: 'mau tanya'
+  mwnny: 'mau tanya',
+  biya: 'biaya',
+  pndaftaran: 'pendaftaran',
+  sistm: 'sistem'
 };
 
 const FILLER_TOKENS = new Set(['min', 'kak', 'bro', 'dong', 'nih', 'dah']);

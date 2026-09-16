@@ -1155,20 +1155,35 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex(), op
     };
   }
 
-  if (/\b(potongan(?:nya)?|diskon(?:nya)?|discount)\b/.test(q) && !hasProgram) {
-    const mentionsLunas = /\blunas\b/i.test(q);
-    const lunasText = mentionsLunas
-      ? 'Untuk pembayaran lunas, ketentuan potongan atau diskon biaya bergantung pada program studi, gelombang pendaftaran, dan skema pembayaran yang berlaku di PMB/keuangan.'
-      : 'Potongan biaya bergantung pada prodi, gelombang pendaftaran, dan komponen biaya yang dimaksud.';
-    return {
-      ...clarificationMetadata,
-      answer: [
-        lunasText,
-        '',
-        'Kalau kakak sebutkan prodi dan gelombangnya, misalnya "potongan TI Gelombang II" atau "rincian biaya SI Gelombang I B", saya bisa hitungkan dari data biaya yang tersedia.'
-      ].join('\n')
-    };
+  if (/\b(potongan(?:nya)?|diskon(?:nya)?|discount|bebas\s+(?:ukt|biaya|kuliah))\b/i.test(q)) {
+    // Structural check for specific unsupported factual claims (unsupported percentage, external condition, or non-official premise)
+    const hasSpecificClaim = /\b\d{1,3}\s*(?:%|persen)\b/i.test(q)
+      || /\b(?:kalau|jika|bila|untuk|bagi|pemilik|pemegang|punya|sertifikat|juara|lomba|kategori)\b/i.test(q);
+    const matchesOfficialScheme = /\b(?:gelombang|gel\b|prestasi|kip|yayasan|1k1s|lunas|kontan|jalur\s+khusus|tahap|pmb)\b/i.test(q);
+
+    if (hasSpecificClaim && !matchesOfficialScheme) {
+      return {
+        outputType: 'SAFE_NO_DATA',
+        source: 'semantic-rag-fee-unsupported-premise',
+        answer: 'Informasi mengenai ketentuan potongan atau diskon tersebut belum ditemukan pada data resmi yang tersedia. Ketentuan potongan biaya resmi di ITB STIKOM Bali mengikuti gelombang pendaftaran, program beasiswa resmi, atau kebijakan PMB yang berlaku.'
+      };
+    }
+    if (!hasProgram) {
+      const mentionsLunas = /\blunas\b/i.test(q);
+      const lunasText = mentionsLunas
+        ? 'Untuk pembayaran lunas, ketentuan potongan atau diskon biaya bergantung pada program studi, gelombang pendaftaran, dan skema pembayaran yang berlaku di PMB/keuangan.'
+        : 'Potongan biaya bergantung pada prodi, gelombang pendaftaran, dan komponen biaya yang dimaksud.';
+      return {
+        ...clarificationMetadata,
+        answer: [
+          lunasText,
+          '',
+          'Kalau kakak sebutkan prodi dan gelombangnya, misalnya "potongan TI Gelombang II" atau "rincian biaya SI Gelombang I B", saya bisa hitungkan dari data biaya yang tersedia.'
+        ].join('\n')
+      };
+    }
   }
+
   if (/\buang\s+pangkal(?:nya)?\b/.test(q) && missingSlots.length) {
     return {
       ...clarificationMetadata,
@@ -1278,10 +1293,10 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex(), op
 
 function isRegistrationFeeQuestion(question) {
   const q = String(question || '').toLowerCase();
-  if (/\b(cara|gimana|bagaimana|dimana|di\s*mana)\b.*\b(daftar|mendaftar|pendaftaran|registrasi)\b/.test(q)) return false;
+  if (/\b(cara|gimana|bagaimana|dimana|di\s*mana)\b.*\b(daftar|mendaftar|pendaftaran|registrasi)\b/.test(q) && !/\b(?:bayar|pembayaran|biaya|lewat)\b/i.test(q)) return false;
   if (/\b(rincian|detail)\b/.test(q)) return false;
   const hasRegistrationComponent = /\b(biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|pembayaran\s+pendaftaran|biaya\s+daftar|uang\s+daftar|bayar\s+daftar|pendaftaran(?:nya)?|daftar(?:nya)?|registrasi(?:nya)?)\b/.test(q);
-  const asksAmount = /\b(berapa|brapa|brp|biaya|harga|bayar|pembayaran|uang|rp|rupiah|nominal|mahal|murah|virtual\s+account|\bva\b|500\s*(?:k|ribu))\b/.test(q);
+  const asksAmount = /\b(berapa|brapa|brp|biaya|harga|bayar|pembayaran|uang|rp|rupiah|nominal|mahal|murah|virtual\s+account|\bva\b|500\s*(?:k|ribu)|lewat\s+(?:apa|mana)|metode)\b/.test(q);
   return hasRegistrationComponent && asksAmount;
 }
 function renderRegistrationDiscountLines(base, discounts) {
@@ -1298,11 +1313,11 @@ function renderRegistrationDiscountLines(base, discounts) {
 function tryRegistrationFeeAnswer(question, index = ragEngine.loadIndex()) {
   if (!isRegistrationFeeQuestion(question)) return null;
 
-  if (/\b(?:virtual\s+account|\bva\b)\b/i.test(question)) {
+  if (/\b(?:virtual\s+account|\bva\b|lewat\s+(?:apa|mana|bank)|metode\s+pembayaran|metode\s+bayar|cara\s+bayar|transfer\s+ke\s+mana)\b/i.test(question)) {
     return {
-      answer: 'Pembayaran biaya formulir pendaftaran PMB sebesar Rp 500.000 dapat dilakukan melalui Virtual Account (VA) berbagai bank mitra seperti BCA, BNI, Bank Mandiri, dan BRI sesuai petunjuk transaksi yang tertera pada akun PMB.',
+      answer: 'Pembayaran biaya formulir pendaftaran PMB sebesar Rp 500.000 dapat dilakukan melalui transfer atau Virtual Account (VA) bank mitra resmi seperti BCA, BNI, Bank Mandiri, dan BRI sesuai petunjuk transaksi yang tertera pada portal pendaftaran PMB.',
       source: 'semantic-rag-registration-fee',
-      contexts: [{ source: 'biaya_pendaftaran.json', text: 'Pembayaran formulir pendaftaran PMB 500.000 via virtual account bank BCA, BNI, Mandiri, BRI' }]
+      contexts: [{ source: 'biaya_pendaftaran.json', text: 'Pembayaran formulir pendaftaran PMB 500.000 via virtual account / transfer bank BCA, BNI, Mandiri, BRI' }]
     };
   }
 

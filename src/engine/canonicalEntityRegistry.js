@@ -245,7 +245,13 @@ const CANONICAL_ENTITIES = [
     canonical: 'UKM Tari PRAGINA',
     type: 'student_activity_unit',
     family: 'student_organization',
-    aliases: ['ukm tari pragina', 'tari pragina', 'pragina', 'ukm pragina', 'ukm tari', 'tari']
+    aliases: ['ukm tari pragina', 'tari pragina', 'pragina', 'ukm pragina', 'ukm tari', 'tari', 'tari bali']
+  },
+  {
+    canonical: 'UKM Tabuh (Bramara Gita)',
+    type: 'student_activity_unit',
+    family: 'student_organization',
+    aliases: ['ukm tabuh', 'tabuh', 'bramara gita', 'ukm bramara gita', 'gamelan', 'tabuh bali', 'seni tabuh', 'megambel']
   },
   {
     canonical: 'UKM Robotika (Robotics)',
@@ -290,6 +296,18 @@ const CANONICAL_ENTITIES = [
     type: 'facility',
     family: 'campus_facility',
     aliases: ['fasilitas parkir', 'parkir', 'parkiran', 'tempat parkir', 'lahan parkir', 'area parkir']
+  },
+  {
+    canonical: 'Inkubator Bisnis (INBIS)',
+    type: 'facility',
+    family: 'campus_facility',
+    aliases: ['inkubator bisnis', 'inbis', 'inbis bali', 'inkubator bisnis stikom bali', 'wadah inkubasi bisnis', 'inkubasi bisnis', 'startup', 'rintisan bisnis', 'wadah inkubasi']
+  },
+  {
+    canonical: 'Program Hi-Think (Magang Jepang)',
+    type: 'special_program',
+    family: 'campus_facility',
+    aliases: ['hi-think', 'hi think', 'hithink', 'program hi-think', 'magang jepang', 'program jepang', 'kerja di jepang']
   },
 
   // Campuses / Locations
@@ -492,7 +510,9 @@ const CANONICAL_INTEREST_PROFILES = [
   { key: 'nature', label: 'alam dan kegiatan luar ruang', terms: ['pecinta alam', 'kegiatan alam', 'alam bebas', 'luar ruang', 'outdoor', 'gunung', 'mendaki', 'hiking', 'camping', 'petualangan', 'konservasi lingkungan'] },
   { key: 'volunteer', label: 'kerelawanan dan kemanusiaan', terms: ['kepalangmerahan', 'palang merah', 'relawan', 'volunteer', 'kemanusiaan', 'sosial', 'kesehatan', 'medis'] },
   { key: 'choir', label: 'paduan suara dan olah vokal', terms: ['paduan suara', 'choir', 'olah vokal', 'vokal'] },
-  { key: 'arts', label: 'seni', terms: ['seni', 'sni', 'musik', 'band', 'nyanyi', 'tari', 'menari', 'tabuh', 'teater', 'drama', 'akting'] },
+  { key: 'dance', label: 'tari tradisional', terms: ['tari', 'menari', 'dance', 'dancer', 'tari bali', 'seni tari', 'pragina'] },
+  { key: 'gamelan', label: 'karawitan dan tabuh', terms: ['gamelan', 'tabuh', 'menabuh', 'karawitan', 'megambel', 'bramara gita'] },
+  { key: 'arts', label: 'seni', terms: ['seni', 'sni', 'musik', 'band', 'nyanyi', 'teater', 'drama', 'akting'] },
   { key: 'sports', label: 'olahraga', terms: ['olahraga', 'sport', 'atlet', 'futsal', 'basket', 'sepak bola'] },
   { key: 'technology', label: 'teknologi', terms: ['teknologi', 'komputer', 'coding', 'pemrograman', 'software', 'aplikasi', 'linux', 'open source', 'keamanan siber', 'jaringan', 'data science', 'artificial intelligence'] },
   { key: 'entrepreneurship', label: 'kewirausahaan', terms: ['wirausaha', 'kewirausahaan', 'entrepreneur', 'bisnis', 'startup', 'usaha'] },
