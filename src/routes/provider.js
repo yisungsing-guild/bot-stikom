@@ -13,6 +13,7 @@ const _ragEngine = require('../engine/ragEngine');
 const extractStructuredEntities = _ragEngine.extractStructuredEntities;
 const { querySemanticRag, verifyOutboundSemanticRelevance } = require('../engine/semanticRagEngine');
 const { buildCanonicalQueryUnderstanding } = require('../engine/queryUnderstanding');
+const { buildTurnConversationState } = require('../engine/conversationStateEngine');
 const { tryDualDegreeAnswer } = require('../engine/feeComparisonEngine');
 const { resolveContextualFeeTotal } = require('../engine/contextualFeeTotal');
 const {
@@ -8770,6 +8771,16 @@ module.exports = function (provider) {
           const semanticContractToPersist = metaPayload.semanticContract && typeof metaPayload.semanticContract === 'object'
             ? metaPayload.semanticContract
             : null;
+          const conversationStateToPersist = semanticContractToPersist
+            ? buildTurnConversationState(prevData, {
+                semanticContract: semanticContractToPersist,
+                conversationState: metaPayload.conversationState,
+                userQuery: semanticContractToPersist.raw,
+                outboundText,
+                source: metaPayload.source,
+                meta: metaPayload
+              })
+            : null;
           const newData = {
             ...prevData,
             composerLastSource: metaPayload.source || prevData.composerLastSource || null,
@@ -8778,6 +8789,8 @@ module.exports = function (provider) {
             composerTelemetry: composerTelemetryToSet,
             ...(semanticContractToPersist ? {
               lastSemanticContract: semanticContractToPersist,
+              lastSemanticContractUpdatedAt: nowIso,
+              conversationState: conversationStateToPersist,
               lastSemanticSource: metaPayload.source || prevData.lastSemanticSource || null
             } : {})
           };

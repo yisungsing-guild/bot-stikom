@@ -35,12 +35,10 @@ function precomputeContextTokens(ctx) {
   return ctx._mmrPrecomputed;
 }
 
-function termOverlapScoreFast(aTermsArray, bNormStr) {
+function termOverlapScoreFast(aTermsArray, bNormStr, bNormSet = null) {
   if (!Array.isArray(aTermsArray) || !bNormStr) return 0;
-  const hits = aTermsArray.filter((term) => {
-    const pattern = getCachedTermRegex(term);
-    return pattern.test(bNormStr);
-  }).length;
+  const searchableTerms = bNormSet instanceof Set ? bNormSet : new Set(bNormStr.split(/\s+/).filter(Boolean));
+  const hits = aTermsArray.filter((term) => searchableTerms.has(term)).length;
   return Math.min(1, hits / Math.max(1, Math.min(aTermsArray.length, 8)));
 }
 // ===========================================================================
@@ -407,8 +405,16 @@ function mmrDiversifyContexts(contexts, understanding, options = {}, metrics = n
   
   if (!list.length || topK <= 0) return [];
 
-  // ===== ROOT CAUSE OPTIMIZATION: Precompute tokens for all contexts =====
-  for (const ctx of list) {
+  const candidatePoolLimitRaw = Number(process.env.SEMANTIC_RAG_MMR_CANDIDATE_LIMIT || '64');
+  const candidatePoolLimit = Number.isFinite(candidatePoolLimitRaw) ? Math.max(16, candidatePoolLimitRaw) : 64;
+  const maxMmrTopKRaw = Number(process.env.SEMANTIC_RAG_MMR_MAX_TOP_K || '32');
+  const maxMmrTopK = Number.isFinite(maxMmrTopKRaw) ? Math.max(8, maxMmrTopKRaw) : 32;
+
+  const candidatePool = list.slice(0, candidatePoolLimit);
+  const effectiveTopK = Math.min(topK, candidatePool.length, maxMmrTopK);
+
+  // ===== ROOT CAUSE OPTIMIZATION: Precompute tokens for candidate pool contexts =====
+  for (const ctx of candidatePool) {
     precomputeContextTokens(ctx);
   }
   // =======================================================================
@@ -416,14 +422,14 @@ function mmrDiversifyContexts(contexts, understanding, options = {}, metrics = n
   const lambdaRaw = Number(options.lambda);
   const lambda = Number.isFinite(lambdaRaw) ? Math.max(0, Math.min(1, lambdaRaw)) : 0.72;
   const selected = [];
-  const remaining = list.map((ctx, index) => ({ ctx, index }));
+  const remaining = candidatePool.map((ctx, index) => ({ ctx, index }));
   const question = understanding && (understanding.canonicalQuestion || understanding.normalizedText || understanding.rawQuestion) || '';
   const questionTerms = normalizeForMatch(question).split(/\s+/).filter(t => t.length >= 3);
 
   let totalComparisons = 0;
   let iterations = 0;
 
-  while (selected.length < topK && remaining.length) {
+  while (selected.length < effectiveTopK && remaining.length) {
     iterations++;
     let bestAt = 0;
     let bestScore = -Infinity;
@@ -437,7 +443,7 @@ function mmrDiversifyContexts(contexts, understanding, options = {}, metrics = n
         Number(current.rrfScore || 0),
         Number(current.rerankScore || 0),
         Number(current.score || 0),
-        termOverlapScoreFast(questionTerms, precomp.normStr)
+        termOverlapScoreFast(questionTerms, precomp.normStr, precomp.normSet)
       );
       // ===================================================================
       
@@ -445,7 +451,7 @@ function mmrDiversifyContexts(contexts, understanding, options = {}, metrics = n
         ? Math.max(...selected.map((picked) => {
             const pickedPrecomp = picked._mmrPrecomputed;
             totalComparisons++;
-            return termOverlapScoreFast(precomp.normalized, pickedPrecomp.normStr);
+            return termOverlapScoreFast(precomp.normalized, pickedPrecomp.normStr, pickedPrecomp.normSet);
           }))
         : 0;
       const mmrScore = (lambda * relevance) - ((1 - lambda) * redundancy);
@@ -464,6 +470,17 @@ function mmrDiversifyContexts(contexts, understanding, options = {}, metrics = n
         selectedRank: selected.length + 1
       }
     });
+  }
+
+  // Preserve remaining candidates from the original list so downstream filtering is intact
+  if (selected.length < list.length) {
+    const selectedIdentities = new Set(selected.map((item) => contextIdentity(item)));
+    for (let i = 0; i < list.length; i += 1) {
+      const item = list[i];
+      if (!selectedIdentities.has(contextIdentity(item))) {
+        selected.push(item);
+      }
+    }
   }
 
   // Record metrics if provided

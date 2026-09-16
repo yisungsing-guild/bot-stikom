@@ -69,14 +69,58 @@ const SLANG_REPLACEMENTS = {
   inernasional: 'internasional',
   internasioal: 'internasional',
   internationalnya: 'international',
-  internasionalnya: 'internasional'
+  internasionalnya: 'internasional',
+  jln: 'jalan',
+  jl: 'jalan',
+  alamt: 'alamat',
+  almt: 'alamat',
+  ny: 'nya',
+  ntar: 'nanti',
+  dpt: 'dapat',
+  bsa: 'bisa',
+  bcicil: 'dicicil',
+  dcicil: 'dicicil',
+  nyicil: 'mencicil',
+  angsuranny: 'angsuran',
+  cicilanny: 'cicilan',
+  ad: 'ada',
+  jg: 'juga',
+  bkn: 'bukan',
+  sm: 'sama',
+  dg: 'dengan',
+  dgn: 'dengan',
+  sy: 'saya',
+  byr: 'bayar',
+  byar: 'bayar',
+  brapa: 'berapa',
+  prtama: 'pertama',
+  pertm: 'pertama',
+  mwnny: 'mau tanya'
 };
 
 const FILLER_TOKENS = new Set(['min', 'kak', 'bro', 'dong', 'nih', 'dah']);
 
 const FUZZY_PROTECTED_VALID_TOKENS = new Set([
   'data',
-  'mata'
+  'mata',
+  'alasan',
+  'alasannya',
+  'antar',
+  'jemput',
+  'bus',
+  'dekat',
+  'sekitar',
+  'jarak',
+  'lapangan',
+  'puputan',
+  'paduan',
+  'alam',
+  'alamnya',
+  'tari',
+  'tarinya',
+  'dominan',
+  'urusan',
+  'urusannya'
 ]);
 
 const DOMAIN_FUZZY_VOCAB = [
@@ -131,9 +175,14 @@ const DOMAIN_FUZZY_VOCAB = [
   'tagihan',
   'nominal',
   'biaya',
+  'semester',
+  'semesteran',
   'spp',
   'ukt',
-  'dpp'
+  'dpp',
+  'alamat',
+  'jalan',
+  'kampus'
 ];
 
 function toString(raw) {
@@ -163,6 +212,14 @@ function normalizeUserQuery(text) {
       replacement = '';
     } else if (Object.prototype.hasOwnProperty.call(SLANG_REPLACEMENTS, token)) {
       replacement = SLANG_REPLACEMENTS[token];
+    } else if (token.length > 3 && token.endsWith('ny')) {
+      const stem = token.slice(0, -2);
+      if (Object.prototype.hasOwnProperty.call(SLANG_REPLACEMENTS, stem)) {
+        replacement = SLANG_REPLACEMENTS[stem];
+      } else {
+        const fuzzy = fuzzyNormalizeDomainToken(stem);
+        replacement = fuzzy || stem;
+      }
     } else {
       const fuzzy = fuzzyNormalizeDomainToken(token);
       if (fuzzy && fuzzy !== token) {
@@ -185,43 +242,55 @@ function normalizeUserQuery(text) {
   };
 }
 
+const FUZZY_TOKEN_CACHE_MAX = 2048;
+const fuzzyTokenCache = new Map();
+
 function fuzzyNormalizeDomainToken(token) {
   if (!token || token.length < 4) return token;
   if (FUZZY_PROTECTED_VALID_TOKENS.has(token)) return token;
+  if (fuzzyTokenCache.has(token)) return fuzzyTokenCache.get(token);
 
   let bestMatch = token;
   let bestDistance = Infinity;
-
   for (const candidate of DOMAIN_FUZZY_VOCAB) {
     if (candidate === token) return token;
-    const distance = levenshteinDistance(token, candidate);
-    const threshold = candidate.length <= 5 ? 1 : 2;
+    const threshold = token.length <= 4 ? 1 : (candidate.length <= 6 ? 1 : 2);
+    if (Math.abs(token.length - candidate.length) > threshold) continue;
+    const distance = levenshteinDistance(token, candidate, threshold);
     if (distance <= threshold && distance < bestDistance) {
       bestDistance = distance;
       bestMatch = candidate;
     }
   }
-
+  if (fuzzyTokenCache.size >= FUZZY_TOKEN_CACHE_MAX) fuzzyTokenCache.delete(fuzzyTokenCache.keys().next().value);
+  fuzzyTokenCache.set(token, bestMatch);
   return bestMatch;
 }
 
-function levenshteinDistance(a, b) {
-  const matrix = Array.from({ length: a.length + 1 }, () => []);
-  for (let i = 0; i <= a.length; i += 1) matrix[i][0] = i;
-  for (let j = 0; j <= b.length; j += 1) matrix[0][j] = j;
-  for (let i = 1; i <= a.length; i += 1) {
-    for (let j = 1; j <= b.length; j += 1) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost
-      );
+function levenshteinDistance(a, b, maxDistance = Infinity) {
+  if (a === b) return 0;
+  if (!a) return b.length;
+  if (!b) return a.length;
+  if (Math.abs(a.length - b.length) > maxDistance) return maxDistance + 1;
+  if (a.length > b.length) [a, b] = [b, a];
+  let previous = Array.from({ length: a.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= b.length; row += 1) {
+    const current = [row];
+    let rowMinimum = row;
+    const from = Number.isFinite(maxDistance) ? Math.max(1, row - maxDistance) : 1;
+    const to = Number.isFinite(maxDistance) ? Math.min(a.length, row + maxDistance) : a.length;
+    for (let column = 1; column < from; column += 1) current[column] = maxDistance + 1;
+    for (let column = from; column <= to; column += 1) {
+      const cost = a[column - 1] === b[row - 1] ? 0 : 1;
+      current[column] = Math.min(current[column - 1] + 1, previous[column] + 1, previous[column - 1] + cost);
+      rowMinimum = Math.min(rowMinimum, current[column]);
     }
+    for (let column = to + 1; column <= a.length; column += 1) current[column] = maxDistance + 1;
+    if (rowMinimum > maxDistance) return maxDistance + 1;
+    previous = current;
   }
-  return matrix[a.length][b.length];
+  return previous[a.length];
 }
-
 module.exports = {
   normalizeUserQuery,
   fuzzyNormalizeDomainToken,

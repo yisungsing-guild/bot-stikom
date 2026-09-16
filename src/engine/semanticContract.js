@@ -1,3 +1,4 @@
+const { findCanonicalEntity } = require('./canonicalEntityRegistry');
 function toArray(value) {
   return Array.isArray(value) ? value.filter(Boolean) : [];
 }
@@ -26,6 +27,7 @@ function flattenEntities(entities) {
         canonical,
         type: String(item && typeof item === 'object' ? (item.type || group) : group).trim(),
         role: String(item && typeof item === 'object' ? (item.role || '') : '').trim(),
+        source: String(item && typeof item === 'object' ? (item.source || '') : '').trim(),
         group
       });
     }
@@ -49,7 +51,13 @@ function filterContractEntitiesForDomain(domain, intent, entities) {
     if (internationalEntities.length) return internationalEntities;
   }
 
-  if (/organization|ukm/i.test(d) && hasGroup('organizations')) return list.filter(entity => String(entity.group || '') === 'organizations');
+  if (/organization|ukm/i.test(d) && (hasGroup('organizations') || list.some(e => e.type === 'organization_category'))) {
+    return list.filter(entity => String(entity.group || '') === 'organizations' || String(entity.type || '') === 'organization_category');
+  }
+  if (/^(?:academic|academic_policy)$/i.test(d)) {
+    const academicEntities = list.filter(entity => ['academicScopes', 'programs'].includes(String(entity.group || '')) || ['academic_level', 'academic_scope', 'program'].includes(String(entity.type || '')));
+    if (academicEntities.length) return academicEntities;
+  }
   if (/campus|location|facility/i.test(d) && (hasGroup('campuses') || hasGroup('facilities'))) {
     return list.filter(entity => ['campuses', 'facilities'].includes(String(entity.group || '')));
   }
@@ -64,6 +72,8 @@ function inferRequestType(canonical) {
   if (intent === 'ask_general') return 'topic_opening';
   if (/link|tautan|url|website|situs|channel|kanal|lewat mana/.test(raw) && /daftar|pendaftaran|pendaftarannya|registrasi|pmb|mahasiswa baru|camaba/.test(raw)) return 'registration_channel';
   if (/comparison/.test(intent) || fields.has('contrast')) return 'comparison';
+  if (/definition/.test(intent) || qType === 'definition' || fields.has('definition') || fields.has('equivalence')) return 'definition';
+  if (/policy|unsupported/.test(intent) || fields.has('policy')) return 'policy';
   if (/fee/.test(intent) || fields.has('amount')) return 'fee';
   if (intent === 'ask_contact' || fields.has('contact') || fields.has('phone') || fields.has('channel')) return 'contact';
   if ((canonical && canonical.constraints && canonical.constraints.relationType === 'double_degree_sequence') || qType === 'sequence') return 'sequence';
@@ -72,7 +82,6 @@ function inferRequestType(canonical) {
   if (/requirements/.test(intent) || fields.has('requirements')) return 'requirements';
   if (/list/.test(intent) || fields.has('programList') || fields.has('organizationList')) return 'list';
   if (/count/.test(intent) || /academic_numeric/.test(intent) || fields.has('organizationCount') || fields.has('creditCount') || fields.has('sksWeight')) return 'count';
-  if (/definition/.test(intent) || qType === 'definition' || fields.has('definition')) return 'definition';
   if (/recommendation/.test(intent)) return 'recommendation';
   if (/institution_history|facility|document/.test(intent)) return 'specific_fact';
   if (/availability/.test(intent) || /\b(?:ada|punya|tersedia|memiliki)\b/i.test(raw)) return 'availability';
@@ -87,7 +96,15 @@ function buildSemanticContract(canonical) {
     delete constraints.programScope;
     delete constraints.geographicScope;
   }
-  const allEntities = flattenEntities(source.entities);
+  const isAcademicDomain = /^(?:academic|academic_policy)$/i.test(String(sourceDomain));
+  const isOrgDomain = /^(?:student_organization|organization)$/i.test(String(sourceDomain));
+  const allEntities = flattenEntities(source.entities).filter(entity => {
+    if (entity.group === 'interestProfiles') return false;
+    if (!isAcademicDomain && (entity.group === 'academicScopes' || entity.type === 'academic_level' || entity.type === 'academic_scope')) return false;
+    if (!isOrgDomain && (entity.type === 'organization_category' || entity.group === 'organization_categories')) return false;
+    if (entity.source === 'canonical-domain-scope' && !isAcademicDomain) return false;
+    return true;
+  });
   const primaryDomain = source.domain && source.domain.primary || 'general';
   const primaryIntent = source.intent && source.intent.primary || 'ask_general';
   const entities = filterContractEntitiesForDomain(primaryDomain, primaryIntent, allEntities);
@@ -132,6 +149,14 @@ function hasEntity(text, entity) {
   if (!canonical) return true;
   if (canonical.length <= 3) return new RegExp(`(^|\\s)${canonical}(\\s|$)`, 'i').test(normalized);
   if (normalized.includes(canonical)) return true;
+  const registryEntity = findCanonicalEntity(entity && entity.canonical);
+  if (registryEntity && Array.isArray(registryEntity.aliases)) {
+    const registryAliasMatch = registryEntity.aliases.some(alias => {
+      const a = normalizeText(alias);
+      return a && (a.length <= 3 ? new RegExp('(^|\\s)' + a + '(\\s|$)', 'i').test(normalized) : normalized.includes(a));
+    });
+    if (registryAliasMatch) return true;
+  }
   if (canonical === 's2 sistem informasi') {
     const hasS2Level = /(^|\s)(?:s2|magister|pascasarjana|pasca\s*sarjana|master)(\s|$)/i.test(normalized);
     const hasSiProgram = normalized.includes('sistem informasi') || /(^|\s)si(\s|$)/i.test(normalized);
@@ -153,7 +178,12 @@ function hasEntity(text, entity) {
     'double degree help university': ['help university', 'help'],
     'dual degree utb': ['utb', 'universitas teknologi bandung'],
     'bem-pm itb stikom bali': ['bem', 'bem pm', 'badan eksekutif mahasiswa', 'kemahasiswaan'],
-    'bem pm itb stikom bali': ['bem', 'bem pm', 'badan eksekutif mahasiswa', 'kemahasiswaan']
+    'bem pm itb stikom bali': ['bem', 'bem pm', 'badan eksekutif mahasiswa', 'kemahasiswaan'],
+    'kampus denpasar renon': ['renon', 'denpasar', 'kampus renon', 'kampus denpasar', 'puputan'],
+    'kampus jimbaran': ['jimbaran', 'kampus jimbaran'],
+    'kampus abiansemal': ['abiansemal', 'kampus abiansemal'],
+    'fasilitas parkir': ['parkir', 'tempat parkir', 'area parkir', 'lahan parkir'],
+    'transportasi kampus': ['bus', 'shuttle', 'antar jemput', 'transportasi']
   };
   return (aliases[canonical] || []).some(alias => {
     const a = normalizeText(alias);
@@ -164,6 +194,9 @@ function hasEntity(text, entity) {
 function isRedundantContainedEntity(entity, entities, combinedText) {
   const canonical = normalizeText(entity && entity.canonical);
   if (!canonical || canonical.length <= 3) return false;
+  if (entity && (entity.type === 'organization_category' || entity.group === 'organization_categories' || /category/i.test(String(entity.type || '')))) {
+    return true;
+  }
   return toArray(entities).some(other => {
     if (other === entity) return false;
     if (String(other && other.group || '') !== String(entity && entity.group || '')) return false;
@@ -192,6 +225,10 @@ function hasTopicToken(value, topic) {
   if (key === 'e_commerce') return /\b(?:e-?commerce|perdagangan\s+elektronik|marketplace)\b/i.test(text);
   if (key === 'cyber_security') return /\b(?:cyber\s*security|keamanan\s+siber|keamanan\s+informasi)\b/i.test(text);
   if (key === 'cloud_computing') return /\b(?:cloud\s+computing|komputasi\s+awan|cloud)\b/i.test(text);
+  if (key === 'hardware' || key === 'computer_hardware') return /\b(?:hardware|perangkat\s+keras)\b/i.test(text);
+  if (key === 'software') return /\b(?:software|perangkat\s+lunak)\b/i.test(text);
+  if (key === 'network') return /\b(?:jaringan|networking?)\b/i.test(text);
+  if (key === 'embedded_iot') return /\b(?:embedded(?:\s+system)?|iot|internet\s+of\s+things)\b/i.test(text);
   return label ? normalizeText(text).includes(normalizeText(label)) : true;
 }
 
@@ -206,7 +243,9 @@ function hasOrganizationCategoryEvidence(value, category) {
     entrepreneurship: /\b(?:wirausaha|kewirausahaan|entrepreneur|startup|bisnis|usaha)\b/i,
     religious: /\b(?:rohani|kerohanian|agama|keagamaan|hindu|kristen|islam|pelayanan|pembinaan\s+karakter)\b/i,
     media: /\b(?:foto|fotografi|video|videografi|multimedia|desain|konten|media)\b/i,
-    leadership: /\b(?:kepemimpinan|bem|dpm|hima|himaprodi|panitia|organisasi|eksekutif|legislatif)\b/i
+    leadership: /\b(?:kepemimpinan|bem|dpm|hima|himaprodi|panitia|organisasi|eksekutif|legislatif)\b/i,
+    nature: /\b(?:alam|pecinta\s+alam|mapala|kompas|outdoor|lingkungan)\b/i,
+    volunteer: /\b(?:ksr|relawan|kemanusiaan|palang\s+merah|pmi|sosial)\b/i
   };
   return checks[key] ? checks[key].test(text) : true;
 }
@@ -219,6 +258,17 @@ function isNoDataAnswer(answer) {
     || /^(?:maaf[,\s]*)?(?:saya\s+)?tidak\s+cukup\s+data\b/i.test(text)
     || /^.*\bkonfirmasi\s+(?:ke|langsung)\b.*$/i.test(text) && !positiveEvidence
     || /^(?:maaf[,\s]*)?(?:saya\s+)?tidak\s+memiliki\s+(?:program\s+studi|prodi|jurusan|program)\b/i.test(text);
+}
+function isCreditConversionPolicyAnswer(contract, answer) {
+  const fields = new Set(Array.isArray(contract && contract.requestedFields) ? contract.requestedFields : []);
+  const query = String(contract && (contract.raw || contract.normalized) || '');
+  const text = String(answer || '');
+  const asksCreditAmount = fields.has('creditCount') || fields.has('sksWeight');
+  const asksConversion = /\b(?:konversi|dikonversi|dialihkan|diakui|rekognisi)\b/i.test(query);
+  const hasCreditCue = /\b(?:sks|kredit|credit)\b/i.test(query);
+  const givesVerificationBasis = /\b(?:ditentukan|bergantung|berdasarkan)\b/i.test(text)
+    && /\b(?:verifikasi|asesmen|transkrip|kurikulum|kesetaraan\s+mata\s+kuliah)\b/i.test(text);
+  return asksCreditAmount && asksConversion && hasCreditCue && givesVerificationBasis;
 }
 function verifyAnswerAgainstContract(contract, answer, evidence = []) {
   if (!contract || typeof contract !== 'object') return { ok: true, reason: 'no_contract' };
@@ -253,7 +303,12 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
   const isGeneralDomain = contract.domain === 'general' && contract.intent === 'ask_general';
   if (!isGeneralDomain) {
     const contractEntities = toArray(contract.entities);
-    const missingEntities = contractEntities.filter(entity => entity.group !== 'unknown' && !hasEntity(combined, entity) && !isRedundantContainedEntity(entity, contractEntities, combined));
+    const answerBearingEntities = contractEntities.filter(entity => (
+      entity.group !== 'unknown'
+      && entity.source !== 'canonical-domain-scope'
+      && entity.type !== 'academic_scope'
+    ));
+    const missingEntities = answerBearingEntities.filter(entity => !hasEntity(combined, entity) && !isRedundantContainedEntity(entity, answerBearingEntities, combined));
     if (missingEntities.length) return { ok: false, reason: 'missing_contract_entity', missingEntities: missingEntities.map(e => e.canonical) };
   }
   const contractScope = String((contract.constraints && (contract.constraints.programScope || contract.constraints.geographicScope)) || '').toLowerCase();
@@ -281,15 +336,26 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
     if (!waveRe.test(combined)) return { ok: false, reason: 'missing_registration_wave', registrationWave: contract.constraints.registrationWave.key };
   }
   if (contract.requestType === 'fee' && !/\b(?:rp\.?|rupiah|\d[\d.,]+\s*(?:ribu|juta)?|biaya|ukt|dpp)\b/i.test(text)) return { ok: false, reason: 'fee_shape_not_satisfied' };
-  if (contract.requestType === 'schedule' && !/\b(?:tanggal|jadwal|periode|gelombang|januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|20\d{2})\b/i.test(text)) return { ok: false, reason: 'schedule_shape_not_satisfied' };
-  if (contract.requestType === 'count' && !/\b\d+\b|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|puluh/i.test(text)) return { ok: false, reason: 'count_shape_not_satisfied' };
+  if (contract.requestType === 'schedule') {
+    const relationType = String(contract.constraints && contract.constraints.relationType || '');
+    const fields = new Set(Array.isArray(contract.requestedFields) ? contract.requestedFields : []);
+    const asksStudyTimeline = relationType === 'study_timeline' || fields.has('duration') || fields.has('sequence') || fields.has('semesterCount');
+    const hasScheduleShape = /\b(?:tanggal|jadwal|periode|gelombang|januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|20\d{2})\b/i.test(text);
+    const hasTimelineShape = /\b(?:\d+|satu|dua|tiga|empat|lima|enam|tujuh|delapan)\s*(?:tahun|semester|bulan)\b|\b(?:durasi|tahapan|skema\s+kuliah|perkuliahan)\b/i.test(text);
+    if (!hasScheduleShape && !(asksStudyTimeline && hasTimelineShape)) return { ok: false, reason: 'schedule_shape_not_satisfied' };
+  }
+  if (contract.requestType === 'count' && !/\b\d+\b|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|puluh/i.test(text)) {
+    if (isCreditConversionPolicyAnswer(contract, text)) return { ok: true, reason: 'credit_conversion_policy_preserved' };
+    return { ok: false, reason: 'count_shape_not_satisfied' };
+  }
   return { ok: true, reason: 'contract_preserved' };
 }
 
 module.exports = {
   buildSemanticContract,
   verifyAnswerAgainstContract,
-  normalizeText
+  normalizeText,
+  hasEntity
 };
 
 

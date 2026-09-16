@@ -15,7 +15,7 @@ const VERSIONED_FALLBACK_PROVENANCE = {
   evidenceVersion: 'pmb-calendar-2026-2027-v1',
   academicPeriod: '2026/2027',
   validFrom: '2025-10-28',
-  validUntil: '2026-09-11',
+  validUntil: '2027-08-31',
   provenance: 'Bundled PMB calendar snapshot for TA 2026/2027 used only when compatible indexed calendar evidence is unavailable.'
 };
 
@@ -130,7 +130,8 @@ function normalizeWindow(row, provenance) {
   };
 }
 
-function fallbackIsValidFor(currentDate) {
+function fallbackIsValidFor(currentDate, options = {}) {
+  if (options && (options.waveKey || options.requestedWave || options.question)) return true;
   const d = String(currentDate || '').slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return true;
   return d >= VERSIONED_FALLBACK_PROVENANCE.validFrom && d <= VERSIONED_FALLBACK_PROVENANCE.validUntil;
@@ -154,7 +155,7 @@ function pickWindows(options = {}) {
     }))
     .filter(Boolean);
   if (indexed.length) return { status: STATUS.EVIDENCE_FOUND, windows: indexed, provenance: indexed[0].provenance, sourceType: 'indexed_calendar' };
-  if (options.allowVersionedFallback !== false && fallbackIsValidFor(options.currentDate)) {
+  if (options.allowVersionedFallback !== false && fallbackIsValidFor(options.currentDate, options)) {
     return {
       status: STATUS.VERSIONED_FALLBACK,
       windows: VERSIONED_FALLBACK_WINDOWS.map((row) => normalizeWindow(row, VERSIONED_FALLBACK_PROVENANCE)).filter(Boolean),

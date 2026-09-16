@@ -12109,7 +12109,9 @@ function tryStructuredFeeBreakdownAnswer(question, top, opts = null) {
   // If user explicitly asked about discounts, produce a template-like breakdown
   if (wantsDiscount) {
     const displayProgram = prettyHeader;
-    const displayWaveGroup = (queryEntities && queryEntities.wave) ? normalizeWaveGroup(queryEntities.wave) : null;
+    const qEnts = (typeof extractStructuredEntities === 'function') ? extractStructuredEntities(question) : null;
+    const displayWaveGroup = (qEnts && qEnts.wave) ? normalizeWaveGroup(qEnts.wave) : null;
+    let feeStruct = (opts && opts.feeStruct) ? opts.feeStruct : null;
 
     const findAmount = (pred) => {
       const it = sortedItems.find(x => pred(String(x.label || '').toLowerCase()));

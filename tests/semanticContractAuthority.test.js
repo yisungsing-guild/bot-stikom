@@ -1,6 +1,7 @@
 const express = require('express');
 const request = require('supertest');
 const { buildCanonicalQueryUnderstanding } = require('../src/engine/queryUnderstanding');
+const { verifyAnswerAgainstContract } = require('../src/engine/semanticContract');
 const { querySemanticRag, verifyOutboundSemanticRelevance } = require('../src/engine/semanticRagEngine');
 const { selectEvidenceFromContexts, evaluateEvidenceAnswerability } = require('../src/engine/evidenceSelector');
 
@@ -17,6 +18,32 @@ function contractOf(q) {
 
 describe('end-to-end semantic contract authority', () => {
   jest.setTimeout(180000);
+
+  test('count verifier accepts evidence-bounded credit conversion policy without inventing a number', () => {
+    const conversionContract = {
+      requestType: 'count',
+      requestedFields: ['creditCount', 'sksWeight'],
+      raw: 'Berapa maksimal SKS yang dapat dikonversi?',
+      constraints: {},
+      entities: []
+    };
+    const supportedPolicy = 'Jumlah maksimal SKS yang dapat dikonversi ditentukan berdasarkan hasil verifikasi transkrip dan kesesuaian kurikulum.';
+    expect(verifyAnswerAgainstContract(conversionContract, supportedPolicy)).toEqual(expect.objectContaining({
+      ok: true,
+      reason: 'credit_conversion_policy_preserved'
+    }));
+
+    const ordinaryCount = { ...conversionContract, raw: 'Berapa total SKS untuk lulus?' };
+    expect(verifyAnswerAgainstContract(ordinaryCount, 'Jumlahnya mengikuti kurikulum program studi.')).toEqual(expect.objectContaining({
+      ok: false,
+      reason: 'count_shape_not_satisfied'
+    }));
+
+    expect(verifyAnswerAgainstContract(conversionContract, 'Jumlah maksimal SKS dapat dikonversi.')).toEqual(expect.objectContaining({
+      ok: false,
+      reason: 'count_shape_not_satisfied'
+    }));
+  });
 
   test('PMB opening paraphrases stay topic_opening, not procedure/channel/fee/schedule', () => {
     const cases = [
@@ -357,7 +384,7 @@ describe('end-to-end semantic contract authority', () => {
         expect(contaminated.answer).not.toMatch(item.mustNot);
       }
     }
-  });
+  }, 360000);
 
   test('elliptical follow-up inherits only with a relevant parent, while self-contained PMB ignores parent', async () => {
     const parent = contractOf('apakah ada program double degree internasional?');

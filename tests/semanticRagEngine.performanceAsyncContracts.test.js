@@ -48,5 +48,22 @@ describe('performance and async root-cause contracts', () => {
     expect(result.debug && result.debug.routeStage).toBe('pre-guard-registration-how');
     expect(result.answer).toMatch(/online|kampus|siap\.stikom-bali\.ac\.id/i);
   });
+
+  test.each([
+    'mahasiswa bebas pake atau harus izin dulu?',
+    'apakah fasilitas kampus perlu persetujuan sebelum dipakai?',
+  ])('facility policy wording cannot consume visa evidence: %s', async (query) => {
+    const result = await querySemanticRag(query, { topK: 8, sessionData: {} });
+
+    expect(result.source).not.toBe('semantic-rag-uploaded-training-generic');
+    expect(String(result.answer || '')).not.toMatch(/\bvisa\b|\bitas\b|\bkitas\b|izin belajar|study permit/i);
+  });
+
+  test('explicit foreign-student permit question still reaches compatible evidence', async () => {
+    const result = await querySemanticRag('mahasiswa asing perlu mengurus izin belajar?', { topK: 8, sessionData: {} });
+
+    expect(result.source).toMatch(/admin-topic|study-permit|visa|foreign-student/i);
+    expect(result.answer).toMatch(/izin belajar|study permit/i);
+  });
 });
 

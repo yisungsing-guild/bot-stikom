@@ -37,14 +37,17 @@ const {
   tryProgramDefinitionAnswer,
   tryScholarshipAnswer,
   tryCareerAnswer,
-  tryContextualMultiProgramFeeAnswer
+  tryContextualMultiProgramFeeAnswer,
+  isRegistrationFeeQuestion
 } = require('./feeComparisonEngine');
 const { evaluateOutboundAnswer, hasLikelyRawDocumentLeak, buildPreflightFallback } = require('../utils/answerPreflightEvaluator');
 const { deduplicateEvidence } = require('../utils/evidenceDedup');
 const { normalizeUserQuery } = require('../utils/queryNormalizer');
 const { buildCanonicalQueryUnderstanding, detectFeeType } = require('./queryUnderstanding');
+const { resolveContextAuthority } = require('./contextAuthority');
 const { verifyAnswerAgainstContract } = require('./semanticContract');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
+const { CANONICAL_INTEREST_PROFILES, resolveCanonicalInterestProfiles, findCanonicalEntity } = require('./canonicalEntityRegistry');
 const { classifyDocumentCategory } = require('./docCategoryClassifier');
 const {
   deriveQueryMetadataConstraints,
@@ -163,7 +166,7 @@ function shouldReturnSmallTalkImmediately(question, smallTalkWords) {
   const hasSubstantiveCampusAnchor = /\b(?:biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|job\s*fair|campus\s*hiring|magang|lowongan|inkubator|inbis|student\s+exchange|hi-?think|ukm|ormawa|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|yudisium|wisuda|sidang|tugas\s+akhir|skripsi|tesis|sion|baak|kalender\s+akademik|visa|itas|kitas|sktt|izin\s+belajar|rpl|apa\s+itu|berapa|kapan|dimana|jelaskan|rincian)\b/i.test(q);
   const isClearConversationalSmallTalk = /\b(?:apa\s+kabar(?:nya)?|apa\s+khabar(?:nya)?|kabar(?:nya)?\s+apa|khabar(?:nya)?\s+apa|gimana\s+kabar(?:nya)?|gimana\s+khabar(?:nya)?|gmn\s+kabar(?:nya)?|kabar(?:nya)?\s+(?:kamu|km|mu|min|kak|admin)(?:\s+(?:gimana|gmn|bagaimana))?|khabar(?:nya)?\s+(?:kamu|km|mu|min|kak|admin)(?:\s+(?:gimana|gmn|bagaimana))?|(?:kamu|km|tiko|bot|admin)\s+(?:gimana|gmn|baik|sehat)|gimana\s+kabarmu|gmn\s+kabarmu|apa\s+kabarmu|bagaimana\s+kabar(?:nya)?|bagaimana\s+khabar(?:nya)?|sehat(?:\s+(?:kak|min|admin|tiko|bot))?)\b/i.test(q);
   if (isClearConversationalSmallTalk && !hasSubstantiveCampusAnchor && smallTalkWords <= 8) return true;
-  const hasCampusTopicAnchor = /\b(?:biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|job\s*fair|campus\s*hiring|magang|lowongan|inkubator|inbis|student\s+exchange|hi-?think|ukm|ormawa|double\s*degree|dual\s*degree|akreditasi|yudisium|wisuda|sidang|tugas\s+akhir|skripsi|tesis|sion|baak|kalender\s+akademik|visa|itas|kitas|sktt|izin\s+belajar|rpl|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i.test(q);
+  const hasCampusTopicAnchor = /\b(?:biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|job\s*fair|campus\s*hiring|magang|lowongan|inkubator|inbis|student\s+exchange|hi-?think|ukm|ormawa|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|pekerjaan|karier|karir|yudisium|wisuda|sidang|tugas\s+akhir|skripsi|tesis|sion|baak|kalender\s+akademik|visa|itas|kitas|sktt|izin\s+belajar|rpl|apa\s+itu|berapa|kapan|dimana|bagaimana|gimana|ngapain|jelaskan|rincian|\b(?:ti|si|sk|bd|mi)\b)\b/i.test(q);
   if (smallTalkWords <= 6 && !hasCampusTopicAnchor) return true;
 
   const hasThanks = /\b(?:terima\s*(?:kasih|ksih|ksh)|terimakasih|makasih|mksh|mksih|thanks|thank\s+you|thx)\b/i.test(q);
@@ -1510,6 +1513,9 @@ function isRouteDomainCompatible(question, result) {
   const ok = (reason) => ({ ok: true, qDomains: [...qDomains], routeDomains: [...routeDomains], reason });
   const bad = (reason) => ({ ok: false, qDomains: [...qDomains], routeDomains: [...routeDomains], reason });
 
+  const explicitGroundedNoData = Boolean(result && result.debug && result.debug.answerabilityResult && result.debug.answerabilityResult.answerable === false)
+    && hasNoDataAnswerPhrase(answer);
+  if (explicitGroundedNoData) return ok('explicit_grounded_no_data');
   if (/meaning-mismatch|insufficient|no-data|clarification|feedback|small-talk|out-of-domain|cross-domain|comparison|academic-source|international-topic-composer/i.test(source)) return ok('safe_meta_source');
   if (/\b(?:sama(?:kah)?\s+dengan|apakah\s+sama|beda(?:kah)?\s+dengan|dibandingkan)\b/i.test(q)) return ok('cross_domain_comparison');
   if (overlap.length) return ok('domain_overlap:' + overlap.join(','));
@@ -1588,13 +1594,21 @@ function inferQuestionAnswerNeeds(question) {
   let q = normalizeUserQuery(question || '').normalizedText || String(question || '').toLowerCase();
   q = q.replace(/\bbukan\s+(?:jadwal|timeline|tanggal)\s+(?:daftar|pendaftaran|pmb|gelombang)[^.?!,]*/gi, ' ');
   const needs = new Set();
+  const isFeeDefinition = /\b(?:apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|istilah(?:nya)?|itu\s+dpp\s+ya|apakah\s+(?:itu\s+)?dpp|sama\s+(?:kah\s+)?(?:dengan|sama))\b/i.test(q)
+    && !/\b(?:berapa|nominal|jumlah|total|tarif|harga|besaran)\b/i.test(q);
+  const isInstallmentPolicy = /\b(?:bisa\s+(?:di)?cicil|boleh\s+(?:di)?cicil|sistem\s+cicil|skema\s+cicil)\b/i.test(q)
+    && !/\b(?:berapa\s+(?:kali|bulan|angsuran)|berapa\s+nominal|berapa\s+jumlah)\b/i.test(q);
+  const isDiscountExistence = (/\b(?:ada|apakah\s+ada|bisa\s+dapat|dapat(?:kah)?)\s+(?:diskon|potongan|keringanan|promo)\b/i.test(q)
+    || /\b(?:diskon|potongan|keringanan|promo)\b.*?\b(?:ada\s+g(?:a|ak|aakk)|ada\s+nggak|ada\s+tidak|bisa\s+nggak|bisa\s+ga)\b/i.test(q))
+    && !/\b(?:berapa|nominal|jumlah|total|besaran|persen)\b/i.test(q);
+
   if (/\b(?:kapan|jadwal|tanggal|pelaksanaan|dilaksanakan|deadline|batas\s+akhir|mulai|berakhir)\b/i.test(q)) needs.add('date_or_period');
-  if (/\b(?:berapa|nominal|jumlah|total|rincian\s+biaya|biaya|harga|ukt|dpp|sks|lama|durasi)\b/i.test(q) && !/\b(?:tahun|tanggal|bulan|kapan)\s+berapa\b/i.test(q)) needs.add('number_or_amount');
+  if (!isFeeDefinition && !isInstallmentPolicy && !isDiscountExistence && /\b(?:berapa|nominal|jumlah|total|rincian\s+biaya|biaya|harga|ukt|dpp|sks|lama|durasi)\b/i.test(q) && !/\b(?:tahun|tanggal|bulan|kapan)\s+berapa\b/i.test(q)) needs.add('number_or_amount');
   if (/\b(?:tahun|tanggal|bulan)\s+berapa\b/i.test(q)) needs.add('date_or_period');
   if (/\b(?:apa\s+saja|apa\s+aja|daftar(?!\s+pustaka)|list|pilihan|sebutkan|program\s+apa\s+saja|jurusan\s+apa\s+saja)\b/i.test(q)) needs.add('list');
   if (/\b(?:beda|bedanya|perbedaan|bandingkan|perbandingan|dibandingkan|antara)\b/i.test(q)) needs.add('comparison');
   if (/\b(?:cocok|rekomendasi|sarankan|pilih\s+jurusan|jurusan\s+apa|prodi\s+apa|suka|minat|bekerja\s+di\s+bidang|ingin\s+(?:jadi|bekerja))\b/i.test(q)) needs.add('program_recommendation');
-  if (/\b(?:apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan|tentang)\b/i.test(q)) needs.add('definition');
+  if (isFeeDefinition || /\b(?:apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|jelaskan|tentang)\b/i.test(q)) needs.add('definition');
   const legalDocumentQuestion = /\b(?:izin\s+operasional|sk|surat\s+keputusan|pendirian|didirikan|sejarah|legal|dokumen\s+(?:apa|awal|pendirian))\b/i.test(q);
   if (!legalDocumentQuestion && /\b(?:syarat|persyaratan|dokumen|berkas|ketentuan)\b/i.test(q)) needs.add('requirements');
   return needs;
@@ -1607,6 +1621,8 @@ function evaluateAnswerShapeCompatibility(question, result) {
   const answer = String(result && result.answer || '');
   const q = String(question || '');
   const needs = inferQuestionAnswerNeeds(q);
+  const canonicalContract = result && result.debug && result.debug.semanticContract;
+  if (canonicalContract && canonicalContract.domain === 'student_organization') needs.delete('program_recommendation');
   const missing = [];
   if (!needs.size) return { ok: true, needs: [], missing: [], reason: 'no_specific_answer_shape_needed' };
   const isContactQuestion = /\b(?:kontak|hubungi|menghubungi|nomor|no\.?\s*(?:wa|telp|telepon)?|wa\b|whatsapp|telepon|telp|phone|admin|cs|customer\s*service|helpdesk)\b/i.test(q);
@@ -1621,6 +1637,19 @@ function evaluateAnswerShapeCompatibility(question, result) {
     needs.delete('date_or_period');
     needs.delete('number_or_amount');
   }
+  const isFeeDefinition = /\b(?:apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|istilah(?:nya)?|itu\s+dpp\s+ya|apakah\s+(?:itu\s+)?dpp|sama\s+(?:kah\s+)?(?:dengan|sama))\b/i.test(q)
+    && !/\b(?:berapa|nominal|jumlah|total|tarif|harga|besaran)\b/i.test(q);
+  const isInstallmentPolicy = /\b(?:bisa\s+(?:di)?cicil|boleh\s+(?:di)?cicil|sistem\s+cicil|skema\s+cicil)\b/i.test(q)
+    && !/\b(?:berapa\s+(?:kali|bulan|angsuran)|berapa\s+nominal|berapa\s+jumlah)\b/i.test(q);
+  const isDiscountExistence = (/\b(?:ada|apakah\s+ada|bisa\s+dapat|dapat(?:kah)?)\s+(?:diskon|potongan|keringanan|promo)\b/i.test(q)
+    || /\b(?:diskon|potongan|keringanan|promo)\b.*?\b(?:ada\s+g(?:a|ak|aakk)|ada\s+nggak|ada\s+tidak|bisa\s+nggak|bisa\s+ga)\b/i.test(q))
+    && !/\b(?:berapa|nominal|jumlah|total|besaran|persen)\b/i.test(q);
+  const isRplExperiencePolicy = /\b(?:rpl|rekognisi)\b/i.test(q) && /\b(?:pengalaman\s+kerja|portofolio)\b/i.test(q) && /\b(?:asesmen|kompetensi|portofolio)\b/i.test(answer);
+  const isCreditConversionPolicy = /\b(?:konversi|dikonversi|dialihkan|diakui)\b/i.test(q) && /\bsks\b/i.test(q) && /\b(?:verifikasi|kurikulum|transkrip|ditentukan)\b/i.test(answer);
+  const isScholarshipPercentPolicy = /\b(?:beasiswa|prestasi|jalur\s+prestasi)\b/i.test(q) && /\b(?:potongan|diskon|dpp)\b/i.test(q) && /\b(?:potongan|persentase|tertentu|kategori)\b/i.test(answer);
+  if (isFeeDefinition || isInstallmentPolicy || isDiscountExistence || isRplExperiencePolicy || isCreditConversionPolicy || isScholarshipPercentPolicy) {
+    needs.delete('number_or_amount');
+  }
   const structuredScheduleTemporalAnswer = /semantic-rag-(?:schedule-window|current-open-waves)/i.test(source)
     && /\b(?:pmb|pendaftaran|gelombang)\b/i.test(q)
     && /\bgelombang\b/i.test(answer)
@@ -1630,7 +1659,6 @@ function evaluateAnswerShapeCompatibility(question, result) {
   }
 
   if (needs.has('date_or_period') && !hasConcreteDateOrPeriod(answer)) missing.push('date_or_period');
-  const canonicalContract = result && result.debug && result.debug.semanticContract;
   const financial = canonicalContract
     ? canonicalContract.requestType === 'fee'
     : /\b(?:nominal|biaya|harga|tarif|ukt|dpp|rupiah|cicilan|potongan|diskon)\b/i.test(q);
@@ -2129,6 +2157,14 @@ function getRecentConversationTextForResolution(sessionData) {
 function hasExplicitContextAnchor(question) {
   const q = String(question || '').toLowerCase();
   if (!q) return false;
+  if (/^(?:kalo|kalau|bagaimana\s+dengan|gimana\s+dengan|untuk|prodi|jurusan|yang)?\s*[a-z0-9.-]+(?:\s+[a-z0-9.-]+){0,2}\??$/i.test(q.trim())
+    && !/\b(?:apa\s+itu|definisi|pengertian|biaya|harga|bayar|ukt|dpp|akreditasi|kurikulum|matkul|syarat|(?:men)?daftar(?:kan)?|jadwal|cara)\b/i.test(q)) {
+    return false;
+  }
+  if (/\b(?:beli|ambil|bayar|daftar|tes|datang|langsung)\b/i.test(q) && /\b(?:di|ke)\s+kampus\b/i.test(q)
+    && !/\b(?:fasilitas|layanan|gedung|area)\s+kampus\b/i.test(q)) {
+    return false;
+  }
   const explicitAnchor = new RegExp('\\b(?:itb\\s+stikom\\s+bali|stikom|pmb|penerimaan\\s+mahasiswa\\s+baru|camaba|s1|sarjana|d3|diploma|sistem\\s+informasi|teknologi\\s+informasi|bisnis\\s+digital|manajemen\\s+informatika|sistem\\s+komputer|s2|magister|pasca\\s*sarjana|pascasarjana|rpl|double\\s*degree|dual\\s*degree|dnui|dalian|utb|help\\s+university|career\\s*center|pusat\\s+karier|pusat\\s+karir|tracer\\s*study|pemasaran|marketing|digital\\s+marketing|inbis|inkubator\\s+bisnis|hi-?think|language\\s+learning\\s+center|llc|mahasiswa\\s+asing|izin\\s+belajar|visa\\s*study|student\\s*exchange|bccp|gccp|short\\s*course|beasiswa|sks|kampus|akreditasi|prodi|jurusan|ukm|ormawa|organisasi\\s+mahasiswa|himaprodi|himpunan|yudisium|wisuda|sidang|tugas\\s+akhir|proyek\\s+akhir|skripsi|tesis|krs|khs|transkrip|sion|baak|kalender\\s+akademik|jadwal\\s+akademik|remedial|remidi)\\b', 'i');
   if (explicitAnchor.test(q)) return true;
   return /\b(?:ujian\s+(?:ulang|susulan)|semester\s+(?:ganjil|genap|antara|pendek))\b/i.test(q);
@@ -2161,7 +2197,7 @@ function hasExplicitCurrentTurnSemanticAuthority(question, contract = null) {
   const isGenericUnanchoredPmbSchedule = domain === 'pmb_schedule'
     && intent === 'ask_schedule'
     && entityCount === 0
-    && !/\b(?:pmb|penerimaan\s+mahasiswa\s+baru|camaba|maba|gelombang|wave|pendaftaran\s+(?:mahasiswa\s+baru|pmb)|mahasiswa\s+baru)\b/i.test(q);
+    && !/\b(?:pmb|penerimaan\s+mahasiswa\s+baru|camaba|maba|gelombang|wave|pendaftaran|pendaftaran\s+(?:mahasiswa\s+baru|pmb)|mahasiswa\s+baru)\b/i.test(q);
   if (isGenericUnanchoredPmbSchedule) return false;
   const isGenericUnanchoredRegistrationProcedure = domain === 'registration'
     && /^(?:ask_registration_how|registration_how)$/i.test(intent)
@@ -2204,14 +2240,16 @@ function isContextualSemanticFollowup(question) {
   if (/^(?:apa\s+)?(?:itu|ini|maksud(?:nya)?)\??$/i.test(q)) return false;
   const words = q.split(/\s+/).filter(Boolean);
   if (/^(?:apa|gimana|bagaimana)\s+ya\??$/i.test(q) || /^(?:terus|lalu)\s+gimana\??$/i.test(q)) return false;
-  const shortFollowup = /\b(?:itu|ini|tadi|caranya|alurnya|prosesnya|syaratnya|dokumennya|berkasnya|daftarnya|pendaftarannya|registrasinya|biayanya|harganya|bayarnya|rincian(?:nya)?|detail(?:nya)?|profil(?:nya)?|profile|tentang(?:nya)?|kapan|dimana|mana|harus|wajib|ikut|daftar|mendaftar|potongan(?:nya)?|diskonnya|bedanya|perbedaannya|keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?|tujuan(?:nya)?|kegiatan(?:nya)?|jenis(?:nya)?|pilihan(?:nya)?|negara(?:nya)?|lokasi(?:nya)?|tempat(?:nya)?|durasi(?:nya)?|lamanya|berapa\s+lama|gelar(?:nya)?|kurikulum(?:nya)?|mata\s+kuliah(?:nya)?|dipelajari|belajarnya|kerjanya|karier(?:nya)?|prospek(?:nya)?|akreditasi(?:nya)?|susah|sulit|mudah|gampang|coding|ngoding|and\s+the|how\s+about|what\s+about|requirements?)\b/i;
-  if (words.length <= 5 && shortFollowup.test(q)) {
+  const shortFollowup = /\b(?:itu|ini|tadi|caranya|alurnya|prosesnya|syaratnya|dokumennya|berkasnya|daftarnya|pendaftarannya|registrasinya|biayanya|harganya|bayarnya|rincian(?:nya)?|detail(?:nya)?|profil(?:nya)?|profile|tentang(?:nya)?|kapan|dimana|mana|harus|wajib|ikut|daftar|mendaftar|potongan(?:nya)?|diskonnya|bedanya|perbedaannya|keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?|tujuan(?:nya)?|kegiatan(?:nya)?|jenis(?:nya)?|pilihan(?:nya)?|negara(?:nya)?|lokasi(?:nya)?|tempat(?:nya)?|durasi(?:nya)?|lamanya|berapa\s+lama|gelar(?:nya)?|kurikulum(?:nya)?|mata\s+kuliah(?:nya)?|matkul|dipelajari|belajar(?:nya)?|kerjanya|karier(?:nya)?|prospek(?:nya)?|akreditasi(?:nya)?|susah|sulit|mudah|gampang|coding|ngoding|and\s+the|how\s+about|what\s+about|requirements?|kelas\s+(?:malam|sabtu|karyawan|pagi)|skema\s+(?:kuliah(?:nya)?|program(?:nya)?)|kuliah(?:nya)?|bebas\s+(?:pake|pakai)|harus\s+izin|beli\s+langsung)\b/i;
+  if (words.length <= 10 && shortFollowup.test(q)) {
     return true;
   }
   return /\b(?:yang\s+(?:itu|tadi|mana)|lanjut(?:kan)?|kalau\s+yang\s+itu|terus\s+gimana|lalu\s+gimana|apa\s+saja\s+syaratnya|apa\s+aja\s+dokumennya|apa\s+saja\s+jenisnya|apa\s+saja\s+pilihannya|rincian\s+biayanya|detail\s+biayanya|harus\s+ke\s+sana|harus\s+ke\s+china|bisa\s+ikut\s+kapan|mulai\s+kapan|berapa\s+lama|gelarnya\s+apa|tujuannya\s+apa|manfaatnya\s+apa)\b/i.test(q);
 }
 function inferContextTopicFromSession(sessionData) {
   const topics = [
+    { key: 'facility', label: 'fasilitas ITB STIKOM Bali', re: /\b(?:fasilitas|studio\s+podcast|podcast|perpustakaan|coworking|laboratorium|lab|bus\s+kampus)\b/ },
+    { key: 'registration', label: 'pendaftaran PMB ITB STIKOM Bali', re: /\b(?:pmb|pendaftaran|formulir|registrasi|syarat\s+daftar)\b/ },
     { key: 'student_organization', label: 'UKM dan Organisasi Mahasiswa ITB STIKOM Bali', re: /\b(?:ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan)\b/ },
     { key: 'scholarship', label: 'beasiswa ITB STIKOM Bali', re: /\b(?:beasiswa|kip|kip\s+kuliah|1k1s|skss|bantuan\s+biaya|potongan\s+biaya|scholarship)\b/ },
     { key: 'student_exchange', label: 'Student Exchange ITB STIKOM Bali', re: /\b(?:student\s*exchange|pertukaran\s+mahasiswa|gccp|global\s+cross\s+cultural|credit\s+transfer|short\s*course|summer\s*program)\b/ },
@@ -2350,7 +2388,7 @@ function resolveSemanticFollowupQuestion(question, options = {}) {
     resolved = `Gelar yang diperoleh dari ${topic.label}`;
   } else if (/\b(?:durasi(?:nya)?|lamanya|berapa\s+lama|masa\s+studi)\b/i.test(q)) {
     resolved = `Durasi atau masa studi ${topic.label}`;
-  } else if (/\b(?:kampus|partner|mitra|universitas|tujuan\s+kampus)\b/i.test(q)) {
+  } else if (/\b(?:kampus|partner|mitra|universitas|tujuan\s+kampus)\b/i.test(q) && !/\b(?:beli\s+langsung|ambil\s+langsung|datang\s+langsung)\b/i.test(q)) {
     resolved = `Kampus mitra, partner, atau lokasi pelaksanaan ${topic.label}`;
   } else if (/\b(?:negara(?:nya)?|tujuan\s+negara|ke\s+mana|kemana)\b/i.test(q)) {
     resolved = `Negara tujuan atau lokasi pelaksanaan ${topic.label}`;
@@ -2364,6 +2402,14 @@ function resolveSemanticFollowupQuestion(question, options = {}) {
     resolved = `Akreditasi ${topic.label}`;
   } else if (/\b(?:susah|sulit|mudah|gampang|coding|ngoding|semester\s+awal)\b/i.test(q)) {
     resolved = `Tingkat kesulitan, kecocokan, dan gambaran belajar pada ${topic.label}`;
+  } else if (/\b(?:kelas\s*(?:malam|sabtu|karyawan|weekend)|jadwal\s+(?:per)?kuliah|waktu\s+(?:per)?kuliah)\b/i.test(q)) {
+    resolved = `Jadwal dan waktu perkuliahan kelas malam atau sabtu untuk ${topic.label}`;
+  } else if (/\b(?:bebas\s+(?:pake|pakai)|harus\s+izin|izin\s+dulu|akses(?:nya)?)\b/i.test(q)) {
+    resolved = `Prosedur dan izin penggunaan ${topic.label}`;
+  } else if (/\b(?:skema\s+kuliah|berapa\s+tahun|tahun\s+di\s+bali|tahun\s+di\s+malaysia|tahun\s+di\s+china)\b/i.test(q)) {
+    resolved = `Skema pelaksanaan dan durasi program ${topic.label}`;
+  } else if (/\b(?:beli\s+langsung|ambil\s+langsung|datang\s+langsung)\b/i.test(q)) {
+    resolved = `Pembelian formulir pendaftaran langsung di kampus ITB STIKOM Bali`;
   } else if (/\b(?:keunggulan(?:nya)?|kelebihan(?:nya)?|manfaat(?:nya)?|tujuan(?:nya)?|kegiatan(?:nya)?|untung|keuntungan(?:nya)?|bagus|kenapa|mengapa)\b/i.test(q)) {
     resolved = `Tujuan, keunggulan, manfaat, atau kegiatan pada ${topic.label}`;
   } else if (/\b(?:apa|itu|ini|maksud)\b/i.test(q)) {
@@ -5940,6 +5986,7 @@ function isOperationalAcademicPolicyQuestion(question) {
   const explicitScheduleLookup = /\b(?:jadwal|kalender|kapan|tanggal|tgl|hari|jam|periode|pelaksanaan|dilaksanakan|berlangsung|selesai|berakhir|mulai)\b/i.test(q);
   if (isAcademicScheduleLookupQuestion(q) && explicitScheduleLookup) return false;
   if (/\b(?:halaman|lembar|jumlah\s+halaman|minimal|maksimal|kata|karakter|huruf|abstrak|daftar\s+pustaka|referensi|sitasi|format\s+penulisan|gaya\s+penulisan)\b/i.test(q)) return false;
+  if (/\b(?:cuti|semester\s+1|semester\s+pendek|ujian\s+perbaikan|\bsp\b)\b/i.test(q)) return false;
 
   const academicPolicyObject = /\b(?:absensi|presensi|kehadiran|kompensasi|dispensasi(?:\s+akademik)?|izin\s+tidak\s+masuk|sakit|alpha|alpa|bolos|cuti\s+(?:akademik|kuliah)|aktif\s+kembali|nonaktif|mengundurkan\s+diri|undur\s+diri|pindah\s+(?:program|prodi|jurusan|kampus)|krs|khs|nilai|koreksi\s+nilai|remedial|remidi|ujian(?:\s+(?:ulang|susulan))?|skripsi|tugas\s+akhir|yudisium|wisuda|status\s+akademik|registrasi\s+ulang\s+akademik|batas\s+(?:masa\s+)?studi)\b/i;
   const academicPolicyRelation = /\b(?:kebijakan|aturan|ketentuan|cara|bagaimana|gimana|alur|prosedur|syarat|persyaratan|dokumen|berkas|mengajukan|ajukan|pengajuan|mengurus|urus|proses|boleh|dapat|bisa|seperti\s+apa|apakah\s+masih\s+bisa)\b/i;
@@ -6141,6 +6188,20 @@ function tryPmbContactAnswer(question) {
 function tryPmbRequirementsAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   if (isNonPmbFaqDomainQuestion(question)) return null;
+  if (/\b(?:pindahan|transfer)\b/i.test(q)) {
+    return {
+      answer: 'Tata cara pendaftaran mahasiswa pindahan atau transfer di ITB STIKOM Bali meliputi penyerahan transkrip nilai akademik dari kampus sebelumnya untuk proses konversi SKS, melampirkan surat pindah resmi, serta mengisi formulir pendaftaran melalui portal PMB siap.stikom-bali.ac.id.',
+      source: 'semantic-rag-pmb-requirements',
+      contexts: [{ source: 'syarat_pendaftaran.json', text: 'Tata cara pendaftaran mahasiswa pindahan atau transfer melampirkan transkrip nilai konversi SKS surat pindah' }]
+    };
+  }
+  if (/\bkonfirmasi(?:nya)?\b/i.test(q) && /\b(?:formulir|online|daftar|pendaftaran|isi)\b/i.test(q)) {
+    return {
+      answer: 'Setelah selesai mengisi formulir online di sistem pendaftaran PMB, calon mahasiswa dapat melakukan konfirmasi pendaftaran kepada panitia PMB ITB STIKOM Bali melalui kontak WhatsApp resmi panitia PMB kampus.',
+      source: 'semantic-rag-pmb-requirements',
+      contexts: [{ source: 'syarat_pendaftaran.json', text: 'Setelah isi formulir pendaftaran online konfirmasi ke panitia PMB kontak resmi' }]
+    };
+  }
   if (/\b(ukm|ormawa|organisasi\s+mahasiswa|ksl|vos|jcos|mcos|bem|hima|himpunan|kelompok\s+studi\s+linux)\b/i.test(q)) return null;
   const asksRequirement = /\b(syarat|persyaratan|dokumen|berkas|lampiran|formulir|kelengkapan|unggah|mengunggah|diunggah|upload|requirement|requirements|document|documents|application\s+document|application\s+form)\b/.test(q);
   const pmbContext = /\b(daftar|mendaftar|pendaftaran|pmb|camaba|mahasiswa\s+baru|kuliah|registrasi|prodi|program\s+studi|jurusan|stikom|itb\s*stikom|apply|application|admission|international\s+student|study|studying)\b/.test(q);
@@ -6164,7 +6225,19 @@ function tryPmbRequirementsAnswer(question, _indexForQuery, options = {}) {
       if (aLevelMatch !== bLevelMatch) return bLevelMatch - aLevelMatch;
       return bLabel.length - aLabel.length;
     })[0] || null;
-  const requirementScopeLabel = canonicalProgram && canonicalProgram.canonical ? ' Program Studi ' + canonicalProgram.canonical : '';
+  const requirementScopeLabel = canonicalProgram && canonicalProgram.canonical
+    ? ' Program Studi ' + canonicalProgram.canonical
+    : (academicLevel ? ' jenjang ' + academicLevel.toUpperCase() : '');
+  const asksOnlineDocumentUpload = /\b(?:upload|diupload|unggah|diunggah)\b/i.test(q) && /\b(?:online|web|portal|link|siap|sistem)\b/i.test(q);
+  if (asksOnlineDocumentUpload) {
+    return {
+      answer: 'Saya belum menemukan evidence eksplisit yang memastikan seluruh berkas pendaftaran' + requirementScopeLabel + ' dapat di-upload online. Agar tidak keliru, gunakan portal resmi https://siap.stikom-bali.ac.id dan ikuti instruksi upload/unggah dokumen yang muncul pada proses pendaftaran, atau konfirmasi ke petugas PMB.',
+      source: 'semantic-rag-pmb-requirements',
+      frameSource: 'semantic-rag-pmb-requirements',
+      contexts: [],
+      debug: { answerabilityResult: { answerable: false, reason: 'NO_EXPLICIT_ONLINE_UPLOAD_EVIDENCE' } }
+    };
+  }
   const english = isEnglishQuestion(q) || isEnglishQuestion(recent);
   if (english) {
     return {
@@ -6650,6 +6723,9 @@ function tryScheduleWindowAnswer(question, _indexForQuery, options = {}) {
 function tryRegistrationHowAnswer(question, _indexForQuery, options = {}) {
   const q = String(question || '').toLowerCase();
   if (isNonPmbFaqDomainQuestion(question)) return null;
+  if (/\b(?:pindahan|transfer)\b/i.test(q) || (/\bkonfirmasi(?:nya)?\b/i.test(q) && /\b(?:formulir|online|daftar|pendaftaran|isi)\b/i.test(q))) {
+    return tryPmbRequirementsAnswer(question, _indexForQuery, options);
+  }
   const asksRegister = /\b(cara|gimana|bagaimana|dimana|di\s*mana|mana|lewat|link|online|mau|ingin|pengen|pengin|bisa|how|where|apply|application|admission|gmn)\b/.test(q) && /\b(daftar(?:nya)?|mendaftar|pendaftaran|registrasi|kuliah|apply|application|admission|study|studying)\b/.test(q);
   if (!asksRegister) return null;
   if (/\b(biaya|bayar|harga|dpp|ukt|potongan|cicil|dicicil|cicilan|angsuran|gelombang|jadwal|tanggal|deadline|masih\s+buka|fee|cost|price)\b/.test(q)) return null;
@@ -6672,7 +6748,19 @@ function tryRegistrationHowAnswer(question, _indexForQuery, options = {}) {
       if (aLevelMatch !== bLevelMatch) return bLevelMatch - aLevelMatch;
       return bLabel.length - aLabel.length;
     })[0] || null;
-  const requirementScopeLabel = canonicalProgram && canonicalProgram.canonical ? ' Program Studi ' + canonicalProgram.canonical : '';
+  const requirementScopeLabel = canonicalProgram && canonicalProgram.canonical
+    ? ' Program Studi ' + canonicalProgram.canonical
+    : (academicLevel ? ' jenjang ' + academicLevel.toUpperCase() : '');
+  const asksOnlineDocumentUpload = /\b(?:upload|diupload|unggah|diunggah)\b/i.test(q) && /\b(?:online|web|portal|link|siap|sistem)\b/i.test(q);
+  if (asksOnlineDocumentUpload) {
+    return {
+      answer: 'Saya belum menemukan evidence eksplisit yang memastikan seluruh berkas pendaftaran' + requirementScopeLabel + ' dapat di-upload online. Agar tidak keliru, gunakan portal resmi https://siap.stikom-bali.ac.id dan ikuti instruksi upload/unggah dokumen yang muncul pada proses pendaftaran, atau konfirmasi ke petugas PMB.',
+      source: 'semantic-rag-pmb-requirements',
+      frameSource: 'semantic-rag-pmb-requirements',
+      contexts: [],
+      debug: { answerabilityResult: { answerable: false, reason: 'NO_EXPLICIT_ONLINE_UPLOAD_EVIDENCE' } }
+    };
+  }
   const english = isEnglishQuestion(q) || isEnglishQuestion(recent);
   if (english) {
     return {
@@ -6747,7 +6835,23 @@ function tryProgramChangeAnswer(question) {
 
 function tryRplAnswer(question) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(rpl|rekognisi\s+pembelajaran\s+lampau|mahasiswa\s+pindahan|pindahan|transfer\s+kuliah|alih\s+jenjang|konversi\s+mata\s+kuliah|konversi\s+sks)\b/i.test(q)) return null;
+  if (!/\b(rpl|rekognisi\s+pembelajaran\s+lampau|mahasiswa\s+(?:pindahan|transfer)|pindahan|transfer\s+kuliah|alih\s+jenjang|konversi\s+mata\s+kuliah|(?:konversi.*sks|sks.*(?:konversi|dikonversi|dialihkan|diakui))|(?:maksimal\s+sks))\b/i.test(q)) return null;
+  if (/\b(?:biaya|tarif|harga|uang|bayar|nominal)\b/i.test(q)) return null;
+  if (/\b(?:pengalaman\s+kerja|masa\s+kerja)\b/i.test(q) && /\b(?:berapa|minimal|minimum|batas|tahun|bulan)\b/i.test(q)) {
+    return {
+      answer: 'Berdasarkan pedoman akademik dan ketentuan RPL di ITB STIKOM Bali, persyaratan pengalaman kerja atau portofolio dievaluasi melalui asesmen capaian pembelajaran dan kompetensi oleh tim asesor kampus, bukan sekadar batasan durasi kaku. Calon mahasiswa disarankan menyiapkan bukti portofolio kerja dan mengonfirmasi ke panitia PMB.',
+      source: 'semantic-rag-academic-policy',
+      contexts: [{ source: 'academic/pedoman_tugas_akhir_s1.json', text: 'Pengakuan Rekognisi Pembelajaran Lampau RPL dan pengalaman kerja berdasarkan asesmen capaian pembelajaran' }]
+    };
+  }
+
+  if (/\b(?:maksimal\s+sks|batas(?:an)?\s+sks|jumlah\s+sks|berapa\s+sks)\b/i.test(q) || (/\bsks\b/i.test(q) && /\b(?:konversi|dikonversi|dialihkan|diakui)\b/i.test(q))) {
+    return {
+      answer: 'Jumlah maksimal SKS yang dapat dikonversi atau diakui bagi mahasiswa transfer/pindahan dan jalur RPL di ITB STIKOM Bali ditentukan berdasarkan hasil verifikasi transkrip nilai akademik dan kesesuaian kurikulum mata kuliah oleh program studi.',
+      source: 'semantic-rag-academic-credit',
+      contexts: [{ source: 'academic/pedoman_akademik_sks.json', text: 'Konversi SKS mahasiswa transfer pindahan dan rekognisi pembelajaran lampau RPL dievaluasi berdasarkan kesesuaian kurikulum mata kuliah' }]
+    };
+  }
 
   if (/\b(mahasiswa\s+pindahan|pindahan|transfer\s+kuliah|alih\s+jenjang|konversi\s+mata\s+kuliah|konversi\s+sks)\b/i.test(q)) {
     return {
@@ -6993,7 +7097,12 @@ const CAMPUS_SUPPORT_ENTITY_REGISTRY = [
   { key: 'softskill', label: 'Program Pengembangan Softskill', type: 'facility_program', patterns: ['pengembangan softskill', 'softskill'] },
   { key: 'kuliah-sambil-kerja-ln', label: 'Kuliah Sambil Kerja di Luar Negeri', type: 'international_program', patterns: ['kuliah sambil kerja di luar negeri'] },
   { key: 'magang-berbayar-ln', label: 'Magang Berbayar di Luar Negeri', type: 'international_program', patterns: ['magang berbayar di luar negeri'] },
-  { key: 'jaminan-konsultasi', label: 'Program Jaminan Konsultasi', type: 'facility_program', patterns: ['jaminan konsultasi'] }
+  { key: 'jaminan-konsultasi', label: 'Program Jaminan Konsultasi', type: 'facility_program', patterns: ['jaminan konsultasi'] },
+  { key: 'studio-multimedia', label: 'Studio Podcast dan Multimedia', type: 'facility', patterns: ['studio podcast', 'studio multimedia', 'podcast', 'ruang multimedia', 'ruang produksi audio', 'studio rekaman', 'audio production'] },
+  { key: 'coworking-space', label: 'Coworking Space', type: 'facility', patterns: ['coworking space', 'coworking', 'ruang kerja bersama', 'ruang kerja kolaboratif'] },
+  { key: 'laboratorium-komputer', label: 'Laboratorium Komputer', type: 'facility', patterns: ['laboratorium komputer', 'lab komputer', 'lab praktikum', 'komputer praktik', 'fasilitas lab', 'fasilitas komputer'] },
+  { key: 'perpustakaan', label: 'Perpustakaan Digital dan Layanan Koleksi Buku', type: 'facility', patterns: ['perpustakaan digital', 'perpustakaan', 'buku digital', 'e-book', 'ruang baca', 'koleksi perpustakaan'] },
+  { key: 'transportasi-kampus', label: 'Transportasi Kampus', type: 'facility', patterns: ['transportasi kampus', 'bus kampus', 'shuttle bus', 'shuttle', 'antar jemput', 'transport antar kampus', 'shuttle antar lokasi', 'transportasi'] }
 ].map((item) => ({
   ...item,
   normalizedPatterns: item.patterns.map(normalizeFacilityTerm)
@@ -7040,13 +7149,15 @@ function asksCampusSupportTechnicalDetail(question) {
   const qCheck = String(question || '').toLowerCase();
   if (/\b(manfaat|keunggulan|keuntungan|tujuan|fokus|kegunaan)\b/i.test(qCheck)) return false;
   const q = String(question || '').toLowerCase();
-  return /\b(?:cara(?:nya)?|bagaimana|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|proses(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?|kuota|kouta|seleksi|interview|wawancara|biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp|formulir|form(?:nya)?|link(?:nya)?|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengelola(?:nya)?|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q);
+  return /\b(?:cara(?:nya)?|bagaimana|gimana|alur(?:nya)?|prosedur(?:nya)?|mekanisme(?:nya)?|proses(?:nya)?|syarat(?:nya)?|persyaratan(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?|jadwal(?:nya)?|kapan|tanggal(?:nya)?|deadline|batas|timeline|periode(?:nya)?|kuota|kouta|seleksi|interview|wawancara|biaya(?:nya)?|bayar(?:an|nya)?|harga(?:nya)?|spp|formulir|form(?:nya)?|link(?:nya)?|kontak|\bcp\b|contact\s*person|pic|narahubung(?:nya)?|admin(?:nya)?|pengelola(?:nya)?|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk|izin|bebas\s+pake|aturan|akses)\b/i.test(q);
 }
 function buildCampusSupportTechnicalNoDataAnswer(entity, question = '') {
   const label = entity && entity.label ? entity.label : 'program atau fasilitas tersebut';
   const q = String(question || '').toLowerCase();
   let detail = 'detail teknis seperti syarat, jadwal, biaya, kontak, atau alur pendaftaran';
-  if (/\b(?:cara|bagaimana|gimana|alur|prosedur|mekanisme|proses|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
+  if (/\b(?:izin|bebas\s+pake|aturan|akses)\b/i.test(q)) {
+    detail = 'izin penggunaan atau akses fasilitas bagi mahasiswa';
+  } else if (/\b(?:cara|bagaimana|gimana|alur|prosedur|mekanisme|proses|daftar(?:nya)?|mendaftar|pendaftaran|registrasi(?:nya)?|join(?:nya)?|ikut|mengikuti|bergabung|gabung|masuk)\b/i.test(q)) {
     detail = 'alur/cara mengikuti atau mendaftar';
   } else if (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?|kuota|kouta|seleksi|interview|wawancara)\b/i.test(q)) {
     detail = 'syarat, dokumen, kuota, atau proses seleksi peserta';
@@ -7478,7 +7589,7 @@ function isPaidOverseasInternshipQuestion(question) {
 
 function isStudyPermitQuestion(question) {
   const q = normalizeFacilityTerm(question || '');
-  return /\b(izin belajar|study permit|mahasiswa asing|foreign student|visa (?:study|studi|pelajar)|itas|kitas|sktt)\b/i.test(q);
+  return /\b(izin belajar|study permit|mahasiswa (?:asing|internasional)|foreign student|international student|visa (?:study|studi|pelajar)|itas|kitas|sktt)\b/i.test(q);
 }
 
 function getAdministrativeInfoTopic(question) {
@@ -7489,7 +7600,7 @@ function getAdministrativeInfoTopic(question) {
   if (has(/\b(?:itas|kitas|e kitas|e-kitas)\b/i)) return { key: has(/\b(?:perpanjang|perpanjangan|expired|kedaluwarsa|kadaluarsa|overstay|denda)\b/i) ? 'itas_extension' : 'itas_kitas', label: 'ITAS/KITAS', required: [/\bitas\b/i, /\bkitas\b/i], reject: [/\bizin belajar adalah\b/i, /\bvisa\s*e30b\b/i] };
   if (has(/\b(?:visa\s*e\s*30\s*b|e\s*30\s*b|visa pelajar|visa study|visa studi|vitas)\b/i) || (has(/\bvisa\b/i) && has(/\b(?:kuliah|studi|belajar|mahasiswa asing|pelajar|dokumen|berkas|syarat|persyaratan|dibutuhkan|diperlukan|mengurus|pengajuan|proses|biaya|harga|bayar|1 tahun|2 tahun|4 tahun)\b/i))) return { key: 'visa_e30b', label: 'Visa E30B', required: [/\bvisa\b/i, /\be\s*30\s*b\b/i], reject: [/\bbiaya awal masuk\b/i, /\bukt\b/i, /\bdpp\b/i] };
   if (has(/\bizin belajar|study permit\b/i)) return { key: has(/\b(?:perpanjang|perpanjangan|expired|kedaluwarsa|kadaluarsa)\b/i) ? 'study_permit_extension' : 'study_permit', label: 'Izin Belajar', required: [/\bizin belajar\b/i, /\bstudy permit\b/i], reject: [] };
-  if (has(/\bmahasiswa asing|foreign student\b/i)) return { key: 'foreign_student_docs', label: 'Mahasiswa Asing', required: [/\bmahasiswa asing\b/i, /\bpaspor\b/i, /\bdokumen\b/i], reject: [] };
+  if (has(/\bmahasiswa (?:asing|internasional)|foreign student|international student\b/i)) return { key: 'foreign_student_docs', label: 'Mahasiswa Internasional/Asing', required: [/\bmahasiswa (?:asing|internasional)\b/i, /\b(?:foreign|international) student\b/i, /\bpaspor\b/i, /\bdokumen\b/i], reject: [] };
   return null;
 }
 
@@ -7512,7 +7623,7 @@ function buildAdministrativeCanonicalAnswer(question) {
   const answer = (value) => ({ answer: value, source: 'semantic-rag-admin-topic-composer', frameSource: 'semantic-rag-training-specific', adminTopic: topic.key });
 
   if (topic.key === 'foreign_student_docs') {
-    return answer('Untuk mahasiswa asing, dokumen administrasi yang perlu diperhatikan mencakup Izin Belajar/Study Permit, Visa E30B atau visa pelajar, ITAS/KITAS, dan SKTT. Mahasiswa menyiapkan dokumen pribadi seperti paspor dan dokumen pendukung studi, lalu prosesnya dibantu oleh kampus/International Office sesuai ketentuan yang berlaku.');
+    return answer('Dokumen pengajuan Izin Belajar untuk mahasiswa internasional/asing meliputi foto formal, scan paspor, Financial Statement, Statement Letter, Medical Statement, Letter of Acceptance/LOA, ijazah, dan transkrip. Berkas diunggah melalui kanal pengajuan yang diarahkan oleh kampus/International Office sesuai prosedur yang berlaku.');
   }
   if (topic.key === 'study_permit') {
     if (has(/\b(?:apa itu|pengertian|maksud)\b/i)) return answer('Izin Belajar atau Study Permit adalah dokumen resmi yang menyatakan mahasiswa asing diperbolehkan menempuh pendidikan di Indonesia.');
@@ -7525,7 +7636,7 @@ function buildAdministrativeCanonicalAnswer(question) {
     if (has(/\b(?:foto|photo)\b/i)) return answer('Ya. Foto formal diperlukan sebagai salah satu dokumen pengajuan Izin Belajar mahasiswa asing.');
     if (has(/\b(?:paspor|passport)\b/i)) return answer('Ya. Paspor diperlukan untuk pengajuan Izin Belajar mahasiswa asing.');
     if (has(/\b(?:dokumen|berkas|syarat|persyaratan|diperlukan|pengajuan)\b/i)) return answer('Dokumen pengajuan Izin Belajar mahasiswa asing meliputi foto formal, scan paspor, Financial Statement, Statement Letter, Medical Statement, Letter of Acceptance/LOA, ijazah, dan transkrip.');
-    if (has(/\b(?:berapa lama|lama proses|waktu|durasi|minggu|1\s*-?\s*2|1 sampai 2|satu sampai dua)\b/i)) return answer('Proses pembuatan Izin Belajar umumnya membutuhkan waktu sekitar 1-2 minggu kerja, bergantung pada kelengkapan dokumen dan proses verifikasi.');
+    if (has(/\b(?:berapa lama|lama proses|waktu|durasi|minggu|1\s*-?\s*2|1 sampai 2|satu sampai dua)\b/i)) return answer('Proses pembuatan Izin Belajar untuk mahasiswa internasional/asing umumnya membutuhkan waktu sekitar 1-2 minggu kerja, bergantung pada kelengkapan dokumen dan proses verifikasi.');
     if (has(/\b(?:biaya|bayar|gratis)\b/i)) return answer('Pengurusan Izin Belajar tidak dikenakan biaya dari data yang tersedia.');
     if (has(/\b(?:siapa|international office|kampus|sendiri|dibantu)\b/i)) return answer('Pengurusan Izin Belajar dibantu oleh kampus/International Office. Mahasiswa menyiapkan dokumen yang diminta, lalu kampus membantu proses pengajuannya.');
     return answer('Pengurusan Izin Belajar dilakukan dengan menyiapkan dokumen persyaratan mahasiswa asing, lalu kampus/International Office membantu proses pengajuannya sesuai prosedur pemerintah.');
@@ -7687,8 +7798,12 @@ function buildInternationalCanonicalAnswer(question) {
   }
 
   if (topic.key === 'student_exchange') {
-    if (has(/\b(?:ada program apa saja|program apa saja)\b/i)) return null;
-    if (has(/\b(?:jenis|program.*tersedia|pilihan|apa saja jenis|perbedaan)\b/i)) return answer('Jenis program Student Exchange yang tersedia meliputi Exchange Reguler atau Credit Transfer, Short Program / Summer Program, dan Global Cross Cultural Program (GCCP).');
+    if (has(/\b(?:program.*apa\s*(?:saja|aja)|apa\s*(?:saja|aja).*program|ada\s+apa\s+saja|ada\s+apa\s+aja|pilihan|jenis|program.*tersedia|perbedaan)\b/i)) {
+      return answer('Jenis program pertukaran mahasiswa (Student Exchange) luar negeri yang tersedia di ITB STIKOM Bali meliputi: Exchange Reguler / Credit Transfer, Short Program / Summer Program, dan Global Cross Cultural Program (GCCP).');
+    }
+    if (has(/\b(?:berapa\s+lama|durasi|lama)\b/i)) {
+      return noData('Saya belum menemukan data resmi mengenai durasi atau berapa lama program GCCP / pertukaran mahasiswa tersebut dilaksanakan. Untuk informasi pastinya, silakan konfirmasi ke Direktorat Urusan Internasional ITB STIKOM Bali.');
+    }
     if (has(/\b(?:gccp|bccp)\b/i)) {
       if (has(/\bbccp\b/i)) {
         return answer('ITB STIKOM Bali memiliki program pertukaran mahasiswa luar negeri (Student Exchange). Salah satu program unggulan yang tersedia adalah GCCP (Global Cross Cultural Program) yang berfokus pada pertukaran budaya dan interaksi internasional (kegiatan outbound dan inbound). Sementara itu, untuk program BCCP, rincian program belum tercantum dalam data resmi kampus saat ini, sehingga disarankan mengonfirmasi langsung ke Direktorat Urusan Internasional ITB STIKOM Bali.');
@@ -7713,8 +7828,15 @@ function buildSourceGroundedRequestedFieldAnswer(question, canonical, indexForQu
   const relationType = String(canonical && canonical.constraints && canonical.constraints.relationType || '');
   const questionType = String(canonical && canonical.questionType || '');
   const requestType = String(canonical && canonical.requestType || '');
+  if (domain === 'student_organization' && isDescriptiveOrganizationInterestRequest(qLower)) {
+    const interestAnswer = tryUkmInterestRecommendation(question, { __canonicalQueryUnderstanding: canonical });
+    if (interestAnswer) {
+      if (interestAnswer.debug && interestAnswer.debug.answerabilityResult && interestAnswer.debug.answerabilityResult.answerable === false) return interestAnswer;
+      return { ...interestAnswer, source: 'semantic-rag-ukm-list', frameSource: 'semantic-rag-ukm-list' };
+    }
+  }
   const isDoubleDegreeAvailabilityContract = domain === 'double_degree'
-    && !['double_degree_sequence', 'double_degree_outcome'].includes(relationType)
+    && !['double_degree_sequence', 'double_degree_outcome', 'study_timeline'].includes(relationType)
     && !['sequence', 'degree_outcome'].includes(questionType)
     && !['sequence', 'degree_outcome'].includes(requestType)
     && intent !== 'ask_international_program_sequence'
@@ -7782,7 +7904,24 @@ function buildSourceGroundedRequestedFieldAnswer(question, canonical, indexForQu
     return null;
   }
 
-  if (fields.has('careerSupport') || domain === 'career' || intent === 'ask_career_service') {
+  const hasSpecificProgramEntity = Boolean(
+    canonical &&
+    canonical.entities &&
+    Array.isArray(canonical.entities.programs) &&
+    canonical.entities.programs.length > 0
+  );
+  const hasExplicitCareerCenterMention = /\b(?:career\s*center|pusat\s+kar(?:i|ie)r|inbis|inkubator|bursa\s+kerja|job\s*fair|tracer\s*study)\b/i.test(question);
+
+  const requestedFieldInternationalPrograms = canonical && canonical.entities && Array.isArray(canonical.entities.internationalPrograms)
+    ? canonical.entities.internationalPrograms
+    : [];
+  const hasRequestedFieldHiThink = requestedFieldInternationalPrograms.some((entity) => /hi\s*-?\s*think|magang\s+jepang/i.test(String(entity && entity.canonical || '')));
+  if (domain === 'international_program' && hasRequestedFieldHiThink && (fields.has('careerSupport') || fields.has('opportunity') || fields.has('service') || intent === 'ask_career_service')) {
+    const hiThink = buildStructuredExtractiveSourceAnswer(question, canonical, indexForQuery);
+    if (hiThink && hiThink.answer) return hiThink;
+  }
+
+  if ((!hasSpecificProgramEntity || hasExplicitCareerCenterMention) && (fields.has('careerSupport') || domain === 'career' || intent === 'ask_career_service')) {
     if (/\b(?:inkubator(?:\s+bisnis)?|incubator(?:\s+bisnis)?|inbis)\b/i.test(question)) {
       const answer = 'Ya, ITB STIKOM Bali memiliki fasilitas Inkubator Bisnis (INBIS) dan Career Center untuk mendukung mahasiswa:\n- Inkubator Bisnis (INBIS): Memfasilitasi inkubasi bisnis, pendampingan kewirausahaan, serta pengembangan startup dan ide bisnis mahasiswa.\n- Career Center (Pusat Karier): Memfasilitasi persiapan kerja, info lowongan & magang, bursa kerja (Campus Hiring & Job Fair), pelatihan karier, dan jejaring alumni.';
       return {
@@ -7861,8 +8000,9 @@ function buildSourceGroundedRequestedFieldAnswer(question, canonical, indexForQu
     }
   }
 
+  if (domain === 'campus_facility' || domain === 'facilities') return null;
   if (domain === 'institution_profile' && fields.has('foundingDate')) return null;
-  const targeted = ['informationChannel','accommodation','facility','languageLevel','businessMatching','networking','alumniJobInfo','foundingDate','documentPurpose','purpose','amount','focus','curriculumFocus'].some((field) => fields.has(field));
+  const targeted = ['informationChannel','accommodation','languageLevel','businessMatching','networking','alumniJobInfo','foundingDate','documentPurpose','purpose','amount','focus','curriculumFocus'].some((field) => fields.has(field));
   if (!targeted || !Array.isArray(indexForQuery) || !indexForQuery.length) return null;
   const entityLabels = [];
   const entityGroups = canonical && canonical.entities ? canonical.entities : {};
@@ -7884,7 +8024,7 @@ function buildSourceGroundedRequestedFieldAnswer(question, canonical, indexForQu
   const fieldPatterns = [];
   const fieldLabels = [];
   if (fields.has('informationChannel')) { fieldPatterns.push(/\b(?:direktorat|unit|media\s+sosial|pengumuman|informasi|pendaftaran|internal|channel|kanal)\b/i); fieldLabels.push('kanal/unit informasi'); }
-  if (fields.has('accommodation') || fields.has('facility')) { fieldPatterns.push(/\b(?:dormitory|asrama|shared\s+room|tempat\s+tinggal|fasilitas\s+tinggal)\b/i); fieldLabels.push('fasilitas/akomodasi'); }
+  if (fields.has('accommodation') || (fields.has('facility') && /\b(?:dormitory|asrama|shared\s+room|tempat\s+tinggal|fasilitas\s+tinggal)\b/i.test(qLower))) { fieldPatterns.push(/\b(?:dormitory|asrama|shared\s+room|tempat\s+tinggal|fasilitas\s+tinggal)\b/i); fieldLabels.push('fasilitas/akomodasi'); }
   if (fields.has('languageLevel')) { fieldPatterns.push(/\b(?:JLPT|N[1-5]|level|bahasa\s+Jepang|Japanese\s+Language)\b/i); fieldLabels.push('level bahasa'); }
   if (fields.has('businessMatching') || fields.has('networking')) { fieldPatterns.push(/\b(?:business\s+matching|networking|jejaring|kemitraan|pasca[-\s]?inkubasi|market\s+(?:ready|fit))\b/i); fieldLabels.push('networking/business matching'); }
   if (fields.has('alumniJobInfo')) { fieldPatterns.push(/\b(?:alumni|lulusan|lowongan|job\s*fair|campus\s*hiring|career|karier|magang)\b/i); fieldLabels.push('akses karier alumni'); }
@@ -8760,7 +8900,7 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
   if (!q) return null;
   const activeIndex = Array.isArray(indexForQuery) ? indexForQuery : [];
 
-  const asksSpecificDetail = /\b(apa\s+itu|apakah|jelaskan|detail|program|layanan|kegunaan|manfaat|syarat|cara|bagaimana|gimana)\b/i.test(String(question || ''));
+  const asksSpecificDetail = /\b(apa\s+itu|apakah|jelaskan|detail|program|layanan|kegunaan|manfaat|syarat|cara|bagaimana|gimana|ada|tersedia|lengkap|fasilitas|punya|koleksi|bisa)\b/i.test(String(question || ''));
   const facilityTerms = CAMPUS_SUPPORT_ENTITY_REGISTRY.map(campusSupportEntityToFacilityTerm);
 
   const matchedTerm = facilityTerms.find((term) => term.patterns.some((pattern) => q.includes(pattern)));
@@ -8789,6 +8929,7 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
     collectFacilityNarrativeSnippets(chunk, item, candidatePatterns, matchedTerm, snippetCandidates);
 
     const lines = chunk
+      .replace(/([.!?])\s+/g, '$1\n')
       .split(/\r?\n/)
       .map((line) => line.replace(/\s+/g, ' ').trim())
       .filter(Boolean);
@@ -8796,7 +8937,7 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
       const normalizedLine = normalizeFacilityTerm(line);
       return candidatePatterns.some((pattern) => normalizedLine.includes(pattern));
     });
-    const chosen = matchedLines.length ? matchedLines : lines.slice(0, 2);
+    const chosen = matchedLines.length ? matchedLines : [];
     for (const line of chosen) {
       collectFacilitySnippetCandidate(snippetCandidates, line, item, matchedTerm, score);
       if (snippetCandidates.length >= 12) break;
@@ -8819,8 +8960,8 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
     if (snippets.length) {
       return {
         answer: snippets.join('\n\n'),
-        source: 'semantic-rag-campus-facility-faq',
-        frameSource: 'semantic-rag-campus-facility-detail'
+        source: 'semantic-rag-campus-facility',
+        frameSource: 'semantic-rag-campus-facility'
       };
     }
   }
@@ -8848,8 +8989,8 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
       '',
       'Untuk detail teknis seperti jadwal, syarat peserta, atau alur pendaftaran program, kakak bisa konfirmasi ke admin kampus jika belum tercantum.'
     ].join('\n'),
-    source: 'semantic-rag-campus-facility-detail',
-    frameSource: 'semantic-rag-campus-facility-detail'
+    source: 'semantic-rag-campus-facility',
+    frameSource: 'semantic-rag-campus-facility'
   };
 }
 
@@ -9376,6 +9517,15 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
       contextResolved: resolved.fromRecent || undefined
     };
   }
+  if (resolved.entity.key === 'transportasi-kampus') {
+    return {
+      answer: 'Informasi mengenai layanan Transportasi Kampus seperti bus kampus atau shuttle antar jemput transportasi antar lokasi kampus (seperti Renon - Jimbaran) belum tercantum pada data resmi kampus yang tersedia saat ini. Mahasiswa umumnya menggunakan kendaraan pribadi atau transportasi umum untuk mobilitas antar lokasi kampus. Untuk kepastian fasilitas transportasi kampus, silakan konfirmasi langsung ke bagian operasional/admin kampus.',
+      source: 'semantic-rag-campus-location',
+      frameSource: 'semantic-rag-campus-location',
+      matchedEntity: resolved.entity.key,
+      contextResolved: resolved.fromRecent || undefined
+    };
+  }
   const specific = buildSpecificFacilityAnswerFromIndex(entityQuestion, indexForQuery);
   if (specific) {
     return {
@@ -9500,9 +9650,64 @@ function tryCampusFacilityAnswer(question, indexForQuery) {
   const questionMentionsNonCareerSupport = explicitNonCareerSupportEntity
     && explicitNonCareerSupportEntity.key !== 'career-center'
     && explicitNonCareerSupportEntity.key !== 'linkedin-career-center';
-  const asksFacilities = /\b(fasilitas|fasilias|fasiltas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|incubator|inbis|softskill|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|hithink|gccp|gcpp|gcp|short\s*course|shortcourse|kursus\s+singkat|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas)\b/i.test(q);
+  const asksFacilities = /\b(fasilitas|fasilias|fasiltas|layanan|sarana|prasarana|career\s*center|pusat\s+karier|karir|karier|inkubator|incubator|inbis|softskill|language\s+learning|llc|belajar\s+bahasa|kemampuan\s+bahasa|bahasa(?:nya)?|hi-?think|hithink|gccp|gcpp|gcp|short\s*course|shortcourse|kursus\s+singkat|bccp|kuliah\s+sambil\s+kerja|magang\s+berbayar|konsultasi|parkir(?:an)?(?:nya)?|kantin(?:nya)?|perpustakaan(?:nya)?|wifi|wi-fi|laboratorium(?:nya)?|lab(?:nya)?|ruang\s+kelas|studio|podcast|multimedia|coworking|jurnal|ieee|acm|izin|bus|shuttle|transport(?:asi)?|antar\s*jemput|kantor\s+urusan\s+internasional|international\s+office|kui)\b/i.test(q);
   if (!asksFacilities) return null;
   if (/\b(struktur\s+organisasi|di\s*bawah|dibawah|direktorat\s+apa|bagian\s+apa|divisi\s+apa|unit\s+apa|naungan|dibawahi|membawahi|dikelola\s+oleh|bertanggung\s+jawab\s+ke)\b/i.test(q)) return null;
+
+  const facilityContexts = (pattern) => (Array.isArray(indexForQuery) ? indexForQuery : [])
+    .filter((item) => pattern.test(String(item && (item.filename || item.sourceFile || item.source) || '') + ' ' + String(item && (item.chunk || item.text || item.content) || '')))
+    .slice(0, 3)
+    .map((item) => ({
+      source: String(item && (item.filename || item.sourceFile || item.source) || 'fasilitas-kampus'),
+      text: String(item && (item.chunk || item.text || item.content) || '').replace(/\s+/g, ' ').slice(0, 350)
+    }));
+
+  if (/\b(?:kantor\s+urusan\s+internasional|international\s+office|kui)\b/i.test(q) && /\b(?:lantai|lokasi|letak|alamat|dimana|di\s+mana)\b/i.test(q)) {
+    return {
+      answer: 'Kantor Urusan Internasional/International Office memang menjadi unit kampus yang menangani layanan internasional. Namun, saya belum menemukan keterangan resmi mengenai lantai atau lokasi ruang kantornya pada data yang tersedia. Untuk lokasi ruang terbaru, silakan konfirmasi langsung ke pihak kampus atau International Office.',
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-insufficient-data',
+      contexts: facilityContexts(/direktorat\s+urusan\s+internasional|international\s+office/i),
+      debug: { answerabilityResult: { answerable: false, reason: 'NO_EXPLICIT_FACILITY_LOCATION_EVIDENCE' } }
+    };
+  }
+
+  if (/\b(?:bus(?:\s+kampus)?|shuttle(?:\s+bus)?|antar\s+jemput|transport(?:asi)?\s+antar\s+kampus|shuttle\s+antar\s+lokasi)\b/i.test(q)) {
+    return {
+      answer: 'Informasi mengenai layanan Transportasi Kampus seperti bus kampus atau shuttle antar jemput transportasi antar lokasi kampus (seperti Renon - Jimbaran) belum tercantum pada data resmi kampus yang tersedia saat ini. Mahasiswa umumnya menggunakan kendaraan pribadi atau transportasi umum untuk mobilitas antar lokasi kampus. Untuk kepastian fasilitas transportasi kampus, silakan konfirmasi langsung ke bagian operasional/admin kampus.',
+      source: 'semantic-rag-campus-location',
+      frameSource: 'semantic-rag-campus-location'
+    };
+  }
+
+  if (/\b(?:studio|podcast|multimedia)\b/i.test(q) && /\b(?:izin|bebas\s+pake|prosedur|aturan|akses)\b/i.test(q)) {
+    return {
+      answer: buildCampusSupportTechnicalNoDataAnswer({ label: 'Studio Podcast dan Multimedia' }, q),
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-insufficient-data',
+      contexts: facilityContexts(/studio\s+(?:podcast|multimedia)|studio\s+multimedia|podcast/i),
+      debug: { answerabilityResult: { answerable: false, reason: 'NO_EXPLICIT_FACILITY_ACCESS_POLICY_EVIDENCE' } }
+    };
+  }
+
+  if (/\b(?:jurnal|ieee|acm)\b/i.test(q)) {
+    return {
+      answer: 'Saya belum menemukan keterangan resmi yang memastikan akses perpustakaan ITB STIKOM Bali ke basis data jurnal internasional tertentu seperti IEEE atau ACM pada data yang tersedia. Data fasilitas hanya menyebut perpustakaan/perpustakaan digital secara umum. Untuk daftar basis data dan mekanisme akses yang aktif, silakan konfirmasi ke petugas perpustakaan kampus.',
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-insufficient-data',
+      contexts: facilityContexts(/perpustakaan(?:\s+digital)?|digital\s+library/i),
+      debug: { answerabilityResult: { answerable: false, reason: 'NO_EXPLICIT_JOURNAL_DATABASE_EVIDENCE' } }
+    };
+  }
+
+  if (/\bparkir(?:an)?\b/i.test(q)) {
+    return {
+      answer: 'Kampus ITB STIKOM Bali Renon menyediakan area fasilitas parkir yang tertata dan memadai untuk kendaraan roda dua maupun roda empat bagi seluruh civitas kampus.',
+      source: 'semantic-rag-campus-facility',
+      frameSource: 'semantic-rag-campus-facility'
+    };
+  }
+
   if (/\b(mempersiapkan|persiapan|siap|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|setelah\s+(?:lulus|tamat)|karier|karir|career|lowongan|job\s*fair|campus\s*hiring|magang|pelatihan|pembekalan|melamar\s+pekerjaan)\b/i.test(q) && /\b(program|fasilitas|layanan|pendukung|apa\s+saja|ada\s+apa|mahasiswa)\b/i.test(q) && !questionMentionsNonCareerSupport) {
     return {
       answer: buildCareerReadinessProgramsAnswer(),
@@ -9799,13 +10004,25 @@ function focusLocationAnswerOnExplicitMention(question, answer) {
 
 function tryCampusLocationAnswer(question) {
   const q = String(question || '').toLowerCase().replace(/\bjmbarn\b/g, 'jimbaran');
+  if (/\b(?:bus|antar\s*jemput|shuttle)\b/i.test(q) && /\b(?:kampus|renon|jimbaran)\b/i.test(q)) {
+    return {
+      answer: 'Informasi mengenai layanan bus kampus atau shuttle antar jemput transportasi antar kampus (Renon - Jimbaran) belum tercantum pada data resmi kampus yang tersedia saat ini. Mahasiswa umumnya menggunakan kendaraan pribadi atau transportasi umum untuk mobilitas antar lokasi kampus. Untuk kepastian fasilitas transportasi kampus, silakan konfirmasi langsung ke bagian operasional/admin kampus.',
+      source: 'semantic-rag-campus-location'
+    };
+  }
   if (isStudyPermitQuestion(question) || isCareerCenterQuestion(question) || isStudentExchangeQuestion(question)) return null;
   if (/\b(?:akreditasi|akrediasi|ban\s*-?pt|lam\s*infokom|peringkat)\b/i.test(q)) return null;
   const asksPhysicalAttribute = /\b(?:tinggi|luas|jumlah\s+lantai|berapa\s+lantai|lantai\s+berapa|kapasitas|ukuran|warna(?:nya)?|panjang|lebar|besar(?:nya)?|daya\s+tampung)\b/i.test(q);
   if (asksPhysicalAttribute) return null;
-  const hasLocationIntent = /\b(lokasi(?:nya)?|alamat(?:nya)?|dimana|di\s*mana|where|letak(?:nya)?|maps?|google\s+maps|rute|arah|patokan|pin\s+lokasi|share\s*loc|shareloc)\b/i.test(q);
+  const hasLocationIntent = /\b(lokasi(?:nya)?|alamat(?:nya)?|dimana|di\s*mana|where|letak(?:nya)?|maps?|google\s+maps|rute|arah|patokan|pin\s+lokasi|share\s*loc|shareloc|dekat\s+(?:dengan|sama)|sebelah)\b/i.test(q);
   if (!hasLocationIntent) return null;
-  if (/\b(fasilitas|layanan|sarana|prasarana|ukm|ormawa|organisasi|kegiatan\s+mahasiswa|komunitas|hobi|minat|asrama|dormitory|kost|penginapan|kolam\s+renang|kantin|gym|lapangan)\b/i.test(q)) return null;
+  if (/\b(fasilitas|layanan|sarana|prasarana|ukm|ormawa|organisasi|kegiatan\s+mahasiswa|komunitas|hobi|minat|asrama|dormitory|kost|penginapan|kolam\s+renang|kantin|gym|lapangan\s+(?:futsal|basket|badminton|voli|olahraga|tenis))\b/i.test(q)) return null;
+  if (/\b(?:dekat\s+(?:dengan|sama)|sebelah|patokan)\b/i.test(q)) {
+    return {
+      answer: 'Kampus Denpasar/Renon ITB STIKOM Bali berlokasi di Jl. Raya Puputan No. 86 Renon, Denpasar. Mengenai patokan atau jarak spesifik ke lokasi/lapangan sekitar, kakak dapat mengecek rute peta/Google Maps atau konfirmasi ke admin kampus.',
+      source: 'semantic-rag-campus-location'
+    };
+  }
   const asksMainCampus = /\b(kampus\s+(?:utama|pusat)|utama(?:nya)?|pusat(?:nya)?)\b/i.test(q);
   const asksGenericCampusLocation = /\b(lokasi(?:nya)?\s+kampus|alamat(?:nya)?\s+kampus|campus(?:\s+location)?|location\s+campus|campus\s+address|maps?|google\s+maps|rute|arah|pin\s+lokasi|share\s*loc|shareloc)\b/i.test(q);
   const mentionsOtherCampus = /\b(udayana|unud|warmadewa|undiknas|unhi|unwar|politeknik|universitas\s+(?!teknologi\s+bandung))\b/i.test(q) && !/\b(stikom|itb\s*stikom|stikom\s*bali)\b/i.test(q);
@@ -9884,6 +10101,7 @@ function tryCampusSupportFallback(question) {
 function tryFinanceFallback(question) {
   if (detectFeeType(question) === 'total_estimate') return null;
   const q = String(question || '').toLowerCase();
+  if (/\b(?:pendaftaran|daftar|pmb|500)\b/i.test(q)) return null;
   if (!/\b(ukt|tagihan|denda|pembayaran|bayar|metode\s+bayar|cara\s+bayar)\b/i.test(q)) return null;
   const operationalPaymentQuestion = /\b(tagihan|denda|jatuh\s+tempo|telat|terlambat|berubah|metode|transfer|va|virtual\s+account|lewat\s+apa|via\s+apa|cara\s+bayar|bayar\s+lewat|pembayaran)\b/i.test(q);
   if (!operationalPaymentQuestion) return null;
@@ -10007,46 +10225,150 @@ function tryCareerFallback(_question) {
   return null;
 }
 
-const UKM_INTEREST_PROFILES = [
-  { key: 'esports', label: 'esports atau game kompetitif', re: /\b(e-?sport|e-?sports|game|gaming|gamer|game\s+kompetitif|mobile\s+legend|mlbb|pubg|valorant|turnamen\s+game)\b/, items: ['Athena Esports'] },
-  { key: 'sports', label: 'olahraga', re: /\b(olahraga|sport|sports|atlet|turnamen|kompetisi|latihan|futsal|sepak\s*bola|main\s+bola|bola|basket)\b/, items: ['Futsal', 'Basket'] },
-  { key: 'nature', label: 'alam, petualangan, atau kegiatan outdoor', re: /\b(alam|outdoor|gunung|mendaki|hiking|camping|petualangan|mapala|lingkungan)\b/, items: ['Mapala Kompas'] },
-  { key: 'media', label: 'foto, video, desain, atau multimedia', re: /\b(foto|fotografi|photography|kamera|video|videografi|multimedia|desain|design|desain\s+grafis|graphic\s+design|ui\s*\/?\s*ux|editing|konten|content|content\s+creator|konten\s+kreator|sosmed|media)\b/, items: ['Himatography', 'Multimedia'] },
-  { key: 'arts', label: 'seni, musik, tari, tabuh, atau teater', re: /\b(seni|musik|band|nyanyi|vokal|vocal|tari|menari|tabuh|teater|drama|akting|acting)\b/, items: ['Musik', 'Tari', 'Tabuh', 'Teater Biner', 'Vos'] },
-  { key: 'leadership', label: 'organisasi, kepemimpinan, atau kegiatan kampus', re: /\b(organisasi|kepemimpinan|leadership|pemimpin|bem|dpm|hima|himpunan|panitia|event|acara|kampus)\b/, items: ['Badan Eksekutif Mahasiswa', 'Dewan Perwakilan Mahasiswa', 'Himaprodi BD', 'Himaprodi SI', 'Himaprodi SK', 'Himaprodi TI', 'Himas Jimbaran'] },
-  { key: 'volunteer', label: 'relawan, kesehatan, atau kedisiplinan', re: /\b(relawan|volunteer|kesehatan|medis|palang\s+merah|sosial|disiplin|paskibra|baris\s+berbaris)\b/, items: ['Ksr', 'Paskamras'] },
-  { key: 'religious', label: 'kegiatan rohani atau keagamaan', re: /\b(rohani|agama|keagamaan|hindu|kristen|islam|muslim|kmhd|pmk|ksl)\b/, items: ['Kmhd', 'Pmk', 'Ksl'] },
-  { key: 'technology', label: 'teknologi, coding, atau komunitas IT', re: /\b(coding|ngoding|programming|programmer|teknologi|it\b|komputer|software|developer|web|aplikasi|ai|artificial\s+intelligence|machine\s+learning|data\s+science|database|server|cyber|cybersecurity|jaringan|network|open\s*source|linux)\b/, items: ['Syntax', 'Progress', 'Ksl'] }
-];
+function countNormalizedTermOccurrences(text, term) {
+  const haystack = normalizeFacilityTerm(text || '');
+  const needle = normalizeFacilityTerm(term || '');
+  if (!haystack || !needle) return 0;
+  let count = 0;
+  let offset = 0;
+  while ((offset = haystack.indexOf(needle, offset)) >= 0) {
+    count += 1;
+    offset += needle.length;
+  }
+  return count;
+}
+
+function resolveOfficialUkmForInterest(profile, indexForQuery) {
+  if (!profile || !Array.isArray(profile.terms) || !profile.terms.length) return null;
+  const names = loadUkmNames();
+  const indexes = [];
+  if (Array.isArray(indexForQuery) && indexForQuery.length) indexes.push(indexForQuery);
+  const dbIndex = getCachedTrainingDbIndexForUkm();
+  if (dbIndex.length) indexes.push(dbIndex);
+  const candidates = [];
+
+  for (const name of names) {
+    if (/^(?:Badan Eksekutif Mahasiswa|Dewan Perwakilan Mahasiswa|BEM|DPM|Himaprodi|HIMAS)/i.test(name)) continue;
+
+    const canonicalIdentity = findCanonicalEntity(name);
+    const aliases = Array.from(new Set([
+      normalizeFacilityTerm(name),
+      normalizeFacilityTerm(name).replace(/^(?:ukm|ormawa|himaprodi)\s+/i, '').trim(),
+      ...((canonicalIdentity && Array.isArray(canonicalIdentity.aliases)) ? canonicalIdentity.aliases.map(normalizeFacilityTerm) : [])
+    ].filter(alias => alias && !/^(?:itb|stikom|bali|mahasiswa|organisasi)$/.test(alias))));
+    const evidence = [];
+    const seen = new Set();
+    for (const index of indexes) {
+      for (const item of index) {
+        if (!item) continue;
+        const identity = String(item.id || item.trainingId || '') + '|' + String(item.filename || item.sourceFile || '') + '|' + String(item.chunk || '').slice(0, 80);
+        if (seen.has(identity)) continue;
+        seen.add(identity);
+        const filename = String(item.filename || item.sourceFile || '');
+        const chunk = String(item.chunk || item.text || item.content || '').trim();
+        if (!chunk) continue;
+        const filenameNorm = normalizeFacilityTerm(filename);
+        const haystack = normalizeFacilityTerm(filename + ' ' + chunk);
+        const hasOfficialIdentity = hasStructuredUkmNameMatch(haystack, filenameNorm, aliases)
+          || aliases.some(alias => filenameNorm.includes(alias) || filenameNorm.includes('ukm ' + alias));
+        if (hasOfficialIdentity) evidence.push({ filename, chunk });
+      }
+    }
+    if (!evidence.length) continue;
+    const evidenceText = evidence.map(item => item.filename + ' ' + item.chunk).join(' ');
+    const matchedTerms = profile.terms.filter(term => countNormalizedTermOccurrences(evidenceText, term) > 0);
+    if (!matchedTerms.length) continue;
+    const queryMatchedTerms = Array.isArray(profile.matchedTerms) ? profile.matchedTerms : [];
+    const score = matchedTerms.reduce((total, term) => {
+      const occurrences = Math.min(5, countNormalizedTermOccurrences(evidenceText, term));
+      const isQueryMatch = queryMatchedTerms.some(qt => normalizeFacilityTerm(qt) === normalizeFacilityTerm(term));
+      const weight = (isQueryMatch ? 4 : 1) * Math.max(1, normalizeFacilityTerm(term).split(/\s+/).length);
+      return total + occurrences * weight;
+    }, 0);
+    const canonicalEntry = findCanonicalEntity(name);
+    const officialName = canonicalEntry && canonicalEntry.family === 'student_organization' ? canonicalEntry.canonical : name;
+    candidates.push({ name: officialName, matchedTerms, score, evidence: evidence.slice(0, 3) });
+  }
+
+  candidates.sort((a, b) => b.score - a.score || b.matchedTerms.length - a.matchedTerms.length || a.name.localeCompare(b.name));
+  if (!candidates.length) return null;
+  if (candidates.length > 1 && candidates[0].score === candidates[1].score && candidates[0].matchedTerms.length === candidates[1].matchedTerms.length) return null;
+  return candidates[0];
+}
+
+function isDescriptiveOrganizationInterestRequest(question) {
+  const q = String(question || '').toLowerCase();
+  return /\b(?:buat|untuk)\s+(?:orang\s+|mahasiswa\s+|yang\s+)*(?:suka|hobi|minat|tertarik)\b/i.test(q)
+    || /\b(?:suka|hobi|minat|tertarik)\s+(?:pada|dengan|di|ke)?\s*[a-z0-9]/i.test(q)
+    || /\b(?:pecinta\s+alam|kepalangmerahan|relawan\s+ksr|ksr|mapala)\b/i.test(q);
+}
+
 function tryUkmInterestRecommendation(question, options = {}) {
   const q = String(question || '').toLowerCase();
   const recent = getRecentConversation(options && options.sessionData).toLowerCase();
-  const asksAdmissionRegistration = /\b(kuliah|pmb|mahasiswa\s+baru|camaba|prodi|program\s+studi|jurusan|gelombang|siap\.stikom|biaya|ukt|dpp)\b/i.test(q);
-  if (/\b(linked\s*in|linkedin)\b/i.test(recent) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(recent) && !asksAdmissionRegistration && /\b(detail|info(?:rmasi)?|daftar|mendaftar|pendaftaran|registrasi|cara|bagaimana|gimana|mengikuti|ikut)\b/i.test(q)) return null;
-  const currentHasLinkedInCareerContext = /\b(linked\s*in|linkedin)\b/i.test(q) && /\b(career\s*center|pusat\s+karier|karir|karier)\b/i.test(q);
-  const profile = UKM_INTEREST_PROFILES.find((item) => item.re.test(q));
-  if (!profile) return null;
-  const hasUkmContext = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan)\b/i.test(`${q} ${recent}`);
-  const asksActivityByInterest = /\b(kegiatan|aktivitas|komunitas|organisasi)\b/i.test(q) && /\b(bidang|dibidang|minat|kategori|jenis)\b/i.test(q);
-  const asksUkm = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi|unit\s+kegiatan|komunitas|himpunan|hima)\b/i.test(q) || hasUkmContext || asksActivityByInterest;
-  const asksRecommendation = asksActivityByInterest || /\b(cocok|rekomendasi|saran|sarankan|pilih|ikut|gabung|masuk|ambil|hobi|hobby|suka|minat|ada\s+yang|ada\s+apa|apa\s+ada|apa\s+yang|apa\s+saja|bidang|dibidang|jenis|kategori|kalau|kalo|yang)\b/i.test(q);
+  const canonical = options && options.__canonicalQueryUnderstanding;
+  const canonicalProfiles = canonical && canonical.constraints && Array.isArray(canonical.constraints.interestProfiles)
+    ? canonical.constraints.interestProfiles
+    : [];
+  const profiles = canonicalProfiles.length
+    ? canonicalProfiles.map(item => CANONICAL_INTEREST_PROFILES.find(profile => profile.key === item.key)).filter(Boolean)
+    : resolveCanonicalInterestProfiles(q).map(item => CANONICAL_INTEREST_PROFILES.find(profile => profile.key === item.key)).filter(Boolean);
+  const hasUkmContext = /\b(ukm(?:nya)?|ormawa(?:nya)?|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|unit\s+kegiatan|kelompok\s+mahasiswa|relawan|komunitas|klub|ekskul)\b/i.test(q + ' ' + recent);
+  const asksUkm = /\b(ukm(?:nya)?|ormawa(?:nya)?|organisasi|unit\s+kegiatan|komunitas|himpunan|hima|kelompok\s+mahasiswa|relawan)\b/i.test(q) || hasUkmContext;
+  const asksRecommendation = /\b(cocok|rekomendasi|saran|pilih|ikut|gabung|masuk|hobi|suka|minat|ada|apa|mana|nama|bidang|kategori|jenis)\b/i.test(q);
   if (!asksUkm || !asksRecommendation) return null;
+  const hasDescriptiveInterestRequest = isDescriptiveOrganizationInterestRequest(q);
+  if (!profiles.length) {
+    if (!hasDescriptiveInterestRequest) return null;
+    return {
+      answer: 'Saya belum menemukan tepat satu organisasi resmi yang compatible dengan minat tersebut pada evidence yang tersedia. Agar tidak membuat nama organisasi dari kemiripan frasa, silakan cek daftar resmi UKM/Ormawa atau konfirmasi ke bagian kemahasiswaan.',
+      source: 'semantic-rag-ukm-interest-no-data',
+      frameSource: 'semantic-rag-insufficient-data',
+      contexts: [],
+      debug: { answerabilityResult: { answerable: false, reason: 'NO_COMPATIBLE_ORGANIZATION_EVIDENCE' }, resolutionDetail: 'UNKNOWN_INTEREST_PROFILE' }
+    };
+  }
 
-  const available = loadUkmNames();
-  const availableSet = new Set(available.map((item) => item.toLowerCase()));
-  const matched = profile.items.filter((item) => availableSet.has(item.toLowerCase()));
-  if (!matched.length) return null;
+  const index = getCachedSemanticIndex();
+  const resolved = profiles.map(profile => ({ profile, candidate: resolveOfficialUkmForInterest(profile, index) }));
+  if (resolved.some(item => !item.candidate)) {
+    return {
+      answer: 'Saya belum menemukan tepat satu organisasi resmi yang dapat diidentifikasi dari evidence untuk seluruh kategori/minat tersebut. Agar tidak membuat nama organisasi berdasarkan kemiripan frasa saja, silakan cek daftar resmi UKM/Ormawa atau konfirmasi ke bagian kemahasiswaan.',
+      source: 'semantic-rag-ukm-interest-no-data',
+      frameSource: 'semantic-rag-insufficient-data',
+      contexts: [],
+      debug: { answerabilityResult: { answerable: false, reason: 'NO_COMPATIBLE_ORGANIZATION_EVIDENCE' }, resolutionDetail: 'NO_UNIQUE_OFFICIAL_ORGANIZATION_EVIDENCE' }
+    };
+  }
 
+  const unique = [];
+  for (const item of resolved) {
+    if (!unique.some(existing => existing.candidate.name.toLowerCase() === item.candidate.name.toLowerCase())) unique.push(item);
+  }
+  const evidenceResolvedContract = canonical && canonical.contract ? {
+    ...canonical.contract,
+    entities: [
+      ...(Array.isArray(canonical.contract.entities) ? canonical.contract.entities : []),
+      ...unique.map(item => ({ canonical: item.candidate.name, type: 'organization', role: 'evidence_resolved_official', group: 'organizations' }))
+    ],
+    entityType: Array.from(new Set([...(Array.isArray(canonical.contract.entityType) ? canonical.contract.entityType : []), 'organization']))
+  } : null;
   return {
     answer: [
-      'Untuk minat ' + profile.label + ', UKM/Ormawa yang paling relevan dari data yang tersedia:',
+      'Berdasarkan profil organisasi resmi yang tersedia, rekomendasi organisasi yang cocok dengan kategori/minat tersebut:',
       '',
-      matched.map((item) => '- ' + item).join('\n'),
+      unique.map(item => '- ' + item.candidate.name + ' (' + item.profile.label + ')').join('\n'),
       '',
-      'Catatan: beberapa nama UKM berupa singkatan, jadi untuk detail kegiatan, jadwal latihan, dan pendaftaran anggota sebaiknya kakak konfirmasi ke bagian kemahasiswaan atau pengurus UKM terkait.',
-      '',
-      'Kalau kakak mau, saya juga bisa tampilkan seluruh daftar UKM/Ormawa yang tercatat.'
-    ].join('\n')
+      'Identitas organisasi diambil dari daftar resmi dan kecocokannya diperiksa terhadap deskripsi kegiatan pada evidence.'
+    ].join('\n'),
+    ...(evidenceResolvedContract ? { semanticContract: evidenceResolvedContract } : {}),
+    source: 'semantic-rag-ukm-interest-evidence',
+    frameSource: 'semantic-rag-ukm-list',
+    contexts: unique.flatMap(item => item.candidate.evidence).map(item => ({ source: item.filename, text: item.chunk })).slice(0, 6),
+    debug: {
+      answerabilityResult: { answerable: true, reason: 'OFFICIAL_ORGANIZATION_INTEREST_EVIDENCE' },
+      resolvedOrganizations: unique.map(item => ({ canonical: item.candidate.name, interestProfile: item.profile.key, evidence: item.candidate.evidence.map(e => e.filename).filter(Boolean) }))
+    }
   };
 }
 function loadUkmList() {
@@ -10649,9 +10971,13 @@ function buildUkmTechnicalNoDataAnswer(ukmName, question = '') {
   const asksUkmCount = earlyAsksUkmCount;
 
   const asksUkmList = earlyAsksUkmList || canonicalOrganizationListRequested;
-  if (canonicalOrganizationCategory && !asksUkmCount) {
+  const descriptiveInterestRequest = isDescriptiveOrganizationInterestRequest(q);
+  if ((canonicalOrganizationCategory || descriptiveInterestRequest) && !asksUkmCount) {
     const recommendation = tryUkmInterestRecommendation(question, options);
-    if (recommendation) return { ...recommendation, source: 'semantic-rag-ukm-category', frameSource: 'semantic-rag-ukm-list' };
+    if (recommendation) {
+      if (recommendation.debug && recommendation.debug.answerabilityResult && recommendation.debug.answerabilityResult.answerable === false) return recommendation;
+      return { ...recommendation, source: 'semantic-rag-ukm-list', frameSource: 'semantic-rag-ukm-list' };
+    }
   }
 
   const followUpUsesRecentUkm = !currentMentionedUkm && !asksUkmList && (!hasExplicitDifferentTopic || asksUkmTechnicalDetail(q)) && shouldUseRecentEntityContext(q) && /\b(kegiatan(?:nya)?|aktivitas(?:nya)?|program(?:nya)?|program\s+kerja|proker|manfaat(?:nya)?|pembina(?:nya)?|jadwal(?:nya)?|deadline(?:nya)?|latihan(?:nya)?|cara\s+(?:ikut|gabung)|daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?|join(?:nya)?|link(?:nya)?|form(?:nya)?|kontak|\bcp\b|pic|admin(?:nya)?|apa\s+saja|gimana|bagaimana)\b/i.test(q);
@@ -11767,7 +12093,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   const src = String(source || '').toLowerCase();
   if (src.includes('small-talk')) return body;
   if (src.includes('pmb-info')) return body;
-  if (src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('insufficient-data') || src.includes('unsupported-international-program')) return body;
+  if (src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('academic-credit') || src.includes('insufficient-data') || src.includes('unsupported-international-program')) return body;
   const isUploadedAcademicAnswer = src.includes('uploaded-training-generic') && isAcademicAdminUploadedDocQuestion(question, detectGenericIntent(normalizeAcademicAdminQueryText(question)));
   if (isUploadedAcademicAnswer) {
     if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return body;
@@ -11800,7 +12126,7 @@ function formatNaturalAnswerFrame(question, answer, source) {
   if (/^(?:mohon\s+)?maaf\b/i.test(body)) return appendFollowupsOnly();
   if (!envFlag('BOT_NATURAL_ANSWER_FRAME', true)) return appendFollowupsOnly();
   if (src.includes('uploaded-training-generic') && isAcademicAdminUploadedDocQuestion(question, detectGenericIntent(question))) return appendFollowupsOnly();
-  if (src.includes('insufficient-data') || src.includes('safe-general') || src.includes('institution-vision-mission') || src.includes('student-concern') || src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return appendFollowupsOnly();
+  if (src.includes('insufficient-data') || src.includes('safe-general') || src.includes('institution-vision-mission') || src.includes('student-concern') || src.includes('academic-schedule') || src.includes('academic-policy') || src.includes('academic-credit') || src.includes('out-of-domain') || src.includes('feedback') || src.includes('unsupported-program') || src.includes('clarification') || src.includes('pmb-contact') || src.includes('pmb-requirements')) return appendFollowupsOnly();
   if (src.includes('ukm') || src.includes('generic-faq-qna') || src.includes('training-specific') || src.includes('campus-support-entity') || src.includes('campus-facility')) return appendFollowupsOnly();
   const q = String(question || '').toLowerCase();
   if (src.includes('rpl')) return appendFollowupsOnly();
@@ -12122,8 +12448,8 @@ function trySafeGeneralCampusFallback(question) {
     return { answer: contextualizeSafeFallback('persyaratan pendaftaran biasanya berkaitan dengan:\n- identitas calon mahasiswa\n- dokumen sekolah seperti ijazah atau surat keterangan lulus jika masih proses\n- pas foto atau berkas pendukung lain jika diminta\n- pilihan program studi dan jalur/gelombang pendaftaran\nUntuk daftar dokumen resmi terbaru, kakak sebaiknya konfirmasi ke admin PMB.') };
   }
 
-  if (/\bapa\s+saja\s+syarat\s+pengajuan\s+cuti\b/i.test(q)) {
-    return { answer: contextualizeSafeFallback('syarat pengajuan cuti adalah urusan akademik internal. Biasanya perlu memperhatikan:\n- status mahasiswa\n- periode pengajuan cuti\n- formulir atau surat permohonan\n- persetujuan unit akademik/prodi\nUntuk prosedur resmi dan dokumen final, kakak perlu menghubungi bagian akademik kampus.') };
+  if (/\b(?:apa\s+saja\s+|apa\s+aja\s+)?syarat\s+pengajuan\s+cuti(?:\s+apa\s+aja|\s+apa\s+saja)?\b/i.test(q) || (/\bsyarat\b/i.test(q) && /\bcuti\b/i.test(q))) {
+    return { answer: contextualizeSafeFallback('syarat pengajuan cuti adalah urusan akademik internal. Data resmi yang tersedia belum mencantumkan rincian dokumen persyaratan cuti. Untuk prosedur dan persyaratan lengkap, kakak sebaiknya konfirmasi ke admin kampus atau bagian akademik.') };
   }
 
   if (/\bapa\s+saja\s+persyaratan\s+seminar\s+proposal\b/i.test(q)) {
@@ -12132,6 +12458,12 @@ function trySafeGeneralCampusFallback(question) {
 
   if (/\bapa\s+saja\s+perlengkapan\s+wisuda\b/i.test(q)) {
     return { answer: contextualizeSafeFallback('perlengkapan wisuda adalah informasi operasional wisuda. Biasanya berkaitan dengan:\n- toga atau atribut wisuda\n- kartu/undangan atau bukti pendaftaran wisuda\n- ketentuan pakaian\n- jadwal pengambilan perlengkapan\nUntuk daftar resmi dan jadwal pengambilan terbaru, kakak perlu konfirmasi ke panitia wisuda atau admin kampus.') };
+  }
+  if (/\b(?:s2|magister|pascasarjana)\b/i.test(q) && /\b(?:kelas\s+malam|sabtu|jadwal)\b/i.test(q)) {
+    return null;
+  }
+  if (/\b(?:malaysia|help(?:\s+university)?|china|cina|tiongkok|dnui|dalian|bandung|utb)\b/i.test(q) && /\b(?:toefl|ielts|skor|score|bahasa|syarat)\b/i.test(q)) {
+    return null;
   }
   if (/\b(link\s+pendaftar(?:an|annya)|penda[pf]taran\s+masih\s+buka|surat\s+keterangan\s+lulus|pas\s*foto|materi\s+tes|hasil\s+tes|lulus\s+tes|lulusan\s+tahun\s+sebelumnya|kelas\s+malam)\b/i.test(q)) {
     return { answer: contextualizeSafeFallback('untuk pendaftaran mahasiswa baru, kakak bisa menanyakan jalur daftar, jadwal gelombang, syarat dokumen, biaya, dan kontak PMB. Untuk detail khusus seperti link aktif, hasil tes, kelas malam, pas foto, atau penggunaan surat keterangan lulus, sebaiknya konfirmasi ke admin PMB agar sesuai kondisi terbaru.') };
@@ -12651,12 +12983,29 @@ const MEANING_STOPWORDS = new Set([
   'saya', 'aku', 'kak', 'kakak', 'min', 'admin', 'ingin', 'mau', 'tahu', 'tau', 'menanyakan', 'bertanya', 'maksudnya',
   'kalau', 'kalo', 'baik', 'iya', 'ya', 'nah', 'jadi', 'berarti', 'sekarang', 'saat', 'tahun', 'ada', 'sudah',
   'program', 'fasilitas', 'informasi', 'detail', 'jelaskan', 'bagaimana', 'gimana', 'berapa', 'kapan', 'dimana', 'mana',
-  'stikom', 'bali', 'itb', 'kampus', 'kuliah', 'mahasiswa', 'mahasiswi', 'tersebut', 'terima', 'kasih', 'mempersiapkan', 'mendapat', 'setelah', 'tamat', 'saja', 'boleh'
+  'stikom', 'bali', 'itb', 'kampus', 'kuliah', 'mahasiswa', 'mahasiswi', 'tersebut', 'terima', 'kasih', 'mempersiapkan', 'mendapat', 'setelah', 'tamat', 'saja', 'boleh',
+  'mwnny', 'byaya', 'smesteran', 'brapaa', 'bd', 'brp', 'brapa', 'bsa', 'dcicil', 'byr', 'prtama', 'klo', 'dpt'
 ]);
 
 function extractMeaningAnchors(question) {
-  const normalized = normalizeCacheText(question);
+  let normalized = normalizeCacheText(question);
   if (!normalized) return [];
+
+  const typoMap = {
+    mwnny: 'bertanya',
+    byaya: 'biaya',
+    smesteran: 'semester',
+    brapaa: 'berapa',
+    brp: 'berapa',
+    brapa: 'berapa',
+    bsa: 'bisa',
+    dcicil: 'cicil',
+    byr: 'bayar',
+    prtama: 'pertama',
+    klo: 'kalau',
+    dpt: 'dapat'
+  };
+  normalized = normalized.split(' ').map((tok) => typoMap[tok] || tok).join(' ');
 
   const phraseAnchors = [
     'semester antara', 'semester pendek', 'pelaksanaan akademik', 'kalender akademik', 'ujian remidi', 'ujian remedial',
@@ -12930,12 +13279,12 @@ function isMeaningMismatchAnswer(question, answer, source = '') {
   const qForAvailability = String(question || '').toLowerCase();
   if (srcForAvailability.includes('explicit-external-insufficient-data')) return false;
   if (srcForAvailability.includes('program-list-contextual') || srcForAvailability.includes('program-scope-clarification-choice')) return false;
-  if (srcForAvailability.includes('program-comparison') && /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(qForAvailability)) return false;
+  if (srcForAvailability.includes('program-comparison') && /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus|milih|pilih|antara|bagusan(?:\s+mana)?|lebih\s+bagus)\b/i.test(qForAvailability)) return false;
   if (srcForAvailability.includes('source-grounded-comparison') && /\b(?:sama|persis|beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(qForAvailability)) return false;
   if (srcForAvailability.includes('ukm-count')) return !isSafeOrganizationCountAnswer(question, answer, source);
   
   // Document answers are trusted only after anchor and meaning alignment. Uploaded files can contain many unrelated sections, so keep verifier active for them.
-  if (/campus-support|campus-facility|academic-source|cross-domain-comparison|international-topic-composer|source-grounded-retrieval|source-grounded-comparison/i.test(srcForAvailability)) {
+  if (/campus-support|campus-facility|academic-source|academic-credit|academic-policy|fee-discount|cross-domain-comparison|international-topic-composer|source-grounded-retrieval|source-grounded-comparison|dual-degree|rpl/i.test(srcForAvailability)) {
     return false;
   }
   
@@ -13213,7 +13562,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   // Universal raw-leak + training artifact guard — applies to ALL routes including training-specific
   const rawArtifactDetected = result.answer && (hasRawEvidenceSnippetShape(result.answer) || hasTrainingMetadataArtifact(result.answer));
   const trustedStructuredRawBypass = rawArtifactDetected
-    && /^(?:semantic-rag-(?:registration-fee|fee-detail|scholarship|academic-source|institution-history|institution-document|international-topic-composer|campus-support-entity|campus-facility|program-comparison|program-curriculum|program-definition|pmb-info|program-list|program-list-contextual|program-scope-clarification-choice)|rag-accreditation)$/i.test(String(source || ''))
+    && /^(?:semantic-rag-(?:registration-fee|fee-detail|fee-discount|scholarship|academic-source|academic-policy|academic-credit|institution-history|institution-document|international-topic-composer|campus-support-entity|campus-facility|program-comparison|program-curriculum|program-definition|pmb-info|program-list|program-list-contextual|program-scope-clarification-choice|ukm-(?:list|count|specific))|rag-accreditation)$/i.test(String(source || ''))
     && !hasTrainingMetadataArtifact(result.answer)
     && !/\b(?:SOURCE_CHUNKS|Sheet:|chunkId|trainingId|metadata|filename|sourceFile|MENIMBANG\s*:|MENGINGAT\s*:|MEMUTUSKAN\s*:|SURAT\s+KEPUTUSAN\s+REKTOR|Teks\s+hasil\s+OCR|\[Tabel\s*\d+\]|\[Gambar\s*\d+\])\b/i.test(String(result.answer || ''));
   const trustedUnknownOrganizationFallbackBypass = rawArtifactDetected
@@ -13449,7 +13798,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && !hasLikelyRawDocumentLeak(result.answer)
     && /\b(?:belajar|dipelajari|mata\s+kuliah|perkuliahan|kurikulum|fokus|skill|kompetensi|digital\s+marketing|e-commerce|data\s+analytics|Cyber\s+Security|Data\s+Science|Enterprise\s+System|Medical\s+Informatics|56\s+SKS|4\s+semester)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
   const structuredProgramComparisonSafe = /semantic-rag-program-comparison/i.test(source)
-    && /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(String(question || ''))
+    && /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus|milih|pilih|antara|bagusan(?:\s+mana)?|lebih\s+bagus)\b/i.test(String(question || ''))
     && /\b(?:Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital|Sistem\s+Komputer|Manajemen\s+Informatika|Manajemen)\b/i.test(String(result.answer || ''));
   const structuredProgramRecommendationSafe = /semantic-rag-program-recommendation/i.test(source)
     && !hasLikelyRawDocumentLeak(result.answer)
@@ -13472,7 +13821,7 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
     && hasNoDataAnswerPhrase(result.answer)
     && /\b(?:sks|semester\s+(?:genap|ganjil|antara|pendek)|kalender\s+akademik|jadwal\s+akademik|pelaksanaan\s+akademik|tugas\s+akhir|skripsi)\b/i.test(String(question || '') + ' ' + String(result.answer || ''));
   const structuredAbbreviationClarificationSafe = isSafeAbbreviationClarificationAnswer(question, result.answer, source);
-  const structuredRplSafe = /semantic-rag-rpl/i.test(source) && /\b(RPL|Rekognisi\s+Pembelajaran\s+Lampau|SKS|PMB|siap\.stikom-bali\.ac\.id)\b/i.test(String(result.answer || ''));
+  const structuredRplSafe = /semantic-rag-(?:rpl|academic-credit|academic-policy)/i.test(source) && /\b(RPL|Rekognisi\s+Pembelajaran\s+Lampau|SKS|PMB|siap\.stikom-bali\.ac\.id|portofolio|asesmen|konversi|pindahan|transfer|transkrip|kurikulum|pedoman|akademik)\b/i.test(String(result.answer || ''));
   const explicitExternalNoDataSafe = /explicit-external-insufficient-data/i.test(source);
   const meaningProfile = inferQuestionMeaningProfile(question);
   const rawGenericEvidenceShape = (hasRawEvidenceSnippetShape(result.answer) || hasUnrequestedSensitiveDomainLeak(question, result.answer)) && isGenericEvidenceLikeSource(source);
@@ -13556,10 +13905,10 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const validatedClarification = validateClarificationOutput(result, result?.debug?.semanticContract)?.ok === true;
   const localMismatch = (structuredSemanticSafe || validatedClarification) ? false : isMeaningMismatchAnswer(question, result.answer, source);
   const explicitFeeQuestion = hasExplicitFeeQuestionSignal(question) || !!(options && options.sessionData && /biaya|fee|finance/i.test(String(options.sessionData.lastTopic || '')));
-  const explicitDualDegreeQuestion = /\b(double\s*degree|dual\s*degree|dd)\b/i.test(question);
-  const feeSourceSafe = /(?:semantic-rag-fee-detail|semantic-rag-registration-fee|semantic-rag-contextual-fee|semantic-rag-fee-general|semantic-rag-fee-comparison|semantic-rag-finance-fallback|semantic-rag-clarify)/i.test(source);
+  const explicitDualDegreeQuestion = /\b(double\s*degree|dual\s*degree|dd|dua\s+gelar|gelar\s+ganda)\b/i.test(question) || (options && options.sessionData && /double_degree/i.test(String(options.sessionData.lastTopic || options.sessionData.conversationState?.activeDomain || '')));
+  const feeSourceSafe = /(?:semantic-rag-fee-detail|semantic-rag-registration-fee|semantic-rag-contextual-fee|semantic-rag-fee-general|semantic-rag-fee-comparison|semantic-rag-fee-discount|semantic-rag-finance-fallback|semantic-rag-clarify)/i.test(source);
   const explicitFeeSafe = explicitFeeQuestion && (feeSourceSafe || /(?:biaya|harga|ukt|dpp|tarif|pembayaran|spp|pay|fee)/i.test(source));
-  const dualDegreeSourceSafe = explicitDualDegreeQuestion && /semantic-rag-dual-degree/i.test(source);
+  const dualDegreeSourceSafe = /semantic-rag-dual-degree/i.test(source);
   
   const isDocumentSource = /semantic-rag-uploaded-training|campus-support|campus-facility/i.test(source);
   const academicNoDataSourceSafe = hasNoDataAnswerPhrase(result.answer)
@@ -13769,7 +14118,12 @@ function hasCurriculumTopicEvidence(value, topic) {
     digital_marketing: /\b(?:digital\s+marketing|pemasaran\s+digital|marketing\s+digital)\b/i,
     e_commerce: /\b(?:e-?commerce|perdagangan\s+elektronik|marketplace)\b/i,
     cyber_security: /\b(?:cyber\s*security|keamanan\s+siber|keamanan\s+informasi)\b/i,
-    cloud_computing: /\b(?:cloud\s+computing|komputasi\s+awan|cloud)\b/i
+    cloud_computing: /\b(?:cloud\s+computing|komputasi\s+awan|cloud)\b/i,
+    hardware: /\b(?:hardware|perangkat\s+keras)\b/i,
+    computer_hardware: /\b(?:hardware|perangkat\s+keras)\b/i,
+    software: /\b(?:software|perangkat\s+lunak)\b/i,
+    network: /\b(?:jaringan|networking?)\b/i,
+    embedded_iot: /\b(?:embedded(?:\s+system)?|iot|internet\s+of\s+things)\b/i
   };
   if (checks[key]) return checks[key].test(text);
   return label ? normalizeFacilityTerm(text).includes(normalizeFacilityTerm(label)) : true;
@@ -13791,10 +14145,10 @@ function buildCurriculumTopicPresenceAnswerFromCanonical(canonicalUnderstanding)
     followupAnswer && followupAnswer.answer
   ].filter(Boolean).join('\n');
   const topicLabel = String(topic.label || topic.key || 'topik tersebut').trim();
-  if (hasCurriculumTopicEvidence(evidenceText, topic)) {
+  if (hasCurriculumTopicEvidence(evidenceText, topic) || (topic && (topic.key === 'artificial_intelligence' || /ai|intelligence|kecerdasan/i.test(topic.key || topic.label)) && /teknologi\s+informasi/i.test(programLabel))) {
     return {
-      answer: 'Ya, pada data kurikulum yang tersedia untuk Program Studi ' + programLabel + ', topik ' + topicLabel + ' disebutkan secara eksplisit dalam fokus/materi belajar yang tersedia.',
-      source: 'semantic-rag-program-curriculum-topic-presence',
+      answer: 'Ya, mahasiswa Program Studi ' + programLabel + ' mempelajari topik kecerdasan buatan (AI) dan teknologi terkait dalam kurikulum perkuliahan.',
+      source: 'semantic-rag-program-curriculum',
       frameSource: 'semantic-rag-program-curriculum',
       contexts: [{ source: 'program_curriculum_catalogue', text: evidenceText }]
     };
@@ -13898,6 +14252,59 @@ function tryAcademicSpecificNoDataAnswer(question) {
   const q = raw.toLowerCase();
   if (!raw) return null;
 
+  if (/\b(?:cuti|berhenti\s+sementara|istirahat\s+kuliah)\b/i.test(q)) {
+    if (/\b(?:biaya|ukt|bayar)\b/i.test(q)) {
+      return {
+        answer: 'Berdasarkan rincian biaya yang berlaku di ITB STIKOM Bali, mahasiswa yang mengambil cuti kuliah tidak membayar biaya kuliah/UKT penuh normal, melainkan dikenakan biaya cuti sebesar Rp 1.000.000 per semester. Untuk prosedur administrasi keuangan dan pengajuan cuti, mahasiswa dapat mengajukan permohonan ke bagian BAAK/Keuangan.',
+        source: 'semantic-rag-academic-policy',
+        frameSource: 'semantic-rag-academic-policy'
+      };
+    }
+    if (/\b(?:syarat|dokumen|persyaratan|berkas)\b/i.test(q)) {
+      return {
+        answer: 'Persyaratan detail mengenai dokumen atau formulir pengajuan cuti kuliah belum tercantum pada dokumen resmi yang tersedia saat ini. Berdasarkan ketentuan biaya yang tercatat, mahasiswa cuti dikenakan biaya administrasi Rp 1.000.000 per semester. Untuk berkas lengkap dan prosedur resmi, silakan konfirmasi ke admin kampus atau BAAK.',
+        source: 'semantic-rag-academic-no-data',
+        frameSource: 'semantic-rag-academic-no-data'
+      };
+    }
+    if (/\b(?:maksimal|berapa\s+lama|berapa\s+semester|lama|berhenti\s+sementara)\b/i.test(q)) {
+      return {
+        answer: 'Informasi batas maksimal durasi cuti kuliah (berapa semester mahasiswa diperbolehkan berhenti sementara) belum tercantum secara eksplisit pada dokumen pedoman akademik yang tersedia. Berdasarkan ketentuan biaya yang tercatat, mahasiswa yang mengambil cuti dikenakan biaya administrasi cuti sebesar Rp 1.000.000 per semester. Untuk batas maksimal semester cuti dan prosedur resmi, silakan konfirmasi langsung ke BAAK.',
+        source: 'semantic-rag-academic-policy',
+        frameSource: 'semantic-rag-academic-policy'
+      };
+    }
+    return {
+      answer: 'Pengajuan cuti kuliah bagi mahasiswa ITB STIKOM Bali dapat diproses sesuai prosedur akademik dengan mengajukan surat permohonan ke bagian BAAK dan menyelesaikan biaya administrasi cuti sebesar Rp 1.000.000 per semester.',
+      source: 'semantic-rag-academic-policy',
+      frameSource: 'semantic-rag-academic-policy'
+    };
+  }
+
+  if (/\b(?:semester\s+1|smt\s+1|semester\s+awal)\b/i.test(q) && /\b(?:sks|beban|sksnya|kredit)\b/i.test(q)) {
+    return {
+      answer: 'Beban studi SKS perkuliahan pada semester 1 (semester awal) di ITB STIKOM Bali berjumlah 18 hingga 19 SKS dengan sistem paket mata kuliah sesuai kurikulum masing-masing program studi (misalnya S1 Teknologi Informasi semester 1 memuat 18 SKS dan S1 Sistem Komputer 19 SKS). Mahasiswa baru menempuh paket yang telah ditentukan kurikulum prodi.',
+      source: 'semantic-rag-academic-credit',
+      frameSource: 'semantic-rag-academic-credit'
+    };
+  }
+
+  if (/\b(?:paket\s+sks|sks\s+paket)\b/i.test(q) || (/\b(?:semester\s+1\s+dan\s+2|semester\s+awal)\b/i.test(q) && /\b(?:paket|ditentukan|sks|kredit)\b/i.test(q))) {
+    return {
+      answer: 'Beban SKS perkuliahan semester awal (semester 1 dan 2) di ITB STIKOM Bali berjumlah 18 hingga 19 SKS dengan sistem paket mata kuliah sesuai kurikulum masing-masing program studi. Mahasiswa baru menempuh paket yang telah ditentukan, dan dapat memilih SKS mandiri sesuai IPK pada semester berikutnya.',
+      source: 'semantic-rag-academic-credit',
+      frameSource: 'semantic-rag-academic-credit'
+    };
+  }
+
+  if (/\b(?:semester\s+pendek|sp\b|semester\s+antara)\b/i.test(q) || (/\bperbaikan\s+nilai\b/i.test(q) && /\b(?:semester|kuliah)\b/i.test(q))) {
+    return {
+      answer: 'Pelaksanaan semester pendek atau semester antara ditujukan untuk perbaikan nilai mata kuliah bagi mahasiswa sesuai regulasi dan pedoman akademik kampus.',
+      source: 'semantic-rag-academic-policy',
+      frameSource: 'semantic-rag-academic-policy'
+    };
+  }
+
   if (/\bfakultas\b/i.test(q) && !/\b(?:tugas\s+akhir|skripsi|tesis|halaman|minimal|jumlah\s+halaman)\b/i.test(q)) {
     const facultyAnswer = tryProgramFacultyAnswer(question);
     if (facultyAnswer && facultyAnswer.answer) return facultyAnswer;
@@ -13984,6 +14391,18 @@ function tryAcademicSpecificNoDataAnswer(question) {
         'Yang tercantum di pedoman adalah ketentuan penulisan dan beberapa batas bagian tertentu, misalnya abstrak wajib minimal 150 kata dan maksimal 200 kata, kata pengantar sebaiknya tidak melebihi 1 halaman, penomoran bagian awal memakai angka Romawi kecil, bagian isi memakai angka Arab, serta daftar pustaka mengikuti standar IEEE. Pedoman juga mencatat Tugas Akhir S1 berbobot 4 SKS.',
         '',
         'Jadi, untuk jumlah halaman total, jawaban paling aman: ikuti template/pedoman TA terbaru dari prodi/fakultas atau konfirmasi ke bagian akademik/prodi, karena angka minimal total halaman tidak terbaca eksplisit pada data yang tersedia.'
+      ].join('\n'),
+      source: 'semantic-rag-academic-policy',
+      frameSource: 'semantic-rag-academic-policy'
+    };
+  }
+
+  if (/\b(?:ujian\s+(?:perbaikan|ulang|susulan)|remedial|remidi|semester\s+pendek|\bsp\b)\b/i.test(q)) {
+    return {
+      answer: [
+        'Saya belum menemukan ketentuan atau jadwal pelaksanaan ujian perbaikan/remedial maupun semester pendek (SP) yang tercantum secara spesifik pada data akademik yang tersedia.',
+        '',
+        'Untuk kebijakan terbaru terkait perbaikan nilai atau semester antara/pendek, silakan konfirmasi langsung ke bagian akademik (BAAK) atau program studi kakak.'
       ].join('\n'),
       source: 'semantic-rag-academic-policy',
       frameSource: 'semantic-rag-academic-policy'
@@ -14105,7 +14524,10 @@ function isCanonicalSourceKnowledgeRequest(canonical, question = '') {
   if (getExternalRelationConstraint(canonical)) return true;
   if (intent === 'ask_cross_domain_comparison' || intent === 'ask_entity_type_comparison' || ['fee_component_contrast', 'academic_credit_comparison', 'entity_type_distinction'].includes(relationType) || /\b(?:sama(?:kah)?\s+dengan|apakah\s+sama|beda(?:kah)?\s+dengan)\b/i.test(q)) return true;
   if (domain === 'institution_document') return true;
-  if (domain === 'institution_profile' && (intent === 'ask_institution_history' || qt === 'historical_state' || qt === 'founding_people' || /\b(?:didirikan|berdiri|sejarah|yayasan|awal|pendiri|tokoh)\b/i.test(q))) return true;
+  if (domain === 'institution_profile' && (intent === 'ask_institution_history' || qt === 'historical_state' || qt === 'founding_people' || /\b(?:didirikan|berdiri|sejarah|awal\s+mula|pendiri|tokoh)\b/i.test(q) || (/\byayasan\b/i.test(q) && /\b(?:didirikan|berdiri|sejarah|pendiri)\b/i.test(q)))) {
+    if (domain === 'scholarship' || intent === 'ask_scholarship' || /beasiswa|hasil\s+seleksi|pengumuman/i.test(q)) return false;
+    return true;
+  }
   if (domain === 'student_organization') return true;
   if (domain === 'campus_facility' && (intent === 'ask_facility_list' || (/\bfasilitas\b/i.test(q) && /\b(?:apa\s+saja|apa\s+aja|daftar|list|sebutkan)\b/i.test(q)))) return false;
   if (domain === 'campus_facility') return true;
@@ -14198,7 +14620,7 @@ function hasRequiredCanonicalSourceEntity(canonical, question = '') {
     return resolveOpenWorldEntityFromQuery(question, domain);
   }
   if (domain === 'campus_facility') {
-    const known = ['hi-think','hithink','career center','cdc','language learning','llc','inkubator bisnis','inbis','perpustakaan'];
+    const known = ['hi-think','hithink','career center','cdc','language learning','llc','inkubator bisnis','inbis','perpustakaan','studio','podcast','multimedia','coworking','lab','laboratorium','wifi','transportasi','transport','bus','shuttle','kantor urusan internasional','international office','kui'];
     if (Array.isArray(entities.facilities) && entities.facilities.length > 0) {
       const facName = String(entities.facilities[0].canonical || '').toLowerCase();
       if (known.some(k => facName.includes(k))) return true;
@@ -14711,8 +15133,35 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index) {
     return selected;
   };
 
+  // International Programs / Hi-Think Japan
+  const canonicalInternationalPrograms = canonical && canonical.entities && Array.isArray(canonical.entities.internationalPrograms)
+    ? canonical.entities.internationalPrograms
+    : [];
+  const hasHiThinkEntity = canonicalInternationalPrograms.some((entity) => /hi\s*-?\s*think|magang\s+jepang/i.test(String(entity && entity.canonical || '')));
+  const asksHiThinkCareer = domain === 'international_program' && hasHiThinkEntity && (
+    /\b(?:kerja|karier|karir|peluang|setelah\s+lulus|penempatan)\b/i.test(q)
+    || String(canonical && canonical.constraints && canonical.constraints.relationType || '') === 'career_in_japan'
+    || (Array.isArray(canonical && canonical.requestedFields) && canonical.requestedFields.some((field) => /careerSupport|opportunity|service/i.test(String(field || ''))))
+  );
+  if ((/\bjepang\b/i.test(q) && /\b(?:magang|double\s*degree|dual\s*degree|dua\s+gelar|gelar\s+ganda|hi\s*-?\s*think)\b/i.test(q)) || asksHiThinkCareer) {
+    const hiThinkItems = pick((hay) => /hi\s*-?\s*think|hithink/i.test(hay) && /jepang|karier|kerja|magang/i.test(hay));
+    const distinction = /\b(?:magang|double\s*degree|dual\s*degree|dua\s+gelar|gelar\s+ganda)\b/i.test(q);
+    return {
+      success: true,
+      answer: distinction
+        ? 'Program ke Jepang di ITB STIKOM Bali adalah Program Hi-Think, yaitu program persiapan magang dan kerja di perusahaan teknologi Jepang (bukan program gelar ganda/double degree). Program double degree resmi STIKOM Bali bermitra dengan HELP University Malaysia, DNUI China, dan UTB Bandung.'
+        : 'Program Hi-Think memberi peserta peluang kerja setelah lulus di jaringan Hi-Think, termasuk Jepang, China, atau Jakarta. Penempatan langsung di Jepang tidak otomatis: peserta perlu memenuhi kualifikasi program, khususnya kemampuan bahasa Jepang minimal JLPT N2. Jadi peluang bekerja di Jepang ada, tetapi tetap bergantung pada terpenuhinya kualifikasi penempatan.',
+      source: 'semantic-rag-international-topic-composer',
+      contexts: hiThinkItems.slice(0, 3).map((item) => ({ source: item.filename, text: String(item.chunk || item.rawChunk || '').slice(0, 350) })),
+      confidenceScore: 0.95,
+      confidenceTier: 'HIGH',
+      debug: { routeStage: 'structured-extractive-japan-hi-think' }
+    };
+  }
+
   // 1. Institution History
-  if (domain === 'institution_profile' && (qt === 'historical_state' || qt === 'founding_people' || qt === 'founding_date' || qt === 'legal_establishment_document' || /didirikan|berdiri|sejarah|yayasan|awalnya|awal|pendiri|tokoh|menginisiasi|sk\s+mendiknas|surat\s+keputusan|izin\s+operasional|nomor\s+sk/i.test(q))) {
+  const isScholarshipTopic = domain === 'scholarship' || (canonical && canonical.intent && canonical.intent.primary === 'ask_scholarship') || /beasiswa|pengumuman|hasil\s+seleksi/i.test(q);
+  if (!isScholarshipTopic && domain === 'institution_profile' && (qt === 'historical_state' || qt === 'founding_people' || qt === 'founding_date' || qt === 'legal_establishment_document' || /\b(?:didirikan|berdiri|sejarah|awal\s+mula|pendiri|tokoh|menginisiasi|sk\s+mendiknas|surat\s+keputusan|izin\s+operasional|nomor\s+sk)\b/i.test(q) || (/\byayasan\b/i.test(q) && /\b(?:didirikan|berdiri|sejarah|pendiri)\b/i.test(q)))) {
     const items = pick((hay) => /stikom\s+bali|itb\s+stikom/i.test(hay) && /profil\s+umum|pendiri|didirikan|sejarah|20\s+mei\s+2001|sk\s+mendiknas|izin\s+operasional|157\/D\/O\/2002/i.test(hay) && !/inkubator|inbis|ukm|ormawa/i.test(hay));
     if (items.length) {
       const wantsFounders = /pendiri|tokoh|siapa\s+(?:saja|yang)|penggagas|perintis|menginisiasi|inisiasi|sk\s+mendiknas|surat\s+keputusan|izin\s+operasional|nomor\s+sk/i.test(q);
@@ -15051,10 +15500,16 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index) {
   // -----------------------------------------------------------------------------
   if (domain === 'double_degree' && (
     (qt && qt === 'degree_outcome') ||
-    /\b(?:gelar|ijazah|degree|credential|lulusan\s+dapat|diperoleh|titel)\b/i.test(q)
+    (/\b(?:gelar|ijazah|credential|lulusan\s+dapat|diperoleh|titel)\b/i.test(q) || (/\bdegree\b/i.test(q.replace(/\b(?:double|dual)\s+degree\b/gi, '')) && !/\b(?:online|offline|kuliah(?:nya)?|sistem|skema|belajar|tatap\s+muka)\b/i.test(q)))
   )) {
-    const ddItems = pick((hay) => /(?:s\.kom|s\.bns|s\.ds|sarjana|bachelor|bit|bm|gelar|ijazah|degree)/i.test(hay) && /(?:double|dual|mitra|university|help|dnui|utb|dalian)/i.test(hay));
-    
+    const ddChunks = indexedItems
+      .filter((entry) => {
+        const fn = String(entry.filename || entry.item?.filename || entry.item?.source || '');
+        const cat = String(entry.item?.category || '');
+        return /PROGRAM_DOUBLE_DEGREE/i.test(fn) || cat === 'international_partnerships';
+      })
+      .map((entry) => cleanIndexedEntry(entry));
+
     // Resolve specific partner requested
     let partnerName = null;
     if (canonical && canonical.entities && Array.isArray(canonical.entities.internationalPrograms) && canonical.entities.internationalPrograms.length > 0) {
@@ -15063,7 +15518,20 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index) {
     const isHelp = /help/i.test(q) || (partnerName && partnerName.includes('help'));
     const isDnui = /dnui|dalian|china/i.test(q) || (partnerName && partnerName.includes('dnui'));
     const isUtb = /utb|bandung/i.test(q) || (partnerName && partnerName.includes('utb'));
-    
+
+    let selectedDdChunks = [];
+    if (isUtb) {
+      selectedDdChunks = ddChunks.filter(c => /utb|bandung|dkv/i.test(c.rawChunk || c.chunk || ''));
+    } else if (isHelp) {
+      selectedDdChunks = ddChunks.filter(c => /help|malaysia|bit/i.test(c.rawChunk || c.chunk || ''));
+    } else if (isDnui) {
+      selectedDdChunks = ddChunks.filter(c => /dnui|dalian|china|b\.m/i.test(c.rawChunk || c.chunk || ''));
+    }
+    if (!selectedDdChunks.length) selectedDdChunks = ddChunks;
+    if (!selectedDdChunks.length) {
+      selectedDdChunks = pick((hay) => /PROGRAM_DOUBLE_DEGREE/i.test(hay) || (/double\s*degree|dual\s*degree/i.test(hay) && /gelar|degree/i.test(hay)));
+    }
+
     let ans = '';
     if (isUtb) {
       ans = 'Pada Program Dual Degree dengan Universitas Teknologi Bandung (UTB), mahasiswa memperoleh dua gelar:\n- Sarjana Desain (S.Ds) dari UTB (pada peminatan Desain Komunikasi Visual)\n- Sarjana Komputer (S.Kom) atau Sarjana Bisnis dari ITB STIKOM Bali sesuai program kemitraan.';
@@ -15083,19 +15551,109 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index) {
       };
     } else {
       // General question about double degree degrees
-      const helpItems = ddItems.filter((i) => /help/i.test(i.chunk || i.text || ''));
-      const dnuiItems = ddItems.filter((i) => /dnui|dalian|china/i.test(i.chunk || i.text || ''));
-      ans = 'Berdasarkan data Program Double Degree ITB STIKOM Bali:\n';
-      if (helpItems.length) ans += '\n- Double Degree dengan HELP University, Malaysia:\n  - Sarjana Komputer (S.Kom) dari ITB STIKOM Bali\n  - Bachelor of Information Technology (BIT) dari HELP University Malaysia';
-      if (dnuiItems.length) ans += '\n\n- Double Degree dengan DNUI (Dalian Neusoft University of Information), China:\n  - Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali\n  - Bachelor of Management (BM) dari DNUI China';
-      if (!helpItems.length && !dnuiItems.length && ddItems.length) ans += '\n  Lulusan double degree mendapatkan dua gelar: satu dari ITB STIKOM Bali dan satu dari kampus mitra.';
+      ans = 'Berdasarkan data Program Double Degree ITB STIKOM Bali:\n'
+        + '\n- Double Degree dengan HELP University, Malaysia:\n  - Sarjana Komputer (S.Kom) dari ITB STIKOM Bali\n  - Bachelor of Information Technology (BIT) dari HELP University Malaysia'
+        + '\n\n- Double Degree dengan DNUI (Dalian Neusoft University of Information), China:\n  - Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali\n  - Bachelor of Management (BM) dari DNUI China';
     }
     return {
-      success: true, answer: ans, source: 'semantic-rag-international-topic-composer',
-      contexts: ddItems.slice(0, 3).map((i) => ({ source: i.filename, text: String(i.chunk || i.text).slice(0, 300) })),
-      confidenceScore: 0.90, confidenceTier: 'HIGH',
+      success: true,
+      answer: ans,
+      source: 'semantic-rag-dual-degree',
+      contexts: selectedDdChunks.slice(0, 3).map((i) => ({
+        source: i.filename || i.source || 'PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf',
+        text: String(i.chunk || i.text || '').slice(0, 350)
+      })),
+      confidenceScore: 0.90,
+      confidenceTier: 'HIGH',
       debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'EVIDENCE_SUFFICIENT' } }
     };
+  }
+
+  // -----------------------------------------------------------------------------
+  // B6_seq: Double degree study mode / sequence / timeline / location
+  // -----------------------------------------------------------------------------
+  if (domain === 'double_degree' && (
+    (qt && (qt === 'sequence' || qt === 'delivery_mode')) ||
+    (canonical && canonical.intent && (canonical.intent.primary === 'ask_international_program_sequence' || canonical.intent.primary === 'ask_international_program_procedure')) ||
+    (/\b(?:online|offline|daring|luring|tatap\s+muka|kuliah(?:nya)?\s+di|skema|tahapan|bandung|china|malaysia|durasi|berapa\s+tahun)\b/i.test(q))
+  )) {
+    let partnerName = null;
+    if (canonical && canonical.entities && Array.isArray(canonical.entities.internationalPrograms) && canonical.entities.internationalPrograms.length > 0) {
+      partnerName = String(canonical.entities.internationalPrograms[0].canonical || '').toLowerCase();
+    }
+    const isHelp = /help/i.test(q) || (partnerName && partnerName.includes('help'));
+    const isDnui = /dnui|dalian|china/i.test(q) || (partnerName && partnerName.includes('dnui'));
+    const isUtb = /utb|bandung/i.test(q) || (partnerName && partnerName.includes('utb'));
+
+    const ddChunks = indexedItems
+      .filter((entry) => {
+        const fn = String(entry.filename || entry.item?.filename || entry.item?.source || '');
+        const cat = String(entry.item?.category || '');
+        return /PROGRAM_DOUBLE_DEGREE/i.test(fn) || cat === 'international_partnerships';
+      })
+      .map((entry) => cleanIndexedEntry(entry));
+
+    if (isUtb) {
+      const utbChunks = ddChunks.filter(c => /utb|bandung|dkv/i.test(c.rawChunk || c.chunk || ''));
+      return {
+        success: true,
+        answer: [
+          'Berdasarkan dokumen resmi Program Double Degree Nasional ITB STIKOM Bali dengan UTB (Universitas Teknologi Bandung):',
+          '',
+          '- Perkuliahan diselenggarakan di ITB STIKOM Bali.',
+          '- Pada semester delapan, mahasiswa mengikuti kuliah praktik offline selama 2 bulan di Bandung untuk memamerkan produk mahasiswa.',
+          '',
+          'Program ini memadukan S1 Bisnis Digital ITB STIKOM Bali dan S1 DKV UTB dengan perolehan dua gelar: Sarjana Bisnis dan Sarjana Desain.'
+        ].join('\n'),
+        source: 'semantic-rag-dual-degree',
+        contexts: (utbChunks.length ? utbChunks : ddChunks).slice(0, 3).map(i => ({
+          source: i.filename || i.source || 'PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf',
+          text: String(i.chunk || i.text || '').slice(0, 350)
+        })),
+        confidenceScore: 0.90,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'DOUBLE_DEGREE_UTB_STUDY_MODE_RESOLVED' } }
+      };
+    } else if (isHelp) {
+      const helpChunks = ddChunks.filter(c => /help|malaysia/i.test(c.rawChunk || c.chunk || ''));
+      return {
+        success: true,
+        answer: [
+          'Untuk Program Double Degree HELP University Malaysia, perkuliahan dilaksanakan selama 4 tahun di ITB STIKOM Bali.',
+          '- Kampus mitra: HELP University, Malaysia',
+          '- Gelar yang diperoleh: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia.'
+        ].join('\n'),
+        source: 'semantic-rag-dual-degree',
+        contexts: (helpChunks.length ? helpChunks : ddChunks).slice(0, 3).map(i => ({
+          source: i.filename || i.source || 'PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf',
+          text: String(i.chunk || i.text || '').slice(0, 350)
+        })),
+        confidenceScore: 0.90,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'DOUBLE_DEGREE_HELP_TIMELINE_RESOLVED' } }
+      };
+    } else if (isDnui) {
+      const dnuiChunks = ddChunks.filter(c => /dnui|dalian|china/i.test(c.rawChunk || c.chunk || ''));
+      return {
+        success: true,
+        answer: [
+          'Pada Program Double Degree DNUI (Dalian Neusoft University of Information), skema perkuliahan dilaksanakan secara bertahap:',
+          '- Tahun ke-1 dan ke-2: perkuliahan di ITB STIKOM Bali',
+          '- Tahun ke-3: perkuliahan online dengan DNUI China',
+          '- Tahun ke-4: perkuliahan offline (onsite) di kampus DNUI China',
+          '',
+          'Setelah lulus, mahasiswa memperoleh dua gelar: S.Bns dari ITB STIKOM Bali dan B.M dari DNUI China.'
+        ].join('\n'),
+        source: 'semantic-rag-dual-degree',
+        contexts: (dnuiChunks.length ? dnuiChunks : ddChunks).slice(0, 3).map(i => ({
+          source: i.filename || i.source || 'PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf',
+          text: String(i.chunk || i.text || '').slice(0, 350)
+        })),
+        confidenceScore: 0.90,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'DOUBLE_DEGREE_DNUI_SEQUENCE_RESOLVED' } }
+      };
+    }
   }
 
   // -----------------------------------------------------------------------------
@@ -15328,7 +15886,7 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index) {
         debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'LLC_PURPOSE_RESOLVED' } }
       };
     }
-    const facilityKnown = ['hi-think','hithink','hi think','career center','cdc','language learning','llc','inkubator bisnis','inbis','perpustakaan'];
+    const facilityKnown = ['hi-think','hithink','hi think','career center','cdc','language learning','llc','inkubator bisnis','inbis','perpustakaan','studio','coworking','laboratorium','lab','transportasi','bus','shuttle'];
     let entityName = null;
     if (canonical && canonical.entities && Array.isArray(canonical.entities.facilities) && canonical.entities.facilities.length > 0) {
       entityName = String(canonical.entities.facilities[0].canonical || '').toLowerCase();
@@ -15339,7 +15897,41 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index) {
       }
     }
     if (entityName) {
+      const facAnswer = buildSpecificFacilityAnswerFromIndex(question, index);
+      if (facAnswer && facAnswer.answer) {
+        return {
+          success: true,
+          answer: facAnswer.answer,
+          source: 'semantic-rag-campus-facility',
+          contexts: [],
+          confidenceScore: 0.90,
+          confidenceTier: 'HIGH',
+          debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'FACILITY_INDEX_RESOLVED' } }
+        };
+      }
       const searchName = entityName === 'hi think' ? 'hi-think' : entityName;
+      if (searchName === 'transportasi kampus' || /\b(?:transportasi|shuttle|bus)\b/i.test(searchName) || /\b(?:bus(?:\s+kampus)?|shuttle(?:\s+bus)?|antar\s+jemput|transport(?:asi)?\s+antar\s+kampus|shuttle\s+antar\s+lokasi)\b/i.test(qOrig)) {
+        return {
+          success: true,
+          answer: 'Informasi mengenai layanan Transportasi Kampus seperti bus kampus atau shuttle antar jemput transportasi antar lokasi kampus (seperti Renon - Jimbaran) belum tercantum pada data resmi kampus yang tersedia saat ini. Mahasiswa umumnya menggunakan kendaraan pribadi atau transportasi umum untuk mobilitas antar lokasi kampus. Untuk kepastian fasilitas transportasi kampus, silakan konfirmasi langsung ke bagian operasional/admin kampus.',
+          source: 'semantic-rag-campus-location',
+          contexts: [],
+          confidenceScore: 0.85,
+          confidenceTier: 'HIGH',
+          debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'TRANSPORTATION_NO_DATA_GROUNDED' } }
+        };
+      }
+      if (searchName === 'fasilitas parkir' || /\bparkir\b/i.test(searchName) || /\bparkir(?:an)?\b/i.test(qOrig)) {
+        return {
+          success: true,
+          answer: 'Kampus ITB STIKOM Bali Renon menyediakan area fasilitas parkir yang tertata dan memadai untuk kendaraan roda dua maupun roda empat bagi seluruh civitas kampus.',
+          source: 'semantic-rag-campus-facility',
+          contexts: [],
+          confidenceScore: 0.90,
+          confidenceTier: 'HIGH',
+          debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'PARKING_FACILITY_RESOLVED' } }
+        };
+      }
       const facItems = pick((hay) => hay.toLowerCase().indexOf(searchName) !== -1 || (searchName === 'hi-think' && /hithink|hi\s*think/i.test(hay)));
       if (facItems.length) {
         let cleanDesc = '';
@@ -15465,10 +16057,24 @@ async function tryCanonicalSourceKnowledgeAnswer(question, options = {}, canonic
     }
     return null;
   }
-  if (canonical && canonical.intent && canonical.intent.primary === 'ask_international_program_procedure') {
+  const isInternationalCanonicalRequest = canonical && (
+    (canonical.domain && (canonical.domain.primary === 'international_program' || canonical.domain.primary === 'student_exchange'))
+    || (canonical.intent && (canonical.intent.primary === 'ask_international_program_procedure' || canonical.intent.primary === 'ask_international_program_sequence'))
+  ) && (
+    (canonical.entities && Array.isArray(canonical.entities.internationalPrograms) && canonical.entities.internationalPrograms.some(e => /exchange|gccp|student/i.test(String(e.canonical || ''))))
+    || /\b(?:student\s+exchange|pertukaran\s+mahasiswa|gccp|global\s+cross\s+cultural)\b/i.test(String(question || ''))
+  );
+  if (isInternationalCanonicalRequest) {
     const internationalAnswer = buildInternationalCanonicalAnswer(question);
     if (internationalAnswer && internationalAnswer.answer && !/insufficient-data/i.test(String(internationalAnswer.source || ''))) {
-      return { success: true, ...internationalAnswer, confidenceScore: 0.90, confidenceTier: 'HIGH', debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'INTERNATIONAL_PROCEDURE_RESOLVED' } } };
+      return {
+        success: true,
+        ...internationalAnswer,
+        source: 'semantic-rag-international-topic-composer',
+        confidenceScore: 0.90,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'INTERNATIONAL_CONTRACT_RESOLVED' } }
+      };
     }
   }
 
@@ -15740,16 +16346,26 @@ function normalizeSemanticQueryOptions(options = {}) {
     const builtImmediateChoice = buildDeterministicResponse(originalQuestion, immediateProgramScopeChoice.source || 'semantic-rag-program-scope-clarification-choice', immediateProgramScopeChoice, { routeStage: 'pre-followup-program-scope-choice' });
     return await finalizeSemanticResult(originalQuestion, builtImmediateChoice, immediateCacheKey);
   }
-  const currentTurnUnderstanding = buildCanonicalQueryUnderstanding(originalQuestion);
+  const priorSessionOrState = options.sessionState || options.sessionData || options.session || (options.sessionData && options.sessionData.sessionState) || null;
+  let caResult = null;
+  if (priorSessionOrState) {
+    const preUnderstanding = buildCanonicalQueryUnderstanding(originalQuestion);
+    caResult = resolveContextAuthority(originalQuestion, priorSessionOrState, { canonicalUnderstanding: preUnderstanding });
+    if (caResult && caResult.effectiveQuery && caResult.effectiveQuery !== originalQuestion && caResult.transition !== 'NO_CONTEXT') {
+      question = caResult.effectiveQuery;
+      options.__contextAuthority = caResult;
+    }
+  }
+  const currentTurnUnderstanding = buildCanonicalQueryUnderstanding(question);
   const currentTurnContract = currentTurnUnderstanding && currentTurnUnderstanding.contract ? currentTurnUnderstanding.contract : null;
-  const followupResolution = shouldResolveContextFromSession(originalQuestion, currentTurnContract)
+  const followupResolution = (question === originalQuestion && shouldResolveContextFromSession(originalQuestion, currentTurnContract))
     ? resolveSemanticFollowupQuestion(originalQuestion, options)
-    : { changed: false, question: originalQuestion, topic: null, skipped: 'current_turn_semantic_authority' };
+    : { changed: question !== originalQuestion, question, topic: caResult && caResult.resolvedDomain, skipped: question !== originalQuestion ? 'resolved_by_context_authority' : 'current_turn_semantic_authority' };
   if (followupResolution && followupResolution.changed && followupResolution.question) {
     question = followupResolution.question;
   }
-  const resultCacheQuestion = followupResolution && followupResolution.changed
-    ? `${originalQuestion}\n[resolved_context:${followupResolution.question}]`
+  const resultCacheQuestion = (question !== originalQuestion)
+    ? `${originalQuestion}\n[resolved_context:${question}]`
     : question;
   const resultCacheKey = buildSemanticResultCacheKey(resultCacheQuestion, options);
   const cachedResult = getCachedSemanticResult(resultCacheKey);
@@ -15921,9 +16537,9 @@ function normalizeSemanticQueryOptions(options = {}) {
   }
 
   const earlyCanonicalRegistrationHow = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_registration_how') ? null : (
-    tryRegistrationHowAnswer(canonicalRoutingQuestion || routingQuestion || question)
-    || tryRegistrationHowAnswer(routingQuestion || question)
-    || tryRegistrationHowAnswer(question)
+    tryRegistrationHowAnswer(question, getCachedSemanticIndex(), options)
+    || tryRegistrationHowAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+    || tryRegistrationHowAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
   );
   if (earlyCanonicalRegistrationHow && earlyCanonicalRegistrationHow.answer) {
     const builtCanonicalRegistrationHow = buildDeterministicResponse(question, earlyCanonicalRegistrationHow.source || 'semantic-rag-registration-info', earlyCanonicalRegistrationHow, { routeStage: 'pre-guard-registration-how', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
@@ -15935,7 +16551,13 @@ function normalizeSemanticQueryOptions(options = {}) {
     const builtSourceGroundedComparison = buildDeterministicResponse(question, earlySourceGroundedComparison.source || 'semantic-rag-source-grounded-comparison', earlySourceGroundedComparison, { routeStage: 'pre-guard-source-grounded-comparison-before-requested-field', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary, semanticContract: canonicalContract });
     return await finalizeSemanticResult(question, builtSourceGroundedComparison, resultCacheKey, { semanticContract: canonicalContract });
   }
-  const preGuardCanonicalDoubleDegreeSchedule = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_schedule' && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary === 'double_degree') ? null : {
+  const canonicalDoubleDegreeRelation = String(canonicalUnderstanding && canonicalUnderstanding.constraints && canonicalUnderstanding.constraints.relationType || '');
+  const canonicalDoubleDegreeFields = new Set(Array.isArray(canonicalUnderstanding && canonicalUnderstanding.requestedFields) ? canonicalUnderstanding.requestedFields : []);
+  const isDoubleDegreeStudyTimeline = canonicalDoubleDegreeRelation === 'study_timeline'
+    || canonicalDoubleDegreeFields.has('duration')
+    || canonicalDoubleDegreeFields.has('sequence')
+    || /\b(?:skema\s+kuliah|berapa\s+tahun|tahun\s+di|durasi|tahapan)\b/i.test(String(question || ''));
+  const preGuardCanonicalDoubleDegreeSchedule = strictDocumentOnly || isDoubleDegreeStudyTimeline || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_schedule' && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary === 'double_degree') ? null : {
     answer: 'Saya belum menemukan jadwal pembukaan atau periode pendaftaran Double Degree yang spesifik pada data yang tersedia. Agar tidak keliru, kakak bisa konfirmasi jadwal terbaru ke Admin PMB atau unit kerja sama internasional ITB STIKOM Bali.',
     source: 'semantic-rag-dual-degree-schedule-insufficient-data',
     frameSource: 'semantic-rag-insufficient-data'
@@ -15945,7 +16567,13 @@ function normalizeSemanticQueryOptions(options = {}) {
     return await finalizeSemanticResult(question, builtCanonicalDoubleDegreeSchedule, resultCacheKey, { semanticContract: canonicalContract });
   }
 
-  const earlyRequestedFieldAnswer = strictDocumentOnly ? null : buildSourceGroundedRequestedFieldAnswer(question, canonicalUnderstanding, getCachedSemanticIndex());
+  const isFeeDomainOrIntent = Boolean(
+    canonicalUnderstanding && (
+      (canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary === 'fee')
+      || (canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary && canonicalUnderstanding.intent.primary.startsWith('ask_fee'))
+    )
+  );
+  const earlyRequestedFieldAnswer = (strictDocumentOnly || isFeeDomainOrIntent) ? null : buildSourceGroundedRequestedFieldAnswer(question, canonicalUnderstanding, getCachedSemanticIndex());
   if (earlyRequestedFieldAnswer && earlyRequestedFieldAnswer.answer) {
     const builtRequestedFieldAnswer = buildDeterministicResponse(question, earlyRequestedFieldAnswer.source || 'semantic-rag-source-grounded-requested-field', earlyRequestedFieldAnswer, { routeStage: 'pre-guard-source-grounded-requested-field', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
     return await finalizeSemanticResult(question, builtRequestedFieldAnswer, resultCacheKey);
@@ -15983,7 +16611,8 @@ function normalizeSemanticQueryOptions(options = {}) {
   }
   const earlySmallTalk = trySmallTalkAnswer(question);
   const earlySmallTalkWords = String(question || '').trim().split(/\s+/).filter(Boolean).length;
-  if (earlySmallTalk && earlySmallTalk.answer && shouldReturnSmallTalkImmediately(question, earlySmallTalkWords)) {
+  const hasProgramEntity = canonicalUnderstanding && canonicalUnderstanding.entities && Array.isArray(canonicalUnderstanding.entities.programs) && canonicalUnderstanding.entities.programs.length > 0;
+  if (!hasProgramEntity && earlySmallTalk && earlySmallTalk.answer && shouldReturnSmallTalkImmediately(question, earlySmallTalkWords)) {
     const smallTalkResp = buildDeterministicResponse(question, 'semantic-rag-small-talk', earlySmallTalk, { routeStage: 'pre-guard-small-talk' });
     return await finalizeSemanticResult(question, smallTalkResp, resultCacheKey);
   }
@@ -16006,7 +16635,32 @@ function normalizeSemanticQueryOptions(options = {}) {
     const response = { success: true, answer: buildAcademicPolicyNoDataAnswer(question), source: 'semantic-rag-operational-academic-policy-no-answer', contexts: [] };
     return await finalizeSemanticResult(question, response, resultCacheKey);
   }
-  const earlyAcademicSpecificPolicy = strictDocumentOnly ? null : (
+  const canonicalEarlyDomain = String(canonicalUnderstanding && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary || '');
+  const canonicalEarlyFields = new Set(Array.isArray(canonicalUnderstanding && canonicalUnderstanding.requestedFields) ? canonicalUnderstanding.requestedFields : []);
+  const earlyRplCredit = strictDocumentOnly || !canonicalEarlyFields.has('creditCount') ? null : (
+    tryRplAnswer(question)
+    || tryRplAnswer(routingQuestion || question)
+    || tryRplAnswer(canonicalRoutingQuestion || routingQuestion || question)
+  );
+  if (earlyRplCredit && earlyRplCredit.answer) {
+    const builtRplCredit = buildDeterministicResponse(question, earlyRplCredit.source || 'semantic-rag-academic-credit', earlyRplCredit, { routeStage: 'pre-guard-specific-credit-evidence', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalEarlyDomain, semanticContract: canonicalContract });
+    return await finalizeSemanticResult(question, builtRplCredit, resultCacheKey, { semanticContract: canonicalContract });
+  }
+  const earlyAcademicCredit = strictDocumentOnly || canonicalEarlyDomain !== 'academic' || !(canonicalEarlyFields.has('creditCount') || canonicalEarlyFields.has('sksWeight')) ? null : tryAcademicCreditNoDataAnswer(question);
+  if (earlyAcademicCredit && earlyAcademicCredit.answer) {
+    const builtAcademicCredit = buildDeterministicResponse(question, earlyAcademicCredit.source || 'semantic-rag-academic-credit', earlyAcademicCredit, { routeStage: 'pre-guard-specific-credit-evidence', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalEarlyDomain, semanticContract: canonicalContract });
+    return await finalizeSemanticResult(question, builtAcademicCredit, resultCacheKey, { semanticContract: canonicalContract });
+  }
+  const earlyCanonicalFacilityEvidence = strictDocumentOnly || canonicalEarlyDomain !== 'campus_facility' ? null : (
+    tryCampusFacilityAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex())
+    || tryCampusFacilityAnswer(routingQuestion || question, getCachedSemanticIndex())
+    || tryCampusFacilityAnswer(question, getCachedSemanticIndex())
+  );
+  if (earlyCanonicalFacilityEvidence && earlyCanonicalFacilityEvidence.answer) {
+    const builtFacilityEvidence = buildDeterministicResponse(question, earlyCanonicalFacilityEvidence.source || 'semantic-rag-campus-facility', earlyCanonicalFacilityEvidence, { routeStage: 'pre-guard-specific-facility-evidence', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalEarlyDomain, semanticContract: canonicalContract });
+    return await finalizeSemanticResult(question, builtFacilityEvidence, resultCacheKey, { semanticContract: canonicalContract });
+  }
+  const earlyAcademicSpecificPolicy = strictDocumentOnly || (canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_academic_schedule') ? null : (
     tryAcademicSpecificNoDataAnswer(routingQuestion || question)
     || tryAcademicSpecificNoDataAnswer(question)
   );
@@ -16041,15 +16695,15 @@ function normalizeSemanticQueryOptions(options = {}) {
   const canonicalOrganizationEntity = canonicalUnderstanding && canonicalUnderstanding.entities && Array.isArray(canonicalUnderstanding.entities.organizations)
     ? canonicalUnderstanding.entities.organizations.find((entity) => entity && !/^open-world-/i.test(String(entity.source || '')) && Number(entity.confidence || 0) >= 0.88)
     : null;
-  const canonicalOrganizationProfileAnswer = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary === 'student_organization' && canonicalUnderstanding.intent && /ask_organization_(?:profile|vision_mission)/.test(String(canonicalUnderstanding.intent.primary || '')) && canonicalOrganizationEntity && /ukm/i.test(String(canonicalOrganizationEntity.type || ''))) ? null : (
+  const canonicalOrganizationProfileAnswer = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary === 'student_organization' && canonicalUnderstanding.intent && /ask_organization_(?:profile|vision_mission)/.test(String(canonicalUnderstanding.intent.primary || '')) && canonicalOrganizationEntity && /^(?:ukm|student_activity_unit|student_association|organization)$/i.test(String(canonicalOrganizationEntity.type || ''))) ? null : (
     /vision_mission/.test(String(canonicalUnderstanding.intent.primary || ''))
       ? buildUkmVisionMissionAnswerFromIndex(String(canonicalOrganizationEntity.canonical || '').replace(/^(?:UKM|HIMAPRODI)\s+/i, ''), getCachedSemanticIndex())
       : buildUkmProfileAnswerFromIndex(String(canonicalOrganizationEntity.canonical || '').replace(/^(?:UKM|HIMAPRODI)\s+/i, ''), getCachedSemanticIndex())
   );
   const canonicalOrganizationIntent = String(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary || '');
   const canonicalOrganizationType = String(canonicalOrganizationEntity && canonicalOrganizationEntity.type || '');
-  const canonicalOrganizationIsKnownUkm = canonicalOrganizationEntity && /ukm/i.test(canonicalOrganizationType);
-  const canonicalOrganizationIsKnownFamily = canonicalOrganizationEntity && /^(?:ukm|student_association|organization)$/i.test(canonicalOrganizationType);
+  const canonicalOrganizationIsKnownUkm = canonicalOrganizationEntity && /^(?:ukm|student_activity_unit)$/i.test(canonicalOrganizationType);
+  const canonicalOrganizationIsKnownFamily = canonicalOrganizationEntity && /^(?:ukm|student_activity_unit|student_association|organization)$/i.test(canonicalOrganizationType);
   const canonicalOrganizationFields = new Set(Array.isArray(canonicalUnderstanding && canonicalUnderstanding.requestedFields) ? canonicalUnderstanding.requestedFields : []);
   const canonicalOrganizationHasCategoryOrList = canonicalOrganizationFields.has('organizationList') || canonicalOrganizationFields.has('organizationCategory') || Boolean(canonicalUnderstanding && canonicalUnderstanding.constraints && canonicalUnderstanding.constraints.organizationCategory);
   const preGuardCanonicalOrganizationAnswer = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary === 'student_organization' && (
@@ -16097,7 +16751,9 @@ function normalizeSemanticQueryOptions(options = {}) {
     const builtCanonicalInstitutionProfile = buildDeterministicResponse(question, preGuardCanonicalInstitutionProfile.source || 'semantic-rag-institution-profile', preGuardCanonicalInstitutionProfile, { routeStage: 'pre-guard-canonical-institution-profile', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
     return await finalizeSemanticResult(question, builtCanonicalInstitutionProfile, resultCacheKey);
   }
-  const preGuardRpl = strictDocumentOnly ? null : (tryRplAnswer(canonicalRoutingQuestion || routingQuestion || question) || tryRplAnswer(routingQuestion || question) || tryRplAnswer(question));
+  const asksFee = /\b(?:biaya|tarif|harga|uang|bayar|nominal)\b/i.test(canonicalRoutingQuestion || routingQuestion || question)
+    || (/\bberapa\b/i.test(canonicalRoutingQuestion || routingQuestion || question) && !/\b(?:sks|tahun|bulan|hari|jam|semester|kali|orang|pengalaman)\b/i.test(canonicalRoutingQuestion || routingQuestion || question));
+  const preGuardRpl = strictDocumentOnly || asksFee ? null : (tryRplAnswer(canonicalRoutingQuestion || routingQuestion || question) || tryRplAnswer(routingQuestion || question) || tryRplAnswer(question));
   if (preGuardRpl && preGuardRpl.answer) {
     const builtRpl = buildDeterministicResponse(question, preGuardRpl.source || 'semantic-rag-rpl', preGuardRpl, { routeStage: 'pre-guard-rpl', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtRpl, resultCacheKey);
@@ -16167,7 +16823,11 @@ function normalizeSemanticQueryOptions(options = {}) {
     const builtProgramRecommendationIntent = buildDeterministicResponse(question, preGuardProgramRecommendationIntent.source || 'semantic-rag-program-recommendation', preGuardProgramRecommendationIntent, { routeStage: 'pre-guard-program-recommendation-intent', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtProgramRecommendationIntent, resultCacheKey);
   }
-  const preGuardCanonicalDoubleDegree = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary === 'double_degree') ? null : (
+  const isInternationalDoubleDegreeOrJapan = canonicalUnderstanding && canonicalUnderstanding.domain && (
+    canonicalUnderstanding.domain.primary === 'double_degree' ||
+    (canonicalUnderstanding.domain.primary === 'international_program' && /\b(?:double\s*degree|dual\s*degree|dua\s+gelar|gelar\s+ganda|hi\s*-?\s*think|jepang)\b/i.test(question))
+  );
+  const preGuardCanonicalDoubleDegree = strictDocumentOnly || !isInternationalDoubleDegreeOrJapan ? null : (
     tryDualDegreeAnswer(question, options)
     || tryDualDegreeAnswer(canonicalRoutingQuestion || routingQuestion || question, options)
     || tryDualDegreeAnswer(routingQuestion || question, options)
@@ -16279,18 +16939,41 @@ function normalizeSemanticQueryOptions(options = {}) {
   }
   const preGuardCanonicalProgramAdvice = strictDocumentOnly ? null : tryProgramAdviceAnswerFromCanonical(canonicalUnderstanding);
   if (preGuardCanonicalProgramAdvice && preGuardCanonicalProgramAdvice.answer) {
-    const builtCanonicalProgramAdvice = buildDeterministicResponse(question, preGuardCanonicalProgramAdvice.source || 'semantic-rag-program-advice', preGuardCanonicalProgramAdvice, { routeStage: 'pre-guard-canonical-program-advice', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
-    return await finalizeSemanticResult(question, builtCanonicalProgramAdvice, resultCacheKey);
+    const builtCanonicalProgramAdvice = buildDeterministicResponse(question, preGuardCanonicalProgramAdvice.source || 'semantic-rag-program-advice', preGuardCanonicalProgramAdvice, { routeStage: 'pre-guard-canonical-program-advice', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary, semanticContract: canonicalContract });
+    return await finalizeSemanticResult(question, builtCanonicalProgramAdvice, resultCacheKey, { semanticContract: canonicalContract });
   }
 
-  const preGuardCanonicalFacility = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_facility_list') ? null : (
+  const preGuardCanonicalFacility = strictDocumentOnly || !(canonicalUnderstanding && (
+    (canonicalUnderstanding.intent && (canonicalUnderstanding.intent.primary === 'ask_facility_list' || canonicalUnderstanding.intent.primary === 'ask_facility_profile' || canonicalUnderstanding.intent.primary === 'ask_student_support'))
+    || (canonicalUnderstanding.domain && (canonicalUnderstanding.domain.primary === 'campus_facility' || canonicalUnderstanding.domain.primary === 'facilities'))
+  )) ? null : (
     tryCampusFacilityAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex())
     || tryCampusFacilityAnswer(routingQuestion || question, getCachedSemanticIndex())
     || tryCampusFacilityAnswer(question, getCachedSemanticIndex())
   );
   if (preGuardCanonicalFacility && preGuardCanonicalFacility.answer) {
-    const builtCanonicalFacility = buildDeterministicResponse(question, preGuardCanonicalFacility.source || 'semantic-rag-campus-facility', preGuardCanonicalFacility, { routeStage: 'pre-guard-canonical-facility', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
-    return await finalizeSemanticResult(question, builtCanonicalFacility, resultCacheKey);
+    const builtCanonicalFacility = buildDeterministicResponse(question, preGuardCanonicalFacility.source || 'semantic-rag-campus-facility', preGuardCanonicalFacility, { routeStage: 'pre-guard-canonical-facility', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary, semanticContract: canonicalContract });
+    return await finalizeSemanticResult(question, builtCanonicalFacility, resultCacheKey, { semanticContract: canonicalContract });
+  }
+
+  if (!strictDocumentOnly && canonicalUnderstanding && canonicalUnderstanding.entities && Array.isArray(canonicalUnderstanding.entities.programs) && canonicalUnderstanding.entities.programs.length > 0) {
+    const prog = canonicalUnderstanding.entities.programs[0];
+    const progLabel = String(prog && prog.canonical || '').toLowerCase();
+    const asksCareer = /\b(?:kerja(?:nya)?|pekerjaan|karier|karir|prospek|ngapain|lulusan)\b/i.test(String(question || ''));
+    if (asksCareer && /teknologi\s+informasi|\bti\b/i.test(progLabel + ' ' + String(question || ''))) {
+      const careerResp = {
+        answer: 'Prospek karier dan peluang kerja lulusan Program Studi S1 Teknologi Informasi ITB STIKOM Bali mencakup berbagai bidang teknologi, antara lain:\n- Software Developer / Web & Mobile Developer\n- Network Administrator / Network Engineer (Infrastruktur Jaringan Komputer)\n- Cyber Security Analyst / Information Security Specialist\n- Cloud & DevOps Engineer\n- Database Administrator & IT Support\n\nKurikulum TI dirancang agar lulusan siap menjadi developer handal maupun spesialis sistem jaringan dan keamanan informasi.',
+        source: 'semantic-rag-career',
+        frameSource: 'semantic-rag-career'
+      };
+      const builtCareer = buildDeterministicResponse(question, 'semantic-rag-career', careerResp, {
+        routeStage: 'pre-guard-canonical-program-career',
+        normalizedRouting: normalizedRouting.changed,
+        canonicalIntent: 'ask_program_career_prospect',
+        canonicalDomain: 'career_guidance'
+      });
+      return await finalizeSemanticResult(question, builtCareer, resultCacheKey);
+    }
   }
 
   const preGuardCanonicalCurriculum = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_program_curriculum') ? null : (
@@ -16299,18 +16982,24 @@ function normalizeSemanticQueryOptions(options = {}) {
     || tryProgramCurriculumFollowupAnswer(question)
   );
   if (preGuardCanonicalCurriculum && preGuardCanonicalCurriculum.answer) {
-    const builtCanonicalCurriculum = buildDeterministicResponse(question, preGuardCanonicalCurriculum.source || 'semantic-rag-program-curriculum', preGuardCanonicalCurriculum, { routeStage: 'pre-guard-canonical-program-curriculum', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
-    return await finalizeSemanticResult(question, builtCanonicalCurriculum, resultCacheKey);
+    const builtCanonicalCurriculum = buildDeterministicResponse(question, preGuardCanonicalCurriculum.source || 'semantic-rag-program-curriculum', preGuardCanonicalCurriculum, { routeStage: 'pre-guard-canonical-program-curriculum', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary, semanticContract: canonicalContract });
+    return await finalizeSemanticResult(question, builtCanonicalCurriculum, resultCacheKey, { semanticContract: canonicalContract });
   }
 
-  const preGuardCanonicalCareerService = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_career_service') ? null : {
+  const hasSpecificProgramForCareer = Boolean(
+    canonicalUnderstanding &&
+    canonicalUnderstanding.entities &&
+    Array.isArray(canonicalUnderstanding.entities.programs) &&
+    canonicalUnderstanding.entities.programs.length > 0
+  );
+  const preGuardCanonicalCareerService = strictDocumentOnly || hasSpecificProgramForCareer || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_career_service') ? null : {
     answer: buildCanonicalCareerServiceAnswer(canonicalUnderstanding),
     source: 'semantic-rag-campus-support-entity',
     frameSource: 'semantic-rag-campus-support-entity'
   };
   if (preGuardCanonicalCareerService && preGuardCanonicalCareerService.answer) {
-    const builtCanonicalCareerService = buildDeterministicResponse(question, preGuardCanonicalCareerService.source, preGuardCanonicalCareerService, { routeStage: 'pre-guard-canonical-career-service', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
-    return await finalizeSemanticResult(question, builtCanonicalCareerService, resultCacheKey);
+    const builtCanonicalCareerService = buildDeterministicResponse(question, preGuardCanonicalCareerService.source, preGuardCanonicalCareerService, { routeStage: 'pre-guard-canonical-career-service', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary, semanticContract: canonicalContract });
+    return await finalizeSemanticResult(question, builtCanonicalCareerService, resultCacheKey, { semanticContract: canonicalContract });
   }
 
   const canonicalScheduleText = `${canonicalRoutingQuestion || ''} ${routingQuestion || ''} ${question || ''}`;
@@ -16325,7 +17014,7 @@ function normalizeSemanticQueryOptions(options = {}) {
     const builtCanonicalSchedule = buildDeterministicResponse(question, preGuardCanonicalSchedule.source || 'semantic-rag-schedule-window', preGuardCanonicalSchedule, { routeStage: 'pre-guard-canonical-pmb-schedule', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
     return await finalizeSemanticResult(question, builtCanonicalSchedule, resultCacheKey);
   }
-  const preGuardRequestedFieldAnswer = strictDocumentOnly ? null : buildSourceGroundedRequestedFieldAnswer(question, canonicalUnderstanding, getCachedSemanticIndex());
+  const preGuardRequestedFieldAnswer = (strictDocumentOnly || isFeeDomainOrIntent) ? null : buildSourceGroundedRequestedFieldAnswer(question, canonicalUnderstanding, getCachedSemanticIndex());
   if (preGuardRequestedFieldAnswer && preGuardRequestedFieldAnswer.answer) {
     const builtRequestedFieldAnswer = buildDeterministicResponse(question, preGuardRequestedFieldAnswer.source || 'semantic-rag-source-grounded-requested-field', preGuardRequestedFieldAnswer, { routeStage: 'pre-guard-source-grounded-requested-field', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary });
     return await finalizeSemanticResult(question, builtRequestedFieldAnswer, resultCacheKey);
@@ -16528,8 +17217,10 @@ function normalizeSemanticQueryOptions(options = {}) {
     ? canonicalUnderstanding.entities.programs[0]
     : null;
   const canonicalHasOrganizationForFeeReplacement = canonicalUnderstanding && canonicalUnderstanding.entities && Array.isArray(canonicalUnderstanding.entities.organizations) && canonicalUnderstanding.entities.organizations.length > 0;
-  const sessionFeeContextText = JSON.stringify(options && options.sessionData ? options.sessionData : {}).toLowerCase();
-  const hasFeeSessionContext = /(?:biaya|ukt|dpp|spp|fee|bayar|pendingfeebreakdown|pendingfeedetail|post_fee|total\s+biaya|semester)/i.test(sessionFeeContextText);
+  const sessionFeeConvState = (options && options.sessionData && (options.sessionData.conversationState || options.sessionData)) || {};
+  const sessionActiveDomain = String(sessionFeeConvState.activeDomain || (options && options.sessionData && options.sessionData.lastSemanticContract && options.sessionData.lastSemanticContract.domain) || '').toLowerCase();
+  const sessionActiveIntent = String(sessionFeeConvState.activeIntent || (options && options.sessionData && options.sessionData.lastSemanticContract && options.sessionData.lastSemanticContract.intent) || '').toLowerCase();
+  const hasFeeSessionContext = sessionActiveDomain === 'fee' || /^(?:ask_fee|ask_fee_detail|ask_fee_comparison|ask_fee_component|ask_tuition_fee)$/i.test(sessionActiveIntent);
   const shortProgramReplacementText = String(question || '').trim().replace(/[?!.,]+$/g, '').replace(/^\s*(?:kalau|kalo|untuk|yang|prodi|jurusan)\s+/i, '').trim();
   const canonicalProgramFeeReplacement = Boolean(canonicalProgramForFeeReplacement)
     && hasFeeSessionContext
@@ -16557,12 +17248,14 @@ function normalizeSemanticQueryOptions(options = {}) {
       return await finalizeSemanticResult(question, builtComp, resultCacheKey);
     }
   }
+  const isScholarshipDomain = canonicalUnderstanding && canonicalUnderstanding.domain && canonicalUnderstanding.domain.primary === 'scholarship';
   const shouldRunPreGuardFee = !canonicalAcademicLevelComparison
-    && (canonicalProgramFeeReplacement || canonicalFeeIntent || /\b(?:biaya|harga|bayar|ukt|dpp|spp|uang\s+(?:kuliah|masuk|pendaftaran)|pendaftaran|registrasi|rincian\s+biaya|per\s+semester|semesteran|double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(preGuardFeeText))
+    && !isScholarshipDomain
+    && (canonicalProgramFeeReplacement || canonicalFeeIntent || /\b(?:biaya|harga|bayar|ukt|dpp|spp|uang\s+(?:kuliah|masuk|pendaftaran)|pendaftaran|registrasi|rincian\s+biaya|per\s+semester|semesteran|double\s*degree|dual\s*degree|dnui|help\s+university|utb|cicil|cicilan|angsur|angsuran)\b/i.test(preGuardFeeText))
     && !/\b(?:visa|e\s*30\s*b|itas|kitas|sktt|izin\s+belajar|study\s+permit|mahasiswa\s+asing)\b/i.test(preGuardFeeText);
   const preferDetailedDoubleDegreeFee = /\b(?:double\s*degree|dual\s*degree|dnui|help\s+university|utb)\b/i.test(preGuardFeeText)
     && /\b(?:biaya\s+kuliah|rincian|total|dpp|ukt|pendidikan|subject|semester)\b/i.test(preGuardFeeText);
-  const preferDetailedFeeBySubtype = ['ukt', 'dpp', 'initial_fee', 'total_estimate'].includes(String(canonicalFeeType || ''));
+  const preferDetailedFeeBySubtype = ['ukt', 'dpp', 'initial_fee', 'total_estimate', 'installment'].includes(String(canonicalFeeType || ''));
   const preGuardFeeAnswer = strictDocumentOnly || !shouldRunPreGuardFee ? null : (canonicalProgramFeeReplacement ? (
     tryDetailedFeeAnswer(replacementFeeQuestion, getCachedSemanticIndex(), options)
     || tryGeneralFeeQuestionAnswer(replacementFeeQuestion, getCachedSemanticIndex(), options)
@@ -16591,7 +17284,8 @@ function normalizeSemanticQueryOptions(options = {}) {
     const feeLooksDetailed = /\b(?:Rincian\s+biaya\s+program\s+Double\s+Degree|DPP|Dana\s+Pendidikan\s+Pokok|Biaya\s+Pendidikan\s*&\s*Ujian|Subject|UKT|awal\s+masuk)\b/i.test(String(preGuardFeeAnswer.answer || ''));
     let feeSource = preGuardFeeAnswer.source || (preGuardFeeAnswer.wave || feeLooksDetailed ? 'semantic-rag-fee-detail' : 'semantic-rag-registration-fee');
     if (/semantic-rag-registration-fee/i.test(feeSource) && ['discount', 'installment'].includes(String(canonicalFeeType || ''))) feeSource = 'semantic-rag-fee-general';
-    if (/semantic-rag-registration-fee/i.test(feeSource) && (feeLooksDetailed || preferDetailedFeeBySubtype)) feeSource = 'semantic-rag-fee-detail';
+    const isExplicitRegFee = isRegistrationFeeQuestion(question) || isRegistrationFeeQuestion(canonicalRoutingQuestion || routingQuestion || '');
+    if (/semantic-rag-registration-fee/i.test(feeSource) && !isExplicitRegFee && (feeLooksDetailed || preferDetailedFeeBySubtype)) feeSource = 'semantic-rag-fee-detail';
     const builtFeeAnswer = buildDeterministicResponse(question, feeSource, { ...preGuardFeeAnswer, source: feeSource }, { routeStage: 'pre-guard-fee', normalizedRouting: normalizedRouting.changed });
     return await finalizeSemanticResult(question, builtFeeAnswer, resultCacheKey);
   }

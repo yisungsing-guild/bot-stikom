@@ -1,4 +1,4 @@
-﻿const DEFAULT_MAX_EVIDENCE = 5;
+const DEFAULT_MAX_EVIDENCE = 5;
 const { truncateEvidenceSafely } = require('../utils/contextTruncation');
 const { getEvidenceRequirements, isScholarshipAligned, containsCurrency } = require('../utils/evidenceRequirements');
 const { verifyAnswerAgainstContract } = require('./semanticContract');
@@ -516,6 +516,174 @@ function hasConcreteList(text) {
   return bulletCount >= 2 || namedPrograms >= 2 || commaItems >= 3;
 }
 
+const REQUESTED_FIELD_EVIDENCE_RULES = {
+  amount: /(?:rp\.?\s*\d|rupiah|\d[\d.,]*\s*(?:ribu|juta))/i,
+  registrationFee: /(?:biaya|uang|pembayaran)\s+(?:pendaftaran|daftar)|pendaftaran[\s\S]{0,80}(?:rp\.?\s*\d|ribu|juta)/i,
+  tuitionFee: /(?:ukt|uang\s+kuliah|biaya\s+(?:kuliah|semester)|per\s+semester|semesteran)/i,
+  developmentFee: /(?:dpp|dana\s+(?:pengembangan|pendidikan)|uang\s+gedung)/i,
+  discount: /(?:diskon|potongan|persen|%)/i,
+  installmentSchedule: /(?:cicil|angsuran|bertahap|tahap\s+pembayaran)/i,
+  installmentRequirements: /(?:syarat|persyaratan|permohonan|pengajuan|dokumen|berkas)/i,
+  paymentMethod: /(?:virtual\s+account|\bva\b|rekening|bank|transfer|loket|kasir)/i,
+  paymentChannel: /(?:virtual\s+account|\bva\b|rekening|bank|transfer|loket|kasir|kanal|channel)/i,
+  virtualAccount: /(?:virtual\s+account|\bva\b)/i,
+  requirements: /(?:syarat|persyaratan|dokumen|berkas|ijazah|transkrip|ktp|kk|rapor|foto|paspor|passport)/i,
+  scholarshipRequirements: /(?:syarat|persyaratan|dokumen|berkas|kriteria|eligible|kelayakan)/i,
+  procedureSteps: /(?:cara|alur|prosedur|langkah|tahap|daftar|pendaftaran|konfirmasi|unggah|upload)/i,
+  date: /(?:\b\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\b|\b20\d{2}\b|periode|gelombang)/i,
+  duration: /(?:durasi|lama|hari|minggu|bulan|tahun|semester)/i,
+  degree: /(?:gelar|sarjana|bachelor|master|s\.kom|m\.kom|ijazah)/i,
+  degreeOutcome: /(?:gelar|sarjana|bachelor|master|s\.kom|m\.kom|ijazah)/i,
+  creditCount: /(?:\b\d+\s*sks\b|jumlah\s+sks|beban\s+(?:studi|sks))/i,
+  sksWeight: /(?:\b\d+\s*sks\b|jumlah\s+sks|beban\s+(?:studi|sks))/i,
+  careerProspects: /(?:prospek|karier|karir|pekerjaan|bekerja|engineer|developer|analyst|wirausaha)/i,
+  jobRoles: /(?:engineer|developer|analyst|programmer|administrator|konsultan|wirausaha|pekerjaan|profesi)/i,
+  organizationList: /(?:ukm|ormawa|organisasi|himpunan|bem|dpm|mapala|ksr|ksl)/i,
+  organization: /(?:ukm|ormawa|organisasi|himpunan|bem|dpm|mapala|ksr|ksl)/i,
+  landmarkProximity: /(?:dekat|sekitar|berdekatan|jarak|landmark|patokan)/i,
+  transportation: /(?:bus|antar\s*jemput|shuttle|transportasi)/i,
+  location: /(?:alamat|lokasi|jalan|kampus|renon|jimbaran|abiansemal)/i,
+  policy: /(?:aturan|kebijakan|ketentuan|boleh|diizinkan|wajib|maksimal|minimal)/i,
+  allowed: /(?:boleh|diizinkan|diperbolehkan|tidak\s+boleh|wajib)/i,
+  permission: /(?:izin|persetujuan|boleh|diizinkan|diperbolehkan)/i,
+  scholarshipList: /(?:beasiswa|kip|1k1s|skss|prestasi|yayasan)/i,
+  facilityList: /(?:fasilitas|sarana|prasarana|lab|laboratorium|perpustakaan)/i,
+  availability: /(?:tersedia|ada|memiliki|fasilitas|beasiswa)/i,
+  profile: /(?:profil|tentang|deskripsi|pengertian|definisi|tujuan|fokus)/i,
+  partner: /(?:mitra|kerja\s*sama|kerjasama|partner|dnui|help\s+university|utb|universitas\s+teknologi\s+bandung)/i,
+  programScope: /(?:nasional|internasional|international|luar\s+negeri|dalam\s+negeri)/i,
+  geographicScope: /(?:nasional|internasional|international|luar\s+negeri|dalam\s+negeri|malaysia|china|tiongkok)/i,
+  curriculum: /(?:kurikulum|mata\s*kuliah|sks|teori|praktik|konsentrasi)/i,
+  curriculumFocus: /(?:fokus|konsentrasi|peminatan|bidang\s+keahlian)/i,
+  academicLevel: /(?:sarjana|strata\s*1|s1|diploma|d3|magister|s2)/i,
+  remedialFee: /(?:remedial|ujian\s+ulang)[\s\S]{0,80}(?:rp\.?\s*\d|biaya|tarif)/i
+};
+
+function isFieldConflicting(field, value, evidenceList = []) {
+  const chunks = Array.isArray(evidenceList) && evidenceList.length > 0
+    ? evidenceList.map((e) => String(e.text || e.chunk || e.content || ''))
+    : [value];
+
+  const rule = REQUESTED_FIELD_EVIDENCE_RULES[field];
+  if (!rule) return false;
+
+  const matchingChunks = chunks.filter((c) => rule.test(c));
+  if (matchingChunks.length >= 2) {
+    if (/fee|amount|biaya|discount|cost/i.test(field) || field === 'registrationFee' || field === 'tuitionFee') {
+      const distinctAmounts = new Set();
+      for (const chunk of matchingChunks) {
+        const matches = [...chunk.matchAll(/rp\.?\s*([\d.,]+)/gi)].map((m) => m[1].replace(/[.,]/g, ''));
+        for (const amt of matches) {
+          distinctAmounts.add(amt);
+        }
+      }
+      if (distinctAmounts.size >= 2) {
+        const allSameWave = matchingChunks.every((c) => /reguler/i.test(c) || !/gelombang\s*[12345]/i.test(c));
+        if (allSameWave || distinctAmounts.size > matchingChunks.length) {
+          return true;
+        }
+      }
+    }
+    let hasAllowed = false;
+    let hasProhibited = false;
+    for (const chunk of matchingChunks) {
+      if (/\b(?:dilarang|tidak\s+(?:boleh|diizinkan|diperbolehkan))\b/i.test(chunk)) hasProhibited = true;
+      else if (/\b(?:boleh|diizinkan|diperbolehkan)\b/i.test(chunk)) hasAllowed = true;
+    }
+    if (hasAllowed && hasProhibited) return true;
+  }
+  return false;
+}
+
+function isFieldPartiallySupported(field, value) {
+  const rule = REQUESTED_FIELD_EVIDENCE_RULES[field];
+  if (!rule || !rule.test(value)) return false;
+
+  const partialIndicators = /(?:belum\s+(?:diumumkan|tercantum|pasti|lengkap|dipastikan|tersedia|disebutkan|jelas|ada)|akan\s+diumumkan|informasi\s+lebih\s+lanjut)/i;
+  const sentences = String(value || '').split(/[.\n;]/);
+  for (const sentence of sentences) {
+    if (rule.test(sentence) && partialIndicators.test(sentence)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function assessFieldLevelAnswerability(semanticContract, text, evidence = []) {
+  const requested = Array.isArray(semanticContract && semanticContract.requestedFields)
+    ? semanticContract.requestedFields.filter((field) => REQUESTED_FIELD_EVIDENCE_RULES[field])
+    : [];
+  if (!requested.length) {
+    return {
+      overallStatus: 'SUPPORTED',
+      fieldDetails: {},
+      requiredFields: [],
+      supportedFields: [],
+      unsupportedFields: [],
+      partiallySupportedFields: [],
+      conflictingFields: [],
+      ratio: 1.0
+    };
+  }
+
+  const value = String(text || '');
+  const fieldDetails = {};
+  const supported = [];
+  const unsupported = [];
+  const partiallySupported = [];
+  const conflicting = [];
+
+  for (const field of requested) {
+    const rule = REQUESTED_FIELD_EVIDENCE_RULES[field];
+    if (!rule) continue;
+    const hasMatch = rule.test(value);
+    if (!hasMatch) {
+      unsupported.push(field);
+      fieldDetails[field] = { status: 'UNSUPPORTED', field };
+    } else if (isFieldConflicting(field, value, evidence)) {
+      conflicting.push(field);
+      fieldDetails[field] = { status: 'CONFLICTING', field };
+    } else if (isFieldPartiallySupported(field, value)) {
+      partiallySupported.push(field);
+      fieldDetails[field] = { status: 'PARTIALLY_SUPPORTED', field };
+    } else {
+      supported.push(field);
+      fieldDetails[field] = { status: 'SUPPORTED', field };
+    }
+  }
+
+  let overallStatus = 'UNSUPPORTED';
+  if (conflicting.length > 0) {
+    overallStatus = 'CONFLICTING';
+  } else if (supported.length === requested.length) {
+    overallStatus = 'SUPPORTED';
+  } else if (supported.length > 0 || partiallySupported.length > 0) {
+    overallStatus = 'PARTIALLY_SUPPORTED';
+  }
+
+  return {
+    overallStatus,
+    fieldDetails,
+    requiredFields: requested,
+    supportedFields: supported,
+    unsupportedFields: unsupported,
+    partiallySupportedFields: partiallySupported,
+    conflictingFields: conflicting,
+    ratio: requested.length ? supported.length / requested.length : 1.0
+  };
+}
+
+function assessRequestedFieldCoverage(semanticContract, text, evidence = []) {
+  const assessment = assessFieldLevelAnswerability(semanticContract, text, evidence);
+  return {
+    required: assessment.requiredFields,
+    covered: assessment.supportedFields,
+    missing: assessment.unsupportedFields,
+    ratio: assessment.ratio,
+    assessment
+  };
+}
+
 function evaluateEvidenceAnswerability({ question, selectedEvidence, intent, semanticContract } = {}) {
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence.filter((item) => item && item.isSelectedEvidence === true) : [];
   const text = evidence.map((item) => item.text).join('\n');
@@ -524,17 +692,43 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent, sem
   const terms = getContentTerms(question);
   const q = String(question || '').trim().toLowerCase();
   const rules = getEvidenceRequirements(detectedIntent, question);
-  const contractAnswerability = semanticContract ? verifyAnswerAgainstContract(semanticContract, text, evidence) : { ok: true };
-  if (contractAnswerability && contractAnswerability.ok === false) {
-    return { answerable: false, reason: 'contract_incompatible_evidence', missingEvidence: [contractAnswerability.reason], contractAnswerability };
-  }
 
-  // Check for no content
+  // Check for no content or missing evidence first
   if (!terms.length && !isExplicitLegalQuestion(question, detectedIntent)) {
     return { answerable: false, reason: 'ambiguous_question', missingEvidence: ['question_object'] };
   }
   if (!evidence.length || !text.trim()) {
     return { answerable: false, reason: 'no_selected_evidence', missingEvidence: ['selected_evidence'] };
+  }
+
+  const contractAnswerability = semanticContract ? verifyAnswerAgainstContract(semanticContract, text, evidence) : { ok: true };
+  if (contractAnswerability && contractAnswerability.ok === false) {
+    return { answerable: false, reason: 'contract_incompatible_evidence', missingEvidence: [contractAnswerability.reason], contractAnswerability };
+  }
+
+  const requestedFieldCoverage = assessRequestedFieldCoverage(semanticContract, text, evidence);
+  const fieldAssessment = (requestedFieldCoverage && requestedFieldCoverage.assessment)
+    || assessFieldLevelAnswerability(semanticContract, text, evidence);
+
+  if (fieldAssessment.overallStatus === 'CONFLICTING') {
+    return {
+      answerable: false,
+      conflicting: true,
+      reason: 'conflicting_evidence',
+      missingEvidence: [],
+      requestedFieldCoverage,
+      fieldAssessment
+    };
+  }
+
+  if (fieldAssessment.requiredFields && fieldAssessment.requiredFields.length > 0 && fieldAssessment.supportedFields.length === 0 && fieldAssessment.partiallySupportedFields.length === 0) {
+    return {
+      answerable: false,
+      reason: 'all_requested_fields_unsupported',
+      missingEvidence: fieldAssessment.unsupportedFields.map((field) => `requested_field:${field}`),
+      requestedFieldCoverage,
+      fieldAssessment
+    };
   }
 
   // STRICT CHECKS: Specific query types that need structural validation
@@ -563,19 +757,35 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent, sem
     return {
       answerable: missingEvidence.length === 0,
       reason: 'missing_required_answer_shape',
-      missingEvidence
+      missingEvidence,
+      requestedFieldCoverage,
+      fieldAssessment
     };
   }
 
   // GENERIC RAG MODE: For other intents, if evidence exists and has content, trust it
   // RAG retrieval already filtered for relevance, don't over-verify structure
   if (evidence.length > 0 && text.trim()) {
-    // Special case: definition-like questions keep their specific reason for backwards compatibility
+    const isPartiallyAnswerable = fieldAssessment && fieldAssessment.overallStatus === 'PARTIALLY_SUPPORTED';
+    const supportedFields = fieldAssessment ? fieldAssessment.supportedFields : [];
+    const unsupportedFields = fieldAssessment ? fieldAssessment.unsupportedFields : [];
+    const partiallySupportedFields = fieldAssessment ? fieldAssessment.partiallySupportedFields : [];
     const asksDefinitionLikeQuestion = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|jelaskan|maksud(?:nya)?|tentang)\b/i.test(q);
-    if (asksDefinitionLikeQuestion) {
-      return { answerable: true, reason: 'definition_like_question_with_evidence', missingEvidence: [] };
-    }
-    return { answerable: true, reason: 'rag_retrieved_evidence_sufficient', missingEvidence: [] };
+    const reason = isPartiallyAnswerable
+      ? 'partially_supported_evidence'
+      : (asksDefinitionLikeQuestion ? 'definition_like_question_with_evidence' : 'rag_retrieved_evidence_sufficient');
+
+    return {
+      answerable: true,
+      partiallyAnswerable: isPartiallyAnswerable,
+      supportedFields,
+      unsupportedFields,
+      partiallySupportedFields,
+      reason,
+      missingEvidence: [],
+      requestedFieldCoverage,
+      fieldAssessment
+    };
   }
 
   // Fallback
@@ -692,6 +902,9 @@ function buildSelectedEvidenceContext(selectedEvidence, maxChars = 9000) {
 module.exports = {
   selectEvidenceFromContexts,
   evaluateEvidenceAnswerability,
+  assessFieldLevelAnswerability,
+  assessRequestedFieldCoverage,
+  REQUESTED_FIELD_EVIDENCE_RULES,
   buildSelectedEvidenceContext,
   buildStructuredEvidenceContext,
   detectEvidenceIntent: detectIntent,

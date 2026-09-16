@@ -1,5 +1,15 @@
 const { normalizeUserQuery } = require('../utils/queryNormalizer');
 const { buildSemanticContract } = require('./semanticContract');
+const {
+  matchCanonicalEntities,
+  resolveCanonicalInterestProfiles,
+  resolveUniqueCanonicalEntityByQualifiers
+} = require('./canonicalEntityRegistry');
+const {
+  normalizeConversationState,
+  isConversationStateFresh,
+  filterCompatibleFields
+} = require('./conversationStateEngine');
 
 const ID_MONTH_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -75,7 +85,8 @@ function detectAcademicLevels(raw) {
 function detectOrganizationCategory(raw) {
   const q = String(raw || '').toLowerCase();
   const categories = [
-    { key: 'arts', label: 'seni', re: /\b(?:seni|sni|musik|band|nyanyi|vokal|vocal|tari|menari|tabuh|teater|drama|akting|acting)\b/i },
+    { key: 'arts', label: 'seni', re: /\b(?:seni|sni|musik|band|nyanyi|vokal|vocal|tari|menari|tabuh|teater|drama|akting|acting|paduan\s+suara|choir)\b/i },
+    { key: 'nature', label: 'pecinta alam', re: /\b(?:alam|outdoor|gunung|petualangan|lingkungan|pecinta\s+alam|mapala)\b/i },
     { key: 'sports', label: 'olahraga', re: /\b(?:olahraga|sport|sports|atlet|futsal|basket|sepak\s*bola|bola)\b/i },
     { key: 'technology', label: 'teknologi', re: /\b(?:teknologi|komputer|coding|ngoding|programming|software|web|aplikasi|linux|open\s*source|cyber|jaringan|data|ai|artificial\s+intelligence|machine\s+learning)\b/i },
     { key: 'entrepreneurship', label: 'kewirausahaan', re: /\b(?:wirausaha|kewirausahaan|entrepreneur|entrepreneurship|bisnis|startup|usaha)\b/i },
@@ -95,7 +106,11 @@ function detectCurriculumTopic(raw) {
     { key: 'digital_marketing', label: 'digital marketing', re: /\b(?:digital\s+marketing|pemasaran\s+digital|marketing\s+digital)\b/i },
     { key: 'e_commerce', label: 'e-commerce', re: /\b(?:e-?commerce|perdagangan\s+elektronik|marketplace)\b/i },
     { key: 'cyber_security', label: 'cyber security', re: /\b(?:cyber\s*security|keamanan\s+siber|keamanan\s+informasi)\b/i },
-    { key: 'cloud_computing', label: 'cloud computing', re: /\b(?:cloud\s+computing|komputasi\s+awan|cloud)\b/i }
+    { key: 'cloud_computing', label: 'cloud computing', re: /\b(?:cloud\s+computing|komputasi\s+awan|cloud)\b/i },
+    { key: 'hardware', label: 'hardware/perangkat keras', re: /\b(?:hardware|perangkat\s+keras)\b/i },
+    { key: 'software', label: 'software/perangkat lunak', re: /\b(?:software|perangkat\s+lunak)\b/i },
+    { key: 'network', label: 'jaringan/network', re: /\b(?:jaringan|networking?)\b/i },
+    { key: 'embedded_iot', label: 'embedded system / IoT', re: /\b(?:embedded(?:\s+system)?|iot|internet\s+of\s+things)\b/i }
   ];
   return topics.find((item) => item.re.test(q)) || null;
 }
@@ -243,7 +258,7 @@ function buildTemporalUnderstanding(rawQuery) {
 function aliasMatchesText(text, alias) {
   const a = String(alias || '').toLowerCase();
   if (!a) return false;
-  const boundary = new RegExp(`(^|[^a-z0-9])${escapeRegex(a)}([^a-z0-9]|$)`, 'i');
+  const boundary = new RegExp(`(^|[^a-z0-9])${escapeRegex(a)}(?:nya)?([^a-z0-9]|$)`, 'i');
   return boundary.test(text);
 }
 
@@ -283,7 +298,10 @@ function resolveProgramEntities(rawText) {
     });
   }
   const seen = new Set();
-  return matches.filter(entity => {
+  const effectiveMatches = (hasS2Level && matches.some(entity => entity.canonical === 'S2 Sistem Informasi'))
+    ? matches.filter(entity => entity.canonical !== 'Sistem Informasi')
+    : matches;
+  return effectiveMatches.filter(entity => {
     if (seen.has(entity.canonical)) return false;
     seen.add(entity.canonical);
     return true;
@@ -294,14 +312,67 @@ function resolveSourceDomainEntities(rawText) {
   const normalized = normalizeUserQuery(rawText || '').normalizedText || String(rawText || '').toLowerCase();
   const organizations = [];
   const facilities = [];
+  const campuses = [];
   const documents = [];
   const internationalPrograms = [];
+  const services = [];
+  const scholarships = [];
+  const admissionTracks = [];
+  const participantScopes = [];
+  const academicScopes = [];
+  const interestProfiles = resolveCanonicalInterestProfiles(normalized).map(profile => ({
+    canonical: profile.label,
+    key: profile.key,
+    label: profile.label,
+    type: 'interest_profile',
+    role: 'descriptive_interest',
+    confidence: 0.9,
+    matchedTerms: profile.matchedTerms,
+    source: 'canonical-interest-registry'
+  }));
   const addUnique = (list, entity) => {
     if (!entity || !entity.canonical) return;
     if (list.some(item => item.canonical === entity.canonical && item.type === entity.type)) return;
     list.push(entity);
   };
 
+  for (const match of matchCanonicalEntities(normalized)) {
+    const entity = {
+      canonical: match.canonical,
+      type: match.type,
+      role: match.family,
+      confidence: Math.max(0.88, Number(match.matchQuality || 0)),
+      source: 'canonical-entity-registry',
+      country: match.country || null,
+      scope: match.scope || null
+    };
+    if (match.family === 'student_organization') addUnique(organizations, entity);
+    else if (match.family === 'campus_facility') addUnique(facilities, entity);
+    else if (match.family === 'campus_location') addUnique(campuses, entity);
+    else if (match.family === 'international_program') addUnique(internationalPrograms, entity);
+    else if (match.family === 'campus_service') addUnique(services, entity);
+    else if (match.family === 'scholarship') addUnique(scholarships, entity);
+    else if (match.family === 'admission_track') addUnique(admissionTracks, entity);
+    else if (match.family === 'participant_scope') addUnique(participantScopes, entity);
+    else if (match.family === 'academic_scope') addUnique(academicScopes, entity);
+  }
+
+  const countryQualifier = /\b(?:jepang|japan)\b/i.test(normalized) ? 'Japan'
+    : (/\bmalaysia\b/i.test(normalized) ? 'Malaysia'
+      : (/\b(?:china|tiongkok)\b/i.test(normalized) ? 'China' : null));
+  const hasInternationalEntityContext = /\b(?:double\s*degree|dual\s*degree|gelar\s+ganda|program\s+ganda|magang|internship|program\s+internasional|kuliah\s+luar\s+negeri)\b/i.test(normalized);
+  if (countryQualifier && hasInternationalEntityContext) {
+    const qualified = resolveUniqueCanonicalEntityByQualifiers({ family: 'international_program', country: countryQualifier });
+    if (qualified) addUnique(internationalPrograms, {
+      canonical: qualified.canonical,
+      type: qualified.type,
+      role: qualified.family,
+      confidence: 0.91,
+      source: 'canonical-registry-unique-qualifier',
+      country: qualified.country || null,
+      scope: qualified.scope || null
+    });
+  }
   const orgSpecs = [
     { re: /\b(?:himaprodi|hima(?:punan)?\s+mahasiswa\s+program\s+studi)\s+(?:sistem\s+informasi|\bsi\b)\b/i, canonical: 'HIMAPRODI Sistem Informasi', type: 'student_association', role: 'organization_profile' },
     { re: /\b(?:himaprodi|hima(?:punan)?\s+mahasiswa\s+program\s+studi)\s+(?:sistem\s+komputer|\bsk\b)\b/i, canonical: 'HIMAPRODI Sistem Komputer', type: 'student_association', role: 'organization_profile' },
@@ -322,33 +393,36 @@ function resolveSourceDomainEntities(rawText) {
     { re: /\b(?:ukm\s+)?basket\b/i, canonical: 'UKM Basket', type: 'ukm', role: 'organization_profile' },
     { re: /\b(?:ukm\s+)?futsal\b/i, canonical: 'UKM Futsal', type: 'ukm', role: 'organization_profile' },
     { re: /\b(?:ukm\s+)?musik\b/i, canonical: 'UKM Musik', type: 'ukm', role: 'organization_profile' },
-    { re: /\b(?:ukm\s+)?multimedia\b/i, canonical: 'UKM Multimedia', type: 'ukm', role: 'organization_profile' },
+    { re: /\b(?:ukm\s+multimedia|unit\s+kegiatan\s+mahasiswa\s+multimedia)\b/i, canonical: 'UKM Multimedia', type: 'ukm', role: 'organization_profile' },
     { re: /\b(?:ukm\s+)?(?:tari|pragina)\b/i, canonical: 'UKM Tari PRAGINA', type: 'ukm', role: 'organization_profile' },
     { re: /\b(?:ukm\s+)?tabuh\b/i, canonical: 'UKM Tabuh Bramara Gita', type: 'ukm', role: 'organization_profile' },
     { re: /\b(?:ukm\s+)?rade\b/i, canonical: 'UKM RADE', type: 'ukm', role: 'organization_profile' },
     { re: /\b(?:ukm\s+)?teater\s+biner\b/i, canonical: 'UKM Teater Biner', type: 'ukm', role: 'organization_profile' },
     { re: /\b(?:bem(?:-pm)?|badan\s+eksekutif\s+mahasiswa)\b/i, canonical: 'BEM-PM ITB STIKOM Bali', type: 'organization', role: 'organization_profile' },
-    { re: /\b(?:vos|voice\s+of\s+stikom)\b/i, canonical: 'VOS', type: 'ukm', role: 'organization_profile' },
+    { re: /\b(?:vos|voice\s+of\s+stikom)\b/i, canonical: 'Voice of STIKOM (VOS)', type: 'ukm', role: 'organization_profile' },
     { re: /\b(?:mapala\s+kompas|mapala)\b/i, canonical: 'Mapala Kompas', type: 'ukm', role: 'organization_profile' },
     { re: /\bathena(?:\s+esports?)?\b/i, canonical: 'Athena Esports', type: 'ukm', role: 'organization_profile' },
     { re: /\b(?:esports?|e-sports?)\b/i, canonical: 'Athena Esports', type: 'ukm', role: 'organization_profile' }
   ];
-  for (const spec of orgSpecs) {
-    if (spec.re.test(normalized)) addUnique(organizations, { ...spec, confidence: 0.9, source: 'canonical-source-entity' });
+  if (!organizations.length) {
+    for (const spec of orgSpecs) {
+      if (spec.re.test(normalized)) addUnique(organizations, { ...spec, confidence: 0.9, source: 'canonical-source-entity' });
+    }
   }
 
   const isGenericOpenWorldOrgName = (value) => {
     const candidate = String(value || '').trim().toLowerCase();
     if (!candidate) return true;
-    if (/^(?:kampus|stikom|itb|bali|ada|apa|saja|aja|di|itu|ini|yang|dan|atau|daftar|cara|bagaimana|gimana|berapa|brp|brapa|jumlah|total|totalnya|banyak|semua|seluruh)(?:\s|$)/i.test(candidate)) return true;
-    if (/\b(?:ada|apa|saja|aja|kampus|stikom|itb|bali|berapa|brp|brapa|jumlah|total|totalnya|banyak|semua|seluruh|seni|sni|musik|tari|tabuh|teater|olahraga|teknologi|kewirausahaan|wirausaha|kerohanian|rohani|minat|kategori|jenis)\b/i.test(candidate)) return true;
+    if (/^(?:kampus|stikom|itb|bali|ada|apa|saja|aja|di|itu|ini|yang|buat|untuk|dan|atau|daftar|cara|bagaimana|gimana|berapa|brp|brapa|jumlah|total|totalnya|banyak|semua|seluruh)(?:\s|$)/i.test(candidate)) return true;
+    if (/\b(?:ada|apa|saja|aja|kampus|stikom|itb|bali|berapa|brp|brapa|jumlah|total|totalnya|banyak|semua|seluruh|seni|sni|musik|tari|tabuh|teater|olahraga|teknologi|kewirausahaan|wirausaha|kerohanian|rohani|minat|kategori|jenis|bidang|it\b|coding|pemrograman|komputer|sektor|divisi|alam|outdoor|pecinta\s+alam|gunung|petualangan|lingkungan|paduan\s+suara|choir|vokal|suara)\b/i.test(candidate)) return true;
+    if (/\b(?:ga|gak|nggak|kah|ta|kan|ya|bukan)\b/i.test(candidate)) return true;
     return false;
   };
   // Open-world entity regex matching for generic UKMs/Himaprodi
   // Extend to 1-4 words (allows "UKM Teater Biner", "UKM Ghost", "HIMAPRODI Bisnis Digital", etc.)
-  const genericUkm = normalized.match(/\bukm\s+([a-z0-9][a-z0-9 _-]{0,35}?)(?=\s+(?:itu|ini|apa|ada|kampus|stikom|itb|yang|di|di\s|bagaimana|gimana|ya|kak|min|admin|bisa|dong|nih|fokus|kegiatan|profil|tujuan|visi|misi|organisasi|himpunan)|[?.!,]|$)/i);
-  if (genericUkm && !organizations.length) {
-    const ukmName = genericUkm[1].trim().replace(/\s+/g, ' ');
+  const genericUkm = normalized.match(/\bukm\s+([a-z0-9][a-z0-9 _-]{0,35}?)(?=\s+(?:itu|ini|apa|ada|kampus|stikom|itb|yang|di|di\s|bagaimana|gimana|ya|kak|min|admin|bisa|dong|nih|ga|gak|nggak|kah|ta|kan|fokus|kegiatan|profil|tujuan|visi|misi|organisasi|himpunan)|[?.!,]|$)/i);
+  if (genericUkm && !organizations.length && !interestProfiles.length) {
+    const ukmName = genericUkm[1].trim().replace(/\s+(?:ga|gak|nggak|kah|ya|dong|nih)$/i, '').replace(/\s+/g, ' ');
     if (!isGenericOpenWorldOrgName(ukmName)) addUnique(organizations, { canonical: `UKM ${ukmName.replace(/\b\w/g, c => c.toUpperCase())}`, type: 'ukm', role: 'organization_profile', confidence: 0.85, source: 'open-world-ukm' });
   }
   const genericHima = normalized.match(/\bhimaprodi\s+([a-z0-9][a-z0-9 _-]{0,35}?)(?=\s+(?:itu|ini|apa|yang|bagaimana|gimana|ya|kak|min)|[?.!,]|$)/i);
@@ -356,6 +430,8 @@ function resolveSourceDomainEntities(rawText) {
     const himaName = genericHima[1].trim().replace(/\s+/g, ' ');
     if (!isGenericOpenWorldOrgName(himaName)) addUnique(organizations, { canonical: `HIMAPRODI ${himaName.toUpperCase()}`, type: 'student_association', role: 'organization_profile', confidence: 0.85, source: 'open-world-himaprodi' });
   }
+
+
 
   if (/\b(?:hi\s*-?\s*think|hithink)\b/i.test(normalized)) {
     addUnique(facilities, { canonical: 'Hi-Think', type: 'facility_program', role: 'campus_support_profile', confidence: 0.92, source: 'canonical-source-entity' });
@@ -365,6 +441,33 @@ function resolveSourceDomainEntities(rawText) {
   }
   if (/\b(?:language\s+learning\s+center|llc|learning\s+center)\b/i.test(normalized)) {
     addUnique(facilities, { canonical: 'Language Learning Center (LLC)', type: 'facility', role: 'campus_support_profile', confidence: 0.92, source: 'canonical-source-entity' });
+  }
+  if (/\b(?:perpustakaan(?:nya)?|library|ruang\s+baca|koleksi\s+(?:buku|perpustakaan)|buku\s+digital|jurnal(?:\s+internasional)?|ieee|acm|perpustakaan\s+digital|e-?book)\b/i.test(normalized)) {
+    addUnique(facilities, { canonical: 'Perpustakaan', type: 'facility', role: 'campus_facility_profile', confidence: 0.92, source: 'canonical-source-entity' });
+  }
+  if (/\b(?:studio(?:\s+podcast)?|podcast|rekaman|ruang\s+multimedia|ruang\s+produksi\s+audio|audio\s+production|studio\s+rekaman)\b/i.test(normalized)) {
+    addUnique(facilities, { canonical: 'Studio Podcast', type: 'facility', role: 'campus_facility_profile', confidence: 0.92, source: 'canonical-source-entity' });
+  }
+  if (/\b(?:coworking(?:\s+space)?|co-working(?:\s+space)?|ruang\s+kerja\s+bersama|ruang\s+kerja\s+kolaboratif|kolaboratif)\b/i.test(normalized)) {
+    addUnique(facilities, { canonical: 'Coworking Space', type: 'facility', role: 'campus_facility_profile', confidence: 0.92, source: 'canonical-source-entity' });
+  }
+  if (/\b(?:lab(?:oratorium)?\s+komputer|lab\s+praktikum|komputer\s+praktik|fasilitas\s+komputer)\b/i.test(normalized)) {
+    addUnique(facilities, { canonical: 'Laboratorium Komputer', type: 'facility', role: 'campus_facility_profile', confidence: 0.92, source: 'canonical-source-entity' });
+  }
+  if (/\b(?:bus\s+kampus|shuttle(?:\s+bus)?|antar\s+jemput|transport(?:asi)?\s+antar\s+kampus|shuttle\s+antar\s+lokasi)\b/i.test(normalized)) {
+    addUnique(facilities, { canonical: 'Transportasi Kampus', type: 'facility', role: 'campus_facility_profile', confidence: 0.92, source: 'canonical-source-entity' });
+  }
+  if (/\b(?:parkir(?:an)?|tempat\s+parkir|lahan\s+parkir|area\s+parkir)\b/i.test(normalized)) {
+    addUnique(facilities, { canonical: 'Fasilitas Parkir', type: 'facility', role: 'campus_facility_profile', confidence: 0.92, source: 'canonical-source-entity' });
+  }
+  if (/\b(?:renon|kampus\s+renon|denpasar|kampus\s+pusat|puputan)\b/i.test(normalized)) {
+    addUnique(campuses, { canonical: 'Kampus Denpasar (Renon)', type: 'campus', role: 'campus_location', confidence: 0.92, source: 'canonical-source-entity' });
+  }
+  if (/\b(?:jimbaran|kampus\s+jimbaran)\b/i.test(normalized)) {
+    addUnique(campuses, { canonical: 'Kampus Jimbaran', type: 'campus', role: 'campus_location', confidence: 0.92, source: 'canonical-source-entity' });
+  }
+  if (/\b(?:abiansemal|kampus\s+abiansemal)\b/i.test(normalized)) {
+    addUnique(campuses, { canonical: 'Kampus Abiansemal', type: 'campus', role: 'campus_location', confidence: 0.92, source: 'canonical-source-entity' });
   }
   if (/\b(?:gccp|gcpp|gcp|global\s+cross\s+cultural|global\s+cultural\s+exchange)\b/i.test(normalized)) {
     addUnique(internationalPrograms, { canonical: 'GCCP', type: 'international_program', role: 'student_exchange_subprogram', confidence: 0.94, source: 'canonical-source-entity' });
@@ -383,24 +486,24 @@ function resolveSourceDomainEntities(rawText) {
     /\b(?:partner(?:nya)?|mitra(?:nya)?|kampus\s+partner(?:nya)?|partner\s+kampus(?:nya)?|universitas\s+(?:mitra|partner)|mitra\s+kampus(?:nya)?)\b/i.test(normalized)
     && /\b(?:siapa|apa|mana|yang\s+mana|dimana|di\s*mana|list|daftar|ada\s+apa|apa\s+saja)\b/i.test(normalized)
   ) || /\b(?:(?:bekerja\s*sama|kerja\s*sama|kerjasama)?\s*dengan\s+universitas\s+mana)\b/i.test(normalized);
-  if (/\b(?:double\s*degree|dual\s*degree|program\s+ganda)\b/i.test(normalized) || hasGenericPartnerRelation) {
+  if (/\b(?:double\s*degree|dual\s*degree|program\s+ganda|gelar\s+ganda|dua\s+gelar)\b/i.test(normalized) || hasGenericPartnerRelation) {
     let partner = 'Double Degree';
     let programScope = /\b(?:nasional|national)\b/i.test(normalized) ? 'national'
       : (/\b(?:internasional|international|luar\s+negeri)\b/i.test(normalized) ? 'international' : null);
     let country = null;
-    if (/\bhelp\b/i.test(normalized)) partner = 'Double Degree HELP University';
-    else if (/\bdnui|dalian\b/i.test(normalized)) partner = 'Double Degree DNUI';
-    else if (/\butb\b/i.test(normalized)) partner = 'Dual Degree UTB';
+    if (/\b(?:help|malaysia)\b/i.test(normalized)) partner = 'Double Degree HELP University';
+    else if (/\b(?:dnui|dalian|china|cina|tiongkok)\b/i.test(normalized)) partner = 'Double Degree DNUI';
+    else if (/\b(?:utb|bandung)\b/i.test(normalized)) partner = 'Dual Degree UTB';
     if (/help/i.test(partner)) { programScope = 'international'; country = 'Malaysia'; }
     if (/dnui/i.test(partner)) { programScope = 'international'; country = 'China'; }
     if (/utb/i.test(partner)) { programScope = 'national'; country = 'Indonesia'; }
     addUnique(internationalPrograms, { canonical: partner, type: 'international_program', role: 'double_degree', scope: programScope, country, confidence: 0.93, source: 'canonical-source-entity' });
   }
   if (!internationalPrograms.some((entity) => String(entity.role || '') === 'double_degree')) {
-    if (/\b(?:dnui|dalian\s+neusoft)\b/i.test(normalized)) {
+    if (/\b(?:dnui|dalian\s+neusoft|china|cina|tiongkok)\b/i.test(normalized)) {
       addUnique(internationalPrograms, { canonical: 'Double Degree DNUI', type: 'international_program', role: 'double_degree', scope: 'international', country: 'China', confidence: 0.91, source: 'canonical-source-entity' });
     }
-    if (/\b(?:help\s+university|help\b.*malaysia|help)\b/i.test(normalized)) {
+    if (/\b(?:help\s+university|help\b.*malaysia|help|malaysia)\b/i.test(normalized)) {
       addUnique(internationalPrograms, { canonical: 'Double Degree HELP University', type: 'international_program', role: 'double_degree', scope: 'international', country: 'Malaysia', confidence: 0.91, source: 'canonical-source-entity' });
     }
     if (/\b(?:utb|universitas\s+teknologi\s+bandung)\b/i.test(normalized)) {
@@ -415,14 +518,20 @@ function resolveSourceDomainEntities(rawText) {
     addUnique(documents, { canonical: 'Sejarah ITB STIKOM Bali', type: 'institution', role: 'institution_history', confidence: 0.88, source: 'canonical-source-entity' });
   }
 
-  return { organizations, facilities, documents, internationalPrograms };
+  const hasSpecificInternationalEntity = internationalPrograms.some(entity => String(entity.canonical || '') !== 'Double Degree');
+  const resolvedInternationalPrograms = hasSpecificInternationalEntity
+    ? internationalPrograms.filter(entity => String(entity.canonical || '') !== 'Double Degree')
+    : internationalPrograms;
+  return { organizations, facilities, campuses, documents, internationalPrograms: resolvedInternationalPrograms, services, scholarships, admissionTracks, participantScopes, academicScopes, interestProfiles };
 }
 
 function detectFeeType(q) {
   if (/\b(?:ukt|uang\s+kuliah|biaya\s+pendidikan|per\s+semester|semesteran)\b/i.test(q)) return 'ukt';
   if (/\b(?:dpp|dana\s+pendidikan\s+pokok)\b/i.test(q)) return 'dpp';
   if (/\b(?:biaya\s+awal|awal\s+masuk|uang\s+masuk|biaya\s+masuk)\b/i.test(q)) return 'initial_fee';
-  if (/\b(?:biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|biaya\s+daftar|daftar\s+berapa)\b/i.test(q) || (/\b(?:daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?)\b/i.test(q) && /\b(?:berapa|brapa|brp|nominal|biaya|harga|bayar|uang|rp|rupiah)\b/i.test(q))) return 'registration_fee';
+  const asksNonFeeQuantity = /\b(?:tanggal|tgl|jam|hari|bulan|tahun|lembar|halaman|berkas|dokumen|syarat|lama|tahap|kali|orang|skor|score|toefl|ielts|nilai|sks|semester)\b/i.test(q);
+  if (/\b(?:biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|biaya\s+daftar|daftar\s+berapa|(?:biaya|uang|harga)\s+formulir(?:nya)?)\b/i.test(q)
+    || (!asksNonFeeQuantity && /\b(?:daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?)\b/i.test(q) && /\b(?:berapa|brapa|brp|nominal|biaya|harga|bayar|uang|rp|rupiah)\b/i.test(q) && !/\bberapa\s+(?:lembar|halaman|berkas|dokumen|syarat|hari|lama|tahap|kali|orang|skor|score|toefl|ielts|nilai|sks|semester)\b/i.test(q))) return 'registration_fee';
   if (/\b(?:potongan(?:nya)?|diskon(?:nya)?|discount)\b/i.test(q) && !/\bbeasiswa(?:nya)?\b/i.test(q)) return 'discount';
   if (/\b(?:total|semua|keseluruhan)\b/i.test(q) && /\b(?:biaya|bayar|uang|harga)\b/i.test(q)) return 'total_estimate';
   if (/\b(?:cicil(?:an(?:nya)?)?|dicicil|di\s*cicil|nyicil|angsur(?:an(?:nya)?)?|diangsur|di\s*angsur|tahap\s+pembayaran|pembayaran\s+bertahap|bertahap)\b/i.test(q)) return 'installment';
@@ -508,10 +617,10 @@ function isKnownNonProgramOntologyCandidate(str) {
   if (!norm || norm.length < 2) return true;
 
   // 1. Academic levels alone or conjunction / comparison of academic levels
-  if (/^(?:jenjang\s+|tingkat\s+|program\s+)?(?:s\s*1|s\s*2|s\s*3|d\s*3|d\s*4|sarjana|diploma(?:\s*(?:3|tiga))?|magister|pascasarjana|master|strata(?:\s*(?:satu|dua|tiga))?)(?:\s*(?:dan|atau|vs|versus|sama|dengan|\/|-)\s*(?:jenjang\s+|tingkat\s+|program\s+)?(?:s\s*1|s\s*2|s\s*3|d\s*3|d\s*4|sarjana|diploma(?:\s*(?:3|tiga))?|magister|pascasarjana|master|strata(?:\s*(?:satu|dua|tiga))?))*$/i.test(norm)) {
+  if (/^(?:jenjang\s+|tingkat\s+|program\s+)?(?:sarjana|diploma(?:\s*(?:3|tiga))?|magister|pascasarjana|master|strata(?:\s*(?:satu|dua|tiga))?)?\s*(?:s\s*[1-4]|d\s*[3-4])?(?:\s*(?:dan|atau|vs|versus|sama|dengan|\/|-)\s*(?:jenjang\s+|tingkat\s+|program\s+)?(?:sarjana|diploma(?:\s*(?:3|tiga))?|magister|pascasarjana|master|strata(?:\s*(?:satu|dua|tiga))?)?\s*(?:s\s*[1-4]|d\s*[3-4])?)*$/i.test(norm)) {
     return true;
   }
-  if (/^(?:s\s*1|s\s*2|s\s*3|d\s*3|d\s*4|sarjana|diploma|magister|pascasarjana)$/i.test(norm)) {
+  if (/^(?:s\s*1|s\s*2|s\s*3|d\s*3|d\s*4|sarjana(?:\s*s\s*1)?|diploma(?:\s*d\s*3)?|magister(?:\s*s\s*2)?|pascasarjana)$/i.test(norm)) {
     return true;
   }
 
@@ -553,10 +662,10 @@ function resolveUnsupportedProgramEntities(text, knownPrograms = []) {
   if (/\b(?:surat\s+keputusan|menimbang\s+bahwa|mengingat\s+undang|memutuskan\s+pasal|lampiran\s+keputusan|\[sheet:|form\s+iku|q:\s*apa\s+itu|a:\s*program|profil\s+organisasi|nama\s+organisasi|nama\s+dokumen|kode\s+dokumen|dokumen\s+mentah|bocor\s+seperti\s+ini)\b/i.test(source)) return [];
   if (/\b(?:himpunan\s+mahasiswa\s+prodi|himaprodi|hima\b|ukm\b|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan\s+mahasiswa)\b/i.test(normalized)) return [];
   if (/\b(?:dnui|dalian\s+neusoft|help\s+university|help\b.*malaysia|utb|universitas\s+teknologi\s+bandung)\b/i.test(normalized)) return [];
-  if (/\b(?:double\s*degree|dual\s*degree|dd\b|student\s+exchange|pertukaran\s+mahasiswa|gccp|bccp|credit\s+transfer|sit\s+in)\b/i.test(normalized)) return [];
+  if (/\b(?:double\s*degree|dual\s*degree|dd\b|gelar\s+ganda|dua\s+gelar|program\s+ganda|student\s+exchange|pertukaran\s+mahasiswa|gccp|bccp|credit\s+transfer|sit\s+in)\b/i.test(normalized)) return [];
   if (/\b(?:mahasiswa\s+asing|foreign\s+student|international\s+student|keimigrasian|imigrasi|izin\s+(?:belajar|tinggal)|visa|vitas|itas|kitas|sktt)\b/i.test(normalized)) return [];
   if (/\b(?:beasiswa|scholarship|kip|1k1s|skss)\b/i.test(normalized)) return [];
-  if (/\b(?:inkubator(?:\s+bisnis)?|inbis|career\s*center|language\s+learning|llc|hi-?think)\b/i.test(normalized)) return [];
+  if (/\b(?:inkubator(?:\s+bisnis)?|inbis|career\s*center|language\s+learning|llc|hi[\s-]?think|hithink)\b/i.test(normalized)) return [];
   if (!/\b(?:jurusan|prodi|program\s+studi|program\b|kuliah\s+di|ambil\s+jurusan|pilih\s+jurusan)\b/i.test(normalized)) return [];
   const supportedLabels = new Set((Array.isArray(knownPrograms) ? knownPrograms : []).map((program) => (normalizeUserQuery(program && program.canonical || '').normalizedText || String(program && program.canonical || '').toLowerCase()).trim()).filter(Boolean));
   if (supportedLabels.size > 0) return [];
@@ -585,12 +694,12 @@ function resolveUnsupportedProgramEntities(text, knownPrograms = []) {
 function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const qRaw = String(normalizedQuery || rawQuery || '').toLowerCase();
   const q = normalizeSlangTokens(qRaw);
-  const hasLocationIntent = /\b(?:alamat|lokasi|dimana|di\s*mana|where|letak|maps?|google\s+maps|rute|arah|patokan|pin\s+lokasi|share\s*loc|shareloc)\b/i.test(q) || /\bkampus(?:nya)?\s+(?:yang\s+)?mana\b/i.test(q);
+  const hasLocationIntent = /\b(?:alamat|lokasi|dimana|di\s*mana|where|letak|maps?|google\s+maps|rute|arah|patokan|pin\s+lokasi|share\s*loc|shareloc|dekat\s+(?:dengan|sama)|sebelah)\b/i.test(q) || /\bkampus(?:nya)?\s+(?:yang\s+)?mana\b/i.test(q);
   const hasPhysicalAttribute = /\b(?:tinggi|luas|jumlah\s+lantai|berapa\s+lantai|lantai\s+berapa|kapasitas|ukuran|warna(?:nya)?|panjang|lebar|besar(?:nya)?|daya\s+tampung)\b/i.test(q);
   const feeType = detectFeeType(q);
   const hasFee = (Boolean(feeType) || /\b(?:biaya(?:nya)?|harga(?:nya)?|bayar(?:nya|an)?|pembayaran|uang|nominal|tarif|fee|cost|nyicil|cicil(?:an(?:nya)?)?|dicicil|di\s*cicil|angsur(?:an(?:nya)?)?|diangsur|di\s*angsur|potongan(?:nya)?|diskon(?:nya)?|tagihan(?:nya)?|denda(?:nya)?)\b/i.test(q));
-  const hasScholarship = /\b(?:beasiswa(?:nya)?|kip|1k1s|skss|bantuan\s+biaya)\b/i.test(q);
-  const hasInternationalAdmin = /\b(?:mahasiswa\s+asing|foreign\s+student|international\s+student|keimigrasian|imigrasi|izin\s+(?:belajar|tinggal)|perpanjang(?:an)?\s+izin|visa|vitas|itas|kitas|sktt)\b/i.test(q);
+  const hasScholarship = /\b(?:beasiswa(?:nya)?|kip|1k1s|skss|bantuan\s+biaya|jalur\s+prestasi)\b/i.test(q);
+  const hasInternationalAdmin = /\b(?:mahasiswa\s+(?:asing|internasional)|foreign\s+student|international\s+student|keimigrasian|imigrasi|izin\s+(?:belajar(?:nya)?|tinggal(?:nya)?)|perpanjang(?:an)?\s+izin|visa|vitas|itas|kitas|sktt)\b/i.test(q);
   const hasInternationalAdminFee = hasFee && hasInternationalAdmin;
   const hasUnsupportedExchangeBarterRelation = /\b(?:exchange|tukar|barter|ditukar|menukar)\b/i.test(q)
     && /\b(?:voucher|kupon|kantin|uang|ukt|dpp|biaya|tagihan|saldo|barang)\b/i.test(q)
@@ -612,59 +721,88 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && !hasAvailabilityStatus;
   const hasPmbDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|pengertian|definisi|maksud(?:nya)?|jelaskan)\b/i.test(q)
     && /\b(?:pmb|penerimaan\s+mahasiswa\s+baru)\b/i.test(q);
-  const asksRegistrationHow = /\b(?:cara|gimana|bagaimana|alur|prosedur|langkah|lewat|online|how|where|apply|application|admission)\b/i.test(q)
-    && /\b(?:daftar(?:nya)?|mendaftar|pendaftaran|registrasi|kuliah|pmb|mahasiswa\s+baru|camaba|maba|study|studying|student|international\s+student)\b/i.test(q)
+  const hasAcademicTaskOrLeave = /\b(?:tugas(?:\s+akhir)?|skripsi|tesis|\bta\b|cuti(?:\s+kuliah)?|organisasi|ormawa|ukm)\b/i.test(q);
+  const asksRegistrationHow = (
+    (/\b(?:cara|gimana|bagaimana|alur|prosedur|langkah|lewat|online|how|where|apply|application|admission)\b/i.test(q)
+      && /\b(?:daftar(?:nya)?|mendaftar|pendaftaran(?:nya)?|registrasi(?:nya)?|kuliah|pmb|mahasiswa\s+baru|camaba|maba|study|studying|student|international\s+student)\b/i.test(q))
+    || /\b(?:formulir\s+online|konfirmasi\s+formulir|konfirmasi(?:nya)?\s+kemana|setelah\s+isi\s+formulir)\b/i.test(q)
+    || (/\b(?:beli|membeli|ambil|mengambil|dapatkan|mendapatkan)\b/i.test(q)
+      && /\bformulir(?:\s+pendaftaran)?\b/i.test(q)
+      && /\b(?:langsung|kampus|offline|loket|pmb)\b/i.test(q))
+  )
     && !hasFee
     && !hasScholarship
     && !hasAvailabilityStatus
-    && !hasRegistrationDataCorrection;
+    && !hasRegistrationDataCorrection
+    && !hasAcademicTaskOrLeave;
   const asksRegistrationChannel = /\b(?:link|tautan|url|website|situs|channel|kanal|kontak|nomor|whatsapp|wa|lewat\s+mana|dimana|di\s+mana)\b/i.test(q)
     && /\b(?:daftar(?:nya)?|pendaftaran|pendaftarannya|registrasi|pmb|mahasiswa\s+baru|camaba|maba)\b/i.test(q)
     && !hasFee
-    && !hasScholarship;
-  const asksRegistrationRequirements = /\b(?:syarat(?:nya)?|persyaratan(?:nya)?|dokumen|berkas|ketentuan(?:nya)?|perlu\s+apa|butuh\s+apa|(?:apa\s+yang\s+)?(?:diperlukan|dibutuhkan)|required|requirements?|documents?)\b/i.test(q)
-    && /\b(?:daftar(?:nya)?|mendaftar|pendaftaran|registrasi|pmb|mahasiswa\s+baru|camaba|maba|kuliah|prodi|program\s+studi|jurusan|s\s*2|s2|pascasarjana|pasca\s+sarjana|magister|master|apply|application|admission|study|studying|student|international\s+student)\b/i.test(q)
+    && !hasScholarship
+    && !hasAcademicTaskOrLeave;
+  const hasExplicitUploadSignal = /\b(?:upload|diupload|unggah|diunggah)\b/i.test(q);
+  const hasOnlineSubmission = hasExplicitUploadSignal && /\b(?:online|web|portal|link|siap|sistem)\b/i.test(q);
+  const hasRegistrationContext = /\b(?:daftar(?:nya)?|mendaftar|pendaftaran(?:nya)?|registrasi(?:nya)?|pmb|mahasiswa\s+baru|camaba|maba)\b/i.test(q);
+  const asksRegistrationRequirements = (
+    (/\b(?:syarat(?:nya)?|persyaratan(?:nya)?|dokumen(?:nya)?|berkas(?:nya)?|ketentuan(?:nya)?|perlu\s+apa|butuh\s+apa|(?:apa\s+yang\s+)?(?:diperlukan|dibutuhkan)|required|requirements?|documents?)\b/i.test(q)
+      && (
+        /\b(?:daftar(?:nya)?|mendaftar|pendaftaran(?:nya)?|registrasi(?:nya)?|pmb|mahasiswa\s+baru|camaba|maba|kuliah|program|prodi|program\s+studi|jurusan|sarjana|diploma|s\s*[1-4]|d\s*[3-4]|pascasarjana|pasca\s+sarjana|magister|master|apply|application|admission|study|studying|student|international\s+student)\b/i.test(q)
+        || (!hasAcademicTaskOrLeave && hasRegistrationContext && hasExplicitUploadSignal)
+        || (!hasAcademicTaskOrLeave && hasExplicitUploadSignal)
+      ))
+    || (!hasAcademicTaskOrLeave && hasRegistrationContext && hasOnlineSubmission)
+    || /\b(?:ijazah\s+legalisir|legalisir\s+ijazah|pas\s+foto|akta\s+kelahiran|kartu\s+keluarga)\b/i.test(q)
+    || (/\b(?:ijazah|rapor|raport|transkrip(?:\s+nilai)?)\b/i.test(q) && /\b(?:legalisir|lembar|fotocopy|foto\s*copy|salinan|kampus\s+asal|sekolah\s+asal)\b/i.test(q))
+    || /\b(?:tes\s+masuk(?:nya)?|ujian\s+masuk(?:nya)?|seleksi\s+masuk(?:nya)?|tes\s+pmb|ujian\s+pmb|ada\s+tes(?:\s+masuk)?|ada\s+ujian(?:\s+masuk)?)\b/i.test(q)
+  )
     && !hasFee
-    && !hasScholarship;
+    && !hasScholarship
+    && !hasAcademicTaskOrLeave;
   const hasSchedule = (/\b(?:jadwal|gelombang|gbg|bulan\s+depan|bulan\s+ini|bulan\s+lalu|deadline|tanggal|tgl|kapan|ditutup|tutup|buka|dibuka|mulai|dimulai|aktif)\b/i.test(q)
     || Boolean(temporal.explicitDate || temporal.requestedMonth || temporal.requestedWave))
     && !/\b(?:berlaku|masa\s+berlaku|valid(?:itas)?|kedaluwarsa|expired)\b/i.test(q);
-  const hasFacility = /\b(?:fasilitas|fasilias|fasiltas|layanan|sarana|prasarana|laboratorium|lab|perpustakaan|ruang|kantin|parkir|wifi|inkubator|inbis|language\s+learning|llc|hi\s*think|hithink)\b/i.test(q);
-  const hasCareer = /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|cdc|karier|karir|prospek(?:nya)?|prospek\s+kerja|peluang\s+kerja|lowongan|magang|job\s*fair|campus\s*hiring|tracer\s*study|persiapan\s+kerja|siap\s+kerja|dunia\s+kerja|pembekalan|melamar\s+pekerjaan|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|mencari\s+kerja|mencari\s+pekerjaan|bantuan\s+(?:persiapan|kerja|pekerjaan|karier|karir)|lulusan.*(?:pekerjaan|kerja|karier|karir)|alumni.*(?:pekerjaan|kerja|karier|karir)|sertifikasi|pelatihan)\b/i.test(q);
+  const hasFacility = (entities.facilities.length > 0)
+    || /\b(?:fasilitas|fasilias|fasiltas|layanan|sarana|prasarana|laboratorium|lab|perpustakaan|library|ruang|kantin|parkir|wifi|inkubator|inbis|language\s+learning|llc|hi\s*think|hithink|studio|podcast|coworking|co-working|antar\s+jemput|bus\s+kampus|shuttle|jurnal(?:\s+internasional)?|ieee|acm|kantor\s+urusan\s+internasional|kui|international\s+office)\b/i.test(q);
+  const hasCareer = /\b(?:career\s*center|pusat\s+karier|pusat\s+karir|cdc|karier|karir|prospek(?:nya)?|prospek\s+kerja|peluang\s+kerja|lowongan|magang|job\s*fair|campus\s*hiring|tracer\s*study|persiapan\s+kerja|siap\s+kerja|dunia\s+kerja|pembekalan|melamar\s+pekerjaan|mendapat(?:kan)?\s+pekerjaan|dapat\s+kerja|mencari\s+kerja|mencari\s+pekerjaan|bantuan\s+(?:persiapan|kerja|pekerjaan|karier|karir)|lulusan.*(?:pekerjaan|kerja|karier|karir)|alumni.*(?:pekerjaan|kerja|karier|karir)|sertifikasi|pelatihan|kerja(?:nya)?\s+ngapain|kerjanya\b|kerja\s+jadi|bekerja\s+sebagai|bekerja\s+jadi|bisa\s+kerja|network\s+engineer|iot\s+engineer|software\s+engineer|data\s+scientist|web\s+developer)\b/i.test(q)
+    && !((entities.internationalPrograms.length > 0 || /\b(?:double\s*degree|dual\s*degree|ke\s+jepang|program\s+internasional)\b/i.test(q)) && /\b(?:atau|vs|bukan|beda)\b/i.test(q));
   const careerTopic = !hasCareer ? null
     : /\b(?:apa\s+itu|itu\s+apa|pengertian|definisi|maksud(?:nya)?|jelaskan|tentang)\b/i.test(q)
       && /\b(?:career\s*center|karier\s*center|karir\s*center|pusat\s+karier|pusat\s+karir|cdc)\b/i.test(q) ? 'definition'
       : /\b(?:keuntungan|manfaat|benefit|nilai\s+tambah|sisi\s+karier)\b/i.test(q) ? 'benefit'
         : /\b(?:membantu.*(?:pekerjaan|kerja)|mendapat(?:kan)?\s+(?:pekerjaan|kerja)|dapat\s+kerja|mencari\s+(?:pekerjaan|kerja)|bantuan\s+(?:mencari|mendapat|persiapan|kerja|pekerjaan)|lulusan.*(?:kerja|pekerjaan)|alumni.*(?:kerja|pekerjaan))\b/i.test(q) ? 'employment_support'
           : /\b(?:lowongan|loker|magang|job\s*fair|campus\s*hiring|rekrutmen|tracer\s*study)\b/i.test(q) ? 'opportunity'
-            : /\b(?:layanan|fungsi|tugas|ngapain|untuk\s+apa|apa\s+saja|apa\s+aja|memberikan|bantu|membantu)\b/i.test(q) ? 'service'
+            : /\b(?:layanan|fungsi|tugas|ngapain|untuk\s+apa|apa\s+saja|apa\s+aja|memberikan|bantu|membantu|kerja(?:nya)?)\b/i.test(q) ? 'service'
               : 'service';
   const externalRelation = extractExternalRelationConstraint(rawQuery || normalizedQuery);
-  const asksLearning = /\b(?:belajar|di\s*pelajari(?:n)?|mempelajari|pelajaran(?:nya)?|perkuliahan|kuliah(?:nya)?(?:\s+(?:apa|apa\s+saja|apa\s+aja|yang\s+ada|membahas))?|mata\s+kuliah(?:nya)?|matkul|materi|course|kelas|kurikulum(?:nya)?|skill|kompetensi|coding|ngoding|ai|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(q);
+  const asksLearning = /\b(?:belajar|di\s*pelajari(?:n)?|mempelajari|pelajaran(?:nya)?|perkuliahan|kuliah(?:nya)?(?:\s+(?:apa|apa\s+saja|apa\s+aja|yang\s+ada|membahas))?|mata\s+kuliah(?:nya)?|matkul|materi|course|kelas|kurikulum(?:nya)?|skill|kompetensi|coding|ngoding|ai|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(q)
+    && !/\b(?:izin\s+belajar|study\s+permit)\b/i.test(q);
   const asksAdvice = /\b(?:kurang|tidak|ga|gak|nggak|belum)\s+(?:cakap|jago|mahir|bisa|paham)|\b(?:apa\s+yang\s+harus|harus\s+bagaimana|saran|cocok|minat)\b/i.test(q);
   const asksList = /\b(?:apa\s+saja|apa\s+aja|daftar|list|pilihan|macam|sebutkan)\b/i.test(q);
   const asksCount = /\b(?:berapa\s+(?:banyak|jumlah(?:nya)?|total(?:nya)?|ada|kampus|lokasi|cabang)|ada\s+berapa|jumlah(?:nya)?|total(?:nya)?|berapa\s+unit|berapa\s+organisasi|berapa\s+kampus|berapa\s+lokasi|berapa\s+cabang)\b/i.test(q);
   const organizationCategory = detectOrganizationCategory(String(rawQuery || '') + ' ' + qRaw + ' ' + q);
   const curriculumTopic = detectCurriculumTopic(String(rawQuery || '') + ' ' + qRaw + ' ' + q);
   const scholarshipRequestSubtype = detectScholarshipRequestSubtype(q);
-  const hasCampusCount = asksCount && /\b(?:kampus(?:nya)?|lokasi(?:nya)?|cabang)\b/i.test(q) && !hasPhysicalAttribute && !/\b(?:ukm|ormawa|organisasi|unit\s+kegiatan\s+mahasiswa|kegiatan\s+mahasiswa|himaprodi|himpunan\s+mahasiswa|biaya|ukt|dpp|sks|semester|beasiswa|prodi|program\s+studi|jurusan)\b/i.test(q);
-  const hasOrganization = /\b(?:ormawa|ukm|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi\s+kampus|kegiatan\s+mahasiswa|himaprodi|hima|himpunan\s+mahasiswa)\b/i.test(q)
+  const hasCampusCount = asksCount && /\b(?:kampus(?:nya)?|lokasi(?:nya)?|cabang)\b/i.test(q) && !hasPhysicalAttribute && !/\b(?:ukm|ormawa|organisasi|unit\s+kegiatan\s+mahasiswa|kegiatan\s+mahasiswa|himaprodi|hima|himpunan\s+mahasiswa|biaya|ukt|dpp|sks|semester|beasiswa|prodi|program\s+studi|jurusan)\b/i.test(q);
+  const hasOrganization = /\b(?:ormawa|ukm|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|organisasi\s+kampus|kegiatan\s+mahasiswa|himaprodi|hima|himpunan\s+mahasiswa|kelompok\s+mahasiswa|komunitas\s+mahasiswa)\b/i.test(q)
     || (/\borganisasi\b/i.test(q) && /\b(?:ikut|mengikuti|gabung|bergabung|join|masuk|daftar|mendaftar|tersedia|ada\s+apa|apa\s+saja|apa\s+aja)\b/i.test(q))
-    || (organizationCategory && /\b(?:organisasi|komunitas|unit\s+kegiatan|kegiatan)\b/i.test(q) && /\b(?:minat|suka|hobi|hobby|tertarik|ikut|mengikuti|buat|untuk)\b/i.test(q));
-  const hasStudentSupport = /\b(?:lomba|kompetisi|prestasi|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|kemahasiswaan|minat\s+dan\s+bakat|minat|ormawa|ukm)\b/i.test(q)
+    || (organizationCategory && /\b(?:organisasi|komunitas|unit\s+kegiatan|kegiatan|kelompok)\b/i.test(q) && /\b(?:minat|suka|hobi|hobby|tertarik|ikut|mengikuti|buat|untuk|ada|tersedia)\b/i.test(q));
+  const hasStudentSupport = !/\bbeasiswa\b/i.test(q)
+    && /\b(?:lomba|kompetisi|prestasi|kegiatan\s+mahasiswa|organisasi\s+mahasiswa|kemahasiswaan|minat\s+dan\s+bakat|minat|ormawa|ukm)\b/i.test(q)
     && /\b(?:dukung|mendukung|dukungan|bantu|membantu|fasilitasi|fasilitas|ikut|mengikuti|ada|tersedia|program)\b/i.test(q);
-  const OPERATIONAL_ACADEMIC_POLICY_OBJECT = /\b(?:cuti\s+(?:akademik|kuliah)|aktif\s+kembali|nonaktif|mengundurkan\s+diri|undur\s+diri|pindah\s+(?:program|prodi|jurusan|kampus)|krs|khs|nilai|koreksi\s+nilai|remedial|remidi|ujian(?:\s+(?:ulang|susulan))?|skripsi|tugas\s+akhir|yudisium|wisuda|status\s+akademik|registrasi\s+ulang\s+akademik|batas\s+(?:masa\s+)?studi|dispensasi\s+akademik)\b/i;
-  const OPERATIONAL_ACADEMIC_POLICY_RELATION = /\b(?:kebijakan|aturan|ketentuan|cara|bagaimana|gimana|alur|prosedur|syarat|persyaratan|dokumen|berkas|mengajukan|ajukan|pengajuan|mengurus|urus|proses|boleh|dapat|bisa|seperti\s+apa)\b/i;
-  const hasOperationalAcademicPolicyObject = OPERATIONAL_ACADEMIC_POLICY_OBJECT.test(q);
+  const OPERATIONAL_ACADEMIC_POLICY_OBJECT = /\b(?:cuti(?:\s+(?:akademik|kuliah|semester))?|berhenti\s+sementara|istirahat\s+kuliah|aktif\s+kembali|nonaktif|mengundurkan\s+diri|undur\s+diri|pindah\s+(?:program|prodi|jurusan|kampus)|krs|khs|nilai|koreksi\s+nilai|remedial|remidi|ujian(?:\s+(?:ulang|susulan|perbaikan))?|semester\s+pendek|\bsp\b|paket\s+sks|sks\s+paket|jumlah\s+kredit(?:nya)?|konversi\s+sks|sks\s+(?:yang\s+)?(?:dapat\s+|bisa\s+)?dikonversi|transfer\s+sks|skripsi|tugas\s+akhir|yudisium|wisuda|status\s+akademik|registrasi\s+ulang\s+akademik|batas\s+(?:masa\s+)?studi|dispensasi\s+akademik)\b/i;
+  const OPERATIONAL_ACADEMIC_POLICY_RELATION = /\b(?:kebijakan|aturan|ketentuan|cara|bagaimana|gimana|alur|prosedur|syarat|persyaratan|dokumen|berkas|mengajukan|ajukan|pengajuan|mengurus|urus|proses|boleh|dapat|bisa|seperti\s+apa|apakah|sistem|mekanisme|ketentuan|berapa|maksimal|minimal|lama|ditentukan|ditetapkan|paket)\b/i;
+  const hasOperationalAcademicPolicyObject = OPERATIONAL_ACADEMIC_POLICY_OBJECT.test(q)
+    || (/\b(?:sks|kredit)\b/i.test(q) && /\b(?:paket|ditentukan|ditetapkan|konversi|kebijakan|aturan|semester\s+awal)\b/i.test(q));
   const hasOperationalAcademicPolicy = hasOperationalAcademicPolicyObject
     && OPERATIONAL_ACADEMIC_POLICY_RELATION.test(q)
-    && !/\b(?:halaman|lembar|jumlah\s+halaman|minimal|maksimal|kata|karakter|huruf|abstrak|daftar\s+pustaka|referensi|sitasi|format\s+penulisan|gaya\s+penulisan)\b/i.test(q)
+    && !/\b(?:halaman|lembar|jumlah\s+halaman|kata|karakter|huruf|abstrak|daftar\s+pustaka|referensi|sitasi|format\s+penulisan|gaya\s+penulisan)\b/i.test(q)
     && !hasFee
-    && !/\b(?:pmb|penerimaan\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|gelombang|beasiswa|ukm|ormawa|organisasi\s+mahasiswa|double\s*degree|dual\s*degree|student\s+exchange|hi[-\s]?think|hithink)\b/i.test(q);
+    && !/\b(?:pmb|penerimaan\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|gelombang|beasiswa|ukm|ormawa|organisasi\s+mahasiswa|double\s*degree|dual\s*degree|student\s+exchange|hi[-\s]?think|hithink|kampus\s+asal|sekolah\s+asal|pindahan|transfer\s+mahasiswa)\b/i.test(q);
   const hasAcademic = /\b(?:sks|skripsi|tugas\s+akhir|tesis|\bta\b|krs|wisuda|yudisium|kalender\s+akademik|baak|remedial|remidi|fokus\s+penelitian|riset|nilai|transkrip)\b/i.test(q)
     || hasOperationalAcademicPolicyObject;
   const hasAcademicSchedule = (hasAcademic || /\bakademik\b/i.test(q))
-    && /\b(?:jadwal|kalender|kapan|tanggal|tgl|periode|pendaftaran|pelaksanaan|semester|ganjil|genap)\b/i.test(q);
+    && /\b(?:jadwal|kalender|kapan|tanggal|tgl|periode|pendaftaran|pelaksanaan|semester|ganjil|genap)\b/i.test(q)
+    ;
   const hasExplicitUnknownProgramScheduleOwner = hasSchedule
     && !hasFee
     && /\bprogram\s+(?!studi\b|pmb\b|pendaftaran\b|penerimaan\b|beasiswa\b|bantuan\b|rpl\b|double\b|dual\b|ganda\b|internasional\b|international\b|student\b|exchange\b)([a-z0-9\p{L}][a-z0-9\p{L}\s._-]{1,40}?)(?:\s+(?:kapan|dibuka|buka|mulai|dimulai|jadwal|periode|pendaftaran|deadline|tanggal|tgl)\b|[?.!,]|$)/iu.test(q)
@@ -684,15 +822,17 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
       || /\b(?:pmb|pendaftaran|penerimaan\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|maba|gelombang|gbg)\b/i.test(q)
     );
   const hasAcademicProcedure = /\b(?:cara|bagaimana|gimana|alur|prosedur|syarat|persyaratan|daftar|pendaftaran|registrasi|mengurus|urus|lapor|minta)\b/i.test(q)
-    && /\b(?:yudisium|wisuda|remedial|remidi|sidang|tugas\s+akhir|skripsi|tesis|krs|baak|akademik|nilai|transkrip)\b/i.test(q);
+    && /\b(?:yudisium|wisuda|remedial|remidi|sidang|tugas\s+akhir|skripsi|tesis|krs|baak|akademik|nilai|transkrip)\b/i.test(q)
+    && !/\b(?:kampus\s+asal|sekolah\s+asal|pindahan|transfer\s+mahasiswa)\b/i.test(q);
   // Academic numeric: any quantitative question about an academic object (SKS, semester, word count, page limit, etc.)
   const hasAcademicNumericGeneral = /\b(?:berapa|jumlah|batas|limit|maksimal|minimal|total)\b/i.test(q)
-    && /\b(?:sks|semester|kata|halaman|lembar|kredit|abstrak|abstrak|bab|paragraf|huruf|spasi|karakter)\b/i.test(q)
-    && /\b(?:skripsi|tugas\s+akhir|tesis|\bta\b|laporan|proposal|karya\s+ilmiah|abstrak|akademik)\b/i.test(q);
+    && /\b(?:sks|semester|kata|halaman|lembar|kredit|abstrak|bab|paragraf|huruf|spasi|karakter)\b/i.test(q)
+    && (/\b(?:skripsi|tugas\s+akhir|tesis|\bta\b|laporan|proposal|karya\s+ilmiah|abstrak|akademik|lulus|kelulusan|wisuda|konversi|transfer)\b/i.test(q)
+      || /\b(?:s\s*1|sarjana|d\s*3|diploma|s\s*2|magister)\b/i.test(q));
   const hasAcademicNumeric = (
     /\b(?:sks|semester|masa\s+studi|berapa\s+sks|berapa\s+semester)\b/i.test(q)
-    && (/\b(?:s2|s\s*2|pascasarjana|pasca\s*sarjana|magister|master)\b/i.test(q)
-      || entities.programs.some((program) => /\b(?:S2|Magister|Pascasarjana)\b/i.test(String(program.canonical || ''))))
+    && (/\b(?:s2|s\s*2|pascasarjana|pasca\s*sarjana|magister|master|s1|s\s*1|sarjana|lulus|kelulusan)\b/i.test(q)
+      || entities.programs.some((program) => /\b(?:S2|Magister|Pascasarjana|S1|Sarjana)\b/i.test(String(program.canonical || ''))))
   ) || hasAcademicNumericGeneral;
   const hasPostgraduateLearning = asksLearning
     && !hasFee
@@ -701,8 +841,11 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
       || entities.programs.some((program) => /\b(?:S2|Magister|Pascasarjana)\b/i.test(String(program.canonical || '')))
     );
   const hasAccreditation = /\b(?:akreditasi|akrediasi|ban\s*-?pt|lam\s*infokom|peringkat\s+akreditasi|sertifikat\s+akreditasi)\b/i.test(q);
-  const hasDoubleDegreeSequence = /\b(?:dnui|dalian\s+neusoft|double\s*degree|dual\s*degree)\b/i.test(q)
-    && /\b(?:skema|tahapan|tahun\s+(?:ke-?\s*)?(?:1|2|3|4|pertama|kedua|ketiga|keempat|3|4)|bertahap|harus\s+ke|wajib\s+ke|pergi\s+ke|kuliah\s+di|onsite|online|offline)\b/i.test(q);
+  const hasDoubleDegreeSequence = (
+    /\b(?:dnui|dalian\s+neusoft|double\s*degree|dual\s*degree)\b/i.test(q)
+    || (/\b(?:malaysia|china|dalian|bandung)\b/i.test(q) && /\b(?:bali|stikom|skema|tahun)\b/i.test(q))
+    || (entities.internationalPrograms.length > 0 && /\b(?:skema|tahapan|tahun)\b/i.test(q))
+  ) && /\b(?:skema|tahapan|tahun\s+(?:ke-?\s*)?(?:1|2|3|4|pertama|kedua|ketiga|keempat|3|4)|berapa\s+tahun|bertahap|harus\s+ke|wajib\s+ke|pergi\s+ke|kuliah\s+di|onsite|online|offline)\b/i.test(q);
   // Institution-history semantic class — requires institution entity context before resolving subtype
   const hasInstitutionEntity = /\b(?:stikom|itb\s*stikom|kampus\s+(?:ini|stikom|itb)|institut\s+teknologi|itb)\b/i.test(q)
     || (entities.programs.length === 0 && entities.organizations.length === 0 && /\b(?:kampus|universitas|perguruan\s+tinggi|institusi|lembaga\s+pendidikan)\b/i.test(q));
@@ -714,9 +857,13 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const hasNonInstitutionNamedEntity = (
     /\b(?:ukm|ormawa|hima(?:prodi)?|student\s+exchange|pertukaran\s+mahasiswa|inbis|inkubator\s+bisnis|career\s+center|pusat\s+karier|double\s*degree|dual\s*degree|program\s+internasional)\b/i.test(q)
   ) && !/\b(?:itb\s*stikom|stikom\s+bali|kampus\s+itb|institutnya|kampus\s+keseluruhan)\b/i.test(q);
-  const hasInstitutionHistorySignal = /\b(?:didirikan|berdiri|sejarah|awalnya|awal\s+mula|yayasan|tanggal\s+berapa|pendiri|tokoh\s+pendiri|siapa\s+yang\s+mendirikan|didirikan\s+oleh|penggagas|perintis|menginisiasi\s+berdirinya|awal\s+berdiri|sejarah\s+awal|asal\s+mula|inisiasi\s+berdirinya|tanggal\s+resmi\s+berdiri(?:nya)?|pendirian|izin\s+operasional|sk\s+mendiknas|surat\s+keputusan\s+mendiknas)\b/i.test(q);
+  const hasGenuineHistorySemantics = /\b(?:didirikan|berdiri|sejarah|awalnya|awal\s+mula|awal\s+berdiri|sejarah\s+awal|asal\s+mula|pendiri|tokoh\s+pendiri|siapa\s+yang\s+mendirikan|didirikan\s+oleh|penggagas|perintis|menginisiasi\s+berdirinya|inisiasi\s+berdirinya|tanggal\s+resmi\s+berdiri(?:nya)?|pendirian|izin\s+operasional|sk\s+mendiknas|surat\s+keputusan\s+mendiknas)\b/i.test(q);
+  const hasInstitutionHistorySignal = hasGenuineHistorySemantics
+    || (/\byayasan\b/i.test(q) && /\b(?:didirikan|berdiri|sejarah|pendiri|tokoh|sk|izin)\b/i.test(q));
+  const hasScholarshipContext = hasScholarship || (Array.isArray(entities.scholarships) && entities.scholarships.length > 0);
   const hasInstitutionHistory = hasInstitutionHistorySignal
     && !hasAcademic
+    && !hasScholarshipContext
     && !hasNonInstitutionNamedEntity
     && (hasInstitutionEntity || !hasNonInstitutionEntityScope);
   // International program + degree outcome: international/partner program entity + degree outcome token
@@ -740,10 +887,11 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   const hasStudentExchangeTopic = /\b(?:student\s+exchange|pertukaran\s+mahasiswa)\b/i.test(q);
   const hasOrganizationProfile = (entities.organizations.length > 0
     || /\b(?:ukm|ormawa|himaprodi|hima|himpunan|bem|dpm|pragina|tari|athena|vos|mapala|esports?|teater)\b/i.test(q))
-    && /\b(?:profil|profile|organisasi\s+apa|apa\s+itu|itu\s+apa|visi|misi|tentang|seperti\s+apa|program\s+kerja|proker|peran|fungsi|tujuan|kegiatan|apa\s+namanya|ada\s+gak|tersedia|apakah\s+ada)\b/i.test(q);
+    && /\b(?:profil|profile|organisasi\s+apa|apa\s+itu|itu\s+apa|visi|misi|tentang|seperti\s+apa|program\s+kerja|proker|peran|fungsi|tujuan|kegiatan(?:nya)?|singkatan(?:nya)?|kepanjangan(?:nya)?|akronim(?:nya)?|artinya|apa\s+namanya|nama\b.*?\bapa|ada\s+gak|tersedia|apakah\s+ada)\b/i.test(q);
   const hasFacilityProfile = (entities.facilities.length > 0
-    || /\b(?:inbis|inkubator\s+bisnis|language\s+learning|llc|hi\s*think)\b/i.test(q))
-    && /\b(?:unit\s+apa|apa\s+itu|itu\s+apa|profil|profile|visi|misi|tahapan|tahap|program|tentang|peran|fungsi|bantu|membantu|dukungan|layanan|business\s+matching|networking|jejaring|level\s+bahasa|bahasa\s+jepang)\b/i.test(q);
+    || /\b(?:inbis|inkubator\s+bisnis|language\s+learning|llc|hi\s*think|perpustakaan|library|studio|podcast|coworking|co-working|antar\s+jemput|bus\s+kampus|shuttle|kantor\s+urusan\s+internasional|kui|international\s+office|parkir)\b/i.test(q)
+    || /\b(?:bebas\s+pake|bebas\s+pakai|harus\s+izin|izin\s+dulu|cara\s+pinjam|peminjaman)\b/i.test(q))
+    && /\b(?:unit\s+apa|apa\s+itu|itu\s+apa|profil|profile|visi|misi|tahapan|tahap|program|tentang|peran|fungsi|bantu|membantu|dukungan|layanan|business\s+matching|networking|jejaring|level\s+bahasa|bahasa\s+jepang|buku(?:\s+digital)?|jurnal|ieee|acm|lengkap|akses|pinjam|peminjaman|izin|aturan|bebas|ngerjain|tugas|antar\s+jemput|rute|jadwal|fasilitas|pake|pakai|lantai|lantai\s+berapa|di\s+mana|dimana|lokasi|luas)\b/i.test(q);
   const hasThesisTerm = /\b(?:skripsi|tugas\s+akhir|tesis|ta)\b/i.test(q);
   const hasThesisPageTerm = /\b(?:halaman|lembar|jumlah\s+halaman|minimal|maksimal|panjang\s+naskah)\b/i.test(q);
   const hasThesisAbstractTerm = /\b(?:abstrak|abstract)\b/i.test(q) && /\b(?:berapa|jumlah|batas|maksimal|minimal|kata|karakter|huruf)\b/i.test(q);
@@ -769,7 +917,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
               : (hasThesisRemedialPolicy ? 'thesis_remedial_policy'
                 : (hasThesisTerm && hasThesisPageTerm ? 'thesis_page_count'
                   : (hasThesisTerm ? 'thesis_general' : null))))))));
-  const strongProgramComparisonContext = /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus|sama\s+.*\b(?:ti|sk|si|bd|mi)\b|\b(?:ti|sk|si|bd|mi)\b\s+sama\s+\b(?:ti|sk|si|bd|mi)\b)\b/i.test(q);
+  const strongProgramComparisonContext = /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus|milih(?:\s+antara)?|pilih(?:\s+antara)?|antara\b[^?]{1,50}\batau|bagusan\s+mana|lebih\s+bagus(?:\s+mana)?|sama\s+.*\b(?:ti|sk|si|bd|mi)\b|\b(?:ti|sk|si|bd|mi)\b\s+sama\s+\b(?:ti|sk|si|bd|mi)\b)\b/i.test(q);
   if (strongProgramComparisonContext && /\bsk\b/i.test(q) && !entities.programs.some((entity) => entity.canonical === 'Sistem Komputer') && !/\b(?:surat\s+keputusan|nomor\s+sk|no\.?\s*sk|sk\s+mendiknas|izin\s+operasional|legal|dokumen)\b/i.test(q)) {
     entities.programs.push({ type: 'program', canonical: 'Sistem Komputer', code: 'SK', surface: 'sk', confidence: 0.84, source: 'canonical-program-alias-comparison-context' });
   }
@@ -837,11 +985,17 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && !hasAcademic;
   const hasProgramList = (/\b(?:jurusan(?:nya)?|prodi(?:nya)?|program\s+studi)\b/i.test(q) && asksList) || hasProgramLevelList;
   const asksProgramDefinition = /\b(?:apa\s+itu|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?|tentang|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa)\b/i.test(q) && entities.programs.length > 0;
+  const CURRICULUM_SUBJECT_CUE = /\b(?:hardware|perangkat\s+keras|software|perangkat\s+lunak|jaringan|networking?|embedded(?:\s+systems?)?|iot|internet\s+of\s+things|coding|ngoding|pemrograman|programming|data\s+(?:analytics|science)|analitik(?:a)?\s+data|analisis\s+data|cyber\s*security|keamanan\s+siber|keamanan\s+informasi|kecerdasan\s+buatan|artificial\s+intelligence|\bai\b|machine\s+learning|cloud(?:\s+computing)?|komputasi\s+awan|multimedia|basis\s+data|database|robotik|robotika|algoritma)\b/i;
+  const CURRICULUM_FOCUS_CUE = /\b(?:fokus(?:nya)?|arah(?:\s+belajar|\s+studi)?|belajar(?:nya)?|dipelajari|mempelajari|pelajaran(?:nya)?|materi|kurikulum(?:nya)?|kompetensi|spesialisasi|konsentrasi|mata\s+kuliah(?:nya)?|matkul|porsi|muatan|bobot|dominan|lebih\s+(?:banyak|ke|fokus|berat|dominan|menitikberatkan)|banyak(?:an)?)\b/i;
   const asksProgramFocusProfile = entities.programs.length > 0
-    && /\b(?:fokus(?:nya)?|arah\s+belajar|belajarnya|dipelajari|mempelajari|materi|kurikulum|kompetensi|spesialisasi|konsentrasi)\b/i.test(q)
+    && (
+      /\b(?:fokus(?:nya)?|arah\s+belajar|belajarnya|dipelajari|mempelajari|materi|kurikulum|kompetensi|spesialisasi|konsentrasi)\b/i.test(q)
+      || ((CURRICULUM_SUBJECT_CUE.test(q) || Boolean(curriculumTopic)) && (CURRICULUM_FOCUS_CUE.test(q) || /\b(?:apakah|ada|tersedia|ya|kan|kah)\b/i.test(q)))
+    )
     && !hasFee
     && !hasProgramComparison
-    && !hasProgramDegreeOutcome;
+    && !hasProgramDegreeOutcome
+    && !hasCareer;
   const hasInstitutionProfile = /\b(?:visi|misi|tujuan|profil|profile|identitas)\b/i.test(q)
     && /\b(?:kampus|institusi|lembaga|itb\s*stikom|stikom\s+bali|institut)\b/i.test(q)
     && !/\b(?:ukm|ormawa|organisasi\s+mahasiswa|himaprodi|himpunan|bem|inbis|inkubator|career\s*center|pusat\s+karier|student\s+exchange|double\s*degree|dual\s*degree|prodi|program\s+studi|jurusan)\b/i.test(q);
@@ -868,13 +1022,14 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     && /\b(?:online|remote|jarak\s+jauh|luar\s+negeri|tanpa\s+izin|tanpa\s+persetujuan|tanpa\s+konfirmasi)\b/i.test(q)
     && !/\b(?:student\s+exchange|pertukaran\s+mahasiswa|double\s*degree|dual\s*degree|hi[-\s]?think|hithink)\b/i.test(q);
   const asksOrganizationList = hasOrganization && (
-    /\b(?:apa\s+saja|apa\s+aja|daftar|list|sebutkan|pilihan|jenis|macam|ada\s+apa|ada\s+gak|punya\s+apa|tersedia\s+apa)\b/i.test(q)
-    || (!entities.organizations.length && /\b(?:ada|tersedia|punya|memiliki)\b/i.test(q) && /\b(?:ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan\s+mahasiswa|kegiatan\s+mahasiswa)\b/i.test(q))
+    /\b(?:apa\s+saja|apa\s+aja|daftar|list|sebutkan|pilihan|jenis|macam|ada\s+apa|ada\s+gak|punya\s+apa|tersedia\s+apa|ada\s+(?:kelompok|komunitas|organisasi|ukm|ormawa))\b/i.test(q)
+    || (!entities.organizations.length && /\b(?:ada|tersedia|punya|memiliki)\b/i.test(q) && /\b(?:ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan\s+mahasiswa|kegiatan\s+mahasiswa|kelompok\s+mahasiswa|komunitas\s+mahasiswa)\b/i.test(q))
     || (asksList && !/\b(?:cara|alur|proses|langkah|syarat|dokumen|biaya)\b/i.test(q))
   );
   let primaryIntent = 'ask_general';
   let primaryDomain = 'general';
   let answerExpectation = 'safe_answer_or_fallback';
+  let explicitRelationType = null;
 
   if (hasUnsupportedExchangeBarterRelation) {
     primaryIntent = 'ask_unsupported_relation';
@@ -916,6 +1071,10 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_entity_type_comparison';
     primaryDomain = 'general';
     answerExpectation = 'comparison';
+  } else if (hasOrganization && /\brobotik(?:a)?\b/i.test(q)) {
+    primaryIntent = 'ask_organization_profile';
+    primaryDomain = 'student_organization';
+    answerExpectation = 'availability_or_category';
   } else if (hasOrganization && (asksCount || /\b(?:berapa|jumlah|total)\b/i.test(q))) {
     primaryIntent = 'ask_organization_count';
     primaryDomain = 'student_organization';
@@ -940,14 +1099,32 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_student_support';
     primaryDomain = 'student_support';
     answerExpectation = 'support_availability';
+  } else if (!/\b(?:atau|vs|bukan|beda|bedanya|perbedaan)\b/i.test(q) && /\b(?:kerja|bekerja|karier|karir|berkarier|berkarir|peluang\s+kerja|pekerjaan)\b/i.test(q) && (/\b(?:jepang|japan)\b/i.test(q) || entities.internationalPrograms.some(e => /hi-think|jepang/i.test(e.canonical)))) {
+    primaryIntent = 'ask_career_service';
+    primaryDomain = 'international_program';
+    answerExpectation = 'service_or_career_info';
+    explicitRelationType = 'career_in_japan';
+    if (!entities.internationalPrograms.some(e => /hi-think/i.test(e.canonical))) {
+      entities.internationalPrograms.push({
+        canonical: 'Program Hi-Think (Magang Jepang)',
+        type: 'special_program',
+        role: 'international_program',
+        confidence: 0.9,
+        source: 'canonical-entity-registry'
+      });
+    }
   } else if (entities.programs.length > 0 && /\b(?:prospek(?:nya)?|prospek\s+kerja|peluang\s+kerja|lulusan|kerja|karier|karir|pekerjaan)\b/i.test(q) && !/\b(?:career\s*center|pusat\s+karier|pusat\s+karir|cdc|job\s*fair|campus\s*hiring|tracer\s*study)\b/i.test(q)) {
-    primaryIntent = 'ask_program_curriculum';
-    primaryDomain = 'program_curriculum';
-    answerExpectation = 'curriculum_or_topic_presence';
+    primaryIntent = 'ask_career_service';
+    primaryDomain = 'career';
+    answerExpectation = 'service_or_career_info';
   } else if (hasCareer) {
     primaryIntent = 'ask_career_service';
     primaryDomain = 'career';
     answerExpectation = 'service_or_career_info';
+  } else if (/\b(?:antar\s+jemput|bus\s+kampus|shuttle)\b/i.test(q) && /\b(?:renon|jimbaran|denpasar|abiansemal|antara\s+kampus|antar\s+kampus)\b/i.test(q)) {
+    primaryIntent = 'ask_location';
+    primaryDomain = 'campus_location';
+    answerExpectation = 'address_or_route';
   } else if (hasFacilityProfile) {
     primaryIntent = /\b(?:visi|misi)\b/i.test(q) ? 'ask_facility_vision_mission' : 'ask_facility_profile';
     primaryDomain = 'campus_facility';
@@ -956,6 +1133,10 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = /\b(?:visi|misi)\b/i.test(q) ? 'ask_institution_vision_mission' : 'ask_institution_profile';
     primaryDomain = 'institution_profile';
     answerExpectation = /\b(?:visi|misi)\b/i.test(q) ? 'institution_vision_mission' : 'institution_profile_or_fallback';
+  } else if ((/\b(?:atau|vs|bukan|beda)\b/i.test(q) && /\b(?:magang|internship|exchange)\b/i.test(q) && /\b(?:double\s*degree|dual\s*degree)\b/i.test(q)) || (/\b(?:ke\s+jepang|program\s+internasional)\b/i.test(q) && /\b(?:atau|vs|bukan|beda)\b/i.test(q) && /\b(?:magang|internship|exchange|double\s*degree|dual\s*degree)\b/i.test(q))) {
+    primaryIntent = 'ask_availability';
+    primaryDomain = 'international_program';
+    answerExpectation = 'availability_or_safe_fallback';
   } else if (hasInternationalProgramComparison) {
     primaryIntent = 'ask_international_program_comparison';
     primaryDomain = 'international_program';
@@ -968,18 +1149,24 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_availability';
     primaryDomain = 'double_degree';
     answerExpectation = 'list';
+  } else if (((Array.isArray(academicLevels) && academicLevels.includes('S2')) || /\b(?:s2|s\s*2|magister|pascasarjana)\b/i.test(q) || (Array.isArray(entities.programs) && entities.programs.some(p => /s2|magister/i.test(p.canonical || p.name || '')))) && /\b(?:kelas\s*(?:malam|sabtu|karyawan|sore|weekend)|jadwal\s+(?:per)?kuliah|waktu\s+(?:per)?kuliah|(?:per)?kuliah(?:an)?\s+(?:kapan|malam|sabtu)|bisa\s+kelas)\b/i.test(q)) {
+    primaryIntent = 'ask_availability';
+    primaryDomain = 's2_postgraduate';
+    answerExpectation = 'date_or_period';
+    explicitRelationType = 'study_schedule';
   } else if (hasInternationalProgramSchedule) {
     primaryIntent = 'ask_schedule';
     primaryDomain = isDoubleDegree ? 'double_degree' : 'international_program';
     answerExpectation = 'date_or_period';
   } else if (hasInternationalProgramProcedure) {
-    primaryIntent = 'ask_international_program_procedure';
-    primaryDomain = 'international_program';
-    answerExpectation = 'procedure';
+    primaryIntent = (asksRegistrationRequirements || /\b(?:syarat|persyaratan|toefl|ielts|skor|score|dokumen|berkas)\b/i.test(q)) ? 'ask_registration_requirements' : 'ask_international_program_procedure';
+    primaryDomain = isDoubleDegree ? 'double_degree' : 'international_program';
+    answerExpectation = (asksRegistrationRequirements || /\b(?:syarat|persyaratan|toefl|ielts|skor|score|dokumen|berkas)\b/i.test(q)) ? 'requirements' : 'procedure';
   } else if (hasDoubleDegreeSequence) {
-    primaryIntent = 'ask_international_program_sequence';
+    primaryIntent = /\b(?:berapa\s+tahun|skema\s+kuliah|timeline|jadwal|durasi)\b/i.test(q) ? 'ask_schedule' : 'ask_international_program_sequence';
     primaryDomain = 'double_degree';
     answerExpectation = 'sequence';
+    explicitRelationType = 'study_timeline';
   } else if (hasInternationalProgramDegreeOutcome) {
     primaryIntent = 'ask_international_degree_outcome';
     primaryDomain = 'double_degree';
@@ -990,7 +1177,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     answerExpectation = 'relation_pairing';
   } else if (hasProgramComparison) {
     primaryIntent = 'ask_program_comparison';
-    primaryDomain = 'program';
+    primaryDomain = 'program_comparison';
     answerExpectation = 'comparison';
   } else if (hasAcademicCreditComparison) {
     primaryIntent = 'ask_academic_comparison';
@@ -1029,37 +1216,53 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryDomain = 'campus_physical';
     answerExpectation = 'specific_fact_or_fallback';
   } else if (hasRpl) {
-    primaryIntent = 'ask_rpl';
-    primaryDomain = 'rpl';
-    answerExpectation = 'definition';
+    if (hasFee) {
+      primaryIntent = 'ask_fee';
+      primaryDomain = 'fee';
+      answerExpectation = 'amount_or_breakdown';
+    } else {
+      primaryIntent = 'ask_rpl';
+      primaryDomain = 'academic_policy';
+      answerExpectation = 'definition';
+    }
   } else if (hasScholarship) {
-    primaryIntent = 'ask_scholarship';
+    const asksScholarshipDiscountOrTuitionFee = !/\bbiaya\s+hidup\b/i.test(q) && (hasFee || /\b(?:potongan|diskon|dpp|ukt|persen)\b/i.test(q));
+    primaryIntent = asksScholarshipDiscountOrTuitionFee ? 'ask_fee' : 'ask_scholarship';
     primaryDomain = 'scholarship';
-    answerExpectation = asksList ? 'list' : 'specific_fact_or_fallback';
+    answerExpectation = asksScholarshipDiscountOrTuitionFee ? 'amount_or_breakdown' : (asksList ? 'list' : 'specific_fact_or_fallback');
   } else if (hasContactRequest) {
     primaryIntent = 'ask_contact';
     primaryDomain = 'campus_contact';
     answerExpectation = 'contact';
-  } else if (asksRegistrationHow) {
-    primaryIntent = 'ask_registration_how';
-    primaryDomain = 'registration';
-    answerExpectation = 'procedure';
-  } else if (asksRegistrationRequirements) {
+  } else if (asksRegistrationRequirements && !hasInternationalAdmin) {
     primaryIntent = 'ask_registration_requirements';
-    primaryDomain = 'registration';
+    primaryDomain = isDoubleDegree ? 'double_degree' : (entities.internationalPrograms.length > 0 ? 'international_program' : 'registration');
     answerExpectation = 'requirements_or_procedure';
+  } else if (asksRegistrationHow && !hasInternationalAdmin) {
+    primaryIntent = 'ask_registration_how';
+    primaryDomain = isDoubleDegree ? 'double_degree' : (entities.internationalPrograms.length > 0 ? 'international_program' : 'registration');
+    answerExpectation = 'procedure';
   } else if (hasInternationalAdminFee) {
     primaryIntent = 'ask_international_admin_fee';
-    primaryDomain = 'international_admin';
+    primaryDomain = 'foreign_student_admin';
     answerExpectation = 'amount_or_breakdown';
   } else if (hasInternationalAdmin) {
-    primaryIntent = 'ask_international_admin_procedure';
-    primaryDomain = 'international_admin';
-    answerExpectation = /\\b(?:dokumen|syarat|berkas|urus|ngurus|perpanjang|prosedur|cara|bagaimana|gimana)\\b/i.test(q) ? 'procedure' : 'specific_fact_or_fallback';
+    primaryIntent = /\b(?:berapa\s+lama|durasi|lama|waktu|jadwal|kapan)\b/i.test(q) ? 'ask_schedule' : 'ask_international_admin_procedure';
+    primaryDomain = 'foreign_student_admin';
+    answerExpectation = /\b(?:berapa\s+lama|durasi|lama|waktu)\b/i.test(q) ? 'numeric_fact' : (/\b(?:dokumen|syarat|berkas|urus|ngurus|perpanjang|prosedur|cara|bagaimana|gimana)\b/i.test(q) ? 'procedure' : 'specific_fact_or_fallback');
+    if (/\b(?:izin\s+belajar|study\s+permit)\b/i.test(q) && /\b(?:berapa\s+lama|durasi|lama|waktu|proses|pengajuan)\b/i.test(q)) {
+      explicitRelationType = 'permit_timeline';
+    } else if (/\b(?:dokumen|syarat|berkas|upload|diupload|unggah|diunggah)\b/i.test(q)) {
+      explicitRelationType = 'foreign_documents';
+    }
   } else if (hasFee) {
+    const isInstallmentPolicy = /\b(?:bisa\s+(?:di)?cicil|boleh\s+(?:di)?cicil|sistem\s+cicil|skema\s+cicil)\b/i.test(q)
+      && !/\b(?:berapa\s+(?:kali|bulan|angsuran)|berapa\s+nominal|berapa\s+jumlah)\b/i.test(q);
+    const isFeeDefinition = !isInstallmentPolicy && /\b(?:apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|istilah(?:nya)?|itu\s+dpp\s+ya|apakah\s+(?:itu\s+)?dpp|sama\s+(?:kah\s+)?(?:dengan|sama))\b/i.test(q)
+      && !/\b(?:berapa|nominal|jumlah|total|tarif|harga|besaran)\b/i.test(q);
     primaryIntent = 'ask_fee';
     primaryDomain = 'fee';
-    answerExpectation = 'amount_or_breakdown';
+    answerExpectation = isInstallmentPolicy ? 'policy_or_safe_no_data' : (isFeeDefinition ? 'definition' : 'amount_or_breakdown');
   } else if (hasPmbDefinition) {
     primaryIntent = 'ask_definition';
     primaryDomain = 'registration';
@@ -1073,9 +1276,20 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryDomain = 'program_curriculum';
     answerExpectation = 'curriculum_or_topic_presence';
   } else if (entities.internationalPrograms.length > 0) {
-    primaryIntent = 'ask_availability';
-    primaryDomain = entities.internationalPrograms.some((entity) => String(entity.role || '') === 'double_degree') ? 'double_degree' : 'international_program';
-    answerExpectation = 'availability_or_safe_fallback';
+    if (asksRegistrationRequirements || /\b(?:syarat|persyaratan|dokumen|berkas)\b/i.test(q)) {
+      primaryIntent = 'ask_registration_requirements';
+      answerExpectation = 'requirements';
+    } else if (asksRegistrationHow) {
+      primaryIntent = 'ask_registration_how';
+      answerExpectation = 'procedure';
+    } else {
+      primaryIntent = 'ask_availability';
+      answerExpectation = 'availability_or_safe_fallback';
+    }
+    primaryDomain = (
+      entities.internationalPrograms.some((entity) => String(entity.role || '') === 'double_degree' || /double\s*degree|dual\s*degree/i.test(entity.canonical || ''))
+      || /\b(?:double\s*degree|dual\s*degree)\b/i.test(q)
+    ) ? 'double_degree' : 'international_program';
   } else if (hasRegistrationDataCorrection) {
     primaryIntent = 'ask_registration_data_correction';
     primaryDomain = 'registration';
@@ -1146,12 +1360,14 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
   let questionType = 'informational';
   if (asksCount) questionType = 'count';
   else if (hasAcademicLevelComparison || hasFeeComponentComparison || hasAcademicCreditComparison || hasEntityTypeComparison || hasLegalDocumentVsPmbComparison) questionType = 'comparison';
+  else if (hasOperationalAcademicPolicy) questionType = 'yes_no_or_explain';
   else if (hasAcademicNumeric) questionType = 'numeric';
   else if (hasInternationalProgramSchedule || hasAcademicSchedule) questionType = 'schedule';
   else if (hasAcademicProcedure || hasThesisSubmissionProcedure || hasInternationalProgramProcedure || hasRegistrationDataCorrection) questionType = 'procedure';
   else if (hasInternationalProgramComparison) questionType = 'comparison';
   else if (hasDualDegreeRelation) questionType = 'relation_pairing';
   else if (hasDoubleDegreeOutcome || hasProgramDegreeOutcome) questionType = 'degree_outcome';
+  else if (/\b(?:berapa\s+lama|durasi|waktu\s+pengurusan|lama\s+proses|prosesnya\s+berapa\s+lama)\b/i.test(q)) questionType = 'duration';
   else if (hasCareerGoalRecommendation) questionType = 'recommendation';
   else if (/\b(?:berlaku(?:nya)?\s+sampai|masa\s+berlaku(?:nya)?|valid(?:ity)?|sampai\s+kapan|sampai\s+tahun\s+berapa)\b/i.test(q)) questionType = 'validity';
   else if (hasContactRequest) questionType = 'contact';
@@ -1181,10 +1397,12 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
         || (hasAcademicNumeric ? 'academic_numeric'
           : (hasAcademicProcedure ? 'academic_procedure'
             : (hasAcademicSchedule ? 'academic_schedule' : null))),
-      relationType: hasUnsupportedExchangeBarterRelation ? 'unsupported_exchange_barter'
+      relationType: explicitRelationType || (
+        hasUnsupportedExchangeBarterRelation ? 'unsupported_exchange_barter'
         : (hasUnsupportedAcademicPolicy ? 'unsupported_academic_policy'
           : (hasLegalDocumentVsPmbComparison ? 'institution_legal_document_vs_pmb_schedule'
-            : (externalRelation ? externalRelation.relationType : (hasInternationalProgramComparison ? 'international_program_contrast' : (hasFeeComponentComparison ? 'fee_component_contrast' : (hasAcademicCreditComparison ? 'academic_credit_comparison' : (hasEntityTypeComparison ? 'entity_type_distinction' : (hasDualDegreeRelation ? 'double_degree_partner_program_pairing' : (hasDoubleDegreeSequence ? 'double_degree_sequence' : (hasDoubleDegreeOutcome || hasInternationalProgramDegreeOutcome ? 'double_degree_outcome' : null)))))))))),
+            : (externalRelation ? externalRelation.relationType : (hasInternationalProgramComparison ? 'international_program_contrast' : (hasFeeComponentComparison ? 'fee_component_contrast' : (hasAcademicCreditComparison ? 'academic_credit_comparison' : (hasEntityTypeComparison ? 'entity_type_distinction' : (hasDualDegreeRelation ? 'double_degree_partner_program_pairing' : (hasDoubleDegreeSequence ? 'double_degree_sequence' : (hasDoubleDegreeOutcome || hasInternationalProgramDegreeOutcome ? 'double_degree_outcome' : null))))))))))
+      ),
       externalRelation,
       institutionHistorySubtype: institutionHistorySubtype || null,
       institutionTopic: hasInstitutionProfile ? (/\b(?:visi|misi)\b/i.test(q) ? 'vision_mission' : (/\btujuan\b/i.test(q) ? 'purpose' : 'profile')) : null,
@@ -1264,19 +1482,49 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
   const relationType = String(classification && classification.constraints && classification.constraints.relationType || '');
   const careerTopic = String(classification && classification.constraints && classification.constraints.careerTopic || '');
   const feeType = String(classification && classification.constraints && classification.constraints.feeType || '');
-  if (domain === 'student_organization' || intent === 'ask_organization_profile' || intent === 'ask_organization_count' || intent === 'ask_organization_vision_mission') {
+  if (domain === 'student_organization' || intent === 'ask_organization_profile' || intent === 'ask_organization_count' || intent === 'ask_organization_vision_mission' || intent === 'ask_program_curriculum') {
+    if (domain === 'student_organization' || /\b(?:ukm|ormawa|organisasi)\b/i.test(q)) {
+      fields.add('organization');
+      fields.add('availability');
+      if (classification && classification.constraints && classification.constraints.organizationCategory) {
+        fields.add('organizationCategory');
+      }
+      if (classification && (classification.questionType === 'count' || intent === 'ask_organization_count')) {
+        fields.add('organizationCount');
+      }
+      if (intent === 'ask_organization_list' || (classification && classification.questionType === 'list')) {
+        fields.add('organizationList');
+      }
+    }
+  }
+  if (/\brobotik(?:a)?\b/i.test(q)) {
     fields.add('organization');
-    if (classification && classification.constraints && classification.constraints.organizationCategory) {
-      fields.add('organizationCategory');
+    fields.add('availability');
+    fields.add('focus');
+    fields.add('curriculumFocus');
+    fields.add('curriculumTopicPresence');
+    fields.add('specificTopic');
+  }
+  const isUangGedung = /\b(?:uang|biaya)\s+gedung\b/i.test(q);
+  if (!isUangGedung && (domain === 'campus_facility' || intent.startsWith('ask_facility') || (classification && classification.entities && classification.entities.facilities && classification.entities.facilities.length > 0) || /\b(?:fasilitas|lab(?:oratorium)?|perpustakaan|perpus|studio|coworking|ruang(?:\s+kelas)?|gedung)\b/i.test(q))) {
+    fields.add('facility');
+    if (asksProfileRelation || intent === 'ask_facility_profile' || /\b(?:lengkap|fitur|alat|buku|komputer|podcast|multimedia|izin|bebas\s+pake|bebas\s+pakai|luas|lantai)\b/i.test(q)) {
+      fields.add('profile');
+      fields.add('definition');
+    }
+    if (/\b(?:ada|tersedia|punya|memiliki|apakah|bisa\s+pake|bebas\s+pake|ga\s+ada|lengkap|luas|disediakan|menyediakan|sedia)\b/i.test(q)) {
       fields.add('availability');
     }
-    if (classification && (classification.questionType === 'count' || intent === 'ask_organization_count')) {
-      fields.add('organizationCount');
+    if (!isUangGedung && /\b(?:lantai|ruang|gedung|lokasi|di\s+mana|dimana|alamat|posisi|letak)\b/i.test(q)) {
+      fields.add('location');
+      fields.add('campusLocation');
     }
-    if (intent === 'ask_organization_list' || (classification && classification.questionType === 'list')) {
-      fields.add('organizationList');
-      fields.add('availability');
-    }
+  }
+  if (/\b(?:potongan|diskon|persen)\b/i.test(q)) {
+    fields.add('discount');
+  }
+  if (/\b(?:apakah\s+(?:stikom\s+bali\s+)?(?:menerima|ada|buka|tersedia|memiliki|punya)|tersedia|tersediakah|adakah|disediakan|menyediakan)\b/i.test(q)) {
+    fields.add('availability');
   }
   if (intent === 'ask_career_service' || domain === 'career') {
     fields.add('careerSupport');
@@ -1294,6 +1542,11 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
   if (intent === 'ask_registration_requirements') {
     fields.add('requirements');
     fields.add('registration');
+    if (/\b(?:upload|diupload|unggah|diunggah|online)\b/i.test(q)) {
+      fields.add('documentUpload');
+      fields.add('submissionChannel');
+      fields.add('procedureSteps');
+    }
   }
   if (intent === 'ask_contact' || domain === 'campus_contact') {
     fields.add('contact');
@@ -1341,11 +1594,35 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
     fields.add('allowed');
     fields.add('permission');
   }
-  if (/\b(?:berapa\s+lama|durasi|lama\s+kuliah|lama\s+studi|waktu\s+pengurusan|proses)\b/i.test(q)) {
+  if (/\b(?:berapa\s+lama|durasi|lama\s+kuliah|lama\s+studi|waktu\s+pengurusan|proses)\b/i.test(q)
+    || (domain === 'double_degree' && /\b(?:skema|berapa\s+tahun|tahun\s+di)\b/i.test(q))) {
     fields.add('duration');
+    fields.add('sequence');
   }
-  if (/\b(?:berapa\s+semester|semester)\b/i.test(q) && (/\b(?:s2|magister|d3|s1|studi|masa\s+studi)\b/i.test(q) || (classification && classification.constraints && classification.constraints.academicLevel))) {
+  if (/\b(?:kelas\s*(?:malam|sabtu|karyawan|sore|weekend)|waktu\s+(?:per)?kuliah|jadwal\s+(?:per)?kuliah)\b/i.test(q) || (domain === 's2_postgraduate' && /\b(?:kelas|sabtu|malam|kuliah)\b/i.test(q))) {
+    fields.add('schedule');
+    fields.add('date');
+    fields.add('deadline');
+    fields.add('validityPeriod');
+  }
+  if (domain === 'double_degree' && /\b(?:skema|tahapan|berapa\s+tahun|bali|malaysia|china|dalian|bandung)\b/i.test(q)) {
+    fields.add('schedule');
+    fields.add('date');
+    fields.add('deadline');
+    fields.add('validityPeriod');
+    fields.add('duration');
     fields.add('semesterCount');
+    fields.add('sequence');
+  }
+  if (/\b(?:kerja|karier|karir|peluang\s+kerja)\b/i.test(q) && (/\b(?:jepang|japan)\b/i.test(q) || domain === 'international_program')) {
+    fields.add('careerSupport');
+    fields.add('opportunity');
+    fields.add('service');
+  }
+  if (/\b(?:berapa\s+semester|semester\s+(?:[1-8]|satu|dua|tiga|empat)|(?:maksimal|minimal|batas)\s+(?:cuti\s+)?(?:berapa\s+)?semester|cuti)\b/i.test(q)
+    || (/\b(?:berapa\s+semester|semester)\b/i.test(q) && (/\b(?:s2|magister|d3|s1|studi|masa\s+studi)\b/i.test(q) || (classification && classification.constraints && classification.constraints.academicLevel)))) {
+    fields.add('semesterCount');
+    fields.add('duration');
   }
   if (/\b(?:berapa\s+sks|sks|total\s+sks|beban\s+sks)\b/i.test(q)) {
     fields.add('creditCount');
@@ -1355,8 +1632,21 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
     fields.add('profile');
     fields.add('definition');
   }
+  const isInstallmentPolicyQ = /\b(?:bisa\s+(?:di)?cicil|boleh\s+(?:di)?cicil|sistem\s+cicil|skema\s+cicil)\b/i.test(q)
+    && !/\b(?:berapa\s+(?:kali|bulan|angsuran)|berapa\s+nominal|berapa\s+jumlah)\b/i.test(q);
+  const isFeeDefOrEquiv = !isInstallmentPolicyQ && (intent === 'ask_fee_definition' || (/\b(?:apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|istilah(?:nya)?|itu\s+dpp\s+ya|apakah\s+(?:itu\s+)?dpp|sama\s+(?:kah\s+)?(?:dengan|sama))\b/i.test(q)
+    && !/\b(?:berapa|nominal|jumlah|total|tarif|harga|besaran)\b/i.test(q)));
   if (feeType) {
-    fields.add('amount');
+    if (isInstallmentPolicyQ) {
+      fields.add('policy');
+      fields.add('installment');
+    } else if (isFeeDefOrEquiv) {
+      fields.add('definition');
+      fields.add('equivalence');
+      fields.add('feeComponent');
+    } else {
+      fields.add('amount');
+    }
     if (feeType === 'registration_fee') fields.add('registrationFee');
     else if (feeType === 'ukt') fields.add('tuitionFee');
     else if (feeType === 'dpp') fields.add('developmentFee');
@@ -1387,14 +1677,19 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
   if (/\b(?:exchange|tukar|barter|ditukar|menukar)\b/i.test(q) && /\b(?:voucher|kupon|kantin|ukt|dpp|biaya|saldo|barang)\b/i.test(q)) {
     fields.add('unsupportedRelation');
   }
-  if (/\b(?:tahun\s+(?:1|2|3|4|pertama|kedua|ketiga|keempat)|skema|alur\s+kuliah|urutan|sequence)\b/i.test(q)) {
+  if (/\b(?:tahun\s+(?:[1-4]|pertama|kedua|ketiga|keempat)|semester\s+(?:[1-8]|satu|dua|tiga|empat|lima|enam|tujuh|delapan|ganjil|genap|pertama|kedua)|gelombang\s+(?:[1-9]|pertama|kedua|ketiga|keempat)|skema|alur\s+kuliah|urutan|sequence|wave)\b/i.test(q)) {
     fields.add('sequence');
   }
-  if (/\b(?:akreditasi(?:\s+apa)?|peringkat|grade|terakreditasi|status\s+akreditasi|status)\b/i.test(q)) {
+  if (domain === 'accreditation' || intent === 'ask_accreditation' || /\b(?:akreditasi(?:\s+apa)?|peringkat|grade|terakreditasi|status\s+akreditasi|status)\b/i.test(q)) {
     fields.add('grade');
     fields.add('status');
   }
-  if (/\b(?:biaya|harga|uang|nominal|tarif|bayar|ukt|dpp|spp|fee|cost|tuition|price|payment)\b/i.test(q)) {
+  if (!isFeeDefOrEquiv && !isInstallmentPolicyQ && /\b(?:biaya|harga|uang|nominal|tarif|(?:pem)?bayar(?:an)?|ukt|dpp|spp|fee|cost|tuition|price|payment|\d+\s*(?:ribu|rb|jt|juta))\b/i.test(q)) {
+    fields.add('amount');
+  }
+  if (/\b(?:pendaftaran|daftar|formulir|registrasi)\b/i.test(q) && (domain === 'fee' || intent === 'ask_fee' || /\b(?:biaya|uang|tarif|(?:pem)?bayar(?:an)?|\d+\s*(?:ribu|rb|jt|juta)|va|virtual\s+account)\b/i.test(q))) {
+    fields.add('registrationFee');
+    fields.add('feeComponent');
     fields.add('amount');
   }
   if (/\b(?:dokumen\s+apa|formulir\s+apa|surat\s+apa|buat\s+apa|buat\s+laporan|dipakai|digunakan|laporan\s+apa|untuk\s+apa|fungsi(?:nya)?|tujuan(?:nya)?|definisi|pengertian)\b/i.test(q)) {
@@ -1408,13 +1703,30 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
     fields.add('legalDocumentNumber');
     fields.add('legalEstablishmentDocument');
   }
-  if (/\b(?:mahasiswa\s+asing|foreign\s+student|keimigrasian|imigrasi|itas|kitas|sktt|izin\s+(?:belajar|tinggal)|perpanjang(?:an)?\s+izin|visa)\b/i.test(q)) {
+  if (/\b(?:mahasiswa\s+(?:asing|internasional)|foreign\s+student|international\s+student|keimigrasian|imigrasi|itas|kitas|sktt|izin\s+(?:belajar|tinggal)|perpanjang(?:an)?\s+izin|visa)\b/i.test(q)) {
     fields.add('foreignStudentImmigration');
     if (/\b(?:sktt|domisili|tempat\s+tinggal|dokumen\s+domisili|surat\s+domisili)\b/i.test(q)) {
       fields.add('sktt');
       fields.add('document');
       fields.add('domicileDocument');
     }
+  }
+  if (domain === 'foreign_student_admin') {
+    fields.add('foreignStudentImmigration');
+    if (relationType === 'permit_timeline' || /\b(?:berapa\s+lama|durasi|lama|waktu|proses|pengajuan)\b/i.test(q)) {
+      fields.add('duration');
+      fields.add('sequence');
+    }
+    if (relationType === 'foreign_documents' || /\b(?:dokumen|syarat|berkas|upload|diupload|unggah|diunggah)\b/i.test(q)) {
+      fields.add('requirements');
+      fields.add('procedureSteps');
+      fields.add('documentUpload');
+      fields.add('submission');
+    }
+    fields.delete('focus');
+    fields.delete('curriculumFocus');
+    fields.delete('documentPurpose');
+    fields.delete('purpose');
   }
   if (/\bdpp\b/i.test(q) && /\bukt\b/i.test(q)) {
     fields.add('feeComponent');
@@ -1481,7 +1793,7 @@ function buildRoutingQuery(normalizedQuery, entities, classification) {
   if (classification.intent.primary === 'ask_international_program_sequence') additions.push('skema tahapan tahun perkuliahan Double Degree DNUI');
   if (classification.domain.primary === 'international_program') additions.push('Student Exchange pertukaran mahasiswa program internasional');
   if (classification.intent.primary === 'ask_organization_profile' || classification.intent.primary === 'ask_organization_vision_mission') additions.push('profil UKM Ormawa HIMAPRODI organisasi mahasiswa');
-  if (classification.intent.primary === 'ask_facility_profile' || classification.intent.primary === 'ask_facility_vision_mission') additions.push('profil fasilitas Inkubator Bisnis INBIS unit kewirausahaan');
+  if (classification.intent.primary === 'ask_facility_profile' || classification.intent.primary === 'ask_facility_vision_mission') additions.push('profil fasilitas sarana prasarana kampus');
   if (classification.intent.primary === 'ask_registration_how' || classification.intent.primary === 'ask_registration_requirements') additions.push('pendaftaran syarat persyaratan dokumen PMB mahasiswa baru');
   if (classification.intent.primary === 'ask_facility_list') additions.push('fasilitas');
   if (classification.constraints.academicTopic) additions.push(classification.constraints.academicTopic.replace(/_/g, ' '));
@@ -1489,6 +1801,67 @@ function buildRoutingQuery(normalizedQuery, entities, classification) {
   return [normalizedQuery, ...additions].filter(Boolean).join(' ').replace(/\s{2,}/g, ' ').trim();
 }
 
+function canonicalIdentityKey(value) {
+  return String(value || '').toLowerCase().replace(/^s[123]\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function applyExplicitEntityCorrection(rawQuery, entities) {
+  const normalized = normalizeUserQuery(rawQuery || '').normalizedText || String(rawQuery || '').toLowerCase();
+  let targetText = '';
+  const correctionFirst = normalized.match(/\b(?:maksud\s+saya|maksudnya|yang\s+benar)\s+(.+?)(?:\s*,?\s*bukan\s+.+)?$/i);
+  const rejectionFirst = normalized.match(/\bbukan\s+.+?[,;]?\s*(?:maksud\s+saya|maksudnya|tapi|melainkan)\s+(.+)$/i);
+  if (rejectionFirst && rejectionFirst[1]) targetText = rejectionFirst[1];
+  else if (correctionFirst && correctionFirst[1]) targetText = correctionFirst[1];
+  if (!targetText) return;
+
+  const targetMatches = matchCanonicalEntities(targetText);
+  const targetPrograms = resolveProgramEntities(targetText);
+  const desired = new Set([
+    ...targetMatches.map(item => canonicalIdentityKey(item.canonical)),
+    ...targetPrograms.map(item => canonicalIdentityKey(item.canonical))
+  ]);
+  if (!desired.size) return;
+
+  const familyGroups = ['programs', 'campuses', 'facilities', 'organizations', 'internationalPrograms', 'services', 'scholarships', 'admissionTracks', 'participantScopes', 'academicScopes'];
+  for (const group of familyGroups) {
+    if (!Array.isArray(entities[group]) || !entities[group].length) continue;
+    const selected = entities[group].filter(item => desired.has(canonicalIdentityKey(item.canonical)));
+    if (selected.length) entities[group].splice(0, entities[group].length, ...selected.map(item => ({ ...item, source: 'explicit-correction' })));
+  }
+}
+
+function inheritCompatibleEntityIntoCanonical(entities, classification, priorState) {
+  const priorEntity = priorState && priorState.activeEntity;
+  if (!priorEntity || !priorEntity.canonical || priorState.isVerified === false || priorState.promotable === false) return;
+  const updatedAt = Date.parse(priorState.updatedAt || '');
+  if (!Number.isFinite(updatedAt) || Date.now() - updatedAt > 30 * 60 * 1000) return;
+  const groups = ['programs', 'campuses', 'facilities', 'organizations', 'internationalPrograms', 'services', 'scholarships', 'admissionTracks', 'participantScopes', 'academicScopes'];
+  const hasExplicitNamedEntity = groups.some(group => Array.isArray(entities[group]) && entities[group].some(item => !/^(?:canonical-domain-scope|canonical-interest-registry)$/.test(String(item && item.source || ''))));
+  if (hasExplicitNamedEntity) return;
+
+  const domain = String(classification && classification.domain && classification.domain.primary || 'general');
+  const type = String(priorEntity.type || '').toLowerCase();
+  const priorGroup = String(priorEntity.group || '');
+  const compatible = (type === 'admission_track' && /^(?:registration|pmb_requirements|academic_policy|fee)$/.test(domain))
+    || (type === 'program' && /^(?:program|program_curriculum|career|fee|academic|academic_policy|accreditation|s2_postgraduate)$/.test(domain))
+    || (/organization/.test(type) && domain === 'student_organization')
+    || (/facility|campus_service/.test(type) && /^(?:campus_facility|campus_service)$/.test(domain))
+    || (/international|special_program/.test(type) && /^(?:international_program|double_degree)$/.test(domain))
+    || (type === 'scholarship' && domain === 'scholarship')
+    || (type === 'participant_scope' && /^(?:foreign_student_admin|pmb_requirements|registration|academic_policy)$/.test(domain))
+    || (type === 'academic_scope' && /^(?:academic_policy|academic|program_curriculum|program|fee)$/.test(domain));
+  if (!compatible) return;
+
+  const group = groups.includes(priorGroup) ? priorGroup
+    : (type === 'admission_track' ? 'admissionTracks'
+      : (type === 'program' ? 'programs'
+        : (/organization/.test(type) ? 'organizations'
+          : (/facility|campus_service/.test(type) ? 'facilities'
+            : (/international|special_program/.test(type) ? 'internationalPrograms'
+              : (type === 'scholarship' ? 'scholarships' : 'participantScopes'))))));
+  if (!Array.isArray(entities[group])) entities[group] = [];
+  entities[group].push({ ...priorEntity, group, confidence: Math.min(0.8, Number(priorEntity.confidence || 0.8)), source: 'compatible-inherited-entity' });
+}
 function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
   const raw = String(rawQuery || '');
   const normalizedInfo = options.normalizedQuery
@@ -1498,19 +1871,35 @@ function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
   const temporal = buildTemporalUnderstanding(raw);
   const programEntities = resolveProgramEntities(`${raw} ${normalizedQuery}`);
   const sourceEntities = resolveSourceDomainEntities(`${raw} ${normalizedQuery}`);
-  const unsupportedProgramEntities = resolveUnsupportedProgramEntities(raw, programEntities);
+  const unsupportedProgramEntities = sourceEntities.admissionTracks && sourceEntities.admissionTracks.length
+    ? []
+    : resolveUnsupportedProgramEntities(raw, programEntities);
   const entities = {
     programs: programEntities,
-    campuses: [],
+    campuses: sourceEntities.campuses || [],
     facilities: sourceEntities.facilities,
     organizations: sourceEntities.organizations,
     people: [],
     documents: sourceEntities.documents,
     internationalPrograms: sourceEntities.internationalPrograms,
+    services: sourceEntities.services || [],
+    scholarships: sourceEntities.scholarships || [],
+    admissionTracks: sourceEntities.admissionTracks || [],
+    participantScopes: sourceEntities.participantScopes || [],
+    academicScopes: sourceEntities.academicScopes || [],
+    interestProfiles: sourceEntities.interestProfiles || [],
     unsupported: unsupportedProgramEntities,
     unknown: []
   };
+  applyExplicitEntityCorrection(raw, entities);
   const classification = classifyIntentDomain(raw, normalizedQuery, entities, temporal);
+  if (!(classification.domain && classification.domain.primary === 'student_organization')) entities.interestProfiles = [];
+  if (classification.constraints) {
+    classification.constraints.interestProfiles = (entities.interestProfiles || []).map(profile => ({ key: profile.key, label: profile.label, matchedTerms: profile.matchedTerms || [] }));
+  }
+  if (classification.domain && classification.domain.primary === 'academic_policy' && !(entities.admissionTracks || []).length && !(entities.academicScopes || []).length) {
+    entities.academicScopes.push({ canonical: 'Kebijakan Akademik (Academic Policy)', type: 'academic_scope', role: 'academic_policy', confidence: 0.82, source: 'canonical-domain-scope' });
+  }
   if (unsupportedProgramEntities[0]) {
     classification.constraints.unsupportedEntityCandidate = {
       type: unsupportedProgramEntities[0].type,
@@ -1520,7 +1909,60 @@ function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
       source: unsupportedProgramEntities[0].source
     };
   }
+  const priorSession = options.priorSession || options.priorSessionOrState || options.session || null;
+  const priorState = priorSession ? normalizeConversationState(priorSession) : null;
+  const hasFreshPriorAuthority = Boolean(
+    priorState
+    && isConversationStateFresh(priorState)
+    && priorState.isVerified !== false
+    && priorState.promotable !== false
+    && !priorState.legacyUnverified
+  );
+  if (hasFreshPriorAuthority && priorState.activeDomain && priorState.activeDomain !== 'general') {
+    if (classification.domain && classification.domain.primary === 'general') {
+      const isRequirementsOrProcedure = /\b(?:syarat|persyaratan|dokumen|berkas|cara|alur|prosedur|biaya|kapan|jadwal|kelas|sabtu|malam|kerja|kuliah|berapa\s+tahun|skema)\b/i.test(normalizedQuery);
+      const isEllipticalFollowUp = isRequirementsOrProcedure || /^(?:kalau|kalo|bagaimana|gimana|lalu|terus|dan|apakah|bisa|boleh)?\s*(?:[a-z0-9.-]+(?:\s+[a-z0-9.-]+){0,10})\??$/i.test(normalizedQuery.trim());
+      if (isEllipticalFollowUp) {
+        classification.domain = { primary: priorState.activeDomain, confidence: 0.82 };
+        if (priorState.activeDomain === 's2_postgraduate' && /\b(?:kelas|sabtu|malam|jadwal|waktu)\b/i.test(normalizedQuery)) {
+          classification.intent = { primary: 'ask_availability', secondary: [], confidence: 0.82 };
+          classification.constraints.relationType = 'study_schedule';
+        } else if (priorState.activeDomain === 'international_program' && /\b(?:kerja|karier|karir|peluang\s+kerja)\b/i.test(normalizedQuery)) {
+          classification.intent = { primary: 'ask_career_service', secondary: [], confidence: 0.82 };
+          classification.constraints.relationType = 'career_in_japan';
+        } else if (priorState.activeDomain === 'double_degree' && /\b(?:skema|tahun|berapa\s+tahun|bali|malaysia|china|dnui|help)\b/i.test(normalizedQuery)) {
+          classification.intent = { primary: 'ask_schedule', secondary: [], confidence: 0.82 };
+          classification.constraints.relationType = 'study_timeline';
+        } else if (isRequirementsOrProcedure) {
+          if (/\b(?:syarat|persyaratan|dokumen|berkas)\b/i.test(normalizedQuery)) {
+            classification.intent = { primary: 'ask_registration_requirements', secondary: [], confidence: 0.82 };
+          } else if (/\b(?:cara|alur|prosedur)\b/i.test(normalizedQuery)) {
+            classification.intent = { primary: 'ask_registration_how', secondary: [], confidence: 0.82 };
+          }
+        } else if (priorState.activeIntent && priorState.activeIntent !== 'ask_general') {
+          classification.intent = { primary: priorState.activeIntent, secondary: [], confidence: 0.82 };
+        }
+      }
+    } else if (classification.domain && classification.domain.primary === 'registration' && (priorState.activeDomain === 'international_program' || priorState.activeDomain === 'double_degree')) {
+      if (!/\b(?:pmb|camaba|mahasiswa\s+baru)\b/i.test(normalizedQuery)) {
+        classification.domain = { primary: priorState.activeDomain, confidence: 0.82 };
+      }
+    }
+  }
+  inheritCompatibleEntityIntoCanonical(entities, classification, hasFreshPriorAuthority ? priorState : null);
   let requestedFields = extractRequestedFields(raw, normalizedQuery, classification);
+  if (hasFreshPriorAuthority && Array.isArray(priorState.requestedFields) && priorState.requestedFields.length > 0) {
+    if (classification.domain && classification.domain.primary === priorState.activeDomain) {
+      const compatiblePriorFields = filterCompatibleFields(
+        priorState.requestedFields,
+        classification.domain.primary,
+        null
+      );
+      for (const f of compatiblePriorFields) {
+        if (!requestedFields.includes(f)) requestedFields.push(f);
+      }
+    }
+  }
   if (classification.intent && classification.intent.primary === 'ask_general' && classification.answerExpectation === 'topic_opening') {
     requestedFields = requestedFields.filter(field => field !== 'procedureSteps');
   }
@@ -1556,7 +1998,8 @@ module.exports = {
   detectFeeType,
   detectOrganizationCategory,
   detectCurriculumTopic,
-  detectScholarshipRequestSubtype
+  detectScholarshipRequestSubtype,
+  normalizeSlangTokens
 };
 
 

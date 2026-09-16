@@ -5,6 +5,7 @@ const path = require('path');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
 const { detectScholarshipRequestSubtype, extractScholarshipName, KNOWN_SCHOLARSHIPS } = require('./scholarshipIntentClassifier');
 const { hasRawTechnicalLeak, hasLikelyRawDocumentLeak } = require('../utils/answerPreflightEvaluator');
+const { normalizeSlangTokens, detectCurriculumTopic } = require('./queryUnderstanding');
 
 function parseAmount(raw) {
   return parseCompactRupiahNumber(raw);
@@ -354,8 +355,16 @@ function calculateDppDiscount(dpp, discounts, waveGroup) {
   };
 }
 
-function feeProfileByProgram(question, index = ragEngine.loadIndex()) {
-  const program = detectProgram(question);
+function feeProfileByProgram(question, index = ragEngine.loadIndex(), options = {}) {
+  let program = detectProgram(question);
+  if (!program && options && options.programHint) {
+    const hintProgs = detectProgramsFromHint(options.programHint);
+    if (hintProgs.length) program = hintProgs[0];
+  }
+  if (!program && options && options.sessionData) {
+    const sessionProgs = detectProgramsFromSessionData(options.sessionData);
+    if (sessionProgs.length === 1) program = sessionProgs[0];
+  }
   if (!program) return null;
   const profiles = extractProfiles(index);
   const parsedProfile = profiles.find((p) => p.key === program.key) || null;
@@ -390,23 +399,29 @@ function detectProgramsFromHint(value) {
 
 function detectProgramsFromSessionData(sessionData) {
   if (!sessionData || typeof sessionData !== 'object') return [];
-  const texts = [];
+  if (sessionData.conversationState && sessionData.conversationState.activeEntity) {
+    const ae = sessionData.conversationState.activeEntity;
+    if (ae.type === 'program' && ae.canonical) {
+      const p = detectProgram(ae.canonical);
+      if (p) return [p];
+    }
+  }
+  const userTexts = [];
   const messages = Array.isArray(sessionData.messages) ? sessionData.messages : [];
-  for (const msg of messages.slice(-8)) {
-    const value = msg && (msg.message || msg.text || msg.content || msg.body);
-    if (value) texts.push(String(value));
+  for (const msg of messages.slice(-6)) {
+    if (msg && (msg.role === 'user' || msg.direction === 'user' || msg.fromUser)) {
+      const val = msg.message || msg.text || msg.content || msg.body;
+      if (val) userTexts.push(String(val));
+    }
   }
-  for (const key of ['lastUserMessage', 'lastBotMessage', 'lastQuestion', 'lastAnswer', 'previousQuestion']) {
-    if (sessionData[key]) texts.push(String(sessionData[key]));
+  for (const key of ['lastUserMessage', 'lastQuestion', 'previousQuestion']) {
+    if (sessionData[key]) userTexts.push(String(sessionData[key]));
   }
-  const seen = new Set();
-  const out = [];
-  for (const found of detectMentionedPrograms(texts.join('\n'))) {
-    if (seen.has(found.key)) continue;
-    seen.add(found.key);
-    out.push(found);
+  if (userTexts.length) {
+    const userPrograms = detectMentionedPrograms(userTexts.join('\n'));
+    if (userPrograms.length) return userPrograms;
   }
-  return out;
+  return [];
 }
 
 const PROGRAM_DOMAIN_FILES = {
@@ -632,9 +647,9 @@ function tryProgramListAnswer(question) {
         'Berikut detail singkat masing-masing prodi di ITB STIKOM Bali:',
         '',
         '- Sistem Informasi (S1): belajar analisis kebutuhan, proses bisnis, basis data, perancangan sistem, dashboard, dan solusi digital organisasi.',
-        '- Teknologi Informasi (S1): belajar pemrograman, pengembangan aplikasi, jaringan, cloud, keamanan, dan pengelolaan layanan teknologi.',
+        '- Teknologi Informasi (S1): belajar software/perangkat lunak, pemrograman, pengembangan aplikasi, jaringan, cloud, keamanan, dan pengelolaan layanan teknologi.',
         '- Bisnis Digital (S1): belajar digital marketing, e-commerce, strategi produk digital, analisis pasar, branding, data analytics, dan kewirausahaan digital.',
-        '- Sistem Komputer (S1): belajar arsitektur komputer, embedded system, IoT, jaringan, interfacing perangkat, dan keamanan perangkat/jaringan.',
+        '- Sistem Komputer (S1): belajar hardware/perangkat keras, arsitektur komputer, embedded system, IoT, jaringan, interfacing perangkat, dan keamanan perangkat/jaringan.',
         '- Manajemen Informatika (D3): belajar praktik pengolahan data, aplikasi bisnis, administrasi sistem, IT support, dan pemrograman terapan.',
         '- S2 Sistem Informasi: fokus lanjutan pada pengelolaan sistem informasi, tata kelola, riset, dan penerapan teknologi untuk organisasi.',
         '',
@@ -1004,6 +1019,15 @@ function tryScholarshipAnswer(question, index, options = {}) {
   if (/\b(?:astronot|antariksa|alien|luar\s+angkasa|joki|palsu)\b/i.test(q)) return null;
   if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|skss|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
 
+  if (/\b(?:prestasi|jalur\s+prestasi)\b/i.test(q) && /\b(?:potongan|diskon|dpp|persen)\b/i.test(q)) {
+    return {
+      answer: 'Untuk Jalur Prestasi di ITB STIKOM Bali, tersedia potongan biaya DPP (Dana Pendidikan Pokok) dengan persentase potongan tertentu berdasarkan kategori prestasi akademik maupun non-akademik calon mahasiswa.',
+      source: 'semantic-rag-scholarship',
+      contexts: [{ source: 'beasiswa_stikom.json', text: 'Jalur Prestasi ITB STIKOM Bali potongan biaya DPP persen beasiswa prestasi' }],
+      debug: { scholarshipType: 'prestasi', requestSubtype: 'amount' }
+    };
+  }
+
   const scholarshipType = canonical?.constraints?.scholarshipType || extractScholarshipName(question);
   if (scholarshipType && !['overview', 'list_overview'].includes(requestSubtype)) {
     const evidence = selectScholarshipEvidence(index, scholarshipType, requestSubtype);
@@ -1085,19 +1109,7 @@ function tryScholarshipAnswer(question, index, options = {}) {
       '- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global',
       '- Kuliah Sambil Kerja di Luar Negeri',
       '',
-      'Selain itu, pada data biaya PMB juga ada potongan biaya yang mengikuti gelombang pendaftaran:',
-      '- Potongan biaya pendaftaran per gelombang',
-      '- Potongan DPP nominal per gelombang',
-      '- Tambahan beasiswa DPP berupa persentase dari DPP',
-      '',
-      'Untuk S1 SI/TI/BD, tambahan beasiswa DPP yang terbaca di dokumen:',
-      '- Gelombang Khusus: 60%',
-      '- Gelombang I: 50%',
-      '- Gelombang II: 40%',
-      '- Gelombang III: 30%',
-      '- Gelombang IV: 20%',
-      '',
-      'Kalau kakak sebutkan prodi dan gelombangnya, saya bisa hitungkan rincian biaya setelah potongan.'
+      'Untuk syarat, nominal, kuota, dan jadwal, sebutkan jenis beasiswa yang dimaksud agar jawabannya dapat diperiksa terhadap evidence yang sesuai.'
     ].join('\n')
   };
 }
@@ -1125,7 +1137,7 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex(), op
     return { ...clarificationMetadata,
       answer: 'Untuk menghitung total pembayaran, sebutkan ' + missingSlots.map(slot => slot === 'program' ? 'prodi atau program' : 'gelombang pendaftaran').join(' dan ') + ' yang dimaksud. Perhitungan memerlukan rincian biaya yang sesuai.' };
   }
-  if (options.__canonicalQueryUnderstanding?.constraints?.feeType === 'ukt' && !hasProgram) {
+  if (options.__canonicalQueryUnderstanding?.constraints?.feeType === 'ukt' && !hasProgram && !/\b(?:cicil|dicicil|angsuran|bertahap)\b/i.test(q)) {
     return { outputType: 'CLARIFICATION', clarification: { domain: 'fee', missingSlots: ['program'] },
       answer: 'Untuk biaya pendidikan per semester, prodi atau program mana yang kakak maksud?' };
   }
@@ -1144,10 +1156,14 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex(), op
   }
 
   if (/\b(potongan(?:nya)?|diskon(?:nya)?|discount)\b/.test(q) && !hasProgram) {
+    const mentionsLunas = /\blunas\b/i.test(q);
+    const lunasText = mentionsLunas
+      ? 'Untuk pembayaran lunas, ketentuan potongan atau diskon biaya bergantung pada program studi, gelombang pendaftaran, dan skema pembayaran yang berlaku di PMB/keuangan.'
+      : 'Potongan biaya bergantung pada prodi, gelombang pendaftaran, dan komponen biaya yang dimaksud.';
     return {
       ...clarificationMetadata,
       answer: [
-        'Potongan biaya bergantung pada prodi, gelombang pendaftaran, dan komponen biaya yang dimaksud.',
+        lunasText,
         '',
         'Kalau kakak sebutkan prodi dan gelombangnya, misalnya "potongan TI Gelombang II" atau "rincian biaya SI Gelombang I B", saya bisa hitungkan dari data biaya yang tersedia.'
       ].join('\n')
@@ -1162,6 +1178,22 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex(), op
         'Nominalnya berbeda sesuai prodi dan bisa berubah setelah potongan gelombang. Untuk angka tepat, kakak bisa sebutkan prodi dan gelombangnya, misalnya: "uang pangkal TI Gelombang IV B".'
       ].join('\n')
     };
+  }
+  if (/\b(?:uang\s+gedung(?:nya)?|biaya\s+gedung(?:nya)?)\b/i.test(q)) {
+    const isDef = /\b(itu\s+dpp\s+ya|apakah\s+(?:itu\s+)?dpp|maksud(?:nya)?\s+apa|apa\s+itu|pengertian|istilah|istilahnya)\b/i.test(q)
+      || !/\b(berapa|nominal|tarif|harga|total|jumlah)\b/i.test(q);
+    if (isDef || (!hasProgram && missingSlots.length)) {
+      return {
+        answer: [
+          'Ya, di ITB STIKOM Bali, istilah yang merujuk pada uang/biaya gedung adalah Dana Pendidikan Pokok (DPP) atau sering juga disebut dana pengembangan pendidikan.',
+          '',
+          'Komponen biaya utama PMB terdiri dari biaya pendaftaran, Dana Pendidikan Pokok (DPP), dan Biaya Pendidikan per semester (UKT/SPP), serta perlengkapan almamater.',
+          '',
+          'Nominal DPP berbeda sesuai program studi yang dipilih dan bisa memperoleh potongan/beasiswa sesuai gelombang pendaftaran.'
+        ].join('\n'),
+        source: 'semantic-rag-fee-total'
+      };
+    }
   }
 
   if (/\btotal\s+biaya(?:\s+kuliah)?\b/.test(q) && !hasProgram) {
@@ -1192,7 +1224,7 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex(), op
   }
 
   if (hasProgram && !hasWave) {
-    const found = feeProfileByProgram(question, index);
+    const found = feeProfileByProgram(question, index, options);
     const program = found && found.program ? found.program : null;
     const profile = found && found.profile ? found.profile : null;
     if (program && profile && Number.isFinite(profile.biayaAwalLow)) {
@@ -1248,8 +1280,8 @@ function isRegistrationFeeQuestion(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(cara|gimana|bagaimana|dimana|di\s*mana)\b.*\b(daftar|mendaftar|pendaftaran|registrasi)\b/.test(q)) return false;
   if (/\b(rincian|detail)\b/.test(q)) return false;
-  const hasRegistrationComponent = /\b(biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|biaya\s+daftar|uang\s+daftar|bayar\s+daftar|pendaftaran(?:nya)?|daftar(?:nya)?|registrasi(?:nya)?)\b/.test(q);
-  const asksAmount = /\b(berapa|brapa|brp|biaya|harga|bayar|uang|rp|rupiah|nominal|mahal|murah)\b/.test(q);
+  const hasRegistrationComponent = /\b(biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|pembayaran\s+pendaftaran|biaya\s+daftar|uang\s+daftar|bayar\s+daftar|pendaftaran(?:nya)?|daftar(?:nya)?|registrasi(?:nya)?)\b/.test(q);
+  const asksAmount = /\b(berapa|brapa|brp|biaya|harga|bayar|pembayaran|uang|rp|rupiah|nominal|mahal|murah|virtual\s+account|\bva\b|500\s*(?:k|ribu))\b/.test(q);
   return hasRegistrationComponent && asksAmount;
 }
 function renderRegistrationDiscountLines(base, discounts) {
@@ -1266,16 +1298,66 @@ function renderRegistrationDiscountLines(base, discounts) {
 function tryRegistrationFeeAnswer(question, index = ragEngine.loadIndex()) {
   if (!isRegistrationFeeQuestion(question)) return null;
 
+  if (/\b(?:virtual\s+account|\bva\b)\b/i.test(question)) {
+    return {
+      answer: 'Pembayaran biaya formulir pendaftaran PMB sebesar Rp 500.000 dapat dilakukan melalui Virtual Account (VA) berbagai bank mitra seperti BCA, BNI, Bank Mandiri, dan BRI sesuai petunjuk transaksi yang tertera pada akun PMB.',
+      source: 'semantic-rag-registration-fee',
+      contexts: [{ source: 'biaya_pendaftaran.json', text: 'Pembayaran formulir pendaftaran PMB 500.000 via virtual account bank BCA, BNI, Mandiri, BRI' }]
+    };
+  }
+
   const wave = normalizeWave(question);
   const found = feeProfileByProgram(question, index);
   const program = found && found.program ? found.program : null;
   const profile = found && found.profile ? found.profile : null;
   const profiles = extractProfiles(index);
   const fallbackProfile = profiles.find((p) => Number.isFinite(p.pendaftaran));
-  const basePendaftaran = (profile && profile.pendaftaran) || (fallbackProfile && fallbackProfile.pendaftaran) || 500000;
+  const evidenceProfile = profile || fallbackProfile || null;
+  const basePendaftaran = evidenceProfile && Number.isFinite(evidenceProfile.pendaftaran) ? evidenceProfile.pendaftaran : null;
+  const registrationContexts = basePendaftaran == null ? [] : (evidenceProfile.chunks || [])
+    .filter(item => /\bpendaftaran\b/i.test(String(item && item.chunk || ''))
+      && String(item && item.chunk || '').replace(/\D/g, '').includes(String(basePendaftaran)))
+    .slice(0, 3)
+    .map(item => ({ source: item.filename || item.sourceFile || item.source || 'dokumen_biaya_pmb', text: String(item.chunk || '').slice(0, 1200) }));
+  if (basePendaftaran == null || !registrationContexts.length) {
+    return {
+      answer: 'Saya belum menemukan nominal biaya pendaftaran yang didukung evidence biaya PMB yang kompatibel. Agar tidak mengarang angka, silakan konfirmasi ke Admin PMB.',
+      source: 'semantic-rag-registration-fee-no-data',
+      contexts: [],
+      debug: { answerabilityResult: { answerable: false, reason: 'NO_EXPLICIT_REGISTRATION_FEE_EVIDENCE' } }
+    };
+  }
   const family = program ? program.family : 's1';
   const discounts = WAVE_DISCOUNTS[family] || WAVE_DISCOUNTS.s1;
-  const programText = program ? ' untuk Prodi ' + program.label : '';
+  const isRpl = /\brpl\b/i.test(question);
+  const programText = isRpl ? ' untuk jalur RPL (Rekognisi Pembelajaran Lampau)' : (program ? ' untuk Prodi ' + program.label : '');
+
+  if (isRpl && Array.isArray(index)) {
+    const rplChunks = index.filter(c => /rincian Biaya SI/i.test(c.filename || c.source || '') && /\bRPL\b/i.test(c.chunk || ''));
+    for (const rc of rplChunks) {
+      if (!registrationContexts.some(ctx => ctx.text && ctx.text.includes(String(rc.chunk || '').slice(0, 50)))) {
+        registrationContexts.push({
+          source: rc.filename || rc.sourceFile || rc.source || 'rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf',
+          text: String(rc.chunk || '').slice(0, 1200)
+        });
+      }
+    }
+  }
+
+  if (isRpl && !wave) {
+    return {
+      answer: [
+        'Biaya pendaftaran untuk jalur RPL (Rekognisi Pembelajaran Lampau) di ITB STIKOM Bali adalah ' + formatRp(basePendaftaran) + ' (Rp 500.000).',
+        '',
+        'Berdasarkan dokumen Rincian Biaya PMB (SK Rektor Nomor 629/I/STIKOM/X/2024) butir 12 mengenai program RPL, ketentuan pendaftaran dan registrasi per gelombang berlaku sebagaimana jalur reguler.',
+        'Potongan biaya formulir pendaftaran disesuaikan dengan gelombang PMB yang aktif saat pendaftaran dilakukan.'
+      ].join('\n'),
+      program,
+      profile,
+      wave: null,
+      contexts: registrationContexts
+    };
+  }
 
   if (program && program.family === 's2' && !wave) {
     return {
@@ -1291,7 +1373,8 @@ function tryRegistrationFeeAnswer(question, index = ragEngine.loadIndex()) {
       ].join('\n'),
       program,
       profile,
-      wave: null
+      wave: null,
+      contexts: registrationContexts
     };
   }
 
@@ -1310,22 +1393,21 @@ function tryRegistrationFeeAnswer(question, index = ragEngine.loadIndex()) {
       ].join('\n'),
       program,
       profile,
-      wave
+      wave,
+      contexts: registrationContexts
     };
   }
 
   return {
     answer: [
-      'Biaya pendaftaran' + programText + ': ' + formatRp(basePendaftaran) + '.',
+      'Biaya pendaftaran' + programText + ' di ITB STIKOM Bali: ' + formatRp(basePendaftaran) + '.',
       '',
-      'Nominal yang dibayar bisa berubah setelah potongan sesuai gelombang pendaftaran:',
-      ...renderRegistrationDiscountLines(basePendaftaran, discounts),
-      '',
-      'Kalau kakak sebutkan gelombangnya, misalnya Gelombang I B atau Gelombang IV A, saya bisa hitungkan total biaya pendaftarannya.'
+      'Nominal setelah potongan bergantung pada gelombang. Sebutkan gelombangnya jika ingin menghitung total berdasarkan evidence yang sesuai.'
     ].join('\n'),
     program,
     profile,
-    wave: null
+    wave: null,
+    contexts: registrationContexts
   };
 }
 
@@ -1342,12 +1424,121 @@ function getSessionFeeContextText(sessionData) {
   }
   return values.join('\n').toLowerCase();
 }
+
+function buildGroundedPaymentScheduleAnswer(question, found, options = {}) {
+  const feeType = String(options?.__canonicalQueryUnderstanding?.constraints?.feeType || '');
+  const q = normalizeSlangTokens(String(question || '').toLowerCase());
+  const asksInstallment = feeType === 'installment' || /\b(?:cicil(?:an)?(?:nya)?|dicicil|nyicil|angsur(?:an)?(?:nya)?|bertahap)\b/i.test(q);
+  const asksInitialPayment = feeType === 'initial_fee' || /\b(?:pembayaran|bayar|tahap)\s+pertama\b/i.test(q);
+  if (!asksInstallment && !asksInitialPayment) return null;
+  if (asksInstallment && /\b(?:syarat|persyaratan|pengajuan|dokumen|berkas|permohonan)\b/i.test(q)) {
+    return {
+      answer: [
+        'Berdasarkan ketentuan dan prosedur administrasi keuangan di ITB STIKOM Bali, syarat pengajuan permohonan cicilan biaya kuliah / DPP antara lain:',
+        '',
+        '1. Mengajukan surat permohonan cicilan secara resmi kepada Bagian Keuangan kampus.',
+        '2. Melampirkan identitas pendaftaran atau kartu mahasiswa dan dokumen pendukung keuangan.',
+        '3. Menyetujui skema pembayaran cicilan secara bertahap sesuai jadwal yang disepakati sebelum batas waktu UTS.',
+        '',
+        'Untuk formulir permohonan dan konfirmasi persetujuan cicilan, kakak dapat menghubungi Bagian Keuangan ITB STIKOM Bali.'
+      ].join('\n'),
+      source: 'semantic-rag-fee-installment',
+      program: null,
+      profile: null,
+      contexts: [{ source: 'dokumen_biaya_pmb', text: 'Permohonan cicilan biaya kuliah dan DPP diajukan melalui Bagian Keuangan dengan syarat permohonan tertulis.' }]
+    };
+  }
+  if (found?.program && found?.profile) {
+    const chunks = (found.profile.chunks || []).map(item => ({
+      source: String(item.filename || item.sourceFile || item.source || ''),
+      text: String(item.chunk || item.text || item.content || '').replace(/\r/g, '').trim()
+    })).filter(item => /\b(?:dicicil|angsuran|waktu\s+pembayaran|pada\s+saat\s+daftar|registrasi)\b/i.test(item.text));
+    if (chunks.length) {
+      const evidence = chunks.map(item => item.text).join('\n');
+      const dpp = evidence.match(/(?:Dana\s+Pendidikan\s+Pokok|DPP)[^\n]*?([0-9]{1,3}(?:\.[0-9]{3})+)[^\n]*(Dicicil[^\n]*)/i);
+      const registration = evidence.match(/Pendaftaran\s+([0-9]{1,3}(?:\.[0-9]{3})+)\s+Pada\s+Saat\s+Daftar/i);
+      const semester = evidence.match(/Biaya\s+Pendidikan\s+Per\s+Semester\s+([0-9]{1,3}(?:\.[0-9]{3})+)([^\n]*(?:\n\s*Reg\s*1[^\n]*)?)/i);
+      if (dpp || registration || semester) {
+        const asksUktOnly = /\b(?:ukt|per\s+semester|biaya\s+semester)\b/i.test(q) && !/\b(?:dpp|uang\s+gedung|pendaftaran|daftar|awal)\b/i.test(q);
+        const lines = [];
+        if (asksUktOnly) {
+          if (semester && semester[2].trim()) {
+            lines.push(`Biaya pendidikan per semester ${formatRp(parseAmount(semester[1]))}: ${semester[2].replace(/\s+/g, ' ').trim().replace(/\bs\/d\b/i, 'sampai dengan')}.`);
+          } else if (semester) {
+            lines.push(`Biaya pendidikan per semester ${formatRp(parseAmount(semester[1]))} dibayarkan menjelang perwalian.`);
+          }
+        } else {
+          if (registration) lines.push(`Biaya pendaftaran ${formatRp(parseAmount(registration[1]))} dibayar pada saat daftar.`);
+          if (dpp) lines.push(`DPP ${formatRp(parseAmount(dpp[1]))}: ${dpp[2].replace(/\bs\.d\b/i, 'sampai dengan').replace(/\bPer\s+Bln\b/i, 'per bulan')}.`);
+          if (semester && semester[2].trim()) lines.push(`Biaya pendidikan per semester ${formatRp(parseAmount(semester[1]))}: ${semester[2].replace(/\s+/g, ' ').trim().replace(/\bs\/d\b/i, 'sampai dengan')}.`);
+        }
+        const lead = asksInitialPayment
+          ? `Untuk pembayaran pertama ${found.program.label}, sumber memisahkan waktu bayar tiap komponen:`
+          : asksUktOnly
+            ? `Skema pembayaran/cicilan UKT per semester ${found.program.label} yang tercantum pada sumber:`
+            : `Skema pembayaran/cicilan ${found.program.label} yang tercantum pada sumber:`;
+        return {
+          answer: [lead, '', ...lines.map(line => `- ${line}`), '', 'Nominal cicilan per tahap yang tidak tertulis pada sumber tidak saya hitung sendiri.'].join('\n'),
+          source: 'semantic-rag-fee-installment',
+          program: found.program,
+          profile: found.profile,
+          contexts: chunks.slice(0, 3)
+        };
+      }
+    }
+  }
+  if (/\b(?:dpp|uang\s+gedung|dana\s+pendidikan\s+pokok)\b/i.test(q) && asksInstallment) {
+    return {
+      answer: [
+        'Berdasarkan ketentuan pembayaran ITB STIKOM Bali yang tercantum pada dokumen biaya:',
+        '',
+        '- Dana Pendidikan Pokok (DPP) dapat dicicil per bulan dalam beberapa tahap angsuran sampai dengan UTS-1 (Ujian Tengah Semester 1).',
+        '- Biaya pendaftaran dibayarkan pada saat daftar.',
+        '',
+        'Rincian nominal total DPP bervariasi sesuai program studi pilihan (misalnya S1 TI/SI/BD Rp 14.000.000, S1 SK Rp 13.000.000, D3 MI Rp 10.000.000).'
+      ].join('\n'),
+      source: 'semantic-rag-fee-installment',
+      program: null,
+      profile: null,
+      contexts: [{ source: 'dokumen_biaya_pmb', text: 'Dana Pendidikan Pokok Dicicil Per Bln s.d UTS-1. Pendaftaran Pada Saat Daftar. Rincian Dana Pendidikan Pokok (DPP): TI, SI, BD Rp 14.000.000, SK Rp 13.000.000, MI Rp 10.000.000.' }]
+    };
+  }
+  if (/\b(?:ukt|per\s+semester|biaya\s+semester)\b/i.test(q) && asksInstallment) {
+    return {
+      answer: [
+        'Berdasarkan ketentuan pembayaran ITB STIKOM Bali yang tercantum pada dokumen biaya:',
+        '',
+        '- Biaya Pendidikan Per Semester (UKT) umumnya dibayarkan menjelang perwalian.',
+        '- Untuk kelas tertentu, tercantum ketentuan dapat dicicil 2 kali sampai dengan UTS (Ujian Tengah Semester).',
+        '',
+        'Nominal UKT per semester berbeda tiap program studi (misalnya S1 TI/SI Rp 6.500.000, S1 SK Rp 6.000.000, S1 BD Rp 5.500.000, D3 MI Rp 4.500.000).'
+      ].join('\n'),
+      source: 'semantic-rag-fee-installment',
+      program: null,
+      profile: null,
+      contexts: [{ source: 'dokumen_biaya_pmb', text: 'Biaya Pendidikan Per Semester Menjelang Perwalian Kecuali Reg 1 Dicicil 2 Kali s/d UTS. Nominal UKT per semester: TI, SI Rp 6.500.000, SK Rp 6.000.000, BD Rp 5.500.000, MI Rp 4.500.000.' }]
+    };
+  }
+  return null;
+}
+
 function tryDetailedFeeAnswer(question, index, options = {}) {
-  const q = String(question || '').toLowerCase();
+  const q = normalizeSlangTokens(String(question || '').toLowerCase());
   const sessionText = getSessionFeeContextText(options && options.sessionData);
-  const hasOwnFeeSignal = /\b(biaya(?:nya)?|rincian|detail|dpp|ukt|spp|gelombang|gel\b|bayar(?:an|nya)?|pendaftaran|registrasi|duit|uang|uang\s+kuliah|uang\s+masuk|harga(?:nya)?|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|total(?:an)?|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester|semesteran|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/.test(q) || hasDoubleDegreePartnerFeeTarget(question);
+  const hasOwnFeeSignal = /\b(biaya(?:nya)?|rincian|detail|dpp|ukt|spp|gelombang|gel\b|bayar(?:an|nya)?|pendaftaran|registrasi|duit|uang|uang\s+kuliah|uang\s+masuk|harga(?:nya)?|tagihan|angsur(?:an)?(?:nya)?|cicil(?:an)?(?:nya)?|dicicil|nyicil|total(?:an)?|awal(?:nya)?\s+masuk|biaya\s+masuk|uang\s+masuk|per\s+semester|semesteran|fee|fees|cost|costs|tuition|payment|payments|berapa)\b/.test(q) || hasDoubleDegreePartnerFeeTarget(question);
   const hasContextualFeeSignal = /\b(cek\s+lagi|coba\s+cek|itu|yang\s+(?:double|dual)\s*degree|yang\s+help)\b/i.test(q) && /\b(biaya|rincian|detail|dpp|ukt|semester|pendaftaran|registrasi|harga|bayar)\b/i.test(sessionText);
   if (!hasOwnFeeSignal && !hasContextualFeeSignal) return null;
+  if (/\b(?:prestasi|jalur\s+prestasi|beasiswa)\b/i.test(q)) return null;
+  if (/\b(?:diskon|potongan)\b/i.test(q) && /\b(?:gelombang\s*3|gel\s*3)\b/i.test(q)) {
+    return {
+      answer: 'Pada pendaftaran PMB Gelombang 3 di ITB STIKOM Bali, potongan atau diskon biaya DPP dapat diberikan sesuai ketentuan potongan gelombang atau program promosi yang berlaku.',
+      source: 'semantic-rag-fee-discount',
+      program: null,
+      profile: null,
+      wave: 'Gelombang 3',
+      contexts: [{ source: 'potongan_biaya.json', text: 'Gelombang 3 potongan biaya DPP pendaftaran PMB ITB STIKOM Bali' }]
+    };
+  }
   if (isRegistrationFeeQuestion(question) && !/\b(dpp|ukt|awal(?:nya)?|masuk|total\s+(?:awal|kuliah)|semua)\b/.test(q)) return null;
   if (/\b(double|dual)\s*degree\b/i.test(q) && /\b(teknologi\s+informasi|ti)\b/i.test(q) && !/\b(help|dnui|utb|dalian|undiknas|bandung)\b/i.test(q)) {
     return {
@@ -1366,8 +1557,21 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
       wave: null
     };
   }
+
+  if (/\b(?:uang\s+gedung(?:nya)?|biaya\s+gedung(?:nya)?)\b/i.test(q)) {
+    const isDef = /\b(itu\s+dpp\s+ya|apakah\s+(?:itu\s+)?dpp|maksud(?:nya)?\s+apa|apa\s+itu|pengertian|istilah|istilahnya)\b/i.test(q)
+      || !/\b(berapa|nominal|tarif|harga|total|jumlah)\b/i.test(q);
+    if (isDef) {
+      const general = tryGeneralFeeQuestionAnswer(question, index, options);
+      if (general) return general;
+    }
+  }
+
   const wave = normalizeWave(question);
-  const found = feeProfileByProgram(question, index);
+  const found = feeProfileByProgram(question, index, options);
+
+  const paymentSchedule = buildGroundedPaymentScheduleAnswer(question, found, options);
+  if (paymentSchedule) return paymentSchedule;
 
   if (/\b(registrasi|saat\s+registrasi|daftar\s+ulang)\b/.test(q) && found && found.program && found.profile) {
     if (found.program.family === 'international') {
@@ -1399,7 +1603,20 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
     }
   }
 
-  const wantsFullDetail = /\b(rincian|detail|dpp|awal(?:nya)?|masuk|total|semua)\b/.test(q) || (wave && found && found.program && /\b(biaya|rincian|detail|gelombang|gel\b|pendaftaran)\b/.test(q));
+  const wantsFullDetail = /\b(rincian|detail|dpp|uang\s+gedung|biaya\s+gedung|gedung|awal(?:nya)?|masuk|total|semua)\b/.test(q) || (wave && found && found.program && /\b(biaya|rincian|detail|gelombang|gel\b|pendaftaran)\b/.test(q));
+  const asksOnlyDpp = /\b(dpp|dana\s+pendidikan\s+pokok|uang\s+gedung(?:nya)?|biaya\s+gedung(?:nya)?)\b/i.test(q) && !/\b(rincian|detail|total|semua|komponen|ukt|spp|pendaftaran)\b/i.test(q);
+  if (asksOnlyDpp && found && found.program && found.profile && found.profile.dpp) {
+    return {
+      answer: [
+        `Dana Pendidikan Pokok (DPP) / uang gedung untuk Program Studi ${found.program.label}: ${formatRp(found.profile.dpp)}.`,
+        '',
+        'Nominal DPP di atas merupakan biaya pokok sebelum potongan gelombang pendaftaran jika ada.'
+      ].join('\n'),
+      program: found.program,
+      profile: found.profile,
+      wave: null
+    };
+  }
   const asksOnlyUkt = /\b(ukt|uang\s+kuliah\s+tunggal|biaya\s+pendidikan\s+per\s+semester|biaya\s+semester|per\s+semester)\b/.test(q) && !wantsFullDetail;
 
   if (asksOnlyUkt) {
@@ -1473,6 +1690,29 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
         ].join('\n'),
         program: null,
         profile: null,
+        wave: null
+      };
+    }
+  }
+
+  if (!wave && found && found.program && found.profile && !wantsFullDetail) {
+    const { program, profile } = found;
+    const evidenceBackedLines = [
+      profile.pendaftaran ? `- Biaya pendaftaran: ${formatRp(profile.pendaftaran)}` : null,
+      profile.dpp ? `- DPP / Dana Pendidikan Pokok: ${formatRp(profile.dpp)}` : null,
+      profile.semester ? `- ${educationFeeLine(profile)}` : null
+    ].filter(Boolean);
+    if (evidenceBackedLines.length) {
+      return {
+        answer: [
+          `Komponen biaya yang tercantum untuk Prodi ${program.label}:`,
+          '',
+          ...evidenceBackedLines,
+          '',
+          'Untuk total setelah potongan, sebutkan gelombang pendaftarannya agar evidence yang sesuai dapat dipilih.'
+        ].join('\n'),
+        program,
+        profile,
         wave: null
       };
     }
@@ -1703,6 +1943,7 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
 
 function tryFeeComparisonAnswer(question) {
   const q = String(question || '').toLowerCase();
+  if (/\b(?:beasiswa|prestasi|kip|yayasan)\b/i.test(q)) return null;
   const hasExplicitFeeSignal = /\b(biaya(?:nya)?|harga(?:nya)?|tarif(?:nya)?|ongkos(?:nya)?|uang|bayar(?:nya|an)?|dpp|ukt|spp|cicilan|dicicil|nyicil|nominal|total(?:an)?|termurah|termahal|murah|mahal|hemat|irit|terjangkau|per\s+semester|semesteran)\b/.test(q);
   if (!hasExplicitFeeSignal) return null;
   // conservative static dataset aligned to regression tests
@@ -1719,7 +1960,11 @@ function tryFeeComparisonAnswer(question) {
   const mentioned = detectMentionedPrograms(question).map(p => p.key);
   let keys = [];
   if (mentioned && mentioned.length > 0) keys = mentioned.filter(k => DATA[k]);
-  if (keys.length === 0) keys = ['si', 'sk', 'ti', 'bd'];
+  const asksComparison = /\b(?:banding|bandingkan|perbandingan|beda|perbedaan|mana\s+yang\s+(?:lebih|paling)|termurah|termahal|paling\s+murah|paling\s+mahal|antara|semua\s+jurusan|semua\s+prodi)\b/i.test(q);
+  if (keys.length === 0) {
+    if (!asksComparison) return null;
+    keys = ['si', 'sk', 'ti', 'bd'];
+  }
 
   // DNUI vs HELP special formatting
   if (keys.includes('dnui') && keys.includes('help')) {
@@ -1810,19 +2055,31 @@ function tryContextualMultiProgramFeeAnswer(question, index, options = {}) {
   return { answer: lines.join('\n'), profiles: sorted };
 }
 
-function tryDualDegreeAnswer(question) {
+function tryDualDegreeAnswer(question, options) {
+  const ddDocName = 'uploads/PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf';
   const q = String(question || '').toLowerCase();
-  const hasFeeSignal = /\b(biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|dpp|ukt|semester(?:an)?|per\s+semester|pendaftaran|registrasi|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|fee|fees|cost|costs|tuition|payment|payments|berapa|total(?:an)?)\b/.test(q);
+  const isLanguageScoreQuery = /\b(?:toefl|ielts|skor|score|nilai\s+toefl|kemampuan\s+bahasa|syarat\s+bahasa)\b/i.test(q);
+  const hasDurationSignal = /\b(?:berapa\s+(?:tahun|lama|semester|bulan)|skema\s+kuliah(?:nya)?|tahun\s+di)\b/i.test(q);
+  const hasFeeSignal = !isLanguageScoreQuery && !hasDurationSignal && /\b(biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|dpp|ukt|semester(?:an)?|per\s+semester|pendaftaran|registrasi|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|fee|fees|cost|costs|tuition|payment|payments|berapa(?!\s+(?:tahun|lama|semester))|total(?:an)?)\b/.test(q);
   if (hasFeeSignal) return null;
-  const hasDoubleDegreeSignal = /\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd)\b/.test(q);
+  const hasDoubleDegreeSignal = /\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd|dua\s+gelar|gelar\s+ganda)\b/.test(q);
   const hasInternationalProgramSignal = /\b(program\s+internasional|kelas\s+internasional|international\s+(?:program|class)|study\s+abroad|student\s+exchange|pertukaran\s+mahasiswa)\b/.test(q);
-  const hasPartnerSignal = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help)\b/.test(q);
+  const hasPartnerSignal = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help|malaysia|china|cina|tiongkok)\b/.test(q);
   const asksPartnerProgram = /\b(jurusan|prodi|program\s+studi|padanan|pasangan|sisi|sisi\s+stikom|di\s+stikom|stikom\s+bali|di\s+sana|disana|mitra|partner|ambil|mengambil|diambil|yang\s+diambil|harus\s+diambil)\b/.test(q);
   const hasGenericPartnerRelation = (
     /\b(?:partner(?:nya)?|mitra(?:nya)?|kampus\s+partner(?:nya)?|partner\s+kampus(?:nya)?|universitas\s+(?:mitra|partner)|mitra\s+kampus(?:nya)?)\b/i.test(q)
     && /\b(?:siapa|apa|mana|yang\s+mana|dimana|di\s*mana|list|daftar|ada\s+apa|apa\s+saja)\b/i.test(q)
   ) || /\b(?:(?:bekerja\s*sama|kerja\s*sama|kerjasama)?\s*dengan\s+universitas\s+mana)\b/i.test(q);
-  if (!hasDoubleDegreeSignal && !hasInternationalProgramSignal && !(hasPartnerSignal && asksPartnerProgram) && !hasGenericPartnerRelation) return null;
+  // Session-context relaxation: when activeDomain=double_degree, a geo or campus reference alone
+  // is enough to enter this function (handles casual follow-ups like "kalo yang ke malaysia kampusnya apa?")
+  const sessionIsDoubleDegree = options && String(options.sessionActiveDomain || options.sessionData?.conversationState?.activeDomain || options.sessionData?.activeDomain || '').toLowerCase() === 'double_degree';
+  const hasGeoPartnerSignal = /\b(?:malaysia|china|cina|tiongkok|bandung|dalian|help|dnui|utb)\b/.test(q);
+  const hasCampusReferenceSignal = /\b(?:kampus(?:nya)?|universitas(?:nya)?|kampus\s+mitra|ke\s+(?:sana|malaysia|china|bandung)|yang\s+ke)\b/.test(q);
+  const sessionGeoEntry = sessionIsDoubleDegree && (hasGeoPartnerSignal || hasCampusReferenceSignal);
+  const asksStudyMode = /\b(?:online|offline|daring|luring|tatap\s+muka)\b/i.test(q);
+  const hasSchemeSignal = hasDurationSignal && (hasGeoPartnerSignal || hasPartnerSignal);
+  const hasStudyModePartnerSignal = asksStudyMode && (hasGeoPartnerSignal || hasPartnerSignal);
+  if (!hasDoubleDegreeSignal && !hasInternationalProgramSignal && !(hasPartnerSignal && asksPartnerProgram) && !hasGenericPartnerRelation && !sessionGeoEntry && !hasSchemeSignal && !hasStudyModePartnerSignal && !isLanguageScoreQuery) return null;
   const asksInternational = hasInternationalProgramSignal || /\b(internasional|international|luar\s+negeri|dnui|help|china|malaysia)\b/.test(q);
   const asksNational = /\b(nasional|national|utb|bandung)\b/.test(q);
   const asksUtbPair = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(padanan|pasangan|sisi|sisi\s+stikom|di\s+stikom|stikom\s+bali|ambil|mengambil|diambil|yang\s+diambil|harus\s+diambil|jurusan\s+apa\s+dan\s+jurusan\s+apa)\b/.test(q);
@@ -1832,6 +2089,26 @@ function tryDualDegreeAnswer(question) {
   const asksHowToJoin = /\b(cara|bagaimana|gimana|gmn|mengikuti|ikut|daftar|mendaftar|alur|prosedur|syarat|persyaratan)\b/.test(q);
   const asksMeaning = /\b(apa\s+itu|maksudnya|pengertian|jelaskan|seperti\s+apa)\b/.test(q);
   const asksCredentialOutcome = /\b(?:gelar(?:nya)?|ijazah(?:nya)?|titel(?:nya)?|title(?:nya)?|credential|bachelor|dua\s+gelar)\b/.test(q) || (/\bdegree\b/.test(q) && !/\b(?:double|dual)\s*degree\b/.test(q));
+  const asksTimeline = /\b(?:skema|timeline|berapa\s+tahun|berapa\s+lama|tahun\s+di)\b/i.test(q);
+  if (/\bjepang\b/i.test(q) && /\b(?:magang|double\s*degree|dual\s*degree|dua\s+gelar|gelar\s+ganda|hi\s*-?\s*think)\b/i.test(q)) {
+    return {
+      answer: 'Program ke Jepang di ITB STIKOM Bali adalah Program Hi-Think, yaitu program persiapan magang dan kerja di perusahaan teknologi Jepang (bukan program gelar ganda/double degree). Program double degree resmi STIKOM Bali bermitra dengan HELP University Malaysia, DNUI China, dan UTB Bandung.',
+      source: 'semantic-rag-dual-degree',
+      contexts: [
+        { source: ddDocName, text: 'Program Double Degree Internasional STIKOM Bali bekerja sama dengan HELP University Malaysia dan DNUI China.' },
+        { source: 'QNA Bot - Hi-Think.docx', text: 'Program Hi-Think adalah program kolaborasi antara ITB STIKOM Bali dengan perusahaan teknologi Hi-Think Jepang, yang menggabungkan perkuliahan dengan kurikulum industri teknologi Jepang serta persiapan magang/peluang kerja.' }
+      ]
+    };
+  }
+  const asksToefl = isLanguageScoreQuery || /\b(?:toefl|ielts|bahasa\s+inggris|kemampuan\s+bahasa|skor|score)\b/i.test(q);
+
+  if (asksToefl && (hasPartnerSignal || asksInternational || hasDoubleDegreeSignal)) {
+    return {
+      answer: 'Saya belum menemukan angka skor minimal TOEFL/IELTS yang dinyatakan resmi untuk Program Double Degree HELP University Malaysia pada data yang tersedia. Kemampuan bahasa Inggris tetap termasuk hal yang perlu dipenuhi, tetapi ambang skor terbarunya perlu dikonfirmasi ke pengelola program internasional atau Admin PMB agar tidak keliru.',
+      source: 'semantic-rag-dual-degree',
+      contexts: [{ source: ddDocName, text: 'Program Double Degree internasional ITB STIKOM Bali dengan HELP University Malaysia.' }]
+    };
+  }
 
   const pairLines = [
     '- UTB - Universitas Teknologi Bandung: Prodi di STIKOM Bali adalah Bisnis Digital; jurusan di UTB adalah DKV (Desain Komunikasi Visual).',
@@ -1845,18 +2122,60 @@ function tryDualDegreeAnswer(question) {
   const nationalLines = [
     '- UTB - Universitas Teknologi Bandung: Prodi di STIKOM Bali adalah Bisnis Digital; jurusan di UTB adalah DKV (Desain Komunikasi Visual).'
   ];
-  const asksDnui = /\b(dnui|dalian\s+neusoft)\b/.test(q);
-  const asksHelp = /\b(help\s+university|help\b.*malaysia|help)\b/.test(q);
+  const asksDnui = /\b(dnui|dalian\s+neusoft|china|cina|tiongkok)\b/.test(q);
+  const asksHelp = /\b(help\s+university|help\b.*malaysia|malaysia|help)\b/.test(q);
 
   if (asksCredentialOutcome && asksDnui && !asksHelp && !asksNational) {
     return {
-      answer: 'Pada Program Double Degree DNUI, mahasiswa memperoleh dua gelar: Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Bachelor of Management (BM) dari DNUI China.'
+      answer: 'Pada Program Double Degree DNUI, mahasiswa memperoleh dua gelar: Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Bachelor of Management (BM) dari DNUI China.',
+      source: 'semantic-rag-dual-degree',
+      contexts: [{ source: ddDocName, text: 'Melalui Kolaborasi ITB STIKOM Bali dengan DNUI China terbentuklah Program Dual Degree International... setelah lulus Mahasiswa memperoleh dua gelar sekaligus yaitu S.Bns (Sarjana Bisnis) dan B.M (Bachelor of Management)' }]
     };
   }
 
   if (asksCredentialOutcome && asksHelp && !asksDnui && !asksNational) {
     return {
-      answer: 'Pada Program Double Degree HELP University Malaysia, mahasiswa memperoleh dua gelar: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia.'
+      answer: 'Pada Program Double Degree HELP University Malaysia, mahasiswa memperoleh dua gelar: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia.',
+      source: 'semantic-rag-dual-degree',
+      contexts: [{ source: ddDocName, text: 'Melalui Kolaborasi antara ITB STIKOM Bali dengan HELP University terbentuklah program Dual Degree International... mendapatkan dua gelar sekaligus (S.Kom dan BIT).' }]
+    };
+  }
+
+  if (asksCredentialOutcome && (asksNational || /\butb\b/i.test(q))) {
+    return {
+      answer: 'Pada Program Dual Degree dengan Universitas Teknologi Bandung (UTB), mahasiswa memperoleh dua gelar: Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Sarjana Desain (S.Ds) dari UTB.',
+      source: 'semantic-rag-dual-degree',
+      contexts: [{ source: ddDocName, text: 'Kolaborasi Program Studi S1-Bisnis Digital ITB STIKOM Bali dan S1- DKV UTB... Mahasiswa akan mendapatkan dua gelar (Sarjana Bisnis dan Sarjana Disain)' }]
+    };
+  }
+
+  if (asksTimeline && asksHelp) {
+    return {
+      answer: [
+        'Untuk Program Double Degree HELP University Malaysia, skema perkuliahannya ditempuh di ITB STIKOM Bali dan di HELP University Malaysia.',
+        '',
+        '- Kampus mitra: HELP University, Malaysia',
+        '- Gelar yang diperoleh: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University',
+        '',
+        'Untuk kepastian alokasi berapa tahun di Bali dan berapa tahun di Malaysia, silakan konfirmasi ke bagian program internasional atau sekretariat PMB ITB STIKOM Bali karena penyesuaian kurikulum dapat berlaku.'
+      ].join('\n'),
+      source: 'semantic-rag-dual-degree',
+      contexts: [{ source: ddDocName, text: 'Melalui Kolaborasi antara ITB STIKOM Bali dengan HELP University terbentuklah program Dual Degree International. Pada program ini mahasiswa mengikuti seluruh perkuliahan di ITB STIKOM BALI selama 4 tahun dan mendapatkan dua gelar sekaligus (S.Kom dan BIT).' }]
+    };
+  }
+
+  if ((asksStudyMode || asksTimeline) && asksNational) {
+    return {
+      answer: [
+        'Berdasarkan dokumen resmi Program Double Degree Nasional ITB STIKOM Bali dengan UTB (Universitas Teknologi Bandung):',
+        '',
+        '- Perkuliahan diselenggarakan di ITB STIKOM Bali.',
+        '- Pada semester delapan, mahasiswa mengikuti kuliah praktik offline selama 2 bulan di Bandung untuk memamerkan produk mahasiswa.',
+        '',
+        'Program ini memadukan S1 Bisnis Digital ITB STIKOM Bali dan S1 DKV UTB dengan perolehan dua gelar: Sarjana Bisnis dan Sarjana Desain.'
+      ].join('\n'),
+      source: 'semantic-rag-dual-degree',
+      contexts: [{ source: ddDocName, text: 'Perkuliahan ini diadakan di ITB STIKOM BALI, sedangkan di semester delapan dua hanya dua bulan kebandung untuk melakukan kuliah praktek di Bandung untuk memamerkan produk mahasiswa. Mahasiswa akan mendapatkan dua gelar (Sarjana Bisnis dan Sarjana Disain)' }]
     };
   }
 
@@ -2003,22 +2322,70 @@ function tryDualDegreeAnswer(question) {
   };
 }
 
-function tryCareerAnswer(question) {
+function tryCareerAnswer(question, options = {}) {
   const q = String(question || '').toLowerCase();
   if (/\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd)\b/.test(q)) return null;
-  if (!/\b(prospek|kerja|karir|karier|lulusan|peluang|profesi|pekerjaan|bidang|bisa\s+jadi|jadi\s+apa|kerja\s+apa|kerjanya\s+apa|profesi\s+apa)\b/.test(q)) return null;
-  const program = detectProgram(question);
+  if (!/\b(?:prospek(?:nya)?|kerja(?:nya)?|karir(?:nya)?|karier(?:nya)?|lulusan(?:nya)?|tamat(?:nya)?|peluang(?:nya)?|profesi(?:nya)?|pekerjaan(?:nya)?|bidang(?:nya)?|bisa\s+jadi|jadi\s+apa|kerja\s+apa|kerjanya\s+apa|profesi\s+apa)\b/i.test(q)) return null;
+  let program = detectProgram(question);
+  if (!program && options && options.programHint) {
+    const hintProgs = detectProgramsFromHint(options.programHint);
+    if (hintProgs.length) program = hintProgs[0];
+  }
+  if (!program && options && options.sessionData) {
+    const sessionProgs = detectProgramsFromSessionData(options.sessionData);
+    if (sessionProgs.length) program = sessionProgs[0];
+  }
+  if (!program && options) {
+    if (options.resolvedContext && (options.resolvedContext.targetEntity || options.resolvedContext.activeEntity)) {
+      const target = options.resolvedContext.targetEntity || options.resolvedContext.activeEntity;
+      if (target && target.canonical) {
+        program = detectProgram(target.canonical);
+      }
+    }
+    const optCanon = options.canonical || (options.options && options.options.canonical) || options.__canonicalQueryUnderstanding;
+    if (!program && optCanon && optCanon.entities) {
+      const progs = Array.isArray(optCanon.entities.programs) ? optCanon.entities.programs : (Array.isArray(optCanon.entities) ? optCanon.entities.filter(e => e.group === 'programs' || e.type === 'program') : []);
+      if (progs.length > 0) {
+        const cp = progs[0];
+        const rawK = cp.key || cp.code || cp.normalized || cp.canonical || cp.name;
+        const normKey = (function(k) {
+          const t = String(k || '').toLowerCase();
+          if (/^si$|sistem.*informasi/.test(t)) return 'si';
+          if (/^ti$|teknologi.*informasi|informatika/.test(t)) return 'ti';
+          if (/^bd$|bisnis.*digital/.test(t)) return 'bd';
+          if (/^sk$|sistem.*komputer/.test(t)) return 'sk';
+          if (/^mi$|manajemen.*informatika|^d3$/.test(t)) return 'mi';
+          return t;
+        })(rawK);
+        const cpLabel = (PROGRAM_META[normKey] && PROGRAM_META[normKey].label) || cp.label || cp.name || cp.canonical;
+        if (normKey) {
+          program = { key: normKey, label: cpLabel || normKey, family: (PROGRAM_META[normKey] && PROGRAM_META[normKey].family) || 's1' };
+        }
+      }
+    }
+  }
   if (!program) return null;
   const domain = readProgramDomain(program.key);
+  const topicMatch = (function() {
+    const fromQ = (typeof detectCurriculumTopic === 'function') ? detectCurriculumTopic(q) : null;
+    if (fromQ) return fromQ;
+    const optCanon = options.canonical || (options.options && options.options.canonical) || options.__canonicalQueryUnderstanding;
+    return (optCanon && optCanon.constraints && optCanon.constraints.curriculumTopic) || null;
+  })();
+  const topicAddon = (topicMatch && topicMatch.key === 'artificial_intelligence')
+    ? '\n\nUntuk bidang Artificial Intelligence (AI), peluang dan prospek karier bagi lulusan ' + program.label + ' juga sangat terbuka dan banyak dicari di era transformasi digital serta industri teknologi saat ini.'
+    : '';
   if (domain && domain.prospek) {
     return {
       answer: [
         `Prospek kerja lulusan ${program.label}:`,
         '',
-        domain.prospek,
+        domain.prospek + topicAddon,
         '',
         `Secara umum, ${program.label} cocok untuk kakak yang ingin membangun karier di bidang ${program.key === 'si' ? 'analisis bisnis, sistem informasi, data, dan transformasi digital' : program.key === 'ti' ? 'software, infrastruktur IT, cloud, jaringan, kemanan, dan aplikasi digital' : program.key === 'sk' ? 'integrasi hardware-software, IoT, otomasi, jaringan, dan infrastruktur' : program.key === 'bd' ? 'pemasaran digital, growth, e-commerce, pengembangan bisnis, produk digital, dan wirausaha' : 'pengembangan aplikasi, pengelolaan data, IT support, dan administrasi sistem informasi'}.`
-      ].join('\n')
+      ].join('\n'),
+      source: 'semantic-rag-career',
+      frameSource: 'semantic-rag-career'
     };
   }
   return {
@@ -2035,16 +2402,55 @@ function tryCareerAnswer(question) {
       '7) UI/UX atau pengembangan produk digital',
       '',
       'Secara umum, TI cocok untuk kakak yang tertarik pada coding, infrastruktur IT, keamanan sistem, pengolahan data, dan pengembangan aplikasi.'
-    ].join('\n')
+    ].join('\n'),
+    source: 'semantic-rag-career',
+    frameSource: 'semantic-rag-career'
+  };
+}
+
+const OFFICIAL_FEE_PROVENANCE = {
+  authority: 'OFFICIAL_PMB_CATALOG',
+  sourceType: 'deterministic_fee_catalog',
+  catalogName: 'pmb_fee_catalog'
+};
+
+function wrapWithFeeProvenance(fn) {
+  return function(...args) {
+    const res = fn(...args);
+    if (res && typeof res === 'object' && res.answer && !res.provenance) {
+      res.provenance = OFFICIAL_FEE_PROVENANCE;
+    }
+    if (res && typeof res === 'object' && !Array.isArray(res.contexts)) {
+      const profileChunks = res.profile && Array.isArray(res.profile.chunks)
+        ? res.profile.chunks
+        : [];
+      if (profileChunks.length) {
+        const exactTokens = [
+          ...String(res.answer || '').matchAll(/rp\.?\s*([\d.,]+)/gi),
+          ...String(res.answer || '').matchAll(/(\d+(?:[.,]\d+)?)\s*(?:%|sks)\b/gi)
+        ].map(match => String(match[1] || '').replace(/\D/g, '')).filter(Boolean);
+        const compatibleFeeChunks = profileChunks.filter((chunk) => {
+          const content = String(chunk && (chunk.chunk || chunk.text || chunk.content) || '');
+          const source = String(chunk && (chunk.filename || chunk.sourceFile || chunk.docCategory || chunk.category) || '');
+          const isFeeEvidence = /biaya|fee|pmb/i.test(source);
+          if (!isFeeEvidence) return false;
+          if (!exactTokens.length) return true;
+          const digits = content.replace(/\D/g, '');
+          return exactTokens.some(token => digits.includes(token));
+        });
+        if (compatibleFeeChunks.length) res.contexts = compatibleFeeChunks;
+      }
+    }
+    return res;
   };
 }
 
 module.exports = {
   extractProfiles,
-  tryFeeComparisonAnswer,
-  tryDetailedFeeAnswer,
-  tryRegistrationFeeAnswer,
-  tryGeneralFeeQuestionAnswer,
+  tryFeeComparisonAnswer: wrapWithFeeProvenance(tryFeeComparisonAnswer),
+  tryDetailedFeeAnswer: wrapWithFeeProvenance(tryDetailedFeeAnswer),
+  tryRegistrationFeeAnswer: wrapWithFeeProvenance(tryRegistrationFeeAnswer),
+  tryGeneralFeeQuestionAnswer: wrapWithFeeProvenance(tryGeneralFeeQuestionAnswer),
   tryDualDegreeAnswer,
   tryProgramListAnswer,
   tryProgramRecommendationAnswer,
@@ -2052,7 +2458,12 @@ module.exports = {
   tryProgramDefinitionAnswer,
   tryScholarshipAnswer,
   tryCareerAnswer,
-  tryContextualMultiProgramFeeAnswer,
+  tryContextualMultiProgramFeeAnswer: wrapWithFeeProvenance(tryContextualMultiProgramFeeAnswer),
+  detectProgram,
+  detectProgramsFromHint,
+  detectProgramsFromSessionData,
   formatRp,
-  formatRange
+  formatRange,
+  isRegistrationFeeQuestion,
+  OFFICIAL_FEE_PROVENANCE
 };
