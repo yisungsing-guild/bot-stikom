@@ -97,13 +97,13 @@ const CANONICAL_ENTITIES = [
   // Student Governance
   {
     canonical: 'BEM ITB STIKOM Bali',
-    type: 'student_governance',
+    type: 'organization',
     family: 'student_organization',
-    aliases: ['bem', 'bem pm', 'badan eksekutif mahasiswa', 'bem itb stikom bali', 'kemahasiswaan']
+    aliases: ['bem', 'bem pm', 'badan eksekutif mahasiswa', 'bem itb stikom bali']
   },
   {
     canonical: 'DPM ITB STIKOM Bali',
-    type: 'student_governance',
+    type: 'organization',
     family: 'student_organization',
     aliases: ['dpm', 'dewan perwakilan mahasiswa', 'dpm itb stikom bali']
   },
@@ -113,7 +113,7 @@ const CANONICAL_ENTITIES = [
     canonical: 'Voice of STIKOM (VOS)',
     type: 'student_activity_unit',
     family: 'student_organization',
-    aliases: ['ukm vos', 'vos', 'voice of stikom', 'paduan suara vos']
+    aliases: ['ukm vos', 'vos', 'voice of stikom', 'paduan suara vos', 'paduan suara', 'paduan suara mahasiswa', 'ukm paduan suara']
   },
   {
     canonical: 'UKM KSL',
@@ -242,10 +242,16 @@ const CANONICAL_ENTITIES = [
     aliases: ['ukm progress', 'progress']
   },
   {
+    canonical: 'UKM DOS',
+    type: 'student_activity_unit',
+    family: 'student_organization',
+    aliases: ['ukm dos', 'dos', 'dance of stikom', 'dance of stikom dos', 'dance of stikom bali', 'ukm dance of stikom']
+  },
+  {
     canonical: 'UKM Tari PRAGINA',
     type: 'student_activity_unit',
     family: 'student_organization',
-    aliases: ['ukm tari pragina', 'tari pragina', 'pragina', 'ukm pragina', 'ukm tari', 'tari', 'tari bali']
+    aliases: ['ukm tari pragina', 'tari pragina', 'pragina', 'ukm pragina', 'ukm tari', 'tari bali', 'tari tradisional', 'ukm tari tradisional']
   },
   {
     canonical: 'UKM Tabuh (Bramara Gita)',
@@ -298,6 +304,12 @@ const CANONICAL_ENTITIES = [
     aliases: ['fasilitas parkir', 'parkir', 'parkiran', 'tempat parkir', 'lahan parkir', 'area parkir']
   },
   {
+    canonical: 'Asrama Mahasiswa',
+    type: 'facility',
+    family: 'campus_facility',
+    aliases: ['asrama', 'asrama mahasiswa', 'asrama kampus', 'dormitory', 'student housing', 'asrama khusus mahasiswa']
+  },
+  {
     canonical: 'Inkubator Bisnis (INBIS)',
     type: 'facility',
     family: 'campus_facility',
@@ -338,6 +350,11 @@ const CANONICAL_ENTITIES = [
     family: 'international_program',
     scope: 'international',
     country: 'China',
+    partnerName: 'Dalian Neusoft University of Information (DNUI)',
+    credentials: [
+      'Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali',
+      'Bachelor of Management (B.M) dari DNUI China'
+    ],
     aliases: ['dnui', 'dalian neusoft', 'dalian', 'double degree dnui', 'dual degree dnui']
   },
   {
@@ -347,6 +364,11 @@ const CANONICAL_ENTITIES = [
     family: 'international_program',
     scope: 'international',
     country: 'Malaysia',
+    partnerName: 'HELP University Malaysia',
+    credentials: [
+      'Sarjana Komputer (S.Kom) dari ITB STIKOM Bali',
+      'Bachelor of Information Technology (BIT) dari HELP University Malaysia'
+    ],
     aliases: ['help university', 'help', 'double degree help', 'dual degree help', 'double degree malaysia', 'dual degree malaysia']
   },
   {
@@ -356,6 +378,11 @@ const CANONICAL_ENTITIES = [
     family: 'international_program',
     scope: 'national',
     country: 'Indonesia',
+    partnerName: 'Universitas Teknologi Bandung (UTB)',
+    credentials: [
+      'Sarjana Desain (S.Ds) dari UTB (pada peminatan Desain Komunikasi Visual)',
+      'Sarjana Komputer (S.Kom) atau Sarjana Bisnis dari ITB STIKOM Bali sesuai program kemitraan'
+    ],
     aliases: ['utb', 'universitas teknologi bandung', 'dual degree utb', 'double degree utb']
   },
   {
@@ -399,6 +426,16 @@ const CANONICAL_ENTITIES = [
     aliases: ['cdc', 'career development center', 'career center', 'pusat karier', 'pusat karir']
   },
   {
+    canonical: 'Program LinkedIn Learning (CDC)',
+    type: 'special_program',
+    family: 'campus_service',
+    service: 'Career Development Center (CDC)',
+    aliases: [
+      'program linkedin learning', 'linkedin learning', 'program linkedin',
+      'linkedin career center', 'linked in learning', 'linkedin cdc', 'linkedin', 'linked in'
+    ]
+  },
+  {
     canonical: 'Language Learning Center (LLC)',
     type: 'campus_service',
     family: 'campus_service',
@@ -409,6 +446,12 @@ const CANONICAL_ENTITIES = [
     type: 'campus_service',
     family: 'campus_service',
     aliases: ['baak', 'biro administrasi akademik dan kemahasiswaan']
+  },
+  {
+    canonical: 'Unit Layanan Industri',
+    type: 'campus_service',
+    family: 'campus_service',
+    aliases: ['layanan industri', 'unit layanan industri', 'pelayanan industri']
   },
 
   // Semantic scopes and admission tracks identify explicit user subjects.
@@ -425,7 +468,7 @@ const CANONICAL_ENTITIES = [
     type: 'academic_level',
     family: 'academic_scope',
     degree: 'S2',
-    aliases: ['s2', 'jenjang s2', 'program s2', 'magister', 'magister s2']
+    aliases: ['s2', 'jenjang s2', 'program s2', 'magister', 'magister s2', 'pascasarjana', 'program pascasarjana']
   },
   {
     canonical: 'Program Diploma (D3)',
@@ -439,6 +482,45 @@ const CANONICAL_ENTITIES = [
     type: 'admission_track',
     family: 'admission_track',
     aliases: ['rpl', 'rekognisi pembelajaran lampau', 'jalur rpl', 'program rpl']
+  },
+  {
+    canonical: 'Jalur Reguler',
+    type: 'admission_track',
+    family: 'admission_track',
+    aliases: ['reguler', 'jalur reguler', 'kelas reguler']
+  },
+  {
+    canonical: 'Jalur Eksekutif (Karyawan)',
+    type: 'admission_track',
+    family: 'admission_track',
+    aliases: ['eksekutif', 'jalur eksekutif', 'kelas eksekutif', 'karyawan', 'kelas karyawan']
+  },
+  {
+    canonical: 'Jalur Internasional',
+    type: 'admission_track',
+    family: 'admission_track',
+    aliases: ['internasional', 'jalur internasional', 'kelas internasional']
+  },
+  {
+    canonical: 'Mahasiswa Asing',
+    type: 'participant_scope',
+    family: 'participant_scope',
+    scope: 'foreign_student',
+    aliases: ['mahasiswa asing', 'foreign student', 'international student', 'izin belajar', 'visa study', 'study permit', 'mahasiswa luar negeri']
+  },
+  {
+    canonical: 'Alumni ITB STIKOM Bali',
+    type: 'participant_scope',
+    family: 'participant_scope',
+    scope: 'alumni',
+    aliases: ['alumni', 'lulusan stikom', 'alumni stikom']
+  },
+  {
+    canonical: 'Mitra Industri',
+    type: 'participant_scope',
+    family: 'participant_scope',
+    scope: 'industry_partner',
+    aliases: ['mitra industri', 'rekanan industri', 'partner industri', 'perusahaan mitra']
   },
   {
     canonical: 'Mahasiswa Pindahan / Transfer',
@@ -574,16 +656,11 @@ function matchCanonicalEntities(text) {
       const aliasNorm = normalizeText(alias);
       if (!aliasNorm) continue;
 
-      if (aliasNorm.length <= 3) {
-        const re = new RegExp(`(^|\\s)${aliasNorm}(\\s|$)`, 'i');
-        if (re.test(norm)) {
-          matchedAlias = alias;
-          matchQuality = Math.max(matchQuality, 1.0);
-          break;
-        }
-      } else if (norm.includes(aliasNorm)) {
+      const escaped = aliasNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(`(^|\\s)${escaped}(\\s|$)`, 'i');
+      if (re.test(norm)) {
         matchedAlias = alias;
-        matchQuality = Math.max(matchQuality, aliasNorm.length >= 10 ? 1.0 : 0.85);
+        matchQuality = Math.max(matchQuality, aliasNorm.length >= 10 ? 1.0 : (aliasNorm.length <= 3 ? 1.0 : 0.85));
         break;
       }
     }
@@ -598,7 +675,7 @@ function matchCanonicalEntities(text) {
         country: entry.country || null,
         matchedAlias,
         matchQuality,
-        isSpecific: entry.type !== 'campus_service' || /inbis|cdc|llc/i.test(entry.canonical)
+        isSpecific: entry.type !== 'campus_service' || /inbis|cdc|llc|layanan industri/i.test(entry.canonical)
       });
     }
   }

@@ -37,7 +37,7 @@ const INTERROGATIVE_PATTERNS = [
   /\b(?:ada|apakah\s+ada)\s+(?:wadah|fasilitas|lab|laboratorium|perpustakaan|ukm|ormawa|ekskul|klub|prodi|jurusan|beasiswa|potongan|diskon|keringanan|bebas\s+(?:ukt|biaya)|jalur|program)\b/i,
   /\b(?:potongan|diskon|keringanan|bebas\s+(?:ukt|biaya))\b/i,
   /\b(?:kuota|daya\s+tampung|jumlah\s+(?:pasti\s+)?(?:mahasiswa|maba|penerimaan))\b/i,
-  /\b(?:info|informasi|spill|minta\s+info|mau\s+tahu|tanya|tolong|mohon)\b/i
+  /(?<!(?:sistem|teknologi)\s+)\b(?:info|informasi|spill|minta\s+info|mau\s+tahu|tanya|tolong|mohon)\b/i
 ];
 
 // Negative control patterns: When present across the whole query or near connectors, do NOT split
@@ -348,21 +348,58 @@ function buildResolvedSubrequests(clauses, fullText, connector) {
       }
     }
 
+    // Academic / Thesis topic inheritance: e.g. "apakah tugas akhir skripsi di stikom bisa dikerjakan berkelompok dan bagaimana pembagian tanggung jawabnya?"
+    if (i > 0 && /\b(?:tanggung\s*jawab(?:nya)?|pembagian(?:nya)?|ketentuan(?:nya)?|aturan(?:nya)?|syarat(?:nya)?|minimal\s+(?:ipk|sks)|durasi(?:nya)?|waktu(?:nya)?|lama(?:nya)?|ujian(?:nya)?|proposal(?:nya)?|sidang(?:nya)?|bimbingan(?:nya)?|pembimbing(?:nya)?|penguji(?:nya)?|revisi(?:nya)?)\b/i.test(resolvedText) && !/\b(?:tugas\s+akhir|skripsi|tesis)\b/i.test(resolvedText)) {
+      if (/\b(?:tugas\s+akhir|skripsi|tesis)\b/i.test(clauses[0])) {
+        const thesisTerm = clauses[0].match(/\b(?:tugas\s+akhir(?:\s+skripsi)?|skripsi|tesis)\b/i);
+        const levelTerm = clauses[0].match(/\b(?:s1|sarjana|d3|diploma|s2|magister)\b/i);
+        if (thesisTerm) {
+          const inheritedParts = [thesisTerm[0]];
+          if (levelTerm && !/\b(?:s1|sarjana|d3|diploma|s2|magister)\b/i.test(resolvedText)) {
+            inheritedParts.push(levelTerm[0]);
+          }
+          resolvedText = `${resolvedText.replace(/\?$/, '')} ${inheritedParts.join(' ')}?`;
+        }
+      }
+    }
+
     // Extract explicit entities directly present in this clause
     const explicitEntities = matchCanonicalEntities(resolvedText);
 
     // Determine message-local anchor inheritance:
-    // If clause i has NO explicit program entity, but has anaphoric cues like "kuliahnya", "akreditasinya",
-    // or asks about a program-dependent field without specifying program, inherit from previous clause!
+    // When clause i has NO explicit entity of a given family, but has anaphoric cues or asks about
+    // an entity-dependent attribute without specifying an entity, inherit ONLY compatible missing dimensions!
+    // Invariant: PARENT EXPLICIT ENTITY > missing entity in generated subrequest,
+    // but: subrequest explicit entity > inherited parent entity.
     let inheritedLocalAnchors = [];
-    const hasAnaphora = /\b(?:kuliahnya|akreditasinya|prodinya|jurusan(?:nya)?|biayanya)\b/i.test(resolvedText);
-    const isProgramDependent = /\b(?:akreditasi|biaya|biaya\s+kuliah|spp|ukt)\b/i.test(resolvedText);
-    const hasExplicitProgram = explicitEntities.some(e => e.family === 'academic_program' || e.type === 'program');
+    const hasAnaphora = /\b(?:kuliahnya|akreditasinya|prodinya|jurusan(?:nya)?|biayanya|telepon(?:nya)?|nomor(?:nya)?|kontak(?:nya)?|alamat(?:nya)?|lokasi(?:nya)?|fasilitas(?:nya)?|jadwal(?:nya)?|syarat(?:nya)?|kegiatan(?:nya)?|email(?:nya)?|proposalnya|ujiannya|sidangnya|durasinya|waktunya)\b/i.test(resolvedText)
+      || (/\b\w+nya\b/i.test(resolvedText) && !/\b(?:hanya|tanya|sebenarnya|biasanya|tampaknya|akhirnya|asalnya|kiranya)\b/i.test(resolvedText))
+      || /\b(?:nya|tersebut|ini|itu|resminya)\b/i.test(resolvedText);
+    const isProgramDependent = /\b(?:akreditasi|biaya|biaya\s+kuliah|spp|ukt|dpp|kurikulum|matkul|lulusan|prospek)\b/i.test(resolvedText);
+    const isAcademicDependent = /\b(?:tugas\s+akhir|skripsi|tesis|proposal|ujian|sidang|bimbingan|yudisium|wisuda|ipk|sks)\b/i.test(resolvedText);
+    const isCampusDependent = /\b(?:alamat|lokasi|posisi|tempat|gedung|kampus)\b/i.test(resolvedText);
+    const isContactDependent = /\b(?:email|surel|telepon|nomor\s+telepon|no\s+telp|kontak|call\s*center|narahubung|whatsapp|hotline)\b/i.test(resolvedText);
+    const isOrgDependent = /\b(?:kegiatan|proker|latihan|gabung|pembina|divisi)\b/i.test(resolvedText);
 
-    if (!hasExplicitProgram && (hasAnaphora || isProgramDependent) && previousExplicitEntities.length > 0) {
-      const inheritedProgram = previousExplicitEntities.find(e => e.family === 'academic_program' || e.type === 'program');
-      if (inheritedProgram) {
-        inheritedLocalAnchors.push(inheritedProgram);
+    if (previousExplicitEntities.length > 0) {
+      let compatibleParent = null;
+      if (isProgramDependent) {
+        compatibleParent = previousExplicitEntities.find(e => e.family === 'academic_program' || e.type === 'program' || e.type === 'international_program');
+      } else if (isAcademicDependent) {
+        compatibleParent = previousExplicitEntities.find(e => e.family === 'academic_scope' || e.type === 'academic_level' || e.family === 'academic_program' || e.type === 'program');
+      } else if (isCampusDependent) {
+        compatibleParent = previousExplicitEntities.find(e => e.family === 'campus_location' || e.type === 'campus');
+      } else if (isContactDependent) {
+        compatibleParent = previousExplicitEntities.find(e => e.family === 'campus_location' || e.type === 'campus' || e.family === 'student_organization' || e.family === 'campus_facility' || e.family === 'academic_program' || e.type === 'program' || e.family === 'campus_service' || e.type === 'campus_service' || e.role === 'campus_service');
+      } else if (isOrgDependent) {
+        compatibleParent = previousExplicitEntities.find(e => e.family === 'student_organization' || e.type === 'student_activity_unit' || e.type === 'student_association');
+      } else if (hasAnaphora) {
+        compatibleParent = previousExplicitEntities[0];
+      }
+
+      // Inherit ONLY if clause i does not have its own explicit entity of the compatible family
+      if (compatibleParent && !explicitEntities.some(e => e.family === compatibleParent.family || e.type === compatibleParent.type)) {
+        inheritedLocalAnchors.push(compatibleParent);
       }
     }
 

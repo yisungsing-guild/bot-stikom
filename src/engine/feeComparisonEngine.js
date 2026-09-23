@@ -37,8 +37,19 @@ const PROGRAM_FALLBACK_PROFILES = {
   utb: { pendaftaran: 500000, dpp: 14000000, atribut: 1500000, semester: 7500000, specialSemester: 6500000, biayaAwalLow: 16000000, biayaAwalHigh: 16000000 }
 };
 
+let cachedFeeProfiles = null;
+let cachedFeeProfilesIndexRef = null;
+
+function invalidateFeeProfilesCache() {
+  cachedFeeProfiles = null;
+  cachedFeeProfilesIndexRef = null;
+}
+
 function extractProfiles(index) {
   const list = Array.isArray(index) ? index : (Array.isArray(ragEngine.loadIndex && ragEngine.loadIndex()) ? ragEngine.loadIndex() : []);
+  if (cachedFeeProfiles && cachedFeeProfilesIndexRef === list && list.length > 0) {
+    return cachedFeeProfiles;
+  }
   const knownKeys = ['si','ti','bd','sk','mi','d3','s2','dnui','help','utb'];
   const profiles = {};
 
@@ -174,6 +185,20 @@ function extractProfiles(index) {
     }
   }
 
+  // unify D3 and MI profiles (since D3 at ITB STIKOM Bali is D3 Manajemen Informatika)
+  if (profiles.d3 && profiles.mi) {
+    for (const c of profiles.d3.chunks) {
+      if (!profiles.mi.chunks.includes(c)) profiles.mi.chunks.push(c);
+    }
+    for (const sf of profiles.d3.sourceFiles) {
+      profiles.mi.sourceFiles.add(sf);
+    }
+    for (const field of ['pendaftaran', 'dpp', 'semester', 'biayaAwalLow', 'biayaAwalHigh', 'atribut', 'totalAwalMasuk']) {
+      if (profiles.mi[field] == null && profiles.d3[field] != null) profiles.mi[field] = profiles.d3[field];
+      if (profiles.d3[field] == null && profiles.mi[field] != null) profiles.d3[field] = profiles.mi[field];
+    }
+  }
+
   // finalize profiles array
   const out = [];
   for (const k of Object.keys(profiles)) {
@@ -187,6 +212,8 @@ function extractProfiles(index) {
     p.biayaAwalHigh = p.biayaAwalLow;
     out.push(p);
   }
+  cachedFeeProfiles = out;
+  cachedFeeProfilesIndexRef = list;
   return out;
 }
 
@@ -475,6 +502,7 @@ function cleanProgramSummary(summary, programLabel) {
 
 function tryProgramDefinitionAnswer(question) {
   const q = String(question || '').toLowerCase();
+  if (/\b(?:gelar(?:nya)?|ijazah(?:nya)?|titel(?:nya)?)\b/i.test(q)) return null;
   const asksCurriculum = /\b(mata\s+kuliah|matkul|kurikulum|dipelajari|yang\s+dipelajari|belajar\s+apa|ngulik\s+apa|skill|kemampuan|kompetensi)\b/.test(q);
   const asksEntrySkillConcern = /\b(harus|wajib|perlu|butuh|apa(?:kah)?|bisa|boleh)\b[\s\S]{0,60}\b(jago|mahir|cakap|bisa)\b[\s\S]{0,40}\b(komputer|coding|ngoding|teknologi\s+informasi|it\b)\b|\b(kurang|belum|tidak|nggak|gak)\s+(?:jago|mahir|cakap|bisa)\b[\s\S]{0,40}\b(komputer|coding|ngoding|teknologi\s+informasi|it\b)\b/i.test(q);
   if (!asksCurriculum && !asksEntrySkillConcern && !/\b(apa\s+itu|itu\s+apa|apaan|maksudnya|jelaskan|tentang|pengertian|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa|arahnya\s+(?:ke)?mana|kemana|tuh|sebenernya|sebenarnya)\b/.test(q)) return null;
@@ -1330,8 +1358,7 @@ function tryRegistrationFeeAnswer(question, index = ragEngine.loadIndex()) {
   const evidenceProfile = profile || fallbackProfile || null;
   const basePendaftaran = evidenceProfile && Number.isFinite(evidenceProfile.pendaftaran) ? evidenceProfile.pendaftaran : null;
   const registrationContexts = basePendaftaran == null ? [] : (evidenceProfile.chunks || [])
-    .filter(item => /\bpendaftaran\b/i.test(String(item && item.chunk || ''))
-      && String(item && item.chunk || '').replace(/\D/g, '').includes(String(basePendaftaran)))
+    .filter(item => /\b(?:pendaftaran|registrasi)\b/i.test(String(item && item.chunk || '')))
     .slice(0, 3)
     .map(item => ({ source: item.filename || item.sourceFile || item.source || 'dokumen_biaya_pmb', text: String(item.chunk || '').slice(0, 1200) }));
   if (basePendaftaran == null || !registrationContexts.length) {
@@ -1470,11 +1497,12 @@ function buildGroundedPaymentScheduleAnswer(question, found, options = {}) {
     })).filter(item => /\b(?:dicicil|angsuran|waktu\s+pembayaran|pada\s+saat\s+daftar|registrasi)\b/i.test(item.text));
     if (chunks.length) {
       const evidence = chunks.map(item => item.text).join('\n');
-      const dpp = evidence.match(/(?:Dana\s+Pendidikan\s+Pokok|DPP)[^\n]*?([0-9]{1,3}(?:\.[0-9]{3})+)[^\n]*(Dicicil[^\n]*)/i);
+      const dpp = evidence.match(/(?:Dana\s+Pendidikan\s+Pokok|DPP|Biaya\s+Registrasi)[^\n]*?([0-9]{1,3}(?:\.[0-9]{3})+)[^\n]*(Dicicil[^\n]*)/i);
       const registration = evidence.match(/Pendaftaran\s+([0-9]{1,3}(?:\.[0-9]{3})+)\s+Pada\s+Saat\s+Daftar/i);
       const semester = evidence.match(/Biaya\s+Pendidikan\s+Per\s+Semester\s+([0-9]{1,3}(?:\.[0-9]{3})+)([^\n]*(?:\n\s*Reg\s*1[^\n]*)?)/i);
-      if (dpp || registration || semester) {
-        const asksUktOnly = /\b(?:ukt|per\s+semester|biaya\s+semester)\b/i.test(q) && !/\b(?:dpp|uang\s+gedung|pendaftaran|daftar|awal)\b/i.test(q);
+      const industri = evidence.match(/Biaya\s+Pengalaman\s+Industri[^\n]*?([0-9]{1,3}(?:\.[0-9]{3})+)[^\n]*(Dicicil[^\n]*)/i);
+      if (dpp || registration || semester || industri) {
+        const asksUktOnly = /\b(?:ukt|per\s+semester|biaya\s+semester)\b/i.test(q) && !/\b(?:dpp|uang\s+gedung|pendaftaran|daftar|awal|registrasi)\b/i.test(q);
         const lines = [];
         if (asksUktOnly) {
           if (semester && semester[2].trim()) {
@@ -1484,8 +1512,12 @@ function buildGroundedPaymentScheduleAnswer(question, found, options = {}) {
           }
         } else {
           if (registration) lines.push(`Biaya pendaftaran ${formatRp(parseAmount(registration[1]))} dibayar pada saat daftar.`);
-          if (dpp) lines.push(`DPP ${formatRp(parseAmount(dpp[1]))}: ${dpp[2].replace(/\bs\.d\b/i, 'sampai dengan').replace(/\bPer\s+Bln\b/i, 'per bulan')}.`);
+          if (dpp) {
+            const dppLabel = /registrasi/i.test(dpp[0]) ? 'Biaya registrasi / DPP' : 'DPP';
+            lines.push(`${dppLabel} ${formatRp(parseAmount(dpp[1]))}: ${dpp[2].replace(/\bs\.d\b/i, 'sampai dengan').replace(/\bPer\s+Bln\b/i, 'per bulan')}.`);
+          }
           if (semester && semester[2].trim()) lines.push(`Biaya pendidikan per semester ${formatRp(parseAmount(semester[1]))}: ${semester[2].replace(/\s+/g, ' ').trim().replace(/\bs\/d\b/i, 'sampai dengan')}.`);
+          if (industri) lines.push(`Biaya Pengalaman Industri ${formatRp(parseAmount(industri[1]))}: ${industri[2].replace(/\s+/g, ' ').trim()}.`);
         }
         const lead = asksInitialPayment
           ? `Untuk pembayaran pertama ${found.program.label}, sumber memisahkan waktu bayar tiap komponen:`
@@ -1580,6 +1612,10 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
       const general = tryGeneralFeeQuestionAnswer(question, index, options);
       if (general) return general;
     }
+  }
+
+  if (/\b(?:sewa\s+apartemen|sewa\s+kamar|sewa\s+kos|biaya\s+hidup|living\s+cost|biaya\s+makan|tiket\s+pesawat|akomodasi\s+luar\s+negeri)\b/i.test(q)) {
+    return null;
   }
 
   const wave = normalizeWave(question);
@@ -1712,10 +1748,26 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
 
   if (!wave && found && found.program && found.profile && !wantsFullDetail) {
     const { program, profile } = found;
+    const asksSpecificLanguage = /\b(?:bahasa|mandarin|inggris|language)\b/i.test(q);
+    if (asksSpecificLanguage && profile.languageFee) {
+      return {
+        answer: [
+          `Biaya persiapan ${profile.languageLabel || 'bahasa'} untuk ${program.label}:`,
+          '',
+          `- ${profile.languageLabel || 'Biaya bahasa'}: ${formatRp(profile.languageFee)} (dibayarkan menjelang Semester II).`,
+          '',
+          `Komponen ini merupakan biaya persiapan bahasa resmi untuk program ${program.label}.`
+        ].join('\n'),
+        program,
+        profile,
+        wave: null
+      };
+    }
     const evidenceBackedLines = [
       profile.pendaftaran ? `- Biaya pendaftaran: ${formatRp(profile.pendaftaran)}` : null,
       profile.dpp ? `- DPP / Dana Pendidikan Pokok: ${formatRp(profile.dpp)}` : null,
-      profile.semester ? `- ${educationFeeLine(profile)}` : null
+      profile.semester ? `- ${educationFeeLine(profile)}` : null,
+      profile.languageFee ? `- ${profile.languageLabel || 'Biaya bahasa'}: ${formatRp(profile.languageFee)} (menjelang Semester II)` : null
     ].filter(Boolean);
     if (evidenceBackedLines.length) {
       return {
@@ -2094,16 +2146,16 @@ function tryDualDegreeAnswer(question, options) {
   const asksStudyMode = /\b(?:online|offline|daring|luring|tatap\s+muka)\b/i.test(q);
   const hasSchemeSignal = hasDurationSignal && (hasGeoPartnerSignal || hasPartnerSignal);
   const hasStudyModePartnerSignal = asksStudyMode && (hasGeoPartnerSignal || hasPartnerSignal);
-  if (!hasDoubleDegreeSignal && !hasInternationalProgramSignal && !(hasPartnerSignal && asksPartnerProgram) && !hasGenericPartnerRelation && !sessionGeoEntry && !hasSchemeSignal && !hasStudyModePartnerSignal && !isLanguageScoreQuery) return null;
+  const asksCredentialOutcome = /\b(?:gelar(?:nya)?|ijazah(?:nya)?|titel(?:nya)?|title(?:nya)?|credential|bachelor|dua\s+gelar)\b/.test(q) || (/\bdegree\b/.test(q) && !/\b(?:double|dual)\s*degree\b/.test(q));
+  if (!hasDoubleDegreeSignal && !hasInternationalProgramSignal && !(hasPartnerSignal && (asksPartnerProgram || asksCredentialOutcome)) && !hasGenericPartnerRelation && !sessionGeoEntry && !hasSchemeSignal && !hasStudyModePartnerSignal && !isLanguageScoreQuery) return null;
   const asksInternational = hasInternationalProgramSignal || /\b(internasional|international|luar\s+negeri|dnui|help|china|malaysia)\b/.test(q);
   const asksNational = /\b(nasional|national|utb|bandung)\b/.test(q);
   const asksUtbPair = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(padanan|pasangan|sisi|sisi\s+stikom|di\s+stikom|stikom\s+bali|ambil|mengambil|diambil|yang\s+diambil|harus\s+diambil|jurusan\s+apa\s+dan\s+jurusan\s+apa)\b/.test(q);
-  const asksAllPairs = /\b(jurusan\s+apa\s+dan\s+jurusan\s+apa|yang\s+lain|lainnya|semua|dnui|help|di\s+sana|disana)\b/.test(q) && (hasDoubleDegreeSignal || hasPartnerSignal);
+  const asksAllPairs = /\b(jurusan\s+apa\s+dan\s+jurusan\s+apa|yang\s+lain|lainnya|semua|seluruh|daftar\s+partner|daftar\s+mitra)\b/.test(q) && (hasDoubleDegreeSignal || hasPartnerSignal) && !/\b(?:dnui|help|utb)\b/i.test(q);
   const asksUtbMajor = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(jurusan|prodi|mengambil|ambil|dapat|dapet|di\s+utb|utb\s+nya|utbnya)\b/.test(q);
   const asksUtbSpecific = /\b(utb|universitas\s+teknologi\s+bandung)\b/.test(q) && /\b(seperti\s+apa|spesifik|khusus|dibanding|beda|bedanya|perbedaan|program\s+lain)\b/.test(q);
   const asksHowToJoin = /\b(cara|bagaimana|gimana|gmn|mengikuti|ikut|daftar|mendaftar|alur|prosedur|syarat|persyaratan)\b/.test(q);
   const asksMeaning = /\b(apa\s+itu|maksudnya|pengertian|jelaskan|seperti\s+apa)\b/.test(q);
-  const asksCredentialOutcome = /\b(?:gelar(?:nya)?|ijazah(?:nya)?|titel(?:nya)?|title(?:nya)?|credential|bachelor|dua\s+gelar)\b/.test(q) || (/\bdegree\b/.test(q) && !/\b(?:double|dual)\s*degree\b/.test(q));
   const asksTimeline = /\b(?:skema|timeline|berapa\s+tahun|berapa\s+lama|tahun\s+di)\b/i.test(q);
   if (/\bjepang\b/i.test(q) && /\b(?:magang|double\s*degree|dual\s*degree|dua\s+gelar|gelar\s+ganda|hi\s*-?\s*think)\b/i.test(q)) {
     return {
@@ -2137,42 +2189,119 @@ function tryDualDegreeAnswer(question, options) {
   const nationalLines = [
     '- UTB - Universitas Teknologi Bandung: Prodi di STIKOM Bali adalah Bisnis Digital; jurusan di UTB adalah DKV (Desain Komunikasi Visual).'
   ];
+  const PARTNER_REGISTRY = {
+    dnui: {
+      key: 'dnui',
+      label: 'DNUI - Dalian Neusoft University of Information, China',
+      shortLabel: 'DNUI',
+      match: /\b(?:dnui|dalian\s+neusoft|china|cina|tiongkok)\b/i,
+      stikomProgram: 'Bisnis Digital',
+      partnerProgram: null,
+      degrees: {
+        combined: 'Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Bachelor of Management (B.M) dari DNUI China'
+      },
+      evidenceSnippet: 'Melalui Kolaborasi ITB STIKOM Bali dengan DNUI China terbentuklah Program Dual Degree International... setelah lulus Mahasiswa memperoleh dua gelar sekaligus yaitu S.Bns (Sarjana Bisnis) dan B.M (Bachelor of Management)'
+    },
+    help: {
+      key: 'help',
+      label: 'HELP University, Malaysia',
+      shortLabel: 'HELP University',
+      match: /\b(?:help\s+university|help\b.*malaysia|malaysia|help)\b/i,
+      stikomProgram: 'Sistem Informasi',
+      partnerProgram: null,
+      degrees: {
+        combined: 'Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia'
+      },
+      evidenceSnippet: 'Melalui Kolaborasi antara ITB STIKOM Bali dengan HELP University terbentuklah program Dual Degree International... mendapatkan dua gelar sekaligus (S.Kom dan BIT).'
+    },
+    utb: {
+      key: 'utb',
+      label: 'UTB - Universitas Teknologi Bandung',
+      shortLabel: 'UTB',
+      match: /\b(?:utb|universitas\s+teknologi\s+bandung|bandung)\b/i,
+      stikomProgram: 'Bisnis Digital',
+      partnerProgram: 'DKV (Desain Komunikasi Visual)',
+      degrees: {
+        combined: 'Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Sarjana Desain (S.Ds) dari UTB'
+      },
+      evidenceSnippet: 'Kolaborasi Program Studi S1-Bisnis Digital ITB STIKOM Bali dan S1- DKV UTB... Mahasiswa akan mendapatkan dua gelar (Sarjana Bisnis dan Sarjana Disain)'
+    }
+  };
+
+  const asksAllPartnersExplicit = /\b(?:semua|seluruh|apa\s+saja|apa\s+aja|daftar\s+partner|daftar\s+mitra|mitra\s+yang\s+tersedia|partner\s+yang\s+tersedia|semua\s+partner|semua\s+mitra)\b/i.test(q)
+    && (hasDoubleDegreeSignal || hasPartnerSignal);
+  const explicitRequestedPartners = Object.values(PARTNER_REGISTRY).filter(p => p.match.test(q));
+
+  let targetPartners = [];
+  let scopeMode = 'UNKNOWN';
+  if (asksAllPartnersExplicit) {
+    targetPartners = Object.values(PARTNER_REGISTRY);
+    scopeMode = 'OVERVIEW_ALL';
+  } else if (explicitRequestedPartners.length > 0) {
+    targetPartners = explicitRequestedPartners;
+    scopeMode = explicitRequestedPartners.length > 1 ? 'EXPLICIT_SET' : 'SINGLE_ENTITY';
+  }
+
   const asksDnui = /\b(dnui|dalian\s+neusoft|china|cina|tiongkok)\b/.test(q);
   const asksHelp = /\b(help\s+university|help\b.*malaysia|malaysia|help)\b/.test(q);
 
-  if (asksCredentialOutcome && asksDnui && !asksHelp && !asksNational) {
+  if (asksCredentialOutcome && targetPartners.length > 0) {
+    if (scopeMode === 'SINGLE_ENTITY') {
+      const p = targetPartners[0];
+      return {
+        answer: `Pada Program Double Degree ${p.shortLabel}, mahasiswa memperoleh dua gelar: ${p.degrees.combined}.`,
+        source: 'semantic-rag-dual-degree',
+        contexts: [{ source: ddDocName, text: p.evidenceSnippet }]
+      };
+    }
+    const lines = [
+      'Gelar yang diperoleh pada Program Double Degree untuk mitra yang ditanyakan:',
+      ''
+    ];
+    const contexts = [];
+    for (const p of targetPartners) {
+      lines.push(`- **${p.shortLabel}**: Mahasiswa memperoleh dua gelar yaitu ${p.degrees.combined}.`);
+      contexts.push({ source: ddDocName, text: p.evidenceSnippet });
+    }
     return {
-      answer: 'Pada Program Double Degree DNUI, mahasiswa memperoleh dua gelar: Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Bachelor of Management (BM) dari DNUI China.',
+      answer: lines.join('\n'),
       source: 'semantic-rag-dual-degree',
-      contexts: [{ source: ddDocName, text: 'Melalui Kolaborasi ITB STIKOM Bali dengan DNUI China terbentuklah Program Dual Degree International... setelah lulus Mahasiswa memperoleh dua gelar sekaligus yaitu S.Bns (Sarjana Bisnis) dan B.M (Bachelor of Management)' }]
+      contexts
     };
   }
 
-  if (asksCredentialOutcome && asksHelp && !asksDnui && !asksNational) {
+  if (scopeMode === 'EXPLICIT_SET' && !asksUtbSpecific) {
+    const lines = [
+      'Berikut pasangan prodi/jurusan Double Degree untuk mitra yang ditanyakan:',
+      ''
+    ];
+    for (const p of targetPartners) {
+      if (p.partnerProgram) {
+        lines.push(`- ${p.label}: Prodi di STIKOM Bali adalah ${p.stikomProgram}; jurusan di ${p.shortLabel} adalah ${p.partnerProgram}.`);
+      } else {
+        lines.push(`- ${p.label}: Prodi di STIKOM Bali adalah ${p.stikomProgram}; jurusan di ${p.shortLabel} belum tercantum pada data yang tersedia.`);
+      }
+    }
+    const hasUnspecified = targetPartners.some(p => !p.partnerProgram);
+    if (hasUnspecified) {
+      const unspecifiedNames = targetPartners.filter(p => !p.partnerProgram).map(p => p.shortLabel).join(' dan ');
+      lines.push('');
+      lines.push(`Catatan: untuk ${unspecifiedNames}, data yang tersedia baru mencantumkan prodi di sisi STIKOM Bali. Nama jurusan di kampus mitra belum tercantum, jadi saya tidak menebak di luar data.`);
+    }
     return {
-      answer: 'Pada Program Double Degree HELP University Malaysia, mahasiswa memperoleh dua gelar: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia.',
-      source: 'semantic-rag-dual-degree',
-      contexts: [{ source: ddDocName, text: 'Melalui Kolaborasi antara ITB STIKOM Bali dengan HELP University terbentuklah program Dual Degree International... mendapatkan dua gelar sekaligus (S.Kom dan BIT).' }]
-    };
-  }
-
-  if (asksCredentialOutcome && (asksNational || /\butb\b/i.test(q))) {
-    return {
-      answer: 'Pada Program Dual Degree dengan Universitas Teknologi Bandung (UTB), mahasiswa memperoleh dua gelar: Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Sarjana Desain (S.Ds) dari UTB.',
-      source: 'semantic-rag-dual-degree',
-      contexts: [{ source: ddDocName, text: 'Kolaborasi Program Studi S1-Bisnis Digital ITB STIKOM Bali dan S1- DKV UTB... Mahasiswa akan mendapatkan dua gelar (Sarjana Bisnis dan Sarjana Disain)' }]
+      answer: lines.join('\n'),
+      source: 'semantic-rag-dual-degree'
     };
   }
 
   if (asksTimeline && asksHelp) {
     return {
       answer: [
-        'Untuk Program Double Degree HELP University Malaysia, skema perkuliahannya ditempuh di ITB STIKOM Bali dan di HELP University Malaysia.',
+        'Berdasarkan informasi Program Dual Degree International dengan HELP University Malaysia:',
         '',
-        '- Kampus mitra: HELP University, Malaysia',
-        '- Gelar yang diperoleh: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University',
-        '',
-        'Untuk kepastian alokasi berapa tahun di Bali dan berapa tahun di Malaysia, silakan konfirmasi ke bagian program internasional atau sekretariat PMB ITB STIKOM Bali karena penyesuaian kurikulum dapat berlaku.'
+        '- Durasi studi: 4 tahun penuh, dengan seluruh proses perkuliahan dilaksanakan di kampus ITB STIKOM Bali.',
+        '- Kampus mitra: HELP University, Malaysia.',
+        '- Gelar yang diperoleh: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University.'
       ].join('\n'),
       source: 'semantic-rag-dual-degree',
       contexts: [{ source: ddDocName, text: 'Melalui Kolaborasi antara ITB STIKOM Bali dengan HELP University terbentuklah program Dual Degree International. Pada program ini mahasiswa mengikuti seluruh perkuliahan di ITB STIKOM BALI selama 4 tahun dan mendapatkan dua gelar sekaligus (S.Kom dan BIT).' }]
@@ -2340,7 +2469,8 @@ function tryDualDegreeAnswer(question, options) {
 function tryCareerAnswer(question, options = {}) {
   const q = String(question || '').toLowerCase();
   if (/\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd)\b/.test(q)) return null;
-  if (!/\b(?:prospek(?:nya)?|kerja(?:nya)?|karir(?:nya)?|karier(?:nya)?|lulusan(?:nya)?|tamat(?:nya)?|peluang(?:nya)?|profesi(?:nya)?|pekerjaan(?:nya)?|bidang(?:nya)?|bisa\s+jadi|jadi\s+apa|kerja\s+apa|kerjanya\s+apa|profesi\s+apa)\b/i.test(q)) return null;
+  if (/\b(?:gelar(?:nya)?|ijazah(?:nya)?|titel(?:nya)?)\b/i.test(q)) return null;
+  if (!/\b(?:prospek(?:nya)?|kerja(?:nya)?|bekerja(?:nya)?|karir(?:nya)?|karier(?:nya)?|lulusan(?:nya)?|tamat(?:nya)?|peluang(?:nya)?|profesi(?:nya)?|pekerjaan(?:nya)?|bidang(?:nya)?|bisa\s+(?:kerja|bekerja|jadi|menjadi)|jadi\s+apa|kerja\s+apa|kerjanya\s+apa|profesi\s+apa|setelah\s+(?:tamat|lulus))\b/i.test(q)) return null;
   let program = detectProgram(question);
   if (!program && options && options.programHint) {
     const hintProgs = detectProgramsFromHint(options.programHint);
@@ -2403,24 +2533,7 @@ function tryCareerAnswer(question, options = {}) {
       frameSource: 'semantic-rag-career'
     };
   }
-  return {
-    answer: [
-      'Prospek kerja lulusan Teknologi Informasi berfokus pada bidang teknis teknologi, pengembangan sistem, jaringan, data, keamanan, dan aplikasi digital.',
-      '',
-      'Beberapa peluang kerja yang relevan:',
-      '1) Software Developer / Programmer',
-      '2) Web Developer / App Developer',
-      '3) Network Engineer',
-      '4) Cybersecurity Specialist',
-      '5) Data Analyst / Data Engineer',
-      '6) IT Support / IT Operations',
-      '7) UI/UX atau pengembangan produk digital',
-      '',
-      'Secara umum, TI cocok untuk kakak yang tertarik pada coding, infrastruktur IT, keamanan sistem, pengolahan data, dan pengembangan aplikasi.'
-    ].join('\n'),
-    source: 'semantic-rag-career',
-    frameSource: 'semantic-rag-career'
-  };
+  return null;
 }
 
 const OFFICIAL_FEE_PROVENANCE = {
@@ -2480,5 +2593,6 @@ module.exports = {
   formatRp,
   formatRange,
   isRegistrationFeeQuestion,
+  invalidateFeeProfilesCache,
   OFFICIAL_FEE_PROVENANCE
 };

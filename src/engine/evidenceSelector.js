@@ -10,6 +10,31 @@ const STOPWORDS = new Set([
   'bisa', 'dapat', 'mohon', 'dimiliki'
 ]);
 
+const PERIPHERAL_SHARED_TOKENS = new Set([
+  'mahasiswa', 'maba', 'tingkat', 'akhir', 'kampus', 'organisasi', 'ormawa',
+  'unit', 'komunitas', 'wadah', 'kegiatan', 'layanan', 'jasa', 'fasilitas',
+  'kuliah', 'perguruan', 'tinggi', 'stikom', 'bali', 'institut', 'anggota',
+  'peserta', 'apakah', 'menyediakan', 'untuk', 'pada', 'bagi', 'adanya', 'kalo', 'kalau'
+]);
+
+function extractCoreSemanticAnchors(question) {
+  return getContentTerms(question).filter((term) => !PERIPHERAL_SHARED_TOKENS.has(term));
+}
+
+function hasCoreSemanticAnchorSupport(text, coreAnchors, requiredEntities = []) {
+  if (!coreAnchors || !coreAnchors.length) return true;
+  if (requiredEntities && requiredEntities.length) {
+    const norm = normalizeText(text);
+    if (requiredEntities.some((ent) => includesAlias(norm, ent))) return true;
+  }
+  const normalized = normalizeText(text);
+  if (coreAnchors.some((anchor) => includesAlias(normalized, anchor))) return true;
+  if (coreAnchors.some((a) => /internasional/i.test(a)) && /\b(double\s*degree|dual\s*degree|student\s+exchange|dnui|help\s+university|utb|gccp|bccp|gelar\s+ganda)\b/i.test(normalized)) {
+    return true;
+  }
+  return false;
+}
+
 const ENTITY_RULES = [
   { key: 'sistem informasi', aliases: ['sistem informasi', 'si'] },
   { key: 'teknologi informasi', aliases: ['teknologi informasi', 'ti'] },
@@ -32,7 +57,10 @@ const ENTITY_RULES = [
   { key: 'career center', aliases: ['career center', 'pusat karier', 'pusat karir'] },
   { key: 'language learning center', aliases: ['language learning center', 'llc', 'belajar bahasa'] },
   { key: 'bem', aliases: ['bem', 'badan eksekutif mahasiswa'] },
-  { key: 'ukm', aliases: ['ukm', 'unit kegiatan mahasiswa', 'kelompok studi'] }
+  { key: 'ukm', aliases: ['ukm', 'unit kegiatan mahasiswa', 'kelompok studi'] },
+  { key: 'd3', aliases: ['d3', 'd-3', 'diploma 3', 'diploma tiga', 'diploma'] },
+  { key: 's1', aliases: ['s1', 's-1', 'sarjana'] },
+  { key: 's2', aliases: ['s2', 's-2', 'magister', 'pascasarjana'] }
 ];
 
 function normalizeText(value) {
@@ -308,7 +336,8 @@ function hasRequiredTopicEntityAlignment(text, requiredEntities) {
   const present = new Set(detectEntities(text));
   const strictFamilies = [
     'double degree', 'utb', 'dnui', 'help', 'gccp', 'bccp',
-    'akreditasi', 'rpl', 'beasiswa', 'visa study', 'inbis', 'cdc'
+    'akreditasi', 'rpl', 'beasiswa', 'visa study', 'inbis', 'cdc',
+    'd3', 's1', 's2'
   ];
   const requestedStrict = required.filter((entity) => strictFamilies.includes(entity));
   if (!requestedStrict.length) return true;
@@ -332,6 +361,7 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence, s
   const list = Array.isArray(contexts) ? contexts : [];
   const detectedIntent = detectIntent(question, intent);
   const requiredEntities = detectEntities(question);
+  const coreAnchors = extractCoreSemanticAnchors(question);
   const limit = Math.min(6, Math.max(3, Number.isFinite(Number(maxEvidence)) ? Number(maxEvidence) : DEFAULT_MAX_EVIDENCE));
   const candidates = [];
   const rejected = [];
@@ -348,6 +378,10 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence, s
       if (!fullText) return;
       const rejection = shouldRejectEvidenceUnit(fullText, question, detectedIntent);
       if (rejection.reject) return;
+      if (!hasCoreSemanticAnchorSupport(fullText, coreAnchors, requiredEntities)) {
+        rejected.push({ source: getSourceLabel(context, index), reason: 'peripheral_token_overlap_rejected', preview: fullText.slice(0, 180) });
+        return;
+      }
       const relevance = scoreRelevance(fullText, question);
       const ent = scoreEntities(fullText, requiredEntities);
       const intentSc = scoreIntentAlignment(fullText, detectedIntent);
@@ -392,6 +426,10 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence, s
       }
       if (!hasRequiredPasalAlignment(text, question)) {
         rejected.push({ source: getSourceLabel(context, index), reason: 'requested_pasal_not_found', preview: text.slice(0, 180) });
+        return;
+      }
+      if (!hasCoreSemanticAnchorSupport(text, coreAnchors, requiredEntities)) {
+        rejected.push({ source: getSourceLabel(context, index), reason: 'peripheral_token_overlap_rejected', preview: text.slice(0, 180) });
         return;
       }
       const relevanceScore = scoreRelevance(text, question);
@@ -448,6 +486,7 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence, s
       const rejection = shouldRejectEvidenceUnit(text, question, detectedIntent);
       if (rejection.reject) return;
       if (isLikelyRawDocument(text)) return;
+      if (!hasCoreSemanticAnchorSupport(text, coreAnchors, requiredEntities)) return;
       const relevance = scoreRelevance(text, question);
       const ent = scoreEntities(text, requiredEntities);
       const intentSc = scoreIntentAlignment(text, detectedIntent);
@@ -699,6 +738,11 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent, sem
   }
   if (!evidence.length || !text.trim()) {
     return { answerable: false, reason: 'no_selected_evidence', missingEvidence: ['selected_evidence'] };
+  }
+
+  const coreAnchors = extractCoreSemanticAnchors(question);
+  if (coreAnchors.length > 0 && !hasCoreSemanticAnchorSupport(text, coreAnchors, detectEntities(question))) {
+    return { answerable: false, reason: 'peripheral_token_overlap_rejected', missingEvidence: coreAnchors };
   }
 
   const contractAnswerability = semanticContract ? verifyAnswerAgainstContract(semanticContract, text, evidence) : { ok: true };

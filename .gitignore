@@ -101,7 +101,14 @@ data/runtime/*.pid
 !/admin-panel.js
 
 # Non-deploy test/audit/tool folders
-tests/
+tests/*
+!tests/evidenceEvaluator.test.js
+!tests/semanticFrame.test.js
+!tests/bindingRetrievalPlanner.test.js
+!tests/evidenceProviderRegistry.test.js
+!tests/knowledgeRootContractRemediation.test.js
+!tests/authorityCutoverAndGroundedComposer.test.js
+!tests/continuousSessionAndAuthorityRegression.test.js
 tools/
 quarantined_backups/
 

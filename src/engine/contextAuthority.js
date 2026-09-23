@@ -27,6 +27,7 @@ const {
   CANONICAL_INTEREST_PROFILES,
   resolveCanonicalInterestProfiles
 } = require('./canonicalEntityRegistry');
+const { normalizeEntityFamily } = require('./semanticFrame');
 
 const CONTEXT_TRANSITIONS = {
   INHERIT: 'INHERIT',
@@ -67,7 +68,10 @@ function feeQueryRequiresProgramEntity(rawText, contract) {
 function isEntityTypeCompatibleWithDomain(entityType, targetDomain) {
   if (!entityType || !targetDomain) return true;
   const allowed = ENTITY_TYPE_DOMAIN_COMPATIBILITY[entityType];
-  return allowed ? allowed.has(targetDomain) : true;
+  if (allowed && allowed.has(targetDomain)) return true;
+  const fam = normalizeEntityFamily(entityType);
+  const famAllowed = ENTITY_TYPE_DOMAIN_COMPATIBILITY[fam];
+  return famAllowed ? famAllowed.has(targetDomain) : true;
 }
 
 /**
@@ -105,9 +109,13 @@ function detectDomainFromCues(rawText, sessionState = null) {
       return 'international_program';
     }
   }
-  if (/\b(?:prospek|kerja|karir|karier|lulusan|peluang\s+kerja|pekerjaan)\b/i.test(text)
+  if (/\b(?:prospek(?:nya)?|kerja|bekerja|karir|karier|berkarir|berkarier|lulusan|peluang\s+kerja|pekerjaan|tamat(?:nya)?|setelah\s+(?:tamat|lulus)|profesi|job\s*role)\b/i.test(text)
     && !/\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(text)) {
     return 'career';
+  }
+  if (/\b(?:kenapa|mengapa|alasan|alternatif|rekomendasi|keunggulan|cocok|pilihan)\b/i.test(text)
+    && /\b(?:jurusan|prodi|program\s+studi|kuliah|s1|d3|s2)\b/i.test(text)) {
+    return 'program';
   }
   if (/\b(?:gelombang|jadwal|kapan\s+buka|kapan\s+daftar|timeline|periode)\b/i.test(text)) {
     return 'pmb_schedule';
@@ -141,6 +149,9 @@ function detectDomainFromCues(rawText, sessionState = null) {
   }
   if (/\b(?:akreditasi|terakreditasi|peringkat\s+akreditasi|ban\s*pt|lam\s*infokom)\b/i.test(text)) {
     return 'accreditation';
+  }
+  if (/\b(?:telepon|nomor\s+telepon|no\s+telp|kontak|call\s*center|narahubung|whatsapp|hotline)\b/i.test(text)) {
+    return 'campus_contact';
   }
   return null;
 }
@@ -431,17 +442,21 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
   const hasDomainCuesInText = Boolean(detectedCuesDomain);
 
   // If user provides an explicit new entity WITHOUT domain cues in the text,
-  // this is an ENTITY_REPLACEMENT preserving the active session domain and intent.
+  // this is an ENTITY_REPLACEMENT preserving the active session domain and intent
+  // ONLY if it is a short elliptical/slot-filling turn (e.g. "kalau TI?", "untuk prodi SK?").
   if (candidateEntity && !hasDomainCuesInText) {
+    const isShortEntityQuery = !rawText || rawText.trim().split(/\s+/).length <= 5 ||
+      /^(?:kalo|kalau|bagaimana\s+dengan|gimana\s+dengan|untuk|lalu)?\s*(?:jurusan|prodi|program\s+studi)?\s*[a-z0-9\s.-]+\??$/i.test(rawText.trim());
+
     const isDifferentEntity = !sessionState.activeEntity ||
       !sessionState.activeEntity.canonical ||
       sessionState.activeEntity.canonical.toLowerCase() !== candidateEntity.canonical.toLowerCase();
 
-    if (isDifferentEntity) {
-      const targetDomain = (isCurrentDomainExplicit && currentDomain !== 'program' && currentDomain !== 'general' ? currentDomain : null)
+    if (isShortEntityQuery && isDifferentEntity) {
+      const targetDomain = (isCurrentDomainExplicit && currentDomain !== 'general' && currentDomain !== 'unknown' ? currentDomain : null)
         || sessionState.activeDomain
         || (isCurrentDomainExplicit ? currentDomain : 'program');
-      const targetIntent = (isCurrentDomainExplicit && currentDomain !== 'program' && isCurrentIntentExplicit ? currentIntent : null)
+      const targetIntent = (isCurrentDomainExplicit && isCurrentIntentExplicit ? currentIntent : null)
         || sessionState.activeIntent
         || (isCurrentIntentExplicit ? currentIntent : null);
 

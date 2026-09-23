@@ -157,6 +157,26 @@ function hasEntity(text, entity) {
     });
     if (registryAliasMatch) return true;
   }
+  // Generic evidence-derived entity binding for student organizations / UKMs / Himaprodi
+  const strippedOrg = canonical.replace(/^(?:ukm|ormawa|himaprodi|hima|himpunan(?:\s+mahasiswa)?)\s+/i, '').trim();
+  if (strippedOrg && strippedOrg.length >= 2) {
+    if (strippedOrg.length <= 3 ? new RegExp(`(^|\\s)${strippedOrg}(\\s|$)`, 'i').test(normalized) : normalized.includes(strippedOrg)) {
+      return true;
+    }
+  }
+  // Generic evidence-derived entity binding for institutional units / services / facilities / associations
+  const strippedCanonical = canonical.replace(/^(?:direktorat|biro|lembaga|unit|pusat|bagian|kantor|bidang)\s+/i, '').trim();
+  if (strippedCanonical && strippedCanonical.length >= 4) {
+    if (normalized.includes(strippedCanonical)) return true;
+    const parts = strippedCanonical.split(/\s+(?:dan|atau|&)\s+|\s*,\s*/);
+    if (parts.length > 1 && parts.some(p => p.trim().length >= 4 && normalized.includes(p.trim()))) {
+      return true;
+    }
+  }
+  const strippedCore = canonical.replace(/^(?:program|layanan|fasilitas|unit)\s+/i, '').replace(/\s*\([^)]*\)/g, '').trim();
+  if (strippedCore && strippedCore.length >= 6 && normalized.includes(strippedCore)) {
+    return true;
+  }
   if (canonical === 's2 sistem informasi') {
     const hasS2Level = /(^|\s)(?:s2|magister|pascasarjana|pasca\s*sarjana|master)(\s|$)/i.test(normalized);
     const hasSiProgram = normalized.includes('sistem informasi') || /(^|\s)si(\s|$)/i.test(normalized);
@@ -164,6 +184,8 @@ function hasEntity(text, entity) {
   }
   if (canonical === 'manajemen informatika' && /(^|\s)(?:mi|d3\s+manajemen\s+informatika|manajemen\s+informatika)(\s|$)/i.test(normalized)) return true;
   const aliases = {
+    'program linkedin learning cdc': ['linkedin learning', 'program linkedin learning', 'linkedin'],
+    'program linkedin learning (cdc)': ['linkedin learning', 'program linkedin learning', 'linkedin'],
     'sistem informasi': ['si'],
     'teknologi informasi': ['ti', 'informatika'],
     'bisnis digital': ['bd'],
@@ -179,7 +201,8 @@ function hasEntity(text, entity) {
     'program hi think': ['hi think', 'hithink', 'hi-think', 'magang jepang', 'jepang', 'program jepang'],
     'program hi think magang jepang': ['hi think', 'hithink', 'hi-think', 'magang jepang', 'jepang', 'program jepang'],
     'ukm tabuh bramara gita': ['ukm tabuh', 'tabuh', 'bramara gita', 'gamelan', 'tabuh bali'],
-    'ukm tari pragina': ['ukm tari', 'tari', 'pragina', 'tari bali', 'seni tari'],
+    'ukm dos': ['ukm dos', 'dos', 'dance of stikom', 'dance of stikom dos', 'dance of stikom bali', 'modern dance'],
+    'ukm tari pragina': ['ukm tari', 'pragina', 'tari bali', 'seni tari'],
     'double degree': ['dual degree', 'program ganda'],
     'double degree dnui': ['dnui', 'dalian'],
     'double degree help university': ['help university', 'help'],
@@ -189,10 +212,12 @@ function hasEntity(text, entity) {
     'kampus denpasar renon': ['renon', 'denpasar', 'kampus renon', 'kampus denpasar', 'puputan'],
     'kampus jimbaran': ['jimbaran', 'kampus jimbaran'],
     'kampus abiansemal': ['abiansemal', 'kampus abiansemal'],
-    'fasilitas parkir': ['parkir', 'tempat parkir', 'area parkir', 'lahan parkir'],
-    'transportasi kampus': ['bus', 'shuttle', 'antar jemput', 'transportasi']
+    'transportasi kampus': ['bus', 'shuttle', 'antar jemput', 'transportasi'],
+    'mahasiswa internasional / asing (foreign student)': ['mahasiswa internasional', 'mahasiswa asing', 'foreign student', 'international office', 'visa', 'izin tinggal', 'pelajar'],
+    'mahasiswa internasional asing foreign student': ['mahasiswa internasional', 'mahasiswa asing', 'foreign student', 'international office', 'visa', 'izin tinggal', 'pelajar']
   };
-  return (aliases[canonical] || []).some(alias => {
+  const list = aliases[canonical] || aliases[canonical.replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()] || [];
+  return list.some(alias => {
     const a = normalizeText(alias);
     return a.length <= 3 ? new RegExp(`(^|\\s)${a}(\\s|$)`, 'i').test(normalized) : normalized.includes(a);
   });
@@ -285,7 +310,12 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
   if (unsupportedCandidate && unsupportedCandidate.canonical) {
     const candidateText = normalizeText(unsupportedCandidate.canonical);
     const combinedUnsupported = normalizeText(text + '\n' + toArray(evidence).map(item => String(item && (item.text || item.chunk || item.content) || '')).join('\n'));
-    const mentionsCandidate = candidateText && combinedUnsupported.includes(candidateText);
+    const candidateTokens = candidateText.split(/\s+/).filter(t => t.length >= 2);
+    const mentionsCandidate = Boolean(candidateText) && (
+      combinedUnsupported.includes(candidateText)
+      || (candidateTokens.length >= 2 && candidateTokens.filter(t => combinedUnsupported.includes(t)).length >= 2)
+      || (candidateTokens.length === 1 && combinedUnsupported.includes(candidateTokens[0]))
+    );
     const unsupportedNoData = isNoDataAnswer(text) || /\b(?:tidak\s+memiliki|belum\s+menemukan|belum\s+tersedia|tidak\s+tersedia|di\s+luar\s+data|tidak\s+akan\s+menebak)\b/i.test(text);
     if (mentionsCandidate && unsupportedNoData) return { ok: true, reason: 'unsupported_entity_no_data_preserved' };
     return { ok: false, reason: 'unsupported_entity_not_preserved', unsupportedEntityCandidate: unsupportedCandidate.canonical };
@@ -315,6 +345,8 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
       entity.group !== 'unknown'
       && entity.source !== 'canonical-domain-scope'
       && entity.type !== 'academic_scope'
+      && entity.type !== 'participant_scope'
+      && entity.role !== 'participant_scope'
     ));
     const missingEntities = answerBearingEntities.filter(entity => !hasEntity(combined, entity) && !isRedundantContainedEntity(entity, answerBearingEntities, combined));
     if (missingEntities.length) {
@@ -334,8 +366,9 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
     && /^(?:ask_registration_how|ask_registration_requirements)$/i.test(String(contract.intent || ''))
     && /\b(?:daftar|pendaftaran|registrasi|apply|application|online|siap\.stikom-bali\.ac\.id|calon\s+mahasiswa|mahasiswa\s+baru)\b/i.test(text)
     && !/\b(?:visa|itas|kitas|sktt|izin\s+(?:tinggal|belajar)|study\s+permit)\b/i.test(String(contract.raw || ''));
+  const isCertRequest = (Array.isArray(contract.requestedFields) ? contract.requestedFields : []).some(f => /certification|vendor/i.test(String(f || '')));
   if ((contractScope === 'national' || /\bnasional\b/i.test(contract.raw)) && !registrationApplicationAnswerSatisfiesAudienceScope && !/\bnasional|national|utb|universitas\s+teknologi\s+bandung|indonesia\b/i.test(text)) return { ok: false, reason: 'missing_national_constraint' };
-  if ((contractScope === 'international' || /\binternasional|international\b/i.test(contract.raw)) && !registrationApplicationAnswerSatisfiesAudienceScope && !/\binternasional|international|luar\s+negeri|malaysia|china|dnui|help\s+university\b/i.test(text)) return { ok: false, reason: 'missing_international_constraint' };
+  if (!isCertRequest && (contractScope === 'international' || /\binternasional|international\b/i.test(contract.raw)) && !registrationApplicationAnswerSatisfiesAudienceScope && !/\binternasional|international|luar\s+negeri|asing|foreign|malaysia|china|dnui|help\s+university\b/i.test(text)) return { ok: false, reason: 'missing_international_constraint' };
   if (contract.constraints && contract.constraints.registrationWave && contract.constraints.registrationWave.key) {
     const wave = contract.constraints.registrationWave;
     const key = String(wave.key || '').trim();

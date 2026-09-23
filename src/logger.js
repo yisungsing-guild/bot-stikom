@@ -20,7 +20,10 @@ function createLogger({ env, level, transport }) {
   const destination = env === 'test' ? pino.destination(2) : undefined;
 
   try {
-    return pino({ level: normalizedLevel }, destination || transport);
+    if (transport) {
+      return pino({ level: normalizedLevel, transport });
+    }
+    return pino({ level: normalizedLevel }, destination);
   } catch (err) {
     const msg = String(err && err.message ? err.message : err);
     // In some environments, Pino may be configured with custom levels externally.

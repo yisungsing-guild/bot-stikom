@@ -237,9 +237,65 @@ function getProgramFitCandidates(question) {
     }));
 }
 
+function detectExplicitProgram(question, options = {}) {
+  const canonicalProgs = options?.canonical?.entities?.programs;
+  if (Array.isArray(canonicalProgs) && canonicalProgs.length > 0) {
+    const rawName = String(canonicalProgs[0]?.name || canonicalProgs[0]?.canonical || canonicalProgs[0] || '').toLowerCase();
+    if (rawName.includes('sistem informasi') || rawName === 'si') return PROGRAMS.si;
+    if (rawName.includes('teknologi informasi') || rawName === 'ti') return PROGRAMS.ti;
+    if (rawName.includes('sistem komputer') || rawName === 'sk') return PROGRAMS.sk;
+    if (rawName.includes('bisnis digital') || rawName === 'bd') return PROGRAMS.bd;
+    if (rawName.includes('manajemen informatika') || rawName === 'mi') return PROGRAMS.mi;
+  }
+  const q = normalizeText(question);
+  if (/\b(?:sistem\s+informasi|prodi\s+si|jurusan\s+si)\b/i.test(q)) return PROGRAMS.si;
+  if (/\b(?:teknologi\s+informasi|prodi\s+ti|jurusan\s+ti)\b/i.test(q)) return PROGRAMS.ti;
+  if (/\b(?:sistem\s+komputer|prodi\s+sk|jurusan\s+sk)\b/i.test(q)) return PROGRAMS.sk;
+  if (/\b(?:bisnis\s+digital|prodi\s+bd|jurusan\s+bd)\b/i.test(q)) return PROGRAMS.bd;
+  if (/\b(?:manajemen\s+informatika|prodi\s+mi|jurusan\s+mi)\b/i.test(q)) return PROGRAMS.mi;
+  if (/\b(?:utb)\b/i.test(q)) return PROGRAMS.utb;
+  if (/\b(?:dnui)\b/i.test(q)) return PROGRAMS.dnui;
+  if (/\b(?:help)\b/i.test(q)) return PROGRAMS.help;
+  return null;
+}
+
+function buildProgramAlternativeAnswer(program, question) {
+  const strengthsList = program.strengths || [];
+  const strengthsText = strengthsList.join(', ');
+  const lines = [
+    `${program.label} menjadi alternatif atau pilihan tepat terutama bagi calon mahasiswa yang ingin mendalami bidang ${strengthsText}.`,
+    '',
+    `Karakteristik & Fokus Utama:`,
+    `- Jenjang & Status: ${program.grounding}.`,
+    `- Fokus Kajian: ${strengthsText}.`,
+    '',
+    'Catatan: Ini adalah gambaran fokus bidang studi untuk membantu pertimbangan minat kakak. Untuk informasi kurikulum spesifik, biaya kuliah, atau pendaftaran resmi, silakan merujuk pada ketentuan resmi ITB STIKOM Bali.'
+  ];
+
+  return {
+    answer: lines.join('\n'),
+    candidates: [{
+      program,
+      confidence: 'HIGH',
+      signals: ['program_alternative_fit'],
+      levels: ['primary'],
+      reasons: [`Fokus kajian pada ${strengthsText}`]
+    }],
+    source: 'semantic-rag-program-recommendation'
+  };
+}
+
 function buildProgramFitAnswer(question, options = {}) {
   const candidates = getProgramFitCandidates(question);
-  if (!candidates.length) return null;
+  if (!candidates.length) {
+    const explicitProgram = detectExplicitProgram(question, options);
+    const q = normalizeText(question);
+    const isFitInquiry = /\b(alternatif|pilihan|alasan|kenapa|mengapa|keunggulan|kelebihan|cocoknya)\b/i.test(q);
+    if (explicitProgram && isFitInquiry) {
+      return buildProgramAlternativeAnswer(explicitProgram, question);
+    }
+    return null;
+  }
 
   const maxCandidates = Number.isFinite(options.maxCandidates) ? options.maxCandidates : 3;
   const selected = candidates.slice(0, Math.max(1, maxCandidates));

@@ -65,7 +65,7 @@ function hasRawTechnicalLeak(text) {
 }
 
 function hasDocumentSourceLeak(text) {
-  const out = String(text || '');
+  const out = String(text || '').replace(/!\[.*?\]\([^\)]+\)/g, '');
   const fileExtLeak = /\b[\w .()\[\]-]{2,160}\.(?:pdf|docx?|xlsx?|pptx?|txt|csv|jpg|jpeg|png|webp|mp4|mp3)\b/i.test(out);
   const explicitSourceLeak = /\b(?:sumber|source|file|filename|sourceFile|dokumen|document)\s*[:=-]\s*[^\n]{3,180}/i.test(out);
   const trainingPhraseLeak = /\b(?:berdasarkan|mengacu pada|diambil dari|dari)\s+(?:dokumen|file|konteks\s+training|training\s+data|data\s+training|chunk|retrieval)\b/i.test(out);

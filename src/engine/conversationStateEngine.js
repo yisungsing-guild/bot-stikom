@@ -53,6 +53,7 @@ function createEmptyConversationState(timestamp = new Date().toISOString()) {
     recommendationRelations: [],
     correctionTarget: null,
     pendingSelection: null,
+    groundedEntityCandidates: [],
     isVerified: false,
     promotable: false,
     legacyUnverified: true,
@@ -213,6 +214,19 @@ function normalizeConversationState(rawState, now = Date.now()) {
     : (unwrappedState.intent ? String(unwrappedState.intent).trim()
       : (hasContractAuth && unwrappedState.lastSemanticContract.intent ? String(unwrappedState.lastSemanticContract.intent).trim() : null));
 
+    const groundedEntityCandidates = Array.isArray(unwrappedState.groundedEntityCandidates)
+    ? unwrappedState.groundedEntityCandidates
+        .filter(c => c && typeof c === 'object' && (c.canonical || c.name || c.entity))
+        .map(c => ({
+          canonical: String(c.canonical || c.name || c.entity || '').trim(),
+          family: c.family ? String(c.family).trim() : (c.entityFamily ? String(c.entityFamily).trim() : 'organization'),
+          type: c.type ? String(c.type).trim() : 'ukm',
+          categories: Array.isArray(c.categories) ? c.categories.map(cat => String(cat).trim()).filter(Boolean) : (c.category ? [String(c.category).trim()] : []),
+          matchedTerms: Array.isArray(c.matchedTerms) ? c.matchedTerms.map(t => String(t).trim()).filter(Boolean) : (c.matchedTerm ? [String(c.matchedTerm).trim()] : []),
+          confidence: Number(c.confidence || 0.85)
+        }))
+    : [];
+
   return {
     activeDomain,
     activeIntent,
@@ -222,6 +236,7 @@ function normalizeConversationState(rawState, now = Date.now()) {
     rawSourceQuery,
     previousAnswerSemantics,
     recommendationRelations,
+    groundedEntityCandidates,
     correctionTarget: unwrappedState.correctionTarget ? String(unwrappedState.correctionTarget).trim() : null,
     pendingSelection: unwrappedState.pendingSelection && typeof unwrappedState.pendingSelection === 'object' ? unwrappedState.pendingSelection : null,
     isVerified,
@@ -341,7 +356,7 @@ const DOMAIN_FIELD_COMPATIBILITY = {
     'profile', 'definition', 'degreeOutcome', 'degree', 'academicLevel', 'duration',
     'semesterCount', 'creditCount', 'sksWeight', 'studyFocus', 'focus', 'programList',
     'requirements', 'procedureSteps', 'policy', 'allowed', 'permission', 'grade', 'status',
-    'programRecommendation', 'numericLimit', 'pageLimit', 'foundingDate', 'founderNames',
+    'programRecommendation', 'numericLimit', 'pageLimit', 'foundingDate', 'legalDecreeDate', 'founderNames',
     'careerGoal', 'availability'
   ]),
   academic_policy: new Set([
@@ -393,7 +408,7 @@ const DOMAIN_FIELD_COMPATIBILITY = {
     'service', 'procedureSteps', 'requirements', 'channel', 'availability', 'contact'
   ]),
   institution_profile: new Set([
-    'profile', 'definition', 'foundingDate', 'founderNames', 'date', 'location',
+    'profile', 'definition', 'foundingDate', 'legalDecreeDate', 'founderNames', 'date', 'location',
     'accreditationRank', 'grade', 'status', 'validityPeriod', 'numericLimit'
   ]),
   international: new Set([
@@ -854,10 +869,11 @@ function mergeConversationState(priorState, turnUpdate = {}, options = {}) {
     target.activeIntent = String(explicitTurnIntent).trim();
   }
   
-  const isCategoryInquiry = (explicitTurnEntity && explicitTurnEntity.type === 'ukm_category') || (
+  const hasExplicitNonCategoryEntity = Boolean(explicitTurnEntity && explicitTurnEntity.type !== 'ukm_category' && (explicitTurnEntity.canonical || explicitTurnEntity.name));
+  const isCategoryInquiry = !hasExplicitNonCategoryEntity && ((explicitTurnEntity && explicitTurnEntity.type === 'ukm_category') || (
     Array.isArray(turnUpdate.requestedFields) &&
     (turnUpdate.requestedFields.includes('category') || turnUpdate.requestedFields.includes('categories') || turnUpdate.requestedFields.includes('organizationCategory'))
-  );
+  ));
 
   if (isCategoryInquiry) {
     target.activeEntity = null;
@@ -934,6 +950,14 @@ function mergeConversationState(priorState, turnUpdate = {}, options = {}) {
   }
   if (turnUpdate.promotable !== undefined) {
     target.promotable = Boolean(turnUpdate.promotable);
+  }
+
+  if (Array.isArray(turnUpdate.groundedEntityCandidates) && turnUpdate.groundedEntityCandidates.length > 0) {
+    target.groundedEntityCandidates = turnUpdate.groundedEntityCandidates;
+  } else if (!isDomainSwitch && Array.isArray(base.groundedEntityCandidates)) {
+    target.groundedEntityCandidates = base.groundedEntityCandidates;
+  } else {
+    target.groundedEntityCandidates = [];
   }
 
   target.updatedAt = new Date(now).toISOString();
@@ -1084,7 +1108,7 @@ function buildTurnConversationState(priorSessionOrState, turnData = {}, options 
     .filter(e => {
       const g = String(e && e.group || '');
       const t = String(e && e.type || '');
-      return g !== 'academicScopes' && t !== 'academic_level' && t !== 'academic_scope';
+      return (g === 'programs' || t === 'program') && g !== 'academicScopes' && t !== 'academic_level' && t !== 'academic_scope';
     });
   const distinctProgramNames = Array.from(new Set(candidatePrograms.map(e => String(e && (e.canonical || e.name || e) || '').trim().toLowerCase()).filter(Boolean)));
   const isComparisonQuery = /\b(?:beda|bedanya|perbedaan|vs|versus|atau|bandingkan|perbandingan|antara)\b/i.test(userQuery || '');
@@ -1267,6 +1291,27 @@ function buildTurnConversationState(priorSessionOrState, turnData = {}, options 
     promotable = isVerified;
   }
 
+  let groundedEntityCandidates = [];
+  if (Array.isArray(directState?.groundedEntityCandidates) && directState.groundedEntityCandidates.length > 0) {
+    groundedEntityCandidates = directState.groundedEntityCandidates;
+  } else if (Array.isArray(turnData.groundedEntityCandidates) && turnData.groundedEntityCandidates.length > 0) {
+    groundedEntityCandidates = turnData.groundedEntityCandidates;
+  } else if (Array.isArray(result?.groundedEntityCandidates) && result.groundedEntityCandidates.length > 0) {
+    groundedEntityCandidates = result.groundedEntityCandidates;
+  } else if (Array.isArray(debug.groundedEntityCandidates) && debug.groundedEntityCandidates.length > 0) {
+    groundedEntityCandidates = debug.groundedEntityCandidates;
+  } else if (Array.isArray(debug.resolvedOrganizations) && debug.resolvedOrganizations.length > 0) {
+    groundedEntityCandidates = debug.resolvedOrganizations.map(org => ({
+      canonical: org.canonical || org.name || org.title,
+      family: 'organization',
+      type: org.type || 'ukm',
+      categories: org.categories || (org.category ? [org.category] : (org.interestProfile ? [org.interestProfile] : [])),
+      matchedTerms: org.matchedTerms || (org.terms ? org.terms : [])
+    }));
+  } else if (isFresh && Array.isArray(priorState.groundedEntityCandidates)) {
+    groundedEntityCandidates = priorState.groundedEntityCandidates;
+  }
+
   const turnUpdate = {
     activeDomain,
     activeIntent,
@@ -1274,6 +1319,7 @@ function buildTurnConversationState(priorSessionOrState, turnData = {}, options 
     activeRelation,
     requestedFields,
     recommendationRelations,
+    groundedEntityCandidates,
     previousAnswerSemantics,
     correctionTarget,
     pendingSelection,
@@ -1637,18 +1683,18 @@ function hasSubstantiveStandaloneIntent(currentUnderstanding, rawText) {
  * Compatibility map: entity type -> allowed domains.
  */
 const ENTITY_TYPE_DOMAIN_COMPATIBILITY = {
-  program: new Set(['career', 'program_curriculum', 'fee', 'accreditation', 'program', 's2', 's2_postgraduate', 'general']),
+  program: new Set(['career', 'program_curriculum', 'fee', 'accreditation', 'program', 's2', 's2_postgraduate', 'campus_contact', 'contact', 'general']),
   partner: new Set(['double_degree', 'student_exchange', 'international_program', 'partner', 'general']),
-  international_program: new Set(['double_degree', 'student_exchange', 'international_program', 'partner', 'general']),
+  international_program: new Set(['double_degree', 'student_exchange', 'international_program', 'partner', 'fee', 'general']),
   wave: new Set(['pmb_schedule', 'schedule', 'registration', 'general']),
-  campus: new Set(['campus_location', 'campus', 'facility', 'general']),
+  campus: new Set(['campus_location', 'campus', 'facility', 'campus_contact', 'contact', 'general']),
   scholarship: new Set(['scholarship', 'general']),
-  organization: new Set(['student_organization', 'organization', 'general']),
-  ukm: new Set(['student_organization', 'organization', 'general']),
-  student_association: new Set(['student_organization', 'organization', 'general']),
+  organization: new Set(['student_organization', 'organization', 'campus_contact', 'contact', 'general']),
+  ukm: new Set(['student_organization', 'organization', 'campus_contact', 'contact', 'general']),
+  student_association: new Set(['student_organization', 'organization', 'campus_contact', 'contact', 'general']),
   ukm_category: new Set(['student_organization', 'organization', 'general']),
-  facility: new Set(['campus_facility', 'facility', 'general']),
-  campus_service: new Set(['campus_facility', 'facility', 'pmb_requirements', 'registration', 'academic_policy', 'general']),
+  facility: new Set(['campus_facility', 'facility', 'campus_location', 'campus_contact', 'contact', 'general']),
+  campus_service: new Set(['campus_facility', 'facility', 'pmb_requirements', 'registration', 'academic_policy', 'campus_contact', 'contact', 'general']),
   admission_track: new Set(['pmb_requirements', 'registration', 'academic_policy', 'academic', 'fee', 'general']),
   participant_scope: new Set(['pmb_requirements', 'registration', 'academic_policy', 'academic', 'foreign_student_admin', 'general']),
   academic_scope: new Set(['academic_policy', 'academic', 'program_curriculum', 'program', 'fee', 'general'])

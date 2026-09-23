@@ -492,6 +492,14 @@ function ensureDataDir() {
   validateRagDataLocation();
 }
 
+let cachedRagIndex = null;
+let cachedRagIndexMtime = 0;
+
+function invalidateRagIndexCache() {
+  cachedRagIndex = null;
+  cachedRagIndexMtime = 0;
+}
+
 function loadIndex() {
   ensureDataDir();
   try {
@@ -499,11 +507,18 @@ function loadIndex() {
       return [];
     }
 
-    // If index file is too large, reset it to avoid OOM
+    // Check in-memory cache against disk mtime
     const stat = fs.statSync(INDEX_PATH);
+    if (cachedRagIndex && cachedRagIndexMtime === stat.mtimeMs && cachedRagIndex.length > 0) {
+      return cachedRagIndex;
+    }
+
+    // If index file is too large, reset it to avoid OOM
     if (stat.size > MAX_INDEX_BYTES) {
       logger.warn({ size: stat.size }, '[RAG] Index file too large, resetting index');
       fs.writeFileSync(INDEX_PATH, JSON.stringify([]));
+      cachedRagIndex = [];
+      cachedRagIndexMtime = Date.now();
       return [];
     }
 
@@ -538,6 +553,12 @@ function loadIndex() {
       }
     }
     
+    cachedRagIndex = index;
+    try {
+      cachedRagIndexMtime = fs.statSync(INDEX_PATH).mtimeMs;
+    } catch (_) {
+      cachedRagIndexMtime = stat.mtimeMs;
+    }
     return index;
   } catch (err) {
     // If parsing fails, try to recover from the backup.
@@ -575,6 +596,7 @@ function writeIndexJson(json) {
   if (fs.existsSync(INDEX_BAK_PATH)) {
     try { fs.unlinkSync(INDEX_BAK_PATH); } catch { /* ignore */ }
   }
+  invalidateRagIndexCache();
 }
 
 function saveIndex(index) {
@@ -1740,9 +1762,16 @@ function extractDualDegreeProgramsFromIndex() {
   return programs;
 }
 
+let cachedFeeBreakdown = null;
+let cachedFeeBreakdownHash = null;
+
 function extractFeeBreakdownFromIndex() {
   const fullIndex = loadIndex();
   if (!Array.isArray(fullIndex) || fullIndex.length === 0) return null;
+
+  const raw = fullIndex.map(i => (i && i.chunk ? String(i.chunk) : '')).join('\n');
+  const hash = crypto.createHash('sha1').update(raw.slice(0, 220000)).digest('hex');
+  if (cachedFeeBreakdown && cachedFeeBreakdownHash === hash) return cachedFeeBreakdown;
 
   // Search for comprehensive fee breakdown sections from the training data.
   // Match sections with "RINCIAN BIAYA PENDIDIKAN" and contain detailed items.
@@ -1771,8 +1800,8 @@ function extractFeeBreakdownFromIndex() {
 
   if (candidates.length === 0) return null;
 
-  // Return the candidate with highest score (most complete fee breakdown)
-  candidates.sort((a, b) => b.score - a.score);
+  cachedFeeBreakdown = candidates[0];
+  cachedFeeBreakdownHash = hash;
   return candidates[0];
 }
 
@@ -3561,11 +3590,16 @@ function normalizeScheduleWaveKey(raw) {
   return letter ? `${roman} ${letter}` : roman;
 }
 
+let cachedAvailableScheduleWaveKeys = null;
+let cachedAvailableScheduleWaveKeysHash = null;
+
 function extractAvailableScheduleWaveKeysFromIndex() {
   const fullIndex = loadIndex();
   if (!Array.isArray(fullIndex) || fullIndex.length === 0) return [];
 
   const combined = fullIndex.map(i => (i && i.chunk ? String(i.chunk) : '')).join('\n');
+  const hash = crypto.createHash('sha1').update(combined.slice(0, 200000)).digest('hex');
+  if (cachedAvailableScheduleWaveKeys && cachedAvailableScheduleWaveKeysHash === hash) return cachedAvailableScheduleWaveKeys;
   const lines = combined.replace(/\r\n/g, '\n').split('\n');
 
   let inCalendar = false;
@@ -3599,6 +3633,8 @@ function extractAvailableScheduleWaveKeysFromIndex() {
     out.push(key);
   }
 
+  cachedAvailableScheduleWaveKeys = out;
+  cachedAvailableScheduleWaveKeysHash = hash;
   return out;
 }
 

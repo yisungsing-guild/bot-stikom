@@ -123,7 +123,9 @@ const FUZZY_PROTECTED_VALID_TOKENS = new Set([
   'tarinya',
   'dominan',
   'urusan',
-  'urusannya'
+  'urusannya',
+  'latihan',
+  'latihannya'
 ]);
 
 const DOMAIN_FUZZY_VOCAB = [

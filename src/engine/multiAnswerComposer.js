@@ -32,8 +32,14 @@ function generateSectionHeading(subResult, index) {
     return entityName ? `Biaya Kuliah ${entityName}` : 'Biaya Pendaftaran & Kuliah';
   }
 
+  // 2b. Academic Policy & Thesis
+  if (domain === 'academic_policy' || domain === 'academic' || /tugas\s+akhir|skripsi|tesis/i.test(text)) {
+    if (/syarat|prasyarat|sks|ipk/i.test(text)) return 'Syarat Akademik Tugas Akhir';
+    return 'Kebijakan Akademik';
+  }
+
   // 3. Registration / PMB
-  if (domain === 'registration' || domain === 'pmb_schedule' || /pmb|daftar|pendaftaran|gelombang|syarat/i.test(text)) {
+  if ((domain === 'registration' || domain === 'pmb_schedule' || /pmb|daftar|pendaftaran|gelombang/i.test(text) || (/syarat/i.test(text) && !/tugas\s+akhir|skripsi|tesis/i.test(text))) && !/tugas\s+akhir|skripsi|tesis/i.test(text)) {
     if (/jadwal|kapan|gelombang/i.test(text)) return 'Jadwal Pendaftaran PMB';
     if (/syarat/i.test(text)) return 'Syarat Pendaftaran PMB';
     return 'Pendaftaran Mahasiswa Baru';
@@ -62,6 +68,11 @@ function generateSectionHeading(subResult, index) {
   // 8. General Admission / Quota
   if (/kuota|daya\s+tampung/i.test(text)) {
     return 'Informasi Kuota & Daya Tampung';
+  }
+
+  // 9. Contact / Official Email Channel
+  if (domain === 'campus_contact' || /email|surel|kontak|telepon|hp|whatsapp|hotline/i.test(text)) {
+    return entityName ? `Kontak & Email Resmi ${entityName}` : 'Kontak & Email Resmi';
   }
 
   // Fallback: concise representation of entity or clause
