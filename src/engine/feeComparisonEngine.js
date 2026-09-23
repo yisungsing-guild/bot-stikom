@@ -2137,12 +2137,28 @@ function tryDualDegreeAnswer(question, options) {
     /\b(?:partner(?:nya)?|mitra(?:nya)?|kampus\s+partner(?:nya)?|partner\s+kampus(?:nya)?|universitas\s+(?:mitra|partner)|mitra\s+kampus(?:nya)?)\b/i.test(q)
     && /\b(?:siapa|apa|mana|yang\s+mana|dimana|di\s*mana|list|daftar|ada\s+apa|apa\s+saja)\b/i.test(q)
   ) || /\b(?:(?:bekerja\s*sama|kerja\s*sama|kerjasama)?\s*dengan\s+universitas\s+mana)\b/i.test(q);
-  // Session-context relaxation: when activeDomain=double_degree, a geo or campus reference alone
-  // is enough to enter this function (handles casual follow-ups like "kalo yang ke malaysia kampusnya apa?")
+  // Explicit competitor or institutional comparison must NOT route to dual degree
+  const hasCompetitorOrInstitutionalComparison = /\b(?:instiki|primakara|udayana|unud|warmadewa|undiksha|kampus\s+lain|universitas\s+lain|perguruan\s+tinggi\s+lain|dibanding(?:kan)?|dibanding\s+kampus|kelebihan|keunggulan|bandingkan|beda(?:nya)?\s+dengan)\b/i.test(q);
+  if (hasCompetitorOrInstitutionalComparison) return null;
+
+  // Session-context relaxation: Double Degree follow-up may inherit prior context only when:
+  // - Current turn has no conflicting explicit current domain semantics
+  // - EffectiveSemanticFrame validates Double Degree continuation
+  // - Specific partner/geo signal is present (generic words like 'kampus' or 'universitas' alone MUST NOT independently prove continuation)
+  const effectiveFrame = options?.effectiveSemanticFrame || options?.__effectiveSemanticFrame || null;
+  const frameHasConflictingExplicitDomain = effectiveFrame && effectiveFrame.provenance?.domain === 'EXPLICIT_CURRENT' && !['double_degree', 'academic_cooperation'].includes(effectiveFrame.domain?.primary);
+  if (frameHasConflictingExplicitDomain) return null;
+
   const sessionIsDoubleDegree = options && String(options.sessionActiveDomain || options.sessionData?.conversationState?.activeDomain || options.sessionData?.activeDomain || '').toLowerCase() === 'double_degree';
   const hasGeoPartnerSignal = /\b(?:malaysia|china|cina|tiongkok|bandung|dalian|help|dnui|utb)\b/.test(q);
-  const hasCampusReferenceSignal = /\b(?:kampus(?:nya)?|universitas(?:nya)?|kampus\s+mitra|ke\s+(?:sana|malaysia|china|bandung)|yang\s+ke)\b/.test(q);
-  const sessionGeoEntry = sessionIsDoubleDegree && (hasGeoPartnerSignal || hasCampusReferenceSignal);
+  const hasCampusReferenceSignal = /\b(?:kampus\s+mitra|universitas\s+mitra|mitra\s+kampus|ke\s+(?:sana|malaysia|china|bandung|dalian)|yang\s+ke\s+(?:malaysia|china|bandung|dalian))\b/.test(q);
+  const frameAllowsDoubleDegree = !effectiveFrame || (
+    effectiveFrame.domain?.primary === 'double_degree' ||
+    effectiveFrame.domain?.primary === 'academic_cooperation' ||
+    effectiveFrame.domain?.primary === 'general' ||
+    effectiveFrame.domain?.primary === 'unknown'
+  );
+  const sessionGeoEntry = sessionIsDoubleDegree && frameAllowsDoubleDegree && (hasGeoPartnerSignal || hasCampusReferenceSignal);
   const asksStudyMode = /\b(?:online|offline|daring|luring|tatap\s+muka)\b/i.test(q);
   const hasSchemeSignal = hasDurationSignal && (hasGeoPartnerSignal || hasPartnerSignal);
   const hasStudyModePartnerSignal = asksStudyMode && (hasGeoPartnerSignal || hasPartnerSignal);

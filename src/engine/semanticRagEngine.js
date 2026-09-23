@@ -4667,7 +4667,7 @@ function hasActionableSemanticAnchor(canonicalUnderstanding, options = {}, quest
   const hasKnownCampusSurface = isKnownSpecializedCampusQuestion(question);
   const isTopicOpening = requestType === 'topic_opening' || (domain === 'general' && intent === 'ask_general');
   if (isTopicOpening && !hasEntity && !hasRequestedField && !hasConstraint && !hasDomain && !hasIntent && !hasNamedLookup && !hasKnownCampusSurface && !hasExplicitFeeQuestionSignal(question)) return false;
-  if (options && options.strictDocumentOnly) return true;
+  if (extractAmbiguousAbbreviation(question)) return true;
   if (hasDomain || hasIntent || hasEntity || hasRequestedField || hasConstraint || hasNamedLookup || hasKnownCampusSurface || hasExplicitFeeQuestionSignal(question)) return true;
   return isKnownSpecializedCampusQuestion(question);
 }
@@ -5707,6 +5707,8 @@ function tryMixedIntentAnswer(question) {
 function trySmallTalkAnswer(question) {
   const raw = String(question || '').trim();
   if (!raw) return null;
+  // Unknown institutional acronyms must not route to small talk
+  if (extractAmbiguousAbbreviation(raw)) return null;
   const hasCampusInfoIntent = /\b(biaya|harga|ukt|dpp|prodi|program\s+studi|jurusan|gelombang|daftar|pendaftaran|beasiswa|fasilitas|fasilias|fasiltas|layanan|career\s*center|pusat\s+kar(?:ir|ier)|inkubator|inbis|language\s+learning|llc|bccp|gccp|gcpp|student\s+exchange|hi-?think|lokasi|alamat|ukm|ormawa|organisasi\s+mahasiswa|unit\s+kegiatan|double\s*degree|dual\s*degree|akreditasi|prospek|kerja|yudisium|wisuda|sidang|tugas\\s+akhir|skripsi|tesis|sion|baak|kalender\\s+akademik|apa\\s+itu|berapa|kapan|dimana|bagaimana|gimana|jelaskan|rincian)\b/i.test(raw);
   const normalized = raw
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
@@ -6419,7 +6421,7 @@ function tryExplicitExternalEntityNoDataAnswer(question) {
 
 function extractAmbiguousAbbreviation(question) {
   const raw = String(question || '').trim();
-  if (!/\b(?:apa\s+itu|itu\s+apa|maksud(?:nya)?|kepanjangan|singkatan|tentang|info(?:rmasi)?|jelaskan)\b/i.test(raw)) return '';
+  if (!/\b(?:apa\s+itu|itu\s+apa|maksud(?:nya)?|kepanjangan|singkatan|tentang|info(?:rmasi)?|jelaskan|kegiatan|acara|program|apa\s+saja|dilakukan|agenda|aktivitas|tujuan|fungsi)\b/i.test(raw)) return '';
   if (detectExplicitExternalEntity(raw)) return '';
 
   const known = new Set([
@@ -6436,10 +6438,10 @@ function extractAmbiguousAbbreviation(question) {
     const token = match[0];
     const upper = token.toUpperCase();
     if (stop.has(upper) || known.has(upper)) continue;
-    // Only treat as probable abbreviation when the token is uppercase/alphanumeric
-    // (e.g., INBIS). This avoids false-positives for normal-cased words like "Inbis".
+    // Treat as abbreviation candidate if uppercase/alphanumeric (e.g. INBIS, GMTI) or known campus acronym pattern
     const looksLikeAbbreviation = /^[A-Z0-9]{2,6}$/.test(token);
-    if (looksLikeAbbreviation) candidates.push(upper);
+    const isAcronymPattern = /\b(?:gmti|bem|dpm|balma|mabora|rade|jcos|pragina|bramara|fokus|kresna|ksr|pmk|kmhd|hima|himaprodi)\b/i.test(token);
+    if (looksLikeAbbreviation || isAcronymPattern) candidates.push(upper);
   }
   return candidates[0] || '';
 }
@@ -10735,8 +10737,11 @@ function tryCampusLocationAnswer(question) {
       source: 'semantic-rag-campus-location'
     };
   }
-  const asksCampusRecommendationOrChoice = /\b(kampus\s+(?:mana|apa)\s+yang\s+(?:paling\s+)?(?:bagus|cocok|tepat|baik|saya\s+pilih|dipilih)|kampus\s+mana\s+yang\s+paling\s+bagus|paling\s+bagus\s+(?:saya\s+)?pilih|pilih\s+kampus\s+mana)\b/i.test(q)
-    || (/\b(klungkung|gianyar|tabanan|bangli|karangasem|buleleng|singaraja|negara|jembrana)\b/i.test(q) && /\b(kampus|pilih)\b/i.test(q));
+  const isCampusCount = /\b(?:ada\s+berapa\s+(?:jumlah\s+)?kampus|berapa\s+(?:jumlah\s+|lokasi\s+)?kampus|kampus(?:nya)?\s+ada\s+berapa|punya\s+berapa\s+kampus|berapa\s+lokasi\s+kampus|jumlah\s+kampus|ask_campus_count)\b/i.test(q);
+  const asksCampusRecommendationOrChoice = !isCampusCount && (
+    /\b(kampus\s+(?:mana|apa)\s+yang\s+(?:paling\s+)?(?:bagus|cocok|tepat|baik|dekat|terdekat|saya\s+pilih|dipilih|saya\s+ambil|diambil)|kampus\s+mana\s+yang\s+paling\s+(?:bagus|dekat)|paling\s+(?:bagus|dekat)\s+(?:saya\s+)?pilih|pilih\s+kampus\s+mana|ambil\s+kampus\s+mana|mengambil\s+kampus\s+yang\s+mana|kampus\s+(?:terdekat|paling\s+dekat))\b/i.test(q)
+    || (/\b(klungkung|gianyar|tabanan|bangli|karangasem|buleleng|singaraja|negara|jembrana)\b/i.test(q) && /\b(kampus|pilih|ambil|dekat|mana|rekomendasi)\b/i.test(q))
+  );
   if (asksCampusRecommendationOrChoice) {
     return {
       answer: [
@@ -10746,7 +10751,7 @@ function tryCampusLocationAnswer(question) {
         '- Kampus Jimbaran: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran, Bali.',
         '- Kampus Abiansemal: Jl. Janger, Dauh Yeh Cani, Abiansemal, Badung, Bali.',
         '',
-        'Dokumen resmi kampus tidak menetapkan satu kampus sebagai yang paling bagus atau terbaik berdasarkan wilayah tempat tinggal tertentu (seperti Klungkung). Kakak dapat memilih kampus yang paling sesuai dengan program studi yang diambil, jenis kelas (reguler/karyawan), serta kemudahan rute tempuh dari tempat tinggal kakak.'
+        'Dokumen resmi kampus tidak menetapkan satu kampus tertentu sebagai yang paling dekat, paling bagus, atau terbaik berdasarkan wilayah tempat tinggal calon mahasiswa. Kakak dapat memilih lokasi kampus yang paling sesuai dengan program studi yang diambil, jenis kelas, serta kemudahan rute perjalanan dari lokasi kakak (dapat dicek melalui aplikasi peta/navigasi).'
       ].join('\n'),
       source: 'semantic-rag-campus-location'
     };
@@ -10758,8 +10763,7 @@ function tryCampusLocationAnswer(question) {
   if (/\b(?:email|surel|surat\s+elektronik|instagram|ig|hubungi|website|web|situs|portal|link|url)\b/i.test(q)) return null;
   const hasContactSignal = /\b(?:nomor|no\s*wa|whatsapp|telepon|telp|hp|kontak)\b/i.test(q);
   const hasLocationIntent = /\b(lokasi(?:nya)?|alamat(?:nya)?|dimana|di\s*mana|where|letak(?:nya)?|maps?|google\s+maps|rute|arah|patokan|pin\s+lokasi|share\s*loc|shareloc|dekat\s+(?:dengan|sama)|sebelah)\b/i.test(q);
-  if (!hasLocationIntent && !hasContactSignal) return null;
-  const isCampusCount = /\b(?:ada\s+berapa\s+(?:jumlah\s+)?kampus|berapa\s+(?:jumlah\s+|lokasi\s+)?kampus|kampus(?:nya)?\s+ada\s+berapa|punya\s+berapa\s+kampus|berapa\s+lokasi\s+kampus|jumlah\s+kampus|ask_campus_count)\b/i.test(q);
+  if (!hasLocationIntent && !hasContactSignal && !isCampusCount) return null;
   if (hasContactSignal && !hasLocationIntent && !isCampusCount && !/\b(?:abiansemal|jimbaran|renon)\b/i.test(q)) return null;
   if (!isCampusCount && /\babiansemal\b/i.test(q) && !/\b(?:renon|denpasar|jimbaran)\b/i.test(q)) {
     return {
@@ -15414,7 +15418,12 @@ async function finalizeSemanticResult(question, result, resultCacheKey, options 
   const isDocumentSource = /semantic-rag-uploaded-training|campus-support|campus-facility/i.test(source);
   const academicNoDataSourceSafe = hasNoDataAnswerPhrase(result.answer)
     && /semantic-rag-academic-(?:credit-no-data|schedule|no-data)|semantic-rag-meaning-mismatch/i.test(source);
-  const skipLlmVerifier = structuredSemanticSafe || academicNoDataSourceSafe || /known-faq-qna|campus-support|campus-facility/i.test(source) || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
+  const isCareerFollowupSafe = /semantic-rag-career/i.test(source) && (
+    (options && (options.sessionActiveDomain === 'career' || /career/i.test(String(options.sessionData?.conversationState?.activeDomain || options.sessionData?.activeDomain || options.sessionData?.lastTopic || ''))))
+    || options?.effectiveSemanticFrame?.domain?.primary === 'career'
+    || options?.__effectiveSemanticFrame?.domain?.primary === 'career'
+  );
+  const skipLlmVerifier = structuredSemanticSafe || academicNoDataSourceSafe || isCareerFollowupSafe || /known-faq-qna|campus-support|campus-facility/i.test(source) || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
   const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
@@ -18892,6 +18901,7 @@ async function _querySemanticRagInner(question, options = {}) {
     (effectiveSemanticFrame?.domain?.primary && !['general', 'unknown'].includes(effectiveSemanticFrame.domain.primary))
     || (Array.isArray(effectiveSemanticFrame?.entities) && effectiveSemanticFrame.entities.length > 0)
     || (effectiveSemanticFrame?.intent?.primary && !['ask_general', 'unknown'].includes(effectiveSemanticFrame.intent.primary))
+    || Boolean(extractAmbiguousAbbreviation(question))
   );
   if (!strictDocumentOnly && !hasEffectiveAnchor && !hasActionableSemanticAnchor(canonicalUnderstanding, options, question)) {
     // Evidence-Aware Clarification (Section G):
@@ -19083,7 +19093,7 @@ async function _querySemanticRagInner(question, options = {}) {
       canonicalIntent: canonicalUnderstanding.intent.primary,
       canonicalDomain: canonicalUnderstanding.domain.primary
     });
-    return await finalizeSemanticResult(question, builtCanonicalCareer, resultCacheKey);
+    return await finalizeSemanticResult(question, builtCanonicalCareer, resultCacheKey, options);
   }
 
   const earlyContactLecturer = strictDocumentOnly ? null : (
@@ -19729,17 +19739,24 @@ async function _querySemanticRagInner(question, options = {}) {
   }
 
   if (!strictDocumentOnly) {
-    const earlyDualDegreeStructured = tryDualDegreeAnswer(question, options)
-      || tryDualDegreeAnswer(canonicalRoutingQuestion || routingQuestion || question, options)
-      || tryDualDegreeAnswer(routingQuestion || question, options);
-    if (earlyDualDegreeStructured && earlyDualDegreeStructured.answer) {
-      const builtEarlyDualDegree = buildDeterministicResponse(
-        question,
-        'semantic-rag-dual-degree',
-        { ...earlyDualDegreeStructured, source: 'semantic-rag-dual-degree' },
-        { routeStage: 'pre-guard-dual-degree-before-document-first', normalizedRouting: normalizedRouting.changed }
-      );
-      return await finalizeSemanticResult(question, builtEarlyDualDegree, resultCacheKey);
+    const frameRejectsDualDegree = effectiveSemanticFrame && (
+      (effectiveSemanticFrame.provenance?.domain === 'EXPLICIT_CURRENT' && !['double_degree', 'academic_cooperation'].includes(effectiveSemanticFrame.domain?.primary))
+      || (effectiveSemanticFrame.domain?.primary && !['double_degree', 'academic_cooperation', 'general', 'unknown'].includes(effectiveSemanticFrame.domain?.primary))
+    );
+    const hasCompetitorComparison = /\b(?:instiki|primakara|udayana|unud|warmadewa|undiksha|kampus\s+lain|universitas\s+lain|kelebihan|keunggulan)\b/i.test(String(question || ''));
+    if (!frameRejectsDualDegree && !hasCompetitorComparison) {
+      const earlyDualDegreeStructured = tryDualDegreeAnswer(question, options)
+        || tryDualDegreeAnswer(canonicalRoutingQuestion || routingQuestion || question, options)
+        || tryDualDegreeAnswer(routingQuestion || question, options);
+      if (earlyDualDegreeStructured && earlyDualDegreeStructured.answer) {
+        const builtEarlyDualDegree = buildDeterministicResponse(
+          question,
+          'semantic-rag-dual-degree',
+          { ...earlyDualDegreeStructured, source: 'semantic-rag-dual-degree' },
+          { routeStage: 'pre-guard-dual-degree-before-document-first', normalizedRouting: normalizedRouting.changed }
+        );
+        return await finalizeSemanticResult(question, builtEarlyDualDegree, resultCacheKey);
+      }
     }
   }
   const preGuardCanonicalOrganizationCount = strictDocumentOnly || !(canonicalUnderstanding && canonicalUnderstanding.intent && canonicalUnderstanding.intent.primary === 'ask_organization_count') ? null : (
@@ -20482,6 +20499,17 @@ async function _querySemanticRagInner(question, options = {}) {
             return await finalizeSemanticResult(question, built, resultCacheKey);
           }
         }
+        if (candidateChunks.length === 0 && /\b(?:kegiatan|acara|program|apa\s+saja|dilakukan|agenda|aktivitas|tujuan|fungsi)\b/i.test(question)) {
+          const boundedNoDataResponse = {
+            answer: `Saya belum menemukan data atau informasi resmi mengenai kegiatan ${abbr} di ITB STIKOM Bali pada dokumen yang tersedia saat ini. Untuk informasi lebih lanjut, silakan konfirmasi langsung ke bagian kemahasiswaan atau pihak kampus.`,
+            source: 'semantic-rag-bounded-evidence-eval',
+            frameSource: 'semantic-rag-insufficient-data',
+            contexts: [],
+            debug: { answerabilityResult: { answerable: false, reason: 'BOUNDED_NO_DATA_UNKNOWN_ENTITY' } }
+          };
+          const built = buildDeterministicResponse(question, 'semantic-rag-bounded-evidence-eval', boundedNoDataResponse, { routeStage: 'pre-ai-bounded-abbreviation-eval' });
+          return await finalizeSemanticResult(question, built, resultCacheKey);
+        }
         const probe = await tryLocalUploadedTrainingGenericAnswer(abbr, options);
         if (probe && probe.answer) {
           if (debugTrace) console.log('[TRACE PRE_AI] returning probe result for abbreviation:', { abbr, source: probe.source });
@@ -20838,6 +20866,7 @@ async function _querySemanticRagInner(question, options = {}) {
         || (effectiveSemanticFrame && effectiveSemanticFrame.domain?.primary && effectiveSemanticFrame.domain.primary !== 'general')
         || (effectiveSemanticFrame && Array.isArray(effectiveSemanticFrame.entities) && effectiveSemanticFrame.entities.length > 0)
         || (effectiveSemanticFrame && effectiveSemanticFrame.intent?.primary && !['ask_general', 'unknown'].includes(effectiveSemanticFrame.intent.primary))
+        || Boolean(extractAmbiguousAbbreviation(question))
       ) ? false : rewrite.needsClarification
     };
   }
