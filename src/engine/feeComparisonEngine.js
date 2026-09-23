@@ -2470,7 +2470,15 @@ function tryCareerAnswer(question, options = {}) {
   const q = String(question || '').toLowerCase();
   if (/\b(double\s*degree(?:nya)?|dual\s*degree(?:nya)?|dd)\b/.test(q)) return null;
   if (/\b(?:gelar(?:nya)?|ijazah(?:nya)?|titel(?:nya)?)\b/i.test(q)) return null;
-  if (!/\b(?:prospek(?:nya)?|kerja(?:nya)?|bekerja(?:nya)?|karir(?:nya)?|karier(?:nya)?|lulusan(?:nya)?|tamat(?:nya)?|peluang(?:nya)?|profesi(?:nya)?|pekerjaan(?:nya)?|bidang(?:nya)?|bisa\s+(?:kerja|bekerja|jadi|menjadi)|jadi\s+apa|kerja\s+apa|kerjanya\s+apa|profesi\s+apa|setelah\s+(?:tamat|lulus))\b/i.test(q)) return null;
+  const isCareerFromFrame = Boolean(
+    (options.effectiveSemanticFrame || options.__effectiveSemanticFrame)?.domain?.primary === 'career'
+    || (options.effectiveSemanticFrame || options.__effectiveSemanticFrame)?.requestedFields?.some(f => ['careerOutcome', 'careerProspects', 'careerProspect', 'jobRoles'].includes(f))
+    || options.__contextAuthority?.activeField === 'careerOutcome'
+    || options.__contextAuthority?.activeDomain === 'career'
+    || options.conversationState?.activeField === 'careerOutcome'
+    || options.sessionData?.conversationState?.activeField === 'careerOutcome'
+  );
+  if (!isCareerFromFrame && !/\b(?:prospek(?:nya)?|kerja(?:nya)?|bekerja(?:nya)?|karir(?:nya)?|karier(?:nya)?|lulusan(?:nya)?|tamat(?:nya)?|peluang(?:nya)?|profesi(?:nya)?|pekerjaan(?:nya)?|bidang(?:nya)?|bisa\s+(?:kerja|bekerja|jadi|menjadi)|jadi\s+apa|kerja\s+apa|kerjanya\s+apa|profesi\s+apa|setelah\s+(?:tamat|lulus))\b/i.test(q)) return null;
   let program = detectProgram(question);
   if (!program && options && options.programHint) {
     const hintProgs = detectProgramsFromHint(options.programHint);
@@ -2506,6 +2514,13 @@ function tryCareerAnswer(question, options = {}) {
         if (normKey) {
           program = { key: normKey, label: cpLabel || normKey, family: (PROGRAM_META[normKey] && PROGRAM_META[normKey].family) || 's1' };
         }
+      }
+    }
+    const frame = options.effectiveSemanticFrame || options.__effectiveSemanticFrame;
+    if (!program && frame) {
+      const frameProg = frame.resolvedBindings?.program || frame.entities?.find(e => e.group === 'programs' || e.type === 'program')?.canonical;
+      if (frameProg) {
+        program = detectProgram(frameProg);
       }
     }
   }

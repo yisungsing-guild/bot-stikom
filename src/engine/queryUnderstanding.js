@@ -1240,9 +1240,15 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryDomain = 'student_organization';
     answerExpectation = 'count';
   } else if (hasOrganization && (organizationCategory || (interestProfiles.length > 0) || /\b(?:suka|hobi|minat|tertarik|ikut|ikutan|gabung|wadah)\b/i.test(q))) {
-    primaryIntent = 'ask_organization_profile';
-    primaryDomain = 'student_organization';
-    answerExpectation = 'availability_or_category';
+    if (asksOrganizationList) {
+      primaryIntent = 'ask_organization_list';
+      primaryDomain = 'student_organization';
+      answerExpectation = 'list';
+    } else {
+      primaryIntent = 'ask_organization_profile';
+      primaryDomain = 'student_organization';
+      answerExpectation = 'availability_or_category';
+    }
   } else if (asksOrganizationList) {
     primaryIntent = 'ask_organization_list';
     primaryDomain = 'student_organization';

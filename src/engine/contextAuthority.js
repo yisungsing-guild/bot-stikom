@@ -66,12 +66,18 @@ function feeQueryRequiresProgramEntity(rawText, contract) {
  * Checks whether a candidate entity's type is compatible with a target domain.
  */
 function isEntityTypeCompatibleWithDomain(entityType, targetDomain) {
-  if (!entityType || !targetDomain) return true;
-  const allowed = ENTITY_TYPE_DOMAIN_COMPATIBILITY[entityType];
-  if (allowed && allowed.has(targetDomain)) return true;
-  const fam = normalizeEntityFamily(entityType);
+  if (!entityType || !targetDomain) return false;
+  const normType = String(entityType).toLowerCase().trim();
+  const normDomain = String(targetDomain).toLowerCase().trim();
+
+  const allowed = ENTITY_TYPE_DOMAIN_COMPATIBILITY[normType];
+  if (allowed && allowed.has(normDomain)) return true;
+
+  const fam = normalizeEntityFamily(normType);
   const famAllowed = ENTITY_TYPE_DOMAIN_COMPATIBILITY[fam];
-  return famAllowed ? famAllowed.has(targetDomain) : true;
+  if (famAllowed && famAllowed.has(normDomain)) return true;
+
+  return false;
 }
 
 /**
@@ -135,11 +141,16 @@ function detectDomainFromCues(rawText, sessionState = null) {
   if (/\b(?:mahasiswa\s+(?:asing|internasional)|foreign\s+student|keimigrasian|imigrasi|izin\s+(?:belajar(?:nya)?|tinggal(?:nya)?)|visa|vitas|itas|kitas|sktt)\b/i.test(text)) {
     return 'foreign_student_admin';
   }
+  if (/\b(?:instiki|primakara|universitas\s+lain|kampus\s+lain|ptn|pts)\b/i.test(text)
+    || (/\b(?:bandingkan|bedanya|perbedaan|komparasi|keunggulan|mana\s+(?:yang\s+)?(?:lebih|bagus|unggul|baik))\b/i.test(text) && /\b(?:instiki|primakara|kampus|stikom)\b/i.test(text))) {
+    return 'institution_comparison';
+  }
   if (/\b(?:kurikulum|mata\s+kuliah|matkul|hardware|software|cloud|iot|jaringan|pemrograman|coding|perangkat\s+keras|perangkat\s+lunak|belajar(?:nya)?|dipelajari|materi)\b/i.test(text)
     && !/\b(?:izin\s+belajar(?:nya)?|study\s+permit)\b/i.test(text)) {
     return 'program_curriculum';
   }
-  if (/\b(?:sks|akademik|semester)\b/i.test(text)) {
+  if (/\b(?:sks|akademik|semester|tugas\s+akhir|\bta\b|skripsi|yudisium|wisuda|kelulusan|sidang|krs|khs)\b/i.test(text)
+    && !/\b(?:izin\s+belajar(?:nya)?|study\s+permit)\b/i.test(text)) {
     return 'academic';
   }
   if (/\b(?:double\s*degree|dual\s*degree|gelar\s*ganda|dnui|help|utb)\b/i.test(text)
@@ -167,67 +178,9 @@ function hasAmbiguousReferenceCues(rawText) {
 
 /**
  * Builds the effective disambiguated query based on the transition and resolved slots.
+ * Per Amendment 1: Raw user utterance is immutable byte-for-byte.
  */
 function buildEffectiveQuery(transition, resolvedDomain, resolvedIntent, resolvedEntity, rawText) {
-  const entityName = resolvedEntity && resolvedEntity.canonical ? resolvedEntity.canonical : '';
-  const domain = String(resolvedDomain || '').toLowerCase();
-
-  if (transition === CONTEXT_TRANSITIONS.ENTITY_REPLACEMENT || transition === CONTEXT_TRANSITIONS.CORRECTION) {
-    const isShortEntityQuery = !rawText || rawText.trim().split(/\s+/).length <= 4 ||
-      /^(?:kalo|kalau|bagaimana\s+dengan|gimana\s+dengan|untuk|prodi|jurusan|yang)?\s*[a-z0-9\s.-]+\??$/i.test(rawText.trim());
-    if (isShortEntityQuery) {
-      if (domain === 'career') {
-        return `Prospek kerja program studi ${entityName} ITB STIKOM Bali`;
-      }
-      if (domain === 'fee') {
-        return `Rincian biaya kuliah program studi ${entityName} ITB STIKOM Bali`;
-      }
-      if (domain === 'academic' || domain === 'program_curriculum') {
-        return `Kurikulum dan materi kuliah program studi ${entityName} ITB STIKOM Bali`;
-      }
-      if (domain === 'accreditation') {
-        return `Akreditasi program studi ${entityName} ITB STIKOM Bali`;
-      }
-      if (domain === 'student_organization') {
-        return `Profil organisasi mahasiswa dan UKM ${entityName} ITB STIKOM Bali`;
-      }
-      if (domain === 'campus_facility' || domain === 'facility' || domain === 'facilities') {
-        return `Informasi fasilitas ${entityName} ITB STIKOM Bali`;
-      }
-      if (domain === 'program') {
-        return `Informasi program studi ${entityName} ITB STIKOM Bali`;
-      }
-    }
-    return entityName && !String(rawText || '').toLowerCase().includes(entityName.toLowerCase())
-      ? `${rawText} ${entityName}`
-      : rawText;
-  }
-
-  if (transition === CONTEXT_TRANSITIONS.AMBIGUOUS_REFERENCE && entityName) {
-    const replaced = String(rawText || '')
-      .replace(/\b(?:prodi|jurusan|program\s+studi)\s+(?:tersebut|itu|tadi)\b/gi, `program studi ${entityName}`)
-      .replace(/\b(?:yang\s+tadi|yang\s+itu|tersebut)\b/gi, entityName);
-    return replaced !== rawText ? replaced : `${rawText} ${entityName}`;
-  }
-
-  if (transition === CONTEXT_TRANSITIONS.DOMAIN_SWITCH && entityName) {
-    if (!String(rawText || '').toLowerCase().includes(entityName.toLowerCase())) {
-      return `${rawText} untuk ${entityName}`;
-    }
-  }
-
-  if (transition === CONTEXT_TRANSITIONS.INHERIT && entityName) {
-    if (domain === 'fee' && !feeQueryRequiresProgramEntity(rawText)) {
-      return rawText;
-    }
-    if (!String(rawText || '').toLowerCase().includes(entityName.toLowerCase())) {
-      return `${rawText} untuk ${entityName}`;
-    }
-  }
-
-  if (transition === CONTEXT_TRANSITIONS.INHERIT && !entityName) {
-    return rawText;
-  }
   return rawText;
 }
 

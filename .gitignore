@@ -109,6 +109,7 @@ tests/*
 !tests/knowledgeRootContractRemediation.test.js
 !tests/authorityCutoverAndGroundedComposer.test.js
 !tests/continuousSessionAndAuthorityRegression.test.js
+!tests/productionRealChatStructuralRegression.test.js
 tools/
 quarantined_backups/
 

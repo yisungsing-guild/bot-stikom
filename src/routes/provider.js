@@ -23,6 +23,7 @@ const {
 } = require('../engine/scheduleEvidenceResolver');
 const { getRagIndexPath, getRagDataDir } = require('../utils/ragPaths');
 const { detectIntent, detectIntentDetails } = require('./providerIntentDetection');
+const { enqueueChat } = require('../engine/chatQueue');
 
 async function resolveKeywordRule(text) {
   try {
@@ -8949,7 +8950,9 @@ module.exports = function (provider) {
     }
   });
 
-  router.post('/webhook', providerWebhookAuth, async (req, res) => {
+  router.post('/webhook', providerWebhookAuth, (req, res) => {
+    const chatId = req.body && req.body.chatId ? req.body.chatId : 'unknown_chat';
+    return enqueueChat(chatId, async () => {
     console.log('WA_RUNTIME_ACTIVE');
     const chatId = req.body.chatId;
     const rawText = String(req.body.text || '').trim();
@@ -17749,6 +17752,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
     } finally {
       clearReplyDeadline();
     }
+    });
   });
 
   return router;

@@ -348,7 +348,7 @@ const DOMAIN_FIELD_COMPATIBILITY = {
     'definition', 'equivalence', 'installment', 'availability', 'requirements', 'procedureSteps'
   ]),
   career: new Set([
-    'careerProspects', 'jobRoles', 'jobs', 'careerSupport', 'opportunity', 'service',
+    'careerOutcome', 'careerProspects', 'careerProspect', 'jobRoles', 'jobs', 'careerSupport', 'opportunity', 'service',
     'career:service', 'careerGoal', 'employmentSupport', 'alumniJobInfo', 'businessMatching', 'networking',
     'profile', 'definition', 'benefit', 'availability'
   ]),
@@ -1691,17 +1691,20 @@ const ENTITY_TYPE_DOMAIN_COMPATIBILITY = {
   scholarship: new Set(['scholarship', 'general']),
   organization: new Set(['student_organization', 'organization', 'campus_contact', 'contact', 'general']),
   ukm: new Set(['student_organization', 'organization', 'campus_contact', 'contact', 'general']),
+  student_activity_unit: new Set(['student_organization', 'organization', 'campus_contact', 'contact', 'general']),
   student_association: new Set(['student_organization', 'organization', 'campus_contact', 'contact', 'general']),
   ukm_category: new Set(['student_organization', 'organization', 'general']),
   facility: new Set(['campus_facility', 'facility', 'campus_location', 'campus_contact', 'contact', 'general']),
   campus_service: new Set(['campus_facility', 'facility', 'pmb_requirements', 'registration', 'academic_policy', 'campus_contact', 'contact', 'general']),
   admission_track: new Set(['pmb_requirements', 'registration', 'academic_policy', 'academic', 'fee', 'general']),
   participant_scope: new Set(['pmb_requirements', 'registration', 'academic_policy', 'academic', 'foreign_student_admin', 'general']),
-  academic_scope: new Set(['academic_policy', 'academic', 'program_curriculum', 'program', 'fee', 'general'])
+  academic_scope: new Set(['academic_policy', 'academic', 'program_curriculum', 'program', 'fee', 'general']),
+  institution: new Set(['institution_comparison', 'general'])
 };
 
 /**
  * Builds an effective substituted query based on prior query pattern or domain template.
+ * Per Amendment 1: Raw user utterance is immutable byte-for-byte.
  *
  * @param {string} rawText Current raw user input
  * @param {object} newEntity Candidate entity
@@ -1709,63 +1712,7 @@ const ENTITY_TYPE_DOMAIN_COMPATIBILITY = {
  * @returns {string} Effective substituted query
  */
 function buildEffectiveSubstitutedQuery(rawText, newEntity, priorState) {
-  if (!newEntity || !newEntity.canonical) return rawText;
-  const rawSourceQuery = priorState && priorState.rawSourceQuery;
-  const priorEntity = priorState && priorState.activeEntity;
-
-  // Try replacing prior entity in source query
-  if (rawSourceQuery && priorEntity) {
-    const candidates = [
-      priorEntity.canonical,
-      priorEntity.code,
-      priorEntity.surface
-    ].filter(Boolean);
-
-    for (const cand of candidates) {
-      const re = new RegExp('\\b' + escapeRegex(cand) + '\\b', 'i');
-      if (re.test(rawSourceQuery)) {
-        return rawSourceQuery.replace(re, newEntity.canonical);
-      }
-    }
-  }
-
-  // Fallback to domain-intent templates
-  const domain = String(priorState && priorState.activeDomain || '').toLowerCase();
-  const intent = String(priorState && priorState.activeIntent || '').toLowerCase();
-  const canonical = newEntity.canonical;
-
-  if (domain === 'career' || intent === 'ask_career_prospect') {
-    return `Prospek kerja karier untuk ${canonical}`;
-  }
-  if (domain === 'program_curriculum' || intent === 'ask_program_curriculum') {
-    return `Kurikulum dan fokus belajar untuk ${canonical}`;
-  }
-  if (domain === 'fee' || intent === 'ask_fee') {
-    return `Rincian biaya kuliah untuk ${canonical}`;
-  }
-  if (domain === 'accreditation' || intent === 'ask_accreditation') {
-    return `Status akreditasi untuk ${canonical}`;
-  }
-  if (domain === 'scholarship') {
-    return `Syarat beasiswa ${canonical}`;
-  }
-  if (domain === 'pmb_schedule') {
-    return `Jadwal pendaftaran ${canonical} PMB`;
-  }
-  if (domain === 'student_organization') {
-    return `Daftar UKM organisasi kategori ${canonical}`;
-  }
-  if (domain === 'campus_facility') {
-    return `Fasilitas ${canonical} ITB STIKOM Bali`;
-  }
-  if (domain === 'double_degree') {
-    return `Program Double Degree ${canonical}`;
-  }
-  if (domain === 'campus_location') {
-    return `Lokasi alamat kampus ${canonical} ITB STIKOM Bali`;
-  }
-
-  return `${canonical} ${rawText}`;
+  return rawText;
 }
 
 /**
@@ -1827,8 +1774,8 @@ function detectEntitySubstitution(currentUnderstanding, priorSessionOrState, opt
   }
 
   // 7. Check domain-entity compatibility
-  const allowedDomains = ENTITY_TYPE_DOMAIN_COMPATIBILITY[candidate.type];
-  const isCompatible = allowedDomains ? allowedDomains.has(state.activeDomain) : true;
+  const allowedDomains = ENTITY_TYPE_DOMAIN_COMPATIBILITY[candidate.type] || ENTITY_TYPE_DOMAIN_COMPATIBILITY[normalizeEntityFamily(candidate.type)];
+  const isCompatible = allowedDomains ? allowedDomains.has(state.activeDomain) : false;
   if (!isCompatible) {
     return { isSubstitution: false, reason: 'incompatible_entity_type' };
   }
@@ -2411,40 +2358,7 @@ function detectContextRepair(currentUnderstanding, priorSessionOrState, options 
     }
   }
 
-  let effectiveQuery = rawText;
-  const entName = resolvedEntity || '';
-
-  if (targetDomain === 'career' || repairedIntent === 'ask_career_prospect') {
-    effectiveQuery = `Prospek kerja dan peluang karier lulusan ${entName} ITB STIKOM Bali`;
-  } else if (targetDomain === 'program_curriculum') {
-    effectiveQuery = `Mata kuliah, kurikulum, dan materi yang dipelajari pada ${entName} ITB STIKOM Bali`;
-  } else if (targetDomain === 'fee') {
-    if (requestedFields.includes('registrationFee')) {
-      effectiveQuery = `Biaya pendaftaran PMB ITB STIKOM Bali`;
-    } else if (requestedFields.includes('semesterFee')) {
-      effectiveQuery = `Biaya kuliah per semester UKT ${entName} ITB STIKOM Bali`;
-    } else if (requestedFields.includes('totalFee')) {
-      effectiveQuery = `Total biaya awal masuk kuliah ${entName} ITB STIKOM Bali`;
-    } else {
-      effectiveQuery = `Rincian biaya kuliah ${entName} ITB STIKOM Bali`;
-    }
-  } else if (targetDomain === 'registration') {
-    effectiveQuery = `Alur dan cara pendaftaran mahasiswa baru PMB ITB STIKOM Bali`;
-  } else if (targetDomain === 'scholarship') {
-    effectiveQuery = `Syarat dan ketentuan beasiswa ${entName} ITB STIKOM Bali`;
-  } else if (targetDomain === 'pmb_schedule') {
-    effectiveQuery = `Jadwal dan tanggal penutupan pendaftaran ${entName} PMB ITB STIKOM Bali`;
-  } else if (targetDomain === 'student_organization') {
-    effectiveQuery = `Daftar UKM bidang ${entName} ITB STIKOM Bali`;
-  } else if (targetDomain === 'campus_facility') {
-    effectiveQuery = `Profil dan informasi fasilitas ${entName} ITB STIKOM Bali`;
-  } else if (targetDomain === 'double_degree') {
-    effectiveQuery = entName.startsWith('Double Degree') ? `Program ${entName} ITB STIKOM Bali` : `Program Double Degree ${entName} ITB STIKOM Bali`;
-  } else if (targetDomain === 'accreditation') {
-    effectiveQuery = `Akreditasi program studi ${entName} ITB STIKOM Bali`;
-  } else if (targetDomain === 'campus_location') {
-    effectiveQuery = `Alamat lengkap dan lokasi kampus ${entName} ITB STIKOM Bali`;
-  }
+  const effectiveQuery = rawText;
 
   const resolvedEntityObj = explicitNewEntity || (state.activeEntity ? state.activeEntity : (resolvedEntity ? { type: resolvedEntityType, canonical: resolvedEntity } : null));
 

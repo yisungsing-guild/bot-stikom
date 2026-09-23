@@ -3,6 +3,7 @@ const axios = require('axios');
 const logger = require('../logger');
 const { requireWebhookToken } = require('../middleware/webhookToken');
 const { normalizeEventText } = require('../lib/normalizer');
+const { enqueueChat } = require('../engine/chatQueue');
 
 function normalizePhone(value) {
   const raw = String(value || '').trim();
@@ -161,17 +162,19 @@ async function handleFonnteWebhook(req, res) {
     }
 
     const normalizedEvent = normalizeEventText(text, { preserveCase: false });
-    await forwardToProvider({
-      chatId: phone,
-      text,
-      normalizedText: normalizedEvent.normalized,
-      searchText: normalizedEvent.searchText,
-      tokens: normalizedEvent.tokens,
-      urls: normalizedEvent.urls,
-      messageId,
-      fonnteMessageId: messageId,
-      ts,
-      source: 'fonnte'
+    await enqueueChat(phone, async () => {
+      await forwardToProvider({
+        chatId: phone,
+        text,
+        normalizedText: normalizedEvent.normalized,
+        searchText: normalizedEvent.searchText,
+        tokens: normalizedEvent.tokens,
+        urls: normalizedEvent.urls,
+        messageId,
+        fonnteMessageId: messageId,
+        ts,
+        source: 'fonnte'
+      });
     });
   } catch (err) {
     logger.error({ err: err?.message || err }, '[Fonnte Webhook] handler error');

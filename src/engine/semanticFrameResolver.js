@@ -56,7 +56,8 @@ const DOMAIN_ENTITY_FAMILY_COMPATIBILITY = Object.freeze({
   registration: new Set(['admission_track', 'program', 'participant_scope']),
   campus_contact: new Set(['campus', 'organization', 'program', 'campus_service']),
   institution_document: new Set(['document', 'academic_scope', 'institution']),
-  document: new Set(['document', 'academic_scope', 'institution'])
+  document: new Set(['document', 'academic_scope', 'institution']),
+  institution_comparison: new Set(['institution'])
 });
 
 /**
@@ -386,9 +387,74 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
     }
   }
 
+const DOMAIN_FIELD_FAMILY_COMPATIBILITY = Object.freeze({
+  foreign_student_admin: new Set(['procedure', 'governance', 'geographic_destination']),
+  academic_policy: new Set(['procedure', 'academic_policy', 'academic_curriculum', 'certification', 'academic_qualification']),
+  academic: new Set(['procedure', 'academic_curriculum', 'academic_quality', 'academic_policy', 'academic_qualification']),
+  registration: new Set(['procedure', 'fee']),
+  scholarship: new Set(['procedure', 'financial_aid', 'fee']),
+  student_organization: new Set(['procedure', 'organization_identity', 'organization_classification', 'organization_inventory']),
+  career: new Set(['procedure', 'career']),
+  fee: new Set(['fee', 'financial', 'financial_aid'])
+});
+
+function areRequestedFieldsCompatibleWithDomain(fields, domain) {
+  if (!fields || !fields.length) return true;
+  const normDom = String(domain || '').trim().toLowerCase();
+  const allowedFamilies = DOMAIN_FIELD_FAMILY_COMPATIBILITY[normDom];
+  for (const field of fields) {
+    const desc = getFieldDescriptor(field);
+    const family = desc?.family || 'unknown';
+    const root = desc?.root || 'unknown';
+    if (family === 'procedure' || root === 'procedure') {
+      if (allowedFamilies && !allowedFamilies.has('procedure')) return false;
+      continue;
+    }
+    if (allowedFamilies && !allowedFamilies.has(family)) {
+      return false;
+    }
+    if ((family === 'fee' || root === 'financial') && !['fee', 'registration', 'scholarship'].includes(normDom)) {
+      return false;
+    }
+    if ((family === 'career' || root === 'career') && normDom !== 'career') {
+      return false;
+    }
+    if ((family === 'organization_inventory' || root === 'organization') && !['student_organization', 'organization'].includes(normDom)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+  // Prior context domain & intent inheritance for entity-substitution and compatible procedural follow-ups
+  const isCurrentDomainUnresolved = domain.primary === 'general' || domain.primary === 'unknown' || !domain.primary;
+  if (isCurrentDomainUnresolved && isFresh && isVerifiedAuthority && sessionState.activeDomain && sessionState.activeDomain !== 'general' && sessionState.activeDomain !== 'unknown') {
+    const candidateFam = entities.length > 0 ? normalizeEntityFamily(entities[0].family || entities[0].type) : null;
+    const isEntityCompatible = !candidateFam || isEntityFamilyCompatibleWithDomain(candidateFam, sessionState.activeDomain);
+    const areFieldsCompatible = areRequestedFieldsCompatibleWithDomain(requestedFields, sessionState.activeDomain);
+
+    const hasFollowUpSignal = requestedFields.length === 0
+      || /\b(?:tersebut|itu|tadi|dokumen(?:nya)?|persyaratan(?:nya)?|syarat(?:nya)?|berkas(?:nya)?|langkah(?:nya)?|alur(?:nya)?|cara(?:nya)?|proses(?:nya)?|pengajuan|alur|tahap|prosedur|bagaimana|gimana|apa\s+saja)\b/i.test(raw)
+      || (entities.length > 0 && slotProvenance.entities === PROVENANCE.PRIOR_CONTEXT_INHERITED);
+
+    if (isEntityCompatible && areFieldsCompatible && hasFollowUpSignal) {
+      domain.primary = sessionState.activeDomain;
+      domain.confidence = 0.85;
+      slotProvenance.domain = PROVENANCE.PRIOR_CONTEXT_INHERITED;
+      inheritedSemantics.domain = sessionState.activeDomain;
+
+      if (sessionState.activeIntent && (intent.primary === 'ask_general' || intent.primary === 'unknown' || intent.primary === 'ask_program')) {
+        intent.primary = sessionState.activeIntent;
+        intent.confidence = 0.85;
+        slotProvenance.intent = PROVENANCE.PRIOR_CONTEXT_INHERITED;
+        inheritedSemantics.intent = sessionState.activeIntent;
+      }
+    }
+  }
+
   // Inherit compatible prior fields if current turn has NO explicit field and no explicit topic change
   if (requestedFields.length === 0 && isFresh && isVerifiedAuthority && Array.isArray(sessionState.requestedFields)) {
-    const compatibleFields = filterCompatibleFields(sessionState.requestedFields, domain.primary, null);
+    const compatibleFields = filterCompatibleFields(sessionState.requestedFields, domain.primary, entities[0] || null);
     for (const f of compatibleFields) {
       if (!requestedFields.includes(f)) {
         requestedFields.push(f);

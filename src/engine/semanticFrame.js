@@ -85,8 +85,8 @@ function normalizeEntityFamily(typeOrFamily) {
   if (!raw) return 'unknown';
 
   // Organization family
-  if (/^(?:ukm|organization|student_organization|hima|himaprodi|ormawa|bem|dpm|student_association|ukm_category|community)$/.test(raw)
-      || raw.includes('organization') || raw.includes('association')) {
+  if (/^(?:ukm|organization|student_organization|student_activity_unit|hima|himaprodi|ormawa|bem|dpm|student_association|ukm_category|community)$/.test(raw)
+      || raw.includes('organization') || raw.includes('association') || raw.includes('activity_unit')) {
     return 'organization';
   }
 
@@ -205,6 +205,8 @@ const FIELD_TAXONOMY = Object.freeze({
   organizationList: { field: 'organizationList', family: 'organization_inventory', root: 'organization', priority: 7 },
 
   // Career
+  careerOutcome: { field: 'careerOutcome', family: 'career', root: 'career', priority: 10 },
+  careerProspects: { field: 'careerProspects', family: 'career', root: 'career', priority: 10 },
   careerProspect: { field: 'careerProspect', family: 'career', root: 'career', priority: 8 },
   jobRoles: { field: 'jobRoles', family: 'career', root: 'career', priority: 10 },
 
