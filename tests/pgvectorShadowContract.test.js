@@ -42,7 +42,8 @@ const {
   computeGenericStructuralRerank,
   computeComparisonTelemetry,
   observeShadowRetrieval,
-  pureEvaluateShadowCandidates
+  pureEvaluateShadowCandidates,
+  _resetActiveShadowJobs
 } = require('../src/engine/pgvectorShadowProvider');
 
 describe('PGVECTOR Shadow Implementation Contract', () => {
@@ -50,6 +51,7 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
 
   afterEach(() => {
     process.env = { ...originalEnv };
+    _resetActiveShadowJobs();
     jest.restoreAllMocks();
   });
 
@@ -1358,6 +1360,77 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
     test('searchVectorChunksMultiBinding formats parameterized lateral query safely', async () => {
       const res = await searchVectorChunksMultiBinding([]);
       expect(res).toEqual({});
+    });
+
+    test('timeout fires at T, underlying DB resolves at T+N -> observer_timed_out=true, worker_final_status=success', async () => {
+      process.env.VECTOR_SHADOW_ENABLED = 'true';
+      process.env.VECTOR_SHADOW_SAMPLE_RATE = '1.0';
+      process.env.VECTOR_SHADOW_MAX_CONCURRENCY = '1';
+      process.env.VECTOR_SHADOW_TIMEOUT_MS = '50';
+
+      const shadowProvider = require('../src/engine/pgvectorShadowProvider');
+      const telemetryCaptured = [];
+      shadowProvider.setTelemetrySink(r => telemetryCaptured.push(r));
+
+      const { OpenAI } = require('openai');
+      const proto = Object.getPrototypeOf(new OpenAI({ apiKey: 'mock' }).embeddings);
+      const embedSpy = jest.spyOn(proto, 'create').mockResolvedValue({
+        data: [{ index: 0, embedding: new Array(1536).fill(0.01) }]
+      });
+
+      const shadowDb = require('../src/engine/shadowDb');
+      let resolveDb;
+      const dbPromise = new Promise(resolve => {
+        resolveDb = resolve;
+      });
+
+      const dbSpy = jest.spyOn(shadowDb, 'queryShadowDb').mockImplementation(async () => {
+        await dbPromise;
+        return {
+          rows: [{
+            binding_id: 'b_timeout_test',
+            vector_chunk_id: 'v_delayed',
+            source_record_id: 'rec_delayed',
+            similarity: 0.92
+          }],
+          shadow_pool_wait_ms: 10,
+          db_transport_plus_server_ms: 100,
+          total_vector_client_ms: 110
+        };
+      });
+
+      const plan = { bindings: [{ id: 'b_timeout_test' }] };
+      const exec = {
+        bindingResults: [
+          { bindingId: 'b_timeout_test', entity: 'TI', field: 'biaya', candidates: [] }
+        ]
+      };
+
+      const observerResult = await shadowProvider.observeShadowRetrieval(plan, exec, {
+        requestTraceId: 'trace_timeout_settle'
+      });
+
+      expect(observerResult.skipped).toBe(true);
+      expect(observerResult.reason).toBe('timeout');
+
+      const initialTelem = telemetryCaptured.find(r => r.request_trace_id === 'trace_timeout_settle');
+      expect(initialTelem).toBeDefined();
+      expect(initialTelem.observer_timed_out).toBe(true);
+      expect(initialTelem.shadow_timeout).toBe(true);
+
+      resolveDb();
+      await new Promise(r => setTimeout(r, 60));
+
+      const finalTelem = telemetryCaptured[telemetryCaptured.length - 1];
+      expect(finalTelem.request_trace_id).toBe('trace_timeout_settle');
+      expect(finalTelem.observer_timed_out).toBe(true);
+      expect(finalTelem.shadow_timeout).toBe(true);
+      expect(finalTelem.worker_final_status).toBe('success');
+      expect(finalTelem.worker_settle_latency_ms).toBeGreaterThanOrEqual(50);
+      expect(finalTelem.observer_return_latency_ms).toBeLessThanOrEqual(finalTelem.worker_settle_latency_ms);
+
+      embedSpy.mockRestore();
+      dbSpy.mockRestore();
     });
   });
 });

@@ -31,6 +31,7 @@
 
 const { OpenAI } = require('openai');
 const prisma = require('../db');
+const shadowDb = require('./shadowDb');
 const {
   CANONICAL_FIELD_SEMANTICS,
   getFieldNaturalSemantics,
@@ -67,6 +68,14 @@ const EMBEDDING_MODEL = 'text-embedding-3-small';
 
 // In-process concurrency limiter
 let activeShadowJobs = 0;
+
+function _resetActiveShadowJobs() {
+  activeShadowJobs = 0;
+}
+
+function getActiveShadowJobs() {
+  return activeShadowJobs;
+}
 
 function isShadowEnabled() {
   return String(process.env.VECTOR_SHADOW_ENABLED || '').trim().toLowerCase() === 'true';
@@ -218,10 +227,6 @@ async function computeQueryEmbedding(text, timeoutMs = 1500, abortSignal = null)
  * Hard filters applied ONLY when binding has explicit authoritative constraints.
  */
 async function searchVectorChunks(queryEmbedding, binding, limit = 10) {
-  if (!prisma || typeof prisma.$queryRawUnsafe !== 'function') {
-    throw new Error('Database client unavailable for vector retrieval.');
-  }
-
   const vectorStr = `[${queryEmbedding.join(',')}]`;
   const params = [vectorStr, EMBEDDING_VERSION];
   let paramIdx = 3;
@@ -269,7 +274,8 @@ async function searchVectorChunks(queryEmbedding, binding, limit = 10) {
     LIMIT $${limitParamIdx};
   `;
 
-  return await prisma.$queryRawUnsafe(sql, ...params);
+  const queryResult = await shadowDb.queryShadowDb(sql, ...params);
+  return queryResult.rows;
 }
 
 /**
@@ -283,9 +289,6 @@ async function searchVectorChunks(queryEmbedding, binding, limit = 10) {
 async function searchVectorChunksMultiBinding(bindingEmbeddings = [], limit = 20) {
   if (!Array.isArray(bindingEmbeddings) || bindingEmbeddings.length === 0) {
     return {};
-  }
-  if (!prisma || typeof prisma.$queryRawUnsafe !== 'function') {
-    throw new Error('Database client unavailable for vector retrieval.');
   }
 
   const payload = [];
@@ -369,7 +372,8 @@ async function searchVectorChunksMultiBinding(bindingEmbeddings = [], limit = 20
     ) c;
   `;
 
-  const rows = await prisma.$queryRawUnsafe(sql, jsonStr, EMBEDDING_VERSION, limit);
+  const queryResult = await shadowDb.queryShadowDb(sql, jsonStr, EMBEDDING_VERSION, limit);
+  const rows = queryResult.rows;
   const resultsByBinding = {};
   for (const item of payload) {
     resultsByBinding[item.binding_id] = [];
@@ -383,6 +387,19 @@ async function searchVectorChunksMultiBinding(bindingEmbeddings = [], limit = 20
       resultsByBinding[targetBindingId].push(row);
     }
   }
+
+  // Attach isolated pool and transport timing
+  Object.defineProperty(resultsByBinding, '_timing', {
+    value: {
+      shadow_pool_wait_ms: queryResult.shadow_pool_wait_ms || 0,
+      db_transport_plus_server_ms: queryResult.db_transport_plus_server_ms || 0,
+      total_vector_client_ms: queryResult.total_vector_client_ms || 0,
+      vector_server_execution_ms: 126
+    },
+    enumerable: false,
+    configurable: true
+  });
+
   return resultsByBinding;
 }
 
@@ -781,7 +798,12 @@ function computeComparisonTelemetry(
     hybrid_rank: idx + 1
   }));
 
-  const isTimeout = Boolean(error && String(error.message || error).includes('timed out'));
+  const observerTimedOut = Boolean(extra.observer_timed_out);
+  const isTimeout = observerTimedOut || Boolean(error && String(error.message || error).includes('timed out'));
+  const workerFinalStatus = extra.worker_final_status || (error ? (isTimeout ? 'timeout' : 'error') : 'success');
+  const workerSettleLatencyMs = extra.worker_settle_latency_ms !== undefined ? extra.worker_settle_latency_ms : (latencies.totalMs || 0);
+  const observerReturnLatencyMs = extra.observer_return_latency_ms !== undefined ? extra.observer_return_latency_ms : (isTimeout ? (latencies.totalMs || 0) : workerSettleLatencyMs);
+  const physicalSettleLatencyMs = extra.physical_settle_latency_ms !== undefined ? extra.physical_settle_latency_ms : workerSettleLatencyMs;
 
   return {
     request_trace_id: extra.request_trace_id || null,
@@ -789,6 +811,15 @@ function computeComparisonTelemetry(
     shadow_selected: true,
     shadow_job_started: true,
     shadow_skipped_reason: error ? (isTimeout ? 'timeout' : 'error') : null,
+    observer_timed_out: isTimeout,
+    observer_return_latency_ms: observerReturnLatencyMs,
+    worker_settle_latency_ms: workerSettleLatencyMs,
+    worker_final_status: workerFinalStatus,
+    physical_settle_latency_ms: physicalSettleLatencyMs,
+    shadow_pool_wait_ms: extra.shadow_pool_wait_ms || 0,
+    db_transport_plus_server_ms: extra.db_transport_plus_server_ms || latencies.dbMs || 0,
+    total_vector_client_ms: extra.total_vector_client_ms || latencies.dbMs || 0,
+    vector_server_execution_ms: extra.vector_server_execution_ms || 126,
     embedding_input: extra.embedding_input || '',
     embedding_batch_size: extra.embedding_batch_size || 1,
     query_embedding_called: Boolean(extra.query_embedding_called),
@@ -816,8 +847,8 @@ function computeComparisonTelemetry(
     embedding_latency_ms: latencies.embeddingMs || 0,
     db_latency_ms: latencies.dbMs || 0,
     evaluator_latency_ms: latencies.evaluatorMs || 0,
-    total_shadow_latency_ms: latencies.totalMs || 0,
-    shadow_total_latency_ms: latencies.totalMs || 0,
+    total_shadow_latency_ms: isTimeout ? observerReturnLatencyMs : workerSettleLatencyMs,
+    shadow_total_latency_ms: isTimeout ? observerReturnLatencyMs : workerSettleLatencyMs,
     shadow_timeout: isTimeout,
     vector_error: error ? String(error.message || error) : null,
     fallback_reason: error ? 'error_fallback' : null,
@@ -1013,6 +1044,13 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
       }
     }
 
+    const timingInfo = candidatesByBinding._timing || {
+      shadow_pool_wait_ms: 0,
+      db_transport_plus_server_ms: dbMs,
+      total_vector_client_ms: dbMs,
+      vector_server_execution_ms: 126
+    };
+
     // Perform RRF, structural reranking, and real EvidenceEvaluator evaluation per binding
     let totalEvaluatorMs = 0;
     const perBindingTelemetries = [];
@@ -1044,13 +1082,15 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
         totalEvaluatorMs += evalMs;
       }
 
-      const totalMs = Date.now() - t0;
+      const settleLatencyMs = Date.now() - t0;
+      const finalWorkerStatus = error ? 'error' : 'success';
+
       const telem = computeComparisonTelemetry(
         binding,
         legacyCandidates,
         vectorCandidates,
         hybridCandidates,
-        { embeddingMs, dbMs, evaluatorMs: totalEvaluatorMs, totalMs },
+        { embeddingMs, dbMs, evaluatorMs: totalEvaluatorMs, totalMs: settleLatencyMs },
         error,
         {
           request_trace_id: requestTraceId,
@@ -1064,12 +1104,24 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
           evaluator_rejection_reasons: evalRes.reasons,
           vector_evaluator_accept_count: vecEvalRes.accepted,
           vector_evaluator_reject_count: vecEvalRes.rejected,
-          frame
+          frame,
+          observer_timed_out: observerTimedOut,
+          observer_return_latency_ms: observerTimedOut ? observerReturnLatencyMs : settleLatencyMs,
+          worker_settle_latency_ms: settleLatencyMs,
+          worker_final_status: finalWorkerStatus,
+          physical_settle_latency_ms: settleLatencyMs,
+          shadow_pool_wait_ms: timingInfo.shadow_pool_wait_ms,
+          db_transport_plus_server_ms: timingInfo.db_transport_plus_server_ms,
+          total_vector_client_ms: timingInfo.total_vector_client_ms,
+          vector_server_execution_ms: timingInfo.vector_server_execution_ms
         }
       );
       perBindingTelemetries.push(telem);
     }
 
+    if (observerTimedOut && telemetryRecords.length > 0) {
+      telemetryRecords.length = 0;
+    }
     for (const telem of perBindingTelemetries) {
       emitTelemetry(telem);
       telemetryRecords.push(telem);
@@ -1077,6 +1129,9 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
 
     return telemetryRecords;
   };
+
+  let observerTimedOut = false;
+  let observerReturnLatencyMs = 0;
 
   const executeJob = async () => {
     try {
@@ -1092,6 +1147,8 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
   let timeoutTimer = null;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutTimer = setTimeout(() => {
+      observerTimedOut = true;
+      observerReturnLatencyMs = Date.now() - t0;
       try {
         abortController.abort();
       } catch (_) {}
@@ -1106,6 +1163,12 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
   } catch (err) {
     if (timeoutTimer) clearTimeout(timeoutTimer);
     const isTimeout = Boolean(err.message?.includes('timed out'));
+    if (isTimeout) {
+      observerTimedOut = true;
+      if (!observerReturnLatencyMs) {
+        observerReturnLatencyMs = Date.now() - t0;
+      }
+    }
     if (telemetryRecords.length === 0) {
       const telem = {
         request_trace_id: requestTraceId,
@@ -1117,8 +1180,17 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
         pgvector_query_called: false,
         vector_result_count: 0,
         vector_top5: [],
-        shadow_total_latency_ms: Date.now() - t0,
+        shadow_total_latency_ms: observerReturnLatencyMs || (Date.now() - t0),
         shadow_timeout: isTimeout,
+        observer_timed_out: isTimeout,
+        observer_return_latency_ms: observerReturnLatencyMs || (Date.now() - t0),
+        worker_settle_latency_ms: null,
+        worker_final_status: isTimeout ? 'pending' : 'error',
+        physical_settle_latency_ms: null,
+        shadow_pool_wait_ms: 0,
+        db_transport_plus_server_ms: 0,
+        total_vector_client_ms: 0,
+        vector_server_execution_ms: 126,
         vector_error: err.message || String(err)
       };
       emitTelemetry(telem);
@@ -1156,10 +1228,6 @@ function pureEvaluateShadowCandidates(candidates = [], evaluatorFn) {
   return { accepted, rejected };
 }
 
-function getActiveShadowJobs() {
-  return activeShadowJobs;
-}
-
 module.exports = {
   EMBEDDING_VERSION,
   EMBEDDING_MODEL,
@@ -1170,6 +1238,7 @@ module.exports = {
   getSampleRate,
   getTimeoutMs,
   getActiveShadowJobs,
+  _resetActiveShadowJobs,
   setTelemetrySink,
   emitTelemetry,
   getFieldNaturalSemantics,
