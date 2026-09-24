@@ -36,6 +36,8 @@ const {
   getFieldNaturalSemantics,
   evaluateCategoryCompatibility
 } = require('./canonicalFieldRegistry');
+const { evaluateBinding, EVALUATION_STATUS } = require('./evidenceEvaluator');
+const { resolveEffectiveSemanticFrame } = require('./semanticFrameResolver');
 
 let logger = null;
 try {
@@ -271,6 +273,264 @@ async function searchVectorChunks(queryEmbedding, binding, limit = 10) {
 }
 
 /**
+ * Parameterized vector search for multiple bindings in a single PostgreSQL roundtrip.
+ * Uses LATERAL join to return independent top-K vector results per binding.
+ *
+ * @param {Array<{ binding: Object, embedding: number[] }>} bindingEmbeddings
+ * @param {number} limit
+ * @returns {Promise<Object.<string, Array>>} Map of bindingId -> candidate rows
+ */
+async function searchVectorChunksMultiBinding(bindingEmbeddings = [], limit = 20) {
+  if (!Array.isArray(bindingEmbeddings) || bindingEmbeddings.length === 0) {
+    return {};
+  }
+  if (!prisma || typeof prisma.$queryRawUnsafe !== 'function') {
+    throw new Error('Database client unavailable for vector retrieval.');
+  }
+
+  const payload = [];
+  for (const item of bindingEmbeddings) {
+    const b = item.binding;
+    const emb = item.embedding;
+    if (!b || !emb || !Array.isArray(emb) || emb.length !== 1536) continue;
+
+    let targetProgram = null;
+    let targetCampus = null;
+
+    if (b.constraints) {
+      if (typeof b.constraints.program === 'string' && b.constraints.program.trim()) {
+        targetProgram = b.constraints.program.trim().toUpperCase();
+      }
+      if (typeof b.constraints.campus === 'string' && b.constraints.campus.trim()) {
+        targetCampus = b.constraints.campus.trim().toUpperCase();
+      }
+    }
+
+    payload.push({
+      binding_id: b.bindingId,
+      embedding_text: `[${emb.join(',')}]`,
+      target_program: targetProgram,
+      target_campus: targetCampus
+    });
+  }
+
+  if (payload.length === 0) {
+    return {};
+  }
+
+  const jsonStr = JSON.stringify(payload);
+  const sql = `
+    WITH bindings AS (
+      SELECT
+        binding_id,
+        embedding_text::vector AS query_embedding,
+        target_program,
+        target_campus
+      FROM jsonb_to_recordset($1::jsonb)
+        AS x(binding_id text, embedding_text text, target_program text, target_campus text)
+    )
+    SELECT 
+      b.binding_id,
+      c.vector_chunk_id,
+      c.source_record_id,
+      c.source_record_index,
+      c.subchunk_index,
+      c.chunk_hash,
+      c.source_file,
+      c.section_title,
+      c.program,
+      c.campus,
+      c.category,
+      c.doc_category,
+      1 - (c.embedding <=> b.query_embedding) AS similarity
+    FROM bindings b
+    CROSS JOIN LATERAL (
+      SELECT 
+        vc.vector_chunk_id,
+        vc.source_record_id,
+        vc.source_record_index,
+        vc.subchunk_index,
+        vc.chunk_hash,
+        vc.source_file,
+        vc.section_title,
+        vc.program,
+        vc.campus,
+        vc.category,
+        vc.doc_category,
+        vc.embedding
+      FROM rag.corpus_vector_chunks vc
+      WHERE vc.vector_search_enabled = true
+        AND vc.embedding_version = $2
+        AND vc.embedding IS NOT NULL
+        AND (b.target_program IS NULL OR vc.program = b.target_program)
+        AND (b.target_campus IS NULL OR vc.campus = b.target_campus)
+      ORDER BY vc.embedding <=> b.query_embedding ASC
+      LIMIT $3
+    ) c;
+  `;
+
+  const rows = await prisma.$queryRawUnsafe(sql, jsonStr, EMBEDDING_VERSION, limit);
+  const resultsByBinding = {};
+  for (const item of payload) {
+    resultsByBinding[item.binding_id] = [];
+  }
+  for (const row of (rows || [])) {
+    const targetBindingId = row.binding_id || (payload.length === 1 ? payload[0].binding_id : null);
+    if (targetBindingId) {
+      if (!resultsByBinding[targetBindingId]) {
+        resultsByBinding[targetBindingId] = [];
+      }
+      resultsByBinding[targetBindingId].push(row);
+    }
+  }
+  return resultsByBinding;
+}
+
+/**
+ * Canonical adapter to construct a normalized evidence record from a vector or hybrid candidate.
+ * Shared between shadow runtime evaluation and offline trace test/audit harnesses.
+ *
+ * @param {Object} candidate - Vector or hybrid candidate
+ * @param {Object} binding - The active RetrievalBinding
+ * @param {Object} [corpusRecord] - Hydrated canonical corpus chunk record
+ * @returns {Object|null} Normalized evidence record compatible with EvidenceEvaluator
+ */
+function buildCorpusEvidenceFromCandidate(candidate, binding, corpusRecord = null) {
+  if (!candidate || !binding) return null;
+
+  const sourceId = candidate.source_file || corpusRecord?.sourceFile || corpusRecord?.filename || 'corpus_index';
+  const textSnippet = corpusRecord?.chunk || corpusRecord?.text || corpusRecord?.content || candidate.chunk || candidate.text || '';
+  const programMeta = candidate.program || corpusRecord?.program || null;
+  const sourceRecordId = candidate.source_record_id || candidate.sourceRecordId || candidate.id || corpusRecord?.id || null;
+  const chunkIndex = candidate.source_record_index ?? candidate.sourceRecordIndex ?? candidate.chunkIndex ?? corpusRecord?.chunkIndex ?? null;
+
+  const entityBinding = programMeta
+    ? { canonical: programMeta, family: 'program', type: 'program' }
+    : (binding.entity ? { canonical: binding.entity.canonical, family: binding.entity.family, type: binding.entity.type } : null);
+
+  return {
+    providerId: 'CorpusEvidenceProvider',
+    bindingId: binding.bindingId,
+    evidenceId: `ev_${sourceRecordId || Math.random().toString(36).slice(2, 8)}`,
+    entityBinding,
+    program: programMeta,
+    fieldBinding: binding.requestedField,
+    relationBinding: binding.relation || null,
+    structuredValue: null,
+    textSnippet: String(textSnippet).trim() || null,
+    sourceId,
+    sourceType: 'indexed_chunk',
+    sourceDocumentOrRecord: sourceId,
+    provenance: `Indexed corpus document: ${sourceId}`,
+    qualifiers: {
+      chunkIndex,
+      program: programMeta,
+      category: candidate.category || corpusRecord?.category || null,
+      docCategory: candidate.doc_category || corpusRecord?.docCategory || null
+    },
+    confidenceSignals: {
+      isOfficialDocument: !/user_complaint|informal/i.test(sourceId),
+      exactMatch: false,
+      score: typeof candidate.similarity === 'number' ? candidate.similarity : 0.8
+    }
+  };
+}
+
+/**
+ * Accesses prewarmed canonical corpus index from memory without extra DB queries.
+ *
+ * @param {Object} [context]
+ * @returns {Array} Array of canonical corpus records
+ */
+function getCorpusIndex(context = {}) {
+  if (context && Array.isArray(context.semanticIndex) && context.semanticIndex.length > 0) {
+    return context.semanticIndex;
+  }
+  try {
+    const { getCachedSemanticIndex } = require('./semanticRagEngine');
+    if (typeof getCachedSemanticIndex === 'function') {
+      const idx = getCachedSemanticIndex();
+      if (Array.isArray(idx) && idx.length > 0) {
+        return idx;
+      }
+    }
+  } catch (_) {}
+  return [];
+}
+
+/**
+ * Evaluates candidate chunks against the production EvidenceEvaluator contract.
+ * Hydrates chunk text from the cached canonical corpus index in memory (zero DB queries).
+ *
+ * @param {Array} candidates - Hybrid or vector candidate records
+ * @param {Object} binding - The RetrievalBinding
+ * @param {Array} semanticIndex - Prewarmed canonical corpus chunks
+ * @param {Object} [frame] - The active SemanticFrame
+ * @param {Map} [idMap] - Pre-built Map of source_record_id -> corpusRecord
+ * @param {Map} [indexMap] - Pre-built Map of source_record_index -> corpusRecord
+ * @returns {{ accepted: number, rejected: number, unavailable: number, reasons: string[] }}
+ */
+function evaluateShadowCandidates(candidates = [], binding = {}, semanticIndex = [], frame = {}, idMap = null, indexMap = null) {
+  if (!Array.isArray(candidates) || candidates.length === 0 || !binding) {
+    return { accepted: 0, rejected: 0, unavailable: 0, reasons: [] };
+  }
+
+  const recIdMap = idMap || new Map((semanticIndex || []).map(r => [r.id, r]));
+  const recIndexMap = indexMap || new Map((semanticIndex || []).map((r, idx) => [r.chunkIndex ?? idx, r]));
+
+  let accepted = 0;
+  let rejected = 0;
+  let unavailable = 0;
+  const reasons = [];
+
+  for (const cand of candidates) {
+    const candId = cand.source_record_id || cand.sourceRecordId || cand.id;
+    const candIndex = cand.source_record_index ?? cand.sourceRecordIndex ?? cand.chunkIndex;
+
+    let corpusRecord = candId ? recIdMap.get(candId) : null;
+    if (!corpusRecord && candIndex !== null && candIndex !== undefined) {
+      corpusRecord = recIndexMap.get(candIndex);
+    }
+
+    const chunkText = corpusRecord?.chunk || corpusRecord?.text || corpusRecord?.content || cand.chunk || cand.text || null;
+    if (!corpusRecord && !cand.chunk && !cand.text) {
+      unavailable++;
+      rejected++;
+      reasons.push('Corpus record unavailable for hydration');
+      continue;
+    }
+
+    const ev = buildCorpusEvidenceFromCandidate(cand, binding, corpusRecord);
+    if (!ev || !ev.textSnippet) {
+      unavailable++;
+      rejected++;
+      reasons.push('Full chunk text missing in corpus record');
+      continue;
+    }
+
+    try {
+      const evalRes = evaluateBinding(binding, [ev], frame, { evidenceOpportunityComplete: true });
+      const isAccepted = evalRes.status === EVALUATION_STATUS.SUPPORTED || evalRes.status === EVALUATION_STATUS.PARTIALLY_SUPPORTED;
+
+      if (isAccepted) {
+        accepted++;
+      } else {
+        rejected++;
+        const reason = evalRes.evidenceDispositions?.[0]?.reasons?.[0]
+          || evalRes.reasonCodes?.[0]
+          || 'Evaluator rejected candidate';
+        reasons.push(reason);
+      }
+    } catch (err) {
+      rejected++;
+      reasons.push(err.message || 'Evaluator exception');
+    }
+  }
+
+  return { accepted, rejected, unavailable, reasons };
+}
+
+/**
  * Deterministic Reciprocal Rank Fusion (RRF) candidate fusion.
  * Combines legacy lexical candidates and pgvector candidates per binding.
  * Preserves candidate provenance: legacy_rank, vector_rank, rrf_score.
@@ -467,14 +727,28 @@ function computeComparisonTelemetry(
   const vectorTop1Source = vectorCandidates[0]?.source_file || null;
   const top1SourceAgreement = Boolean(legacyTop1Source && vectorTop1Source && legacyTop1Source === vectorTop1Source);
 
-  let vectorEvaluatorAcceptCount = 0;
-  let vectorEvaluatorRejectCount = 0;
-  for (const vc of (vectorCandidates || [])) {
-    if (typeof vc.similarity === 'number' && vc.similarity >= 0.70) {
-      vectorEvaluatorAcceptCount++;
-    } else {
-      vectorEvaluatorRejectCount++;
-    }
+  // REAL EvidenceEvaluator results (similarity is NEVER used as acceptance proxy)
+  let evaluatorAcceptCount = extra.evaluator_accept_count;
+  let evaluatorRejectCount = extra.evaluator_reject_count;
+  let evaluatorUnavailableCount = extra.evaluator_unavailable_count || 0;
+  let evaluatorRejectionReasons = Array.isArray(extra.evaluator_rejection_reasons) ? extra.evaluator_rejection_reasons : [];
+
+  if (evaluatorAcceptCount === undefined) {
+    const semanticIndex = getCorpusIndex(extra);
+    const evalRes = evaluateShadowCandidates((hybridCandidates || []).slice(0, 10), binding, semanticIndex, extra.frame || {});
+    evaluatorAcceptCount = evalRes.accepted;
+    evaluatorRejectCount = evalRes.rejected;
+    evaluatorUnavailableCount = evalRes.unavailable;
+    evaluatorRejectionReasons = evalRes.reasons;
+  }
+
+  let vectorEvaluatorAcceptCount = extra.vector_evaluator_accept_count;
+  let vectorEvaluatorRejectCount = extra.vector_evaluator_reject_count;
+  if (vectorEvaluatorAcceptCount === undefined) {
+    const semanticIndex = getCorpusIndex(extra);
+    const vecEvalRes = evaluateShadowCandidates((vectorCandidates || []).slice(0, 10), binding, semanticIndex, extra.frame || {});
+    vectorEvaluatorAcceptCount = vecEvalRes.accepted;
+    vectorEvaluatorRejectCount = vecEvalRes.rejected;
   }
 
   const vectorTop5Structured = (vectorCandidates || []).slice(0, 5).map((c, idx) => ({
@@ -507,16 +781,6 @@ function computeComparisonTelemetry(
     hybrid_rank: idx + 1
   }));
 
-  let evaluatorAcceptCount = 0;
-  let evaluatorRejectCount = 0;
-  for (const c of hybridCandidates) {
-    if (typeof c.similarity === 'number' && c.similarity >= 0.70) {
-      evaluatorAcceptCount++;
-    } else {
-      evaluatorRejectCount++;
-    }
-  }
-
   const isTimeout = Boolean(error && String(error.message || error).includes('timed out'));
 
   return {
@@ -545,10 +809,13 @@ function computeComparisonTelemetry(
     vector_evaluator_reject_count: vectorEvaluatorRejectCount,
     evaluator_accept_count: evaluatorAcceptCount,
     evaluator_reject_count: evaluatorRejectCount,
+    evaluator_unavailable_count: evaluatorUnavailableCount,
+    evaluator_rejection_reasons: evaluatorRejectionReasons,
     query_embedding_latency_ms: latencies.embeddingMs || 0,
     vector_db_latency_ms: latencies.dbMs || 0,
     embedding_latency_ms: latencies.embeddingMs || 0,
     db_latency_ms: latencies.dbMs || 0,
+    evaluator_latency_ms: latencies.evaluatorMs || 0,
     total_shadow_latency_ms: latencies.totalMs || 0,
     shadow_total_latency_ms: latencies.totalMs || 0,
     shadow_timeout: isTimeout,
@@ -708,36 +975,73 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
       }
     }
 
-    // Perform vector search, RRF, and structural reranking per binding with bounded DB concurrency
-    const dbConcurrency = (context && context.dbConcurrency) || getDbConcurrency();
-    const perBindingTelemetries = await mapConcurrent(bindingWorkItems, dbConcurrency, async (item, i) => {
+    // Hydrate canonical corpus index in memory (829 records, prewarmed, zero DB queries)
+    const semanticIndex = getCorpusIndex(context);
+    const idMap = new Map((semanticIndex || []).map(r => [r.id, r]));
+    const indexMap = new Map((semanticIndex || []).map((r, idx) => [r.chunkIndex ?? idx, r]));
+
+    // Resolve effective semantic frame for clause semantic checks
+    let frame = context.frame || null;
+    if (!frame && context.question) {
+      try {
+        frame = resolveEffectiveSemanticFrame(context.question, {});
+      } catch (_) {
+        frame = {};
+      }
+    }
+    if (!frame) frame = {};
+
+    // Single-roundtrip multi-binding vector search via LATERAL join (1 DB roundtrip for all bindings)
+    let candidatesByBinding = {};
+    let dbMs = 0;
+    let dbError = embError;
+    let pgvectorQueryCalled = false;
+
+    if (embeddings.length > 0 && !dbError) {
+      pgvectorQueryCalled = true;
+      const tDb0 = Date.now();
+      try {
+        const queryItems = bindingWorkItems.map((item, i) => ({
+          binding: item.binding,
+          embedding: embeddings[i] || null
+        }));
+        candidatesByBinding = await module.exports.searchVectorChunksMultiBinding(queryItems, 20);
+        dbMs = Date.now() - tDb0;
+      } catch (err) {
+        dbError = err;
+        dbMs = Date.now() - tDb0;
+      }
+    }
+
+    // Perform RRF, structural reranking, and real EvidenceEvaluator evaluation per binding
+    let totalEvaluatorMs = 0;
+    const perBindingTelemetries = [];
+
+    for (let i = 0; i < bindingWorkItems.length; i++) {
+      const item = bindingWorkItems[i];
       const binding = item.binding;
       const legacyCandidates = item.legacyCandidates;
-      const embedding = embeddings[i] || null;
+      const vectorCandidates = candidatesByBinding[binding.bindingId] || [];
+      const error = dbError;
+      const queryEmbeddingCalled = Boolean(item.queryText);
 
-      let vectorCandidates = [];
       let hybridCandidates = [];
-      let dbMs = 0;
-      let error = embError;
-      let queryEmbeddingCalled = Boolean(item.queryText);
-      let pgvectorQueryCalled = false;
+      let evalRes = { accepted: 0, rejected: 0, unavailable: 0, reasons: [] };
+      let vecEvalRes = { accepted: 0, rejected: 0, unavailable: 0, reasons: [] };
 
-      if (embedding && !error) {
-        pgvectorQueryCalled = true;
-        const tDb0 = Date.now();
-        try {
-          vectorCandidates = await module.exports.searchVectorChunks(embedding, binding, 20);
-          dbMs = Date.now() - tDb0;
+      if (!error) {
+        // 1. Reciprocal Rank Fusion (RRF)
+        const rrfCandidates = computeBindingRRF(legacyCandidates, vectorCandidates, 60);
 
-          // 1. Reciprocal Rank Fusion (RRF)
-          const rrfCandidates = computeBindingRRF(legacyCandidates, vectorCandidates, 60);
+        // 2. Generic Structural Reranking
+        hybridCandidates = computeGenericStructuralRerank(rrfCandidates, binding);
 
-          // 2. Generic Structural Reranking
-          hybridCandidates = computeGenericStructuralRerank(rrfCandidates, binding);
-        } catch (dbErr) {
-          error = dbErr;
-          dbMs = Date.now() - tDb0;
-        }
+        // 3. Real Production EvidenceEvaluator Evaluation on hybrid top 10
+        const tEval0 = Date.now();
+        evalRes = evaluateShadowCandidates((hybridCandidates || []).slice(0, 10), binding, semanticIndex, frame, idMap, indexMap);
+        vecEvalRes = evaluateShadowCandidates((vectorCandidates || []).slice(0, 10), binding, semanticIndex, frame, idMap, indexMap);
+        const evalMs = Date.now() - tEval0;
+        totalEvaluatorMs += evalMs;
       }
 
       const totalMs = Date.now() - t0;
@@ -746,18 +1050,25 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
         legacyCandidates,
         vectorCandidates,
         hybridCandidates,
-        { embeddingMs, dbMs, totalMs },
+        { embeddingMs, dbMs, evaluatorMs: totalEvaluatorMs, totalMs },
         error,
         {
           request_trace_id: requestTraceId,
           embedding_input: item.queryText,
           embedding_batch_size: validTexts.length,
           query_embedding_called: queryEmbeddingCalled,
-          pgvector_query_called: pgvectorQueryCalled
+          pgvector_query_called: pgvectorQueryCalled,
+          evaluator_accept_count: evalRes.accepted,
+          evaluator_reject_count: evalRes.rejected,
+          evaluator_unavailable_count: evalRes.unavailable,
+          evaluator_rejection_reasons: evalRes.reasons,
+          vector_evaluator_accept_count: vecEvalRes.accepted,
+          vector_evaluator_reject_count: vecEvalRes.rejected,
+          frame
         }
       );
-      return telem;
-    });
+      perBindingTelemetries.push(telem);
+    }
 
     for (const telem of perBindingTelemetries) {
       emitTelemetry(telem);
@@ -867,6 +1178,10 @@ module.exports = {
   computeBatchQueryEmbeddings,
   computeQueryEmbedding,
   searchVectorChunks,
+  searchVectorChunksMultiBinding,
+  buildCorpusEvidenceFromCandidate,
+  evaluateShadowCandidates,
+  getCorpusIndex,
   computeBindingRRF,
   computeGenericStructuralRerank,
   computeComparisonTelemetry,

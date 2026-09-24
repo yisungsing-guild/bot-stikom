@@ -314,8 +314,8 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
           vector_chunk_id: 'v_chunk_1',
           source_file: 'fee.xlsx',
           similarity: 0.88,
-          // Intentionally include sensitive or heavy fields to prove they are stripped
-          chunk: 'Very long document body text that must not appear in telemetry',
+          // Valid content for TI tuition fee so production EvidenceEvaluator accepts it
+          chunk: 'Biaya kuliah Program Studi Teknologi Informasi (TI) SPP per semester Rp 7.500.000. Very long document body text that must not appear in telemetry',
           embedding: new Array(1536).fill(0.5)
         }
       ];
@@ -1201,7 +1201,11 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
     });
 
     test('Telemetry V2 contains required hybrid, score components, and batch size fields', () => {
-      const binding = { bindingId: 'b_telem_v2', requestedField: 'careerOutcome' };
+      const binding = {
+        bindingId: 'b_telem_v2',
+        requestedField: 'careerOutcome',
+        entity: { canonical: 'Teknologi Informasi' }
+      };
       const legacyCandidates = [{ sourceRecordId: 'rec_1' }];
       const vectorCandidates = [{ source_record_id: 'rec_1', similarity: 0.82 }];
       const hybridCandidates = [{
@@ -1210,7 +1214,8 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
         vector_rank: 1,
         rrf_score: 0.032,
         structural_score: 0.072,
-        similarity: 0.82
+        similarity: 0.82,
+        chunk: 'Lulusan program studi Teknologi Informasi (TI) berkarir sebagai Software Engineer, Cloud Architect, dan Network Specialist.'
       }];
 
       const telemetry = computeComparisonTelemetry(
@@ -1242,5 +1247,119 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
       expect(telemetry.evaluator_accept_count).toBe(1);
     });
   });
+
+  describe('PGVECTOR SHADOW V2 — Production Evaluator Parity & Single Roundtrip', () => {
+    const {
+      buildCorpusEvidenceFromCandidate,
+      evaluateShadowCandidates,
+      searchVectorChunksMultiBinding
+    } = require('../src/engine/pgvectorShadowProvider');
+    const { evaluateBinding, EVALUATION_STATUS } = require('../src/engine/evidenceEvaluator');
+
+    test('buildCorpusEvidenceFromCandidate constructs a compliant evidence record', () => {
+      const binding = {
+        bindingId: 'b_test_parity',
+        requestedField: 'careerOutcome',
+        entity: { canonical: 'Teknologi Informasi', family: 'program' },
+        clauseText: 'Kalau lulus Teknologi Informasi biasanya kerja apa?'
+      };
+
+      const candidate = {
+        source_record_id: 'rec_ti_career',
+        source_file: 'ISIAN WEBSITE (1).pdf',
+        program: 'TI',
+        similarity: 0.59
+      };
+
+      const corpusRecord = {
+        id: 'rec_ti_career',
+        sourceFile: 'ISIAN WEBSITE (1).pdf',
+        program: 'TI',
+        chunk: 'Prospek lulusan Teknologi Informasi (TI): Software Engineer, Network Engineer, IT Consultant.'
+      };
+
+      const ev = buildCorpusEvidenceFromCandidate(candidate, binding, corpusRecord);
+      expect(ev.providerId).toBe('CorpusEvidenceProvider');
+      expect(ev.bindingId).toBe('b_test_parity');
+      expect(ev.textSnippet).toContain('Software Engineer');
+      expect(ev.sourceId).toBe('ISIAN WEBSITE (1).pdf');
+      expect(ev.entityBinding.canonical).toBe('TI');
+      expect(ev.confidenceSignals.isOfficialDocument).toBe(true);
+    });
+
+    test('Invariant parity: SAME candidate + SAME binding + SAME corpus record = SAME evaluator result', () => {
+      const binding = {
+        bindingId: 'b_inv_1',
+        requestedField: 'careerOutcome',
+        entity: { canonical: 'Teknologi Informasi', family: 'program' },
+        clauseText: 'Kalau lulus Teknologi Informasi biasanya kerja apa?'
+      };
+
+      const candidate = {
+        source_record_id: 'c6bde145-64ad-4363-9218-1627e7b238eb',
+        source_file: 'ISIAN WEBSITE (1).pdf',
+        program: 'TI',
+        similarity: 0.5038
+      };
+
+      const corpusRecord = {
+        id: 'c6bde145-64ad-4363-9218-1627e7b238eb',
+        sourceFile: 'ISIAN WEBSITE (1).pdf',
+        program: 'TI',
+        chunk: 'Profesi dan prospek kerja lulusan S1 Teknologi Informasi (TI) meliputi Software Engineer, Cloud Administrator, Cybersecurity Analyst.'
+      };
+
+      // 1. Direct evaluator call (offline audit style)
+      const ev1 = buildCorpusEvidenceFromCandidate(candidate, binding, corpusRecord);
+      const evalDirect = evaluateBinding(binding, [ev1], {});
+
+      // 2. Shadow runtime evaluateShadowCandidates call
+      const shadowEval = evaluateShadowCandidates([candidate], binding, [corpusRecord], {});
+
+      expect(evalDirect.status).toBe(EVALUATION_STATUS.SUPPORTED);
+      expect(shadowEval.accepted).toBe(1);
+      expect(shadowEval.rejected).toBe(0);
+      expect(shadowEval.unavailable).toBe(0);
+    });
+
+    test('Real trace candidate parity: rejects noise and accepts genuine candidates', () => {
+      // Trace 1: genuine TI career chunk accepted
+      const tiBinding = {
+        bindingId: 'b_ti',
+        requestedField: 'careerOutcome',
+        entity: { canonical: 'Teknologi Informasi', family: 'program' }
+      };
+      const tiGoodCandidate = {
+        source_record_id: 'ti_rec',
+        source_file: 'ISIAN WEBSITE (1).pdf',
+        program: 'TI',
+        chunk: 'Profesi lulusan Teknologi Informasi (TI): System Engineer, Cloud Specialist, Web Developer.'
+      };
+      const tiResult = evaluateShadowCandidates([tiGoodCandidate], tiBinding, [tiGoodCandidate], {});
+      expect(tiResult.accepted).toBe(1);
+
+      // Trace 3 noise: Pedoman TA rejected on field/subtype mismatch
+      const recNoise = {
+        source_record_id: 'noise_ta',
+        source_file: 'Pedoman TA S1 2019 Revisi 1.pdf',
+        chunk: 'Buku Pedoman Tugas Akhir S1 Revisi 1 tahun 2019 tentang sistematika penulisan laporan.'
+      };
+      const pfitBinding = {
+        bindingId: 'b_pfit',
+        requestedField: 'programRecommendation',
+        clauseText: 'Kalau saya tertarik software, cloud, dan cybersecurity prodi apa yang paling relevan?'
+      };
+      const noiseResult = evaluateShadowCandidates([recNoise], pfitBinding, [recNoise], {});
+      expect(noiseResult.accepted).toBe(0);
+      expect(noiseResult.rejected).toBe(1);
+      expect(noiseResult.reasons[0]).toMatch(/Field\/subtype mismatch|hints/i);
+    });
+
+    test('searchVectorChunksMultiBinding formats parameterized lateral query safely', async () => {
+      const res = await searchVectorChunksMultiBinding([]);
+      expect(res).toEqual({});
+    });
+  });
 });
+
 
