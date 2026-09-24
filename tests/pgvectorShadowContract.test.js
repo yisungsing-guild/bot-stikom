@@ -724,4 +724,342 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
       }
     });
   });
+
+  describe('14. Production-Safe Observability & Early-Return Shadow Reachability', () => {
+    let capturedTelemetry = [];
+    const shadowProvider = require('../src/engine/pgvectorShadowProvider');
+    const { setTelemetrySink } = shadowProvider;
+
+    beforeEach(() => {
+      capturedTelemetry = [];
+      setTelemetrySink(record => {
+        capturedTelemetry.push(record);
+      });
+    });
+
+    afterEach(() => {
+      setTelemetrySink(null);
+    });
+
+    test('telemetry emitted for executed shadow', async () => {
+      process.env.VECTOR_SHADOW_ENABLED = 'true';
+      process.env.VECTOR_SHADOW_SAMPLE_RATE = '1.0';
+      process.env.VECTOR_SHADOW_MAX_CONCURRENCY = '1';
+      process.env.VECTOR_SHADOW_TIMEOUT_MS = '1500';
+
+      const { OpenAI } = require('openai');
+      const proto = Object.getPrototypeOf(new OpenAI({ apiKey: 'mock' }).embeddings);
+      const embedSpy = jest.spyOn(proto, 'create').mockResolvedValue({
+        data: [{ embedding: new Array(1536).fill(0.01) }]
+      });
+      const prisma = require('../src/db');
+      const dbSpy = jest.spyOn(prisma, '$queryRawUnsafe').mockResolvedValue([
+        {
+          vector_chunk_id: 'v_1',
+          source_record_id: 'rec_1',
+          source_file: 'test_course.xlsx',
+          similarity: 0.85
+        }
+      ]);
+
+      const plan = { bindings: [{ id: 'b_exec_1' }] };
+      const exec = {
+        bindingResults: [
+          { bindingId: 'b_exec_1', entity: 'TI', field: 'prospek', candidates: [] }
+        ]
+      };
+
+      const res = await shadowProvider.observeShadowRetrieval(plan, exec, {
+        requestTraceId: 'trace_test_exec'
+      });
+
+      expect(res.skipped).toBe(false);
+      const t = capturedTelemetry.find(r => r.request_trace_id === 'trace_test_exec');
+      expect(t).toBeDefined();
+
+      expect(t.request_trace_id).toBe('trace_test_exec');
+      expect(t.binding_id).toBe('b_exec_1');
+      expect(t.shadow_selected).toBe(true);
+      expect(t.shadow_job_started).toBe(true);
+      expect(t.shadow_skipped_reason).toBeNull();
+      expect(t.query_embedding_called).toBe(true);
+      expect(t.pgvector_query_called).toBe(true);
+      expect(t.vector_result_count).toBe(1);
+      expect(t.vector_top5).toEqual([
+        {
+          source_record_id: 'rec_1',
+          source_file: 'test_course.xlsx',
+          similarity: 0.85,
+          rank: 1
+        }
+      ]);
+      expect(t.shadow_timeout).toBe(false);
+      expect(t.vector_error).toBeNull();
+
+      embedSpy.mockRestore();
+      dbSpy.mockRestore();
+    });
+
+    test('telemetry emitted for sampling skip', async () => {
+      process.env.VECTOR_SHADOW_ENABLED = 'true';
+      process.env.VECTOR_SHADOW_SAMPLE_RATE = '0'; // force skip
+
+      const plan = { bindings: [{ id: 'b_samp_1' }] };
+      const exec = {
+        bindingResults: [
+          { bindingId: 'b_samp_1', entity: 'TI', field: 'biaya', candidates: [] }
+        ]
+      };
+
+      const res = await shadowProvider.observeShadowRetrieval(plan, exec, {
+        requestTraceId: 'trace_samp_skip'
+      });
+
+      expect(res.skipped).toBe(true);
+      expect(res.reason).toBe('sampling');
+      const t = capturedTelemetry.find(r => r.request_trace_id === 'trace_samp_skip');
+      expect(t).toBeDefined();
+
+      expect(t.request_trace_id).toBe('trace_samp_skip');
+      expect(t.binding_id).toBe('b_samp_1');
+      expect(t.shadow_selected).toBe(false);
+      expect(t.shadow_job_started).toBe(false);
+      expect(t.shadow_skipped_reason).toBe('sampling');
+      expect(t.query_embedding_called).toBe(false);
+      expect(t.pgvector_query_called).toBe(false);
+      expect(t.vector_result_count).toBe(0);
+      expect(t.vector_top5).toEqual([]);
+      expect(t.shadow_timeout).toBe(false);
+      expect(t.vector_error).toBeNull();
+    });
+
+    test('telemetry emitted for timeout', async () => {
+      process.env.VECTOR_SHADOW_ENABLED = 'true';
+      process.env.VECTOR_SHADOW_SAMPLE_RATE = '1.0';
+      process.env.VECTOR_SHADOW_TIMEOUT_MS = '50'; // fast timeout
+
+      const { OpenAI } = require('openai');
+      const proto = Object.getPrototypeOf(new OpenAI({ apiKey: 'mock' }).embeddings);
+      const embedSpy = jest.spyOn(proto, 'create').mockImplementation(async () => {
+        await new Promise(r => setTimeout(r, 200));
+        return { data: [{ embedding: new Array(1536).fill(0.01) }] };
+      });
+
+      const plan = { bindings: [{ id: 'b_time_1' }] };
+      const exec = {
+        bindingResults: [
+          { bindingId: 'b_time_1', entity: 'TI', field: 'prospek', candidates: [] }
+        ]
+      };
+
+      const res = await shadowProvider.observeShadowRetrieval(plan, exec, {
+        requestTraceId: 'trace_timeout_1'
+      });
+
+      expect(res.skipped).toBe(true);
+      expect(res.reason).toBe('timeout');
+      const t = capturedTelemetry.find(r => r.request_trace_id === 'trace_timeout_1');
+      expect(t).toBeDefined();
+
+      expect(t.request_trace_id).toBe('trace_timeout_1');
+      expect(t.binding_id).toBe('b_time_1');
+      expect(t.shadow_selected).toBe(true);
+      expect(t.shadow_job_started).toBe(true);
+      expect(t.shadow_skipped_reason).toBe('timeout');
+      expect(t.shadow_timeout).toBe(true);
+      expect(t.vector_error).toContain('timed out');
+
+      embedSpy.mockRestore();
+    });
+
+    test('telemetry emitted for capacity skip', async () => {
+      process.env.VECTOR_SHADOW_ENABLED = 'true';
+      process.env.VECTOR_SHADOW_SAMPLE_RATE = '1.0';
+      process.env.VECTOR_SHADOW_MAX_CONCURRENCY = '1';
+      process.env.VECTOR_SHADOW_TIMEOUT_MS = '1000';
+
+      let releaseTask1;
+      const task1HoldPromise = new Promise(resolve => {
+        releaseTask1 = resolve;
+      });
+
+      const { OpenAI } = require('openai');
+      const proto = Object.getPrototypeOf(new OpenAI({ apiKey: 'mock' }).embeddings);
+      const embedSpy = jest.spyOn(proto, 'create').mockImplementation(async () => {
+        await task1HoldPromise;
+        return { data: [{ embedding: new Array(1536).fill(0.01) }] };
+      });
+      const prisma = require('../src/db');
+      const dbSpy = jest.spyOn(prisma, '$queryRawUnsafe').mockResolvedValue([]);
+
+      const plan1 = { bindings: [{ id: 'b_cap_1' }] };
+      const exec1 = { bindingResults: [{ bindingId: 'b_cap_1', entity: 'TI', field: 'biaya', candidates: [] }] };
+
+      const promise1 = shadowProvider.observeShadowRetrieval(plan1, exec1, { requestTraceId: 't1_hold' });
+      for (let i = 0; i < 50; i++) {
+        if (shadowProvider.getActiveShadowJobs() > 0) break;
+        await new Promise(r => setTimeout(r, 10));
+      }
+
+      // Second task arrives while slot is occupied
+      const plan2 = { bindings: [{ id: 'b_cap_2' }] };
+      const exec2 = { bindingResults: [{ bindingId: 'b_cap_2', entity: 'SI', field: 'biaya', candidates: [] }] };
+      const res2 = await shadowProvider.observeShadowRetrieval(plan2, exec2, { requestTraceId: 't2_cap' });
+
+      expect(res2.skipped).toBe(true);
+      expect(res2.reason).toBe('capacity');
+
+      const capRecord = capturedTelemetry.find(r => r.request_trace_id === 't2_cap');
+      expect(capRecord).toBeDefined();
+      expect(capRecord.shadow_selected).toBe(true);
+      expect(capRecord.shadow_job_started).toBe(false);
+      expect(capRecord.shadow_skipped_reason).toBe('capacity');
+      expect(capRecord.query_embedding_called).toBe(false);
+      expect(capRecord.pgvector_query_called).toBe(false);
+
+      releaseTask1();
+      await promise1;
+      embedSpy.mockRestore();
+      dbSpy.mockRestore();
+    });
+
+    test('telemetry emitted for OpenAI failure', async () => {
+      process.env.VECTOR_SHADOW_ENABLED = 'true';
+      process.env.VECTOR_SHADOW_SAMPLE_RATE = '1.0';
+      process.env.VECTOR_SHADOW_MAX_CONCURRENCY = '1';
+      process.env.VECTOR_SHADOW_TIMEOUT_MS = '1500';
+
+      const embedSpy = jest.spyOn(shadowProvider, 'computeQueryEmbedding').mockRejectedValue(new Error('OpenAI quota exceeded simulated'));
+
+      const plan = { bindings: [{ id: 'b_err_1' }] };
+      const exec = {
+        bindingResults: [
+          { bindingId: 'b_err_1', entity: 'TI', field: 'prospek', candidates: [] }
+        ]
+      };
+
+      const res = await shadowProvider.observeShadowRetrieval(plan, exec, {
+        requestTraceId: 'trace_openai_err'
+      });
+
+      expect(res.skipped).toBe(false); // job ran and completed with error recorded per binding
+      const t = capturedTelemetry.find(r => r.request_trace_id === 'trace_openai_err');
+      expect(t).toBeDefined();
+
+      expect(t.request_trace_id).toBe('trace_openai_err');
+      expect(t.binding_id).toBe('b_err_1');
+      expect(t.shadow_selected).toBe(true);
+      expect(t.shadow_job_started).toBe(true);
+      expect(t.query_embedding_called).toBe(true);
+      expect(t.pgvector_query_called).toBe(false);
+      expect(t.vector_error).toContain('OpenAI quota exceeded simulated');
+
+      embedSpy.mockRestore();
+    });
+
+    test('no full chunks/embeddings in telemetry', async () => {
+      process.env.VECTOR_SHADOW_ENABLED = 'true';
+      process.env.VECTOR_SHADOW_SAMPLE_RATE = '1.0';
+
+      const { OpenAI } = require('openai');
+      const proto = Object.getPrototypeOf(new OpenAI({ apiKey: 'mock' }).embeddings);
+      const embedSpy = jest.spyOn(proto, 'create').mockResolvedValue({
+        data: [{ embedding: new Array(1536).fill(0.01) }]
+      });
+      const prisma = require('../src/db');
+      const dbSpy = jest.spyOn(prisma, '$queryRawUnsafe').mockResolvedValue([
+        {
+          vector_chunk_id: 'v_safe_1',
+          source_record_id: 'rec_safe_1',
+          source_file: 'safe.xlsx',
+          content: 'SECRET LONG DOCUMENT BODY CHUNK THAT MUST NOT BE LOGGED',
+          embedding: new Array(1536).fill(0.99),
+          similarity: 0.95
+        }
+      ]);
+
+      const plan = { bindings: [{ id: 'b_leak_test' }] };
+      const exec = {
+        bindingResults: [
+          { bindingId: 'b_leak_test', entity: 'TI', field: 'biaya', candidates: [] }
+        ]
+      };
+
+      await shadowProvider.observeShadowRetrieval(plan, exec, { requestTraceId: 't_leak' });
+
+      const t = capturedTelemetry.find(r => r.request_trace_id === 't_leak');
+      expect(t).toBeDefined();
+
+      // Verify vector_top5 is strictly bounded to the 4 fields
+      expect(t.vector_top5).toEqual([
+        {
+          source_record_id: 'rec_safe_1',
+          source_file: 'safe.xlsx',
+          similarity: 0.95,
+          rank: 1
+        }
+      ]);
+
+      const serialized = JSON.stringify(t);
+      expect(serialized).not.toContain('SECRET LONG DOCUMENT BODY');
+      expect(serialized).not.toContain('content');
+      expect(/0\.99.*0\.99.*0\.99/.test(serialized)).toBe(false);
+
+      embedSpy.mockRestore();
+      dbSpy.mockRestore();
+    });
+
+    test('authoritative result unchanged', async () => {
+      const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+      // 1. Run with shadow disabled
+      process.env.VECTOR_SHADOW_ENABLED = 'false';
+      process.env.VECTOR_RETRIEVAL_ENABLED = 'false';
+      const question = 'program double degree di stikom bali ada apa saja?';
+
+      const resDisabled = await querySemanticRag(question, { bypassCache: true });
+
+      // 2. Run with shadow enabled
+      process.env.VECTOR_SHADOW_ENABLED = 'true';
+      process.env.VECTOR_SHADOW_SAMPLE_RATE = '1.0';
+
+      const resEnabled = await querySemanticRag(question, { bypassCache: true });
+
+      expect(resEnabled.answer).toBe(resDisabled.answer);
+      expect(resEnabled.source).toBe(resDisabled.source);
+      expect(resEnabled.debug?.routeStage).toBe(resDisabled.debug?.routeStage);
+    });
+
+    test('early-return route reachability covered generically', async () => {
+      const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+
+      process.env.VECTOR_SHADOW_ENABLED = 'true';
+      process.env.VECTOR_SHADOW_SAMPLE_RATE = '1.0';
+
+      const routesToVerify = [
+        { label: 'career', query: 'Kalau lulus Teknologi Informasi biasanya kerja apa?' },
+        { label: 'uploaded_training', query: 'Apa keunggulan STIKOM Bali untuk mahasiswa yang ingin punya pengalaman internasional?' },
+        { label: 'program_rec', query: 'Kalau saya tertarik software, cloud, dan cybersecurity prodi apa yang paling relevan di STIKOM Bali?' }
+      ];
+
+      const shadowProvider = require('../src/engine/pgvectorShadowProvider');
+      const spy = jest.spyOn(shadowProvider, 'observeShadowRetrieval').mockImplementation(async () => {
+        return { skipped: true, reason: 'test_spy' };
+      });
+
+      try {
+        for (const route of routesToVerify) {
+          spy.mockClear();
+          await querySemanticRag(route.query, { bypassCache: true });
+          for (let i = 0; i < 50; i++) {
+            if (spy.mock.calls.length > 0) break;
+            await new Promise(r => setTimeout(r, 20));
+          }
+          expect(spy.mock.calls.length).toBeGreaterThan(0);
+        }
+      } finally {
+        spy.mockRestore();
+      }
+    }, 30000);
+  });
 });

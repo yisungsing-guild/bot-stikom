@@ -32,6 +32,29 @@
 const { OpenAI } = require('openai');
 const prisma = require('../db');
 
+let logger = null;
+try {
+  logger = require('../logger');
+} catch (_) {}
+
+let customTelemetrySink = null;
+function setTelemetrySink(fn) {
+  customTelemetrySink = fn;
+}
+
+function emitTelemetry(record) {
+  if (typeof customTelemetrySink === 'function') {
+    try {
+      customTelemetrySink(record);
+    } catch (_) {}
+  }
+  if (logger && typeof logger.info === 'function') {
+    try {
+      logger.info(record, '[PGVECTOR_SHADOW] Telemetry');
+    } catch (_) {}
+  }
+}
+
 const EMBEDDING_VERSION = 'text-embedding-3-small-1536-corpus-787bfb8f-v1';
 const EMBEDDING_MODEL = 'text-embedding-3-small';
 
@@ -172,7 +195,7 @@ async function searchVectorChunks(queryEmbedding, binding, limit = 10) {
  * Computes telemetry comparing legacy and vector candidates.
  * Bounded: logs IDs and scores only, never full chunks or 1536-dim vectors.
  */
-function computeComparisonTelemetry(binding, legacyCandidates = [], vectorCandidates = [], latencies = {}, error = null) {
+function computeComparisonTelemetry(binding, legacyCandidates = [], vectorCandidates = [], latencies = {}, error = null, extra = {}) {
   const legacyIds = legacyCandidates.map(c => c.sourceRecordId || c.chunk?.id || c.chunkIndex || c.id).filter(Boolean);
   const vectorIds = vectorCandidates.map(c => c.source_record_id || c.vector_chunk_id).filter(Boolean);
 
@@ -202,7 +225,6 @@ function computeComparisonTelemetry(binding, legacyCandidates = [], vectorCandid
   let vectorEvaluatorAcceptCount = 0;
   let vectorEvaluatorRejectCount = 0;
   for (const vc of vectorCandidates) {
-    // Basic similarity threshold check for candidate viability
     if (typeof vc.similarity === 'number' && vc.similarity >= 0.70) {
       vectorEvaluatorAcceptCount++;
     } else {
@@ -210,8 +232,30 @@ function computeComparisonTelemetry(binding, legacyCandidates = [], vectorCandid
     }
   }
 
+  const vectorTop5Structured = (vectorCandidates || []).slice(0, 5).map((c, idx) => ({
+    source_record_id: c.source_record_id || c.sourceRecordId || null,
+    source_file: c.source_file || c.sourceFile || null,
+    similarity: typeof c.similarity === 'number' ? Number(c.similarity.toFixed(4)) : null,
+    rank: idx + 1
+  }));
+
+  const isTimeout = Boolean(error && String(error.message || error).includes('timed out'));
+
   return {
-    binding_id: binding.bindingId,
+    request_trace_id: extra.request_trace_id || null,
+    binding_id: binding.bindingId || null,
+    shadow_selected: true,
+    shadow_job_started: true,
+    shadow_skipped_reason: error ? (isTimeout ? 'timeout' : 'error') : null,
+    query_embedding_called: Boolean(extra.query_embedding_called),
+    pgvector_query_called: Boolean(extra.pgvector_query_called),
+    vector_result_count: vectorCandidates.length,
+    vector_top5: vectorTop5Structured,
+    shadow_total_latency_ms: latencies.totalMs || 0,
+    shadow_timeout: isTimeout,
+    vector_error: error ? String(error.message || error) : null,
+
+    // Backward-compatibility and audit fields
     entity: binding.entity ? binding.entity.canonical : 'INSTITUTION_ROOT',
     requestedField: binding.requestedField,
     legacy_top_5: legacyTop5,
@@ -226,7 +270,6 @@ function computeComparisonTelemetry(binding, legacyCandidates = [], vectorCandid
     query_embedding_latency_ms: latencies.embeddingMs || 0,
     vector_db_latency_ms: latencies.dbMs || 0,
     total_shadow_latency_ms: latencies.totalMs || 0,
-    vector_error: error ? String(error.message || error) : null,
     fallback_reason: error ? 'error_fallback' : null
   };
 }
@@ -236,6 +279,10 @@ function computeComparisonTelemetry(binding, legacyCandidates = [], vectorCandid
  * Completely fire-and-forget: never throws, never blocks the caller.
  */
 async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
+  const requestTraceId = context.requestTraceId || context.traceId || null;
+  const bindingResults = executionSnapshot?.bindingResults || [];
+  const primaryBindingId = bindingResults[0]?.bindingId || null;
+
   // Gate 1: Fail-safe flag default (must be explicitly 'true')
   if (!isShadowEnabled()) {
     return { skipped: true, reason: 'disabled' };
@@ -244,13 +291,43 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
   // Gate 2: Sampling check (default 0)
   const sampleRate = getSampleRate();
   if (sampleRate <= 0 || (sampleRate < 1 && Math.random() > sampleRate)) {
-    return { skipped: true, reason: 'sampling' };
+    const telem = {
+      request_trace_id: requestTraceId,
+      binding_id: primaryBindingId,
+      shadow_selected: false,
+      shadow_job_started: false,
+      shadow_skipped_reason: 'sampling',
+      query_embedding_called: false,
+      pgvector_query_called: false,
+      vector_result_count: 0,
+      vector_top5: [],
+      shadow_total_latency_ms: 0,
+      shadow_timeout: false,
+      vector_error: null
+    };
+    emitTelemetry(telem);
+    return { skipped: true, reason: 'sampling', telemetry: [telem] };
   }
 
   // Gate 3: Concurrency limiter
   const maxConcurrency = getMaxConcurrency();
   if (activeShadowJobs >= maxConcurrency) {
-    return { skipped: true, reason: 'capacity' };
+    const telem = {
+      request_trace_id: requestTraceId,
+      binding_id: primaryBindingId,
+      shadow_selected: true,
+      shadow_job_started: false,
+      shadow_skipped_reason: 'capacity',
+      query_embedding_called: false,
+      pgvector_query_called: false,
+      vector_result_count: 0,
+      vector_top5: [],
+      shadow_total_latency_ms: 0,
+      shadow_timeout: false,
+      vector_error: null
+    };
+    emitTelemetry(telem);
+    return { skipped: true, reason: 'capacity', telemetry: [telem] };
   }
 
   activeShadowJobs++;
@@ -266,13 +343,33 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
     }
   };
 
+  const telemetryRecords = [];
+
   const shadowJob = async () => {
-    const telemetryRecords = [];
-    const bindingResults = executionSnapshot?.bindingResults || [];
+    if (bindingResults.length === 0) {
+      const telem = {
+        request_trace_id: requestTraceId,
+        binding_id: null,
+        shadow_selected: true,
+        shadow_job_started: true,
+        shadow_skipped_reason: 'no_bindings',
+        query_embedding_called: false,
+        pgvector_query_called: false,
+        vector_result_count: 0,
+        vector_top5: [],
+        shadow_total_latency_ms: Date.now() - t0,
+        shadow_timeout: false,
+        vector_error: null
+      };
+      emitTelemetry(telem);
+      telemetryRecords.push(telem);
+      return telemetryRecords;
+    }
 
     for (const bResult of bindingResults) {
+      const bindingId = bResult.bindingId || null;
       const binding = {
-        bindingId: bResult.bindingId,
+        bindingId,
         entity: bResult.entity ? { canonical: bResult.entity } : null,
         requestedField: bResult.field,
         retrievalHints: bResult.retrievalHints || [],
@@ -284,16 +381,20 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
       let embeddingMs = 0;
       let dbMs = 0;
       let error = null;
+      let queryEmbeddingCalled = false;
+      let pgvectorQueryCalled = false;
 
       try {
         const queryText = buildBindingQueryText(binding);
         if (queryText) {
+          queryEmbeddingCalled = true;
           const tEmb0 = Date.now();
-          const queryEmbedding = await computeQueryEmbedding(queryText, timeoutMs, abortController.signal);
+          const queryEmbedding = await module.exports.computeQueryEmbedding(queryText, timeoutMs, abortController.signal);
           embeddingMs = Date.now() - tEmb0;
 
+          pgvectorQueryCalled = true;
           const tDb0 = Date.now();
-          vectorCandidates = await searchVectorChunks(queryEmbedding, binding, 10);
+          vectorCandidates = await module.exports.searchVectorChunks(queryEmbedding, binding, 10);
           dbMs = Date.now() - tDb0;
         }
       } catch (err) {
@@ -306,8 +407,14 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
         legacyCandidates,
         vectorCandidates,
         { embeddingMs, dbMs, totalMs },
-        error
+        error,
+        {
+          request_trace_id: requestTraceId,
+          query_embedding_called: queryEmbeddingCalled,
+          pgvector_query_called: pgvectorQueryCalled
+        }
       );
+      emitTelemetry(telem);
       telemetryRecords.push(telem);
     }
 
@@ -323,7 +430,6 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
   };
 
   const jobPromise = executeJob();
-  // Absorb background rejection/abort errors so they never trigger unhandled rejection
   jobPromise.catch(() => {});
 
   let timeoutTimer = null;
@@ -342,10 +448,30 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
     return { skipped: false, results, durationMs: Date.now() - t0 };
   } catch (err) {
     if (timeoutTimer) clearTimeout(timeoutTimer);
+    const isTimeout = Boolean(err.message?.includes('timed out'));
+    if (telemetryRecords.length === 0) {
+      const telem = {
+        request_trace_id: requestTraceId,
+        binding_id: primaryBindingId,
+        shadow_selected: true,
+        shadow_job_started: true,
+        shadow_skipped_reason: isTimeout ? 'timeout' : 'error',
+        query_embedding_called: true,
+        pgvector_query_called: false,
+        vector_result_count: 0,
+        vector_top5: [],
+        shadow_total_latency_ms: Date.now() - t0,
+        shadow_timeout: isTimeout,
+        vector_error: err.message || String(err)
+      };
+      emitTelemetry(telem);
+      telemetryRecords.push(telem);
+    }
     return {
       skipped: true,
-      reason: err.message?.includes('timed out') ? 'timeout' : 'error',
-      error: err.message
+      reason: isTimeout ? 'timeout' : 'error',
+      error: err.message,
+      telemetry: telemetryRecords
     };
   }
 }
@@ -386,6 +512,8 @@ module.exports = {
   getSampleRate,
   getTimeoutMs,
   getActiveShadowJobs,
+  setTelemetrySink,
+  emitTelemetry,
   buildBindingQueryText,
   computeQueryEmbedding,
   searchVectorChunks,

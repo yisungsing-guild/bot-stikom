@@ -18820,12 +18820,17 @@ async function _querySemanticRagInner(question, options = {}) {
 
       // Non-blocking pgvector shadow observer hook (runs asynchronously outside the critical path)
       if (pgvectorShadowProvider && typeof pgvectorShadowProvider.observeShadowRetrieval === 'function') {
+        const requestTraceId = options.traceId
+          || options.requestId
+          || options.requestTraceId
+          || (options.sessionData && options.sessionData.chatId ? `${options.sessionData.chatId}_${Date.now()}` : `trace_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
+
         setImmediate(() => {
           try {
             pgvectorShadowProvider.observeShadowRetrieval(
               authoritativeRetrievalPlan,
               authoritativeRetrievalExecution,
-              { question }
+              { question, requestTraceId }
             ).catch(err => {
               logger.debug({ err: err?.message }, '[PGVECTOR_SHADOW] Asynchronous observation error');
             });
