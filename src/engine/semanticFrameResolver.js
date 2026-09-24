@@ -198,6 +198,11 @@ function resolveAuthoritativeFields(rawText, rawFields, numericSemantics) {
     fields.add('sktt');
   }
 
+  // International experience / Global program specificity
+  if (/\b(?:pengalaman\s+internasional|program\s+internasional|international\s+(?:program|experience)|student\s+exchange|pertukaran\s+(?:mahasiswa|pelajar)|studi\s+(?:ke\s+)?luar\s+negeri|study\s+abroad|kelas\s+internasional|jalur\s+internasional)\b/i.test(q)) {
+    fields.add('internationalExperience');
+  }
+
   return rankRequestedFields(Array.from(fields));
 }
 

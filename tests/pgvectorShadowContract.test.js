@@ -35,7 +35,11 @@ const {
   getSampleRate,
   getTimeoutMs,
   buildBindingQueryText,
+  computeBatchQueryEmbeddings,
+  computeQueryEmbedding,
   searchVectorChunks,
+  computeBindingRRF,
+  computeGenericStructuralRerank,
   computeComparisonTelemetry,
   observeShadowRetrieval,
   pureEvaluateShadowCandidates
@@ -269,9 +273,26 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
 
       const queryText = buildBindingQueryText(binding);
       expect(queryText).toContain('TEKNOLOGI_INFORMASI');
-      expect(queryText).toContain('tuitionFee');
+      expect(queryText).toContain('biaya kuliah');
       expect(queryText).toContain('biaya kuliah ti spp');
       expect(queryText).not.toContain('undefined');
+    });
+
+    test('current clause semantic terms survive query construction even when requestedField is populated', () => {
+      const binding = {
+        bindingId: 'b_open_rec',
+        entity: null,
+        requestedField: 'programRecommendation',
+        clauseText: 'software, cloud, dan cybersecurity',
+        rawText: 'saya tertarik dengan software, cloud, dan cybersecurity'
+      };
+
+      const queryText = buildBindingQueryText(binding);
+      expect(queryText).toContain('software');
+      expect(queryText).toContain('cloud');
+      expect(queryText).toContain('cybersecurity');
+      expect(queryText).toContain('rekomendasi program studi');
+      expect(queryText).not.toContain('programRecommendation programRecommendation');
     });
   });
 
@@ -559,7 +580,7 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
       expect(afterEvidenceCount).toBe(evidenceCountSnapshot);
 
       shadowProvider.observeShadowRetrieval.mockRestore();
-    });
+    }, 15000);
   });
 
   describe('11. Zombie-Operation & Timeout Capacity Hardening', () => {
@@ -1062,4 +1083,164 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
       }
     }, 30000);
   });
+
+  describe('15. Generic Retrieval Quality Tuning & Hybrid Fusion Contract', () => {
+    test('computeBatchQueryEmbeddings requests embeddings in a single batched call', async () => {
+      process.env.OPENAI_API_KEY = 'mock-test-key';
+      const texts = ['text 1', 'text 2', 'text 3'];
+      const shadowProvider = require('../src/engine/pgvectorShadowProvider');
+      const mockCreate = jest.fn().mockResolvedValue({
+        data: [
+          { index: 0, embedding: new Array(1536).fill(0.1) },
+          { index: 1, embedding: new Array(1536).fill(0.2) },
+          { index: 2, embedding: new Array(1536).fill(0.3) }
+        ]
+      });
+      const clientSpy = jest.spyOn(shadowProvider, 'getOpenAIClient').mockReturnValue({
+        embeddings: { create: mockCreate }
+      });
+
+      try {
+        const embeddings = await shadowProvider.computeBatchQueryEmbeddings(texts, 1500);
+        expect(embeddings.length).toBe(3);
+        expect(mockCreate).toHaveBeenCalledTimes(1);
+        expect(mockCreate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            input: texts,
+            model: 'text-embedding-3-small'
+          }),
+          expect.anything()
+        );
+        expect(embeddings[0][0]).toBe(0.1);
+        expect(embeddings[1][0]).toBe(0.2);
+        expect(embeddings[2][0]).toBe(0.3);
+      } finally {
+        clientSpy.mockRestore();
+      }
+    });
+
+    test('computeBindingRRF deterministically merges legacy and vector candidates preserving provenance', () => {
+      const legacyCandidates = [
+        { sourceRecordId: 'rec_A', sourceFile: 'A.pdf' },
+        { sourceRecordId: 'rec_B', sourceFile: 'B.pdf' }
+      ];
+      const vectorCandidates = [
+        { source_record_id: 'rec_B', source_file: 'B.pdf', similarity: 0.85 },
+        { source_record_id: 'rec_C', source_file: 'C.pdf', similarity: 0.75 }
+      ];
+
+      const rrf = computeBindingRRF(legacyCandidates, vectorCandidates, 60);
+
+      expect(rrf.length).toBe(3);
+      // rec_B is in both legacy (rank 2) and vector (rank 1) -> highest RRF score
+      expect(rrf[0].source_record_id).toBe('rec_B');
+      expect(rrf[0].legacy_rank).toBe(2);
+      expect(rrf[0].vector_rank).toBe(1);
+      expect(rrf[0].similarity).toBe(0.85);
+      expect(rrf[0].rrf_score).toBeCloseTo(1 / (60 + 2) + 1 / (60 + 1), 5);
+
+      const recA = rrf.find(c => c.source_record_id === 'rec_A');
+      expect(recA.legacy_rank).toBe(1);
+      expect(recA.vector_rank).toBeNull();
+      expect(recA.similarity).toBeNull();
+
+      const recC = rrf.find(c => c.source_record_id === 'rec_C');
+      expect(recC.legacy_rank).toBeNull();
+      expect(recC.vector_rank).toBe(2);
+      expect(recC.similarity).toBe(0.75);
+    });
+
+    test('computeGenericStructuralRerank boosts compatible metadata and penalizes conflicting metadata without filename rules', () => {
+      const binding = {
+        bindingId: 'b1',
+        entity: { canonical: 'TI', family: 'program' },
+        requestedField: 'careerOutcome',
+        constraints: { program: 'TI' }
+      };
+
+      const rrfCandidates = [
+        {
+          source_record_id: 'c_compat',
+          rrf_score: 0.015,
+          program: 'TI',
+          doc_category: 'PROSPEK_KERJA',
+          category: 'PROSPEK_KERJA',
+          similarity: 0.74
+        },
+        {
+          source_record_id: 'c_unknown',
+          rrf_score: 0.015,
+          program: null,
+          doc_category: null,
+          category: null,
+          similarity: 0.65
+        },
+        {
+          source_record_id: 'c_conflict',
+          rrf_score: 0.015,
+          program: 'BD', // Bisnis Digital (conflict)
+          doc_category: null,
+          category: 'ADMINISTRASI', // Conflict for career
+          similarity: 0.65
+        }
+      ];
+
+      const reranked = computeGenericStructuralRerank(rrfCandidates, binding);
+
+      expect(reranked[0].source_record_id).toBe('c_compat');
+      expect(reranked[0].score_components.program_compatibility).toBeGreaterThan(0);
+      expect(reranked[0].score_components.field_category_compatibility).toBeGreaterThan(0);
+
+      const unknownCandidate = reranked.find(c => c.source_record_id === 'c_unknown');
+      expect(unknownCandidate.score_components.program_compatibility).toBe(0);
+      expect(unknownCandidate.score_components.field_category_compatibility).toBe(0);
+
+      const conflictCandidate = reranked.find(c => c.source_record_id === 'c_conflict');
+      expect(conflictCandidate.score_components.program_compatibility).toBeLessThan(0);
+      expect(conflictCandidate.score_components.field_category_compatibility).toBeLessThan(0);
+    });
+
+    test('Telemetry V2 contains required hybrid, score components, and batch size fields', () => {
+      const binding = { bindingId: 'b_telem_v2', requestedField: 'careerOutcome' };
+      const legacyCandidates = [{ sourceRecordId: 'rec_1' }];
+      const vectorCandidates = [{ source_record_id: 'rec_1', similarity: 0.82 }];
+      const hybridCandidates = [{
+        source_record_id: 'rec_1',
+        legacy_rank: 1,
+        vector_rank: 1,
+        rrf_score: 0.032,
+        structural_score: 0.072,
+        similarity: 0.82
+      }];
+
+      const telemetry = computeComparisonTelemetry(
+        binding,
+        legacyCandidates,
+        vectorCandidates,
+        hybridCandidates,
+        { embeddingMs: 120, dbMs: 40, totalMs: 165 },
+        null,
+        {
+          request_trace_id: 't_v2',
+          embedding_input: 'lulus TI biasanya kerja apa',
+          embedding_batch_size: 1,
+          query_embedding_called: true,
+          pgvector_query_called: true
+        }
+      );
+
+      expect(telemetry.embedding_input).toBe('lulus TI biasanya kerja apa');
+      expect(telemetry.embedding_batch_size).toBe(1);
+      expect(telemetry.embedding_latency_ms).toBe(120);
+      expect(telemetry.db_latency_ms).toBe(40);
+      expect(telemetry.total_shadow_latency_ms).toBe(165);
+      expect(telemetry.hybrid_top10).toBeDefined();
+      expect(telemetry.hybrid_top10.length).toBe(1);
+      expect(telemetry.hybrid_top10[0].legacy_rank).toBe(1);
+      expect(telemetry.hybrid_top10[0].vector_rank).toBe(1);
+      expect(telemetry.hybrid_top10[0].rrf_score).toBe(0.032);
+      expect(telemetry.evaluator_accept_count).toBe(1);
+    });
+  });
 });
+

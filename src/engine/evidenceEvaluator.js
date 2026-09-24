@@ -47,6 +47,13 @@ const DIMENSION_STATUS = Object.freeze({
   NOT_APPLICABLE: 'NOT_APPLICABLE'
 });
 
+const {
+  CANONICAL_FIELD_FAMILIES,
+  getFieldSynonyms,
+  getFieldHints,
+  getFieldFamily
+} = require('./canonicalFieldRegistry');
+
 /**
  * Normalized token helper for clean entity boundary comparison
  */
@@ -125,6 +132,11 @@ function doesSnippetMentionEntity(requestedCanonical, aliases = [], snippet = ''
   if (reqLower.includes('akademik')) {
     return snipLower.includes('akademik') || snipLower.includes('yudisium');
   }
+  if (reqLower.includes('internasional') || reqLower.includes('international')) {
+    if (snipLower.includes('internasional') || snipLower.includes('student exchange') || snipLower.includes('pertukaran mahasiswa') || snipLower.includes('luar negeri') || snipLower.includes('dual degree') || snipLower.includes('double degree')) {
+      return true;
+    }
+  }
 
   // 4. Token-based fallback for other entities
   const stopWords = new Set(['program', 'studi', 'prodi', 's1', 'd3', 's2', 'itb', 'stikom', 'bali', 'direktorat', 'lembaga', 'unit', 'biro', 'form', 'formulir', 'dokumen', 'surat', 'pedoman', 'mahasiswa']);
@@ -163,7 +175,102 @@ function isEntityCompatible(bindingEntity, evidenceEntity, evidenceSnippet = '',
   if (isIndexedChunk && requestedLower !== 'institution_root' && requestedLower !== 'itb stikom bali') {
     const docSource = evidence?.sourceDocumentOrRecord || evidence?.sourceId || '';
     const textToSearch = (evidenceSnippet || evidence?.textSnippet || '') + ' ' + docSource;
+
+    const prodiNames = ['teknologi informasi', 'sistem informasi', 'sistem komputer', 'bisnis digital', 'manajemen informatika'];
+    const reqIsProdi = prodiNames.find(p => requestedLower.includes(p));
+
+    // Guard: Student club or subunit document cannot satisfy an academic program entity
+    const isStudentClubOrSubunit = /\b(?:ukm|ormawa|unit\s+kegiatan\s+mahasiswa|hima|himaprodi|senat|bem)\b/i.test(textToSearch);
+    if (reqIsProdi && isStudentClubOrSubunit) {
+      return {
+        compatible: false,
+        matchType: 'SUBUNIT_CLUB_NOT_PRODI_ENTITY',
+        reason: `Student club or subunit document cannot satisfy academic program entity '${requestedCanonical}'`
+      };
+    }
+
+    // Guard: Generic Career Center consulting/workshops cannot satisfy prodi-specific entity
+    const isCareerCenterFaq = /FAQ\s+CC|Career\s+Center/i.test(docSource) && /konsultasi|persiapan\s+magang|penyusunan\s+cv|persiapan\s+wawancara/i.test(textToSearch);
+    if (reqIsProdi && isCareerCenterFaq) {
+      return {
+        compatible: false,
+        matchType: 'CAREER_CENTER_SERVICE_NOT_PRODI_SPECIFIC',
+        reason: `Generic Career Center consulting/service FAQ cannot satisfy prodi '${requestedCanonical}' outcomes`
+      };
+    }
+
+    // 1. Check structured authoritative metadata relation if present (metadata NULL remains UNKNOWN)
+    const metaProgram = evidence?.program || evidence?.metadata?.program || evidence?.qualifiers?.program || null;
+    if (metaProgram !== null && metaProgram !== undefined) {
+      const metaProgNorm = String(metaProgram).toUpperCase().trim();
+      const isTiReq = requestedLower.includes('teknologi informasi') || requestedLower === 'ti';
+      const isSiReq = requestedLower.includes('sistem informasi') || requestedLower === 'si';
+      const isSkReq = requestedLower.includes('sistem komputer') || requestedLower === 'sk';
+      const isBdReq = requestedLower.includes('bisnis digital') || requestedLower === 'bd';
+
+      const isTiMeta = metaProgNorm === 'TI' || metaProgNorm.includes('TEKNOLOGI INFORMASI');
+      const isSiMeta = metaProgNorm === 'SI' || metaProgNorm.includes('SISTEM INFORMASI');
+      const isSkMeta = metaProgNorm === 'SK' || metaProgNorm.includes('SISTEM KOMPUTER');
+      const isBdMeta = metaProgNorm === 'BD' || metaProgNorm.includes('BISNIS DIGITAL');
+
+      if ((isTiReq && isTiMeta) || (isSiReq && isSiMeta) || (isSkReq && isSkMeta) || (isBdReq && isBdMeta)) {
+        // Boundary spillover guard: even if metadata matches, if the text explicitly describes a conflicting program
+        // and does NOT mention the requested program, explicit conflicting text overrides stale/broad metadata
+        const snipLower = textToSearch.toLowerCase();
+        if (reqIsProdi) {
+          const conflictingProdi = prodiNames.find(p => p !== reqIsProdi && snipLower.includes(p));
+          const mentionsRequested = snipLower.includes(reqIsProdi) || (bindingEntity.aliases || []).some(a => snipLower.includes(a.toLowerCase()));
+          if (conflictingProdi && !mentionsRequested && (snipLower.includes('profesi lulusan') || snipLower.includes('program studi') || snipLower.includes('prodi'))) {
+            return {
+              compatible: false,
+              matchType: 'EXPLICIT_CONFLICTING_ENTITY',
+              reason: `Evidence text explicitly describes conflicting program '${conflictingProdi}' without mentioning requested '${requestedCanonical}' (metadata override)`
+            };
+          }
+        }
+        return {
+          compatible: true,
+          matchType: 'AUTHORITATIVE_METADATA_RELATION',
+          provenance: 'STRUCTURED_AUTHORITATIVE_METADATA'
+        };
+      } else if ((isTiReq && (isSiMeta || isSkMeta || isBdMeta)) ||
+                 (isSiReq && (isTiMeta || isSkMeta || isBdMeta)) ||
+                 (isSkReq && (isTiMeta || isSiMeta || isBdMeta)) ||
+                 (isBdReq && (isTiMeta || isSiMeta || isSkMeta))) {
+        return {
+          compatible: false,
+          matchType: 'EXPLICIT_CONFLICTING_ENTITY',
+          reason: `Authoritative metadata program '${metaProgram}' explicitly conflicts with requested entity '${requestedCanonical}'`
+        };
+      }
+    }
+
+    // 2. Snippet text verification
     if (!doesSnippetMentionEntity(requestedCanonical, bindingEntity.aliases, textToSearch)) {
+      const snipLower = textToSearch.toLowerCase();
+
+      // Explicitly conflicting entity
+      if (reqIsProdi) {
+        const conflictingProdi = prodiNames.find(p => p !== reqIsProdi && snipLower.includes(p));
+        if (conflictingProdi) {
+          return {
+            compatible: false,
+            matchType: 'EXPLICIT_CONFLICTING_ENTITY',
+            reason: `Evidence chunk explicitly mentions conflicting program '${conflictingProdi}' without mentioning requested '${requestedCanonical}'`
+          };
+        }
+      }
+
+      // Institution-wide evidence (do not automatically treat institution-wide evidence as TI evidence)
+      const isInstitutionWide = /\b(?:itb\s+stikom\s+bali|institut\s+teknologi\s+dan\s+bisnis\s+stikom\s+bali|stikom\s+bali)\b/i.test(snipLower);
+      if (reqIsProdi && isInstitutionWide) {
+        return {
+          compatible: false,
+          matchType: 'INSTITUTION_WIDE_EVIDENCE_NOT_PRODI_SPECIFIC',
+          reason: `Evidence chunk contains institution-wide information, which cannot satisfy prodi-specific entity '${requestedCanonical}'`
+        };
+      }
+
       return {
         compatible: false,
         matchType: 'ENTITY_ABSENT_IN_SNIPPET',
@@ -455,7 +562,67 @@ function isFieldCompatible(binding, evidence) {
       }
     }
 
-    // Primary hint alignment with standard semantic field synonyms
+    // Specific validation for Career Family fields
+    const careerFields = ['careerOutcome', 'jobRole', 'profession', 'graduateProfile', 'prospect', 'careerProspect', 'careerProspects', 'jobRoles'];
+    if (careerFields.includes(requestedField)) {
+      // Negative guard: "etika profesi" alone does not prove career outcome
+      const isEtikaOnly = snippet.includes('etika profesi') &&
+        !snippet.includes('profesi lulusan') &&
+        !snippet.includes('prospek') &&
+        !snippet.includes('pekerjaan') &&
+        !snippet.includes('lulusan dapat bekerja');
+      if (isEtikaOnly) {
+        return {
+          compatible: false,
+          subtypeCompatible: false,
+          disposition: EVIDENCE_DISPOSITION.REJECTED,
+          reason: 'Isolated course concept (e.g. etika profesi) does not establish career outcome proof'
+        };
+      }
+    }
+
+    // Specific validation for academicLevel field
+    if (requestedField === 'academicLevel') {
+      const sourceDoc = String(evidence.sourceDocumentOrRecord || evidence.sourceId || '').toLowerCase();
+      const isThesisOrAdminRegulation = /pedoman\s+ta|tugas\s+akhir|sk\s+pembina|tata\s+tertib|skripsi|sidang|akreditasi|sertifikat\s+akreditasi|sk\s+lam/i.test(sourceDoc) ||
+        /\b(?:141\s+sks|transkrip\s+nilai|pembimbing\s+dan\s+ketua|bimbingan\s+ta)\b/i.test(snippet) ||
+        evidence?.docCategory === 'AKREDITASI' || evidence?.category === 'AKREDITASI';
+      if (isThesisOrAdminRegulation) {
+        return {
+          compatible: false,
+          subtypeCompatible: false,
+          disposition: EVIDENCE_DISPOSITION.RELEVANT_BUT_INCOMPATIBLE,
+          reason: 'Thesis regulation, accreditation certificate, or administrative roster cannot satisfy academic degree offering level'
+        };
+      }
+    }
+
+    // Specific validation for internationalExperience field
+    if (requestedField === 'internationalExperience') {
+      const sourceDoc = String(evidence.sourceDocumentOrRecord || evidence.sourceId || '').toLowerCase();
+      if (/fasilitas/i.test(sourceDoc) || evidence?.category === 'FASILITAS') {
+        return {
+          compatible: false,
+          subtypeCompatible: false,
+          disposition: EVIDENCE_DISPOSITION.RELEVANT_BUT_INCOMPATIBLE,
+          reason: 'Facility listing document cannot satisfy international experience binding'
+        };
+      }
+    }
+
+    // Specific validation for programRecommendation and careerGoal fields
+    if (requestedField === 'programRecommendation' || requestedField === 'careerGoal') {
+      if (/modern\s+dance|tari\b|japanese\s+community|jcos/i.test(snippet)) {
+        return {
+          compatible: false,
+          subtypeCompatible: false,
+          disposition: EVIDENCE_DISPOSITION.REJECTED,
+          reason: 'Recreational club or hobby activity cannot satisfy academic program recommendation or career goal'
+        };
+      }
+    }
+
+    // Primary hint alignment with canonical registry and standard semantic field synonyms
     const FIELD_SYNONYMS = {
       facility: ['fasilitas', 'facility', 'akses', 'layanan', 'portal', 'course', 'kursus', 'fitur', 'program'],
       profile: ['profil', 'profile', 'tentang', 'program', 'deskripsi'],
@@ -470,9 +637,11 @@ function isFieldCompatible(binding, evidence) {
       destinationCountry: ['negara', 'negara tujuan', 'negara mitra', 'destinasi', 'ke negara mana', 'china', 'thailand', 'malaysia', 'philippines', 'filipina'],
       country: ['negara', 'negara tujuan', 'negara mitra', 'destinasi', 'ke negara mana', 'china', 'thailand', 'malaysia', 'philippines', 'filipina']
     };
+    const canonicalFieldSynonyms = getFieldSynonyms(requestedField) || [];
     const primaryHints = [
       ...(Array.isArray(binding.primaryFieldHints) ? binding.primaryFieldHints : []),
-      ...(FIELD_SYNONYMS[requestedField] || [])
+      ...(FIELD_SYNONYMS[requestedField] || []),
+      ...canonicalFieldSynonyms
     ];
     const matchedHints = primaryHints.filter(h => snippet.includes(h.toLowerCase()));
     if (matchedHints.length > 0) {
@@ -480,7 +649,11 @@ function isFieldCompatible(binding, evidence) {
     }
 
     // Secondary hints count as relevant but incompatible if primary is missing
-    const secondaryHints = Array.isArray(binding.secondaryFamilyHints) ? binding.secondaryFamilyHints : [];
+    const canonicalHints = getFieldHints(requestedField);
+    const secondaryHints = [
+      ...(Array.isArray(binding.secondaryFamilyHints) ? binding.secondaryFamilyHints : []),
+      ...(canonicalHints.secondaryFamilyHints || [])
+    ];
     const matchedSecondary = secondaryHints.filter(h => snippet.includes(h.toLowerCase()));
     if (matchedSecondary.length > 0) {
       return {
@@ -763,6 +936,71 @@ function detectDimensionScopedConflicts(compatibleEvidence) {
 }
 
 /**
+ * Evaluates whether evidence aligns with current-clause subject matter concepts.
+ *
+ * For program_fit fields (careerGoal, programRecommendation), generic words like
+ * "minat" or "bakat" are insufficient — evidence must also align with meaningful
+ * current-clause concepts / competencies (e.g. software, cloud, cybersecurity).
+ *
+ * @param {Object} binding
+ * @param {Object} evidence
+ * @param {Object} frame
+ * @returns {{ aligned: boolean, reason?: string, matchedAnchors?: string[] }}
+ */
+function isClauseSemanticallyAligned(binding, evidence, frame) {
+  const requestedField = binding?.requestedField;
+  const isProgramFit = ['programRecommendation', 'careerGoal'].includes(requestedField);
+
+  // Clause semantic alignment applies when preserving current-clause subject matter
+  if (!isProgramFit) {
+    return { aligned: true };
+  }
+
+  const clauseText = binding?.clauseText || binding?.rawText || frame?.rawQuery || '';
+  const STOPWORDS = new Set([
+    'kalau', 'jika', 'bila', 'saya', 'aku', 'kami', 'kita', 'dia', 'mereka', 'anda', 'kamu',
+    'tertarik', 'minat', 'bakat', 'senang', 'suka', 'ingin', 'mau', 'butuh', 'perlu',
+    'dan', 'atau', 'serta', 'lalu', 'kemudian', 'juga', 'dengan', 'tanpa',
+    'di', 'ke', 'dari', 'pada', 'untuk', 'buat', 'oleh', 'dalam', 'atas', 'bawah',
+    'apa', 'apakah', 'siapa', 'siapakah', 'kapan', 'dimana', 'kemana', 'bagaimana', 'gimana', 'mengapa', 'kenapa', 'berapa',
+    'yang', 'paling', 'lebih', 'sangat', 'agak', 'cukup',
+    'ada', 'adalah', 'merupakan', 'yaitu', 'yakni',
+    'ini', 'itu', 'tersebut',
+    'stikom', 'bali', 'itb', 'institut', 'kampus', 'universitas', 'perguruan', 'tinggi',
+    'prodi', 'jurusan', 'program', 'studi', 'kuliah', 'belajar', 'pendidikan',
+    'relevan', 'cocok', 'bagus', 'baik', 'tepat', 'pilihan', 'rekomendasi', 'informasi', 'info', 'tanya', 'tolong',
+    'lulus', 'lulusan', 'kerja', 'biasanya'
+  ]);
+
+  const rawTokens = String(clauseText)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t.length >= 4 && !STOPWORDS.has(t));
+
+  const anchors = Array.from(new Set(rawTokens));
+
+  // If user provided substantive subject-matter anchors, evidence must match at least one anchor
+  if (anchors.length > 0) {
+    const snip = String(evidence?.textSnippet || evidence?.structuredValue || '').toLowerCase();
+    const sourceDoc = String(evidence?.sourceDocumentOrRecord || evidence?.sourceId || '').toLowerCase();
+    const metaProg = String(evidence?.program || '').toLowerCase();
+    const textToSearch = snip + ' ' + sourceDoc + ' ' + metaProg;
+
+    const matchedAnchors = anchors.filter(a => textToSearch.includes(a));
+    if (matchedAnchors.length === 0) {
+      return {
+        aligned: false,
+        reason: `Evidence does not align with current-clause semantic anchors: ${anchors.join(', ')}`
+      };
+    }
+    return { aligned: true, matchedAnchors };
+  }
+
+  return { aligned: true };
+}
+
+/**
  * Evaluates a single RetrievalBinding against its retrieved evidence candidates.
  * SIDE-EFFECT FREE: Does NOT mutate binding, frame, or evidence objects.
  *
@@ -872,12 +1110,24 @@ function evaluateBinding(binding, evidenceList = [], frame = {}, options = {}) {
       continue;
     }
 
-    // Passed entity and field compatibility
+    // 3. Clause semantic alignment (for fields requiring current-clause subject matter preservation)
+    const alignComp = isClauseSemanticallyAligned(binding, ev, frame);
+    if (!alignComp.aligned) {
+      evidenceDispositions.push({
+        evidenceId: ev.evidenceId,
+        disposition: EVIDENCE_DISPOSITION.RELEVANT_BUT_INCOMPATIBLE,
+        reasons: [alignComp.reason || 'Clause semantic alignment failed']
+      });
+      rejectedEvidenceIds.push(ev.evidenceId);
+      continue;
+    }
+
+    // Passed entity, specific field, and clause semantic compatibility
     matchedEvidenceList.push(ev);
     evidenceDispositions.push({
       evidenceId: ev.evidenceId,
       disposition: EVIDENCE_DISPOSITION.SUPPORTS,
-      reasons: ['Entity and field compatible with traceable provenance']
+      reasons: ['Entity, specific field, and clause semantically supported with traceable provenance']
     });
   }
 
@@ -1165,6 +1415,7 @@ module.exports = {
   DIMENSION_STATUS,
   isEntityCompatible,
   isFieldCompatible,
+  isClauseSemanticallyAligned,
   evaluateRecipientCompatibility,
   evaluateQualifierCompatibility,
   evaluateRelationCompatibility,

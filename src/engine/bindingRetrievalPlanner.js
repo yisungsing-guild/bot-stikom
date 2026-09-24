@@ -32,6 +32,13 @@ const {
   normalizeEntityFamily
 } = require('./semanticFrame');
 
+const {
+  CANONICAL_FIELD_FAMILIES,
+  CANONICAL_FIELD_DEFINITIONS,
+  getFieldHints,
+  getFieldFamily
+} = require('./canonicalFieldRegistry');
+
 const SCOPE_TYPES = Object.freeze({
   EXPLICIT_ENTITY: 'EXPLICIT_ENTITY',
   INSTITUTION_ROOT: 'INSTITUTION_ROOT',
@@ -419,19 +426,25 @@ function filterRetrievalWorthyFields(requestedFields, exclusions = [], constrain
  */
 function deriveFieldHints(field, exclusions = []) {
   const normField = String(field || '').trim();
-  const regEntry = FIELD_HINT_REGISTRY[normField] || null;
-  const desc = getFieldDescriptor(normField);
+  const canonicalHints = getFieldHints(normField);
 
   let primary = [];
   let secondary = [];
 
-  if (regEntry) {
-    primary = [...regEntry.primary];
-    secondary = [...regEntry.secondary];
-  } else if (normField) {
-    primary = [normField];
-    if (desc.family && desc.family !== normField) {
-      secondary.push(desc.family);
+  if (canonicalHints && (canonicalHints.primaryFieldHints.length > 0 || canonicalHints.secondaryFamilyHints.length > 0)) {
+    primary = [...canonicalHints.primaryFieldHints];
+    secondary = [...canonicalHints.secondaryFamilyHints];
+  } else {
+    const regEntry = FIELD_HINT_REGISTRY[normField] || null;
+    const desc = getFieldDescriptor(normField);
+    if (regEntry) {
+      primary = [...regEntry.primary];
+      secondary = [...regEntry.secondary];
+    } else if (normField) {
+      primary = [normField];
+      if (desc.family && desc.family !== normField) {
+        secondary.push(desc.family);
+      }
     }
   }
 
@@ -760,12 +773,16 @@ function createRetrievalPlan(inputFrameOrBundle, options = {}) {
             }
           } else {
             // Entity profile / definition request (zero factual fields)
+            let defaultField = 'profile';
+            if (frame.constraints?.programScope === 'international' || ent?.type === 'internationalPrograms' || ent?.family === 'international') {
+              defaultField = 'internationalExperience';
+            }
             bindings.push(createRetrievalBinding({
               bindingId: `bind_${subreqIdx}_${bIdx++}`,
               subrequestId: subreqId,
               scopeType: SCOPE_TYPES.EXPLICIT_ENTITY,
               entity: ent,
-              requestedField: 'profile',
+              requestedField: defaultField,
               relations,
               constraints,
               exclusions,
@@ -795,12 +812,16 @@ function createRetrievalPlan(inputFrameOrBundle, options = {}) {
           }
         } else {
           // General institution profile / definition request
+          let defaultField = 'profile';
+          if (frame.constraints?.programScope === 'international') {
+            defaultField = 'internationalExperience';
+          }
           bindings.push(createRetrievalBinding({
             bindingId: `bind_${subreqIdx}_${bIdx++}`,
             subrequestId: subreqId,
             scopeType: SCOPE_TYPES.INSTITUTION_ROOT,
             entity: null,
-            requestedField: 'profile',
+            requestedField: defaultField,
             relations,
             constraints,
             exclusions,

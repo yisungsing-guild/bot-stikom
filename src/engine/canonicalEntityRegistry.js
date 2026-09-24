@@ -499,7 +499,7 @@ const CANONICAL_ENTITIES = [
     canonical: 'Jalur Internasional',
     type: 'admission_track',
     family: 'admission_track',
-    aliases: ['internasional', 'jalur internasional', 'kelas internasional']
+    aliases: ['jalur internasional', 'kelas internasional']
   },
   {
     canonical: 'Mahasiswa Asing',
