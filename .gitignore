@@ -110,6 +110,7 @@ tests/*
 !tests/authorityCutoverAndGroundedComposer.test.js
 !tests/continuousSessionAndAuthorityRegression.test.js
 !tests/productionRealChatStructuralRegression.test.js
+!tests/pgvectorShadowContract.test.js
 tools/
 quarantined_backups/
 

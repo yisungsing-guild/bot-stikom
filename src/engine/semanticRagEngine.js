@@ -52,6 +52,10 @@ const { createRetrievalPlan, executeRetrievalPlan, SCOPE_TYPES } = require('./bi
 const { defaultRegistry: evidenceProviderRegistry } = require('./evidenceProviderRegistry');
 const { evaluatePlanResults } = require('./evidenceEvaluator');
 const { composeGroundedAnswerPlan, renderGroundedAnswer } = require('./groundedComposer');
+let pgvectorShadowProvider = null;
+try {
+  pgvectorShadowProvider = require('./pgvectorShadowProvider');
+} catch (_) {}
 const { verifyGroundedAnswerPlan } = require('./finalVerifier');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
 const { CANONICAL_INTEREST_PROFILES, resolveCanonicalInterestProfiles, findCanonicalEntity, matchCanonicalEntities } = require('./canonicalEntityRegistry');
@@ -18813,6 +18817,23 @@ async function _querySemanticRagInner(question, options = {}) {
         getActiveTrainingDataFromDb
       });
       options.__authoritativeRetrievalExecution = authoritativeRetrievalExecution;
+
+      // Non-blocking pgvector shadow observer hook (runs asynchronously outside the critical path)
+      if (pgvectorShadowProvider && typeof pgvectorShadowProvider.observeShadowRetrieval === 'function') {
+        setImmediate(() => {
+          try {
+            pgvectorShadowProvider.observeShadowRetrieval(
+              authoritativeRetrievalPlan,
+              authoritativeRetrievalExecution,
+              { question }
+            ).catch(err => {
+              logger.debug({ err: err?.message }, '[PGVECTOR_SHADOW] Asynchronous observation error');
+            });
+          } catch (err) {
+            logger.debug({ err: err?.message }, '[PGVECTOR_SHADOW] Asynchronous dispatch error');
+          }
+        });
+      }
 
       if (evidenceProviderRegistry && typeof evidenceProviderRegistry.executePlan === 'function') {
         authoritativeProviderExecution = await evidenceProviderRegistry.executePlan(authoritativeRetrievalPlan, {
