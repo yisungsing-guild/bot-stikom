@@ -896,13 +896,24 @@ function evaluateCategoryCompatibility(field, docCategory, category) {
   return 0;
 }
 
+const {
+  CANONICAL_SEMANTIC_CONCEPTS,
+  resolveCanonicalConcept,
+  getConceptEquivalenceTerms,
+  matchesSemanticConcept
+} = require('./canonicalConceptRegistry');
+
 module.exports = {
   CANONICAL_FIELD_FAMILIES,
   CANONICAL_FIELD_DEFINITIONS,
+  CANONICAL_SEMANTIC_CONCEPTS,
   getCanonicalFieldDefinition,
   getFieldFamily,
   getFieldNaturalSemantics,
   getFieldHints,
   getFieldSynonyms,
-  evaluateCategoryCompatibility
+  evaluateCategoryCompatibility,
+  resolveCanonicalConcept,
+  getConceptEquivalenceTerms,
+  matchesSemanticConcept
 };

@@ -51,7 +51,8 @@ const {
   CANONICAL_FIELD_FAMILIES,
   getFieldSynonyms,
   getFieldHints,
-  getFieldFamily
+  getFieldFamily,
+  matchesSemanticConcept
 } = require('./canonicalFieldRegistry');
 
 /**
@@ -987,7 +988,7 @@ function isClauseSemanticallyAligned(binding, evidence, frame) {
     const metaProg = String(evidence?.program || '').toLowerCase();
     const textToSearch = snip + ' ' + sourceDoc + ' ' + metaProg;
 
-    const matchedAnchors = anchors.filter(a => textToSearch.includes(a));
+    const matchedAnchors = anchors.filter(a => matchesSemanticConcept(a, textToSearch));
     if (matchedAnchors.length === 0) {
       return {
         aligned: false,
