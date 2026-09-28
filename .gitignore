@@ -112,6 +112,7 @@ tests/*
 !tests/productionRealChatStructuralRegression.test.js
 !tests/pgvectorShadowContract.test.js
 !tests/pgvectorHybridContract.test.js
+!tests/uat30DefectRemediation.test.js
 tools/
 quarantined_backups/
 
