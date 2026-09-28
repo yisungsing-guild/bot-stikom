@@ -419,6 +419,7 @@ function invalidateSemanticIndexCache() {
 
 function invalidateTrainingDbCache() {
   trainingDbCache = null;
+  snapshotManifestDocCache = null;
 }
 
 function getCachedSemanticIndex() {
@@ -3808,11 +3809,14 @@ function normalizeAcademicAdminQueryText(value) {
 function splitAcademicDocumentSections(text) {
   const cleaned = cleanDocumentMarkers(String(text || '')).replace(/\r\n/g, '\n');
   if (!cleaned.trim()) return [];
-  const matches = [...cleaned.matchAll(/(?:^|\n)\s*([A-Z])\.\s+([^:\n]{3,120})\s*:?/g)];
+  const matches = [...cleaned.matchAll(/(?:^|\n|\s{2,}|\s(?=[A-Z]\.\s+))([A-Z])\.\s+([^:\n]{3,120})\s*:?/g)];
   if (!matches.length) return [{ label: '', title: '', text: cleaned.trim() }];
   const sections = [];
   for (let i = 0; i < matches.length; i += 1) {
-    const start = matches[i].index + (matches[i][0].startsWith('\n') ? 1 : 0);
+    let start = matches[i].index;
+    while (start < cleaned.length && (cleaned[start] === '\n' || cleaned[start] === ' ')) {
+      start += 1;
+    }
     const end = i + 1 < matches.length ? matches[i + 1].index : cleaned.length;
     sections.push({
       label: String(matches[i][1] || '').trim(),
@@ -3823,13 +3827,246 @@ function splitAcademicDocumentSections(text) {
   return sections.filter((section) => section.text);
 }
 
-function selectAcademicDocumentSection(question, evidence, mode = 'schedule') {
+function classifyDocumentAuthority(item) {
+  if (!item) return 'unknown';
+  const meta = item.metadata || item.governanceMetadata || {};
+  const explicitType = String(meta.docType || meta.authority || meta.category || meta.sourceType || '').toLowerCase();
+  if (['academic_announcement', 'academic_calendar', 'academic_policy', 'academic_handbook'].includes(explicitType)) {
+    return explicitType;
+  }
+  if (['institution_profile', 'student_organization', 'marketing_general', 'historical_profile'].includes(explicitType)) {
+    return explicitType;
+  }
+
+  const filename = String(item.filename || item.sourceFile || item.source || '').toLowerCase();
+  const rawText = String(item.chunk || item.text || item.content || '').slice(0, 800).toLowerCase();
+  const hay = filename + ' ' + rawText;
+
+  // Student organization / UKM / Ormawa
+  if (/\b(?:ormawa|ukm|unit\s+kegiatan\s+mahasiswa|hima|himaprodi|kemahasiswaan|pragina|tabuh|seni\s+tradisional|jcos|dos|vos|himatography|u2m|mm)\b/i.test(filename)
+    || (/\b(?:unit\s+kegiatan\s+mahasiswa|profile\s+ormawa|dies\s+natalies?|wadah\s+aktivitas\s+kemahasiswaan)\b/i.test(rawText) && !/\b(?:kalender\s+akademik|pedoman\s+akademik|informasi\s+pendaftaran)\b/i.test(filename))) {
+    return 'student_organization';
+  }
+
+  // Historical Profile
+  if (/\b(?:sejarah|history|pendiri|tokoh\s+pendiri)\b/i.test(filename) || /\b(?:sejarah\s+singkat|sejarah\s+institusi)\b/i.test(rawText)) {
+    return 'historical_profile';
+  }
+
+  // Institution Profile / Website FAQ / General Website
+  if (/\b(?:isian\s+website|profil\s+institusi|profil\s+umum)\b/i.test(hay)
+    || (/\b(?:didirikan\s+pada\s+tanggal|yayasan\s+widya\s+dharma\s+shanti|sk\s+mendiknas\s+no\.?\s*157)\b/i.test(rawText) && !/\b(?:kalender\s+akademik|informasi\s+pendaftaran|pedoman)\b/i.test(filename))) {
+    return 'institution_profile';
+  }
+
+  // Tuition fees / marketing flyers
+  if (/\b(?:rincian\s+biaya|biaya\s+kuliah|brosur|biaya\s+d3|biaya\s+s1|biaya\s+dnui|biaya\s+utb|biaya\s+help|biaya\s+sk|biaya\s+si)\b/i.test(filename)) {
+    return 'marketing_general';
+  }
+
+  // Official Academic Announcements (Circulars, PENGUMUMAN, edaran yudisium/sidang/wisuda)
+  if (/\b(?:informasi\s+pendaftaran\s*(&|dan)\s*pelaksanaan|pengumuman|surat\s+edaran|edaran)\b/i.test(filename)
+    || /\b(?:informasi\s+pendaftaran\s*(&|dan)\s*pelaksanaan\s+yudisium|pelaksanaan\s+yudisium|jadwal\s+sidang)\b/i.test(rawText)) {
+    return 'academic_announcement';
+  }
+
+  // Academic Calendar
+  if (/\b(?:kalender\s+akademik|kalender)\b/i.test(filename) || /\b(?:kalender\s+akademik|smt\s+ganjil|smt\s+genap)\b/i.test(rawText)) {
+    return 'academic_calendar';
+  }
+
+  // Academic Policy / Decrees
+  if (/\b(?:peraturan\s+akademik|sk\s+rektor|surat\s+keputusan\s+rektor|statuta)\b/i.test(filename) || /\b(?:peraturan\s+akademik|sk\s+rektor)\b/i.test(rawText)) {
+    return 'academic_policy';
+  }
+
+  // Academic Handbook / Pedoman
+  if (/\b(?:pedoman\s+ta|pedoman\s+tugas\s+akhir|panduan\s+akademik|buku\s+pedoman)\b/i.test(filename) || /\b(?:pedoman\s+tugas\s+akhir|buku\s+pedoman)\b/i.test(rawText)) {
+    return 'academic_handbook';
+  }
+
+  return 'unknown';
+}
+
+function isAuthoritativeAcademicScheduleSource(item) {
+  const auth = classifyDocumentAuthority(item);
+  return ['academic_announcement', 'academic_calendar', 'academic_policy', 'academic_handbook'].includes(auth);
+}
+
+function extractDocumentAcademicPeriod(text, filename = '') {
+  const combined = `${filename}\n${text}`;
+  const m = combined.match(/Semester\s+(?:Ganjil|Genap)\s+TA\s+(\d{4}\/\d{4})|Semester\s+(?:Ganjil|Genap)\s+(?:Tahun\s+Akademik\s+)?(\d{4}[-/]\d{4})|Tahun\s+Akademik\s+(\d{4}\/\d{4})|T\.A\.?\s+(\d{4}\/\d{4})/i);
+  if (m) {
+    return (m[1] || m[2] || m[3] || m[4]).replace(/-/g, '/');
+  }
+  const yearMatch = combined.match(/\b(202[4-9]\/202[5-9])\b/);
+  return yearMatch ? yearMatch[1] : '';
+}
+
+function groupEvidenceByDocument(evidence) {
+  const docs = new Map();
+  const list = Array.isArray(evidence) ? evidence : [];
+  for (const item of list) {
+    if (!item) continue;
+    const text = String(item.text || item.chunk || item.content || '').trim();
+    if (!text) continue;
+    const filename = String(item.filename || item.sourceFile || item.source || 'unknown_doc');
+    const docKey = item.documentId || item.docId || filename;
+    if (!docs.has(docKey)) {
+      docs.set(docKey, {
+        docKey,
+        filename,
+        documentId: item.documentId || null,
+        authority: classifyDocumentAuthority(item),
+        academicPeriod: extractDocumentAcademicPeriod(text, filename),
+        items: []
+      });
+    }
+    const docEntry = docs.get(docKey);
+    docEntry.items.push(item);
+  }
+  return Array.from(docs.values());
+}
+
+let snapshotManifestDocCache = null;
+
+function getAuthoritativeManifestDocumentText(doc) {
+  if (!doc) return '';
+  if (!snapshotManifestDocCache) {
+    snapshotManifestDocCache = new Map();
+    const candidatePaths = [
+      process.env.RAG_INDEX_PATH ? path.join(path.dirname(path.resolve(process.env.RAG_INDEX_PATH)), 'knowledge_manifest.jsonl') : null,
+      path.resolve(__dirname, '..', '..', 'data', 'runtime', 'index_snapshots', '2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy', 'knowledge_manifest.jsonl'),
+      path.resolve(__dirname, '..', '..', 'data', 'runtime', 'index_snapshots', '2026-08-11T04-15-00-138Z_after-final-knowledgeprep-ready', 'knowledge_manifest.jsonl'),
+      path.resolve(__dirname, '..', '..', 'data', 'runtime', 'knowledge_preparation_manifest.jsonl')
+    ].filter(Boolean);
+
+    for (const p of candidatePaths) {
+      if (!fs.existsSync(p)) continue;
+      try {
+        const lines = fs.readFileSync(p, 'utf8').split('\n');
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const record = JSON.parse(line);
+          const filename = record.filename || record.sourceFile;
+          const id = record.trainingDataId || record.id;
+          const content = (record.knowledgeExtraction && Array.isArray(record.knowledgeExtraction.ruleCandidates) && record.knowledgeExtraction.ruleCandidates[0])
+            ? record.knowledgeExtraction.ruleCandidates[0]
+            : (record.content || '');
+
+          if (content && content.length > 200) {
+            if (filename && !snapshotManifestDocCache.has(filename.toLowerCase())) {
+              snapshotManifestDocCache.set(filename.toLowerCase(), content);
+            }
+            if (id && !snapshotManifestDocCache.has(id)) {
+              snapshotManifestDocCache.set(id, content);
+            }
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
+  const fn = doc.filename ? String(doc.filename).toLowerCase() : '';
+  const id = doc.documentId || doc.docKey || '';
+  if (fn && snapshotManifestDocCache.has(fn)) return snapshotManifestDocCache.get(fn);
+  if (id && snapshotManifestDocCache.has(id)) return snapshotManifestDocCache.get(id);
+  return '';
+}
+
+function getAuthoritativeDocumentText(doc) {
+  if (!doc) return '';
+  if (trainingDbCache && Array.isArray(trainingDbCache.data)) {
+    const found = trainingDbCache.data.find((r) => {
+      if (!r || !r.content) return false;
+      if (doc.documentId && r.id === doc.documentId) return true;
+      if (doc.filename && r.filename && r.filename.toLowerCase() === doc.filename.toLowerCase()) return true;
+      if (doc.docKey && (r.id === doc.docKey || (r.filename && r.filename.toLowerCase() === doc.docKey.toLowerCase()))) return true;
+      return false;
+    });
+    if (found && found.content) {
+      return cleanDocumentMarkers(String(found.content));
+    }
+  }
+
+  const manifestText = getAuthoritativeManifestDocumentText(doc);
+  if (manifestText) {
+    return cleanDocumentMarkers(String(manifestText));
+  }
+
+  const items = Array.isArray(doc.items) ? doc.items : [];
+  return items.map((item) => cleanDocumentMarkers(String(item.text || item.chunk || item.content || ''))).join('\n\n');
+}
+
+function extractCleanScheduleDateField(text) {
+  if (!text) return '';
+  let rawVal = '';
+  const mLabel = String(text).match(/(?:(?:Hari\s*(?:[/,-]|\bdan\b)?\s*Tanggal|Tanggal\s*(?:Pelaksanaan|Pendaftaran)?|Batas\s+Akhir\s+Pendaftaran)\s*[:\uFF1A]|\bTanggal\b\s*[:\uFF1A])\s*([^\n]+)/i);
+  if (mLabel && mLabel[1]) {
+    rawVal = mLabel[1].replace(/\s+/g, ' ')
+      .replace(/\s+(?:Pukul|Waktu|Jam|Tempat|Loket|Lokasi|Pakaian|Selain\s+dari\s+tanggal\s+tersebut|[B-Z]\.\s+|Persyaratan)\b[\s\S]*$/i, '')
+      .trim();
+  } else {
+    const mCal = String(text).match(/(?:^|\n)\s*(?:(?:senin|selasa|rabu|kamis|jumat|sabtu|minggu),?\s+)?(\d{1,2}(?:\s*-\s*\d{1,2})?\s+(?:jan(?:uari)?|feb(?:ruari)?|mar(?:et)?|apr(?:il)?|mei|jun(?:i)?|jul(?:i)?|ag(?:us)?t(?:us)?|agu|sep(?:tember)?|okt(?:ober)?|nov(?:ember)?|des(?:ember)?)\.?(?:\s+\d{4})?)\s*:\s*[^\n]*(?:yudisium|sidang|wisuda|pendaftaran|remedial)/i);
+    if (mCal && mCal[1]) {
+      rawVal = mCal[1].trim();
+    }
+  }
+
+  if (!rawVal) return '';
+  if (/\b(?:didirikan|berdiri|pendiri|yayasan|widya\s+dharma|sk\s+mendiknas|157\/d\/o\/2002|dies\s+natalis|dies\s+natalies)\b/i.test(rawVal)) {
+    return '';
+  }
+  if (/\b2001\b|\b2002\b/.test(rawVal)) {
+    return '';
+  }
+  const hasDateShape = /\b(?:senin|selasa|rabu|kamis|jumat|sabtu|minggu|\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|jan|feb|mar|apr|mei|jun|jul|agt|agu|sep|okt|nov|des)\.?|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})\b/i.test(rawVal);
+  if (!hasDateShape) return '';
+  return rawVal;
+}
+
+function extractCleanScheduleTimeField(text) {
+  if (!text) return '';
+  const m = String(text).match(/(?:Pukul|Waktu|Jam)\s*[:\uFF1A]\s*([^\n]+)/i);
+  if (!m || !m[1]) return '';
+  const rawVal = m[1].replace(/\s+/g, ' ')
+    .replace(/\s+(?:Hari\s*(?:[/,-]|\bdan\b)?\s*Tanggal|Tanggal|Tempat|Loket|Lokasi|Pakaian|Selain\s+dari\s+tanggal\s+tersebut|[B-Z]\.\s+|Persyaratan)\b[\s\S]*$/i, '')
+    .trim();
+  const hasTimeShape = /\b\d{1,2}[:.]\d{2}(?:\s*(?:wita|wib|wit))?\b/i.test(rawVal);
+  if (!hasTimeShape) return '';
+  return rawVal;
+}
+
+function extractCleanSchedulePlaceField(text) {
+  if (!text) return '';
+  const m = String(text).match(/(?:Tempat|Loket|Lokasi)\s*[:\uFF1A]\s*([^\n]+)/i);
+  if (!m || !m[1]) return '';
+  const rawVal = m[1].replace(/\s+/g, ' ')
+    .replace(/\s+(?:Hari\s*(?:[/,-]|\bdan\b)?\s*Tanggal|Tanggal|Pukul|Waktu|Jam|Pakaian|Selain\s+dari\s+tanggal\s+tersebut|[B-Z]\.\s+|Persyaratan)\b[\s\S]*$/i, '')
+    .trim();
+  if (/\b(?:ukm|ormawa|sanggar|alumni|berdiri|prakarsai|dies\s+natalis|teuku\s+umar|pragina|tabuh)\b/i.test(rawVal)) {
+    return '';
+  }
+  if (rawVal.length < 3 || rawVal.length > 120) return '';
+  return rawVal;
+}
+
+function selectAcademicDocumentSectionDetailed(question, evidence, mode = 'schedule') {
   const q = normalizeAcademicAdminQueryText(question).toLowerCase();
-  const combined = (Array.isArray(evidence) ? evidence : [])
-    .map((item) => String(item && item.text || item && item.chunk || ''))
-    .join('\n\n');
-  const sections = splitAcademicDocumentSections(combined);
-  if (!sections.length) return '';
+  const list = Array.isArray(evidence) ? evidence : [];
+  if (!list.length) return '';
+
+  const authoritativeEvidence = list.filter((item) => {
+    if (mode === 'schedule' || mode === 'requirement') {
+      return isAuthoritativeAcademicScheduleSource(item);
+    }
+    return true;
+  });
+
+  if (!authoritativeEvidence.length) return '';
+
+  const docs = groupEvidenceByDocument(authoritativeEvidence);
+  if (!docs.length) return '';
 
   const topicPatterns = [];
   if (/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q)) topicPatterns.push(/\b(sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i);
@@ -3846,26 +4083,75 @@ function selectAcademicDocumentSection(question, evidence, mode = 'schedule') {
   const asksThesisDefense = /\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q);
 
   let best = null;
-  for (const section of sections) {
-    const hay = normalizeAcademicAdminQueryText(`${section.title}\n${section.text}`);
-    const title = normalizeAcademicAdminQueryText(section.title || '');
-    if (topicPatterns.length && !topicPatterns.some((pattern) => pattern.test(hay))) continue;
-    if (asksYudisium && /\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title) && !/\byudisium\b/i.test(title)) continue;
-    if (asksThesisDefense && /\byudisium\b/i.test(title) && !/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title)) continue;
-    if (mode === 'schedule' && !wantsRequirement && /\b(?:persyaratan|syarat|ketentuan|dokumen|berkas)\b/i.test(title)) continue;
-    let score = 0;
-    if (wantsRequirement && /\b(?:persyaratan|syarat|ketentuan|dokumen|berkas)\b/i.test(section.title)) score += 10;
-    if (wantsPelaksanaan && /\b(?:pelaksanaan|acara)\b/i.test(section.title)) score += 10;
-    if (wantsPelaksanaan && /\b(?:pendaftaran|registrasi)\b/i.test(section.title) && !/\b(?:pelaksanaan|acara)\b/i.test(section.title)) score -= 5;
-    if (wantsRegistration && /\b(?:pendaftaran|registrasi|batas)\b/i.test(section.title)) score += 10;
-    if (wantsRegistration && /\b(?:pelaksanaan|acara)\b/i.test(section.title) && !/\b(?:pendaftaran|registrasi|batas)\b/i.test(section.title)) score -= 5;
-    if (!wantsRequirement && !wantsPelaksanaan && !wantsRegistration && /\b(?:pelaksanaan|pendaftaran|persyaratan|jadwal)\b/i.test(section.title)) score += 2;
-    if (/\b(?:hari\s*\/?\s*tanggal|tanggal|pukul|waktu|tempat|loket|wita|wib|wit)\b/i.test(hay)) score += 1;
-    if (/\b(?:syarat|persyaratan|dokumen|berkas|krs|bukti|surat|transkrip|ijazah|skpi)\b/i.test(hay)) score += 1;
-    if (score > 0 && (!best || score > best.score)) best = { score, section };
+
+  for (const doc of docs) {
+    const docText = getAuthoritativeDocumentText(doc);
+    const sections = splitAcademicDocumentSections(docText);
+
+    for (const section of sections) {
+      const hay = normalizeAcademicAdminQueryText(`${section.title}\n${section.text}`);
+      const title = normalizeAcademicAdminQueryText(section.title || '');
+
+      if (topicPatterns.length && !topicPatterns.some((pattern) => pattern.test(hay))) continue;
+      if (asksYudisium && /\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title) && !/\byudisium\b/i.test(title)) continue;
+      if (asksThesisDefense && /\byudisium\b/i.test(title) && !/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title)) continue;
+      if (mode === 'schedule' && !wantsRequirement && /\b(?:persyaratan|syarat|ketentuan|dokumen|berkas)\b/i.test(title)) continue;
+
+      let score = 0;
+      if (doc.authority === 'academic_announcement') score += 15;
+      else if (doc.authority === 'academic_calendar') score += 10;
+      else if (doc.authority === 'academic_policy' || doc.authority === 'academic_handbook') score += 5;
+
+      // Temporal validation: query period match or recency preference without naive current-year cutoffs
+      const queryPeriodMatch = q.match(/\b(202[0-9](?:\/202[0-9]|[-/]\d{2,4})?)\b/);
+      if (queryPeriodMatch && doc.academicPeriod) {
+        if (doc.academicPeriod.includes(queryPeriodMatch[1])) {
+          score += 20;
+        } else {
+          score -= 20;
+        }
+      } else if (!queryPeriodMatch && doc.academicPeriod) {
+        const periodStartYear = parseInt(doc.academicPeriod.slice(0, 4), 10);
+        if (!isNaN(periodStartYear)) {
+          score += Math.max(0, periodStartYear - 2020);
+        }
+      }
+
+      if (wantsRequirement && /\b(?:persyaratan|syarat|ketentuan|dokumen|berkas)\b/i.test(section.title)) score += 10;
+      if (wantsPelaksanaan && /\b(?:pelaksanaan|acara)\b/i.test(section.title)) score += 12;
+      if (wantsPelaksanaan && /\b(?:pendaftaran|registrasi)\b/i.test(section.title) && !/\b(?:pelaksanaan|acara)\b/i.test(section.title)) score -= 5;
+      if (wantsRegistration && /\b(?:pendaftaran|registrasi|batas)\b/i.test(section.title)) score += 12;
+      if (wantsRegistration && /\b(?:pelaksanaan|acara)\b/i.test(section.title) && !/\b(?:pendaftaran|registrasi|batas)\b/i.test(section.title)) score -= 5;
+      if (!wantsRequirement && !wantsPelaksanaan && !wantsRegistration && /\b(?:pelaksanaan|pendaftaran|persyaratan|jadwal)\b/i.test(section.title)) score += 2;
+      if (/\b(?:hari\s*\/?\s*tanggal|tanggal|pukul|waktu|tempat|loket|wita|wib|wit)\b/i.test(hay)) score += 2;
+      if (/\b(?:syarat|persyaratan|dokumen|berkas|krs|bukti|surat|transkrip|ijazah|skpi)\b/i.test(hay)) score += 1;
+
+      if (/\b(?:didirikan\s+pada|yayasan\s+widya\s+dharma\s+shanti|20\s+mei\s+2001)\b/i.test(hay)) score -= 50;
+      if (/\b(?:ukm\s+tari|pragina|teuku\s+umar|bramara\s+gita)\b/i.test(hay)) score -= 50;
+
+      if (score > 0 && (!best || score > best.score)) {
+        best = {
+          score,
+          section: {
+            ...section,
+            filename: doc.filename,
+            documentId: doc.documentId,
+            authority: doc.authority,
+            academicPeriod: doc.academicPeriod
+          }
+        };
+      }
+    }
   }
-  return best && best.section ? best.section.text : '';
+
+  return best && best.section ? best.section : null;
 }
+
+function selectAcademicDocumentSection(question, evidence, mode = 'schedule') {
+  const detailed = selectAcademicDocumentSectionDetailed(question, evidence, mode);
+  return detailed ? detailed.text : '';
+}
+
 function isSafeCompactAcademicScheduleAnswer(question, answer) {
   const q = String(question || '');
   const a = String(answer || '').trim();
@@ -3873,9 +4159,10 @@ function isSafeCompactAcademicScheduleAnswer(question, answer) {
   if (!core || !isAcademicAdminUploadedDocQuestion(q, 'schedule')) return false;
   if (!/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis|yudisium|wisuda)\b/i.test(core)) return false;
   const hasConcreteSchedule = /\b(?:Hari\s*\/?\s*Tanggal|Tanggal)\s*:/i.test(core)
-    && /\b(?:Pukul|Waktu|Jam)\s*:/i.test(core)
-    && /\b(?:Tempat|Loket|Lokasi)\s*:/i.test(core);
+    || (/\b(?:Pukul|Waktu|Jam)\s*:/i.test(core) && /\b(?:Tempat|Loket|Lokasi)\s*:/i.test(core))
+    || /\b(?:Pelaksanaan\s+Acara|Batas\s+Akhir\s+Pendaftaran)\s*:/i.test(core);
   if (!hasConcreteSchedule) return false;
+  if (/\b(?:20\s+Mei\s+2001|Yayasan\s+Widya\s+Dharma|Teuku\s+Umar|PRAGINA|Bramara\s+Gita)\b/i.test(core)) return false;
   if (/\b(?:Perihal|Ditujukan\s+Kepada|Sehubungan\s+dengan|Lampiran|Tembusan|Persyaratan|SURAT\s+KEPUTUSAN|Menimbang|Mengingat|Memutuskan)\b/i.test(core)) return false;
   if ((core.match(/(?:^|\n)\s*[A-Z]\.\s+/g) || []).length > 0) return false;
   return a.length <= 850;
@@ -4022,25 +4309,16 @@ function isSafeOrganizationCountAnswer(question, answer, source = '') {
 }
 function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const q = normalizeAcademicAdminQueryText(question);
-  const evidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
+  const rawEvidence = Array.isArray(selectedEvidence) ? selectedEvidence : [];
   if (!isAcademicAdminUploadedDocQuestion(q, 'schedule')) return '';
   if (!/\b(kapan|jadwal|tanggal|deadline|terakhir|pendaftaran|daftar|registrasi|pukul|jam|pelaksanaan|dilaksanakan|berlangsung|akan\s+datang|informasi(?:nya)?|info)\b/i.test(q)) return '';
   if (/\b(?:website|url|portal|login|situs|web|link|tautan|warna|hex|heksadesimal|durasi|berapa\s+(?:menit|jam))\b/i.test(q)) return '';
 
-  const combined = evidence.map((item) => cleanDocumentMarkers(String(item && item.text || ''))).join('\n\n');
-  if (!combined.trim()) return '';
+  const authoritativeEvidence = rawEvidence.filter((item) => isAuthoritativeAcademicScheduleSource(item));
+  if (!authoritativeEvidence.length) return '';
 
-  let section = selectAcademicDocumentSection(q, evidence, 'schedule');
-  if (!section) section = combined.slice(0, 1200);
-
-  const cleanScheduleFieldValue = (value) => String(value || '')
-    .replace(/\s+/g, ' ')
-    .replace(/\s+(?:Hari\s*\/?\s*Tanggal|Tanggal|Pukul|Waktu|Jam|Tempat|Loket|Lokasi|Selain\s+dari\s+tanggal\s+tersebut|[B-Z]\.\s+|Persyaratan)\b[\s\S]*$/i, '')
-    .trim();
-  const getFieldValue = (sourceText, regex) => {
-    const m = String(sourceText || '').match(regex);
-    return m && m[1] ? cleanScheduleFieldValue(m[1]) : '';
-  };
+  const docs = groupEvidenceByDocument(authoritativeEvidence);
+  if (!docs.length) return '';
 
   const asksThesisDefense = /\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q);
   const asksYudisium = /\byudisium\b/i.test(q);
@@ -4050,9 +4328,97 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   const hasExplicitPelaksanaanSignal = /\b(?:pelaksanaan|dilaksanakan|berlangsung|acara|diadakan)\b/i.test(q);
   const wantsRegistration = hasRegistrationSignal && !hasExplicitPelaksanaanSignal;
   const wantsPelaksanaan = hasExplicitPelaksanaanSignal || (/\b(?:kapan|jam|pukul|waktu|hari|tanggal|dimana|lokasi|tempat)\b/i.test(q) && !hasRegistrationSignal);
+  const isGeneralSchedule = !wantsPelaksanaan && !wantsRegistration;
 
   const action = wantsPelaksanaan ? 'pelaksanaan' : (wantsRegistration ? 'batas pendaftaran' : 'jadwal');
-  const docTitleMatch = combined.match(/Yudisium\s*(?:[I|1|\|]+\s*)?(?:Wisuda\s+[IVXLCDM\d]+)?/i);
+
+  // General Schedule slot handling: combine event execution + registration deadline from the SAME authoritative document
+  if (isGeneralSchedule) {
+    const sortedDocs = [...docs].sort((a, b) => {
+      const getPriority = (d) => {
+        let p = 0;
+        if (d.authority === 'academic_announcement') p += 20;
+        else if (d.authority === 'academic_calendar') p += 10;
+        else if (d.authority === 'academic_policy' || d.authority === 'academic_handbook') p += 5;
+        const year = parseInt(String(d.academicPeriod || '').slice(0, 4), 10);
+        if (!isNaN(year)) p += (year - 2020);
+        return p;
+      };
+      return getPriority(b) - getPriority(a);
+    });
+
+    for (const doc of sortedDocs) {
+      const docText = getAuthoritativeDocumentText(doc);
+      const allSections = splitAcademicDocumentSections(docText);
+
+      const regSection = allSections.find((s) => {
+        const title = s.title.toLowerCase();
+        if (asksYudisium && /\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title) && !/\byudisium\b/i.test(title)) return false;
+        if (asksThesisDefense && /\byudisium\b/i.test(title) && !/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title)) return false;
+        return /\b(?:pendaftaran|registrasi|batas)\b/i.test(title);
+      });
+
+      const pelSection = allSections.find((s) => {
+        const title = s.title.toLowerCase();
+        if (asksYudisium && /\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title) && !/\byudisium\b/i.test(title)) return false;
+        if (asksThesisDefense && /\byudisium\b/i.test(title) && !/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title)) return false;
+        return /\b(?:pelaksanaan|acara)\b/i.test(title);
+      });
+
+      if (regSection || pelSection) {
+        const pelDate = pelSection ? extractCleanScheduleDateField(pelSection.text) : '';
+        const pelTime = pelSection ? extractCleanScheduleTimeField(pelSection.text) : '';
+        const pelPlace = pelSection ? extractCleanSchedulePlaceField(pelSection.text) : '';
+
+        const regDate = regSection ? extractCleanScheduleDateField(regSection.text) : '';
+        const regTime = regSection ? extractCleanScheduleTimeField(regSection.text) : '';
+        const regPlace = regSection ? extractCleanSchedulePlaceField(regSection.text) : '';
+
+        if ((pelDate || pelTime || pelPlace) || (regDate || regTime || regPlace)) {
+          const docTitleMatch = docText.match(/Yudisium\s*(?:[I|1|\|]+\s*)?(?:Wisuda\s+[IVXLCDM\d]+)?/i);
+          let eventName = '';
+          if (asksThesisDefense) {
+            eventName = 'Sidang Tugas Akhir/Proyek Akhir';
+          } else if (docTitleMatch && (asksYudisium || asksWisuda)) {
+            eventName = docTitleMatch[0].replace(/\|/g, 'I').replace(/\s+/g, ' ').trim();
+          } else if (asksYudisium && asksWisuda) {
+            eventName = 'Yudisium / Wisuda';
+          } else if (asksYudisium) {
+            eventName = 'Yudisium';
+          } else if (asksWisuda) {
+            eventName = 'Wisuda';
+          } else {
+            eventName = 'jadwal yang ditanyakan';
+          }
+
+          const period = doc.academicPeriod || extractDocumentAcademicPeriod(docText, doc.filename);
+          const topic = `jadwal ${eventName}`;
+          const lines = [`Berdasarkan data akademik ${topic}${period ? ` ${period}` : ''}:`];
+
+          if (pelTime || pelDate || pelPlace) {
+            lines.push(`- Pelaksanaan Acara: ${pelDate ? `Hari/Tanggal ${pelDate}, ` : ''}${pelTime ? `Pukul ${pelTime}` : ''}${pelPlace ? ` di ${pelPlace}` : ''}`.trim());
+          }
+          if (regTime || regDate || regPlace) {
+            lines.push(`- Batas Akhir Pendaftaran: ${regDate ? `Hari/Tanggal ${regDate}, ` : ''}${regTime ? `Pukul ${regTime}` : ''}${regPlace ? ` di ${regPlace}` : ''}`.trim());
+          }
+          return lines.join('\n').trim();
+        }
+      }
+    }
+  }
+
+  // Single slot selection (Pelaksanaan or Batas Pendaftaran)
+  const detailedSection = selectAcademicDocumentSectionDetailed(q, authoritativeEvidence, 'schedule');
+  if (!detailedSection || !detailedSection.text) return ''; // REMOVED UNSAFE FALLBACK!
+
+  const sectionText = detailedSection.text;
+  const date = extractCleanScheduleDateField(sectionText);
+  const time = extractCleanScheduleTimeField(sectionText);
+  const place = extractCleanSchedulePlaceField(sectionText);
+
+  if (!date && !time && !place) return ''; // Grounding requirement: must have at least one valid schedule field
+
+  const docTitleMatch = sectionText.match(/Yudisium\s*(?:[I|1|\|]+\s*)?(?:Wisuda\s+[IVXLCDM\d]+)?/i);
   let eventName = '';
   if (asksThesisDefense) {
     eventName = 'Sidang Tugas Akhir/Proyek Akhir';
@@ -4069,58 +4435,20 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence) {
   }
   const topic = `${action} ${eventName}`;
 
-  const periodMatch = combined.match(/Semester\s+(?:Ganjil|Genap)\s+TA\s+\d{4}\/\d{4}|Semester\s+(?:Ganjil|Genap)\s+(?:Tahun\s+Akademik\s+)?\d{4}[-/]\d{4}|Tahun\s+Akademik\s+\d{4}\/\d{4}/i);
-  const period = periodMatch ? periodMatch[0].replace(/\s+/g, ' ').trim() : '';
+  const periodMatch = sectionText.match(/Semester\s+(?:Ganjil|Genap)\s+TA\s+\d{4}\/\d{4}|Semester\s+(?:Ganjil|Genap)\s+(?:Tahun\s+Akademik\s+)?\d{4}[-/]\d{4}|Tahun\s+Akademik\s+\d{4}\/\d{4}/i);
+  const period = periodMatch ? periodMatch[0].replace(/\s+/g, ' ').trim() : (detailedSection.academicPeriod || '');
 
-  const isGeneralSchedule = !wantsPelaksanaan && !wantsRegistration;
-  if (isGeneralSchedule) {
-    const allSections = splitAcademicDocumentSections(combined);
-    const regSection = allSections.find((s) => {
-      const title = s.title.toLowerCase();
-      if (asksYudisium && /\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title) && !/\byudisium\b/i.test(title)) return false;
-      if (asksThesisDefense && /\byudisium\b/i.test(title) && !/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title)) return false;
-      return /\b(?:pendaftaran|registrasi)\b/i.test(title);
-    });
-    const pelSection = allSections.find((s) => {
-      const title = s.title.toLowerCase();
-      if (asksYudisium && /\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title) && !/\byudisium\b/i.test(title)) return false;
-      if (asksThesisDefense && /\byudisium\b/i.test(title) && !/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(title)) return false;
-      return /\b(?:pelaksanaan|acara)\b/i.test(title);
-    });
-    if (regSection && pelSection) {
-      const pelDate = getFieldValue(pelSection.text, /(?:Hari\s*\/?\s*Tanggal|Tanggal)\s*[:\uFF1A]?\s*([^\n]+)/i);
-      const pelTime = getFieldValue(pelSection.text, /(?:Pukul|Waktu|Jam)\s*[:\uFF1A]?\s*([^\n]+)/i);
-      const pelPlace = getFieldValue(pelSection.text, /(?:Tempat|Loket|Lokasi)\s*[:\uFF1A]?\s*([^\n]+)/i);
-
-      const regDate = getFieldValue(regSection.text, /(?:Hari\s*\/?\s*Tanggal|Tanggal)\s*[:\uFF1A]?\s*([^\n]+)/i);
-      const regTime = getFieldValue(regSection.text, /(?:Pukul|Waktu|Jam)\s*[:\uFF1A]?\s*([^\n]+)/i);
-      const regPlace = getFieldValue(regSection.text, /(?:Tempat|Loket|Lokasi)\s*[:\uFF1A]?\s*([^\n]+)/i);
-
-      const lines = [`Berdasarkan data akademik ${topic}${period ? ` ${period}` : ''}:`];
-      if (pelTime || pelDate || pelPlace) {
-        lines.push(`- Pelaksanaan Acara: ${pelDate ? `Hari/Tanggal ${pelDate}, ` : ''}${pelTime ? `Pukul ${pelTime}` : ''}${pelPlace ? ` di ${pelPlace}` : ''}`.trim());
-      }
-      if (regTime || regDate || regPlace) {
-        lines.push(`- Batas Akhir Pendaftaran: ${regDate ? `Hari/Tanggal ${regDate}, ` : ''}${regTime ? `Pukul ${regTime}` : ''}${regPlace ? ` di ${regPlace}` : ''}`.trim());
-      }
-      return lines.join('\n').trim();
-    }
-  }
-
-  const date = getFieldValue(section, /(?:Hari\s*\/?\s*Tanggal|Tanggal)\s*[:\uFF1A]?\s*([^\n]+)/i);
-  const time = getFieldValue(section, /(?:Pukul|Waktu|Jam)\s*[:\uFF1A]?\s*([^\n]+)/i);
-  const place = getFieldValue(section, /(?:Tempat|Loket|Lokasi)\s*[:\uFF1A]?\s*([^\n]+)/i);
-
-  if (!date && !time && !place) return '';
   const lines = [`Untuk ${topic}${period ? ` ${period}` : ''}:`];
   if (date) lines.push(`- Hari/Tanggal: ${date}`);
   if (time) lines.push(`- Pukul: ${time}`);
   if (place) lines.push(`- Tempat: ${place}`);
 
-  const afterMatch = section.match(/Selain\s+dari\s+tanggal\s+tersebut[\s\S]{0,260}?(?=\n\s*[A-Z]\.\s+|$)/i);
+  const afterMatch = sectionText.match(/Selain\s+dari\s+tanggal\s+tersebut[\s\S]{0,260}?(?=\n\s*[A-Z]\.\s+|$)/i);
   if (afterMatch) {
     const note = afterMatch[0].replace(/\s+[B-Z]\.\s+[\s\S]*$/i, '').replace(/\s+/g, ' ').trim();
-    if (note) lines.push(`- Catatan: ${note}`);
+    if (note && !/\b(?:2001|2002|yayasan|teuku\s+umar)\b/i.test(note)) {
+      lines.push(`- Catatan: ${note}`);
+    }
   }
 
   return lines.join('\n').trim();
@@ -5074,7 +5402,11 @@ async function tryDirectAcademicAdminUploadedSectionAnswer(question, options = {
   const answer = buildLocalUploadedTrainingAnswer(normalizedQuestion, contexts);
   if (!answer) return null;
   const framedAnswer = formatNaturalAnswerFrame(question, answer, 'semantic-rag-uploaded-training-generic');
-  const preflight = evaluateOutboundAnswer(framedAnswer, question, { source: 'semantic-rag-uploaded-training-generic' });
+  const preflight = evaluateOutboundAnswer(framedAnswer, question, {
+    source: 'semantic-rag-uploaded-training-generic',
+    skipCrossDomainLeak: true,
+    domain: 'academic'
+  });
   if ((preflight && preflight.blocked) || hasRawSpreadsheetFaqDump(answer) || hasRawEvidenceSnippetShape(answer)) return null;
 
   return {
@@ -12662,7 +12994,13 @@ function inferFrameTopic(question, source) {
   const src = String(source || '').toLowerCase();
 
   if (src.includes('uploaded-training-generic') && isAcademicAdminUploadedDocQuestion(question, detectGenericIntent(normalizeAcademicAdminQueryText(question)))) {
-    const topic = /\byudisium\b/i.test(q) ? 'informasi yudisium' : (/\bwisuda\b/i.test(q) ? 'informasi wisuda' : 'informasi akademik dari dokumen kampus');
+    const topic = /\byudisium\b/i.test(q)
+      ? 'informasi yudisium'
+      : (/\bwisuda\b/i.test(q)
+        ? 'informasi wisuda'
+        : (/\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi)\b/i.test(q)
+          ? 'informasi sidang tugas akhir'
+          : 'informasi akademik kampus'));
     return {
       request: topic,
       assumption: 'Saya jawab dari data akademik yang tersedia dan hanya mengambil bagian yang relevan.',
@@ -16928,8 +17266,22 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
       selected.push(cleaned);
       if (selected.length >= limit) break;
     }
+    if (selected.length === 0 && Array.isArray(index) && index.length > activeIndex.length) {
+      for (const item of index) {
+        const fn = String(item && (item.filename || item.sourceFile || item.source) || '');
+        const rc = String(item && (item.chunk || item.text || item.content) || '');
+        if (!fn || !rc) continue;
+        const rawHay = fn + ' ' + rc;
+        if (!predicate(rawHay, { filename: fn, rawChunk: rc, item })) continue;
+        const cleaned = cleanSourceKnowledgeChunk(item);
+        if (!cleaned.chunk || !cleaned.filename) continue;
+        selected.push(cleaned);
+        if (selected.length >= limit) break;
+      }
+    }
     return selected;
   };
+
 
   // International Programs / Hi-Think Japan
   const canonicalInternationalPrograms = canonical && canonical.entities && Array.isArray(canonical.entities.internationalPrograms)
@@ -16959,7 +17311,7 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
 
   // 1. Institution History
   const isScholarshipTopic = domain === 'scholarship' || (canonical && canonical.intent && canonical.intent.primary === 'ask_scholarship') || /beasiswa|pengumuman|hasil\s+seleksi/i.test(q);
-  if (!isScholarshipTopic && domain === 'institution_profile' && (qt === 'historical_state' || qt === 'founding_people' || qt === 'founding_date' || qt === 'legal_establishment_document' || /\b(?:didirikan|berdiri|sejarah|awal\s+mula|pendiri|tokoh|menginisiasi|sk\s+mendiknas|surat\s+keputusan|izin\s+operasional|nomor\s+sk)\b/i.test(q) || (/\byayasan\b/i.test(q) && /\b(?:didirikan|berdiri|sejarah|pendiri)\b/i.test(q)))) {
+  if (!isScholarshipTopic && (domain === 'institution_profile' || (/\byayasan\b/i.test(q) && /\b(?:didirikan|berdiri|sejarah|pendiri)\b/i.test(q))) && (qt === 'historical_state' || qt === 'founding_people' || qt === 'founding_date' || qt === 'legal_establishment_document' || /\b(?:didirikan|berdiri|sejarah|awal\s+mula|pendiri|tokoh|menginisiasi|sk\s+mendiknas|surat\s+keputusan|izin\s+operasional|nomor\s+sk)\b/i.test(q) || (/\byayasan\b/i.test(q) && /\b(?:didirikan|berdiri|sejarah|pendiri)\b/i.test(q)))) {
     const items = pick((hay) => /stikom\s+bali|itb\s+stikom/i.test(hay) && /profil\s+umum|pendiri|didirikan|sejarah|20\s+mei\s+2001|sk\s+mendiknas|izin\s+operasional|157\/D\/O\/2002/i.test(hay) && !/inkubator|inbis|ukm|ormawa/i.test(hay));
     if (items.length) {
       const wantsFounders = /pendiri|tokoh|siapa\s+(?:saja|yang)|penggagas|perintis|menginisiasi|inisiasi|sk\s+mendiknas|surat\s+keputusan|izin\s+operasional|nomor\s+sk/i.test(q);
@@ -17138,7 +17490,7 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
   }
 
   if ((domain === 'academic' || domain === 'academic_policy') && /yudisium|wisuda/i.test(q)) {
-    const items = pick((hay) => /yudisium|wisuda/i.test(hay));
+    const items = pick((hay, entry) => isAuthoritativeAcademicScheduleSource(entry && entry.item) && /yudisium|wisuda/i.test(hay));
     if (items.length) {
       if (/\b(?:warna|heksadesimal|hex|kode\s+warna|background|latar\s+belakang|pasfoto|foto)\b/i.test(q)) {
         const photoChunk = items.find(it => /#002157|biru\s+dongker|pasfoto|background/i.test(it.chunk));
@@ -17180,7 +17532,7 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
           };
         }
       }
-      const evidenceItems = items.map((entry) => ({ text: entry.chunk, filename: entry.filename }));
+      const evidenceItems = items.map((entry) => ({ text: entry.chunk, filename: entry.filename, item: entry.item }));
       let ans = '';
       const wantsReq = /syarat|persyaratan|berkas|dokumen|alur|prosedur|ketentuan/i.test(q);
       const wantsSched = /\b(?:kapan|jadwal|tanggal|deadline|terakhir|batas|pukul|jam|pelaksanaan|dilaksanakan|berlangsung)\b/i.test(q);
@@ -22019,5 +22371,14 @@ module.exports = {
   createRetrievalPlan,
   executeRetrievalPlan,
   SCOPE_TYPES,
-  evidenceProviderRegistry
+  evidenceProviderRegistry,
+  classifyDocumentAuthority,
+  isAuthoritativeAcademicScheduleSource,
+  extractCleanScheduleDateField,
+  extractCleanScheduleTimeField,
+  extractCleanSchedulePlaceField,
+  buildAcademicScheduleSummaryAnswer,
+  selectAcademicDocumentSection,
+  selectAcademicDocumentSectionDetailed,
+  tryDirectAcademicAdminUploadedSectionAnswer
 };

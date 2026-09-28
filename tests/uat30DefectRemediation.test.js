@@ -292,4 +292,63 @@ describe('UAT 30 Defect Remediation & Domain Coverage Test Suite', () => {
       expect(result.answer.toLowerCase()).toMatch(/(?:wisuda|jadwal|pelaksanaan|baak)/i);
     });
   });
+
+  describe('P2-11: Academic Schedule Authority Isolation (Yudisium)', () => {
+    test('Query "kapan yudisium?" requires presence of date, time, place and zero contamination', async () => {
+      const result = await querySemanticRag('kapan yudisium?');
+      expect(result.success).toBe(true);
+      const answer = result.answer;
+
+      // Positive Presence Assertions
+      expect(answer).toContain('14 Oktober 2026');
+      expect(answer).toContain('14.00 WITA');
+      expect(answer).toContain('Aula STIKOMBALI');
+
+      // Negative Absence Assertions (Contamination Isolation)
+      expect(answer).not.toContain('20 Mei 2001');
+      expect(answer).not.toContain('Yayasan Widya Dharma Shanti');
+      expect(answer).not.toContain('Teuku Umar');
+      expect(answer).not.toContain('PRAGINA');
+      expect(answer).not.toContain('Jadwal/gelombang');
+    }, 15000);
+
+    test('Query "kapan batas pendaftaran yudisium?" requires presence of date, time, place and zero contamination', async () => {
+      const result = await querySemanticRag('kapan batas pendaftaran yudisium?');
+      expect(result.success).toBe(true);
+      const answer = result.answer;
+
+      // Positive Presence Assertions
+      expect(answer).toContain('2 Oktober 2026');
+      expect(answer).toContain('20.00 WITA');
+      expect(answer).toContain('Loket Akademik');
+
+      // Negative Absence Assertions (Contamination Isolation)
+      expect(answer).not.toContain('20 Mei 2001');
+      expect(answer).not.toContain('Yayasan Widya Dharma Shanti');
+      expect(answer).not.toContain('Teuku Umar');
+      expect(answer).not.toContain('PRAGINA');
+      expect(answer).not.toContain('Jadwal/gelombang');
+    }, 15000);
+
+    test('Query "jadwal yudisium" requires presence of both slots and dates with zero contamination', async () => {
+      const result = await querySemanticRag('jadwal yudisium');
+      expect(result.success).toBe(true);
+      const answer = result.answer;
+
+      // Positive Presence Assertions
+      expect(answer).toContain('14 Oktober 2026');
+      expect(answer).toContain('14.00 WITA');
+      expect(answer).toContain('Aula STIKOMBALI');
+      expect(answer).toContain('2 Oktober 2026');
+      expect(answer).toContain('20.00 WITA');
+      expect(answer).toContain('Loket Akademik');
+
+      // Negative Absence Assertions (Contamination Isolation)
+      expect(answer).not.toContain('20 Mei 2001');
+      expect(answer).not.toContain('Yayasan Widya Dharma Shanti');
+      expect(answer).not.toContain('Teuku Umar');
+      expect(answer).not.toContain('PRAGINA');
+      expect(answer).not.toContain('Jadwal/gelombang');
+    }, 15000);
+  });
 });
