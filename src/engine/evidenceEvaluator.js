@@ -89,10 +89,10 @@ function getEntityPhrases(canonical) {
 function doesSnippetMentionEntity(requestedCanonical, aliases = [], snippet = '') {
   if (!snippet) return false;
   const snipLower = snippet.toLowerCase();
-  const reqLower = requestedCanonical.toLowerCase();
+  const reqLower = requestedCanonical.toLowerCase().replace(/_/g, ' ');
 
   // 1. Direct match with canonical or aliases
-  if (snipLower.includes(reqLower)) return true;
+  if (snipLower.includes(reqLower) || snipLower.includes(requestedCanonical.toLowerCase())) return true;
   if (Array.isArray(aliases) && aliases.some(a => a && snipLower.includes(a.toLowerCase()))) {
     return true;
   }
@@ -169,7 +169,7 @@ function isEntityCompatible(bindingEntity, evidenceEntity, evidenceSnippet = '',
   }
 
   const requestedCanonical = bindingEntity.canonical.trim();
-  const requestedLower = requestedCanonical.toLowerCase();
+  const requestedLower = requestedCanonical.toLowerCase().replace(/_/g, ' ');
 
   // If evidence is an indexed corpus chunk, verify that the snippet actually mentions the entity
   const isIndexedChunk = evidence?.sourceType === 'indexed_chunk' || (!evidenceEntity?.isAuthoritative && evidenceSnippet);
@@ -1261,7 +1261,8 @@ function evaluateBinding(binding, evidenceList = [], frame = {}, options = {}) {
       value: matchedEvidenceList[0].structuredValue || matchedEvidenceList[0].textSnippet,
       evidenceId: matchedEvidenceList[0].evidenceId,
       sourceId: matchedEvidenceList[0].sourceId,
-      provenance: matchedEvidenceList[0].provenance
+      provenance: matchedEvidenceList[0].provenance,
+      retrievalChannel: matchedEvidenceList[0].retrievalChannel || matchedEvidenceList[0].qualifiers?.retrievalChannel || null
     });
   }
 

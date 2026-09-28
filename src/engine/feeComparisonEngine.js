@@ -5,7 +5,7 @@ const path = require('path');
 const { buildProgramFitAnswer } = require('./programFitReasoning');
 const { detectScholarshipRequestSubtype, extractScholarshipName, KNOWN_SCHOLARSHIPS } = require('./scholarshipIntentClassifier');
 const { hasRawTechnicalLeak, hasLikelyRawDocumentLeak } = require('../utils/answerPreflightEvaluator');
-const { normalizeSlangTokens, detectCurriculumTopic } = require('./queryUnderstanding');
+const { normalizeSlangTokens, detectCurriculumTopic, hasExplicitProgramSemantics, hasPriorProgramContext } = require('./queryUnderstanding');
 
 function parseAmount(raw) {
   return parseCompactRupiahNumber(raw);
@@ -305,7 +305,7 @@ function normalizeWave(question) {
   };
 }
 
-function detectProgram(question) {
+function detectProgram(question, options = {}) {
   const q = String(question || '').toLowerCase();
   if (/\b(dnui|dalian\s+neusoft)\b/.test(q)) return { key: 'dnui', label: 'Double Degree DNUI', family: 'international' };
   if (/\b(help\s+university|help\b.*malaysia|biaya\s+pendaftaran\s+help\b|pendaftaran\s+help\b|help)\b/.test(q)) return { key: 'help', label: 'Double Degree HELP University', family: 'international' };
@@ -319,11 +319,16 @@ function detectProgram(question) {
   if (/\b(?:teknologi\s+informasi|teknik\s+informatika|informatika|prodi\s+informatika|jurusan\s+informatika|tek\s*info|tekinfo)\b/.test(q)) return { key: 'ti', label: 'Teknologi Informasi', family: 's1' };
   if (/\b(?:bisnis|binis|bisinis)\s+digital\b/.test(q)) return { key: 'bd', label: 'Bisnis Digital', family: 's1' };
   if (/\b(manajemen\s+informatika|d3|diploma(?:\s+(?:3|tiga))?|informatic\s+diploma)\b/.test(q)) return { key: 'mi', label: 'Manajemen Informatika', family: 'd3' };
-  if (/\bti\b/.test(q)) return { key: 'ti', label: 'Teknologi Informasi', family: 's1' };
-  if (/\bbd\b/.test(q)) return { key: 'bd', label: 'Bisnis Digital', family: 's1' };
-  if (/\bsk\b/.test(q)) return { key: 'sk', label: 'Sistem Komputer', family: 'sk' };
-  if (/\bmi\b/.test(q)) return { key: 'mi', label: 'Manajemen Informatika', family: 'd3' };
-  if (/\bsi\b(?!\s+sistem)\b/.test(q)) return { key: 'si', label: 'Sistem Informasi', family: 's1' };
+
+  // Short tokens require explicit program semantics or prior context
+  const priorState = options.sessionState || options.conversationState || options.priorSessionOrState || options.sessionData || options.session || options;
+  const hasSemantics = hasExplicitProgramSemantics(q);
+
+  if (/\bti\b/.test(q) && (hasSemantics || hasPriorProgramContext(priorState, 'Teknologi Informasi', 'TI'))) return { key: 'ti', label: 'Teknologi Informasi', family: 's1' };
+  if (/\bbd\b/.test(q) && (hasSemantics || hasPriorProgramContext(priorState, 'Bisnis Digital', 'BD'))) return { key: 'bd', label: 'Bisnis Digital', family: 's1' };
+  if (/\bsk\b/.test(q) && (hasSemantics || hasPriorProgramContext(priorState, 'Sistem Komputer', 'SK'))) return { key: 'sk', label: 'Sistem Komputer', family: 'sk' };
+  if (/\bmi\b/.test(q) && (hasSemantics || hasPriorProgramContext(priorState, 'Manajemen Informatika', 'MI'))) return { key: 'mi', label: 'Manajemen Informatika', family: 'd3' };
+  if (/\bsi\b(?!\s+sistem)\b/.test(q) && (hasSemantics || hasPriorProgramContext(priorState, 'Sistem Informasi', 'SI'))) return { key: 'si', label: 'Sistem Informasi', family: 's1' };
 
   return null;
 }
@@ -402,18 +407,26 @@ function feeProfileByProgram(question, index = ragEngine.loadIndex(), options = 
   };
 }
 
-function detectMentionedPrograms(question) {
+function detectMentionedPrograms(question, options = {}) {
   const q = String(question || '').toLowerCase();
+  const priorState = options.sessionState || options.conversationState || options.priorSessionOrState || options.sessionData || options.session || options;
+  const hasSemantics = hasExplicitProgramSemantics(q);
+
   const specs = [
     { key: 'dnui', label: 'Double Degree DNUI', re: /\b(dnui|dalian\s+neusoft)\b/ },
     { key: 'help', label: 'Double Degree HELP University', re: /\b(help\s+university|help\b.*malaysia|biaya\s+pendaftaran\s+help\b|pendaftaran\s+help\b|help)\b/ },
     { key: 'utb', label: 'Double Degree UTB', re: /\b(utb|universitas\s+teknologi\s+bandung)\b/ },
     { key: 's2', label: 'S2 Sistem Informasi', re: /\b(s2|pascasarjana|magister|master)\b/ },
-    { key: 'si', label: 'Sistem Informasi', re: /\b(sistem\s+informasi|sistem\s+infomrasi|sistem\s+infromasi|si\b(?!\s+sistem))\b/ },
-    { key: 'ti', label: 'Teknologi Informasi', re: /\b(ti|teknologi\s+informasi|teknik\s+informatika|informatika|prodi\s+informatika|jurusan\s+informatika|tek\s*info|tekinfo)\b/ },
-    { key: 'bd', label: 'Bisnis Digital', re: /\b(bd|(?:bisnis|binis|bisinis)\s+digital)\b/ },
-    { key: 'sk', label: 'Sistem Komputer', re: /\b(sk|sistem\s+komputer)\b/ },
-    { key: 'mi', label: 'Manajemen Informatika', re: /\b(mi|manajemen\s+informatika|d3|diploma(?:\s+(?:3|tiga))?|informatic\s+diploma)\b/ }
+    { key: 'si', label: 'Sistem Informasi', re: /\b(sistem\s+informasi|sistem\s+infomrasi|sistem\s+infromasi)\b/ },
+    { key: 'ti', label: 'Teknologi Informasi', re: /\b(teknologi\s+informasi|teknik\s+informatika|informatika|prodi\s+informatika|jurusan\s+informatika|tek\s*info|tekinfo)\b/ },
+    { key: 'bd', label: 'Bisnis Digital', re: /\b((?:bisnis|binis|bisinis)\s+digital)\b/ },
+    { key: 'sk', label: 'Sistem Komputer', re: /\b(sistem\s+komputer)\b/ },
+    { key: 'mi', label: 'Manajemen Informatika', re: /\b(manajemen\s+informatika|d3|diploma(?:\s+(?:3|tiga))?|informatic\s+diploma)\b/ },
+    ...(hasSemantics || hasPriorProgramContext(priorState, 'Sistem Informasi', 'SI') ? [{ key: 'si', label: 'Sistem Informasi', re: /\bsi\b(?!\s+sistem)\b/ }] : []),
+    ...(hasSemantics || hasPriorProgramContext(priorState, 'Teknologi Informasi', 'TI') ? [{ key: 'ti', label: 'Teknologi Informasi', re: /\bti\b/ }] : []),
+    ...(hasSemantics || hasPriorProgramContext(priorState, 'Bisnis Digital', 'BD') ? [{ key: 'bd', label: 'Bisnis Digital', re: /\bbd\b/ }] : []),
+    ...(hasSemantics || hasPriorProgramContext(priorState, 'Sistem Komputer', 'SK') ? [{ key: 'sk', label: 'Sistem Komputer', re: /\bsk\b/ }] : []),
+    ...(hasSemantics || hasPriorProgramContext(priorState, 'Manajemen Informatika', 'MI') ? [{ key: 'mi', label: 'Manajemen Informatika', re: /\bmi\b/ }] : [])
   ];
   return specs.filter((spec) => spec.re.test(q));
 }
@@ -500,13 +513,13 @@ function cleanProgramSummary(summary, programLabel) {
     .trim();
 }
 
-function tryProgramDefinitionAnswer(question) {
+function tryProgramDefinitionAnswer(question, options = {}) {
   const q = String(question || '').toLowerCase();
   if (/\b(?:gelar(?:nya)?|ijazah(?:nya)?|titel(?:nya)?)\b/i.test(q)) return null;
   const asksCurriculum = /\b(mata\s+kuliah|matkul|kurikulum|dipelajari|yang\s+dipelajari|belajar\s+apa|ngulik\s+apa|skill|kemampuan|kompetensi)\b/.test(q);
   const asksEntrySkillConcern = /\b(harus|wajib|perlu|butuh|apa(?:kah)?|bisa|boleh)\b[\s\S]{0,60}\b(jago|mahir|cakap|bisa)\b[\s\S]{0,40}\b(komputer|coding|ngoding|teknologi\s+informasi|it\b)\b|\b(kurang|belum|tidak|nggak|gak)\s+(?:jago|mahir|cakap|bisa)\b[\s\S]{0,40}\b(komputer|coding|ngoding|teknologi\s+informasi|it\b)\b/i.test(q);
   if (!asksCurriculum && !asksEntrySkillConcern && !/\b(apa\s+itu|itu\s+apa|apaan|maksudnya|jelaskan|tentang|pengertian|jurusan\s+apa|prodi\s+apa|program\s+studi\s+apa|seperti\s+apa|arahnya\s+(?:ke)?mana|kemana|tuh|sebenernya|sebenarnya)\b/.test(q)) return null;
-  const program = detectProgram(question);
+  const program = detectProgram(question, options);
   if (!program) return null;
   const domain = readProgramDomain(program.key);
   if (!domain || !domain.ringkasan) return null;

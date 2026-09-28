@@ -658,7 +658,7 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
   });
 
   describe('12. Abort Signal & Unhandled Rejection Immunity', () => {
-    test('abort signal triggers on timeout without creating unhandled rejections or altering authoritative result', async () => {
+    test('observer timeout does not automatically abort background worker (OBSERVER_ONLY decoupling)', async () => {
       process.env.VECTOR_SHADOW_ENABLED = 'true';
       process.env.VECTOR_SHADOW_SAMPLE_RATE = '1.0';
       process.env.VECTOR_SHADOW_MAX_CONCURRENCY = '1';
@@ -673,18 +673,19 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
       const rejectionHandler = () => { unhandledRejections++; };
       process.on('unhandledRejection', rejectionHandler);
 
+      let resolveEmbed;
       const embedSpy = jest.spyOn(proto, 'create').mockImplementation(async (_params, options) => {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
+          resolveEmbed = () => resolve({ data: [{ index: 0, embedding: new Array(1536).fill(0.01) }] });
           if (options?.signal) {
             options.signal.addEventListener('abort', () => {
               abortSignalFired = true;
-              const abortErr = new Error('Request was aborted.');
-              abortErr.name = 'AbortError';
-              reject(abortErr);
             });
           }
         });
       });
+
+      const dbSpy = jest.spyOn(shadowProvider, 'searchVectorChunksMultiBinding').mockResolvedValue({ b_abort: [] });
 
       const plan = { subrequests: [] };
       const exec = { bindingResults: [{ bindingId: 'b_abort', entity: 'TI', field: 'biaya', candidates: [] }] };
@@ -693,15 +694,23 @@ describe('PGVECTOR Shadow Implementation Contract', () => {
       expect(res.skipped).toBe(true);
       expect(res.reason).toBe('timeout');
 
-      // Wait for abort event and promise cleanup
+      // Wait past observer timeout (60ms > 40ms)
       await new Promise(r => setTimeout(r, 60));
 
-      expect(abortSignalFired).toBe(true);
+      // Invariant: Observer timeout MUST NOT abort background worker (OBSERVER_ONLY)
+      expect(abortSignalFired).toBe(false);
+      expect(shadowProvider.getActiveShadowJobs()).toBe(1);
+
+      // Settle worker
+      if (resolveEmbed) resolveEmbed();
+      await new Promise(r => setTimeout(r, 60));
+
       expect(unhandledRejections).toBe(0);
       expect(shadowProvider.getActiveShadowJobs()).toBe(0);
 
       process.removeListener('unhandledRejection', rejectionHandler);
       embedSpy.mockRestore();
+      dbSpy.mockRestore();
     });
   });
 

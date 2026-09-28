@@ -639,11 +639,45 @@ function stripIndonesianAffixes(token) {
   return t;
 }
 
+function hasExplicitProgramSemantics(text) {
+  const s = String(text || '').toLowerCase();
+  return /\b(?:program|program\s+studi|prodi|jurusan|progdi|bidang\s+studi|konsentrasi|peminatan|fakultas|kuliah|perkuliahan|mata\s+kuliah|matkul|kurikulum|belajar|dipelajari|pelajaran|lulusan|alumni|prospek|karier|karir|pekerjaan|profesi|job|biaya|dpp|spp|bayar|tarif|uang\s+gedung|sks|gelar|semester|s1|d3|sarjana|diploma|akreditasi)\b/i.test(s)
+    || /\b(?:beda|bedanya|perbedaan|banding|bandingkan|versus|vs)\b/i.test(s);
+}
+
+function hasPriorProgramContext(priorState, canonicalName, code) {
+  if (!priorState || typeof priorState !== 'object') return false;
+  const unwrap = priorState.sessionState || priorState.conversationState || priorState.priorSessionOrState || priorState.sessionData || priorState.data || priorState.session || priorState;
+  const active = unwrap.activeEntity || (unwrap.conversationState && unwrap.conversationState.activeEntity) || null;
+  const targetCanonical = String(canonicalName || '').toLowerCase().trim();
+  const targetCode = String(code || '').toLowerCase().trim();
+  if (active && active.canonical) {
+    const activeCanonical = String(active.canonical).toLowerCase().trim();
+    if (activeCanonical === targetCanonical || activeCanonical.includes(targetCanonical) || targetCanonical.includes(activeCanonical)) {
+      return true;
+    }
+  }
+  const lastProgram = unwrap.lastProgramHint || unwrap.lastEntity || unwrap.activeProgram || unwrap.program || (unwrap.conversationState && (unwrap.conversationState.lastEntity || unwrap.conversationState.activeProgram)) || null;
+  if (lastProgram) {
+    const lp = String(lastProgram).toLowerCase().trim();
+    if (lp === targetCanonical || lp === targetCode) return true;
+  }
+  return false;
+}
+
+function isPmbPriorContext(priorState) {
+  if (!priorState || typeof priorState !== 'object') return false;
+  const unwrap = priorState.sessionState || priorState.conversationState || priorState.priorSessionOrState || priorState.sessionData || priorState.data || priorState.session || priorState;
+  const lastDomain = unwrap.lastDomain || unwrap.activeDomain || (unwrap.conversationState && (unwrap.conversationState.lastDomain || unwrap.conversationState.activeDomain));
+  const lastEntity = unwrap.lastEntity || unwrap.activeEntity?.canonical || (unwrap.conversationState && (unwrap.conversationState.lastEntity || unwrap.conversationState.activeEntity?.canonical));
+  return lastDomain === 'pmb' || String(lastEntity).toLowerCase() === 'pmb';
+}
+
 /**
  * Match canonical entities against input text.
  * Returns array of matched entities with priority metrics.
  */
-function matchCanonicalEntities(text) {
+function matchCanonicalEntities(text, options = {}) {
   const norm = normalizeText(text);
   if (!norm) return [];
 
@@ -659,6 +693,14 @@ function matchCanonicalEntities(text) {
       const escaped = aliasNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp(`(^|\\s)${escaped}(\\s|$)`, 'i');
       if (re.test(norm)) {
+        if (aliasNorm === 'si' && entry.canonical === 'Sistem Informasi') {
+          const isUppercase = /\bSI\b/.test(text);
+          const hasSemantics = hasExplicitProgramSemantics(norm);
+          const hasPrior = hasPriorProgramContext(options, entry.canonical, entry.degree);
+          if (!isUppercase && !hasSemantics && !hasPrior) {
+            continue;
+          }
+        }
         matchedAlias = alias;
         matchQuality = Math.max(matchQuality, aliasNorm.length >= 10 ? 1.0 : (aliasNorm.length <= 3 ? 1.0 : 0.85));
         break;

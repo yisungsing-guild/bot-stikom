@@ -760,6 +760,31 @@ class CorpusEvidenceProvider {
     // Consume candidates pre-retrieved for this binding by BindingRetrievalPlanner
     const plannerResults = context.plannerResults || (context.retrievalExecution && context.retrievalExecution.bindingResults) || [];
     const bindingResult = plannerResults.find(r => r.bindingId === binding.bindingId);
+    const legacyCandidates = (bindingResult && Array.isArray(bindingResult.candidates)) ? bindingResult.candidates : [];
+
+    // Hybrid retrieval integration: merge legacy and pgvector candidates when enabled and gated
+    let isHybrid = false;
+    try {
+      const { isHybridRetrievalEnabled } = require('./pgvectorHybridProvider');
+      isHybrid = isHybridRetrievalEnabled(context);
+    } catch (_) {}
+
+    const isFactualRequired = context.isFactualRetrievalRequired !== false && !context.skipHybrid;
+
+    if (isHybrid && isFactualRequired) {
+      const { mergeAndDeduplicateCandidates } = require('./pgvectorHybridProvider');
+      const vectorCandidatesByBinding = context.vectorCandidatesByBinding || {};
+      const vectorCandidates = vectorCandidatesByBinding[binding.bindingId] || [];
+      const corpusIndex = context.semanticIndex || [];
+
+      const hybridEvidence = mergeAndDeduplicateCandidates(legacyCandidates, vectorCandidates, binding, corpusIndex);
+      if (hybridEvidence && hybridEvidence.length > 0) {
+        return { providerId: this.id, bindingId: binding.bindingId, evidence: hybridEvidence };
+      }
+      if (vectorCandidates.length > 0 && legacyCandidates.length === 0) {
+        return { providerId: this.id, bindingId: binding.bindingId, evidence: [] };
+      }
+    }
 
     if (bindingResult && Array.isArray(bindingResult.candidates)) {
       for (const cand of bindingResult.candidates) {
@@ -873,6 +898,28 @@ class EvidenceProviderRegistry {
       };
     }
 
+    // Hybrid retrieval pre-fetch for plan bindings (GATED strictly for factual retrievable queries)
+    let isHybrid = false;
+    try {
+      const { isHybridRetrievalEnabled } = require('./pgvectorHybridProvider');
+      isHybrid = isHybridRetrievalEnabled(executionContext);
+    } catch (_) {}
+
+    const isFactualRequired = executionContext.isFactualRetrievalRequired !== false && !executionContext.skipHybrid;
+
+    if (isHybrid && isFactualRequired && !executionContext.vectorCandidatesByBinding) {
+      try {
+        const { retrieveVectorCandidatesForPlan } = require('./pgvectorHybridProvider');
+        const vectorCandidatesByBinding = await retrieveVectorCandidatesForPlan(plan, executionContext);
+        executionContext = {
+          ...executionContext,
+          vectorCandidatesByBinding
+        };
+      } catch (err) {
+        // Safe fallback: continue with legacy retrieval
+      }
+    }
+
     const resultsByBinding = {};
     const allEvidence = [];
     let totalBindings = 0;
@@ -912,7 +959,8 @@ class EvidenceProviderRegistry {
       planId: plan.planId || null,
       totalBindings,
       resultsByBinding,
-      allEvidence
+      allEvidence,
+      vectorCandidatesByBinding: executionContext.vectorCandidatesByBinding || null
     };
   }
 }

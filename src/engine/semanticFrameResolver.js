@@ -221,7 +221,7 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
   const normalizedQuery = normalizedInfo?.normalizedText || raw.toLowerCase();
 
   // Step 1: Upstream Raw Feature Extraction
-  const understanding = buildCanonicalQueryUnderstanding(raw, { normalizedQuery });
+  const understanding = buildCanonicalQueryUnderstanding(raw, { normalizedQuery, ...options });
   const numericSemantics = extractNumericSemantics(raw);
 
   // Step 2: Current Query Explicit Semantic Resolution
@@ -376,8 +376,23 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
     const priorEntity = sessionState.activeEntity;
     const priorFam = normalizeEntityFamily(priorEntity.family || priorEntity.type);
 
+    // Guard: If the query asks for definition of an explicit unresolved referent token (e.g., "apa itu X"),
+    // do not inherit priorEntity unless the token matches priorEntity.
+    const defTargetMatch = /\b(?:apa\s+itu|itu\s+apa|apaan|maksud(?:nya)?|pengertian|definisi|arti)\s+([a-z0-9_-]+)\b/i.exec(raw);
+    let isConflictingDefTarget = false;
+    if (defTargetMatch && defTargetMatch[1]) {
+      const targetToken = defTargetMatch[1].toLowerCase().trim();
+      const priorCanon = String(priorEntity.canonical || '').toLowerCase().trim();
+      const priorCode = String(priorEntity.code || '').toLowerCase().trim();
+      const priorAliases = Array.isArray(priorEntity.aliases) ? priorEntity.aliases.map(a => String(a).toLowerCase().trim()) : [];
+      const matchesPrior = priorCanon === targetToken || priorCanon.includes(targetToken) || priorCode === targetToken || priorAliases.includes(targetToken);
+      if (!matchesPrior) {
+        isConflictingDefTarget = true;
+      }
+    }
+
     // Rule: Inheritance fills missing compatible dimensions only. Never overwrite explicit current entity!
-    if (isEntityFamilyCompatibleWithDomain(priorFam, domain.primary)) {
+    if (!isConflictingDefTarget && isEntityFamilyCompatibleWithDomain(priorFam, domain.primary)) {
       const inheritedEntity = {
         canonical: priorEntity.canonical,
         type: priorEntity.type || 'unknown',

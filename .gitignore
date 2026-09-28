@@ -111,6 +111,7 @@ tests/*
 !tests/continuousSessionAndAuthorityRegression.test.js
 !tests/productionRealChatStructuralRegression.test.js
 !tests/pgvectorShadowContract.test.js
+!tests/pgvectorHybridContract.test.js
 tools/
 quarantined_backups/
 

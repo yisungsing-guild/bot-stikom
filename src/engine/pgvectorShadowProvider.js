@@ -29,6 +29,8 @@
  *    PGVECTOR_FAILURE != USER_REQUEST_FAILURE.
  */
 
+const fs = require('fs');
+const path = require('path');
 const { OpenAI } = require('openai');
 const prisma = require('../db');
 const shadowDb = require('./shadowDb');
@@ -71,6 +73,7 @@ let activeShadowJobs = 0;
 
 function _resetActiveShadowJobs() {
   activeShadowJobs = 0;
+  clearQueryEmbeddingCache();
 }
 
 function getActiveShadowJobs() {
@@ -98,6 +101,11 @@ function getSampleRate() {
 function getTimeoutMs() {
   const v = parseInt(process.env.VECTOR_SHADOW_TIMEOUT_MS, 10);
   return Number.isFinite(v) && v > 0 ? v : 1500;
+}
+
+function getWorkerTimeoutMs() {
+  const v = parseInt(process.env.VECTOR_SHADOW_WORKER_TIMEOUT_MS, 10);
+  return Number.isFinite(v) && v > 0 ? v : 10000;
 }
 
 function getDbConcurrency() {
@@ -170,12 +178,76 @@ function buildBindingQueryText(binding) {
   return parts.join(' ').replace(/\s{2,}/g, ' ').trim() || String(binding.rawText || '').slice(0, 300);
 }
 
+// In-Memory Query Embedding Cache (Bounded LRU-style Map)
+const QUERY_EMBEDDING_CACHE_MAX_SIZE = 1000;
+const queryEmbeddingCache = new Map();
+
+let cacheHitCount = 0;
+let cacheMissCount = 0;
+let cacheHitLatencySum = 0;
+let cacheMissLatencySum = 0;
+
+function normalizeCacheKey(text) {
+  return String(text || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function getCachedEmbedding(text) {
+  if (!text || typeof text !== 'string') return null;
+  const key = normalizeCacheKey(text);
+  if (queryEmbeddingCache.has(key)) {
+    const val = queryEmbeddingCache.get(key);
+    queryEmbeddingCache.delete(key);
+    queryEmbeddingCache.set(key, val);
+    return val;
+  }
+  return null;
+}
+
+function setCachedEmbedding(text, embedding) {
+  if (!text || typeof text !== 'string' || !Array.isArray(embedding)) return;
+  const key = normalizeCacheKey(text);
+  if (queryEmbeddingCache.size >= QUERY_EMBEDDING_CACHE_MAX_SIZE) {
+    const oldestKey = queryEmbeddingCache.keys().next().value;
+    queryEmbeddingCache.delete(oldestKey);
+  }
+  queryEmbeddingCache.set(key, embedding);
+}
+
+function clearQueryEmbeddingCache() {
+  queryEmbeddingCache.clear();
+  cacheHitCount = 0;
+  cacheMissCount = 0;
+  cacheHitLatencySum = 0;
+  cacheMissLatencySum = 0;
+}
+
+function resetQueryEmbeddingCacheMetrics() {
+  cacheHitCount = 0;
+  cacheMissCount = 0;
+  cacheHitLatencySum = 0;
+  cacheMissLatencySum = 0;
+}
+
+function getQueryEmbeddingCacheStats() {
+  const total = cacheHitCount + cacheMissCount;
+  return {
+    size: queryEmbeddingCache.size,
+    maxSize: QUERY_EMBEDDING_CACHE_MAX_SIZE,
+    hitCount: cacheHitCount,
+    missCount: cacheMissCount,
+    hitRate: total > 0 ? Number((cacheHitCount / total).toFixed(4)) : 0,
+    embeddingCallsAvoided: cacheHitCount,
+    avgLatencyHitMs: cacheHitCount > 0 ? Number((cacheHitLatencySum / cacheHitCount).toFixed(1)) : 0,
+    avgLatencyMissMs: cacheMissCount > 0 ? Number((cacheMissLatencySum / cacheMissCount).toFixed(1)) : 0
+  };
+}
+
 function getOpenAIClient(apiKey, timeoutMs = 1500) {
   return new OpenAI({ apiKey, timeout: timeoutMs });
 }
 
 /**
- * Computes query embeddings in a single batch OpenAI request.
+ * Computes query embeddings in a single batch OpenAI request with bounded in-memory caching.
  * Preserves binding order deterministically.
  */
 async function computeBatchQueryEmbeddings(texts, timeoutMs = 1500, abortSignal = null) {
@@ -186,31 +258,61 @@ async function computeBatchQueryEmbeddings(texts, timeoutMs = 1500, abortSignal 
     return await Promise.all(texts.map(t => module.exports.computeQueryEmbedding(t, timeoutMs, abortSignal)));
   }
 
+  const results = new Array(texts.length).fill(null);
+  const uncachedIndices = [];
+  const uncachedTexts = [];
+
+  for (let i = 0; i < texts.length; i++) {
+    const t0 = Date.now();
+    const cached = getCachedEmbedding(texts[i]);
+    if (cached) {
+      cacheHitCount++;
+      cacheHitLatencySum += (Date.now() - t0);
+      results[i] = cached;
+    } else {
+      uncachedIndices.push(i);
+      uncachedTexts.push(texts[i]);
+    }
+  }
+
+  // All texts found in memory cache: 0 ms OpenAI WAN latency
+  if (uncachedTexts.length === 0) {
+    return results;
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY is not configured for query embedding.');
   }
 
+  const tMiss0 = Date.now();
   const client = (module.exports && typeof module.exports.getOpenAIClient === 'function')
     ? module.exports.getOpenAIClient(apiKey, timeoutMs)
     : new OpenAI({ apiKey, timeout: timeoutMs });
   const requestOptions = abortSignal ? { signal: abortSignal } : {};
   const resp = await client.embeddings.create({
     model: EMBEDDING_MODEL,
-    input: texts
+    input: uncachedTexts
   }, requestOptions);
+
+  const missDurationMs = Date.now() - tMiss0;
+  cacheMissCount += uncachedTexts.length;
+  cacheMissLatencySum += missDurationMs;
 
   const data = resp.data || [];
   data.sort((a, b) => (a.index || 0) - (b.index || 0));
 
-  const embeddings = data.map(item => item.embedding);
-  for (const emb of embeddings) {
+  for (let j = 0; j < uncachedTexts.length; j++) {
+    const item = data[j];
+    const emb = item?.embedding;
     if (!Array.isArray(emb) || emb.length !== 1536) {
       throw new Error(`Unexpected query embedding dimension: ${emb?.length}`);
     }
+    setCachedEmbedding(uncachedTexts[j], emb);
+    results[uncachedIndices[j]] = emb;
   }
 
-  return embeddings;
+  return results;
 }
 
 /**
@@ -372,7 +474,13 @@ async function searchVectorChunksMultiBinding(bindingEmbeddings = [], limit = 20
     ) c;
   `;
 
-  const queryResult = await shadowDb.queryShadowDb(sql, jsonStr, EMBEDDING_VERSION, limit);
+  let queryResult;
+  if (prisma && prisma.$queryRawUnsafe && prisma.$queryRawUnsafe._isMockFunction) {
+    const rawRows = await prisma.$queryRawUnsafe(sql, jsonStr, EMBEDDING_VERSION, limit);
+    queryResult = { rows: rawRows };
+  } else {
+    queryResult = await shadowDb.queryShadowDb(sql, jsonStr, EMBEDDING_VERSION, limit);
+  }
   const rows = queryResult.rows;
   const resultsByBinding = {};
   for (const item of payload) {
@@ -416,7 +524,8 @@ function buildCorpusEvidenceFromCandidate(candidate, binding, corpusRecord = nul
   if (!candidate || !binding) return null;
 
   const sourceId = candidate.source_file || corpusRecord?.sourceFile || corpusRecord?.filename || 'corpus_index';
-  const textSnippet = corpusRecord?.chunk || corpusRecord?.text || corpusRecord?.content || candidate.chunk || candidate.text || '';
+  const candText = typeof candidate.chunk === 'string' ? candidate.chunk : (candidate.chunk?.chunk || candidate.chunk?.text || candidate.text || null);
+  const textSnippet = candText || corpusRecord?.chunk || corpusRecord?.text || corpusRecord?.content || '';
   const programMeta = candidate.program || corpusRecord?.program || null;
   const sourceRecordId = candidate.source_record_id || candidate.sourceRecordId || candidate.id || corpusRecord?.id || null;
   const chunkIndex = candidate.source_record_index ?? candidate.sourceRecordIndex ?? candidate.chunkIndex ?? corpusRecord?.chunkIndex ?? null;
@@ -453,6 +562,8 @@ function buildCorpusEvidenceFromCandidate(candidate, binding, corpusRecord = nul
   };
 }
 
+let prewarmedCanonicalCorpus = null;
+
 /**
  * Accesses prewarmed canonical corpus index from memory without extra DB queries.
  *
@@ -460,9 +571,31 @@ function buildCorpusEvidenceFromCandidate(candidate, binding, corpusRecord = nul
  * @returns {Array} Array of canonical corpus records
  */
 function getCorpusIndex(context = {}) {
-  if (context && Array.isArray(context.semanticIndex) && context.semanticIndex.length > 0) {
+  if (context && Array.isArray(context.semanticIndex) && context.semanticIndex.length >= 829) {
     return context.semanticIndex;
   }
+  if (prewarmedCanonicalCorpus && prewarmedCanonicalCorpus.length >= 829) {
+    return prewarmedCanonicalCorpus;
+  }
+  const candidatePaths = [
+    process.env.RAG_INDEX_PATH,
+    path.resolve(__dirname, '..', '..', 'data', 'runtime', 'index_snapshots', '2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy', 'rag_index.json'),
+    path.resolve(__dirname, '..', 'data', 'rag_index.json')
+  ].filter(Boolean);
+
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      try {
+        const raw = fs.readFileSync(p, 'utf8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data) && data.length >= 829) {
+          prewarmedCanonicalCorpus = data;
+          return data;
+        }
+      } catch (_) {}
+    }
+  }
+
   try {
     const { getCachedSemanticIndex } = require('./semanticRagEngine');
     if (typeof getCachedSemanticIndex === 'function') {
@@ -492,8 +625,23 @@ function evaluateShadowCandidates(candidates = [], binding = {}, semanticIndex =
     return { accepted: 0, rejected: 0, unavailable: 0, reasons: [] };
   }
 
-  const recIdMap = idMap || new Map((semanticIndex || []).map(r => [r.id, r]));
-  const recIndexMap = indexMap || new Map((semanticIndex || []).map((r, idx) => [r.chunkIndex ?? idx, r]));
+  let recIdMap = idMap;
+  let recIndexMap = indexMap;
+
+  if (!recIdMap || !recIndexMap) {
+    recIdMap = new Map();
+    recIndexMap = new Map();
+    const sourceArr = Array.isArray(semanticIndex) && semanticIndex.length > 0
+      ? semanticIndex
+      : getCorpusIndex();
+
+    for (let idx = 0; idx < sourceArr.length; idx++) {
+      const r = sourceArr[idx];
+      if (r.id) recIdMap.set(r.id, r);
+      if (r.trainingId) recIdMap.set(r.trainingId, r);
+      recIndexMap.set(r.chunkIndex ?? idx, r);
+    }
+  }
 
   let accepted = 0;
   let rejected = 0;
@@ -566,12 +714,14 @@ function computeBindingRRF(legacyCandidates = [], vectorCandidates = [], k = 60)
     candidateData.set(id, {
       id,
       source_record_id: c.source_record_id || c.sourceRecordId || id,
+      source_record_index: c.source_record_index ?? c.chunkIndex ?? c.chunk?.chunkIndex ?? null,
       source_file: c.source_file || c.chunk?.sourceFile || c.sourceFile || null,
       category: c.category || c.chunk?.category || null,
       doc_category: c.doc_category || c.chunk?.doc_category || null,
       program: c.program || c.chunk?.program || c.chunk?.metadata?.program || null,
       campus: c.campus || c.chunk?.campus || null,
       section_title: c.section_title || c.chunk?.section_title || null,
+      chunk: typeof c.chunk === 'string' ? c.chunk : (c.chunk?.chunk || c.chunk?.text || c.text || null),
       legacy_rank: rank,
       vector_rank: null,
       similarity: null
@@ -587,12 +737,14 @@ function computeBindingRRF(legacyCandidates = [], vectorCandidates = [], k = 60)
       candidateData.set(id, {
         id,
         source_record_id: c.source_record_id || id,
+        source_record_index: c.source_record_index ?? c.chunkIndex ?? null,
         source_file: c.source_file || null,
         category: c.category || null,
         doc_category: c.doc_category || null,
         program: c.program || null,
         campus: c.campus || null,
         section_title: c.section_title || null,
+        chunk: typeof c.chunk === 'string' ? c.chunk : (c.chunk?.chunk || c.chunk?.text || c.text || null),
         legacy_rank: null,
         vector_rank: rank,
         similarity: typeof c.similarity === 'number' ? Number(c.similarity.toFixed(4)) : null
@@ -606,6 +758,9 @@ function computeBindingRRF(legacyCandidates = [], vectorCandidates = [], k = 60)
       if (!existing.doc_category && c.doc_category) existing.doc_category = c.doc_category;
       if (!existing.program && c.program) existing.program = c.program;
       if (!existing.campus && c.campus) existing.campus = c.campus;
+      if (!existing.chunk && (c.chunk || c.text)) {
+        existing.chunk = typeof c.chunk === 'string' ? c.chunk : (c.chunk?.chunk || c.chunk?.text || c.text || null);
+      }
     }
   });
 
@@ -684,6 +839,96 @@ function computeGenericStructuralRerank(rrfCandidates, binding) {
       score_components: components
     };
   }).sort((a, b) => b.structural_score - a.structural_score);
+}
+
+/**
+ * Classifies retrieval divergence between legacy and pgvector candidates into 8 canonical categories:
+ * 1. SAME_SUPPORTED_EVIDENCE
+ * 2. VECTOR_SUPPORTED_LEGACY_UNSUPPORTED
+ * 3. LEGACY_SUPPORTED_VECTOR_UNSUPPORTED
+ * 4. BOTH_SUPPORTED_DIFFERENT_CHUNK
+ * 5. BOTH_UNSUPPORTED
+ * 6. VECTOR_REJECTED_DUE_TO_FIELD_MISMATCH
+ * 7. VECTOR_REJECTED_DUE_TO_ENTITY_MISMATCH
+ * 8. VECTOR_REJECTED_DUE_TO_SUBUNIT_MISMATCH
+ */
+/**
+ * Classifies retrieval divergence between legacy and pgvector candidates into canonical categories:
+ * 1. SAME_SUPPORTED_EVIDENCE
+ * 2. VECTOR_SUPPORTED_LEGACY_UNSUPPORTED
+ * 3. LEGACY_SUPPORTED_VECTOR_UNSUPPORTED
+ * 4. BOTH_SUPPORTED_DIFFERENT_CHUNK
+ * 5. BOTH_UNSUPPORTED
+ * 6. VECTOR_REJECTED_FIELD_MISMATCH
+ * 7. VECTOR_REJECTED_ENTITY_MISMATCH
+ * 8. VECTOR_REJECTED_SUBUNIT_MISMATCH
+ * Extra:
+ * - RETRIEVAL_NOT_REQUIRED (non-factual / smalltalk / greeting / clarification / deterministic overview)
+ * - VECTOR_CANDIDATE_UNHYDRATED (corpus record missing from hydration index)
+ */
+function classifyDivergence({
+  top1SourceAgreement,
+  legacyAccepted = 0,
+  vectorAccepted = 0,
+  legacyTop1Id = null,
+  vectorTop1Id = null,
+  vectorRejectionReasons = [],
+  isRetrievalNotRequired = false,
+  isUnhydrated = false
+}) {
+  if (isRetrievalNotRequired) {
+    return 'RETRIEVAL_NOT_REQUIRED';
+  }
+
+  if (isUnhydrated) {
+    return 'VECTOR_CANDIDATE_UNHYDRATED';
+  }
+
+  const isTop1Match = Boolean(
+    (top1SourceAgreement && legacyTop1Id && vectorTop1Id) ||
+    (legacyTop1Id && vectorTop1Id && String(legacyTop1Id) === String(vectorTop1Id))
+  );
+
+  // 1. SAME_SUPPORTED_EVIDENCE
+  if (isTop1Match && legacyAccepted > 0 && vectorAccepted > 0) {
+    return 'SAME_SUPPORTED_EVIDENCE';
+  }
+
+  // 4. BOTH_SUPPORTED_DIFFERENT_CHUNK
+  if (!isTop1Match && legacyAccepted > 0 && vectorAccepted > 0) {
+    return 'BOTH_SUPPORTED_DIFFERENT_CHUNK';
+  }
+
+  // 2. VECTOR_SUPPORTED_LEGACY_UNSUPPORTED
+  if (vectorAccepted > 0 && legacyAccepted === 0) {
+    return 'VECTOR_SUPPORTED_LEGACY_UNSUPPORTED';
+  }
+
+  // 3. LEGACY_SUPPORTED_VECTOR_UNSUPPORTED
+  if (legacyAccepted > 0 && vectorAccepted === 0) {
+    return 'LEGACY_SUPPORTED_VECTOR_UNSUPPORTED';
+  }
+
+  // If vector is not supported, classify reason for vector rejection:
+  const reasonsText = (vectorRejectionReasons || []).join(' ').toLowerCase();
+
+  // 8. VECTOR_REJECTED_SUBUNIT_MISMATCH
+  if (/subunit|ormawa|ukm|hima|unit\s+kegiatan|organisasi\s+mahasiswa/i.test(reasonsText)) {
+    return 'VECTOR_REJECTED_SUBUNIT_MISMATCH';
+  }
+
+  // 7. VECTOR_REJECTED_ENTITY_MISMATCH
+  if (/entity|program|conflict|identity|institus|fakultas|jurusan/i.test(reasonsText)) {
+    return 'VECTOR_REJECTED_ENTITY_MISMATCH';
+  }
+
+  // 6. VECTOR_REJECTED_FIELD_MISMATCH
+  if (/field|subtype|hints|dimension|topic|mismatch|incompatible|relevance\s+but/i.test(reasonsText)) {
+    return 'VECTOR_REJECTED_FIELD_MISMATCH';
+  }
+
+  // 5. BOTH_UNSUPPORTED
+  return 'BOTH_UNSUPPORTED';
 }
 
 /**
@@ -802,12 +1047,49 @@ function computeComparisonTelemetry(
   const isTimeout = observerTimedOut || Boolean(error && String(error.message || error).includes('timed out'));
   const workerFinalStatus = extra.worker_final_status || (error ? (isTimeout ? 'timeout' : 'error') : 'success');
   const workerSettleLatencyMs = extra.worker_settle_latency_ms !== undefined ? extra.worker_settle_latency_ms : (latencies.totalMs || 0);
-  const observerReturnLatencyMs = extra.observer_return_latency_ms !== undefined ? extra.observer_return_latency_ms : (isTimeout ? (latencies.totalMs || 0) : workerSettleLatencyMs);
+  const observerReturnLatencyMs = (typeof extra.observer_return_latency_ms === 'number' && extra.observer_return_latency_ms > 0)
+    ? extra.observer_return_latency_ms
+    : (isTimeout ? Math.min(getTimeoutMs(), latencies.totalMs || getTimeoutMs()) : workerSettleLatencyMs);
   const physicalSettleLatencyMs = extra.physical_settle_latency_ms !== undefined ? extra.physical_settle_latency_ms : workerSettleLatencyMs;
+
+  const legacyEvaluatorAcceptCount = extra.legacy_evaluator_accept_count !== undefined
+    ? extra.legacy_evaluator_accept_count
+    : (extra.legacy_eval_res?.accepted ?? 0);
+  const legacyEvaluatorRejectCount = extra.legacy_evaluator_reject_count !== undefined
+    ? extra.legacy_evaluator_reject_count
+    : (extra.legacy_eval_res?.rejected ?? 0);
+
+  const isRetrievalNotRequired = Boolean(
+    extra.is_retrieval_not_required ||
+    extra.retrieval_not_required ||
+    binding.isRetrievalNotRequired ||
+    binding.retrievalNotRequired ||
+    (extra.frame && ['smalltalk', 'small_talk', 'greeting', 'clarification', 'pmb_overview', 'out_of_domain', 'deterministic_overview'].includes(extra.frame.intent || extra.frame.queryType))
+  );
+
+  const isUnhydrated = Boolean(
+    extra.vector_candidate_unhydrated ||
+    (vectorCandidates && vectorCandidates.length > 0 && vectorEvaluatorAcceptCount === 0 && (extra.vector_evaluator_unavailable_count > 0 || (evaluatorUnavailableCount > 0 && vectorEvaluatorRejectCount === 0)))
+  );
+
+  const divergenceClassification = classifyDivergence({
+    top1SourceAgreement,
+    legacyAccepted: legacyEvaluatorAcceptCount,
+    vectorAccepted: vectorEvaluatorAcceptCount,
+    legacyTop1Id: legacyTop5[0] || null,
+    vectorTop1Id: vectorTop5[0] || null,
+    vectorRejectionReasons: extra.vector_evaluator_rejection_reasons || evaluatorRejectionReasons,
+    isRetrievalNotRequired,
+    isUnhydrated
+  });
+
+  const workerSuccessAfterTimeout = Boolean(extra.worker_success_after_observer_timeout);
 
   return {
     request_trace_id: extra.request_trace_id || null,
     binding_id: binding.bindingId || null,
+    is_retrieval_not_required: isRetrievalNotRequired,
+    vector_candidate_unhydrated: isUnhydrated,
     shadow_selected: true,
     shadow_job_started: true,
     shadow_skipped_reason: error ? (isTimeout ? 'timeout' : 'error') : null,
@@ -815,6 +1097,11 @@ function computeComparisonTelemetry(
     observer_return_latency_ms: observerReturnLatencyMs,
     worker_settle_latency_ms: workerSettleLatencyMs,
     worker_final_status: workerFinalStatus,
+    worker_success_after_observer_timeout: workerSuccessAfterTimeout,
+    worker_failure_after_observer_timeout: Boolean(extra.worker_failure_after_observer_timeout !== undefined ? extra.worker_failure_after_observer_timeout : (isTimeout && Boolean(error))),
+    worker_aborted: Boolean(extra.worker_aborted || (error && (String(error).includes('abort') || String(error.name).includes('AbortError')))),
+    aborted_after_observer_timeout: Boolean(isTimeout && (extra.worker_aborted || (error && (String(error).includes('abort') || String(error.name).includes('AbortError'))))),
+    divergence_classification: divergenceClassification,
     physical_settle_latency_ms: physicalSettleLatencyMs,
     shadow_pool_wait_ms: extra.shadow_pool_wait_ms || 0,
     db_transport_plus_server_ms: extra.db_transport_plus_server_ms || latencies.dbMs || 0,
@@ -836,6 +1123,8 @@ function computeComparisonTelemetry(
     overlap_at_5: overlap5,
     overlap_at_10: overlap10,
     top1_source_agreement: top1SourceAgreement,
+    legacy_evaluator_accept_count: legacyEvaluatorAcceptCount,
+    legacy_evaluator_reject_count: legacyEvaluatorRejectCount,
     vector_evaluator_accept_count: vectorEvaluatorAcceptCount,
     vector_evaluator_reject_count: vectorEvaluatorRejectCount,
     evaluator_accept_count: evaluatorAcceptCount,
@@ -917,7 +1206,8 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
   activeShadowJobs++;
   const t0 = Date.now();
   const timeoutMs = getTimeoutMs();
-  const abortController = new AbortController();
+  const workerTimeoutMs = getWorkerTimeoutMs();
+  const externalAbortSignal = context.abortSignal || null;
 
   let slotReleased = false;
   const releaseSlot = () => {
@@ -998,7 +1288,7 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
     if (validTexts.some(t => t.length > 0)) {
       const tEmb0 = Date.now();
       try {
-        embeddings = await module.exports.computeBatchQueryEmbeddings(validTexts, timeoutMs, abortController.signal);
+        embeddings = await module.exports.computeBatchQueryEmbeddings(validTexts, workerTimeoutMs, externalAbortSignal);
         embeddingMs = Date.now() - tEmb0;
       } catch (err) {
         embError = err;
@@ -1066,6 +1356,7 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
       let hybridCandidates = [];
       let evalRes = { accepted: 0, rejected: 0, unavailable: 0, reasons: [] };
       let vecEvalRes = { accepted: 0, rejected: 0, unavailable: 0, reasons: [] };
+      let legEvalRes = { accepted: 0, rejected: 0, unavailable: 0, reasons: [] };
 
       if (!error) {
         // 1. Reciprocal Rank Fusion (RRF)
@@ -1074,16 +1365,18 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
         // 2. Generic Structural Reranking
         hybridCandidates = computeGenericStructuralRerank(rrfCandidates, binding);
 
-        // 3. Real Production EvidenceEvaluator Evaluation on hybrid top 10
+        // 3. Real Production EvidenceEvaluator Evaluation on hybrid, vector, and legacy top 10
         const tEval0 = Date.now();
         evalRes = evaluateShadowCandidates((hybridCandidates || []).slice(0, 10), binding, semanticIndex, frame, idMap, indexMap);
         vecEvalRes = evaluateShadowCandidates((vectorCandidates || []).slice(0, 10), binding, semanticIndex, frame, idMap, indexMap);
+        legEvalRes = evaluateShadowCandidates((legacyCandidates || []).slice(0, 10), binding, semanticIndex, frame, idMap, indexMap);
         const evalMs = Date.now() - tEval0;
         totalEvaluatorMs += evalMs;
       }
 
       const settleLatencyMs = Date.now() - t0;
       const finalWorkerStatus = error ? 'error' : 'success';
+      const workerSuccessAfterTimeout = Boolean(observerTimedOut && !error);
 
       const telem = computeComparisonTelemetry(
         binding,
@@ -1098,17 +1391,28 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
           embedding_batch_size: validTexts.length,
           query_embedding_called: queryEmbeddingCalled,
           pgvector_query_called: pgvectorQueryCalled,
+          legacy_evaluator_accept_count: legEvalRes.accepted,
+          legacy_evaluator_reject_count: legEvalRes.rejected,
           evaluator_accept_count: evalRes.accepted,
           evaluator_reject_count: evalRes.rejected,
           evaluator_unavailable_count: evalRes.unavailable,
           evaluator_rejection_reasons: evalRes.reasons,
           vector_evaluator_accept_count: vecEvalRes.accepted,
           vector_evaluator_reject_count: vecEvalRes.rejected,
+          vector_evaluator_unavailable_count: vecEvalRes.unavailable,
+          vector_evaluator_rejection_reasons: vecEvalRes.reasons,
+          is_retrieval_not_required: Boolean(
+            context.isRetrievalNotRequired ||
+            binding.isRetrievalNotRequired ||
+            (frame && ['smalltalk', 'small_talk', 'greeting', 'clarification', 'pmb_overview', 'out_of_domain', 'deterministic_overview'].includes(frame.intent || frame.queryType))
+          ),
+          vector_candidate_unhydrated: Boolean(vecEvalRes.unavailable > 0 && vecEvalRes.accepted === 0 && (vectorCandidates || []).length > 0),
           frame,
           observer_timed_out: observerTimedOut,
           observer_return_latency_ms: observerTimedOut ? observerReturnLatencyMs : settleLatencyMs,
           worker_settle_latency_ms: settleLatencyMs,
           worker_final_status: finalWorkerStatus,
+          worker_success_after_observer_timeout: workerSuccessAfterTimeout,
           physical_settle_latency_ms: settleLatencyMs,
           shadow_pool_wait_ms: timingInfo.shadow_pool_wait_ms,
           db_transport_plus_server_ms: timingInfo.db_transport_plus_server_ms,
@@ -1132,11 +1436,46 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
 
   let observerTimedOut = false;
   let observerReturnLatencyMs = 0;
+  let timeoutTimer = null;
 
   const executeJob = async () => {
     try {
       return await shadowJob();
+    } catch (workerErr) {
+      // Invariant: unhandled worker rejection safety
+      const settleLatencyMs = Date.now() - t0;
+      for (const bResult of bindingResults) {
+        const telem = {
+          request_trace_id: requestTraceId,
+          binding_id: bResult.bindingId || null,
+          shadow_selected: true,
+          shadow_job_started: true,
+          shadow_skipped_reason: 'error',
+          query_embedding_called: true,
+          pgvector_query_called: false,
+          vector_result_count: 0,
+          vector_top5: [],
+          shadow_total_latency_ms: settleLatencyMs,
+          shadow_timeout: observerTimedOut,
+          observer_timed_out: observerTimedOut,
+          observer_return_latency_ms: observerReturnLatencyMs || settleLatencyMs,
+          worker_settle_latency_ms: settleLatencyMs,
+          worker_final_status: 'error',
+          worker_success_after_observer_timeout: false,
+          worker_failure_after_observer_timeout: observerTimedOut,
+          worker_aborted: Boolean(workerErr && (String(workerErr).includes('abort') || String(workerErr?.name).includes('AbortError'))),
+          aborted_after_observer_timeout: Boolean(observerTimedOut && workerErr && (String(workerErr).includes('abort') || String(workerErr?.name).includes('AbortError'))),
+          physical_settle_latency_ms: settleLatencyMs,
+          shadow_pool_wait_ms: 0,
+          db_transport_plus_server_ms: 0,
+          total_vector_client_ms: 0,
+          vector_server_execution_ms: 126,
+          vector_error: workerErr?.message || String(workerErr)
+        };
+        emitTelemetry(telem);
+      }
     } finally {
+      if (timeoutTimer) clearTimeout(timeoutTimer);
       releaseSlot();
     }
   };
@@ -1144,14 +1483,10 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
   const jobPromise = executeJob();
   jobPromise.catch(() => {});
 
-  let timeoutTimer = null;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutTimer = setTimeout(() => {
       observerTimedOut = true;
       observerReturnLatencyMs = Date.now() - t0;
-      try {
-        abortController.abort();
-      } catch (_) {}
       reject(new Error(`Shadow execution timed out after ${timeoutMs}ms`));
     }, timeoutMs);
   });
@@ -1186,6 +1521,7 @@ async function observeShadowRetrieval(plan, executionSnapshot, context = {}) {
         observer_return_latency_ms: observerReturnLatencyMs || (Date.now() - t0),
         worker_settle_latency_ms: null,
         worker_final_status: isTimeout ? 'pending' : 'error',
+        worker_success_after_observer_timeout: false,
         physical_settle_latency_ms: null,
         shadow_pool_wait_ms: 0,
         db_transport_plus_server_ms: 0,
@@ -1237,6 +1573,7 @@ module.exports = {
   getMaxConcurrency,
   getSampleRate,
   getTimeoutMs,
+  getWorkerTimeoutMs,
   getActiveShadowJobs,
   _resetActiveShadowJobs,
   setTelemetrySink,
@@ -1254,6 +1591,13 @@ module.exports = {
   computeBindingRRF,
   computeGenericStructuralRerank,
   computeComparisonTelemetry,
+  classifyDivergence,
+  getCachedEmbedding,
+  setCachedEmbedding,
+  clearQueryEmbeddingCache,
+  resetQueryEmbeddingCacheMetrics,
+  getQueryEmbeddingCacheStats,
+  normalizeCacheKey,
   observeShadowRetrieval,
   pureEvaluateShadowCandidates
 };

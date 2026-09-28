@@ -1380,6 +1380,45 @@ function escapeRegex(s) {
   return String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function hasExplicitProgramSemantics(text) {
+  const s = String(text || '').toLowerCase();
+  return /\b(?:program|program\s+studi|prodi|jurusan|progdi|bidang\s+studi|konsentrasi|peminatan|fakultas|kuliah|perkuliahan|mata\s+kuliah|matkul|kurikulum|belajar|dipelajari|pelajaran|lulusan|alumni|prospek|karier|karir|pekerjaan|profesi|job|biaya|dpp|spp|bayar|tarif|uang\s+gedung|sks|gelar|semester|s1|d3|sarjana|diploma|akreditasi)\b/i.test(s)
+    || /\b(?:beda|bedanya|perbedaan|banding|bandingkan|versus|vs)\b/i.test(s);
+}
+
+function hasPriorProgramContext(priorState, canonicalName, code) {
+  if (!priorState || typeof priorState !== 'object') return false;
+  const unwrap = priorState.sessionState || priorState.conversationState || priorState.sessionData || priorState.data || priorState.session || priorState;
+  const active = unwrap.activeEntity || (unwrap.conversationState && unwrap.conversationState.activeEntity) || null;
+  const targetCanonical = String(canonicalName || '').toLowerCase().trim();
+  const targetCode = String(code || '').toLowerCase().trim();
+  if (active && active.canonical) {
+    const activeCanonical = String(active.canonical).toLowerCase().trim();
+    if (activeCanonical === targetCanonical || activeCanonical.includes(targetCanonical) || targetCanonical.includes(activeCanonical)) {
+      return true;
+    }
+  }
+  const lastProgram = unwrap.lastProgramHint || unwrap.lastEntity || unwrap.activeProgram || unwrap.program || (unwrap.conversationState && (unwrap.conversationState.lastEntity || unwrap.conversationState.activeProgram)) || null;
+  if (lastProgram) {
+    const lp = String(lastProgram).toLowerCase().trim();
+    if (lp === targetCanonical || lp === targetCode) return true;
+  }
+  const priorDomain = unwrap.activeDomain || unwrap.domain || (unwrap.conversationState && unwrap.conversationState.activeDomain) || null;
+  const priorEntityFam = active?.family || active?.type;
+  if (priorEntityFam === 'program' && ['program', 'fee', 'career', 'program_curriculum', 'accreditation'].includes(priorDomain)) {
+    return true;
+  }
+  return false;
+}
+
+function isPmbPriorContext(priorState) {
+  if (!priorState || typeof priorState !== 'object') return false;
+  const unwrap = priorState.sessionState || priorState.conversationState || priorState.priorSessionOrState || priorState.sessionData || priorState.data || priorState.session || priorState;
+  const lastDomain = unwrap.lastDomain || unwrap.activeDomain || (unwrap.conversationState && (unwrap.conversationState.lastDomain || unwrap.conversationState.activeDomain));
+  const lastEntity = unwrap.lastEntity || unwrap.activeEntity?.canonical || (unwrap.conversationState && (unwrap.conversationState.lastEntity || unwrap.conversationState.activeEntity?.canonical));
+  return lastDomain === 'pmb' || String(lastEntity).toLowerCase() === 'pmb';
+}
+
 /**
  * Extracts a candidate entity from current turn understanding or raw text.
  * Covers all domains: programs (S1/D3), S2, international partners, waves,
@@ -1387,9 +1426,10 @@ function escapeRegex(s) {
  *
  * @param {object} currentUnderstanding Canonical query understanding
  * @param {string} rawText Raw input text
+ * @param {object} [options] Context options containing prior state
  * @returns {object|null} Candidate entity object
  */
-function extractCandidateEntity(currentUnderstanding, rawText) {
+function extractCandidateEntity(currentUnderstanding, rawText, options = {}) {
   const text = String(rawText || '').trim();
   const u = currentUnderstanding || {};
   const entities = u.entities || {};
@@ -1407,6 +1447,8 @@ function extractCandidateEntity(currentUnderstanding, rawText) {
   }
   const progMatch = text.match(/\b(teknologi\s+informasi|\bti\b|sistem\s+informasi|\bsi\b|sistem\s+komputer|\bsk\b|bisnis\s+digital|\bbd\b|d3\s+manajemen\s+informatika|d3\s+mi|manajemen\s+informatika|\bmi\b)\b/i);
   if (progMatch) {
+    const matchedToken = progMatch[1].trim();
+    const isShortToken = matchedToken.length <= 2;
     const progMap = {
       'TI': { canonical: 'Teknologi Informasi', code: 'TI' },
       'TEKNOLOGI INFORMASI': { canonical: 'Teknologi Informasi', code: 'TI' },
@@ -1421,15 +1463,34 @@ function extractCandidateEntity(currentUnderstanding, rawText) {
       'D3 MI': { canonical: 'Manajemen Informatika', code: 'MI' },
       'D3 MANAJEMEN INFORMATIKA': { canonical: 'Manajemen Informatika', code: 'MI' }
     };
-    const found = progMap[progMatch[1].toUpperCase()];
+    const found = progMap[matchedToken.toUpperCase()];
     if (found) {
-      return {
-        type: 'program',
-        canonical: found.canonical,
-        code: found.code,
-        surface: progMatch[0],
-        group: 'programs'
-      };
+      if (found.code === 'SI') {
+        const priorState = options.sessionState || options.conversationState || options.priorSessionOrState || options.sessionData || options.session || options;
+        const isPmb = isPmbPriorContext(priorState);
+        const isUppercase = /\bSI\b/.test(text);
+        const hasSemantics = hasExplicitProgramSemantics(text);
+        const isSub = /\b(?:kalau|gimana\s+kalau|terus|bagaimana\s+dengan)\b/i.test(text);
+        if (isPmb && !isUppercase && !hasSemantics && !isSub) {
+          // skip particle collision in PMB follow-up
+        } else {
+          return {
+            type: 'program',
+            canonical: found.canonical,
+            code: found.code,
+            surface: progMatch[0],
+            group: 'programs'
+          };
+        }
+      } else {
+        return {
+          type: 'program',
+          canonical: found.canonical,
+          code: found.code,
+          surface: progMatch[0],
+          group: 'programs'
+        };
+      }
     }
   }
 
@@ -2358,7 +2419,40 @@ function detectContextRepair(currentUnderstanding, priorSessionOrState, options 
     }
   }
 
-  const effectiveQuery = rawText;
+  let effectiveQuery = rawText;
+  const entName = resolvedEntity || '';
+
+  if (targetDomain === 'career' || repairedIntent === 'ask_career_prospect') {
+    effectiveQuery = `Prospek kerja dan peluang karier lulusan ${entName} ITB STIKOM Bali`;
+  } else if (targetDomain === 'program_curriculum') {
+    effectiveQuery = `Mata kuliah, kurikulum, dan materi yang dipelajari pada ${entName} ITB STIKOM Bali`;
+  } else if (targetDomain === 'fee') {
+    if (requestedFields.includes('registrationFee')) {
+      effectiveQuery = `Biaya pendaftaran PMB ITB STIKOM Bali`;
+    } else if (requestedFields.includes('semesterFee')) {
+      effectiveQuery = `Biaya kuliah per semester UKT ${entName} ITB STIKOM Bali`;
+    } else if (requestedFields.includes('totalFee')) {
+      effectiveQuery = `Total biaya awal masuk kuliah ${entName} ITB STIKOM Bali`;
+    } else {
+      effectiveQuery = `Rincian biaya kuliah ${entName} ITB STIKOM Bali`;
+    }
+  } else if (targetDomain === 'registration') {
+    effectiveQuery = `Alur dan cara pendaftaran mahasiswa baru PMB ITB STIKOM Bali`;
+  } else if (targetDomain === 'scholarship') {
+    effectiveQuery = `Syarat dan ketentuan beasiswa ${entName} ITB STIKOM Bali`;
+  } else if (targetDomain === 'pmb_schedule') {
+    effectiveQuery = `Jadwal dan tanggal penutupan pendaftaran ${entName} PMB ITB STIKOM Bali`;
+  } else if (targetDomain === 'student_organization') {
+    effectiveQuery = `Daftar UKM bidang ${entName} ITB STIKOM Bali`;
+  } else if (targetDomain === 'campus_facility') {
+    effectiveQuery = `Profil dan informasi fasilitas ${entName} ITB STIKOM Bali`;
+  } else if (targetDomain === 'double_degree') {
+    effectiveQuery = entName.startsWith('Double Degree') ? `Program ${entName} ITB STIKOM Bali` : `Program Double Degree ${entName} ITB STIKOM Bali`;
+  } else if (targetDomain === 'accreditation') {
+    effectiveQuery = `Akreditasi program studi ${entName} ITB STIKOM Bali`;
+  } else if (targetDomain === 'campus_location') {
+    effectiveQuery = `Alamat lengkap dan lokasi kampus ${entName} ITB STIKOM Bali`;
+  }
 
   const resolvedEntityObj = explicitNewEntity || (state.activeEntity ? state.activeEntity : (resolvedEntity ? { type: resolvedEntityType, canonical: resolvedEntity } : null));
 
@@ -2629,5 +2723,7 @@ module.exports = {
   DOMAIN_FIELD_COMPATIBILITY,
   isFieldCompatibleWithDomain,
   isFieldCompatibleWithEntity,
-  filterCompatibleFields
+  filterCompatibleFields,
+  hasExplicitProgramSemantics,
+  hasPriorProgramContext
 };

@@ -227,7 +227,7 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
   const isCurrentDomainExplicit = Boolean(currentDomain && currentDomain !== 'general' && currentDomain !== 'unknown');
   const isCurrentIntentExplicit = Boolean(currentIntent && currentIntent !== 'ask_general' && currentIntent !== 'unknown');
 
-  const candidateEntity = extractCandidateEntity(understanding, rawText);
+  const candidateEntity = extractCandidateEntity(understanding, rawText, sessionState);
 
   const sessionEntity = sessionState && (sessionState.activeEntity || (sessionState.lastProgramHint ? { canonical: sessionState.lastProgramHint, type: 'program' } : null));
   const sessionDomain = sessionState && (sessionState.activeDomain || sessionState.domain || (sessionState.lastSemanticContract && sessionState.lastSemanticContract.domain) || null);

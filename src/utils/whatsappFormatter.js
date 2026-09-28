@@ -932,9 +932,27 @@ function suggestionsForIntent(intent, program) {
   }
 }
 
+function sanitizeOutboundWhatsappText(text) {
+  if (!text) return '';
+  let str = String(text);
+
+  // 1. Strip debug telemetry markers and metadata JSON objects
+  str = str.replace(/\[?DEBUG_TELEMETRY_[A-Z0-9_]+\]?:?\s*/gi, '');
+  str = str.replace(/\{?\s*["']?(?:chatId|mappedIncomingIntent|incomingConfidence|effectiveSessionChatId)["']?\s*:[^,\n}]+,?\s*\}?/gi, '');
+
+  // 2. Strip string concatenation artifacts (e.g. '\n' + '... or ' + '...)
+  str = str.replace(/(?:['"`]\s*\+\s*['"`]|['"`]\s*\+\s*\\n\s*\+\s*['"`]|\\n\s*\+\s*['"`])/g, '\n');
+  str = str.replace(/['"`]\s*\+\s*['"`]/g, '');
+
+  // 3. Strip stray trailing/leading braces from leaked objects
+  str = str.replace(/^\s*\{+\s*/, '').replace(/\s*\}+\s*$/, '');
+
+  return str.trim();
+}
+
 function normalizeWhatsappReply(text) {
   if (!text) return '';
-  let out = normalizeWhitespace(String(text));
+  let out = sanitizeOutboundWhatsappText(normalizeWhitespace(String(text)));
   out = out.replace(/[ΓÇó•·◦⁃‣]/g, '-');
 
   const normalizedLines = [];
@@ -1189,7 +1207,9 @@ module.exports = {
   formatProgramOverviewResponse,
   mapProgramAlias,
   mapProviderIntentToFormatter,
-  extractProgramFromText
+  extractProgramFromText,
+  sanitizeOutboundWhatsappText,
+  normalizeWhatsappReply
 };
 
 // Expose helpers for unit testing

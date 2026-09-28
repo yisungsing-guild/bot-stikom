@@ -98,7 +98,8 @@ const SLANG_REPLACEMENTS = {
   mwnny: 'mau tanya',
   biya: 'biaya',
   pndaftaran: 'pendaftaran',
-  sistm: 'sistem'
+  sistm: 'sistem',
+  kamups: 'kampus'
 };
 
 const FILLER_TOKENS = new Set(['min', 'kak', 'bro', 'dong', 'nih', 'dah']);

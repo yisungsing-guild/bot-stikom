@@ -171,6 +171,12 @@ function isNegativeControl(clause1, clause2, fullText) {
     }
   }
 
+  // 5. Coordinated temporal/schedule interrogative attributes of the same event:
+  // e.g. "diadakan jam berapa dan tanggal berapa?" or "kapan dan dimana?"
+  const coordinatedScheduleQuery = /\b(?:jam|pukul|waktu|hari|tanggal|kapan|dimana)\s*(?:berapa)?\??\s*$/i.test(clause1.trim())
+    && /^\s*(?:jam|pukul|waktu|hari|tanggal|kapan|dimana)\s*(?:berapa)?\??\s*$/i.test(clause2.trim());
+  if (coordinatedScheduleQuery) return true;
+
   return false;
 }
 
