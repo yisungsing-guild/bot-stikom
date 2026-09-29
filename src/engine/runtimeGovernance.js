@@ -56,13 +56,59 @@ function safeWarn(meta, message) {
   } catch (_) {}
 }
 
+const AUTHORITY_TIERS = {
+  tier_1_official_decree: { tier: 1, weight: 100, label: 'SK Rektor / Regulasi Formal' },
+  tier_2_official_announcement: { tier: 2, weight: 80, label: 'Pengumuman Resmi BAAK / PMB / Kalender' },
+  tier_3_curriculum_guideline: { tier: 3, weight: 60, label: 'Pedoman Akademik / Kurikulum / Brosur' },
+  tier_4_supporting_doc: { tier: 4, weight: 40, label: 'Profil Unit / UKM / Dokumen Pendukung' },
+  tier_unknown: { tier: 99, weight: 0, label: 'Dokumen Tanpa Otoritas Terverifikasi' }
+};
+
 function normalizeStatus(value) {
-  const status = String(value || '').trim().toLowerCase();
-  if (['approved', 'active', 'published', 'valid'].includes(status)) return 'approved';
-  if (['draft', 'pending', 'review'].includes(status)) return 'draft';
-  if (['expired', 'inactive'].includes(status)) return 'expired';
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return 'validity_unknown';
+  }
+  const status = String(value).trim().toLowerCase();
+  if (['approved', 'active', 'published', 'valid'].includes(status)) return 'active';
+  if (['superseded', 'replaced'].includes(status)) return 'superseded';
+  if (['expired', 'inactive', 'obsolete'].includes(status)) return 'expired';
+  if (['archived', 'archive', 'historical'].includes(status)) return 'archived';
+  if (['draft', 'pending', 'review', 'template'].includes(status)) return 'draft';
   if (['rejected', 'blocked'].includes(status)) return 'rejected';
-  return 'approved';
+  if (['validity_unknown', 'unknown', 'unverified'].includes(status)) return 'validity_unknown';
+  return 'validity_unknown';
+}
+
+function normalizeAuthority(value) {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return 'tier_unknown';
+  }
+  const val = String(value).trim().toLowerCase();
+  if (val === '1' || val === 'tier_1' || /^(tier_?1|decree|sk|rektor|regulasi|formal_policy|academic_policy)/i.test(val)) {
+    return 'tier_1_official_decree';
+  }
+  if (val === '2' || val === 'tier_2' || /^(tier_?2|announcement|pengumuman|edaran|calendar|kalender|academic_announcement|academic_calendar)/i.test(val)) {
+    return 'tier_2_official_announcement';
+  }
+  if (val === '3' || val === 'tier_3' || /^(tier_?3|guideline|pedoman|kurikulum|curriculum|handbook|brochure|academic_handbook)/i.test(val)) {
+    return 'tier_3_curriculum_guideline';
+  }
+  if (val === '4' || val === 'tier_4' || /^(tier_?4|supporting|profile|profil|ukm|ormawa|general_profile|faq|template)/i.test(val)) {
+    return 'tier_4_supporting_doc';
+  }
+  return 'tier_unknown';
+}
+
+function getAuthorityTier(value) {
+  const code = normalizeAuthority(value);
+  const meta = AUTHORITY_TIERS[code] || AUTHORITY_TIERS.tier_unknown;
+  return { code, ...meta };
+}
+
+function compareAuthority(authA, authB) {
+  const tierA = getAuthorityTier(authA);
+  const tierB = getAuthorityTier(authB);
+  return tierA.weight - tierB.weight;
 }
 
 function buildDocumentGovernanceMetadata(input = {}) {
@@ -71,14 +117,23 @@ function buildDocumentGovernanceMetadata(input = {}) {
   const nowIso = new Date().toISOString();
   const explicitOwner = String(input.owner || input.governanceOwner || '').trim();
   const source = String(input.source || '').trim() || 'unknown';
+  const status = normalizeStatus(input.status || input.governanceStatus || 'active');
+  const authority = normalizeAuthority(input.authority || input.sourceAuthority || input.authorityTier);
+  const tierMeta = getAuthorityTier(authority);
 
   return {
     owner: explicitOwner || divisionKey || 'general',
-    status: normalizeStatus(input.status || input.governanceStatus || 'approved'),
+    status,
     version: String(input.version || input.governanceVersion || '').trim() || `${source}-${sha256(filename || nowIso).slice(0, 10)}`,
     validFrom: input.validFrom || nowIso,
-    validTo: input.validTo || null,
-    sourceAuthority: String(input.sourceAuthority || input.authority || '').trim() || (source === 'upload' ? 'admin_upload' : source),
+    validTo: input.validTo || input.validUntil || null,
+    validUntil: input.validUntil || input.validTo || null,
+    sourceAuthority: authority,
+    authority,
+    authorityTier: tierMeta.tier,
+    authorityWeight: tierMeta.weight,
+    supersedes: input.supersedes || null,
+    supersededBy: input.supersededBy || null,
     notes: String(input.notes || '').trim() || null
   };
 }
@@ -95,32 +150,213 @@ function getTrainingGovernance(row = {}) {
     ? row.governanceMetadata
     : {};
   const createdAt = row.createdAt || new Date();
+  const rawStatus = row.governanceStatus || row.status || metadata.status || null;
+  const status = normalizeStatus(rawStatus);
+
+  const rawTier = Number(row.authorityTier || metadata.authorityTier) || null;
+  const rawAuthority = row.authority || row.sourceAuthority || metadata.authority || metadata.sourceAuthority || row.source || (rawTier ? `tier_${rawTier}` : null);
+  const authority = normalizeAuthority(rawAuthority);
+  const tierMeta = getAuthorityTier(authority);
+  const resolvedTier = (rawTier && rawTier >= 1 && rawTier <= 4) ? rawTier : (authority !== 'tier_unknown' ? tierMeta.tier : null);
+
   return {
-    owner: row.governanceOwner || metadata.owner || row.divisionKey || 'general',
-    status: normalizeStatus(row.governanceStatus || metadata.status || 'approved'),
-    version: row.governanceVersion || metadata.version || null,
-    validFrom: row.validFrom || metadata.validFrom || createdAt,
-    validTo: row.validTo || metadata.validTo || null,
-    sourceAuthority: metadata.sourceAuthority || row.source || 'unknown'
+    owner: row.governanceOwner || row.owner || metadata.owner || row.divisionKey || 'general',
+    status,
+    version: row.governanceVersion || row.version || metadata.version || null,
+    validFrom: row.validFrom || metadata.validFrom || (rawStatus ? createdAt : null),
+    validTo: row.validTo || row.validUntil || metadata.validTo || metadata.validUntil || null,
+    validUntil: row.validUntil || row.validTo || metadata.validUntil || metadata.validTo || null,
+    sourceAuthority: authority,
+    authority,
+    authorityTier: resolvedTier || 99,
+    authorityWeight: tierMeta.weight,
+    supersedes: row.supersedes || metadata.supersedes || null,
+    supersededBy: row.supersededBy || metadata.supersededBy || null
   };
 }
 
-function isTrainingGovernanceAllowed(row = {}) {
+function isTrainingGovernanceAllowed(row = {}, options = {}) {
+  const allowHistorical = Boolean(options.allowHistorical);
+  const allowUnknown = Boolean(options.allowUnknown || envFlag('RAG_ALLOW_UNKNOWN_GOVERNANCE', false));
   const governance = getTrainingGovernance(row);
-  if (envFlag('RAG_ALLOW_DRAFT_DOCUMENTS', false) && governance.status === 'draft') return true;
-  if (!['approved'].includes(governance.status)) return false;
 
-  const now = Date.now();
+  // 1. Missing or unknown governance -> fail closed
+  if (governance.status === 'validity_unknown') {
+    return allowUnknown;
+  }
+
+  // 2. Incomplete metadata check: must have valid authority tier (1..4)
+  if (!governance.authorityTier || governance.authorityTier < 1 || governance.authorityTier > 4 || governance.authority === 'tier_unknown') {
+    return false;
+  }
+
+  // 3. Historical query handling
+  if (allowHistorical) {
+    if (['archived', 'superseded', 'expired'].includes(governance.status)) {
+      if (options.query) {
+        const q = String(options.query).toLowerCase();
+        const content = String(row.output || row.input || row.question || row.answer || '').toLowerCase();
+        const isHistoryQuery = /\b(?:sejarah|pendiri|didirikan|berdiri|awal\s+mula|tokoh|yayasan)\b/i.test(q);
+        const isOperational = /\b(?:pmb|jadwal|gelombang|loket|spp|registrasi|biaya\s+kuliah)\b/i.test(content) && !/\b(?:sejarah|pendiri|didirikan|awal\s+mula)\b/i.test(content);
+        if (isHistoryQuery && isOperational) {
+          return false;
+        }
+      }
+      return true;
+    }
+    if (['approved', 'active'].includes(governance.status)) {
+      return true;
+    }
+    return false;
+  }
+
+  // 4. Current operational checks
+  if (envFlag('RAG_ALLOW_DRAFT_DOCUMENTS', false) && governance.status === 'draft') return true;
+  if (envFlag('RAG_ALLOW_SUPERSEDED_DOCUMENTS', false) && governance.status === 'superseded') return true;
+  if (envFlag('RAG_ALLOW_ARCHIVED_DOCUMENTS', false) && governance.status === 'archived') return true;
+
+  if (['superseded', 'archived', 'rejected', 'expired', 'draft', 'validity_unknown'].includes(governance.status)) return false;
+  if (!['approved', 'active'].includes(governance.status)) return false;
+
+  if (governance.supersededBy && !envFlag('RAG_ALLOW_SUPERSEDED_DOCUMENTS', false)) return false;
+
+  const now = options.referenceTime ? parseDateMs(options.referenceTime) : Date.now();
   const from = parseDateMs(governance.validFrom);
-  const to = parseDateMs(governance.validTo);
+  const to = parseDateMs(governance.validTo || governance.validUntil);
   if (from && from > now && !envFlag('RAG_ALLOW_FUTURE_DOCUMENTS', false)) return false;
   if (to && to < now && !envFlag('RAG_ALLOW_EXPIRED_DOCUMENTS', false)) return false;
   return true;
 }
 
-function filterGovernedTrainingRows(rows = []) {
+function isChunkGovernanceAllowed(chunk = {}, options = {}) {
+  if (!chunk || typeof chunk !== 'object') return false;
+  const allowHistorical = Boolean(options.allowHistorical);
+  const allowUnknown = Boolean(options.allowUnknown || envFlag('RAG_ALLOW_UNKNOWN_GOVERNANCE', false));
+
+  // Determine status
+  const rawStatus = chunk.governanceStatus || chunk.status || (chunk.metadata && chunk.metadata.status) || (chunk.governanceMetadata && chunk.governanceMetadata.status) || null;
+  const status = normalizeStatus(rawStatus);
+
+  if (status === 'validity_unknown') {
+    return allowUnknown;
+  }
+
+  // Determine authority and tier
+  const rawTier = Number(chunk.authorityTier || (chunk.governanceMetadata && chunk.governanceMetadata.authorityTier)) || null;
+  const rawAuthority = chunk.authority || (chunk.metadata && chunk.metadata.authority) || (chunk.governanceMetadata && chunk.governanceMetadata.authority) || (rawTier ? `tier_${rawTier}` : null);
+  const authority = normalizeAuthority(rawAuthority);
+  const resolvedTier = (rawTier && rawTier >= 1 && rawTier <= 4) ? rawTier : (authority !== 'tier_unknown' ? getAuthorityTier(authority).tier : null);
+
+  // Incomplete / partial metadata: authority must be Tier 1..4
+  if (!resolvedTier || resolvedTier < 1 || resolvedTier > 4 || authority === 'tier_unknown') {
+    return false;
+  }
+
+  // Historical query handling
+  if (allowHistorical) {
+    if (['archived', 'superseded', 'expired'].includes(status)) {
+      if (options.query) {
+        const q = String(options.query).toLowerCase();
+        const chunkText = String(chunk.chunk || chunk.content || chunk.text || '').toLowerCase();
+        const filename = String(chunk.filename || '').toLowerCase();
+
+        const isHistoryQuery = /\b(?:sejarah|pendiri|didirikan|berdiri|awal\s+mula|tokoh|yayasan)\b/i.test(q);
+        const isOperationalChunk = /\b(?:pmb|jadwal|gelombang|loket|spp|registrasi|biaya\s+kuliah)\b/i.test(chunkText) && !/\b(?:sejarah|pendiri|didirikan|awal\s+mula)\b/i.test(chunkText);
+
+        if (isHistoryQuery && isOperationalChunk) {
+          return false;
+        }
+
+        const yearMatches = q.match(/\b(19\d\d|20[0-2]\d)\b/g);
+        if (yearMatches && yearMatches.length > 0) {
+          const chunkMentionsYear = yearMatches.some(y => chunkText.includes(y) || filename.includes(y));
+          if (!chunkMentionsYear && !isHistoryQuery) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    if (['approved', 'active'].includes(status)) {
+      return true;
+    }
+    return false;
+  }
+
+  // Current operational checks
+  if (envFlag('RAG_ALLOW_DRAFT_DOCUMENTS', false) && status === 'draft') return true;
+  if (envFlag('RAG_ALLOW_SUPERSEDED_DOCUMENTS', false) && status === 'superseded') return true;
+  if (envFlag('RAG_ALLOW_ARCHIVED_DOCUMENTS', false) && status === 'archived') return true;
+
+  if (['superseded', 'archived', 'rejected', 'expired', 'draft', 'validity_unknown'].includes(status)) return false;
+  if (!['approved', 'active'].includes(status)) return false;
+
+  const supersededBy = chunk.supersededBy || (chunk.metadata && chunk.metadata.supersededBy) || (chunk.governanceMetadata && chunk.governanceMetadata.supersededBy);
+  if (supersededBy && !envFlag('RAG_ALLOW_SUPERSEDED_DOCUMENTS', false)) return false;
+
+  const now = options.referenceTime ? parseDateMs(options.referenceTime) : Date.now();
+  const validFrom = parseDateMs(chunk.validFrom || (chunk.metadata && chunk.metadata.validFrom) || (chunk.governanceMetadata && chunk.governanceMetadata.validFrom));
+  const validTo = parseDateMs(chunk.validUntil || chunk.validTo || (chunk.metadata && (chunk.metadata.validUntil || chunk.metadata.validTo)) || (chunk.governanceMetadata && (chunk.governanceMetadata.validUntil || chunk.governanceMetadata.validTo)));
+
+  if (validFrom && validFrom > now && !envFlag('RAG_ALLOW_FUTURE_DOCUMENTS', false)) return false;
+  if (validTo && validTo < now && !envFlag('RAG_ALLOW_EXPIRED_DOCUMENTS', false)) return false;
+
+  return true;
+}
+
+function filterGovernedChunks(chunks = [], options = {}) {
+  const list = Array.isArray(chunks) ? chunks : [];
+  return list.filter(c => isChunkGovernanceAllowed(c, options));
+}
+
+function enrichChunkWithGovernance(chunk = {}, defaultGovernance = {}) {
+  if (!chunk || typeof chunk !== 'object') return chunk;
+  const gov = Object.assign({}, defaultGovernance, chunk.governanceMetadata || (chunk.metadata && chunk.metadata.governance) || {});
+
+  const rawStatus = chunk.governanceStatus || chunk.status || gov.status || null;
+  const status = normalizeStatus(rawStatus);
+
+  const rawAuthority = chunk.authority || gov.authority || gov.sourceAuthority || null;
+  const authority = normalizeAuthority(rawAuthority);
+  const tierMeta = getAuthorityTier(authority);
+
+  // If status is not explicitly known, or authority is unknown, FAIL-CLOSED to validity_unknown
+  const finalStatus = (status === 'validity_unknown' || authority === 'tier_unknown') && !['superseded', 'expired', 'archived', 'draft', 'rejected'].includes(status)
+    ? 'validity_unknown'
+    : status;
+
+  const validFrom = chunk.validFrom || gov.validFrom || null;
+  const validUntil = chunk.validUntil || chunk.validTo || gov.validUntil || gov.validTo || null;
+  const version = chunk.version || chunk.trainingVersion || gov.version || null;
+
+  return {
+    ...chunk,
+    governanceStatus: finalStatus,
+    status: finalStatus,
+    validFrom,
+    validUntil,
+    version,
+    authority,
+    authorityTier: tierMeta.tier,
+    supersedes: chunk.supersedes || gov.supersedes || null,
+    supersededBy: chunk.supersededBy || gov.supersededBy || null,
+    governanceMetadata: {
+      status: finalStatus,
+      authority,
+      authorityTier: tierMeta.tier,
+      authorityWeight: tierMeta.weight,
+      version,
+      validFrom,
+      validUntil,
+      supersedes: chunk.supersedes || gov.supersedes || null,
+      supersededBy: chunk.supersededBy || gov.supersededBy || null
+    }
+  };
+}
+
+function filterGovernedTrainingRows(rows = [], options = {}) {
   const list = Array.isArray(rows) ? rows : [];
-  return list.filter(isTrainingGovernanceAllowed);
+  return list.filter(r => isTrainingGovernanceAllowed(r, options));
 }
 
 async function safeEnsureRuntimeTable(prisma, tableName, sql) {
@@ -439,10 +675,18 @@ function appendRuntimeAuditJsonl(filename, payload) {
 }
 
 module.exports = {
+  AUTHORITY_TIERS,
+  normalizeStatus,
+  normalizeAuthority,
+  getAuthorityTier,
+  compareAuthority,
   buildDocumentGovernanceMetadata,
   getTrainingGovernance,
   isTrainingGovernanceAllowed,
   filterGovernedTrainingRows,
+  isChunkGovernanceAllowed,
+  filterGovernedChunks,
+  enrichChunkWithGovernance,
   rememberInboundEventPersistent,
   detectUserFeedback,
   recordUserFeedback,

@@ -15,6 +15,7 @@ const {
   buildSelectedEvidenceContext
 } = require('./evidenceSelector');
 const { enrichChunkWithCategory } = require('./docCategoryClassifier');
+const { enrichChunkWithGovernance, isChunkGovernanceAllowed } = require('./runtimeGovernance');
 const { auditLogger } = require('./ragAuditLogger');
 const { parseCompactRupiahNumber } = require('../utils/rupiahParser');
 const {
@@ -526,27 +527,42 @@ function loadIndex() {
     let index = JSON.parse(raw || '[]');
     index = normalizeCorpusIndex(index);
     
-    // Enrich existing chunks that don't have docCategory field
-    // This is needed to upgrade old indexes that were created before docCategory implementation
+    // Enrich existing chunks that don't have docCategory or governance fields
+    // This is needed to upgrade old indexes that were created before governance implementation
     if (Array.isArray(index)) {
-      const chunksNeedingEnrichment = index.filter(c => c && !c.docCategory);
-      if (chunksNeedingEnrichment.length > 0) {
+      let changed = false;
+      const chunksNeedingCategory = index.filter(c => c && !c.docCategory);
+      if (chunksNeedingCategory.length > 0) {
         logger.info({
           total: index.length,
-          needingEnrichment: chunksNeedingEnrichment.length,
-          enrichmentRate: (chunksNeedingEnrichment.length / index.length * 100).toFixed(2) + '%'
+          needingEnrichment: chunksNeedingCategory.length,
+          enrichmentRate: (chunksNeedingCategory.length / index.length * 100).toFixed(2) + '%'
         }, '[RAG] Enriching existing chunks with docCategory');
-        
-        // Enrich chunks
         index = index.map(chunk => {
-          if (!chunk || chunk.docCategory) return chunk; // Already has docCategory
+          if (!chunk || chunk.docCategory) return chunk;
           return enrichChunkWithCategory(chunk);
         });
-        
-        // Save enriched index back
+        changed = true;
+      }
+
+      const chunksNeedingGovernance = index.filter(c => c && (!c.governanceStatus || !c.authorityTier));
+      if (chunksNeedingGovernance.length > 0) {
+        logger.warn({
+          total: index.length,
+          needingGovernance: chunksNeedingGovernance.length,
+          rate: (chunksNeedingGovernance.length / index.length * 100).toFixed(2) + '%'
+        }, '[RAG] WARNING: Found chunks missing governance metadata. Marking as validity_unknown (fail-closed)');
+        index = index.map(chunk => {
+          if (!chunk || (chunk.governanceStatus && chunk.authorityTier)) return chunk;
+          return enrichChunkWithGovernance(chunk, { status: 'validity_unknown', authority: 'tier_unknown' });
+        });
+        changed = true;
+      }
+
+      if (changed) {
         try {
           saveIndex(index);
-          logger.info('[RAG] Index enriched and saved with docCategory fields');
+          logger.info('[RAG] Index enriched and saved with docCategory and governance fields');
         } catch (saveErr) {
           logger.warn({ err: saveErr.message }, '[RAG] Failed to save enriched index');
         }
@@ -3746,8 +3762,9 @@ let cachedScheduleWindows = null;
 let cachedScheduleWindowsHash = null;
 
 function extractScheduleRegistrationWindowsFromIndex() {
-  const fullIndex = loadIndex();
-  if (!Array.isArray(fullIndex) || fullIndex.length === 0) return [];
+  const rawIndex = loadIndex();
+  if (!Array.isArray(rawIndex) || rawIndex.length === 0) return [];
+  const fullIndex = rawIndex.filter(i => i && isChunkGovernanceAllowed(i));
 
   try {
     // Cache by content hash to avoid rescans.
@@ -9597,10 +9614,13 @@ function filterRelevantChunks(question, scored, queryEntities = null) {
     }
   }
 
+  const isHistorical = Boolean(queryEntities && queryEntities.isHistorical) || /\b(?:sejarah|pendiri|didirikan|berdiri|awal\s+mula|tokoh|yayasan)\b/i.test(question || '');
+
   const filtered = scored.filter((s) => {
     const chunk = String((s.item && s.item.chunk) || '').trim();
     if (!chunk) return false;
     if (s.item && (s.item.excludeFromSearch === true || Number(s.item.retrievalWeight) === 0)) return false;
+    if (s.item && !isChunkGovernanceAllowed(s.item, { allowHistorical: isHistorical, query: question })) return false;
     const lower = chunk.toLowerCase();
     if (metadataPattern.test(lower) || isHeaderFooterChunk(chunk)) return false;
     const isAdmin = isAdminInternalChunk(chunk, s.item.filename);
@@ -12499,7 +12519,8 @@ async function query(question, topK = 8, options = null) {
     // Deterministic rule: when user asks tentang potongan/diskon untuk Dual Degree,
     // coba ekstrak potongan langsung dari dokumen UTB/DNUI/HELP yang ada di index.
     try {
-      const dualDegreeFee = tryStructuredDualDegreeFeeAnswer ? tryStructuredDualDegreeFeeAnswer(question, indexForQuery) : null;
+      const governedIndex = Array.isArray(indexForQuery) ? indexForQuery.filter(it => it && isChunkGovernanceAllowed(it)) : [];
+      const dualDegreeFee = tryStructuredDualDegreeFeeAnswer ? tryStructuredDualDegreeFeeAnswer(question, governedIndex) : null;
       if (dualDegreeFee && dualDegreeFee.answer) {
         return wrapRagResult(cleanAnswerLanguage(dualDegreeFee.answer), dualDegreeFee.source, 'HIGH', question);
       }
@@ -13037,10 +13058,12 @@ async function query(question, topK = 8, options = null) {
       // Keep the retriever order while focusing on relevant document types.
       const topIds = new Set(relevantScored.slice(0, Math.max(topK, 8)).map(s => s.item.id));
       const reRanked = scored.filter(s => topIds.has(s.item.id));
+      scored.length = 0;
       if (reRanked.length > 0) {
-        scored.length = 0;
         scored.push(...reRanked);
       }
+    } else {
+      scored.length = 0;
     }
     debugCollector.afterRelevantCount = (relevantScored && relevantScored.length) ? relevantScored.length : scored.length;
 

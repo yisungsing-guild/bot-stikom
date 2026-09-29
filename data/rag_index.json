@@ -14,6 +14,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/double_degree.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PROFILE-2026",
+    "authority": "tier_4_supporting_doc",
+    "authorityTier": 4,
+    "authorityWeight": 40,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_4_supporting_doc",
+      "authorityTier": 4,
+      "authorityWeight": 40,
+      "version": "PROFILE-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "KEMAHASISWAAN",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Profil Unit / Organisasi Mahasiswa / Informasi Pendukung",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -31,6 +55,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/international_program.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "INTL-PROG-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "INTL-PROG-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "KSL",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Program Internasional dan Double Degree",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -48,6 +96,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/international_program.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "INTL-PROG-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "INTL-PROG-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "KSL",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Program Internasional dan Double Degree",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -67,6 +139,30 @@
         "program_detail"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -86,6 +182,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -105,6 +225,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -124,6 +268,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -143,6 +311,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -162,6 +354,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -181,6 +397,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -200,6 +440,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_bisnis_digital.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -219,6 +483,30 @@
         "program_detail"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -238,6 +526,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -257,6 +569,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -276,6 +612,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -295,6 +655,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -314,6 +698,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -333,6 +741,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -352,6 +784,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -371,6 +827,30 @@
         "program_detail"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -390,6 +870,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -409,6 +913,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -428,6 +956,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -447,6 +999,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -466,6 +1042,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -485,6 +1085,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -504,6 +1128,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_sistem_komputer.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -523,6 +1171,30 @@
         "program_detail"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -542,6 +1214,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -561,6 +1257,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -580,6 +1300,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -599,6 +1343,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -618,6 +1386,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -637,6 +1429,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -656,6 +1472,30 @@
         "career"
       ],
       "source": "docs/retrieval/knowledge_domains/program_studi_teknologi_informasi.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -673,6 +1513,30 @@
         "curriculum"
       ],
       "source": "docs/retrieval/knowledge_domains/scholarship.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -690,6 +1554,30 @@
         "program_detail"
       ],
       "source": "docs/retrieval/knowledge_domains/tuition_fee.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -707,6 +1595,30 @@
         "program_detail"
       ],
       "source": "docs/retrieval/knowledge_domains/tuition_fee.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "PRODI-CURRICULUM-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "PRODI-CURRICULUM-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "PMB",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Profil, Kurikulum, dan Karier Program Studi",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   },
   {
@@ -724,6 +1636,30 @@
         "program_detail"
       ],
       "source": "docs/retrieval/knowledge_domains/exchange_program.md"
+    },
+    "governanceStatus": "active",
+    "status": "active",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": null,
+    "version": "INTL-PROG-2026",
+    "authority": "tier_3_curriculum_guideline",
+    "authorityTier": 3,
+    "authorityWeight": 60,
+    "supersedes": null,
+    "supersededBy": null,
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_3_curriculum_guideline",
+      "authorityTier": 3,
+      "authorityWeight": 60,
+      "version": "INTL-PROG-2026",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "KSL",
+      "supersedes": null,
+      "supersededBy": null,
+      "notes": "Panduan Program Internasional dan Double Degree",
+      "migratedAt": "2026-09-29T03:21:53.691Z"
     }
   }
 ]
