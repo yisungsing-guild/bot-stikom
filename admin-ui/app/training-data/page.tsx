@@ -133,6 +133,12 @@ function formatApiErrorText(input: unknown): string {
   return raw
 }
 
+function cleanDefaultTitle(filename: string): string {
+  if (!filename) return ''
+  const withoutExt = filename.replace(/\.[^/.]+$/, '')
+  return withoutExt.replace(/[_-]+/g, ' ').trim()
+}
+
 export default function TrainingDataPage() {
   const [items, setItems] = useState<TrainingItem[] | null>(null)
   const [itemsError, setItemsError] = useState<string | null>(null)
@@ -142,6 +148,15 @@ export default function TrainingDataPage() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [documentTitle, setDocumentTitle] = useState('')
+  const [bulkFileTitles, setBulkFileTitles] = useState<Record<number, string>>({})
+  const [validFrom, setValidFrom] = useState('')
+  const [validUntil, setValidUntil] = useState('')
+  const [noExpiry, setNoExpiry] = useState(false)
+  const [authority, setAuthority] = useState('tier_1_official_decree')
+  const [status, setStatus] = useState('active')
+  const [version, setVersion] = useState('')
   const [lastUploadResults, setLastUploadResults] = useState<Array<{ ok: boolean; filename: string; trainingDataId?: string }> | null>(null)
   const [trainingVisualContext, setTrainingVisualContext] = useState('')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
@@ -590,9 +605,80 @@ export default function TrainingDataPage() {
     }
   }
 
-  async function uploadFiles(files: FileList) {
+  function handleFilesSelected(files: FileList | File[]) {
     const list = Array.from(files || [])
     if (!list.length) return
+
+    setPendingFiles(list)
+    setSelectedFiles(list.map((f) => f.name))
+    setUploadError(null)
+    setLastUploadResults(null)
+
+    if (list.length === 1) {
+      setDocumentTitle(cleanDefaultTitle(list[0].name))
+    } else {
+      const titles: Record<number, string> = {}
+      list.forEach((f, idx) => {
+        titles[idx] = cleanDefaultTitle(f.name)
+      })
+      setBulkFileTitles(titles)
+    }
+  }
+
+  function resetUploadForm() {
+    setPendingFiles([])
+    setSelectedFiles([])
+    setDocumentTitle('')
+    setBulkFileTitles({})
+    setValidFrom('')
+    setValidUntil('')
+    setNoExpiry(false)
+    setAuthority('tier_1_official_decree')
+    setStatus('active')
+    setVersion('')
+    setUploadError(null)
+    try {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    } catch {
+      // ignore
+    }
+  }
+
+  async function submitUpload() {
+    if (!pendingFiles.length) return
+
+    if (!validFrom) {
+      setUploadError('Tanggal Mulai Berlaku wajib diisi.')
+      return
+    }
+
+    if (!noExpiry && !validUntil) {
+      setUploadError('Tanggal Expired wajib diisi, atau centang opsi "Berlaku sampai dicabut".')
+      return
+    }
+
+    if (validFrom && validUntil && !noExpiry) {
+      if (new Date(validUntil).getTime() < new Date(validFrom).getTime()) {
+        setUploadError('Tanggal Expired tidak boleh lebih awal dari Tanggal Mulai Berlaku.')
+        return
+      }
+    }
+
+    if (pendingFiles.length === 1) {
+      const t = documentTitle.trim()
+      if (!t) {
+        setUploadError('Nama / Judul Dokumen wajib diisi melalui form.')
+        return
+      }
+    } else {
+      for (let i = 0; i < pendingFiles.length; i++) {
+        const t = (bulkFileTitles[i] || '').trim()
+        if (!t) {
+          setUploadError(`Nama / Judul Dokumen untuk file "${pendingFiles[i].name}" wajib diisi.`)
+          return
+        }
+      }
+    }
 
     setIsUploading(true)
     setUploadError(null)
@@ -601,29 +687,63 @@ export default function TrainingDataPage() {
     try {
       let uploaded: { filename: string; trainingDataId?: string } | null = null
 
-      if (list.length === 1) {
+      if (pendingFiles.length === 1) {
+        const file = pendingFiles[0]
         const fd = new FormData()
-        fd.append('file', list[0])
+        fd.append('file', file)
+        fd.append('documentTitle', documentTitle.trim())
+        fd.append('title', documentTitle.trim())
+        fd.append('validFrom', validFrom.trim())
+        if (noExpiry) {
+          fd.append('validUntil', 'null')
+          fd.append('noExpiry', 'true')
+        } else {
+          fd.append('validUntil', validUntil.trim())
+        }
+        if (authority) fd.append('authority', authority)
+        if (status) fd.append('status', status)
+        if (version.trim()) fd.append('version', version.trim())
         const visualContext = trainingVisualContext.trim()
         if (visualContext) fd.append('visualContext', visualContext)
-        const resp = await adminFetchJson<UploadSingleResponse>('/admin/training/upload', { method: 'POST', body: fd })
+
+        const fileExt = (file.name || '').split('.').pop()?.toLowerCase() || ''
+        const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v']
+        const endpoint = videoExtensions.includes(fileExt) ? '/training/video-upload' : '/admin/training/upload'
+
+        const resp = await adminFetchJson<UploadSingleResponse>(endpoint, { method: 'POST', body: fd })
         setLastUploadResults([
           {
             ok: true,
-            filename: resp && resp.filename ? resp.filename : list[0].name,
+            filename: resp && resp.filename ? resp.filename : file.name,
             trainingDataId: resp && resp.trainingDataId ? resp.trainingDataId : undefined,
           },
         ])
         if (resp && resp.filename) {
           uploaded = { filename: resp.filename, trainingDataId: resp.trainingDataId }
         } else {
-          uploaded = { filename: list[0].name }
+          uploaded = { filename: file.name }
         }
       } else {
         const fd = new FormData()
         const visualContext = trainingVisualContext.trim()
         if (visualContext) fd.append('visualContext', visualContext)
-        for (const f of list) fd.append('files', f)
+        for (const f of pendingFiles) fd.append('files', f)
+        const titles: string[] = []
+        for (let i = 0; i < pendingFiles.length; i++) {
+          titles.push((bulkFileTitles[i] || '').trim())
+        }
+        fd.append('fileTitles', JSON.stringify(titles))
+        fd.append('validFrom', validFrom.trim())
+        if (noExpiry) {
+          fd.append('validUntil', 'null')
+          fd.append('noExpiry', 'true')
+        } else {
+          fd.append('validUntil', validUntil.trim())
+        }
+        if (authority) fd.append('authority', authority)
+        if (status) fd.append('status', status)
+        if (version.trim()) fd.append('version', version.trim())
+
         const resp = await adminFetchJson<UploadBulkResponse>('/admin/training/upload-bulk', { method: 'POST', body: fd })
 
         const results = resp && Array.isArray(resp.results) ? resp.results : []
@@ -638,7 +758,7 @@ export default function TrainingDataPage() {
               }))
           )
         } else {
-          setLastUploadResults(list.map((f) => ({ ok: true, filename: f.name })))
+          setLastUploadResults(pendingFiles.map((f) => ({ ok: true, filename: f.name })))
         }
 
         const firstOk = resp && Array.isArray(resp.results)
@@ -647,7 +767,7 @@ export default function TrainingDataPage() {
         if (firstOk && firstOk.filename) {
           uploaded = { filename: firstOk.filename, trainingDataId: firstOk.trainingDataId }
         } else {
-          uploaded = { filename: `${list.length} files` }
+          uploaded = { filename: `${pendingFiles.length} files` }
         }
       }
 
@@ -661,17 +781,13 @@ export default function TrainingDataPage() {
         setRagQuestion(autoQuestion)
         void runRagTest(autoQuestion)
       }
+
+      resetUploadForm()
     } catch (e: any) {
       const msg = e && e.bodyText ? e.bodyText : (e && e.message ? e.message : 'Upload failed')
       setUploadError(formatApiErrorText(msg))
     } finally {
       setIsUploading(false)
-      try {
-        if (fileInputRef.current) fileInputRef.current.value = ''
-      } catch {
-        // ignore
-      }
-      setSelectedFiles([])
     }
   }
 
@@ -950,7 +1066,7 @@ export default function TrainingDataPage() {
         </Card>
       ) : null}
 
-      <Card className="p-12 border-2 border-dashed">
+      <Card className="p-8 border-2 border-dashed">
         <div
           className="text-center"
           onDragEnter={(e) => {
@@ -974,8 +1090,7 @@ export default function TrainingDataPage() {
             setIsDragOverUpload(false)
             const dt = e.dataTransfer
             if (dt && dt.files && dt.files.length) {
-              setSelectedFiles(Array.from(dt.files).map((f) => f.name))
-              void uploadFiles(dt.files)
+              handleFilesSelected(dt.files)
             }
           }}
         >
@@ -986,51 +1101,240 @@ export default function TrainingDataPage() {
           <p className="text-muted-foreground mb-6">
             Drag and drop CSV/XLS/XLSX/TXT/PDF/DOCX or image files here, or click to browse
           </p>
-          <div className="mx-auto mb-5 max-w-2xl text-left">
-            <Label htmlFor="training-visual-context">Konteks visual / caption desain (opsional)</Label>
-            <Textarea
-              id="training-visual-context"
-              value={trainingVisualContext}
-              onChange={(e) => setTrainingVisualContext(e.target.value)}
-              rows={3}
-              placeholder="Contoh: Kalender akademik 2026/2027 berisi jadwal PMB, gelombang pendaftaran, dan kontak admin."
-              className="mt-2"
-            />
-            <p className="mt-2 text-xs text-muted-foreground">
-              Berguna untuk kalender, brosur, poster, atau desain yang teksnya kecil/kurang jelas saat OCR.
-            </p>
-          </div>
-          <div className="flex gap-3 justify-center">
+          <div className="flex gap-3 justify-center mb-4">
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading || !canUpload}
             >
-              {isUploading ? 'Uploading...' : 'Browse Files'}
+              Browse Files
             </Button>
             <Button variant="outline" disabled={!canUpload}>Learn Format</Button>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Tip: kamu bisa pilih banyak file sekaligus (Ctrl/Shift) atau drag & drop beberapa file.
-            {isDragOverUpload ? ' (Lepas file untuk upload)' : ''}
+            {isDragOverUpload ? ' (Lepas file untuk memilih file)' : ''}
           </p>
-          {selectedFiles.length ? (
-            <p className="mt-3 text-xs text-muted-foreground">
-              Selected: {selectedFiles.join(', ')}
-            </p>
-          ) : null}
+
           <input
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".csv,.xls,.xlsx,.txt,.pdf,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tif,.tiff"
+            accept=".csv,.xls,.xlsx,.txt,.pdf,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tif,.tiff,.mp4,.mov,.avi,.mkv,.webm,.m4v"
             className="hidden"
             onChange={(e) => {
               if (e.target.files) {
-                setSelectedFiles(Array.from(e.target.files).map((f) => f.name))
-                void uploadFiles(e.target.files)
+                handleFilesSelected(e.target.files)
               }
             }}
           />
+
+          {/* METADATA FORM - SHOWN AFTER FILE SELECTED */}
+          {pendingFiles.length > 0 ? (
+            <div className="mt-6 border-t pt-6 text-left max-w-2xl mx-auto space-y-5">
+              {/* Single File Info Box */}
+              {pendingFiles.length === 1 ? (
+                <div className="rounded-lg border border-green-200 bg-green-50/80 p-4 dark:border-green-900/50 dark:bg-green-950/20">
+                  <div className="flex items-center gap-2 text-sm font-medium text-green-900 dark:text-green-300">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+                    <span>File terpilih:</span>
+                    <span className="font-mono font-semibold text-foreground break-all">{pendingFiles[0].name}</span>
+                    <span className="text-xs text-muted-foreground ml-auto shrink-0">
+                      ({(pendingFiles[0].size / 1024).toFixed(1)} KB)
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs text-green-700 dark:text-green-400">
+                    ℹ️ <em>Nama file fisik tidak perlu diubah. Kolom <strong>Nama / Judul Dokumen</strong> di bawah adalah identitas logis resmi yang digunakan sistem.</em>
+                  </p>
+                </div>
+              ) : (
+                /* Bulk Files Info Box */
+                <div className="rounded-lg border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
+                  <div className="flex items-center justify-between text-sm font-medium text-blue-900 dark:text-blue-300">
+                    <span>Batch Upload: {pendingFiles.length} file terpilih</span>
+                    <Badge variant="outline">{pendingFiles.length} files</Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-blue-700 dark:text-blue-400">
+                    ℹ️ <em>Tentukan <strong>Nama / Judul Dokumen</strong> untuk masing-masing file di bawah.</em>
+                  </p>
+                </div>
+              )}
+
+              {/* Single File Title Field */}
+              {pendingFiles.length === 1 ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="upload-doc-title" className="font-semibold">
+                    Nama / Judul Dokumen <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="upload-doc-title"
+                    value={documentTitle}
+                    onChange={(e) => setDocumentTitle(e.target.value)}
+                    placeholder="misal: SK Biaya Pendidikan Mahasiswa Baru 2026/2027"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Nama/Judul Dokumen ini menjadi identitas resmi yang dicari dan ditampilkan oleh bot.
+                  </p>
+                </div>
+              ) : (
+                /* Bulk File Titles List */
+                <div className="space-y-3">
+                  <Label className="font-semibold">Nama / Judul Dokumen per File <span className="text-destructive">*</span></Label>
+                  <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1">
+                    {pendingFiles.map((file, idx) => (
+                      <div key={`${file.name}-${idx}`} className="rounded-md border p-3 bg-muted/40 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-mono text-muted-foreground truncate max-w-sm" title={file.name}>
+                            📄 {file.name}
+                          </span>
+                          <span className="text-muted-foreground">({(file.size / 1024).toFixed(1)} KB)</span>
+                        </div>
+                        <Input
+                          value={bulkFileTitles[idx] || ''}
+                          onChange={(e) => setBulkFileTitles((prev) => ({ ...prev, [idx]: e.target.value }))}
+                          placeholder={`Nama / Judul Dokumen #${idx + 1} *`}
+                          className="h-8 text-sm"
+                          required
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Governance Fields Grid: Valid From & Valid Until */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="upload-valid-from" className="font-semibold">
+                    Tanggal Mulai Berlaku <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="upload-valid-from"
+                    type="date"
+                    value={validFrom}
+                    onChange={(e) => setValidFrom(e.target.value)}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Dokumen belum berlaku tidak dipakai bot.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="upload-valid-until" className="font-semibold">
+                    Tanggal Expired
+                  </Label>
+                  <Input
+                    id="upload-valid-until"
+                    type="date"
+                    value={validUntil}
+                    onChange={(e) => setValidUntil(e.target.value)}
+                    disabled={noExpiry}
+                  />
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      id="upload-no-expiry"
+                      type="checkbox"
+                      checked={noExpiry}
+                      onChange={(e) => {
+                        setNoExpiry(e.target.checked)
+                        if (e.target.checked) setValidUntil('')
+                      }}
+                      className="rounded border-input h-4 w-4"
+                    />
+                    <Label htmlFor="upload-no-expiry" className="text-xs font-normal cursor-pointer">
+                      Berlaku sampai dicabut
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Governance Fields Grid: Authority, Status, Version */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="upload-authority" className="font-semibold">
+                    Tingkat Otoritas
+                  </Label>
+                  <select
+                    id="upload-authority"
+                    value={authority}
+                    onChange={(e) => setAuthority(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="tier_1_official_decree">Tier 1: SK Rektor / Regulasi Formal</option>
+                    <option value="tier_2_official_announcement">Tier 2: Pengumuman Resmi / Kalender</option>
+                    <option value="tier_3_operational_faq">Tier 3: SOP / Panduan Teknis / Brosur</option>
+                    <option value="tier_4_marketing_general">Tier 4: Informasi Umum / Promosi</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="upload-status" className="font-semibold">
+                    Status Dokumen
+                  </Label>
+                  <select
+                    id="upload-status"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="active">Active (Berlaku)</option>
+                    <option value="draft">Draft (Belum Berlaku)</option>
+                    <option value="superseded">Superseded (Sudah Digantikan)</option>
+                    <option value="archived">Archived (Diarsipkan)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="upload-version" className="font-semibold">
+                    Versi Dokumen
+                  </Label>
+                  <Input
+                    id="upload-version"
+                    value={version}
+                    onChange={(e) => setVersion(e.target.value)}
+                    placeholder="misal: v2026.1"
+                  />
+                </div>
+              </div>
+
+              {/* Visual context textarea */}
+              <div className="space-y-1.5">
+                <Label htmlFor="training-visual-context" className="font-semibold">
+                  Konteks visual / caption desain (opsional)
+                </Label>
+                <Textarea
+                  id="training-visual-context"
+                  value={trainingVisualContext}
+                  onChange={(e) => setTrainingVisualContext(e.target.value)}
+                  rows={2}
+                  placeholder="Contoh: Kalender akademik 2026/2027 berisi jadwal PMB, gelombang pendaftaran, dan kontak admin."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Berguna untuk kalender, brosur, poster, atau desain yang teksnya kecil/kurang jelas saat OCR.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  onClick={() => void submitUpload()}
+                  disabled={isUploading}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  {isUploading ? 'Mengunggah & Menyimpan...' : 'Upload & Simpan'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={resetUploadForm}
+                  disabled={isUploading}
+                >
+                  Batal
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           {uploadError ? (
             <p className="mt-4 text-sm text-destructive whitespace-pre-wrap">{uploadError}</p>
