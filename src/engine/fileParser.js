@@ -619,6 +619,10 @@ class FileParser {
       const content = await this.parseFileContentAsync(filePath, originalFilename, options);
 
       const safeFilename = this.sanitizeFilenameForStorage(originalFilename);
+      const rawDocTitle = options && typeof options.documentTitle === 'string' && options.documentTitle.trim()
+        ? options.documentTitle.trim()
+        : (options && typeof options.title === 'string' && options.title.trim() ? options.title.trim() : null);
+      const effectiveLogicalFilename = rawDocTitle || safeFilename;
       const sanitized = this.sanitizeTextForStorage(content);
       const safeSourceUrl = options && typeof options.sourceUrl === 'string' ? String(options.sourceUrl).trim() : null;
       const sanitizedTranscriptText = options && typeof options.transcriptText === 'string'
@@ -643,7 +647,7 @@ class FileParser {
       try {
         training = await prisma.trainingData.create({
           data: {
-            filename: safeFilename,
+            filename: effectiveLogicalFilename,
             storedFilename: storedFilename || null,
             content: contentToStore,
             source: 'upload',

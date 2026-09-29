@@ -1383,124 +1383,160 @@
 
       <!-- SINGLE FILE UPLOAD -->
       <div id="trainingModeSingle" class="training-mode-section active">
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb;">
-          <h3 style="margin-top: 0; font-size: 1em;">📤 Single File Upload</h3>
-          <p style="margin: 8px 0 6px 0; color: #666; font-size: 0.9em;">
-            Upload satu dokumen setiap kali. Cocok untuk update kecil atau dokumen penting tertentu.
-          </p>
-          <p style="margin: 0 0 12px 0; color: #666; font-size: 0.85em;">
-            Format: PDF, DOCX, Excel, CSV, TXT, gambar (JPG, PNG, GIF, WebP). Maksimal ±2MB per file di mode development.
+        <div style="background: #f9f9f9; padding: 18px; border-radius: 10px; border: 1px solid #e5e7eb;">
+          <h3 style="margin-top: 0; font-size: 1.05em; font-weight: 600;">📤 Upload Training Data (Single File)</h3>
+          <p style="margin: 4px 0 14px 0; color: #64748b; font-size: 0.88em;">
+            Format: PDF, DOCX, Excel, CSV, TXT, gambar (JPG, PNG, WebP), video. Maksimal ±2MB per file di mode development.
           </p>
           <form onsubmit="uploadTraining(event)">
-            <div class="form-group">
-              <label for="trainingFile" onclick="openFilePicker('trainingFile')" style="cursor: pointer;">📂 Pilih 1 File untuk Training</label>
-              <input type="file" id="trainingFile" accept=".mp4,.mov,.avi,.mkv,.webm,.m4v,.pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" required>
-              <small style="color: #999;">Single file - pilih satu file</small>
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label for="trainingFile" onclick="openFilePicker('trainingFile')" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #3b82f6; color: white; border-radius: 6px; font-weight: 500;">
+                📁 Browse / Pilih File
+              </label>
+              <input type="file" id="trainingFile" accept=".mp4,.mov,.avi,.mkv,.webm,.m4v,.pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" required onchange="handleSingleFileSelected(this)" style="display: none;">
             </div>
-            <div class="form-group">
-              <label for="uploadTitle">Nama / Judul Dokumen (opsional jika sesuai nama file)</label>
-              <input type="text" id="uploadTitle" placeholder="misal: SK_Biaya_Kuliah_2026.pdf atau Pedoman_Akademik_2026.pdf" />
-              <small style="color: #888;">Gunakan nama deskriptif. Nama ambigu seperti test.pdf atau dokumen baru akan ditolak.</small>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="uploadValidFrom">Tanggal Mulai Berlaku</label>
-                <input type="date" id="uploadValidFrom" />
-                <small style="color: #888;">Dokumen belum berlaku tidak dipakai bot.</small>
+
+            <!-- File terpilih info box -->
+            <div id="singleSelectedFileInfo" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px;">
+              <div style="font-size: 0.9em; color: #166534; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                <span>File terpilih:</span>
+                <span id="singleSelectedFileName" style="font-family: monospace; font-size: 1.05em; color: #0f172a; word-break: break-all;">-</span>
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="uploadValidUntil">Tanggal Expired</label>
-                <input type="date" id="uploadValidUntil" />
-                <div style="margin-top: 4px;">
-                  <label style="font-size: 0.82em; font-weight: normal; cursor: pointer;">
-                    <input type="checkbox" id="uploadNoExpiry" onchange="toggleNoExpiry('uploadValidUntil', this.checked)"> Berlaku sampai dicabut
-                  </label>
+              <small style="color: #15803d; margin-top: 4px; display: block;">
+                ℹ️ <em>Nama file tidak perlu diubah. Nama/Judul Dokumen di bawah adalah nama yang digunakan sistem untuk identitas dokumen.</em>
+              </small>
+            </div>
+
+            <div id="singleMetadataFields" style="display: none;">
+              <div class="form-group">
+                <label for="uploadTitle" style="font-weight: 600;">Nama / Judul Dokumen <span style="color: #dc2626;">*</span></label>
+                <input type="text" id="uploadTitle" placeholder="misal: SK Biaya Pendidikan Mahasiswa Baru 2026/2027" required style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                <small style="color: #64748b;">Nama/Judul Dokumen ini menjadi identitas resmi yang dicari dan ditampilkan oleh RAG bot.</small>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="uploadValidFrom" style="font-weight: 600;">Tanggal Mulai Berlaku <span style="color: #dc2626;">*</span></label>
+                  <input type="date" id="uploadValidFrom" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                  <small style="color: #64748b;">Dokumen belum berlaku tidak dipakai bot.</small>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="uploadValidUntil" style="font-weight: 600;">Tanggal Expired</label>
+                  <input type="date" id="uploadValidUntil" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                  <div style="margin-top: 4px;">
+                    <label style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: #334155;">
+                      <input type="checkbox" id="uploadNoExpiry" onchange="toggleNoExpiry('uploadValidUntil', this.checked)"> Berlaku sampai dicabut
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="uploadAuthority">Tingkat Otoritas (Authority)</label>
-                <select id="uploadAuthority" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
-                  <option value="tier_2_official_announcement">Tier 2: Pengumuman Resmi / Kalender</option>
-                  <option value="tier_1_official_decree">Tier 1: SK Rektor / Regulasi Formal</option>
-                  <option value="tier_3_operational_faq">Tier 3: SOP / Panduan Teknis / Brosur</option>
-                  <option value="tier_4_marketing_general">Tier 4: Informasi Umum / Promosi</option>
-                </select>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="uploadAuthority" style="font-weight: 600;">Tingkat Otoritas</label>
+                  <select id="uploadAuthority" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="tier_1_official_decree">Tier 1: SK Rektor / Regulasi Formal</option>
+                    <option value="tier_2_official_announcement">Tier 2: Pengumuman Resmi / Kalender</option>
+                    <option value="tier_3_operational_faq">Tier 3: SOP / Panduan Teknis / Brosur</option>
+                    <option value="tier_4_marketing_general">Tier 4: Informasi Umum / Promosi</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="uploadStatus" style="font-weight: 600;">Status Dokumen</label>
+                  <select id="uploadStatus" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="active">Active (Berlaku)</option>
+                    <option value="draft">Draft (Belum Berlaku)</option>
+                    <option value="superseded">Superseded (Sudah Digantikan)</option>
+                    <option value="archived">Archived (Diarsipkan)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="uploadVersion" style="font-weight: 600;">Versi Dokumen</label>
+                  <input type="text" id="uploadVersion" placeholder="misal: v2026.1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                </div>
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="uploadStatus">Status Dokumen</label>
-                <select id="uploadStatus" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
-                  <option value="active">Active (Berlaku)</option>
-                  <option value="draft">Draft (Belum Berlaku)</option>
-                  <option value="superseded">Superseded (Sudah Digantikan)</option>
-                  <option value="archived">Archived (Diarsipkan)</option>
-                </select>
-              </div>
+
+              <button type="submit" style="padding: 10px 20px; font-weight: 600; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                📤 UPLOAD & SIMPAN
+              </button>
             </div>
-            <button type="submit">📤 Upload Single</button>
           </form>
         </div>
       </div>
 
       <!-- BULK UPLOAD -->
       <div id="trainingModeBulk" class="training-mode-section">
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb;">
-          <h3 style="margin-top: 0; font-size: 1em;">🎯 Bulk Upload (Multiple Files)</h3>
+        <div style="background: #f9f9f9; padding: 18px; border-radius: 10px; border: 1px solid #e5e7eb;">
+          <h3 style="margin-top: 0; font-size: 1.05em; font-weight: 600;">🎯 Bulk Upload (Multiple Files)</h3>
           <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 0.88em; color: #92400e;">
-            <strong>⚠️ Perhatian Tata Kelola Dokumen:</strong>
-            <div style="margin-top: 4px;">Metadata (Masa Berlaku, Otoritas, Status) ini diterapkan ke <strong>seluruh dokumen dalam batch</strong>. Gunakan Bulk Upload hanya untuk dokumen yang memiliki metadata tata kelola yang sama (misal: satu paket edaran/panduan). Jika masa berlaku berbeda, silakan gunakan <strong>Single Upload</strong>.</div>
+            <strong>ℹ️ Tata Kelola Dokumen:</strong>
+            <div style="margin-top: 4px;">Nama file fisik tidak perlu diubah. Sistem akan menggunakan <strong>Nama / Judul Dokumen</strong> yang dapat Anda sesuaikan di bawah untuk setiap file. Tanggal berlaku dan otoritas diterapkan ke seluruh dokumen dalam batch ini.</div>
           </div>
           <p style="font-size: 0.85em; margin: 0 0 12px 0; color: #666;">
             Format: PDF, DOCX, Excel, CSV, TXT, gambar (JPG, PNG, GIF, WebP). Maksimal ±2MB per file di mode development.
           </p>
           <form onsubmit="uploadBulkTraining(event)">
-            <div class="form-group">
-              <label for="bulkTrainingFiles" onclick="openFilePicker('bulkTrainingFiles')" style="cursor: pointer;">📂 Upload Multiple Files Sekaligus</label>
-              <input type="file" id="bulkTrainingFiles" accept=".mp4,.mov,.avi,.mkv,.webm,.m4v,.pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" multiple required>
-              <small style="color: #666;"><strong>Nama Dokumen:</strong> Mengikuti nama masing-masing file asli dan akan <strong>divalidasi secara individual oleh server</strong>. File dengan nama ambigu (seperti <em>test.pdf</em>, <em>doc1.pdf</em>) akan ditolak.</small>
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label for="bulkTrainingFiles" onclick="openFilePicker('bulkTrainingFiles')" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #3b82f6; color: white; border-radius: 6px; font-weight: 500;">
+                📁 Browse / Pilih Multiple Files
+              </label>
+              <input type="file" id="bulkTrainingFiles" accept=".mp4,.mov,.avi,.mkv,.webm,.m4v,.pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" multiple required onchange="handleBulkFilesSelected(this)" style="display: none;">
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="bulkValidFrom">Tanggal Mulai Berlaku (Wajib untuk Batch)</label>
-                <input type="date" id="bulkValidFrom" required />
-                <small style="color: #888;">Dokumen yang belum berlaku tidak akan digunakan oleh bot.</small>
-              </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="bulkValidUntil">Tanggal Expired (Wajib untuk Batch)</label>
-                <input type="date" id="bulkValidUntil" />
-                <div style="margin-top: 4px;">
-                  <label style="font-size: 0.82em; font-weight: normal; cursor: pointer;">
-                    <input type="checkbox" id="bulkNoExpiry" onchange="toggleNoExpiry('bulkValidUntil', this.checked)"> Berlaku sampai dicabut
-                  </label>
+
+            <!-- List of selected files with title inputs -->
+            <div id="bulkFilesContainer" style="display: none; margin-bottom: 16px;">
+              <div style="font-weight: 600; font-size: 0.92em; margin-bottom: 8px; color: #334155;">Daftar File & Judul Dokumen:</div>
+              <div id="bulkFilesList" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; padding: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;"></div>
+            </div>
+
+            <div id="bulkMetadataFields" style="display: none;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="bulkValidFrom" style="font-weight: 600;">Tanggal Mulai Berlaku (Batch) <span style="color: #dc2626;">*</span></label>
+                  <input type="date" id="bulkValidFrom" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                  <small style="color: #888;">Dokumen yang belum berlaku tidak akan digunakan oleh bot.</small>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="bulkValidUntil" style="font-weight: 600;">Tanggal Expired (Batch)</label>
+                  <input type="date" id="bulkValidUntil" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                  <div style="margin-top: 4px;">
+                    <label style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: #334155;">
+                      <input type="checkbox" id="bulkNoExpiry" onchange="toggleNoExpiry('bulkValidUntil', this.checked)"> Berlaku sampai dicabut
+                    </label>
+                  </div>
                 </div>
               </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="bulkAuthority" style="font-weight: 600;">Tingkat Otoritas</label>
+                  <select id="bulkAuthority" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="tier_1_official_decree">Tier 1: SK Rektor / Regulasi Formal</option>
+                    <option value="tier_2_official_announcement">Tier 2: Pengumuman Resmi / Kalender</option>
+                    <option value="tier_3_operational_faq">Tier 3: SOP / Panduan Teknis / Brosur</option>
+                    <option value="tier_4_marketing_general">Tier 4: Informasi Umum / Promosi</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="bulkStatus" style="font-weight: 600;">Status Dokumen</label>
+                  <select id="bulkStatus" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="active">Active (Berlaku)</option>
+                    <option value="draft">Draft (Belum Berlaku)</option>
+                    <option value="superseded">Superseded (Sudah Digantikan)</option>
+                    <option value="archived">Archived (Diarsipkan)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="bulkVersion" style="font-weight: 600;">Versi Dokumen</label>
+                  <input type="text" id="bulkVersion" placeholder="misal: v2026.1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+                </div>
+              </div>
+
+              <button type="submit" style="padding: 10px 20px; font-weight: 600; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                📤 UPLOAD & SIMPAN BATCH
+              </button>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 15px;">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="bulkAuthority">Tingkat Otoritas (Authority)</label>
-                <select id="bulkAuthority" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
-                  <option value="tier_2_official_announcement">Tier 2: Pengumuman Resmi / Kalender</option>
-                  <option value="tier_1_official_decree">Tier 1: SK Rektor / Regulasi Formal</option>
-                  <option value="tier_3_operational_faq">Tier 3: SOP / Panduan Teknis / Brosur</option>
-                  <option value="tier_4_marketing_general">Tier 4: Informasi Umum / Promosi</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="bulkStatus">Status Dokumen</label>
-                <select id="bulkStatus" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
-                  <option value="active">Active (Berlaku)</option>
-                  <option value="draft">Draft (Belum Berlaku)</option>
-                  <option value="superseded">Superseded (Sudah Digantikan)</option>
-                  <option value="archived">Archived (Diarsipkan)</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="bulkVersion">Versi Dokumen (Opsional)</label>
-                <input type="text" id="bulkVersion" placeholder="misal: v2026.1" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;" />
-              </div>
-            </div>
-            <button type="submit">📤 Upload Bulk (Multiple Files)</button>
+
             <div id="bulkProgress" style="margin-top: 10px; display: none;">
               <div style="background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">
                 <div id="bulkProgressBar" style="background: #667eea; height: 100%; width: 0%; transition: width 0.3s;"></div>
@@ -3309,153 +3345,220 @@
       }
     }
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function openFilePicker(inputId) {
+      const el = document.getElementById(inputId);
+      if (el) el.click();
+    }
+
+    function cleanDefaultTitle(filename) {
+      if (!filename) return '';
+      const withoutExt = filename.replace(/\.[^/.]+$/, '');
+      return withoutExt.replace(/[_-]+/g, ' ').trim();
+    }
+
+    function handleSingleFileSelected(input) {
+      const infoBox = document.getElementById('singleSelectedFileInfo');
+      const nameEl = document.getElementById('singleSelectedFileName');
+      const fieldsBox = document.getElementById('singleMetadataFields');
+      const titleInput = document.getElementById('uploadTitle');
+
+      if (!input.files || input.files.length === 0) {
+        if (infoBox) infoBox.style.display = 'none';
+        if (fieldsBox) fieldsBox.style.display = 'none';
+        return;
+      }
+
+      const file = input.files[0];
+      if (nameEl) nameEl.textContent = file.name;
+      if (infoBox) infoBox.style.display = 'block';
+      if (fieldsBox) fieldsBox.style.display = 'block';
+
+      if (titleInput && !titleInput.value.trim()) {
+        titleInput.value = cleanDefaultTitle(file.name);
+      }
+    }
+
+    function handleBulkFilesSelected(input) {
+      const container = document.getElementById('bulkFilesContainer');
+      const listEl = document.getElementById('bulkFilesList');
+      const fieldsBox = document.getElementById('bulkMetadataFields');
+
+      if (!input.files || input.files.length === 0) {
+        if (container) container.style.display = 'none';
+        if (fieldsBox) fieldsBox.style.display = 'none';
+        if (listEl) listEl.innerHTML = '';
+        return;
+      }
+
+      const files = Array.from(input.files);
+      if (container) container.style.display = 'block';
+      if (fieldsBox) fieldsBox.style.display = 'block';
+
+      if (listEl) {
+        listEl.innerHTML = files.map((f, idx) => `
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <span style="font-family: monospace; font-size: 0.88em; color: #475569; word-break: break-all;">
+                📄 <strong>${escapeHtml(f.name)}</strong> <small style="color: #94a3b8;">(${(f.size / 1024).toFixed(1)} KB)</small>
+              </span>
+              <span style="font-size: 0.75em; color: #16a34a; background: #dcfce7; padding: 2px 8px; border-radius: 9999px; font-weight: 600;">File #${idx + 1}</span>
+            </div>
+            <div>
+              <label style="font-size: 0.82em; font-weight: 600; color: #334155; display: block; margin-bottom: 3px;">
+                Nama / Judul Dokumen <span style="color: #dc2626;">*</span>
+              </label>
+              <input type="text"
+                     class="bulk-file-title-input"
+                     data-index="${idx}"
+                     data-filename="${escapeHtml(f.name)}"
+                     value="${escapeHtml(cleanDefaultTitle(f.name))}"
+                     placeholder="Nama / Judul Dokumen untuk file ini *"
+                     required
+                     style="width: 100%; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9em; box-sizing: border-box;" />
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
     async function uploadTraining(e) {
       e.preventDefault();
       const fileInput = document.getElementById('trainingFile');
-      
-      console.log('[Training] Form submitted, fileInput:', fileInput);
-      console.log('[Training] Files in input:', fileInput.files.length);
-      
-      const file = fileInput.files[0];
+      const file = fileInput ? fileInput.files[0] : null;
       
       if (!file) {
-        console.warn('[Training] No file selected');
         showAlert('❌ Pilih file terlebih dahulu', 'error');
         return;
       }
 
-      console.log('[Training] Selected file:', file.name, 'Type:', file.type, 'Size:', file.size);
+      const titleInput = document.getElementById('uploadTitle');
+      const title = titleInput ? titleInput.value.trim() : '';
+      if (!title) {
+        showAlert('❌ Nama / Judul Dokumen wajib diisi sebagai identitas resmi dokumen.', 'error');
+        if (titleInput) titleInput.focus();
+        return;
+      }
+
+      const validFromInput = document.getElementById('uploadValidFrom');
+      const validUntilInput = document.getElementById('uploadValidUntil');
+      const noExpiryInput = document.getElementById('uploadNoExpiry');
+      const authorityInput = document.getElementById('uploadAuthority');
+      const statusInput = document.getElementById('uploadStatus');
+      const versionInput = document.getElementById('uploadVersion');
+
+      const validFrom = validFromInput ? validFromInput.value.trim() : '';
+      const noExpiry = noExpiryInput ? noExpiryInput.checked : false;
+      const validUntil = validUntilInput ? validUntilInput.value.trim() : '';
+      const authority = authorityInput ? authorityInput.value : '';
+      const status = statusInput ? statusInput.value : '';
+      const version = versionInput ? versionInput.value.trim() : '';
+
+      if (!validFrom) {
+        showAlert('❌ Tanggal Mulai Berlaku wajib diisi.', 'error');
+        if (validFromInput) validFromInput.focus();
+        return;
+      }
+
+      if (!noExpiry && !validUntil) {
+        showAlert('❌ Tanggal Expired wajib diisi, atau centang opsi "Berlaku sampai dicabut".', 'error');
+        if (validUntilInput) validUntilInput.focus();
+        return;
+      }
+
+      if (validFrom && validUntil && !noExpiry) {
+        if (new Date(validUntil).getTime() < new Date(validFrom).getTime()) {
+          showAlert('❌ Tanggal Expired tidak boleh lebih awal dari Tanggal Mulai Berlaku.', 'error');
+          if (validUntilInput) validUntilInput.focus();
+          return;
+        }
+      }
 
       const maxSize = await getServerMaxUploadBytes();
       if (file.size > maxSize) {
-        console.warn('[Training] File too large:', file.size, 'bytes');
         showAlert(`❌ Ukuran file maksimal ${(maxSize / 1024 / 1024).toFixed(2)}MB (file Anda: ${(file.size / 1024 / 1024).toFixed(2)}MB). Silakan compress atau split file.`, 'error');
         return;
       }
 
-      // Validate file type and choose endpoint (video -> /training/video-upload)
       const fileExt = file.name.split('.').pop().toLowerCase();
       const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'];
       const validExtensions = ['txt', 'pdf', 'csv', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'webp', ...videoExtensions];
       
       if (!validExtensions.includes(fileExt)) {
-        console.warn('[Training] Invalid file extension:', fileExt);
         showAlert(`❌ File type tidak didukung. Gunakan: ${validExtensions.join(', ')}`, 'error');
         return;
       }
 
       const formData = new FormData();
       formData.append('file', file);
-
-      const titleInput = document.getElementById('uploadTitle');
-      const validFromInput = document.getElementById('uploadValidFrom');
-      const validUntilInput = document.getElementById('uploadValidUntil');
-      const noExpiryInput = document.getElementById('uploadNoExpiry');
-      const authorityInput = document.getElementById('uploadAuthority');
-      const statusInput = document.getElementById('uploadStatus');
-
-      if (titleInput && titleInput.value.trim()) {
-        formData.append('title', titleInput.value.trim());
-      }
-      if (validFromInput && validFromInput.value.trim()) {
-        formData.append('validFrom', validFromInput.value.trim());
-      }
-      if (noExpiryInput && noExpiryInput.checked) {
+      formData.append('documentTitle', title);
+      formData.append('title', title);
+      formData.append('validFrom', validFrom);
+      if (noExpiry) {
         formData.append('validUntil', 'null');
-      } else if (validUntilInput && validUntilInput.value.trim()) {
-        formData.append('validUntil', validUntilInput.value.trim());
+        formData.append('noExpiry', 'true');
+      } else {
+        formData.append('validUntil', validUntil);
       }
-      if (authorityInput && authorityInput.value) {
-        formData.append('authority', authorityInput.value);
-      }
-      if (statusInput && statusInput.value) {
-        formData.append('status', statusInput.value);
-      }
+      if (authority) formData.append('authority', authority);
+      if (status) formData.append('status', status);
+      if (version) formData.append('version', version);
 
-      // Route to video upload endpoint for video files to enable transcription flow
       const isVideo = videoExtensions.includes(fileExt);
       const endpoint = isVideo ? `${API_BASE}/training/video-upload` : `${API_BASE}/admin/training/upload`;
 
       try {
-        console.log('[Training] Uploading file:', file.name, '(' + (file.size / 1024).toFixed(2) + 'KB)');
-        console.log('[Training] Sending POST to:', endpoint);
-        
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
           body: formData
         });
         
-        console.log('[Training] Response status:', res.status);
-        console.log('[Training] Response headers:', res.headers);
-        
         const parsed = await readJsonOrTextResponse(res);
         const data = parsed.ok ? parsed.data : null;
-        console.log('[Training] Response data:', data);
         
         if (res.ok && res.status !== 202) {
-          if (!data) {
-            showAlert('✅ Upload berhasil, tapi response tidak terbaca (non-JSON).', 'success');
-            fileInput.value = '';
-            e.target.reset();
-            await loadTraining();
-            return;
-          }
-          console.log('[Training] File uploaded successfully:', data.trainingDataId);
-          showAlert('✅ Training data berhasil diupload!', 'success');
-          fileInput.value = '';  // Clear file input
+          showAlert('✅ Training data berhasil diupload dengan identitas logis valid!', 'success');
+          fileInput.value = '';
+          const singleInfo = document.getElementById('singleSelectedFileInfo');
+          const singleFields = document.getElementById('singleMetadataFields');
+          if (singleInfo) singleInfo.style.display = 'none';
+          if (singleFields) singleFields.style.display = 'none';
           if (titleInput) titleInput.value = '';
           if (validFromInput) validFromInput.value = '';
           if (validUntilInput) { validUntilInput.value = ''; validUntilInput.disabled = false; }
           if (noExpiryInput) noExpiryInput.checked = false;
+          if (versionInput) versionInput.value = '';
           e.target.reset();
           await loadTraining();
         } else {
-          console.error('[Training] Server error:', data || parsed.raw);
-          
-          // Build error message dengan suggestions
           let message = `❌ Upload gagal (HTTP ${res.status})`;
-
           if (res.status === 413) {
             message += `\n\nFile terlalu besar untuk diterima server/proxy (413 Payload Too Large).`;
-            message += `\n💡 Solusi: kecilkan file atau naikkan limit upload di Nginx (client_max_body_size).`;
           } else if (res.status === 502 || res.status === 504) {
             message += `\n\nServer/proxy timeout atau gateway error.`;
-            message += `\n💡 Solusi: cek log PM2/Nginx, naikkan timeout proxy, atau coba file lebih kecil.`;
           }
-
           if (data && (data.error || data.message)) {
             message += `\n${data.error || data.message}`;
           } else if (parsed.raw) {
-            const snippet = String(parsed.raw).trim().slice(0, 600);
-            message += `\n\nServer/Proxy Response:\n${snippet}`;
+            message += `\n\nServer Response:\n${String(parsed.raw).trim().slice(0, 400)}`;
           }
-          
-          if (data.suggestions && data.suggestions.length > 0) {
+          if (data && data.suggestions && data.suggestions.length > 0) {
             message += '\n\n💡 Solusi:\n' + data.suggestions.map(s => '• ' + s).join('\n');
           }
-          
           showAlert(message, 'error');
-          
-          // Jika OCR gagal dan ada manual input option, scroll ke form manual
-          if (data.showManualInput) {
-            setTimeout(() => {
-              const manualSection = document.getElementById('manualText');
-              if (manualSection) {
-                manualSection.scrollIntoView({ behavior: 'smooth' });
-                manualSection.focus();
-              }
-            }, 500);
-          }
         }
       } catch (err) {
-        console.error('[Training] Exception:', err);
-        console.error('[Training] Stack:', err.stack);
-        
-        let message = `❌ Error: ${err.message}`;
-        message += '\n\n💡 Solusi:\n• 📝 Gunakan form "Input Manual Teks" sebagai alternatif\n• 🔄 Coba dengan file format yang berbeda (TXT, DOCX, Excel)\n• 💬 Hubungi administrator jika masalah berlanjut';
-        
-        showAlert(message, 'error');
+        showAlert(`❌ Error: ${err.message}`, 'error');
       }
     }
 
@@ -3534,7 +3637,7 @@
       e.preventDefault();
       
       const fileInput = document.getElementById('bulkTrainingFiles');
-      const files = Array.from(fileInput.files);
+      const files = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
       
       if (files.length === 0) {
         showAlert('❌ Pilih minimal 1 file', 'error');
@@ -3546,11 +3649,23 @@
         return;
       }
 
+      // Collect titles per file
+      const titles = [];
+      for (let i = 0; i < files.length; i++) {
+        const titleInput = document.querySelector(`.bulk-file-title-input[data-index="${i}"]`);
+        const t = titleInput ? titleInput.value.trim() : '';
+        if (!t) {
+          showAlert(`❌ Nama / Judul Dokumen untuk file "${files[i].name}" wajib diisi.`, 'error');
+          if (titleInput) titleInput.focus();
+          return;
+        }
+        titles.push(t);
+      }
+
       const maxSize = await getServerMaxUploadBytes();
       const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'];
       const validExtensions = ['txt', 'pdf', 'csv', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'webp', ...videoExtensions];
 
-      // Pre-validate all files before uploading
       for (const file of files) {
         const fileExt = String(file.name || '').split('.').pop().toLowerCase();
         if (!validExtensions.includes(fileExt)) {
@@ -3597,26 +3712,20 @@
         }
       }
 
-      console.log('[Bulk Upload] Starting batch upload for', files.length, 'files with governance:', {
-        validFrom,
-        validUntil: noExpiry ? null : validUntil,
-        authority,
-        status
-      });
-
       const progressDiv = document.getElementById('bulkProgress');
       const progressBar = document.getElementById('bulkProgressBar');
       const progressText = document.getElementById('bulkProgressText');
 
-      progressDiv.style.display = 'block';
-      progressBar.style.width = '35%';
-      progressText.textContent = `Mengunggah ${files.length} dokumen dengan tata kelola ke server...`;
+      if (progressDiv) progressDiv.style.display = 'block';
+      if (progressBar) progressBar.style.width = '35%';
+      if (progressText) progressText.textContent = `Mengunggah ${files.length} dokumen dengan identitas logis ke server...`;
 
       try {
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) {
           formData.append('files', files[i]);
         }
+        formData.append('fileTitles', JSON.stringify(titles));
         formData.append('validFrom', validFrom);
         if (noExpiry) {
           formData.append('validUntil', 'null');
@@ -3634,7 +3743,7 @@
           body: formData
         });
 
-        progressBar.style.width = '100%';
+        if (progressBar) progressBar.style.width = '100%';
         const parsed = await readJsonOrTextResponse(res);
         const data = parsed.ok ? parsed.data : null;
 
@@ -3644,16 +3753,22 @@
           const failedResults = results.filter(r => r && !r.ok);
 
           if (failedResults.length === 0) {
-            showAlert(`✅ Semua ${successCount} file dalam batch berhasil diupload dengan tata kelola valid!`, 'success');
+            showAlert(`✅ Semua ${successCount} file dalam batch berhasil diupload dengan identitas logis valid!`, 'success');
           } else {
             let summaryMsg = `⚠️ Selesai dengan catatan:\n• Berhasil: ${successCount}\n• Ditolak: ${failedResults.length}\n\nDetail:\n`;
             failedResults.forEach(r => {
-              summaryMsg += `❌ ${r.filename}: ${r.error || 'Ditolak'}\n`;
+              summaryMsg += `❌ ${r.filename || r.documentTitle}: ${r.error || 'Ditolak'}\n`;
             });
             showAlert(summaryMsg, 'warning');
           }
 
           fileInput.value = '';
+          const container = document.getElementById('bulkFilesContainer');
+          const fieldsBox = document.getElementById('bulkMetadataFields');
+          const listEl = document.getElementById('bulkFilesList');
+          if (container) container.style.display = 'none';
+          if (fieldsBox) fieldsBox.style.display = 'none';
+          if (listEl) listEl.innerHTML = '';
           if (validFromInput) validFromInput.value = '';
           if (validUntilInput) { validUntilInput.value = ''; validUntilInput.disabled = false; }
           if (noExpiryInput) noExpiryInput.checked = false;
@@ -3680,7 +3795,7 @@
         console.error('[Bulk Upload] Exception:', err);
         showAlert(`❌ Error mengunggah batch: ${err.message}`, 'error');
       } finally {
-        progressDiv.style.display = 'none';
+        if (progressDiv) progressDiv.style.display = 'none';
       }
     }
 

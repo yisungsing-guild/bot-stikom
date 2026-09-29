@@ -10034,8 +10034,14 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
 
     const opts = (options && typeof options === 'object') ? options : {};
     const divisionKey = typeof opts.divisionKey === 'string' ? String(opts.divisionKey).toLowerCase().trim() : null;
-    const optsFilename = typeof opts.filename === 'string' ? opts.filename : null;
-    const optsSourceFile = typeof opts.sourceFile === 'string' ? opts.sourceFile : null;
+    const optsDocumentTitle = typeof opts.documentTitle === 'string' && opts.documentTitle.trim()
+      ? opts.documentTitle.trim()
+      : (typeof opts.title === 'string' && opts.title.trim() ? opts.title.trim() : null);
+    const optsOriginalFilename = typeof opts.originalFilename === 'string' && opts.originalFilename.trim()
+      ? opts.originalFilename.trim()
+      : null;
+    const optsFilename = optsDocumentTitle || (typeof opts.filename === 'string' ? opts.filename : null);
+    const optsSourceFile = optsOriginalFilename || (typeof opts.sourceFile === 'string' ? opts.sourceFile : null);
     const fileHash = typeof opts.fileHash === 'string' ? opts.fileHash : null;
     const trainingVersion = typeof opts.trainingVersion === 'string' ? opts.trainingVersion : null;
     const uploadedById = typeof opts.uploadedById === 'string' ? opts.uploadedById : null;
@@ -10255,6 +10261,8 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
         divisionKey: divisionKey || null,
         filename: resolvedFilename || null,
         sourceFile: resolvedSourceFile || resolvedFilename || null,
+        documentTitle: optsDocumentTitle || resolvedFilename || null,
+        originalFilename: optsOriginalFilename || resolvedSourceFile || null,
         fileHash: fileHash || null,
         trainingVersion: trainingVersion || null,
         uploadedById: uploadedById || null,

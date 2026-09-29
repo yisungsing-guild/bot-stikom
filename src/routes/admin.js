@@ -1257,9 +1257,31 @@ router.post(
       const transcriptText = extractTranscriptText(req);
       const sourceUrl = extractSourceUrl(req);
 
+      const rawTitle = req.body?.documentTitle !== undefined ? req.body.documentTitle : req.body?.title;
+      const documentTitle = typeof rawTitle === 'string' ? rawTitle.trim() : '';
+      const originalFilename = req.uploadInfo.originalname;
+
+      if (!documentTitle) {
+        if (uploadedPath) {
+          await cleanupUploadedFile(uploadedPath);
+        }
+        return res.status(400).send({
+          ok: false,
+          error: 'Nama / Judul Dokumen wajib diisi melalui form.',
+          field: 'documentTitle',
+          suggestions: [
+            'Isi field "Nama / Judul Dokumen" pada form',
+            'Gunakan nama deskriptif seperti "SK Biaya Pendidikan 2026/2027"',
+            'Nama file fisik tidak perlu diubah'
+          ]
+        });
+      }
+
       // Validate intake governance (naming, validFrom, validUntil, authority, status)
       const intakeValidation = validateDocumentIntakeGovernance({
-        filename: req.body?.title || req.body?.filename || req.uploadInfo.originalname,
+        filename: documentTitle,
+        documentTitle,
+        originalFilename,
         validFrom: req.body?.validFrom,
         validUntil: req.body?.validUntil || req.body?.validTo,
         noExpiry: req.body?.noExpiry,
@@ -1280,7 +1302,7 @@ router.post(
         return res.status(400).send({
           ok: false,
           error: intakeValidation.error,
-          field: intakeValidation.field || 'filename',
+          field: intakeValidation.field || 'documentTitle',
           suggestions: [
             'Gunakan nama dokumen deskriptif yang mencerminkan isi dokumen (misal: Pedoman_Akademik_2026.pdf)',
             'Pastikan format tanggal valid (YYYY-MM-DD)',
@@ -1292,11 +1314,11 @@ router.post(
       // Parse file
       const result = await FileParser.parseAndStoreFile(
         uploadedPath,
-        req.uploadInfo.originalname,
+        originalFilename,
         uploaderId,
         divisionKey,
         req.uploadInfo.filename,
-        { visualContext, transcriptText, sourceUrl }
+        { visualContext, transcriptText, sourceUrl, documentTitle }
       );
       
       if (!result.success) {
@@ -1386,7 +1408,9 @@ router.post(
 
       await applyTrainingGovernance(result.trainingDataId, {
         ...intakeValidation.governanceMetadata,
-        filename: req.uploadInfo.originalname,
+        filename: documentTitle,
+        documentTitle,
+        originalFilename,
         divisionKey,
         source: 'upload',
         owner: intakeValidation.governanceMetadata.owner
@@ -1396,7 +1420,9 @@ router.post(
       res.status(201).send({
         ok: true,
         trainingDataId: result.trainingDataId,
-        filename: req.uploadInfo.originalname,
+        filename: documentTitle,
+        documentTitle,
+        originalFilename,
         fileSize: req.uploadInfo.size,
         contentPreview: result.content.substring(0, 200) + '...',
         wasTruncated: !!result.wasTruncated,
@@ -1404,7 +1430,9 @@ router.post(
       });
 
       queueTrainingUploadNotification(req, {
-        filename: req.uploadInfo.originalname,
+        filename: documentTitle,
+        documentTitle,
+        originalFilename,
         trainingDataId: result.trainingDataId,
         divisionKey,
         source: 'upload',
@@ -1417,19 +1445,26 @@ router.post(
         try {
           logger.info({
             trainingDataId: result.trainingDataId,
-            filename: req.uploadInfo.originalname,
+            filename: documentTitle,
+            documentTitle,
+            originalFilename,
             source: 'upload',
             divisionKey
           }, '[TRACE_BEFORE_INGEST]');
           console.log('[RAG] Starting ingestion for training:', result.trainingDataId);
           const ing = await ingestTrainingData(result.trainingDataId, result.content, 'upload', {
             divisionKey,
-            filename: req.uploadInfo.originalname,
+            filename: documentTitle,
+            documentTitle,
+            sourceFile: originalFilename,
+            originalFilename,
             uploadedById: uploaderId,
             sourceUrl,
             storageType: 'file',
             governance: {
               ...intakeValidation.governanceMetadata,
+              documentTitle,
+              originalFilename,
               ...(result.governanceMetadata && typeof result.governanceMetadata === 'object' ? result.governanceMetadata : {})
             }
           });
@@ -1875,9 +1910,25 @@ router.post(
       });
     }
 
+    let parsedTitles = [];
+    try {
+      if (typeof req.body?.fileTitles === 'string') {
+        parsedTitles = JSON.parse(req.body.fileTitles);
+      } else if (Array.isArray(req.body?.fileTitles)) {
+        parsedTitles = req.body.fileTitles;
+      } else if (typeof req.body?.titles === 'string') {
+        parsedTitles = JSON.parse(req.body.titles);
+      } else if (Array.isArray(req.body?.titles)) {
+        parsedTitles = req.body.titles;
+      }
+    } catch {
+      parsedTitles = [];
+    }
+
     const results = [];
 
-    for (const info of uploadInfos) {
+    for (let i = 0; i < uploadInfos.length; i++) {
+      const info = uploadInfos[i];
       const uploadedPath = info && info.path ? info.path : null;
       try {
         if (!uploadedPath) {
@@ -1885,21 +1936,30 @@ router.post(
           continue;
         }
 
-        const fileNamingValidation = validateDocumentNaming(info.originalname);
+        const originalname = info.originalname;
+        const candidateTitle = Array.isArray(parsedTitles) && parsedTitles[i] && typeof parsedTitles[i] === 'string'
+          ? parsedTitles[i].trim()
+          : null;
+        const effectiveTitle = candidateTitle || originalname;
+
+        const fileNamingValidation = validateDocumentNaming(effectiveTitle);
         if (!fileNamingValidation.valid) {
           await cleanupUploadedFile(uploadedPath);
           results.push({
             ok: false,
-            filename: info.originalname,
+            filename: originalname,
+            documentTitle: effectiveTitle,
             error: fileNamingValidation.error,
             errorCode: 'VALIDATION_ERROR',
-            field: 'filename'
+            field: 'documentTitle'
           });
           continue;
         }
 
         const intakeValidation = validateDocumentIntakeGovernance({
-          filename: info.originalname,
+          filename: effectiveTitle,
+          documentTitle: effectiveTitle,
+          originalFilename: originalname,
           validFrom: req.body?.validFrom,
           validUntil: req.body?.validUntil || req.body?.validTo,
           noExpiry: req.body?.noExpiry,
@@ -1916,7 +1976,8 @@ router.post(
           await cleanupUploadedFile(uploadedPath);
           results.push({
             ok: false,
-            filename: info.originalname,
+            filename: originalname,
+            documentTitle: effectiveTitle,
             error: intakeValidation.error,
             errorCode: 'VALIDATION_ERROR',
             field: intakeValidation.field
@@ -1926,18 +1987,19 @@ router.post(
 
         const parsed = await FileParser.parseAndStoreFile(
           uploadedPath,
-          info.originalname,
+          originalname,
           uploaderId,
           divisionKey,
           info.filename,
-          { visualContext, transcriptText, sourceUrl }
+          { visualContext, transcriptText, sourceUrl, documentTitle: effectiveTitle }
         );
 
         if (!parsed.success) {
           await cleanupUploadedFile(uploadedPath);
           results.push({
             ok: false,
-            filename: info.originalname,
+            filename: originalname,
+            documentTitle: effectiveTitle,
             error: parsed.error,
             errorCode: parsed.errorCode || 'PARSE_ERROR',
             prismaCode: parsed && Object.prototype.hasOwnProperty.call(parsed, 'prismaCode') ? (parsed.prismaCode || null) : null,
@@ -1948,7 +2010,9 @@ router.post(
 
         await applyTrainingGovernance(parsed.trainingDataId, {
           ...intakeValidation.governanceMetadata,
-          filename: info.originalname,
+          filename: effectiveTitle,
+          documentTitle: effectiveTitle,
+          originalFilename: originalname,
           divisionKey,
           source: 'bulk-upload',
           owner: intakeValidation.governanceMetadata.owner
@@ -1957,7 +2021,9 @@ router.post(
         results.push({
           ok: true,
           trainingDataId: parsed.trainingDataId,
-          filename: info.originalname,
+          filename: effectiveTitle,
+          documentTitle: effectiveTitle,
+          originalFilename: originalname,
           fileSize: info.size,
           contentPreview: parsed.content.substring(0, 200) + '...',
           wasTruncated: !!parsed.wasTruncated,
@@ -1965,7 +2031,9 @@ router.post(
         });
 
         queueTrainingUploadNotification(req, {
-          filename: info.originalname,
+          filename: effectiveTitle,
+          documentTitle: effectiveTitle,
+          originalFilename: originalname,
           trainingDataId: parsed.trainingDataId,
           divisionKey,
           source: 'bulk-upload',
@@ -1978,18 +2046,25 @@ router.post(
           try {
             logger.info({
               trainingDataId: parsed.trainingDataId,
-              filename: info.originalname,
+              filename: effectiveTitle,
+              documentTitle: effectiveTitle,
+              originalFilename: originalname,
               source: 'upload',
               divisionKey
             }, '[TRACE_BEFORE_INGEST]');
             await ingestTrainingData(parsed.trainingDataId, parsed.content, 'upload', {
               divisionKey,
-              filename: info.originalname,
+              filename: effectiveTitle,
+              documentTitle: effectiveTitle,
+              sourceFile: originalname,
+              originalFilename: originalname,
               uploadedById: uploaderId,
               sourceUrl,
               storageType: 'file',
               governance: {
                 ...intakeValidation.governanceMetadata,
+                documentTitle: effectiveTitle,
+                originalFilename: originalname,
                 ...(parsed.governanceMetadata && typeof parsed.governanceMetadata === 'object' ? parsed.governanceMetadata : {})
               }
             });

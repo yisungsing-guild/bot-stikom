@@ -123,9 +123,19 @@ function validateDocumentNaming(filenameOrTitle) {
     return { valid: false, error: 'Nama dokumen terlalu panjang (maksimal 255 karakter).' };
   }
 
-  const baseName = path.basename(trimmed);
-  const ext = path.extname(baseName);
-  const nameWithoutExt = path.basename(baseName, ext).trim();
+  // Preserve logical titles with slashes (e.g. "SK 629/2025" or "Yudisium 2026/2027")
+  // Only extract basename if it looks like an actual file path
+  const looksLikePath = /^[a-zA-Z]:[\\/]|^[\\/]|\.\.[\\/]/.test(trimmed);
+  const baseName = looksLikePath ? path.basename(trimmed) : trimmed;
+
+  const knownExtensions = new Set([
+    '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.csv', '.txt',
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v'
+  ]);
+  const rawExt = path.extname(baseName).toLowerCase();
+  const hasKnownExt = knownExtensions.has(rawExt);
+  const ext = hasKnownExt ? rawExt : '';
+  const nameWithoutExt = ext ? baseName.slice(0, -ext.length).trim() : baseName.trim();
 
   if (baseName.startsWith('.') && (!baseName.includes('.', 1) || nameWithoutExt.startsWith('.'))) {
     return { valid: false, error: 'Nama dokumen tidak boleh hanya berupa ekstensi file.' };
@@ -135,11 +145,16 @@ function validateDocumentNaming(filenameOrTitle) {
     return { valid: false, error: 'Nama dokumen tidak boleh hanya berupa ekstensi file.' };
   }
 
-  if (/[<>:"|?*\x00-\x1f]/.test(baseName)) {
+  // Block dangerous or forbidden characters
+  if (/[<>|?*\x00-\x1f]/.test(baseName)) {
+    return { valid: false, error: 'Nama dokumen mengandung karakter yang tidak diizinkan (<, >, |, ?, *).' };
+  }
+  // For file names without spaces (likely physical file paths), also block colons and quotes
+  if (!baseName.includes(' ') && /[<>:"|?*]/.test(baseName)) {
     return { valid: false, error: 'Nama dokumen mengandung karakter yang tidak diizinkan (<, >, :, ", |, ?, *).' };
   }
 
-  const lowerName = nameWithoutExt.toLowerCase().replace(/[\s_\-]+/g, ' ').trim();
+  const lowerName = nameWithoutExt.toLowerCase().replace(/[\s_\-\.\/]+/g, ' ').trim();
   const ambiguousExactNames = new Set([
     'test', 'testing', 'test1', 'test2', 'coba', 'percobaan',
     'dokumen', 'dokumen baru', 'dokumen baru 1', 'dokumen 1', 'dokumen_baru',
@@ -228,10 +243,18 @@ function validateDocumentValidityDates(validFrom, validUntil, options = {}) {
 }
 
 function validateDocumentIntakeGovernance(payload = {}, options = {}) {
-  const name = payload.filename || payload.title || payload.name;
+  if (payload.documentTitle !== undefined && String(payload.documentTitle).trim() === '') {
+    return { valid: false, error: "Nama / Judul Dokumen ('documentTitle') wajib diisi.", field: 'documentTitle' };
+  }
+  if (options.requireDocumentTitle && !String(payload.documentTitle || payload.title || '').trim()) {
+    return { valid: false, error: "Nama / Judul Dokumen ('documentTitle') wajib diisi.", field: 'documentTitle' };
+  }
+
+  const isExplicitTitleProvided = Boolean(payload.documentTitle || payload.title);
+  const name = payload.documentTitle || payload.title || payload.filename || payload.name;
   const nameResult = validateDocumentNaming(name);
   if (!nameResult.valid) {
-    return { valid: false, error: nameResult.error, field: 'filename' };
+    return { valid: false, error: nameResult.error, field: isExplicitTitleProvided ? 'documentTitle' : 'filename' };
   }
 
   const noExpiry = Boolean(
@@ -295,9 +318,19 @@ function validateDocumentIntakeGovernance(payload = {}, options = {}) {
     }
   }
 
+  const documentTitle = String(payload.documentTitle || payload.title || nameResult.sanitizedName).trim();
+  const originalFilename = String(
+    payload.originalFilename ||
+    ((payload.documentTitle || payload.title) && payload.filename ? payload.filename : '') ||
+    payload.sourceFile ||
+    ''
+  ).trim() || null;
+
   const governanceMetadata = buildDocumentGovernanceMetadata({
     ...payload,
-    filename: nameResult.sanitizedName,
+    filename: documentTitle,
+    documentTitle,
+    originalFilename,
     validFrom: dateResult.validFrom,
     validUntil: dateResult.validUntil,
     validTo: dateResult.validUntil,
@@ -309,7 +342,10 @@ function validateDocumentIntakeGovernance(payload = {}, options = {}) {
 
   return {
     valid: true,
-    sanitizedFilename: nameResult.sanitizedName,
+    sanitizedFilename: documentTitle,
+    filename: documentTitle,
+    documentTitle,
+    originalFilename,
     validFrom: dateResult.validFrom,
     validUntil: dateResult.validUntil,
     status: finalStatus,
@@ -319,7 +355,14 @@ function validateDocumentIntakeGovernance(payload = {}, options = {}) {
 }
 
 function buildDocumentGovernanceMetadata(input = {}) {
-  const filename = String(input.filename || '').trim();
+  const documentTitle = String(input.documentTitle || input.title || input.filename || '').trim();
+  const originalFilename = String(
+    input.originalFilename ||
+    ((input.documentTitle || input.title) && input.filename ? input.filename : '') ||
+    input.sourceFile ||
+    ''
+  ).trim() || null;
+  const filename = documentTitle || String(input.filename || '').trim();
   const divisionKey = String(input.divisionKey || '').trim() || null;
   const nowIso = new Date().toISOString();
   const explicitOwner = String(input.owner || input.governanceOwner || '').trim();
@@ -329,6 +372,9 @@ function buildDocumentGovernanceMetadata(input = {}) {
   const tierMeta = getAuthorityTier(authority);
 
   return {
+    documentTitle: documentTitle || null,
+    originalFilename: originalFilename || null,
+    filename: filename || null,
     owner: explicitOwner || divisionKey || 'general',
     status,
     version: String(input.version || input.governanceVersion || '').trim() || `${source}-${sha256(filename || nowIso).slice(0, 10)}`,
@@ -537,20 +583,28 @@ function enrichChunkWithGovernance(chunk = {}, defaultGovernance = {}) {
   const validFrom = chunk.validFrom || gov.validFrom || null;
   const validUntil = chunk.validUntil || chunk.validTo || gov.validUntil || gov.validTo || null;
   const version = chunk.version || chunk.trainingVersion || gov.version || null;
+  const documentTitle = chunk.documentTitle || gov.documentTitle || null;
+  const originalFilename = chunk.originalFilename || gov.originalFilename || chunk.sourceFile || gov.sourceFile || null;
+  const filename = documentTitle || gov.filename || chunk.filename || null;
 
   return {
     ...chunk,
+    filename: filename || chunk.filename,
     governanceStatus: finalStatus,
     status: finalStatus,
     validFrom,
     validUntil,
     version,
+    documentTitle: documentTitle || filename,
+    originalFilename,
     authority,
     authorityTier: tierMeta.tier,
     supersedes: chunk.supersedes || gov.supersedes || null,
     supersededBy: chunk.supersededBy || gov.supersededBy || null,
     governanceMetadata: {
       ...gov,
+      documentTitle,
+      originalFilename,
       status: finalStatus,
       authority,
       authorityTier: tierMeta.tier,

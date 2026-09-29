@@ -508,4 +508,201 @@ describe('Document Administration & Intake Governance (RKAI Requirement)', () =>
       expect(allowedFuture).toBe(false);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // UI/UX REVISION: Separate Physical File Upload from Document Metadata
+  // -------------------------------------------------------------------------
+  describe('UI/UX Revision — Separate File Upload from Document Metadata', () => {
+
+    describe('A. Single Upload Governance', () => {
+      test('1. original filename ambigu + documentTitle valid -> ACCEPT', () => {
+        const payload = {
+          filename: 'test.pdf',
+          documentTitle: 'SK Biaya Pendidikan Mahasiswa Baru 2026/2027',
+          validFrom: '2026-01-01',
+          validUntil: '2026-12-31',
+          authority: 'tier_1_official_decree',
+          status: 'active'
+        };
+
+        const res = validateDocumentIntakeGovernance(payload);
+        expect(res.valid).toBe(true);
+        expect(res.filename).toBe('SK Biaya Pendidikan Mahasiswa Baru 2026/2027');
+        expect(res.governanceMetadata.documentTitle).toBe('SK Biaya Pendidikan Mahasiswa Baru 2026/2027');
+        expect(res.governanceMetadata.originalFilename).toBe('test.pdf');
+      });
+
+      test('2. original filename random seperti IMG_1234.pdf + documentTitle valid -> ACCEPT without physical rename', () => {
+        const payload = {
+          filename: 'IMG_20260929_142233.pdf',
+          documentTitle: 'Pengumuman Jadwal Yudisium I Tahun 2026/2027',
+          validFrom: '2026-01-01',
+          validUntil: '2026-12-31',
+          authority: 'tier_2_official_announcement',
+          status: 'active'
+        };
+
+        const res = validateDocumentIntakeGovernance(payload);
+        expect(res.valid).toBe(true);
+        expect(res.filename).toBe('Pengumuman Jadwal Yudisium I Tahun 2026/2027');
+        expect(res.governanceMetadata.originalFilename).toBe('IMG_20260929_142233.pdf');
+      });
+
+      test('3. documentTitle kosong dan physical filename ambigu -> REJECT', () => {
+        const payload = {
+          filename: 'IMG_1234.pdf',
+          documentTitle: '',
+          validFrom: '2026-01-01',
+          validUntil: '2026-12-31',
+          authority: 'tier_1_official_decree',
+          status: 'active'
+        };
+
+        const res = validateDocumentIntakeGovernance(payload);
+        expect(res.valid).toBe(false);
+        expect(res.error).toBeDefined();
+      });
+
+      test('4. documentTitle ambigu -> REJECT', () => {
+        const payload = {
+          filename: 'scan_file.pdf',
+          documentTitle: 'dokumen baru',
+          validFrom: '2026-01-01',
+          validUntil: '2026-12-31',
+          authority: 'tier_1_official_decree',
+          status: 'active'
+        };
+
+        const res = validateDocumentIntakeGovernance(payload);
+        expect(res.valid).toBe(false);
+        expect(res.field).toBe('documentTitle');
+        expect(res.error).toMatch(/terlalu ambigu|tidak informatif/i);
+      });
+
+      test('5. metadata tanggal valid -> ACCEPT', () => {
+        const payload = {
+          filename: 'scan123.pdf',
+          documentTitle: 'Pedoman Penulisan Skripsi Mahasiswa S1 2026',
+          validFrom: '2026-01-01',
+          validUntil: '2026-12-31',
+          authority: 'tier_1_official_decree',
+          status: 'active'
+        };
+
+        const res = validateDocumentIntakeGovernance(payload);
+        expect(res.valid).toBe(true);
+        expect(res.validFrom).toContain('2026-01-01');
+        expect(res.validUntil).toContain('2026-12-31');
+      });
+
+      test('6. metadata expired -> BLOCK current retrieval', () => {
+        const payload = {
+          filename: 'scan123.pdf',
+          documentTitle: 'Pedoman Penulisan Skripsi Mahasiswa S1 2020',
+          validFrom: '2020-01-01',
+          validUntil: '2020-12-31',
+          authority: 'tier_1_official_decree',
+          status: 'active'
+        };
+
+        const intake = validateDocumentIntakeGovernance(payload);
+        expect(intake.valid).toBe(true);
+        expect(intake.status).toBe('expired');
+
+        const chunk = {
+          id: 'chunk-exp-title',
+          chunk: 'Aturan lama skripsi',
+          governanceStatus: intake.status,
+          validFrom: intake.validFrom,
+          validUntil: intake.validUntil,
+          authority: intake.authority
+        };
+
+        const allowed = isChunkGovernanceAllowed(chunk, { referenceTime: '2026-09-29T12:00:00.000Z' });
+        expect(allowed).toBe(false);
+      });
+    });
+
+    describe('B. Metadata Persistence & Propagation', () => {
+      test('7 & 8 & 9. documentTitle and originalFilename persist in metadata and propagate to chunks', () => {
+        const meta = buildDocumentGovernanceMetadata({
+          filename: 'scan123.pdf',
+          documentTitle: 'SK Biaya Pendidikan Mahasiswa Baru 2026/2027',
+          validFrom: '2026-01-01',
+          validUntil: '2026-12-31',
+          authority: 'tier_1_official_decree',
+          status: 'active',
+          version: 'v2026.1'
+        });
+
+        // 7. documentTitle persisted as authoritative filename & identity
+        expect(meta.filename).toBe('SK Biaya Pendidikan Mahasiswa Baru 2026/2027');
+        expect(meta.documentTitle).toBe('SK Biaya Pendidikan Mahasiswa Baru 2026/2027');
+
+        // 9. originalFilename available as technical audit metadata
+        expect(meta.originalFilename).toBe('scan123.pdf');
+
+        // 8. Chunks inherit documentTitle and originalFilename
+        const rawChunk = {
+          id: 'c-1',
+          chunk: 'Biaya pendaftaran adalah Rp 500.000',
+          filename: 'scan123.pdf'
+        };
+
+        const enriched = enrichChunkWithGovernance(rawChunk, meta);
+        expect(enriched.filename).toBe('SK Biaya Pendidikan Mahasiswa Baru 2026/2027');
+        expect(enriched.documentTitle).toBe('SK Biaya Pendidikan Mahasiswa Baru 2026/2027');
+        expect(enriched.originalFilename).toBe('scan123.pdf');
+        expect(enriched.governanceMetadata.documentTitle).toBe('SK Biaya Pendidikan Mahasiswa Baru 2026/2027');
+        expect(enriched.governanceMetadata.originalFilename).toBe('scan123.pdf');
+        expect(enriched.governanceMetadata.version).toBe('v2026.1');
+      });
+    });
+
+    describe('C. Bulk Upload Governance', () => {
+      test('10 & 11 & 12. different filenames + per-file titles -> ACCEPT without renaming physical files, batch governance applies', () => {
+        const batchFiles = [
+          { originalname: 'IMG_001.pdf', title: 'SK Beasiswa Prestasi Unggulan 2026/2027' },
+          { originalname: 'scan_dokumen_final.docx', title: 'Pedoman Pelaksanaan Magang Industri 2026' },
+          { originalname: 'DSC_4421.pdf', title: 'Kalender Akademik Semester Ganjil 2026/2027' }
+        ];
+
+        const batchGovernanceCommon = {
+          validFrom: '2026-02-01',
+          validUntil: '2026-12-31',
+          authority: 'tier_1_official_decree',
+          status: 'active',
+          version: 'batch-2026'
+        };
+
+        const intakeResults = batchFiles.map(f => {
+          return validateDocumentIntakeGovernance({
+            filename: f.originalname,
+            documentTitle: f.title,
+            ...batchGovernanceCommon
+          });
+        });
+
+        // 10. All files accepted because each has a valid descriptive documentTitle
+        for (const res of intakeResults) {
+          expect(res.valid).toBe(true);
+        }
+
+        // 11. Original filenames were random/camera images, no renaming was forced
+        expect(intakeResults[0].governanceMetadata.originalFilename).toBe('IMG_001.pdf');
+        expect(intakeResults[0].filename).toBe('SK Beasiswa Prestasi Unggulan 2026/2027');
+        expect(intakeResults[1].governanceMetadata.originalFilename).toBe('scan_dokumen_final.docx');
+        expect(intakeResults[2].governanceMetadata.originalFilename).toBe('DSC_4421.pdf');
+
+        // 12. Batch governance uniformly applied
+        for (const res of intakeResults) {
+          expect(res.validFrom).toContain('2026-02-01');
+          expect(res.validUntil).toContain('2026-12-31');
+          expect(res.authority).toBe('tier_1_official_decree');
+          expect(res.status).toBe('active');
+          expect(res.governanceMetadata.version).toBe('batch-2026');
+        }
+      });
+    });
+  });
 });
