@@ -115,6 +115,7 @@ tests/*
 !tests/uat30DefectRemediation.test.js
 !tests/phase2UatRemediation.test.js
 !tests/documentAdministrationGovernance.test.js
+!tests/adminTrainingUploadCleanup.test.js
 tools/
 quarantined_backups/
 

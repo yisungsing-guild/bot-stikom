@@ -1346,7 +1346,18 @@ router.post(
           logger.warn({ err: dbErr && dbErr.message ? dbErr.message : String(dbErr) }, '[Upload] Fallback training DB insert failed');
         }
 
-        // Do NOT delete uploaded file so admin can download original for inspection.
+        // When fallback DB row is created successfully, preserve the uploaded file so admin can download original.
+        // If fallback DB row creation failed, cleanup physical file to prevent orphan/zombie file on disk.
+        if (!fallbackTraining && uploadedPath) {
+          try {
+            await cleanupUploadedFile(uploadedPath);
+          } catch (cleanupErr) {
+            logger.warn(
+              { uploadedPath, err: cleanupErr && cleanupErr.message ? cleanupErr.message : String(cleanupErr) },
+              '[Upload] Failed to cleanup orphan file after fallback DB insert failure'
+            );
+          }
+        }
 
         // Improved error response dengan suggestions
         const errorResponse = {
