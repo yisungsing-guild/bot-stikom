@@ -19,8 +19,6 @@ const CLAUSE_CONNECTORS = [
   'lalu',
   'serta',
   'kemudian',
-  'tapi',
-  'sedangkan',
   'juga'
 ];
 
@@ -177,6 +175,16 @@ function isNegativeControl(clause1, clause2, fullText) {
     && /^\s*(?:jam|pukul|waktu|hari|tanggal|kapan|dimana)\s*(?:berapa)?\??\s*$/i.test(clause2.trim());
   if (coordinatedScheduleQuery) return true;
 
+  // 6. Coordinated predicate attributes of the same topic/entity without a new entity:
+  // e.g. "Apakah ITB STIKOM Bali sudah terakreditasi oleh BAN-PT? Apa peringkat akreditasinya?"
+  // Clause 1 asks about accreditation of ITB STIKOM Bali, Clause 2 asks for its ranking/status (anaphoric attribute).
+  const c1Lower = String(clause1 || '').toLowerCase();
+  const c2Lower = String(clause2 || '').toLowerCase();
+  const isAccreditationContinuation = /\b(?:akreditasi|terakreditasi|ban\s*-?\s*pt)\b/i.test(c1Lower)
+    && /\b(?:akreditasi(?:nya)?|peringkat(?:nya)?|status(?:nya)?|nomor\s*sk|sk\s*akreditasi)\b/i.test(c2Lower)
+    && !matchCanonicalEntities(clause2).some(e => e.family === 'academic_program' || e.type === 'program');
+  if (isAccreditationContinuation) return true;
+
   return false;
 }
 
@@ -240,20 +248,29 @@ function decomposeSemanticRequests(rawText, options = {}) {
       .filter(p => p.length > 0);
 
     if (rawParts.length > 1) {
-      // Verify that each part is a meaningful independent question/clause
-      const validSubrequests = [];
-      for (const part of rawParts) {
-        // Clean trailing punctuation for predicate checking
-        const cleanPart = part.replace(/[?.!]+$/, '').trim();
-        if (cleanPart.length >= 3 && hasInterrogativePredicate(cleanPart)) {
-          validSubrequests.push(part);
-        } else if (cleanPart.length >= 8) {
-          validSubrequests.push(part);
+      let isNegative = false;
+      for (let i = 0; i < rawParts.length - 1; i++) {
+        if (isNegativeControl(rawParts[i], rawParts[i + 1], original)) {
+          isNegative = true;
+          break;
         }
       }
+      if (!isNegative) {
+        // Verify that each part is a meaningful independent question/clause
+        const validSubrequests = [];
+        for (const part of rawParts) {
+          // Clean trailing punctuation for predicate checking
+          const cleanPart = part.replace(/[?.!]+$/, '').trim();
+          if (cleanPart.length >= 3 && hasInterrogativePredicate(cleanPart)) {
+            validSubrequests.push(part);
+          } else if (cleanPart.length >= 8) {
+            validSubrequests.push(part);
+          }
+        }
 
-      if (validSubrequests.length > 1) {
-        return buildResolvedSubrequests(validSubrequests, original, '?');
+        if (validSubrequests.length > 1) {
+          return buildResolvedSubrequests(validSubrequests, original, '?');
+        }
       }
     }
   }
@@ -286,10 +303,9 @@ function decomposeSemanticRequests(rawText, options = {}) {
     const hasP2 = hasInterrogativePredicate(clause2) || hasInterrogativePredicate(normC2);
 
     // Or clause starts with a distinct topic predicate
-    const clause2HasTopic = /\b(?:biaya|akreditasi|rpl|beasiswa|potongan|diskon|keringanan|bebas\s+(?:ukt|biaya)|fasilitas|lab|laboratorium|perpustakaan|ukm|ormawa|kuota|daya\s+tampung|jumlah\s+(?:pasti|maba|mahasiswa)|pembayaran|jadwal|info|syarat)\b/i.test(clause2) || /\b(?:biaya|akreditasi|rpl|beasiswa|potongan|diskon|keringanan|bebas\s+(?:ukt|biaya)|fasilitas|lab|laboratorium|perpustakaan|ukm|ormawa|kuota|daya\s+tampung|jumlah\s+(?:pasti|maba|mahasiswa)|pembayaran|jadwal|info|syarat)\b/i.test(normC2);
     const clause1HasTopic = /\b(?:biaya|akreditasi|rpl|beasiswa|potongan|diskon|keringanan|bebas\s+(?:ukt|biaya)|fasilitas|lab|laboratorium|perpustakaan|ukm|ormawa|kuota|daya\s+tampung|jumlah\s+(?:pasti|maba|mahasiswa)|pembayaran|jadwal|info|syarat)\b/i.test(clause1) || /\b(?:biaya|akreditasi|rpl|beasiswa|potongan|diskon|keringanan|bebas\s+(?:ukt|biaya)|fasilitas|lab|laboratorium|perpustakaan|ukm|ormawa|kuota|daya\s+tampung|jumlah\s+(?:pasti|maba|mahasiswa)|pembayaran|jadwal|info|syarat)\b/i.test(normC1);
 
-    if ((hasP1 || clause1HasTopic) && (hasP2 || clause2HasTopic)) {
+    if ((hasP1 || clause1HasTopic) && hasP2) {
       splitCandidate = {
         clauses: [clause1, clause2],
         connector

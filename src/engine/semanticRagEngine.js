@@ -2438,7 +2438,14 @@ function hasExplicitCurrentTurnSemanticAuthority(question, contract = null) {
   return false;
 }
 
-function shouldResolveContextFromSession(question, contract = null) {
+function shouldResolveContextFromSession(question, contract = null, options = {}) {
+  const ca = options.__contextAuthority || (options.options && options.options.__contextAuthority);
+  if (ca && (ca.transition === 'NO_CONTEXT' || ca.transition === 'DOMAIN_SWITCH')) {
+    return false;
+  }
+  if (ca && ca.transition === 'ENTITY_REPLACEMENT' && ca.resolvedEntity) {
+    return true;
+  }
   if (!isContextualSemanticFollowup(question)) return false;
   return !hasExplicitCurrentTurnSemanticAuthority(question, contract);
 }
@@ -2514,14 +2521,40 @@ function inferContextTopicFromSession(sessionData) {
       'manajemen informatika': 'informatics_management',
       's2 sistem informasi': 'postgraduate'
     };
-    const programKey = programKeyByCanonical[canonicalProgramName] || canonicalProgramName
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    return {
-      key: programKey || 'program',
-      label: `Prodi ${stateEntity} ITB STIKOM Bali`,
-      entity: stateEntity
-    };
+    if (programKeyByCanonical[canonicalProgramName]) {
+      return {
+        key: programKeyByCanonical[canonicalProgramName],
+        label: `Prodi ${stateEntity} ITB STIKOM Bali`,
+        entity: stateEntity
+      };
+    }
+    const stateObj = sessionData && (sessionData.state || sessionData.conversationState || sessionData);
+    const entityType = stateObj && (stateObj.activeEntity?.type || stateObj.activeEntity?.family || stateObj.type);
+    const entityFamily = stateObj && (stateObj.activeEntity?.family || stateObj.family);
+    if (entityType === 'program' || entityFamily === 'academic_program') {
+      const programKey = canonicalProgramName
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      return {
+        key: programKey || 'program',
+        label: `Prodi ${stateEntity} ITB STIKOM Bali`,
+        entity: stateEntity
+      };
+    }
+    if (entityType === 'admission_track' || /rpl|rekognisi/i.test(canonicalProgramName)) {
+      return {
+        key: 'rpl',
+        label: 'jalur RPL ITB STIKOM Bali',
+        entity: stateEntity
+      };
+    }
+    if (entityType === 'international_program' || /double\s*degree|dual\s*degree/i.test(canonicalProgramName)) {
+      return {
+        key: 'dual_degree',
+        label: 'Program Double Degree ITB STIKOM Bali',
+        entity: stateEntity
+      };
+    }
   }
   const messages = sessionData && Array.isArray(sessionData.messages) ? sessionData.messages : [];
   for (let i = messages.length - 1; i >= 0; i -= 1) {
@@ -2580,12 +2613,48 @@ function canResolveRequirementFollowupForTopic(topicKey) {
   return !/^(?:career_center|inbis|llc|student_organization)$/i.test(String(topicKey || ''));
 }
 
+function canResolveAccreditationFollowupForTopic(topicKey) {
+  return /^(?:business_digital|information_system|information_technology|computer_system|informatics_management|postgraduate|program(?:_[a-z0-9_]+)?)$/i.test(String(topicKey || ''));
+}
+
 function resolveSemanticFollowupQuestion(question, options = {}) {
   const original = String(question || '').trim();
   const smallTalkWords = original.split(/\s+/).filter(Boolean).length;
   const smallTalk = trySmallTalkAnswer(original);
   if (smallTalk && smallTalk.answer && shouldReturnSmallTalkImmediately(original, smallTalkWords)) {
     return { changed: false, question: original, topic: null, smallTalkOnly: true };
+  }
+  const ca = options.__contextAuthority || (options.options && options.options.__contextAuthority);
+  if (ca && ca.transition === 'ENTITY_REPLACEMENT' && ca.resolvedEntity) {
+    const entityName = ca.resolvedEntity.canonical || ca.resolvedEntity.name || original;
+    if (ca.resolvedDomain === 'fee') {
+      return {
+        changed: true,
+        question: `Berapa biaya kuliah untuk ${entityName}?`,
+        topic: 'fee'
+      };
+    }
+    if (ca.resolvedDomain === 'accreditation') {
+      return {
+        changed: true,
+        question: `Bagaimana akreditasi untuk ${entityName}?`,
+        topic: 'accreditation'
+      };
+    }
+    if (ca.resolvedDomain === 'program_curriculum') {
+      return {
+        changed: true,
+        question: `Apa kurikulum yang dipelajari di ${entityName}?`,
+        topic: 'program_curriculum'
+      };
+    }
+    if (ca.resolvedDomain === 'career') {
+      return {
+        changed: true,
+        question: `Bagaimana prospek kerja untuk ${entityName}?`,
+        topic: 'career'
+      };
+    }
   }
   if (!original || !isContextualSemanticFollowup(original)) {
     return { changed: false, question: original, topic: null };
@@ -2628,11 +2697,15 @@ function resolveSemanticFollowupQuestion(question, options = {}) {
   } else if (/\b(?:cara|alur|proses|daftar|mengurus)\b/i.test(q)) {
     resolved = `Cara, alur, atau proses untuk ${topic.label}`;
   } else if (/\bakreditasi(?:nya)?\b/i.test(q)) {
-    resolved = `Akreditasi ${topic.label}`;
+    if (canResolveAccreditationFollowupForTopic(topic.key)) {
+      resolved = `Akreditasi ${topic.label}`;
+    } else {
+      resolved = original;
+    }
   } else if (/\b(?:berlaku|masa\s+berlaku|valid(?:ity)?|sampai\s+kapan|sampai\s+tahun\s+berapa)\b/i.test(q)) {
     const recentAll = getRecentConversationTextForResolution(options && options.sessionData);
     if (/\bakreditasi\b/i.test(recentAll)) {
-      resolved = `Masa berlaku akreditasi ${topic.label}`;
+      resolved = canResolveAccreditationFollowupForTopic(topic.key) ? `Masa berlaku akreditasi ${topic.label}` : original;
     } else {
       resolved = `Masa berlaku ${topic.label}`;
     }
@@ -2655,7 +2728,11 @@ function resolveSemanticFollowupQuestion(question, options = {}) {
   } else if (/\b(?:kerja(?:nya)?|karier(?:nya)?|karir(?:nya)?|prospek(?:nya)?)\b/i.test(q)) {
     resolved = `Peluang kerja atau karier terkait ${topic.label}`;
   } else if (/\b(?:akreditasi(?:nya)?|akredit)\b/i.test(q)) {
-    resolved = `Akreditasi ${topic.label}`;
+    if (canResolveAccreditationFollowupForTopic(topic.key)) {
+      resolved = `Akreditasi ${topic.label}`;
+    } else {
+      resolved = original;
+    }
   } else if (/\b(?:susah|sulit|mudah|gampang|coding|ngoding|semester\s+awal)\b/i.test(q)) {
     resolved = `Tingkat kesulitan, kecocokan, dan gambaran belajar pada ${topic.label}`;
   } else if (/\b(?:kelas\s*(?:malam|sabtu|karyawan|weekend)|jadwal\s+(?:per)?kuliah|waktu\s+(?:per)?kuliah)\b/i.test(q)) {
@@ -9641,13 +9718,45 @@ function tryAccreditationAnswer(question, indexForQuery) {
       frameSource: 'rag-accreditation'
     };
   }
+
+  const asksInstitution = /\b(kampus|institusi|perguruan\s+tinggi|itb\s*stikom\s*bali|stikom\s*bali)\b|\bdi\s*kampus\b/i.test(q)
+    || /\bban\s*-?\s*pt\b/i.test(q)
+    || /\b(apakah|apa)\b[\s\S]{0,80}\bterakreditasi\b/i.test(q);
+
+  if (asksInstitution && Array.isArray(indexForQuery) && indexForQuery.length) {
+    const candidates = [];
+    for (const item of indexForQuery) {
+      const chunk = String(item && item.chunk ? item.chunk : '').replace(/\s+/g, ' ').trim();
+      const haystack = `${item && (item.filename || item.sourceFile || '')} ${chunk}`;
+      if (!/akreditasi|ban\s*-?\s*pt|peringkat/i.test(haystack)) continue;
+      if (!/institut\s+teknologi\s+dan\s+bisnis\s+stikom\s+bali|itb\s*stikom\s*bali|perguruan\s+tinggi/i.test(haystack)) continue;
+      const gradeMatch = chunk.match(/menjadi\s+(UNGGUL|BAIK\s+SEKALI|BAIK|[ABC])\b/i)
+        || chunk.match(/peringkat\s+akreditasi[\s\S]{0,160}?\b(UNGGUL|BAIK\s+SEKALI|BAIK|[ABC])\b/i)
+        || chunk.match(/terakreditasi[\s\S]{0,80}?\b(UNGGUL|BAIK\s+SEKALI|BAIK|[ABC])\b/i);
+      const skMatch = haystack.match(/(?:Nomor\s*[:\-]?\s*)?([0-9]{2,5}\/SK\/BAN\s*-?\s*PT\/[A-Za-z0-9.\/-]+\/\d{4})/i);
+      const score = (gradeMatch ? 10 : 0) + (skMatch ? 4 : 0) + (/konversi\s+peringkat/i.test(haystack) ? 3 : 0) + (/perguruan\s+tinggi/i.test(haystack) ? 2 : 0);
+      if (score > 0) candidates.push({ chunk, score, grade: gradeMatch && gradeMatch[1], sk: skMatch && skMatch[1] });
+    }
+
+    candidates.sort((a, b) => b.score - a.score);
+    const best = candidates[0];
+    if (best && best.grade) {
+      const grade = String(best.grade).replace(/\s+/g, ' ').trim().replace(/\b\w/g, (m) => m.toUpperCase());
+      const lines = [`ITB STIKOM Bali sudah terakreditasi oleh BAN-PT dengan peringkat ${grade}.`];
+      if (best.sk) lines.push(`Nomor SK: ${String(best.sk).replace(/\s+/g, '')}.`);
+      return {
+        answer: lines.join('\n'),
+        source: 'rag-accreditation',
+        frameSource: 'rag-accreditation'
+      };
+    }
+  }
+
   const structured = ragEngine.tryStructuredAccreditationAnswer(question, indexForQuery);
   if (structured && structured.answer && structured.source !== 'rag-accreditation-clarify') {
     return structured;
   }
 
-  const asksInstitution = /\b(kampus|institusi|perguruan\s+tinggi|itb\s*stikom\s*bali|stikom\s*bali)\b|\bdi\s*kampus\b/i.test(q)
-    || /\b(apakah|apa)\b[\s\S]{0,80}\bterakreditasi\b/i.test(q);
   if (!asksInstitution || !Array.isArray(indexForQuery) || !indexForQuery.length) return structured || null;
 
   const candidates = [];
@@ -10269,6 +10378,84 @@ function buildGoesToSchoolAnswer() {
   ].join('\n');
 }
 
+function tryTemporalProgramStatusAnswer(question, canonicalUnderstanding = null, options = {}) {
+  const q = String(question || '').trim().toLowerCase();
+  if (!q) return null;
+
+  const hasTemporalInquiryToken = /\b(?:masih(?:\s+(?:berjalan|aktif|ada|beroperasi|buka|dibuka|menerima|tersedia|berlaku|dijalankan))?|saat\s+ini|sekarang|terbaru|terkini|masih\s+tersedia|masih\s+dibuka|masih\s+menerima)\b/i.test(q);
+  const questionsHistoricalExplanation = /\b(?:sudah\s+tidak\s+(?:dijalankan|berjalan|aktif|ada)|kenapa\s+masih\s+bisa\s+dijelaskan|mengapa\s+masih\s+dijelaskan|kok\s+masih\s+dijelaskan|kenapa\s+masih\s+muncul)\b/i.test(q);
+
+  if (!hasTemporalInquiryToken && !questionsHistoricalExplanation) return null;
+
+  const isPlainScheduleQuery = /\b(?:jadwal|gelombang|tanggal|tgl|kapan|sampai\s+kapan)\b/i.test(q)
+    && !questionsHistoricalExplanation
+    && !/\b(?:masih\s+berjalan|masih\s+aktif|masih\s+buka|masih\s+dibuka|masih\s+menerima|masih\s+tersedia|apakah\s+program\s+masih)\b/i.test(q);
+  if (isPlainScheduleQuery) return null;
+
+  let targetEntity = '';
+  if (/\b(?:hi[-\s]?think|hithink)\b/i.test(q)) targetEntity = 'Hi-Think';
+  else if (/\b(?:gccp|global\s+cross\s+cultural)\b/i.test(q)) targetEntity = 'GCCP';
+  else if (/\b(?:bccp)\b/i.test(q)) targetEntity = 'BCCP';
+  else if (/\b(?:goes\s+to\s+school)\b/i.test(q)) targetEntity = 'Goes to School';
+  else if (canonicalUnderstanding && canonicalUnderstanding.entities) {
+    const facilities = canonicalUnderstanding.entities.facilities || [];
+    const intl = canonicalUnderstanding.entities.internationalPrograms || [];
+    const progs = canonicalUnderstanding.entities.programs || [];
+    const svcs = canonicalUnderstanding.entities.services || [];
+    const found = facilities[0] || intl[0] || progs[0] || svcs[0];
+    if (found && found.canonical) targetEntity = found.canonical;
+  }
+  if (!targetEntity && options && (options.sessionData || options.conversationState || options.sessionState)) {
+    const st = options.sessionData?.conversationState || options.conversationState || options.sessionState || options.sessionData;
+    const lastEntity = st?.activeEntity?.canonical || st?.lastEntity;
+    if (typeof lastEntity === 'string' && lastEntity) targetEntity = lastEntity;
+  }
+
+  const programLabel = targetEntity ? `program ${targetEntity}` : 'program yang dimaksud';
+
+  if (questionsHistoricalExplanation) {
+    return {
+      answer: [
+        `Informasi mengenai ${programLabel} tercatat pada dokumen dan arsip profil program kampus yang ada dalam basis data resmi, sehingga sistem dapat memberikan penjelasan mengenai latar belakang dan konsep program tersebut berdasarkan catatan historis yang ada.`,
+        '',
+        'Namun, dokumen resmi yang tersedia di sistem saat ini belum memuat pembaruan status operasional terkini (apakah program tersebut saat ini masih aktif dijalankan pada periode saat ini atau sudah tidak dilanjutkan).',
+        '',
+        'Dokumen historis tidak dapat dijadikan bukti bahwa program masih aktif berjalan. Untuk kepastian status keaktifan operasional saat ini, silakan konfirmasi langsung ke pihak kampus atau unit terkait (seperti Direktorat Kerja Sama / Career Center).'
+      ].join('\n'),
+      source: 'semantic-rag-temporal-authority',
+      frameSource: 'semantic-rag-temporal-authority'
+    };
+  }
+
+  if (hasTemporalInquiryToken) {
+    if (!targetEntity) {
+      return {
+        answer: [
+          'Untuk memastikan apakah program yang kakak maksud saat ini masih aktif berjalan atau dibuka, mohon sebutkan nama program spesifik yang ingin ditanyakan.',
+          '',
+          'Catatan resmi yang ada di sistem memuat data arsip dan profil program kampus. Namun untuk kepastian status keaktifan operasional terkini (terutama program kerja sama atau program pendukung), status operasional terbarunya disarankan untuk dikonfirmasi langsung ke pengelola kampus atau unit terkait.'
+        ].join('\n'),
+        source: 'semantic-rag-temporal-authority',
+        frameSource: 'semantic-rag-temporal-authority'
+      };
+    }
+
+    return {
+      answer: [
+        `Data mengenai ${programLabel} tercatat pada dokumen profil dan arsip program kampus yang tersedia di sistem.`,
+        '',
+        'Namun, dokumen resmi yang tersedia saat ini belum mencantumkan konfirmasi status operasional terkini (apakah program tersebut saat ini masih aktif dibuka/dijalankan pada periode sekarang atau sudah tidak dilanjutkan).',
+        '',
+        'Dokumen profil/historis yang ada tidak menjadi jaminan bahwa program saat ini masih aktif. Untuk memastikan status keaktifan terbarunya, disarankan konfirmasi langsung ke pengelola program atau admin kampus terkait.'
+      ].join('\n'),
+      source: 'semantic-rag-temporal-authority',
+      frameSource: 'semantic-rag-temporal-authority'
+    };
+  }
+
+  return null;
+}
+
 function buildAcademicPolicyNoDataAnswer(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(absensi|presensi|kehadiran)\b/i.test(q) && /\b(remedial|remidi|ujian\s+ulang|ujian\s+susulan)\b/i.test(q)) {
@@ -10406,6 +10593,8 @@ function tryCampusSupportEntityAnswer(question, indexForQuery, options = {}) {
     };
   }
   if (/\b(?:hi[-\s]?think|hithink)\b/i.test(q)) {
+    const temporalAns = tryTemporalProgramStatusAnswer(q, options?.canonicalUnderstanding || options?.canonical, options);
+    if (temporalAns && temporalAns.answer) return temporalAns;
     let hiThinkAnswer = buildHiThinkAnswer();
     if (/\b(?:kapan|mulai|semester|ikut|mengikuti|daftar|mendaftar)\b/i.test(q)) {
       hiThinkAnswer = 'Mahasiswa dapat mengikuti Program Hi-Think mulai Semester 5. Program ini berkaitan dengan persiapan belajar dan karier di lingkungan industri teknologi Jepang, termasuk penguatan kompetensi dan bahasa Jepang. Untuk jadwal pembukaan, kuota, dan alur pendaftaran yang sedang berjalan, kakak sebaiknya konfirmasi ke admin kampus atau pengelola program.';
@@ -15583,7 +15772,7 @@ async function _baseFinalizeSemanticResult(question, result, resultCacheKey, opt
   // Universal raw-leak + training artifact guard — applies to ALL routes including training-specific
   const rawArtifactDetected = result.answer && (hasRawEvidenceSnippetShape(result.answer) || hasTrainingMetadataArtifact(result.answer));
   const trustedStructuredRawBypass = rawArtifactDetected
-    && /^(?:semantic-rag-(?:grounded-composer|source-grounded-retrieval|foreign-student-admin-topic|registration-fee|fee-detail|fee-discount|scholarship|academic-source|academic-policy|academic-credit|institution-history|institution-document|international-topic-composer|campus-support-entity|campus-facility|pmb-contact|program-comparison|program-curriculum|program-definition|pmb-info|program-list|program-list-contextual|program-scope-clarification-choice|ukm-(?:list|count|specific|interest-evidence|implicit-evidence))|rag-accreditation)$/i.test(String(source || ''))
+    && /^(?:semantic-rag-(?:grounded-composer|source-grounded-retrieval|foreign-student-admin-topic|registration-fee|fee-detail|fee-discount|scholarship|academic-source|academic-policy|academic-credit|academic-credit-no-data|institution-history|institution-document|international-topic-composer|campus-support-entity|campus-facility|pmb-contact|program-comparison|program-curriculum|program-definition|program-availability-dkv|temporal-authority|pmb-info|program-list|program-list-contextual|program-scope-clarification-choice|ukm-(?:list|count|specific|interest-evidence|implicit-evidence))|rag-accreditation)$/i.test(String(source || ''))
     && !hasTrainingMetadataArtifact(result.answer)
     && !/\b(?:SOURCE_CHUNKS|Sheet:|chunkId|trainingId|metadata|filename|sourceFile|MENIMBANG\s*:|MENGINGAT\s*:|MEMUTUSKAN\s*:|SURAT\s+KEPUTUSAN\s+REKTOR|Teks\s+hasil\s+OCR|\[Tabel\s*\d+\]|\[Gambar\s*\d+\])\b/i.test(String(result.answer || ''));
   const trustedUnknownOrganizationFallbackBypass = rawArtifactDetected
@@ -15884,7 +16073,17 @@ async function _baseFinalizeSemanticResult(question, result, resultCacheKey, opt
   const structuredUkmSpecificSafe = /semantic-rag-ukm-specific/i.test(source)
     && !hasLikelyRawDocumentLeak(result.answer)
     && !hasNoDataAnswerPhrase(result.answer);
-  const structuredSemanticSafe = structuredExtractiveSourceSafe || structuredUkmSpecificSafe || structuredAcademicPolicyFieldSafe || deterministicKnownFaqSafe || structuredSmallTalkSafe || structuredScheduleSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredOrganizationCountSafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredPostgraduateProfileSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredProgramRecommendationSafe || structuredStudyLevelComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredAdminInternationalSafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredCertificationSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
+  const structuredDkvAvailabilitySafe = /semantic-rag-program-availability-dkv/i.test(source)
+    && /\b(?:DKV|Desain\s+Komunikasi\s+Visual)\b/i.test(String(result.answer || ''))
+    && /\b(?:Sistem\s+Informasi|Teknologi\s+Informasi|Bisnis\s+Digital)\b/i.test(String(result.answer || ''));
+  const structuredTemporalSafe = /semantic-rag-temporal-authority/i.test(source);
+  const explicitFeeQuestion = hasExplicitFeeQuestionSignal(question)
+    || !!(options && options.sessionData && /biaya|fee|finance/i.test(String(options.sessionData.lastTopic || '')))
+    || options?.__contextAuthority?.resolvedDomain === 'fee'
+    || /fee|biaya/i.test(String(options?.sessionData?.conversationState?.activeDomain || options?.sessionData?.activeDomain || options?.sessionActiveDomain || options?.effectiveSemanticFrame?.domain?.primary || ''));
+  const feeSourceSafe = /(?:semantic-rag-fee-detail|semantic-rag-registration-fee|semantic-rag-contextual-fee|semantic-rag-fee-general|semantic-rag-fee-comparison|semantic-rag-fee-discount|semantic-rag-finance-fallback|semantic-rag-clarify)/i.test(source);
+  const explicitFeeSafe = explicitFeeQuestion && (feeSourceSafe || /(?:biaya|harga|ukt|dpp|tarif|pembayaran|spp|pay|fee)/i.test(source));
+  const structuredSemanticSafe = explicitFeeSafe || structuredDkvAvailabilitySafe || structuredTemporalSafe || structuredExtractiveSourceSafe || structuredUkmSpecificSafe || structuredAcademicPolicyFieldSafe || deterministicKnownFaqSafe || structuredSmallTalkSafe || structuredScheduleSafe || compactAcademicSafe || structuredPmbSafe || structuredDualDegreeSafe || structuredFacilitySafe || structuredOrganizationCountSafe || structuredProgramListSafe || structuredProgramDefinitionSafe || structuredPostgraduateProfileSafe || structuredProgramCurriculumSafe || structuredProgramComparisonSafe || structuredProgramRecommendationSafe || structuredStudyLevelComparisonSafe || structuredAcademicFacultySafe || structuredAcademicNoDataSafe || structuredAbbreviationClarificationSafe || structuredRplSafe || explicitExternalNoDataSafe || structuredDefinitionSafe || structuredAccreditationSafe || structuredScholarshipSafe || structuredVisaStudySafe || structuredAdminInternationalSafe || structuredCampusLocationSafe || structuredFeedbackSafe || structuredInstitutionProfileSafe || structuredCertificationSafe || structuredAcademicUploadSafe || documentEvidenceSourceSafe || fineIntentSafe;
   if (preflight && preflight.blocked && !structuredSemanticSafe) {
     const blocked = {
       success: true,
@@ -15916,10 +16115,7 @@ async function _baseFinalizeSemanticResult(question, result, resultCacheKey, opt
   const client = options.client || getClient();
   const validatedClarification = validateClarificationOutput(result, result?.debug?.semanticContract)?.ok === true;
   const localMismatch = (structuredSemanticSafe || validatedClarification) ? false : isMeaningMismatchAnswer(question, result.answer, source);
-  const explicitFeeQuestion = hasExplicitFeeQuestionSignal(question) || !!(options && options.sessionData && /biaya|fee|finance/i.test(String(options.sessionData.lastTopic || '')));
   const explicitDualDegreeQuestion = /\b(double\s*degree|dual\s*degree|dd|dua\s+gelar|gelar\s+ganda)\b/i.test(question) || (options && options.sessionData && /double_degree/i.test(String(options.sessionData.lastTopic || options.sessionData.conversationState?.activeDomain || '')));
-  const feeSourceSafe = /(?:semantic-rag-fee-detail|semantic-rag-registration-fee|semantic-rag-contextual-fee|semantic-rag-fee-general|semantic-rag-fee-comparison|semantic-rag-fee-discount|semantic-rag-finance-fallback|semantic-rag-clarify)/i.test(source);
-  const explicitFeeSafe = explicitFeeQuestion && (feeSourceSafe || /(?:biaya|harga|ukt|dpp|tarif|pembayaran|spp|pay|fee)/i.test(source));
   const dualDegreeSourceSafe = /semantic-rag-dual-degree/i.test(source);
   
   const isDocumentSource = /semantic-rag-uploaded-training|campus-support|campus-facility/i.test(source);
@@ -16009,10 +16205,33 @@ function tryShortProgramDefinitionDirectAnswer(question, canonical = null, optio
   if (canonical && canonical.entities && Array.isArray(canonical.entities.programs) && canonical.entities.programs.length >= 2) return null;
   if (/\\b(?:perbandingan|bandingkan|beda|perbedaan|antara)\\b/i.test(normalized)) return null;
   if (/\bdkv\b|desain\s+komunikasi\s+visual/i.test(normalized)) {
-    const asksRegularStikomProgramExistence = asksProgramExistenceShape
-      && /\b(?:stikom|itb\s*stikom|kampus)\b/i.test(normalized)
-      && !/\b(?:double\s*degree|dual\s*degree|dd\b|utb|universitas\s+teknologi\s+bandung)\b/i.test(normalized);
-    if (asksRegularStikomProgramExistence) return null;
+    const asksDkvRelationshipOrAvailability = /\b(?:program\s+studi|prodi|jurusan)\s+(?:apa|yang)\b/i.test(normalized)
+      || /\b(?:terkait|mempelajari|belajar|ada\s+ya|tersedia|punya)\b/i.test(normalized)
+      || /\b(?:stikom|itb\s*stikom|kampus|perkuliahan)\b/i.test(normalized);
+
+    if (asksDkvRelationshipOrAvailability) {
+      const answer = [
+        'Di ITB STIKOM Bali, tidak ada program studi mandiri bernama DKV (Desain Komunikasi Visual).',
+        '',
+        'Program studi resmi yang diselenggarakan di ITB STIKOM Bali adalah:',
+        '- S1 Sistem Informasi',
+        '- S1 Teknologi Informasi',
+        '- S1 Bisnis Digital',
+        '- S1 Sistem Komputer',
+        '- D3 Manajemen Informatika',
+        '- S2 Sistem Informasi',
+        '',
+        'Terkait bidang desain komunikasi visual dan multimedia:',
+        '- Aspek desain visual, branding, media digital, UI/UX, dan multimedia dipelajari sebagai bagian kurikulum pada program studi yang relevan, terutama S1 Bisnis Digital dan S1 Teknologi Informasi.',
+        '- Terdapat juga program Dual Degree (Gelar Ganda) kerja sama ITB STIKOM Bali dengan Universitas Teknologi Bandung (UTB), di mana mahasiswa menempuh S1 Bisnis Digital di ITB STIKOM Bali dan S1 Desain Komunikasi Visual (DKV) di UTB.',
+        '',
+        'Untuk informasi kurikulum prodi atau program kemitraan terbaru, silakan konfirmasi ke pihak PMB kampus.'
+      ].join('\n');
+      return buildDeterministicResponse(q, 'semantic-rag-program-availability-dkv', { answer, source: 'semantic-rag-program-availability-dkv' }, {
+        routeStage: 'short-definition-dkv-relationship'
+      });
+    }
+
     const answer = [
       'DKV adalah singkatan dari Desain Komunikasi Visual.',
       '',
@@ -16128,7 +16347,20 @@ function tryProgramCurriculumFollowupAnswer(question) {
       source: 'semantic-rag-program-curriculum',
       frameSource: 'semantic-rag-program-curriculum'
     };
-  }  if (/\bbisnis\s+digital\b/i.test(q)) {
+  }  if (/\b(?:seo|search\s+engine\s+optim(?:ization|isation)|sem|search\s+engine\s+marketing)\b/i.test(q)) {
+    return {
+      answer: [
+        'Ya, materi terkait SEO (Search Engine Optimization) dan Search Engine Marketing (SEM) dipelajari sebagai bagian dari konsentrasi Digital Marketing pada Program Studi S1 Bisnis Digital di ITB STIKOM Bali.',
+        '',
+        'Di Program Studi Bisnis Digital, mahasiswa mempelajari pemanfaatan teknologi untuk bisnis modern, termasuk digital marketing, optimasi mesin pencari (SEO/SEM), e-commerce, strategi konten, analisis pasar, branding, dan data analytics.',
+        '',
+        'Untuk detail silabus per semester, silakan konfirmasi ke Program Studi S1 Bisnis Digital atau Bagian Akademik.'
+      ].join('\n'),
+      source: 'semantic-rag-program-curriculum',
+      frameSource: 'semantic-rag-program-curriculum'
+    };
+  }
+  if (/\bbisnis\s+digital\b/i.test(q)) {
     return {
       answer: [
         'Di Program Studi Bisnis Digital, mahasiswa belajar bisnis berbasis teknologi dan pengembangan usaha di ekosistem digital.',
@@ -16150,6 +16382,7 @@ function hasCurriculumTopicEvidence(value, topic) {
   const label = String(topic && topic.label || '').toLowerCase();
   if (!key && !label) return true;
   const checks = {
+    seo: /\b(?:seo|search\s+engine\s+optim(?:ization|isation)|sem|search\s+engine\s+marketing|digital\s+marketing)\b/i,
     artificial_intelligence: /\b(?:ai|artificial\s+intelligence|kecerdasan\s+buatan|machine\s+learning)\b/i,
     coding: /\b(?:coding|ngoding|pemrograman|programming)\b/i,
     data_analytics: /\b(?:data\s+analytics|analitik(?:a)?\s+data|analisis\s+data|data\s+science)\b/i,
@@ -16175,14 +16408,39 @@ function buildCurriculumTopicPresenceAnswerFromCanonical(canonicalUnderstanding)
   const programs = canonical.entities && Array.isArray(canonical.entities.programs) ? canonical.entities.programs : [];
   const program = programs[0] || null;
   const programLabel = String(program && program.canonical || '').trim();
-  if (!programLabel) return null;
+  const topicLabel = String(topic.label || topic.key || 'topik tersebut').trim();
+  if (!programLabel) {
+    if (topic && topic.key === 'seo') {
+      return {
+        answer: [
+          'Ya, mahasiswa mempelajari SEO (Search Engine Optimization) pada Program Studi S1 Bisnis Digital di ITB STIKOM Bali.',
+          '',
+          'Materi SEO dan Search Engine Marketing (SEM) merupakan bagian dari fokus kurikulum Digital Marketing dan E-Commerce di S1 Bisnis Digital.',
+          '',
+          'Untuk detail silabus per semester, silakan konfirmasi ke Program Studi S1 Bisnis Digital atau Bagian Akademik.'
+        ].join('\n'),
+        source: 'semantic-rag-program-curriculum',
+        frameSource: 'semantic-rag-program-curriculum',
+        contexts: [{ source: 'program_curriculum_catalogue', text: 'S1 Bisnis Digital kurikulum digital marketing dan SEO' }]
+      };
+    }
+    return {
+      answer: [
+        `Untuk pertanyaan apakah mahasiswa mempelajari topik ${topicLabel}, mohon sebutkan program studi yang ingin ditanyakan (misalnya S1 Bisnis Digital, S1 Sistem Informasi, atau S1 Teknologi Informasi).`,
+        '',
+        'Kurikulum dan mata kuliah yang dipelajari berbeda-beda untuk tiap program studi. Jika prodi disebutkan, saya dapat memberikan informasi kurikulum yang lebih tepat.'
+      ].join('\n'),
+      source: 'semantic-rag-program-curriculum-topic-no-data',
+      frameSource: 'semantic-rag-program-curriculum',
+      contexts: []
+    };
+  }
   const focusAnswer = buildProgramFocusAnswerFromCanonical(canonical);
   const followupAnswer = tryProgramCurriculumFollowupAnswer(programLabel + ' belajar kurikulum');
   const evidenceText = [
     focusAnswer && focusAnswer.answer,
     followupAnswer && followupAnswer.answer
   ].filter(Boolean).join('\n');
-  const topicLabel = String(topic.label || topic.key || 'topik tersebut').trim();
   if (hasCurriculumTopicEvidence(evidenceText, topic) || (topic && (topic.key === 'artificial_intelligence' || /ai|intelligence|kecerdasan/i.test(topic.key || topic.label)) && /teknologi\s+informasi/i.test(programLabel))) {
     return {
       answer: 'Ya, mahasiswa Program Studi ' + programLabel + ' mempelajari topik ' + topicLabel + ' dalam kurikulum perkuliahan.',
@@ -16515,34 +16773,40 @@ function tryAcademicCreditNoDataAnswer(question) {
   if (/\b(?:tugas\s+akhir|skripsi|ta\b|tesis)\b/i.test(q)) return null;
 
   let program = '';
-  if (/\bbisnis\s+digital\b|\bbd\b/i.test(q)) program = ' untuk Prodi S1-Bisnis Digital';
-  else if (/\bsistem\s+informasi\b|\bsi\b/i.test(q)) program = ' untuk Prodi Sistem Informasi';
-  else if (/\bteknologi\s+informasi\b|\bti\b/i.test(q)) program = ' untuk Prodi Teknologi Informasi';
-  else if (/\bsistem\s+komputer\b|\bsk\b/i.test(q)) program = ' untuk Prodi Sistem Komputer';
-  else if (/\bmanajemen\s+informatika\b|\bmi\b/i.test(q)) program = ' untuk Prodi D3 Manajemen Informatika';
+  if (/\bbisnis\s+digital\b|\bbd\b/i.test(q)) program = ' Program Studi S1 Bisnis Digital';
+  else if (/\bsistem\s+informasi\b|\bsi\b/i.test(q)) program = ' Program Studi S1 Sistem Informasi';
+  else if (/\bteknologi\s+informasi\b|\bti\b/i.test(q)) program = ' Program Studi S1 Teknologi Informasi';
+  else if (/\bsistem\s+komputer\b|\bsk\b/i.test(q)) program = ' Program Studi S1 Sistem Komputer';
+  else if (/\bmanajemen\s+informatika\b|\bmi\b/i.test(q)) program = ' Program Studi D3 Manajemen Informatika';
 
-  const isS1Question = /\b(?:s1|sarjana|strata\s+satu|bisnis\s+digital|sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer)\b/i.test(q)
-    && !/\b(?:d3|diploma|s2|magister|pascasarjana|rpl|transfer|konversi)\b/i.test(q);
+  const isGraduationTotal = /\b(?:lulus|kelulusan|tamat|selesai|menyelesaikan|beban\s+studi|total\s+sks|sks\s+total|beban\s+kurikulum)\b/i.test(q);
 
-  if (isS1Question || !program) {
-    const programLabel = program || ' untuk program S1';
+  if (isGraduationTotal) {
+    const targetProgram = program || ' program S1';
     return {
       answer: [
-        `Untuk lulus${programLabel}, total beban studi S1 adalah 144 SKS.`,
+        `Untuk rincian total SKS kelulusan${targetProgram}, angka total beban studi kelulusan secara lengkap belum tercantum eksplisit pada ringkasan data kurikulum yang tersedia di sistem saat ini.`,
         '',
-        'Angka ini berlaku sebagai acuan beban studi program sarjana. Untuk sebaran mata kuliah per semester atau kurikulum detail per prodi, kakak bisa cek kurikulum prodi atau konfirmasi ke bagian akademik/prodi.'
+        'Sebagai pembeda ketentuan SKS yang tercatat di pedoman akademik kampus:',
+        '- Persyaratan SKS untuk mengambil Tugas Akhir (TA/Skripsi) pada jenjang S1 adalah minimal 110 SKS (bukan total SKS kelulusan).',
+        '- Beban SKS paket semester awal (Semester 1 & 2) rata-rata berkisar 18–19 SKS per semester.',
+        '- Untuk mahasiswa jalur RPL, jumlah SKS yang diakui ditentukan melalui hasil asesmen portofolio.',
+        '',
+        'Untuk mengetahui total SKS kumulatif kelulusan per program studi secara resmi dan pasti, disarankan untuk mengecek Buku Pedoman Akademik/Kurikulum prodi atau konfirmasi langsung ke Bagian Akademik (BAAK) / Program Studi terkait.'
       ].join('\n'),
-      source: 'semantic-rag-academic-credit'
+      source: 'semantic-rag-academic-credit-no-data',
+      frameSource: 'semantic-rag-academic-credit-no-data'
     };
   }
 
   return {
     answer: [
-      `Untuk total SKS lulus${program}, data yang tersedia perlu dicek pada kurikulum prodi terkait.`,
+      `Untuk rincian beban SKS${program || ' program studi'}, data kurikulum lengkap per semester belum tercantum eksplisit pada basis data yang tersedia.`,
       '',
-      'Kalau kakak menyebut prodinya dengan jelas, saya bisa bantu arahkan ke informasi kurikulum yang paling relevan.'
+      'Untuk informasi sebaran SKS per semester atau beban studi kurikulum terbaru, silakan konfirmasi ke bagian akademik kampus atau program studi terkait.'
     ].join('\n'),
-    source: 'semantic-rag-academic-credit'
+    source: 'semantic-rag-academic-credit-no-data',
+    frameSource: 'semantic-rag-academic-credit-no-data'
   };
 }
 function tryGreetingPermissionAnswer(question) {
@@ -17294,6 +17558,18 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
     || (Array.isArray(canonical && canonical.requestedFields) && canonical.requestedFields.some((field) => /careerSupport|opportunity|service/i.test(String(field || ''))))
   );
   if ((/\bjepang\b/i.test(q) && /\b(?:magang|double\s*degree|dual\s*degree|dua\s+gelar|gelar\s+ganda|hi\s*-?\s*think)\b/i.test(q)) || asksHiThinkCareer) {
+    const temporalStatus = tryTemporalProgramStatusAnswer(q, canonical, options);
+    if (temporalStatus && temporalStatus.answer) {
+      return {
+        success: true,
+        answer: temporalStatus.answer,
+        source: temporalStatus.source || 'semantic-rag-temporal-authority',
+        contexts: [],
+        confidenceScore: 0.95,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'temporal-status-authority-hithink' }
+      };
+    }
     const hiThinkItems = pick((hay) => /hi\s*-?\s*think|hithink/i.test(hay) && /jepang|karier|kerja|magang/i.test(hay));
     const distinction = /\b(?:magang|double\s*degree|dual\s*degree|dua\s+gelar|gelar\s+ganda)\b/i.test(q);
     return {
@@ -17416,7 +17692,26 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
   }
 
   // 3a. Academic Policy - Thesis / Tugas Akhir (Prerequisites, GPA, Group Work)
-  const isThesisPolicy = (domain === 'academic' || domain === 'academic_policy' || /tugas\s+akhir|skripsi|tesis|\bta\b/i.test(q))
+  const hasThesisExplicitToken = /\b(?:tugas\s+akhir|skripsi|tesis|\bta\b)\b/i.test(q)
+    || (canonical && canonical.intent && /thesis|skripsi|tugas_akhir/i.test(canonical.intent.primary || ''));
+  const isGraduationTotalSks = /\b(?:lulus|kelulusan|tamat|selesai|menyelesaikan|beban\s+studi|total\s+sks|sks\s+total)\b/i.test(q)
+    && /\b(?:sks|kredit|beban)\b/i.test(q)
+    && !hasThesisExplicitToken;
+  if (isGraduationTotalSks) {
+    const creditGap = tryAcademicCreditNoDataAnswer(q);
+    if (creditGap && creditGap.answer) {
+      return {
+        success: true,
+        answer: creditGap.answer,
+        source: creditGap.source || 'semantic-rag-academic-credit-no-data',
+        contexts: [],
+        confidenceScore: 0.95,
+        confidenceTier: 'HIGH',
+        debug: { routeStage: 'pre-guard-graduation-total-credit-gap' }
+      };
+    }
+  }
+  const isThesisPolicy = hasThesisExplicitToken
     && /\b(?:sks|ipk|gpa|nilai|prasyarat|syarat|kelompok|berkelompok|tanggung\s*jawab)\b/i.test(q)
     && !/\b(?:halaman|lembar|panjang\s+naskah|tebal)\b/i.test(q);
   if (isThesisPolicy) {
@@ -17560,8 +17855,8 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
     }
   }
 
-  // 4. Accreditation Validity
-  if (domain === 'accreditation' && (qt === 'validity' || /berlaku|valid|sampai\s+kapan/i.test(q))) {
+  // 4. Accreditation Validity or Institutional Accreditation
+  if (domain === 'accreditation' && (qt === 'validity' || /berlaku|valid|sampai\s+kapan/i.test(q) || /ban\s*-?\s*pt|institusi|kampus|stikom\s*bali/i.test(q))) {
     const items = pick((hay) => /sertifikat\s+akreditasi|akreditasi/i.test(hay));
     const isSI = /sistem\s+informasi|\bsi\b/i.test(q);
     const isTI = /teknologi\s+informasi|\bti\b/i.test(q);
@@ -18430,6 +18725,18 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
       if (facItems.length) {
         let cleanDesc = '';
         if (/hi\s*-?\s*think|hithink/i.test(searchName) || /hi\s*-?\s*think|hithink/i.test(qOrig)) {
+          const temporalAns = tryTemporalProgramStatusAnswer(qOrig, canonical, options);
+          if (temporalAns && temporalAns.answer) {
+            return {
+              success: true,
+              answer: temporalAns.answer,
+              source: temporalAns.source || 'semantic-rag-temporal-authority',
+              contexts: facItems.slice(0, 3).map((i) => ({ source: i.filename, text: String(i.chunk || i.text).slice(0, 300) })),
+              confidenceScore: 0.90,
+              confidenceTier: 'HIGH',
+              debug: { routeStage: 'pre-guard-temporal-authority', answerabilityResult: { answerable: true, reason: 'HI_THINK_TEMPORAL_AUTHORITY' } }
+            };
+          }
           return {
             success: true,
             answer: buildHiThinkAnswer(),
@@ -18840,11 +19147,20 @@ function normalizeSemanticQueryOptions(options = {}) {
 }
 
 async function executeCompoundRequests(originalQuestion, decomp, options = {}) {
-  const basePriorState = options.sessionState
+  let basePriorState = options.sessionState
     || options.sessionData
     || options.session
     || (options.sessionData && options.sessionData.sessionState)
     || null;
+
+  if (basePriorState) {
+    try {
+      const caParent = resolveContextAuthority(originalQuestion, basePriorState);
+      if (caParent && (caParent.transition === 'NO_CONTEXT' || caParent.transition === 'DOMAIN_SWITCH')) {
+        basePriorState = null;
+      }
+    } catch (_e) {}
+  }
 
   const subResults = [];
 
@@ -19290,7 +19606,7 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
   }
   const currentTurnUnderstanding = buildCanonicalQueryUnderstanding(question, { ...options, sessionState: priorSessionOrState });
   const currentTurnContract = currentTurnUnderstanding && currentTurnUnderstanding.contract ? currentTurnUnderstanding.contract : null;
-  const followupResolution = (question === originalQuestion && shouldResolveContextFromSession(originalQuestion, currentTurnContract))
+  const followupResolution = (question === originalQuestion && shouldResolveContextFromSession(originalQuestion, currentTurnContract, options))
     ? resolveSemanticFollowupQuestion(originalQuestion, options)
     : { changed: question !== originalQuestion, question, topic: caResult && caResult.resolvedDomain, skipped: question !== originalQuestion ? 'resolved_by_context_authority' : 'current_turn_semantic_authority' };
   if (followupResolution && followupResolution.changed && followupResolution.question) {
@@ -19502,6 +19818,19 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
       });
       return await finalizeSemanticResult(question, builtGroundedResult, resultCacheKey);
     }
+  }
+
+  const earlyTemporalStatus = tryTemporalProgramStatusAnswer(question, canonicalUnderstanding, options)
+    || tryTemporalProgramStatusAnswer(routingQuestion || question, canonicalUnderstanding, options);
+  if (earlyTemporalStatus && earlyTemporalStatus.answer) {
+    const builtTemporalStatus = buildDeterministicResponse(question, earlyTemporalStatus.source || 'semantic-rag-temporal-authority', earlyTemporalStatus, {
+      routeStage: 'pre-guard-temporal-status-authority',
+      normalizedRouting: normalizedRouting.changed,
+      canonicalIntent: canonicalUnderstanding?.intent?.primary,
+      canonicalDomain: canonicalUnderstanding?.domain?.primary,
+      semanticContract: canonicalContract
+    });
+    return await finalizeSemanticResult(question, builtTemporalStatus, resultCacheKey, { semanticContract: canonicalContract });
   }
 
   const hasEffectiveAnchor = Boolean(
@@ -19763,6 +20092,7 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
     const builtCanonicalDoubleDegreeSchedule = buildDeterministicResponse(question, preGuardCanonicalDoubleDegreeSchedule.source, preGuardCanonicalDoubleDegreeSchedule, { routeStage: 'pre-guard-canonical-double-degree-schedule', normalizedRouting: normalizedRouting.changed, canonicalIntent: canonicalUnderstanding.intent.primary, canonicalDomain: canonicalUnderstanding.domain.primary, semanticContract: canonicalContract });
     return await finalizeSemanticResult(question, builtCanonicalDoubleDegreeSchedule, resultCacheKey, { semanticContract: canonicalContract });
   }
+
 
   const isFeeDomainOrIntent = Boolean(
     canonicalUnderstanding && (

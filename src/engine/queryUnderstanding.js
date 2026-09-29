@@ -111,7 +111,8 @@ function detectCurriculumTopic(raw) {
     { key: 'hardware', label: 'hardware/perangkat keras', re: /\b(?:hardware|perangkat\s+keras)\b/i },
     { key: 'software', label: 'software/perangkat lunak', re: /\b(?:software|perangkat\s+lunak)\b/i },
     { key: 'network', label: 'jaringan/network', re: /\b(?:jaringan|networking?)\b/i },
-    { key: 'embedded_iot', label: 'embedded system / IoT', re: /\b(?:embedded(?:\s+system)?|iot|internet\s+of\s+things)\b/i }
+    { key: 'embedded_iot', label: 'embedded system / IoT', re: /\b(?:embedded(?:\s+system)?|iot|internet\s+of\s+things)\b/i },
+    { key: 'seo', label: 'SEO / Search Engine Optimization', re: /\b(?:seo|search\s+engine\s+optim(?:ization|isation)|sem|search\s+engine\s+marketing)\b/i }
   ];
   return topics.find((item) => item.re.test(q)) || null;
 }
@@ -725,7 +726,7 @@ function normalizeUnsupportedProgramCandidate(value) {
     .trim();
   if (!candidate || candidate.length < 3) return '';
   if (/^(?:ada|punya|tersedia|apa|apa\s+saja|apa\s+aja|aja|saja|daftar|list|semua|pilihan|jenis|macam|setelah|sebelum|bisa|dapat|boleh|ganti|ubah|diubah|diganti|mana|yang|cocok|sebaiknya|rekomendasi|saran|nya|ku|mu)$/i.test(candidate)) return '';
-  if (/^(?:setelah|sebelum|bisa|dapat|boleh|ganti|ubah|diubah|diganti|pilihan|awal|waktu|pertama|kali|didirikan|berdiri|saat|mana|yang|cocok|sebaiknya|rekomendasi|saran)\b/i.test(candidate)) return '';
+  if (/^(?:masih|sudah|sedang|akan|pernah|belum|setelah|sebelum|bisa|dapat|boleh|ganti|ubah|diubah|diganti|pilihan|awal|waktu|pertama|kali|didirikan|berdiri|saat|mana|yang|cocok|sebaiknya|rekomendasi|saran)\b/i.test(candidate)) return '';
   if (/\b(?:apa\s+saja|apa\s+aja|daftar|list|semua|pilihan|mana\s+yang|yang\s+mana|yang\s+cocok|mana\s+yang\s+cocok|sebaiknya|rekomendasi|saran)\b/i.test(candidate)) return '';
   if (isKnownNonProgramOntologyCandidate(candidate)) return '';
   return titleCaseCandidate(candidate);
@@ -963,7 +964,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
             : /\b(?:layanan|fungsi|tugas|ngapain|untuk\s+apa|apa\s+saja|apa\s+aja|memberikan|bantu|membantu|kerja(?:nya)?)\b/i.test(q) ? 'service'
               : 'service';
   const externalRelation = extractExternalRelationConstraint(rawQuery || normalizedQuery);
-  const asksLearning = /\b(?:belajar|di\s*pelajari(?:n)?|mempelajari|pelajaran(?:nya)?|perkuliahan|kuliah(?:nya)?(?:\s+(?:apa|apa\s+saja|apa\s+aja|yang\s+ada|membahas))?|mata\s+kuliah(?:nya)?|matkul|materi|course|kelas|kurikulum(?:nya)?|skill|kompetensi|coding|ngoding|ai|artificial\s+intelligence|kecerdasan\s+buatan)\b/i.test(q)
+  const asksLearning = /\b(?:belajar|di\s*pelajari(?:n)?|mempelajari|pelajaran(?:nya)?|perkuliahan|kuliah(?:nya)?(?:\s+(?:apa|apa\s+saja|apa\s+aja|yang\s+ada|membahas))?|mata\s+kuliah(?:nya)?|matkul|materi|course|kelas|kurikulum(?:nya)?|skill|kompetensi|coding|ngoding|ai|artificial\s+intelligence|kecerdasan\s+buatan|seo|search\s+engine\s+optim(?:ization|isation)|sem|search\s+engine\s+marketing)\b/i.test(q)
     && !/\b(?:izin\s+belajar|study\s+permit)\b/i.test(q);
   const asksAdvice = /\b(?:kurang|tidak|ga|gak|nggak|belum)\s+(?:cakap|jago|mahir|bisa|paham)|\b(?:apa\s+yang\s+harus|harus\s+bagaimana|saran|cocok|minat)\b/i.test(q);
   const asksList = /\b(?:apa\s+saja|apa\s+aja|daftar|list|pilihan|macam|sebutkan)\b/i.test(q);
@@ -1509,7 +1510,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_general';
     primaryDomain = 'registration';
     answerExpectation = 'topic_opening';
-  } else if (asksLearning && entities.programs.length) {
+  } else if (asksLearning && (entities.programs.length > 0 || curriculumTopic)) {
     primaryIntent = 'ask_program_curriculum';
     primaryDomain = 'program_curriculum';
     answerExpectation = 'curriculum_or_topic_presence';
@@ -1576,7 +1577,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
     primaryIntent = 'ask_program_definition';
     primaryDomain = 'program';
     answerExpectation = 'definition';
-  } else if (asksLearning && entities.programs.length) {
+  } else if (asksLearning && (entities.programs.length > 0 || curriculumTopic)) {
     primaryIntent = 'ask_program_curriculum';
     primaryDomain = 'program_curriculum';
     answerExpectation = 'curriculum_or_topic_presence';

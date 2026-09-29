@@ -112,11 +112,27 @@ function composeMultiAnswer(subResults, options = {}) {
     return subResults[0];
   }
 
+  // Deduplicate identical answers across sub-requests (e.g. repeated clarifications or identical answers)
+  const uniqueSubResults = [];
+  const seenNormalizedAnswers = new Set();
+  for (const sub of subResults) {
+    const norm = String(sub.answer || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    if (norm && seenNormalizedAnswers.has(norm)) {
+      continue;
+    }
+    if (norm) seenNormalizedAnswers.add(norm);
+    uniqueSubResults.push(sub);
+  }
+
+  if (uniqueSubResults.length === 1) {
+    return uniqueSubResults[0];
+  }
+
   const sections = [];
   const allContexts = [];
 
-  for (let i = 0; i < subResults.length; i++) {
-    const sub = subResults[i];
+  for (let i = 0; i < uniqueSubResults.length; i++) {
+    const sub = uniqueSubResults[i];
     const heading = generateSectionHeading(sub, i);
     const cleanedAnswer = cleanSubAnswer(sub.answer);
 

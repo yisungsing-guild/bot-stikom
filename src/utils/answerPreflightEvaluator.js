@@ -477,11 +477,11 @@ function detectCrossDomainAnswerLeak(answer, userQuery = '', options = {}) {
     rpl: /\b(?:rpl|rekognisi|konversi|alih kredit|transfer sks|jumlah sks diakui|d1|d2)\b/i.test(q),
     doubleDegree: /\b(?:double degree|dual degree|gelar ganda|dua gelar|gelar|dnui|dalian|help university|utb|malaysia|china|cina)\b/i.test(q),
     accreditation: /\b(?:akreditasi|ban pt|ban-pt|lam infokom|peringkat akreditasi|nomor sk|berlaku|masa\s+berlaku|sampai\s+kapan)\b/i.test(q),
-    career: /\b(?:career\s*center|karier(?:nya)?|karir(?:nya)?|kerja(?:nya)?|prospek(?:nya)?|peluang(?:nya)?|magang|job\s*fair|campus\s*hiring|tracer\s*study|rekrutmen|lowongan|profesi(?:nya)?|pekerjaan(?:nya)?)\b/i.test(q),
+    career: /\b(?:career\s*center|cdc|karier(?:nya)?|karir(?:nya)?|kerja(?:nya)?|prospek(?:nya)?|peluang(?:nya)?|magang|job\s*fair|campus\s*hiring|tracer\s*study|rekrutmen|lowongan|profesi(?:nya)?|pekerjaan(?:nya)?|linkedin|linked\s*in)\b/i.test(q),
     academicAdmin: /\b(?:yudisium|wisuda|sidang|skripsi|tugas\s*akhir|proyek\s*akhir|sion|baak|kalender akademik|jadwal akademik|informasi akademik|akademik|remedial|remidi|semester|perkuliahan|kuliah|jadwal kuliah|mulai kuliah)\b/i.test(q),
     fee: (/\b(?:biaya|ukt|dpp|potongan|diskon|cicilan|nominal|gelombang)\b/i.test(q) || (/\bpendaftaran\b/i.test(q) && !/\bbukan\s+(?:jadwal\s+)?(?:pmb|pendaftaran)\b/i.test(q))) && !/\b(?:sidang|yudisium|wisuda|skripsi|tugas\s*akhir|proyek\s*akhir|remedial|remidi)\b/i.test(q),
     program: /\b(?:prodi(?:nya)?|program studi|jurusan(?:nya)?|ti|si|bd|sk|s1|s2|d3|sistem informasi|teknologi informasi|bisnis digital|sistem komputer|manajemen informatika|dkv|desain komunikasi visual)\b/i.test(q),
-    campusSupport: /\b(?:ukm|ormawa|organisasi|fasilitas|inkubator|inbis|student exchange|hi think|hithink|goes to school)\b/i.test(q)
+    campusSupport: /\b(?:ukm|ormawa|organisasi|fasilitas|inkubator|inbis|student exchange|hi think|hithink|goes to school|linkedin|linked\s*in|learning\s+program)\b/i.test(q)
   };
 
   const answerDomains = {
