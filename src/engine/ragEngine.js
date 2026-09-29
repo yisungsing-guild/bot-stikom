@@ -10273,14 +10273,19 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
         pageNumber: structured.pageNumber || null
       };
       
-      // Enrich chunk with document category for intent-aware filtering
+      // Enrich chunk with document category and governance metadata
+      let enrichedChunk = chunkObj;
       try {
-        const enrichedChunk = enrichChunkWithCategory(chunkObj);
-        filteredIndex.push(enrichedChunk);
+        enrichedChunk = enrichChunkWithCategory(enrichedChunk);
       } catch (enrichErr) {
         logger.warn({ err: enrichErr.message }, '[RAG] Failed to enrich chunk category, using original');
-        filteredIndex.push(chunkObj);
       }
+      try {
+        enrichedChunk = enrichChunkWithGovernance(enrichedChunk, governance || {});
+      } catch (govErr) {
+        logger.warn({ err: govErr.message }, '[RAG] Failed to enrich chunk governance');
+      }
+      filteredIndex.push(enrichedChunk);
       
       existingHashes.add(key);
     }
@@ -10316,14 +10321,19 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
           governance: governance || null
         };
         
-        // Enrich summary chunk with document category
+        // Enrich summary chunk with document category and governance metadata
+        let enrichedSummary = summaryChunk;
         try {
-          const enrichedSummary = enrichChunkWithCategory(summaryChunk);
-          filteredIndex.push(enrichedSummary);
+          enrichedSummary = enrichChunkWithCategory(enrichedSummary);
         } catch (enrichErr) {
           logger.warn({ err: enrichErr.message }, '[RAG] Failed to enrich summary chunk category, using original');
-          filteredIndex.push(summaryChunk);
         }
+        try {
+          enrichedSummary = enrichChunkWithGovernance(enrichedSummary, governance || {});
+        } catch (govErr) {
+          logger.warn({ err: govErr.message }, '[RAG] Failed to enrich summary chunk governance');
+        }
+        filteredIndex.push(enrichedSummary);
       }
     }
 

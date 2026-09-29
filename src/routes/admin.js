@@ -22,7 +22,14 @@ const { appendChatMessage, getChatMessages } = require('../engine/chatLog');
 const crypto = require('crypto');
 const fs = require('fs/promises');
 const AdmZip = require('adm-zip');
-const { buildDocumentGovernanceMetadata } = require('../engine/runtimeGovernance');
+const {
+  buildDocumentGovernanceMetadata,
+  validateDocumentNaming,
+  validateDocumentValidityDates,
+  validateDocumentIntakeGovernance,
+  normalizeStatus,
+  normalizeAuthority
+} = require('../engine/runtimeGovernance');
 const { MANIFEST_PATH: KNOWLEDGE_PREPARATION_MANIFEST_PATH } = require('../engine/knowledgePreparationPipeline');
 const KNOWLEDGE_PREPARATION_DECISION_LOG_PATH = path.resolve(__dirname, '..', '..', 'data', 'runtime', 'knowledge_preparation_decisions.jsonl');
 
@@ -1250,6 +1257,38 @@ router.post(
       const transcriptText = extractTranscriptText(req);
       const sourceUrl = extractSourceUrl(req);
 
+      // Validate intake governance (naming, validFrom, validUntil, authority, status)
+      const intakeValidation = validateDocumentIntakeGovernance({
+        filename: req.body?.title || req.body?.filename || req.uploadInfo.originalname,
+        validFrom: req.body?.validFrom,
+        validUntil: req.body?.validUntil || req.body?.validTo,
+        noExpiry: req.body?.noExpiry,
+        authority: req.body?.authority || req.body?.authorityTier,
+        status: req.body?.status || req.body?.governanceStatus,
+        version: req.body?.version || req.body?.governanceVersion,
+        notes: req.body?.notes,
+        supersedes: req.body?.supersedes,
+        divisionKey,
+        owner: req.body?.owner || divisionKey || (req.user && req.user.role ? req.user.role : null),
+        source: 'upload'
+      });
+
+      if (!intakeValidation.valid) {
+        if (uploadedPath) {
+          await cleanupUploadedFile(uploadedPath);
+        }
+        return res.status(400).send({
+          ok: false,
+          error: intakeValidation.error,
+          field: intakeValidation.field || 'filename',
+          suggestions: [
+            'Gunakan nama dokumen deskriptif yang mencerminkan isi dokumen (misal: Pedoman_Akademik_2026.pdf)',
+            'Pastikan format tanggal valid (YYYY-MM-DD)',
+            'Pastikan tanggal expired tidak lebih awal dari tanggal mulai berlaku'
+          ]
+        });
+      }
+
       // Parse file
       const result = await FileParser.parseAndStoreFile(
         uploadedPath,
@@ -1346,20 +1385,22 @@ router.post(
       }
 
       await applyTrainingGovernance(result.trainingDataId, {
+        ...intakeValidation.governanceMetadata,
         filename: req.uploadInfo.originalname,
         divisionKey,
         source: 'upload',
-        owner: divisionKey || (req.user && req.user.role ? req.user.role : null)
+        owner: intakeValidation.governanceMetadata.owner
       });
 
       console.log('[POST /admin/training/upload] File successfully processed:', result.trainingDataId);
-res.status(201).send({
+      res.status(201).send({
         ok: true,
         trainingDataId: result.trainingDataId,
         filename: req.uploadInfo.originalname,
         fileSize: req.uploadInfo.size,
         contentPreview: result.content.substring(0, 200) + '...',
-        wasTruncated: !!result.wasTruncated
+        wasTruncated: !!result.wasTruncated,
+        governance: intakeValidation.governanceMetadata
       });
 
       queueTrainingUploadNotification(req, {
@@ -1388,7 +1429,7 @@ res.status(201).send({
             sourceUrl,
             storageType: 'file',
             governance: {
-              ...buildDocumentGovernanceMetadata({ filename: req.uploadInfo.originalname, divisionKey, source: 'upload' }),
+              ...intakeValidation.governanceMetadata,
               ...(result.governanceMetadata && typeof result.governanceMetadata === 'object' ? result.governanceMetadata : {})
             }
           });
@@ -1800,6 +1841,40 @@ router.post(
     const transcriptText = extractTranscriptText(req);
     const sourceUrl = extractSourceUrl(req);
 
+    // Validate batch governance metadata BEFORE processing files
+    const batchGovernanceValidation = validateDocumentIntakeGovernance({
+      filename: 'batch_validation_placeholder.pdf',
+      validFrom: req.body?.validFrom,
+      validUntil: req.body?.validUntil || req.body?.validTo,
+      noExpiry: req.body?.noExpiry,
+      authority: req.body?.authority || req.body?.authorityTier,
+      status: req.body?.status || req.body?.governanceStatus,
+      version: req.body?.version || req.body?.governanceVersion,
+      notes: req.body?.notes,
+      divisionKey,
+      owner: req.body?.owner || divisionKey || (req.user && req.user.role ? req.user.role : null),
+      source: 'bulk-upload'
+    });
+
+    if (!batchGovernanceValidation.valid && batchGovernanceValidation.field !== 'filename') {
+      for (const info of uploadInfos) {
+        if (info && info.path) {
+          await cleanupUploadedFile(info.path);
+        }
+      }
+      return res.status(400).send({
+        ok: false,
+        error: batchGovernanceValidation.error,
+        field: batchGovernanceValidation.field,
+        suggestions: [
+          'Gunakan Bulk Upload hanya untuk dokumen dengan masa berlaku yang sama',
+          'Pastikan Tanggal Mulai Berlaku diisi (format YYYY-MM-DD)',
+          'Pastikan Tanggal Expired diisi atau pilih opsi "Berlaku sampai dicabut"',
+          'Pastikan Tingkat Otoritas (Tier 1 s.d Tier 4) dan Status Dokumen valid'
+        ]
+      });
+    }
+
     const results = [];
 
     for (const info of uploadInfos) {
@@ -1807,6 +1882,45 @@ router.post(
       try {
         if (!uploadedPath) {
           results.push({ ok: false, filename: info && info.originalname ? info.originalname : null, error: 'Missing uploaded file path' });
+          continue;
+        }
+
+        const fileNamingValidation = validateDocumentNaming(info.originalname);
+        if (!fileNamingValidation.valid) {
+          await cleanupUploadedFile(uploadedPath);
+          results.push({
+            ok: false,
+            filename: info.originalname,
+            error: fileNamingValidation.error,
+            errorCode: 'VALIDATION_ERROR',
+            field: 'filename'
+          });
+          continue;
+        }
+
+        const intakeValidation = validateDocumentIntakeGovernance({
+          filename: info.originalname,
+          validFrom: req.body?.validFrom,
+          validUntil: req.body?.validUntil || req.body?.validTo,
+          noExpiry: req.body?.noExpiry,
+          authority: req.body?.authority || req.body?.authorityTier,
+          status: req.body?.status || req.body?.governanceStatus,
+          version: req.body?.version || req.body?.governanceVersion,
+          notes: req.body?.notes,
+          divisionKey,
+          owner: divisionKey || (req.user && req.user.role ? req.user.role : null),
+          source: 'bulk-upload'
+        });
+
+        if (!intakeValidation.valid) {
+          await cleanupUploadedFile(uploadedPath);
+          results.push({
+            ok: false,
+            filename: info.originalname,
+            error: intakeValidation.error,
+            errorCode: 'VALIDATION_ERROR',
+            field: intakeValidation.field
+          });
           continue;
         }
 
@@ -1832,6 +1946,14 @@ router.post(
           continue;
         }
 
+        await applyTrainingGovernance(parsed.trainingDataId, {
+          ...intakeValidation.governanceMetadata,
+          filename: info.originalname,
+          divisionKey,
+          source: 'bulk-upload',
+          owner: intakeValidation.governanceMetadata.owner
+        });
+
         results.push({
           ok: true,
           trainingDataId: parsed.trainingDataId,
@@ -1839,6 +1961,7 @@ router.post(
           fileSize: info.size,
           contentPreview: parsed.content.substring(0, 200) + '...',
           wasTruncated: !!parsed.wasTruncated,
+          governance: intakeValidation.governanceMetadata
         });
 
         queueTrainingUploadNotification(req, {
@@ -1864,7 +1987,11 @@ router.post(
               filename: info.originalname,
               uploadedById: uploaderId,
               sourceUrl,
-              storageType: 'file'
+              storageType: 'file',
+              governance: {
+                ...intakeValidation.governanceMetadata,
+                ...(parsed.governanceMetadata && typeof parsed.governanceMetadata === 'object' ? parsed.governanceMetadata : {})
+              }
             });
           } catch (err) {
             console.error('[RAG] Ingestion failed (bulk):', err && err.message ? err.message : String(err));
@@ -1904,7 +2031,20 @@ router.post(
 router.post('/training/manual', async (req, res, next) => {
   try {
     console.log('[POST /admin/training/manual] Received manual text input');
-    const { text, title, source, divisionKey: divisionKeyRaw } = req.body;
+    const {
+      text,
+      title,
+      source,
+      divisionKey: divisionKeyRaw,
+      validFrom,
+      validUntil,
+      validTo,
+      authority,
+      status,
+      version,
+      notes,
+      supersedes
+    } = req.body || {};
     
     if (!text || !text.trim()) {
       return res.status(400).send({ error: 'Text content required' });
@@ -1913,22 +2053,52 @@ router.post('/training/manual', async (req, res, next) => {
     if (text.trim().length < 10) {
       return res.status(400).send({ error: 'Text too short (minimum 10 characters)' });
     }
-    
-    // Create training data dari manual text
-    const uploaderId = await resolveUploaderId(req);
 
     let divisionKey = roleToDivisionKey(req.user && req.user.role);
     if (!divisionKey) divisionKey = normalizeDivisionKey(divisionKeyRaw);
+
+    // Validate intake governance
+    const intakeValidation = validateDocumentIntakeGovernance({
+      filename: title,
+      validFrom,
+      validUntil: validUntil || validTo,
+      noExpiry: req.body?.noExpiry,
+      authority: authority || req.body?.authorityTier,
+      status: status || req.body?.governanceStatus,
+      version: version || req.body?.governanceVersion,
+      notes,
+      supersedes,
+      divisionKey,
+      owner: req.body?.owner || divisionKey || (req.user && req.user.role ? req.user.role : null),
+      source: source || 'manual'
+    });
+
+    if (!intakeValidation.valid) {
+      return res.status(400).send({
+        ok: false,
+        error: intakeValidation.error,
+        field: intakeValidation.field || 'title',
+        suggestions: [
+          'Gunakan judul dokumen deskriptif yang mencerminkan subjek dokumen',
+          'Pastikan format tanggal valid (YYYY-MM-DD)',
+          'Pastikan tanggal expired tidak lebih awal dari tanggal mulai berlaku'
+        ]
+      });
+    }
+
+    // Create training data dari manual text
+    const uploaderId = await resolveUploaderId(req);
 
     const normalized = FileParser.sanitizeTextForStorage(text.trim());
     const maxStoredBytes = parseInt(process.env.MAX_TRAINING_CONTENT_BYTES || String(15 * 1024 * 1024), 10);
     const limited = FileParser.limitTextToUtf8Bytes(normalized, maxStoredBytes);
 
     let training;
+    const finalFilename = intakeValidation.sanitizedFilename || title;
     try {
       training = await prisma.trainingData.create({
         data: {
-          filename: title || `manual-${new Date().toISOString()}`,
+          filename: finalFilename,
           content: limited.text,
           source: source || 'manual',
           active: true,
@@ -1945,7 +2115,7 @@ router.post('/training/manual', async (req, res, next) => {
       if (!missingOptionalFields) throw e;
       training = await prisma.trainingData.create({
         data: {
-          filename: title || `manual-${new Date().toISOString()}`,
+          filename: finalFilename,
           content: limited.text,
           source: source || 'manual',
           active: true,
@@ -1954,19 +2124,21 @@ router.post('/training/manual', async (req, res, next) => {
     }
 
     await applyTrainingGovernance(training.id, {
+      ...intakeValidation.governanceMetadata,
       filename: training.filename,
       divisionKey,
       source: source || 'manual',
-      owner: divisionKey || (req.user && req.user.role ? req.user.role : null)
+      owner: intakeValidation.governanceMetadata.owner
     });
 
     console.log('[POST /admin/training/manual] Training created:', training.id);
-res.status(201).send({
+    res.status(201).send({
       ok: true,
       trainingDataId: training.id,
       filename: training.filename,
       contentLength: training.content.length,
-      wasTruncated: limited.wasTruncated
+      wasTruncated: limited.wasTruncated,
+      governance: intakeValidation.governanceMetadata
     });
 
     queueTrainingUploadNotification(req, {
@@ -1982,12 +2154,12 @@ res.status(201).send({
     setImmediate(async () => {
       try {
         console.log('[RAG] Starting ingestion for manual training:', training.id);
-          const ing = await ingestTrainingData(training.id, training.content, 'manual', {
+        const ing = await ingestTrainingData(training.id, training.content, 'manual', {
           divisionKey,
           filename: training.filename,
           uploadedById: uploaderId,
           storageType: 'manual',
-          governance: buildDocumentGovernanceMetadata({ filename: training.filename, divisionKey, source: 'manual' })
+          governance: intakeValidation.governanceMetadata
         });
         console.log('[RAG] Ingestion result:', ing);
       } catch (err) {
@@ -2529,7 +2701,13 @@ router.get('/training', async (req, res, next) => {
             createdAt: true,
             source: true,
             uploadedById: true,
-            uploadedBy: { select: { id: true, username: true, displayName: true, role: true } }
+            uploadedBy: { select: { id: true, username: true, displayName: true, role: true } },
+            governanceStatus: true,
+            validFrom: true,
+            validTo: true,
+            governanceOwner: true,
+            governanceVersion: true,
+            governanceMetadata: true
           },
           orderBy: [{ active: 'desc' }, { createdAt: 'desc' }]
         });
@@ -2568,7 +2746,13 @@ router.get('/training', async (req, res, next) => {
           createdAt: true,
           source: true,
           uploadedById: true,
-          uploadedBy: { select: { id: true, username: true, displayName: true, role: true } }
+          uploadedBy: { select: { id: true, username: true, displayName: true, role: true } },
+          governanceStatus: true,
+          validFrom: true,
+          validTo: true,
+          governanceOwner: true,
+          governanceVersion: true,
+          governanceMetadata: true
         },
         orderBy: [{ active: 'desc' }, { createdAt: 'desc' }]
       });
@@ -3018,6 +3202,95 @@ router.delete('/training/:id', async (req, res, next) => {
     next(err);
   }
 });
+
+// Update document governance metadata
+const handleUpdateTrainingGovernance = async (req, res, next) => {
+  try {
+    const trainingId = req.params.id;
+    const training = await prisma.trainingData.findUnique({
+      where: { id: trainingId }
+    });
+    if (!training) {
+      return res.status(404).send({ ok: false, error: 'Training data tidak ditemukan' });
+    }
+
+    const { validFrom, validUntil, validTo, status, authority, version, notes, supersedes, supersededBy } = req.body || {};
+
+    const rawFrom = validFrom !== undefined ? validFrom : training.validFrom;
+    const rawUntil = validUntil !== undefined ? validUntil : (validTo !== undefined ? validTo : training.validTo);
+
+    const dateResult = validateDocumentValidityDates(rawFrom, rawUntil);
+    if (!dateResult.valid) {
+      return res.status(400).send({ ok: false, error: dateResult.error, field: 'validUntil' });
+    }
+
+    let finalStatus = status ? normalizeStatus(status) : (training.governanceStatus || 'active');
+    if (finalStatus === 'active' && dateResult.validUntil) {
+      const untilMs = new Date(dateResult.validUntil).getTime();
+      if (untilMs < Date.now()) {
+        finalStatus = 'expired';
+      }
+    }
+
+    const finalAuthority = authority
+      ? normalizeAuthority(authority)
+      : (training.governanceMetadata?.authority || 'tier_2_official_announcement');
+
+    const updated = await applyTrainingGovernance(training.id, {
+      filename: training.filename,
+      divisionKey: training.divisionKey,
+      source: training.source,
+      validFrom: dateResult.validFrom,
+      validUntil: dateResult.validUntil,
+      validTo: dateResult.validUntil,
+      status: finalStatus,
+      governanceStatus: finalStatus,
+      authority: finalAuthority,
+      sourceAuthority: finalAuthority,
+      version: version !== undefined ? version : training.governanceVersion,
+      notes: notes !== undefined ? notes : (training.governanceMetadata?.notes || null),
+      supersedes: supersedes !== undefined ? supersedes : (training.governanceMetadata?.supersedes || null),
+      supersededBy: supersededBy !== undefined ? supersededBy : (training.governanceMetadata?.supersededBy || null),
+      owner: training.governanceOwner || training.divisionKey || 'general'
+    });
+
+    // Re-ingest into RAG in background to sync chunk governance
+    setImmediate(async () => {
+      try {
+        if (training.content) {
+          await ingestTrainingData(training.id, training.content, training.source, {
+            divisionKey: training.divisionKey,
+            filename: training.filename,
+            uploadedById: training.uploadedById,
+            storageType: training.storageType,
+            governance: updated?.governanceMetadata || buildDocumentGovernanceMetadata({
+              filename: training.filename,
+              status: finalStatus,
+              validFrom: dateResult.validFrom,
+              validUntil: dateResult.validUntil,
+              authority: finalAuthority
+            })
+          });
+        }
+      } catch (ingErr) {
+        logger.warn({ err: ingErr.message, trainingId }, '[RAG] Failed to sync re-ingested governance');
+      }
+    });
+
+    res.send({
+      ok: true,
+      trainingDataId: training.id,
+      governance: updated?.governanceMetadata || null
+    });
+  } catch (err) {
+    console.error('[PATCH /admin/training/:id/governance] Error:', err.message);
+    res.status(500).send({ ok: false, error: err.message });
+  }
+};
+
+router.patch('/training/:id/governance', handleUpdateTrainingGovernance);
+router.put('/training/:id/governance', handleUpdateTrainingGovernance);
+
 
 // Old upload endpoint (deprecated, kept for backward compatibility)
 router.post('/upload', upload.single('file'), async (req, res, next) => {

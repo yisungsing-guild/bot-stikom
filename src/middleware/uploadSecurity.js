@@ -196,8 +196,8 @@ function createUploadWithLimits({ maxFiles }) {
       fileSize: MAX_FILE_SIZE,
       files,
       // parts must be >= files + fields + some overhead
-      parts: Math.max(files + 12, 20),
-      fields: 10,
+      parts: Math.max(files + 35, 40),
+      fields: 30,
     },
   });
 }

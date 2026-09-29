@@ -1397,6 +1397,47 @@
               <input type="file" id="trainingFile" accept=".mp4,.mov,.avi,.mkv,.webm,.m4v,.pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" required>
               <small style="color: #999;">Single file - pilih satu file</small>
             </div>
+            <div class="form-group">
+              <label for="uploadTitle">Nama / Judul Dokumen (opsional jika sesuai nama file)</label>
+              <input type="text" id="uploadTitle" placeholder="misal: SK_Biaya_Kuliah_2026.pdf atau Pedoman_Akademik_2026.pdf" />
+              <small style="color: #888;">Gunakan nama deskriptif. Nama ambigu seperti test.pdf atau dokumen baru akan ditolak.</small>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="uploadValidFrom">Tanggal Mulai Berlaku</label>
+                <input type="date" id="uploadValidFrom" />
+                <small style="color: #888;">Dokumen belum berlaku tidak dipakai bot.</small>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="uploadValidUntil">Tanggal Expired</label>
+                <input type="date" id="uploadValidUntil" />
+                <div style="margin-top: 4px;">
+                  <label style="font-size: 0.82em; font-weight: normal; cursor: pointer;">
+                    <input type="checkbox" id="uploadNoExpiry" onchange="toggleNoExpiry('uploadValidUntil', this.checked)"> Berlaku sampai dicabut
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="uploadAuthority">Tingkat Otoritas (Authority)</label>
+                <select id="uploadAuthority" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                  <option value="tier_2_official_announcement">Tier 2: Pengumuman Resmi / Kalender</option>
+                  <option value="tier_1_official_decree">Tier 1: SK Rektor / Regulasi Formal</option>
+                  <option value="tier_3_operational_faq">Tier 3: SOP / Panduan Teknis / Brosur</option>
+                  <option value="tier_4_marketing_general">Tier 4: Informasi Umum / Promosi</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="uploadStatus">Status Dokumen</label>
+                <select id="uploadStatus" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                  <option value="active">Active (Berlaku)</option>
+                  <option value="draft">Draft (Belum Berlaku)</option>
+                  <option value="superseded">Superseded (Sudah Digantikan)</option>
+                  <option value="archived">Archived (Diarsipkan)</option>
+                </select>
+              </div>
+            </div>
             <button type="submit">📤 Upload Single</button>
           </form>
         </div>
@@ -1406,7 +1447,10 @@
       <div id="trainingModeBulk" class="training-mode-section">
         <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb;">
           <h3 style="margin-top: 0; font-size: 1em;">🎯 Bulk Upload (Multiple Files)</h3>
-          <p style="font-size: 0.9em; margin: 8px 0 6px 0; color: #666;">Upload beberapa file sekaligus untuk diproses satu per satu.</p>
+          <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 0.88em; color: #92400e;">
+            <strong>⚠️ Perhatian Tata Kelola Dokumen:</strong>
+            <div style="margin-top: 4px;">Metadata (Masa Berlaku, Otoritas, Status) ini diterapkan ke <strong>seluruh dokumen dalam batch</strong>. Gunakan Bulk Upload hanya untuk dokumen yang memiliki metadata tata kelola yang sama (misal: satu paket edaran/panduan). Jika masa berlaku berbeda, silakan gunakan <strong>Single Upload</strong>.</div>
+          </div>
           <p style="font-size: 0.85em; margin: 0 0 12px 0; color: #666;">
             Format: PDF, DOCX, Excel, CSV, TXT, gambar (JPG, PNG, GIF, WebP). Maksimal ±2MB per file di mode development.
           </p>
@@ -1414,14 +1458,54 @@
             <div class="form-group">
               <label for="bulkTrainingFiles" onclick="openFilePicker('bulkTrainingFiles')" style="cursor: pointer;">📂 Upload Multiple Files Sekaligus</label>
               <input type="file" id="bulkTrainingFiles" accept=".mp4,.mov,.avi,.mkv,.webm,.m4v,.pdf,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif,.webp" multiple required>
-              <small style="color: #999;"><strong>Multiple files:</strong> Pilih banyak file dengan Ctrl+Click atau Shift+Click. Max 10 files per batch.</small>
+              <small style="color: #666;"><strong>Nama Dokumen:</strong> Mengikuti nama masing-masing file asli dan akan <strong>divalidasi secara individual oleh server</strong>. File dengan nama ambigu (seperti <em>test.pdf</em>, <em>doc1.pdf</em>) akan ditolak.</small>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="bulkValidFrom">Tanggal Mulai Berlaku (Wajib untuk Batch)</label>
+                <input type="date" id="bulkValidFrom" required />
+                <small style="color: #888;">Dokumen yang belum berlaku tidak akan digunakan oleh bot.</small>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="bulkValidUntil">Tanggal Expired (Wajib untuk Batch)</label>
+                <input type="date" id="bulkValidUntil" />
+                <div style="margin-top: 4px;">
+                  <label style="font-size: 0.82em; font-weight: normal; cursor: pointer;">
+                    <input type="checkbox" id="bulkNoExpiry" onchange="toggleNoExpiry('bulkValidUntil', this.checked)"> Berlaku sampai dicabut
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="bulkAuthority">Tingkat Otoritas (Authority)</label>
+                <select id="bulkAuthority" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                  <option value="tier_2_official_announcement">Tier 2: Pengumuman Resmi / Kalender</option>
+                  <option value="tier_1_official_decree">Tier 1: SK Rektor / Regulasi Formal</option>
+                  <option value="tier_3_operational_faq">Tier 3: SOP / Panduan Teknis / Brosur</option>
+                  <option value="tier_4_marketing_general">Tier 4: Informasi Umum / Promosi</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="bulkStatus">Status Dokumen</label>
+                <select id="bulkStatus" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                  <option value="active">Active (Berlaku)</option>
+                  <option value="draft">Draft (Belum Berlaku)</option>
+                  <option value="superseded">Superseded (Sudah Digantikan)</option>
+                  <option value="archived">Archived (Diarsipkan)</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="bulkVersion">Versi Dokumen (Opsional)</label>
+                <input type="text" id="bulkVersion" placeholder="misal: v2026.1" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;" />
+              </div>
             </div>
             <button type="submit">📤 Upload Bulk (Multiple Files)</button>
             <div id="bulkProgress" style="margin-top: 10px; display: none;">
               <div style="background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">
                 <div id="bulkProgressBar" style="background: #667eea; height: 100%; width: 0%; transition: width 0.3s;"></div>
               </div>
-              <small id="bulkProgressText" style="color: #666;">0/0 files uploaded</small>
+              <small id="bulkProgressText" style="color: #666;">Mengunggah batch dokumen...</small>
             </div>
           </form>
         </div>
@@ -1434,12 +1518,49 @@
           <p style="font-size: 0.9em; margin: 10px 0 10px 0; color: #666;">Jika upload PDF sulit atau ingin input text langsung hasil scan:</p>
           <form onsubmit="uploadManualText(event)">
             <div class="form-group">
-              <label for="manualTitle">Judul/Nama Data (opsional)</label>
-              <input type="text" id="manualTitle" placeholder="mis: Kalender Pendaftaran 2026" />
+              <label for="manualTitle">Judul / Nama Dokumen (Wajib)</label>
+              <input type="text" id="manualTitle" placeholder="misal: SK_Biaya_Kuliah_2026 atau Pedoman_Akademik_2026" required />
+              <small style="color: #888;">Gunakan nama deskriptif. Nama ambigu seperti test atau dokumen baru akan ditolak.</small>
             </div>
             <div class="form-group">
               <label for="manualText">Teks Content</label>
               <textarea id="manualText" placeholder="Paste text hasil scan atau copy-paste dari dokumen lain..." rows="5" required></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="manualValidFrom">Tanggal Mulai Berlaku</label>
+                <input type="date" id="manualValidFrom" />
+                <small style="color: #888;">Dokumen belum berlaku tidak dipakai bot.</small>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="manualValidUntil">Tanggal Expired</label>
+                <input type="date" id="manualValidUntil" />
+                <div style="margin-top: 4px;">
+                  <label style="font-size: 0.82em; font-weight: normal; cursor: pointer;">
+                    <input type="checkbox" id="manualNoExpiry" onchange="toggleNoExpiry('manualValidUntil', this.checked)"> Berlaku sampai dicabut
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="manualAuthority">Tingkat Otoritas (Authority)</label>
+                <select id="manualAuthority" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                  <option value="tier_2_official_announcement">Tier 2: Pengumuman Resmi / Kalender</option>
+                  <option value="tier_1_official_decree">Tier 1: SK Rektor / Regulasi Formal</option>
+                  <option value="tier_3_operational_faq">Tier 3: SOP / Panduan Teknis / Brosur</option>
+                  <option value="tier_4_marketing_general">Tier 4: Informasi Umum / Promosi</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="manualStatus">Status Dokumen</label>
+                <select id="manualStatus" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                  <option value="active">Active (Berlaku)</option>
+                  <option value="draft">Draft (Belum Berlaku)</option>
+                  <option value="superseded">Superseded (Sudah Digantikan)</option>
+                  <option value="archived">Archived (Diarsipkan)</option>
+                </select>
+              </div>
             </div>
             <button type="submit">💾 Simpan Sebagai Training Data</button>
           </form>
@@ -1464,9 +1585,9 @@
         <table>
           <thead>
             <tr>
-              <th>Filename</th>
-              <th>Source</th>
-              <th>Uploader</th>
+              <th>Dokumen / Filename</th>
+              <th>Masa Berlaku</th>
+              <th>Authority</th>
               <th>Status</th>
               <th>Dibuat</th>
               <th>Aksi</th>
@@ -3084,13 +3205,30 @@
           ? `<button class="danger" onclick="deleteTraining('${item.id}')">🗑️ Deactivate</button>`
           : '';
 
+        const govStatus = item.governanceStatus || (item.active ? 'active' : 'inactive');
+        const validFromText = item.validFrom ? new Date(item.validFrom).toLocaleDateString('id-ID') : '-';
+        const validUntilText = item.validTo ? new Date(item.validTo).toLocaleDateString('id-ID') : 'Sampai dicabut';
+        const authorityText = item.governanceMetadata?.authority || 'tier_2_official_announcement';
+
         tbody.innerHTML += `
           <tr>
-            <td>${item.filename}</td>
-            <td>${item.source}</td>
-            <td>${uploaderText}</td>
-            <td><span class="badge">${item.active ? 'Active' : 'Inactive'}</span></td>
-            <td>${new Date(item.createdAt).toLocaleString('id-ID')}</td>
+            <td>
+              <strong>${item.filename}</strong>
+              <div style="font-size: 0.8em; color: #888;">Sumber: ${item.source} | Uploader: ${uploaderText}</div>
+            </td>
+            <td style="font-size: 0.85em;">
+              <div>🟢 Mulai: ${validFromText}</div>
+              <div>🔴 Expired: ${validUntilText}</div>
+            </td>
+            <td style="font-size: 0.85em;">
+              <span class="badge" style="background: #eef2ff; color: #4338ca;">${authorityText}</span>
+            </td>
+            <td>
+              <span class="badge" style="${govStatus === 'expired' ? 'background: #fee2e2; color: #b91c1c;' : (govStatus === 'active' ? 'background: #dcfce7; color: #15803d;' : 'background: #fef3c7; color: #b45309;')}">
+                ${govStatus}
+              </span>
+            </td>
+            <td style="font-size: 0.85em;">${new Date(item.createdAt).toLocaleString('id-ID')}</td>
             <td>
               <div class="action-btns">
                 <button type="button" onclick="previewTraining('${item.id}')">👁️ Preview</button>
@@ -3163,6 +3301,14 @@
       }
     }
 
+    function toggleNoExpiry(inputId, checked) {
+      const input = document.getElementById(inputId);
+      if (input) {
+        input.disabled = checked;
+        if (checked) input.value = '';
+      }
+    }
+
     async function uploadTraining(e) {
       e.preventDefault();
       const fileInput = document.getElementById('trainingFile');
@@ -3201,6 +3347,31 @@
       const formData = new FormData();
       formData.append('file', file);
 
+      const titleInput = document.getElementById('uploadTitle');
+      const validFromInput = document.getElementById('uploadValidFrom');
+      const validUntilInput = document.getElementById('uploadValidUntil');
+      const noExpiryInput = document.getElementById('uploadNoExpiry');
+      const authorityInput = document.getElementById('uploadAuthority');
+      const statusInput = document.getElementById('uploadStatus');
+
+      if (titleInput && titleInput.value.trim()) {
+        formData.append('title', titleInput.value.trim());
+      }
+      if (validFromInput && validFromInput.value.trim()) {
+        formData.append('validFrom', validFromInput.value.trim());
+      }
+      if (noExpiryInput && noExpiryInput.checked) {
+        formData.append('validUntil', 'null');
+      } else if (validUntilInput && validUntilInput.value.trim()) {
+        formData.append('validUntil', validUntilInput.value.trim());
+      }
+      if (authorityInput && authorityInput.value) {
+        formData.append('authority', authorityInput.value);
+      }
+      if (statusInput && statusInput.value) {
+        formData.append('status', statusInput.value);
+      }
+
       // Route to video upload endpoint for video files to enable transcription flow
       const isVideo = videoExtensions.includes(fileExt);
       const endpoint = isVideo ? `${API_BASE}/training/video-upload` : `${API_BASE}/admin/training/upload`;
@@ -3233,6 +3404,10 @@
           console.log('[Training] File uploaded successfully:', data.trainingDataId);
           showAlert('✅ Training data berhasil diupload!', 'success');
           fileInput.value = '';  // Clear file input
+          if (titleInput) titleInput.value = '';
+          if (validFromInput) validFromInput.value = '';
+          if (validUntilInput) { validUntilInput.value = ''; validUntilInput.disabled = false; }
+          if (noExpiryInput) noExpiryInput.checked = false;
           e.target.reset();
           await loadTraining();
         } else {
@@ -3289,6 +3464,16 @@
       
       const title = document.getElementById('manualTitle').value.trim();
       const text = document.getElementById('manualText').value.trim();
+      const validFromInput = document.getElementById('manualValidFrom');
+      const validUntilInput = document.getElementById('manualValidUntil');
+      const noExpiryInput = document.getElementById('manualNoExpiry');
+      const authorityInput = document.getElementById('manualAuthority');
+      const statusInput = document.getElementById('manualStatus');
+
+      const validFrom = validFromInput && validFromInput.value.trim() ? validFromInput.value.trim() : null;
+      const validUntil = (noExpiryInput && noExpiryInput.checked) ? null : (validUntilInput && validUntilInput.value.trim() ? validUntilInput.value.trim() : null);
+      const authority = authorityInput ? authorityInput.value : undefined;
+      const status = statusInput ? statusInput.value : undefined;
       
       console.log('[Manual Text] Submitting:', title, 'length:', text.length);
       
@@ -3312,8 +3497,12 @@
           },
           body: JSON.stringify({
             text: text,
-            title: title || 'Manual Text ' + new Date().toLocaleString('id-ID'),
-            source: 'manual'
+            title: title,
+            source: 'manual',
+            validFrom,
+            validUntil,
+            authority,
+            status
           })
         });
         
@@ -3324,9 +3513,16 @@
           showAlert(`✅ Training data (${data.contentLength} chars) berhasil tersimpan!`, 'success');
           document.getElementById('manualTitle').value = '';
           document.getElementById('manualText').value = '';
+          if (validFromInput) validFromInput.value = '';
+          if (validUntilInput) { validUntilInput.value = ''; validUntilInput.disabled = false; }
+          if (noExpiryInput) noExpiryInput.checked = false;
           await loadTraining();
         } else {
-          showAlert(`❌ Error: ${data.error}`, 'error');
+          let errText = `❌ Error: ${data.error}`;
+          if (data.suggestions && data.suggestions.length) {
+            errText += '\n\n💡 Solusi:\n' + data.suggestions.map(s => '• ' + s).join('\n');
+          }
+          showAlert(errText, 'error');
         }
       } catch (err) {
         console.error('[Manual Text] Exception:', err);
@@ -3367,95 +3563,125 @@
         }
       }
       
-      console.log('[Bulk Upload] Starting upload for', files.length, 'files');
-      
+      const validFromInput = document.getElementById('bulkValidFrom');
+      const validUntilInput = document.getElementById('bulkValidUntil');
+      const noExpiryInput = document.getElementById('bulkNoExpiry');
+      const authorityInput = document.getElementById('bulkAuthority');
+      const statusInput = document.getElementById('bulkStatus');
+      const versionInput = document.getElementById('bulkVersion');
+
+      const validFrom = validFromInput ? validFromInput.value.trim() : '';
+      const noExpiry = noExpiryInput ? noExpiryInput.checked : false;
+      const validUntil = validUntilInput ? validUntilInput.value.trim() : '';
+      const authority = authorityInput ? authorityInput.value : '';
+      const status = statusInput ? statusInput.value : '';
+      const version = versionInput ? versionInput.value.trim() : '';
+
+      if (!validFrom) {
+        showAlert('❌ Tanggal Mulai Berlaku wajib diisi untuk batch dokumen.', 'error');
+        if (validFromInput) validFromInput.focus();
+        return;
+      }
+
+      if (!noExpiry && !validUntil) {
+        showAlert('❌ Tanggal Expired wajib diisi, atau centang opsi "Berlaku sampai dicabut".', 'error');
+        if (validUntilInput) validUntilInput.focus();
+        return;
+      }
+
+      if (validFrom && validUntil && !noExpiry) {
+        if (new Date(validUntil).getTime() < new Date(validFrom).getTime()) {
+          showAlert('❌ Tanggal Expired tidak boleh lebih awal dari Tanggal Mulai Berlaku.', 'error');
+          if (validUntilInput) validUntilInput.focus();
+          return;
+        }
+      }
+
+      console.log('[Bulk Upload] Starting batch upload for', files.length, 'files with governance:', {
+        validFrom,
+        validUntil: noExpiry ? null : validUntil,
+        authority,
+        status
+      });
+
       const progressDiv = document.getElementById('bulkProgress');
       const progressBar = document.getElementById('bulkProgressBar');
       const progressText = document.getElementById('bulkProgressText');
-      
+
       progressDiv.style.display = 'block';
-      progressBar.style.width = '0%';
-      progressText.textContent = `0/${files.length} files uploaded`;
-      
-      let uploaded = 0;
-      let failed = 0;
-      const results = [];
-      
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        try {
-          console.log(`[Bulk Upload] Uploading file ${i+1}/${files.length}: ${file.name}`);
-          
-          const formData = new FormData();
-          formData.append('file', file);
-          const fileExt = String(file.name || '').split('.').pop().toLowerCase();
-          const isVideo = videoExtensions.includes(fileExt);
-          const endpoint = isVideo ? `${API_BASE}/training/video-upload` : `${API_BASE}/admin/training/upload`;
+      progressBar.style.width = '35%';
+      progressText.textContent = `Mengunggah ${files.length} dokumen dengan tata kelola ke server...`;
 
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
-          });
-          const parsed = await readJsonOrTextResponse(res);
-          const data = parsed.ok ? parsed.data : null;
-          
-          if (res.ok && res.status !== 202) {
-            console.log(`[Bulk Upload] ✅ ${file.name}`);
-            results.push({ file: file.name, status: 'success' });
-            uploaded++;
-          } else {
-            let errMsg = data && (data.error || data.message)
-              ? String(data.error || data.message)
-              : (parsed.raw ? String(parsed.raw).trim().slice(0, 240) : `HTTP ${res.status}`);
-
-            if (res.status === 413) {
-              errMsg = `413 Payload Too Large (limit proxy/server). Kecilkan file atau naikkan client_max_body_size.`;
-            } else if (res.status === 502 || res.status === 504) {
-              errMsg = `${res.status} Gateway/Timeout. Cek log PM2/Nginx atau coba file lebih kecil.`;
-            }
-
-            if (data && Array.isArray(data.suggestions) && data.suggestions.length > 0) {
-              errMsg += ` | Solusi: ${String(data.suggestions[0]).replace(/^•\s*/, '')}`;
-            }
-            console.warn(`[Bulk Upload] ⚠️ ${file.name}: ${errMsg}`);
-            results.push({ file: file.name, status: 'failed', error: errMsg });
-            failed++;
-          }
-        } catch (err) {
-          console.error(`[Bulk Upload] Error ${file.name}:`, err.message);
-          results.push({ file: file.name, status: 'error', error: err.message });
-          failed++;
+      try {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+          formData.append('files', files[i]);
         }
-        
-        // Update progress
-        const progress = ((i + 1) / files.length) * 100;
-        progressBar.style.width = progress + '%';
-        progressText.textContent = `${i+1}/${files.length} files processed (${uploaded} success, ${failed} failed)`;
-        
-        // Small delay between uploads
-        await new Promise(r => setTimeout(r, 500));
-      }
-      
-      progressDiv.style.display = 'none';
-      
-      // Summary
-      if (failed === 0) {
-        showAlert(`✅ Semua ${uploaded} file berhasil diupload!`, 'success');
-      } else {
-        let summary = `⚠️ ${uploaded} berhasil, ${failed} gagal\n\nDetail:\n`;
-        results.forEach(r => {
-          summary += r.status === 'success' 
-            ? `✅ ${r.file}\n`
-            : `❌ ${r.file}: ${r.error || 'Unknown error'}\n`;
+        formData.append('validFrom', validFrom);
+        if (noExpiry) {
+          formData.append('validUntil', 'null');
+          formData.append('noExpiry', 'true');
+        } else {
+          formData.append('validUntil', validUntil);
+        }
+        formData.append('authority', authority);
+        formData.append('status', status);
+        if (version) formData.append('version', version);
+
+        const res = await fetch(`${API_BASE}/admin/training/upload-bulk`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
         });
-        showAlert(summary, 'warning');
+
+        progressBar.style.width = '100%';
+        const parsed = await readJsonOrTextResponse(res);
+        const data = parsed.ok ? parsed.data : null;
+
+        if (res.ok && data) {
+          const results = Array.isArray(data.results) ? data.results : [];
+          const successCount = results.filter(r => r && r.ok).length;
+          const failedResults = results.filter(r => r && !r.ok);
+
+          if (failedResults.length === 0) {
+            showAlert(`✅ Semua ${successCount} file dalam batch berhasil diupload dengan tata kelola valid!`, 'success');
+          } else {
+            let summaryMsg = `⚠️ Selesai dengan catatan:\n• Berhasil: ${successCount}\n• Ditolak: ${failedResults.length}\n\nDetail:\n`;
+            failedResults.forEach(r => {
+              summaryMsg += `❌ ${r.filename}: ${r.error || 'Ditolak'}\n`;
+            });
+            showAlert(summaryMsg, 'warning');
+          }
+
+          fileInput.value = '';
+          if (validFromInput) validFromInput.value = '';
+          if (validUntilInput) { validUntilInput.value = ''; validUntilInput.disabled = false; }
+          if (noExpiryInput) noExpiryInput.checked = false;
+          if (versionInput) versionInput.value = '';
+          e.target.reset();
+          await loadTraining();
+        } else {
+          let errMsg = data && (data.error || data.message)
+            ? String(data.error || data.message)
+            : (parsed.raw ? String(parsed.raw).trim().slice(0, 240) : `HTTP ${res.status}`);
+
+          if (res.status === 413) {
+            errMsg = `413 Payload Too Large (limit proxy/server). Kurangi jumlah file per batch.`;
+          } else if (res.status === 502 || res.status === 504) {
+            errMsg = `${res.status} Gateway/Timeout. Cek server atau kurangi jumlah file per batch.`;
+          }
+
+          if (data && Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+            errMsg += '\n\n💡 Solusi:\n' + data.suggestions.map(s => '• ' + s).join('\n');
+          }
+          showAlert(`❌ Upload Batch Gagal:\n${errMsg}`, 'error');
+        }
+      } catch (err) {
+        console.error('[Bulk Upload] Exception:', err);
+        showAlert(`❌ Error mengunggah batch: ${err.message}`, 'error');
+      } finally {
+        progressDiv.style.display = 'none';
       }
-      
-      fileInput.value = '';
-      e.target.reset();
-      await loadTraining();
     }
 
     // Cache server upload max size (from /admin/stats)

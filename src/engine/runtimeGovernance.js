@@ -111,6 +111,213 @@ function compareAuthority(authA, authB) {
   return tierA.weight - tierB.weight;
 }
 
+function validateDocumentNaming(filenameOrTitle) {
+  if (!filenameOrTitle || typeof filenameOrTitle !== 'string') {
+    return { valid: false, error: 'Nama dokumen wajib diisi.' };
+  }
+  const trimmed = filenameOrTitle.trim();
+  if (trimmed.length < 3) {
+    return { valid: false, error: 'Nama dokumen terlalu pendek (minimal 3 karakter).' };
+  }
+  if (trimmed.length > 255) {
+    return { valid: false, error: 'Nama dokumen terlalu panjang (maksimal 255 karakter).' };
+  }
+
+  const baseName = path.basename(trimmed);
+  const ext = path.extname(baseName);
+  const nameWithoutExt = path.basename(baseName, ext).trim();
+
+  if (baseName.startsWith('.') && (!baseName.includes('.', 1) || nameWithoutExt.startsWith('.'))) {
+    return { valid: false, error: 'Nama dokumen tidak boleh hanya berupa ekstensi file.' };
+  }
+
+  if (!nameWithoutExt || nameWithoutExt.length < 2) {
+    return { valid: false, error: 'Nama dokumen tidak boleh hanya berupa ekstensi file.' };
+  }
+
+  if (/[<>:"|?*\x00-\x1f]/.test(baseName)) {
+    return { valid: false, error: 'Nama dokumen mengandung karakter yang tidak diizinkan (<, >, :, ", |, ?, *).' };
+  }
+
+  const lowerName = nameWithoutExt.toLowerCase().replace(/[\s_\-]+/g, ' ').trim();
+  const ambiguousExactNames = new Set([
+    'test', 'testing', 'test1', 'test2', 'coba', 'percobaan',
+    'dokumen', 'dokumen baru', 'dokumen baru 1', 'dokumen 1', 'dokumen_baru',
+    'document', 'new document', 'new doc', 'doc', 'doc1',
+    'file', 'file baru', 'new file', 'untitled', 'untitled document',
+    'baru', 'contoh', 'sample', 'dummy', 'temp', 'temporary',
+    'asdf', 'qwerty', '123', '1234', '12345', 'aaa', 'bbb',
+    'data', 'data baru', 'input', 'teks', 'text'
+  ]);
+
+  if (ambiguousExactNames.has(lowerName)) {
+    return {
+      valid: false,
+      error: `Nama dokumen '${baseName}' terlalu ambigu atau tidak informatif. Gunakan nama deskriptif yang mencerminkan isi dokumen (misal: 'SK_Biaya_Kuliah_2026.pdf', 'Jadwal_Yudisium_Genap_2026.pdf', atau 'Pedoman_Akademik_S1.pdf').`
+    };
+  }
+
+  if (/^\d+$/.test(lowerName) || /^([a-z])\1+$/.test(lowerName)) {
+    return {
+      valid: false,
+      error: `Nama dokumen '${baseName}' tidak informatif. Gunakan nama yang mencerminkan subjek atau topik dokumen.`
+    };
+  }
+
+  return { valid: true, sanitizedName: baseName, nameWithoutExt, ext };
+}
+
+function validateDocumentValidityDates(validFrom, validUntil, options = {}) {
+  let parsedFrom = null;
+  let parsedUntil = null;
+
+  const requireValidFrom = options.requireValidFrom !== undefined ? Boolean(options.requireValidFrom) : false;
+  const requireValidUntil = options.requireValidUntil !== undefined ? Boolean(options.requireValidUntil) : false;
+  const noExpiryFlag = Boolean(
+    options.noExpiry === true ||
+    options.noExpiry === 'true' ||
+    options.noExpiry === 1 ||
+    options.noExpiry === '1'
+  );
+
+  // 1. Validate validFrom
+  if (validFrom !== undefined && validFrom !== null && String(validFrom).trim() !== '') {
+    const fromDate = new Date(validFrom);
+    if (isNaN(fromDate.getTime())) {
+      return { valid: false, error: "Tanggal mulai berlaku ('validFrom') harus berupa format tanggal yang valid (contoh: YYYY-MM-DD).", field: 'validFrom' };
+    }
+    parsedFrom = fromDate.toISOString();
+  } else if (requireValidFrom) {
+    return { valid: false, error: "Tanggal mulai berlaku ('validFrom') wajib diisi.", field: 'validFrom' };
+  }
+
+  // 2. Validate validUntil
+  const rawUntilStr = validUntil !== undefined && validUntil !== null ? String(validUntil).trim().toLowerCase() : '';
+  const isExplicitIndefinite = noExpiryFlag || ['none', 'null', 'tidak_ada', 'tidak ada', 'berlaku_sampai_dicabut', 'sampai_dicabut'].includes(rawUntilStr);
+
+  if (isExplicitIndefinite) {
+    parsedUntil = null; // null represents indefinite / berlaku sampai dicabut
+  } else if (rawUntilStr !== '') {
+    const untilDate = new Date(validUntil);
+    if (isNaN(untilDate.getTime())) {
+      return { valid: false, error: "Tanggal expired ('validUntil') harus berupa format tanggal yang valid (contoh: YYYY-MM-DD).", field: 'validUntil' };
+    }
+    parsedUntil = untilDate.toISOString();
+  } else if (requireValidUntil) {
+    return { valid: false, error: "Tanggal expired ('validUntil') wajib diisi, atau pilih opsi 'Berlaku sampai dicabut'.", field: 'validUntil' };
+  }
+
+  // 3. Consistency check: validUntil must not be earlier than validFrom
+  if (parsedFrom && parsedUntil) {
+    const fromMs = new Date(parsedFrom).getTime();
+    const untilMs = new Date(parsedUntil).getTime();
+    if (untilMs < fromMs) {
+      return {
+        valid: false,
+        error: "Tanggal expired ('validUntil') tidak boleh lebih awal dari tanggal mulai berlaku ('validFrom').",
+        field: 'validUntil'
+      };
+    }
+  }
+
+  return {
+    valid: true,
+    validFrom: parsedFrom,
+    validUntil: parsedUntil // null represents indefinite / berlaku sampai dicabut
+  };
+}
+
+function validateDocumentIntakeGovernance(payload = {}, options = {}) {
+  const name = payload.filename || payload.title || payload.name;
+  const nameResult = validateDocumentNaming(name);
+  if (!nameResult.valid) {
+    return { valid: false, error: nameResult.error, field: 'filename' };
+  }
+
+  const noExpiry = Boolean(
+    payload.noExpiry === true ||
+    payload.noExpiry === 'true' ||
+    payload.noExpiry === 1 ||
+    payload.noExpiry === '1' ||
+    payload.isIndefinite === true
+  );
+
+  const requireValidFrom = options.requireValidFrom !== undefined ? Boolean(options.requireValidFrom) : true;
+  const requireValidUntil = options.requireValidUntil !== undefined ? Boolean(options.requireValidUntil) : !noExpiry;
+
+  const dateResult = validateDocumentValidityDates(payload.validFrom, payload.validUntil || payload.validTo, {
+    requireValidFrom,
+    requireValidUntil,
+    noExpiry
+  });
+  if (!dateResult.valid) {
+    return { valid: false, error: dateResult.error, field: dateResult.field || 'validUntil' };
+  }
+
+  // Authority validation
+  const rawAuthority = payload.authority !== undefined ? payload.authority : (payload.sourceAuthority !== undefined ? payload.sourceAuthority : payload.authorityTier);
+  let authority;
+  if (rawAuthority === undefined || rawAuthority === null || String(rawAuthority).trim() === '') {
+    if (options.requireAuthority === true) {
+      return { valid: false, error: "Tingkat otoritas ('authority') wajib diisi.", field: 'authority' };
+    }
+    authority = 'tier_2_official_announcement';
+  } else {
+    authority = normalizeAuthority(rawAuthority);
+    if (authority === 'tier_unknown') {
+      return { valid: false, error: "Tingkat otoritas ('authority') tidak valid. Pilih Tier 1 s.d Tier 4 yang sah.", field: 'authority' };
+    }
+  }
+
+  // Status validation
+  const rawStatus = payload.status !== undefined ? payload.status : payload.governanceStatus;
+  let status;
+  if (rawStatus === undefined || rawStatus === null || String(rawStatus).trim() === '') {
+    if (options.requireStatus === true) {
+      return { valid: false, error: "Status dokumen ('status') wajib diisi.", field: 'status' };
+    }
+    status = 'active';
+  } else {
+    const normalizedRaw = String(rawStatus).trim().toLowerCase();
+    const validStatuses = ['active', 'draft', 'superseded', 'archived', 'approved', 'published', 'valid', 'expired', 'replaced'];
+    if (!validStatuses.includes(normalizedRaw)) {
+      return { valid: false, error: "Status dokumen ('status') tidak valid. Pilih active, draft, superseded, atau archived.", field: 'status' };
+    }
+    status = normalizeStatus(rawStatus);
+  }
+
+  // If status is active but validUntil has already passed, automatically set status to expired
+  let finalStatus = status;
+  if (finalStatus === 'active' && dateResult.validUntil) {
+    const untilMs = new Date(dateResult.validUntil).getTime();
+    if (untilMs < Date.now()) {
+      finalStatus = 'expired';
+    }
+  }
+
+  const governanceMetadata = buildDocumentGovernanceMetadata({
+    ...payload,
+    filename: nameResult.sanitizedName,
+    validFrom: dateResult.validFrom,
+    validUntil: dateResult.validUntil,
+    validTo: dateResult.validUntil,
+    status: finalStatus,
+    governanceStatus: finalStatus,
+    authority,
+    sourceAuthority: authority
+  });
+
+  return {
+    valid: true,
+    sanitizedFilename: nameResult.sanitizedName,
+    validFrom: dateResult.validFrom,
+    validUntil: dateResult.validUntil,
+    status: finalStatus,
+    authority,
+    governanceMetadata
+  };
+}
+
 function buildDocumentGovernanceMetadata(input = {}) {
   const filename = String(input.filename || '').trim();
   const divisionKey = String(input.divisionKey || '').trim() || null;
@@ -125,7 +332,7 @@ function buildDocumentGovernanceMetadata(input = {}) {
     owner: explicitOwner || divisionKey || 'general',
     status,
     version: String(input.version || input.governanceVersion || '').trim() || `${source}-${sha256(filename || nowIso).slice(0, 10)}`,
-    validFrom: input.validFrom || nowIso,
+    validFrom: input.validFrom || null,
     validTo: input.validTo || input.validUntil || null,
     validUntil: input.validUntil || input.validTo || null,
     sourceAuthority: authority,
@@ -149,7 +356,6 @@ function getTrainingGovernance(row = {}) {
   const metadata = row.governanceMetadata && typeof row.governanceMetadata === 'object'
     ? row.governanceMetadata
     : {};
-  const createdAt = row.createdAt || new Date();
   const rawStatus = row.governanceStatus || row.status || metadata.status || null;
   const status = normalizeStatus(rawStatus);
 
@@ -159,13 +365,16 @@ function getTrainingGovernance(row = {}) {
   const tierMeta = getAuthorityTier(authority);
   const resolvedTier = (rawTier && rawTier >= 1 && rawTier <= 4) ? rawTier : (authority !== 'tier_unknown' ? tierMeta.tier : null);
 
+  const validFromVal = row.validFrom ? new Date(row.validFrom).toISOString() : (metadata.validFrom ? new Date(metadata.validFrom).toISOString() : null);
+  const validToVal = row.validTo ? new Date(row.validTo).toISOString() : (metadata.validTo ? new Date(metadata.validTo).toISOString() : (row.validUntil ? new Date(row.validUntil).toISOString() : (metadata.validUntil ? new Date(metadata.validUntil).toISOString() : null)));
+
   return {
     owner: row.governanceOwner || row.owner || metadata.owner || row.divisionKey || 'general',
     status,
     version: row.governanceVersion || row.version || metadata.version || null,
-    validFrom: row.validFrom || metadata.validFrom || (rawStatus ? createdAt : null),
-    validTo: row.validTo || row.validUntil || metadata.validTo || metadata.validUntil || null,
-    validUntil: row.validUntil || row.validTo || metadata.validUntil || metadata.validTo || null,
+    validFrom: validFromVal,
+    validTo: validToVal,
+    validUntil: validToVal,
     sourceAuthority: authority,
     authority,
     authorityTier: resolvedTier || 99,
@@ -311,7 +520,7 @@ function filterGovernedChunks(chunks = [], options = {}) {
 
 function enrichChunkWithGovernance(chunk = {}, defaultGovernance = {}) {
   if (!chunk || typeof chunk !== 'object') return chunk;
-  const gov = Object.assign({}, defaultGovernance, chunk.governanceMetadata || (chunk.metadata && chunk.metadata.governance) || {});
+  const gov = Object.assign({}, defaultGovernance, chunk.governanceMetadata || chunk.governance || (chunk.metadata && (chunk.metadata.governanceMetadata || chunk.metadata.governance)) || {});
 
   const rawStatus = chunk.governanceStatus || chunk.status || gov.status || null;
   const status = normalizeStatus(rawStatus);
@@ -341,6 +550,7 @@ function enrichChunkWithGovernance(chunk = {}, defaultGovernance = {}) {
     supersedes: chunk.supersedes || gov.supersedes || null,
     supersededBy: chunk.supersededBy || gov.supersededBy || null,
     governanceMetadata: {
+      ...gov,
       status: finalStatus,
       authority,
       authorityTier: tierMeta.tier,
@@ -680,6 +890,9 @@ module.exports = {
   normalizeAuthority,
   getAuthorityTier,
   compareAuthority,
+  validateDocumentNaming,
+  validateDocumentValidityDates,
+  validateDocumentIntakeGovernance,
   buildDocumentGovernanceMetadata,
   getTrainingGovernance,
   isTrainingGovernanceAllowed,
