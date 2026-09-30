@@ -285,7 +285,57 @@ function buildProgramAlternativeAnswer(program, question) {
   };
 }
 
+function isBroadSchoolBackgroundWithoutSpecificPreference(question, options = {}) {
+  if (options?.canonical?.constraints?.profileInsufficient) return true;
+  const q = normalizeText(question);
+  if (!q) return false;
+  const hasSchoolOrigin = /\b(?:berasal\s+dari|lulusan|dari| tamatan|anak|siswa|alumni)\s+(?:smk|sma|ma|stm|sekolah\b)|(?:\bsmk\b|\bsma\b)\s+(?:bidang\s+komputer|jurusan\s+komputer|komputer|tkj|rpl|multimedia|dkv|ipa|ips|it\b|teknik\s+komputer)/i.test(q);
+  if (!hasSchoolOrigin) return false;
+  const hasSpecificCareerOrInterest = /\b(?:ingin\s+(?:jadi|bekerja|kerja|fokus|mendalami)|mau\s+(?:jadi|bekerja|kerja|fokus)|pengen\s+(?:jadi|bekerja|kerja|fokus)|cita\s*-?\s*cita|suka\s+(?:coding|ngoding|pemrograman|hardware|iot|bisnis|marketing|data|desain|gambar|jaringan|cyber)|minat\s+(?:di|ke|pada)\s+(?:coding|ngoding|pemrograman|hardware|iot|bisnis|marketing|data|desain|jaringan|cyber)|hobi\s+(?:coding|ngoding|gambar|desain|merakit)|programmer|software\s+developer|web\s+developer|data\s+analyst|digital\s+marketer|cyber\s*security|iot\s+engineer|network\s+engineer|ui\s*\/?\s*ux)\b/i.test(q);
+  return !hasSpecificCareerOrInterest;
+}
+
+function buildBroadBackgroundProgramGuidanceAnswer(question) {
+  const q = normalizeText(question);
+  const isSmkComputer = /\bsmk\b.*\b(?:komputer|tkj|rpl|multimedia|informatika|it\b)/i.test(q);
+  const intro = isSmkComputer
+    ? 'Latar belakang dari SMK bidang komputer sebenarnya punya dasar yang relevan untuk beberapa program studi di ITB STIKOM Bali. Karena bidang komputer cukup luas, prodi yang paling cocok bergantung pada fokus dan arah karier yang paling kakak minati:'
+    : 'Latar belakang sekolah kakak bisa masuk ke beberapa program studi di ITB STIKOM Bali. Agar pilihannya paling pas, berikut gambaran perbedaan fokus tiap prodi yang relevan:';
+
+  const lines = [
+    intro,
+    '',
+    '1. **Teknologi Informasi (TI) — S1**',
+    '   Cocok jika kakak lebih tertarik pada pemrograman (coding), pengembangan software/aplikasi (web/mobile), cloud computing, jaringan, dan keamanan siber (cyber security).',
+    '2. **Sistem Informasi (SI) — S1**',
+    '   Cocok jika kakak tertarik menghubungkan teknologi dengan proses bisnis, analisis sistem perusahaan, pengelolaan basis data (database), dashboard, dan solusi digital organisasi.',
+    '3. **Sistem Komputer (SK) — S1**',
+    '   Cocok jika kakak lebih menyukai sisi perangkat keras (hardware), arsitektur komputer, embedded system, Internet of Things (IoT), mikrokontroler, dan jaringan komputer.',
+    '4. **Bisnis Digital (BD) — S1 / Manajemen Informatika (MI) — D3**',
+    '   - **Bisnis Digital (S1)**: cocok jika ingin fokus ke pengembangan bisnis berbasis teknologi, digital marketing, e-commerce, dan strategi produk digital.',
+    '   - **Manajemen Informatika (D3)**: cocok jika mencari jalur vokasi/praktis 3 tahun yang fokus pada aplikasi terapan, pengolahan data, dan dukungan operasional IT.',
+    '',
+    'Supaya saya bisa mengerucutkan rekomendasi yang paling pas buat kakak: selama di SMK atau untuk rencana karier ke depan, kakak lebih suka bagian **coding/pembuatan aplikasi**, **analisis data & sistem bisnis**, atau **perangkat keras (hardware), jaringan & IoT**?'
+  ];
+
+  return {
+    answer: lines.join('\n'),
+    candidates: [
+      { program: PROGRAMS.ti, confidence: 'MEDIUM', signals: ['smk_computer_background'], levels: ['candidate'], reasons: ['Fokus software, coding, jaringan, dan keamanan siber'] },
+      { program: PROGRAMS.si, confidence: 'MEDIUM', signals: ['smk_computer_background'], levels: ['candidate'], reasons: ['Fokus sistem informasi, analisis bisnis, dan basis data'] },
+      { program: PROGRAMS.sk, confidence: 'MEDIUM', signals: ['smk_computer_background'], levels: ['candidate'], reasons: ['Fokus hardware, embedded system, IoT, dan jaringan'] },
+      { program: PROGRAMS.bd, confidence: 'MEDIUM', signals: ['smk_computer_background'], levels: ['candidate'], reasons: ['Fokus bisnis digital, e-commerce, dan digital marketing'] }
+    ],
+    profileInsufficient: true,
+    needsClarification: true,
+    source: 'semantic-rag-program-recommendation'
+  };
+}
+
 function buildProgramFitAnswer(question, options = {}) {
+  if (isBroadSchoolBackgroundWithoutSpecificPreference(question, options)) {
+    return buildBroadBackgroundProgramGuidanceAnswer(question);
+  }
   const candidates = getProgramFitCandidates(question);
   if (!candidates.length) {
     const explicitProgram = detectExplicitProgram(question, options);
@@ -328,5 +378,7 @@ module.exports = {
   SIGNALS,
   detectProgramFitSignals,
   getProgramFitCandidates,
-  buildProgramFitAnswer
+  buildProgramFitAnswer,
+  isBroadSchoolBackgroundWithoutSpecificPreference,
+  buildBroadBackgroundProgramGuidanceAnswer
 };

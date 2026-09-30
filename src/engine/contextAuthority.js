@@ -179,10 +179,10 @@ function detectDomainFromCues(rawText, sessionState = null) {
     return 'student_organization';
   }
   if (/\b(?:fasilitas|lab|perpustakaan|gedung|kantin|parkir|asrama)\b/i.test(text)) {
-    return 'facility';
+    return 'campus_facility';
   }
   if (/\b(?:mahasiswa\s+(?:asing|internasional)|foreign\s+student|keimigrasian|imigrasi|izin\s+(?:belajar(?:nya)?|tinggal(?:nya)?)|visa|vitas|itas|kitas|sktt)\b/i.test(text)) {
-    return 'foreign_student_admin';
+    return 'international_admin';
   }
   if (/\b(?:instiki|primakara|universitas\s+lain|kampus\s+lain|ptn|pts)\b/i.test(text)
     || (/\b(?:bandingkan|bedanya|perbedaan|komparasi|keunggulan|mana\s+(?:yang\s+)?(?:lebih|bagus|unggul|baik))\b/i.test(text) && /\b(?:instiki|primakara|kampus|stikom)\b/i.test(text))) {
@@ -464,9 +464,7 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
   // cues are only a fallback for otherwise unclassified turns; a word such as
   // syarat must not demote an explicit fee/installment contract to registration.
   const lexicalCuesDomain = detectDomainFromCues(rawText, sessionState);
-  const detectedCuesDomain = isCurrentDomainExplicit
-    ? (currentDomain === 'campus_facility' && lexicalCuesDomain === 'facility' ? lexicalCuesDomain : currentDomain)
-    : lexicalCuesDomain;
+  const detectedCuesDomain = isCurrentDomainExplicit ? currentDomain : lexicalCuesDomain;
   const hasDomainCuesInText = Boolean(detectedCuesDomain);
 
   // If user provides an explicit new entity WITHOUT domain cues in the text,

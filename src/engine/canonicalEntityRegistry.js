@@ -315,12 +315,6 @@ const CANONICAL_ENTITIES = [
     family: 'campus_facility',
     aliases: ['inkubator bisnis', 'inbis', 'inbis bali', 'inkubator bisnis stikom bali', 'wadah inkubasi bisnis', 'inkubasi bisnis', 'startup', 'rintisan bisnis', 'wadah inkubasi']
   },
-  {
-    canonical: 'Program Hi-Think (Magang Jepang)',
-    type: 'special_program',
-    family: 'campus_facility',
-    aliases: ['hi-think', 'hi think', 'hithink', 'program hi-think', 'magang jepang', 'program jepang', 'kerja di jepang']
-  },
 
   // Campuses / Locations
   {

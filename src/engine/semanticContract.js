@@ -1,4 +1,5 @@
 const { findCanonicalEntity } = require('./canonicalEntityRegistry');
+const { normalizeCanonicalDomain } = require('./domainNormalization');
 function toArray(value) {
   return Array.isArray(value) ? value.filter(Boolean) : [];
 }
@@ -89,7 +90,10 @@ function inferRequestType(canonical) {
   if (/availability/.test(intent) || /\b(?:ada|punya|tersedia|memiliki)\b/i.test(raw)) return 'availability';
   return qType || intent || 'unknown';
 }
-function buildSemanticContract(canonical) {
+function buildSemanticContract(canonicalOrQuestion, maybeSession = null, maybeCanonical = null) {
+  const canonical = (maybeCanonical && typeof maybeCanonical === 'object')
+    ? maybeCanonical
+    : (canonicalOrQuestion && typeof canonicalOrQuestion === 'object' ? canonicalOrQuestion : {});
   const source = canonical && typeof canonical === 'object' ? canonical : {};
     const constraints = source.constraints && typeof source.constraints === 'object' ? { ...source.constraints } : {};
   const sourceDomain = source.domain && source.domain.primary || 'general';
@@ -107,10 +111,28 @@ function buildSemanticContract(canonical) {
     if (entity.source === 'canonical-domain-scope' && !isAcademicDomain) return false;
     return true;
   });
-  const primaryDomain = source.domain && source.domain.primary || 'general';
+  const primaryDomain = normalizeCanonicalDomain(source.domain && source.domain.primary || 'general');
   const primaryIntent = source.intent && source.intent.primary || 'ask_general';
   const entities = filterContractEntitiesForDomain(primaryDomain, primaryIntent, allEntities);
   const requestType = inferRequestType(source);
+  const isComparison = requestType === 'comparison'
+    || Boolean(constraints.comparisonScope)
+    || (Array.isArray(constraints.comparisonEntities) && constraints.comparisonEntities.length > 0);
+  const normalizedScope = constraints.comparisonScope === 'all_programs'
+    ? 'all_programs'
+    : (constraints.comparisonScope === 'explicit_entities' ? 'multi_entity' : (constraints.comparisonScope || 'multi_entity'));
+  const comparison = isComparison ? Object.freeze({
+    enabled: true,
+    operation: 'compare',
+    scope: normalizedScope,
+    entities: Array.isArray(constraints.comparisonEntities) && constraints.comparisonEntities.length
+      ? unique(constraints.comparisonEntities)
+      : unique(entities.map(entity => entity.canonical)),
+    fields: Array.isArray(constraints.comparisonFields) && constraints.comparisonFields.length
+      ? unique(constraints.comparisonFields)
+      : unique(source.requestedFields),
+    inheritedAnchor: constraints.inheritedComparisonAnchor || null
+  }) : null;
   return Object.freeze({
     version: 1,
     raw: source.rawQuery || '',
@@ -125,6 +147,7 @@ function buildSemanticContract(canonical) {
     academicLevel: constraints.academicLevel || (Array.isArray(constraints.academicLevels) && constraints.academicLevels.length === 1 ? constraints.academicLevels[0] : null),
     relations: unique([constraints.relationType, constraints.comparisonTarget, constraints.externalRelation && constraints.externalRelation.relationType]),
     constraints,
+    comparison,
     contextReference: source.contextReference || { mode: 'current_turn', resolvedFrom: null },
     answerShape: {
       topic_opening: 'acknowledge_topic_only',

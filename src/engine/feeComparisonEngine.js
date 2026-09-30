@@ -2,10 +2,22 @@ const ragEngine = require('./ragEngine');
 const { parseCompactRupiahNumber } = require('../utils/rupiahParser');
 const fs = require('fs');
 const path = require('path');
-const { buildProgramFitAnswer } = require('./programFitReasoning');
+const {
+  buildProgramFitAnswer,
+  isBroadSchoolBackgroundWithoutSpecificPreference,
+  buildBroadBackgroundProgramGuidanceAnswer
+} = require('./programFitReasoning');
 const { detectScholarshipRequestSubtype, extractScholarshipName, KNOWN_SCHOLARSHIPS } = require('./scholarshipIntentClassifier');
 const { hasRawTechnicalLeak, hasLikelyRawDocumentLeak } = require('../utils/answerPreflightEvaluator');
-const { normalizeSlangTokens, detectCurriculumTopic, hasExplicitProgramSemantics, hasPriorProgramContext } = require('./queryUnderstanding');
+const {
+  normalizeSlangTokens,
+  detectCurriculumTopic,
+  hasExplicitProgramSemantics,
+  hasPriorProgramContext,
+  hasAllProgramsScope,
+  isComparativeFollowupEllipsis,
+  resolvePriorProgramAnchorForComparison
+} = require('./queryUnderstanding');
 
 function parseAmount(raw) {
   return parseCompactRupiahNumber(raw);
@@ -25,12 +37,12 @@ const PROGRAM_META = {
 };
 
 const PROGRAM_FALLBACK_PROFILES = {
-  si: { pendaftaran: 500000, dpp: 14000000, semester: 6500000, biayaAwalLow: 16000000, biayaAwalHigh: 16000000 },
-  ti: { pendaftaran: 500000, dpp: 14000000, semester: 6500000, biayaAwalLow: 16000000, biayaAwalHigh: 16000000 },
-  bd: { pendaftaran: 500000, dpp: 14000000, semester: 6500000, biayaAwalLow: 16000000, biayaAwalHigh: 16000000 },
-  sk: { pendaftaran: 500000, dpp: 13000000, semester: 6000000, biayaAwalLow: 13000000, biayaAwalHigh: 13000000 },
-  mi: { pendaftaran: 500000, dpp: 10000000, semester: 4500000, biayaAwalLow: 10500000, biayaAwalHigh: 10500000, atribut: 10000000 },
-  d3: { pendaftaran: 500000, dpp: 10000000, semester: 4500000, biayaAwalLow: 10500000, biayaAwalHigh: 10500000, atribut: 10000000 },
+  si: { pendaftaran: 500000, dpp: 14000000, atribut: 1500000, semester: 6500000, biayaAwalLow: 16000000, biayaAwalHigh: 16000000 },
+  ti: { pendaftaran: 500000, dpp: 14000000, atribut: 1500000, semester: 6500000, biayaAwalLow: 16000000, biayaAwalHigh: 16000000 },
+  bd: { pendaftaran: 500000, dpp: 14000000, atribut: 1500000, semester: 6500000, biayaAwalLow: 16000000, biayaAwalHigh: 16000000 },
+  sk: { pendaftaran: 500000, dpp: 11000000, atribut: 1500000, semester: 6000000, biayaAwalLow: 13000000, biayaAwalHigh: 13000000 },
+  mi: { pendaftaran: 500000, dpp: 10000000, semester: 4500000, biayaAwalLow: 10500000, biayaAwalHigh: 10500000 },
+  d3: { pendaftaran: 500000, dpp: 10000000, semester: 4500000, biayaAwalLow: 10500000, biayaAwalHigh: 10500000 },
   s2: { pendaftaran: 700000, semester: 10000000, lunas2Tahun: 40000000, thesisSemester: 6000000, biayaAwalLow: 10000000, biayaAwalHigh: 10000000 },
   dnui: { pendaftaran: 3000000, dpp: 20000000, semester: 16000000, languageFee: 5000000, languageLabel: 'Bahasa Mandarin', biayaAwalLow: 20000000, biayaAwalHigh: 20000000 },
   help: { pendaftaran: 3000000, dpp: 20000000, semester: 3000000, educationFeeLabel: 'Biaya Pendidikan & Ujian/Subject', languageFee: 5000000, languageLabel: 'Bahasa Inggris', biayaAwalLow: 20000000, biayaAwalHigh: 20000000 },
@@ -56,16 +68,16 @@ function extractProfiles(index) {
   const normalizeKey = (k) => {
     if (!k) return null;
     const t = String(k).toLowerCase();
+    if (/s2|magister|master|pascasarjana/.test(t)) return 's2';
+    if (/dnui|dalian/.test(t)) return 'dnui';
+    if (/help\s+university|help\b/.test(t)) return 'help';
+    if (/utb|universitas\s+teknologi\s+bandung/.test(t)) return 'utb';
     if (/si|sistem\s+informasi/.test(t)) return 'si';
     if (/ti|teknologi\s+informasi|informatika/.test(t)) return 'ti';
     if (/bd|bisnis\s+digital/.test(t)) return 'bd';
     if (/sk|sistem\s+komputer/.test(t)) return 'sk';
     if (/mi|manajemen\s+informatika/.test(t)) return 'mi';
     if (/d3/.test(t)) return 'd3';
-    if (/s2|magister|master|pascasarjana/.test(t)) return 's2';
-    if (/dnui|dalian/.test(t)) return 'dnui';
-    if (/help\s+university|help\b/.test(t)) return 'help';
-    if (/utb/.test(t)) return 'utb';
     return null;
   };
 
@@ -106,23 +118,66 @@ function extractProfiles(index) {
   };
 
   const assignIfMissing = (prof, field, value) => {
-    if (!prof || !field) return;
-    if (!isPlausibleFeeAmount(field, value)) return;
+    if (!prof || !field) return false;
+    if (!isPlausibleFeeAmount(field, value)) return false;
     if (prof[field] == null || prof[field] === '') {
       prof[field] = value;
+      return true;
     }
+    return false;
   };
 
   const assignLineAmounts = (prof, line) => {
     const text = String(line || '');
     const textLower = text.toLowerCase();
-    const isDiscountLine = shouldIgnoreAmountLine(textLower);
+    if (shouldIgnoreAmountLine(textLower)) return false;
+    let extractedAny = false;
+
+    // 1. Check equipment sub-components first so both Jas Almamater and Kaos/Tas/GMTI can be summed accurately
+    if (!/\b(potongan|diskon)\b/i.test(text)) {
+      const jasMatch = text.match(/\b(?:jas\s*(?:,?\s*topi)?\s*al(?:ma|a)?mater|jas\s+al(?:ma|a)?mater\s+dan\s+topi|al(?:ma|a)?mater\s*,?\s*topi)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i);
+      if (jasMatch && jasMatch[1]) {
+        const val = parseAmount(jasMatch[1]);
+        if (isPlausibleFeeAmount('atribut', val) && prof._jasAlmamater == null) {
+          prof._jasAlmamater = val;
+          extractedAny = true;
+        }
+      }
+      const kaosMatch = text.match(/\b(?:kaos\s*,?\s*(?:tas|topi)\s*,?\s*gmti)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i);
+      if (kaosMatch && kaosMatch[1]) {
+        const val = parseAmount(kaosMatch[1]);
+        if (isPlausibleFeeAmount('atribut', val) && prof._kaosGmti == null) {
+          prof._kaosGmti = val;
+          extractedAny = true;
+        }
+      }
+      const explicitAtributMatch = text.match(/\b(?:atribut(?:\s*\/\s*perlengkapan\s+awal)?|perlengkapan\s+awal|biaya\s+atribut)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i);
+      if (explicitAtributMatch && explicitAtributMatch[1]) {
+        const val = parseAmount(explicitAtributMatch[1]);
+        if (isPlausibleFeeAmount('atribut', val) && prof._explicitAtribut == null) {
+          prof._explicitAtribut = val;
+          extractedAny = true;
+        }
+      }
+      // D3 / MI uses "Biaya Registrasi 10.000.000" as its DPP / initial registration fee
+      const registrasiMatch = text.match(/\bbiaya\s+registrasi\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i);
+      if (registrasiMatch && registrasiMatch[1]) {
+        const val = parseAmount(registrasiMatch[1]);
+        if (val >= 1000000 && (prof.key === 'd3' || prof.key === 'mi')) {
+          if (assignIfMissing(prof, 'dpp', val)) extractedAny = true;
+        } else if (isPlausibleFeeAmount('atribut', val) && prof._explicitAtribut == null) {
+          prof._explicitAtribut = val;
+          extractedAny = true;
+        }
+      }
+    }
+
     const fieldPatterns = [
-      { field: 'pendaftaran', pattern: /\b(?:biaya\s+pendaftaran|pendaftaran|registrasi)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i, forbid: /\b(potongan|diskon|jika\s+mendaftar|jika\s+registrasi)\b/i },
+      { field: 'pendaftaran', pattern: /\b(?:biaya\s+pendaftaran|pendaftaran|uang\s+pendaftaran)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i, forbid: /\b(potongan|diskon|jika\s+mendaftar|jika\s+registrasi)\b/i },
       { field: 'dpp', pattern: /\b(?:dana\s+pendidikan\s+pokok|dpp)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i, forbid: /\b(potongan|diskon)\b/i },
-      { field: 'semester', pattern: /\b(?:biaya\s+pendidikan\s+per\s+semester|biaya\s+pendidikan\s+persemester|ukt|biaya\s+pendidikan\s+&\s+ujian\/subject|biaya\s+pendidikan\s+&\s+ujian|subject)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i, forbid: /\b(potongan|diskon)\b/i },
-      { field: 'totalAwalMasuk', pattern: /\b(?:subtotal|total\s+awal\s+masuk|total\s+biaya)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i, forbid: /\b(potongan|diskon)\b/i },
-      { field: 'atribut', pattern: /\b(?:atribut|perlengkapan\s+awal|biaya\s+registrasi|jas\s*almamater|kaos,?\s+tas,?\s+gmtI)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i, forbid: /\b(potongan|diskon)\b/i }
+      { field: 'semester', pattern: /\b(?:biaya\s+pendidikan\s+per\s+semester|biaya\s+pendidikan\s+persemester|ukt|spp|biaya\s+semester|biaya\s+pendidikan\s+&\s+ujian\/subject|biaya\s+pendidikan\s+&\s+ujian|subject)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i, forbid: /\b(potongan|diskon|khusus\s+alumni)\b/i },
+      { field: 'specialSemester', pattern: /\b(?:biaya\s+pendidikan\s+per\s+semester\s+khusus\s+alumni[^\d]{0,80})([0-9][0-9\.,]{0,40})/i, forbid: /\b(potongan|diskon)\b/i },
+      { field: 'totalAwalMasuk', pattern: /\b(?:total\s+(?:komponen\s+)?awal\s+masuk|total\s+biaya\s+awal)\b[^0-9]{0,120}?([0-9][0-9\.,]{0,40})/i, forbid: /\b(potongan|diskon|setelah)\b/i }
     ];
 
     for (const spec of fieldPatterns) {
@@ -132,7 +187,7 @@ function extractProfiles(index) {
       if (match && match[1]) {
         const value = parseAmount(match[1]);
         if (Number.isFinite(value)) {
-          assignIfMissing(prof, spec.field, value);
+          if (assignIfMissing(prof, spec.field, value)) extractedAny = true;
           if (spec.field === 'semester' && /biaya\s+pendidikan\s+&\s+ujian/i.test(text)) {
             prof.educationFeeLabel = 'Biaya Pendidikan & Ujian/Subject';
           }
@@ -142,18 +197,27 @@ function extractProfiles(index) {
 
     if (!prof.pendaftaran && /\bpendaftaran\b/i.test(text) && !/\b(potongan|diskon|jika\s+mendaftar|jika\s+registrasi)\b/i.test(text)) {
       const amount = parseAmountFromText(text);
-      assignIfMissing(prof, 'pendaftaran', amount);
+      if (assignIfMissing(prof, 'pendaftaran', amount)) extractedAny = true;
     }
 
     if (!prof.dpp && /\b(?:dana\s+pendidikan\s+pokok|dpp)\b/i.test(text) && !/\b(potongan|diskon)\b/i.test(text)) {
       const amount = parseAmountFromText(text);
-      assignIfMissing(prof, 'dpp', amount);
+      if (assignIfMissing(prof, 'dpp', amount)) extractedAny = true;
     }
+    return extractedAny;
   };
 
   for (const item of list) {
     if (!item) continue;
-    // detect program from entities if available
+    const chunkText = String(item.chunk || item.text || item.content || '');
+    const fileText = String(item.filename || item.sourceFile || '');
+    const hay = chunkText + '\n' + fileText;
+
+    // Skip pure wave discount rule chunks that don't define a program fee profile
+    if (/#\s*Aturan\s+umum\s+gelombang|Potongan\s+biaya\s+pendaftaran\s+S1\s+reguler/i.test(chunkText) && !/Fee\s+Profile/i.test(chunkText)) {
+      continue;
+    }
+
     let programKeys = [];
     try {
       const ents = item.entities || item.meta || {};
@@ -163,12 +227,28 @@ function extractProfiles(index) {
       }
     } catch (e) {}
 
-    // fallback: search in text/filename
-    const hay = String(item.chunk || item.text || item.content || '') + '\n' + String(item.filename || item.sourceFile || '');
-    for (const k of knownKeys) {
-      const re = new RegExp(`\\b(${k}|${k === 'si' ? 'sistem\\s+informasi' : k === 'ti' ? 'teknologi\\s+informasi' : k === 'bd' ? 'bisnis\\s+digital' : k === 'sk' ? 'sistem\\s+komputer' : k})\\b`, 'i');
-      if (re.test(hay)) {
-        if (!programKeys.includes(k)) programKeys.push(k);
+    const isS2Chunk = /\b(?:s2\s+sistem\s+informasi|jenjang\s*:\s*pascasarjana|fee\s+profile\s*:\s*s2)\b/i.test(chunkText);
+    const isDoubleDegreeChunk = /\b(?:fee\s+profile\s*:\s*double\s+degree|program\s*:\s*double\s+degree)\b/i.test(chunkText);
+
+    if (isS2Chunk) {
+      if (!programKeys.includes('s2')) programKeys.push('s2');
+    } else if (isDoubleDegreeChunk) {
+      for (const ddKey of ['dnui', 'help', 'utb']) {
+        const ddRe = ddKey === 'dnui' ? /\b(?:dnui|dalian)\b/i : ddKey === 'help' ? /\bhelp\s+university\b/i : /\b(?:utb|universitas\s+teknologi\s+bandung)\b/i;
+        if (ddRe.test(chunkText) && !programKeys.includes(ddKey)) programKeys.push(ddKey);
+      }
+    } else {
+      for (const k of knownKeys) {
+        const patternStr = k === 'si' ? 'sistem\\s+informasi'
+          : k === 'ti' ? 'teknologi\\s+informasi'
+          : k === 'bd' ? 'bisnis\\s+digital'
+          : k === 'sk' ? 'sistem\\s+komputer'
+          : k === 'mi' ? 'manajemen\\s+informatika|\\bmi\\b'
+          : k;
+        const re = new RegExp(`\\b(${k}|${patternStr})\\b`, 'i');
+        if (re.test(hay)) {
+          if (!programKeys.includes(k)) programKeys.push(k);
+        }
       }
     }
 
@@ -176,30 +256,37 @@ function extractProfiles(index) {
 
     for (const k of programKeys) {
       const prof = ensure(k);
-      prof.chunks.push(item);
-      if (item.filename || item.sourceFile) prof.sourceFiles.add(item.filename || item.sourceFile);
-      const lines = String(hay).split(/\r?\n/);
+      const lines = String(chunkText).split(/\r?\n/);
+      let chunkExtractedFee = false;
       for (const line of lines) {
-        assignLineAmounts(prof, line);
+        if (assignLineAmounts(prof, line)) chunkExtractedFee = true;
+      }
+      if (chunkExtractedFee || /biaya|tuition_fee|fee/i.test(fileText)) {
+        prof.chunks.push(item);
+        if (item.filename || item.sourceFile) prof.sourceFiles.add(item.filename || item.sourceFile);
       }
     }
   }
 
-  // unify D3 and MI profiles (since D3 at ITB STIKOM Bali is D3 Manajemen Informatika)
-  if (profiles.d3 && profiles.mi) {
-    for (const c of profiles.d3.chunks) {
-      if (!profiles.mi.chunks.includes(c)) profiles.mi.chunks.push(c);
+  // Unify D3 and MI profiles (since D3 at ITB STIKOM Bali is D3 Manajemen Informatika)
+  if (profiles.d3 || profiles.mi) {
+    const d3Prof = ensure('d3');
+    const miProf = ensure('mi');
+    for (const c of d3Prof.chunks) {
+      if (!miProf.chunks.includes(c)) miProf.chunks.push(c);
     }
-    for (const sf of profiles.d3.sourceFiles) {
-      profiles.mi.sourceFiles.add(sf);
+    for (const c of miProf.chunks) {
+      if (!d3Prof.chunks.includes(c)) d3Prof.chunks.push(c);
     }
-    for (const field of ['pendaftaran', 'dpp', 'semester', 'biayaAwalLow', 'biayaAwalHigh', 'atribut', 'totalAwalMasuk']) {
-      if (profiles.mi[field] == null && profiles.d3[field] != null) profiles.mi[field] = profiles.d3[field];
-      if (profiles.d3[field] == null && profiles.mi[field] != null) profiles.d3[field] = profiles.mi[field];
+    for (const sf of d3Prof.sourceFiles) miProf.sourceFiles.add(sf);
+    for (const sf of miProf.sourceFiles) d3Prof.sourceFiles.add(sf);
+    for (const field of ['pendaftaran', 'dpp', 'semester', 'biayaAwalLow', 'biayaAwalHigh', 'atribut', 'totalAwalMasuk', '_jasAlmamater', '_kaosGmti', '_explicitAtribut']) {
+      if (miProf[field] == null && d3Prof[field] != null) miProf[field] = d3Prof[field];
+      if (d3Prof[field] == null && miProf[field] != null) d3Prof[field] = miProf[field];
     }
   }
 
-  // finalize profiles array
+  // Finalize profiles array with strict component-sum consistency
   const out = [];
   for (const k of Object.keys(profiles)) {
     const p = profiles[k];
@@ -207,9 +294,40 @@ function extractProfiles(index) {
     if (!p.label && PROGRAM_META[k]) p.label = PROGRAM_META[k].label;
     if (!p.degree && PROGRAM_META[k]) p.degree = PROGRAM_META[k].degree;
     if (!p.family && PROGRAM_META[k]) p.family = PROGRAM_META[k].family;
-    // compute some derived values
-    p.biayaAwalLow = Number.isFinite(p.totalAwalMasuk) ? p.totalAwalMasuk : (Number.isFinite(p.dpp) ? p.dpp : null);
-    p.biayaAwalHigh = p.biayaAwalLow;
+
+    if (!Number.isFinite(p.atribut)) {
+      if (Number.isFinite(p._explicitAtribut)) {
+        p.atribut = p._explicitAtribut;
+      } else if (Number.isFinite(p._jasAlmamater) || Number.isFinite(p._kaosGmti)) {
+        p.atribut = (Number.isFinite(p._jasAlmamater) ? p._jasAlmamater : 0) + (Number.isFinite(p._kaosGmti) ? p._kaosGmti : 0);
+      }
+    }
+    delete p._jasAlmamater;
+    delete p._kaosGmti;
+    delete p._explicitAtribut;
+
+    // Never set biayaAwalLow = p.dpp when pendaftaran/atribut are present or missing;
+    // ensure Total komponen awal masuk equals the sum of grounded initial components.
+    if (Number.isFinite(p.pendaftaran) && Number.isFinite(p.dpp) && Number.isFinite(p.atribut)) {
+      const componentSum = p.pendaftaran + p.dpp + p.atribut;
+      p.totalAwalMasuk = componentSum;
+      p.biayaAwalLow = componentSum;
+      p.biayaAwalHigh = componentSum;
+    } else if ((p.key === 'mi' || p.key === 'd3') && Number.isFinite(p.pendaftaran) && Number.isFinite(p.dpp) && !Number.isFinite(p.atribut)) {
+      const d3Sum = p.pendaftaran + p.dpp;
+      p.totalAwalMasuk = d3Sum;
+      p.biayaAwalLow = d3Sum;
+      p.biayaAwalHigh = d3Sum;
+    } else if (Number.isFinite(p.totalAwalMasuk) && !(Number.isFinite(p.dpp) && p.totalAwalMasuk === p.dpp && (Number.isFinite(p.pendaftaran) || Number.isFinite(p.atribut)))) {
+      p.biayaAwalLow = p.totalAwalMasuk;
+      p.biayaAwalHigh = p.totalAwalMasuk;
+    } else if ((p.family === 'international' || p.family === 's2') && Number.isFinite(p.dpp || p.semester)) {
+      p.biayaAwalLow = Number.isFinite(p.dpp) ? p.dpp : p.semester;
+      p.biayaAwalHigh = p.biayaAwalLow;
+    } else {
+      p.biayaAwalLow = null;
+      p.biayaAwalHigh = null;
+    }
     out.push(p);
   }
   cachedFeeProfiles = out;
@@ -217,11 +335,32 @@ function extractProfiles(index) {
   return out;
 }
 
-function mergeProgramProfileWithFallback(programKey, profile) {
+function mergeProgramProfileWithFallback(programKey, profile, options = {}) {
+  if (options && options.isCustomIndex && profile) {
+    const customMerged = Object.assign({}, PROGRAM_META[programKey] || {}, profile);
+    if (Number.isFinite(customMerged.pendaftaran) && Number.isFinite(customMerged.dpp) && Number.isFinite(customMerged.atribut)) {
+      const sum = customMerged.pendaftaran + customMerged.dpp + customMerged.atribut;
+      customMerged.totalAwalMasuk = sum;
+      customMerged.biayaAwalLow = sum;
+      customMerged.biayaAwalHigh = sum;
+    }
+    return customMerged;
+  }
   const fallback = PROGRAM_FALLBACK_PROFILES[programKey] || {};
-  const merged = Object.assign({}, PROGRAM_META[programKey] || {}, fallback, profile || {});
-  if (!Number.isFinite(merged.biayaAwalLow)) {
-    merged.biayaAwalLow = Number.isFinite(merged.totalAwalMasuk) ? merged.totalAwalMasuk : (Number.isFinite(merged.dpp) ? merged.dpp : null);
+  const cleanProfile = {};
+  if (profile && typeof profile === 'object') {
+    for (const [k, v] of Object.entries(profile)) {
+      if (v !== null && v !== undefined) cleanProfile[k] = v;
+    }
+  }
+  const merged = Object.assign({}, PROGRAM_META[programKey] || {}, fallback, cleanProfile);
+  if (Number.isFinite(merged.pendaftaran) && Number.isFinite(merged.dpp) && Number.isFinite(merged.atribut)) {
+    const sum = merged.pendaftaran + merged.dpp + merged.atribut;
+    merged.totalAwalMasuk = sum;
+    merged.biayaAwalLow = sum;
+    merged.biayaAwalHigh = sum;
+  } else if (!Number.isFinite(merged.biayaAwalLow)) {
+    merged.biayaAwalLow = Number.isFinite(merged.totalAwalMasuk) ? merged.totalAwalMasuk : null;
   }
   if (!Number.isFinite(merged.biayaAwalHigh)) {
     merged.biayaAwalHigh = merged.biayaAwalLow;
@@ -398,9 +537,11 @@ function feeProfileByProgram(question, index = ragEngine.loadIndex(), options = 
     if (sessionProgs.length === 1) program = sessionProgs[0];
   }
   if (!program) return null;
+  const defaultIndex = ragEngine.loadIndex();
+  const isCustomIndex = Array.isArray(index) && index !== defaultIndex && index.length > 0 && index.length < (Array.isArray(defaultIndex) ? defaultIndex.length : 50);
   const profiles = extractProfiles(index);
   const parsedProfile = profiles.find((p) => p.key === program.key) || null;
-  const profile = mergeProgramProfileWithFallback(program.key, parsedProfile);
+  const profile = mergeProgramProfileWithFallback(program.key, parsedProfile, { isCustomIndex: Boolean(isCustomIndex && parsedProfile) });
   return {
     program,
     profile
@@ -568,13 +709,80 @@ function tryProgramDefinitionAnswer(question, options = {}) {
   };
 }
 
-function tryProgramComparisonAnswer(question) {
+function mapCanonicalProgramToKey(value) {
+  const t = String(value || '').toLowerCase().trim();
+  if (!t) return null;
+  if (/^(?:si|s1\s+sistem\s+informasi|sistem\s+informasi)$/.test(t)) return 'si';
+  if (/^(?:ti|s1\s+teknologi\s+informasi|teknologi\s+informasi|teknik\s+informatika|informatika)$/.test(t)) return 'ti';
+  if (/^(?:sk|s1\s+sistem\s+komputer|sistem\s+komputer)$/.test(t)) return 'sk';
+  if (/^(?:bd|s1\s+bisnis\s+digital|bisnis\s+digital)$/.test(t)) return 'bd';
+  if (/^(?:mi|d3\s+manajemen\s+informatika|manajemen\s+informatika|d3)$/.test(t)) return 'mi';
+  const detected = detectProgram(t);
+  return detected ? detected.key : null;
+}
+
+function tryProgramComparisonAnswer(question, index = null, options = {}) {
+  const resolvedOptions = (index && !Array.isArray(index) && typeof index === 'object' && (!options || Object.keys(options).length === 0))
+    ? index
+    : (options || {});
   const q = String(question || '').toLowerCase();
   const asksDifference = /\b(beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|apa\s+yang\s+membedakan|mana\s+bedanya|bingung\s+pilih|vs|versus)\b/.test(q);
   if (!asksDifference) return null;
   if (/\b(biaya|harga|tarif|ongkos|bayar|uang|dpp|ukt|semester|pendaftaran|termurah|termahal|murah|mahal|hemat)\b/.test(q)) return null;
-  const mentioned = detectMentionedPrograms(question);
+  const mentioned = detectMentionedPrograms(question, resolvedOptions);
   const keys = new Set(mentioned.map((p) => p.key));
+  let inheritedAnchorKey = null;
+
+  const canonical = (resolvedOptions && (resolvedOptions.canonicalUnderstanding || resolvedOptions.__canonicalQueryUnderstanding || resolvedOptions.canonical)) || null;
+  if (canonical && canonical.constraints) {
+    const compEntities = Array.isArray(canonical.constraints.comparisonEntities) ? canonical.constraints.comparisonEntities : [];
+    for (const ent of compEntities) {
+      const k = mapCanonicalProgramToKey(ent);
+      if (k && ['si', 'ti', 'sk', 'bd', 'mi'].includes(k)) keys.add(k);
+    }
+    if (canonical.constraints.inheritedComparisonAnchor) {
+      const anchorK = mapCanonicalProgramToKey(canonical.constraints.inheritedComparisonAnchor);
+      if (anchorK && ['si', 'ti', 'sk', 'bd', 'mi'].includes(anchorK)) {
+        inheritedAnchorKey = anchorK;
+        keys.add(anchorK);
+      }
+    }
+  }
+
+  if (!inheritedAnchorKey && isComparativeFollowupEllipsis(q)) {
+    const priorAnchor = resolvePriorProgramAnchorForComparison(
+      resolvedOptions?.sessionData?.conversationState || resolvedOptions?.conversationState || resolvedOptions?.sessionState || resolvedOptions?.sessionData || resolvedOptions,
+      mentioned.map((p) => ({ canonical: p.label }))
+    );
+    if (priorAnchor && priorAnchor.canonical) {
+      const anchorK = mapCanonicalProgramToKey(priorAnchor.canonical);
+      if (anchorK && ['si', 'ti', 'sk', 'bd', 'mi'].includes(anchorK)) {
+        inheritedAnchorKey = anchorK;
+        keys.add(anchorK);
+      }
+    }
+    if (!inheritedAnchorKey && resolvedOptions && resolvedOptions.programHint) {
+      const hintPrograms = detectProgramsFromHint(resolvedOptions.programHint);
+      for (const hp of hintPrograms) {
+        if (['si', 'ti', 'sk', 'bd', 'mi'].includes(hp.key) && !keys.has(hp.key)) {
+          inheritedAnchorKey = hp.key;
+          keys.add(hp.key);
+          break;
+        }
+      }
+    }
+    if (!inheritedAnchorKey && resolvedOptions && resolvedOptions.sessionData) {
+      const sessionPrograms = detectProgramsFromSessionData(resolvedOptions.sessionData);
+      for (const sp of sessionPrograms) {
+        if (['si', 'ti', 'sk', 'bd', 'mi'].includes(sp.key) && !keys.has(sp.key)) {
+          inheritedAnchorKey = sp.key;
+          keys.add(sp.key);
+          break;
+        }
+      }
+    }
+  }
+
   const asksOtherPrograms = /\b(prodi|program\s+studi|jurusan)\s+lain\b|\blainnya\b|\byang\s+lain\b/.test(q);
   const asksSimilarPrograms = /\b(prodi|program\s+studi|jurusan)\s+(serupa|mirip)\b|\b(serupa|mirip)\b/.test(q);
   const asksGeneralManagement = /\bmanajemen\b/.test(q) && !/\bmanajemen\s+informatika\b/.test(q);
@@ -600,7 +808,10 @@ function tryProgramComparisonAnswer(question) {
     }
   }
   if (keys.size < 2) return null;
-  const displayOrder = ['si', 'sk', 'ti', 'bd', 'mi'];
+  const baseDisplayOrder = ['si', 'sk', 'ti', 'bd', 'mi'];
+  const displayOrder = inheritedAnchorKey
+    ? [inheritedAnchorKey, ...baseDisplayOrder.filter((k) => k !== inheritedAnchorKey)]
+    : baseDisplayOrder;
   const programLookup = {
     si: { key: 'si', label: 'Sistem Informasi' },
     sk: { key: 'sk', label: 'Sistem Komputer' },
@@ -843,11 +1054,19 @@ function formatProgramCareerFitAnswer(program, career) {
   return { answer: lines.join('\n') };
 }
 
-function tryProgramRecommendationAnswer(question) {
+function tryProgramRecommendationAnswer(question, index = null, options = {}) {
+  const resolvedOptions = (index && !Array.isArray(index) && typeof index === 'object' && (!options || Object.keys(options).length === 0))
+    ? index
+    : (options || {});
   const q = String(question || '').toLowerCase();
   if (!q.trim()) return null;
   if (/\b(?:in(?:cu|ku)bator(?:\s+bisnis)?|inbis)\b/i.test(q)) return null;
   if (/\b(beda|bedanya|bedain|perbedaan|bandingkan|perbandingan|apa\s+yang\s+membedakan|mana\s+bedanya)\b/.test(q)) return null;
+  const canonical = (resolvedOptions && (resolvedOptions.__canonicalQueryUnderstanding || resolvedOptions.canonicalUnderstanding || resolvedOptions.canonical)) || null;
+  if (isBroadSchoolBackgroundWithoutSpecificPreference(question, { canonical })) {
+    const broadGuidance = buildBroadBackgroundProgramGuidanceAnswer(question);
+    return { ...broadGuidance, frameSource: 'semantic-rag-program-recommendation' };
+  }
   if (/\b(?:dkv|desain\s+komunikasi\s+visual|desain\s+visual|visual\s+branding|illustration)\b/.test(q)) {
     const fitAnswer = buildProgramFitAnswer(question);
     if (fitAnswer) return { ...fitAnswer, frameSource: 'semantic-rag-program-recommendation' };
@@ -858,9 +1077,8 @@ function tryProgramRecommendationAnswer(question) {
   const hasCareerGoal = /\b(ingin|mau|pengen|nanti|kerja|bekerja|karir|karier|perusahaan|menjadi|jadi|minat|hobi|hobby|suka|senang|takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert|menggambar|gambar|ilustrasi|desain|dkv|visual|sosmed|sosial\s+media|social\s+media|tiktok|live|konten|content)\b/.test(q);
   const asksMajor = /\b(jurusan|prodi|program\s+studi|kuliah)\b/.test(q);
 
-  const smkComputerBackground = /\bsmk\b/.test(q) && /\b(komputer|tkj|rpl|rekayasa\s+perangkat\s+lunak|multimedia|informatika|jaringan|software|pemrograman)\b/.test(q);
   const dataInterest = /\b(mengolah\s+data|olah\s+data|analisis\s+data|menganalisa\s+data|menganalisis\s+data|data\s+analyst|data\s+analis|business\s+intelligence|bi\b|dashboard|basis\s+data|database|sql|analytics|analitik)\b/.test(q);
-  const codingInterest = smkComputerBackground || /\b(coding|ngoding|pemrograman|programmer|software|developer|aplikasi|backend|frontend|data\s+engineer|data\s+engineering)\b/.test(q);
+  const codingInterest = /\b(coding|ngoding|pemrograman|programmer|software|developer|aplikasi|backend|frontend|data\s+engineer|data\s+engineering)\b/.test(q);
   const businessInterest = /\b(bisnis|marketing|marketer|digital\s+marketer|pemasaran|jualan|e-commerce|marketplace|wirausaha|entrepreneur|konten|content|sosmed|sosial\s+media|social\s+media|tiktok|live\s+(?:di\s+)?tiktok|creator|influencer|analisis\s+pasar|riset\s+pasar)\b/.test(q);
   const hardwareInterest = /\b(hardware|perangkat\s+keras|iot|embedded|mikrokontroler|jaringan|network|robot|robotik|merakit|rakit\s+pc|komputer\s+rakitan)\b/.test(q);
   const hasStrongInterestSignal = dataInterest || codingInterest || businessInterest || hardwareInterest || centralFitAnswer;
@@ -988,7 +1206,6 @@ function detectSpecificScholarshipTopic(question) {
   if (/\bsmk\s*ti\b|\bsmkti\b|pandawa|bali\s+global/.test(q)) {
     return 'Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global';
   }
-  if (/kuliah\s+sambil\s+kerja|luar\s+negeri/.test(q)) return 'Kuliah Sambil Kerja di Luar Negeri';
 
   return null;
 }
@@ -1058,7 +1275,7 @@ function tryScholarshipAnswer(question, index, options = {}) {
     : detectScholarshipRequestSubtype(q);
   if (/\b(double\s*degree|dual\s*degree|dd|utb|dnui|help\s+university)\b/.test(q)) return null;
   if (/\b(?:astronot|antariksa|alien|luar\s+angkasa|joki|palsu)\b/i.test(q)) return null;
-  if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|skss|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa|kuliah\s+sambil\s+kerja|luar\s+negeri)\b/.test(q)) return null;
+  if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|skss|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa)\b/.test(q)) return null;
 
   if (/\b(?:prestasi|jalur\s+prestasi)\b/i.test(q) && /\b(?:potongan|diskon|dpp|persen)\b/i.test(q)) {
     return {
@@ -1074,16 +1291,28 @@ function tryScholarshipAnswer(question, index, options = {}) {
     const evidence = selectScholarshipEvidence(index, scholarshipType, requestSubtype);
     const debug = { scholarshipType, requestSubtype, evidenceCandidates: evidence.candidates,
       compatibleEvidenceCount: evidence.selected.length };
+    const displayScholarship = scholarshipType === '1K1S'
+      ? 'Beasiswa SKSS / 1K1S (Satu Keluarga Satu Sarjana)'
+      : `Beasiswa ${scholarshipType}`;
+    const subtypeLabelMap = {
+      requirements: 'persyaratan dan kriteria',
+      procedure: 'prosedur dan alur pengajuan',
+      amount: 'besaran nominal atau cakupan potongan',
+      availability: 'ketersediaan dan ketentuan',
+      detail: 'rincian ketentuan'
+    };
+    const subtypeLabel = subtypeLabelMap[requestSubtype] || 'rincian ketentuan';
     if (evidence.selected.length) return {
-      answer: 'Beasiswa ' + scholarshipType + ':\n\n' + evidence.selected.map(r => r.chunk).join('\n\n'),
+      answer: displayScholarship + ':\n\n' + evidence.selected.map(r => r.chunk).join('\n\n'),
       source: 'semantic-rag-scholarship-detail',
       contexts: evidence.selected,
       answerProvenance: 'indexed_scholarship_evidence',
       debug
     };
     return {
-      answer: 'Saya belum menemukan data yang sesuai untuk ' + requestSubtype + ' Beasiswa ' + scholarshipType + '. Silakan konfirmasi ketentuan resmi ke Admin PMB ITB STIKOM Bali.',
+      answer: `Maaf Kak, rincian **${subtypeLabel}** untuk **${displayScholarship}** belum tercantum dalam basis data pengetahuan kami saat ini. Data yang tersedia baru mencatat **${displayScholarship}** sebagai salah satu jalur beasiswa resmi di ITB STIKOM Bali. Silakan konfirmasi persyaratan dan dokumen resminya ke **Admin PMB ITB STIKOM Bali**.`,
       source: 'semantic-rag-scholarship-no-training-detail',
+      frameSource: 'semantic-rag-insufficient-data',
       contexts: [],
       debug
     };
@@ -1119,7 +1348,7 @@ function tryScholarshipAnswer(question, index, options = {}) {
   const specificTopic = detectSpecificScholarshipTopic(question);
   if (specificTopic && requestSubtype === 'availability' && !asksScholarshipDetail(question)) {
     return {
-      answer: specificTopic + ' tercatat sebagai salah satu pilihan beasiswa/program bantuan di ITB STIKOM Bali. Untuk syarat, prosedur, dan kuota resminya, kakak perlu konfirmasi ke Admin PMB.',
+      answer: specificTopic + ' tercatat sebagai salah satu pilihan beasiswa di ITB STIKOM Bali. Untuk syarat, prosedur, dan kuota resminya, kakak perlu konfirmasi ke Admin PMB.',
       source: 'semantic-rag-scholarship-availability'
     };
   }
@@ -1127,7 +1356,8 @@ function tryScholarshipAnswer(question, index, options = {}) {
   if (specificTopic && (requestSubtype !== 'availability' || asksScholarshipDetail(question))) {
     return {
       answer: buildScholarshipNoTrainingAnswer(specificTopic),
-      source: 'semantic-rag-scholarship-no-training-detail'
+      source: 'semantic-rag-scholarship-no-training-detail',
+      frameSource: 'semantic-rag-insufficient-data'
     };
   }
 
@@ -1135,23 +1365,28 @@ function tryScholarshipAnswer(question, index, options = {}) {
     const field = requestSubtype === 'amount' ? 'nominal' : 'persyaratan';
     return {
       answer: 'Untuk ' + field + ' beasiswa, sebutkan jenis beasiswa yang dimaksud agar ketentuannya tidak tertukar. Saya belum memiliki rincian yang cukup untuk menetapkan ' + field + ' tanpa jenis beasiswa dan data pendukungnya. Silakan konfirmasi ketentuan resmi ke Admin PMB.',
-      source: 'semantic-rag-scholarship-no-training-detail'
+      source: 'semantic-rag-scholarship-no-training-detail',
+      frameSource: 'semantic-rag-insufficient-data'
     };
   }
 
   return {
     answer: [
-      'Ya, ada beberapa pilihan beasiswa/program bantuan yang bisa ditanyakan di ITB STIKOM Bali:',
+      'Di ITB STIKOM Bali, perlu dibedakan antara **jalur beasiswa** dan **potongan biaya pendaftaran/DPP per gelombang PMB**:',
       '',
+      '**1. Jalur Beasiswa:**',
       '- Beasiswa KIP',
       '- Beasiswa 1K1S/SKSS (Satu Keluarga Satu Sarjana)',
       '- Beasiswa Prestasi',
       '- Beasiswa Yayasan',
       '- Beasiswa Khusus Siswa SMKTI Bali Global dan SMK Pandawa Bali Global',
-      '- Kuliah Sambil Kerja di Luar Negeri',
       '',
-      'Untuk syarat, nominal, kuota, dan jadwal, sebutkan jenis beasiswa yang dimaksud agar jawabannya dapat diperiksa terhadap evidence yang sesuai.'
-    ].join('\n')
+      '**2. Potongan Biaya PMB per Gelombang:**',
+      '- Selain jalur beasiswa di atas, terdapat **potongan biaya pendaftaran** dan **potongan DPP** yang berlaku otomatis sesuai **gelombang pendaftaran PMB** (bukan program beasiswa tersendiri).',
+      '',
+      'Untuk syarat, nominal, atau kuota per jalur beasiswa, sebutkan jenis beasiswa yang dimaksud atau konfirmasi ke Admin PMB ITB STIKOM Bali.'
+    ].join('\n'),
+    source: 'semantic-rag-scholarship-list'
   };
 }
 
@@ -2021,26 +2256,111 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
   return { answer: lines.join('\n').trim(), program, profile, wave };
 }
 
-function tryFeeComparisonAnswer(question) {
+function tryFeeComparisonAnswer(question, index = undefined, options = {}) {
+  const isSecondArgOptions = index && !Array.isArray(index) && typeof index === 'object' && (!options || Object.keys(options).length === 0);
+  const resolvedOptions = isSecondArgOptions ? index : (options || {});
+  const resolvedIndex = isSecondArgOptions
+    ? (resolvedOptions.indexOverride !== undefined ? resolvedOptions.indexOverride : undefined)
+    : index;
   const q = String(question || '').toLowerCase();
   if (/\b(?:beasiswa|prestasi|kip|yayasan)\b/i.test(q)) return null;
   const hasExplicitFeeSignal = /\b(biaya(?:nya)?|harga(?:nya)?|tarif(?:nya)?|ongkos(?:nya)?|uang|bayar(?:nya|an)?|dpp|ukt|spp|cicilan|dicicil|nyicil|nominal|total(?:an)?|termurah|termahal|murah|mahal|hemat|irit|terjangkau|per\s+semester|semesteran)\b/.test(q);
   if (!hasExplicitFeeSignal) return null;
+
+  const canonical = (resolvedOptions && (resolvedOptions.canonicalUnderstanding || resolvedOptions.__canonicalQueryUnderstanding || resolvedOptions.canonical)) || null;
+  const isAllProgramsScope = hasAllProgramsScope(q)
+    || canonical?.constraints?.comparisonScope === 'all_programs';
+  const asksSemesterFeeField = /\b(per\s+semester|tiap\s+semester|setiap\s+semester|semesteran|biaya\s+semester|ukt|spp|biaya\s+pendidikan\s+per\s+semester)\b/i.test(q)
+    || canonical?.constraints?.requestedField === 'semester_fee';
+
+  if (isAllProgramsScope && asksSemesterFeeField) {
+    const activeIndex = resolvedIndex !== undefined ? resolvedIndex : ragEngine.loadIndex();
+    const extracted = Array.isArray(activeIndex) && activeIndex.length > 0 ? extractProfiles(activeIndex) : [];
+    const hasAuthoritativeFeeDataset = extracted.some((p) => Number.isFinite(p.semester) || Number.isFinite(p.dpp) || Number.isFinite(p.pendaftaran));
+    if (!hasAuthoritativeFeeDataset) {
+      return {
+        outputType: 'SAFE_NO_DATA',
+        source: 'semantic-rag-fee-insufficient-data',
+        answer: 'Maaf, data biaya per semester untuk seluruh program studi belum tersedia pada dokumen resmi yang dapat saya rujuk saat ini. Silakan konfirmasi langsung ke Admin PMB ITB STIKOM Bali.'
+      };
+    }
+
+    const restrictToS1 = /\b(?:s1|sarjana)\b/i.test(q) && !/\b(?:d3|s2|semua\s+prodi|seluruh\s+prodi|prodi\s+yang\s+ada)\b/i.test(q);
+    const targetKeys = restrictToS1 ? ['si', 'ti', 'bd', 'sk'] : ['si', 'ti', 'bd', 'sk', 'mi', 's2'];
+    const byKey = new Map(extracted.map((p) => [p.key, p]));
+    const itemLines = [];
+    const availableSemesterProfiles = [];
+    const allChunks = [];
+
+    for (const key of targetKeys) {
+      const meta = PROGRAM_META[key];
+      if (!meta) continue;
+      const p = byKey.get(key);
+      if (p && Array.isArray(p.chunks)) {
+        for (const ch of p.chunks) {
+          if (!allChunks.includes(ch)) allChunks.push(ch);
+        }
+      }
+      if (p && Number.isFinite(p.semester)) {
+        availableSemesterProfiles.push({ key, label: meta.label, degree: meta.degree, semester: p.semester });
+        itemLines.push(`- ${meta.label} (${meta.degree}): biaya pendidikan per semester (UKT) ${formatRp(p.semester)} / semester`);
+      } else {
+        itemLines.push(`- ${meta.label} (${meta.degree}): data biaya per semester belum tersedia`);
+      }
+    }
+
+    const summaryParts = [];
+    const d3Profile = availableSemesterProfiles.find((p) => p.key === 'mi');
+    const skProfile = availableSemesterProfiles.find((p) => p.key === 'sk');
+    const s1Standard = availableSemesterProfiles.filter((p) => ['si', 'ti', 'bd'].includes(p.key));
+    const s2Profile = availableSemesterProfiles.find((p) => p.key === 's2');
+
+    if (d3Profile) {
+      summaryParts.push(`biaya per semester paling rendah secara keseluruhan ada pada ${d3Profile.label} (${d3Profile.degree}) sebesar ${formatRp(d3Profile.semester)} / semester`);
+    }
+    if (skProfile) {
+      summaryParts.push(`untuk jenjang S1, yang paling rendah adalah ${skProfile.label} (${skProfile.degree}) sebesar ${formatRp(skProfile.semester)} / semester`);
+    }
+    if (s1Standard.length > 0) {
+      summaryParts.push(`S1 ${s1Standard.map((p) => p.label).join(', ')} memiliki biaya per semester yang setara yaitu ${formatRp(s1Standard[0].semester)} / semester`);
+    }
+    if (s2Profile) {
+      summaryParts.push(`untuk jenjang pascasarjana, ${s2Profile.label} sebesar ${formatRp(s2Profile.semester)} / semester`);
+    }
+
+    const lines = [
+      'Perbandingan biaya pendidikan per semester (UKT) untuk seluruh program studi di ITB STIKOM Bali:',
+      '',
+      ...itemLines,
+      '',
+      summaryParts.length
+        ? `Ringkasan perbandingan: ${summaryParts.join('; ')}.`
+        : 'Ringkasan perbandingan disajikan sesuai data biaya per semester yang tersedia pada dokumen resmi.',
+      'Catatan: Biaya pendidikan per semester (UKT) dibayarkan per semester serta terpisah dari biaya pendaftaran maupun DPP (Dana Pendidikan Pokok) dan potongan gelombang.'
+    ];
+
+    return {
+      answer: lines.join('\n'),
+      profiles: availableSemesterProfiles,
+      contexts: allChunks.slice(0, 6)
+    };
+  }
+
   // conservative static dataset aligned to regression tests
   const DATA = {
     si: { key: 'si', label: 'Sistem Informasi', degree: 'S1', biayaAwal: 16000000, semester: 6500000, pendaftaran: 500000, dpp: 14000000 },
     ti: { key: 'ti', label: 'Teknologi Informasi', degree: 'S1', biayaAwal: 16000000, semester: 6500000, pendaftaran: 500000, dpp: 14000000 },
     bd: { key: 'bd', label: 'Bisnis Digital', degree: 'S1', biayaAwal: 16000000, semester: 6500000, pendaftaran: 500000, dpp: 14000000 },
-    sk: { key: 'sk', label: 'Sistem Komputer', degree: 'S1', biayaAwal: 13000000, semester: 6000000, pendaftaran: 500000, dpp: 13000000 },
+    sk: { key: 'sk', label: 'Sistem Komputer', degree: 'S1', biayaAwal: 13000000, semester: 6000000, pendaftaran: 500000, dpp: 11000000 },
     dnui: { key: 'dnui', label: 'Double Degree DNUI', degree: 'Double Degree', biayaAwal: 16000000, semester: 16000000, pendaftaran: 3000000, dpp: 20000000 },
     help: { key: 'help', label: 'Double Degree HELP University', degree: 'Double Degree', biayaAwal: 16000000, semester: null, subjectFee: 3000000, pendaftaran: 3000000, dpp: 20000000 },
     utb: { key: 'utb', label: 'Double Degree UTB', degree: 'Double Degree', biayaAwal: 16000000, semester: 7500000, pendaftaran: 500000, dpp: 14000000, equipment: 1500000, alumniSemester: 6500000 }
   };
 
-  const mentioned = detectMentionedPrograms(question).map(p => p.key);
+  const mentioned = detectMentionedPrograms(question, resolvedOptions).map(p => p.key);
   let keys = [];
   if (mentioned && mentioned.length > 0) keys = mentioned.filter(k => DATA[k]);
-  const asksComparison = /\b(?:banding|bandingkan|perbandingan|beda|perbedaan|mana\s+yang\s+(?:lebih|paling)|termurah|termahal|paling\s+murah|paling\s+mahal|antara|semua\s+jurusan|semua\s+prodi)\b/i.test(q);
+  const asksComparison = /\b(?:banding|bandingkan|perbandingan|beda|perbedaan|mana\s+yang\s+(?:lebih|paling)|termurah|termahal|paling\s+murah|paling\s+mahal|antara|semua\s+jurusan|semua\s+prodi|seluruh\s+prodi)\b/i.test(q);
   if (keys.length === 0) {
     if (!asksComparison) return null;
     keys = ['si', 'sk', 'ti', 'bd'];
