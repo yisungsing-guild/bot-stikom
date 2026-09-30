@@ -231,7 +231,7 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
     if (Array.isArray(understanding.entities?.[group])) {
       for (const ent of understanding.entities[group]) {
         if (!ent || typeof ent !== 'object' || !ent.canonical) continue;
-        const isSyntheticRegistry = /^(?:canonical-domain-scope|canonical-interest-registry)$/.test(String(ent.source || ''));
+        const isSyntheticRegistry = /^(?:canonical-domain-scope|canonical-interest-registry|compatible-inherited-entity|inherited-academic-slot|inherited-slot)$/.test(String(ent.source || ''));
         if (isSyntheticRegistry) continue;
         rawExplicitEntities.push({
           canonical: ent.canonical,
@@ -392,7 +392,10 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
     }
 
     // Rule: Inheritance fills missing compatible dimensions only. Never overwrite explicit current entity!
-    if (!isConflictingDefTarget && isEntityFamilyCompatibleWithDomain(priorFam, domain.primary)) {
+    const isAcademicScheduleOrProcedure = domain.primary === 'academic'
+      && (understanding.constraints?.academicTopic === 'academic_schedule' || understanding.constraints?.academicTopic === 'academic_procedure' || /\b(?:wisuda|yudisium|sidang|krs|remedial)\b/i.test(raw));
+    const isIncompatibleProgramOnAcademicEvent = isAcademicScheduleOrProcedure && (priorFam === 'program' || priorFam === 'international_program');
+    if (!isConflictingDefTarget && !isIncompatibleProgramOnAcademicEvent && isEntityFamilyCompatibleWithDomain(priorFam, domain.primary)) {
       const inheritedEntity = {
         canonical: priorEntity.canonical,
         type: priorEntity.type || 'unknown',
@@ -409,8 +412,8 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
 
 const DOMAIN_FIELD_FAMILY_COMPATIBILITY = Object.freeze({
   foreign_student_admin: new Set(['procedure', 'governance', 'geographic_destination']),
-  academic_policy: new Set(['procedure', 'academic_policy', 'academic_curriculum', 'certification', 'academic_qualification']),
-  academic: new Set(['procedure', 'academic_curriculum', 'academic_quality', 'academic_policy', 'academic_qualification']),
+  academic_policy: new Set(['procedure', 'academic_policy', 'academic_curriculum', 'certification', 'academic_qualification', 'temporal_schedule', 'temporal_duration']),
+  academic: new Set(['procedure', 'academic_curriculum', 'academic_quality', 'academic_policy', 'academic_qualification', 'temporal_schedule', 'temporal_duration', 'location']),
   registration: new Set(['procedure', 'fee']),
   scholarship: new Set(['procedure', 'financial_aid', 'fee']),
   student_organization: new Set(['procedure', 'organization_identity', 'organization_classification', 'organization_inventory']),

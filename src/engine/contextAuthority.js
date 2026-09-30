@@ -46,6 +46,30 @@ const DOMAINS_REQUIRING_PROGRAM_ENTITY = new Set([
   'program'
 ]);
 
+function academicQueryRequiresProgramEntity(rawText, understanding, contract, entity) {
+  if (entity && (entity.type === 'academic_event' || entity.type === 'academic_scope' || /^(?:wisuda|yudisium)$/i.test(String(entity.canonical || '')))) {
+    return false;
+  }
+  const text = String(rawText || '').toLowerCase();
+  if (/\b(?:wisuda|yudisium|sidang|skripsi|tugas\s+akhir|\bta\b|tesis|krs|khs|remedial|remidi|kalender\s+akademik|cuti|nilai|transkrip|baak)\b/i.test(text)) {
+    return false;
+  }
+  const acadTopic = String(understanding?.constraints?.academicTopic || contract?.constraints?.academicTopic || '');
+  if (acadTopic === 'academic_schedule' || acadTopic === 'academic_procedure') {
+    return false;
+  }
+  return true;
+}
+
+function domainRequiresProgramEntity(domain, rawText, understanding, contract, entity) {
+  const d = String(domain || '').toLowerCase().trim();
+  if (!DOMAINS_REQUIRING_PROGRAM_ENTITY.has(d)) return false;
+  if (d === 'academic') {
+    return academicQueryRequiresProgramEntity(rawText, understanding, contract, entity);
+  }
+  return true;
+}
+
 /**
  * Checks if a fee query requires a program entity.
  * General PMB registration fees (e.g. "biaya pendaftaran") do NOT require a prodi entity,
@@ -83,8 +107,20 @@ function isEntityTypeCompatibleWithDomain(entityType, targetDomain) {
 /**
  * Detects whether rawText has substantive domain cues for a specific domain.
  */
+function stripProtestAndNegatedClauses(rawText) {
+  let text = String(rawText || '').trim();
+  if (!text) return '';
+  const positiveBoundary = '(?:,|;|\\b(?:saya\\s+(?:menanyakan|tanya|nanya|minta|cari|mau\\s+tanya|ingin\\s+tanya)|yang\\s+saya\\s+(?:tanyakan|tanya|maksud)|melainkan|tetapi|tapi|maksud\\s+saya|padahal)\\b|[?.!]|$)';
+  text = text.replace(new RegExp(`\\b(?:bukan(?:nya)?|bukanlah|tidak\\s+(?:menanyakan(?:\\s+tentang)?|tanya(?:\\s+tentang)?|nanya(?:\\s+tentang)?|minta|cari|bahas)|jangan\\s+bahas|bukan\\s+soal|bukan\\s+tentang)\\s+(.+?)(?=\\s*${positiveBoundary})`, 'gi'), ' ');
+  text = text.replace(new RegExp(`\\bkok\\s+(?:malah\\s+|jadi\\s+)?(?:bahas\\s+|jawab\\s+|kasih\\s+|muncul\\s+)?(.+?)(?=\\s*${positiveBoundary})`, 'gi'), ' ');
+  return text.replace(/\s{2,}/g, ' ').trim() || String(rawText || '').trim();
+}
+
+/**
+ * Detects whether rawText has substantive domain cues for a specific domain.
+ */
 function detectDomainFromCues(rawText, sessionState = null) {
-  const text = String(rawText || '').toLowerCase();
+  const text = stripProtestAndNegatedClauses(rawText).toLowerCase();
   const hasS2Entity = Boolean(
     sessionState && (
       /\b(?:s2|magister|pascasarjana)\b/i.test(String(sessionState.activeEntity?.canonical || ''))
@@ -110,6 +146,11 @@ function detectDomainFromCues(rawText, sessionState = null) {
     && !/\b(?:paket\s+sks|sks\s+paket|konversi\s+sks|rpl)\b/i.test(text)) {
     return 'fee';
   }
+  // Explicit academic event/milestone cues must precede pmb_schedule and registration
+  if (/\b(?:yudisium|wisuda|kelulusan|sidang|skripsi|tugas\s+akhir|\bta\b|krs|khs|remedial|remidi|kalender\s+akademik|cuti\s+akademik|cuti\s+kuliah)\b/i.test(text)
+    && !/\b(?:izin\s+belajar(?:nya)?|study\s+permit)\b/i.test(text)) {
+    return 'academic';
+  }
   if (/\b(?:jepang|japan|hi\s*-?\s*think)\b/i.test(text) || (sessionState && sessionState.activeDomain === 'international_program')) {
     if (/\b(?:kerja|karir|karier|lulusan|peluang\s+kerja|pekerjaan|magang|pelatihan)\b/i.test(text)) {
       return 'international_program';
@@ -123,10 +164,12 @@ function detectDomainFromCues(rawText, sessionState = null) {
     && /\b(?:jurusan|prodi|program\s+studi|kuliah|s1|d3|s2)\b/i.test(text)) {
     return 'program';
   }
-  if (/\b(?:gelombang|jadwal|kapan\s+buka|kapan\s+daftar|timeline|periode)\b/i.test(text)) {
+  if (/\b(?:gelombang|jadwal|kapan\s+buka|kapan\s+daftar|timeline|periode)\b/i.test(text)
+    && !/\b(?:yudisium|wisuda|sidang|skripsi|tugas\s+akhir|krs|khs|remedial|remidi|akademik|semester)\b/i.test(text)) {
     return 'pmb_schedule';
   }
-  if (/\b(?:syarat|cara\s+daftar|alur\s+daftar|berkas|dokumen|pendaftaran|registrasi|beli\s+langsung|datang\s+langsung)\b/i.test(text)) {
+  if (/\b(?:syarat|cara\s+daftar|alur\s+daftar|berkas|dokumen|pendaftaran|registrasi|beli\s+langsung|datang\s+langsung)\b/i.test(text)
+    && !/\b(?:yudisium|wisuda|sidang|skripsi|tugas\s+akhir|krs|khs|remedial|remidi)\b/i.test(text)) {
     return 'registration';
   }
   if (/\b(?:beasiswa|kip|potongan|keringanan|bantuan\s+biaya)\b/i.test(text)) {
@@ -224,14 +267,25 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
     ''
   ).toLowerCase().trim();
 
-  const isCurrentDomainExplicit = Boolean(currentDomain && currentDomain !== 'general' && currentDomain !== 'unknown');
-  const isCurrentIntentExplicit = Boolean(currentIntent && currentIntent !== 'ask_general' && currentIntent !== 'unknown');
+  const isBareSlotFollowup = Boolean(understanding?.constraints?.isBareSlotFollowup)
+    || (/^(?:(?:kalau|kalo|untuk|terus|lalu|nah|jadi|berarti|itu)\s+)?(?:tanggal(?:\s+berapa|nya(?:\s+berapa|\s+kapan)?)?|tgl(?:\s+berapa|nya)?|hari\s+apa|jam(?:\s+berapa|nya(?:\s+berapa)?)?|pukul(?:\s+berapa|nya)?|waktunya(?:\s+kapan|\s+jam\s+berapa)?|kapan(?:\s+itu|\s+ya|\s+sih|\s+dilaksanakan|\s+diadakan)?|sampai\s+(?:tanggal\s+berapa|tgl\s+berapa|kapan)(?:\s+itu|\s+ya)?|batas(?:nya)?\s+kapan|terakhir\s+kapan|(?:tempat(?:nya)?|lokasi(?:nya)?|acara(?:nya)?|pelaksanaan(?:nya)?)\s+(?:di\s*mana|dimana|kapan|jam\s+berapa|tanggal\s+berapa)|di\s*mana(?:\s+itu|\s+ya|\s+tempatnya|\s+lokasinya)?|dimana(?:\s+itu|\s+ya|\s+tempatnya|\s+lokasinya)?)\s*[?.!]*$/i.test(rawText)
+      && !/\b(?:pmb|pendaftaran|mahasiswa\s+baru|camaba|gelombang|wisuda|yudisium|sidang|kampus|stikom|prodi|jurusan)\b/i.test(rawText));
 
-  const candidateEntity = extractCandidateEntity(understanding, rawText, sessionState);
+  const isCurrentDomainExplicit = !isBareSlotFollowup && Boolean(currentDomain && currentDomain !== 'general' && currentDomain !== 'unknown');
+  const isCurrentIntentExplicit = !isBareSlotFollowup && Boolean(currentIntent && currentIntent !== 'ask_general' && currentIntent !== 'unknown');
 
-  const sessionEntity = sessionState && (sessionState.activeEntity || (sessionState.lastProgramHint ? { canonical: sessionState.lastProgramHint, type: 'program' } : null));
+  const candidateEntity = isBareSlotFollowup ? null : extractCandidateEntity(understanding, rawText, sessionState);
+
   const sessionDomain = sessionState && (sessionState.activeDomain || sessionState.domain || (sessionState.lastSemanticContract && sessionState.lastSemanticContract.domain) || null);
   const sessionIntent = sessionState && (sessionState.activeIntent || sessionState.intent || (sessionState.lastSemanticContract && sessionState.lastSemanticContract.intent) || null);
+  const isAcademicEventTurnOrSession = /\b(?:wisuda|yudisium|sidang|krs|remedial|kalender\s+akademik)\b/i.test(rawText)
+    || currentDomain === 'academic'
+    || sessionDomain === 'academic'
+    || Boolean(understanding?.constraints?.isMetaAcknowledgement);
+  const sessionEntity = sessionState && (
+    sessionState.activeEntity ||
+    (!isAcademicEventTurnOrSession && sessionState.lastProgramHint ? { canonical: sessionState.lastProgramHint, type: 'program' } : null)
+  );
 
   // Check session context availability and validity
   const hasActiveSessionContext = Boolean(
@@ -246,31 +300,28 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
     !sessionState.legacyUnverified
   );
 
-  // If no valid session context, transition is NO_CONTEXT
-  if (!hasActiveSessionContext || !isFresh) {
-    const missing = [];
-    if (!isCurrentDomainExplicit && !candidateEntity) missing.push('domain', 'topic');
-    if (currentDomain === 'fee' && feeQueryRequiresProgramEntity(rawText, contract) && !candidateEntity) {
-      missing.push('entity');
-    }
-    if (DOMAINS_REQUIRING_PROGRAM_ENTITY.has(currentDomain) && !candidateEntity) {
-      missing.push('entity');
-    }
+  const isMetaClosing = Boolean(understanding?.constraints?.isMetaAcknowledgement)
+    || /^(?:oke|ok|baik|siap|sip|oh|oalah|ya|yap|yoi|mantap|noted)?\s*(?:terima\s+kasih|makasih|makasi|thanks|thank\s+you|thx|matur\s+suksma)(?:\s+(?:banyak|ya|kak|min|admin|infonya|informasinya))*\s*[?.!]*$/i.test(rawText)
+    || /^(?:oh\s+begitu(?:\s+ya)?|oalah\s+begitu(?:\s+ya)?|begitu\s+ya|oh\s+gitu(?:\s+ya)?|gitu\s+ya|oke\s+baik(?:\s+kak)?|siap\s+kak|baik\s+terima\s+kasih)\s*[?.!]*$/i.test(rawText)
+    || /^(?:kok|kenapa)\s+(?:ga|gak|nggak|tidak|kurang)\s+(?:jelas|nyambung|sesuai|bener|benar)(?:\s+gitu|\s+ya|\s+sih|\s+kak|\s+min)?\s*[?.!]*$/i.test(rawText)
+    || /^(?:oke|ok|baik|sip|oh|oalah|begitu|gitu|jika|kalau\s+begitu|berarti)?\s*(?:berarti\s+)?(?:jika\s+)?(?:data(?:nya)?|informasi(?:nya)?|jadwal(?:nya)?)\s+(?:memang\s+)?(?:belum|tidak|kurang|gak|nggak)\s+(?:lengkap|ada|tersedia)(?:\s+ya|\s+kak|\s+min)?\s*[?.!]*$/i.test(rawText)
+    || /^jika\s+data\s+belum\s+lengkap(?:\s+ya)?\s*[?.!]*$/i.test(rawText);
+  if (isMetaClosing) {
     return {
       transition: CONTEXT_TRANSITIONS.NO_CONTEXT,
-      resolvedDomain: isCurrentDomainExplicit ? currentDomain : null,
-      resolvedIntent: isCurrentIntentExplicit ? currentIntent : null,
-      resolvedEntity: candidateEntity || null,
-      missingSlots: missing,
-      suppressClarification: false,
+      resolvedDomain: 'general',
+      resolvedIntent: 'acknowledgement',
+      resolvedEntity: null,
+      missingSlots: [],
+      suppressClarification: true,
       effectiveQuery: rawText,
-      reason: !hasActiveSessionContext ? 'no_session_context' : 'stale_session_context'
+      reason: 'META_CLOSING'
     };
   }
 
   // =========================================================================
   // TRANSITION 1: CORRECTION
-  // User explicitly signals repair/correction ("bukan SI, maksud saya TI")
+  // User explicitly signals repair/correction ("bukan SI, maksud saya TI", "Kok biaya PMB? Saya tanya wisuda")
   // =========================================================================
   const repairSignal = parseContextRepairSignal(rawText);
   if (repairSignal && repairSignal.isRepair) {
@@ -278,8 +329,6 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
     const repairEntity = extractCandidateEntity(null, repairClause);
     const domainFromRepair = detectDomainFromCues(repairClause, sessionState);
 
-    // If repairClause specifies an entity, that entity wins.
-    // If not, but rejectedClause exists and matches prior entity, prior entity is cleared.
     let resolvedEntity = repairEntity;
     if (!resolvedEntity && repairSignal.rejectedClause) {
       const rejectedEntity = extractCandidateEntity(null, repairSignal.rejectedClause);
@@ -292,12 +341,11 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
     } else if (!resolvedEntity) {
       resolvedEntity = sessionEntity;
     }
-    // If the repair clause does not explicitly change domain, retain session activeDomain
     const resolvedDomain = domainFromRepair || sessionDomain || (isCurrentDomainExplicit ? currentDomain : null);
     const resolvedIntent = (domainFromRepair && isCurrentIntentExplicit) ? currentIntent : (sessionIntent || currentIntent);
 
     const missing = [];
-    if (resolvedDomain && (DOMAINS_REQUIRING_PROGRAM_ENTITY.has(resolvedDomain) || (resolvedDomain === 'fee' && feeQueryRequiresProgramEntity(rawText, contract)))) {
+    if (resolvedDomain && (domainRequiresProgramEntity(resolvedDomain, rawText, understanding, contract, resolvedEntity) || (resolvedDomain === 'fee' && feeQueryRequiresProgramEntity(rawText, contract)))) {
       if (!resolvedEntity) missing.push('entity');
     }
     if (!resolvedDomain || resolvedDomain === 'general') missing.push('domain');
@@ -317,21 +365,48 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
     };
   }
 
+  // If no valid session context, transition is NO_CONTEXT
+  if (!hasActiveSessionContext || !isFresh) {
+    const missing = [];
+    if (!isCurrentDomainExplicit && !candidateEntity) missing.push('domain', 'topic');
+    if (currentDomain === 'fee' && feeQueryRequiresProgramEntity(rawText, contract) && !candidateEntity) {
+      missing.push('entity');
+    }
+    if (domainRequiresProgramEntity(currentDomain, rawText, understanding, contract, candidateEntity) && !candidateEntity) {
+      missing.push('entity');
+    }
+    return {
+      transition: CONTEXT_TRANSITIONS.NO_CONTEXT,
+      resolvedDomain: isCurrentDomainExplicit ? currentDomain : null,
+      resolvedIntent: isCurrentIntentExplicit ? currentIntent : null,
+      resolvedEntity: candidateEntity || null,
+      missingSlots: missing,
+      suppressClarification: false,
+      effectiveQuery: rawText,
+      reason: !hasActiveSessionContext ? 'no_session_context' : 'stale_session_context'
+    };
+  }
+
   // A complete current-turn proposition (explicit domain + intent + entity)
   // is self-contained. It must not be reinterpreted as an entity-only
   // replacement of an unrelated prior domain. Elliptical replacements such as
   // "kalau TI?" remain inheritable because their canonical domain/intent are
   // general rather than explicit.
-  if (isCurrentDomainExplicit && isCurrentIntentExplicit && candidateEntity) {
+  if (isCurrentDomainExplicit && isCurrentIntentExplicit && candidateEntity && !isBareSlotFollowup) {
+    const isSameDomainEntityPivot = sessionDomain === currentDomain
+      && sessionEntity
+      && sessionEntity.canonical
+      && String(sessionEntity.canonical).toLowerCase() !== String(candidateEntity.canonical || '').toLowerCase()
+      && /^(?:kalau|kalo|untuk|terus|lalu|bagaimana\s+dengan|gimana\s+dengan)\b/i.test(rawText.trim());
     return {
-      transition: CONTEXT_TRANSITIONS.NO_CONTEXT,
+      transition: isSameDomainEntityPivot ? CONTEXT_TRANSITIONS.ENTITY_REPLACEMENT : CONTEXT_TRANSITIONS.NO_CONTEXT,
       resolvedDomain: currentDomain,
       resolvedIntent: currentIntent,
       resolvedEntity: candidateEntity,
       missingSlots: [],
       suppressClarification: true,
       effectiveQuery: rawText,
-      reason: 'self_contained_current_turn_proposition'
+      reason: isSameDomainEntityPivot ? 'same_domain_entity_pivot' : 'self_contained_current_turn_proposition'
     };
   }
 
@@ -448,7 +523,10 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
     const fallbackSessionEntity = sessionState.activeEntity || sessionEntity;
     if (!resolvedEntity && fallbackSessionEntity) {
       const priorEntityType = fallbackSessionEntity.type || 'program';
-      if (isEntityTypeCompatibleWithDomain(priorEntityType, newDomain)) {
+      const isProgramEntityOnAcademicEvent = newDomain === 'academic'
+        && (priorEntityType === 'program' || priorEntityType === 'international_program')
+        && !academicQueryRequiresProgramEntity(rawText, understanding, contract, null);
+      if (!isProgramEntityOnAcademicEvent && isEntityTypeCompatibleWithDomain(priorEntityType, newDomain)) {
         resolvedEntity = fallbackSessionEntity;
       }
     }
@@ -459,7 +537,7 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
       : (isCurrentIntentExplicit ? currentIntent : null);
 
     const missing = [];
-    if (DOMAINS_REQUIRING_PROGRAM_ENTITY.has(resolvedDomain) && !resolvedEntity) {
+    if (domainRequiresProgramEntity(resolvedDomain, rawText, understanding, contract, resolvedEntity) && !resolvedEntity) {
       missing.push('entity');
     } else if (resolvedDomain === 'fee' && feeQueryRequiresProgramEntity(rawText, contract) && !resolvedEntity) {
       missing.push('entity');
@@ -539,13 +617,16 @@ function resolveContextAuthority(currentTurn, priorSessionOrState, options = {})
     let targetEntity = candidateEntity || null;
     if (!targetEntity && sessionEntity) {
       const priorEntityType = sessionEntity.type || 'program';
-      if (isEntityTypeCompatibleWithDomain(priorEntityType, targetDomain)) {
+      const isProgramEntityOnAcademicEvent = targetDomain === 'academic'
+        && (priorEntityType === 'program' || priorEntityType === 'international_program')
+        && !academicQueryRequiresProgramEntity(rawText, understanding, contract, null);
+      if (!isProgramEntityOnAcademicEvent && isEntityTypeCompatibleWithDomain(priorEntityType, targetDomain)) {
         targetEntity = sessionEntity;
       }
     }
 
     const missing = [];
-    if (targetDomain && (DOMAINS_REQUIRING_PROGRAM_ENTITY.has(targetDomain) || (targetDomain === 'fee' && feeQueryRequiresProgramEntity(rawText, contract)))) {
+    if (targetDomain && (domainRequiresProgramEntity(targetDomain, rawText, understanding, contract, targetEntity) || (targetDomain === 'fee' && feeQueryRequiresProgramEntity(rawText, contract)))) {
       if (!targetEntity) missing.push('entity');
     }
     if (!targetDomain || targetDomain === 'general') missing.push('domain');

@@ -98,6 +98,23 @@ function normalizeConversationState(rawState, now = Date.now()) {
   // Risk 1 hardening: missing updatedAt must NOT be treated as fresh.
   // Leave updatedAt as null so isConversationStateFresh returns false.
 
+  const stableCtx = unwrappedState.stableSemanticContext && typeof unwrappedState.stableSemanticContext === 'object'
+    ? unwrappedState.stableSemanticContext
+    : null;
+  if (!updatedAt && stableCtx && stableCtx.establishedAt) {
+    const d = new Date(stableCtx.establishedAt);
+    if (!Number.isNaN(d.getTime())) {
+      updatedAt = d.toISOString();
+    }
+  }
+  const effectiveRawDomain = String(
+    unwrappedState.activeDomain
+    || unwrappedState.domain
+    || (stableCtx && stableCtx.domain)
+    || (unwrappedState.lastSemanticContract && unwrappedState.lastSemanticContract.domain)
+    || ''
+  ).trim().toLowerCase();
+
   // Normalize activeEntity
   let activeEntity = null;
   if (unwrappedState.activeEntity && typeof unwrappedState.activeEntity === 'object' && !Array.isArray(unwrappedState.activeEntity)) {
@@ -109,6 +126,38 @@ function normalizeConversationState(rawState, now = Date.now()) {
       surface: unwrappedState.activeEntity.surface ? String(unwrappedState.activeEntity.surface).trim() : undefined
     };
     if (!activeEntity.canonical) activeEntity = null;
+  } else if (typeof unwrappedState.activeEntity === 'string' && unwrappedState.activeEntity.trim()) {
+    const eStr = unwrappedState.activeEntity.trim();
+    const isAcadEv = /^(?:wisuda|yudisium)$/i.test(eStr);
+    activeEntity = {
+      type: isAcadEv ? 'academic_event' : (effectiveRawDomain === 'academic' ? 'academic_scope' : 'program'),
+      canonical: isAcadEv ? (eStr.charAt(0).toUpperCase() + eStr.slice(1).toLowerCase()) : eStr,
+      group: isAcadEv || effectiveRawDomain === 'academic' ? 'academicScopes' : 'programs'
+    };
+  } else if (typeof unwrappedState.entity === 'string' && unwrappedState.entity.trim()) {
+    const eStr = unwrappedState.entity.trim();
+    const isAcadEv = /^(?:wisuda|yudisium)$/i.test(eStr);
+    activeEntity = {
+      type: isAcadEv ? 'academic_event' : (effectiveRawDomain === 'academic' ? 'academic_scope' : 'program'),
+      canonical: isAcadEv ? (eStr.charAt(0).toUpperCase() + eStr.slice(1).toLowerCase()) : eStr,
+      group: isAcadEv || effectiveRawDomain === 'academic' ? 'academicScopes' : 'programs'
+    };
+  } else if (stableCtx && stableCtx.entity) {
+    if (typeof stableCtx.entity === 'object' && stableCtx.entity.canonical) {
+      activeEntity = {
+        type: stableCtx.entity.type || 'academic_event',
+        canonical: String(stableCtx.entity.canonical).trim(),
+        group: stableCtx.entity.group || 'academicScopes'
+      };
+    } else if (typeof stableCtx.entity === 'string' && stableCtx.entity.trim()) {
+      const eStr = stableCtx.entity.trim();
+      const isAcadEv = /^(?:wisuda|yudisium)$/i.test(eStr);
+      activeEntity = {
+        type: isAcadEv ? 'academic_event' : 'academic_scope',
+        canonical: isAcadEv ? (eStr.charAt(0).toUpperCase() + eStr.slice(1).toLowerCase()) : eStr,
+        group: 'academicScopes'
+      };
+    }
   } else if (updatedAt && unwrappedState.lastSemanticContract && Array.isArray(unwrappedState.lastSemanticContract.entities) && unwrappedState.lastSemanticContract.entities.length > 0) {
     const e0 = unwrappedState.lastSemanticContract.entities[0];
     if (e0 && (e0.canonical || e0.name)) {
@@ -118,10 +167,9 @@ function normalizeConversationState(rawState, now = Date.now()) {
         group: e0.group || 'programs'
       };
     }
-  } else if (typeof unwrappedState.lastProgramHint === 'string' && unwrappedState.lastProgramHint.trim()) {
-    // Backward compatibility with legacy lastProgramHint. A fresh semantic
-    // contract entity wins because providers may persist the current turn's
-    // program hint before context authority runs.
+  } else if (effectiveRawDomain !== 'academic' && typeof unwrappedState.lastProgramHint === 'string' && unwrappedState.lastProgramHint.trim()) {
+    // Backward compatibility with legacy lastProgramHint. Do NOT promote stale
+    // lastProgramHint when the active session domain is academic.
     activeEntity = {
       type: 'program',
       canonical: unwrappedState.lastProgramHint.trim(),
@@ -188,7 +236,12 @@ function normalizeConversationState(rawState, now = Date.now()) {
   let promotable = false;
   let legacyUnverified = false;
 
-  const hasContractAuth = Boolean(updatedAt && unwrappedState.lastSemanticContract && (unwrappedState.lastSemanticContract.domain || unwrappedState.lastSemanticContract.intent));
+  const hasContractAuth = Boolean(
+    updatedAt && (
+      (unwrappedState.lastSemanticContract && (unwrappedState.lastSemanticContract.domain || unwrappedState.lastSemanticContract.intent))
+      || (stableCtx && stableCtx.domain)
+    )
+  );
   if (hasContractAuth) {
     isVerified = true;
     promotable = true;
@@ -209,10 +262,12 @@ function normalizeConversationState(rawState, now = Date.now()) {
 
   const activeDomain = unwrappedState.activeDomain ? String(unwrappedState.activeDomain).trim()
     : (unwrappedState.domain ? String(unwrappedState.domain).trim()
-      : (hasContractAuth && unwrappedState.lastSemanticContract.domain ? String(unwrappedState.lastSemanticContract.domain).trim() : null));
+      : (stableCtx && stableCtx.domain ? String(stableCtx.domain).trim()
+        : (hasContractAuth && unwrappedState.lastSemanticContract && unwrappedState.lastSemanticContract.domain ? String(unwrappedState.lastSemanticContract.domain).trim() : null)));
   const activeIntent = unwrappedState.activeIntent ? String(unwrappedState.activeIntent).trim()
     : (unwrappedState.intent ? String(unwrappedState.intent).trim()
-      : (hasContractAuth && unwrappedState.lastSemanticContract.intent ? String(unwrappedState.lastSemanticContract.intent).trim() : null));
+      : (stableCtx && stableCtx.intent ? String(stableCtx.intent).trim()
+        : (hasContractAuth && unwrappedState.lastSemanticContract && unwrappedState.lastSemanticContract.intent ? String(unwrappedState.lastSemanticContract.intent).trim() : null)));
 
     const groundedEntityCandidates = Array.isArray(unwrappedState.groundedEntityCandidates)
     ? unwrappedState.groundedEntityCandidates
@@ -349,7 +404,8 @@ const DOMAIN_FIELD_COMPATIBILITY = {
   ]),
   career: new Set([
     'careerOutcome', 'careerProspects', 'careerProspect', 'jobRoles', 'jobs', 'careerSupport', 'opportunity', 'service',
-    'career:service', 'careerGoal', 'employmentSupport', 'alumniJobInfo', 'businessMatching', 'networking',
+    'career:service', 'career:contact', 'career:work_while_studying', 'careerGoal', 'employmentSupport', 'alumniJobInfo',
+    'businessMatching', 'networking', 'workWhileStudying', 'contact', 'contactPerson', 'pic', 'phone', 'contactNumber',
     'profile', 'definition', 'benefit', 'availability'
   ]),
   academic: new Set([
@@ -357,7 +413,8 @@ const DOMAIN_FIELD_COMPATIBILITY = {
     'semesterCount', 'creditCount', 'sksWeight', 'studyFocus', 'focus', 'programList',
     'requirements', 'procedureSteps', 'policy', 'allowed', 'permission', 'grade', 'status',
     'programRecommendation', 'numericLimit', 'pageLimit', 'foundingDate', 'legalDecreeDate', 'founderNames',
-    'careerGoal', 'availability'
+    'careerGoal', 'availability', 'date', 'time', 'place', 'location', 'schedule',
+    'registrationDeadline', 'eventExecution', 'deadline', 'code', 'programCode', 'courseCode'
   ]),
   academic_policy: new Set([
     'policy', 'allowed', 'permission', 'requirements', 'procedureSteps', 'duration',
@@ -367,7 +424,7 @@ const DOMAIN_FIELD_COMPATIBILITY = {
   program_curriculum: new Set([
     'focus', 'curriculumFocus', 'curriculumTopics', 'curriculumTopicPresence', 'specificTopic',
     'creditCount', 'sksWeight', 'duration', 'semesterCount', 'studyFocus', 'definition',
-    'availability', 'organization'
+    'availability', 'organization', 'curriculum', 'code', 'programCode', 'courseCode'
   ]),
   pmb_schedule: new Set([
     'date', 'schedule', 'timeline', 'scheduleWave', 'activeWave', 'wavePeriod', 'closingDate',
@@ -405,7 +462,7 @@ const DOMAIN_FIELD_COMPATIBILITY = {
     'mapsLink', 'location'
   ]),
   campus_service: new Set([
-    'service', 'procedureSteps', 'requirements', 'channel', 'availability', 'contact'
+    'service', 'procedureSteps', 'requirements', 'channel', 'availability', 'contact', 'contactPerson', 'pic', 'phone', 'contactNumber'
   ]),
   institution_profile: new Set([
     'profile', 'definition', 'foundingDate', 'legalDecreeDate', 'founderNames', 'date', 'location',
@@ -435,6 +492,7 @@ function normalizeDomainForFieldCompatibility(domain) {
   if (!domain) return 'general';
   const d = String(domain).trim().toLowerCase();
   if (d === 'tuition') return 'fee';
+  if (d === 'program') return 'academic';
   if (d === 'facility') return 'campus_facility';
   if (d === 'ukm' || d === 'extracurricular' || d === 'organization') return 'student_organization';
   if (d === 'pmb_requirements' || d === 'pmb_procedure' || d === 'pmb_how' || d === 'registration') return 'registration';
@@ -1129,6 +1187,7 @@ function buildTurnConversationState(priorSessionOrState, turnData = {}, options 
     const firstE = contract.entities.find(e => {
       const g = String(e && e.group || '');
       const t = String(e && e.type || '');
+      if (t === 'academic_event' || /^(?:wisuda|yudisium)$/i.test(String(e && e.canonical || ''))) return true;
       return g !== 'academicScopes' && t !== 'academic_level' && t !== 'academic_scope';
     });
     if (typeof firstE === 'string') {
@@ -1674,7 +1733,28 @@ function extractCandidateEntity(currentUnderstanding, rawText, options = {}) {
     };
   }
 
-  // 11. Academic scopes are category / degree-level constraints, not named entities
+  // 11. Academic Event Entities (Wisuda / Yudisium)
+  const acadEvents = (Array.isArray(entities.academicScopes) ? entities.academicScopes : [])
+    .filter(e => e && (e.type === 'academic_event' || /^(?:wisuda|yudisium)$/i.test(String(e.canonical || ''))));
+  if (acadEvents.length === 1) {
+    return {
+      type: 'academic_event',
+      canonical: acadEvents[0].canonical,
+      surface: acadEvents[0].surface || acadEvents[0].canonical,
+      group: 'academicScopes'
+    };
+  }
+  const acadEventMatch = text.match(/\b(wisuda|yudisium)\b/i);
+  if (acadEventMatch) {
+    const rawEv = acadEventMatch[1].toLowerCase();
+    const canonical = rawEv === 'wisuda' ? 'Wisuda' : 'Yudisium';
+    return {
+      type: 'academic_event',
+      canonical,
+      surface: acadEventMatch[1],
+      group: 'academicScopes'
+    };
+  }
 
   // 12. Services
   const serv = Array.isArray(entities.services) ? entities.services : [];
@@ -1760,6 +1840,7 @@ const ENTITY_TYPE_DOMAIN_COMPATIBILITY = {
   admission_track: new Set(['pmb_requirements', 'registration', 'academic_policy', 'academic', 'fee', 'general']),
   participant_scope: new Set(['pmb_requirements', 'registration', 'academic_policy', 'academic', 'foreign_student_admin', 'general']),
   academic_scope: new Set(['academic_policy', 'academic', 'program_curriculum', 'program', 'fee', 'general']),
+  academic_event: new Set(['academic', 'academic_policy', 'general']),
   institution: new Set(['institution_comparison', 'general'])
 };
 
@@ -2262,6 +2343,28 @@ function parseContextRepairSignal(rawText) {
       marker = 'saya bukan tanya ..., tapi ...';
       rejectedClause = sayaBukanTanyaMatch[1].trim();
       repairClause = sayaBukanTanyaMatch[2].trim();
+    }
+  }
+
+  // 7. (saya) tidak/bukan menanyakan/tanya (tentang) X [, / space] (saya menanyakan/tanya/nanya / yang saya tanyakan / tapi / melainkan) Y
+  if (!isRepair) {
+    const tidakMenanyakanMatch = text.match(/^(?:saya\s+)?(?:tidak|bukan|enggak|nggak|gak)\s+(?:menanyakan|tanya|nanya|minta|cari|bahas)(?:\s+tentang|\s+soal|\s+mengenai)?\s+(.+?)(?:\s*[,;.]?\s*(?:saya\s+(?:menanyakan|tanya|nanya|minta|cari)|yang\s+saya\s+(?:tanyakan|tanya|maksud)|melainkan|tetapi|tapi|maksud\s+saya)\s+(?:tentang\s+|soal\s+|mengenai\s+)?)(.+)$/i);
+    if (tidakMenanyakanMatch) {
+      isRepair = true;
+      marker = 'tidak menanyakan ..., saya menanyakan ...';
+      rejectedClause = tidakMenanyakanMatch[1].trim().replace(/[?,.;!]+$/g, '').trim();
+      repairClause = tidakMenanyakanMatch[2].trim();
+    }
+  }
+
+  // 8. kok (malah) X? [padahal] saya tanya/menanyakan Y
+  if (!isRepair) {
+    const kokProtestMatch = text.match(/^kok\s+(?:malah\s+|jadi\s+)?(?:bahas\s+|jawab\s+|kasih\s+|muncul\s+)?(.+?)(?:\s*[?,.;!]+\s*|\s+)(?:padahal\s+)?(?:saya\s+(?:menanyakan|tanya|nanya|minta|cari|mau\s+tanya|ingin\s+tanya)|yang\s+saya\s+(?:tanyakan|tanya|maksud)|maksud\s+saya)\s+(?:tentang\s+|soal\s+|mengenai\s+)?(.+)$/i);
+    if (kokProtestMatch) {
+      isRepair = true;
+      marker = 'kok ..., saya tanya ...';
+      rejectedClause = kokProtestMatch[1].trim().replace(/[?,.;!]+$/g, '').trim();
+      repairClause = kokProtestMatch[2].trim();
     }
   }
 

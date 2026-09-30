@@ -129,7 +129,7 @@ function normalizeEntityFamily(typeOrFamily) {
   if (/^(?:participant_scope|audience_scope)$/.test(raw)) {
     return 'participant_scope';
   }
-  if (/^(?:academic_scope|academic_policy)$/.test(raw)) {
+  if (/^(?:academic_scope|academic_policy|academic_event)$/.test(raw)) {
     return 'academic_scope';
   }
 
@@ -165,8 +165,12 @@ const FIELD_TAXONOMY = Object.freeze({
   semesterCount: { field: 'semesterCount', family: 'temporal_duration', root: 'temporal', priority: 8 },
   schedule: { field: 'schedule', family: 'temporal_schedule', root: 'temporal', priority: 6 },
   deadline: { field: 'deadline', family: 'temporal_schedule', root: 'temporal', priority: 8 },
+  registrationDeadline: { field: 'registrationDeadline', family: 'temporal_schedule', root: 'temporal', priority: 9 },
+  eventExecution: { field: 'eventExecution', family: 'temporal_schedule', root: 'temporal', priority: 9 },
   registrationWave: { field: 'registrationWave', family: 'temporal_schedule', root: 'temporal', priority: 8 },
-  date: { field: 'date', family: 'temporal_schedule', root: 'temporal', priority: 2 },
+  date: { field: 'date', family: 'temporal_schedule', root: 'temporal', priority: 6 },
+  time: { field: 'time', family: 'temporal_schedule', root: 'temporal', priority: 7 },
+  place: { field: 'place', family: 'location', root: 'geographic', priority: 6 },
 
   // Institutional History & Founding
   foundingDate: { field: 'foundingDate', family: 'history', root: 'institution', priority: 10 },

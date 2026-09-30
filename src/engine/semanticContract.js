@@ -55,7 +55,9 @@ function filterContractEntitiesForDomain(domain, intent, entities) {
     return list.filter(entity => String(entity.group || '') === 'organizations' || String(entity.type || '') === 'organization_category');
   }
   if (/^(?:academic|academic_policy)$/i.test(d)) {
-    const academicEntities = list.filter(entity => ['academicScopes', 'programs'].includes(String(entity.group || '')) || ['academic_level', 'academic_scope', 'program'].includes(String(entity.type || '')));
+    const academicScopeEntities = list.filter(entity => String(entity.group || '') === 'academicScopes' || ['academic_level', 'academic_scope', 'academic_event'].includes(String(entity.type || '')));
+    if (academicScopeEntities.length && /schedule|procedure|info/i.test(i)) return academicScopeEntities;
+    const academicEntities = list.filter(entity => ['academicScopes', 'programs'].includes(String(entity.group || '')) || ['academic_level', 'academic_scope', 'academic_event', 'program'].includes(String(entity.type || '')));
     if (academicEntities.length) return academicEntities;
   }
   if (/campus|location|facility/i.test(d) && (hasGroup('campuses') || hasGroup('facilities'))) {
@@ -100,7 +102,7 @@ function buildSemanticContract(canonical) {
   const isOrgDomain = /^(?:student_organization|organization)$/i.test(String(sourceDomain));
   const allEntities = flattenEntities(source.entities).filter(entity => {
     if (entity.group === 'interestProfiles') return false;
-    if (!isAcademicDomain && (entity.group === 'academicScopes' || entity.type === 'academic_level' || entity.type === 'academic_scope')) return false;
+    if (!isAcademicDomain && (entity.group === 'academicScopes' || entity.type === 'academic_level' || entity.type === 'academic_scope' || entity.type === 'academic_event')) return false;
     if (!isOrgDomain && (entity.type === 'organization_category' || entity.group === 'organization_categories')) return false;
     if (entity.source === 'canonical-domain-scope' && !isAcademicDomain) return false;
     return true;
@@ -116,6 +118,7 @@ function buildSemanticContract(canonical) {
     domain: primaryDomain,
     intent: primaryIntent,
     requestType,
+    requestedSlot: constraints.requestedSlot || source.requestedSlot || null,
     requestedFields: unique(source.requestedFields),
     entities,
     entityType: unique(entities.map(entity => entity.type || entity.group)),
@@ -391,7 +394,7 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
     const relationType = String(contract.constraints && contract.constraints.relationType || '');
     const fields = new Set(Array.isArray(contract.requestedFields) ? contract.requestedFields : []);
     const asksStudyTimeline = relationType === 'study_timeline' || fields.has('duration') || fields.has('sequence') || fields.has('semesterCount');
-    const hasScheduleShape = /\b(?:tanggal|jadwal|periode|gelombang|januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|20\d{2})\b/i.test(text);
+    const hasScheduleShape = /\b(?:tanggal|jadwal|periode|gelombang|pukul|wita|wib|wit|tempat|lokasi|loket|aula|kampus|januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember|20\d{2})\b/i.test(text);
     const hasTimelineShape = /\b(?:\d+|satu|dua|tiga|empat|lima|enam|tujuh|delapan)\s*(?:tahun|semester|bulan)\b|\b(?:durasi|tahapan|skema\s+kuliah|perkuliahan)\b/i.test(text);
     if (!hasScheduleShape && !(asksStudyTimeline && hasTimelineShape)) return { ok: false, reason: 'schedule_shape_not_satisfied' };
   }

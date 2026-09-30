@@ -547,6 +547,18 @@ const CANONICAL_ENTITIES = [
     aliases: ['akademik', 'kebijakan akademik', 'academic policy', 'aturan akademik', 'pedoman akademik']
   },
   {
+    canonical: 'Wisuda',
+    type: 'academic_event',
+    family: 'academic_scope',
+    aliases: ['wisuda', 'upacara wisuda', 'pelaksanaan wisuda', 'jadwal wisuda', 'acara wisuda']
+  },
+  {
+    canonical: 'Yudisium',
+    type: 'academic_event',
+    family: 'academic_scope',
+    aliases: ['yudisium', 'pendaftaran yudisium', 'pelaksanaan yudisium', 'jadwal yudisium', 'acara yudisium']
+  },
+  {
     canonical: 'UKM Khusus (Special UKM)',
     type: 'organization_category',
     family: 'student_organization',
@@ -563,7 +575,7 @@ const CANONICAL_ENTITIES = [
     canonical: 'Beasiswa 1K1S (Satu Keluarga Satu Sarjana)',
     type: 'scholarship',
     family: 'scholarship',
-    aliases: ['beasiswa 1k1s', '1k1s', 'satu keluarga satu sarjana', 'program 1k1s', 'beasiswa satu keluarga satu sarjana']
+    aliases: ['beasiswa 1k1s', '1k1s', 'satu keluarga satu sarjana', 'program 1k1s', 'beasiswa satu keluarga satu sarjana', 'skss', 'beasiswa skss']
   },
   {
     canonical: 'Beasiswa Prestasi',
@@ -581,7 +593,7 @@ const CANONICAL_ENTITIES = [
     canonical: 'Beasiswa SKSS',
     type: 'scholarship',
     family: 'scholarship',
-    aliases: ['beasiswa skss', 'skss']
+    aliases: ['beasiswa skss', 'skss', '1k1s', 'beasiswa 1k1s', 'satu keluarga satu sarjana', 'beasiswa 1k1s/skss']
   }
 ];
 

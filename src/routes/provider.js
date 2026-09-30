@@ -10081,9 +10081,20 @@ module.exports = function (provider) {
       if (isSemanticRagFirstEnabled() && isRagEnabled() && allowBundledIndex && !looksLikeWrongAnswerFeedback(text) && !shouldSkipSemanticRagFirst(text, sessionData)) {
         try {
           const topK = parseInt(process.env.SEMANTIC_RAG_TOP_K || process.env.RAG_TOP_K || '8', 10);
-          const semanticProgramHint = (typeof extractSpecificProgramHint === 'function' ? extractSpecificProgramHint(text) : null)
-            || (typeof extractProgramHint === 'function' ? extractProgramHint(text) : null)
-            || (sessionData && sessionData.lastProgramHint ? String(sessionData.lastProgramHint) : '');
+          const explicitTurnProgramHint = (typeof extractSpecificProgramHint === 'function' ? extractSpecificProgramHint(text) : null)
+            || (typeof extractProgramHint === 'function' ? extractProgramHint(text) : null);
+          const priorDomainFromSession = String(
+            (sessionData && sessionData.stableSemanticContext && sessionData.stableSemanticContext.domain)
+            || (sessionData && sessionData.lastSemanticContract && sessionData.lastSemanticContract.domain)
+            || (sessionData && sessionData.conversationState && sessionData.conversationState.activeDomain)
+            || ''
+          ).toLowerCase();
+          const isAcademicOrProtestOrClosingTurn = /\b(?:wisuda|yudisium|sidang|skripsi|tugas\s+akhir|proyek\s+akhir|krs|khs|remedial|remidi|kalender\s+akademik|cuti\s+akademik)\b/i.test(String(text || ''))
+            || /\b(?:kok\s+(?:biaya|pmb|jadwal)|tidak\s+menanyakan|bukan\s+(?:tanya|nanya|menanyakan))\b/i.test(String(text || ''))
+            || /\b(?:data(?:nya)?\s+belum\s+lengkap|jika\s+data\s+belum\s+lengkap|berarti\s+belum\s+ada)\b/i.test(String(text || ''))
+            || (priorDomainFromSession === 'academic' && !explicitTurnProgramHint);
+          const semanticProgramHint = explicitTurnProgramHint
+            || (!isAcademicOrProtestOrClosingTurn && sessionData && sessionData.lastProgramHint ? String(sessionData.lastProgramHint) : '');
           const semantic = await querySemanticRag(text, {
             topK,
             chatId,
@@ -10140,15 +10151,25 @@ module.exports = function (provider) {
                 sessionData = newData;
               }
 
-              const isScheduleAnswer = semanticDomain === 'pmb_schedule'
+              const isScheduleAnswer = (semanticDomain === 'pmb_schedule'
                 || semanticDomain === 'schedule'
-                || /^semantic-rag-schedule\b/i.test(String(semantic.source || ''));
+                || /^semantic-rag-schedule\b/i.test(String(semantic.source || '')))
+                && semanticDomain !== 'academic'
+                && !/^semantic-rag-academic\b/i.test(String(semantic.source || ''));
               if (isScheduleAnswer) {
                 const currentState = session ? session.state : 'root';
                 const prevData = sessionData || {};
                 const nowIso = new Date().toISOString();
                 const newData = {
                   ...prevData,
+                  stableSemanticContext: {
+                    domain: 'pmb_schedule',
+                    entity: 'PMB',
+                    requestedFields: Array.from(semanticFields).length ? Array.from(semanticFields) : ['schedule'],
+                    establishedAt: nowIso,
+                    sourceTurn: String(text || '').trim(),
+                    source: semantic.source || 'semantic-rag-schedule'
+                  },
                   lastSemanticContract: semanticContractForSession || prevData.lastSemanticContract || null,
                   lastSemanticSource: semantic.source || prevData.lastSemanticSource || null,
                   pendingScheduleWave: {
@@ -10165,11 +10186,121 @@ module.exports = function (provider) {
                 });
                 sessionData = newData;
               }
+
+              const isAcademicAnswer = semanticDomain === 'academic'
+                || semanticDomain === 'academic_policy'
+                || /^semantic-rag-academic\b/i.test(String(semantic.source || ''))
+                || (/^semantic-rag-uploaded-training-generic\b/i.test(String(semantic.source || ''))
+                  && /\b(?:yudisium|wisuda|sidang|skripsi|tugas\s+akhir|krs|khs|remedial|remidi|kalender\s+akademik)\b/i.test(String(text || '')));
+              if (isAcademicAnswer) {
+                const currentState = session ? session.state : 'root';
+                const prevData = sessionData || {};
+                const nowIso = new Date().toISOString();
+                const debugInfo = (semantic && semantic.debug) || {};
+                const contractConstraints = (semanticContractForSession && semanticContractForSession.constraints) || {};
+                const contractEntityObj = Array.isArray(semanticContractForSession && semanticContractForSession.entities)
+                  ? semanticContractForSession.entities.find(e => e && (e.type === 'academic_event' || /^(?:wisuda|yudisium)$/i.test(String(e.canonical || ''))))
+                  : null;
+                const selMeta = debugInfo.academicSelectionMeta || {};
+                const inferredAcademicEntity = debugInfo.academicEntity
+                  || selMeta.academicEntity
+                  || (contractEntityObj && contractEntityObj.canonical)
+                  || (/\byudisium\b/i.test(String(text || '')) ? 'Yudisium' : (/\bwisuda\b/i.test(String(text || '')) ? 'Wisuda' : null))
+                  || (prevData.stableSemanticContext && prevData.stableSemanticContext.domain === 'academic' ? prevData.stableSemanticContext.entity : null)
+                  || 'academic';
+                const prevAcademicEntity = prevData.stableSemanticContext && prevData.stableSemanticContext.domain === 'academic'
+                  ? prevData.stableSemanticContext.entity
+                  : null;
+                const isSameAcademicEntity = Boolean(
+                  prevAcademicEntity
+                  && inferredAcademicEntity
+                  && String(prevAcademicEntity).toLowerCase() === String(inferredAcademicEntity).toLowerCase()
+                );
+                const inferredScheduleType = semantic.academicScheduleType
+                  || debugInfo.academicScheduleType
+                  || selMeta.academicScheduleType
+                  || contractConstraints.academicScheduleType
+                  || (isSameAcademicEntity ? prevData.stableSemanticContext.academicScheduleType : null)
+                  || null;
+                const inferredSourceDocument = semantic.sourceDocument
+                  || debugInfo.sourceFile
+                  || selMeta.selectedSourceDocument
+                  || (debugInfo.documentSelection && debugInfo.documentSelection.selectedDocument)
+                  || (isSameAcademicEntity ? prevData.stableSemanticContext.sourceDocument : null)
+                  || null;
+                const inferredAcademicPeriod = semantic.academicPeriod
+                  || debugInfo.academicPeriod
+                  || selMeta.selectedAcademicPeriod
+                  || (isSameAcademicEntity ? prevData.stableSemanticContext.academicPeriod : null)
+                  || null;
+                const requestedFieldList = Array.isArray(semanticContractForSession && semanticContractForSession.requestedFields) && semanticContractForSession.requestedFields.length
+                  ? semanticContractForSession.requestedFields
+                  : ['schedule', 'date'];
+                const persistedAcademicContract = {
+                  ...(semanticContractForSession || {}),
+                  domain: 'academic',
+                  intent: (semanticContractForSession && semanticContractForSession.intent) || 'ask_academic_schedule',
+                  requestType: (semanticContractForSession && semanticContractForSession.requestType) || 'schedule',
+                  requestedFields: requestedFieldList,
+                  entities: contractEntityObj
+                    ? [contractEntityObj]
+                    : (inferredAcademicEntity && /^(?:wisuda|yudisium)$/i.test(String(inferredAcademicEntity))
+                      ? [{ group: 'academicEvents', canonical: inferredAcademicEntity, type: 'academic_event', confidence: 0.98 }]
+                      : (Array.isArray(semanticContractForSession && semanticContractForSession.entities) ? semanticContractForSession.entities : [])),
+                  constraints: {
+                    ...contractConstraints,
+                    academicTopic: contractConstraints.academicTopic || 'academic_schedule',
+                    ...(inferredScheduleType ? { academicScheduleType: inferredScheduleType } : {}),
+                    ...(inferredSourceDocument ? { sourceDocument: inferredSourceDocument } : {}),
+                    ...(inferredAcademicPeriod ? { academicPeriod: inferredAcademicPeriod } : {})
+                  }
+                };
+                const newData = {
+                  ...prevData,
+                  stableSemanticContext: {
+                    domain: 'academic',
+                    entity: inferredAcademicEntity,
+                    topic: 'schedule',
+                    academicTopic: 'academic_schedule',
+                    academicScheduleType: inferredScheduleType,
+                    requestedFields: requestedFieldList,
+                    sourceDocument: inferredSourceDocument,
+                    academicPeriod: inferredAcademicPeriod,
+                    establishedAt: nowIso,
+                    sourceTurn: String(text || '').trim(),
+                    source: semantic.source || 'semantic-rag-academic'
+                  },
+                  lastSemanticContract: persistedAcademicContract,
+                  lastSemanticContractUpdatedAt: nowIso,
+                  lastSemanticSource: semantic.source || prevData.lastSemanticSource || null,
+                  pendingScheduleWave: null,
+                  conversationState: {
+                    ...(prevData.conversationState || {}),
+                    activeDomain: 'academic',
+                    activeEntity: {
+                      canonical: inferredAcademicEntity,
+                      type: 'academic_event',
+                      family: 'academic_scope'
+                    },
+                    activeField: requestedFieldList[0] || 'schedule',
+                    academicScheduleType: inferredScheduleType,
+                    sourceDocument: inferredSourceDocument,
+                    academicPeriod: inferredAcademicPeriod,
+                    updatedAt: Date.now()
+                  }
+                };
+                await prisma.session.upsert({
+                  where: { chatId },
+                  create: { chatId, state: currentState, data: newData },
+                  update: { state: currentState, data: newData }
+                });
+                sessionData = newData;
+              }
             } catch (persistErr) {
               logger.warn({
                 err: persistErr && persistErr.message ? persistErr.message : String(persistErr),
                 chatId
-              }, '[Provider] Failed to persist scholarship semantic context');
+              }, '[Provider] Failed to persist semantic context');
             }
 
             try {
