@@ -359,8 +359,50 @@ function createSemanticFrame(props = {}) {
     constraints: props.provenance?.constraints || PROVENANCE.EXPLICIT_CURRENT
   };
 
+  const temporalConstraint = props.temporalConstraint && typeof props.temporalConstraint === 'object'
+    ? {
+        temporalMode: String(props.temporalConstraint.temporalMode || 'general'),
+        period: props.temporalConstraint.period ? String(props.temporalConstraint.period) : null,
+        academicYear: Number.isFinite(props.temporalConstraint.academicYear) ? props.temporalConstraint.academicYear : null,
+        isHistorical: Boolean(props.temporalConstraint.isHistorical)
+      }
+    : {
+        temporalMode: 'general',
+        period: null,
+        academicYear: null,
+        isHistorical: false
+      };
+
+  const location = props.location && typeof props.location === 'object'
+    ? {
+        studyLocation: props.location.studyLocation ? String(props.location.studyLocation) : null,
+        campus: props.location.campus ? String(props.location.campus) : null,
+        country: props.location.country ? String(props.location.country) : null,
+        isAmbiguous: Boolean(props.location.isAmbiguous)
+      }
+    : {
+        studyLocation: null,
+        campus: null,
+        country: null,
+        isAmbiguous: Boolean(ambiguity.isAmbiguous && ambiguity.type === 'location_program_overlap')
+      };
+
+  const contextRelation = props.contextRelation && typeof props.contextRelation === 'object'
+    ? {
+        isFollowup: Boolean(props.contextRelation.isFollowup),
+        referentToken: props.contextRelation.referentToken ? String(props.contextRelation.referentToken) : null,
+        inheritedEntities: Array.isArray(props.contextRelation.inheritedEntities) ? [...props.contextRelation.inheritedEntities] : [],
+        inheritedDomain: props.contextRelation.inheritedDomain ? String(props.contextRelation.inheritedDomain) : null
+      }
+    : {
+        isFollowup: false,
+        referentToken: null,
+        inheritedEntities: [],
+        inheritedDomain: null
+      };
+
   const frame = {
-    version: 1,
+    version: 2,
     rawQuery,
     normalizedQuery,
     intent,
@@ -370,12 +412,15 @@ function createSemanticFrame(props = {}) {
     primaryField,
     fieldFamily: primaryFieldDescriptor ? primaryFieldDescriptor.family : null,
     fieldRoot: primaryFieldDescriptor ? primaryFieldDescriptor.root : null,
+    temporalConstraint,
+    location,
+    contextRelation,
+    ambiguity,
     relations,
     constraints,
     numericSemantics,
     explicitSemantics,
     inheritedSemantics,
-    ambiguity,
     confidence,
     provenance,
     questionType: props.questionType ? String(props.questionType) : 'direct_question',

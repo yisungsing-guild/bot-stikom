@@ -327,7 +327,32 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
     || options.session
     || null;
 
-  const sessionState = normalizeConversationState(priorSessionOrState);
+  let stateToNormalize = priorSessionOrState;
+  if (priorSessionOrState && typeof priorSessionOrState === 'object') {
+    if (!priorSessionOrState.updatedAt && !priorSessionOrState.lastSemanticContractUpdatedAt) {
+      stateToNormalize = { ...priorSessionOrState, updatedAt: new Date(options.now || Date.now()).toISOString() };
+    }
+    // Also resolve program alias if activeEntity is not explicitly set
+    if (!stateToNormalize.activeEntity && (stateToNormalize.program || stateToNormalize.prodi)) {
+      const progName = stateToNormalize.program || stateToNormalize.prodi;
+      stateToNormalize = {
+        ...stateToNormalize,
+        activeEntity: {
+          canonical: progName,
+          type: 'program',
+          family: 'program',
+          group: 'programs'
+        }
+      };
+    }
+    if (stateToNormalize.legacyUnverified === undefined && (stateToNormalize.isVerified === undefined || stateToNormalize.isVerified === true)) {
+      stateToNormalize.isVerified = true;
+      stateToNormalize.promotable = true;
+      stateToNormalize.legacyUnverified = false;
+    }
+  }
+
+  const sessionState = normalizeConversationState(stateToNormalize);
   const isFresh = isConversationStateFresh(sessionState, options.now || Date.now(), options.maxAgeMs);
   const isVerifiedAuthority = Boolean(sessionState && sessionState.isVerified !== false && sessionState.promotable !== false && !sessionState.legacyUnverified);
 
@@ -487,6 +512,104 @@ function areRequestedFieldsCompatibleWithDomain(fields, domain) {
     }
   }
 
+  // Multi-intent detection & representation
+  const secondaryIntents = new Set(Array.isArray(intent.secondary) ? intent.secondary : []);
+  const asksFee = requestedFields.includes('tuitionFee') || requestedFields.includes('fee') || requestedFields.includes('amount') || numericSemantics.isFeeMetric || /\b(?:biaya|harga|bayar|ukt|dpp|spp|tarif)\b/i.test(raw);
+  const asksModality = requestedFields.includes('deliveryMode') || requestedFields.includes('studyModality') || /\b(?:online|offline|daring|luring|hybrid)\b/i.test(raw);
+  const asksSchedule = requestedFields.includes('schedule') || requestedFields.includes('eventExecution') || requestedFields.includes('date') || /\b(?:kapan|jadwal|tanggal|waktu|hari)\b/i.test(raw);
+  const asksRequirements = requestedFields.includes('requirements') || /\b(?:syarat|persyaratan|dokumen|berkas)\b/i.test(raw);
+  const asksCurriculum = requestedFields.includes('curriculum') || requestedFields.includes('courseList') || /\b(?:kurikulum|mata\s+kuliah|matakuliah|sks)\b/i.test(raw);
+  const asksCareer = requestedFields.includes('careerProspects') || requestedFields.includes('jobRoles') || /\b(?:prospek|karir|karier|peluang\s+kerja)\b/i.test(raw);
+
+  if (asksFee && asksModality) {
+    if (intent.primary.includes('fee') || intent.primary === 'ask_tuition_fee' || intent.primary === 'ask_fee') {
+      secondaryIntents.add('ask_delivery_mode');
+    } else if (intent.primary.includes('delivery') || intent.primary === 'ask_delivery_mode') {
+      secondaryIntents.add('ask_tuition_fee');
+    } else {
+      secondaryIntents.add('ask_delivery_mode');
+    }
+    if (!requestedFields.includes('deliveryMode')) requestedFields.push('deliveryMode');
+    if (!requestedFields.includes('tuitionFee') && !requestedFields.includes('fee') && !requestedFields.includes('amount')) requestedFields.push('tuitionFee');
+  }
+
+  if (asksSchedule && asksRequirements) {
+    if (/schedule/i.test(intent.primary)) {
+      secondaryIntents.add('ask_academic_requirement');
+    } else if (/requirement/i.test(intent.primary)) {
+      secondaryIntents.add('ask_academic_schedule');
+    }
+  }
+
+  if (asksCurriculum && asksCareer) {
+    if (/curriculum/i.test(intent.primary)) {
+      secondaryIntents.add('ask_career_service');
+    } else if (/career/i.test(intent.primary)) {
+      secondaryIntents.add('ask_program_curriculum');
+    }
+  }
+
+  intent.secondary = Array.from(secondaryIntents);
+
+  // Extract Temporal Constraint
+  const hasHistoricalCue = /\b(?:tahun\s+lalu|kemarin|dulu|sebelumnya|yang\s+lalu|lampau)\b/i.test(raw);
+  const yearMatch = raw.match(/\b(20[12][0-9])\b/);
+  const explicitYear = yearMatch ? parseInt(yearMatch[1], 10) : null;
+  const isPastYear = explicitYear && explicitYear < 2026;
+  const isFutureYear = explicitYear && explicitYear > 2026;
+  const isCurrentYear = explicitYear === 2026;
+
+  const hasFutureCue = /\b(?:nanti|akan\s+datang|depan|mendatang)\b/i.test(raw);
+  const hasCurrentCue = /\b(?:sekarang|saat\s+ini|ini|terkini|terbaru|saat\s+sekarang)\b/i.test(raw);
+
+  const isHistorical = Boolean(hasHistoricalCue || isPastYear);
+  const isFuture = Boolean(!isHistorical && (hasFutureCue || isFutureYear));
+  const isCurrent = Boolean(!isHistorical && !isFuture && (hasCurrentCue || isCurrentYear || understanding.constraints?.academicPeriod));
+
+  const periodMatch = raw.match(/\b(202[0-9](?:\/202[0-9]|[-/]\d{2,4})?(?:\s+(?:ganjil|genap))?)\b/i);
+  const period = periodMatch ? periodMatch[1] : (understanding.constraints?.academicPeriod || null);
+
+  const temporalConstraint = {
+    temporalMode: isHistorical ? 'past' : (isFuture ? 'future' : (isCurrent ? 'current' : 'general')),
+    period,
+    academicYear: explicitYear || (period ? parseInt(period.slice(0, 4), 10) : (isCurrent ? 2026 : null)),
+    isHistorical
+  };
+
+  // Extract Location
+  const hasBandung = /\bbandung\b/i.test(raw);
+  const hasRenon = /\brenon\b/i.test(raw);
+  const hasJimbaran = /\bjimbaran\b/i.test(raw);
+  const hasAbiansemal = /\babiansemal\b/i.test(raw);
+  const hasMalaysia = /\bmalaysia\b/i.test(raw);
+  const hasChina = /\b(?:china|tiongkok)\b/i.test(raw);
+
+  const studyLocation = hasBandung ? 'Bandung' : (hasRenon ? 'Renon' : (hasJimbaran ? 'Jimbaran' : (hasAbiansemal ? 'Abiansemal' : (understanding.constraints?.studyLocation || null))));
+  const campus = hasRenon ? 'Kampus Renon' : (hasJimbaran ? 'Kampus Jimbaran' : (hasAbiansemal ? 'Kampus Abiansemal' : (understanding.constraints?.campus || null)));
+  const country = hasMalaysia ? 'Malaysia' : (hasChina ? 'China' : (understanding.constraints?.country || null));
+
+  const isLocationAmbiguous = Boolean(understanding.ambiguity?.isAmbiguous && understanding.ambiguity?.type === 'location_program_overlap');
+
+  const location = {
+    studyLocation,
+    campus,
+    country,
+    isAmbiguous: isLocationAmbiguous
+  };
+
+  // Extract Context Relation
+  const referentMatch = raw.match(/\b([a-z]+(?:nya))\b|\b(itu|tersebut)\b/i);
+  const referentToken = referentMatch ? referentMatch[0] : null;
+  const isFollowupCue = /\b(?:kalau|kalo|gimana|bagaimana|terus|lalu|jika|apakah|bisa)\b/i.test(raw);
+  const isInherited = slotProvenance.entities === PROVENANCE.PRIOR_CONTEXT_INHERITED || slotProvenance.domain === PROVENANCE.PRIOR_CONTEXT_INHERITED;
+
+  const contextRelation = {
+    isFollowup: Boolean(isFollowupCue || referentToken || isInherited),
+    referentToken,
+    inheritedEntities: inheritedSemantics.entities.map(e => e.canonical),
+    inheritedDomain: inheritedSemantics.domain || (slotProvenance.domain === PROVENANCE.PRIOR_CONTEXT_INHERITED ? domain.primary : null)
+  };
+
   // Step 4: Construct and Freeze EffectiveSemanticFrame
   const frame = createSemanticFrame({
     rawQuery: raw,
@@ -502,6 +625,9 @@ function areRequestedFieldsCompatibleWithDomain(fields, domain) {
     numericSemantics,
     explicitSemantics,
     inheritedSemantics,
+    temporalConstraint,
+    location,
+    contextRelation,
     ambiguity: understanding.ambiguity || {},
     confidence: Math.min(intent.confidence, domain.confidence),
     provenance: slotProvenance,

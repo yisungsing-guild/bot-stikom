@@ -460,6 +460,11 @@ function isTrainingGovernanceAllowed(row = {}, options = {}) {
       return true;
     }
     if (['approved', 'active'].includes(governance.status)) {
+      const now = options.referenceTime ? parseDateMs(options.referenceTime) : Date.now();
+      const from = parseDateMs(governance.validFrom);
+      if (from && from > now && !envFlag('RAG_ALLOW_FUTURE_DOCUMENTS', false)) {
+        return false;
+      }
       return true;
     }
     return false;
@@ -533,6 +538,11 @@ function isChunkGovernanceAllowed(chunk = {}, options = {}) {
       return true;
     }
     if (['approved', 'active'].includes(status)) {
+      const now = options.referenceTime ? parseDateMs(options.referenceTime) : Date.now();
+      const validFrom = parseDateMs(chunk.validFrom || (chunk.metadata && chunk.metadata.validFrom) || (chunk.governanceMetadata && chunk.governanceMetadata.validFrom));
+      if (validFrom && validFrom > now && !envFlag('RAG_ALLOW_FUTURE_DOCUMENTS', false)) {
+        return false;
+      }
       return true;
     }
     return false;

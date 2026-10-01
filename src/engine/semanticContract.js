@@ -18,6 +18,15 @@ function normalizeText(value) {
 }
 
 function flattenEntities(entities) {
+  if (Array.isArray(entities)) {
+    return entities.filter(Boolean).map(item => ({
+      canonical: String(item && typeof item === 'object' ? (item.canonical || item.name || item.value || '') : item || '').trim(),
+      type: String(item && typeof item === 'object' ? (item.type || item.family || 'unknown') : 'unknown').trim(),
+      role: String(item && typeof item === 'object' ? (item.role || '') : '').trim(),
+      source: String(item && typeof item === 'object' ? (item.source || '') : '').trim(),
+      group: item && typeof item === 'object' && item.group ? String(item.group) : (item && item.family ? `${item.family}s` : 'entities')
+    })).filter(e => e.canonical);
+  }
   const source = entities && typeof entities === 'object' ? entities : {};
   const out = [];
   for (const [group, list] of Object.entries(source)) {

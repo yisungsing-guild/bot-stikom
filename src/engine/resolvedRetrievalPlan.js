@@ -2,6 +2,7 @@
 
 const { hasEntity } = require('./semanticContract');
 const { matchCanonicalEntities, findCanonicalEntity, areEntitiesEquivalent } = require('./canonicalEntityRegistry');
+const { isChunkGovernanceAllowed } = require('./runtimeGovernance');
 
 // Planning constraints, not answerability. A candidate must survive domain and
 // entity compatibility before lexical or embedding similarity can affect rank.
@@ -198,7 +199,130 @@ function buildResolvedRetrievalPlan(contract) {
   };
 }
 
+function buildRetrievalPlanFromSemanticFrame(semanticFrame) {
+  if (!semanticFrame || typeof semanticFrame !== 'object') {
+    throw new Error('Valid SemanticFrame required to build RetrievalPlan');
+  }
+
+  const domain = String(semanticFrame.domain?.primary || semanticFrame.domain || 'general');
+  const intent = String(semanticFrame.intent?.primary || semanticFrame.intent || 'ask_general');
+  const entities = Array.isArray(semanticFrame.entities)
+    ? semanticFrame.entities.map(e => typeof e === 'string' ? e : e.canonical).filter(Boolean)
+    : [];
+  const entitySpecs = Array.isArray(semanticFrame.entities) ? semanticFrame.entities : [];
+  const requestedFields = unique(semanticFrame.requestedFields || []);
+  const relations = unique(semanticFrame.relations || []);
+  const constraints = semanticFrame.constraints || {};
+
+  const temporalConstraint = semanticFrame.temporalConstraint || {};
+  const isHistorical = Boolean(temporalConstraint.isHistorical);
+  const temporalMode = temporalConstraint.temporalMode || (isHistorical ? 'past' : 'current');
+
+  const location = semanticFrame.location || {};
+  const locationScope = location.studyLocation || location.campus || location.country || null;
+
+  // Derive sourceScope based on domain
+  const sourceScope = [];
+  if (domain === 'academic' || domain === 'academic_policy' || domain === 's2_postgraduate') {
+    sourceScope.push('academic_announcement', 'academic_calendar', 'academic_policy', 'academic_handbook');
+  } else if (domain === 'fee') {
+    sourceScope.push('fee_catalog', 'pmb_brochure', 'official_document');
+  } else if (domain === 'double_degree' || domain === 'international_program') {
+    sourceScope.push('international_partnership', 'academic_handbook', 'official_document');
+  } else if (domain === 'student_organization') {
+    sourceScope.push('student_affairs', 'organization_directory');
+  } else if (domain === 'campus_facility' || domain === 'campus') {
+    sourceScope.push('facility_directory', 'campus_handbook');
+  } else {
+    sourceScope.push('official_document', 'website');
+  }
+
+  // Derive authorityRequirements respecting existing governance tiers
+  const authorityRequirements = {
+    minAuthorityLevel: (domain === 'academic' && /schedule|deadline|graduation|wisuda|yudisium/i.test(intent))
+      ? 'announcement'
+      : (domain === 'fee' ? 'official' : 'general'),
+    mustBeAuthoritative: domain === 'academic' || domain === 'fee' || domain === 'double_degree'
+  };
+
+  // Governance requirements
+  const governanceRequirements = {
+    excludeExpired: !isHistorical,
+    excludeDraft: true,
+    excludeArchived: !isHistorical
+  };
+
+  const historicalPolicy = isHistorical ? 'allow_historical' : 'require_current';
+
+  let fallbackPolicy = 'safe_data_gap';
+  if (semanticFrame.ambiguity?.isAmbiguous) {
+    fallbackPolicy = 'clarify_ambiguity';
+  }
+
+  // Textual query parts for planQuery compatibility
+  const queryParts = [
+    entities.join(' '),
+    relations.map(relation => RELATION_QUERY_TERMS[relation] || relation.replace(/_/g, ' ')).join(' '),
+    requestedFields.map(field => field.replace(/([a-z])([A-Z])/g, '$1 $2')).join(' '),
+    domain && domain !== 'general' ? domain.replace(/_/g, ' ') : '',
+    intent && intent !== 'ask_general' ? intent.replace(/_/g, ' ') : '',
+    temporalConstraint.period || '',
+    constraintTerms(constraints).join(' ')
+  ];
+
+  const planQuery = unique(queryParts.join(' ').split(/\s+/)).filter(Boolean).join(' ')
+    || semanticFrame.normalizedQuery
+    || semanticFrame.rawQuery
+    || '';
+
+  return {
+    sourceScope,
+    domain,
+    intent,
+    entities,
+    entitySpecs,
+    requestedFields,
+    temporalScope: {
+      mode: temporalMode,
+      targetPeriod: temporalConstraint.period || null,
+      allowHistorical: isHistorical
+    },
+    locationScope,
+    authorityRequirements,
+    governanceRequirements,
+    historicalPolicy,
+    fallbackPolicy,
+    planQuery
+  };
+}
+
 function evaluatePlannedCandidate(item, plan) {
+  if (plan && (plan.governanceRequirements || plan.temporalScope)) {
+    const hasGovMetadata = Boolean(item && (item.governanceStatus || item.status || item.validUntil || item.validTo || item.governanceMetadata || (item.metadata && (item.metadata.status || item.metadata.authorityTier))));
+    if (hasGovMetadata) {
+      const isGovAllowed = isChunkGovernanceAllowed(item, {
+        allowHistorical: Boolean(plan.temporalScope?.allowHistorical),
+        query: plan.planQuery || (plan.temporalScope?.targetPeriod ? `tahun ${plan.temporalScope.targetPeriod}` : '')
+      });
+      if (!isGovAllowed) {
+        return {
+          compatible: false,
+          rejected: true,
+          reason: 'governance_violation',
+          entityScore: 0,
+          relationScore: 0,
+          fieldScore: 0,
+          domainScore: 0,
+          semanticScore: 0,
+          contractScore: 0,
+          fieldHits: [],
+          relationHits: [],
+          competingEntity: null
+        };
+      }
+    }
+  }
+
   const identity = [
     item && item.filename, item && item.sourceFile, item && item.source,
     item && item.title, item && item.id,
@@ -320,6 +444,7 @@ module.exports = {
   FIELD_SIGNALS,
   RELATION_SIGNALS,
   buildResolvedRetrievalPlan,
+  buildRetrievalPlanFromSemanticFrame,
   evaluatePlannedCandidate,
   rankPlannedCandidates
 };
