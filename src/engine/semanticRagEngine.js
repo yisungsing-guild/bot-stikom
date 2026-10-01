@@ -901,6 +901,7 @@ function hasStableFastLaneIntent(question) {
   const q = String(question || '').trim();
   if (!q) return true;
   if (isGreetingOnly(q)) return true;
+  if (/\b(?:online|offline|hybrid|daring|luring|tatap\s*muka)\b/i.test(q) && /\b(?:kuliah(?:nya)?|perkuliahan(?:nya)?|kelas(?:nya)?|pembelajaran(?:nya)?)\b/i.test(q)) return true;
   if (trySmallTalkAnswer(q)) return true;
   if (hasExplicitFeeQuestionSignal(q) && !/\b(?:visa|e\s*30\s*b|itas|kitas|sktt|izin\s+belajar|study\s+permit|mahasiswa\s+asing)\b/i.test(q)) return true;
   if (/\b(?:double\s*degree|dual\s*degree|gelar\s+ganda)\b/i.test(q) && !hasExplicitFeeQuestionSignal(q)) return true;
@@ -2531,7 +2532,7 @@ function inferContextTopicFromSession(sessionData) {
         ? (sessionData.state?.lastEntity || sessionData.conversationState?.lastEntity || sessionData.lastEntity)
         : null)
   );
-  if (String(stateDomain || '').toLowerCase() === 'academic'
+  if ((String(stateDomain || '').toLowerCase() === 'academic' && (!stateEntity || /^(?:wisuda|yudisium)$/i.test(String(stateEntity || '').trim())))
     || /^(?:wisuda|yudisium)$/i.test(String(stateEntity || '').trim())) {
     const ent = /^(?:wisuda|yudisium)$/i.test(String(stateEntity || '').trim())
       ? String(stateEntity).trim()
@@ -2811,7 +2812,7 @@ function resolveSemanticFollowupQuestion(question, options = {}) {
   } else if (/\b(?:susah|sulit|mudah|gampang|coding|ngoding|semester\s+awal)\b/i.test(q)) {
     resolved = `Tingkat kesulitan, kecocokan, dan gambaran belajar pada ${topic.label}`;
   } else if (/\b(?:online|offline|hybrid|daring|luring|tatap\s+muka)\b/i.test(q)) {
-    resolved = `Perkuliahan online atau offline untuk ${topic.label}`;
+    resolved = /\b(?:di|ke)\s+[a-z]+/i.test(original) ? `${original} untuk ${topic.label}` : `Perkuliahan online atau offline untuk ${topic.label}`;
   } else if (/\b(?:kelas\s*(?:malam|sabtu|karyawan|weekend)|jadwal\s+(?:per)?kuliah|waktu\s+(?:per)?kuliah)\b/i.test(q)) {
     resolved = `Jadwal dan waktu perkuliahan kelas malam atau sabtu untuk ${topic.label}`;
   } else if (/\b(?:bebas\s+(?:pake|pakai)|harus\s+izin|izin\s+dulu|akses(?:nya)?)\b/i.test(q)) {
@@ -17050,8 +17051,48 @@ function tryStudyModeAnswer(question, index, options = {}) {
 
   const priorEntity = options?.sessionState?.activeEntity || options?.conversationState?.activeEntity || options?.priorSessionOrState?.activeEntity;
   const priorText = String((typeof priorEntity === 'object' ? priorEntity?.canonical : priorEntity) || '');
+  const priorDomain = String(options?.sessionState?.activeDomain || options?.conversationState?.activeDomain || options?.priorSessionOrState?.activeDomain || '');
   const isS2 = /\b(?:s2|magister|master|pascasarjana)\b/i.test(q) || /\b(?:s2|magister|master|pascasarjana)\b/i.test(priorText);
+  const isUtb = /utb|universitas\s+teknologi\s+bandung/i.test(q) || /utb/i.test(priorText) || priorDomain === 'double_degree';
   const modalityRegex = /\b(?:online|offline|hybrid|daring|luring|tatap\s*muka|jarak\s*jauh)\b/i;
+
+  if (isS2 && /\bbandung\b/i.test(q)) {
+    return {
+      success: true,
+      answer: 'Untuk Program Pascasarjana (S2 Sistem Informasi) ITB STIKOM Bali, perkuliahan diselenggarakan di kampus ITB STIKOM Bali di Bali dengan sistem tatap muka dan daring (online) sesuai ketentuan kelas eksekutif. ITB STIKOM Bali tidak memiliki kampus cabang di Bandung.',
+      source: 'semantic-rag-study-modality',
+      frameSource: 'semantic-rag-study-modality',
+      contexts: [],
+      confidenceScore: 0.92,
+      confidenceTier: 'HIGH',
+      debug: {
+        routeStage: 'study-modality-location-resolved',
+        scope: 's2_postgraduate',
+        location: 'Bandung'
+      }
+    };
+  }
+
+  const isAmbiguousLocation = (options?.canonicalUnderstanding?.ambiguity?.isAmbiguous
+    || (/\bbandung\b/i.test(q) && !isS2 && !isUtb))
+    && !/double\s*degree|dual\s*degree|gelar\s*ganda/i.test(q);
+
+  if (isAmbiguousLocation) {
+    return {
+      success: true,
+      answer: 'Perkuliahan reguler ITB STIKOM Bali diselenggarakan di kampus Bali (Kampus Renon, Jimbaran, dan Abiansemal) dengan opsi tatap muka (offline) serta didukung pembelajaran daring (online) melalui platform resmi kampus. Di Bandung tidak terdapat kampus mandiri ITB STIKOM Bali; kegiatan perkuliahan di Bandung hanya terdapat pada Program Dual Degree Nasional dengan Universitas Teknologi Bandung (UTB), di mana pada semester 8 mahasiswa menempuh kuliah praktik offline selama 2 bulan di Bandung.',
+      source: 'semantic-rag-study-modality',
+      frameSource: 'semantic-rag-study-modality',
+      contexts: [],
+      confidenceScore: 0.92,
+      confidenceTier: 'HIGH',
+      debug: {
+        routeStage: 'study-modality-ambiguity-resolved',
+        isAmbiguous: true,
+        location: 'Bandung'
+      }
+    };
+  }
 
   const activeRows = trainingDbCache && Array.isArray(trainingDbCache.data) ? trainingDbCache.data : [];
   const semanticIndex = getCachedSemanticIndex();

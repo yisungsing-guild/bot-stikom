@@ -580,13 +580,13 @@ function resolveSourceDomainEntities(rawText) {
     addUnique(internationalPrograms, { canonical: partner, type: 'international_program', role: 'double_degree', scope: programScope, country, confidence: 0.93, source: 'canonical-source-entity' });
   }
   if (!internationalPrograms.some((entity) => String(entity.role || '') === 'double_degree')) {
-    if (/\b(?:dnui|dalian\s+neusoft|china|cina|tiongkok)\b/i.test(normalized)) {
+    if (/\b(?:dnui|dalian\s+neusoft(?:\s+university)?)\b/i.test(normalized)) {
       addUnique(internationalPrograms, { canonical: 'Double Degree DNUI', type: 'international_program', role: 'double_degree', scope: 'international', country: 'China', confidence: 0.91, source: 'canonical-source-entity' });
     }
-    if (/\b(?:help\s+university|help\b.*malaysia|help|malaysia)\b/i.test(normalized)) {
+    if (/\b(?:help\s+university)\b/i.test(normalized)) {
       addUnique(internationalPrograms, { canonical: 'Double Degree HELP University', type: 'international_program', role: 'double_degree', scope: 'international', country: 'Malaysia', confidence: 0.91, source: 'canonical-source-entity' });
     }
-    if (/\b(?:utb|universitas\s+teknologi\s+bandung|bandung)\b/i.test(normalized)) {
+    if (/\b(?:utb|universitas\s+teknologi\s+bandung)\b/i.test(normalized)) {
       addUnique(internationalPrograms, { canonical: 'Dual Degree UTB', type: 'international_program', role: 'double_degree', scope: 'national', country: 'Indonesia', confidence: 0.91, source: 'canonical-source-entity' });
     }
   }
@@ -658,7 +658,12 @@ function normalizeSlangTokens(input) {
     .replace(/\btitel\b/gi, 'gelar')
     .replace(/\bjmbarn\b/gi, 'jimbaran')
     .replace(/\bdr\b/gi, 'dari')
-    .replace(/\bbgt\b/gi, 'banget');
+    .replace(/\bbgt\b/gi, 'banget')
+    .replace(/\bonlen\b/gi, 'online')
+    .replace(/\boflen\b/gi, 'offline')
+    .replace(/\bofline\b/gi, 'offline')
+    .replace(/\bdaringnya\b/gi, 'daring')
+    .replace(/\bluringnya\b/gi, 'luring');
 }
 
 function extractExternalRelationConstraint(rawText) {
@@ -1106,7 +1111,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
     && /\b(?:aplikasi|platform|media|pakai\s+apa|menggunakan\s+apa|lewat\s+apa|via\s+apa|tools?|software)\b/i.test(q);
   const hasStudyModalityTerm = /\b(?:online|offline|hybrid|daring|luring|tatap\s+muka)\b/i.test(q)
     && (
-      /\b(?:kuliah|perkuliahan|kelas|pembelajaran|sistem\s+kuliah|metode\s+kuliah|opsi\s+kuliah|sistem|metode|opsi)\b/i.test(q)
+      /\b(?:kuliah(?:nya)?|perkuliahan(?:nya)?|kelas(?:nya)?|pembelajaran(?:nya)?|sistem\s+kuliah|metode\s+kuliah|opsi\s+kuliah|sistem|metode|opsi)\b/i.test(q)
       || /\b(?:kalau|jika|bagaimana|gimana|apakah|bisa|ada|nggak|bisa\s+nggak)\b/i.test(q)
       || Boolean(options && (options.sessionState || options.conversationState || options.priorSessionOrState))
     )
@@ -1210,8 +1215,8 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
   const hasAccreditation = /\b(?:akreditasi|akrediasi|ban\s*-?pt|lam\s*infokom|peringkat\s+akreditasi|sertifikat\s+akreditasi)\b/i.test(q);
   const hasDoubleDegreeSequence = (
     /\b(?:dnui|dalian\s+neusoft|double\s*degree|dual\s*degree)\b/i.test(q)
-    || (/\b(?:malaysia|china|dalian|bandung)\b/i.test(q) && /\b(?:bali|stikom|skema|tahun)\b/i.test(q))
     || (entities.internationalPrograms.length > 0 && /\b(?:skema|tahapan|tahun)\b/i.test(q))
+    || (/\b(?:utb|dnui|help)\b/i.test(q) && /\b(?:skema|tahun|tahapan)\b/i.test(q))
   ) && /\b(?:skema|tahapan|tahun\s+(?:ke-?\s*)?(?:1|2|3|4|pertama|kedua|ketiga|keempat|3|4)|berapa\s+tahun|bertahap|harus\s+ke|wajib\s+ke|pergi\s+ke|kuliah\s+di|onsite|online|offline)\b/i.test(q);
   // Institution-history semantic class — requires institution entity context before resolving subtype
   const hasInstitutionEntity = /\b(?:stikom|itb\s*stikom|kampus\s+(?:ini|stikom|itb)|institut\s+teknologi|itb)\b/i.test(q)
@@ -1385,7 +1390,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
     || /\b(?:double\s*degree|dual\s*degree|program\s+ganda|kuliah\s+ganda)\b/i.test(q);
   const isInternational = entities.internationalPrograms.length > 0 || isDoubleDegree;
   const hasInternationalProgramSchedule = isInternational && hasSchedule && !hasFee;
-  const asksInternationalProcedureSignal = /\b(?:syarat|persyaratan|seleksi(?:nya)?|perlu\s+apa|butuh\s+apa|dokumen|cara|alur|prosedur|langkah|tahapan|lewat\s+mana|kanal|channel|pengumuman|online|offline|mekanisme)\b/i.test(q)
+  const asksInternationalProcedureSignal = /\b(?:syarat|persyaratan|seleksi(?:nya)?|perlu\s+apa|butuh\s+apa|dokumen|cara|alur|prosedur|langkah|tahapan|lewat\s+mana|kanal|channel|pengumuman|mekanisme)\b/i.test(q)
     || (/\b(?:ikut|mengikuti|daftar|pendaftaran)\b/i.test(q) && !hasSchedule);
   const hasInternationalProgramProcedure = entities.internationalPrograms.length > 0
     && asksInternationalProcedureSignal
@@ -1438,7 +1443,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
   const doubleDegreeScope = /\b(?:nasional|national)\b/i.test(q) ? 'national'
     : (/\b(?:internasional|international|luar\s+negeri)\b/i.test(q) ? 'international'
       : (/\b(?:help|dnui|dalian|china|malaysia)\b/i.test(q) ? 'international'
-        : (/\b(?:utb|universitas\s+teknologi\s+bandung|bandung)\b/i.test(q) ? 'national' : null)));
+        : (/\b(?:utb|universitas\s+teknologi\s+bandung)\b/i.test(q) ? 'national' : null)));
   // Cross-domain comparison query
   const hasComparisonQuery = /\b(?:sama(?:kah)?\s+dengan|apakah\s+sama|beda(?:kah)?\s+dengan|dibandingkan|vs|versus|sama\s+atau\s+berbeda|apa\s+bedanya)\b/i.test(q)
     && /\b(?:jadwal|tanggal|gelombang|wisuda|yudisium|pmb|pendaftaran|akademik|dpp|ukt)\b/i.test(q);
@@ -1653,7 +1658,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
     answerExpectation = 'specific_fact_or_fallback';
   } else if (hasStudyModalityTerm) {
     primaryIntent = 'ask_delivery_mode';
-    primaryDomain = 'academic';
+    primaryDomain = isDoubleDegree ? 'double_degree' : 'academic';
     answerExpectation = 'specific_fact_or_fallback';
   } else if (hasOnlineLearningPlatform) {
     primaryIntent = 'ask_learning_platform';
@@ -1888,6 +1893,7 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
       programScope: doubleDegreeScope,
       geographicScope: doubleDegreeScope,
       locationIntent: hasLocationIntent,
+      studyLocation: (/\b(?:di|ke|dari)?\s*bandung\b/i.test(q)) ? 'Bandung' : null,
       physicalAttribute: hasPhysicalAttribute,
       comparisonTarget: hasAcademicLevelComparison ? 'academic_level' : (hasLegalDocumentVsPmbComparison ? 'institution_legal_document_vs_pmb_schedule' : (hasInternationalProgramComparison ? 'international_program' : (hasFeeComponentComparison ? 'fee_component' : (hasAcademicCreditComparison ? 'academic_credit' : (hasEntityTypeComparison ? 'entity_type' : ((hasFeeComparison || /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|vs|versus)\b/i.test(q)) ? 'program' : null)))))),
       academicTopic: academicTopic
@@ -1940,7 +1946,23 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
     },
     questionType,
     answerExpectation,
-    ambiguity: []
+    ambiguity: (() => {
+      const hasBandungMention = /\bbandung\b/i.test(q);
+      const isLocationProgramAmbiguity = hasBandungMention
+        && entities.programs.length === 0
+        && !entities.internationalPrograms.some(e => /utb|universitas\s+teknologi\s+bandung/i.test(e.canonical || ''))
+        && !/\b(?:double\s*degree|dual\s*degree|program\s+ganda|gelar\s+ganda|dua\s+gelar)\b/i.test(q)
+        && !(options && (options.sessionState || options.conversationState || options.priorSessionOrState));
+      return isLocationProgramAmbiguity ? {
+        isAmbiguous: true,
+        type: 'location_program_overlap',
+        location: 'Bandung',
+        competingInterpretations: [
+          { domain: 'academic', intent: 'ask_delivery_mode', description: 'Metode perkuliahan reguler ITB STIKOM Bali di lokasi Bandung' },
+          { domain: 'double_degree', intent: 'ask_delivery_mode', entity: 'Dual Degree UTB', description: 'Program Dual Degree UTB (praktik offline 2 bulan di Bandung)' }
+        ]
+      } : { isAmbiguous: false };
+    })()
   };
 }
 
@@ -2093,6 +2115,9 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
   if ((classification && classification.constraints && classification.constraints.studyModality) || /\b(?:online|offline|hybrid|daring|luring|tatap\s+muka)\b/i.test(q)) {
     fields.add('deliveryMode');
     fields.add('studyModality');
+  }
+  if (/\b(?:di|ke)\s+(?:bandung|bali|malaysia|china|dalian)\b/i.test(q) || (/\b(?:kuliah(?:nya)?|perkuliahan(?:nya)?|semester|praktik|belajar)\b/i.test(q) && /\b(?:bandung|bali|malaysia|china|dalian)\b/i.test(q))) {
+    fields.add('studyLocation');
   }
 
   // Comparison
@@ -2871,7 +2896,7 @@ function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
         } else if (priorState.activeDomain === 'international_program' && /\b(?:kerja|karier|karir|peluang\s+kerja)\b/i.test(normalizedQuery)) {
           classification.intent = { primary: 'ask_career_service', secondary: [], confidence: 0.82 };
           classification.constraints.relationType = 'career_in_japan';
-        } else if (priorState.activeDomain === 'double_degree' && /\b(?:skema|tahun|berapa\s+tahun|bali|malaysia|china|dnui|help)\b/i.test(normalizedQuery)) {
+        } else if (priorState.activeDomain === 'double_degree' && /\b(?:skema|tahun|berapa\s+tahun|bali|malaysia|china|dnui|help|bandung|utb)\b/i.test(normalizedQuery)) {
           classification.intent = { primary: 'ask_schedule', secondary: [], confidence: 0.82 };
           classification.constraints.relationType = 'study_timeline';
         } else if (isRequirementsOrProcedure) {
@@ -2888,6 +2913,8 @@ function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
       if (!/\b(?:pmb|camaba|mahasiswa\s+baru)\b/i.test(normalizedQuery)) {
         classification.domain = { primary: priorState.activeDomain, confidence: 0.82 };
       }
+    } else if (priorState.activeDomain === 'double_degree' && classification.domain && classification.domain.primary === 'academic' && (classification.constraints && classification.constraints.studyModality) && /\b(?:bandung|utb|skema|praktik|online|offline)\b/i.test(normalizedQuery)) {
+      classification.domain = { primary: 'double_degree', confidence: 0.85 };
     }
   }
   if (!isSecurityOrSystemProbe) {

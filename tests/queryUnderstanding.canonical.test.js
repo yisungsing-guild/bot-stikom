@@ -329,5 +329,87 @@ describe('Indonesian morphology and requested-field object precedence', () => {
         expect(canonical.constraints.studyModality).toBe(true);
       }).not.toThrow();
     });
+
+    describe('Phase 1.1 Semantic Precedence Invariants', () => {
+      test('1. "kuliahnya online/offline?" maps to delivery mode without entity hijacking', () => {
+        const canonical = buildCanonicalQueryUnderstanding('kuliahnya online/offline?');
+        expect(canonical.domain.primary).toBe('academic');
+        expect(canonical.intent.primary).toBe('ask_delivery_mode');
+        expect(canonical.constraints.studyModality).toBe(true);
+        expect(canonical.entities.internationalPrograms).toHaveLength(0);
+      });
+
+      test('2. "online/daring menggunakan aplikasi apa?" maps to learning platform', () => {
+        const canonical = buildCanonicalQueryUnderstanding('online/daring menggunakan aplikasi apa?');
+        expect(canonical.domain.primary).toBe('academic');
+        expect(canonical.intent.primary).toBe('ask_learning_platform');
+        expect(canonical.requestedFields).toContain('application');
+      });
+
+      test('3. "kuliahnya online/offline di Bandung?" is NOT hijacked into double_degree or registration procedure', () => {
+        const canonical = buildCanonicalQueryUnderstanding('kuliahnya online/offline di Bandung?');
+        expect(canonical.domain.primary).toBe('academic');
+        expect(canonical.intent.primary).toBe('ask_delivery_mode');
+        expect(canonical.entities.internationalPrograms).toHaveLength(0);
+        expect(canonical.constraints.studyLocation).toBe('Bandung');
+        expect(canonical.constraints.studyModality).toBe(true);
+      });
+
+      test('4. "Double Degree UTB di Bandung bagaimana?" correctly resolves double_degree with partner entity', () => {
+        const canonical = buildCanonicalQueryUnderstanding('Double Degree UTB di Bandung bagaimana?');
+        expect(canonical.domain.primary).toBe('double_degree');
+        expect(canonical.entities.internationalPrograms.map(e => e.canonical)).toContain('Dual Degree UTB');
+      });
+
+      test('5. "semester 8 kuliah di Bandung?" extracts studyLocation requestedField and constraint', () => {
+        const canonical = buildCanonicalQueryUnderstanding('semester 8 kuliah di Bandung?');
+        expect(canonical.requestedFields).toContain('studyLocation');
+        expect(canonical.constraints.studyLocation).toBe('Bandung');
+      });
+
+      test('6. S2 SI context + "kuliahnya online/offline di Bandung?" preserves S2 SI context and academic domain', () => {
+        const canonical = buildCanonicalQueryUnderstanding('kuliahnya online/offline di Bandung?', {
+          sessionState: { activeDomain: 'academic', activeEntity: { canonical: 'S2 Sistem Informasi', type: 'program' }, updatedAt: new Date().toISOString(), isVerified: true, promotable: true, legacyUnverified: false }
+        });
+        expect(canonical.domain.primary).toBe('academic');
+        expect(canonical.intent.primary).toBe('ask_delivery_mode');
+        expect(canonical.entities.programs.map(e => e.canonical)).toContain('S2 Sistem Informasi');
+        expect(canonical.ambiguity.isAmbiguous).toBe(false);
+      });
+
+      test('7. Double Degree context + "kuliahnya online/offline di Bandung?" preserves Double Degree domain and inherits entity', () => {
+        const canonical = buildCanonicalQueryUnderstanding('kuliahnya online/offline di Bandung?', {
+          sessionState: { activeDomain: 'double_degree', activeEntity: { canonical: 'Dual Degree UTB', type: 'international_program' }, updatedAt: new Date().toISOString(), isVerified: true, promotable: true, legacyUnverified: false }
+        });
+        expect(canonical.domain.primary).toBe('double_degree');
+        expect(canonical.intent.primary).toBe('ask_delivery_mode');
+        expect(canonical.entities.internationalPrograms.map(e => e.canonical)).toContain('Dual Degree UTB');
+        expect(canonical.ambiguity.isAmbiguous).toBe(false);
+      });
+
+      test('8. Standalone query without session context is explicitly represented as ambiguous', () => {
+        const canonical = buildCanonicalQueryUnderstanding('kuliahnya online/offline di Bandung?');
+        expect(canonical.ambiguity.isAmbiguous).toBe(true);
+        expect(canonical.ambiguity.type).toBe('location_program_overlap');
+        expect(canonical.ambiguity.location).toBe('Bandung');
+        expect(canonical.ambiguity.competingInterpretations).toHaveLength(2);
+      });
+
+      test('9. Typo variants "onlen" and "oflen" normalize cleanly and resolve to delivery mode', () => {
+        const canonical = buildCanonicalQueryUnderstanding('kuliah onlen atau oflen di bandung?');
+        expect(canonical.domain.primary).toBe('academic');
+        expect(canonical.intent.primary).toBe('ask_delivery_mode');
+        expect(canonical.constraints.studyModality).toBe(true);
+        expect(canonical.constraints.studyLocation).toBe('Bandung');
+      });
+
+      test('10. Paraphrase variant "apakah sistem pembelajarannya tatap muka atau jarak jauh jika di Bandung?" resolves delivery mode', () => {
+        const canonical = buildCanonicalQueryUnderstanding('apakah sistem pembelajarannya tatap muka atau jarak jauh jika di Bandung?');
+        expect(canonical.domain.primary).toBe('academic');
+        expect(canonical.intent.primary).toBe('ask_delivery_mode');
+        expect(canonical.constraints.studyModality).toBe(true);
+        expect(canonical.constraints.studyLocation).toBe('Bandung');
+      });
+    });
   });
 });
