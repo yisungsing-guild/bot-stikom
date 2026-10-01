@@ -23657,6 +23657,22 @@ async function querySemanticRag(question, options = {}) {
         result.debug.retrieval_channel = options.__canaryTelemetry.retrieval_channel;
       }
     }
+
+    // Phase 4A: Plan-Driven Retrieval Shadow Observer (Non-blocking organic execution)
+    try {
+      const { observePlanDrivenShadow } = require('./shadowIntegration');
+      if (typeof observePlanDrivenShadow === 'function') {
+        const shadowPromise = observePlanDrivenShadow(question, result, options);
+        if (options && options.__syncShadow && shadowPromise) {
+          const shadowRecord = await shadowPromise;
+          if (result.debug && typeof result.debug === 'object') {
+            result.debug.planDrivenShadow = shadowRecord;
+          }
+        }
+      }
+    } catch (_) {
+      // Complete isolation: shadow observation failure NEVER impacts legacy result
+    }
   }
   return result;
 }
@@ -23849,5 +23865,13 @@ module.exports = {
   buildAcademicScheduleSummaryAnswer,
   selectAcademicDocumentSection,
   selectAcademicDocumentSectionDetailed,
-  tryDirectAcademicAdminUploadedSectionAnswer
+  tryDirectAcademicAdminUploadedSectionAnswer,
+  observePlanDrivenShadow: (...args) => {
+    try {
+      return require('./shadowIntegration').observePlanDrivenShadow(...args);
+    } catch (_) { return null; }
+  },
+  runShadowEvaluation: (...args) => {
+    return require('./shadowIntegration').runShadowEvaluation(...args);
+  }
 };

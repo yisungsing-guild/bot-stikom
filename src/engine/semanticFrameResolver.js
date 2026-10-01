@@ -216,6 +216,7 @@ function resolveAuthoritativeFields(rawText, rawFields, numericSemantics) {
  * @returns {object} Frozen EffectiveSemanticFrame
  */
 function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
+  options = options || {};
   const raw = String(rawQuery || '').trim();
   const normalizedInfo = normalizeUserQuery(raw);
   const normalizedQuery = normalizedInfo?.normalizedText || raw.toLowerCase();
