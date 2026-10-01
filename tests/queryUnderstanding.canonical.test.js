@@ -304,5 +304,30 @@ describe('Indonesian morphology and requested-field object precedence', () => {
       expect(canonical.domain.primary).toBe('fee');
       expect(canonical.requestedFields).toContain('amount');
     });
+
+    test('Phase 1: Modality query "online/daring menggunakan aplikasi apa?" does not crash with ReferenceError', () => {
+      expect(() => {
+        const canonical = buildCanonicalQueryUnderstanding('online/daring menggunakan aplikasi apa?');
+        expect(canonical).toBeDefined();
+        expect(canonical.intent.primary).toBe('ask_learning_platform');
+      }).not.toThrow();
+    });
+
+    test('Phase 1: Modality query "kuliahnya online/offline di Bandung?" does not crash with ReferenceError', () => {
+      expect(() => {
+        const canonical = buildCanonicalQueryUnderstanding('kuliahnya online/offline di Bandung?');
+        expect(canonical).toBeDefined();
+      }).not.toThrow();
+    });
+
+    test('Phase 1: Modality follow-up query inherits session context safely without throwing', () => {
+      expect(() => {
+        const canonical = buildCanonicalQueryUnderstanding('kuliahnya online atau offline?', {
+          sessionState: { program: 'Sistem Informasi', learningModality: 'HYBRID' }
+        });
+        expect(canonical).toBeDefined();
+        expect(canonical.constraints.studyModality).toBe(true);
+      }).not.toThrow();
+    });
   });
 });

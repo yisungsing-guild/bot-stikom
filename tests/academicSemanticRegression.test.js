@@ -4,7 +4,7 @@ const { buildCanonicalQueryUnderstanding, extractNegativeSemantics } = require('
 const { resolveContextAuthority, CONTEXT_TRANSITIONS } = require('../src/engine/contextAuthority');
 const { buildTurnConversationState } = require('../src/engine/conversationStateEngine');
 const { resolveEffectiveSemanticFrame } = require('../src/engine/semanticFrameResolver');
-const { querySemanticRag, invalidateTrainingDbCache } = require('../src/engine/semanticRagEngine');
+const { querySemanticRag, invalidateTrainingDbCache, selectAcademicDocumentSectionDetailed, buildAcademicScheduleSummaryAnswer } = require('../src/engine/semanticRagEngine');
 const prisma = require('../src/db');
 
 const MOCK_ACADEMIC_INDEX = [
@@ -1558,6 +1558,89 @@ describe('25-Scenario Academic Semantic Regression Suite (Wisuda / Yudisium / PM
         invalidateTrainingDbCache();
         const qFresh = await querySemanticRag('Apa pedoman untuk menyusun Tugas Akhir?');
         expect(qFresh.contexts?.[0]?.text).toContain('TERBARU EDISI REVISI TOTAL 2026');
+      });
+    });
+
+    describe('Phase 1 Remediation: Top-K Document Selection & Yudisium Invariants', () => {
+      test('Rescue #1: Rank #2 document rescues query when rank #1 document lacks requested schedule section', () => {
+        const docGeneral = {
+          filename: 'panduan_umum_akademik.pdf',
+          documentId: 'doc_panduan',
+          authority: 'academic_handbook',
+          text: 'Panduan Umum Mahasiswa\nMahasiswa wajib mengikuti yudisium setelah menyelesaikan seluruh mata kuliah.'
+        };
+        const docSchedule = {
+          filename: 'pengumuman_yudisium_resmi.pdf',
+          documentId: 'doc_pengumuman',
+          authority: 'academic_announcement',
+          academicPeriod: '2025/2026 Genap',
+          text: 'Pengumuman Yudisium\nPelaksanaan Acara\nHari/Tanggal: Jumat, 28 Agustus 2026\nPukul: 09:00 WITA\nTempat: Aula ITB STIKOM Bali'
+        };
+
+        const evidence = [
+          { source: docGeneral.filename, text: docGeneral.text, metadata: docGeneral },
+          { source: docSchedule.filename, text: docSchedule.text, metadata: docSchedule }
+        ];
+
+        const sec = selectAcademicDocumentSectionDetailed('Kapan yudisium?', evidence, 'schedule');
+        expect(sec).toBeDefined();
+        expect(sec.filename).toBe('pengumuman_yudisium_resmi.pdf');
+        expect(sec.text).toContain('28 Agustus 2026');
+      });
+
+      test('Document Boundary Invariant: Sections are never combined across different candidate documents', () => {
+        const docA = {
+          filename: 'doc_A.pdf',
+          documentId: 'docA',
+          authority: 'academic_announcement',
+          text: 'Pengumuman Yudisium A\nPelaksanaan Acara\nHari/Tanggal: Jumat, 28 Agustus 2026'
+        };
+        const docB = {
+          filename: 'doc_B.pdf',
+          documentId: 'docB',
+          authority: 'academic_handbook',
+          text: 'Panduan B\nBatas Akhir Pendaftaran\nHari/Tanggal: 10 September 2026'
+        };
+
+        const evidence = [
+          { source: docA.filename, text: docA.text, metadata: docA },
+          { source: docB.filename, text: docB.text, metadata: docB }
+        ];
+
+        const sec = selectAcademicDocumentSectionDetailed('Kapan yudisium?', evidence, 'schedule');
+        expect(sec.filename).toBe('doc_A.pdf');
+        expect(sec.text).not.toContain('10 September 2026');
+        expect(sec.text).not.toContain('Panduan B');
+      });
+
+      test('Yudisium Grounding Invariant: "Kapan yudisium?" rejects historical founding and organization profile data without contamination', () => {
+        const docHistorical = {
+          filename: 'profil_sejarah.pdf',
+          documentId: 'doc_hist',
+          authority: 'academic_handbook',
+          text: 'STIKOM Bali didirikan pada 20 Mei 2001 oleh Yayasan Widya Dharma Shanti di Denpasar. UKM Tari PRAGINA didirikan untuk seni tari.'
+        };
+
+        const evidence = [
+          { source: docHistorical.filename, text: docHistorical.text, metadata: docHistorical }
+        ];
+
+        const sec = selectAcademicDocumentSectionDetailed('Kapan yudisium?', evidence, 'schedule');
+        expect(sec).toBeNull();
+
+        const ans = buildAcademicScheduleSummaryAnswer('Kapan yudisium?', evidence);
+        expect(ans).toBe('');
+        expect(ans).not.toMatch(/20\s+Mei\s+2001/i);
+        expect(ans).not.toMatch(/Yayasan\s+Widya\s+Dharma/i);
+        expect(ans).not.toMatch(/PRAGINA/i);
+      });
+
+      test('Fail-Closed Invariant: Safe fail-closed when no valid academic evidence exists', () => {
+        const sec = selectAcademicDocumentSectionDetailed('Kapan yudisium?', [], 'schedule');
+        expect(sec).toBeFalsy();
+
+        const ans = buildAcademicScheduleSummaryAnswer('Kapan yudisium?', []);
+        expect(ans).toBe('');
       });
     });
   });

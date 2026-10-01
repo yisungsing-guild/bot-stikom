@@ -4378,11 +4378,13 @@ function selectAcademicDocumentSectionDetailed(question, evidence, mode = 'sched
   const asksThesisDefense = /\b(?:sidang|tugas\s+akhir|proyek\s+akhir|skripsi|tesis)\b/i.test(q);
 
   let best = null;
-  const candidateDocs = docs.slice(0, 1);
+  const TOP_K_ACADEMIC_DOCS = Math.min(docs.length, 3);
+  const candidateDocs = docs.slice(0, TOP_K_ACADEMIC_DOCS);
 
   for (const doc of candidateDocs) {
     const docText = getAuthoritativeDocumentText(doc);
     const sections = splitAcademicDocumentSections(docText);
+    let docBest = null;
 
     for (const section of sections) {
       const hay = normalizeAcademicAdminQueryText(`${section.title}\n${section.text}`);
@@ -4431,8 +4433,8 @@ function selectAcademicDocumentSectionDetailed(question, evidence, mode = 'sched
       if (/\b(?:didirikan\s+pada|yayasan\s+widya\s+dharma\s+shanti|20\s+mei\s+2001)\b/i.test(hay)) score -= 50;
       if (/\b(?:ukm\s+tari|pragina|teuku\s+umar|bramara\s+gita)\b/i.test(hay)) score -= 50;
 
-      if (score > 0 && (!best || score > best.score)) {
-        best = {
+      if (score > 0 && (!docBest || score > docBest.score)) {
+        docBest = {
           score,
           section: {
             ...section,
@@ -4442,6 +4444,25 @@ function selectAcademicDocumentSectionDetailed(question, evidence, mode = 'sched
             academicPeriod: doc.academicPeriod || extractDocumentAcademicPeriod(docText, doc.filename)
           }
         };
+      }
+    }
+
+    if (docBest && docBest.section) {
+      const secTitle = docBest.section.title || '';
+      const secHay = normalizeAcademicAdminQueryText(`${secTitle}\n${docBest.section.text}`);
+      const isFieldCompatible = wantsRequirement
+        ? /\b(?:persyaratan|syarat|ketentuan|dokumen|berkas)\b/i.test(secTitle) || /\b(?:syarat|persyaratan)\b/i.test(secHay)
+        : (wantsRegistration
+          ? (/\b(?:pendaftaran|registrasi|batas)\b/i.test(secTitle) || Boolean(extractCleanScheduleDateField(docBest.section.text)))
+          : (wantsPelaksanaan
+            ? (/\b(?:pelaksanaan|acara)\b/i.test(secTitle) || Boolean(extractCleanScheduleDateField(docBest.section.text)))
+            : true));
+
+      if (isFieldCompatible) {
+        best = docBest;
+        break;
+      } else if (!best) {
+        best = docBest;
       }
     }
   }
@@ -4652,7 +4673,8 @@ function buildAcademicScheduleSummaryAnswer(question, selectedEvidence, options 
 
   // General Schedule slot handling: combine event execution + registration deadline from the SAME authoritative document
   if (isGeneralSchedule) {
-    for (const doc of sortedDocs.slice(0, 1)) {
+    const TOP_K_GENERAL_DOCS = Math.min(sortedDocs.length, 3);
+    for (const doc of sortedDocs.slice(0, TOP_K_GENERAL_DOCS)) {
       const docText = getAuthoritativeDocumentText(doc);
       const allSections = splitAcademicDocumentSections(docText);
 

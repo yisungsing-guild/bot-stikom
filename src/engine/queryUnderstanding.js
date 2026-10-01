@@ -988,7 +988,7 @@ function extractStructuredRelation(q, entities) {
   return null;
 }
 
-function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal) {
+function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, options = {}) {
   const qRaw = String(normalizedQuery || rawQuery || '').toLowerCase();
   const qFull = normalizeSlangTokens(qRaw);
   const negativeSemantics = extractNegativeSemantics(rawQuery || normalizedQuery);
@@ -2763,7 +2763,7 @@ function buildCanonicalQueryUnderstanding(rawQuery, options = {}) {
     unknown: []
   };
   applyExplicitEntityCorrection(raw, entities, options);
-  const classification = classifyIntentDomain(raw, normalizedQuery, entities, temporal);
+  const classification = classifyIntentDomain(raw, normalizedQuery, entities, temporal, options);
   if (!(classification.domain && classification.domain.primary === 'student_organization')) entities.interestProfiles = [];
   if (classification.constraints) {
     classification.constraints.interestProfiles = (entities.interestProfiles || []).map(profile => ({ key: profile.key, label: profile.label, matchedTerms: profile.matchedTerms || [] }));
