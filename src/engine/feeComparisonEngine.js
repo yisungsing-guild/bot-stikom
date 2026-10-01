@@ -938,6 +938,20 @@ function tryProgramListAnswer(question) {
 
 const CAREER_PROFILES = [
   {
+    key: 'ai',
+    label: 'Artificial Intelligence (AI) / Machine Learning',
+    re: /\b(ai\b|artificial\s+intelligence|kecerdasan\s+buatan|machine\s+learning|deep\s+learning|data\s+science|nlp|computer\s+vision)\b/,
+    primary: 'ti',
+    alternative: ['si', 'sk'],
+    fit: {
+      ti: { level: 'utama', text: 'Teknologi Informasi paling cocok untuk pengembangan AI dan Machine Learning karena fokus kurikulumnya pada pemrograman lanjut, algoritma cerdas, cloud computing, dan integrasi perangkat lunak.' },
+      si: { level: 'alternatif data & sistem', text: 'Sistem Informasi sangat mendukung dari sisi Data Science, analitik data, dan pemanfaatan sistem cerdas untuk kebutuhan organisasi.' },
+      sk: { level: 'alternatif perangkat keras cerdas', text: 'Sistem Komputer cocok jika tertarik pada implementasi AI di bidang IoT, edge computing, robotika, dan perangkat cerdas terintegrasi.' },
+      bd: { level: 'pendukung bisnis digital', text: 'Bisnis Digital memanfaatkan analitik data dan AI untuk strategi pertumbuhan bisnis, tetapi bukan fokus utama riset teknis model AI.' },
+      mi: { level: 'dasar pemrograman', text: 'Manajemen Informatika memberikan dasar praktis pemrograman dan pengelolaan database yang dapat menjadi modal awal.' }
+    }
+  },
+  {
     key: 'data',
     label: 'data analyst / analisis data',
     re: /\b(mengolah\s+data|olah\s+data|analisis\s+data|menganalisa\s+data|menganalisis\s+data|data\s+analyst|data\s+analis|business\s+intelligence|bi\b|dashboard|basis\s+data|database|sql|analytics|analitik)\b/,
@@ -1073,15 +1087,15 @@ function tryProgramRecommendationAnswer(question, index = null, options = {}) {
   }
   const centralFitAnswer = buildProgramFitAnswer(question);
 
-  const asksRecommendation = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|jurusan\s+yang\s+mana|prodi\s+yang\s+mana|program\s+yang\s+mana|masuk\s+jurusan\s+apa|ambil\s+jurusan\s+apa)\b/.test(q);
-  const hasCareerGoal = /\b(ingin|mau|pengen|nanti|kerja|bekerja|karir|karier|perusahaan|menjadi|jadi|minat|hobi|hobby|suka|senang|takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert|menggambar|gambar|ilustrasi|desain|dkv|visual|sosmed|sosial\s+media|social\s+media|tiktok|live|konten|content)\b/.test(q);
+  const asksRecommendation = /\b(sebaiknya|cocok|cocoknya|sesuai|rekomendasi|saran|sarankan|pilih|mengambil|ambil|harus\s+masuk|masuk|jurusan\s+yang\s+mana|prodi\s+yang\s+mana|program\s+yang\s+mana|masuk\s+jurusan\s+apa|ambil\s+jurusan\s+apa|masuk\s+prodi\s+apa|di\s+prodi\s+apa(?:kah)?)\b/.test(q);
+  const hasCareerGoal = /\b(ingin|mau|pengen|nanti|kerja|bekerja|karir|karier|perusahaan|menjadi|jadi|tertarik|minat|hobi|hobby|suka|senang|takut|khawatir|bingung|ragu|introvert|ekstrovert|extrovert|menggambar|gambar|ilustrasi|desain|dkv|visual|sosmed|sosial\s+media|social\s+media|tiktok|live|konten|content|ai\b|artificial\s+intelligence|kecerdasan\s+buatan)\b/.test(q);
   const asksMajor = /\b(jurusan|prodi|program\s+studi|kuliah)\b/.test(q);
 
   const dataInterest = /\b(mengolah\s+data|olah\s+data|analisis\s+data|menganalisa\s+data|menganalisis\s+data|data\s+analyst|data\s+analis|business\s+intelligence|bi\b|dashboard|basis\s+data|database|sql|analytics|analitik)\b/.test(q);
   const codingInterest = /\b(coding|ngoding|pemrograman|programmer|software|developer|aplikasi|backend|frontend|data\s+engineer|data\s+engineering)\b/.test(q);
   const businessInterest = /\b(bisnis|marketing|marketer|digital\s+marketer|pemasaran|jualan|e-commerce|marketplace|wirausaha|entrepreneur|konten|content|sosmed|sosial\s+media|social\s+media|tiktok|live\s+(?:di\s+)?tiktok|creator|influencer|analisis\s+pasar|riset\s+pasar)\b/.test(q);
   const hardwareInterest = /\b(hardware|perangkat\s+keras|iot|embedded|mikrokontroler|jaringan|network|robot|robotik|merakit|rakit\s+pc|komputer\s+rakitan)\b/.test(q);
-  const hasStrongInterestSignal = dataInterest || codingInterest || businessInterest || hardwareInterest || centralFitAnswer;
+  const hasStrongInterestSignal = dataInterest || codingInterest || businessInterest || hardwareInterest || centralFitAnswer || Boolean(detectCareerProfile(question));
   const mentionedPrograms = detectMentionedPrograms(question);
   const asksProgramOutcome = mentionedPrograms.length === 1
     && /\b(cocoknya|nantinya|lulusannya?|jurusan|prodi|program\s+studi)\b/.test(q)

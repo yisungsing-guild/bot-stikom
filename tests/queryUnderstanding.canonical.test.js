@@ -1,7 +1,9 @@
 const {
   buildCanonicalQueryUnderstanding,
   resolveProgramEntities,
-  buildTemporalUnderstanding
+  buildTemporalUnderstanding,
+  classifyKnowledgeAvailability,
+  KNOWLEDGE_AVAILABILITY
 } = require('../src/engine/queryUnderstanding');
 
 describe('canonical query understanding', () => {
@@ -235,5 +237,72 @@ describe('Indonesian morphology and requested-field object precedence', () => {
 
     expect(contractFor('apa itu data?').intent).not.toBe('ask_program_recommendation');
     expect(contractFor('Program mana yang paling murah?').intent).not.toBe('ask_program_recommendation');
+  });
+
+  describe('Knowledge Coverage Invariant: Availability Classification', () => {
+    test('classifies FOUND when evidence is present and verified', () => {
+      const status = classifyKnowledgeAvailability({
+        evidenceChunks: [{ source: 'doc.md', text: 'Biaya S2 SI Rp 10.000.000' }],
+        governanceBlocked: false,
+        retrievalDefect: false
+      });
+      expect(status).toBe(KNOWLEDGE_AVAILABILITY.FOUND);
+    });
+
+    test('classifies NOT_FOUND (honest data gap) when evidence is genuinely missing without defect', () => {
+      const status = classifyKnowledgeAvailability({
+        evidenceChunks: [],
+        governanceBlocked: false,
+        retrievalDefect: false
+      });
+      expect(status).toBe(KNOWLEDGE_AVAILABILITY.NOT_FOUND);
+    });
+
+    test('classifies RETRIEVAL_DEFECT when failure is caused by indexing or matching defect', () => {
+      const status = classifyKnowledgeAvailability({
+        evidenceChunks: [],
+        retrievalDefect: true
+      });
+      expect(status).toBe(KNOWLEDGE_AVAILABILITY.RETRIEVAL_DEFECT);
+    });
+
+    test('classifies GOVERNANCE_BLOCKED when evidence exists but blocked by policy', () => {
+      const status = classifyKnowledgeAvailability({
+        evidenceChunks: [{ source: 'doc.md', text: 'evidence' }],
+        governanceBlocked: true
+      });
+      expect(status).toBe(KNOWLEDGE_AVAILABILITY.GOVERNANCE_BLOCKED);
+    });
+  });
+
+  describe('Knowledge Coverage Invariant: Semantic Resolution & Modality Intent', () => {
+    test('does not hallucinate "Apakah Saya Harus Masuk" as unsupported program entity', () => {
+      const canonical = buildCanonicalQueryUnderstanding('Jika saya tertarik dengan AI, di prodi apakah saya harus masuk?');
+      const entities = (canonical.entities && canonical.entities.programs) || [];
+      const hasBogus = entities.some(e => /apakah\s+saya\s+harus\s+masuk/i.test(e.canonical || ''));
+      expect(hasBogus).toBe(false);
+      expect(canonical.intent.primary).toBe('ask_program_recommendation');
+    });
+
+    test('classifies study modality query as delivery mode and not curriculum', () => {
+      const canonical = buildCanonicalQueryUnderstanding('Perkuliahan S2 SI online/offline?');
+      expect(canonical.intent.primary).toBe('ask_delivery_mode');
+      expect(canonical.constraints.requestedField).toBe('deliveryMode');
+      expect(canonical.constraints.studyModality).toBe(true);
+    });
+
+    test('classifies follow-up modality query as deliveryMode', () => {
+      const canonical = buildCanonicalQueryUnderstanding('Kalau online bagaimana?');
+      expect(canonical.intent.primary).toBe('ask_delivery_mode');
+      expect(canonical.constraints.requestedField).toBe('deliveryMode');
+      expect(canonical.constraints.studyModality).toBe(true);
+    });
+
+    test('correctly handles fee morphology "biayanya" without hijacking into curriculum focus', () => {
+      const canonical = buildCanonicalQueryUnderstanding('Kalau mau ambil Magister Sistem Informasi, biayanya berapa?');
+      expect(canonical.intent.primary).toBe('ask_fee');
+      expect(canonical.domain.primary).toBe('fee');
+      expect(canonical.requestedFields).toContain('amount');
+    });
   });
 });

@@ -752,6 +752,14 @@ class FileParser {
         logger.warn({ err: prepErr && prepErr.message ? prepErr.message : String(prepErr), trainingId: training.id }, '[KnowledgePrep] preparation failed after upload');
       }
 
+      try {
+        const { invalidateTrainingDbCache } = require('./semanticRagEngine');
+        if (typeof invalidateTrainingDbCache === 'function') {
+          invalidateTrainingDbCache();
+        }
+      } catch (cacheErr) {
+        logger.warn({ err: cacheErr && cacheErr.message ? cacheErr.message : String(cacheErr), trainingId: training.id }, '[FileParser] cache invalidation failed');
+      }
       logger.info({ trainingId: training.id }, '[FileParser] File parsed and stored');
       return {
         success: true,

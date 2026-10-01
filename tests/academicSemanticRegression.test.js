@@ -4,7 +4,8 @@ const { buildCanonicalQueryUnderstanding, extractNegativeSemantics } = require('
 const { resolveContextAuthority, CONTEXT_TRANSITIONS } = require('../src/engine/contextAuthority');
 const { buildTurnConversationState } = require('../src/engine/conversationStateEngine');
 const { resolveEffectiveSemanticFrame } = require('../src/engine/semanticFrameResolver');
-const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+const { querySemanticRag, invalidateTrainingDbCache } = require('../src/engine/semanticRagEngine');
+const prisma = require('../src/db');
 
 const MOCK_ACADEMIC_INDEX = [
   {
@@ -1335,5 +1336,229 @@ describe('25-Scenario Academic Semantic Regression Suite (Wisuda / Yudisium / PM
     // 6. "Halo"
     const resHalo = await querySemanticRag('Halo');
     expect(resHalo.answer).toMatch(/Halo|Tiko|ITB\s+STIKOM\s+Bali/i);
+  });
+
+  describe('Knowledge Coverage / Retrievability Invariant Suite', () => {
+    test('retrieves Thesis Guidance Book (Pedoman TA) from active training corpus across query variations (FIX 3 & FIX 10)', async () => {
+      const queries = [
+        'Apakah ada Pedoman untuk menyusun Tugas Akhir?',
+        'Apa pedoman untuk menyusun Tugas Akhir?',
+        'Buku panduan Tugas Akhir ada?',
+        'Di mana pedoman penyusunan Tugas Akhir?'
+      ];
+
+      for (const q of queries) {
+        const res = await querySemanticRag(q);
+        expect(res.success).toBe(true);
+        expect(res.source).toBe('semantic-rag-academic-policy');
+        expect(res.contexts?.length).toBeGreaterThan(0);
+        expect(res.answer).toMatch(/Pedoman\s+Tugas\s+Akhir/i);
+        expect(res.answer).not.toMatch(/belum tercantum/i);
+      }
+    });
+
+    test('returns honest DATA GAP without fabrication for S2 SI modality when absent from corpus (FIX 1)', async () => {
+      const res = await querySemanticRag('Perkuliahan S2 SI online/offline?');
+      expect(res.success).toBe(true);
+      expect(res.source).toBe('semantic-rag-modality-no-data');
+      expect(res.contexts?.length || 0).toBe(0);
+      expect(res.answer).toMatch(/belum tercantum/i);
+      expect(res.answer).not.toMatch(/tersedia offline,\s*online,\s*hybrid/i);
+    });
+
+    test('answers S2 SI fee with factual nominals via structured fee authority (FIX 7 & FIX 8)', async () => {
+      const resStandard = await querySemanticRag('Berapa biaya kuliah S2 SI?');
+      expect(resStandard.success).toBe(true);
+      expect(resStandard.source).toBe('semantic-rag-fee-detail');
+      expect(resStandard.answer).toMatch(/700\.000|10\.000\.000|40\.000\.000/);
+
+      const resParaphrase = await querySemanticRag('Kalau mau ambil Magister Sistem Informasi, biayanya berapa?');
+      expect(resParaphrase.success).toBe(true);
+      expect(resParaphrase.source).toBe('semantic-rag-fee-detail');
+      expect(resParaphrase.answer).toMatch(/700\.000|10\.000\.000|40\.000\.000/);
+    });
+
+    test('answers program recommendation for AI interest (FIX 11)', async () => {
+      const res = await querySemanticRag('Jika saya tertarik dengan AI, di prodi apakah saya harus masuk?');
+      expect(res.success).toBe(true);
+      expect(res.source).toBe('semantic-rag-program-recommendation');
+      expect(res.answer).not.toMatch(/Apakah Saya Harus Masuk/i);
+    });
+
+    test('answers campus faculties overview grounded in active documents with partial DATA GAP (FIX 2)', async () => {
+      const res = await querySemanticRag('jabarkan pengetahuanmu tentang STIKOM Bali beserta fakultas dan prodi di sana');
+      expect(res.success).toBe(true);
+      expect(res.source).toBe('semantic-rag-faculty-overview');
+      expect(res.contexts?.length).toBeGreaterThan(0);
+      expect(res.answer).toMatch(/Fakultas Informatika dan Komputer/i);
+      expect(res.answer).toMatch(/Fakultas Bisnis dan Vokasi/i);
+      expect(res.answer).toMatch(/pemetaan resmi prodi per fakultas|belum tercantum/i);
+    });
+
+    test('returns honest DATA GAP for unmapped prodi-per-faculty structure (FIX 10)', async () => {
+      const res = await querySemanticRag('Apa saja prodi di bawah Fakultas Bisnis dan Vokasi?');
+      expect(res.success).toBe(true);
+      expect(res.source).toBe('semantic-rag-academic-no-data');
+      expect(res.answer).toMatch(/belum tercantum/i);
+    });
+
+    test('returns honest DATA GAP on specific video meeting tool for online class (FIX 10)', async () => {
+      const res = await querySemanticRag('Kalau perkuliahan online, aplikasi apa?');
+      expect(res.success).toBe(true);
+      expect(res.source).toBe('semantic-rag-learning-platform-no-data');
+      expect(res.answer).toMatch(/E-Learning STIKOM Bali/i);
+    });
+
+    test('Scenario A: Turn 2 "Lalu data apa yang dimiliki?" does not jump to generic unrelated program profile (FIX 12)', async () => {
+      const t1 = await querySemanticRag('Apa model machine learning yang digunakan?');
+      const t2 = await querySemanticRag('Lalu data apa yang dimiliki?', {
+        conversationState: t1.conversationState
+      });
+      expect(t2.success).toBe(true);
+      expect(t2.source).not.toBe('semantic-rag-program-definition');
+      expect(t2.source).not.toBe('semantic-rag-program-curriculum');
+    });
+
+    test('Scenario B: Turn 2 "Kalau online bagaimana?" preserves S2 SI entity, changes field to modality, does not return fee or curriculum (FIX 12)', async () => {
+      const t1 = await querySemanticRag('Berapa biaya kuliah S2 SI?');
+      expect(t1.source).toBe('semantic-rag-fee-detail');
+
+      const t2 = await querySemanticRag('Kalau online bagaimana?', {
+        conversationState: t1.conversationState
+      });
+      expect(t2.success).toBe(true);
+      expect(t2.source).toBe('semantic-rag-modality-no-data');
+      expect(t2.source).not.toBe('semantic-rag-fee-detail');
+      expect(t2.source).not.toBe('semantic-rag-program-curriculum');
+      expect(t2.answer).toMatch(/S2 Sistem Informasi|Pascasarjana/i);
+      expect(t2.answer).toMatch(/metode perkuliahan|belum tercantum/i);
+    });
+
+    describe('Physical Filename Agnostic & Ingestion Invariant (FIX 6, FIX 5 & FIX 14)', () => {
+      let originalFindMany;
+
+      beforeEach(() => {
+        originalFindMany = prisma.trainingData.findMany;
+      });
+
+      afterEach(() => {
+        if (originalFindMany) prisma.trainingData.findMany = originalFindMany;
+        invalidateTrainingDbCache();
+      });
+
+      test('retrieves based on logical title and content regardless of physical filename (IMG_8291.pdf vs scan123.pdf)', async () => {
+        const fixtureContent = 'Pedoman Tugas Akhir ITB STIKOM Bali memuat ketentuan lengkap pengajuan skripsi bagi mahasiswa aktif dengan syarat minimal 110 SKS dan IPK 2.50.';
+
+        // Case A: Arbitrary camera filename IMG_8291.pdf
+        prisma.trainingData.findMany = async () => [{
+          id: 'fixture-img-8291',
+          filename: 'IMG_8291.pdf',
+          content: fixtureContent,
+          source: 'upload',
+          divisionKey: 'academic',
+          createdAt: new Date(),
+          ragIngestStatus: 'success',
+          ragChunkCount: 1,
+          active: true,
+          governanceStatus: 'active',
+          governanceMetadata: {
+            documentTitle: 'Pedoman Tugas Akhir ITB STIKOM Bali',
+            status: 'active',
+            authority: 'tier_2_institutional_policy',
+            authorityTier: 2
+          }
+        }];
+
+        invalidateTrainingDbCache();
+        const resA = await querySemanticRag('Apa pedoman untuk menyusun Tugas Akhir?');
+        expect(resA.success).toBe(true);
+        expect(resA.source).toBe('semantic-rag-academic-policy');
+        expect(resA.contexts?.length).toBeGreaterThan(0);
+        expect(resA.contexts?.[0]?.filename).toBe('IMG_8291.pdf');
+
+        // Case B: Arbitrary scanner filename scan123.pdf with identical logical title and content
+        prisma.trainingData.findMany = async () => [{
+          id: 'fixture-scan-123',
+          filename: 'scan123.pdf',
+          content: fixtureContent,
+          source: 'upload',
+          divisionKey: 'academic',
+          createdAt: new Date(),
+          ragIngestStatus: 'success',
+          ragChunkCount: 1,
+          active: true,
+          governanceStatus: 'active',
+          governanceMetadata: {
+            documentTitle: 'Pedoman Tugas Akhir ITB STIKOM Bali',
+            status: 'active',
+            authority: 'tier_2_institutional_policy',
+            authorityTier: 2
+          }
+        }];
+
+        invalidateTrainingDbCache();
+        const resB = await querySemanticRag('Apa pedoman untuk menyusun Tugas Akhir?');
+        expect(resB.success).toBe(true);
+        expect(resB.source).toBe('semantic-rag-academic-policy');
+        expect(resB.contexts?.length).toBeGreaterThan(0);
+        expect(resB.contexts?.[0]?.filename).toBe('scan123.pdf');
+      });
+
+      test('cache invalidation immediately makes new ingested knowledge retrievable without restart (stale vs fresh proof)', async () => {
+        let currentMockDocs = [{
+          id: 'fixture-v1',
+          filename: 'Pedoman_TA_V1.pdf',
+          content: 'Pedoman Tugas Akhir ITB STIKOM Bali versi lama tahun 2019.',
+          source: 'upload',
+          divisionKey: 'academic',
+          createdAt: new Date(),
+          ragIngestStatus: 'success',
+          ragChunkCount: 1,
+          active: true,
+          governanceStatus: 'active',
+          governanceMetadata: {
+            documentTitle: 'Pedoman Tugas Akhir ITB STIKOM Bali',
+            status: 'active',
+            authority: 'tier_2_institutional_policy',
+            authorityTier: 2
+          }
+        }];
+        prisma.trainingData.findMany = async () => currentMockDocs;
+
+        // 1. Initial query loads warm cache with V1
+        invalidateTrainingDbCache();
+        const qWarm = await querySemanticRag('Apa pedoman untuk menyusun Tugas Akhir?');
+        expect(qWarm.contexts?.[0]?.text).toContain('versi lama tahun 2019');
+
+        // 2. Ingest new document update in DB without restarting
+        currentMockDocs = [{
+          id: 'fixture-v2',
+          filename: 'Pedoman_TA_V2.pdf',
+          content: 'Pedoman Tugas Akhir ITB STIKOM Bali TERBARU EDISI REVISI TOTAL 2026.',
+          source: 'upload',
+          divisionKey: 'academic',
+          createdAt: new Date(),
+          ragIngestStatus: 'success',
+          ragChunkCount: 1,
+          active: true,
+          governanceStatus: 'active',
+          governanceMetadata: {
+            documentTitle: 'Pedoman Tugas Akhir ITB STIKOM Bali',
+            status: 'active',
+            authority: 'tier_2_institutional_policy',
+            authorityTier: 2
+          }
+        }];
+
+        // 3. Query without invalidation still reads stale cache
+        const qStale = await querySemanticRag('Apa pedoman untuk menyusun Tugas Akhir?');
+        expect(qStale.contexts?.[0]?.text).toContain('versi lama tahun 2019');
+
+        // 4. Invalidate cache: next query immediately sees fresh knowledge
+        invalidateTrainingDbCache();
+        const qFresh = await querySemanticRag('Apa pedoman untuk menyusun Tugas Akhir?');
+        expect(qFresh.contexts?.[0]?.text).toContain('TERBARU EDISI REVISI TOTAL 2026');
+      });
+    });
   });
 });
