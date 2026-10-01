@@ -770,6 +770,8 @@ function resolveUnsupportedProgramEntities(text, knownPrograms = []) {
     const match = normalized.match(pattern);
     const candidate = match && normalizeUnsupportedProgramCandidate(match[1]);
     if (!candidate) continue;
+    const isLocationCandidate = /\b(?:bandung|bali|denpasar|jimbaran|renon|abiansemal|jakarta|surabaya|yogyakarta|malaysia|china|dalian|kampus|luar\s+negeri)\b/i.test(candidate);
+    if (isLocationCandidate) continue;
     const candidateKey = (normalizeUserQuery(candidate).normalizedText || String(candidate || '').toLowerCase()).trim();
     if (supportedLabels.has(candidateKey)) return [];
     const isAcademic = pIdx !== 1 || hasExplicitAcademicSignals;
@@ -1958,8 +1960,8 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
         type: 'location_program_overlap',
         location: 'Bandung',
         competingInterpretations: [
-          { domain: 'academic', intent: 'ask_delivery_mode', description: 'Metode perkuliahan reguler ITB STIKOM Bali di lokasi Bandung' },
-          { domain: 'double_degree', intent: 'ask_delivery_mode', entity: 'Dual Degree UTB', description: 'Program Dual Degree UTB (praktik offline 2 bulan di Bandung)' }
+          { domain: 'academic', intent: 'ask_delivery_mode', description: 'Metode perkuliahan di lokasi terkait' },
+          { domain: 'international', intent: 'ask_delivery_mode', entity: 'Dual Degree UTB', description: 'Program Dual Degree Nasional (kerja sama UTB Bandung)' }
         ]
       } : { isAmbiguous: false };
     })()
@@ -2302,7 +2304,10 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
     fields.add('deadline');
     fields.add('validityPeriod');
   }
-  if (domain === 'double_degree' && /\b(?:skema|tahapan|berapa\s+tahun|bali|malaysia|china|dalian|bandung)\b/i.test(q)) {
+  const mentionsExplicitStudyLocation = /\b(?:skema|tahapan|berapa\s+tahun|malaysia|china|dalian|bandung)\b/i.test(q)
+    || (/\bbali\b/i.test(q) && !/\b(?:itb\s+stikom\s+bali|stikom\s+bali)\b/i.test(q))
+    || /\b(?:kuliah|studi|tahun)\s+di\s+bali\b/i.test(q);
+  if (domain === 'double_degree' && mentionsExplicitStudyLocation) {
     fields.add('schedule');
     fields.add('date');
     fields.add('deadline');

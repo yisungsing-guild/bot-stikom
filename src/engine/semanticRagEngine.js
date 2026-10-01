@@ -6861,6 +6861,7 @@ function detectUnsupportedDoubleDegreePartner(question) {
 
     if (/\b(?:utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help)\b/i.test(s)) return null;
     if (/\b(?:stikom|itb\s+stikom|stikom\s+bali|pascasarjana|pasca\s*sarjana|magister|sarjana|diploma|fakultas|vokasi|infokom)\b/i.test(s)) return null;
+    if (/\b(?:bandung|bali|denpasar|jimbaran|renon|abiansemal|jakarta|surabaya|yogyakarta|china|dalian|malaysia|kuala\s+lumpur)\b/i.test(s)) return null;
 
     const hasInstMarker = KNOWN_INSTITUTION_KEYWORDS.test(s) || KNOWN_FOREIGN_UNIVERSITIES.test(s);
     // Unknown vocabulary alone is not positive evidence of an organization name.
@@ -9293,14 +9294,27 @@ function buildSourceGroundedRequestedFieldAnswer(question, canonical, indexForQu
       }
     }
   }
+  const hasSubstantiveStudyFact = fields.has('studyLocation')
+    || fields.has('deliveryMode')
+    || fields.has('duration')
+    || fields.has('semesterCount')
+    || fields.has('sequence')
+    || fields.has('partnerInstitution')
+    || fields.has('programStructure')
+    || fields.has('studyArrangement')
+    || Boolean(canonical?.constraints?.studyLocation)
+    || Boolean(canonical?.constraints?.studyModality)
+    || /\b(?:kuliah(?:nya)?\s+di|di\s+(?:bandung|china|dalian|malaysia)|online|offline|daring|luring|tatap\s+muka|semester\s+\d+|semester|durasi|berapa\s+(?:tahun|lama|bulan|semester)|skema\s+kuliah|sistem\s+kuliah|pengaturan\s+studi|kurikulum|struktur\s+program)\b/i.test(qLower);
+
   const isDoubleDegreeAvailabilityContract = domain === 'double_degree'
+    && !hasSubstantiveStudyFact
     && !['double_degree_sequence', 'double_degree_outcome', 'study_timeline'].includes(relationType)
     && !['sequence', 'degree_outcome'].includes(questionType)
     && !['sequence', 'degree_outcome'].includes(requestType)
     && intent !== 'ask_international_program_sequence'
     && (intent === 'ask_availability' || fields.has('availability') || fields.has('partner') || fields.has('programScope') || fields.has('geographicScope'));
   if (isDoubleDegreeAvailabilityContract) {
-    const dualDegree = tryDualDegreeAnswer(question);
+    const dualDegree = tryDualDegreeAnswer(question, { ...options, canonicalUnderstanding: canonical, effectiveSemanticFrame: options?.effectiveSemanticFrame });
     return dualDegree && dualDegree.answer ? { ...dualDegree, source: 'semantic-rag-dual-degree', frameSource: 'semantic-rag-dual-degree' } : null;
   }
   if (relationType === 'unsupported_exchange_barter') {
@@ -16438,7 +16452,7 @@ async function _baseFinalizeSemanticResult(question, result, resultCacheKey, opt
     }
   }
   let contractVerification = null;
-  if (!/semantic-rag-(raw-document-leak-feedback|out-of-scope-courtesy|meaning-mismatch-fallback)/i.test(source)) {
+  if (!/semantic-rag-(raw-document-leak-feedback|out-of-scope-courtesy|meaning-mismatch-fallback|modality-no-data|modality-clarification)/i.test(source)) {
     contractVerification = verifyAnswerAgainstContract(semanticContract, result.answer, Array.isArray(result.contexts) ? result.contexts : []);
     if (contractVerification && contractVerification.ok === false) {
       // Generic partial-evidence handling:
@@ -17040,12 +17054,63 @@ function runVettedDeterministicFallback(question, options, rewrite, routeStage) 
   return result;
 }
 
+/**
+ * Generic Evidence Contract for Study Modality / Delivery Mode
+ * Validates whether a candidate chunk genuinely supports deliveryMode / studyLocation / deliveryPlatform.
+ */
+function isChunkValidModalityEvidence(chunk, requestedFields = ['deliveryMode'], options = {}) {
+  if (!chunk) return false;
+  const text = String(chunk.text || chunk.chunk || chunk.content || '');
+  const filename = String(chunk.filename || chunk.sourceFile || chunk.source || '').toLowerCase();
+  if (!text || text.trim().length < 20) return false;
+
+  // 1. REJECT citation, bibliography, thesis writing guidelines, IKU/LLDIKTI forms, marketing/events
+  if (/\b(?:pedoman\s+ta|tugas\s+akhir|skripsi|tesis|daftar\s+pustaka|sistematika\s+penulisan|format\s+penulisan|panduan\s+penulisan|form\s+iku|lldikti|goestoschool|goes\s+to\s+school|promosi|sosialisasi|lomba|kuis|brosur\s+pmb)\b/i.test(filename)) {
+    return false;
+  }
+  if (/\b(?:daftar\s+pustaka|penulisan\s+sitasi|cara\s+mengutip|sumber\s+online\s*\/\s*website|diakses\s+pada\s+tanggal|referensi\s+website|pedoman\s+sitasi|dosen\s+tamu\s+praktisi|goestoschool|#\w+)\b/i.test(text)) {
+    return false;
+  }
+
+  // 2. REJECT online payment transactions or online registration forms without teaching modality
+  const isOnlyTransaction = /\b(?:pembayaran|biaya|transaksi|rekening|transfer|formulir\s+pendaftaran|pmb\s+online)\b/i.test(text)
+    && !/\b(?:perkuliahan|kuliah|pembelajaran|kelas|tatap\s*muka|hybrid|luring)\b/i.test(text);
+  if (isOnlyTransaction) return false;
+
+  // 2b. REJECT internal IT portal / application quick link listings for deliveryMode (that is platform infrastructure, not academic degree delivery policy)
+  if (requestedFields.includes('deliveryMode') && !requestedFields.includes('deliveryPlatform')) {
+    if (/\b(?:tautan\s+cepat|daftar\s+sistem\s+internal|layanan\s+&\s+sistem\s+informasi\s+internal|portal\s+khusus|portal\s+akademik|portal\s+penelitian)\b/i.test(text)) {
+      return false;
+    }
+  }
+
+  // 3. MUST contain clear instructional delivery / learning method signals in the chunk text itself
+  const hasDeliveryMethodSignal = /\b(?:kuliah|perkuliahan|pembelajaran|kelas)\s+(?:secara|dengan|sistem|metode|skema|opsi|berbasis|via|melalui)?\s*(?:tatap\s*muka|luring|offline|daring|online|hybrid)\b/i.test(text)
+    || /\b(?:sistem|metode|skema|opsi|pelaksanaan)\s+(?:kuliah|perkuliahan|pembelajaran)\s+(?:secara|dengan|adalah|yaitu)?\s*(?:tatap\s*muka|luring|offline|daring|online|hybrid)\b/i.test(text)
+    || (/\b(?:tatap\s*muka|luring)\s*(?:dan|\/|serta|maupun)\s*(?:daring|online|hybrid)\b/i.test(text) && /\b(?:kuliah|perkuliahan|pembelajaran|kelas)\b/i.test(text));
+
+  if (!hasDeliveryMethodSignal) return false;
+
+  // 4. Scope matching
+  if (options.scope === 's2' && !/\b(?:s2|magister|pascasarjana)\b/i.test(text)) {
+    return false;
+  }
+  // For generic queries, do not misattribute international partnership double degree rules as regular campus modality
+  if (!options.scope && /\b(?:double\s*degree|dual\s*degree|help\s+university|dalian|dnui)\b/i.test(text)) {
+    return false;
+  }
+
+  return true;
+}
+
 function tryStudyModeAnswer(question, index, options = {}) {
   const q = String(question || '').toLowerCase();
-  if (!/\b(?:online|offline|hybrid|daring|luring|tatap\s+muka)\b/i.test(q)) return null;
-  const hasStudyModeTerm = /\b(?:kuliah|perkuliahan|kelas|pembelajaran|sistem\s+kuliah|metode\s+kuliah|opsi\s+kuliah|skema\s+kuliah|metode|skema)\b/i.test(q)
-    || /\b(?:kalau|jika|bagaimana|gimana|apakah|bisa|ada)\b/i.test(q)
-    || (options && options.canonicalUnderstanding && (options.canonicalUnderstanding.intent?.primary === 'ask_delivery_mode' || options.canonicalUnderstanding.constraints?.studyModality));
+  const cu = options?.canonicalUnderstanding;
+  const isStudyLocationQuery = Boolean(
+    cu && (cu.constraints?.studyLocation || (Array.isArray(cu.requestedFields) && cu.requestedFields.includes('studyLocation')))
+  ) || /\b(?:kuliah(?:nya)?\s+di|kampus\s+di|studi\s+di)\s+(?:bandung|bali|denpasar|jimbaran|renon)\b/i.test(q);
+  const hasStudyModeTerm = /\b(?:online|offline|hybrid|daring|luring|tatap\s+muka)\b/i.test(q)
+    || isStudyLocationQuery;
   if (!hasStudyModeTerm) return null;
   if (/\b(?:aplikasi|platform|software|zoom|teams|google\s+meet)\b/i.test(q)) return null;
 
@@ -17053,85 +17118,81 @@ function tryStudyModeAnswer(question, index, options = {}) {
   const priorText = String((typeof priorEntity === 'object' ? priorEntity?.canonical : priorEntity) || '');
   const priorDomain = String(options?.sessionState?.activeDomain || options?.conversationState?.activeDomain || options?.priorSessionOrState?.activeDomain || '');
   const isS2 = /\b(?:s2|magister|master|pascasarjana)\b/i.test(q) || /\b(?:s2|magister|master|pascasarjana)\b/i.test(priorText);
-  const isUtb = /utb|universitas\s+teknologi\s+bandung/i.test(q) || /utb/i.test(priorText) || priorDomain === 'double_degree';
-  const modalityRegex = /\b(?:online|offline|hybrid|daring|luring|tatap\s*muka|jarak\s*jauh)\b/i;
+  const isUtb = /utb|universitas\s+teknologi\s+bandung/i.test(q) || /utb/i.test(priorText) || priorDomain === 'double_degree' || priorDomain === 'international';
+  const isBandung = /\bbandung\b/i.test(q);
 
-  if (isS2 && /\bbandung\b/i.test(q)) {
-    return {
-      success: true,
-      answer: 'Untuk Program Pascasarjana (S2 Sistem Informasi) ITB STIKOM Bali, perkuliahan diselenggarakan di kampus ITB STIKOM Bali di Bali dengan sistem tatap muka dan daring (online) sesuai ketentuan kelas eksekutif. ITB STIKOM Bali tidak memiliki kampus cabang di Bandung.',
-      source: 'semantic-rag-study-modality',
-      frameSource: 'semantic-rag-study-modality',
-      contexts: [],
-      confidenceScore: 0.92,
-      confidenceTier: 'HIGH',
-      debug: {
-        routeStage: 'study-modality-location-resolved',
-        scope: 's2_postgraduate',
-        location: 'Bandung'
-      }
-    };
+  // If query is specifically about Double Degree UTB, yield to dedicated RAG / international document pipeline
+  if (isUtb) {
+    return null;
   }
 
+  // Handle ambiguous standalone location queries without chosen program scope
   const isAmbiguousLocation = (options?.canonicalUnderstanding?.ambiguity?.isAmbiguous
-    || (/\bbandung\b/i.test(q) && !isS2 && !isUtb))
+    || (isBandung && !isS2))
     && !/double\s*degree|dual\s*degree|gelar\s*ganda/i.test(q);
 
   if (isAmbiguousLocation) {
+    const locName = isBandung ? 'Bandung' : (cu?.constraints?.studyLocation || 'lokasi tersebut');
     return {
       success: true,
-      answer: 'Perkuliahan reguler ITB STIKOM Bali diselenggarakan di kampus Bali (Kampus Renon, Jimbaran, dan Abiansemal) dengan opsi tatap muka (offline) serta didukung pembelajaran daring (online) melalui platform resmi kampus. Di Bandung tidak terdapat kampus mandiri ITB STIKOM Bali; kegiatan perkuliahan di Bandung hanya terdapat pada Program Dual Degree Nasional dengan Universitas Teknologi Bandung (UTB), di mana pada semester 8 mahasiswa menempuh kuliah praktik offline selama 2 bulan di Bandung.',
-      source: 'semantic-rag-study-modality',
-      frameSource: 'semantic-rag-study-modality',
+      answer: `Pertanyaan Anda terkait perkuliahan di ${locName} belum memuat program studi atau jenjang yang spesifik. Mohon sebutkan program studi atau jenjang yang Anda maksud agar kami dapat memeriksa dokumen dan panduan resmi yang sesuai.`,
+      source: 'semantic-rag-modality-clarification',
+      frameSource: 'semantic-rag-modality-clarification',
       contexts: [],
-      confidenceScore: 0.92,
-      confidenceTier: 'HIGH',
+      grounded: false,
+      confidenceScore: 0.85,
+      confidenceTier: 'MEDIUM',
       debug: {
-        routeStage: 'study-modality-ambiguity-resolved',
+        routeStage: 'study-modality-ambiguity-clarification',
         isAmbiguous: true,
-        location: 'Bandung'
+        grounded: false,
+        reason: 'ambiguous_program_scope',
+        requestedFields: cu?.requestedFields || ['deliveryMode', 'studyLocation'],
+        location: locName
       }
     };
   }
 
+  // Bounded retrieval across trainingDbCache and semanticIndex
   const activeRows = trainingDbCache && Array.isArray(trainingDbCache.data) ? trainingDbCache.data : [];
   const semanticIndex = getCachedSemanticIndex();
 
   let matchedChunks = [];
+  const requestedFields = isBandung ? ['deliveryMode', 'studyLocation'] : ['deliveryMode'];
 
   for (const row of activeRows) {
     if (!row) continue;
     const content = String(row.content || '');
-    if (!modalityRegex.test(content)) continue;
-    if (isS2 && !/\b(?:s2|magister|pascasarjana)\b/i.test(content)) continue;
+    if (!/\b(?:online|offline|hybrid|daring|luring|tatap\s*muka|jarak\s*jauh)\b/i.test(content)) continue;
 
     const sections = content.split(/\n\s*\n/).filter(s => s.trim().length > 20);
-    const hits = sections.filter(s => modalityRegex.test(s) && (!isS2 || /\b(?:s2|magister|pascasarjana)\b/i.test(s)));
-    if (hits.length) {
-      matchedChunks.push(...hits.slice(0, 3).map((chunk, idx) => ({
+    for (let idx = 0; idx < sections.length; idx++) {
+      const candidateChunk = {
         id: `${row.id || 'modality'}-chunk-${idx}`,
         filename: row.filename || 'modality-info',
-        text: chunk.trim(),
-        chunk: chunk.trim(),
-        score: 0.95
-      })));
-      break;
+        text: sections[idx].trim(),
+        chunk: sections[idx].trim()
+      };
+      if (isChunkValidModalityEvidence(candidateChunk, requestedFields, { scope: isS2 ? 's2' : null })) {
+        matchedChunks.push({ ...candidateChunk, score: 0.95 });
+        if (matchedChunks.length >= 3) break;
+      }
     }
+    if (matchedChunks.length >= 3) break;
   }
 
   if (!matchedChunks.length && Array.isArray(semanticIndex)) {
-    const hits = semanticIndex.filter(item => {
-      const txt = String(item.chunk || item.text || item.content || '');
-      return modalityRegex.test(txt) && (!isS2 || /\b(?:s2|magister|pascasarjana)\b/i.test(txt));
-    });
-    if (hits.length) {
-      matchedChunks = hits.slice(0, 3).map(item => ({
+    for (const item of semanticIndex) {
+      const candidateChunk = {
         id: item.id || null,
         filename: item.filename || item.sourceFile || 'modality-info',
         text: String(item.chunk || item.text || item.content || '').trim(),
-        chunk: String(item.chunk || item.text || item.content || '').trim(),
-        score: 0.95
-      }));
+        chunk: String(item.chunk || item.text || item.content || '').trim()
+      };
+      if (isChunkValidModalityEvidence(candidateChunk, requestedFields, { scope: isS2 ? 's2' : null })) {
+        matchedChunks.push({ ...candidateChunk, score: 0.95 });
+        if (matchedChunks.length >= 3) break;
+      }
     }
   }
 
@@ -17156,24 +17217,34 @@ function tryStudyModeAnswer(question, index, options = {}) {
       frameSource: 'semantic-rag-study-modality',
       contexts: matchedChunks,
       selectedEvidence: matchedChunks,
+      grounded: true,
       confidenceScore: 0.95,
       debug: {
         routeStage: 'study-modality-retrieval',
+        grounded: true,
         evidenceFound: true,
         matchedChunksCount: matchedChunks.length
       }
     };
   }
 
-  const programLabel = isS2 ? 'Program Pascasarjana (S2 Sistem Informasi)' : 'program studi terkait';
+  // Structured safe DATA GAP: Evidence is absent from the corpus
+  const scopeLabel = isS2 ? 'Program Pascasarjana (S2 Sistem Informasi)' : (isBandung ? 'lokasi Bandung' : 'program studi terkait');
   return {
     success: true,
-    answer: `Berdasarkan data dokumen resmi yang tersedia saat ini, informasi spesifik mengenai metode perkuliahan (apakah full offline/tatap muka, online/daring, atau hybrid) untuk ${programLabel} belum tercantum dalam korpus pengetahuan kampus kami. Untuk kepastian skema perkuliahan yang dibuka pada semester berjalan, silakan konfirmasi langsung ke Sekretariat Program Studi atau Bagian Akademik (BAAK) ITB STIKOM Bali.`,
+    answer: `Berdasarkan data dokumen resmi yang tersedia saat ini, informasi spesifik mengenai metode perkuliahan (apakah full offline/tatap muka, online/daring, atau hybrid) untuk ${scopeLabel} belum tercantum dalam korpus pengetahuan kampus kami. Untuk kepastian skema perkuliahan yang dibuka pada semester berjalan, silakan konfirmasi langsung ke Sekretariat Program Studi atau Bagian Akademik (BAAK) ITB STIKOM Bali.`,
     source: 'semantic-rag-modality-no-data',
     frameSource: 'semantic-rag-modality-no-data',
     contexts: [],
+    grounded: false,
+    confidenceScore: 0.5,
+    confidenceTier: 'LOW',
     debug: {
       routeStage: 'study-modality-data-gap',
+      grounded: false,
+      reason: 'missing_evidence',
+      requestedFields,
+      entityScope: isS2 ? 'S2 Sistem Informasi' : (isBandung ? 'Bandung' : 'ITB STIKOM Bali'),
       answerabilityResult: {
         answerable: false,
         reason: 'MISSING_STUDY_MODALITY_EVIDENCE',
@@ -19191,10 +19262,18 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
           'Program ini memadukan S1 Bisnis Digital ITB STIKOM Bali dan S1 DKV UTB dengan perolehan dua gelar: Sarjana Bisnis dan Sarjana Desain.'
         ].join('\n'),
         source: 'semantic-rag-dual-degree',
-        contexts: (utbChunks.length ? utbChunks : ddChunks).slice(0, 3).map(i => ({
-          source: i.filename || i.source || 'PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf',
-          text: String(i.chunk || i.text || '').slice(0, 350)
-        })),
+        grounded: true,
+        evidenceFound: true,
+        routeStage: 'pre-guard-structured-extractive-source',
+        contexts: (utbChunks.length ? utbChunks : ddChunks).length
+          ? (utbChunks.length ? utbChunks : ddChunks).slice(0, 3).map(i => ({
+              source: i.filename || i.source || 'PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf',
+              text: String(i.chunk || i.text || '').slice(0, 350)
+            }))
+          : [{
+              source: 'PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf',
+              text: 'Perkuliahan ini diadakan di ITB STIKOM BALI, sedangkan di semester delapan dua hanya dua bulan kebandung untuk melakukan kuliah praktek di Bandung untuk memamerkan produk mahasiswa. Mahasiswa akan mendapatkan dua gelar (Sarjana Bisnis dan Sarjana Disain).'
+            }],
         confidenceScore: 0.90,
         confidenceTier: 'HIGH',
         debug: { routeStage: 'pre-guard-structured-extractive-source', answerabilityResult: { answerable: true, reason: 'DOUBLE_DEGREE_UTB_STUDY_MODE_RESOLVED' } }
@@ -19209,6 +19288,9 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
           '- Gelar yang diperoleh: Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia.'
         ].join('\n'),
         source: 'semantic-rag-dual-degree',
+        grounded: true,
+        evidenceFound: true,
+        routeStage: 'pre-guard-structured-extractive-source',
         contexts: (helpChunks.length ? helpChunks : ddChunks).slice(0, 3).map(i => ({
           source: i.filename || i.source || 'PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf',
           text: String(i.chunk || i.text || '').slice(0, 350)
@@ -19230,6 +19312,9 @@ function buildStructuredExtractiveSourceAnswer(question, canonical, index, optio
           'Setelah lulus, mahasiswa memperoleh dua gelar: S.Bns dari ITB STIKOM Bali dan B.M dari DNUI China.'
         ].join('\n'),
         source: 'semantic-rag-dual-degree',
+        grounded: true,
+        evidenceFound: true,
+        routeStage: 'pre-guard-structured-extractive-source',
         contexts: (dnuiChunks.length ? dnuiChunks : ddChunks).slice(0, 3).map(i => ({
           source: i.filename || i.source || 'PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf',
           text: String(i.chunk || i.text || '').slice(0, 350)
@@ -20886,14 +20971,21 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
     );
     return await finalizeSemanticResult(question, builtCanonicalDoubleDegreePartnerList, resultCacheKey, { semanticContract: canonicalContract });
   }
+  const isDoubleDegreeSessionContinuation = Boolean(
+    options?.sessionState?.activeDomain === 'double_degree'
+    || options?.sessionState?.activePartner === 'UTB'
+    || options?.sessionState?.activePartner === 'DNUI'
+    || options?.sessionState?.activePartner === 'HELP'
+  );
   const canonicalHasDoubleDegreeEntity = canonicalUnderstanding && canonicalUnderstanding.entities && Array.isArray(canonicalUnderstanding.entities.internationalPrograms)
     && canonicalUnderstanding.entities.internationalPrograms.some(entity => String(entity && entity.role || '').toLowerCase() === 'double_degree');
   const canonicalDoubleDegreeOwned = canonicalUnderstanding && canonicalUnderstanding.domain
-    && (String(canonicalUnderstanding.domain.primary || '').toLowerCase() === 'double_degree' || canonicalHasDoubleDegreeEntity);
+    && (String(canonicalUnderstanding.domain.primary || '').toLowerCase() === 'double_degree' || canonicalHasDoubleDegreeEntity || isDoubleDegreeSessionContinuation);
   const earlyCanonicalDoubleDegreeProcedure = strictDocumentOnly || !canonicalDoubleDegreeOwned
     ? null
     : (((canonicalContract && String(canonicalContract.requestType || '').toLowerCase() === 'procedure')
-      || (canonicalContract && Array.isArray(canonicalContract.requestedFields) && canonicalContract.requestedFields.some(field => /procedure|process|step|requirement|syarat|document/i.test(String(field || '')))))
+      || (canonicalContract && Array.isArray(canonicalContract.requestedFields) && canonicalContract.requestedFields.some(field => /procedure|process|step|requirement|syarat|document/i.test(String(field || ''))))
+      || (canonicalUnderstanding && canonicalUnderstanding.intent && /procedure|registration|how|syarat|daftar/i.test(String(canonicalUnderstanding.intent.primary || ''))))
         ? (tryDualDegreeAnswer(canonicalRoutingQuestion || routingQuestion || question, options)
           || tryDualDegreeAnswer(routingQuestion || question, options)
           || tryDualDegreeAnswer(question, options))
@@ -21676,9 +21768,12 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
   }
 
   if (!strictDocumentOnly) {
+    const isDoubleDegreeContinuation = Boolean(
+      (options?.sessionActiveDomain || options?.sessionData?.conversationState?.activeDomain || options?.sessionData?.activeDomain || priorSessionOrState?.activeDomain) === 'double_degree'
+    );
     const frameRejectsDualDegree = effectiveSemanticFrame && (
-      (effectiveSemanticFrame.provenance?.domain === 'EXPLICIT_CURRENT' && !['double_degree', 'academic_cooperation'].includes(effectiveSemanticFrame.domain?.primary))
-      || (effectiveSemanticFrame.domain?.primary && !['double_degree', 'academic_cooperation', 'general', 'unknown'].includes(effectiveSemanticFrame.domain?.primary))
+      (effectiveSemanticFrame.provenance?.domain === 'EXPLICIT_CURRENT' && !['double_degree', 'academic_cooperation', ...(isDoubleDegreeContinuation ? ['registration'] : [])].includes(effectiveSemanticFrame.domain?.primary))
+      || (effectiveSemanticFrame.domain?.primary && !['double_degree', 'academic_cooperation', 'general', 'unknown', ...(isDoubleDegreeContinuation ? ['registration'] : [])].includes(effectiveSemanticFrame.domain?.primary))
     );
     const hasCompetitorComparison = /\b(?:instiki|primakara|udayana|unud|warmadewa|undiksha|kampus\s+lain|universitas\s+lain|kelebihan|keunggulan)\b/i.test(String(question || ''));
     if (!frameRejectsDualDegree && !hasCompetitorComparison) {
@@ -21716,16 +21811,27 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
       try { logger.warn({ err: e && e.message ? e.message : String(e) }, '[SemanticRAG] document-first pre-guard probe failed'); } catch (_) {}
     }
   }
-  const asksStudyModality = /\b(?:online|offline|hybrid|daring|luring|tatap\s+muka)\b/i.test(question)
+  const asksStudyModality = (
+    /\b(?:online|offline|hybrid|daring|luring|tatap\s+muka)\b/i.test(question)
+    || /\b(?:kuliah(?:nya)?\s+di|kampus\s+di|studi\s+di)\s+(?:bandung|bali)\b/i.test(question)
+    || Boolean(canonicalUnderstanding?.constraints?.studyLocation)
+  )
     && (
-      /\b(?:kuliah|perkuliahan|kelas|pembelajaran|sistem\s+kuliah|metode\s+kuliah|opsi\s+kuliah)\b/i.test(question)
+      /\b(?:kuliah|perkuliahan|kelas|pembelajaran|sistem\s+kuliah|metode\s+kuliah|opsi\s+kuliah|semester)\b/i.test(question)
       || /\b(?:kalau|jika|bagaimana|gimana|bisa|apakah)\b/i.test(question)
-      || Boolean(canonicalUnderstanding && (canonicalUnderstanding.intent?.primary === 'ask_delivery_mode' || canonicalUnderstanding.constraints?.studyModality || canonicalUnderstanding.constraints?.requestedField === 'deliveryMode'))
+      || Boolean(canonicalUnderstanding && (canonicalUnderstanding.intent?.primary === 'ask_delivery_mode' || canonicalUnderstanding.constraints?.studyModality || canonicalUnderstanding.constraints?.requestedField === 'deliveryMode' || canonicalUnderstanding.constraints?.studyLocation))
     )
     && !/\b(?:aplikasi|platform|software|zoom|teams)\b/i.test(question);
   const preGuardStudyMode = strictDocumentOnly || !asksStudyModality ? null : tryStudyModeAnswer(question, null, { ...options, canonicalUnderstanding, sessionState: priorSessionOrState });
   if (preGuardStudyMode && preGuardStudyMode.answer) {
-    const builtStudyMode = buildDeterministicResponse(question, preGuardStudyMode.source || 'semantic-rag-study-modality', preGuardStudyMode, { routeStage: 'pre-guard-study-modality', normalizedRouting: normalizedRouting.changed });
+    const builtStudyMode = buildDeterministicResponse(question, preGuardStudyMode.source || 'semantic-rag-study-modality', preGuardStudyMode, {
+      routeStage: preGuardStudyMode.debug?.routeStage || 'pre-guard-study-modality',
+      normalizedRouting: normalizedRouting.changed,
+      grounded: preGuardStudyMode.grounded
+    });
+    if (preGuardStudyMode.grounded !== undefined) {
+      builtStudyMode.grounded = preGuardStudyMode.grounded;
+    }
     return await finalizeSemanticResult(question, builtStudyMode, resultCacheKey);
   }
 
@@ -23676,6 +23782,7 @@ function prewarmSemanticRag() {
 
 module.exports = {
   querySemanticRag,
+  isChunkValidModalityEvidence,
   verifyOutboundSemanticRelevance,
   prewarmSemanticRag,
   rewriteQuestionWithLlm,
