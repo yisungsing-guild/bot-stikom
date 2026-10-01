@@ -421,6 +421,12 @@ function invalidateSemanticIndexCache() {
 function invalidateTrainingDbCache() {
   trainingDbCache = null;
   snapshotManifestDocCache = null;
+  try {
+    const { invalidateRetrievalStrategyCache } = require('./retrievalStrategy');
+    if (typeof invalidateRetrievalStrategyCache === 'function') {
+      invalidateRetrievalStrategyCache();
+    }
+  } catch (_) {}
 }
 
 function getCachedSemanticIndex() {
@@ -23811,6 +23817,7 @@ module.exports = {
   computeAdminPenalty,
   computeGenericScore,
   selectEvidenceByCompatibility,
+  evaluateGenericAnswerability,
   getCachedSemanticIndex,
   getCachedInvertedIndex,
   lookupCandidateChunkIndices,
