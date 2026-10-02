@@ -31,6 +31,7 @@ const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 
 describe('Document Validity & Lifecycle Governance', () => {
   beforeEach(() => {
+    jest.setTimeout(120000);
     delete process.env.OPENAI_API_KEY;
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'false';

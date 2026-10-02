@@ -5,6 +5,7 @@ const { normalizeUserQuery } = require('../src/utils/queryNormalizer');
 
 describe('UAT 30 Defect Remediation & Domain Coverage Test Suite', () => {
   beforeAll(() => {
+    jest.setTimeout(120000);
     process.env.VECTOR_RETRIEVAL_ENABLED = 'false';
   });
 

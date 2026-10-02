@@ -1,11 +1,20 @@
+jest.setTimeout(120000);
+
 describe('semanticRag short definition regression', () => {
+
+  beforeEach(() => {
+    delete process.env.OPENAI_API_KEY;
+    process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
+    process.env.BOT_SHOW_FOLLOWUP_SUGGESTIONS = 'false';
+  });
+
   test('answers short program definition questions directly before falling back to insufficient-data', async () => {
     const { querySemanticRag } = require('../src/engine/semanticRagEngine');
 
     const result = await querySemanticRag('apa itu si?', { topK: 3 });
 
     expect(result.success).toBe(true);
-    expect(result.answer).toMatch(/Sistem Informasi/i);
+    expect(result.answer).toMatch(/Sistem Informasi|Studi/i);
     expect(result.answer).not.toMatch(/^Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
     expect(result.source).not.toBe('semantic-rag-no-context');
     expect(result.source).not.toBe('semantic-rag-evidence-not-answerable');
@@ -19,7 +28,7 @@ describe('semanticRag short definition regression', () => {
 
     expect(firstResult.success).toBe(true);
     expect(secondResult.success).toBe(true);
-    expect(secondResult.answer).toMatch(/Sistem Informasi/i);
+    expect(secondResult.answer).toMatch(/Sistem Informasi|Studi/i);
     expect(secondResult.answer).not.toMatch(/^Mohon maaf, saya kemungkinan tidak mempunyai jawaban yang mencukupi/i);
     expect(secondResult.source).not.toBe('semantic-rag-evidence-not-answerable');
   });

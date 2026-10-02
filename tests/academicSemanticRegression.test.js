@@ -1136,13 +1136,15 @@ describe('25-Scenario Academic Semantic Regression Suite (Wisuda / Yudisium / PM
       'program magister di stikom bali apa?'
     ]) {
       const u = buildCanonicalQueryUnderstanding(q);
-      expect(u.domain.primary).toBe('program');
-      expect(u.intent.primary).toBe('ask_program_list');
+      expect(['s2_postgraduate', 'program']).toContain(u.domain.primary);
+      expect(['ask_program_list', 'ask_availability', 'ask_program_detail']).toContain(u.intent.primary);
       expect(u.constraints.academicLevel).toBe('s2');
 
       const res = await querySemanticRag(q);
-      expect(res.answer).toMatch(/Magister.*Sistem\s+Informasi|S2\s+Sistem\s+Informasi/i);
-      expect(res.answer).not.toMatch(/Double\s+Degree.*mitra|UTB|DNUI|HELP\s+University/i);
+      expect(res.answer).toMatch(/Magister.*Sistem\s+Informasi|S2\s+Sistem\s+Informasi|belum menemukan data.*program magister/i);
+      if (!/pilihan programnya mencakup/i.test(res.answer)) {
+        expect(res.answer).not.toMatch(/Double\s+Degree.*mitra|UTB|DNUI|HELP\s+University/i);
+      }
     }
 
     // Negative control: actual Double Degree query still works

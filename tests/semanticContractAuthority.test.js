@@ -352,7 +352,7 @@ describe('end-to-end semantic contract authority', () => {
     ];
 
     const selfContained = [
-      { q: 'apa itu S2 Sistem Informasi (SI)?', source: 'semantic-rag-postgraduate-profile', domain: 'program', requestType: 'definition', must: /S2 Sistem Informasi|Magister Sistem Informasi|Pascasarjana/i, mustNot: /belum menemukan data|Program Studi Sistem Informasi adalah program studi yang berfokus/i },
+      { q: 'apa itu S2 Sistem Informasi (SI)?', source: 'semantic-rag-postgraduate-profile', domain: 's2_postgraduate', requestType: 'definition', must: /S2 Sistem Informasi|Magister Sistem Informasi|Pascasarjana/i, mustNot: /belum menemukan data|Program Studi Sistem Informasi adalah program studi yang berfokus/i },
       { q: 'apa itu mi?', source: 'semantic-rag-program-definition', domain: 'program', requestType: 'definition', must: /Manajemen Informatika.*D3/i, mustNot: /daftar program studi|Program studi\/prodi yang tersedia/i },
       { q: 'bagaimana cara mendaftar stikom?', source: 'semantic-rag-registration-info', domain: 'registration', requestType: 'procedure', must: /daftar|pendaftaran|PMB|online|offline/i, mustNot: /Manajemen Informatika adalah|program D3 yang berfokus|belum menemukan data/i },
       { q: 'kapan pendaftaran dibuka?', source: 'semantic-rag-schedule-window', domain: 'pmb_schedule', requestType: 'schedule', must: /PMB|pendaftaran|gelombang|20\d{2}/i, mustNot: /Manajemen Informatika|belum menemukan data/i },
