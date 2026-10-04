@@ -195,7 +195,8 @@ function buildResolvedRetrievalPlan(contract) {
     relations,
     requestedFields,
     constraints,
-    query: unique(queryParts).join(' ').trim() || contract.raw || ''
+    query: unique(queryParts).join(' ').trim() || contract.raw || '',
+    rawQuery: contract.raw || contract.rawQuery || contract.normalizedQuery || ''
   };
 }
 
@@ -238,11 +239,19 @@ function buildRetrievalPlanFromSemanticFrame(semanticFrame) {
   }
 
   // Derive authorityRequirements respecting existing governance tiers
+  const isAuthorityDemanded = Boolean(
+    domain === 'academic' ||
+    domain === 'academic_policy' ||
+    domain === 'fee' ||
+    domain === 'double_degree' ||
+    /\b(?:sk\s*rektor|surat\s+keputusan|penetapan|pedoman|tata\s+tertib|kebijakan|aturan|kurikulum\s+resmi)\b/i.test(semanticFrame.rawQuery || '')
+  );
+
   const authorityRequirements = {
     minAuthorityLevel: (domain === 'academic' && /schedule|deadline|graduation|wisuda|yudisium/i.test(intent))
       ? 'announcement'
-      : (domain === 'fee' ? 'official' : 'general'),
-    mustBeAuthoritative: domain === 'academic' || domain === 'fee' || domain === 'double_degree'
+      : (domain === 'fee' || isAuthorityDemanded ? 'official' : 'general'),
+    mustBeAuthoritative: isAuthorityDemanded
   };
 
   // Governance requirements
@@ -282,6 +291,7 @@ function buildRetrievalPlanFromSemanticFrame(semanticFrame) {
     entities,
     entitySpecs,
     requestedFields,
+    constraints,
     temporalScope: {
       mode: temporalMode,
       targetPeriod: temporalConstraint.period || null,
@@ -292,7 +302,9 @@ function buildRetrievalPlanFromSemanticFrame(semanticFrame) {
     governanceRequirements,
     historicalPolicy,
     fallbackPolicy,
-    planQuery
+    planQuery,
+    rawQuery: semanticFrame.rawQuery || semanticFrame.normalizedQuery || '',
+    normalizedQuery: semanticFrame.normalizedQuery || ''
   };
 }
 
@@ -323,6 +335,26 @@ function evaluatePlannedCandidate(item, plan) {
     }
   }
 
+  if (plan && plan.authorityRequirements && plan.authorityRequirements.mustBeAuthoritative) {
+    const tier = Number(item && (item.authorityTier || (item.metadata && item.metadata.authorityTier) || 99));
+    if (tier > 3) {
+      return {
+        compatible: false,
+        rejected: true,
+        reason: 'authority_tier_insufficient',
+        entityScore: 0,
+        relationScore: 0,
+        fieldScore: 0,
+        domainScore: 0,
+        semanticScore: 0,
+        contractScore: 0,
+        fieldHits: [],
+        relationHits: [],
+        competingEntity: null
+      };
+    }
+  }
+
   const identity = [
     item && item.filename, item && item.sourceFile, item && item.source,
     item && item.title, item && item.id,
@@ -340,7 +372,7 @@ function evaluatePlannedCandidate(item, plan) {
 
   const specs = (plan && plan.entitySpecs) || [];
   const entityMatches = specs.filter(spec => hasEntity(combined, typeof spec === 'string' ? { canonical: spec } : spec));
-  const entityScore = specs.length ? entityMatches.length / specs.length : 1;
+  const entityScore = specs.length ? entityMatches.length / specs.length : 0.5;
   const comparison = specs.length > 1 || (plan && plan.relations || []).some(relation => /comparison|contrast/.test(relation));
   const genericEntityTarget = specs.length === 1 && /^(?:double\s+degree|dual\s+degree|gelar\s+ganda|itb\s+stikom\s+bali|stikom\s+bali)$/i.test(String(typeof specs[0] === 'string' ? specs[0] : specs[0].canonical || '').trim());
   let competingEntity = null;
@@ -385,10 +417,23 @@ function evaluatePlannedCandidate(item, plan) {
     constraintMismatch = 'unsupported_entity_constraint';
   }
 
+  const queryStr = String(plan && (plan.rawQuery || plan.normalizedQuery || plan.planQuery || plan.query) || '').toLowerCase();
+  const queryTokens = queryStr
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter(t => t.length >= 3 && !/^(?:yang|dan|atau|dari|untuk|pada|dengan|dalam|ke|di|ini|itu|tersebut|adalah|ada|apakah|apa|bagaimana|gimana|berapa|kapan|dimana|mana|siapa|gak|tidak|bisa|kak|min|info|informasi|tanya|mau|tentang|stikom|bali|itb|kampus|cara|alur|prosedur|langkah|tahapan|lewat)$/i.test(t));
+
+  const contentHits = queryTokens.filter(token => combined.toLowerCase().includes(token));
+  const tokenMatchRatio = queryTokens.length > 0 ? contentHits.length / queryTokens.length : 1;
+  const hasContentGrounding = queryTokens.length === 0
+    || (specs.length === 0
+      ? (Boolean(familySignal && familySignal.test(body)) || fieldHits.length > 0 || (queryTokens.length <= 1 ? contentHits.length > 0 : (contentHits.length >= 2 && tokenMatchRatio >= 0.35)))
+      : (contentHits.length > 0 || entityMatches.length > 0 || fieldHits.length > 0 || relationHits.length > 0 || Boolean(familySignal && familySignal.test(body))));
+
   const missingTargetEntity = specs.length > 0 && !genericEntityTarget && entityScore === 0;
   const missingRelation = relations.length > 0 && relationScore === 0;
   const missingRequestedField = requestedFields.length > 0 && fieldScore === 0;
-  const rejected = !domainCompatible || Boolean(competingEntity) || Boolean(constraintMismatch) || missingTargetEntity;
+  const rejected = !domainCompatible || Boolean(competingEntity) || Boolean(constraintMismatch) || missingTargetEntity || !hasContentGrounding;
 
   return {
     compatible: !rejected,
@@ -399,7 +444,11 @@ function evaluatePlannedCandidate(item, plan) {
         ? 'competing_same_family_entity'
         : (constraintMismatch
           ? constraintMismatch
-          : (missingTargetEntity ? 'missing_target_entity' : (missingRelation ? 'missing_relation' : (missingRequestedField ? 'missing_requested_field' : 'compatible'))))),
+          : (missingTargetEntity
+            ? 'missing_target_entity'
+            : (!hasContentGrounding
+              ? 'no_query_content_match'
+              : (missingRelation ? 'missing_relation' : (missingRequestedField ? 'missing_requested_field' : 'compatible')))))),
     entityScore,
     relationScore,
     fieldScore,

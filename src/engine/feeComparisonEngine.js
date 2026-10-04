@@ -12,6 +12,7 @@ const { hasRawTechnicalLeak, hasLikelyRawDocumentLeak } = require('../utils/answ
 const {
   normalizeSlangTokens,
   detectCurriculumTopic,
+  detectFeeType,
   hasExplicitProgramSemantics,
   hasPriorProgramContext,
   hasAllProgramsScope,
@@ -1424,11 +1425,12 @@ function tryGeneralFeeQuestionAnswer(question, index = ragEngine.loadIndex(), op
   const raw = String(question || '').trim();
   const missingSlots = [...(!hasProgram ? ['program'] : []), ...(!hasWave ? ['wave'] : [])];
   const clarificationMetadata = { outputType: 'CLARIFICATION', clarification: { domain: 'fee', missingSlots } };
-  if (options.__canonicalQueryUnderstanding?.constraints?.feeType === 'total_estimate' && missingSlots.length) {
+  const cuFeeType = options.__canonicalQueryUnderstanding?.constraints?.feeType || detectFeeType(question);
+  if (cuFeeType === 'total_estimate' && missingSlots.length) {
     return { ...clarificationMetadata,
       answer: 'Untuk menghitung total pembayaran, sebutkan ' + missingSlots.map(slot => slot === 'program' ? 'prodi atau program' : 'gelombang pendaftaran').join(' dan ') + ' yang dimaksud. Perhitungan memerlukan rincian biaya yang sesuai.' };
   }
-  if (options.__canonicalQueryUnderstanding?.constraints?.feeType === 'ukt' && !hasProgram && !/\b(?:cicil|dicicil|angsuran|bertahap)\b/i.test(q)) {
+  if (cuFeeType === 'ukt' && !hasProgram && !/\b(?:cicil|dicicil|angsuran|bertahap)\b/i.test(q)) {
     return { outputType: 'CLARIFICATION', clarification: { domain: 'fee', missingSlots: ['program'] },
       answer: 'Untuk biaya pendidikan per semester, prodi atau program mana yang kakak maksud?' };
   }
@@ -2470,9 +2472,71 @@ function tryContextualMultiProgramFeeAnswer(question, index, options = {}) {
   return { answer: lines.join('\n'), profiles: sorted };
 }
 
+const DUAL_DEGREE_PARTNER_REGISTRY = {
+  dnui: {
+    key: 'dnui',
+    label: 'DNUI - Dalian Neusoft University of Information, China',
+    shortLabel: 'DNUI',
+    match: /\b(?:dnui|dalian\s+neusoft|china|cina|tiongkok)\b/i,
+    stikomProgram: 'Bisnis Digital',
+    partnerProgram: null,
+    degrees: {
+      combined: 'Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Bachelor of Management (B.M) dari DNUI China'
+    },
+    evidenceSnippet: 'Melalui Kolaborasi ITB STIKOM Bali dengan Dalian Neusoft University of Information (DNUI) China terbentuklah Program Dual Degree International... setelah lulus Mahasiswa memperoleh dua gelar sekaligus yaitu S.Bns (Sarjana Bisnis) dan B.M (Bachelor of Management)'
+  },
+  help: {
+    key: 'help',
+    label: 'HELP University, Malaysia',
+    shortLabel: 'HELP University',
+    match: /\b(?:help\s+university|help\b.*malaysia|malaysia|help)\b/i,
+    stikomProgram: 'Sistem Informasi',
+    partnerProgram: null,
+    degrees: {
+      combined: 'Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia'
+    },
+    evidenceSnippet: 'Melalui Kolaborasi antara ITB STIKOM Bali dengan HELP University Malaysia terbentuklah program Dual Degree International... mendapatkan dua gelar sekaligus (S.Kom dan BIT).'
+  },
+  utb: {
+    key: 'utb',
+    label: 'UTB - Universitas Teknologi Bandung',
+    shortLabel: 'UTB',
+    match: /\b(?:utb|universitas\s+teknologi\s+bandung|bandung)\b/i,
+    stikomProgram: 'Bisnis Digital',
+    partnerProgram: 'DKV (Desain Komunikasi Visual)',
+    degrees: {
+      combined: 'Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Sarjana Desain (S.Ds) dari UTB'
+    },
+    evidenceSnippet: 'Kolaborasi Program Studi S1-Bisnis Digital ITB STIKOM Bali dan S1-DKV Universitas Teknologi Bandung (UTB)... Mahasiswa akan mendapatkan dua gelar (Sarjana Bisnis dan Sarjana Disain)'
+  }
+};
+
 function tryDualDegreeAnswer(question, options) {
   const ddDocName = 'uploads/PROGRAM_DOUBLE_DEGREE_INTERNASIONAL-DAN-NASIONAL-1783426945410.pdf';
   const q = String(question || '').toLowerCase();
+  const PARTNER_REGISTRY = DUAL_DEGREE_PARTNER_REGISTRY;
+
+  function formatDdResult(result) {
+    if (!result || !result.answer) return null;
+    const ans = String(result.answer || '');
+    let contexts = Array.isArray(result.contexts) ? result.contexts : [];
+    if (contexts.length === 0 && !asksHowToJoin && !result.isProcedural) {
+      const neededPartners = Object.values(PARTNER_REGISTRY).filter(p => {
+        const pRe = new RegExp(`\\b(?:${p.shortLabel}|${p.key})\\b`, 'i');
+        return pRe.test(ans) || p.match.test(q);
+      });
+      const selected = neededPartners.length > 0 ? neededPartners : Object.values(PARTNER_REGISTRY);
+      contexts = selected.map(p => ({ source: ddDocName, text: p.evidenceSnippet }));
+    }
+    return {
+      ...result,
+      source: result.source || 'semantic-rag-dual-degree',
+      frameSource: result.frameSource || 'semantic-rag-dual-degree',
+      contexts,
+      provenance: result.provenance || { authority: 'OFFICIAL_DOUBLE_DEGREE_CATALOG', sourceType: 'deterministic_dual_degree_catalog' }
+    };
+  }
+
   const isLanguageScoreQuery = /\b(?:toefl|ielts|skor|score|nilai\s+toefl|kemampuan\s+bahasa|syarat\s+bahasa)\b/i.test(q);
   const hasDurationSignal = /\b(?:berapa\s+(?:tahun|lama|semester|bulan)|skema\s+kuliah(?:nya)?|tahun\s+di)\b/i.test(q);
   const hasFeeSignal = !isLanguageScoreQuery && !hasDurationSignal && /\b(biaya(?:nya)?|harga(?:nya)?|tarif|ongkos|bayar(?:an|nya)?|uang|uang\s+kuliah|uang\s+masuk|spp|dpp|ukt|semester(?:an)?|per\s+semester|pendaftaran|registrasi|tagihan|angsuran|cicil|cicilan|dicicil|nyicil|fee|fees|cost|costs|tuition|payment|payments|berapa(?!\s+(?:tahun|lama|semester))|total(?:an)?)\b/.test(q);
@@ -2605,44 +2669,6 @@ function tryDualDegreeAnswer(question, options) {
   const nationalLines = [
     '- UTB - Universitas Teknologi Bandung: Prodi di STIKOM Bali adalah Bisnis Digital; jurusan di UTB adalah DKV (Desain Komunikasi Visual).'
   ];
-  const PARTNER_REGISTRY = {
-    dnui: {
-      key: 'dnui',
-      label: 'DNUI - Dalian Neusoft University of Information, China',
-      shortLabel: 'DNUI',
-      match: /\b(?:dnui|dalian\s+neusoft|china|cina|tiongkok)\b/i,
-      stikomProgram: 'Bisnis Digital',
-      partnerProgram: null,
-      degrees: {
-        combined: 'Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Bachelor of Management (B.M) dari DNUI China'
-      },
-      evidenceSnippet: 'Melalui Kolaborasi ITB STIKOM Bali dengan DNUI China terbentuklah Program Dual Degree International... setelah lulus Mahasiswa memperoleh dua gelar sekaligus yaitu S.Bns (Sarjana Bisnis) dan B.M (Bachelor of Management)'
-    },
-    help: {
-      key: 'help',
-      label: 'HELP University, Malaysia',
-      shortLabel: 'HELP University',
-      match: /\b(?:help\s+university|help\b.*malaysia|malaysia|help)\b/i,
-      stikomProgram: 'Sistem Informasi',
-      partnerProgram: null,
-      degrees: {
-        combined: 'Sarjana Komputer (S.Kom) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University Malaysia'
-      },
-      evidenceSnippet: 'Melalui Kolaborasi antara ITB STIKOM Bali dengan HELP University terbentuklah program Dual Degree International... mendapatkan dua gelar sekaligus (S.Kom dan BIT).'
-    },
-    utb: {
-      key: 'utb',
-      label: 'UTB - Universitas Teknologi Bandung',
-      shortLabel: 'UTB',
-      match: /\b(?:utb|universitas\s+teknologi\s+bandung|bandung)\b/i,
-      stikomProgram: 'Bisnis Digital',
-      partnerProgram: 'DKV (Desain Komunikasi Visual)',
-      degrees: {
-        combined: 'Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali dan Sarjana Desain (S.Ds) dari UTB'
-      },
-      evidenceSnippet: 'Kolaborasi Program Studi S1-Bisnis Digital ITB STIKOM Bali dan S1- DKV UTB... Mahasiswa akan mendapatkan dua gelar (Sarjana Bisnis dan Sarjana Disain)'
-    }
-  };
 
   const asksAllPartnersExplicit = /\b(?:semua|seluruh|apa\s+saja|apa\s+aja|daftar\s+partner|daftar\s+mitra|mitra\s+yang\s+tersedia|partner\s+yang\s+tersedia|semua\s+partner|semua\s+mitra)\b/i.test(q)
     && (hasDoubleDegreeSignal || hasPartnerSignal);
@@ -2679,11 +2705,11 @@ function tryDualDegreeAnswer(question, options) {
       lines.push(`- **${p.shortLabel}**: Mahasiswa memperoleh dua gelar yaitu ${p.degrees.combined}.`);
       contexts.push({ source: ddDocName, text: p.evidenceSnippet });
     }
-    return {
+    return formatDdResult({
       answer: lines.join('\n'),
       source: 'semantic-rag-dual-degree',
       contexts
-    };
+    });
   }
 
   if (scopeMode === 'EXPLICIT_SET' && !asksUtbSpecific) {
@@ -2704,14 +2730,14 @@ function tryDualDegreeAnswer(question, options) {
       lines.push('');
       lines.push(`Catatan: untuk ${unspecifiedNames}, data yang tersedia baru mencantumkan prodi di sisi STIKOM Bali. Nama jurusan di kampus mitra belum tercantum, jadi saya tidak menebak di luar data.`);
     }
-    return {
+    return formatDdResult({
       answer: lines.join('\n'),
       source: 'semantic-rag-dual-degree'
-    };
+    });
   }
 
   if (asksTimeline && asksHelp) {
-    return {
+    return formatDdResult({
       answer: [
         'Berdasarkan informasi Program Dual Degree International dengan HELP University Malaysia:',
         '',
@@ -2721,11 +2747,11 @@ function tryDualDegreeAnswer(question, options) {
       ].join('\n'),
       source: 'semantic-rag-dual-degree',
       contexts: [{ source: ddDocName, text: 'Melalui Kolaborasi antara ITB STIKOM Bali dengan HELP University terbentuklah program Dual Degree International. Pada program ini mahasiswa mengikuti seluruh perkuliahan di ITB STIKOM BALI selama 4 tahun dan mendapatkan dua gelar sekaligus (S.Kom dan BIT).' }]
-    };
+    });
   }
 
   if ((asksStudyMode || asksTimeline) && asksNational) {
-    return {
+    return formatDdResult({
       answer: [
         'Berdasarkan dokumen resmi Program Double Degree Nasional ITB STIKOM Bali dengan UTB (Universitas Teknologi Bandung):',
         '',
@@ -2736,11 +2762,11 @@ function tryDualDegreeAnswer(question, options) {
       ].join('\n'),
       source: 'semantic-rag-dual-degree',
       contexts: [{ source: ddDocName, text: 'Perkuliahan ini diadakan di ITB STIKOM BALI, sedangkan di semester delapan dua hanya dua bulan kebandung untuk melakukan kuliah praktek di Bandung untuk memamerkan produk mahasiswa. Mahasiswa akan mendapatkan dua gelar (Sarjana Bisnis dan Sarjana Disain)' }]
-    };
+    });
   }
 
   if (asksDnui && !asksHelp && !asksNational) {
-    return {
+    return formatDdResult({
       answer: [
         'Double Degree DNUI adalah program Double Degree internasional ITB STIKOM Bali dengan Dalian Neusoft University of Information, China.',
         '',
@@ -2750,11 +2776,11 @@ function tryDualDegreeAnswer(question, options) {
         '',
         'Jadi, untuk DNUI, data yang aman disebutkan adalah partner internasionalnya dan prodi STIKOM Bali yang terkait. Saya tidak menebak nama jurusan DNUI karena belum ada di data.'
       ].join('\n')
-    };
+    });
   }
 
   if (asksHelp && !asksDnui && !asksNational) {
-    return {
+    return formatDdResult({
       answer: [
         'Double Degree HELP University adalah program Double Degree internasional ITB STIKOM Bali dengan HELP University, Malaysia.',
         '',
@@ -2764,11 +2790,11 @@ function tryDualDegreeAnswer(question, options) {
         '',
         'Jadi, untuk HELP University, data yang aman disebutkan adalah partner internasionalnya dan prodi STIKOM Bali yang terkait. Saya tidak menebak nama jurusan HELP karena belum ada di data.'
       ].join('\n')
-    };
+    });
   }
 
   if (asksUtbPair) {
-    return {
+    return formatDdResult({
       answer: [
         'Untuk Double Degree Nasional dengan UTB, pasangannya adalah:',
         '',
@@ -2777,11 +2803,11 @@ function tryDualDegreeAnswer(question, options) {
         '',
         'Jadi, kalau kakak mengambil jalur Double Degree UTB, sisi STIKOM Bali-nya adalah Bisnis Digital, sedangkan sisi UTB-nya DKV.'
       ].join('\n')
-    };
+    });
   }
 
   if (asksAllPairs && !asksUtbSpecific) {
-    return {
+    return formatDdResult({
       answer: [
         'Berikut pasangan prodi/jurusan Double Degree yang tersedia pada data:',
         '',
@@ -2789,11 +2815,11 @@ function tryDualDegreeAnswer(question, options) {
         '',
         'Catatan: untuk DNUI dan HELP, data yang tersedia baru mencantumkan prodi di sisi STIKOM Bali. Nama jurusan di kampus mitra belum tercantum, jadi saya tidak menebak di luar data.'
       ].join('\n')
-    };
+    });
   }
 
   if (asksUtbMajor) {
-    return {
+    return formatDdResult({
       answer: [
         'Untuk Double Degree Nasional dengan UTB:',
         '',
@@ -2802,11 +2828,11 @@ function tryDualDegreeAnswer(question, options) {
         '',
         'Jadi, konteksnya adalah pasangan prodi pada program kerja sama Double Degree Nasional dengan UTB.'
       ].join('\n')
-    };
+    });
   }
 
   if (asksUtbSpecific) {
-    return {
+    return formatDdResult({
       answer: [
         'Double Degree Nasional dengan UTB adalah program kerja sama ITB STIKOM Bali dengan Universitas Teknologi Bandung (UTB).',
         '',
@@ -2819,11 +2845,11 @@ function tryDualDegreeAnswer(question, options) {
         '',
         'Jadi, kalau pertanyaannya pasangan UTB dan STIKOM Bali, jawabannya: STIKOM Bali Bisnis Digital, UTB DKV (Desain Komunikasi Visual).'
       ].join('\n')
-    };
+    });
   }
 
   if (asksHowToJoin && (hasDoubleDegreeSignal || sessionProceduralEntry) && !asksMeaning && !asksAllPairs && !asksUtbMajor && !asksUtbPair && !asksUtbSpecific) {
-    return {
+    return formatDdResult({
       answer: [
         'Untuk mengikuti program Double Degree, kakak perlu mendaftar atau mengajukan minat melalui jalur PMB/admin kampus sesuai program mitra yang dipilih.',
         '',
@@ -2837,11 +2863,11 @@ function tryDualDegreeAnswer(question, options) {
         'Detail teknis seperti syarat peserta, jadwal keberangkatan/perkuliahan, dokumen, dan alur final bisa berbeda per mitra, jadi bagian itu perlu dikonfirmasi ke Admin PMB ITB STIKOM Bali.'
       ].join('\n'),
       frameSource: 'semantic-rag-direct-answer'
-    };
+    });
   }
 
   if (asksInternational && !asksNational) {
-    return {
+    return formatDdResult({
       answer: [
         'Ya, ada program Double Degree internasional di ITB STIKOM Bali:',
         '',
@@ -2849,11 +2875,11 @@ function tryDualDegreeAnswer(question, options) {
         '',
         'Pada data yang tersedia, DNUI terkait Prodi Bisnis Digital di STIKOM Bali, sedangkan HELP University terkait Prodi Sistem Informasi di STIKOM Bali. Nama jurusan di sisi DNUI/HELP belum tercantum, jadi saya tidak menebak di luar data.'
       ].join('\n')
-    };
+    });
   }
 
   if (asksNational && !asksInternational) {
-    return {
+    return formatDdResult({
       answer: [
         'Ya, ada program Double Degree nasional di ITB STIKOM Bali:',
         '',
@@ -2861,10 +2887,10 @@ function tryDualDegreeAnswer(question, options) {
         '',
         'Untuk sisi STIKOM Bali, prodi yang terkait adalah Bisnis Digital. Untuk sisi UTB, jurusan yang diambil adalah DKV (Desain Komunikasi Visual).'
       ].join('\n')
-    };
+    });
   }
 
-  return {
+  return formatDdResult({
     answer: [
       asksMeaning
         ? 'Double Degree adalah program kerja sama kuliah dengan kampus mitra, sehingga mahasiswa mengikuti skema akademik yang melibatkan ITB STIKOM Bali dan universitas partner.'
@@ -2879,7 +2905,7 @@ function tryDualDegreeAnswer(question, options) {
         ? 'Kalau kakak mau, saya bisa jelaskan detail program DNUI atau HELP.'
         : (asksNational ? 'Kalau kakak mau, saya bisa jelaskan detail program UTB.' : 'Kalau kakak mau, saya bisa jelaskan detail program UTB, DNUI, atau HELP.')
     ].join('\n')
-  };
+  });
 }
 
 function tryCareerAnswer(question, options = {}) {

@@ -121,6 +121,7 @@ function normalizeConversationState(rawState, now = Date.now()) {
     activeEntity = {
       type: unwrappedState.activeEntity.type ? String(unwrappedState.activeEntity.type).trim() : 'unknown',
       canonical: unwrappedState.activeEntity.canonical ? String(unwrappedState.activeEntity.canonical).trim() : '',
+      family: unwrappedState.activeEntity.family ? String(unwrappedState.activeEntity.family).trim() : undefined,
       code: unwrappedState.activeEntity.code ? String(unwrappedState.activeEntity.code).trim() : undefined,
       group: unwrappedState.activeEntity.group ? String(unwrappedState.activeEntity.group).trim() : undefined,
       surface: unwrappedState.activeEntity.surface ? String(unwrappedState.activeEntity.surface).trim() : undefined
@@ -129,18 +130,28 @@ function normalizeConversationState(rawState, now = Date.now()) {
   } else if (typeof unwrappedState.activeEntity === 'string' && unwrappedState.activeEntity.trim()) {
     const eStr = unwrappedState.activeEntity.trim();
     const isAcadEv = /^(?:wisuda|yudisium)$/i.test(eStr);
+    const { findCanonicalEntity } = require('./canonicalEntityRegistry');
+    const canon = findCanonicalEntity(eStr);
+    const isS1Variant = canon && canon.degree === 'S1' && canon.canonical.startsWith('S1 ') && !eStr.toLowerCase().startsWith('s1 ');
+    const finalCanon = isAcadEv ? (eStr.charAt(0).toUpperCase() + eStr.slice(1).toLowerCase()) : (canon ? (isS1Variant ? eStr : canon.canonical) : eStr);
     activeEntity = {
-      type: isAcadEv ? 'academic_event' : (effectiveRawDomain === 'academic' ? 'academic_scope' : 'program'),
-      canonical: isAcadEv ? (eStr.charAt(0).toUpperCase() + eStr.slice(1).toLowerCase()) : eStr,
-      group: isAcadEv || effectiveRawDomain === 'academic' ? 'academicScopes' : 'programs'
+      type: isAcadEv ? 'academic_event' : (canon ? (canon.type || 'program') : (effectiveRawDomain === 'academic' ? 'academic_scope' : 'program')),
+      canonical: finalCanon,
+      family: canon ? (canon.family || 'program') : (isAcadEv ? 'academic_event' : (effectiveRawDomain === 'academic' ? 'academic_scope' : 'program')),
+      group: isAcadEv ? 'academicScopes' : (canon ? (canon.group || 'programs') : (effectiveRawDomain === 'academic' ? 'academicScopes' : 'programs'))
     };
   } else if (typeof unwrappedState.entity === 'string' && unwrappedState.entity.trim()) {
     const eStr = unwrappedState.entity.trim();
     const isAcadEv = /^(?:wisuda|yudisium)$/i.test(eStr);
+    const { findCanonicalEntity } = require('./canonicalEntityRegistry');
+    const canon = findCanonicalEntity(eStr);
+    const isS1Variant = canon && canon.degree === 'S1' && canon.canonical.startsWith('S1 ') && !eStr.toLowerCase().startsWith('s1 ');
+    const finalCanon = isAcadEv ? (eStr.charAt(0).toUpperCase() + eStr.slice(1).toLowerCase()) : (canon ? (isS1Variant ? eStr : canon.canonical) : eStr);
     activeEntity = {
-      type: isAcadEv ? 'academic_event' : (effectiveRawDomain === 'academic' ? 'academic_scope' : 'program'),
-      canonical: isAcadEv ? (eStr.charAt(0).toUpperCase() + eStr.slice(1).toLowerCase()) : eStr,
-      group: isAcadEv || effectiveRawDomain === 'academic' ? 'academicScopes' : 'programs'
+      type: isAcadEv ? 'academic_event' : (canon ? (canon.type || 'program') : (effectiveRawDomain === 'academic' ? 'academic_scope' : 'program')),
+      canonical: finalCanon,
+      family: canon ? (canon.family || 'program') : (isAcadEv ? 'academic_event' : (effectiveRawDomain === 'academic' ? 'academic_scope' : 'program')),
+      group: isAcadEv ? 'academicScopes' : (canon ? (canon.group || 'programs') : (effectiveRawDomain === 'academic' ? 'academicScopes' : 'programs'))
     };
   } else if (stableCtx && stableCtx.entity) {
     if (typeof stableCtx.entity === 'object' && stableCtx.entity.canonical) {
@@ -1442,7 +1453,9 @@ function escapeRegex(s) {
 function hasExplicitProgramSemantics(text) {
   const s = String(text || '').toLowerCase();
   return /\b(?:program|program\s+studi|prodi|jurusan|progdi|bidang\s+studi|konsentrasi|peminatan|fakultas|kuliah|perkuliahan|mata\s+kuliah|matkul|kurikulum|belajar|dipelajari|pelajaran|lulusan|alumni|prospek|karier|karir|pekerjaan|profesi|job|biaya|dpp|spp|bayar|tarif|uang\s+gedung|sks|gelar|semester|s1|d3|sarjana|diploma|akreditasi)\b/i.test(s)
-    || /\b(?:beda|bedanya|perbedaan|banding|bandingkan|versus|vs)\b/i.test(s);
+    || /\b(?:beda|bedanya|perbedaan|banding|bandingkan|versus|vs)\b/i.test(s)
+    || /\b(?:apa\s+(?:itu|yang\s+dimaksud(?:\s+dengan)?)|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?)\s+(?:si|ti|bd|sk|mi)(?:\s*[?,!.]|\s+(?:kak|min|ya|dong|sih|bro|gan|tuh|nih)\b|\s*$)/i.test(s)
+    || /\b(?:si|ti|bd|sk|mi)\s+(?:itu\s+apa|apaan|maksudnya|artinya)\b/i.test(s);
 }
 
 function hasPriorProgramContext(priorState, canonicalName, code) {

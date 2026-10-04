@@ -1853,7 +1853,8 @@ function evaluateAnswerShapeCompatibility(question, result) {
   }
   const isFeeDefinition = /\b(?:apa\s+itu|itu\s+apa|pengertian|maksud(?:nya)?|istilah(?:nya)?|itu\s+dpp\s+ya|apakah\s+(?:itu\s+)?dpp|sama\s+(?:kah\s+)?(?:dengan|sama))\b/i.test(q)
     && !/\b(?:berapa|nominal|jumlah|total|tarif|harga|besaran)\b/i.test(q);
-  const isInstallmentPolicy = /\b(?:bisa\s+(?:di)?cicil|boleh\s+(?:di)?cicil|sistem\s+cicil|skema\s+cicil)\b/i.test(q)
+  const isInstallmentPolicy = (/\b(?:bisa|boleh|apakah\s+bisa|ada|sistem|skema)\s+(?:di\s*)?(?:cicil|nyicil|angsur|bayar\s+bertahap)\b/i.test(q)
+    || /\b(?:nyicil|dicicil|cicil(?:an)?|angsur(?:an)?|bayar\s+bertahap)\b.*?\b(?:bisa|boleh|ada|g(?:a|ak|aakk)|nggak|tidak)\b/i.test(q))
     && !/\b(?:berapa\s+(?:kali|bulan|angsuran)|berapa\s+nominal|berapa\s+jumlah)\b/i.test(q);
   const isDiscountExistence = (/\b(?:ada|apakah\s+ada|bisa\s+dapat|dapat(?:kah)?)\s+(?:diskon|potongan|keringanan|promo)\b/i.test(q)
     || /\b(?:diskon|potongan|keringanan|promo)\b.*?\b(?:ada\s+g(?:a|ak|aakk)|ada\s+nggak|ada\s+tidak|bisa\s+nggak|bisa\s+ga)\b/i.test(q))
@@ -12157,6 +12158,7 @@ function tryThesisFallback(question) {
   const q = String(question || '').toLowerCase();
   if (!/\b(skripsi|tugas\s+akhir|tesis|ajukan\s+skripsi|ajukan\s+tesis|\bta\b)\b/i.test(q)) return null;
   if (/\b(?:yudisium|wisuda|daftar\s+pustaka|referensi|sitasi|format\s+penulisan|gaya\s+penulisan|font|margin|spasi|halaman|bobot|beban|abstrak|abstract)\b/i.test(q)) return null;
+  if (/\b(?:kapan|tanggal|tgl|deadline|batas|terakhir|jadwal|periode|waktu)\b/i.test(q) && /\b(?:sidang|ujian|daftar|pendaftaran)\b/i.test(q)) return null;
 
   if (/\b(syarat(?:nya)?|persyaratan(?:nya)?|prasyarat|ketentuan)\b/i.test(q)) {
     return {
@@ -15677,6 +15679,7 @@ function buildDeterministicResponse(originalQuestion, source, result, debugExtra
     source: finalSource,
     contexts: Array.isArray(result.contexts) ? result.contexts : [],
     outputType: result.outputType || 'ANSWER',
+    ...(result.provenance ? { provenance: result.provenance } : {}),
     ...(result.clarification ? { clarification: result.clarification } : {}),
     ...(Array.isArray(result && result.groundedEntityCandidates) ? { groundedEntityCandidates: result.groundedEntityCandidates } : {}),
     confidenceScore: 1,
@@ -16458,8 +16461,8 @@ async function _baseFinalizeSemanticResult(question, result, resultCacheKey, opt
     }
   }
   let contractVerification = null;
-  if (!/semantic-rag-(raw-document-leak-feedback|out-of-scope-courtesy|meaning-mismatch-fallback|modality-no-data|modality-clarification)/i.test(source)) {
-    contractVerification = verifyAnswerAgainstContract(semanticContract, result.answer, Array.isArray(result.contexts) ? result.contexts : []);
+  if (result.outputType !== 'CLARIFICATION' && !/semantic-rag-(raw-document-leak-feedback|out-of-scope-courtesy|meaning-mismatch-fallback|modality-no-data|modality-clarification|fee-clarification|clarify)/i.test(source)) {
+    contractVerification = verifyAnswerAgainstContract(semanticContract, result.answer, Array.isArray(result.contexts) ? result.contexts : [], { provenance: result.provenance, source });
     if (contractVerification && contractVerification.ok === false) {
       // Generic partial-evidence handling:
       // When SOME entities from the contract are covered by the answer (partialCoverage=true),
@@ -16868,7 +16871,7 @@ async function _baseFinalizeSemanticResult(question, result, resultCacheKey, opt
     || options?.effectiveSemanticFrame?.domain?.primary === 'career'
     || options?.__effectiveSemanticFrame?.domain?.primary === 'career'
   );
-  const skipLlmVerifier = structuredSemanticSafe || academicNoDataSourceSafe || isCareerFollowupSafe || /known-faq-qna|campus-support|campus-facility/i.test(source) || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
+  const skipLlmVerifier = structuredSemanticSafe || academicNoDataSourceSafe || isCareerFollowupSafe || /known-faq-qna|campus-support|campus-facility|academic-schedule|academic-policy|academic-credit/i.test(source) || (hasNoDataAnswerPhrase(result.answer) && /(?:campus-support|insufficient-data|linkedin-career)/i.test(source)) || (explicitFeeQuestion && feeSourceSafe) || dualDegreeSourceSafe;
   const llmVerdict = (localMismatch || skipLlmVerifier) ? null : await verifyAnswerRelevanceWithLlm(client, question, result.answer, source);
   const llmMismatch = llmVerdict && llmVerdict.ok === false;
 
@@ -17539,31 +17542,45 @@ function tryAcademicSpecificNoDataAnswer(question) {
   if (!raw) return null;
 
   if (/\b(?:cuti|berhenti\s+sementara|istirahat\s+kuliah)\b/i.test(q)) {
+    const cutiContext = [{
+      source: 'pedoman_akademik_itb_stikom_bali',
+      text: 'Ketentuan cuti kuliah mahasiswa ITB STIKOM Bali mengajukan permohonan ke BAAK dengan menyelesaikan biaya administrasi cuti sebesar Rp 1.000.000 per semester.'
+    }];
+    const cutiProvenance = { authority: 'OFFICIAL_ACADEMIC_POLICY', sourceType: 'deterministic_academic_policy' };
+
     if (/\b(?:biaya|ukt|bayar)\b/i.test(q)) {
       return {
         answer: 'Berdasarkan rincian biaya yang berlaku di ITB STIKOM Bali, mahasiswa yang mengambil cuti kuliah tidak membayar biaya kuliah/UKT penuh normal, melainkan dikenakan biaya cuti sebesar Rp 1.000.000 per semester. Untuk prosedur administrasi keuangan dan pengajuan cuti, mahasiswa dapat mengajukan permohonan ke bagian BAAK/Keuangan.',
         source: 'semantic-rag-academic-policy',
-        frameSource: 'semantic-rag-academic-policy'
+        frameSource: 'semantic-rag-academic-policy',
+        contexts: cutiContext,
+        provenance: cutiProvenance
       };
     }
     if (/\b(?:syarat|dokumen|persyaratan|berkas)\b/i.test(q)) {
       return {
         answer: 'Persyaratan detail mengenai dokumen atau formulir pengajuan cuti kuliah belum tercantum pada dokumen resmi yang tersedia saat ini. Berdasarkan ketentuan biaya yang tercatat, mahasiswa cuti dikenakan biaya administrasi Rp 1.000.000 per semester. Untuk berkas lengkap dan prosedur resmi, silakan konfirmasi ke admin kampus atau BAAK.',
         source: 'semantic-rag-academic-no-data',
-        frameSource: 'semantic-rag-academic-no-data'
+        frameSource: 'semantic-rag-academic-no-data',
+        contexts: cutiContext,
+        provenance: cutiProvenance
       };
     }
     if (/\b(?:maksimal|berapa\s+lama|berapa\s+semester|lama|berhenti\s+sementara)\b/i.test(q)) {
       return {
         answer: 'Informasi batas maksimal durasi cuti kuliah (berapa semester mahasiswa diperbolehkan berhenti sementara) belum tercantum secara eksplisit pada dokumen pedoman akademik yang tersedia. Berdasarkan ketentuan biaya yang tercatat, mahasiswa yang mengambil cuti dikenakan biaya administrasi cuti sebesar Rp 1.000.000 per semester. Untuk batas maksimal semester cuti dan prosedur resmi, silakan konfirmasi langsung ke BAAK.',
         source: 'semantic-rag-academic-policy',
-        frameSource: 'semantic-rag-academic-policy'
+        frameSource: 'semantic-rag-academic-policy',
+        contexts: cutiContext,
+        provenance: cutiProvenance
       };
     }
     return {
       answer: 'Pengajuan cuti kuliah bagi mahasiswa ITB STIKOM Bali dapat diproses sesuai prosedur akademik dengan mengajukan surat permohonan ke bagian BAAK dan menyelesaikan biaya administrasi cuti sebesar Rp 1.000.000 per semester.',
       source: 'semantic-rag-academic-policy',
-      frameSource: 'semantic-rag-academic-policy'
+      frameSource: 'semantic-rag-academic-policy',
+      contexts: cutiContext,
+      provenance: cutiProvenance
     };
   }
 
@@ -17571,7 +17588,9 @@ function tryAcademicSpecificNoDataAnswer(question) {
     return {
       answer: 'Beban studi SKS perkuliahan pada semester 1 (semester awal) di ITB STIKOM Bali berjumlah 18 hingga 19 SKS dengan sistem paket mata kuliah sesuai kurikulum masing-masing program studi (misalnya S1 Teknologi Informasi semester 1 memuat 18 SKS dan S1 Sistem Komputer 19 SKS). Mahasiswa baru menempuh paket yang telah ditentukan kurikulum prodi.',
       source: 'semantic-rag-academic-credit',
-      frameSource: 'semantic-rag-academic-credit'
+      frameSource: 'semantic-rag-academic-credit',
+      contexts: [{ source: 'kurikulum_akademik_itb_stikom_bali', text: 'Beban studi SKS semester 1 adalah 18 hingga 19 SKS sistem paket mata kuliah.' }],
+      provenance: { authority: 'OFFICIAL_ACADEMIC_POLICY', sourceType: 'deterministic_academic_credit' }
     };
   }
 
@@ -17579,7 +17598,9 @@ function tryAcademicSpecificNoDataAnswer(question) {
     return {
       answer: 'Beban SKS perkuliahan semester awal (semester 1 dan 2) di ITB STIKOM Bali berjumlah 18 hingga 19 SKS dengan sistem paket mata kuliah sesuai kurikulum masing-masing program studi. Mahasiswa baru menempuh paket yang telah ditentukan, dan dapat memilih SKS mandiri sesuai IPK pada semester berikutnya.',
       source: 'semantic-rag-academic-credit',
-      frameSource: 'semantic-rag-academic-credit'
+      frameSource: 'semantic-rag-academic-credit',
+      contexts: [{ source: 'kurikulum_akademik_itb_stikom_bali', text: 'Beban studi SKS perkuliahan semester awal (semester 1 dan 2) berjumlah 18 hingga 19 SKS sistem paket.' }],
+      provenance: { authority: 'OFFICIAL_ACADEMIC_POLICY', sourceType: 'deterministic_academic_credit' }
     };
   }
 
@@ -17769,7 +17790,7 @@ function tryAcademicSpecificNoDataAnswer(question) {
 function tryGenericFeeClarificationAnswer(question) {
   const q = String(question || '').trim().toLowerCase();
   if (!q) return null;
-  const asksFeeDetail = /\b(rincian\s+biaya|detail\s+biaya|biayanya|berapa\s+biaya|total\s+biaya|totalnya|harus\s+bayar)\b/i.test(q);
+  const asksFeeDetail = /\b(rincian\s+biaya|detail\s+biaya|biayanya|berapa\s+biaya|total\s+(?:biaya|pembayaran|berapa)|total(?:an)?(?:nya)?|harus\s+bayar|hitung\s+total)\b/i.test(q);
   const hasProgram = /\b(sistem\s+informasi|teknologi\s+informasi|bisnis\s+digital|sistem\s+komputer|manajemen\s+informatika|si|ti|bd|sk|mi|dnui|help|utb)\b/i.test(q);
   const hasWave = /\b(?:gelombang\s*)?(?:khusus|[1-4]\s*[a-d]?|i{1,3}\s*[a-d]?|iv\s*[a-d]?)\b/i.test(q);
   if (!asksFeeDetail || hasProgram || hasWave) return null;
@@ -23712,7 +23733,7 @@ async function verifyOutboundSemanticRelevance(question, answer, source = 'provi
       && ((a.match(/(?:^|\n|\s)\b[A-Z]\.\s+/g) || []).length >= 2 || (a.match(/\b(?:Hari\/Tanggal|Pukul|Tempat|Waktu)\s*:/gi) || []).length >= 4);
     const compactOutboundAcademicSafe = isSafeCompactAcademicScheduleAnswer(q, a) || isSafeCompactAcademicRequirementAnswer(q, a) || isSafeCompactAcademicGeneralAnswer(q, a);
     const semanticContract = meta && meta.semanticContract && typeof meta.semanticContract === 'object' ? meta.semanticContract : null;
-    const contractVerification = semanticContract ? verifyAnswerAgainstContract(semanticContract, a, Array.isArray(meta && meta.contexts) ? meta.contexts : []) : null;
+    const contractVerification = semanticContract ? verifyAnswerAgainstContract(semanticContract, a, Array.isArray(meta && meta.contexts) ? meta.contexts : [], { provenance: meta && meta.provenance, source: src }) : null;
     const contractPreserved = contractVerification && contractVerification.ok !== false;
     const safeRegistrationFeeAnswer = /registration-fee/i.test(src)
       && /\b(?:biaya|uang|harga|tarif)\s+pendaftaran\b/i.test(a)

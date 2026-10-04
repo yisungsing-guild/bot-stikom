@@ -217,7 +217,7 @@ class StructuredTrainingDataStrategy extends BaseRetrievalStrategy {
   supports(plan) {
     if (!plan) return false;
     const scope = Array.isArray(plan.sourceScope) ? plan.sourceScope : [];
-    const isFaq = plan.domain === 'faq' || plan.domain === 'procedure';
+    const isFaq = plan.domain === 'faq' || plan.domain === 'procedure' || plan.domain === 'campus_contact';
     const isQna = plan.intent && String(plan.intent).includes('qna');
     const isTrainingScope = scope.includes('training_data');
     return isFaq || isQna || isTrainingScope;
@@ -268,17 +268,30 @@ class StructuredTrainingDataStrategy extends BaseRetrievalStrategy {
         });
       }
 
-      if (entityMatch) {
+      // Query token grounding
+      const queryStr = String(plan?.planQuery || plan?.rawQuery || query || '').toLowerCase();
+      const queryTokens = queryStr
+        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+        .split(/\s+/)
+        .filter(t => t.length >= 3 && !/^(?:yang|dan|atau|dari|untuk|pada|dengan|dalam|ke|di|ini|itu|tersebut|adalah|ada|apakah|apa|bagaimana|gimana|berapa|kapan|dimana|mana|siapa|gak|tidak|bisa|kak|min|info|informasi|tanya|mau|tentang|stikom|bali|itb|kampus)$/i.test(t));
+      const tokenHits = queryTokens.filter(token => combined.includes(token));
+      const isGrounded = queryTokens.length === 0 || tokenHits.length > 0 || entityMatch;
+
+      if (entityMatch && isGrounded) {
         matched.push({
           id: row.id || `training_${matched.length}`,
           input: row.input || row.question,
           output: row.output || row.answer,
           source: row.source || 'training_data',
-          authorityTier: row.authorityTier || 1,
+          authorityTier: row.authorityTier || 3,
           status: row.status || 'approved',
           metrics: {
             entityMatch,
-            compatible: true
+            compatible: true,
+            entityScore: entityMatch ? 1.0 : 0.5,
+            domainScore: 1.0,
+            fieldScore: 1.0,
+            contractScore: 0.85
           }
         });
       }
@@ -398,7 +411,7 @@ function selectRetrievalStrategy(retrievalPlan, runtimeContext = {}) {
 
   if (retrievalPlan) {
     const trainingStrategy = new StructuredTrainingDataStrategy();
-    if (trainingStrategy.supports(retrievalPlan)) {
+    if (trainingStrategy.supports(retrievalPlan) || (Array.isArray(runtimeContext.trainingData) && runtimeContext.trainingData.length > 0)) {
       return trainingStrategy;
     }
   }
@@ -420,10 +433,20 @@ function evaluateRetrievalEvidence(candidates = [], plan = {}) {
     };
   }
 
+  // If the plan itself dictates ambiguity clarification, do not force answerable
+  if (plan.fallbackPolicy === 'clarify_ambiguity') {
+    return {
+      answerable: false,
+      selectedEvidence: candidates,
+      policy: 'clarify_ambiguity',
+      reason: 'plan_policy_requires_clarification'
+    };
+  }
+
   // Top candidate must be compatible and possess positive entity & domain score
   const top = candidates[0];
   const isCompatible = top.metrics ? Boolean(top.metrics.compatible) : true;
-  const entityScore = top.metrics?.entityScore !== undefined ? top.metrics.entityScore : 1.0;
+  const entityScore = top.metrics?.entityScore !== undefined ? top.metrics.entityScore : 0.5;
   const domainScore = top.metrics?.domainScore !== undefined ? top.metrics.domainScore : 1.0;
 
   if (!isCompatible || entityScore < 0.5 || domainScore === 0) {
@@ -432,16 +455,6 @@ function evaluateRetrievalEvidence(candidates = [], plan = {}) {
       selectedEvidence: [],
       policy: plan.fallbackPolicy || 'safe_data_gap',
       reason: 'top_candidate_fails_compatibility_threshold'
-    };
-  }
-
-  // If the plan itself dictates ambiguity clarification, do not force answerable
-  if (plan.fallbackPolicy === 'clarify_ambiguity') {
-    return {
-      answerable: false,
-      selectedEvidence: candidates,
-      policy: 'clarify_ambiguity',
-      reason: 'plan_policy_requires_clarification'
     };
   }
 

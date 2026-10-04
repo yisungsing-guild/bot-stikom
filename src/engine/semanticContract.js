@@ -85,7 +85,7 @@ function inferRequestType(canonical) {
   if (/link|tautan|url|website|situs|channel|kanal|lewat mana/.test(raw) && /daftar|pendaftaran|pendaftarannya|registrasi|pmb|mahasiswa baru|camaba/.test(raw)) return 'registration_channel';
   if (/comparison/.test(intent) || fields.has('contrast')) return 'comparison';
   if (/definition/.test(intent) || qType === 'definition' || fields.has('definition') || fields.has('equivalence')) return 'definition';
-  if (/policy|unsupported/.test(intent) || fields.has('policy')) return 'policy';
+  if (/policy|unsupported/.test(intent) || fields.has('policy') || (canonical && canonical.constraints && canonical.constraints.feeType === 'installment')) return 'policy';
   if (/fee/.test(intent) || fields.has('amount')) return 'fee';
   if (intent === 'ask_contact' || fields.has('contact') || fields.has('phone') || fields.has('channel')) return 'contact';
   if ((canonical && canonical.constraints && canonical.constraints.relationType === 'double_degree_sequence') || qType === 'sequence') return 'sequence';
@@ -337,7 +337,7 @@ function isCreditConversionPolicyAnswer(contract, answer) {
     && /\b(?:verifikasi|asesmen|transkrip|kurikulum|kesetaraan\s+mata\s+kuliah)\b/i.test(text);
   return asksCreditAmount && asksConversion && hasCreditCue && givesVerificationBasis;
 }
-function verifyAnswerAgainstContract(contract, answer, evidence = []) {
+function verifyAnswerAgainstContract(contract, answer, evidence = [], options = {}) {
   if (!contract || typeof contract !== 'object') return { ok: true, reason: 'no_contract' };
   const text = String(answer || '');
   if (!text.trim()) return { ok: false, reason: 'empty_answer' };
@@ -421,7 +421,71 @@ function verifyAnswerAgainstContract(contract, answer, evidence = []) {
     const waveRe = new RegExp(`\\b(?:gel(?:ombang)?\\s*)?(?:${variants.join('|')})\\b`, 'i');
     if (!waveRe.test(combined)) return { ok: false, reason: 'missing_registration_wave', registrationWave: contract.constraints.registrationWave.key };
   }
-  if (contract.requestType === 'fee' && !/\b(?:rp\.?|rupiah|\d[\d.,]+\s*(?:ribu|juta)?|biaya|ukt|dpp)\b/i.test(text)) return { ok: false, reason: 'fee_shape_not_satisfied' };
+  if (contract.requestType === 'fee' && contract.constraints?.feeType !== 'installment' && !/\b(?:rp\.?|rupiah|\d[\d.,]+\s*(?:ribu|juta)?|biaya|ukt|dpp)\b/i.test(text)) return { ok: false, reason: 'fee_shape_not_satisfied' };
+
+  // Numeric and percentage grounding verification against evidence
+  const isDeterministicFee = Boolean(
+    (options && options.provenance && (options.provenance.sourceType === 'deterministic_fee_catalog' || options.provenance.sourceType === 'deterministic_academic_policy' || options.provenance.sourceType === 'deterministic_academic_credit'))
+    || (options && /fee-detail|fee-discount|registration-fee|fee-comparison|contextual-fee|academic-policy|academic-credit/i.test(options.source))
+    || (contract && contract.provenance && (contract.provenance.sourceType === 'deterministic_fee_catalog' || contract.provenance.sourceType === 'deterministic_academic_policy'))
+  );
+
+  const evidenceText = toArray(evidence).map(item => String(item && (item.text || item.chunk || item.content) || '')).join('\n');
+  const normalizedEvidence = normalizeText(evidenceText);
+  const normalizedEvidenceDigits = evidenceText.replace(/\D/g, '');
+
+  if (!isDeterministicFee) {
+    const percentMatches = text.match(/\b(\d+(?:[.,]\d+)?)\s*%/g) || [];
+    for (const pMatch of percentMatches) {
+      const rawVal = pMatch.replace(/[^0-9.,]/g, '');
+      const hasPercentInEvidence = evidenceText.includes(pMatch)
+        || evidenceText.includes(`${rawVal}%`)
+        || new RegExp(`\\b${rawVal}\\s*(?:%|persen)\\b`, 'i').test(evidenceText);
+      if (!hasPercentInEvidence) {
+        return { ok: false, reason: 'unsupported_numeric_claim' };
+      }
+    }
+
+    const moneyMatches = text.match(/(?:rp\.?|rupiah\s*)\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?)/gi) || [];
+    for (const mMatch of moneyMatches) {
+      const digitsOnly = mMatch.replace(/\D/g, '');
+      if (digitsOnly.length >= 5) {
+        const formattedNum = mMatch.replace(/^(?:rp\.?|rupiah\s*)\s*/i, '').trim();
+        const inEvidence = evidenceText.includes(formattedNum)
+          || normalizedEvidenceDigits.includes(digitsOnly)
+          || new RegExp(`\\b${formattedNum.replace(/\./g, '\\.')}\\b`).test(evidenceText);
+        if (!inEvidence) {
+          return { ok: false, reason: 'unsupported_numeric_claim' };
+        }
+      }
+    }
+  }
+
+  // Provenance / external partner verification
+  const isProcedural = contract.requestType === 'procedure'
+    || /^(?:ask_registration_how|ask_registration_requirements|ask_international_program_procedure)$/i.test(String(contract.intent || ''))
+    || (Array.isArray(contract.requestedFields) && contract.requestedFields.includes('procedureSteps'));
+  const isPartnerQuery = !isProcedural && (
+    (Array.isArray(contract.requestedFields) && contract.requestedFields.includes('partner'))
+    || contract.domain === 'double_degree'
+    || contract.domain === 'kerjasama'
+  );
+  if (isPartnerQuery) {
+    const institutionRegex = /\b([A-Z][a-zA-Z0-9]+(?:\s+[A-Z][a-zA-Z0-9]+)*\s+(?:University|Institute|College|Politeknik|Universitas)|(?:Universitas|University|Institut|Institute|Politeknik)\s+[A-Z][a-zA-Z0-9]+(?:\s+[A-Z][a-zA-Z0-9]+)*)\b/g;
+    let instMatch;
+    while ((instMatch = institutionRegex.exec(text)) !== null) {
+      const instName = instMatch[0].trim();
+      const instNormalized = normalizeText(instName);
+      if (instNormalized.includes('stikom') || instNormalized.includes('itb')) continue;
+      // Extract distinctive tokens of the institution name (exclude generic words)
+      const distinctiveTokens = instNormalized.split(/\s+/).filter(t => !['university', 'universitas', 'institute', 'institut', 'college', 'politeknik', 'dan', 'and', 'the', 'of'].includes(t) && t.length >= 3);
+      const isGroundedInEvidence = distinctiveTokens.length > 0 && distinctiveTokens.some(tok => normalizedEvidence.includes(tok));
+      if (!isGroundedInEvidence) {
+        return { ok: false, reason: 'provenance_mismatch' };
+      }
+    }
+  }
+
   if (contract.requestType === 'schedule') {
     const relationType = String(contract.constraints && contract.constraints.relationType || '');
     const fields = new Set(Array.isArray(contract.requestedFields) ? contract.requestedFields : []);

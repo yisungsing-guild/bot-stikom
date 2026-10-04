@@ -117,6 +117,9 @@ tests/*
 !tests/phase2SemanticFrameContract.test.js
 !tests/phase3RetrievalStrategy.test.js
 !tests/phase4ShadowIntegration.test.js
+!tests/phase4OfflineHoldout.test.js
+!tests/feeClarificationFamilies.test.js
+!tests/clarificationOutputContract.test.js
 !tests/documentAdministrationGovernance.test.js
 !tests/adminTrainingUploadCleanup.test.js
 tools/

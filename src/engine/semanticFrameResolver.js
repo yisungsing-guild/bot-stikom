@@ -203,6 +203,14 @@ function resolveAuthoritativeFields(rawText, rawFields, numericSemantics) {
     fields.add('internationalExperience');
   }
 
+  if (/\b(?:alamat|lokasi|di\s+mana|dimana)\b/i.test(q)) {
+    fields.add('location');
+  }
+
+  if (/\b(?:universitas\s+mana|mitra|partner)\b/i.test(q)) {
+    fields.add('partner');
+  }
+
   return rankRequestedFields(Array.from(fields));
 }
 
@@ -285,6 +293,54 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
     slotProvenance.domain = PROVENANCE.DERIVED;
   }
 
+  // Facility / Location authority: normalize campus_location to campus_facility or admission
+  if (domain.primary === 'campus_location') {
+    if (/\b(?:pmb|pendaftaran|daftar)\b/i.test(raw)) {
+      domain.primary = 'admission';
+      domain.confidence = 0.85;
+      slotProvenance.domain = PROVENANCE.DERIVED;
+      if (!requestedFields.includes('location')) requestedFields.push('location');
+      if (!requestedFields.includes('procedureSteps')) requestedFields.push('procedureSteps');
+    } else {
+      domain.primary = 'campus_facility';
+      domain.confidence = 0.85;
+      slotProvenance.domain = PROVENANCE.DERIVED;
+      if (!requestedFields.includes('location')) requestedFields.push('location');
+    }
+  }
+
+  // Institution metadata authority (founding date, dies natalis, anniversary): primary domain is general
+  if (domain.primary === 'institution_profile') {
+    domain.primary = 'general';
+    domain.confidence = 0.85;
+    slotProvenance.domain = PROVENANCE.DERIVED;
+  }
+
+  // 3b. Compatible prior context inheritance from session
+  const priorSessionOrState = options.sessionState
+    || (options.sessionData && (options.sessionData.sessionState || options.sessionData.conversationState || options.sessionData.state))
+    || options.sessionData
+    || options.session
+    || null;
+
+  // Academic modality follow-up authority (e.g. "bisa untuk jurusan apa saja" when prior modality is active)
+  const isPriorModalityActive = Boolean(
+    priorSessionOrState?.studyModality ||
+    priorSessionOrState?.deliveryMode ||
+    priorSessionOrState?.activeModality ||
+    options.sessionState?.studyModality ||
+    options.sessionState?.deliveryMode ||
+    options.sessionState?.activeModality ||
+    /\b(?:online|offline|kelas\s+(?:malam|sore|karyawan))\b/i.test(priorSessionOrState?.rawSourceQuery || '')
+  );
+  if (domain.primary === 'program' && isPriorModalityActive) {
+    domain.primary = 'academic';
+    domain.confidence = 0.85;
+    slotProvenance.domain = PROVENANCE.DERIVED;
+    if (!requestedFields.includes('deliveryMode')) requestedFields.push('deliveryMode');
+    if (!requestedFields.includes('curriculum')) requestedFields.push('curriculum');
+  }
+
   // Step 3: Context Authority (Inheritance Hierarchy)
   // CURRENT EXPLICIT > COMPATIBLE MESSAGE-LOCAL > COMPATIBLE PRIOR CONTEXT > UNKNOWN
   const entities = [...rawExplicitEntities];
@@ -321,13 +377,6 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
     }
   }
 
-  // 3b. Compatible prior context inheritance from session
-  const priorSessionOrState = options.sessionState
-    || (options.sessionData && (options.sessionData.sessionState || options.sessionData.conversationState || options.sessionData.state))
-    || options.sessionData
-    || options.session
-    || null;
-
   let stateToNormalize = priorSessionOrState;
   if (priorSessionOrState && typeof priorSessionOrState === 'object') {
     if (!priorSessionOrState.updatedAt && !priorSessionOrState.lastSemanticContractUpdatedAt) {
@@ -345,6 +394,23 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
           group: 'programs'
         }
       };
+    } else if (typeof stateToNormalize.activeEntity === 'string' && stateToNormalize.activeEntity.trim()) {
+      const { findCanonicalEntity } = require('./canonicalEntityRegistry');
+      const eStr = stateToNormalize.activeEntity.trim();
+      const canon = findCanonicalEntity(eStr);
+      if (canon) {
+        const isS1Variant = canon.degree === 'S1' && canon.canonical.startsWith('S1 ') && !eStr.toLowerCase().startsWith('s1 ');
+        const finalCanon = isS1Variant ? eStr : canon.canonical;
+        stateToNormalize = {
+          ...stateToNormalize,
+          activeEntity: {
+            canonical: finalCanon,
+            type: canon.type || (canon.family === 'student_organization' ? 'student_activity_unit' : 'program'),
+            family: canon.family || (canon.group === 'programs' ? 'academic_program' : 'program'),
+            group: canon.group || (canon.family === 'student_organization' ? 'organizations' : 'programs')
+          }
+        };
+      }
     }
     if (stateToNormalize.legacyUnverified === undefined && (stateToNormalize.isVerified === undefined || stateToNormalize.isVerified === true)) {
       stateToNormalize.isVerified = true;
@@ -438,8 +504,8 @@ function resolveEffectiveSemanticFrame(rawQuery, options = {}) {
 
 const DOMAIN_FIELD_FAMILY_COMPATIBILITY = Object.freeze({
   foreign_student_admin: new Set(['procedure', 'governance', 'geographic_destination']),
-  academic_policy: new Set(['procedure', 'academic_policy', 'academic_curriculum', 'certification', 'academic_qualification', 'temporal_schedule', 'temporal_duration']),
-  academic: new Set(['procedure', 'academic_curriculum', 'academic_quality', 'academic_policy', 'academic_qualification', 'temporal_schedule', 'temporal_duration', 'location']),
+  academic_policy: new Set(['procedure', 'academic_policy', 'academic_curriculum', 'certification', 'academic_qualification', 'temporal_schedule', 'temporal_duration', 'sequence']),
+  academic: new Set(['procedure', 'academic_curriculum', 'academic_quality', 'academic_policy', 'academic_qualification', 'temporal_schedule', 'temporal_duration', 'location', 'sequence', 'partner']),
   registration: new Set(['procedure', 'fee']),
   scholarship: new Set(['procedure', 'financial_aid', 'fee']),
   student_organization: new Set(['procedure', 'organization_identity', 'organization_classification', 'organization_inventory']),
@@ -604,6 +670,16 @@ function areRequestedFieldsCompatibleWithDomain(fields, domain) {
   const isFollowupCue = /\b(?:kalau|kalo|gimana|bagaimana|terus|lalu|jika|apakah|bisa)\b/i.test(raw);
   const isInherited = slotProvenance.entities === PROVENANCE.PRIOR_CONTEXT_INHERITED || slotProvenance.domain === PROVENANCE.PRIOR_CONTEXT_INHERITED;
 
+  const hasUnresolvedAnaphora = entities.length === 0 && (
+    /\b(?:jurusan|prodi|program|fakultas|kampus|ukm)\s+(?:itu|tersebut|tadi)\b/i.test(raw) ||
+    /\b(?:masuk|daftar|kuliah\s+di|biaya|syarat)\s+(?:jurusan|prodi|program)\s+(?:itu|tersebut)\b/i.test(raw)
+  );
+
+  let ambiguity = understanding.ambiguity || {};
+  if (hasUnresolvedAnaphora) {
+    ambiguity = { isAmbiguous: true, reason: 'unresolved_anaphoric_reference' };
+  }
+
   const contextRelation = {
     isFollowup: Boolean(isFollowupCue || referentToken || isInherited),
     referentToken,
@@ -629,7 +705,7 @@ function areRequestedFieldsCompatibleWithDomain(fields, domain) {
     temporalConstraint,
     location,
     contextRelation,
-    ambiguity: understanding.ambiguity || {},
+    ambiguity,
     confidence: Math.min(intent.confidence, domain.confidence),
     provenance: slotProvenance,
     questionType: understanding.questionType,

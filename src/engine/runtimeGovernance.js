@@ -398,18 +398,19 @@ function parseDateMs(value) {
   return Number.isNaN(ms) ? null : ms;
 }
 
-function getTrainingGovernance(row = {}) {
+function getTrainingGovernance(row = {}, options = {}) {
   const metadata = row.governanceMetadata && typeof row.governanceMetadata === 'object'
     ? row.governanceMetadata
     : {};
-  const rawStatus = row.governanceStatus || row.status || metadata.status || null;
+  const allowRuntime = Boolean(options.allowRuntimeFallback);
+  const rawStatus = row.governanceStatus || row.status || metadata.status || (allowRuntime && row.active === true ? 'active' : (row.active === false ? 'inactive' : null));
   const status = normalizeStatus(rawStatus);
 
   const rawTier = Number(row.authorityTier || metadata.authorityTier) || null;
-  const rawAuthority = row.authority || row.sourceAuthority || metadata.authority || metadata.sourceAuthority || row.source || (rawTier ? `tier_${rawTier}` : null);
+  const rawAuthority = row.authority || row.sourceAuthority || metadata.authority || metadata.sourceAuthority || (allowRuntime ? (row.source || (rawTier ? `tier_${rawTier}` : null) || 'tier_3_curriculum_guideline') : (row.source || (rawTier ? `tier_${rawTier}` : null)));
   const authority = normalizeAuthority(rawAuthority);
   const tierMeta = getAuthorityTier(authority);
-  const resolvedTier = (rawTier && rawTier >= 1 && rawTier <= 4) ? rawTier : (authority !== 'tier_unknown' ? tierMeta.tier : null);
+  const resolvedTier = (rawTier && rawTier >= 1 && rawTier <= 4) ? rawTier : (authority !== 'tier_unknown' ? tierMeta.tier : (allowRuntime ? 3 : null));
 
   const validFromVal = row.validFrom ? new Date(row.validFrom).toISOString() : (metadata.validFrom ? new Date(metadata.validFrom).toISOString() : null);
   const validToVal = row.validTo ? new Date(row.validTo).toISOString() : (metadata.validTo ? new Date(metadata.validTo).toISOString() : (row.validUntil ? new Date(row.validUntil).toISOString() : (metadata.validUntil ? new Date(metadata.validUntil).toISOString() : null)));
@@ -433,7 +434,7 @@ function getTrainingGovernance(row = {}) {
 function isTrainingGovernanceAllowed(row = {}, options = {}) {
   const allowHistorical = Boolean(options.allowHistorical);
   const allowUnknown = Boolean(options.allowUnknown || envFlag('RAG_ALLOW_UNKNOWN_GOVERNANCE', false));
-  const governance = getTrainingGovernance(row);
+  const governance = getTrainingGovernance(row, options);
 
   // 1. Missing or unknown governance -> fail closed
   if (governance.status === 'validity_unknown') {
