@@ -599,20 +599,27 @@ function loadIndex() {
 
 function writeIndexJson(json) {
   ensureDataDir();
-  const tmpPath = `${INDEX_PATH}.tmp`;
+  const uniqueId = `${process.pid}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+  const tmpPath = `${INDEX_PATH}.${uniqueId}.tmp`;
 
-  // Write to tmp first, then replace via rename (Windows-safe) using .bak.
-  fs.writeFileSync(tmpPath, json);
-  if (fs.existsSync(INDEX_BAK_PATH)) {
-    try { fs.unlinkSync(INDEX_BAK_PATH); } catch { /* ignore */ }
-  }
-  if (fs.existsSync(INDEX_PATH)) fs.renameSync(INDEX_PATH, INDEX_BAK_PATH);
-  fs.renameSync(tmpPath, INDEX_PATH);
+  try {
+    // Write to unique tmp first, then replace via rename (Windows-safe) using .bak.
+    fs.writeFileSync(tmpPath, json);
+    if (fs.existsSync(INDEX_BAK_PATH)) {
+      try { fs.unlinkSync(INDEX_BAK_PATH); } catch { /* ignore */ }
+    }
+    if (fs.existsSync(INDEX_PATH)) fs.renameSync(INDEX_PATH, INDEX_BAK_PATH);
+    fs.renameSync(tmpPath, INDEX_PATH);
 
-  if (fs.existsSync(INDEX_BAK_PATH)) {
-    try { fs.unlinkSync(INDEX_BAK_PATH); } catch { /* ignore */ }
+    if (fs.existsSync(INDEX_BAK_PATH)) {
+      try { fs.unlinkSync(INDEX_BAK_PATH); } catch { /* ignore */ }
+    }
+    invalidateRagIndexCache();
+  } finally {
+    if (fs.existsSync(tmpPath)) {
+      try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+    }
   }
-  invalidateRagIndexCache();
 }
 
 function saveIndex(index) {
@@ -629,13 +636,13 @@ function saveIndex(index) {
         const candidate = JSON.stringify(trimmed, null, 2);
         if (Buffer.byteLength(candidate, 'utf-8') <= MAX_INDEX_BYTES) {
           writeIndexJson(candidate);
-          return;
+          return { success: true };
         }
         trimmed.shift();
       }
       // If everything fails, reset to empty
       writeIndexJson(JSON.stringify([]));
-      return;
+      return { success: true };
     }
 
     writeIndexJson(json);
@@ -645,8 +652,10 @@ function saveIndex(index) {
     } catch (e) {
       // ignore
     }
+    return { success: true };
   } catch (err) {
     logger.error({ err: err.message }, '[RAG] Failed to save index');
+    return { success: false, error: err.message };
   }
 }
 
@@ -10023,7 +10032,39 @@ function ragEnvFlag(name, defaultValue = false) {
   return value === 'true' || value === '1' || value === 'yes' || value === 'y' || value === 'on';
 }
 
+let ragIngestQueue = Promise.resolve();
+
+function enqueueRagIngest(taskFn) {
+  const current = ragIngestQueue;
+  let resolveTask, rejectTask;
+  const taskPromise = new Promise((resolve, reject) => {
+    resolveTask = resolve;
+    taskReject = reject;
+  });
+
+  ragIngestQueue = current
+    .catch(() => {})
+    .then(async () => {
+      try {
+        const result = await taskFn();
+        resolveTask(result);
+      } catch (err) {
+        rejectTask(err);
+      }
+    });
+
+  return taskPromise;
+}
+
+function getActiveRagIngestQueue() {
+  return ragIngestQueue;
+}
+
 async function ingestTrainingData(trainingId, text, source = 'upload', options = null) {
+  return enqueueRagIngest(() => _executeIngestTrainingData(trainingId, text, source, options));
+}
+
+async function _executeIngestTrainingData(trainingId, text, source = 'upload', options = null) {
   try {
     await updateTrainingRagIngestStatus(trainingId, {
       status: 'processing',
@@ -10193,6 +10234,7 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
     let aliasedDuplicates = 0;
     const allowDuplicateTrainingAlias = Boolean(opts.allowDuplicateTrainingAlias);
     let skippedAdministrative = 0;
+    const newChunksForTraining = [];
     for (const chunk of chunks) {
       if (shouldExcludeChunkFromRagIndex(chunk, resolvedSourceFile || resolvedFilename || '')) {
         skippedAdministrative++;
@@ -10231,6 +10273,7 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
             governance: governance || existingDuplicate.governance || null
           };
           filteredIndex.push(aliasChunk);
+          newChunksForTraining.push(aliasChunk);
           aliasedDuplicates++;
           skippedDuplicates++;
           continue;
@@ -10294,6 +10337,7 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
         logger.warn({ err: govErr.message }, '[RAG] Failed to enrich chunk governance');
       }
       filteredIndex.push(enrichedChunk);
+      newChunksForTraining.push(enrichedChunk);
       
       existingHashes.add(key);
     }
@@ -10342,18 +10386,26 @@ async function ingestTrainingData(trainingId, text, source = 'upload', options =
           logger.warn({ err: govErr.message }, '[RAG] Failed to enrich summary chunk governance');
         }
         filteredIndex.push(enrichedSummary);
+        newChunksForTraining.push(enrichedSummary);
       }
     }
 
-    saveIndex(filteredIndex);
+    // Atomic disk index merge: reload the latest on-disk index to avoid clobbering other concurrent ingests
+    const diskIndex = loadIndex();
+    const freshIndex = (Array.isArray(diskIndex) ? diskIndex : []).filter(item => item && item.trainingId !== trainingId);
+    freshIndex.push(...newChunksForTraining);
+    const saveRes = saveIndex(freshIndex);
+    if (saveRes && saveRes.success === false) {
+      throw new Error(`Failed to write RAG index to disk: ${saveRes.error || 'Disk write failed'}`);
+    }
 
     let persistedIndex = loadIndex();
     let persistedChunkCount = countTrainingChunksInIndex(persistedIndex, trainingId);
-    const inMemoryChunkCount = countTrainingChunksInIndex(filteredIndex, trainingId);
+    const inMemoryChunkCount = countTrainingChunksInIndex(freshIndex, trainingId);
 
     if (persistedChunkCount === 0 && inMemoryChunkCount > 0) {
       logger.warn({ trainingId, inMemoryChunkCount }, '[RAG] Quality gate retry: saved index did not contain expected chunks');
-      saveIndex(filteredIndex);
+      saveIndex(freshIndex);
       persistedIndex = loadIndex();
       persistedChunkCount = countTrainingChunksInIndex(persistedIndex, trainingId);
     }
@@ -14195,6 +14247,8 @@ function getIndexPath() {
 
 module.exports = {
   ingestTrainingData,
+  enqueueRagIngest,
+  getActiveRagIngestQueue,
   verifyTrainingIndexed,
   countTrainingChunksInIndex,
   invalidateSemanticRagCaches,

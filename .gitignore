@@ -122,6 +122,7 @@ tests/*
 !tests/clarificationOutputContract.test.js
 !tests/documentAdministrationGovernance.test.js
 !tests/adminTrainingUploadCleanup.test.js
+!tests/trainingDataReliability.test.js
 tools/
 quarantined_backups/
 

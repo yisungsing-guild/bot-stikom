@@ -2625,8 +2625,13 @@ router.post('/training/url', async (req, res, next) => {
       const result = await ragIngest(trainingId, contentForIngest, training.source || 'upload', {
         divisionKey: training.divisionKey || null,
         filename: training.filename,
-        sourceFile: training.filename,
-        uploadedById: training.uploadedById || null
+        documentTitle: training.filename,
+        sourceFile: reprocessStoredFilename || training.storedFilename || training.filename,
+        originalFilename: training.filename,
+        uploadedById: training.uploadedById || null,
+        governance: training.governanceMetadata && typeof training.governanceMetadata === 'object'
+          ? training.governanceMetadata
+          : null
       });
 
       const payload = {
