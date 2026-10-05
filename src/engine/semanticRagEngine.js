@@ -16479,7 +16479,7 @@ async function _baseFinalizeSemanticResult(question, result, resultCacheKey, opt
     }
   }
   let contractVerification = null;
-  if (result.outputType !== 'CLARIFICATION' && !/semantic-rag-(raw-document-leak-feedback|out-of-scope-courtesy|meaning-mismatch-fallback|modality-no-data|modality-clarification|fee-clarification|clarify)/i.test(source)) {
+  if (result.outputType !== 'CLARIFICATION' && !/semantic-rag-(raw-document-leak-feedback|out-of-scope-courtesy|meaning-mismatch-fallback|modality-no-data|modality-clarification|fee-clarification|academic-credit-no-data|clarify)/i.test(source)) {
     contractVerification = verifyAnswerAgainstContract(semanticContract, result.answer, Array.isArray(result.contexts) ? result.contexts : [], { provenance: result.provenance, source });
     if (contractVerification && contractVerification.ok === false) {
       // Generic partial-evidence handling:
@@ -16930,12 +16930,16 @@ async function _baseFinalizeSemanticResult(question, result, resultCacheKey, opt
   let escalationResult = null;
   try {
     const { routeAdminEscalation } = require('./adminEscalationRouter');
+    const isSpecializedCategorySource = (
+      (/semantic-rag-ukm-(?:category|list)/i.test(result.source) && Array.isArray(result.contexts) && result.contexts.length > 0)
+      || /semantic-rag-academic-credit-no-data/i.test(result.source)
+    );
     escalationResult = routeAdminEscalation({
       rawQuery: question,
       frame: effectiveFrame,
-      evaluation: options.__authoritativeEvaluation || (result && result.debug && result.debug.authoritativeEvaluation),
-      answerPlan: options.__groundedAnswerPlan || (result && result.debug && result.debug.groundedAnswerPlan),
-      verification: options.__verifierResult || (result && result.debug && result.debug.verifierResult),
+      evaluation: isSpecializedCategorySource ? null : (options.__authoritativeEvaluation || (result && result.debug && result.debug.authoritativeEvaluation)),
+      answerPlan: isSpecializedCategorySource ? null : (options.__groundedAnswerPlan || (result && result.debug && result.debug.groundedAnswerPlan)),
+      verification: isSpecializedCategorySource ? null : (options.__verifierResult || (result && result.debug && result.debug.verifierResult)),
       answer: result.answer,
       contexts: result.contexts,
       confidenceScore: result.confidenceScore,
@@ -20983,6 +20987,42 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
       semanticContract: canonicalContract
     });
     return await finalizeSemanticResult(question, builtTemporalStatus, resultCacheKey, { semanticContract: canonicalContract });
+  }
+
+  // Personal account / system escalation check before vague clarification
+  // Queries like "Saya mengalami kendala SION", "lupa password", "tagihan saya" must route to specific Admin, not vague clarification.
+  const { detectPersonalAccountRequest, routeAdminEscalation } = require('./adminEscalationRouter');
+  const personalCheck = detectPersonalAccountRequest(question) || detectPersonalAccountRequest(routingQuestion || question);
+  if (personalCheck && personalCheck.isPersonal) {
+    const escResult = routeAdminEscalation({
+      rawQuery: question,
+      frame: effectiveSemanticFrame,
+      trigger: 'personal_account_request',
+      contactOverrides: options.contactOverrides
+    });
+    if (escResult && escResult.escalated && escResult.answer) {
+      const response = {
+        success: true,
+        answer: escResult.answer,
+        source: 'semantic-rag-personal-escalation',
+        outputType: 'ANSWER',
+        contexts: [],
+        confidenceScore: 0.95,
+        confidenceTier: 'HIGH',
+        debug: {
+          routeStage: 'pre-guard-personal-escalation',
+          adminEscalation: {
+            escalated: true,
+            topic: escResult.topic,
+            contact: escResult.contact,
+            trigger: escResult.trigger,
+            reason: escResult.reason
+          }
+        }
+      };
+      setCachedSemanticResult(resultCacheKey, response);
+      return response;
+    }
   }
 
   const hasEffectiveAnchor = Boolean(

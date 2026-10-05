@@ -76,6 +76,12 @@ function detectPersonalAccountRequest(rawQuery) {
  */
 function resolveEscalationTopic(frame, rawQuery, options = {}) {
   const q = String(rawQuery || '').toLowerCase();
+  // 1. Check personal query category first if available
+  const personalCheck = detectPersonalAccountRequest(q);
+  if (personalCheck.isPersonal && personalCheck.personalCategory) {
+    return { topic: personalCheck.personalCategory, confidence: 0.95, source: 'personal_request_detection' };
+  }
+
   const domain = frame?.domain?.primary || options?.domain || '';
   const domainConfidence = typeof frame?.domain?.confidence === 'number'
     ? frame.domain.confidence
@@ -86,12 +92,6 @@ function resolveEscalationTopic(frame, rawQuery, options = {}) {
   // Rule: Low confidence domain falls back to general
   if (domainConfidence < 0.60) {
     return { topic: 'general', confidence: domainConfidence, source: 'low_confidence_fallback' };
-  }
-
-  // 1. Check personal query category first if available
-  const personalCheck = detectPersonalAccountRequest(q);
-  if (personalCheck.isPersonal && personalCheck.personalCategory) {
-    return { topic: personalCheck.personalCategory, confidence: 0.95, source: 'personal_request_detection' };
   }
 
   // 2. IT / System domain
@@ -196,8 +196,12 @@ function evaluateEscalationTriggers(params = {}) {
   }
 
   // Trigger 1 & 8: Evidence tidak ditemukan / insufficient / low answerability
-  const isEvaluatorUnsupported = evaluation && evaluation.overallStatus === 'UNSUPPORTED';
-  const isPlanUnsupported = answerPlan && answerPlan.overallStatus === 'UNSUPPORTED';
+  const isSpecializedAuthoritativeSource = (
+    (/semantic-rag-ukm-(?:category|list)/i.test(source) && contexts && contexts.length > 0)
+    || /semantic-rag-academic-credit-no-data/i.test(source)
+  );
+  const isEvaluatorUnsupported = !isSpecializedAuthoritativeSource && evaluation && evaluation.overallStatus === 'UNSUPPORTED';
+  const isPlanUnsupported = !isSpecializedAuthoritativeSource && answerPlan && answerPlan.overallStatus === 'UNSUPPORTED';
   const isVerifierBlocked = verification && verification.decision === 'BLOCK';
   const hasInsufficientEvidenceMarker = /insufficient_evidence|rag-no-evidence|rag-ai-error|meaning-mismatch-fallback|contract-verifier-blocked/i.test(source) ||
     /data yang Anda minta tidak tersedia|belum menemukan data yang sesuai|tidak menemukan informasi|informasi yang cukup lengkap/i.test(textAnswer);

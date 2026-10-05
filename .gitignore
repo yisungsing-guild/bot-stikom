@@ -124,6 +124,7 @@ tests/*
 !tests/adminTrainingUploadCleanup.test.js
 !tests/trainingDataReliability.test.js
 !tests/coverageRemediation.test.js
+!tests/whatsAppPipelineRegression.test.js
 tools/
 quarantined_backups/
 
