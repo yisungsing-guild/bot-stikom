@@ -123,6 +123,7 @@ tests/*
 !tests/documentAdministrationGovernance.test.js
 !tests/adminTrainingUploadCleanup.test.js
 !tests/trainingDataReliability.test.js
+!tests/coverageRemediation.test.js
 tools/
 quarantined_backups/
 

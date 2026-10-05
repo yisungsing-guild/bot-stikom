@@ -877,6 +877,12 @@ function normalizeQueryForRetrieval(rawQuery) {
   for (const [short, long] of Object.entries(abbrevMap)) {
     q = q.replace(new RegExp(`\\b${short}\\b`, 'g'), long);
   }
+
+  // Synonym bridge for dual degree <-> double degree
+  if (/\bdual\s+degree\b/i.test(q)) {
+    q = q.replace(/\bdual\s+degree\b/gi, 'double degree dual degree');
+  }
+
   // Intent-aware expansion: for short program tokens or full program names,
   // append related phrases so the embedding captures program/profile context.
   const expansions = {
@@ -887,7 +893,21 @@ function normalizeQueryForRetrieval(rawQuery) {
     'bd': ['bisnis digital', 'program studi bisnis digital', 'profil bisnis digital'],
     'bisnis digital': ['program studi bisnis digital', 'profil bisnis digital'],
     'mi': ['manajemen informatika', 'program studi manajemen informatika', 'profil manajemen informatika'],
-    'sk': ['sistem komputer', 'program studi sistem komputer', 'profil sistem komputer']
+    'sk': ['sistem komputer', 'program studi sistem komputer', 'profil sistem komputer'],
+    // Scope A1: UKM Olahraga <-> Basket <-> Futsal
+    'olahraga': ['ukm olahraga', 'basket', 'futsal', 'ukm basket', 'ukm futsal'],
+    'sport': ['olahraga', 'basket', 'futsal'],
+    // Scope A2: Dual Degree <-> Double Degree
+    'dual degree': ['double degree', 'program double degree'],
+    'double degree': ['dual degree', 'double degree'],
+    // Scope A3: GCCP
+    'gccp': ['global culture and career program', 'global cross cultural program', 'student exchange', 'pertukaran mahasiswa', 'keuntungan', 'benefits', 'tujuan', 'program exchange'],
+    // Scope A4: Pascasarjana / S2
+    'pascasarjana': ['magister sistem informasi', 's2 sistem informasi', 'program magister'],
+    's2': ['magister sistem informasi', 'pascasarjana', 's2 sistem informasi'],
+    // Scope A5: Konsentrasi S2
+    'konsentrasi': ['peminatan', 'specialization', 'data science', 'cyber security', 'enterprise system', 'medical informatics'],
+    'konsentrasi s2': ['data science', 'cyber security', 'enterprise system', 'medical informatics', 'magister sistem informasi']
   };
 
   // Detect presence of key tokens in the original raw query (lowercased)
@@ -14491,7 +14511,8 @@ module.exports = {
   tryStructuredDirectProgramProfileAnswer,
   tryStructuredProgramRegistrationFeeAnswer,
   tryStructuredProgramRegistrationMenuAnswer,
-  tokenizeForRelevanceGuard
+  tokenizeForRelevanceGuard,
+  normalizeQueryForRetrieval
 };
 
 

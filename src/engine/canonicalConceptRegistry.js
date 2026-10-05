@@ -127,6 +127,54 @@ const CANONICAL_SEMANTIC_CONCEPTS = Object.freeze({
       'game development',
       'pengembangan game'
     ])
+  }),
+
+  DUAL_DEGREE: Object.freeze({
+    id: 'concept_dual_degree',
+    canonical: 'dual_degree',
+    terms: Object.freeze([
+      'dual degree',
+      'double degree',
+      'gelar ganda',
+      'dua gelar'
+    ])
+  }),
+
+  SPORTS: Object.freeze({
+    id: 'concept_sports',
+    canonical: 'sports',
+    terms: Object.freeze([
+      'olahraga',
+      'sport',
+      'basket',
+      'futsal',
+      'badminton',
+      'voli',
+      'sepak bola'
+    ])
+  }),
+
+  POSTGRADUATE: Object.freeze({
+    id: 'concept_postgraduate',
+    canonical: 'postgraduate',
+    terms: Object.freeze([
+      'pascasarjana',
+      'magister',
+      's2',
+      'magister sistem informasi'
+    ])
+  }),
+
+  EXCHANGE_PROGRAM: Object.freeze({
+    id: 'concept_exchange_program',
+    canonical: 'exchange_program',
+    terms: Object.freeze([
+      'gccp',
+      'global cross cultural program',
+      'global culture and career program',
+      'student exchange',
+      'pertukaran mahasiswa'
+    ])
   })
 });
 

@@ -191,7 +191,15 @@ const DOMAIN_FUZZY_VOCAB = [
   'dpp',
   'alamat',
   'jalan',
-  'kampus'
+  'kampus',
+  'olahraga',
+  'basket',
+  'futsal',
+  'konsentrasi',
+  'peminatan',
+  'specialization',
+  'gccp',
+  'sion'
 ];
 
 function toString(raw) {
@@ -206,6 +214,7 @@ function normalizeUserQuery(text) {
   normalized = normalizeWhitespace(normalized.toLowerCase());
   normalized = normalized
     .replace(/\bpasca\s+sarjana\b/g, 'pascasarjana')
+    .replace(/\bdual\s+degree\b/g, 'double degree')
     .replace(/\bhi[-\s]*think\b/g, 'hi think')
     .replace(/\bjob\s+fair\b/g, 'job fair')
     .replace(/\bcampus\s+hiring\b/g, 'campus hiring')

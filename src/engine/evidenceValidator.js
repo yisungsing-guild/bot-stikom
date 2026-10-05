@@ -270,20 +270,27 @@ function validateChunkRelevanceToQuestion(chunk, question, intentKey) {
   const chunkText = String(chunk.chunk).toLowerCase();
   const originalQuestion = String(question || '').toLowerCase();
 
-  // Abbreviation expansion map (preserve the original abbrev token)
+  // Abbreviation and taxonomy expansion map (preserve the original abbrev token)
   const ABBR_MAP = {
     si: 'sistem informasi',
     ti: 'teknologi informasi',
     sk: 'sistem komputer',
     bd: 'bisnis digital',
-    mi: 'manajemen informatika'
+    mi: 'manajemen informatika',
+    olahraga: 'basket futsal',
+    gccp: 'global cross cultural program student exchange keuntungan benefits tujuan',
+    pascasarjana: 'magister s2 sistem informasi',
+    konsentrasi: 'data science cyber security enterprise system medical informatics peminatan specialization'
   };
 
   // Expand abbreviations inline while keeping the original abbrev token
   let expandedQuestion = originalQuestion;
   for (const [abbr, full] of Object.entries(ABBR_MAP)) {
-    const re = new RegExp('\\b' + abbr + '\\b', 'gi');
+    const re = new RegExp('\\b' + abbr.replace(/[-\\/\\^$*+?.()|[\\]{}]/g, '\\$&') + '\\b', 'gi');
     expandedQuestion = expandedQuestion.replace(re, (m) => `${m} ${full}`);
+  }
+  if (/\bdual\s+degree\b/i.test(expandedQuestion)) {
+    expandedQuestion = expandedQuestion.replace(/\bdual\s+degree\b/gi, 'dual degree double degree');
   }
 
   const questionText = expandedQuestion;

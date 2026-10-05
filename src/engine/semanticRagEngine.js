@@ -1276,7 +1276,10 @@ function buildAdaptiveQueryVariants(question, options = {}) {
     { re: /\b(?:hi\s*think|hithink|hi-?think|jepang|n4|jlpt)\b/i, text: 'Hi-Think Jepang JLPT N4 kuliah sambil kerja magang berbayar peluang kerja' },
     { re: /\b(?:mahasiswa\s+asing|visa|izin\s+belajar|study\s+permit|itas|kitas|sktt)\b/i, text: 'mahasiswa asing izin belajar visa study permit ITAS KITAS SKTT paspor dokumen' },
     { re: /\b(?:internasional|international|student\s*exchange|gccp|bccp|short\s*course|double\s*degree|dual\s*degree)\b/i, text: 'program internasional student exchange double degree dual degree GCCP BCCP short course DNUI HELP UTB' },
-    { re: /\b(?:pascasarjana|pasca\s*sarjana|magister|s2|s\s*2)\b/i, text: 'S2 Sistem Informasi pascasarjana magister akreditasi kurikulum keunggulan prospek kerja' },
+    { re: /\b(?:gccp|global\s+cross\s+cultural\s+program|global\s+culture\s+(?:and|&)\s+career\s+program)\b/i, text: 'GCCP Global Cross Cultural Program Global Culture and Career Program student exchange program exchange keuntungan benefits tujuan pertukaran mahasiswa' },
+    { re: /\b(?:pascasarjana|pasca\s*sarjana|magister|s2|s\s*2)\b/i, text: 'S2 Sistem Informasi pascasarjana magister akreditasi kurikulum keunggulan prospek kerja Magister Sistem Informasi' },
+    { re: /\b(?:konsentrasi|peminatan|specialization)\b/i, text: 'konsentrasi peminatan specialization Data Science Cyber Security Enterprise System Medical Informatics Magister Sistem Informasi' },
+    { re: /\b(?:olahraga|sport|basket|futsal)\b/i, text: 'UKM bidang olahraga basket futsal kegiatan mahasiswa ormawa atletik' },
     { re: /\b(?:akreditasi|ban\s*-?pt|lam\s*infokom|peringkat)\b/i, text: 'akreditasi BAN-PT LAM INFOKOM peringkat akreditasi program studi' },
     { re: /\b(?:llc|language\s+learning|bahasa)\b/i, text: 'Language Learning Center LLC kemampuan bahasa pelatihan bahasa' }
   ];
@@ -3709,6 +3712,18 @@ async function retrieveSemanticContexts(searchQueries, options = {}) {
     }
     if (/\b(organisasi|ukm|hima|himaprodi|ormawa|kegiatan)\b/i.test(qLower)) {
       semanticFieldConcepts.push('ukm', 'ormawa', 'organisasi mahasiswa', 'himaprodi');
+    }
+    if (/\b(olahraga|sport|basket|futsal)\b/i.test(qLower)) {
+      semanticFieldConcepts.push('olahraga', 'basket', 'futsal', 'ukm basket', 'ukm futsal');
+    }
+    if (/\b(gccp|student\s*exchange|pertukaran\s*mahasiswa)\b/i.test(qLower)) {
+      semanticFieldConcepts.push('gccp', 'global cross cultural program', 'student exchange', 'keuntungan', 'benefits', 'tujuan');
+    }
+    if (/\b(pascasarjana|magister|s2)\b/i.test(qLower)) {
+      semanticFieldConcepts.push('pascasarjana', 'magister sistem informasi', 's2');
+    }
+    if (/\b(konsentrasi|peminatan|specialization)\b/i.test(qLower)) {
+      semanticFieldConcepts.push('konsentrasi', 'peminatan', 'data science', 'cyber security', 'enterprise system', 'medical informatics');
     }
     const expansionIndices = lookupCandidateChunkIndices([...expansionVariants, ...semanticFieldConcepts], invIndex, 60);
 
@@ -12847,7 +12862,10 @@ function tryImplicitDescriptiveOrganizationAnswer(question, options = {}) {
           for (const term of profile.terms) {
             if (q.includes(term)) {
               const termRe = new RegExp('\\b' + escapeRegex(term) + '\\b', 'i');
-              if (termRe.test(text) || (profile.key === 'nature' && cand.name.toLowerCase().includes('mapala')) || (profile.key === 'volunteer' && cand.name.toLowerCase().includes('ksr'))) {
+              if (termRe.test(text) ||
+                  (profile.key === 'nature' && cand.name.toLowerCase().includes('mapala')) ||
+                  (profile.key === 'volunteer' && cand.name.toLowerCase().includes('ksr')) ||
+                  (profile.key === 'sports' && (cand.name.toLowerCase().includes('basket') || cand.name.toLowerCase().includes('futsal')))) {
                 cand.matchedTerms.add(term);
                 cand.matchedTerms.add(profile.key);
                 cand.score += 5;

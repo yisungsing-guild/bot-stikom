@@ -43,9 +43,11 @@ function detectPersonalAccountRequest(rawQuery) {
     return { isPersonal: true, personalCategory: 'academic' };
   }
 
-  // Personal authentication / credentials (password portal, akun siakad, reset kata sandi)
+  // Personal authentication / credentials (password portal, akun siakad, reset kata sandi, kendala SION)
   if (/\b(?:lupa|reset|ganti|ubah)\s+(?:password|kata\s+sandi|pin|akun)\b/i.test(q) ||
-      /\b(?:password|kata\s+sandi|akun|login)\s+(?:siakad|portal|email|saya|ku)\b/i.test(q)) {
+      /\b(?:password|kata\s+sandi|akun|login)\s+(?:siakad|portal|sion|email|saya|ku)\b/i.test(q) ||
+      /\b(?:kendala|error|bermasalah|tidak\s+bisa\s+login)\s+(?:siakad|portal|sion)\b/i.test(q) ||
+      /\b(?:sion)\s+(?:error|bermasalah|kendala|tidak\s+bisa\s+login|down)\b/i.test(q)) {
     return { isPersonal: true, personalCategory: 'it' };
   }
 
@@ -94,7 +96,9 @@ function resolveEscalationTopic(frame, rawQuery, options = {}) {
 
   // 2. IT / System domain
   const isItDomain = /^(?:it|it_system|system|portal|infrastructure)$/i.test(domain) ||
-    /\b(?:siakad|portal|wifi|wi-fi|email\s+kampus|moodle|elearning|e-learning|login|password|kata\s+sandi|reset\s+password|akun|server|jaringan|error\s+sistem)\b/i.test(q);
+    /\b(?:siakad|sion|portal|wifi|wi-fi|email\s+kampus|moodle|elearning|e-learning|login|password|kata\s+sandi|reset\s+password|akun|server|jaringan|error\s+sistem)\b/i.test(q) ||
+    /\b(?:kendala|error|bermasalah|tidak\s+bisa\s+login|masalah)\s+sion\b/i.test(q) ||
+    /\bsion\s+(?:kendala|error|bermasalah|tidak\s+bisa\s+login|masalah|down)\b/i.test(q);
   if (isItDomain) {
     return { topic: 'it', confidence: 0.90, source: 'it_semantics' };
   }
