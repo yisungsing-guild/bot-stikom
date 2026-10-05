@@ -9929,6 +9929,40 @@ function applyDuplicateChunkPenalty(scored) {
   }
 }
 
+function normalizeDocIdentifier(str) {
+  return String(str || '')
+    .toLowerCase()
+    .replace(/[-_]/g, ' ')
+    .replace(/\.(docx?|pdf|xlsx?|pptx?|txt|csv)$/i, '')
+    .replace(/\b\d{10,}\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isSameLogicalDocument(existingItem, incomingMeta = {}) {
+  if (!existingItem) return false;
+  const existingNames = [
+    normalizeDocIdentifier(existingItem.filename),
+    normalizeDocIdentifier(existingItem.sourceFile),
+    normalizeDocIdentifier(existingItem.documentTitle),
+    normalizeDocIdentifier(existingItem.originalFilename)
+  ].filter(Boolean);
+
+  const incomingNames = [
+    normalizeDocIdentifier(incomingMeta.filename),
+    normalizeDocIdentifier(incomingMeta.sourceFile),
+    normalizeDocIdentifier(incomingMeta.documentTitle),
+    normalizeDocIdentifier(incomingMeta.originalFilename)
+  ].filter(Boolean);
+
+  if (!existingNames.length || !incomingNames.length) return false;
+
+  for (const en of existingNames) {
+    if (incomingNames.includes(en)) return true;
+  }
+  return false;
+}
+
 async function computeEmbedding(text) {
   // If OpenAI key available, use embeddings API
   if (process.env.OPENAI_API_KEY) {
@@ -10232,6 +10266,8 @@ async function _executeIngestTrainingData(trainingId, text, source = 'upload', o
 
     let skippedDuplicates = 0;
     let aliasedDuplicates = 0;
+    let reconciledDuplicates = 0;
+    const reconciledChunkIds = new Set();
     const allowDuplicateTrainingAlias = Boolean(opts.allowDuplicateTrainingAlias);
     let skippedAdministrative = 0;
     const newChunksForTraining = [];
@@ -10243,6 +10279,89 @@ async function _executeIngestTrainingData(trainingId, text, source = 'upload', o
       const h = chunkHash(chunk);
       const key = hashKeyFor(divisionKey, h);
       if (existingHashes.has(key)) {
+        const existingMatch = filteredIndex.find((item) => {
+          if (!item || !item.chunk) return false;
+          if (reconciledChunkIds.has(item.id)) return false;
+          const itemDiv = item.divisionKey ? String(item.divisionKey).toLowerCase().trim() : null;
+          if ((divisionKey || null) !== (itemDiv || null)) return false;
+          const itemHash = item.chunkHash || chunkHash(item.chunk);
+          return itemHash === h;
+        });
+
+        let canReconcile = false;
+        if (existingMatch) {
+          const existingTid = existingMatch.trainingId ? String(existingMatch.trainingId).trim() : null;
+          if (!existingTid || existingTid === String(trainingId).trim()) {
+            canReconcile = true;
+          } else {
+            const isSameLogical = isSameLogicalDocument(existingMatch, {
+              filename: resolvedFilename,
+              sourceFile: resolvedSourceFile,
+              documentTitle: optsDocumentTitle,
+              originalFilename: optsOriginalFilename
+            });
+
+            if (isSameLogical) {
+              canReconcile = true;
+            } else if (prisma && prisma.trainingData && typeof prisma.trainingData.findUnique === 'function') {
+              try {
+                const ownerRec = await prisma.trainingData.findUnique({
+                  where: { id: existingTid },
+                  select: { id: true, active: true }
+                });
+                if (!ownerRec || ownerRec.active === false) {
+                  canReconcile = true;
+                }
+              } catch (_) {}
+            }
+          }
+        }
+
+        if (canReconcile && existingMatch) {
+          const nowIso = new Date().toISOString();
+          const reconciledChunk = {
+            ...existingMatch,
+            trainingId,
+            filename: resolvedFilename || existingMatch.filename || null,
+            sourceFile: resolvedSourceFile || resolvedFilename || existingMatch.sourceFile || null,
+            documentTitle: optsDocumentTitle || resolvedFilename || existingMatch.documentTitle || null,
+            originalFilename: optsOriginalFilename || resolvedSourceFile || existingMatch.originalFilename || null,
+            source: source || existingMatch.source || 'upload',
+            divisionKey: divisionKey || null,
+            fileHash: fileHash || existingMatch.fileHash || null,
+            trainingVersion: trainingVersion || existingMatch.trainingVersion || null,
+            uploadedById: uploadedById || existingMatch.uploadedById || null,
+            governance: governance || existingMatch.governance || null,
+            governanceMetadata: governance || existingMatch.governanceMetadata || null,
+            governanceStatus: (governance && governance.status) || existingMatch.governanceStatus || null,
+            authority: (governance && (governance.authority || governance.sourceAuthority)) || existingMatch.authority || null,
+            updatedAt: nowIso
+          };
+
+          let enrichedReconciled = reconciledChunk;
+          try {
+            enrichedReconciled = enrichChunkWithCategory(enrichedReconciled);
+          } catch (enrichErr) {
+            logger.warn({ err: enrichErr.message }, '[RAG] Failed to enrich reconciled chunk category, using original');
+          }
+          try {
+            enrichedReconciled = enrichChunkWithGovernance(enrichedReconciled, governance || {});
+          } catch (govErr) {
+            logger.warn({ err: govErr.message }, '[RAG] Failed to enrich reconciled chunk governance');
+          }
+
+          const fIdx = filteredIndex.findIndex(it => it && it.id === existingMatch.id);
+          if (fIdx >= 0) {
+            filteredIndex[fIdx] = enrichedReconciled;
+          } else {
+            filteredIndex.push(enrichedReconciled);
+          }
+          newChunksForTraining.push(enrichedReconciled);
+          reconciledDuplicates++;
+          reconciledChunkIds.add(existingMatch.id);
+          continue;
+        }
+
         const existingDuplicate = allowDuplicateTrainingAlias
           ? filteredIndex.find((item) => {
               if (!item || !item.chunk) return false;
@@ -10347,7 +10466,68 @@ async function _executeIngestTrainingData(trainingId, text, source = 'upload', o
       const summaryText = `Ringkasan dokumen:\n${documentSummary}`;
       const summaryHash = chunkHash(summaryText);
       const summaryKey = hashKeyFor(divisionKey, summaryHash);
-      if (!existingHashes.has(summaryKey)) {
+      if (existingHashes.has(summaryKey)) {
+        const existingSummaryMatch = filteredIndex.find((item) => {
+          if (!item || !item.chunk) return false;
+          if (reconciledChunkIds.has(item.id)) return false;
+          const itemDiv = item.divisionKey ? String(item.divisionKey).toLowerCase().trim() : null;
+          if ((divisionKey || null) !== (itemDiv || null)) return false;
+          const itemHash = item.chunkHash || chunkHash(item.chunk);
+          return itemHash === summaryHash;
+        });
+
+        let canReconcileSummary = false;
+        if (existingSummaryMatch) {
+          const existingTid = existingSummaryMatch.trainingId ? String(existingSummaryMatch.trainingId).trim() : null;
+          if (!existingTid || existingTid === String(trainingId).trim()) {
+            canReconcileSummary = true;
+          } else {
+            canReconcileSummary = isSameLogicalDocument(existingSummaryMatch, {
+              filename: resolvedFilename,
+              sourceFile: resolvedSourceFile,
+              documentTitle: optsDocumentTitle,
+              originalFilename: optsOriginalFilename
+            });
+          }
+        }
+
+        if (canReconcileSummary && existingSummaryMatch) {
+          const nowIso = new Date().toISOString();
+          const reconciledSummary = {
+            ...existingSummaryMatch,
+            trainingId,
+            filename: resolvedFilename || existingSummaryMatch.filename || null,
+            sourceFile: resolvedSourceFile || resolvedFilename || existingSummaryMatch.sourceFile || null,
+            documentTitle: optsDocumentTitle || resolvedFilename || existingSummaryMatch.documentTitle || null,
+            originalFilename: optsOriginalFilename || resolvedSourceFile || existingSummaryMatch.originalFilename || null,
+            source: source || existingSummaryMatch.source || 'upload',
+            divisionKey: divisionKey || null,
+            fileHash: fileHash || existingSummaryMatch.fileHash || null,
+            trainingVersion: trainingVersion || existingSummaryMatch.trainingVersion || null,
+            uploadedById: uploadedById || existingSummaryMatch.uploadedById || null,
+            governance: governance || existingSummaryMatch.governance || null,
+            updatedAt: nowIso
+          };
+
+          let enrichedSummary = reconciledSummary;
+          try {
+            enrichedSummary = enrichChunkWithCategory(enrichedSummary);
+          } catch (_) {}
+          try {
+            enrichedSummary = enrichChunkWithGovernance(enrichedSummary, governance || {});
+          } catch (_) {}
+
+          const fIdx = filteredIndex.findIndex(it => it && it.id === existingSummaryMatch.id);
+          if (fIdx >= 0) {
+            filteredIndex[fIdx] = enrichedSummary;
+          } else {
+            filteredIndex.push(enrichedSummary);
+          }
+          newChunksForTraining.push(enrichedSummary);
+          reconciledDuplicates++;
+          reconciledChunkIds.add(existingSummaryMatch.id);
+        }
+      } else {
         const embedding = await computeEmbedding(summaryText);
         const summaryId = crypto.randomUUID();
         const summaryChunk = {
@@ -10392,7 +10572,12 @@ async function _executeIngestTrainingData(trainingId, text, source = 'upload', o
 
     // Atomic disk index merge: reload the latest on-disk index to avoid clobbering other concurrent ingests
     const diskIndex = loadIndex();
-    const freshIndex = (Array.isArray(diskIndex) ? diskIndex : []).filter(item => item && item.trainingId !== trainingId);
+    const freshIndex = (Array.isArray(diskIndex) ? diskIndex : []).filter(item => {
+      if (!item) return false;
+      if (item.trainingId === trainingId) return false;
+      if (reconciledChunkIds.has(item.id)) return false;
+      return true;
+    });
     freshIndex.push(...newChunksForTraining);
     const saveRes = saveIndex(freshIndex);
     if (saveRes && saveRes.success === false) {
@@ -10421,10 +10606,11 @@ async function _executeIngestTrainingData(trainingId, text, source = 'upload', o
       sourceChunksConsidered,
       skippedAdministrative,
       skippedDuplicates,
+      reconciledDuplicates,
       aliasedDuplicates
     };
 
-    logger.info({ trainingId, chunks: chunks.length, skippedDuplicates, skippedAdministrative, aliasedDuplicates, indexedChunkCount, divisionKey: divisionKey || null }, '[RAG] Ingested chunks');
+    logger.info({ trainingId, chunks: chunks.length, skippedDuplicates, reconciledDuplicates, skippedAdministrative, aliasedDuplicates, indexedChunkCount, divisionKey: divisionKey || null }, '[RAG] Ingested chunks');
     
     // Audit logging: verify docCategory enrichment
     if (process.env.RAG_AUDIT_LOGGING === 'true') {
@@ -10457,6 +10643,7 @@ async function _executeIngestTrainingData(trainingId, text, source = 'upload', o
         error,
         ingested,
         skippedDuplicates,
+        reconciledDuplicates,
         aliasedDuplicates,
         indexedChunkCount,
         totalChunks: chunks.length,
@@ -10479,7 +10666,7 @@ async function _executeIngestTrainingData(trainingId, text, source = 'upload', o
       indexedChunkCount
     });
 
-    return { success: true, ingested, skippedDuplicates, aliasedDuplicates, indexedChunkCount, totalChunks: chunks.length, cleaningFallbackUsed, qualityGate, cacheInvalidation };
+    return { success: true, ingested, skippedDuplicates, reconciledDuplicates, aliasedDuplicates, indexedChunkCount, totalChunks: chunks.length, cleaningFallbackUsed, qualityGate, cacheInvalidation };
   } catch (err) {
     logger.error({ err: err.message }, '[RAG] Ingest error');
     await updateTrainingRagIngestStatus(trainingId, {
