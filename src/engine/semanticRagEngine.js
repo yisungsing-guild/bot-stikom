@@ -16907,13 +16907,49 @@ async function _baseFinalizeSemanticResult(question, result, resultCacheKey, opt
   }
 
   const effectiveFrame = options.effectiveSemanticFrame || options.__effectiveSemanticFrame || (result && result.debug && result.debug.effectiveSemanticFrame) || null;
+
+  // Admin Escalation Router Layer: Sits strictly after Evidence Evaluation and before Final Renderer
+  let escalationResult = null;
+  try {
+    const { routeAdminEscalation } = require('./adminEscalationRouter');
+    escalationResult = routeAdminEscalation({
+      rawQuery: question,
+      frame: effectiveFrame,
+      evaluation: options.__authoritativeEvaluation || (result && result.debug && result.debug.authoritativeEvaluation),
+      answerPlan: options.__groundedAnswerPlan || (result && result.debug && result.debug.groundedAnswerPlan),
+      verification: options.__verifierResult || (result && result.debug && result.debug.verifierResult),
+      answer: result.answer,
+      contexts: result.contexts,
+      confidenceScore: result.confidenceScore,
+      confidenceTier: result.confidenceTier,
+      source: result.source,
+      contactOverrides: options.contactOverrides
+    });
+  } catch (escErr) {
+    logger.debug({ err: escErr?.message }, '[ADMIN_ESCALATION_ROUTER] Router evaluation skipped');
+  }
+
+  const finalizedAnswer = (escalationResult && escalationResult.escalated && escalationResult.answer)
+    ? escalationResult.answer
+    : result.answer;
+
   const finalized = {
     ...result,
+    answer: finalizedAnswer,
     ...(effectiveFrame ? { effectiveSemanticFrame: effectiveFrame } : {}),
     debug: {
       ...(result.debug && typeof result.debug === 'object' ? result.debug : {}),
       ...(effectiveFrame ? { effectiveSemanticFrame: effectiveFrame } : {}),
-      ...(llmVerdict ? { llmMeaningVerifier: llmVerdict } : {})
+      ...(llmVerdict ? { llmMeaningVerifier: llmVerdict } : {}),
+      ...(escalationResult ? {
+        adminEscalation: {
+          escalated: escalationResult.escalated,
+          topic: escalationResult.topic,
+          contact: escalationResult.contact,
+          trigger: escalationResult.trigger,
+          reason: escalationResult.reason
+        }
+      } : {})
     }
   };
   return await traceAndCacheSemanticResult(question, finalized, resultCacheKey, 'finalized');

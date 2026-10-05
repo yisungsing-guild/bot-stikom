@@ -337,10 +337,19 @@ function renderGroundedAnswer(answerPlan, options = {}) {
   // 3. Render unsupported bindings (if ALL are unsupported or when needed for completeness)
   if (supportedBindings.length === 0 && conflictingBindings.length === 0) {
     const unsuppEntities = [...new Set(unsupportedBindings.map(b => b.entity.canonical).filter(e => e && e !== 'ITB STIKOM Bali' && e !== 'INSTITUTION_ROOT'))];
+    let contactCta = 'kakak dapat mengonfirmasi ke pihak kampus atau admin terkait.';
+    try {
+      const { resolveEscalationTopic } = require('./adminEscalationRouter');
+      const { getAdminContact, formatContactCallToAction } = require('../config/adminContacts');
+      const topicRes = resolveEscalationTopic(options.frame, options.question);
+      const contact = getAdminContact(topicRes.topic, options.contactOverrides);
+      contactCta = formatContactCallToAction(contact, { prefix: 'kakak bisa mengonfirmasi langsung ke' });
+    } catch (_) {}
+
     if (unsuppEntities.length > 0) {
-      return `Saya belum menemukan data resmi mengenai ${unsuppEntities.join(' dan ')} pada dokumen ITB STIKOM Bali yang tersedia saat ini. Agar tidak keliru, kakak bisa mengonfirmasi langsung ke layanan kampus atau Admin PMB terkait.`;
+      return `Saya belum menemukan data resmi mengenai ${unsuppEntities.join(' dan ')} pada dokumen ITB STIKOM Bali yang tersedia saat ini. Agar tidak keliru, ${contactCta}`;
     }
-    return 'Saya belum menemukan data yang sesuai pada dokumen ITB STIKOM Bali yang tersedia saat ini. Agar tidak keliru, kakak dapat mengonfirmasi ke pihak kampus atau admin terkait.';
+    return `Saya belum menemukan data yang sesuai pada dokumen ITB STIKOM Bali yang tersedia saat ini. Agar tidak keliru, ${contactCta}`;
   } else if (unsupportedBindings.length > 0 && supportedBindings.length > 0) {
     // Some subrequests were unsupported while others were supported
     const internalFieldRegex = /^(?:programType|programScope|geographicScope|availability|contrast|relation)$/i;

@@ -215,7 +215,19 @@ function getRandomTemplate(category) {
   return templates[Math.floor(Math.random() * templates.length)];
 }
 
-function buildUnavailableFallbackMessage() {
+function buildUnavailableFallbackMessage(question = null, options = {}) {
+  try {
+    const { routeAdminEscalation } = require('./adminEscalationRouter');
+    const esc = routeAdminEscalation({
+      rawQuery: question || '',
+      confidenceTier: 'LOW',
+      source: 'rag-no-evidence',
+      contactOverrides: options.contactOverrides
+    });
+    if (esc && esc.escalated && esc.answer) {
+      return esc.answer;
+    }
+  } catch (_) {}
   return [
     'Maaf, data yang Anda minta tidak tersedia pada sumber yang kami miliki.',
     '',
