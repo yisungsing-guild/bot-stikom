@@ -44,10 +44,13 @@ function detectPersonalAccountRequest(rawQuery) {
   }
 
   // Personal authentication / credentials (password portal, akun siakad, reset kata sandi, kendala SION)
-  if (/\b(?:lupa|reset|ganti|ubah)\s+(?:password|kata\s+sandi|pin|akun)\b/i.test(q) ||
+  if (/\b(?:lupa|reset|ganti|ubah|terkunci|locked|terblokir|diblokir)\s+(?:password|kata\s+sandi|pin|akun)\b/i.test(q) ||
+      /\b(?:password|kata\s+sandi|akun|login|portal|sion)\s+(?:siakad|portal|sion|email|saya|ku)?\s*(?:terkunci|locked|terblokir|diblokir)\b/i.test(q) ||
       /\b(?:password|kata\s+sandi|akun|login)\s+(?:siakad|portal|sion|email|saya|ku)\b/i.test(q) ||
       /\b(?:kendala|error|bermasalah|tidak\s+bisa\s+login)\s+(?:siakad|portal|sion)\b/i.test(q) ||
-      /\b(?:sion)\s+(?:error|bermasalah|kendala|tidak\s+bisa\s+login|down)\b/i.test(q)) {
+      /\b(?:sion|portal)\s+(?:error|bermasalah|kendala|tidak\s+bisa\s+login|down|terkunci|locked|terblokir)\b/i.test(q) ||
+      /\b(?:kontak|nomor|hubungi)\s+(?:bagian|admin|tim|unit)?\s*it\b/i.test(q) ||
+      /\b(?:perbaikan|kendala|masalah)\s+(?:sistem|portal|sion|server|jaringan)\b/i.test(q)) {
     return { isPersonal: true, personalCategory: 'it' };
   }
 
@@ -98,7 +101,8 @@ function resolveEscalationTopic(frame, rawQuery, options = {}) {
   const isItDomain = /^(?:it|it_system|system|portal|infrastructure)$/i.test(domain) ||
     /\b(?:siakad|sion|portal|wifi|wi-fi|email\s+kampus|moodle|elearning|e-learning|login|password|kata\s+sandi|reset\s+password|akun|server|jaringan|error\s+sistem)\b/i.test(q) ||
     /\b(?:kendala|error|bermasalah|tidak\s+bisa\s+login|masalah)\s+sion\b/i.test(q) ||
-    /\bsion\s+(?:kendala|error|bermasalah|tidak\s+bisa\s+login|masalah|down)\b/i.test(q);
+    /\bsion\s+(?:kendala|error|bermasalah|tidak\s+bisa\s+login|masalah|down|terkunci)\b/i.test(q) ||
+    /\b(?:kontak|nomor|hubungi)\s+(?:bagian|admin|tim|unit)?\s*it\b/i.test(q);
   if (isItDomain) {
     return { topic: 'it', confidence: 0.90, source: 'it_semantics' };
   }
@@ -139,6 +143,8 @@ function resolveEscalationTopic(frame, rawQuery, options = {}) {
   return { topic: 'general', confidence: 0.50, source: 'unmatched_general_fallback' };
 }
 
+const { resolveEvidenceStatus, EVIDENCE_TYPES, GROUNDING_STATUS, SOURCE_AUTHORITY } = require('./evidenceAuthority');
+
 /**
  * Evaluates whether an escalation trigger is active.
  *
@@ -172,6 +178,7 @@ function evaluateEscalationTriggers(params = {}) {
   const textAnswer = String(answer || '');
   const normConfidenceTier = String(confidenceTier || '').toUpperCase();
   const numScore = typeof confidenceScore === 'number' ? confidenceScore : null;
+  const evStatus = resolveEvidenceStatus(params);
 
   // Trigger 7: Personal account / transaction request
   const personal = detectPersonalAccountRequest(rawQuery);
@@ -196,20 +203,19 @@ function evaluateEscalationTriggers(params = {}) {
   }
 
   // Trigger 1 & 8: Evidence tidak ditemukan / insufficient / low answerability
-  const isSpecializedAuthoritativeSource = (
-    (/semantic-rag-ukm-(?:category|list)/i.test(source) && contexts && contexts.length > 0)
-    || /semantic-rag-academic-credit-no-data/i.test(source)
-  );
-  const isEvaluatorUnsupported = !isSpecializedAuthoritativeSource && evaluation && evaluation.overallStatus === 'UNSUPPORTED';
-  const isPlanUnsupported = !isSpecializedAuthoritativeSource && answerPlan && answerPlan.overallStatus === 'UNSUPPORTED';
   const isVerifierBlocked = verification && verification.decision === 'BLOCK';
-  const hasInsufficientEvidenceMarker = /insufficient_evidence|rag-no-evidence|rag-ai-error|meaning-mismatch-fallback|contract-verifier-blocked/i.test(source) ||
-    /data yang Anda minta tidak tersedia|belum menemukan data yang sesuai|tidak menemukan informasi|informasi yang cukup lengkap/i.test(textAnswer);
+  const hasInsufficientEvidenceMarker = /insufficient_evidence|rag-no-evidence|rag-ai-error|meaning-mismatch-fallback|contract-verifier-blocked|no-training/i.test(source) ||
+    /data yang Anda minta tidak tersedia|belum menemukan data yang sesuai|tidak menemukan informasi|informasi yang cukup lengkap|belum tercantum/i.test(textAnswer);
 
+  // If candidate answer possesses authoritative evidence and is grounded,
+  // generic document retriever status (contexts: [] or overallStatus: UNSUPPORTED) must NOT overwrite it!
+  const isEvaluatorUnsupported = !evStatus.hasAuthoritativeEvidence && evaluation && evaluation.overallStatus === 'UNSUPPORTED';
+  const isPlanUnsupported = !evStatus.hasAuthoritativeEvidence && answerPlan && answerPlan.overallStatus === 'UNSUPPORTED';
   const hasNoContexts = (!contexts || contexts.length === 0) &&
+    !evStatus.hasAuthoritativeEvidence &&
     !/greeting|smalltalk|general_knowledge/i.test(source);
 
-  if (isEvaluatorUnsupported || isPlanUnsupported || isVerifierBlocked || (hasNoContexts && hasInsufficientEvidenceMarker) || hasInsufficientEvidenceMarker) {
+  if (isVerifierBlocked || isEvaluatorUnsupported || isPlanUnsupported || (hasNoContexts && hasInsufficientEvidenceMarker) || (!evStatus.hasAuthoritativeEvidence && hasInsufficientEvidenceMarker)) {
     return {
       shouldEscalate: true,
       trigger: 'insufficient_evidence',
@@ -232,9 +238,8 @@ function evaluateEscalationTriggers(params = {}) {
   }
 
   // Trigger 3: Answer confidence di bawah threshold
-  const isLowConfidence = normConfidenceTier === 'LOW' ||
-    normConfidenceTier === 'VERY_LOW' ||
-    (numScore !== null && numScore < 0.60);
+  const isLowConfidence = (normConfidenceTier === 'LOW' || normConfidenceTier === 'VERY_LOW' || (numScore !== null && numScore < 0.60))
+    && !evStatus.hasAuthoritativeEvidence;
 
   if (isLowConfidence && !/greeting|smalltalk/i.test(source)) {
     return {
@@ -305,6 +310,16 @@ function composeEscalatedAnswer(params = {}) {
     case 'insufficient_evidence':
     case 'low_confidence':
     default: {
+      if (originalAnswer && originalAnswer.length > 30 && !/Saya belum (?:menemukan|dapat memastikan)/i.test(originalAnswer)) {
+        let base = originalAnswer.trim().replace(/\n*\[\s*Hubungi Admin\s*\]\s*$/i, '').trim();
+        return [
+          base,
+          '',
+          topic === 'general'
+            ? formatContactCallToAction(contact, { prefix: 'Silakan hubungi' })
+            : `Untuk informasi lebih lanjut, ${contactCta}`
+        ].join('\n');
+      }
       if (topic === 'general') {
         return [
           'Saya belum dapat memastikan informasi tersebut berdasarkan knowledge base yang tersedia.',
@@ -343,8 +358,11 @@ function routeAdminEscalation(params = {}) {
     rawQuery = '',
     frame = null,
     answer = '',
-    contactOverrides = {}
+    contactOverrides = {},
+    source = ''
   } = params;
+
+  const evStatus = resolveEvidenceStatus(params);
 
   // 1. Evaluate whether escalation is triggered
   const evalResult = evaluateEscalationTriggers(params);
@@ -352,6 +370,31 @@ function routeAdminEscalation(params = {}) {
   // 2. Resolve topic regardless (for metadata telemetry)
   const topicResolution = resolveEscalationTopic(frame, rawQuery, params);
   const contact = getAdminContact(topicResolution.topic, contactOverrides);
+
+  // Preserve intentional academic credit explanation (prodi-specific SKS guidance without fabricating total SKS)
+  if (source === 'semantic-rag-academic-credit-no-data' || /academic-credit-no-data/i.test(source)) {
+    return {
+      escalated: false,
+      answer: String(answer || ''),
+      topic: topicResolution.topic,
+      contact: null,
+      trigger: null,
+      reason: 'Preserve authoritative academic credit gap explanation'
+    };
+  }
+
+  // Global Invariant: If candidate answer has authoritative evidence and is grounded,
+  // do NOT wipe out the answer with generic insufficient_evidence boilerplate!
+  if (evalResult.shouldEscalate && evalResult.trigger === 'insufficient_evidence' && evStatus.hasAuthoritativeEvidence && evStatus.answerGroundingStatus === 'GROUNDED') {
+    return {
+      escalated: false,
+      answer: String(answer || ''),
+      topic: topicResolution.topic,
+      contact: null,
+      trigger: null,
+      reason: 'Authoritative grounded answer preserved against generic insufficient_evidence override'
+    };
+  }
 
   // If no escalation triggered: return original answer cleanly
   if (!evalResult.shouldEscalate) {
@@ -388,6 +431,7 @@ function routeAdminEscalation(params = {}) {
 module.exports = {
   detectPersonalAccountRequest,
   resolveEscalationTopic,
+  resolveEvidenceStatus,
   evaluateEscalationTriggers,
   composeEscalatedAnswer,
   routeAdminEscalation

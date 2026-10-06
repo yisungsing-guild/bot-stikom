@@ -86,10 +86,10 @@ function detectAcademicLevels(raw) {
 function detectOrganizationCategory(raw) {
   const q = String(raw || '').toLowerCase();
   const categories = [
-    { key: 'arts', label: 'seni', re: /\b(?:seni|sni|musik|band|nyanyi|vokal|vocal|tari|menari|tabuh|teater|drama|akting|acting|paduan\s+suara|choir)\b/i },
+    { key: 'arts', label: 'seni dan kebudayaan', re: /\b(?:seni|kesenian|budaya|kebudayaan|sni|musik|band|nyanyi|vokal|vocal|tari|menari|tabuh|teater|drama|akting|acting|paduan\s+suara|choir)\b/i },
     { key: 'nature', label: 'pecinta alam', re: /\b(?:alam|outdoor|gunung|petualangan|lingkungan|pecinta\s+alam|mapala)\b/i },
-    { key: 'sports', label: 'olahraga', re: /\b(?:olahraga|sport|sports|atlet|futsal|basket|sepak\s*bola|bola)\b/i },
-    { key: 'technology', label: 'teknologi', re: /\b(?:teknologi|komputer|coding|ngoding|programming|software|web|aplikasi|linux|open\s*source|cyber|jaringan|data|ai|artificial\s+intelligence|machine\s+learning)\b/i },
+    { key: 'sports', label: 'olahraga', re: /\b(?:olahraga|sport|sports|atlet|futsal|basket|sepak\s*bola|bola|badminton|bulutangkis|bulu\s+tangkis|voli|tenis|esport|esports|e-sport|e-sports|bela\s*diri|beladiri|silat|taekwondo|karate)\b/i },
+    { key: 'technology', label: 'teknologi', re: /\b(?:teknologi|komputer|coding|ngoding|programming|software|web|aplikasi|linux|open\s*source|cyber|jaringan|data|ai|artificial\s+intelligence|machine\s+learning|robotik|it)\b/i },
     { key: 'entrepreneurship', label: 'kewirausahaan', re: /\b(?:wirausaha|kewirausahaan|entrepreneur|entrepreneurship|bisnis|startup|usaha)\b/i },
     { key: 'religious', label: 'kerohanian', re: /\b(?:rohani|kerohanian|agama|keagamaan|hindu|kristen|islam|muslim)\b/i },
     { key: 'media', label: 'media kreatif', re: /\b(?:foto|fotografi|video|videografi|multimedia|desain|konten|content|sosmed|media)\b/i },
@@ -609,13 +609,13 @@ function resolveSourceDomainEntities(rawText) {
 }
 
 function detectFeeType(q) {
+  if (/\b(?:potongan(?:nya)?|diskon(?:nya)?|discount)\b/i.test(q) && !/\bbeasiswa(?:nya)?\b/i.test(q)) return 'discount';
+  if (/\b(?:dpp|dana\s+pendidikan\s+pokok|dana\s+pengembangan\s+pendidikan|uang\s+gedung)\b/i.test(q)) return 'dpp';
   if (/\b(?:ukt|uang\s+kuliah|biaya\s+pendidikan|(?:biaya\s+)?per\s+semester(?:nya)?|semesteran(?:nya)?|bayar\s+semester(?:an)?(?:nya)?|biaya\s+semester(?:an)?(?:nya)?)\b/i.test(q)) return 'ukt';
-  if (/\b(?:dpp|dana\s+pendidikan\s+pokok)\b/i.test(q)) return 'dpp';
   if (/\b(?:biaya\s+awal|awal\s+masuk|uang\s+masuk|biaya\s+masuk)\b/i.test(q)) return 'initial_fee';
   const asksNonFeeQuantity = /\b(?:tanggal|tgl|jam|hari|bulan|tahun|lembar|halaman|berkas|dokumen|syarat|lama|tahap|kali|orang|skor|score|toefl|ielts|nilai|sks|semester)\b/i.test(q);
   if (/\b(?:biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|biaya\s+daftar|daftar\s+berapa|(?:biaya|uang|harga)\s+formulir(?:nya)?)\b/i.test(q)
     || (!asksNonFeeQuantity && /\b(?:daftar(?:nya)?|pendaftaran(?:nya)?|registrasi(?:nya)?)\b/i.test(q) && /\b(?:berapa|brapa|brp|nominal|biaya|harga|bayar|uang|rp|rupiah)\b/i.test(q) && !/\bberapa\s+(?:lembar|halaman|berkas|dokumen|syarat|hari|lama|tahap|kali|orang|skor|score|toefl|ielts|nilai|sks|semester)\b/i.test(q))) return 'registration_fee';
-  if (/\b(?:potongan(?:nya)?|diskon(?:nya)?|discount)\b/i.test(q) && !/\bbeasiswa(?:nya)?\b/i.test(q)) return 'discount';
   if (/\b(?:total(?:an)?(?:nya)?|semua(?:nya)?|keseluruhan(?:nya)?)\b/i.test(q) && (/\b(?:biaya|bayar|pembayaran|uang|harga|kuliah|masuk|daftar|pendidikan|akhir|tagihan)\b/i.test(q) || /\b(?:berapa|brp|brapa|jadi)\b/i.test(q))) return 'total_estimate';
   if (/\b(?:cicil(?:an(?:nya)?)?|dicicil|di\s*cicil|nyicil|mencicil|angsur(?:an(?:nya)?)?|diangsur|di\s*angsur|mengangsur|tahap\s+pembayaran|pembayaran\s+bertahap|bertahap)\b/i.test(q)) return 'installment';
   return null;
@@ -776,6 +776,10 @@ function resolveUnsupportedProgramEntities(text, knownPrograms = []) {
     if (!candidate) continue;
     const isLocationCandidate = /\b(?:bandung|bali|denpasar|jimbaran|renon|abiansemal|jakarta|surabaya|yogyakarta|malaysia|china|dalian|kampus|luar\s+negeri)\b/i.test(candidate);
     if (isLocationCandidate) continue;
+    const isActivityOrNonDegree = /\b(?:magang|beasiswa|pertukaran|pelatihan|sertifikasi|mbkm|kegiatan|studi\s+independen|kerja\s*praktek|kkn|konversi|pengembangan|pembekalan|bimbingan)\b/i.test(candidate);
+    if (isActivityOrNonDegree) continue;
+    const isDegreeLevelCandidate = /^(?:sarjana(?:\s+s1)?|s1|d3|s2|magister|diploma)(?:\s+yang)?$/i.test(candidate.trim());
+    if (isDegreeLevelCandidate) continue;
     const candidateKey = (normalizeUserQuery(candidate).normalizedText || String(candidate || '').toLowerCase()).trim();
     if (supportedLabels.has(candidateKey)) return [];
     const isAcademic = pIdx !== 1 || hasExplicitAcademicSignals;
@@ -1013,7 +1017,10 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
     && !/\b(?:alamat\s+(?:email|surel|web|website|url|link|portal|situs)|surel)\b/i.test(q);
   const hasPhysicalAttribute = /\b(?:tinggi|luas|jumlah\s+lantai|berapa\s+lantai|lantai\s+berapa|kapasitas|ukuran|warna(?:nya)?|panjang|lebar|besar(?:nya)?|daya\s+tampung)\b/i.test(q);
   const feeType = detectFeeType(q);
+  const asksDecreeOrDocumentNumber = /\b(?:nomor|no\.?)\s+(?:berapa|sk|surat|dokumen|keputusan)\b/i.test(q)
+    || (/\b(?:surat\s+keputusan|sk\s+rektor)\b/i.test(q) && /\b(?:nomor|no\.?)\b/i.test(q));
   const hasFee = !negativeSemantics.excludedDomains.includes('fee')
+    && !asksDecreeOrDocumentNumber
     && (Boolean(feeType) || /\b(?:biaya(?:nya)?|harga(?:nya)?|bayar(?:nya|an)?|pembayaran|uang|nominal|tarif|fee|cost|total(?:an)?(?:nya)?|nyicil|mencicil|cicil(?:an(?:nya)?)?|dicicil|di\s*cicil|angsur(?:an(?:nya)?)?|mengangsur|diangsur|di\s*angsur|potongan(?:nya)?|diskon(?:nya)?|tagihan(?:nya)?|denda(?:nya)?)\b/i.test(q));
   const hasScholarship = /\b(?:beasiswa(?:nya)?|kip|1k1s|skss|bantuan\s+biaya|jalur\s+prestasi)\b/i.test(q);
   const hasInternationalAdmin = /\b(?:mahasiswa\s+(?:asing|internasional|luar\s+negeri)|foreign\s+student|international\s+student|keimigrasian|imigrasi|izin\s+(?:belajar(?:nya)?|tinggal(?:nya)?)|perpanjang(?:an)?\s+izin|visa|vitas|itas|kitas|sktt)\b/i.test(q);
@@ -1021,17 +1028,19 @@ function classifyIntentDomain(rawQuery, normalizedQuery, entities, temporal, opt
   const hasUnsupportedExchangeBarterRelation = /\b(?:exchange|tukar|barter|ditukar|menukar)\b/i.test(q)
     && /\b(?:voucher|kupon|kantin|uang|ukt|dpp|biaya|tagihan|saldo|barang)\b/i.test(q)
     && !/\b(?:student\s+exchange|pertukaran\s+mahasiswa|program\s+exchange|exchange\s+reguler|credit\s+transfer|gccp|bccp)\b/i.test(q);
-  const hasRpl = /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(q);
+  const hasRpl = /\b(?:rpl|rekognisi\s+pembelajaran\s+lampau|mbkm|merdeka\s+belajar)\b/i.test(q);
   const hasAvailabilityStatus = /\b(?:masih\s+buka|masih\s+dibuka|masih\s+menerima|menerima\s+pendaftaran|terima\s+pendaftaran|buka|dibuka|aktif|berjalan|status)\b/i.test(q);
   const hasRegistrationDataCorrection = /\b(?:salah|keliru|typo|salah\s+ketik|salah\s+isi|salah\s+input|ubah|edit|koreksi|perbaiki|revisi)\b/i.test(q)
     && /\b(?:data|form|formulir|biodata|nama|nik|nomor|email|kontak|pendaftaran|daftar|registrasi|pmb|camaba|mahasiswa\s+baru)\b/i.test(q)
     && /\b(?:daftar|pendaftaran|registrasi|pmb|camaba|mahasiswa\s+baru|form|formulir)\b/i.test(q)
     && !hasFee;
-  const hasContactRequest = (/\b(?:kontak|hubungi|menghubungi|nomor|no\.?\s*(?:wa|telp|telepon)?|wa\b|whatsapp|telepon|telp|phone|cs|customer\s*service|helpdesk|email|surel|instagram|ig|medsos)\b/i.test(q)
+  const isDocumentOrDecreeNumber = /\b(?:nomor|no\b)\s+(?:dokumen|sop|sk|surat|keputusan|rekening|registrasi|ijazah)\b/i.test(q)
+    || (/\b(?:sk|dokumen|sop|surat\s+keputusan|standar\s+operasional)\b/i.test(q) && !/\b(?:telepon|telp|wa|whatsapp|hp|handphone|hotline|kontak|hubungi|call|narahubung|pic\b)\b/i.test(q));
+  const hasContactRequest = !isDocumentOrDecreeNumber && ((/\b(?:kontak|hubungi|menghubungi|nomor\s+(?:kontak|wa|telepon|telp|hp)|no\.?\s*(?:wa|telp|telepon|hp)|wa\b|whatsapp|telepon|telp|phone|cs|customer\s*service|helpdesk|email|surel|instagram|ig|medsos)\b/i.test(q)
     && /\b(?:kampus|stikom|itb|admin|pmb|kontak|nomor|telepon|telp|wa|whatsapp|hubungi|helpdesk|email|surel|instagram|ig|medsos)\b/i.test(q)
     && !hasRegistrationDataCorrection
     && !/\b(?:nomor\s+sk|no\.?\s*sk|sk\s+mendiknas|izin\s+operasional)\b/i.test(q))
-    || /\b(?:alamat\s+email|email\s+resmi|akun\s+instagram|instagram\s+resmi)\b/i.test(q);
+    || /\b(?:alamat\s+email|email\s+resmi|akun\s+instagram|instagram\s+resmi)\b/i.test(q));
   const hasRegistrationTopicOpening = /\b(?:mau|ingin|pengen|pengin|boleh|izin|permisi|info(?:rmasi)?)\b/i.test(q)
     && /\b(?:tanya|bertanya|nanya|menanyakan|soal|tentang|mengenai|info(?:rmasi)?)\b/i.test(q)
     && /\b(?:pmb|penerimaan\s+mahasiswa\s+baru|pendaftaran\s+mahasiswa\s+baru|mahasiswa\s+baru|camaba|maba)\b/i.test(q)
@@ -2014,6 +2023,8 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
     }
   }
   const fields = new Set();
+  const isDocumentOrDecreeNumber = /\b(?:nomor|no\b)\s+(?:dokumen|sop|sk|surat|keputusan|rekening|registrasi|ijazah)\b/i.test(q)
+    || (/\b(?:sk|dokumen|sop|surat\s+keputusan|standar\s+operasional)\b/i.test(q) && !/\b(?:telepon|telp|wa|whatsapp|hp|handphone|hotline|kontak|hubungi|call|narahubung|pic\b)\b/i.test(q));
   const asksProfileRelation = /\b(?:profil(?:nya)?|profile|tentang(?:nya)?|apa\s+itu|itu\s+apa|jelaskan|detail(?:nya)?|gambaran)\b/i.test(q);
   const asksExplicitProcedureRelation = /\b(?:cara(?:nya)?|bagaimana\s+cara|gimana\s+cara|alur(?:nya)?|prosedur(?:nya)?|langkah|tahapan|syarat|persyaratan|dokumen\s+apa|berkas|pendaftaran|mendaftar|daftar(?:nya)?|registrasi(?:nya)?|how\s+to|how\s+do\s+i|steps|procedure|requirements?)\b/i.test(qEffective);
 
@@ -2135,7 +2146,7 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
     fields.add('socialMedia');
     fields.add('contact');
   }
-  if (/\b(?:nomor|no\b|telepon|telp|wa|whatsapp|hotline|kontak|hubungi|contact\s*person|narahubung|pic\b|penanggung\s*jawab)\b/i.test(q)) {
+  if (!isDocumentOrDecreeNumber && /\b(?:nomor|no\b|telepon|telp|wa|whatsapp|hotline|kontak|hubungi|contact\s*person|narahubung|pic\b|penanggung\s*jawab)\b/i.test(q)) {
     fields.add('contactNumber');
     fields.add('phone');
     fields.add('contact');
@@ -2401,7 +2412,7 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
   if (intent !== 'ask_program_curriculum' && asksExplicitProcedureRelation && !(feeType && domain === 'fee') && !(asksProfileRelation && !/\b(?:cara|bagaimana\s+cara|gimana\s+cara|alur|prosedur|langkah|tahapan|syarat|persyaratan|dokumen\s+apa|berkas|pendaftaran|mendaftar|daftar(?:nya)?|registrasi(?:nya)?|how\s+to|how\s+do\s+i|steps|procedure|requirements?)\b/i.test(q))) {
     fields.add('procedureSteps');
   }
-  if (/\b(?:unit\s+mana|cek\s+ke\s+unit|info(?:rmasi)?\s+pendaftaran|media\s+sosial|pengumuman|direktorat|channel|kanal|lewat\s+mana)\b/i.test(q)) {
+  if (domain !== 'scholarship' && !/\b(?:beasiswa)\b/i.test(q) && /\b(?:unit\s+mana|cek\s+ke\s+unit|info(?:rmasi)?\s+pendaftaran|media\s+sosial|pengumuman|direktorat|channel|kanal|lewat\s+mana)\b/i.test(q)) {
     fields.add('informationChannel');
   }
   if (/\b(?:dormitory|asrama|tempat\s+tinggal|shared\s+room|fasilitas\s+tinggal|tinggal\s+apa)\b/i.test(q)) {
@@ -2507,6 +2518,7 @@ function extractRequestedFields(rawQuery, normalizedQuery, classification) {
     if (subtype === 'requirements') fields.add('scholarshipRequirements');
     else if (subtype === 'procedure') fields.add('scholarshipProcedure');
     else if (subtype === 'availability') fields.add('scholarshipAvailability');
+    else if (/\b(?:unit|bagian|biro|siapa|kontak|kantor|mengurus|mengelola)\b/i.test(q)) fields.add('managingUnit');
     else fields.add('scholarshipList');
   }
   if (domain === 'campus_location' && intent === 'ask_campus_count') {

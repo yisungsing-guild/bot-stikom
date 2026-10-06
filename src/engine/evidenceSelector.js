@@ -124,6 +124,8 @@ function detectIntent(question, intent) {
   if (/\b(visa\s+(?:study|studi|pelajar)|izin\s+belajar|study\s+permit|itas|kitas|sktt|mahasiswa\s+asing)\b/i.test(q)) return 'visa_study';
   if (/\b(internasional|international|double\s*degree|dual\s*degree|student\s+exchange|study\s+exchange|mitra\s+luar|luar\s+negeri|gccp|bccp|utb|dnui|help)\b/i.test(q)) return 'international_program';
   if (/\b(inbis|inkubator\s+bisnis|career\s*(?:development\s*)?center|cdc|pusat\s+karier|pusat\s+karir)\b/i.test(q)) return 'campus_service';
+  if (/\b(kurikulum|mata\s+kuliah|sks|silabus|konversi\s+sks|beban\s+studi)\b/i.test(q)) return 'curriculum';
+  if (/\b(career|karir|karier|pekerjaan|prospek\s+kerja|lulusan\s+jadi\s+apa|peluang\s+kerja)\b/i.test(q)) return 'career';
   if (/\b(biaya|harga|tarif|ukt|dpp|uang|bayar|pembayaran|cicilan|nominal)\b/i.test(q)) return 'fee';
   if (/\b(jadwal|kapan|tanggal|periode|gelombang|jam|waktu|bulan\s+(?:ini|depan))\b/i.test(q)) return 'schedule';
   if (/\b(syarat|persyaratan|dokumen|berkas|ketentuan)\b/i.test(q)) return 'requirement';
@@ -200,6 +202,9 @@ function shouldRejectEvidenceUnit(text, question, intent) {
   if (!allowLegal && isLegalBoilerplate(text)) return { reject: true, reason: 'legal_boilerplate_not_requested' };
   if (/\b(?:demikian|dibuat\s+dan\s+ditandatangani|dipergunakan\s+sebagaimana\s+mestinya)\b/i.test(text) && !allowLegal) {
     return { reject: true, reason: 'document_footer_boilerplate' };
+  }
+  if (/\b(?:sidang|wisuda|yudisium)\b/i.test(question) && /\b(?:himaprodi|himpunan\s+mahasiswa|organisasi\s+mahasiswa|ukm|ormawa)\b/i.test(text) && !/\b(?:himaprodi|himpunan|organisasi|ukm|ormawa)\b/i.test(question)) {
+    return { reject: true, reason: 'student_org_not_relevant_to_academic_examination' };
   }
   return { reject: false, reason: '' };
 }
@@ -307,10 +312,14 @@ function scoreIntentAlignment(text, detectedIntent) {
     accreditation: /\b(akreditasi|ban\s*-?\s*pt|baik\s+sekali|unggul|terakreditasi)\b/i,
     rpl: /\b(rpl|rekognisi\s+pembelajaran\s+lampau|alih\s+jenjang|konversi\s+sks)\b/i,
     visa_study: /\b(visa\s+(?:study|studi|pelajar)|izin\s+belajar|study\s+permit|itas|kitas|sktt|mahasiswa\s+asing)\b/i,
-    campus_service: /\b(inbis|inkubator\s+bisnis|career\s*(?:development\s*)?center|cdc|career\s+center|pusat\s+karier|pusat\s+karir)\b/i
+    campus_service: /\b(inbis|inkubator\s+bisnis|career\s*(?:development\s*)?center|cdc|career\s+center|pusat\s+karier|pusat\s+karir)\b/i,
+    career: /\b(career|karir|karier|kerja|pekerjaan|alumni|lulusan|magang|pelatihan|sertifikasi|profesional|cdc|pusat\s+karier)\b/i,
+    curriculum: /\b(kurikulum|mata\s*kuliah|sks|merdeka|semester|silabus|pembelajaran|magang|kredit|konversi)\b/i,
+    facility: /\b(fasilitas|lab|laboratorium|gedung|ruang|perpustakaan|parkir|lapangan|kantin|wifi)\b/i,
+    academic: /\b(akademik|krs|khs|yudisium|wisuda|sidang|komprehensif|skripsi|remedial|cuti|transkrip|nilai|dosen)\b/i
   };
-  if (!detectedIntent || detectedIntent === 'general') return 0.35;
-  return checks[detectedIntent] && checks[detectedIntent].test(value) ? 1 : 0;
+  if (!detectedIntent || detectedIntent === 'general' || !checks[detectedIntent]) return 0.35;
+  return checks[detectedIntent].test(value) ? 1 : 0;
 }
 
 function scoreRelevance(text, question) {
@@ -369,7 +378,7 @@ function selectEvidenceFromContexts({ question, contexts, intent, maxEvidence, s
   // This helps long/structured FAQ or QnA chunks survive over-aggressive unit-splitting.
   // Only apply for non-legal, non-fee intents (controlled list) to avoid changing
   // deterministic fee behavior.
-  const earlyLaxAllowedIntents = new Set(['international_program', 'program', 'list', 'general', 'scholarship', 'accreditation', 'rpl', 'visa_study', 'campus_service']);
+  const earlyLaxAllowedIntents = new Set(['international_program', 'program', 'list', 'general', 'scholarship', 'accreditation', 'rpl', 'visa_study', 'campus_service', 'career', 'curriculum', 'facility', 'academic']);
   if (earlyLaxAllowedIntents.has(detectedIntent)) {
     list.forEach((context, index) => {
       const rawText = String((context && (context.chunk || context.text || context.content)) || '');
@@ -566,9 +575,9 @@ const REQUESTED_FIELD_EVIDENCE_RULES = {
   paymentMethod: /(?:virtual\s+account|\bva\b|rekening|bank|transfer|loket|kasir)/i,
   paymentChannel: /(?:virtual\s+account|\bva\b|rekening|bank|transfer|loket|kasir|kanal|channel)/i,
   virtualAccount: /(?:virtual\s+account|\bva\b)/i,
-  requirements: /(?:syarat|persyaratan|dokumen|berkas|ijazah|transkrip|ktp|kk|rapor|foto|paspor|passport)/i,
+  requirements: /(?:syarat|persyaratan|dokumen|berkas|ijazah|transkrip|ktp|kk|rapor|foto|paspor|passport|penguji|dewan\s+dosen|dosen\s+senior|pelaksanaan|lulus)/i,
   scholarshipRequirements: /(?:syarat|persyaratan|dokumen|berkas|kriteria|eligible|kelayakan)/i,
-  procedureSteps: /(?:cara|alur|prosedur|langkah|tahap|daftar|pendaftaran|konfirmasi|unggah|upload)/i,
+  procedureSteps: /(?:cara|alur|prosedur|langkah|tahap|daftar|pendaftaran|konfirmasi|unggah|upload|pelaksanaan|diuji|sidang)/i,
   date: /(?:\b\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\b|\b20\d{2}\b|periode|gelombang)/i,
   duration: /(?:durasi|lama|hari|minggu|bulan|tahun|semester)/i,
   degree: /(?:gelar|sarjana|bachelor|master|s\.kom|m\.kom|ijazah)/i,
@@ -595,7 +604,9 @@ const REQUESTED_FIELD_EVIDENCE_RULES = {
   curriculum: /(?:kurikulum|mata\s*kuliah|sks|teori|praktik|konsentrasi)/i,
   curriculumFocus: /(?:fokus|konsentrasi|peminatan|bidang\s+keahlian)/i,
   academicLevel: /(?:sarjana|strata\s*1|s1|diploma|d3|magister|s2)/i,
-  remedialFee: /(?:remedial|ujian\s+ulang)[\s\S]{0,80}(?:rp\.?\s*\d|biaya|tarif)/i
+  remedialFee: /(?:remedial|ujian\s+ulang)[\s\S]{0,80}(?:rp\.?\s*\d|biaya|tarif)/i,
+  legalDocumentNumber: /(?:nomor|no\.?|sk\b|surat\s+keputusan|\b\d{2,4}\/[A-Za-z0-9/.-]+)/i,
+  legalEstablishmentDocument: /(?:sk\b|surat\s+keputusan|keputusan\s+rektor|penetapan|izin|nomor|no\.?)/i
 };
 
 function isFieldConflicting(field, value, evidenceList = []) {
@@ -723,7 +734,20 @@ function assessRequestedFieldCoverage(semanticContract, text, evidence = []) {
   };
 }
 
-function evaluateEvidenceAnswerability({ question, selectedEvidence, intent, semanticContract } = {}) {
+function evaluateEvidenceAnswerability(firstArg = {}, secondArg, thirdArg, fourthArg) {
+  let question;
+  let selectedEvidence;
+  let intent;
+  let semanticContract;
+
+  if (typeof firstArg === 'string' || Array.isArray(secondArg)) {
+    question = firstArg;
+    selectedEvidence = secondArg;
+    intent = thirdArg;
+    semanticContract = fourthArg;
+  } else {
+    ({ question, selectedEvidence, intent, semanticContract } = firstArg || {});
+  }
   const evidence = Array.isArray(selectedEvidence) ? selectedEvidence.filter((item) => item && item.isSelectedEvidence === true) : [];
   const text = evidence.map((item) => item.text).join('\n');
   const detectedIntent = detectIntent(question, intent);
@@ -791,8 +815,8 @@ function evaluateEvidenceAnswerability({ question, selectedEvidence, intent, sem
       || /\b(?:mulai|dibuka|periode|masa\s+pendaftaran)\b[\s\S]{0,120}\b\d{1,2}\s*(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\b/i.test(text);
     if (!hasConcreteDateOrPeriod) missingEvidence.push('date_or_period');
   }
-  // List queries must have concrete multiple items
-  if (/\bapa\s+saja\b/i.test(q) && detectedIntent !== 'legal' && !hasConcreteList(text)) {
+  // List queries must have concrete multiple items, except for requirements, legal, academic, and curriculum topics with narrative evidence
+  if (/\bapa\s+saja\b/i.test(q) && !['legal', 'requirements', 'requirement', 'academic', 'curriculum', 'exam'].includes(detectedIntent) && !/\b(?:syarat|persyaratan|sidang|komprehensif|ujian)\b/i.test(q) && !hasConcreteList(text)) {
     missingEvidence.push('multiple_concrete_items');
   }
 

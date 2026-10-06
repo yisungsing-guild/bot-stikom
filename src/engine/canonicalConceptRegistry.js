@@ -149,6 +149,12 @@ const CANONICAL_SEMANTIC_CONCEPTS = Object.freeze({
       'basket',
       'futsal',
       'badminton',
+      'bulu tangkis',
+      'bulutangkis',
+      'bos',
+      'ukm bos',
+      'athena esports',
+      'esports',
       'voli',
       'sepak bola'
     ])
@@ -161,7 +167,184 @@ const CANONICAL_SEMANTIC_CONCEPTS = Object.freeze({
       'pascasarjana',
       'magister',
       's2',
-      'magister sistem informasi'
+      's-2',
+      'strata 2',
+      'magister sistem informasi',
+      's2 sistem informasi',
+      's2 msi'
+    ])
+  }),
+
+  ARTS: Object.freeze({
+    id: 'concept_arts',
+    canonical: 'arts',
+    terms: Object.freeze([
+      'seni',
+      'kesenian',
+      'budaya',
+      'kebudayaan',
+      'musik',
+      'tari',
+      'pragina',
+      'tabuh',
+      'teater',
+      'teater biner',
+      'paduan suara',
+      'dos',
+      'd.o.s',
+      'vos',
+      'voice of stikom',
+      'himatography',
+      'multimedia',
+      'jcos'
+    ])
+  }),
+
+  UKM_TECH_PROGRAMMING: Object.freeze({
+    id: 'concept_ukm_tech',
+    canonical: 'ukm_tech',
+    terms: Object.freeze([
+      'komputer',
+      'programming',
+      'pemrograman',
+      'coding',
+      'syntax',
+      'ksl',
+      'linux',
+      'mcos',
+      'rade',
+      'ghost',
+      'teknologi dan penalaran'
+    ])
+  }),
+
+  UKM_COMMUNITY_SPECIAL: Object.freeze({
+    id: 'concept_ukm_community',
+    canonical: 'ukm_community',
+    terms: Object.freeze([
+      'ksr',
+      'ksr pmi',
+      'ksr-pmi',
+      'palang merah',
+      'kemanusiaan',
+      'kepalangmerahan',
+      'mapala',
+      'mapala kompas',
+      'paskamras',
+      'progress',
+      'u2m'
+    ])
+  }),
+
+  UKM_EXECUTIVE: Object.freeze({
+    id: 'concept_ukm_executive',
+    canonical: 'ukm_executive',
+    terms: Object.freeze([
+      'organisasi mahasiswa',
+      'ormawa',
+      'eksekutif',
+      'legislatif',
+      'kemahasiswaan',
+      'badan eksekutif mahasiswa',
+      'bem',
+      'dewan perwakilan mahasiswa',
+      'dpm',
+      'balma',
+      'himpunan mahasiswa',
+      'himaprodi'
+    ])
+  }),
+
+  PROGRAM_TI: Object.freeze({
+    id: 'concept_program_ti',
+    canonical: 'teknologi_informasi',
+    terms: Object.freeze([
+      'teknologi informasi',
+      'ti',
+      'it',
+      'information technology',
+      'prodi ti',
+      'jurusan ti',
+      's1 teknologi informasi'
+    ])
+  }),
+
+  PROGRAM_SI: Object.freeze({
+    id: 'concept_program_si',
+    canonical: 'sistem_informasi',
+    terms: Object.freeze([
+      'sistem informasi',
+      'si',
+      'information systems',
+      'prodi si',
+      'jurusan si',
+      's1 sistem informasi'
+    ])
+  }),
+
+  PROGRAM_BD: Object.freeze({
+    id: 'concept_program_bd',
+    canonical: 'bisnis_digital',
+    terms: Object.freeze([
+      'bisnis digital',
+      'bd',
+      'digital business',
+      'prodi bd',
+      'jurusan bd',
+      's1 bisnis digital'
+    ])
+  }),
+
+  PROGRAM_SK: Object.freeze({
+    id: 'concept_program_sk',
+    canonical: 'sistem_komputer',
+    terms: Object.freeze([
+      'sistem komputer',
+      'sk',
+      'computer systems',
+      'computer engineering',
+      'prodi sk',
+      'jurusan sk',
+      's1 sistem komputer'
+    ])
+  }),
+
+  DPP_BUILDING_FEE: Object.freeze({
+    id: 'concept_dpp_building_fee',
+    canonical: 'dpp',
+    terms: Object.freeze([
+      'dpp',
+      'dana pendidikan pokok',
+      'dana pengembangan pendidikan',
+      'uang gedung',
+      'biaya gedung',
+      'potongan dpp',
+      'potongan uang gedung'
+    ])
+  }),
+
+  SCHOLARSHIP_KIP: Object.freeze({
+    id: 'concept_scholarship_kip',
+    canonical: 'kip_kuliah',
+    terms: Object.freeze([
+      'kip kuliah',
+      'kip-k',
+      'kip',
+      'kartu indonesia pintar',
+      'beasiswa kip'
+    ])
+  }),
+
+  SION_PORTAL: Object.freeze({
+    id: 'concept_sion_portal',
+    canonical: 'sion',
+    terms: Object.freeze([
+      'sion',
+      'portal sion',
+      'akun sion',
+      'login sion',
+      'password sion',
+      'sion.stikom-bali.ac.id'
     ])
   }),
 
@@ -173,7 +356,8 @@ const CANONICAL_SEMANTIC_CONCEPTS = Object.freeze({
       'global cross cultural program',
       'global culture and career program',
       'student exchange',
-      'pertukaran mahasiswa'
+      'pertukaran mahasiswa',
+      'pertukaran pelajar'
     ])
   })
 });

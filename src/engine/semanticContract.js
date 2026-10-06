@@ -93,7 +93,8 @@ function inferRequestType(canonical) {
   if (/registration_how|data_correction/.test(intent) || fields.has('procedureSteps')) return 'procedure';
   if (/requirements/.test(intent) || fields.has('requirements')) return 'requirements';
   if (/list/.test(intent) || fields.has('programList') || fields.has('organizationList')) return 'list';
-  if (/count/.test(intent) || /academic_numeric/.test(intent) || fields.has('organizationCount') || fields.has('creditCount') || fields.has('sksWeight')) return 'count';
+  const asksCountExplicitly = /\b(?:berapa|jumlah|total|banyaknya)\b/i.test(raw);
+  if (/count/.test(intent) || (asksCountExplicitly && (/academic_numeric/.test(intent) || fields.has('organizationCount') || fields.has('creditCount') || fields.has('sksWeight')))) return 'count';
   if (/recommendation/.test(intent)) return 'recommendation';
   if (/institution_history|facility|document/.test(intent)) return 'specific_fact';
   if (/availability/.test(intent) || /\b(?:ada|punya|tersedia|memiliki)\b/i.test(raw)) return 'availability';
@@ -191,6 +192,14 @@ function hasEntity(text, entity) {
       return a && (a.length <= 3 ? new RegExp('(^|\\s)' + a + '(\\s|$)', 'i').test(normalized) : normalized.includes(a));
     });
     if (registryAliasMatch) return true;
+  }
+  // Multi-token generic entity matching (e.g. "internet wifi" matched by presence of both tokens)
+  const entityTokens = canonical.split(/\s+/).filter(t => t.length >= 3);
+  if (entityTokens.length >= 2 && entityTokens.every(t => normalized.includes(t))) {
+    return true;
+  }
+  if (canonical === 'internet wifi' && /\b(?:wifi|wi-fi|internet|hotspot)\b/i.test(normalized)) {
+    return true;
   }
   // Generic evidence-derived entity binding for student organizations / UKMs / Himaprodi
   const strippedOrg = canonical.replace(/^(?:ukm|ormawa|himaprodi|hima|himpunan(?:\s+mahasiswa)?)\s+/i, '').trim();
@@ -370,7 +379,8 @@ function verifyAnswerAgainstContract(contract, answer, evidence = [], options = 
   if (organizationCategory && reqFields.includes('organizationCategory') && !hasOrganizationCategoryEvidence(combined, organizationCategory)) {
     return { ok: false, reason: 'organization_category_not_evidenced', category: organizationCategory.label || organizationCategory.key };
   }
-  if (contract.domain === 'scholarship' && reqFields.includes('scholarshipList') && !/\b(?:beasiswa\s+kip|1k1s|skss|beasiswa\s+prestasi|beasiswa\s+yayasan)\b/i.test(combined)) {
+  const asksScholarshipCatalogueExplicitly = /\b(?:daftar|apa\s+saja|jenis|macam|katalog|program)\b/i.test(String(contract.raw || contract.normalized || ''));
+  if (contract.domain === 'scholarship' && reqFields.includes('scholarshipList') && asksScholarshipCatalogueExplicitly && !/\b(?:beasiswa\s+kip|1k1s|skss|beasiswa\s+prestasi|beasiswa\s+yayasan)\b/i.test(combined)) {
     return { ok: false, reason: 'scholarship_catalogue_not_evidenced' };
   }
   const isGeneralDomain = contract.domain === 'general' && contract.intent === 'ask_general';
@@ -479,7 +489,9 @@ function verifyAnswerAgainstContract(contract, answer, evidence = [], options = 
       if (instNormalized.includes('stikom') || instNormalized.includes('itb')) continue;
       // Extract distinctive tokens of the institution name (exclude generic words)
       const distinctiveTokens = instNormalized.split(/\s+/).filter(t => !['university', 'universitas', 'institute', 'institut', 'college', 'politeknik', 'dan', 'and', 'the', 'of'].includes(t) && t.length >= 3);
-      const isGroundedInEvidence = distinctiveTokens.length > 0 && distinctiveTokens.some(tok => normalizedEvidence.includes(tok));
+      const userQueryText = normalizeText((contract && (contract.raw || contract.normalized)) || '');
+      const isGroundedInEvidence = (distinctiveTokens.length > 0 && distinctiveTokens.some(tok => normalizedEvidence.includes(tok)))
+        || (distinctiveTokens.length > 0 && distinctiveTokens.some(tok => userQueryText.includes(tok)));
       if (!isGroundedInEvidence) {
         return { ok: false, reason: 'provenance_mismatch' };
       }
@@ -494,9 +506,13 @@ function verifyAnswerAgainstContract(contract, answer, evidence = [], options = 
     const hasTimelineShape = /\b(?:\d+|satu|dua|tiga|empat|lima|enam|tujuh|delapan)\s*(?:tahun|semester|bulan)\b|\b(?:durasi|tahapan|skema\s+kuliah|perkuliahan)\b/i.test(text);
     if (!hasScheduleShape && !(asksStudyTimeline && hasTimelineShape)) return { ok: false, reason: 'schedule_shape_not_satisfied' };
   }
-  if (contract.requestType === 'count' && !/\b\d+\b|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|puluh/i.test(text)) {
-    if (isCreditConversionPolicyAnswer(contract, text)) return { ok: true, reason: 'credit_conversion_policy_preserved' };
-    return { ok: false, reason: 'count_shape_not_satisfied' };
+  if (contract.requestType === 'count') {
+    const rawQ = normalizeText((contract && (contract.raw || contract.rawQuery || contract.normalized || '')) || '');
+    const isYesNoOrExplanation = /\b(?:apakah|adakah|bagaimana|gimana|jelaskan)\b/i.test(rawQ) && !/\b(?:berapa|jumlah\s+sks|total\s+sks)\b/i.test(rawQ);
+    if (!isYesNoOrExplanation && !/\b\d+\b|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|puluh/i.test(text)) {
+      if (isCreditConversionPolicyAnswer(contract, text)) return { ok: true, reason: 'credit_conversion_policy_preserved' };
+      return { ok: false, reason: 'count_shape_not_satisfied' };
+    }
   }
   return { ok: true, reason: 'contract_preserved' };
 }

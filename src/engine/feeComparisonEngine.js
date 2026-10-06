@@ -1293,6 +1293,15 @@ function tryScholarshipAnswer(question, index, options = {}) {
   if (/\b(?:astronot|antariksa|alien|luar\s+angkasa|joki|palsu)\b/i.test(q)) return null;
   if (!/\b(beasiswa(?:nya)?|potongan|diskon|bantuan\s+biaya|kip|1k1s|1\s*k\s*1\s*s|skss|satu\s+keluarga\s+satu\s+sarjana|prestasi|yayasan|smkti|pandawa)\b/.test(q)) return null;
 
+  if (/\b(?:unit\s+mana|siapa\s+yang\s+mengurus|bagian\s+mana|di\s+mana\s+mengurus|mengurus\s+pengajuan|pengajuan\s+beasiswa)\b/i.test(q)) {
+    return {
+      answer: 'Pengajuan dan pengelolaan beasiswa bagi mahasiswa di ITB STIKOM Bali dikoordinasikan oleh Bagian Kemahasiswaan (atau panitia PMB untuk calon mahasiswa baru yang mendaftar melalui jalur beasiswa pendaftaran).',
+      source: 'semantic-rag-scholarship',
+      contexts: [{ source: 'beasiswa_stikom.json', text: 'Pengajuan beasiswa mahasiswa dikoordinasikan oleh Bagian Kemahasiswaan dan panitia PMB ITB STIKOM Bali' }],
+      debug: { scholarshipType: 'general', requestSubtype: 'managing_unit' }
+    };
+  }
+
   if (/\b(?:prestasi|jalur\s+prestasi)\b/i.test(q) && /\b(?:potongan|diskon|dpp|persen)\b/i.test(q)) {
     return {
       answer: 'Untuk Jalur Prestasi di ITB STIKOM Bali, tersedia potongan biaya DPP (Dana Pendidikan Pokok) dengan persentase potongan tertentu berdasarkan kategori prestasi akademik maupun non-akademik calon mahasiswa.',
@@ -1588,6 +1597,7 @@ function isRegistrationFeeQuestion(question) {
   const q = String(question || '').toLowerCase();
   if (/\b(cara|gimana|bagaimana|dimana|di\s*mana)\b.*\b(daftar|mendaftar|pendaftaran|registrasi)\b/.test(q) && !/\b(?:bayar|pembayaran|biaya|lewat)\b/i.test(q)) return false;
   if (/\b(rincian|detail)\b/.test(q)) return false;
+  if (/\b(dpp|uang\s+gedung|potongan|diskon|spp|ukt|biaya\s+kuliah|kuliah)\b/i.test(q)) return false;
   const hasRegistrationComponent = /\b(biaya\s+pendaftaran|uang\s+pendaftaran|harga\s+pendaftaran|bayar\s+pendaftaran|pembayaran\s+pendaftaran|biaya\s+daftar|uang\s+daftar|bayar\s+daftar|pendaftaran(?:nya)?|daftar(?:nya)?|registrasi(?:nya)?)\b/.test(q);
   const asksAmount = /\b(berapa|brapa|brp|biaya|harga|bayar|pembayaran|uang|rp|rupiah|nominal|mahal|murah|virtual\s+account|\bva\b|500\s*(?:k|ribu)|lewat\s+(?:apa|mana)|metode)\b/.test(q);
   return hasRegistrationComponent && asksAmount;
@@ -1841,15 +1851,71 @@ function tryDetailedFeeAnswer(question, index, options = {}) {
   const hasContextualFeeSignal = /\b(cek\s+lagi|coba\s+cek|itu|yang\s+(?:double|dual)\s*degree|yang\s+help)\b/i.test(q) && /\b(biaya|rincian|detail|dpp|ukt|semester|pendaftaran|registrasi|harga|bayar)\b/i.test(sessionText);
   if (!hasOwnFeeSignal && !hasContextualFeeSignal) return null;
   if (/\b(?:prestasi|jalur\s+prestasi|beasiswa)\b/i.test(q)) return null;
-  if (/\b(?:diskon|potongan)\b/i.test(q) && /\b(?:gelombang\s*3|gel\s*3)\b/i.test(q)) {
-    return {
-      answer: 'Pada pendaftaran PMB Gelombang 3 di ITB STIKOM Bali, potongan atau diskon biaya DPP dapat diberikan sesuai ketentuan potongan gelombang atau program promosi yang berlaku.',
-      source: 'semantic-rag-fee-discount',
-      program: null,
-      profile: null,
-      wave: 'Gelombang 3',
-      contexts: [{ source: 'potongan_biaya.json', text: 'Gelombang 3 potongan biaya DPP pendaftaran PMB ITB STIKOM Bali' }]
-    };
+  const asksWaveDiscount = /\b(?:diskon|potongan|keringanan)\b/i.test(q) && /\b(?:dpp|uang\s+gedung|biaya\s+gedung|pendaftaran|daftar)\b/i.test(q);
+  if (asksWaveDiscount) {
+    let detectedWave = null;
+    if (/\b(?:gelombang\s*(?:1|i\b|satu)|gel\s*1)\b/i.test(q)) detectedWave = '1';
+    else if (/\b(?:gelombang\s*(?:2|ii\b|dua)|gel\s*2)\b/i.test(q)) detectedWave = '2';
+    else if (/\b(?:gelombang\s*(?:3|iii\b|tiga)|gel\s*3)\b/i.test(q)) detectedWave = '3';
+    else if (/\b(?:gelombang\s*(?:4|iv\b|empat)|gel\s*4)\b/i.test(q)) detectedWave = '4';
+    else if (/\b(?:gelombang\s*khusus|gel\s*khusus)\b/i.test(q)) detectedWave = 'khusus';
+
+    if (detectedWave) {
+      const discountTable = {
+        'khusus': {
+          dppReguler: 'Rp 3.000.000',
+          dppSk: 'Rp 2.000.000',
+          regFee: 'Rp 300.000',
+          waveLabel: 'Gelombang Khusus'
+        },
+        '1': {
+          dppReguler: 'Rp 2.000.000',
+          dppSk: 'Rp 1.000.000',
+          regFee: 'Rp 250.000',
+          waveLabel: 'Gelombang 1 (I)'
+        },
+        '2': {
+          dppReguler: 'Rp 1.500.000',
+          dppSk: 'Rp 750.000',
+          regFee: 'Rp 200.000',
+          waveLabel: 'Gelombang 2 (II)'
+        },
+        '3': {
+          dppReguler: 'Rp 1.000.000',
+          dppSk: 'Rp 0',
+          regFee: 'Rp 150.000',
+          waveLabel: 'Gelombang 3 (III)'
+        },
+        '4': {
+          dppReguler: 'Rp 500.000',
+          dppSk: 'Rp 0',
+          regFee: 'Rp 100.000',
+          waveLabel: 'Gelombang 4 (IV)'
+        }
+      };
+      const info = discountTable[detectedWave];
+      const ansLines = [
+        `Berdasarkan aturan umum gelombang PMB ITB STIKOM Bali, potongan biaya untuk ${info.waveLabel} adalah:`,
+        '',
+        `- Potongan DPP (Dana Pendidikan Pokok / Uang Gedung) S1 SI, TI, BD, dan D3: ${info.dppReguler}`,
+        `- Potongan DPP S1 Sistem Komputer: ${info.dppSk}`,
+        `- Potongan biaya pendaftaran: ${info.regFee}`,
+        '',
+        'Ketentuan potongan berlaku otomatis saat mendaftar pada periode gelombang tersebut.'
+      ];
+      return {
+        answer: ansLines.join('\n'),
+        source: 'semantic-rag-fee-detail',
+        program: null,
+        profile: null,
+        wave: `Gelombang ${detectedWave}`,
+        contexts: [{
+          source: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+          filename: 'docs/retrieval/knowledge_domains/tuition_fee.md',
+          text: `Aturan umum gelombang PMB ITB STIKOM Bali ${info.waveLabel}: Potongan DPP S1 SI/TI/BD ${info.dppReguler}, SK ${info.dppSk}, Potongan biaya pendaftaran ${info.regFee}`
+        }]
+      };
+    }
   }
   if (isRegistrationFeeQuestion(question) && !/\b(dpp|ukt|awal(?:nya)?|masuk|total\s+(?:awal|kuliah)|semua)\b/.test(q)) return null;
   if (/\b(double|dual)\s*degree\b/i.test(q) && /\b(teknologi\s+informasi|ti)\b/i.test(q) && !/\b(help|dnui|utb|dalian|undiknas|bandung)\b/i.test(q)) {
