@@ -267,7 +267,7 @@ function aliasMatchesText(text, alias) {
 function hasExplicitProgramSemantics(text) {
   const s = String(text || '').toLowerCase();
   return /\b(?:program|program\s+studi|prodi|jurusan|progdi|bidang\s+studi|konsentrasi|peminatan|fakultas|kuliah|perkuliahan|mata\s+kuliah|matkul|kurikulum|belajar|dipelajari|pelajaran|lulusan|alumni|prospek|karier|karir|pekerjaan|profesi|job|biaya|dpp|spp|bayar|tarif|uang\s+gedung|sks|gelar|semester|s1|d3|sarjana|diploma|akreditasi)\b/i.test(s)
-    || /\b(?:beda|bedanya|perbedaan|banding|bandingkan|versus|vs)\b/i.test(s)
+    || /\b(?:beda|bedanya|bedain|perbedaan|banding|bandingkan|dibanding(?:kan)?|perbandingan|versus|vs)\b/i.test(s)
     || /\b(?:apa\s+(?:itu|yang\s+dimaksud(?:\s+dengan)?)|apakah\s+itu|itu\s+apa|apaan|pengertian|jelaskan|maksud(?:nya)?)\s+(?:si|ti|bd|sk|mi)(?:\s*[?,!.]|\s+(?:kak|min|ya|dong|sih|bro|gan|tuh|nih)\b|\s*$)/i.test(s)
     || /\b(?:si|ti|bd|sk|mi)\s+(?:itu\s+apa|apaan|maksudnya|artinya)\b/i.test(s);
 }

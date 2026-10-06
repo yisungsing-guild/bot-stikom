@@ -125,6 +125,8 @@ tests/*
 !tests/trainingDataReliability.test.js
 !tests/coverageRemediation.test.js
 !tests/whatsAppPipelineRegression.test.js
+!tests/ragGeneralizationRegression.test.js
+!tests/ragKnowledgeBaseAudit.test.js
 tools/
 quarantined_backups/
 
