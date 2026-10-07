@@ -63,7 +63,7 @@ Daftar 25 pertanyaan unseen queries yang digunakan untuk mengukur daya generalis
 | **UQ-09** | `TI belajar mata kuliah apa?` | `ACADEMIC_CURRICULUM` | S1 Teknologi Informasi | Menjelaskan sebaran mata kuliah TI per semester |
 | **UQ-10** | `Mata kuliah Sistem Informasi semester 3 apa saja?` | `ACADEMIC_CURRICULUM` | S1 Sistem Informasi | Menyebutkan kurikulum Semester III SI |
 | **UQ-11** | `Kalau ambil Sistem Komputer semester 5 belajar apa?` | `ACADEMIC_CURRICULUM` | S1 Sistem Komputer | Menyebutkan kurikulum Semester V SK |
-| **UQ-12** | `Kalau mau daftar STIKOM Bali mulai dari mana?` | `PMB` | General PMB | Mengarahkan ke portal resmi `siap.stikom-bali.ac.id` / `pmb` |
+| **UQ-12** | `Kalau mau daftar STIKOM Bali mulai dari mana?` | `PMB` | General PMB | Mengarahkan ke alur pendaftaran portal resmi `pmb.stikom-bali.ac.id` |
 | **UQ-13** | `Dokumen pendaftaran mahasiswa baru apa saja?` | `PMB` | Dokumen Persyaratan | Menyebutkan ijazah/SKL, KTP, KK, pasfoto |
 | **UQ-14** | `Proses masuk STIKOM Bali bagaimana?` | `PMB` | Prosedur PMB | Menjelaskan alur pendaftaran, tes/berkas, dan registrasi |
 | **UQ-15** | `Jurusan sarjana apa saja?` | `ACADEMIC_PROGRAM` | Program Sarjana (S1) | Merinci 4 prodi S1: SI, TI, SK, Bisnis Digital |
@@ -72,7 +72,7 @@ Daftar 25 pertanyaan unseen queries yang digunakan untuk mengukur daya generalis
 | **UQ-18** | `Berapa potongan DPP kalau daftar gelombang awal?` | `SCHOLARSHIP / FEE` | Potongan DPP PMB | Menyebutkan nominal pasti: Gelombang Khusus Rp3jt, Gel I Rp2jt |
 | **UQ-19** | `Fasilitas praktikum komputernya ada apa aja?` | `FACILITIES` | Fasilitas Kampus | Menjelaskan laboratorium komputer dan perangkat praktikum |
 | **UQ-20** | `UKM untuk yang suka gaming ada?` | `ORGANIZATION_UKM` | UKM Kampus | Mengidentifikasi UKM e-sports (Athena E-Sports) |
-| **UQ-21** | `Bisa kuliah sambil kerja nggak?` | `ACADEMIC_PROGRAM` | Skema Kuliah | Menjelaskan kelas malam/karyawan dan program magang |
+| **UQ-21** | `Bisa kuliah sambil kerja nggak?` | `ACADEMIC_PROGRAM` | Skema Kuliah | **PARTIALLY_SUPPORTED**: Menjelaskan program kuliah sambil kerja di luar negeri & Career Center, transparan menyatakan ketiadaan data jadwal kelas karyawan/malam domestik |
 | **UQ-22** | `Biaya pendaftaran awal bayar berapa?` | `TUITION_FEE` | Pendaftaran PMB | Menyebutkan nominal biaya pendaftaran Rp500.000 |
 | **UQ-23** | `Perbedaan prodi SI sama TI apa?` | `ACADEMIC_PROGRAM` | Perbandingan SI vs TI | Membedakan fokus bisnis/proses (SI) vs infrastruktur/teknis (TI) |
 | **UQ-24** | `Ada program double degree luar negeri?` | `INTERNATIONAL` | Program Dual Degree | Menjelaskan kemitraan HELP (Malaysia) & DNUI (China) |
@@ -129,6 +129,8 @@ Aturan ketat pembuktian fakta (*Ground Truth & Provenance*):
 4. **Potongan Gelombang Awal**: Gelombang Khusus Rp3.000.000, Gelombang I Rp2.000.000 (Reguler). Persentase 50%-60% mutlak hanya untuk alumni SMK TI Bali Global & SMK Pandawa.
 5. **Otoritas Kurikulum vs TA**: Syarat Tugas Akhir/Skripsi tunduk pada Pedoman TA Revisi 1 (110-120 SKS lulus); distribusi mata kuliah tunduk pada Kurikulum 2025.
 6. **Program Internasional**: HELP University (Malaysia) & DNUI (China). Mahasiswa HELP menjalani 4 tahun perkuliahan di ITB STIKOM Bali untuk memperoleh gelar S.Kom dan BIT.
+7. **Portal Resmi PMB**: Otoritas rujukan resmi alur dan pendaftaran mahasiswa baru adalah `pmb.stikom-bali.ac.id` (bukan domain portal legacy internal seperti `siap.stikom-bali.ac.id`).
+8. **Skema Kuliah Sambil Kerja (Partially Supported)**: Hanya terbukti untuk program kerja/magang luar negeri (Hi-Think Jepang) serta fasilitasi Career Center. Tidak ada bukti resmi yang memadai mengenai jadwal kelas malam/karyawan reguler domestik; bot wajib transparan menyatakan keterbatasan data.
 
 ---
 
