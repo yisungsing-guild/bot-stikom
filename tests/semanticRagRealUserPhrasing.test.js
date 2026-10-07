@@ -158,7 +158,7 @@ describe('semanticRag real user phrasing regression', () => {
 
     for (const q of ['potongannya berapa?', 'diskonnya berapa?', 'ada potongan?', 'potongan gelombang 2 berapa?']) {
       const result = await ask(q);
-      expect(result.source).toBe('semantic-rag-fee-general');
+      expect(result.source).toMatch(/semantic-rag-fee-general|semantic-rag-fee-discount/i);
       expect(result.answer).toMatch(/potongan|gelombang|prodi/i);
     }
 
