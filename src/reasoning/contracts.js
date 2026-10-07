@@ -42,6 +42,62 @@ const PLAN_TYPE = Object.freeze({
   CONTEXT_CORRECTION: 'CONTEXT_CORRECTION'
 });
 
+// 5. CONTEXT REPAIR & DELTA CONTRACT (STEP 4)
+const CONTEXT_ACTION = Object.freeze({
+  ENTITY_ADDED: 'entity_added',
+  ENTITY_REMOVED: 'entity_removed',
+  ENTITY_REPLACED: 'entity_replaced',
+  DOMAIN_ADDED: 'domain_added',
+  DOMAIN_REPLACED: 'domain_replaced',
+  ASPECT_ADDED: 'aspect_added',
+  ASPECT_REPLACED: 'aspect_replaced',
+  TEMPORAL_CONSTRAINT_ADDED: 'temporal_constraint_added',
+  TEMPORAL_CONSTRAINT_REPLACED: 'temporal_constraint_replaced',
+  CONTEXT_PRESERVED: 'context_preserved',
+  CONTEXT_RESET: 'context_reset',
+  AMBIGUITY_DETECTED: 'ambiguity_detected'
+});
+
+const ENTITY_PROVENANCE = Object.freeze({
+  EXPLICIT_CURRENT_TURN: 'explicit_current_turn',
+  INHERITED_FROM_SESSION: 'inherited_from_session',
+  NONE: 'none'
+});
+
+const CONTEXT_TTL_MS = 30 * 60 * 1000; // 30 minutes TTL baseline
+
+const CAMPUS_WIDE_DOMAINS = Object.freeze([
+  'FACILITIES',
+  'ORGANIZATION',
+  'SCHOLARSHIP',
+  'SCHEDULE',
+  'PMB_SCHEDULE',
+  'CAMPUS_LIFE',
+  'GENERAL_ADMISSION'
+]);
+
+function validateContextDelta(delta) {
+  if (!delta || typeof delta !== 'object') {
+    return { valid: false, reason: 'delta_not_an_object' };
+  }
+  if (!Array.isArray(delta.actions)) {
+    return { valid: false, reason: 'delta_actions_must_be_array' };
+  }
+  const validActionValues = new Set(Object.values(CONTEXT_ACTION));
+  for (const act of delta.actions) {
+    if (!validActionValues.has(act)) {
+      return { valid: false, reason: `invalid_context_action: ${act}` };
+    }
+  }
+  if (!delta.resolvedState || typeof delta.resolvedState !== 'object') {
+    return { valid: false, reason: 'missing_resolved_state' };
+  }
+  if (delta.resolvedState.activeEntity && !Object.values(ENTITY_PROVENANCE).includes(delta.resolvedState.entityProvenance)) {
+    return { valid: false, reason: `invalid_entity_provenance: ${delta.resolvedState.entityProvenance}` };
+  }
+  return { valid: true };
+}
+
 // 2. RECOMMENDATION FEATURE CONTRACT
 function validateProgramFeature(feature) {
   if (!feature || typeof feature !== 'object') {
@@ -198,6 +254,11 @@ module.exports = {
   canStartReplan,
   isBudgetExceeded,
   PLAN_TYPE,
+  CONTEXT_ACTION,
+  ENTITY_PROVENANCE,
+  CONTEXT_TTL_MS,
+  CAMPUS_WIDE_DOMAINS,
+  validateContextDelta,
   validateProgramFeature,
   getAuthoritativeProgramOptions,
   createShadowTelemetry,

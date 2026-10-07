@@ -184,6 +184,21 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       phase1Result.finalAnswer = phase1Result.subQueryResults.map(r => r.answer).filter(Boolean).join('\n\n');
     }
 
+    // Atomically commit context delta to session only after verified completion (Step 4)
+    if (chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
+      const deltaState = plan.contextDelta.resolvedState;
+      await updateSession(chatId, {
+        dataPatch: {
+          activeDomain: deltaState.activeDomain,
+          activeEntity: deltaState.activeEntity,
+          preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
+          entityProvenance: deltaState.entityProvenance,
+          lastQuery: rawQuery,
+          lastAnswer: phase1Result.finalAnswer
+        }
+      });
+    }
+
     // Single Outbound Dispatch if requested
     if (shouldDispatch && chatId && phase1Result.finalAnswer) {
       await outboundDispatcher.sendOutboundMessage(chatId, phase1Result.finalAnswer);

@@ -17,11 +17,13 @@
 
 const {
   PLAN_TYPE,
+  ENTITY_PROVENANCE,
   getAuthoritativeProgramOptions,
   validateExecutionPlan
 } = require('./contracts');
 const { resolveSemanticFrame } = require('../core/semanticFrameResolver');
 const { CANONICAL_ENTITIES, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
+const { computeContextDelta } = require('./contextRepair');
 
 // Queries that require a specific program entity to give an accurate answer
 const AMBIGUITY_INDUCING_INTENTS = new Set([
@@ -67,22 +69,23 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
   // 1. Resolve semantic frame via Phase 1 core (deterministic)
   const semanticFrame = resolveSemanticFrame(query, sessionData);
 
-  // 2. Extract verified active entity from context if available
-  const contextActiveEntity = sessionData.activeEntity || null;
+  // 2. Compute explicit Context Delta (Step 4 integration)
+  const contextDelta = computeContextDelta({ data: sessionData }, { rawQuery: query, semanticFrame });
+  const deltaState = contextDelta.resolvedState || {};
+
   const entities = (semanticFrame.entities || []).map(e => e.canonical || e.name || String(e));
+  const contextActiveEntity = deltaState.activeEntity || null;
 
   let planType = PLAN_TYPE.DIRECT;
   let clarificationOptions = [];
   let isAmbiguous = false;
-  let targetEntities = [...entities];
+  let targetEntities = contextActiveEntity ? [contextActiveEntity] : [...entities];
 
   // 3. Ambiguity & Context Inheritance Resolution
   if (isAmbiguousEntityInquiry(query, semanticFrame)) {
     if (contextActiveEntity && typeof contextActiveEntity === 'string') {
       // INHERIT CONTEXT: activeEntity in sessionData provides sufficient discriminator
-      if (!targetEntities.includes(contextActiveEntity)) {
-        targetEntities = [contextActiveEntity];
-      }
+      targetEntities = [contextActiveEntity];
       planType = PLAN_TYPE.DIRECT;
       isAmbiguous = false;
     } else if (entities.length === 0) {
@@ -132,6 +135,12 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     });
   }
 
+  const isInherited = Boolean(
+    contextActiveEntity &&
+    (deltaState.entityProvenance === ENTITY_PROVENANCE.INHERITED_FROM_SESSION ||
+     (sessionData.activeEntity && targetEntities.includes(sessionData.activeEntity) && entities.length === 0))
+  );
+
   const plan = {
     id: `plan_${Date.now()}`,
     rawQuery: query,
@@ -140,12 +149,13 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     clarificationOptions,
     tasks,
     contextDelta: {
-      activeDomain: semanticFrame.domain,
-      activeEntity: targetEntities.length > 0 ? targetEntities[0] : contextActiveEntity,
-      inheritedFromSession: Boolean(contextActiveEntity && targetEntities.includes(contextActiveEntity))
+      ...contextDelta,
+      activeDomain: deltaState.activeDomain || semanticFrame.domain,
+      activeEntity: contextActiveEntity,
+      inheritedFromSession: isInherited
     },
     metadata: {
-      plannerVersion: 'phase2-step1',
+      plannerVersion: 'phase2-step4',
       frameDomain: semanticFrame.domain,
       frameIntent: semanticFrame.intent
     }
