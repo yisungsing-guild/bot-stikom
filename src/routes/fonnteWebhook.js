@@ -162,7 +162,21 @@ async function handleFonnteWebhook(req, res) {
     }
 
     const normalizedEvent = normalizeEventText(text, { preserveCase: false });
+    const isV2 = String(process.env.CHAT_ENGINE || '').toLowerCase().trim() === 'v2' ||
+      String(process.env.USE_GREENFIELD || '').toLowerCase().trim() === 'true';
+
     await enqueueChat(phone, async () => {
+      if (isV2) {
+        try {
+          const { handleInboundMessage } = require('../core/orchestrator');
+          logger.info({ phone, messageId }, '[ChatEngine] Routing inbound message to Greenfield V2');
+          await handleInboundMessage(body, { executeDispatch: true });
+        } catch (v2Err) {
+          logger.error({ err: v2Err.message, phone, messageId }, '[ChatEngine] Greenfield V2 execution failed (safe failure, no legacy fallback)');
+        }
+        return;
+      }
+
       await forwardToProvider({
         chatId: phone,
         text,
