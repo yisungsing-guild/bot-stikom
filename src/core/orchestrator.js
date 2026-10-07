@@ -136,7 +136,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatc
       rejectedCount: arbitrated.rejected.length,
       answerability: answerability.status,
       answer,
-      verification
+      verification,
+      arbitrated
     });
   }
 

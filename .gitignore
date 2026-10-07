@@ -131,6 +131,7 @@ tests/*
 !tests/semanticCorrectnessRegression.test.js
 !tests/phase2Planner.contract.test.js
 !tests/phase2OrchestratorBridge.test.js
+!tests/phase2BoundedReplan.test.js
 tools/
 quarantined_backups/
 

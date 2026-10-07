@@ -3,14 +3,15 @@
 /**
  * src/reasoning/phase2Bridge.js
  * 
- * Phase 2 Step 2: Orchestrator Handoff & Phase 1 Bridge.
+ * Phase 2 Step 2 & 3: Orchestrator Handoff, Phase 1 Bridge, Bounded Reflection & Replan.
  * 
- * Constraints:
+ * Strict Invariants:
  * 1. Safe Feature Flag: ENABLE_PHASE2_REASONING=true to enable, false/unknown treats as false.
  * 2. Single Source of Truth: Never duplicates Phase 1 retrieval, arbiter, or verifier.
- * 3. Exactly One Fallback: On exception or timeout, falls back to Phase 1 exactly once. Zero double response.
+ * 3. Exactly One Fallback: On exception or timeout, falls back to Phase 1 exactly once. Zero double dispatch.
  * 4. Backward-Compatible Response Contract: Preserves response shape expected by consumers.
- * 5. Session State Safety: Session state remains consistent; never corrupted on fallback.
+ * 5. Bounded Reflection: Maksimal 1 replan per turn, hanya dijalankan jika elapsedMs < 1500ms.
+ * 6. Provenance Continuity: Factual claims must be backed by accepted evidence.
  */
 
 const { TOTAL_TURN_BUDGET_MS, PLAN_TYPE } = require('./contracts');
@@ -18,7 +19,9 @@ const plannerModule = require('./phase2Planner');
 const { getSession, updateSession } = require('../core/conversationState');
 const outboundDispatcher = require('../core/outboundDispatcher');
 const { verifyFinalAnswer } = require('../core/finalAnswerVerifier');
+const { synthesizeAnswer } = require('../core/groundedAnswerGenerator');
 const { ANSWERABILITY_STATUS } = require('../core/answerabilityGate');
+const boundedReflection = require('./boundedReflection');
 const logger = require('../logger');
 
 /**
@@ -31,7 +34,7 @@ function isPhase2Enabled() {
 }
 
 /**
- * Executes a turn through Phase 2 Bridge with strict timeout and Phase 1 fallback guarantee.
+ * Executes a turn through Phase 2 Bridge with strict timeout, reflection, and Phase 1 fallback guarantee.
  * 
  * @param {string} chatId
  * @param {string} rawQuery
@@ -44,7 +47,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
   const internalOptions = { ...options, executeDispatch: false };
   let timedOut = false;
 
-  // Global turn timeout Promise race against TOTAL_TURN_BUDGET_MS
+  // Global turn timeout Promise race against TOTAL_TURN_BUDGET_MS (2500ms)
   let timeoutHandle = null;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutHandle = setTimeout(() => {
@@ -112,6 +115,11 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         phase2Meta: {
           handledBy: 'phase2_bridge',
           planType: plan.planType,
+          replan: {
+            replanExecuted: false,
+            replanDecision: boundedReflection.REPLAN_DECISION.NO_REPLAN_SUFFICIENT,
+            replanAttempts: 0
+          },
           latencyMs: Date.now() - startTime,
           fallbackTriggered: false
         }
@@ -122,6 +130,60 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     // Phase 1 executes retrieval, arbitration, answerability, synthesis, & verification
     const phase1Result = await phase1PipelineFn(chatId, rawQuery, internalOptions);
 
+    let replanMetadata = {
+      replanExecuted: false,
+      replanDecision: boundedReflection.REPLAN_DECISION.NO_REPLAN_SUFFICIENT,
+      replanAttempts: 0,
+      newEvidenceFound: false
+    };
+
+    // 5. Step 3: Bounded Reflection & Controlled Replan
+    if (Array.isArray(phase1Result.subQueryResults)) {
+      for (const sub of phase1Result.subQueryResults) {
+        const sufficiency = boundedReflection.evaluateEvidenceSufficiency(
+          sub.frame,
+          sub.arbitrated || { accepted: [] },
+          { status: sub.answerability, missingAspects: (sub.arbitrated && sub.arbitrated.missingAspects) || [] }
+        );
+
+        if (!sufficiency.sufficient) {
+          const replanResult = await boundedReflection.executeBoundedReplan({
+            semanticFrame: sub.frame,
+            initialPlan: sub.plan,
+            initialArbitrated: sub.arbitrated || { accepted: [] },
+            initialAnswerability: { status: sub.answerability },
+            startTime,
+            replanAttempts: replanMetadata.replanAttempts
+          });
+
+          replanMetadata = {
+            replanExecuted: replanResult.replanExecuted,
+            replanDecision: replanResult.decision,
+            replanAttempts: replanResult.replanExecuted ? 1 : 0,
+            newEvidenceFound: replanResult.newEvidenceFound || false
+          };
+
+          if (replanResult.newEvidenceFound && replanResult.arbitrated) {
+            // Re-synthesize answer with the newly acquired verified evidence
+            const synthesis = await synthesizeAnswer(sub.frame, replanResult.arbitrated);
+            if (synthesis.success && synthesis.answer) {
+              const verification = verifyFinalAnswer(synthesis.answer, sub.frame, replanResult.arbitrated);
+              if (verification.pass) {
+                sub.answer = synthesis.answer;
+                sub.verification = verification;
+                sub.answerability = replanResult.answerability.status;
+                sub.acceptedCount = replanResult.arbitrated.accepted.length;
+              }
+            }
+          }
+          break; // Bounded Invariant: exactly 1 replan attempt per turn
+        }
+      }
+
+      // Re-assemble finalAnswer if replan updated any subquery answer
+      phase1Result.finalAnswer = phase1Result.subQueryResults.map(r => r.answer).filter(Boolean).join('\n\n');
+    }
+
     // Single Outbound Dispatch if requested
     if (shouldDispatch && chatId && phase1Result.finalAnswer) {
       await outboundDispatcher.sendOutboundMessage(chatId, phase1Result.finalAnswer);
@@ -131,6 +193,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     phase1Result.phase2Meta = {
       handledBy: 'phase2_bridge',
       planType: plan.planType,
+      replan: replanMetadata,
       latencyMs: Date.now() - startTime,
       fallbackTriggered: false
     };

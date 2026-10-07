@@ -18,9 +18,13 @@ const { CANONICAL_ENTITIES } = require('../engine/canonicalEntityRegistry');
 const TOTAL_TURN_BUDGET_MS = 2500;
 const REPLAN_START_DEADLINE_MS = 1500;
 
-function canStartReplan(elapsedMs) {
-  if (typeof elapsedMs !== 'number' || isNaN(elapsedMs)) return false;
-  return elapsedMs < REPLAN_START_DEADLINE_MS;
+function canStartReplan(startTimeOrElapsed, currentTime) {
+  let elapsed = startTimeOrElapsed;
+  if (typeof currentTime === 'number' && typeof startTimeOrElapsed === 'number') {
+    elapsed = currentTime - startTimeOrElapsed;
+  }
+  if (typeof elapsed !== 'number' || isNaN(elapsed)) return false;
+  return elapsed < REPLAN_START_DEADLINE_MS;
 }
 
 function isBudgetExceeded(elapsedMs) {
