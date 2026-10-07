@@ -37,9 +37,55 @@ const { isPhase2Enabled, executePhase2Bridge } = require('../reasoning/phase2Bri
  */
 async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
   if (isPhase2Enabled()) {
-    return executePhase2Bridge(chatId, rawQuery, { executeDispatch }, (cId, q, opt) => {
+    const bridgeResult = await executePhase2Bridge(chatId, rawQuery, { executeDispatch }, (cId, q, opt) => {
       return runPhase1DeterministicPipeline(cId, q, opt);
     });
+
+    if (bridgeResult && bridgeResult.comparisonEnvelope) {
+      // Orchestrator owns synthesis, verification, fallback, and outbound dispatch for comparative evaluations
+      const targetEntities = bridgeResult.targetEntities || [];
+      const frame = { domain: 'ACADEMIC_PROGRAM', intent: 'ask_program_comparison', entities: targetEntities };
+
+      let finalAnswer = null;
+      const synthRes = await synthesizeAnswer(frame, {}, bridgeResult.comparisonEnvelope);
+
+      if (synthRes && synthRes.success && synthRes.answer) {
+        const verifRes = verifyFinalAnswer(synthRes.answer, frame, {}, bridgeResult.comparisonEnvelope);
+        if (verifRes && verifRes.pass) {
+          finalAnswer = synthRes.answer;
+        } else {
+          logger.warn({ reason: verifRes ? verifRes.reason : 'unknown' }, '[Orchestrator] Comparative answer blocked by verifier');
+          finalAnswer = 'Mohon maaf, informasi perbandingan resmi yang terverifikasi belum dapat dipastikan secara lengkap saat ini.';
+        }
+      } else {
+        finalAnswer = 'Mohon maaf, informasi perbandingan resmi belum dapat diproses.';
+      }
+
+      bridgeResult.finalAnswer = finalAnswer;
+
+      // Atomic session persistence
+      if (chatId && bridgeResult.plan && bridgeResult.plan.contextDelta && bridgeResult.plan.contextDelta.resolvedState) {
+        const deltaState = bridgeResult.plan.contextDelta.resolvedState;
+        await updateSession(chatId, {
+          dataPatch: {
+            activeDomain: deltaState.activeDomain,
+            activeEntity: deltaState.activeEntity,
+            preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
+            entityProvenance: deltaState.entityProvenance,
+            lastQuery: rawQuery,
+            lastAnswer: finalAnswer
+          }
+        });
+      }
+
+      if (executeDispatch && chatId && finalAnswer) {
+        await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
+      }
+
+      return bridgeResult;
+    }
+
+    return bridgeResult;
   }
   return runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch });
 }

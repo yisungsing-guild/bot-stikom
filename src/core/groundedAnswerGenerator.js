@@ -948,7 +948,26 @@ Pendaftaran mahasiswa baru dapat dilakukan secara online melalui https://pmb.sti
   return null;
 }
 
-async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}) {
+async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null) {
+  if (comparisonEnvelope && comparisonEnvelope.mode === 'COMPARATIVE') {
+    const { renderTextFromPlan, validateComparisonEnvelope } = require('../reasoning/comparativeSynthesis');
+    const validation = validateComparisonEnvelope(comparisonEnvelope);
+    if (!validation.valid) {
+      return {
+        success: false,
+        answer: null,
+        reason: 'comparative_transport_failure',
+        diagnosticCode: validation.code
+      };
+    }
+    const rendered = renderTextFromPlan(comparisonEnvelope.renderPlan);
+    return {
+      success: true,
+      answer: rendered,
+      source: 'comparative_deterministic_synthesis'
+    };
+  }
+
   const accepted = arbitratedEvidence.accepted || [];
   if (accepted.length === 0) {
     return {

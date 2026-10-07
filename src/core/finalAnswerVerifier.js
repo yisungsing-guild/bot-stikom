@@ -29,7 +29,30 @@ const RAW_DOCUMENT_LEAK_PATTERNS = [
   /Ketua Program Studi S1-/i
 ];
 
-function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = {}) {
+function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null) {
+  if (comparisonEnvelope && comparisonEnvelope.mode === 'COMPARATIVE') {
+    const { renderTextFromPlan, validateComparisonEnvelope } = require('../reasoning/comparativeSynthesis');
+    const { sanitizeWhatsAppMarkdown } = require('./outboundRenderer');
+
+    const validation = validateComparisonEnvelope(comparisonEnvelope);
+    if (!validation.valid) {
+      return { pass: false, reason: 'comparative_envelope_invalid', diagnosticCode: validation.code };
+    }
+
+    const expectedText = renderTextFromPlan(comparisonEnvelope.renderPlan);
+    if (candidateAnswer !== expectedText) {
+      return { pass: false, reason: 'comparative_text_divergence' };
+    }
+
+    // Outbound fixed-point idempotence assertion
+    const sanitized = sanitizeWhatsAppMarkdown(candidateAnswer);
+    if (sanitized !== candidateAnswer) {
+      return { pass: false, reason: 'outbound_sanitizer_non_idempotent' };
+    }
+
+    return { pass: true };
+  }
+
   const text = String(candidateAnswer || '').trim();
   if (!text) {
     return { pass: false, reason: 'empty_answer' };

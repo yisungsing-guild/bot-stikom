@@ -182,30 +182,80 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       const isSuccessfulGraph = [GRAPH_COMPLETION_STATE.COMPLETE_SUCCESS, GRAPH_COMPLETION_STATE.PARTIAL_COMPLETION].includes(graphResult.completionState);
 
       let finalGraphAnswer = '';
-      if (isSuccessfulGraph) {
-        const factsText = Object.values(graphResult.consolidatedFacts || {}).map(f => `${f.aspect}: ${JSON.stringify(f.value)}`).join(', ');
-        finalGraphAnswer = factsText || 'Informasi berhasil diproses.';
+      let comparisonEnvelope = null;
+      let targetEntities = [];
+      let isComparative = false;
 
-        // Atomic session persistence (Step 4 & Step 5)
-        if (chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
-          const deltaState = plan.contextDelta.resolvedState;
-          await updateSession(chatId, {
-            dataPatch: {
-              activeDomain: deltaState.activeDomain,
-              activeEntity: deltaState.activeEntity,
-              preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
-              entityProvenance: deltaState.entityProvenance,
-              lastQuery: rawQuery,
-              lastAnswer: finalGraphAnswer
+      if (isSuccessfulGraph) {
+        // Check if plan or graph contains a comparative evaluation request
+        isComparative = (plan.planType === PLAN_TYPE.COMPARATIVE_EVALUATION) ||
+          (plan.taskGraph && plan.taskGraph.goalType === 'COMPARISON') ||
+          (plan.comparisonRequest && plan.comparisonRequest.enabled);
+
+        if (isComparative) {
+          const { buildComparisonMatrix, compileRenderPlan } = require('./comparativeSynthesis');
+          targetEntities = plan.comparisonRequest?.targetEntities ||
+            plan.taskGraph?.targetEntities ||
+            [];
+          const requestedAspects = plan.comparisonRequest?.requestedAspects ||
+            plan.taskGraph?.requestedAspects ||
+            [];
+
+          // Group consolidatedFacts by entity
+          const factsByEntity = {};
+          for (const ent of targetEntities) {
+            factsByEntity[ent] = [];
+          }
+          for (const fact of Object.values(graphResult.consolidatedFacts || {})) {
+            const ent = fact.entity;
+            if (ent && factsByEntity[ent]) {
+              factsByEntity[ent].push({
+                aspect: fact.aspect,
+                value: fact.value,
+                presence: 'PRESENT'
+              });
             }
+          }
+
+          const matrix = buildComparisonMatrix({
+            comparedEntities: targetEntities,
+            requestedAspects,
+            factsByEntity,
+            scopedConflicts: graphResult.scopedConflicts || []
           });
+
+          const renderPlan = compileRenderPlan(matrix);
+
+          comparisonEnvelope = Object.freeze({
+            mode: 'COMPARATIVE',
+            matrix,
+            renderPlan
+          });
+        } else {
+          const factsText = Object.values(graphResult.consolidatedFacts || {}).map(f => `${f.aspect}: ${JSON.stringify(f.value)}`).join(', ');
+          finalGraphAnswer = factsText || 'Informasi berhasil diproses.';
+
+          // Atomic session persistence (Step 4 & Step 5) for non-comparative graph tasks
+          if (chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
+            const deltaState = plan.contextDelta.resolvedState;
+            await updateSession(chatId, {
+              dataPatch: {
+                activeDomain: deltaState.activeDomain,
+                activeEntity: deltaState.activeEntity,
+                preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
+                entityProvenance: deltaState.entityProvenance,
+                lastQuery: rawQuery,
+                lastAnswer: finalGraphAnswer
+              }
+            });
+          }
         }
       } else {
         // Graph did not succeed -> zero session mutation
         finalGraphAnswer = 'Maaf, informasi yang diminta belum dapat dipenuhi secara lengkap.';
       }
 
-      if (shouldDispatch && chatId && finalGraphAnswer) {
+      if (!isComparative && shouldDispatch && chatId && finalGraphAnswer) {
         await outboundDispatcher.sendOutboundMessage(chatId, finalGraphAnswer);
       }
 
@@ -213,6 +263,9 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         chatId,
         rawQuery,
         graphResult,
+        comparisonEnvelope,
+        targetEntities,
+        plan,
         finalAnswer: finalGraphAnswer,
         phase2Meta: {
           handledBy: 'phase2_task_graph',

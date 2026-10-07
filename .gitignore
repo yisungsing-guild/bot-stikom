@@ -132,6 +132,8 @@ tests/*
 !tests/phase2Planner.contract.test.js
 !tests/phase2OrchestratorBridge.test.js
 !tests/phase2BoundedReplan.test.js
+!tests/phase2TaskGraph.test.js
+!tests/phase2ComparativeSynthesis.test.js
 tools/
 quarantined_backups/
 
