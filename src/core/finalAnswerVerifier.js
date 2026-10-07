@@ -53,6 +53,25 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
           reason: `entity_contradiction_conflicting_sibling_in_answer: ${excluded}`
         };
       }
+
+      // If excluded is a program (e.g. S1 Sistem Komputer), also check for program title patterns
+      const base = excluded.replace(/^(S1|S2|D3|D4)\s+/i, '');
+      const isSameBaseAsTarget = entities.some(e => {
+        const canonical = e.canonical || e.name || String(e);
+        const tb = canonical.replace(/^(S1|S2|D3|D4)\s+/i, '').toLowerCase();
+        return tb === base.toLowerCase();
+      });
+
+      if (!isSameBaseAsTarget && base !== excluded && base.length >= 5) {
+        const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const titleRegex = new RegExp(`(?:Program\\s+Studi|Prodi|Jurusan)\\s+${escapedBase}\\b|\\b${escapedBase}\\s*\\((?:S1|S2|D3|D4)\\)`, 'i');
+        if (titleRegex.test(text)) {
+          return {
+            pass: false,
+            reason: `entity_contradiction_conflicting_sibling_in_answer: ${excluded}`
+          };
+        }
+      }
     }
   }
 
@@ -82,6 +101,34 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
           reason: 'unsupported_temporal_claim_lacks_valid_temporal_evidence'
         };
       }
+    }
+  }
+
+  // 4. Aspect / Requested Field Consistency Check
+  const isFeeInquiry = semanticFrame.domain === 'TUITION_FEE' || 
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)));
+
+  if (isFeeInquiry) {
+    const hasFeeKeywords = /\b(biaya|pendidikan|dpp|spp|uang pangkal|rp|cicil|pembayaran|nominal)\b/i.test(text);
+    const hasCurriculumOnly = /\b(semester\s+[ivx\d]+\s+no\s+nama\s+mata\s+kuliah|praktikum\s+[a-z]+|kurikulum\s+2025)\b/i.test(text) && !hasFeeKeywords;
+    if (!hasFeeKeywords || hasCurriculumOnly) {
+      return {
+        pass: false,
+        reason: 'aspect_mismatch_answer_lacks_fee_evidence'
+      };
+    }
+  }
+
+  const isCurriculumInquiry = semanticFrame.domain === 'ACADEMIC_CURRICULUM' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses'].includes(a)));
+
+  if (isCurriculumInquiry) {
+    const hasCurriculumKeywords = /\b(kurikulum|mata\s*kuliah|matkul|sks|semester|silabus)\b/i.test(text);
+    if (!hasCurriculumKeywords) {
+      return {
+        pass: false,
+        reason: 'aspect_mismatch_answer_lacks_curriculum_evidence'
+      };
     }
   }
 

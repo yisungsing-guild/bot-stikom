@@ -42,6 +42,32 @@ function normalizeQueryText(text) {
  * Extracts domain and primary intent based on semantic patterns
  */
 function inferDomainAndIntent(normalized, entities = []) {
+  // 0. Conversational Greeting & Small Talk (Non-Retrieval)
+  if (/^(hallo+|halo+|hai+|hi+|hei+|pagi|siang|sore|malam|assalamu'?alaikum|selamat\s+(pagi|siang|sore|malam)|sampurasun|om\s+swastiastu)\b/i.test(normalized) &&
+      !/\b(biaya|daftar|jurusan|prodi|beasiswa|kuliah|akreditasi|perwalian|krs|mata\s*kuliah|sks)\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'CONVERSATIONAL_GREETING',
+      retrievalRequired: false,
+      userState: 'GREETING',
+      desiredAction: 'GREET_USER',
+      aspects: ['greeting'],
+      relation: 'GREETING'
+    };
+  }
+
+  if (/\b(apa\s+kha?bar|bagaimana\s+kha?bar(?:mu)?|gimana\s+kha?bar(?:mu)?|kha?bar(?:nya)?\s+gimana|kamu\s+siapa|siapa\s+kamu|kamu\s+robot)\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'CONVERSATIONAL_SMALL_TALK',
+      retrievalRequired: false,
+      userState: 'SMALL_TALK',
+      desiredAction: 'RESPOND_SMALL_TALK',
+      aspects: ['small_talk'],
+      relation: 'SMALL_TALK'
+    };
+  }
+
   // 1. Academic Missed Process / State
   if (/\b(terlambat|telat|ketinggalan|terlewat|lupa)\s+(perwalian|krs|daftar ulang|bayar|ujian|sidang|yudisium)\b/i.test(normalized)) {
     const processMatch = normalized.match(/\b(perwalian|krs|daftar ulang|bayar|ujian|sidang|yudisium)\b/i);
@@ -49,6 +75,7 @@ function inferDomainAndIntent(normalized, entities = []) {
     return {
       domain: 'ACADEMIC',
       intent: 'MISSED_ACADEMIC_PROCESS',
+      retrievalRequired: false,
       userState: 'LATE',
       desiredAction: 'NEXT_STEP_PROCEDURE',
       aspects: ['procedure', 'deadline', 'late_policy'],
@@ -56,11 +83,40 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 2. Dynamic Quota / Live Enrollment Availability (Priority over static study mode)
+  // 2. Program Curriculum Inquiry (Priority over general program info)
+  if (/\b(kurikulum|mata\s*kuliah|matkul|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul)\b/i.test(normalized)) {
+    return {
+      domain: 'ACADEMIC_CURRICULUM',
+      intent: 'CURRICULUM_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_CURRICULUM_INFO',
+      aspects: ['curriculum', 'courses'],
+      relation: 'PROGRAM_CURRICULUM'
+    };
+  }
+
+  // 3. Program Overview / Definition / Profile (Generic across academic programs)
+  const hasAcademicProgram = entities.some(e => e.family === 'academic_program' || e.type === 'program');
+  if ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|deskripsi)\b/i.test(normalized) && hasAcademicProgram) ||
+      (/\b(apa\s+itu\s+program\s+studi|profil\s+prodi|profil\s+program\s+studi)\b/i.test(normalized))) {
+    return {
+      domain: 'ACADEMIC_PROGRAM',
+      intent: 'PROGRAM_OVERVIEW',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_PROGRAM_OVERVIEW',
+      aspects: ['overview', 'definition'],
+      relation: 'PROGRAM_OVERVIEW'
+    };
+  }
+
+  // 4. Dynamic Quota / Live Enrollment Availability (Priority over static study mode)
   if (/\b(kuota|sisa kuota|daya tampung|masih menerima pendaftar|masih menerima|masih ada kuota)\b/i.test(normalized)) {
     return {
       domain: 'ADMISSION_QUOTA',
       intent: 'LIVE_QUOTA_INQUIRY',
+      retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_LIVE_STATUS',
       aspects: ['quota', 'dynamic_availability', 'live_status'],
@@ -68,11 +124,12 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 3. Study Mode / Class Schedule / Working Students
+  // 5. Study Mode / Class Schedule / Working Students
   if (/\b(kuliah sore|kelas karyawan|kuliah malam|untuk yang bekerja|sambil kerja|kelas malam|kuliah sambil kerja)\b/i.test(normalized)) {
     return {
       domain: 'ACADEMIC_PROGRAM',
       intent: 'STUDY_MODE',
+      retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_STUDY_MODE_INFO',
       aspects: ['class_schedule', 'working_students', 'evening_class'],
@@ -80,7 +137,7 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 3. International Programs
+  // 6. International Programs
   if (entities.some(e => e.family === 'international_program') || /\b(double degree|dual degree|international program|pertukaran mahasiswa|student exchange)\b/i.test(normalized)) {
     let intent = 'INTERNATIONAL_PROGRAM_INFO';
     const aspects = [];
@@ -103,6 +160,7 @@ function inferDomainAndIntent(normalized, entities = []) {
     return {
       domain: 'INTERNATIONAL',
       intent,
+      retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_INTERNATIONAL_PROGRAM_INFO',
       aspects,
@@ -110,12 +168,13 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 4. Admission / PMB Schedule & Current Status
+  // 7. Admission / PMB Schedule & Current Status
   if (/\b(pmb|pendaftaran|daftar|gelombang|buka|masih dibuka|kapan buka|jalur pendaftaran)\b/i.test(normalized)) {
     const isNow = TEMPORAL_NOW_REGEX.test(normalized);
     return {
       domain: 'PMB',
       intent: isNow ? 'CURRENT_ENROLLMENT_STATUS' : 'ADMISSION_SCHEDULE',
+      retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_PMB_STATUS',
       aspects: ['schedule', 'status', 'wave_info'],
@@ -123,11 +182,12 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 5. Academic Graduation Requirement (SKS lulus)
+  // 8. Academic Graduation Requirement (SKS lulus)
   if (/\b(sks|jumlah sks|sks lulus|beban sks)\b/i.test(normalized)) {
     return {
       domain: 'ACADEMIC_CURRICULUM',
       intent: 'GRADUATION_REQUIREMENTS',
+      retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_CURRICULUM_REQUIREMENTS',
       aspects: ['sks_count', 'graduation_rule'],
@@ -135,13 +195,14 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 6. Program Comparison (Perbedaan Prodi)
+  // 9. Program Comparison (Perbedaan Prodi)
   const hasProgramEntity = entities.some(e => e.family === 'academic_program' || e.type === 'program');
   if (/\b(perbedaan|beda|bedanya|banding|dibandingkan)\b/i.test(normalized) && 
       (/\b(prodi|jurusan|program studi)\b/i.test(normalized) || hasProgramEntity || entities.length >= 2)) {
     return {
       domain: 'ACADEMIC_PROGRAM',
       intent: 'PROGRAM_COMPARISON',
+      retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_PROGRAM_DIFFERENTIATION',
       aspects: ['curriculum_difference', 'career_prospects'],
@@ -149,12 +210,13 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 7. Accreditation
+  // 10. Accreditation
   if (/\b(akreditasi|terakreditasi|ban-?pt|lam-?infokom)\b/i.test(normalized)) {
     const isProdi = entities.some(e => e.family === 'academic_program' || e.type === 'program') || /\b(prodi|jurusan|program studi|s1|d3|s2)\b/i.test(normalized);
     return {
       domain: isProdi ? 'ACADEMIC_PROGRAM' : 'INSTITUTIONAL',
       intent: isProdi ? 'PROGRAM_ACCREDITATION' : 'INSTITUTIONAL_ACCREDITATION',
+      retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_ACCREDITATION_STATUS',
       aspects: ['akreditasi', 'peringkat', 'sk_akreditasi'],
@@ -162,23 +224,12 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 8. Dynamic Quota / Seat Availability
-  if (/\b(kuota|sisa kuota|daya tampung|masih menerima pendaftar|masih menerima|masih ada kuota)\b/i.test(normalized)) {
-    return {
-      domain: 'ADMISSION_QUOTA',
-      intent: 'LIVE_QUOTA_INQUIRY',
-      userState: 'INQUIRING',
-      desiredAction: 'PROVIDE_LIVE_STATUS',
-      aspects: ['quota', 'dynamic_availability'],
-      relation: 'LIVE_ENROLLMENT_AVAILABILITY'
-    };
-  }
-
-  // 9. Tuition Fee / Biaya Kuliah
+  // 11. Tuition Fee / Biaya Kuliah
   if (/\b(biaya|biaya kuliah|spp|dpp|uang pangkal|bayar kuliah|angsuran|potongan biaya|cicilan)\b/i.test(normalized)) {
     return {
       domain: 'TUITION_FEE',
       intent: 'TUITION_FEE_INQUIRY',
+      retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_TUITION_FEE_INFO',
       aspects: ['fee', 'dpp', 'tuition'],
@@ -249,6 +300,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}) {
     normalizedQuery: normalized,
     domain,
     intent,
+    retrievalRequired: inferred.retrievalRequired !== false,
     entities,
     relation: inferred.relation,
     aspects: inferred.aspects,

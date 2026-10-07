@@ -28,23 +28,33 @@ function buildRetrievalPlan(semanticFrame) {
   const targetEntities = (entities || []).map(e => e.canonical || e.name || String(e));
   const normalizedText = String(normalizedQuery || '').toLowerCase();
 
-  // Generic discovery of conflicting / sibling entities to exclude
+  // Generic discovery of conflicting / sibling entities to exclude across all families
+  // INVARIANT: Explicitly requested entities in targetEntities must NEVER be excluded!
+  const targetEntitySet = new Set(targetEntities.map(t => t.toLowerCase()));
   const excludedConflictingEntities = [];
   for (const ent of targetEntities) {
     const canonicalObj = findCanonicalEntity(ent);
-    if (canonicalObj && canonicalObj.family && canonicalObj.role) {
-      const siblings = CANONICAL_ENTITIES.filter(other => 
-        other.canonical !== canonicalObj.canonical && 
-        other.family === canonicalObj.family && 
-        other.role === canonicalObj.role
-      );
+    if (canonicalObj && canonicalObj.family) {
+      const siblings = CANONICAL_ENTITIES.filter(other => {
+        if (targetEntitySet.has(other.canonical.toLowerCase())) return false;
+        if (other.family !== canonicalObj.family) return false;
+        if (canonicalObj.role && other.role) {
+          return other.role === canonicalObj.role;
+        }
+        return true;
+      });
       for (const sib of siblings) {
-        if (!excludedConflictingEntities.includes(sib.canonical)) {
+        if (!targetEntitySet.has(sib.canonical.toLowerCase()) && !excludedConflictingEntities.includes(sib.canonical)) {
           excludedConflictingEntities.push(sib.canonical);
         }
         if (Array.isArray(sib.aliases)) {
           for (const alias of sib.aliases) {
-            if (alias.length >= 3 && !excludedConflictingEntities.includes(alias)) {
+            if (targetEntitySet.has(alias.toLowerCase())) continue;
+            // Avoid adding plain multi-word noun phrases that are valid descriptive terms in other programs
+            const isPlainNoun = canonicalObj.family === 'academic_program' && 
+              !/^(s1|s2|d3|d4|prodi|jurusan|sarjana|diploma|magister)\b/i.test(alias) && 
+              !/\b(s1|s2|d3|d4)\b/i.test(alias);
+            if (alias.length >= 3 && !isPlainNoun && !excludedConflictingEntities.includes(alias)) {
               excludedConflictingEntities.push(alias);
             }
           }
@@ -68,15 +78,50 @@ function buildRetrievalPlan(semanticFrame) {
     queryVariants.push('konversi peringkat akreditasi perguruan tinggi institut teknologi dan bisnis stikom bali');
     queryVariants.push('akreditasi institusi BAN-PT perguruan tinggi');
   }
-  if (targetEntities.length > 0) {
-    queryVariants.push(`${targetEntities.join(' ')} ${cleanKeywords}`.trim());
+
+  // Tuition fee query variants prioritized
+  if (domain === 'TUITION_FEE' || (aspects && (aspects.includes('fee') || aspects.includes('tuition')))) {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`rincian biaya pendidikan ${ent}`);
+        queryVariants.push(`biaya kuliah ${ent} per semester`);
+      }
+    } else {
+      queryVariants.push('rincian biaya pendidikan mahasiswa baru kelas reguler');
+    }
   }
-  queryVariants.push(cleanKeywords || normalizedQuery);
-  queryVariants.push(normalizedQuery);
+
+  // Program Overview / Definition query variants
+  if (intent === 'PROGRAM_OVERVIEW' || intent === 'DEFINITION' || intent === 'PROGRAM_COMPARISON') {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`deskripsi profil program studi ${ent}`);
+        queryVariants.push(`tentang ${ent}`);
+      }
+    }
+  }
+
+  // Program Curriculum query variants
+  if (intent === 'CURRICULUM_INQUIRY' || domain === 'ACADEMIC_CURRICULUM') {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`kurikulum ${ent} mata kuliah`);
+        queryVariants.push(`sebaran mata kuliah ${ent}`);
+      }
+    }
+  }
+
+  if (targetEntities.length > 0) {
+    const combined = `${targetEntities.join(' ')} ${cleanKeywords}`.trim();
+    if (!queryVariants.includes(combined)) queryVariants.push(combined);
+  }
+  if (cleanKeywords && !queryVariants.includes(cleanKeywords)) queryVariants.push(cleanKeywords);
+  if (normalizedQuery && !queryVariants.includes(normalizedQuery)) queryVariants.push(normalizedQuery);
 
   return {
     domain,
     intent,
+    retrievalRequired: semanticFrame.retrievalRequired !== false,
     targetEntities,
     excludedConflictingEntities,
     requiredAspects: aspects || [],

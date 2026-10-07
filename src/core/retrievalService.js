@@ -30,6 +30,58 @@ function isPgVectorProductionEnabled() {
   return mode === 'hybrid' || mode === 'vector' || enabled || hybrid;
 }
 
+const { CANONICAL_ENTITIES } = require('../engine/canonicalEntityRegistry');
+
+let cachedFileContextMap = null;
+function getFileContextMap(corpus) {
+  if (cachedFileContextMap) return cachedFileContextMap;
+  cachedFileContextMap = new Map();
+
+  for (const doc of corpus) {
+    const f = doc.sourceFile || doc.filename || '';
+    if (!f || cachedFileContextMap.has(f)) continue;
+
+    const docChunks = corpus.filter(c => (c.sourceFile || c.filename) === f);
+    const entities = new Set();
+    let category = doc.docCategory || '';
+
+    for (const c of docChunks) {
+      const txt = (c.chunk || c.text || '');
+      if (!category && (txt.includes('BIAYA PENDIDIKAN') || /rincian biaya/i.test(f))) {
+        category = 'BIAYA';
+      }
+
+      // Check program header in text
+      const progMatch = txt.match(/PROGRAM STUDI\s+([A-Z0-9\s,\(\)]+?)(?:T\.A|\n|$)/i);
+      if (progMatch) {
+        const pName = progMatch[1].trim();
+        for (const ent of CANONICAL_ENTITIES) {
+          if (ent.family === 'academic_program' && (
+            pName.toLowerCase().includes(ent.canonical.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase()) ||
+            (ent.aliases && ent.aliases.some(a => a.length >= 3 && pName.toLowerCase().includes(a)))
+          )) {
+            entities.add(ent.canonical);
+          }
+        }
+      }
+
+      // Check filename for canonical entities & aliases
+      for (const ent of CANONICAL_ENTITIES) {
+        if (ent.aliases && ent.aliases.some(a => a.length >= 2 && new RegExp('\\b' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(f))) {
+          entities.add(ent.canonical);
+        }
+      }
+    }
+
+    cachedFileContextMap.set(f, {
+      category,
+      entities: Array.from(entities)
+    });
+  }
+
+  return cachedFileContextMap;
+}
+
 /**
  * Retrieves candidates matching RetrievalPlan
  * Integrates:
@@ -44,13 +96,24 @@ async function retrieveCandidates(retrievalPlan, { topK = 6 } = {}) {
     return [];
   }
 
-  const query = (retrievalPlan.queryVariants && retrievalPlan.queryVariants[0]) || '';
+  const variants = (retrievalPlan.queryVariants && retrievalPlan.queryVariants.length > 0)
+    ? retrievalPlan.queryVariants.slice(0, 4)
+    : [retrievalPlan.normalizedQuery || ''];
+  const query = variants.join(' ');
   if (!query) return [];
 
-  // 1. BM25 Sparse Retrieval over governed text
-  const textDocs = corpus.map(doc => ({
-    text: doc.chunk || doc.text || (doc.metadata && (doc.metadata.chunk || doc.metadata.text)) || ''
-  }));
+  const fileContextMap = getFileContextMap(corpus);
+
+  // 1. BM25 Sparse Retrieval over governed text enriched with document context
+  const textDocs = corpus.map(doc => {
+    const f = doc.sourceFile || doc.filename || '';
+    const ctx = fileContextMap.get(f);
+    const entStr = ctx && ctx.entities && ctx.entities.length > 0 ? ctx.entities.join(' ') : '';
+    const raw = doc.chunk || doc.text || (doc.metadata && (doc.metadata.chunk || doc.metadata.text)) || '';
+    const textWithContext = entStr ? `${entStr} ${f} ${raw}` : `${f} ${raw}`;
+    return { text: textWithContext };
+  });
+
   const bm25Results = computeBm25Scores(query, textDocs);
   
   const bm25Sorted = bm25Results
@@ -60,9 +123,20 @@ async function retrieveCandidates(retrievalPlan, { topK = 6 } = {}) {
 
   const bm25Candidates = bm25Sorted.map(item => {
     const doc = corpus[item.index];
-    const text = doc.chunk || doc.text || (doc.metadata && (doc.metadata.chunk || doc.metadata.text)) || '';
+    const rawText = doc.chunk || doc.text || (doc.metadata && (doc.metadata.chunk || doc.metadata.text)) || '';
     const source = doc.filename || doc.source || (doc.metadata && doc.metadata.source) || 'unknown';
+    const sourceFile = doc.sourceFile || doc.filename || source;
     const metadata = doc.metadata || doc || {};
+    const ctx = fileContextMap.get(sourceFile);
+
+    // Propagate document-level program entity to chunk text if chunk lacks explicit entity mention
+    let enrichedText = rawText;
+    if (ctx && ctx.entities && ctx.entities.length > 0) {
+      const hasAnyEnt = ctx.entities.some(e => rawText.toLowerCase().includes(e.toLowerCase()));
+      if (!hasAnyEnt && (ctx.category === 'BIAYA' || /rincian biaya/i.test(sourceFile))) {
+        enrichedText = `[Program: ${ctx.entities.join(', ')}] ${rawText}`;
+      }
+    }
 
     return {
       id: doc.id || `chunk_${item.index}`,
@@ -70,12 +144,14 @@ async function retrieveCandidates(retrievalPlan, { topK = 6 } = {}) {
       source_record_index: item.index,
       index: item.index,
       score: item.score,
-      text,
-      chunk: text,
+      text: enrichedText,
+      rawText,
+      chunk: enrichedText,
       source,
-      source_file: doc.sourceFile || doc.filename || source,
+      source_file: sourceFile,
       metadata,
-      docCategory: metadata.docCategory || doc.docCategory || null,
+      docCategory: metadata.docCategory || doc.docCategory || (ctx ? ctx.category : null),
+      contextEntities: ctx ? ctx.entities : [],
       validFrom: doc.validFrom || metadata.validFrom || null,
       validTo: doc.validTo || metadata.validTo || null
     };

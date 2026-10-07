@@ -43,6 +43,30 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
   const subQueryResults = [];
 
   for (const frame of subFrames) {
+    // Check if conversational non-retrieval intent
+    if (frame.domain === 'CONVERSATIONAL' || frame.retrievalRequired === false) {
+      let reply = '';
+      if (frame.intent === 'CONVERSATIONAL_GREETING') {
+        reply = 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
+      } else if (frame.intent === 'CONVERSATIONAL_SMALL_TALK') {
+        reply = 'Kabar baik! Terima kasih sudah menyapa. Saya adalah asisten virtual resmi ITB STIKOM Bali. Ada informasi kampus yang ingin Anda tanyakan hari ini?';
+      } else {
+        reply = 'Halo! Saya asisten resmi ITB STIKOM Bali. Silakan beri tahu informasi apa yang ingin Anda ketahui seputar kampus kami.';
+      }
+
+      subQueryResults.push({
+        frame,
+        plan: null,
+        candidatesCount: 0,
+        acceptedCount: 0,
+        rejectedCount: 0,
+        answerability: ANSWERABILITY_STATUS.ANSWERABLE,
+        answer: reply,
+        verification: { pass: true, reason: 'conversational_verified' }
+      });
+      continue;
+    }
+
     // 2. Build Retrieval Plan
     const plan = buildRetrievalPlan(frame);
     frame.retrievalPlan = plan;
@@ -53,8 +77,8 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
     // 4. Stage B: Strict Evidence Arbitration (Hard Entity Lock, Temporal, Aspect)
     const arbitrated = arbitrateEvidence(candidates, plan);
     arbitrated.retrievalPlan = plan;
-    if (arbitrated.accepted.length > 6) {
-      arbitrated.accepted = arbitrated.accepted.slice(0, 6);
+    if (arbitrated.accepted.length > 10) {
+      arbitrated.accepted = arbitrated.accepted.slice(0, 10);
     }
 
     // 5. Evaluate Answerability

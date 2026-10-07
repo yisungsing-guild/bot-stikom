@@ -73,11 +73,14 @@ function isCandidateMatchingTargetEntity(candidateText, targetEntityStr) {
     }
   }
 
-  // 3. Generic distinctive token matching for target entity (excluding generic taxonomy stopwords)
-  const genericStopwords = new Set(['program', 'studi', 'degree', 'double', 'dual', 'jenjang', 'sarjana', 'diploma']);
+  // 3. Generic distinctive token matching for target entity (proximity required for multi-token entities)
+  const genericStopwords = new Set(['program', 'studi', 'degree', 'double', 'dual', 'jenjang', 'sarjana', 'diploma', 's1', 's2', 'd3', 'd4']);
   const targetTokens = targetNorm.split(/\s+/).filter(t => t.length >= 3 && !genericStopwords.has(t));
-  for (const token of targetTokens) {
-    if (cleanText.includes(token)) return true;
+  if (targetTokens.length === 1) {
+    if (cleanText.includes(targetTokens[0])) return true;
+  } else if (targetTokens.length > 1) {
+    const proximityPattern = new RegExp('\\b' + targetTokens[0] + '\\b(?:\\s+\\w+){0,2}\\s+\\b' + targetTokens[1] + '\\b', 'i');
+    if (proximityPattern.test(cleanText)) return true;
   }
 
   return false;
@@ -122,6 +125,53 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan) {
         disposition: 'REJECT_ENTITY_MISMATCH',
         reason: 'evidence_does_not_contain_target_entity'
       };
+    }
+  }
+
+  // 3. Aspect Compatibility & Ownership Check
+  const providedAspects = [];
+  const isFeeChunk = candidate.docCategory === 'BIAYA' ||
+    (candidate.source_file && /rincian biaya/i.test(candidate.source_file)) ||
+    /\b(biaya|pendidikan per semester|dpp|spp|uang pangkal|waktu pembayaran|pendaftaran \d|dicicil|potongan biaya|angsuran)\b/i.test(text);
+
+  const isCurriculumChunk = /\b(kurikulum|mata\s*kuliah|matkul|sks|semester\s+[ivx\d]+\s+no\s+nama\s+mata\s+kuliah|praktikum)\b/i.test(text);
+  const isOverviewChunk = /\b(deskripsi singkat|profil|fokus pada|keahlian dalam bidang|visi|misi|program studi terlihat|penjelasan prodi|peluang kerja|yang dipelajari|perbedaan)\b/i.test(text);
+  const isHobbyChunk = /\b(hobi\s*\/\s*aktivitas|aktivitas\s*:\s*bermain game|hobi\s*:)\b/i.test(text);
+
+  if (isFeeChunk) providedAspects.push('fee', 'tuition', 'dpp');
+  if (isCurriculumChunk) providedAspects.push('curriculum', 'courses');
+  if (isOverviewChunk) providedAspects.push('overview', 'definition', 'curriculum_difference', 'career_prospects');
+
+  // Strict aspect matching against retrievalPlan.requiredAspects
+  if (Array.isArray(requiredAspects) && requiredAspects.length > 0 && !requiredAspects.includes('general')) {
+    const wantsFee = requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)) || retrievalPlan.domain === 'TUITION_FEE';
+    const wantsCurriculum = requiredAspects.some(a => ['curriculum', 'courses'].includes(a)) || retrievalPlan.domain === 'ACADEMIC_CURRICULUM';
+    const wantsOverview = requiredAspects.some(a => ['overview', 'definition', 'curriculum_difference', 'career_prospects'].includes(a));
+
+    if (wantsFee) {
+      if (!isFeeChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_contain_fee_aspect'
+        };
+      }
+    } else if (wantsCurriculum) {
+      if (!isCurriculumChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_contain_curriculum_aspect'
+        };
+      }
+    } else if (wantsOverview) {
+      if (isHobbyChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_is_hobby_not_overview'
+        };
+      }
     }
   }
 
@@ -192,6 +242,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan) {
   return {
     accepted: true,
     disposition: 'SUPPORTS',
+    providedAspects,
     reason: 'compatible_with_plan'
   };
 }
@@ -209,15 +260,28 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
       accepted.push({
         ...candidate,
         disposition: evaluation.disposition,
-        dispositionReason: evaluation.reason
+        dispositionReason: evaluation.reason,
+        providedAspects: evaluation.providedAspects || []
       });
     } else {
       rejected.push({
         ...candidate,
         disposition: evaluation.disposition,
-        dispositionReason: evaluation.reason
+        dispositionReason: evaluation.reason,
+        providedAspects: evaluation.providedAspects || []
       });
     }
+  }
+
+  // Sort accepted evidence to prioritize core requested aspect content
+  if (retrievalPlan.domain === 'TUITION_FEE' || (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.includes('fee'))) {
+    accepted.sort((a, b) => {
+      const aHasCore = /\b(Biaya Pendidikan Per Semester|Dana Pendidikan Pokok|\(DPP\))\b/i.test(a.text);
+      const bHasCore = /\b(Biaya Pendidikan Per Semester|Dana Pendidikan Pokok|\(DPP\))\b/i.test(b.text);
+      if (aHasCore && !bHasCore) return -1;
+      if (!aHasCore && bHasCore) return 1;
+      return 0;
+    });
   }
 
   return {
