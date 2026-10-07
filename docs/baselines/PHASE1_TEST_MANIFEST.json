@@ -10,12 +10,12 @@
     "phase1_unique_test_case_count": 325,
     "phase1_unique_test_files_count": 25,
     "phase1_overlap_deduplication_delta": 8,
-    "phase2_suite_execution_count": 37,
-    "phase2_unique_test_case_count": 37,
-    "phase2_unique_test_files_count": 3,
-    "grand_suite_execution_count": 370,
-    "grand_unique_test_case_count": 362,
-    "grand_unique_test_files_count": 28
+    "phase2_suite_execution_count": 59,
+    "phase2_unique_test_case_count": 59,
+    "phase2_unique_test_files_count": 4,
+    "grand_suite_execution_count": 392,
+    "grand_unique_test_case_count": 384,
+    "grand_unique_test_files_count": 29
   },
   "overlapping_files_audit": [
     {
@@ -233,6 +233,13 @@
       "file": "tests/phase2BoundedReplan.test.js",
       "step": "Step 3: Bounded Reflection & Controlled Replan",
       "test_count": 10,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/phase2ContextRepair.test.js",
+      "step": "Step 4: Context Repair & Delta State Management",
+      "test_count": 22,
       "status": "PASS",
       "is_shared_across_scripts": false
     }
