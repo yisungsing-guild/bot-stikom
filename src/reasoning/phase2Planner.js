@@ -144,10 +144,11 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
   const plan = {
     id: `plan_${Date.now()}`,
     rawQuery: query,
-    planType,
+    planType: options.taskGraph ? PLAN_TYPE.MULTI_STEP : planType,
     isAmbiguous,
     clarificationOptions,
     tasks,
+    taskGraph: options.taskGraph || null,
     contextDelta: {
       ...contextDelta,
       activeDomain: deltaState.activeDomain || semanticFrame.domain,
@@ -155,7 +156,7 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
       inheritedFromSession: isInherited
     },
     metadata: {
-      plannerVersion: 'phase2-step4',
+      plannerVersion: 'phase2-step5',
       frameDomain: semanticFrame.domain,
       frameIntent: semanticFrame.intent
     }

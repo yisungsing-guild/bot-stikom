@@ -14,7 +14,8 @@
  * 6. Provenance Continuity: Factual claims must be backed by accepted evidence.
  */
 
-const { TOTAL_TURN_BUDGET_MS, PLAN_TYPE } = require('./contracts');
+const { TOTAL_TURN_BUDGET_MS, PLAN_TYPE, GRAPH_COMPLETION_STATE } = require('./contracts');
+const { executeTaskGraph } = require('./taskGraphExecutor');
 const plannerModule = require('./phase2Planner');
 const { getSession, updateSession } = require('../core/conversationState');
 const outboundDispatcher = require('../core/outboundDispatcher');
@@ -62,7 +63,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     const sessionData = session ? (session.data || {}) : {};
 
     // 2. Build execution plan via Phase 2 planner
-    const planResult = await plannerModule.buildExecutionPlan(rawQuery, sessionData, { startTime });
+    const planResult = await plannerModule.buildExecutionPlan(rawQuery, sessionData, { ...options, startTime });
     if (!planResult || !planResult.success || !planResult.plan) {
       throw new Error(`invalid_plan: ${planResult ? planResult.error : 'null_plan'}`);
     }
@@ -126,7 +127,105 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       };
     }
 
-    // 4. Standard Handoff to Phase 1 Deterministic Execution Core
+    // 4. Step 5: Multi-Step Task Graph Execution
+    if (plan.taskGraph) {
+      const graphResult = await executeTaskGraph(plan.taskGraph, {
+        phase1BridgeFn: async (queryText, queryOpts = {}) => {
+          const subRes = await phase1PipelineFn(chatId, queryText, { ...internalOptions, executeDispatch: false });
+          const firstSub = (subRes.subQueryResults && subRes.subQueryResults[0]) || {};
+          const accepted = (firstSub.arbitrated && firstSub.arbitrated.accepted) || [];
+          return {
+            answerability: firstSub.answerability || 'UNKNOWN',
+            acceptedEvidence: accepted.map(c => ({
+              chunkId: c.id || c.chunkId || 'chunk',
+              chunkHash: c.hash || 'hash',
+              source: c.source || 'doc',
+              sourceAuthority: c.sourceAuthority || c.source || 'SK_PMB',
+              confidenceScore: c.confidenceScore || 0.9
+            })),
+            verifiedEntities: (firstSub.frame && firstSub.frame.entities) ? firstSub.frame.entities.map(e => e.canonical || String(e)) : (queryOpts.targetEntity ? [queryOpts.targetEntity] : []),
+            verifiedAspects: (firstSub.frame && firstSub.frame.aspects) || (queryOpts.aspects || []),
+            structuredFacts: firstSub.structuredFacts || {}
+          };
+        },
+        replanBridgeFn: async (node, graph) => {
+          const replanQuery = node.input.queryText || rawQuery;
+          const replanSubRes = await phase1PipelineFn(chatId, replanQuery, { ...internalOptions, executeDispatch: false });
+          const firstSub = (replanSubRes.subQueryResults && replanSubRes.subQueryResults[0]) || {};
+          const accepted = (firstSub.arbitrated && firstSub.arbitrated.accepted) || [];
+          if (accepted.length > 0 && firstSub.answerability === 'ANSWERABLE') {
+            return {
+              status: 'SUCCEEDED',
+              output: {
+                verifiedEntities: (firstSub.frame && firstSub.frame.entities) ? firstSub.frame.entities.map(e => e.canonical || String(e)) : (node.input.targetEntity ? [node.input.targetEntity] : []),
+                verifiedAspects: (firstSub.frame && firstSub.frame.aspects) || (node.input.aspects || []),
+                structuredFacts: firstSub.structuredFacts || {},
+                acceptedEvidence: accepted.map(c => ({
+                  chunkId: c.id || c.chunkId || 'chunk',
+                  chunkHash: c.hash || 'hash',
+                  source: c.source || 'doc',
+                  sourceAuthority: c.sourceAuthority || c.source || 'SK_PMB',
+                  confidenceScore: c.confidenceScore || 0.9
+                })),
+                answerability: firstSub.answerability
+              }
+            };
+          }
+          return { status: 'INSUFFICIENT_EVIDENCE' };
+        }
+      });
+
+      if (graphResult.completionState === GRAPH_COMPLETION_STATE.TIMEOUT_GRAPH) {
+        throw new Error('graph_execution_timeout');
+      }
+
+      const isSuccessfulGraph = [GRAPH_COMPLETION_STATE.COMPLETE_SUCCESS, GRAPH_COMPLETION_STATE.PARTIAL_COMPLETION].includes(graphResult.completionState);
+
+      let finalGraphAnswer = '';
+      if (isSuccessfulGraph) {
+        const factsText = Object.values(graphResult.consolidatedFacts || {}).map(f => `${f.aspect}: ${JSON.stringify(f.value)}`).join(', ');
+        finalGraphAnswer = factsText || 'Informasi berhasil diproses.';
+
+        // Atomic session persistence (Step 4 & Step 5)
+        if (chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
+          const deltaState = plan.contextDelta.resolvedState;
+          await updateSession(chatId, {
+            dataPatch: {
+              activeDomain: deltaState.activeDomain,
+              activeEntity: deltaState.activeEntity,
+              preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
+              entityProvenance: deltaState.entityProvenance,
+              lastQuery: rawQuery,
+              lastAnswer: finalGraphAnswer
+            }
+          });
+        }
+      } else {
+        // Graph did not succeed -> zero session mutation
+        finalGraphAnswer = 'Maaf, informasi yang diminta belum dapat dipenuhi secara lengkap.';
+      }
+
+      if (shouldDispatch && chatId && finalGraphAnswer) {
+        await outboundDispatcher.sendOutboundMessage(chatId, finalGraphAnswer);
+      }
+
+      return {
+        chatId,
+        rawQuery,
+        graphResult,
+        finalAnswer: finalGraphAnswer,
+        phase2Meta: {
+          handledBy: 'phase2_task_graph',
+          planType: plan.planType,
+          completionState: graphResult.completionState,
+          allGoalsSatisfied: graphResult.allGoalsSatisfied,
+          latencyMs: Date.now() - startTime,
+          fallbackTriggered: false
+        }
+      };
+    }
+
+    // 5. Standard Handoff to Phase 1 Deterministic Execution Core
     // Phase 1 executes retrieval, arbitration, answerability, synthesis, & verification
     const phase1Result = await phase1PipelineFn(chatId, rawQuery, internalOptions);
 
