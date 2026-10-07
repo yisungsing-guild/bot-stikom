@@ -34,13 +34,15 @@ function buildRetrievalPlan(semanticFrame) {
     'fasilitas', 'gedung', 'kegiatan', 'organisasi'
   ]);
 
-  // Generic discovery of conflicting / sibling entities to exclude across all families
+  // Generic discovery of conflicting / sibling entities to exclude across mutually exclusive families
   // INVARIANT: Explicitly requested entities in targetEntities must NEVER be excluded!
+  // Invariant: Non-mutually-exclusive families like campus facilities or scholarships do not exclude each other
+  const MUTUALLY_EXCLUSIVE_FAMILIES = new Set(['academic_program', 'international_program']);
   const targetEntitySet = new Set(targetEntities.map(t => t.toLowerCase()));
   const excludedConflictingEntities = [];
   for (const ent of targetEntities) {
     const canonicalObj = findCanonicalEntity(ent);
-    if (canonicalObj && canonicalObj.family) {
+    if (canonicalObj && canonicalObj.family && MUTUALLY_EXCLUSIVE_FAMILIES.has(canonicalObj.family)) {
       const siblings = CANONICAL_ENTITIES.filter(other => {
         if (targetEntitySet.has(other.canonical.toLowerCase())) return false;
         if (other.family !== canonicalObj.family) return false;
@@ -128,10 +130,32 @@ function buildRetrievalPlan(semanticFrame) {
     queryVariants.push('layanan bursa kerja dan kemitraan');
   }
 
-  // General PMB Inquiry query variants
-  if (domain === 'PMB' && intent === 'GENERAL_PMB_INQUIRY') {
+  // PMB Inquiry & Procedure query variants
+  if (domain === 'PMB' || intent === 'GENERAL_PMB_INQUIRY' || intent === 'ADMISSION_PROCEDURE') {
     queryVariants.push('informasi pendaftaran mahasiswa baru PMB jalur reguler kelas karyawan');
-    queryVariants.push('syarat pendaftaran dan prosedur PMB STIKOM Bali');
+    queryVariants.push('syarat pendaftaran dan prosedur alur PMB STIKOM Bali');
+    queryVariants.push('alur pendaftaran mahasiswa baru pmb.stikom-bali.ac.id');
+  }
+
+  // Academic Curriculum query variants
+  if (domain === 'ACADEMIC_CURRICULUM' || intent === 'CURRICULUM_INQUIRY' || (aspects && (aspects.includes('curriculum') || aspects.includes('courses')))) {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`kurikulum 2025 program studi ${ent} mata kuliah sks semester`);
+        queryVariants.push(`sebaran mata kuliah kurikulum ${ent}`);
+        queryVariants.push(`${ent} Semester I II III IV V VI VII VIII SKS`);
+        queryVariants.push(`${ent} mata kuliah semester SKS`);
+      }
+    } else {
+      queryVariants.push('kurikulum 2025 program studi mata kuliah sks semester');
+    }
+  }
+
+  // Available Academic Programs List query variants
+  if (intent === 'AVAILABLE_PROGRAMS_LIST') {
+    queryVariants.push('program studi sarjana diploma magister ITB STIKOM Bali');
+    queryVariants.push('pilihan jurusan program studi S1 D3 S2 ITB STIKOM Bali');
+    queryVariants.push('program sarjana S1 Sistem Informasi Sistem Komputer Teknologi Informasi Bisnis Digital');
   }
 
   // Program Overview / Definition query variants
@@ -143,6 +167,24 @@ function buildRetrievalPlan(semanticFrame) {
         queryVariants.push(`deskripsi profil program studi ${ent}`);
         queryVariants.push(`tentang ${ent}`);
       }
+    }
+  }
+
+  // Study Mode (Kelas Karyawan / Kuliah Sambil Kerja) query variants
+  if (intent === 'STUDY_MODE' || (aspects && aspects.includes('class_schedule'))) {
+    queryVariants.push('kelas karyawan kelas sore kuliah sambil bekerja jadwal fleksibel');
+    queryVariants.push('pilihan kelas reguler kelas sore pendaftaran PMB');
+    queryVariants.push('kuliah sambil kerja di luar negeri fasilitas stikom');
+  }
+
+  // Degree Award query variants
+  if (intent === 'DEGREE_AWARD' || (aspects && aspects.includes('degree_award'))) {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`gelar lulusan ${ent} sarjana komputer magister diploma`);
+      }
+    } else {
+      queryVariants.push('gelar lulusan sarjana komputer magister diploma ITB STIKOM Bali');
     }
   }
 

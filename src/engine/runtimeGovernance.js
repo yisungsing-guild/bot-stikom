@@ -403,12 +403,13 @@ function getTrainingGovernance(row = {}, options = {}) {
     ? row.governanceMetadata
     : {};
   const allowRuntime = Boolean(options.allowRuntimeFallback);
-  const rawStatus = row.governanceStatus || row.status || metadata.status || (allowRuntime && row.active === true ? 'active' : (row.active === false ? 'inactive' : null));
+  const rawStatus = row.governanceStatus || row.status || metadata.status || (allowRuntime && (row.active === true || row.active === undefined) ? 'active' : (row.active === false ? 'inactive' : null));
   const status = normalizeStatus(rawStatus);
 
   const rawTier = Number(row.authorityTier || metadata.authorityTier) || null;
   const rawAuthority = row.authority || row.sourceAuthority || metadata.authority || metadata.sourceAuthority || (allowRuntime ? (row.source || (rawTier ? `tier_${rawTier}` : null) || 'tier_3_curriculum_guideline') : (row.source || (rawTier ? `tier_${rawTier}` : null)));
-  const authority = normalizeAuthority(rawAuthority);
+  const normalizedAuth = normalizeAuthority(rawAuthority);
+  const authority = (allowRuntime && normalizedAuth === 'tier_unknown') ? 'tier_3_curriculum_guideline' : normalizedAuth;
   const tierMeta = getAuthorityTier(authority);
   const resolvedTier = (rawTier && rawTier >= 1 && rawTier <= 4) ? rawTier : (authority !== 'tier_unknown' ? tierMeta.tier : (allowRuntime ? 3 : null));
 

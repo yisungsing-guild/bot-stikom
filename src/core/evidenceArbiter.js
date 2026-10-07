@@ -153,6 +153,11 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan) {
   const isOrganizationChunk = /\b(ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|ormawa|hima\b|himaprodi|senat|balma|ekstrakurikuler)\b/i.test(text);
   const isPmbGeneralChunk = /\b(pmb|pendaftaran\s+mahasiswa\s+baru|jalur\s+pendaftaran|syarat\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
   const isHobbyChunk = /\b(hobi\s*\/\s*aktivitas|aktivitas\s*:\s*bermain game|hobi\s*:)\b/i.test(text);
+  const isProgramListChunk = /\b(program\s+studi|program\s+sarjana|jenjang|s1|d3|s2|pilihan\s+program)\b/i.test(text);
+  const isStudyModeChunk = /\b(kelas\s+karyawan|kelas\s+sore|kelas\s+reguler|pilihan\s+kelas|kuliah\s+sambil\s+kerja|sambil\s+bekerja|jadwal\s+kuliah|fleksibel|bekerja)\b/i.test(text);
+  const isDegreeChunk = /\b(gelar|sarjana\s+komputer|sarjana\s+bisnis|s\.kom|s\.bns|m\.kom|a\.md\.kom)\b/i.test(text);
+  const isEsportsChunk = /\b(esport|esports|e-sports|athena|gaming|game)\b/i.test(text);
+  const isSportsChunk = /\b(olahraga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(text);
 
   if (isFeeChunk) providedAspects.push('fee', 'tuition', 'dpp');
   if (isCurriculumChunk) providedAspects.push('curriculum', 'courses');
@@ -162,6 +167,11 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan) {
   if (isFacilityChunk) providedAspects.push('facilities', 'lab', 'campus_infrastructure');
   if (isOrganizationChunk) providedAspects.push('student_organization', 'activities', 'ukm');
   if (isPmbGeneralChunk) providedAspects.push('admission_overview', 'procedure', 'admission_pathways');
+  if (isProgramListChunk) providedAspects.push('program_list', 'degrees');
+  if (isStudyModeChunk) providedAspects.push('class_schedule', 'working_students', 'evening_class');
+  if (isDegreeChunk) providedAspects.push('degree_award');
+  if (isEsportsChunk) providedAspects.push('esports_gaming');
+  if (isSportsChunk) providedAspects.push('sports');
 
   // Program Overview / Definition: Guard against administrative signature blocks, thesis guide kaprodi lines, or pure institutional history
   if (retrievalPlan.intent === 'PROGRAM_OVERVIEW' || retrievalPlan.intent === 'DEFINITION') {
@@ -192,6 +202,19 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan) {
     }
   }
 
+  // PMB domain guard: exclude thesis, yudisium, wisuda, and proposal defense chunks
+  if (retrievalPlan.domain === 'PMB') {
+    const isThesisOrGraduation = /\b(yudisium|wisuda|tugas\s+akhir|sidang\s+ta|ujian\s+proposal)\b/i.test(text) ||
+      (candidate.source_file && /(?:yudisium|wisuda|pedoman\s+ta)/i.test(candidate.source_file));
+    if (isThesisOrGraduation) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'evidence_is_thesis_or_graduation_not_admission'
+      };
+    }
+  }
+
   // Strict aspect matching against retrievalPlan.requiredAspects
   if (Array.isArray(requiredAspects) && requiredAspects.length > 0 && !requiredAspects.includes('general')) {
     const wantsFee = requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)) || retrievalPlan.domain === 'TUITION_FEE';
@@ -200,7 +223,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan) {
     const wantsScholarship = requiredAspects.some(a => ['scholarship', 'discount'].includes(a)) || retrievalPlan.domain === 'SCHOLARSHIP';
     const wantsFacilities = requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES';
     const wantsOrg = requiredAspects.some(a => ['student_organization', 'ukm'].includes(a)) || retrievalPlan.domain === 'ORGANIZATION_UKM';
-    const wantsPmbGeneral = requiredAspects.some(a => ['admission_overview', 'admission_pathways'].includes(a)) || (retrievalPlan.domain === 'PMB' && retrievalPlan.intent === 'GENERAL_PMB_INQUIRY');
+    const wantsPmbGeneral = requiredAspects.some(a => ['admission_overview', 'procedure', 'admission_pathways'].includes(a)) || (retrievalPlan.domain === 'PMB' && (retrievalPlan.intent === 'GENERAL_PMB_INQUIRY' || retrievalPlan.intent === 'ADMISSION_PROCEDURE'));
 
     if (wantsFee) {
       if (!isFeeChunk) {
@@ -211,11 +234,12 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan) {
         };
       }
     } else if (wantsCurriculum) {
-      if (!isCurriculumChunk) {
+      const isIsoPolicy = /\b(manajemen berkomitmen untuk|kebijakan mutu)\b/i.test(text);
+      if (isIsoPolicy || !isCurriculumChunk) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
-          reason: 'evidence_does_not_contain_curriculum_aspect'
+          reason: isIsoPolicy ? 'evidence_is_iso_policy_not_curriculum' : 'evidence_does_not_contain_curriculum_aspect'
         };
       }
     } else if (wantsScholarship) {

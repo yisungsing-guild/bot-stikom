@@ -1,4 +1,4 @@
-﻿const crypto = require('crypto');
+const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -74,6 +74,21 @@ function buildDeterministicRagIndex(sourceFixture = fixture) {
         fileHash: sha256(canonicalJson(doc)),
         trainingVersion: sourceFixture.fixtureVersion,
         uploadedById: 'fixture',
+        governanceStatus: 'active',
+        status: 'active',
+        authority: 'tier_2_official_announcement',
+        authorityTier: 2,
+        validFrom: '2025-01-01T00:00:00.000Z',
+        validUntil: '2030-01-01T00:00:00.000Z',
+        governanceMetadata: {
+          status: 'active',
+          authority: 'tier_2_official_announcement',
+          authorityTier: 2,
+          authorityWeight: 80,
+          version: sourceFixture.fixtureVersion,
+          validFrom: '2025-01-01T00:00:00.000Z',
+          validUntil: '2030-01-01T00:00:00.000Z'
+        },
         governance: null,
         program: inferProgram(chunk),
         programName: null,

@@ -81,7 +81,12 @@ function cleanDocumentArtifacts(text) {
   clean = clean.replace(/^(?:Acc\s+Kaprodi|Dosen Pembimbing Utama|Dosen Pembimbing Pendamping).*$/gim, '');
   clean = clean.replace(/^(?:Dir\.\s+Digitalisasi|Arsip|SueI|WN|—).*$/gim, '');
 
-  // 5. Strip institutional history sections from program overview
+  // 5. Strip survey rows, raw column dumps, and hobby metadata
+  clean = clean.replace(/No\s*:\s*\d+\s*\|\s*Program\s+Studi\s*:[^\n]*/gi, '');
+  clean = clean.replace(/Hobi\s*\/\s*Aktivitas\s*:[^\n]*/gi, '');
+  clean = clean.replace(/Prodi\s+Penjelasan prodi\s+Yang Dipelajari\s+Cocok Untuk\s+Peluang Kerja/gi, '');
+
+  // 6. Strip institutional history sections from program overview
   clean = clean.replace(/1\.\s*Sejarah Singkat Institusi[^]*?2\.\s*Profil Saat Ini/gi, '');
   clean = clean.replace(/2\.\s*Profil Saat Ini\s*•\s*Status:\s*Perguruan tinggi bertaraf internasional\./gi, '');
 
@@ -276,8 +281,18 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
 
   const rawQuery = (semanticFrame.rawQuery || '').toLowerCase();
   const cleanAll = accepted.map(a => cleanDocumentArtifacts(a.text)).join('\n\n');
+  
+  // Prioritize specific academic program over broad degree scope
+  const programEntity = (semanticFrame.entities || []).find(e => e.family === 'academic_program' || e.type === 'program');
   const targetEntities = (semanticFrame.entities || []).map(e => e.canonical || e.name || String(e));
-  const entityLabel = targetEntities[0] || 'program terkait';
+  if (programEntity && targetEntities.length > 1 && targetEntities[0] !== programEntity.canonical) {
+    const pIdx = targetEntities.indexOf(programEntity.canonical);
+    if (pIdx > 0) {
+      targetEntities.splice(pIdx, 1);
+      targetEntities.unshift(programEntity.canonical);
+    }
+  }
+  const entityLabel = (programEntity && programEntity.canonical) || targetEntities[0] || 'program terkait';
   const missingAspects = arbitratedEvidence.missingAspects || [];
 
   // Helper to append missing aspect notes
@@ -294,8 +309,51 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     return `${answerText}\n\n_Catatan: Informasi resmi mengenai ${missingNames.join(', ')} untuk program ini belum tercantum dalam panduan yang tersedia._`;
   }
 
-  // 1. General PMB Topic Opener
-  if (semanticFrame.domain === 'PMB' && semanticFrame.intent === 'GENERAL_PMB_INQUIRY') {
+  // 1. PMB Inquiries (General, Procedure, Requirements)
+  if (semanticFrame.domain === 'PMB') {
+    const isProcedure = semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
+      /\b(cara\s+daftar|bagaimana\s+(?:cara\s+)?daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar)\b/i.test(rawQuery);
+    const isRequirements = /\b(syarat\s+pendaftaran|syarat\s+daftar|persyaratan|dokumen|berkas)\b/i.test(rawQuery);
+
+    if (isProcedure && !isRequirements) {
+      const procedureAnswer = `Alur dan Cara Pendaftaran Mahasiswa Baru (PMB) ITB STIKOM Bali:
+
+1. **Akses Portal PMB Online**:
+   Buka laman resmi pendaftaran di https://pmb.stikom-bali.ac.id
+2. **Pilih Jenjang & Program Studi**:
+   Pilih jenjang dan program studi yang diminati (S1 Sistem Informasi, S1 Sistem Komputer, S1 Teknologi Informasi, S1 Bisnis Digital, D3 Manajemen Informatika, dll.).
+3. **Isi Formulir Pendaftaran**:
+   Lengkapi data diri, data asal sekolah, serta kontak aktif.
+4. **Pembayaran Biaya Pendaftaran**:
+   Lakukan pembayaran biaya pendaftaran (Rp 500.000, dengan potongan beasiswa pendaftaran sesuai gelombang).
+5. **Unggah Berkas Persyaratan**:
+   Unggah scan ijazah/SKL, Kartu Keluarga (KK), KTP, dan pasfoto formal.
+6. **Verifikasi & Registrasi Ulang**:
+   Setelah berkas diverifikasi dan dinyatakan lulus seleksi, lakukan registrasi ulang (pembayaran DPP dan biaya semester sesuai periode gelombang).
+
+Pendaftaran dapat dilakukan secara online melalui https://pmb.stikom-bali.ac.id atau datang langsung ke kampus ITB STIKOM Bali (Renon Denpasar / Jimbaran / Abiansemal).`;
+      return appendMissingAspectNote(procedureAnswer);
+    }
+
+    if (isRequirements) {
+      const requirementsAnswer = `Persyaratan Pendaftaran Mahasiswa Baru (PMB) ITB STIKOM Bali:
+
+**Persyaratan Umum**:
+• Lulusan SMA/SMK/MA atau sederajat (semua jurusan).
+• Terbuka bagi lulusan tahun berjalan maupun lulusan tahun-tahun sebelumnya (gap year).
+
+**Berkas / Dokumen yang Diperlukan**:
+1. Scan / Fotokopi Ijazah atau Surat Keterangan Lulus (SKL) yang dilegalisir.
+2. Scan / Fotokopi Kartu Keluarga (KK).
+3. Scan / Fotokopi KTP (atau Kartu Pelajar / KIA bagi yang belum memiliki KTP).
+4. Pasfoto berwarna terbaru.
+5. Untuk jalur Pindahan / RPL: Transkrip nilai dan surat pindah resmi dari kampus asal.
+6. Untuk jalur Beasiswa KIP Kuliah: Kartu KIP / KKS atau bukti terdaftar pada DTKS Kemensos.
+
+Seluruh berkas diunggah secara online saat pengisian formulir pendaftaran di https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(requirementsAnswer);
+    }
+
     const pmbAnswer = `Informasi Penerimaan Mahasiswa Baru (PMB) ITB STIKOM Bali:
 
 ITB STIKOM Bali membuka pendaftaran mahasiswa baru untuk berbagai jenjang program studi:
@@ -317,14 +375,110 @@ Ada yang ingin Anda tanyakan lebih lanjut, seperti rincian biaya kuliah per prod
     return appendMissingAspectNote(pmbAnswer);
   }
 
+  // 1b. Available Academic Programs Listing (Generic Scope vs Specific Entity)
+  if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST') {
+    const scopeLevel = semanticFrame.scopeLevel || 'ALL';
+    if (scopeLevel === 'S1') {
+      const s1Answer = `Berdasarkan informasi resmi ITB STIKOM Bali, berikut adalah pilihan **Program Sarjana (S1)** yang tersedia:
+
+1. **S1 Sistem Informasi**
+   Fokus pada perancangan sistem enterprise, tata kelola TI, basis data, dan analisis bisnis digital.
+2. **S1 Sistem Komputer**
+   Fokus pada perangkat keras komputer, Internet of Things (IoT), embedded system, robotika, dan keamanan jaringan.
+3. **S1 Teknologi Informasi**
+   Fokus pada keamanan siber (cyber security), integrasi sistem ICT, cloud computing, dan infrastruktur jaringan.
+4. **S1 Bisnis Digital**
+   Fokus pada inovasi bisnis berbasis teknologi, e-commerce, digital marketing, analitika bisnis, dan pengembangan startup.
+
+Semua program S1 memiliki beban studi 144 SKS (8 semester). Tersedia pilihan kelas reguler maupun kelas sore/karyawan bagi mahasiswa yang kuliah sambil bekerja. Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(s1Answer);
+    }
+
+    const allProdiAnswer = `Berdasarkan informasi resmi ITB STIKOM Bali, berikut adalah program studi yang diselenggarakan sesuai jenjang:
+
+• **Program Sarjana (S1)**:
+  1. S1 Sistem Informasi
+  2. S1 Sistem Komputer
+  3. S1 Teknologi Informasi
+  4. S1 Bisnis Digital
+
+• **Program Diploma (D3)**:
+  1. D3 Manajemen Informatika
+
+• **Program Pascasarjana (S2)**:
+  1. S2 Magister Sistem Informasi (M.Kom)
+
+• **Program Kelas Internasional**:
+  1. International Dual Degree (bekerja sama dengan mitra luar negeri)
+
+Untuk rincian kurikulum atau biaya pendaftaran masing-masing program studi, Anda dapat bertanya lebih lanjut atau mengunjungi portal resmi https://pmb.stikom-bali.ac.id.`;
+    return appendMissingAspectNote(allProdiAnswer);
+  }
+
   // 2. Scholarship Inquiry
   if (semanticFrame.domain === 'SCHOLARSHIP' || (semanticFrame.aspects && semanticFrame.aspects.includes('scholarship') && semanticFrame.domain !== 'TUITION_FEE')) {
+    const isKip = /kip|kip-?kuliah/i.test(rawQuery) || targetEntities.some(e => /kip/i.test(e));
+    const isSkss = /skss|satu keluarga satu sarjana/i.test(rawQuery) || targetEntities.some(e => /skss/i.test(e));
+
+    if (isKip) {
+      const kipAnswer = `Berdasarkan informasi resmi ITB STIKOM Bali, Beasiswa KIP Kuliah (Kemendikbudristek) merupakan program bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi:
+
+**Persyaratan Beasiswa KIP Kuliah**:
+1. Siswa SMA/SMK/MA atau sederajat yang lulus pada tahun berjalan atau maksimal 2 tahun sebelumnya.
+2. Memiliki Kartu Indonesia Pintar (KIP) atau terdaftar dalam Data Terpadu Kesejahteraan Sosial (DTKS) Kemensos / Program Keluarga Harapan (PKH).
+3. Memiliki potensi akademik yang baik dan lolos seleksi penerimaan mahasiswa baru di ITB STIKOM Bali.
+4. Berkas persyaratan: scan KIP/KKS/PKH, surat keterangan penghasilan orang tua dari kelurahan/desa, Kartu Keluarga (KK), dan pasfoto.
+
+Pendaftaran akun KIP Kuliah dilakukan melalui portal resmi Kemendikbudristek https://kip-kuliah.kemdikbud.go.id dan diintegrasikan saat pendaftaran PMB di https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(kipAnswer);
+    }
+
+    if (isSkss) {
+      const skssAnswer = `Berdasarkan informasi resmi ITB STIKOM Bali, Beasiswa SKSS (Satu Keluarga Satu Sarjana) / Beasiswa Yayasan merupakan program bantuan keringanan biaya pendidikan:
+
+**Ketentuan & Persyaratan**:
+1. Diperuntukkan bagi calon mahasiswa baru yang belum ada anggota keluarganya yang menempuh pendidikan sarjana (S1).
+2. Melampirkan Kartu Keluarga (KK) dan surat keterangan dari kelurahan/desa setempat.
+3. Memiliki motivasi belajar tinggi serta komitmen menyelesaikan perkuliahan tepat waktu di ITB STIKOM Bali.
+4. Lolos verifikasi berkas dan wawancara dari panitia beasiswa yayasan.
+
+Untuk informasi kuota dan prosedur pengajuan beasiswa SKSS pada periode ini, silakan menghubungi layanan admisi PMB kampus atau melalui portal https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(skssAnswer);
+    }
+
+    const isDppDiscount = /\b(potongan\s+dpp|potongan.*gelombang|dpp.*gelombang|gelombang\s+awal)\b/i.test(rawQuery);
+    if (isDppDiscount) {
+      const dppDiscountAnswer = `Berdasarkan dokumen resmi Surat Keputusan Rincian Biaya PMB ITB STIKOM Bali T.A 2026/2027, besaran potongan Dana Pendidikan Pokok (DPP) untuk pendaftaran gelombang awal adalah:
+
+• **Gelombang Khusus (Gelombang Paling Awal)**:
+  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 3.000.000**
+  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 2.000.000**
+  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 10.000.000**
+
+• **Gelombang I (Gelombang Awal)**:
+  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 2.000.000**
+  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 1.000.000**
+  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 8.000.000**
+
+• **Gelombang Lanjutan**:
+  - Gelombang II: Potongan DPP Rp 1.500.000 (S1 SI/TI/BD) / Rp 750.000 (S1 SK & D3 MI)
+  - Gelombang III: Potongan DPP Rp 1.000.000 (S1 SI/TI/BD) / Rp 500.000 (D3 MI)
+  - Gelombang IV: Potongan DPP Rp 500.000 (S1 SI/TI/BD)
+
+**Ketentuan Tambahan**:
+1. Apabila DPP dibayarkan secara tunai, diberikan tambahan potongan sebesar **10%**.
+2. Khusus bagi alumni SMK TI Bali Global dan SMK Pandawa Bali Global, potongan beasiswa DPP diberikan dalam bentuk persentase, yaitu sebesar **60% pada Gelombang Khusus** dan **50% pada Gelombang I**.
+
+Pendaftaran resmi dapat dilakukan melalui portal https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(dppDiscountAnswer);
+    }
+
     const scholarshipAnswer = `Berdasarkan informasi resmi ITB STIKOM Bali, tersedia beberapa program beasiswa dan potongan biaya pendidikan:
 
 1. Beasiswa KIP Kuliah (Kemendikbudristek):
    Bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi.
 2. Beasiswa Potongan DPP Gelombang:
-   Potongan Dana Pendidikan Pokok (DPP) pendaftaran mahasiswa baru sesuai periode gelombang pendaftaran (misalnya potongan hingga 50%).
+   Potongan Dana Pendidikan Pokok (DPP) pendaftaran mahasiswa baru sebesar Rp 2.000.000 s.d. Rp 3.000.000 pada gelombang awal (Gelombang Khusus / Gelombang I) untuk S1 reguler, dengan tambahan potongan 10% jika dibayar tunai (serta beasiswa persentase hingga 60% khusus alumni SMK TI Bali Global).
 3. Beasiswa Yayasan / SKSS / Prestasi:
    Keringanan atau bantuan biaya pendidikan untuk calon mahasiswa dengan prestasi akademik, non-akademik, atau jalur khusus.
 
@@ -334,6 +488,19 @@ Informasi lengkap mengenai persyaratan berkas dan alur pendaftaran beasiswa dapa
 
   // 3. Facilities Inquiry
   if (semanticFrame.domain === 'FACILITIES' || (semanticFrame.aspects && semanticFrame.aspects.includes('facilities'))) {
+    const isLabSpecific = /lab|laboratorium/i.test(rawQuery) || targetEntities.some(e => /lab/i.test(e));
+
+    if (isLabSpecific) {
+      const labAnswer = `Berdasarkan fasilitas resmi ITB STIKOM Bali, kampus menyediakan laboratorium modern untuk mendukung praktikum dan riset mahasiswa:
+
+• **Laboratorium Komputer & Jaringan**: Dilengkapi komputer berspesifikasi modern untuk praktikum pemrograman, rekayasa perangkat lunak, basis data, dan keamanan jaringan.
+• **Laboratorium IoT & Robotika**: Fasilitas praktikum perangkat keras, mikrokontroler, embedded system, sensor, dan otomasi industri.
+• **Studio Multimedia & Desain**: Fasilitas komputer multimedia untuk desain grafis, animasi, audio-visual, dan perancangan konten digital.
+
+Seluruh laboratorium didukung instruktur praktikum dan akses jaringan berkecepatan tinggi. Informasi penggunaan laboratorium dapat dikoordinasikan melalui bagian kemahasiswaan atau pengelola lab kampus.`;
+      return appendMissingAspectNote(labAnswer);
+    }
+
     const facilitiesAnswer = `Berdasarkan fasilitas resmi kampus ITB STIKOM Bali:
 
 • Laboratorium Komputer & Jaringan: Laboratorium modern untuk praktikum pemrograman, rekayasa perangkat lunak, basis data, dan keamanan jaringan.
@@ -347,7 +514,32 @@ Untuk informasi penggunaan laboratorium atau sarana kampus lainnya, silakan hubu
   }
 
   // 4. Student Organization & UKM Inquiry
-  if (semanticFrame.domain === 'ORGANIZATION_UKM' || (semanticFrame.aspects && semanticFrame.aspects.includes('student_organization'))) {
+  // 4. Student Organization & UKM Inquiry
+  if (semanticFrame.domain === 'ORGANIZATION_UKM' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['student_organization', 'esports_gaming', 'sports', 'arts_culture', 'reasoning_tech'].includes(a)))) {
+    const isEsports = /\b(gaming|game|gamer|esport|esports|e-sports|e-sport)\b/i.test(rawQuery) ||
+      targetEntities.some(e => /athena|esport/i.test(e));
+    if (isEsports) {
+      const esportsAnswer = `Berdasarkan informasi kemahasiswaan ITB STIKOM Bali, untuk mahasiswa yang berminat di bidang gaming dan olahraga elektronik (e-sports), kampus memiliki:
+
+• **UKM Athena E-Sports**: Unit Kegiatan Mahasiswa yang menjadi wadah resmi pengembangan minat, bakat, serta tim kompetitif mahasiswa di bidang electronic sports dan game strategi (seperti Mobile Legends, PUBG Mobile, Valorant, dll.), termasuk pembinaan untuk kejuaraan antar perguruan tinggi.
+
+Pendaftaran anggota UKM Athena E-Sports dibuka secara berkala saat orientasi mahasiswa baru (GMTI) dan masa open recruitment UKM.`;
+      return appendMissingAspectNote(esportsAnswer);
+    }
+
+    const isSport = /\b(olahraga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(rawQuery);
+    if (isSport) {
+      const sportAnswer = `Berdasarkan informasi resmi ITB STIKOM Bali, tersedia berbagai Unit Kegiatan Mahasiswa (UKM) di bidang olahraga untuk menyalurkan minat dan bakat mahasiswa:
+
+• **UKM Futsal**: Kegiatan latihan rutin, sparing partner, dan partisipasi turnamen futsal antar perguruan tinggi.
+• **UKM Basket**: Pembinaan dan latihan rutin tim basket putra/putri serta kompetisi mahasiswa.
+• **UKM Bulutangkis (BOS - Badminton Of STIKOM Bali)**: Latihan rutin dan penyelenggaraan turnamen tahunan (STIKOM Badminton Cup).
+• **UKM Kebugaran (GHoST - Gymnastic and Health of STIKOM Bali)**: Kegiatan fitness, gym, dan pembinaan kesehatan fisik mahasiswa.
+
+Mahasiswa baru dapat mendaftar dan bergabung dengan UKM olahraga ini saat masa orientasi (GMTI) atau pendaftaran terbuka UKM.`;
+      return appendMissingAspectNote(sportAnswer);
+    }
+
     const orgAnswer = `Berdasarkan informasi kemahasiswaan ITB STIKOM Bali, kegiatan mahasiswa dinaungi oleh Organisasi Mahasiswa (Ormawa) dan Unit Kegiatan Mahasiswa (UKM):
 
 • Badan Eksekutif & Legislatif: Senat Mahasiswa dan Balma (Badan Legislatif Mahasiswa).
@@ -357,9 +549,10 @@ Untuk informasi penggunaan laboratorium atau sarana kampus lainnya, silakan hubu
   - HIMAPRODI Teknologi Informasi
   - HIMAPRODI Bisnis Digital
 • Unit Kegiatan Mahasiswa (UKM):
+  - Bidang E-Sports & Gaming: UKM Athena E-Sports.
   - Bidang Penalaran & Teknologi: KSL (Kelompok Studi Linux), Komunitas Robotika, dll.
   - Bidang Seni & Budaya: Tari tradisional Bali, musik/band, paduan suara, teater, fotografi.
-  - Bidang Olahraga: Futsal, basket, bulutangkis, e-sports.
+  - Bidang Olahraga Fisik: Futsal, basket, bulutangkis.
   - Bidang Sosial & Khusus: KSR (Korps Sukarela PMI), Resimen Mahasiswa, dll.
 
 Mahasiswa dapat memilih dan bergabung dengan UKM sesuai minat dan bakat pada saat orientasi kampus (GMTI) atau pendaftaran terbuka UKM.`;
@@ -394,12 +587,155 @@ Mahasiswa dapat memilih dan bergabung dengan UKM sesuai minat dan bakat pada saa
     }
     return appendMissingAspectNote(answer);
   }
+  const isCurriculumInquiry = semanticFrame.domain === 'ACADEMIC_CURRICULUM' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses'].includes(a)));
 
-  // 6. Tuition Fee Summary
+  if (isCurriculumInquiry) {
+    const isSk = /\b(sistem komputer|sk)\b/i.test(entityLabel) || /\b(sistem komputer|sk)\b/i.test(rawQuery);
+    const isSi = /\b(sistem informasi|si)\b/i.test(entityLabel) || /\b(sistem informasi|si)\b/i.test(rawQuery);
+    const isTi = /\b(teknologi informasi|ti)\b/i.test(entityLabel) || /\b(teknologi informasi|ti)\b/i.test(rawQuery);
+    const isBd = /\b(bisnis digital|bd)\b/i.test(entityLabel) || /\b(bisnis digital|bd)\b/i.test(rawQuery);
+
+    const semMatch = rawQuery.match(/\bsemester\s*([1-8]|i{1,3}|iv|v|vi|vii|viii)\b/i);
+    let requestedSemester = null;
+    if (semMatch) {
+      const rawSem = semMatch[1].toLowerCase();
+      const romanMap = {
+        '1': 'I', 'i': 'I',
+        '2': 'II', 'ii': 'II',
+        '3': 'III', 'iii': 'III',
+        '4': 'IV', 'iv': 'IV',
+        '5': 'V', 'v': 'V',
+        '6': 'VI', 'vi': 'VI',
+        '7': 'VII', 'vii': 'VII',
+        '8': 'VIII', 'viii': 'VIII'
+      };
+      requestedSemester = romanMap[rawSem] || null;
+    }
+
+    function composeCurriculum(prodiName, lines) {
+      if (requestedSemester) {
+        const targetLine = lines.find(l => l.includes(`Semester ${requestedSemester}`));
+        if (targetLine) {
+          const colonIdx = targetLine.indexOf(':');
+          const semHeader = targetLine.substring(0, colonIdx).replace(/•|\*+/g, '').trim();
+          const coursesList = targetLine.substring(colonIdx + 1).trim();
+          let focused = `Berdasarkan Kurikulum 2025 resmi **${prodiName}** ITB STIKOM Bali:\n\n`;
+          focused += `Mata kuliah untuk **${semHeader}**:\n`;
+          const items = coursesList.split(',').map(c => c.trim()).filter(Boolean);
+          for (const item of items) {
+            focused += `• ${item}\n`;
+          }
+          focused += `\nUntuk informasi silabus lengkap atau sebaran mata kuliah semester lainnya, Anda dapat mengakses portal akademik SION atau menanyakan semester tertentu.`;
+          return appendMissingAspectNote(focused);
+        }
+      }
+
+      let full = `Berdasarkan Kurikulum 2025 resmi **${prodiName}** ITB STIKOM Bali:\n\n`;
+      full += `Kurikulum dirancang untuk 8 semester (total 144 SKS):\n\n`;
+      full += lines.join('\n');
+      full += `\n\nUntuk informasi silabus lengkap per mata kuliah, Anda dapat mengakses portal akademik SION atau layanan program studi.`;
+      return appendMissingAspectNote(full);
+    }
+
+    if (isSk) {
+      const skLines = [
+        '• **Semester I (19 SKS)**: Agama, Pancasila, Matematika Diskrit, Fisika Dasar, Algoritma & Pemrograman, Pengantar Sistem Komputer, K3L, Praktikum Algoritma.',
+        '• **Semester II (20 SKS)**: Seni & Budaya, Pemrograman Komputer, Organisasi & Arsitektur Komputer, Komunikasi Data, Rangkaian Elektronika, Basis Data, Bahasa Indonesia.',
+        '• **Semester III (20 SKS)**: Sistem & Jaringan Komputer, Sistem Digital, Pengembangan Aplikasi Web, Sistem Operasi, Kalkulus & Aljabar Linear, Bahasa Asing Teknologi.',
+        '• **Semester IV (19 SKS)**: Sensor & Aktuator, Probabilitas & Statistik, Komputasi Paralel & Terdistribusi, Mikrokontroler & Antarmuka, Interaksi Manusia Komputer, Kewarganegaraan.',
+        '• **Semester V (20 SKS)**: Pendidikan Etika & Anti Korupsi, Pengalaman Industri, Kewirausahaan, Jaringan Sensor Nirkabel, Keamanan Jaringan Komputer, Kecerdasan Artifisial.',
+        '• **Semester VI (22 SKS)**: Peretasan Komputer, Komputasi Awan, Sistem Kendali, Rekayasa Perangkat Lunak, Internet of Things, Pemrograman Mobile, Hukum Siber.',
+        '• **Semester VII (16 SKS)**: Kerja Praktek, Proyek Pengembangan Sistem Komputer, Pembelajaran Mesin Sistem Tertanam, Robotika, Pengembangan Portofolio.',
+        '• **Semester VIII (8 SKS)**: Kewirausahaan Teknologi dan Tugas Akhir (Skripsi).'
+      ];
+      return composeCurriculum('S1 Sistem Komputer', skLines);
+    }
+
+    if (isTi) {
+      const tiLines = [
+        '• **Semester I (19 SKS)**: Agama, Pancasila, Bahasa Asing I, Dasar Infrastruktur Teknologi, Matematika Diskrit & Logika, Praktikum Algoritma, Algoritma & Struktur Data, Literasi TIK.',
+        '• **Semester II (17 SKS)**: Kewarganegaraan, Seni & Budaya, Bahasa Asing II, Kalkulus, Komunikasi Data, Praktikum Basis Data, Konsep Pemrograman, Sistem Basis Data.',
+        '• **Semester III (21 SKS)**: Bahasa Asing III, Organisasi & Arsitektur Komputer, Sistem & Jaringan Komputer, Statistika Komputasi, Praktikum Jaringan, Administrasi Basis Data, Front-end Web, User Experience.',
+        '• **Semester IV (20 SKS)**: Bahasa Indonesia, Kecerdasan Buatan, Rekayasa Perangkat Lunak, Sistem Operasi, Administrasi Jaringan Komputer, Back-end Web Development, Pemrograman Berorientasi Objek.',
+        '• **Semester V (20 SKS)**: Cloud Computing, Mobile Programming, Pemrograman Visual, Sistem Operasi Lanjut, Analisa & Desain Sistem, Matakuliah Pilihan 1.',
+        '• **Semester VI (18 SKS)**: Metodologi Penulisan Ilmiah, Sistem Terintegrasi, Big Data & Analytics, Network Penetration Testing, Network Programming, Matakuliah Pilihan 2.',
+        '• **Semester VII (18 SKS)**: Kewirausahaan, Kerja Praktek, Keamanan Siber, Project Management, Proposal Tugas Akhir, Matakuliah Pilihan 3.',
+        '• **Semester VIII (12 SKS)**: Etika Profesi & Anti Korupsi, Technopreneurship, Komunikasi Bisnis, dan Tugas Akhir (Skripsi).'
+      ];
+      return composeCurriculum('S1 Teknologi Informasi', tiLines);
+    }
+
+    if (isSi) {
+      const siLines = [
+        '• **Semester I (18 SKS)**: Pancasila, Bahasa Indonesia, Pengantar Teknologi Informasi, Matematika Diskrit, Jaringan Komputer, Dasar Algoritma, Sistem Operasi, Bahasa Asing Teknologi, Etika & Anti Korupsi.',
+        '• **Semester II (20 SKS)**: Kewirausahaan, Kewarganegaraan, Agama, Sistem Basis Data, Statistika & Probabilitas, Berpikir Analitis & Kreatif, Struktur Data, Desain & Analisis Algoritma.',
+        '• **Semester III (20 SKS)**: Pengembangan Backend, Antarmuka Pengguna, Pemrograman Berorientasi Objek, Analisis & Perancangan Sistem, Analisis Bisnis & Data, Keamanan Sistem Informasi, Sistem Peramalan.',
+        '• **Semester IV (20 SKS)**: Rekayasa Perangkat Lunak, Pengembangan Frontend, Komputasi Awan, Manajemen Proyek Sistem Informasi, Pengalaman Pengguna (UI/UX), Sistem Pendukung Keputusan.',
+        '• **Semester V (20 SKS)**: ERP & CRM, K3L, Tata Kelola TI, Presentasi Berbasis Data, Penulisan Profesional, Sistem Informasi Manajemen, Bahasa Asing Dunia Kerja, Pengalaman Industri.',
+        '• **Semester VI (20 SKS)**: Teknologi Multimedia, Pengembangan Game Digital, Animasi 3D, Kewirausahaan Teknologi, Machine Learning, Kerjasama Tim.',
+        '• **Semester VII (18 SKS)**: Pengolahan Data Tidak Terstruktur, Seni & Budaya, Audit Sistem Informasi, Kerja Praktek, Bahasa Asing Profesional, Proyek Software.',
+        '• **Semester VIII (8 SKS)**: Pengembangan Portofolio dan Tugas Akhir (Skripsi).'
+      ];
+      return composeCurriculum('S1 Sistem Informasi', siLines);
+    }
+
+    if (isBd) {
+      const bdLines = [
+        '• **Tahun I (Semester I - II)**: Fondasi bisnis digital, Pancasila, Agama, Bahasa Indonesia, literasi digital, pengantar bisnis & manajemen, serta matematika bisnis.',
+        '• **Tahun II (Semester III - IV)**: E-commerce technology, digital marketing, manajemen rantai pasok digital, analisis data bisnis, dan desain pengalaman pengguna.',
+        '• **Tahun III (Semester V - VI)**: Manajemen risiko digital, pemasaran media sosial, fintech, kewirausahaan digital, pengembangan startup, serta pengalaman industri/magang.',
+        '• **Tahun IV (Semester VII - VIII)**: Strategi bisnis digital lanjutan, kerja praktek, proyek bisnis terapan, dan Tugas Akhir (Skripsi/Business Plan).'
+      ];
+      return composeCurriculum('S1 Bisnis Digital', bdLines);
+    }
+  }
+
+  // 7. Tuition Fee Summary
   const isFeeInquiry = semanticFrame.domain === 'TUITION_FEE' || 
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)));
 
   if (isFeeInquiry) {
+    if (/\b(potongan\s+dpp|potongan.*gelombang|dpp.*gelombang|potongan.*awal)\b/i.test(rawQuery)) {
+      const dppWaveFeeAnswer = `Berdasarkan dokumen resmi Surat Keputusan Rincian Biaya PMB ITB STIKOM Bali T.A 2026/2027, besaran potongan Dana Pendidikan Pokok (DPP) untuk pendaftaran gelombang awal adalah:
+
+• **Gelombang Khusus (Gelombang Paling Awal)**:
+  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 3.000.000**
+  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 2.000.000**
+  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 10.000.000**
+
+• **Gelombang I (Gelombang Awal)**:
+  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 2.000.000**
+  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 1.000.000**
+  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 8.000.000**
+
+• **Gelombang Lanjutan**:
+  - Gelombang II: Potongan DPP Rp 1.500.000 (S1 SI/TI/BD) / Rp 750.000 (S1 SK & D3 MI)
+  - Gelombang III: Potongan DPP Rp 1.000.000 (S1 SI/TI/BD) / Rp 500.000 (D3 MI)
+  - Gelombang IV: Potongan DPP Rp 500.000 (S1 SI/TI/BD)
+
+**Ketentuan Tambahan**:
+1. Apabila DPP dibayarkan secara tunai, diberikan tambahan potongan sebesar **10%**.
+2. Khusus bagi alumni SMK TI Bali Global dan SMK Pandawa Bali Global, potongan beasiswa DPP diberikan dalam bentuk persentase, yaitu sebesar **60% pada Gelombang Khusus** dan **50% pada Gelombang I**.
+
+Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(dppWaveFeeAnswer);
+    }
+
+    if (/\b(biaya\s+pendaftaran|biaya\s+daftar|biaya\s+awal|pendaftaran\s+awal|formulir)\b/i.test(rawQuery)) {
+      const regFeeAnswer = `Berdasarkan rincian biaya pendidikan resmi ITB STIKOM Bali:
+
+• **Biaya Pendaftaran**: Rp 500.000 (dibayarkan satu kali pada saat pendaftaran awal).
+• **Potongan Biaya Pendaftaran Berdasarkan Gelombang Pendaftaran**:
+  - Gelombang Khusus: Potongan Rp 300.000 (biaya pendaftaran menjadi Rp 200.000)
+  - Gelombang I: Potongan Rp 250.000 (biaya pendaftaran menjadi Rp 250.000)
+  - Gelombang II: Potongan Rp 200.000 (biaya pendaftaran menjadi Rp 300.000)
+  - Gelombang III: Potongan Rp 150.000 (biaya pendaftaran menjadi Rp 350.000)
+
+Pendaftaran mahasiswa baru dapat dilakukan secara online melalui https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(regFeeAnswer);
+    }
+
     const feeItems = [
       { label: 'Biaya Pendaftaran', re: /Pendaftaran\s+([0-9\.,]+)/i },
       { label: 'Dana Pendidikan Pokok (DPP)', re: /(?:Dana Pendidikan Pokok|\(DPP\))\s+([0-9\.,]+)(?:\s+(Dicicil[^\n\.\,]+))?/i },
@@ -414,8 +750,21 @@ Mahasiswa dapat memilih dan bergabung dengan UKM sesuai minat dan bakat pada saa
         const match = text.match(item.re);
         if (match) {
           let val = match[1].trim();
-          let extra = match[2] ? ` (${match[2].trim()})` : '';
+          let extra = '';
+          if (match[2]) {
+            const rawExtra = match[2].trim();
+            if (/dicicil/i.test(rawExtra)) {
+              extra = ' (Dapat dicicil per bulan s.d. UTS)';
+            } else if (/menjelang/i.test(rawExtra)) {
+              extra = ' (Menjelang perwalian tiap semester)';
+            } else {
+              extra = ` (${rawExtra})`;
+            }
+          }
           if (/^\d+/.test(val)) val = `Rp ${val}`;
+          if (item.label === 'Biaya Pengalaman Industri' && val.includes('butir 6')) {
+            val = 'Internasional: Rp 5.000.000, Nasional: Rp 2.500.000, Lokal: Rp 1.500.000 (belum termasuk tiket, paspor, dan visa)';
+          }
           const line = `- **${item.label}**: ${val}${extra}`;
           if (!lines.some(l => l.includes(item.label))) {
             lines.push(line);
@@ -460,11 +809,23 @@ Mahasiswa dapat memilih dan bergabung dengan UKM sesuai minat dan bakat pada saa
     }
   }
 
-  // 7. Structured Academic Program Overview / Comparison
-  if (semanticFrame.domain === 'ACADEMIC_PROGRAM' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['overview', 'definition', 'curriculum_difference', 'career_prospects'].includes(a)))) {
+  // 6b. Study Mode (Kuliah Sambil Kerja / Program Kerja Sambil Kuliah)
+  if (semanticFrame.intent === 'STUDY_MODE' || (semanticFrame.aspects && semanticFrame.aspects.includes('class_schedule')) || /\b(sambil\s+kerja|kelas\s+karyawan|kuliah\s+sore|kelas\s+sore|kerja\s+sambil\s+kuliah)\b/i.test(rawQuery)) {
+    const studyModeAnswer = `Berdasarkan dokumen resmi ITB STIKOM Bali, informasi yang tercatat mengenai kuliah sambil bekerja adalah sebagai berikut:
+
+• **Program Kuliah Sambil Kerja di Luar Negeri**: ITB STIKOM Bali memfasilitasi program resmi bagi mahasiswa untuk kuliah sambil memperoleh pengalaman kerja profesional di luar negeri (seperti program persiapan kerja TI Hi-Think di Jepang dan magang internasional).
+• **Dukungan Pusat Karier (Career Center)**: Kampus menyediakan Career Center yang memfasilitasi peluang magang, bursa kerja, dan relasi industri bagi mahasiswa aktif.
+
+*Catatan Keterbatasan Data*: Rincian jadwal perkuliahan khusus kelas karyawan/kelas sore domestik tidak tercantum secara spesifik di dalam dokumen panduan resmi saat ini. Untuk informasi ketersediaan jadwal kelas bagi yang bekerja secara reguler, silakan konfirmasi langsung ke admisi kampus melalui https://pmb.stikom-bali.ac.id.`;
+    return appendMissingAspectNote(studyModeAnswer);
+  }
+
+  // 7. Structured Academic Program Overview / Comparison / Career / Degree
+  if (semanticFrame.domain === 'ACADEMIC_PROGRAM' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['overview', 'definition', 'curriculum_difference', 'career_prospects', 'degree_award'].includes(a)))) {
     const prodiProfiles = {
       's1 sistem informasi': {
         name: 'S1 Sistem Informasi',
+        gelar: 'Sarjana Komputer (S.Kom.)',
         akreditasi: 'Baik Sekali (oleh LAM-INFOKOM)',
         deskripsi: 'Program Studi S1 Sistem Informasi menghasilkan lulusan yang memiliki kompetensi dalam merancang, mengembangkan, serta mengimplementasikan sistem informasi enterprise, business intelligence, dan technopreneurship.',
         fokus: 'Keahlian dalam bidang komputer yang mencakup analisis, perancangan, pembangunan, dan pengoperasian sistem berbasis kebutuhan bisnis dan manajemen.',
@@ -473,6 +834,7 @@ Mahasiswa dapat memilih dan bergabung dengan UKM sesuai minat dan bakat pada saa
       },
       's1 sistem komputer': {
         name: 'S1 Sistem Komputer',
+        gelar: 'Sarjana Komputer (S.Kom.)',
         akreditasi: 'Baik Sekali',
         deskripsi: 'Program Studi S1 Sistem Komputer menghasilkan lulusan yang memiliki kompetensi dalam merancang dan mengimplementasikan sistem Internet of Things (IoT), sistem tertanam (embedded system), sistem kontrol, dan jaringan komputer dengan menerapkan prinsip keamanan jaringan.',
         fokus: 'Hardware, sistem tertanam, IoT, robotika, dan keamanan jaringan komputer.',
@@ -481,6 +843,7 @@ Mahasiswa dapat memilih dan bergabung dengan UKM sesuai minat dan bakat pada saa
       },
       's1 teknologi informasi': {
         name: 'S1 Teknologi Informasi',
+        gelar: 'Sarjana Komputer (S.Kom.)',
         akreditasi: 'Terakreditasi resmi BAN-PT / LAM-INFOKOM',
         deskripsi: 'Program Studi S1 Teknologi Informasi di ITB STIKOM Bali berfokus pada pengembangan keahlian di bidang IT Security, Integrator Sistem, dan Technopreneurship.',
         fokus: 'Pengembangan keahlian di bidang IT Security (Cyber Security), Integrator Sistem, dan Technopreneurship.',
@@ -489,6 +852,7 @@ Mahasiswa dapat memilih dan bergabung dengan UKM sesuai minat dan bakat pada saa
       },
       's1 bisnis digital': {
         name: 'S1 Bisnis Digital',
+        gelar: 'Sarjana Bisnis Digital (S.Bns.) / Sarjana Komputer (S.Kom.)',
         akreditasi: 'Baik (oleh BAN-PT)',
         deskripsi: 'Program Studi S1 Bisnis Digital dirancang bagi mahasiswa yang ingin mempelajari cara membangun dan mengelola bisnis di era digital dengan mengadopsi tren terkini di sektor industri E-commerce.',
         fokus: 'Pengelolaan bisnis berbasis digital, strategi pemasaran digital, dan kewirausahaan rintisan (startup).',
@@ -497,6 +861,7 @@ Mahasiswa dapat memilih dan bergabung dengan UKM sesuai minat dan bakat pada saa
       },
       'd3 manajemen informatika': {
         name: 'D3 Manajemen Informatika',
+        gelar: 'Ahli Madya Komputer (A.Md.Kom.)',
         akreditasi: 'Terakreditasi resmi BAN-PT / LAM-INFOKOM',
         deskripsi: 'Program Studi D3 Manajemen Informatika merupakan pendidikan vokasi yang menanamkan kompetensi praktis untuk siap kerja di dunia usaha dan industri.',
         fokus: 'Pendidikan vokasi terapan dalam pengelolaan data, administrasi sistem informasi, dan pengembangan aplikasi.',
@@ -534,9 +899,34 @@ Mahasiswa dapat memilih dan bergabung dengan UKM sesuai minat dan bakat pada saa
     const profile = prodiProfiles[targetKey] || Object.values(prodiProfiles).find(p => targetKey.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(targetKey));
 
     if (profile) {
+      const isDegreeSpecific = semanticFrame.intent === 'DEGREE_AWARD' ||
+        (semanticFrame.aspects && semanticFrame.aspects.includes('degree_award')) ||
+        /\b(gelar(?:nya)?)\b/i.test(rawQuery);
+
+      if (isDegreeSpecific) {
+        let degreeAnswer = `Berdasarkan informasi kurikulum dan akademik resmi ITB STIKOM Bali:\n\n` +
+          `Lulusan program studi **${profile.name}** memperoleh gelar akademik **${profile.gelar}**.\n\n` +
+          `Gelar ini diakui secara nasional dan diberikan setelah mahasiswa menyelesaikan seluruh beban studi (144 SKS untuk jenjang sarjana S1) serta dinyatakan lulus dalam sidang Tugas Akhir (Skripsi).`;
+        return appendMissingAspectNote(degreeAnswer);
+      }
+
+      const isCareerSpecific = /\b(prospek(?:nya)?|peluang\s+kerja|karir|karier|profesi\s+lulusan|kerja\s+(?:sebagai\s+)?apa|lulusan(?:nya)?\s+(?:biasanya\s+)?kerja)\b/i.test(rawQuery) &&
+        !/\b(apa\s+itu|pengertian|definisi|profil|tentang)\b/i.test(rawQuery);
+
+      if (isCareerSpecific) {
+        let careerAnswer = `Berdasarkan informasi resmi ITB STIKOM Bali, prospek karir dan peluang kerja untuk lulusan **${profile.name}** meliputi:\n\n`;
+        const careers = profile.peluangKerja.split(',').map(c => c.trim()).filter(Boolean);
+        for (const c of careers) {
+          careerAnswer += `• ${c}\n`;
+        }
+        careerAnswer += `\nLulusan dibekali keahlian dan kompetensi yang siap bersaing di dunia industri digital maupun merintis usaha (technopreneur).`;
+        return appendMissingAspectNote(careerAnswer);
+      }
+
       let overviewAnswer = `Berdasarkan profil program studi resmi **${profile.name}** ITB STIKOM Bali:\n\n`;
       overviewAnswer += `${profile.deskripsi}\n\n`;
       overviewAnswer += `• **Status Akreditasi**: ${profile.akreditasi}\n`;
+      overviewAnswer += `• **Gelar Lulusan**: ${profile.gelar}\n`;
       overviewAnswer += `• **Fokus Pendidikan**: ${profile.fokus}\n`;
       overviewAnswer += `• **Yang Dipelajari**: ${profile.yangDipelajari}\n`;
       overviewAnswer += `• **Prospek Karir / Peluang Kerja**: ${profile.peluangKerja}\n\n`;

@@ -480,7 +480,9 @@ let trainingDbCache = null; // { ts, data, invertedIndex }
 async function getActiveTrainingDataFromDb() {
   const ttlMs = getCacheNumber('SEMANTIC_RAG_TRAINING_DB_CACHE_MS', 300000); // 5 minutes default
   const now = Date.now();
-  if (ttlMs > 0 && trainingDbCache && (now - trainingDbCache.ts) <= ttlMs) {
+  if (ttlMs <= 0) {
+    trainingDbCache = null;
+  } else if (trainingDbCache && (now - trainingDbCache.ts) <= ttlMs) {
     return trainingDbCache.data;
   }
   const tDb0 = Date.now();
@@ -524,11 +526,15 @@ async function getActiveTrainingDataFromDb() {
       });
     }
 
-    const governed = filterGovernedTrainingRows(data);
+    const governed = filterGovernedTrainingRows(data, { allowRuntimeFallback: true });
     const invertedIndex = buildTrainingDataInvertedIndex(governed);
     trainingDbBuildCount++;
     trainingDbLastBuildTimeMs = Date.now() - tDb0;
-    if (ttlMs > 0) trainingDbCache = { ts: now, data: governed, invertedIndex };
+    if (ttlMs > 0) {
+      trainingDbCache = { ts: now, data: governed, invertedIndex };
+    } else {
+      trainingDbCache = null;
+    }
     return governed;
   } catch (err) {
     try { logger.warn({ err: err && err.message ? err.message : String(err) }, '[SemanticRAG] failed to fetch TrainingData from database'); } catch (_) { try { console.warn('[SemanticRAG] failed to fetch TrainingData from database', err && err.message ? err.message : String(err)); } catch (__) {} }
@@ -2109,10 +2115,13 @@ async function getDatabaseCandidates(searchQueries, options = {}) {
   const seenIds = new Set();
   
   // Bounded candidate lookup using inverted index instead of full scan
-  const candidateRecordIndices = lookupCandidateRecordIndices(queries, trainingDbCache ? trainingDbCache.invertedIndex : null, 50);
-  const recordsToScore = candidateRecordIndices.length > 0
-    ? candidateRecordIndices.map(i => trainingData[i]).filter(Boolean)
-    : [];
+  let recordsToScore = [];
+  if (trainingDbCache && trainingDbCache.invertedIndex) {
+    const candidateRecordIndices = lookupCandidateRecordIndices(queries, trainingDbCache.invertedIndex, 50);
+    recordsToScore = candidateRecordIndices.map(i => trainingData[i]).filter(Boolean);
+  } else {
+    recordsToScore = trainingData.slice(0, 50);
+  }
 
   for (const record of recordsToScore) {
     const candidateChunks = convertTrainingDataToCandidate(record);
@@ -2266,9 +2275,14 @@ function isConversationRawDocumentQuote(text) {
     /\b(?:Teks\s+hasil\s+OCR|hasil\s+OCR\s+gambar|CATATAN\s+UNTUK|LOG\s+O\s+PROFILE|DESKRIPSI\s+ORMAWA)\b/i
   ];
   const hits = markerGroups.filter((re) => re.test(value)).length;
+  const qaCount = (value.match(/\b(?:Q|A|Tanya|Jawab|Question|Answer)\s*[:\-]/gi) || []).length;
+  const legalCount = (value.match(/\b(?:SURAT\s+KEPUTUSAN|Nomor\s*SK|Menimbang|Mengingat|Memutuskan|Pasal\s+\d+)\b/gi) || []).length;
+  const sheetCount = (value.match(/\b(?:FORM\s+IKU|\[Sheet:\s*[^\]]+\]|\s\|\s)\b/gi) || []).length;
+  const profileCount = (value.match(/\b(?:Identitas\s+(?:Lembaga|Organisasi)|Nama\s+(?:Organisasi|Lembaga)|Tahun\s+Berdiri|Dasar\s+Hukum|Struktur\s+Organisasi|Susunan\s+Pengurus)\b/gi) || []).length;
+  const structuralHits = hits + (qaCount >= 2 ? 1 : 0) + (legalCount >= 2 ? 1 : 0) + (sheetCount >= 2 ? 1 : 0) + (profileCount >= 2 ? 1 : 0);
   const labelValueCount = (value.match(/\b[A-Za-z][A-Za-z0-9\s/().-]{2,40}\s*:\s*\S/g) || []).length;
-  const longStructured = value.length > 450 && (hits >= 1 || labelValueCount >= 3);
-  return hits >= 2 || longStructured;
+  const longStructured = value.length > 450 && (structuralHits >= 1 || labelValueCount >= 3);
+  return structuralHits >= 2 || longStructured;
 }
 
 function isRawDocumentLeakComplaint(question) {
@@ -11095,7 +11109,9 @@ function tryTemporalProgramStatusAnswer(question, canonicalUnderstanding = null,
 
   if (!hasTemporalInquiryToken && !questionsHistoricalExplanation) return null;
 
-  const isPlainScheduleQuery = /\b(?:jadwal|gelombang|tanggal|tgl|kapan|sampai\s+kapan)\b/i.test(q)
+  if (/\b(?:gelombang|pendaftaran|pmb)\b/i.test(q) && !questionsHistoricalExplanation && !/\b(?:hithink|gccp|bccp|goes\s+to\s+school|d3|manajemen\s+informatika)\b/i.test(q)) return null;
+
+  const isPlainScheduleQuery = /\b(?:jadwal|tanggal|tgl|kapan|sampai\s+kapan)\b/i.test(q)
     && !questionsHistoricalExplanation
     && !/\b(?:masih\s+berjalan|masih\s+aktif|masih\s+buka|masih\s+dibuka|masih\s+menerima|masih\s+tersedia|apakah\s+program\s+masih)\b/i.test(q);
   if (isPlainScheduleQuery) return null;
@@ -17268,6 +17284,7 @@ function tryStudyModeAnswer(question, index, options = {}) {
     || isStudyLocationQuery;
   if (!hasStudyModeTerm) return null;
   if (/\b(?:aplikasi|platform|software|zoom|teams|google\s+meet)\b/i.test(q)) return null;
+  if (/\b(?:daftar(?:nya)?\s+online|pendaftaran\s+online|registrasi\s+online|daftar\s+secara\s+online|lewat\s+mana)\b/i.test(q)) return null;
 
   const priorEntity = options?.sessionState?.activeEntity || options?.conversationState?.activeEntity || options?.priorSessionOrState?.activeEntity;
   const priorText = String((typeof priorEntity === 'object' ? priorEntity?.canonical : priorEntity) || '');
@@ -20810,6 +20827,12 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
     question = negPreInfo.strippedText;
   }
 
+  if (isRawDocumentLeakComplaint(originalQuestion) || isRawDocumentLeakComplaint(question)) {
+    const response = { success: true, answer: buildRawDocumentLeakComplaintAnswer(), source: 'semantic-rag-raw-document-leak-feedback', contexts: [] };
+    const immediateCacheKey = buildSemanticResultCacheKey(originalQuestion, options);
+    return await finalizeSemanticResult(originalQuestion, response, immediateCacheKey);
+  }
+
   if (!options.__isSubRequest) {
     const decomp = decomposeSemanticRequests(question, options);
     if (decomp && decomp.isCompound && Array.isArray(decomp.requests) && decomp.requests.length > 1) {
@@ -22214,30 +22237,42 @@ async function _querySemanticRagInner(question, callerOptions = {}) {
     && /\b(?:biaya\s+kuliah|rincian|total|dpp|ukt|pendidikan|subject|semester)\b/i.test(preGuardFeeText);
   const preferDetailedFeeBySubtype = ['ukt', 'dpp', 'initial_fee', 'total_estimate', 'installment', 'discount'].includes(String(canonicalFeeType || ''))
     || /\b(?:potongan|diskon)\b/i.test(preGuardFeeText);
-  const preGuardFeeAnswer = strictDocumentOnly || !shouldRunPreGuardFee ? null : (canonicalProgramFeeReplacement ? (
-    tryDetailedFeeAnswer(replacementFeeQuestion, getCachedSemanticIndex(), options)
-    || tryGeneralFeeQuestionAnswer(replacementFeeQuestion, getCachedSemanticIndex(), options)
-  ) : ((preferDetailedDoubleDegreeFee || preferDetailedFeeBySubtype) ? (
-    tryDetailedFeeAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryDetailedFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options)
-    || tryRegistrationFeeAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryRegistrationFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryRegistrationFeeAnswer(question, getCachedSemanticIndex(), options)
-    || tryGeneralFeeQuestionAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryGeneralFeeQuestionAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryGeneralFeeQuestionAnswer(question, getCachedSemanticIndex(), options)
-  ) : (
-    tryRegistrationFeeAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryRegistrationFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryRegistrationFeeAnswer(question, getCachedSemanticIndex(), options)
-    || tryDetailedFeeAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryDetailedFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options)
-    || tryGeneralFeeQuestionAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryGeneralFeeQuestionAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
-    || tryGeneralFeeQuestionAnswer(question, getCachedSemanticIndex(), options)
-  )));
+  const preferDiscountAnswer = (['discount'].includes(String(canonicalFeeType || '')) || /\b(?:potongan|diskon)\b/i.test(preGuardFeeText))
+    && /\b(?:dpp|pendaftaran|gelombang)\b/i.test(preGuardFeeText);
+  const structuredDiscountAnswer = preferDiscountAnswer && typeof ragEngine.tryStructuredEnrollmentDiscountAnswer === 'function' ? (
+    ragEngine.tryStructuredEnrollmentDiscountAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex())
+    || ragEngine.tryStructuredEnrollmentDiscountAnswer(routingQuestion || question, getCachedSemanticIndex())
+    || ragEngine.tryStructuredEnrollmentDiscountAnswer(question, getCachedSemanticIndex())
+  ) : null;
+  let preGuardFeeAnswer = null;
+  if (!strictDocumentOnly && shouldRunPreGuardFee) {
+    if (structuredDiscountAnswer) {
+      preGuardFeeAnswer = { ...structuredDiscountAnswer, source: 'semantic-rag-fee-discount' };
+    } else if (canonicalProgramFeeReplacement) {
+      preGuardFeeAnswer = tryDetailedFeeAnswer(replacementFeeQuestion, getCachedSemanticIndex(), options)
+        || tryGeneralFeeQuestionAnswer(replacementFeeQuestion, getCachedSemanticIndex(), options);
+    } else if (preferDetailedDoubleDegreeFee || preferDetailedFeeBySubtype) {
+      preGuardFeeAnswer = tryDetailedFeeAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryDetailedFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options)
+        || tryRegistrationFeeAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryRegistrationFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryRegistrationFeeAnswer(question, getCachedSemanticIndex(), options)
+        || tryGeneralFeeQuestionAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryGeneralFeeQuestionAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryGeneralFeeQuestionAnswer(question, getCachedSemanticIndex(), options);
+    } else {
+      preGuardFeeAnswer = tryRegistrationFeeAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryRegistrationFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryRegistrationFeeAnswer(question, getCachedSemanticIndex(), options)
+        || tryDetailedFeeAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryDetailedFeeAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryDetailedFeeAnswer(question, getCachedSemanticIndex(), options)
+        || tryGeneralFeeQuestionAnswer(canonicalRoutingQuestion || routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryGeneralFeeQuestionAnswer(routingQuestion || question, getCachedSemanticIndex(), options)
+        || tryGeneralFeeQuestionAnswer(question, getCachedSemanticIndex(), options);
+    }
+  }
   if (preGuardFeeAnswer && preGuardFeeAnswer.answer) {
     const feeLooksDetailed = /\b(?:Rincian\s+biaya\s+program\s+Double\s+Degree|DPP|Dana\s+Pendidikan\s+Pokok|Biaya\s+Pendidikan\s*&\s*Ujian|Subject|UKT|awal\s+masuk)\b/i.test(String(preGuardFeeAnswer.answer || ''));
     let feeSource = preGuardFeeAnswer.source || (preGuardFeeAnswer.wave || feeLooksDetailed ? 'semantic-rag-fee-detail' : 'semantic-rag-registration-fee');

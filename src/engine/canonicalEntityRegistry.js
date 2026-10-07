@@ -50,6 +50,29 @@ const CANONICAL_ENTITIES = [
     aliases: ['s2 sistem informasi', 's2 si', 'magister sistem informasi', 'pascasarjana sistem informasi', 'magister si']
   },
 
+  // Academic Degree Scopes (Generic Institutional Scope)
+  {
+    canonical: 'Program Sarjana (S1)',
+    type: 'academic_scope',
+    family: 'academic_scope',
+    degree: 'S1',
+    aliases: ['program sarjana (s1)', 'program sarjana', 'jurusan sarjana', 'prodi sarjana', 'program s1', 'jurusan s1', 'prodi s1', 'sarjana', 'strata 1']
+  },
+  {
+    canonical: 'Program Diploma (D3)',
+    type: 'academic_scope',
+    family: 'academic_scope',
+    degree: 'D3',
+    aliases: ['program diploma (d3)', 'program diploma', 'jurusan diploma', 'prodi diploma', 'program d3', 'jurusan d3', 'prodi d3', 'diploma', 'diploma 3']
+  },
+  {
+    canonical: 'Program Pascasarjana (S2)',
+    type: 'academic_scope',
+    family: 'academic_scope',
+    degree: 'S2',
+    aliases: ['program pascasarjana (s2)', 'program pascasarjana', 'program magister', 'jurusan s2', 'prodi s2', 'program s2', 'magister', 'pascasarjana']
+  },
+
   // Student Associations (HIMAPRODI / HIMA)
   {
     canonical: 'HIMAPRODI Teknologi Informasi',
@@ -143,7 +166,8 @@ const CANONICAL_ENTITIES = [
     canonical: 'UKM Athena Esport',
     type: 'student_activity_unit',
     family: 'student_organization',
-    aliases: ['ukm athena', 'athena', 'athena esport', 'esport', 'esports']
+    category: 'esports_gaming',
+    aliases: ['ukm athena', 'athena', 'athena esport', 'esport', 'esports', 'e-sports', 'gaming', 'game', 'gamer', 'ukm gaming', 'ukm game']
   },
   {
     canonical: 'UKM Mapala Kompas',
@@ -738,8 +762,12 @@ function matchCanonicalEntities(text, options = {}) {
     });
   });
 
-  // Sort by specificity (longer canonical / higher quality first)
-  return filtered.sort((a, b) => b.canonical.length - a.canonical.length);
+  // Sort by specificity: specific programs rank above generic academic scope, then by canonical length
+  return filtered.sort((a, b) => {
+    if (a.family === 'academic_program' && b.family === 'academic_scope') return -1;
+    if (b.family === 'academic_program' && a.family === 'academic_scope') return 1;
+    return b.canonical.length - a.canonical.length;
+  });
 }
 
 /**

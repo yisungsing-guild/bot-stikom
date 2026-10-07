@@ -2612,8 +2612,8 @@ function tryDualDegreeAnswer(question, options) {
   const hasPartnerSignal = /\b(utb|universitas\s+teknologi\s+bandung|dnui|dalian\s+neusoft|help\s+university|help|malaysia|china|cina|tiongkok)\b/.test(q);
   const asksPartnerProgram = /\b(jurusan|prodi|program\s+studi|padanan|pasangan|sisi|sisi\s+stikom|di\s+stikom|stikom\s+bali|di\s+sana|disana|mitra|partner|ambil|mengambil|diambil|yang\s+diambil|harus\s+diambil)\b/.test(q);
   const hasGenericPartnerRelation = (
-    /\b(?:partner(?:nya)?|mitra(?:nya)?|kampus\s+partner(?:nya)?|partner\s+kampus(?:nya)?|universitas\s+(?:mitra|partner)|mitra\s+kampus(?:nya)?)\b/i.test(q)
-    && /\b(?:siapa|apa|mana|yang\s+mana|dimana|di\s*mana|list|daftar|ada\s+apa|apa\s+saja)\b/i.test(q)
+    /\b(?:partner(?:nya)?|mitra(?:nya)?|kampus\s+partner(?:nya)?|partner\s+kampus(?:nya)?|universitas\s+(?:mitra|partner)|mitra\s+kampus(?:nya)?|negara\s+partner|partner\s+negara)\b/i.test(q)
+    && /\b(?:siapa|apa|mana|yang\s+mana|dimana|di\s*mana|list|daftar|ada\s+apa|apa\s+saja|mana\s+aja)\b/i.test(q)
   ) || /\b(?:(?:bekerja\s*sama|kerja\s*sama|kerjasama)?\s*dengan\s+universitas\s+mana)\b/i.test(q);
   // Explicit competitor or institutional comparison must NOT route to dual degree
   const hasCompetitorOrInstitutionalComparison = /\b(?:instiki|primakara|udayana|unud|warmadewa|undiksha|kampus\s+lain|universitas\s+lain|perguruan\s+tinggi\s+lain|dibanding(?:kan)?|dibanding\s+kampus|kelebihan|keunggulan|bandingkan|beda(?:nya)?\s+dengan)\b/i.test(q);
@@ -2639,14 +2639,13 @@ function tryDualDegreeAnswer(question, options) {
     'duration',
     'semesterCount',
     'sequence',
-    'partnerInstitution',
     'programStructure',
     'studyArrangement'
   ].some(field => frameFields.has(field));
 
   const hasStudyLocationConstraint = Boolean(cu?.constraints?.studyLocation);
   const hasStudyModalityConstraint = Boolean(cu?.constraints?.studyModality);
-  const hasStudyFactLexicalSignal = /\b(?:kuliah(?:nya)?\s+di|di\s+(?:bandung|china|dalian|malaysia)|online|offline|daring|luring|tatap\s+muka|semester\s+\d+|semester|durasi|berapa\s+(?:tahun|lama|bulan|semester)|skema\s+kuliah|sistem\s+kuliah|pengaturan\s+studi|kurikulum|struktur\s+program)\b/i.test(q);
+  const hasStudyFactLexicalSignal = /\b(?:kuliah(?:nya)?\s+di|di\s+(?:bandung|china|dalian|malaysia)|online|offline|daring|luring|tatap\s+muka|semester\s+\d+|durasi|berapa\s+(?:tahun|lama|bulan|semester)|skema\s+kuliah|sistem\s+kuliah|pengaturan\s+studi|kurikulum|struktur\s+program)\b/i.test(q);
 
   const isExplicitRegistrationProcedure = (
     /\b(?:cara|alur|proses|langkah|tahap|prosedur|syarat|dokumen|pendaftaran|mendaftar|daftar|registrasi|join|gabung|ikut)\b/i.test(q)
@@ -2655,7 +2654,7 @@ function tryDualDegreeAnswer(question, options) {
     || cu?.intent?.primary === 'ask_registration_requirements'
   ) && !hasStudyLocationConstraint && !hasStudyModalityConstraint && !/\b(?:kuliah(?:nya)?\s+di|di\s+(?:bandung|china|dalian|malaysia)|online|offline|daring|luring|tatap\s+muka|semester\s+\d+|semester)\b/i.test(q);
 
-  const hasStudyFactIntent = !isExplicitRegistrationProcedure && (hasStudyFactRequestedField || hasStudyLocationConstraint || hasStudyModalityConstraint || hasStudyFactLexicalSignal);
+  const hasStudyFactIntent = !isExplicitRegistrationProcedure && !hasGenericPartnerRelation && (hasStudyFactRequestedField || hasStudyLocationConstraint || hasStudyModalityConstraint || hasStudyFactLexicalSignal);
 
   // Evidence-first precedence: If the query requests substantive study facts (study location, modality, duration, sequence, structure),
   // delegate to the evidence-first pipeline instead of returning a procedural template or hardcoded snippet.

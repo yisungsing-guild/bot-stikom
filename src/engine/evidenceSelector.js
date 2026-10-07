@@ -766,7 +766,9 @@ function evaluateEvidenceAnswerability(firstArg = {}, secondArg, thirdArg, fourt
 
   const coreAnchors = extractCoreSemanticAnchors(question);
   if (coreAnchors.length > 0 && !hasCoreSemanticAnchorSupport(text, coreAnchors, detectEntities(question))) {
-    return { answerable: false, reason: 'peripheral_token_overlap_rejected', missingEvidence: coreAnchors };
+    const missing = [...coreAnchors];
+    if (detectedIntent === 'schedule') missing.push('date_or_period');
+    return { answerable: false, reason: 'peripheral_token_overlap_rejected', missingEvidence: missing };
   }
 
   const contractAnswerability = semanticContract ? verifyAnswerAgainstContract(semanticContract, text, evidence) : { ok: true };

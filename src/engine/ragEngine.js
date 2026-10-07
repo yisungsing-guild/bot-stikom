@@ -3805,7 +3805,11 @@ let cachedScheduleWindowsHash = null;
 function extractScheduleRegistrationWindowsFromIndex() {
   const rawIndex = loadIndex();
   if (!Array.isArray(rawIndex) || rawIndex.length === 0) return [];
-  const fullIndex = rawIndex.filter(i => i && isChunkGovernanceAllowed(i));
+  const fullIndex = rawIndex.filter(i => {
+    if (!i) return false;
+    const hasGov = Boolean(i.governanceStatus || i.status || i.authority || i.authorityTier || i.governanceMetadata);
+    return hasGov ? isChunkGovernanceAllowed(i) : true;
+  });
 
   try {
     // Cache by content hash to avoid rescans.
@@ -9661,7 +9665,7 @@ function filterRelevantChunks(question, scored, queryEntities = null) {
     const chunk = String((s.item && s.item.chunk) || '').trim();
     if (!chunk) return false;
     if (s.item && (s.item.excludeFromSearch === true || Number(s.item.retrievalWeight) === 0)) return false;
-    if (s.item && !isChunkGovernanceAllowed(s.item, { allowHistorical: isHistorical, query: question })) return false;
+    if (s.item && (s.item.governanceStatus || s.item.status || s.item.authority || s.item.authorityTier || s.item.governanceMetadata) && !isChunkGovernanceAllowed(s.item, { allowHistorical: isHistorical, query: question })) return false;
     const lower = chunk.toLowerCase();
     if (metadataPattern.test(lower) || isHeaderFooterChunk(chunk)) return false;
     const isAdmin = isAdminInternalChunk(chunk, s.item.filename);
@@ -10712,9 +10716,27 @@ async function _executeIngestTrainingData(trainingId, text, source = 'upload', o
 
 // Coba jawab secara terstruktur khusus untuk pertanyaan potongan biaya pendaftaran
 function buildEnrollmentDiscountScanText(top) {
-  if (!top || !Array.isArray(top)) return '';
+  let chunks = top;
+  if (!chunks || !Array.isArray(chunks) || chunks.length === 0) {
+    try {
+      const { getCachedSemanticIndex } = require('./semanticRagEngine');
+      const cached = getCachedSemanticIndex();
+      if (Array.isArray(cached) && cached.length > 0) chunks = cached;
+    } catch (_) {}
+  }
+  if (!chunks || !Array.isArray(chunks) || chunks.length === 0) {
+    try {
+      const { getRagIndexPath } = require('../utils/ragPaths');
+      const idxPath = getRagIndexPath();
+      if (fs.existsSync(idxPath)) {
+        const raw = JSON.parse(fs.readFileSync(idxPath, 'utf8'));
+        if (Array.isArray(raw)) chunks = raw;
+      }
+    } catch (_) {}
+  }
+  if (!chunks || !Array.isArray(chunks)) return '';
   const parts = [];
-  for (const item of top) {
+  for (const item of chunks) {
     if (!item || typeof item !== 'object') continue;
     if (typeof item.chunk === 'string' && item.chunk.trim()) parts.push(item.chunk);
     if (typeof item.sectionTitle === 'string' && item.sectionTitle.trim()) parts.push(item.sectionTitle);
@@ -10752,9 +10774,13 @@ function tryStructuredEnrollmentDiscountAnswer(question, top) {
   let wantAll = false;
   if (q.includes('semua') || q.includes('seluruh') || q.includes('lengkap')) wantAll = true;
   if (!wantAll) {
-    const waveQueryMatch = /gelombang\s*(khusus|[0-9]{1,2}|[ivx]+)(?:\s*([a-c]))?/i.exec(question);
-    if (waveQueryMatch && waveQueryMatch[1]) {
-      requestedWave = normalizeRequestedWave(`${waveQueryMatch[1]}${waveQueryMatch[2] || ''}`);
+    if (/\b(awal|pertama)\b/i.test(q)) {
+      requestedWave = 'AWAL';
+    } else {
+      const waveQueryMatch = /gelombang\s*(khusus|[0-9]{1,2}|[ivx]+)(?:\s*([a-c]))?/i.exec(question);
+      if (waveQueryMatch && waveQueryMatch[1]) {
+        requestedWave = normalizeRequestedWave(`${waveQueryMatch[1]}${waveQueryMatch[2] || ''}`);
+      }
     }
   }
 
@@ -10778,8 +10804,6 @@ function tryStructuredEnrollmentDiscountAnswer(question, top) {
 
   const regMap = new Map();
   const dppMap = new Map();
-  const registrationSection = scanText.match(/Potongan\s*Biaya\s*Pendaftaran[\s\S]{0,900}?((?=Beasiswa\s*untuk\s*Dana\s*Pendidikan\s*Pokok)|(?=Khusus\s+Alumni|4\.)|$)/i);
-  const dppSection = scanText.match(/Beasiswa\s*untuk\s*Dana\s*Pendidikan\s*Pokok[\s\S]{0,900}?((?=Khusus\s+Alumni|4\.)|$)/i);
 
   const normalizeWave = (waveText) => {
     const upper = String(waveText || '').toUpperCase().trim();
@@ -10797,46 +10821,56 @@ function tryStructuredEnrollmentDiscountAnswer(question, top) {
     return null;
   };
 
-  const regText = registrationSection ? registrationSection[0] : '';
-  const dppText = dppSection ? dppSection[0] : '';
-
-  if (regText) {
-    for (const match of regText.matchAll(/Rp\.?\s*([0-9]{1,3}(?:\.[0-9]{3})+)[\s\S]{0,80}?Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?/gi)) {
-      const waveLabel = normalizeWave(`${match[2] || ''}${match[3] || ''}`);
-      if (waveLabel) regMap.set(waveLabel, `Rp ${match[1]}`);
+  let currentSection = null; // 'REG' or 'DPP'
+  const linesSrc = scanText.replace(/\r/g, '').split('\n');
+  for (const line of linesSrc) {
+    const l = line.trim();
+    if (!l) continue;
+    if (/potongan\s*biaya\s*pendaftaran/i.test(l)) {
+      currentSection = 'REG';
+      continue;
+    }
+    if (/potongan\s*dpp|dana\s*pendidikan\s*pokok|beasiswa.*dpp/i.test(l)) {
+      if (/sistem\s*komputer|d3/i.test(l)) {
+        currentSection = null;
+      } else {
+        currentSection = 'DPP';
+      }
+      continue;
+    }
+    if (/^(?:4\.|khusus\s+alumni|catatan)/i.test(l)) {
+      currentSection = null;
+      continue;
+    }
+    const waveMatch = /Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?\s*:\s*Rp\.?\s*([0-9]{1,3}(?:\.[0-9]{3})+)/i.exec(l);
+    if (waveMatch && currentSection) {
+      const waveLabel = normalizeWave(`${waveMatch[1]}${waveMatch[2] || ''}`);
+      const amount = `Rp ${waveMatch[3]}`;
+      if (currentSection === 'REG' && waveLabel && !regMap.has(waveLabel)) {
+        regMap.set(waveLabel, amount);
+      } else if (currentSection === 'DPP' && waveLabel && !dppMap.has(waveLabel)) {
+        dppMap.set(waveLabel, amount);
+      }
     }
   }
 
-  if (dppText) {
-    for (const match of dppText.matchAll(/Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?[\s\S]{0,80}?Rp\.?\s*([0-9]{1,3}(?:\.[0-9]{3})+)/gi)) {
-      const waveLabel = normalizeWave(`${match[1] || ''}${match[2] || ''}`);
-      if (waveLabel) dppMap.set(waveLabel, `Rp ${match[3]}`);
+  // Fallback for flat unsectioned formats
+  if (regMap.size === 0 && dppMap.size === 0) {
+    const registrationSection = scanText.match(/Potongan\s*Biaya\s*Pendaftaran[\s\S]{0,900}?((?=Beasiswa\s*untuk\s*Dana\s*Pendidikan\s*Pokok|Potongan\s*DPP)|(?=Khusus\s+Alumni|4\.)|$)/i);
+    const dppSection = scanText.match(/(?:Beasiswa\s*untuk\s*Dana\s*Pendidikan\s*Pokok|Potongan\s*DPP\s*(?:nominal)?\s*(?:S1|SI|TI|BD|UTB)?)[\s\S]{0,900}?((?=Khusus\s+Alumni|Potongan\s*DPP\s*nominal\s*Sistem|4\.)|$)/i);
+    const regText = registrationSection ? registrationSection[0] : '';
+    const dppText = dppSection ? dppSection[0] : '';
+
+    if (regText) {
+      for (const match of regText.matchAll(/Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?\s*:\s*Rp\.?\s*([0-9]{1,3}(?:\.[0-9]{3})+)/gi)) {
+        const waveLabel = normalizeWave(`${match[1] || ''}${match[2] || ''}`);
+        if (waveLabel) regMap.set(waveLabel, `Rp ${match[3]}`);
+      }
     }
-    for (const match of dppText.matchAll(/Rp\.?\s*([0-9]{1,3}(?:\.[0-9]{3})+)[\s\S]{0,80}?Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?/gi)) {
-      const waveLabel = normalizeWave(`${match[2] || ''}${match[3] || ''}`);
-      if (waveLabel && !dppMap.has(waveLabel)) dppMap.set(waveLabel, `Rp ${match[1]}`);
-    }
-  }
-
-  if (regMap.size === 0 || dppMap.size === 0) {
-    const linesSrc = scanText.replace(/\r/g, '').split('\n');
-    for (let i = 0; i < linesSrc.length; i++) {
-      const window = [linesSrc[i], linesSrc[i + 1] || '', linesSrc[i + 2] || ''].join(' ').replace(/\s+/g, ' ').trim();
-      if (!window) continue;
-      if (!/(rp|potongan|gelombang|pendaftaran|dpp|dana pendidikan pokok|beasiswa)/i.test(window)) continue;
-
-      const amountMatches = Array.from(window.matchAll(/Rp\.?\s*([0-9]{1,3}(?:\.[0-9]{3})+)/gi));
-      const waveMatches = Array.from(window.matchAll(/Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?/gi));
-      if (amountMatches.length === 0 || waveMatches.length === 0) continue;
-
-      const isReg = /pendaftaran|potongan biaya pendaftaran|mendaftar/i.test(window);
-      const isDpp = /dpp|dana pendidikan pokok|beasiswa/i.test(window);
-
-      for (const waveMatch of waveMatches) {
-        const waveLabel = normalizeWave(`${waveMatch[1]}${waveMatch[2] || ''}`);
-        const amount = `Rp ${amountMatches[0][1]}`;
-        if (isReg && waveLabel && !regMap.has(waveLabel)) regMap.set(waveLabel, amount);
-        if (isDpp && waveLabel && !dppMap.has(waveLabel)) dppMap.set(waveLabel, amount);
+    if (dppText) {
+      for (const match of dppText.matchAll(/Gelombang\s*(Khusus|IV|III|II|I|[0-9]{1,2})(?:\s*([A-C]))?\s*:\s*Rp\.?\s*([0-9]{1,3}(?:\.[0-9]{3})+)/gi)) {
+        const waveLabel = normalizeWave(`${match[1] || ''}${match[2] || ''}`);
+        if (waveLabel) dppMap.set(waveLabel, `Rp ${match[3]}`);
       }
     }
   }
@@ -10854,16 +10888,23 @@ function tryStructuredEnrollmentDiscountAnswer(question, top) {
 
   const displayWaveLabel = (label, requested) => {
     const canonical = label === 'KHUSUS' ? 'Gelombang Khusus' : `Gelombang ${label}`;
-    if (requested && requested !== label) {
+    if (requested && requested !== label && requested !== 'AWAL') {
       const requestedText = requested === 'KHUSUS' ? 'Gelombang Khusus' : `Gelombang ${requested}`;
       return `${requestedText} (berdasarkan ${canonical})`;
     }
     return canonical;
   };
 
+  const isDppOnly = (q.includes('dpp') || q.includes('dana pendidikan')) && !q.includes('pendaftaran') && !q.includes('biaya daftar');
+  const isRegOnly = (q.includes('pendaftaran') || q.includes('biaya daftar')) && !q.includes('dpp') && !q.includes('dana pendidikan');
+
   const resolvedRequestedLabels = [];
   if (requestedWave && !wantAll) {
-    if (actualWaveLabels.has(requestedWave)) {
+    if (requestedWave === 'AWAL') {
+      if (actualWaveLabels.has('KHUSUS')) resolvedRequestedLabels.push('KHUSUS');
+      if (actualWaveLabels.has('I')) resolvedRequestedLabels.push('I');
+      else if (actualWaveLabels.has('1')) resolvedRequestedLabels.push('1');
+    } else if (actualWaveLabels.has(requestedWave)) {
       resolvedRequestedLabels.push(requestedWave);
     } else {
       const broadRequest = requestedWave.replace(/[A-Z]$/, '');
@@ -10874,8 +10915,12 @@ function tryStructuredEnrollmentDiscountAnswer(question, top) {
   }
 
   const pushTarget = (label, displayWave) => {
-    if (regMap.has(label)) lines.push(`- ${regMap.get(label)} jika mendaftar pada ${displayWaveLabel(label, displayWave)}`);
-    if (dppMap.has(label)) lines.push(`- ${dppMap.get(label)} untuk DPP pada ${displayWaveLabel(label, displayWave)}`);
+    if (!isDppOnly && regMap.has(label)) {
+      lines.push(`- Potongan Biaya Pendaftaran: ${regMap.get(label)} jika mendaftar pada ${displayWaveLabel(label, displayWave)}`);
+    }
+    if (!isRegOnly && dppMap.has(label)) {
+      lines.push(`- Potongan Dana Pendidikan Pokok (DPP): ${dppMap.get(label)} jika registrasi pada ${displayWaveLabel(label, displayWave)}`);
+    }
   };
 
   if (requestedWave && resolvedRequestedLabels.length > 0 && !wantAll) {
@@ -10895,11 +10940,24 @@ function tryStructuredEnrollmentDiscountAnswer(question, top) {
     ragVerboseTrace('[TRACE_ENROLL_DISCOUNT_RESULT]', { requestedWave, resolvedRequestedLabels, linesPreview: lines.slice(0,8) });
   } catch (e) {}
 
-  const answer = `Potongan biaya pendaftaran yang tersedia adalah:\n\n${lines.join('\n')}\n\nUntuk informasi lain di luar daftar di atas, silakan konfirmasi ke admin kampus untuk kepastian.`;
+  let header = 'Potongan biaya pendaftaran yang tersedia adalah:';
+  if (isDppOnly) {
+    header = 'Berdasarkan dokumen resmi, potongan Dana Pendidikan Pokok (DPP) yang tersedia adalah:';
+  } else if (isRegOnly) {
+    header = 'Berdasarkan dokumen resmi, potongan biaya pendaftaran yang tersedia adalah:';
+  } else {
+    header = 'Berdasarkan dokumen resmi, rincian potongan pendaftaran dan DPP yang tersedia adalah:';
+  }
+
+  let extraNotes = '';
+  if (isDppOnly || (!isRegOnly && dppMap.size > 0)) {
+    extraNotes = '\n\nCatatan Tambahan:\n1. Terdapat tambahan potongan 10% apabila DPP dibayar tunai.\n2. Khusus bagi alumni SMK TI Bali Global dan SMK Pandawa Bali Global, tersedia potongan beasiswa DPP dalam bentuk persentase (hingga 60% pada Gelombang Khusus dan 50% pada Gelombang I).';
+  }
+
+  const answer = `${header}\n\n${lines.join('\n')}${extraNotes}\n\nUntuk informasi lain di luar daftar di atas, silakan konfirmasi ke admin kampus untuk kepastian.`;
   const contexts = [];
   const nowTs = new Date().toISOString();
-  if (regText) contexts.push({ id: 'backup-registration-section', filename: 'PMB_OFFICIAL_BACKUP', chunk: regText, chunkType: 'COST', ocrQualityScore: 1.0, updatedAt: nowTs, lowConfidence: false });
-  if (dppText) contexts.push({ id: 'backup-dpp-section', filename: 'PMB_OFFICIAL_BACKUP', chunk: dppText, chunkType: 'COST', ocrQualityScore: 1.0, updatedAt: nowTs, lowConfidence: false });
+  contexts.push({ id: 'backup-discount-section', filename: 'PMB_OFFICIAL_DISCOUNT', chunk: scanText.slice(0, 1000), chunkType: 'COST', ocrQualityScore: 1.0, updatedAt: nowTs, lowConfidence: false });
   logger.info({ requestedWave, regCount: regMap.size, dppCount: dppMap.size }, '[RAG] enrollment discount helper result');
   return { answer, source: 'rag-rule', contexts };
 }
@@ -14512,7 +14570,8 @@ module.exports = {
   tryStructuredProgramRegistrationFeeAnswer,
   tryStructuredProgramRegistrationMenuAnswer,
   tokenizeForRelevanceGuard,
-  normalizeQueryForRetrieval
+  normalizeQueryForRetrieval,
+  tryStructuredEnrollmentDiscountAnswer
 };
 
 

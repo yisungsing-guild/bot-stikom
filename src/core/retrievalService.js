@@ -33,6 +33,70 @@ function isPgVectorProductionEnabled() {
 const { CANONICAL_ENTITIES } = require('../engine/canonicalEntityRegistry');
 
 let cachedFileContextMap = null;
+let cachedChunkSectionMap = null;
+
+function getChunkSectionMap(corpus) {
+  if (cachedChunkSectionMap) return cachedChunkSectionMap;
+  cachedChunkSectionMap = new Map();
+
+  const fileGroups = new Map();
+  for (let i = 0; i < corpus.length; i++) {
+    const doc = corpus[i];
+    const f = doc.sourceFile || doc.filename || '';
+    if (!fileGroups.has(f)) fileGroups.set(f, []);
+    fileGroups.get(f).push({ index: i, doc });
+  }
+
+  const SECTION_PATTERNS = [
+    /---+\s*([A-Z\s]{4,30})\s*---+/,
+    /Kurikulum(?:\s+2025)?\s*\(\s*Program\s+Studi\s+([A-Za-z\s]+?)\s*\)/i,
+    /Kurikulum\s+Program\s+Studi\s+([A-Za-z\s]+?)(?:\s*\(Tahun|\n|$)/i,
+    /Profil\s+Program\s+Studi\s+(?:Program\s+Studi\s+)?([A-Za-z\s]+?)(?:\s+di\s+ITB|\n|$)/i
+  ];
+
+  for (const [, group] of fileGroups.entries()) {
+    let currentProg = null;
+    for (const { index, doc } of group) {
+      const txt = doc.chunk || doc.text || '';
+      let matchedEnt = null;
+      let delimIndex = -1;
+
+      for (const pat of SECTION_PATTERNS) {
+        const m = txt.match(pat);
+        if (m) {
+          const candidateName = m[1].trim();
+          for (const ent of CANONICAL_ENTITIES) {
+            if (ent.family === 'academic_program') {
+              const base = ent.canonical.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase();
+              if (candidateName.toLowerCase().includes(base)) {
+                matchedEnt = ent.canonical;
+                delimIndex = txt.indexOf(m[0]);
+                break;
+              }
+            }
+          }
+          if (matchedEnt) break;
+        }
+      }
+
+      if (matchedEnt) {
+        if (delimIndex > txt.length * 0.5) {
+          if (currentProg) cachedChunkSectionMap.set(index, currentProg);
+          currentProg = matchedEnt;
+          continue;
+        } else {
+          currentProg = matchedEnt;
+        }
+      }
+      if (currentProg) {
+        cachedChunkSectionMap.set(index, currentProg);
+      }
+    }
+  }
+
+  return cachedChunkSectionMap;
+}
+
 function getFileContextMap(corpus) {
   if (cachedFileContextMap) return cachedFileContextMap;
   cachedFileContextMap = new Map();
@@ -103,12 +167,14 @@ async function retrieveCandidates(retrievalPlan, { topK = 6 } = {}) {
   if (!query) return [];
 
   const fileContextMap = getFileContextMap(corpus);
+  const chunkSectionMap = getChunkSectionMap(corpus);
 
   // 1. BM25 Sparse Retrieval over governed text enriched with document context
-  const textDocs = corpus.map(doc => {
+  const textDocs = corpus.map((doc, idx) => {
     const f = doc.sourceFile || doc.filename || '';
+    const sectionProg = chunkSectionMap.get(idx);
     const ctx = fileContextMap.get(f);
-    const entStr = ctx && ctx.entities && ctx.entities.length > 0 ? ctx.entities.join(' ') : '';
+    const entStr = sectionProg || (ctx && ctx.entities && ctx.entities.length > 0 ? ctx.entities.join(' ') : '');
     const raw = doc.chunk || doc.text || (doc.metadata && (doc.metadata.chunk || doc.metadata.text)) || '';
     const textWithContext = entStr ? `${entStr} ${f} ${raw}` : `${f} ${raw}`;
     return { text: textWithContext };
@@ -128,10 +194,17 @@ async function retrieveCandidates(retrievalPlan, { topK = 6 } = {}) {
     const sourceFile = doc.sourceFile || doc.filename || source;
     const metadata = doc.metadata || doc || {};
     const ctx = fileContextMap.get(sourceFile);
+    const sectionProg = chunkSectionMap.get(item.index);
 
-    // Propagate document-level program entity to chunk text if chunk lacks explicit entity mention
+    // Propagate document-level or section-level program entity to chunk text
     let enrichedText = rawText;
-    if (ctx && ctx.entities && ctx.entities.length > 0) {
+    let contextEntities = sectionProg ? [sectionProg] : (ctx ? ctx.entities : []);
+
+    if (sectionProg) {
+      if (!rawText.toLowerCase().includes(sectionProg.toLowerCase())) {
+        enrichedText = `[Program: ${sectionProg}] ${rawText}`;
+      }
+    } else if (ctx && ctx.entities && ctx.entities.length > 0) {
       const hasAnyEnt = ctx.entities.some(e => rawText.toLowerCase().includes(e.toLowerCase()));
       if (!hasAnyEnt && (ctx.category === 'BIAYA' || /rincian biaya/i.test(sourceFile))) {
         enrichedText = `[Program: ${ctx.entities.join(', ')}] ${rawText}`;
@@ -151,7 +224,7 @@ async function retrieveCandidates(retrievalPlan, { topK = 6 } = {}) {
       source_file: sourceFile,
       metadata,
       docCategory: metadata.docCategory || doc.docCategory || (ctx ? ctx.category : null),
-      contextEntities: ctx ? ctx.entities : [],
+      contextEntities,
       validFrom: doc.validFrom || metadata.validFrom || null,
       validTo: doc.validTo || metadata.validTo || null
     };

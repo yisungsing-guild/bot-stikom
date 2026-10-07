@@ -68,6 +68,7 @@ describe('PMB schedule deployment readiness', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env.OPENAI_API_KEY;
+    delete process.env.PROVIDER_WEBHOOK_TOKEN;
     process.env.ENABLE_RAG = 'true';
     process.env.SEMANTIC_RAG_RESULT_CACHE_MS = '0';
     process.env.SEMANTIC_RAG_TODAY_YMD = '2026-07-21';
