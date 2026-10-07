@@ -9,12 +9,12 @@
 
 ## 1. BASELINE IMMUTABILITY & TRACEABILITY VERIFICATION
 
-- **Verified Commit**: `353559c2c8f0686c6cb6f2a871e66dc348cc558d` (memuat seluruh hasil audit 292 test cases 100% green, serta koreksi dokumentasi UQ-12 PMB portal authority dan UQ-21 work-study evidence limitation).
+- **Verified Commit**: `353559c2c8f0686c6cb6f2a871e66dc348cc558d` (memuat seluruh hasil audit 299 test cases legacy engine / 333 total Phase 1 canonical 100% green, serta koreksi dokumentasi UQ-12 PMB portal authority dan UQ-21 work-study evidence limitation).
 - **Verified Tag**: `git rev-parse phase1-freeze` menghasilkan tepat `353559c2c8f0686c6cb6f2a871e66dc348cc558d`.
 - **Aturan Immutabilitas**:
   - Kode logika Phase 1 pada direktori `src/core/` (kecuali injection switch non-invasif) berstatus **READ-ONLY / IMMUTABLE**.
-  - Seluruh 292 test cases Phase 1 wajib selalu dieksekusi dan tidak boleh diubah atau dilemahkan.
-  - Setiap perubahan Phase 2 ditempatkan pada namespace terisolasi `src/reasoning/` dan `tests/phase2/`.
+  - Seluruh 333 test cases Phase 1 (299 Legacy Engine + 34 Greenfield Core) wajib selalu dieksekusi dan tidak boleh diubah atau dilemahkan.
+  - Setiap perubahan Phase 2 ditempatkan pada namespace terisolasi `src/reasoning/` dan `tests/phase2/` (atau test suite berawalan `tests/phase2`).
 
 ---
 
@@ -235,8 +235,8 @@ PHASE2_SHADOW_MODE = process.env.PHASE2_SHADOW_MODE === 'true';
 
 Phase 2 **TIDAK BOLEH** dinyatakan selesai hanya karena 35 unit test baru lulus. Kriteria kelulusan resmi:
 
-1. **Phase 1 Baseline Green**: Seluruh **292 / 292 test cases** Phase 1 tetap 100% PASS.
-2. **Phase 2 Reasoning Suite Green**: Seluruh **35 test cases baru** Phase 2 100% PASS.
+1. **Phase 1 Baseline Green**: Seluruh **333 / 333 test cases** Phase 1 (299 Legacy Engine + 34 Greenfield Core) tetap 100% PASS.
+2. **Phase 2 Reasoning Suite Green**: Seluruh test cases baru Phase 2 100% PASS (Step 1: 17, Step 2: 10, Step 3: 10, dll).
 3. **Zero Invariant Regression**:
    - Nol kebocoran entitas (*zero sibling leak*).
    - Nol pemalsuan temporal (*zero ungrounded currentness claims*).
@@ -314,7 +314,7 @@ flowchart TD
     S8 --> S9[STEP 9: Real-User Production UAT & Sign-off]
 ```
 
-Setiap langkah wajib melewati audit kode, unit test independen, dan verifikasi regresi 292 test Phase 1 sebelum melangkah ke langkah berikutnya.
+Setiap langkah wajib melewati audit kode, unit test independen, dan verifikasi regresi 333 test Phase 1 (299 Legacy Engine + 34 Greenfield Core) sebelum melangkah ke langkah berikutnya.
 
 ---
 

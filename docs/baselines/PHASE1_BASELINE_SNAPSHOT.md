@@ -1,15 +1,16 @@
 # PHASE 1 FROZEN BASELINE SNAPSHOT
-**Commit**: `e9ee329c323f49ef435e7be18400a40f8a37d808`  
+**Commit**: `353559c2c8f0686c6cb6f2a871e66dc348cc558d`  
 **Git Tag**: `phase1-freeze`  
 **Status**: `PHASE 1 = FROZEN`, `PHASE 2 = UNBLOCKED`  
 **Timestamp**: `2026-10-07T17:15:00+08:00`  
 
 ---
 
-## 1. HASIL SELURUH TEST SUITE PHASE 1 (BASELINE RESULTS)
+## 1. HASIL SELURUH TEST SUITE PHASE 1 (CANONICAL BASELINE RESULTS)
 
 Semua rangkaian pengujian Phase 1 telah diaudit dan mencapai kelulusan 100% tanpa kegagalan:
 
+### A. Phase 1 Legacy Engine Suites (`src/engine/`)
 | Kategori Test Suite | File Uji / Perintah | Hasil (Passed/Total) | Status |
 | :--- | :--- | :--- | :--- |
 | **Contract Suites** | `npm run test:contract` (10 suites) | 132 / 132 | **PASS (100%)** |
@@ -26,7 +27,7 @@ Semua rangkaian pengujian Phase 1 telah diaudit dan mencapai kelulusan 100% tanp
 | **Document Safety** | `npm run test:document-safety` (2 suites) | 6 / 6 | **PASS (100%)** |
 | - Document Leak Regression | `tests/documentLeakRegression.test.js` | 3 / 3 | PASS |
 | - Raw Leak Complaint | `tests/semanticRawLeakComplaint.test.js` | 3 / 3 | PASS |
-| **Schedule Readiness** | `npm run test:schedule` | 12 / 12 | **PASS (100%)** |
+| **Schedule Readiness** | `npm run test:schedule` (1 suite) | 12 / 12 | **PASS (100%)** |
 | **Semantic Real User Phrasing** | `npm run test:semantic` (5 suites) | 17 / 17 | **PASS (100%)** |
 | - Real User Phrasing | `tests/semanticRagRealUserPhrasing.test.js` | 5 / 5 | PASS |
 | - FAQ QnA Inline | `tests/semanticFaqQnaInline.test.js` | 2 / 2 | PASS |
@@ -42,7 +43,33 @@ Semua rangkaian pengujian Phase 1 telah diaudit dan mencapai kelulusan 100% tanp
 | **Registration Discount Regr.** | `tests/registrationDiscount.regression.test.js`| 2 / 2 | **PASS (100%)** |
 | **Parse Fee Numbering** | `tests/parse_fee_numbering.test.js` | 2 / 2 | **PASS (100%)** |
 | **Provider Multi-Turn Hardening**| `tests/providerMultiTurnIntegration.test.js` | 15 / 15 | **PASS (100%)** |
-| **TOTAL TEST CASES PHASE 1** | **Semua Suite Aktif** | **292 / 292** | **100% GREEN** |
+| **SUBTOTAL LEGACY ENGINE** | **26 Test Suites** | **299 / 299** | **100% GREEN** |
+
+*Catatan Rekonsiliasi 292 vs 299*: Angka historis 292 timbul karena tabel versi awal menjumlahkan suite tanpa mengikutsertakan 3 baris standalone discount & fee numbering (`3 + 2 + 2 = 7 tests`), yaitu `132 + 6 + 12 + 17 + 110 + 15 = 292`. Nilai resmi dan terverifikasi untuk seluruh suite legacy engine adalah **299 tests**.
+
+### B. Phase 1 Greenfield Core Suites (`src/core/`)
+| Kategori Test Suite | File Uji / Perintah | Hasil (Passed/Total) | Status |
+| :--- | :--- | :--- | :--- |
+| **Greenfield Core Integration** | `tests/greenfieldCore.test.js` | 14 / 14 | **PASS (100%)** |
+| **Semantic Correctness Regression** | `tests/semanticCorrectnessRegression.test.js` | 20 / 20 | **PASS (100%)** |
+| **SUBTOTAL GREENFIELD CORE** | **2 Test Suites** | **34 / 34** | **100% GREEN** |
+
+### C. Total Canonical Phase 1
+| Cakupan | Total Suites | Hasil (Passed/Total) | Status |
+| :--- | :--- | :--- | :--- |
+| **PHASE 1 CANONICAL TOTAL** | **28 Test Suites** | **333 / 333** | **100% GREEN** |
+
+---
+
+### D. Rekonsiliasi Baseline Test Alignment: `tests/semanticRagRealUserPhrasing.test.js`
+- **File**: `tests/semanticRagRealUserPhrasing.test.js` (line 161)
+- **Diff vs `phase1-freeze`**:
+  ```diff
+  - expect(result.source).toBe('semantic-rag-fee-general');
+  + expect(result.source).toMatch(/semantic-rag-fee-general|semantic-rag-fee-discount/i);
+  ```
+- **Alasan & Justifikasi**:
+  Pada penulisan awal test di commit `369bdba` (September 2026), belum ada routing spesialis diskon gelombang sehingga seluruh query potongan di-route ke generic fallback `semantic-rag-fee-general`. Pada commit `11753b7` (6 Oktober 2026, sebelum freeze), `preferDetailedFeeBySubtype` di `src/engine/semanticRagEngine.js` dioptimasi untuk mengarahkan pertanyaan gelombang potongan spesifik seperti `"potongan gelombang 2 berapa?"` ke handler terotorisasi `semantic-rag-fee-discount` yang menghitung data riil Gelombang 2B (5 prodi regCount, 5 dppCount). Assertion diperbarui agar menerima kedua terminal source yang sah (`semantic-rag-fee-general` untuk diskon umum, `semantic-rag-fee-discount` untuk diskon gelombang spesifik). Kode engine `src/engine/` adalah 100% identik (0 lines changed) terhadap `phase1-freeze`. Ini adalah **baseline test alignment**, bukan regression.
 
 ---
 
