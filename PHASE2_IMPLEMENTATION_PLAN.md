@@ -9,12 +9,13 @@
 
 ## 1. BASELINE IMMUTABILITY & TRACEABILITY VERIFICATION
 
-- **Verified Commit**: `353559c2c8f0686c6cb6f2a871e66dc348cc558d` (memuat seluruh hasil audit 299 test cases legacy engine / 333 total Phase 1 canonical 100% green, serta koreksi dokumentasi UQ-12 PMB portal authority dan UQ-21 work-study evidence limitation).
-- **Verified Tag**: `git rev-parse phase1-freeze` menghasilkan tepat `353559c2c8f0686c6cb6f2a871e66dc348cc558d`.
-- **Aturan Immutabilitas**:
-  - Kode logika Phase 1 pada direktori `src/core/` (kecuali injection switch non-invasif) berstatus **READ-ONLY / IMMUTABLE**.
-  - Seluruh 333 test cases Phase 1 (299 Legacy Engine + 34 Greenfield Core) wajib selalu dieksekusi dan tidak boleh diubah atau dilemahkan.
-  - Setiap perubahan Phase 2 ditempatkan pada namespace terisolasi `src/reasoning/` dan `tests/phase2/` (atau test suite berawalan `tests/phase2`).
+- **Historical Freeze Tag & Commit**: `phase1-freeze` menunjuk commit `353559c2c8f0686c6cb6f2a871e66dc348cc558d` (historical immutable code anchor).
+- **Current Regression Tag & Commit**: `phase1-regression-baseline` menunjuk commit `40843bc99c2cb072830b799e26e64017a3ac1c28` (current corrected regression contract).
+- **Aturan Immutabilitas & Dual Metrik**:
+  - Kode logika Phase 1 pada direktori `src/core/` dan `src/engine/` berstatus **READ-ONLY / IMMUTABLE**.
+  - **Metrik A (Suite Execution)**: 333 tests dieksekusi antar-suite (299 Legacy Engine + 34 Greenfield Core).
+  - **Metrik B (Unique Canonical)**: 325 unique test cases pada 25 unique files (bebas duplikasi) sebagaimana terdaftar di `docs/baselines/PHASE1_TEST_MANIFEST.json`.
+  - Setiap perubahan Phase 2 ditempatkan pada namespace terisolasi `src/reasoning/` dan test suite berawalan `tests/phase2`.
 
 ---
 
@@ -235,8 +236,8 @@ PHASE2_SHADOW_MODE = process.env.PHASE2_SHADOW_MODE === 'true';
 
 Phase 2 **TIDAK BOLEH** dinyatakan selesai hanya karena 35 unit test baru lulus. Kriteria kelulusan resmi:
 
-1. **Phase 1 Baseline Green**: Seluruh **333 / 333 test cases** Phase 1 (299 Legacy Engine + 34 Greenfield Core) tetap 100% PASS.
-2. **Phase 2 Reasoning Suite Green**: Seluruh test cases baru Phase 2 100% PASS (Step 1: 17, Step 2: 10, Step 3: 10, dll).
+1. **Phase 1 Baseline Green**: Seluruh **325 unique test cases** Phase 1 (25 files, 333 suite execution count) tetap 100% PASS.
+2. **Phase 2 Reasoning Suite Green**: Seluruh **37 unique test cases** Phase 2 (Step 1: 17, Step 2: 10, Step 3: 10) tetap 100% PASS. Total Canonical Post-Step-3 = **362 unique tests** (370 suite execution count).
 3. **Zero Invariant Regression**:
    - Nol kebocoran entitas (*zero sibling leak*).
    - Nol pemalsuan temporal (*zero ungrounded currentness claims*).
@@ -314,7 +315,7 @@ flowchart TD
     S8 --> S9[STEP 9: Real-User Production UAT & Sign-off]
 ```
 
-Setiap langkah wajib melewati audit kode, unit test independen, dan verifikasi regresi 333 test Phase 1 (299 Legacy Engine + 34 Greenfield Core) sebelum melangkah ke langkah berikutnya.
+Setiap langkah wajib melewati audit kode, unit test independen, dan verifikasi regresi 325 unique test Phase 1 (333 suite execution count) sebelum melangkah ke langkah berikutnya.
 
 ---
 

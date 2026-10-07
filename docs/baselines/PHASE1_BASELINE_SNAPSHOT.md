@@ -1,75 +1,71 @@
 # PHASE 1 FROZEN BASELINE SNAPSHOT
-**Commit**: `353559c2c8f0686c6cb6f2a871e66dc348cc558d`  
-**Git Tag**: `phase1-freeze`  
-**Status**: `PHASE 1 = FROZEN`, `PHASE 2 = UNBLOCKED`  
-**Timestamp**: `2026-10-07T17:15:00+08:00`  
+**Historical Freeze Commit**: `353559c2c8f0686c6cb6f2a871e66dc348cc558d`  
+**Git Tag (Historical Code Anchor)**: `phase1-freeze`  
+**Corrected Regression Commit**: `40843bc99c2cb072830b799e26e64017a3ac1c28`  
+**Git Tag (Current Regression Contract)**: `phase1-regression-baseline`  
+**Status**: `PHASE 1 = FROZEN & VERIFIED`, `PHASE 2 = IN PROGRESS (HOLD AT STEP 3)`  
+**Timestamp**: `2026-10-07T19:15:00+08:00`  
 
 ---
 
-## 1. HASIL SELURUH TEST SUITE PHASE 1 (CANONICAL BASELINE RESULTS)
+## 1. REKONSILIASI DUA METRIK PENGUJIAN PHASE 1 (CANONICAL TEST ACCOUNTING)
 
-Semua rangkaian pengujian Phase 1 telah diaudit dan mencapai kelulusan 100% tanpa kegagalan:
+Untuk tata kelola (*governance*) pengujian yang presisi, seluruh metrik pengujian Phase 1 dibagi secara tegas menjadi dua metrik:
 
-### A. Phase 1 Legacy Engine Suites (`src/engine/`)
-| Kategori Test Suite | File Uji / Perintah | Hasil (Passed/Total) | Status |
-| :--- | :--- | :--- | :--- |
-| **Contract Suites** | `npm run test:contract` (10 suites) | 132 / 132 | **PASS (100%)** |
-| - Canonical Query Understanding | `tests/queryUnderstanding.canonical.test.js` | 13 / 13 | PASS |
-| - P0 Root Cause Contracts | `tests/semanticRagEngine.p0RootCauseContracts.test.js` | 10 / 10 | PASS |
-| - P1 Canonical Contracts | `tests/semanticRagEngine.p1CanonicalContracts.test.js` | 26 / 26 | PASS |
-| - P3 Academic Contracts | `tests/semanticRagEngine.p3AcademicContracts.test.js` | 19 / 19 | PASS |
-| - Performance Async Contracts | `tests/semanticRagEngine.performanceAsyncContracts.test.js` | 9 / 9 | PASS |
-| - Short Definition Regression | `tests/semanticRagShortDefinitionRegression.test.js` | 12 / 12 | PASS |
-| - Small Talk Guard | `tests/semanticSmallTalkGuard.test.js` | 14 / 14 | PASS |
-| - Evidence Selector | `tests/evidenceSelector.test.js` | 11 / 11 | PASS |
-| - Semantic Evidence Selection | `tests/semanticEvidenceSelection.test.js` | 10 / 10 | PASS |
-| - Answer Preflight Evaluator | `tests/answerPreflightEvaluator.test.js` | 8 / 8 | PASS |
-| **Document Safety** | `npm run test:document-safety` (2 suites) | 6 / 6 | **PASS (100%)** |
-| - Document Leak Regression | `tests/documentLeakRegression.test.js` | 3 / 3 | PASS |
-| - Raw Leak Complaint | `tests/semanticRawLeakComplaint.test.js` | 3 / 3 | PASS |
-| **Schedule Readiness** | `npm run test:schedule` (1 suite) | 12 / 12 | **PASS (100%)** |
-| **Semantic Real User Phrasing** | `npm run test:semantic` (5 suites) | 17 / 17 | **PASS (100%)** |
-| - Real User Phrasing | `tests/semanticRagRealUserPhrasing.test.js` | 5 / 5 | PASS |
-| - FAQ QnA Inline | `tests/semanticFaqQnaInline.test.js` | 2 / 2 | PASS |
-| - Short Definition Regression | `tests/semanticRagShortDefinitionRegression.test.js` | 4 / 4 | PASS |
-| - Small Talk Guard | `tests/semanticSmallTalkGuard.test.js` | 3 / 3 | PASS |
-| - Raw Leak Complaint | `tests/semanticRawLeakComplaint.test.js` | 3 / 3 | PASS |
-| **Retrieval & Generalization** | `npm run test:retrieval` (4 suites) | 110 / 110 | **PASS (100%)** |
-| - Database Candidate Retrieval | `tests/databaseCandidateRetrieval.test.js` | 12 / 12 | PASS |
-| - Generic Evidence Retrieval | `tests/genericEvidenceRetrieval.test.js` | 14 / 14 | PASS |
-| - Unseen Entity Generalization | `tests/unseenEntityGeneralization.test.js` | 16 / 16 | PASS |
-| - Generic RAG Integration | `tests/genericRagIntegration.test.js` | 68 / 68 | PASS |
-| **Registration Discount Cases** | `tests/registrationDiscount.cases.test.js` | 3 / 3 | **PASS (100%)** |
-| **Registration Discount Regr.** | `tests/registrationDiscount.regression.test.js`| 2 / 2 | **PASS (100%)** |
-| **Parse Fee Numbering** | `tests/parse_fee_numbering.test.js` | 2 / 2 | **PASS (100%)** |
-| **Provider Multi-Turn Hardening**| `tests/providerMultiTurnIntegration.test.js` | 15 / 15 | **PASS (100%)** |
-| **SUBTOTAL LEGACY ENGINE** | **26 Test Suites** | **299 / 299** | **100% GREEN** |
+### Metrik A: Suite Execution Count (333 Tests)
+*Total test yang dieksekusi jika masing-masing npm script dan suite pengujian dijalankan secara terpisah (termasuk duplikasi antar-script).*
 
-*Catatan Rekonsiliasi 292 vs 299*: Angka historis 292 timbul karena tabel versi awal menjumlahkan suite tanpa mengikutsertakan 3 baris standalone discount & fee numbering (`3 + 2 + 2 = 7 tests`), yaitu `132 + 6 + 12 + 17 + 110 + 15 = 292`. Nilai resmi dan terverifikasi untuk seluruh suite legacy engine adalah **299 tests**.
-
-### B. Phase 1 Greenfield Core Suites (`src/core/`)
-| Kategori Test Suite | File Uji / Perintah | Hasil (Passed/Total) | Status |
-| :--- | :--- | :--- | :--- |
-| **Greenfield Core Integration** | `tests/greenfieldCore.test.js` | 14 / 14 | **PASS (100%)** |
-| **Semantic Correctness Regression** | `tests/semanticCorrectnessRegression.test.js` | 20 / 20 | **PASS (100%)** |
-| **SUBTOTAL GREENFIELD CORE** | **2 Test Suites** | **34 / 34** | **100% GREEN** |
-
-### C. Total Canonical Phase 1
-| Cakupan | Total Suites | Hasil (Passed/Total) | Status |
-| :--- | :--- | :--- | :--- |
-| **PHASE 1 CANONICAL TOTAL** | **28 Test Suites** | **333 / 333** | **100% GREEN** |
+1. **Legacy Engine (`src/engine/`)**:
+   - `npm run test:contract` (10 suites): **132 tests**
+   - `npm run test:document-safety` (2 suites): **6 tests**
+   - `npm run test:schedule` (1 suite): **12 tests**
+   - `npm run test:semantic` (5 suites): **17 tests**
+   - `npm run test:retrieval` (4 suites): **110 tests**
+   - Standalone Discount & Multi-turn (4 suites): **22 tests**  
+     (`registrationDiscount.cases`: 3, `registrationDiscount.regression`: 2, `parse_fee_numbering`: 2, `providerMultiTurnIntegration`: 15)  
+   - *Subtotal Legacy Engine*: **299 tests executed**
+2. **Greenfield Core (`src/core/`)**:
+   - `tests/greenfieldCore.test.js`: **14 tests**
+   - `tests/semanticCorrectnessRegression.test.js`: **20 tests**  
+   - *Subtotal Greenfield Core*: **34 tests executed**
+3. **Total Suite Execution Phase 1**: $299 + 34 = \mathbf{333\text{ tests executed}}$.
 
 ---
 
-### D. Rekonsiliasi Baseline Test Alignment: `tests/semanticRagRealUserPhrasing.test.js`
-- **File**: `tests/semanticRagRealUserPhrasing.test.js` (line 161)
-- **Diff vs `phase1-freeze`**:
-  ```diff
-  - expect(result.source).toBe('semantic-rag-fee-general');
-  + expect(result.source).toMatch(/semantic-rag-fee-general|semantic-rag-fee-discount/i);
-  ```
-- **Alasan & Justifikasi**:
-  Pada penulisan awal test di commit `369bdba` (September 2026), belum ada routing spesialis diskon gelombang sehingga seluruh query potongan di-route ke generic fallback `semantic-rag-fee-general`. Pada commit `11753b7` (6 Oktober 2026, sebelum freeze), `preferDetailedFeeBySubtype` di `src/engine/semanticRagEngine.js` dioptimasi untuk mengarahkan pertanyaan gelombang potongan spesifik seperti `"potongan gelombang 2 berapa?"` ke handler terotorisasi `semantic-rag-fee-discount` yang menghitung data riil Gelombang 2B (5 prodi regCount, 5 dppCount). Assertion diperbarui agar menerima kedua terminal source yang sah (`semantic-rag-fee-general` untuk diskon umum, `semantic-rag-fee-discount` untuk diskon gelombang spesifik). Kode engine `src/engine/` adalah 100% identik (0 lines changed) terhadap `phase1-freeze`. Ini adalah **baseline test alignment**, bukan regression.
+### Metrik B: Unique Test Case Count (CANONICAL GOVERNANCE: 325 Tests)
+*Jumlah test case unik aktual tanpa double-counting antar-suite, dieksekusi dalam 1 proses Jest tunggal.*
+
+- **Total Unique Test Files**: **25 files**
+- **Total Unique Test Cases**: **325 tests (100% PASS)**
+- **Audit Overlap Antar-Script (Delta 8 Tests)**:
+  Terdapat 3 file yang terdaftar di lebih dari satu script npm:
+  1. `tests/semanticRawLeakComplaint.test.js` (**2 tests**): masuk di `test:document-safety` dan `test:semantic`.
+  2. `tests/semanticRagShortDefinitionRegression.test.js` (**3 tests**): masuk di `test:contract` dan `test:semantic`.
+  3. `tests/semanticSmallTalkGuard.test.js` (**3 tests**): masuk di `test:contract` dan `test:semantic`.
+  $$\text{Total Duplicate Executions} = 2 + 3 + 3 = 8\text{ tests}$$
+  $$\text{Unique Canonical Tests} = 333 - 8 = \mathbf{325\text{ tests}}$$
+
+Seluruh rincian per file terdokumentasi secara definitif dalam mesin pada [PHASE1_TEST_MANIFEST.json](file:///c:/Users/TSC-AKA/Videos/MARKETING/BOTAI/system_wa/docs/baselines/PHASE1_TEST_MANIFEST.json).
+
+---
+
+## 1.1. DUAL TAG BASELINE TRACEABILITY & TEST ALIGNMENT
+
+Untuk memastikan integritas historis tanpa mencampuradukkan baseline:
+
+1. **Tag `phase1-freeze` (`353559c`)**:
+   - Berfungsi sebagai **Historical Immutable Code Anchor**.
+   - Menandai titik akhir resmi Phase 1 beserta perbaikan dokumentasi UQ-12 dan UQ-21.
+2. **Tag `phase1-regression-baseline` (`40843bc`)**:
+   - Berfungsi sebagai **Current Corrected Regression Contract**.
+   - Memuat penyesuaian assertion pada `tests/semanticRagRealUserPhrasing.test.js` (line 161):
+     ```diff
+     - expect(result.source).toBe('semantic-rag-fee-general');
+     + expect(result.source).toMatch(/semantic-rag-fee-general|semantic-rag-fee-discount/i);
+     ```
+   - **Kepastian Kode**: Kode engine Phase 1 pada `src/engine/` **tidak mengalami perubahan sama sekali** (0 diff vs `phase1-freeze`).
+   - **Justifikasi Teknis**: Test lama (September 2026) terlalu ketat mengharuskan label `'semantic-rag-fee-general'` pada kueri `"potongan gelombang 2 berapa?"`. Padahal perbaikan engine di commit `11753b7` (sebelum freeze) telah mengarahkan kueri gelombang ke handler spesialis `semantic-rag-fee-discount` dengan data potongan Gelombang 2B yang faktual dan grounded.
+   - Penyesuaian test ini dilakukan agar contract selaras dengan *intended behavior* sistem produksi tanpa merusak invariant apapun.
 
 ---
 

@@ -1,0 +1,240 @@
+{
+  "manifest_version": "1.0.0",
+  "generated_at": "2026-10-07T19:15:00+08:00",
+  "historical_phase1_freeze_commit": "353559c2c8f0686c6cb6f2a871e66dc348cc558d",
+  "historical_phase1_freeze_tag": "phase1-freeze",
+  "current_corrected_regression_commit": "40843bc99c2cb072830b799e26e64017a3ac1c28",
+  "current_corrected_regression_tag": "phase1-regression-baseline",
+  "metrics_summary": {
+    "phase1_suite_execution_count": 333,
+    "phase1_unique_test_case_count": 325,
+    "phase1_unique_test_files_count": 25,
+    "phase1_overlap_deduplication_delta": 8,
+    "phase2_suite_execution_count": 37,
+    "phase2_unique_test_case_count": 37,
+    "phase2_unique_test_files_count": 3,
+    "grand_suite_execution_count": 370,
+    "grand_unique_test_case_count": 362,
+    "grand_unique_test_files_count": 28
+  },
+  "overlapping_files_audit": [
+    {
+      "file": "tests/semanticRawLeakComplaint.test.js",
+      "test_count": 2,
+      "member_of_suites": ["npm run test:document-safety", "npm run test:semantic"],
+      "explanation": "File diuji pada test:document-safety (pencegahan leak) dan test:semantic (phrasing complaint). Berkontribusi 2 duplikasi eksekusi."
+    },
+    {
+      "file": "tests/semanticRagShortDefinitionRegression.test.js",
+      "test_count": 3,
+      "member_of_suites": ["npm run test:contract", "npm run test:semantic"],
+      "explanation": "File diuji pada test:contract (kontrak definisi) dan test:semantic (evaluasi semantik). Berkontribusi 3 duplikasi eksekusi."
+    },
+    {
+      "file": "tests/semanticSmallTalkGuard.test.js",
+      "test_count": 3,
+      "member_of_suites": ["npm run test:contract", "npm run test:semantic"],
+      "explanation": "File diuji pada test:contract (guard kontrak) dan test:semantic (small talk guard). Berkontribusi 3 duplikasi eksekusi."
+    }
+  ],
+  "phase1_unique_test_files": [
+    {
+      "file": "tests/queryUnderstanding.canonical.test.js",
+      "suites": ["npm run test:contract"],
+      "test_count": 33,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticRagEngine.p0RootCauseContracts.test.js",
+      "suites": ["npm run test:contract"],
+      "test_count": 10,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticRagEngine.p1CanonicalContracts.test.js",
+      "suites": ["npm run test:contract"],
+      "test_count": 14,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticRagEngine.p3AcademicContracts.test.js",
+      "suites": ["npm run test:contract"],
+      "test_count": 4,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticRagEngine.performanceAsyncContracts.test.js",
+      "suites": ["npm run test:contract"],
+      "test_count": 9,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticRagShortDefinitionRegression.test.js",
+      "suites": ["npm run test:contract", "npm run test:semantic"],
+      "test_count": 3,
+      "status": "PASS",
+      "is_shared_across_scripts": true
+    },
+    {
+      "file": "tests/semanticSmallTalkGuard.test.js",
+      "suites": ["npm run test:contract", "npm run test:semantic"],
+      "test_count": 3,
+      "status": "PASS",
+      "is_shared_across_scripts": true
+    },
+    {
+      "file": "tests/evidenceSelector.test.js",
+      "suites": ["npm run test:contract"],
+      "test_count": 21,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticEvidenceSelection.test.js",
+      "suites": ["npm run test:contract"],
+      "test_count": 6,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/answerPreflightEvaluator.test.js",
+      "suites": ["npm run test:contract"],
+      "test_count": 29,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/documentLeakRegression.test.js",
+      "suites": ["npm run test:document-safety"],
+      "test_count": 4,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticRawLeakComplaint.test.js",
+      "suites": ["npm run test:document-safety", "npm run test:semantic"],
+      "test_count": 2,
+      "status": "PASS",
+      "is_shared_across_scripts": true
+    },
+    {
+      "file": "tests/scheduleReadiness.test.js",
+      "suites": ["npm run test:schedule"],
+      "test_count": 12,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticRagRealUserPhrasing.test.js",
+      "suites": ["npm run test:semantic"],
+      "test_count": 8,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticFaqQnaInline.test.js",
+      "suites": ["npm run test:semantic"],
+      "test_count": 1,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/databaseCandidateRetrieval.test.js",
+      "suites": ["npm run test:retrieval"],
+      "test_count": 19,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/unseenEntityGeneralization.test.js",
+      "suites": ["npm run test:retrieval"],
+      "test_count": 13,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/genericEvidenceRetrieval.test.js",
+      "suites": ["npm run test:retrieval"],
+      "test_count": 72,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/genericRagIntegration.test.js",
+      "suites": ["npm run test:retrieval"],
+      "test_count": 6,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/registrationDiscount.cases.test.js",
+      "suites": ["standalone discount suite"],
+      "test_count": 3,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/registrationDiscount.regression.test.js",
+      "suites": ["standalone discount suite"],
+      "test_count": 2,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/parse_fee_numbering.test.js",
+      "suites": ["standalone discount suite"],
+      "test_count": 2,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/providerMultiTurnIntegration.test.js",
+      "suites": ["standalone multi-turn suite"],
+      "test_count": 15,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/greenfieldCore.test.js",
+      "suites": ["standalone greenfield core"],
+      "test_count": 14,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/semanticCorrectnessRegression.test.js",
+      "suites": ["standalone greenfield core"],
+      "test_count": 20,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    }
+  ],
+  "phase2_unique_test_files": [
+    {
+      "file": "tests/phase2Planner.contract.test.js",
+      "step": "Step 1: Planner & Contracts",
+      "test_count": 17,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/phase2OrchestratorBridge.test.js",
+      "step": "Step 2: Orchestrator Handoff & Phase 1 Bridge",
+      "test_count": 10,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    },
+    {
+      "file": "tests/phase2BoundedReplan.test.js",
+      "step": "Step 3: Bounded Reflection & Controlled Replan",
+      "test_count": 10,
+      "status": "PASS",
+      "is_shared_across_scripts": false
+    }
+  ]
+}
