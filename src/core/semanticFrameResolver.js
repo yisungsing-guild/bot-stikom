@@ -68,6 +68,19 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
+  // 0.1 Prompt Injection & Adversarial Jailbreak Defense
+  if (/\b(ignore\s+(all\s+)?(?:previous\s+)?instructions|forget\s+(?:all\s+)?(?:rules|instructions)|system\s+prompt|reveal\s+(?:the\s+)?prompt|jailbreak|kamu\s+sekarang\s+adalah\s+DAN|abaikan\s+(?:semua\s+)?(?:instruksi|aturan)|lupakan\s+(?:semua\s+)?(?:instruksi|aturan)|bocorkan\s+prompt|bypass\s+security)\b/i.test(normalized)) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'ADVERSARIAL_INJECTION_DEFENSE',
+      retrievalRequired: false,
+      userState: 'ADVERSARIAL',
+      desiredAction: 'REFUSE_ADVERSARIAL',
+      aspects: ['safety_refusal'],
+      relation: 'SAFETY_GUARD'
+    };
+  }
+
   // 1. Academic Missed Process / State
   if (/\b(terlambat|telat|ketinggalan|terlewat|lupa)\s+(perwalian|krs|daftar ulang|bayar|ujian|sidang|yudisium)\b/i.test(normalized)) {
     const processMatch = normalized.match(/\b(perwalian|krs|daftar ulang|bayar|ujian|sidang|yudisium)\b/i);
@@ -84,7 +97,7 @@ function inferDomainAndIntent(normalized, entities = []) {
   }
 
   // 2. Program Curriculum Inquiry (Priority over general program info)
-  if (/\b(kurikulum|mata\s*kuliah|matkul|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul)\b/i.test(normalized)) {
+  if (/\b(kurikulum(?:nya)?|mata\s*kuliah|matkul|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul)\b/i.test(normalized)) {
     return {
       domain: 'ACADEMIC_CURRICULUM',
       intent: 'CURRICULUM_INQUIRY',
@@ -168,12 +181,91 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 7. Admission / PMB Schedule & Current Status
+  // 7. Scholarship Inquiry
+  if (/\b(beasiswa|kip\s*kuliah|kip-?k|potongan\s+dpp|keringanan\s+biaya|bantuan\s+dana\s+pendidikan)\b/i.test(normalized)) {
+    return {
+      domain: 'SCHOLARSHIP',
+      intent: 'SCHOLARSHIP_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_SCHOLARSHIP_INFO',
+      aspects: ['scholarship', 'requirements', 'discount'],
+      relation: 'SCHOLARSHIP_INFO'
+    };
+  }
+
+  // 8. Facilities Inquiry
+  if (/\b(fasilitas|laboratorium|lab\b|perpustakaan|asrama|dormitory|ruang\s+kelas|gedung\s+kampus)\b/i.test(normalized)) {
+    return {
+      domain: 'FACILITIES',
+      intent: 'FACILITY_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_FACILITY_INFO',
+      aspects: ['facilities', 'lab', 'campus_infrastructure'],
+      relation: 'CAMPUS_FACILITIES'
+    };
+  }
+
+  // 9. Organization & UKM Inquiry
+  if (/\b(ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|ormawa|hima\b|himaprodi|senat\s+mahasiswa|balma|ekstrakurikuler)\b/i.test(normalized)) {
+    return {
+      domain: 'ORGANIZATION_UKM',
+      intent: 'ORGANIZATION_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_ORGANIZATION_INFO',
+      aspects: ['student_organization', 'activities', 'ukm'],
+      relation: 'STUDENT_ORGANIZATION'
+    };
+  }
+
+  // 10. Career Center & Internship & Industry Cooperation
+  if (/\b(career\s+center|cdc\b|inbis|inkubator\s+bisnis|magang|internship|campus\s+hiring|kerja\s+sama\s+industri|penyaluran\s+kerja|sertifikasi|training)\b/i.test(normalized)) {
+    return {
+      domain: 'CAREER_CENTER',
+      intent: 'CAREER_CENTER_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_CAREER_CENTER_INFO',
+      aspects: ['internship', 'career_services', 'cooperation'],
+      relation: 'CAREER_SERVICES'
+    };
+  }
+
+  // 11. Admission / PMB Schedule & General Topic Opener
   if (/\b(pmb|pendaftaran|daftar|gelombang|buka|masih dibuka|kapan buka|jalur pendaftaran)\b/i.test(normalized)) {
     const isNow = TEMPORAL_NOW_REGEX.test(normalized);
+    if (isNow) {
+      return {
+        domain: 'PMB',
+        intent: 'CURRENT_ENROLLMENT_STATUS',
+        retrievalRequired: true,
+        userState: 'INQUIRING',
+        desiredAction: 'PROVIDE_PMB_STATUS',
+        aspects: ['schedule', 'status', 'wave_info'],
+        relation: 'ADMISSION_WINDOW'
+      };
+    }
+
+    const isTopicOpener = /\b(saya\s+ingin\s+bertanya\s+tentang\s+pmb|mau\s+tanya\s+pmb|info\s+pmb|tentang\s+pmb|informasi\s+pmb|bagaimana\s+pmb|pendaftaran\s+stikom|daftar\s+stikom)\b/i.test(normalized) ||
+      (!/\b(gelombang|kapan|jadwal|tanggal|buka sampai|periode)\b/i.test(normalized) && /\b(pmb|pendaftaran)\b/i.test(normalized) && !/\b(biaya|bayar|kurikulum|beasiswa)\b/i.test(normalized));
+
+    if (isTopicOpener) {
+      return {
+        domain: 'PMB',
+        intent: 'GENERAL_PMB_INQUIRY',
+        retrievalRequired: true,
+        userState: 'INQUIRING',
+        desiredAction: 'PROVIDE_GENERAL_PMB_OVERVIEW',
+        aspects: ['admission_overview', 'procedure', 'admission_pathways'],
+        relation: 'PMB_OVERVIEW'
+      };
+    }
+
     return {
       domain: 'PMB',
-      intent: isNow ? 'CURRENT_ENROLLMENT_STATUS' : 'ADMISSION_SCHEDULE',
+      intent: 'ADMISSION_SCHEDULE',
       retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_PMB_STATUS',
@@ -182,7 +274,7 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 8. Academic Graduation Requirement (SKS lulus)
+  // 12. Academic Graduation Requirement (SKS lulus)
   if (/\b(sks|jumlah sks|sks lulus|beban sks)\b/i.test(normalized)) {
     return {
       domain: 'ACADEMIC_CURRICULUM',
@@ -195,7 +287,7 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 9. Program Comparison (Perbedaan Prodi)
+  // 13. Program Comparison (Perbedaan Prodi)
   const hasProgramEntity = entities.some(e => e.family === 'academic_program' || e.type === 'program');
   if (/\b(perbedaan|beda|bedanya|banding|dibandingkan)\b/i.test(normalized) && 
       (/\b(prodi|jurusan|program studi)\b/i.test(normalized) || hasProgramEntity || entities.length >= 2)) {
@@ -210,7 +302,7 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 10. Accreditation
+  // 14. Accreditation
   if (/\b(akreditasi|terakreditasi|ban-?pt|lam-?infokom)\b/i.test(normalized)) {
     const isProdi = entities.some(e => e.family === 'academic_program' || e.type === 'program') || /\b(prodi|jurusan|program studi|s1|d3|s2)\b/i.test(normalized);
     return {
@@ -224,8 +316,8 @@ function inferDomainAndIntent(normalized, entities = []) {
     };
   }
 
-  // 11. Tuition Fee / Biaya Kuliah
-  if (/\b(biaya|biaya kuliah|spp|dpp|uang pangkal|bayar kuliah|angsuran|potongan biaya|cicilan)\b/i.test(normalized)) {
+  // 15. Tuition Fee / Biaya Kuliah
+  if (/\b(biaya(?:nya)?|biaya kuliah|spp|dpp|uang pangkal|bayar kuliah|angsuran|potongan biaya|cicilan)\b/i.test(normalized)) {
     return {
       domain: 'TUITION_FEE',
       intent: 'TUITION_FEE_INQUIRY',
@@ -234,18 +326,6 @@ function inferDomainAndIntent(normalized, entities = []) {
       desiredAction: 'PROVIDE_TUITION_FEE_INFO',
       aspects: ['fee', 'dpp', 'tuition'],
       relation: 'TUITION_FEE'
-    };
-  }
-
-  // 10. General Academic / Facility / Unit
-  if (/\b(inbis|inkubator|karir|magang|internship|campus hiring|sertifikasi|training|custom software|mou|pks|riset)\b/i.test(normalized)) {
-    return {
-      domain: 'CAMPUS_SERVICE',
-      intent: 'SERVICE_INQUIRY',
-      userState: 'INQUIRING',
-      desiredAction: 'PROVIDE_CAMPUS_SERVICE_INFO',
-      aspects: ['facility', 'cooperation', 'service_procedure'],
-      relation: 'CAMPUS_SERVICE'
     };
   }
 
@@ -288,12 +368,50 @@ function resolveSemanticFrame(rawQuery, sessionData = {}) {
   // 4. Infer Domain & Intent
   const inferred = inferDomainAndIntent(normalized, entities);
 
-  // Apply context inheritance only if explicitly evaluated as dependent
   let domain = inferred.domain;
   let intent = inferred.intent;
+
+  // Invariant: Campus-wide facilities/UKM or Conversational MUST NOT inherit academic program entities
+  const isProgramSpecificDomain = ['ACADEMIC_CURRICULUM', 'TUITION_FEE', 'ACADEMIC_PROGRAM'].includes(domain);
+  const isCampusWideDomain = ['FACILITIES', 'ORGANIZATION_UKM', 'CAREER_CENTER', 'CONVERSATIONAL'].includes(domain);
+
+  if (entities.length === 0 && contextDep.shouldInherit && contextDep.inheritedEntity && !isCampusWideDomain) {
+    const inheritedCanon = findCanonicalEntity(contextDep.inheritedEntity);
+    if (inheritedCanon && inheritedCanon.family === 'academic_program' && isProgramSpecificDomain) {
+      entities.push({
+        canonical: inheritedCanon.canonical,
+        type: inheritedCanon.type,
+        family: inheritedCanon.family,
+        inherited: true
+      });
+    }
+  }
+
   if (contextDep.shouldInherit && contextDep.inheritedDomain && domain === 'GENERAL') {
     domain = contextDep.inheritedDomain;
   }
+
+  // Detect additional requested aspects
+  const combinedAspects = new Set(inferred.aspects || []);
+  if (/\b(prospek(?:nya)?|peluang\s+kerja|karir|karier|profesi\s+lulusan)\b/i.test(normalized)) {
+    combinedAspects.add('career_prospects');
+  }
+  if (/\b(kurikulum(?:nya)?|mata\s*kuliah|matkul|sks)\b/i.test(normalized)) {
+    combinedAspects.add('curriculum');
+  }
+  if (/\b(biaya(?:nya)?|spp|dpp|uang\s+pangkal)\b/i.test(normalized)) {
+    combinedAspects.add('fee');
+  }
+  if (/\b(beasiswa(?:nya)?|potongan\s+dpp|keringanan)\b/i.test(normalized)) {
+    combinedAspects.add('scholarship');
+  }
+  if (/\b(fasilitas(?:nya)?|lab\b|laboratorium)\b/i.test(normalized)) {
+    combinedAspects.add('facilities');
+  }
+  if (/\b(akreditasi(?:nya)?)\b/i.test(normalized)) {
+    combinedAspects.add('akreditasi');
+  }
+  const finalAspects = Array.from(combinedAspects);
 
   return {
     rawQuery: raw,
@@ -303,7 +421,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}) {
     retrievalRequired: inferred.retrievalRequired !== false,
     entities,
     relation: inferred.relation,
-    aspects: inferred.aspects,
+    aspects: finalAspects,
     temporal,
     userState: inferred.userState,
     desiredAction: inferred.desiredAction,

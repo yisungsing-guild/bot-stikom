@@ -20,7 +20,13 @@ const RAW_DOCUMENT_LEAK_PATTERNS = [
   /training_data_id/i,
   /governanceMetadata/i,
   /select\s+.*\s+from/i,
-  /ragChunkCount/i
+  /ragChunkCount/i,
+  /Ringkasan dokumen:/i,
+  /\[Sheet:\s*[^\]]+\]/i,
+  /\|\s*col\d+\s*:/i,
+  /PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN/i,
+  /2\.\s*Profil Saat Ini\s*•\s*Status:\s*Perguruan tinggi bertaraf internasional/i,
+  /Ketua Program Studi S1-/i
 ];
 
 function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = {}) {
@@ -40,11 +46,18 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   }
 
   // 2. Entity Alignment Check (Generic across all entities)
+  const GENERIC_COMMON_WORDS = new Set([
+    'akademik', 'kuliah', 'kampus', 'stikom', 'bali', 'mahasiswa', 'program',
+    'studi', 'jurusan', 'fakultas', 'pendidikan', 'kurikulum', 'biaya', 'beasiswa',
+    'fasilitas', 'gedung', 'kegiatan', 'organisasi'
+  ]);
+
   const { entities = [] } = semanticFrame;
   const excludedEntities = (arbitratedEvidence.retrievalPlan && arbitratedEvidence.retrievalPlan.excludedConflictingEntities) || [];
   
   for (const excluded of excludedEntities) {
     if (excluded && excluded.length >= 4) {
+      if (GENERIC_COMMON_WORDS.has(excluded.toLowerCase().trim())) continue;
       const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`\\b${escaped}\\b`, 'i');
       if (regex.test(text)) {

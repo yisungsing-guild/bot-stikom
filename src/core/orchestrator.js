@@ -50,6 +50,8 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
         reply = 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
       } else if (frame.intent === 'CONVERSATIONAL_SMALL_TALK') {
         reply = 'Kabar baik! Terima kasih sudah menyapa. Saya adalah asisten virtual resmi ITB STIKOM Bali. Ada informasi kampus yang ingin Anda tanyakan hari ini?';
+      } else if (frame.intent === 'ADVERSARIAL_INJECTION_DEFENSE') {
+        reply = 'Mohon maaf, saya adalah asisten informasi resmi ITB STIKOM Bali dan hanya melayani pertanyaan seputar informasi kampus, PMB, program studi, biaya kuliah, dan kegiatan akademik.';
       } else {
         reply = 'Halo! Saya asisten resmi ITB STIKOM Bali. Silakan beri tahu informasi apa yang ingin Anda ketahui seputar kampus kami.';
       }
@@ -83,6 +85,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
 
     // 5. Evaluate Answerability
     const answerability = evaluateAnswerability(frame, arbitrated);
+    arbitrated.missingAspects = answerability.missingAspects || [];
 
     let answer = null;
     let verification = { pass: false, reason: 'unprocessed' };
@@ -129,7 +132,9 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
-        activeEntity: primaryFrame.entities.length > 0 ? primaryFrame.entities[0].canonical : null,
+        activeEntity: primaryFrame.entities.length > 0 
+          ? primaryFrame.entities[0].canonical 
+          : (sessionData.activeEntity || null),
         lastQuery: rawQuery,
         lastAnswer: finalAnswer
       }

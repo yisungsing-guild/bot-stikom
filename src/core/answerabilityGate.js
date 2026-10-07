@@ -61,19 +61,35 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       }
     }
 
-    const hasAspectCoverage = requiredAspects.some(req => allProvidedAspects.has(req));
-    if (!hasAspectCoverage) {
+    const coveredAspects = requiredAspects.filter(req => allProvidedAspects.has(req));
+    const missingAspects = requiredAspects.filter(req => !allProvidedAspects.has(req));
+
+    if (coveredAspects.length === 0) {
       if (semanticFrame.domain === 'TUITION_FEE' || requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a))) {
         return {
           status: ANSWERABILITY_STATUS.UNKNOWN,
           reason: 'insufficient_fee_aspect_coverage',
+          coveredAspects: [],
+          missingAspects: requiredAspects,
           guidance: 'Informasi resmi mengenai rincian biaya kuliah untuk program studi tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
         };
       }
       return {
         status: ANSWERABILITY_STATUS.UNKNOWN,
         reason: 'insufficient_aspect_evidence',
+        coveredAspects: [],
+        missingAspects: requiredAspects,
         guidance: 'Informasi resmi terkait aspek tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
+      };
+    }
+
+    if (missingAspects.length > 0 && coveredAspects.length > 0) {
+      return {
+        status: ANSWERABILITY_STATUS.PARTIAL,
+        reason: 'partial_aspect_coverage',
+        coveredAspects,
+        missingAspects,
+        guidance: `Informasi terkait ${missingAspects.join(', ')} belum tercantum secara lengkap dalam panduan yang tersedia.`
       };
     }
   }
@@ -82,14 +98,18 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
   if (semanticFrame.subQueries && semanticFrame.subQueries.length > 1) {
     return {
       status: ANSWERABILITY_STATUS.PARTIAL,
-      reason: 'multi_subquery_partial_coverage'
+      reason: 'multi_subquery_partial_coverage',
+      coveredAspects: requiredAspects,
+      missingAspects: []
     };
   }
 
   // 4. Fully supported
   return {
     status: ANSWERABILITY_STATUS.ANSWERABLE,
-    reason: 'sufficient_supported_evidence'
+    reason: 'sufficient_supported_evidence',
+    coveredAspects: requiredAspects,
+    missingAspects: []
   };
 }
 

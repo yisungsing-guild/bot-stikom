@@ -28,6 +28,12 @@ function buildRetrievalPlan(semanticFrame) {
   const targetEntities = (entities || []).map(e => e.canonical || e.name || String(e));
   const normalizedText = String(normalizedQuery || '').toLowerCase();
 
+  const GENERIC_COMMON_WORDS = new Set([
+    'akademik', 'kuliah', 'kampus', 'stikom', 'bali', 'mahasiswa', 'program',
+    'studi', 'jurusan', 'fakultas', 'pendidikan', 'kurikulum', 'biaya', 'beasiswa',
+    'fasilitas', 'gedung', 'kegiatan', 'organisasi'
+  ]);
+
   // Generic discovery of conflicting / sibling entities to exclude across all families
   // INVARIANT: Explicitly requested entities in targetEntities must NEVER be excluded!
   const targetEntitySet = new Set(targetEntities.map(t => t.toLowerCase()));
@@ -44,12 +50,14 @@ function buildRetrievalPlan(semanticFrame) {
         return true;
       });
       for (const sib of siblings) {
-        if (!targetEntitySet.has(sib.canonical.toLowerCase()) && !excludedConflictingEntities.includes(sib.canonical)) {
+        const sibCanonLower = sib.canonical.toLowerCase().trim();
+        if (!GENERIC_COMMON_WORDS.has(sibCanonLower) && !targetEntitySet.has(sibCanonLower) && !excludedConflictingEntities.includes(sib.canonical)) {
           excludedConflictingEntities.push(sib.canonical);
         }
         if (Array.isArray(sib.aliases)) {
           for (const alias of sib.aliases) {
-            if (targetEntitySet.has(alias.toLowerCase())) continue;
+            const aliasLower = alias.toLowerCase().trim();
+            if (targetEntitySet.has(aliasLower) || GENERIC_COMMON_WORDS.has(aliasLower)) continue;
             // Avoid adding plain multi-word noun phrases that are valid descriptive terms in other programs
             const isPlainNoun = canonicalObj.family === 'academic_program' && 
               !/^(s1|s2|d3|d4|prodi|jurusan|sarjana|diploma|magister)\b/i.test(alias) && 
@@ -91,13 +99,61 @@ function buildRetrievalPlan(semanticFrame) {
     }
   }
 
+  // Scholarship query variants
+  if (domain === 'SCHOLARSHIP' || (aspects && aspects.includes('scholarship'))) {
+    queryVariants.push('informasi beasiswa potongan DPP KIP Kuliah STIKOM Bali');
+    queryVariants.push('syarat pendaftaran beasiswa mahasiswa baru');
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`beasiswa ${ent}`);
+      }
+    }
+  }
+
+  // Facilities query variants
+  if (domain === 'FACILITIES' || (aspects && aspects.includes('facilities'))) {
+    queryVariants.push('fasilitas laboratorium komputer perpustakaan asrama kampus ITB STIKOM Bali');
+    queryVariants.push('sarana dan prasarana fasilitas mahasiswa');
+  }
+
+  // Organization & UKM query variants
+  if (domain === 'ORGANIZATION_UKM' || (aspects && aspects.includes('student_organization'))) {
+    queryVariants.push('unit kegiatan mahasiswa UKM ormawa ITB STIKOM Bali');
+    queryVariants.push('daftar organisasi kemahasiswaan himaprodi');
+  }
+
+  // Career Center & Internship query variants
+  if (domain === 'CAREER_CENTER' || (aspects && aspects.includes('internship'))) {
+    queryVariants.push('career center inkubator bisnis inbis magang kerja sama industri ITB STIKOM Bali');
+    queryVariants.push('layanan bursa kerja dan kemitraan');
+  }
+
+  // General PMB Inquiry query variants
+  if (domain === 'PMB' && intent === 'GENERAL_PMB_INQUIRY') {
+    queryVariants.push('informasi pendaftaran mahasiswa baru PMB jalur reguler kelas karyawan');
+    queryVariants.push('syarat pendaftaran dan prosedur PMB STIKOM Bali');
+  }
+
   // Program Overview / Definition query variants
   if (intent === 'PROGRAM_OVERVIEW' || intent === 'DEFINITION' || intent === 'PROGRAM_COMPARISON') {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
+        queryVariants.push(`penjelasan prodi dan karier masa depan ${ent} yang dipelajari peluang kerja`);
+        queryVariants.push(`profil program studi ${ent} fokus pendidikan keahlian visi`);
         queryVariants.push(`deskripsi profil program studi ${ent}`);
         queryVariants.push(`tentang ${ent}`);
       }
+    }
+  }
+
+  // Career prospects specific variants
+  if (aspects && aspects.includes('career_prospects')) {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`peluang kerja prospek karir profesi lulusan ${ent}`);
+      }
+    } else {
+      queryVariants.push('peluang kerja prospek karir lulusan');
     }
   }
 

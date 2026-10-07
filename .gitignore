@@ -127,6 +127,8 @@ tests/*
 !tests/whatsAppPipelineRegression.test.js
 !tests/ragGeneralizationRegression.test.js
 !tests/ragKnowledgeBaseAudit.test.js
+!tests/greenfieldCore.test.js
+!tests/semanticCorrectnessRegression.test.js
 tools/
 quarantined_backups/
 

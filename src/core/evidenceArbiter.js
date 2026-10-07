@@ -33,6 +33,17 @@ function isCandidateMatchingTargetEntity(candidateText, targetEntityStr) {
   const cleanText = normalizePunctuation(candidateText);
   const targetNorm = targetEntityStr.toLowerCase();
 
+  // Strict degree isolation (e.g. S1 vs S2/Magister/Pascasarjana)
+  if (/^S1\b/i.test(targetEntityStr) && /\b(magister|s2|pascasarjana)\b/i.test(cleanText) && !/\b(s1|sarjana)\b/i.test(cleanText)) {
+    return false;
+  }
+  if (/^S2\b/i.test(targetEntityStr) && !/\b(magister|s2|pascasarjana)\b/i.test(cleanText)) {
+    return false;
+  }
+  if (/^D3\b/i.test(targetEntityStr) && !/\b(d3|diploma|ahli madya)\b/i.test(cleanText)) {
+    return false;
+  }
+
   // 1. Direct substring match
   if (rawTextNorm.includes(targetNorm) || cleanText.includes(normalizePunctuation(targetEntityStr))) {
     return true;
@@ -135,18 +146,61 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan) {
     /\b(biaya|pendidikan per semester|dpp|spp|uang pangkal|waktu pembayaran|pendaftaran \d|dicicil|potongan biaya|angsuran)\b/i.test(text);
 
   const isCurriculumChunk = /\b(kurikulum|mata\s*kuliah|matkul|sks|semester\s+[ivx\d]+\s+no\s+nama\s+mata\s+kuliah|praktikum)\b/i.test(text);
-  const isOverviewChunk = /\b(deskripsi singkat|profil|fokus pada|keahlian dalam bidang|visi|misi|program studi terlihat|penjelasan prodi|peluang kerja|yang dipelajari|perbedaan)\b/i.test(text);
+  const isOverviewChunk = /\b(deskripsi singkat|profil|fokus pada|fokus pendidikan|keahlian dalam bidang|visi|misi|program studi terlihat|penjelasan prodi|peluang kerja|yang dipelajari|perbedaan)\b/i.test(text);
+  const isCareerChunk = /\b(peluang kerja|prospek karir|profesi lulusan|career center|magang|internship|cdc)\b/i.test(text);
+  const isScholarshipChunk = /\b(beasiswa|kip-?kuliah|potongan\s+dpp|keringanan\s+biaya|bantuan\s+dana|skss)\b/i.test(text);
+  const isFacilityChunk = /\b(fasilitas|laboratorium|lab\b|perpustakaan|asrama|dormitory|sarana\s+dan\s+prasarana)\b/i.test(text);
+  const isOrganizationChunk = /\b(ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|ormawa|hima\b|himaprodi|senat|balma|ekstrakurikuler)\b/i.test(text);
+  const isPmbGeneralChunk = /\b(pmb|pendaftaran\s+mahasiswa\s+baru|jalur\s+pendaftaran|syarat\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
   const isHobbyChunk = /\b(hobi\s*\/\s*aktivitas|aktivitas\s*:\s*bermain game|hobi\s*:)\b/i.test(text);
 
   if (isFeeChunk) providedAspects.push('fee', 'tuition', 'dpp');
   if (isCurriculumChunk) providedAspects.push('curriculum', 'courses');
-  if (isOverviewChunk) providedAspects.push('overview', 'definition', 'curriculum_difference', 'career_prospects');
+  if (isOverviewChunk) providedAspects.push('overview', 'definition', 'curriculum_difference');
+  if (isCareerChunk) providedAspects.push('career_prospects');
+  if (isScholarshipChunk) providedAspects.push('scholarship', 'discount', 'requirements');
+  if (isFacilityChunk) providedAspects.push('facilities', 'lab', 'campus_infrastructure');
+  if (isOrganizationChunk) providedAspects.push('student_organization', 'activities', 'ukm');
+  if (isPmbGeneralChunk) providedAspects.push('admission_overview', 'procedure', 'admission_pathways');
+
+  // Program Overview / Definition: Guard against administrative signature blocks, thesis guide kaprodi lines, or pure institutional history
+  if (retrievalPlan.intent === 'PROGRAM_OVERVIEW' || retrievalPlan.intent === 'DEFINITION') {
+    const isAdministrativeSignature = /^(?:Ketua Program Studi|Para Ketua Program Studi|Acc Kaprodi|Dosen Pembimbing)\s*[A-Z0-9\-\s\.]*$/i.test(candidate.text.trim()) ||
+      (candidate.text.length < 80 && /Ketua Program Studi/i.test(candidate.text));
+    if (isAdministrativeSignature) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'evidence_is_administrative_signature_not_overview'
+      };
+    }
+    const isInstitutionalHistory = /1\.\s*Sejarah Singkat Institusi/i.test(candidate.text) && !candidate.text.includes('Fokus Pendidikan');
+    if (isInstitutionalHistory) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'evidence_is_institutional_history_not_program_overview'
+      };
+    }
+    const isPureFeeDocument = (candidate.source_file && /rincian biaya/i.test(candidate.source_file)) && !isOverviewChunk;
+    if (isPureFeeDocument) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'evidence_from_fee_doc_lacks_overview'
+      };
+    }
+  }
 
   // Strict aspect matching against retrievalPlan.requiredAspects
   if (Array.isArray(requiredAspects) && requiredAspects.length > 0 && !requiredAspects.includes('general')) {
     const wantsFee = requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)) || retrievalPlan.domain === 'TUITION_FEE';
     const wantsCurriculum = requiredAspects.some(a => ['curriculum', 'courses'].includes(a)) || retrievalPlan.domain === 'ACADEMIC_CURRICULUM';
-    const wantsOverview = requiredAspects.some(a => ['overview', 'definition', 'curriculum_difference', 'career_prospects'].includes(a));
+    const wantsOverview = requiredAspects.some(a => ['overview', 'definition', 'curriculum_difference'].includes(a));
+    const wantsScholarship = requiredAspects.some(a => ['scholarship', 'discount'].includes(a)) || retrievalPlan.domain === 'SCHOLARSHIP';
+    const wantsFacilities = requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES';
+    const wantsOrg = requiredAspects.some(a => ['student_organization', 'ukm'].includes(a)) || retrievalPlan.domain === 'ORGANIZATION_UKM';
+    const wantsPmbGeneral = requiredAspects.some(a => ['admission_overview', 'admission_pathways'].includes(a)) || (retrievalPlan.domain === 'PMB' && retrievalPlan.intent === 'GENERAL_PMB_INQUIRY');
 
     if (wantsFee) {
       if (!isFeeChunk) {
@@ -162,6 +216,38 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan) {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
           reason: 'evidence_does_not_contain_curriculum_aspect'
+        };
+      }
+    } else if (wantsScholarship) {
+      if (!isScholarshipChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_contain_scholarship_aspect'
+        };
+      }
+    } else if (wantsFacilities) {
+      if (!isFacilityChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_contain_facility_aspect'
+        };
+      }
+    } else if (wantsOrg) {
+      if (!isOrganizationChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_contain_organization_aspect'
+        };
+      }
+    } else if (wantsPmbGeneral) {
+      if (!isPmbGeneralChunk && !isFeeChunk && !isScholarshipChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_contain_pmb_general_aspect'
         };
       }
     } else if (wantsOverview) {
@@ -280,6 +366,16 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
       const bHasCore = /\b(Biaya Pendidikan Per Semester|Dana Pendidikan Pokok|\(DPP\))\b/i.test(b.text);
       if (aHasCore && !bHasCore) return -1;
       if (!aHasCore && bHasCore) return 1;
+      return 0;
+    });
+  }
+
+  if (retrievalPlan.intent === 'PROGRAM_OVERVIEW' || retrievalPlan.intent === 'DEFINITION') {
+    accepted.sort((a, b) => {
+      const aIsAuthoritative = /\b(Penjelasan Prodi|Fokus Pendidikan|Yang Dipelajari|Peluang Kerja|Visi)\b/i.test(a.text);
+      const bIsAuthoritative = /\b(Penjelasan Prodi|Fokus Pendidikan|Yang Dipelajari|Peluang Kerja|Visi)\b/i.test(b.text);
+      if (aIsAuthoritative && !bIsAuthoritative) return -1;
+      if (!aIsAuthoritative && bIsAuthoritative) return 1;
       return 0;
     });
   }
