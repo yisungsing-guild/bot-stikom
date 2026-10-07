@@ -60,15 +60,26 @@ function validateProgramFeature(feature) {
 
 // 3. CLARIFICATION OPTIONS (AUTHORITATIVE REGISTRY RETRIEVAL)
 function getAuthoritativeProgramOptions(options = {}) {
-  const { degree = 'S1' } = options;
+  const { scope = 's1', degree } = options;
+  if (scope === 's1' || degree === 'S1') {
+    return CANONICAL_ENTITIES
+      .filter(e => e.family === 'academic_program' && e.degree === 'S1')
+      .map(e => ({ canonical: e.canonical, degree: e.degree, type: e.type, family: e.family }));
+  }
+  if (scope === 'fee') {
+    // Programs with authoritative published fee structures (S1, D3, S2)
+    return CANONICAL_ENTITIES
+      .filter(e => e.family === 'academic_program' && ['S1', 'D3', 'S2'].includes(e.degree))
+      .map(e => ({ canonical: e.canonical, degree: e.degree, type: e.type, family: e.family }));
+  }
+  if (scope === 'all' || scope === 'academic') {
+    return CANONICAL_ENTITIES
+      .filter(e => e.family === 'academic_program')
+      .map(e => ({ canonical: e.canonical, degree: e.degree, type: e.type, family: e.family }));
+  }
   return CANONICAL_ENTITIES
     .filter(e => e.family === 'academic_program' && (!degree || e.degree === degree))
-    .map(e => ({
-      canonical: e.canonical,
-      degree: e.degree,
-      type: e.type,
-      family: e.family
-    }));
+    .map(e => ({ canonical: e.canonical, degree: e.degree, type: e.type, family: e.family }));
 }
 
 // 4. SHADOW MODE CONTRACT (READ-ONLY TELEMETRY)
@@ -116,7 +127,7 @@ function validateClaimProvenance(provenance) {
 }
 
 // 6. EXECUTION PLAN VALIDATION
-// Prohibits unsupported factual claims from entering the plan.
+// Prohibits unsupported factual claims from being injected into the plan.
 const FACTUAL_CLAIM_PATTERNS = [
   /Rp\s*[\d\.]+/i,
   /\b\d+\s*sks\b/i,
@@ -148,10 +159,21 @@ function validateExecutionPlan(plan) {
     if (!Array.isArray(task.targetEntities)) return { valid: false, reason: `task_target_entities_must_be_array_at_index_${idx}` };
     if (!Array.isArray(task.requiredAspects)) return { valid: false, reason: `task_required_aspects_must_be_array_at_index_${idx}` };
 
-    // Strict Invariant: Unsupported factual claims cannot be injected into task query or metadata
+    // Strict Invariant: Validate generated claims if present
+    if (Array.isArray(task.generatedClaims)) {
+      for (const claim of task.generatedClaims) {
+        for (const pattern of FACTUAL_CLAIM_PATTERNS) {
+          if (pattern.test(claim)) {
+            return { valid: false, reason: `unsupported_factual_claim_in_generated_claim: ${claim}` };
+          }
+        }
+      }
+    }
+
+    // Strict Invariant: If task query contains synthetic factual claims NOT present in raw user query, reject injection
     for (const pattern of FACTUAL_CLAIM_PATTERNS) {
-      if (pattern.test(task.query)) {
-        return { valid: false, reason: `unsupported_factual_claim_in_task_query: ${task.query}` };
+      if (pattern.test(task.query) && !pattern.test(plan.rawQuery)) {
+        return { valid: false, reason: `unsupported_factual_claim_injected_into_task_query: ${task.query}` };
       }
     }
   }

@@ -26,14 +26,29 @@ const { arbitrateEvidence } = require('./evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('./answerabilityGate');
 const { synthesizeAnswer } = require('./groundedAnswerGenerator');
 const { verifyFinalAnswer } = require('./finalAnswerVerifier');
-const { sendOutboundMessage } = require('./outboundDispatcher');
+const outboundDispatcher = require('./outboundDispatcher');
 const logger = require('../logger');
+const { isPhase2Enabled, executePhase2Bridge } = require('../reasoning/phase2Bridge');
 
 /**
- * Processes a single turn inquiry through the pure greenfield pipeline.
- * Returns structured result for shadow logging or outbound delivery.
+ * Processes a single turn inquiry through the orchestrator.
+ * If Phase 2 is enabled, executes via Phase 2 Bridge with single fallback to Phase 1.
+ * If Phase 2 is disabled, runs Phase 1 deterministic pipeline directly.
  */
 async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
+  if (isPhase2Enabled()) {
+    return executePhase2Bridge(chatId, rawQuery, { executeDispatch }, (cId, q, opt) => {
+      return runPhase1DeterministicPipeline(cId, q, opt);
+    });
+  }
+  return runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch });
+}
+
+/**
+ * Pure deterministic Phase 1 pipeline execution.
+ * Returns structured result for shadow logging or outbound delivery.
+ */
+async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch = false } = {}) {
   const session = await getSession(chatId);
   const sessionData = session.data || {};
 
@@ -145,7 +160,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
 
   // Dispatch if requested
   if (executeDispatch && chatId) {
-    await sendOutboundMessage(chatId, finalAnswer);
+    await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
   }
 
   return {
@@ -196,5 +211,6 @@ async function handleInboundMessage(body = {}, { executeDispatch = true } = {}) 
 
 module.exports = {
   processTurn,
-  handleInboundMessage
+  handleInboundMessage,
+  runPhase1DeterministicPipeline
 };

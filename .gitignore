@@ -129,6 +129,8 @@ tests/*
 !tests/ragKnowledgeBaseAudit.test.js
 !tests/greenfieldCore.test.js
 !tests/semanticCorrectnessRegression.test.js
+!tests/phase2Planner.contract.test.js
+!tests/phase2OrchestratorBridge.test.js
 tools/
 quarantined_backups/
 

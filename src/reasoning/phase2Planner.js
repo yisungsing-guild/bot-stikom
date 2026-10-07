@@ -89,7 +89,14 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
       // NO ACTIVE CONTEXT: Query is ambiguous. Request clarification with authoritative options.
       planType = PLAN_TYPE.AMBIGUOUS_CLARIFICATION;
       isAmbiguous = true;
-      clarificationOptions = getAuthoritativeProgramOptions({ degree: 'S1' });
+      // Scope clarification options according to domain/intent (Constraint 8)
+      if (semanticFrame.domain === 'TUITION_FEE') {
+        clarificationOptions = getAuthoritativeProgramOptions({ scope: 'fee' });
+      } else if (semanticFrame.domain === 'ACADEMIC_CURRICULUM' || semanticFrame.domain === 'ACADEMIC_PROGRAM') {
+        clarificationOptions = getAuthoritativeProgramOptions({ scope: 'all' });
+      } else {
+        clarificationOptions = getAuthoritativeProgramOptions({ scope: 's1' });
+      }
     }
   }
 
