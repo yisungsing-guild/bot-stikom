@@ -86,7 +86,7 @@ function isCandidateMatchingTargetEntity(candidateText, targetEntityStr) {
 
   // 3. Generic distinctive token matching for target entity (proximity required for multi-token entities)
   const genericStopwords = new Set(['program', 'studi', 'degree', 'double', 'dual', 'jenjang', 'sarjana', 'diploma', 's1', 's2', 'd3', 'd4']);
-  const targetTokens = targetNorm.split(/\s+/).filter(t => t.length >= 3 && !genericStopwords.has(t));
+  const targetTokens = normalizePunctuation(targetEntityStr).split(/\s+/).filter(t => t.length >= 3 && !genericStopwords.has(t));
   if (targetTokens.length === 1) {
     if (cleanText.includes(targetTokens[0])) return true;
   } else if (targetTokens.length > 1) {
