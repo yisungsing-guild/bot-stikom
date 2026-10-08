@@ -44,7 +44,8 @@ function isPhase2Enabled() {
  */
 async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1PipelineFn) {
   const startTime = Date.now();
-  const shouldDispatch = Boolean(options && options.executeDispatch);
+  const isShadowMode = Boolean(options && options.executionMode === 'SHADOW');
+  const shouldDispatch = Boolean(options && options.executeDispatch) && !isShadowMode;
   const internalOptions = { ...options, executeDispatch: false };
   let timedOut = false;
 
@@ -59,7 +60,9 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
 
   const executionPromise = (async () => {
     // 1. Read-only session snapshot
-    const session = await getSession(chatId);
+    const session = (options && options.sessionSnapshot)
+      ? JSON.parse(JSON.stringify(options.sessionSnapshot))
+      : await getSession(chatId);
     const sessionData = session ? (session.data || {}) : {};
 
     // 2. Build execution plan via Phase 2 planner
@@ -84,13 +87,15 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         throw new Error(`clarification_verifier_failure: ${verification.reason}`);
       }
 
-      // Safe session state update (only after verification passed)
-      await updateSession(chatId, {
-        dataPatch: {
-          lastQuery: rawQuery,
-          lastAnswer: clarificationAnswer
-        }
-      });
+      // Safe session state update (only after verification passed and not in shadow mode)
+      if (!isShadowMode && chatId) {
+        await updateSession(chatId, {
+          dataPatch: {
+            lastQuery: rawQuery,
+            lastAnswer: clarificationAnswer
+          }
+        });
+      }
 
       // Single Outbound Dispatch if requested
       if (shouldDispatch && chatId) {
@@ -274,7 +279,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
           finalGraphAnswer = factsText || 'Informasi berhasil diproses.';
 
           // Atomic session persistence (Step 4 & Step 5) for non-comparative graph tasks
-          if (chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
+          if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
             const deltaState = plan.contextDelta.resolvedState;
             await updateSession(chatId, {
               dataPatch: {
@@ -375,7 +380,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     }
 
     // Atomically commit context delta to session only after verified completion (Step 4)
-    if (chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
+    if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
       const deltaState = plan.contextDelta.resolvedState;
       await updateSession(chatId, {
         dataPatch: {

@@ -29,15 +29,18 @@ const { verifyFinalAnswer } = require('./finalAnswerVerifier');
 const outboundDispatcher = require('./outboundDispatcher');
 const logger = require('../logger');
 const { isPhase2Enabled, executePhase2Bridge } = require('../reasoning/phase2Bridge');
+const { isPhase2ShadowModeEnabled, runShadowEvaluationSafely } = require('../reasoning/shadowEvaluator');
 
 /**
  * Processes a single turn inquiry through the orchestrator.
  * If Phase 2 is enabled, executes via Phase 2 Bridge with single fallback to Phase 1.
  * If Phase 2 is disabled, runs Phase 1 deterministic pipeline directly.
+ * If Phase 2 is disabled and Phase 2 Shadow Mode is enabled, fires shadow evaluation asynchronously.
  */
-async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
+async function processTurn(chatId, rawQuery, { executeDispatch = false, executionMode } = {}) {
+  const isShadowMode = executionMode === 'SHADOW';
   if (isPhase2Enabled()) {
-    const bridgeResult = await executePhase2Bridge(chatId, rawQuery, { executeDispatch }, (cId, q, opt) => {
+    const bridgeResult = await executePhase2Bridge(chatId, rawQuery, { executeDispatch, executionMode }, (cId, q, opt) => {
       return runPhase1DeterministicPipeline(cId, q, opt);
     });
 
@@ -74,7 +77,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
       }
 
       // Atomic session persistence (Step 4 & Step 7 context commit)
-      if (chatId) {
+      if (!isShadowMode && chatId) {
         await updateSession(chatId, {
           dataPatch: {
             activeDomain: 'academic_recommendation',
@@ -86,7 +89,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
         });
       }
 
-      if (executeDispatch && chatId && finalAnswer) {
+      if (!isShadowMode && executeDispatch && chatId && finalAnswer) {
         await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
       }
 
@@ -116,7 +119,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
       bridgeResult.finalAnswer = finalAnswer;
 
       // Atomic session persistence
-      if (chatId && bridgeResult.plan && bridgeResult.plan.contextDelta && bridgeResult.plan.contextDelta.resolvedState) {
+      if (!isShadowMode && chatId && bridgeResult.plan && bridgeResult.plan.contextDelta && bridgeResult.plan.contextDelta.resolvedState) {
         const deltaState = bridgeResult.plan.contextDelta.resolvedState;
         await updateSession(chatId, {
           dataPatch: {
@@ -130,7 +133,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
         });
       }
 
-      if (executeDispatch && chatId && finalAnswer) {
+      if (!isShadowMode && executeDispatch && chatId && finalAnswer) {
         await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
       }
 
@@ -139,16 +142,40 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
 
     return bridgeResult;
   }
-  return runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch });
+
+  // Phase 2 is disabled. Check if Shadow Mode is enabled.
+  if (isPhase2ShadowModeEnabled() && !isShadowMode) {
+    const p1StartTime = Date.now();
+    const p1Result = await runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch, executionMode });
+    const p1LatencyMs = Date.now() - p1StartTime;
+
+    // Fire asynchronously - never awaited by Phase 1 critical path
+    setImmediate(() => {
+      runShadowEvaluationSafely({
+        chatId,
+        rawQuery,
+        p1Result,
+        p1LatencyMs,
+        phase1PipelineFn: runPhase1DeterministicPipeline
+      }).catch(() => {});
+    });
+
+    return p1Result;
+  }
+
+  return runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch, executionMode });
 }
 
 /**
  * Pure deterministic Phase 1 pipeline execution.
  * Returns structured result for shadow logging or outbound delivery.
  */
-async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch = false } = {}) {
-  const session = await getSession(chatId);
-  const sessionData = session.data || {};
+async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch = false, executionMode, sessionSnapshot } = {}) {
+  const isShadowMode = executionMode === 'SHADOW';
+  const session = sessionSnapshot
+    ? JSON.parse(JSON.stringify(sessionSnapshot))
+    : await getSession(chatId);
+  const sessionData = session ? (session.data || {}) : {};
 
   // 1. Decompose Query into SemanticFrames
   const subFrames = decomposeQuery(rawQuery, sessionData);
@@ -243,7 +270,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatc
   const finalAnswer = subQueryResults.map(r => r.answer).filter(Boolean).join('\n\n');
 
   // Update session state with authoritative current turn domain & entity
-  if (subFrames.length > 0) {
+  if (!isShadowMode && chatId && subFrames.length > 0) {
     const primaryFrame = subFrames[0];
     await updateSession(chatId, {
       dataPatch: {
@@ -258,7 +285,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatc
   }
 
   // Dispatch if requested
-  if (executeDispatch && chatId) {
+  if (!isShadowMode && executeDispatch && chatId) {
     await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
   }
 

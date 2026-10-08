@@ -135,6 +135,7 @@ tests/*
 !tests/phase2TaskGraph.test.js
 !tests/phase2ComparativeSynthesis.test.js
 !tests/phase2RecommendationEngine.test.js
+!tests/phase2ShadowEvaluation.test.js
 tools/
 quarantined_backups/
 
