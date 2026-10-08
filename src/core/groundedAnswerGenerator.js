@@ -948,7 +948,95 @@ Pendaftaran mahasiswa baru dapat dilakukan secara online melalui https://pmb.sti
   return null;
 }
 
-async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null) {
+/**
+ * Natural Language Answer Renderer for Academic Program Recommendation
+ * Part of established orchestration/rendering lifecycle.
+ * Formats directly to WhatsApp Markdown fixed-point format (*bold*, single \n) ensuring sanitizer idempotency.
+ *
+ * @param {object} structuredResult
+ * @returns {string} rendered WhatsApp Markdown string
+ */
+function renderRecommendationAnswer(structuredResult) {
+  if (!structuredResult || typeof structuredResult !== 'object') {
+    return 'Maaf, rekomendasi program studi belum dapat diproses.';
+  }
+
+  const { isBroadGuidance, scoredCandidates, presentationType } = structuredResult;
+
+  const DISCLAIMER_TEXT = 'Catatan: Rekomendasi ini disusun secara objektif berdasarkan keselarasan minat dan kurikulum resmi ITB STIKOM Bali, bukan keputusan mutlak. Untuk konsultasi lebih lanjut mengenai kurikulum dan pendaftaran, silakan menghubungi bagian admisi PMB.';
+
+  // 1. Broad Guidance
+  if (isBroadGuidance || presentationType === 'BROAD_GUIDANCE' || !Array.isArray(scoredCandidates) || scoredCandidates.length === 0) {
+    const lines = [
+      'Latar belakang sekolah Kakak bisa masuk ke beberapa program studi di ITB STIKOM Bali. Agar pilihannya paling pas, berikut gambaran perbedaan fokus tiap prodi yang relevan:',
+      '1. *Teknologi Informasi (TI) — S1*: Pemrograman (coding), pengembangan software/aplikasi, cloud computing, jaringan, dan keamanan siber.',
+      '2. *Sistem Informasi (SI) — S1*: Menghubungkan teknologi dengan proses bisnis, analisis sistem perusahaan, basis data (database), dan dashboard.',
+      '3. *Sistem Komputer (SK) — S1*: Perangkat keras (hardware), arsitektur komputer, embedded system, IoT, mikrokontroler, dan robotika.',
+      '4. *Bisnis Digital (BD) — S1*: Pengembangan bisnis teknologi, digital marketing, e-commerce, dan strategi produk digital.',
+      '5. *Manajemen Informatika (MI) — D3*: Jalur vokasi praktis 3 tahun untuk aplikasi terapan, pengolahan data, dan dukungan operasional IT.',
+      'Supaya rekomendasi lebih spesifik, bidang apa yang paling Kakak minati antara coding/aplikasi, analisis data & bisnis, atau hardware & IoT?',
+      DISCLAIMER_TEXT
+    ];
+    return lines.join('\n');
+  }
+
+  const cand1 = scoredCandidates[0];
+  const cand2 = scoredCandidates[1] || null;
+
+  // 2. Dominant Single
+  if (presentationType === 'DOMINANT_SINGLE') {
+    const lines = [
+      `Berdasarkan minat yang Kakak sampaikan, program studi yang paling selaras adalah *${cand1.canonicalName}*.`,
+      `*Fokus & Alasan Keselarasan:*`,
+      `- ${cand1.reasons[0] || cand1.strengths.join(', ')}.`,
+      `- Dasar resmi: ${cand1.grounding}.`
+    ];
+
+    if (cand2) {
+      lines.push(`*Pilihan Alternatif Terdekat:*`);
+      lines.push(`- *${cand2.canonicalName}*: ${cand2.reasons[0] || cand2.strengths.join(', ')} (Dasar resmi: ${cand2.grounding}).`);
+    }
+
+    lines.push(DISCLAIMER_TEXT);
+    return lines.join('\n');
+  }
+
+  // 3. Balanced Dual
+  if (presentationType === 'BALANCED_DUAL' && cand2) {
+    const lines = [
+      `Minat yang Kakak sampaikan memiliki irisan kuat pada dua program studi, yaitu *${cand1.canonicalName}* dan *${cand2.canonicalName}*. Keduanya memiliki keterkaitan yang berimbang dengan perbedaan fokus utama berikut:`,
+      `1. *${cand1.canonicalName}*`,
+      `- Fokus kajian: ${cand1.strengths.slice(0, 4).join(', ')}.`,
+      `- Keselarasan: ${cand1.reasons[0]}.`,
+      `- Dasar data: ${cand1.grounding}.`,
+      `2. *${cand2.canonicalName}*`,
+      `- Fokus kajian: ${cand2.strengths.slice(0, 4).join(', ')}.`,
+      `- Keselarasan: ${cand2.reasons[0]}.`,
+      `- Dasar data: ${cand2.grounding}.`,
+      DISCLAIMER_TEXT
+    ];
+    return lines.join('\n');
+  }
+
+  // Fallback single list
+  const lines = [
+    `Rekomendasi program studi yang relevan dengan minat Kakak:`,
+    `1. *${cand1.canonicalName}* (${cand1.reasons[0]})`,
+    DISCLAIMER_TEXT
+  ];
+  return lines.join('\n');
+}
+
+async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
+  if (recommendationResult && (recommendationResult.mode === 'RECOMMENDATION' || recommendationResult.provenance?.version === 'phase2-step7')) {
+    const rendered = renderRecommendationAnswer(recommendationResult);
+    return {
+      success: true,
+      answer: rendered,
+      source: 'recommendation_deterministic_synthesis'
+    };
+  }
+
   if (comparisonEnvelope && comparisonEnvelope.mode === 'COMPARATIVE') {
     const { renderTextFromPlan, validateComparisonEnvelope } = require('../reasoning/comparativeSynthesis');
     const validation = validateComparisonEnvelope(comparisonEnvelope);
@@ -1040,5 +1128,6 @@ module.exports = {
   buildSynthesisPrompt,
   cleanDocumentArtifacts,
   buildGroundedDeterministicSummary,
-  synthesizeAnswer
+  synthesizeAnswer,
+  renderRecommendationAnswer
 };

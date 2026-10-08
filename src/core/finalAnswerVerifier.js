@@ -29,7 +29,26 @@ const RAW_DOCUMENT_LEAK_PATTERNS = [
   /Ketua Program Studi S1-/i
 ];
 
-function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null) {
+function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
+  if (recommendationResult && (recommendationResult.mode === 'RECOMMENDATION' || recommendationResult.provenance?.version === 'phase2-step7')) {
+    const text = String(candidateAnswer || '').trim();
+    if (!text) {
+      return { pass: false, reason: 'empty_answer' };
+    }
+    if (/\bpasti\s+cocok\b/i.test(text) || /\bpasti\s+pilih\b/i.test(text)) {
+      return { pass: false, reason: 'recommendation_absolute_claim_forbidden' };
+    }
+    const { sanitizeWhatsAppMarkdown } = require('./outboundRenderer');
+    const sanitized = sanitizeWhatsAppMarkdown(candidateAnswer);
+    if (sanitized !== candidateAnswer) {
+      return { pass: false, reason: 'outbound_sanitizer_non_idempotent' };
+    }
+    if (!/admisi\s+PMB|ketentuan\s+resmi/i.test(text)) {
+      return { pass: false, reason: 'recommendation_lacks_pmb_advisory' };
+    }
+    return { pass: true, reason: 'verified_recommendation' };
+  }
+
   if (comparisonEnvelope && comparisonEnvelope.mode === 'COMPARATIVE') {
     const { renderTextFromPlan, validateComparisonEnvelope } = require('../reasoning/comparativeSynthesis');
     const { sanitizeWhatsAppMarkdown } = require('./outboundRenderer');

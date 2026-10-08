@@ -41,6 +41,58 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false } = {}) {
       return runPhase1DeterministicPipeline(cId, q, opt);
     });
 
+    if (bridgeResult && bridgeResult.structuredRecommendation) {
+      // Orchestrator owns synthesis, verification, fallback, context commit, and outbound dispatch for recommendations
+      const recResult = bridgeResult.structuredRecommendation;
+      const topEntity = recResult.scoredCandidates[0]?.canonicalName || null;
+      const frame = {
+        domain: 'ACADEMIC_RECOMMENDATION',
+        intent: 'PROGRAM_RECOMMENDATION',
+        rawQuery,
+        entities: topEntity ? [{ canonical: topEntity }] : []
+      };
+
+      let finalAnswer = null;
+      const synthRes = await synthesizeAnswer(frame, {}, null, recResult);
+
+      if (synthRes && synthRes.success && synthRes.answer) {
+        const verifRes = verifyFinalAnswer(synthRes.answer, frame, {}, null, recResult);
+        if (verifRes && verifRes.pass) {
+          finalAnswer = synthRes.answer;
+        } else {
+          logger.warn({ reason: verifRes ? verifRes.reason : 'unknown' }, '[Orchestrator] Recommendation answer blocked by verifier');
+          finalAnswer = 'Mohon maaf, rekomendasi program studi belum dapat dipastikan secara lengkap saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali.';
+        }
+      } else {
+        finalAnswer = 'Mohon maaf, rekomendasi program studi belum dapat diproses.';
+      }
+
+      bridgeResult.finalAnswer = finalAnswer;
+      if (bridgeResult.subQueryResults && bridgeResult.subQueryResults[0]) {
+        bridgeResult.subQueryResults[0].answer = finalAnswer;
+        bridgeResult.subQueryResults[0].verification = { pass: finalAnswer === synthRes?.answer };
+      }
+
+      // Atomic session persistence (Step 4 & Step 7 context commit)
+      if (chatId) {
+        await updateSession(chatId, {
+          dataPatch: {
+            activeDomain: 'academic_recommendation',
+            activeEntity: topEntity,
+            recommendationRelations: recResult.contextRelations,
+            lastQuery: rawQuery,
+            lastAnswer: finalAnswer
+          }
+        });
+      }
+
+      if (executeDispatch && chatId && finalAnswer) {
+        await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
+      }
+
+      return bridgeResult;
+    }
+
     if (bridgeResult && bridgeResult.comparisonEnvelope) {
       // Orchestrator owns synthesis, verification, fallback, and outbound dispatch for comparative evaluations
       const targetEntities = bridgeResult.targetEntities || [];

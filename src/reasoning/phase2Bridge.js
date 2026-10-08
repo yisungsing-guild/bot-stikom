@@ -127,6 +127,44 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       };
     }
 
+    // 3.5 Step 7: Deterministic Recommendation Engine Handling
+    // phase2Bridge owns task execution, recommendation result packaging, and context delta preparation only.
+    // Natural language rendering, verification, fallback, context commit, and outbound dispatch are owned by orchestrator.
+    if (plan.planType === PLAN_TYPE.RECOMMENDATION) {
+      const { evaluateRecommendation } = require('./recommendationEngine');
+      const recResult = evaluateRecommendation(rawQuery, options);
+
+      const topEntity = recResult.scoredCandidates[0]?.canonicalName || null;
+      const subQueryResult = {
+        frame: { domain: 'ACADEMIC_RECOMMENDATION', intent: 'PROGRAM_RECOMMENDATION', entities: topEntity ? [{ canonical: topEntity }] : [] },
+        plan,
+        candidatesCount: recResult.scoredCandidates.length,
+        acceptedCount: recResult.detectedSignals.length,
+        rejectedCount: 0,
+        answerability: ANSWERABILITY_STATUS.ANSWERABLE
+      };
+
+      return {
+        chatId,
+        rawQuery,
+        subQueryResults: [subQueryResult],
+        structuredRecommendation: recResult,
+        plan,
+        phase2Meta: {
+          handledBy: 'phase2_recommendation_engine',
+          planType: plan.planType,
+          presentationType: recResult.presentationType,
+          replan: {
+            replanExecuted: false,
+            replanDecision: boundedReflection.REPLAN_DECISION.NO_REPLAN_SUFFICIENT,
+            replanAttempts: 0
+          },
+          latencyMs: Date.now() - startTime,
+          fallbackTriggered: false
+        }
+      };
+    }
+
     // 4. Step 5: Multi-Step Task Graph Execution
     if (plan.taskGraph) {
       const graphResult = await executeTaskGraph(plan.taskGraph, {

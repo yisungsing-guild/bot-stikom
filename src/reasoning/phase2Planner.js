@@ -24,6 +24,9 @@ const {
 const { resolveSemanticFrame } = require('../core/semanticFrameResolver');
 const { CANONICAL_ENTITIES, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
 const { computeContextDelta } = require('./contextRepair');
+const { buildCanonicalQueryUnderstanding } = require('../engine/queryUnderstanding');
+const { detectProgramFitSignals, isBroadSchoolBackgroundWithoutSpecificPreference } = require('../engine/programFitReasoning');
+const { normalizeQueryForSignals } = require('./recommendationEngine');
 
 // Queries that require a specific program entity to give an accurate answer
 const AMBIGUITY_INDUCING_INTENTS = new Set([
@@ -103,7 +106,27 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     }
   }
 
-  // 4. Build task graph
+  // 4. Recommendation vs Direct vs Ambiguity
+  const canonicalUnderstanding = (typeof buildCanonicalQueryUnderstanding === 'function')
+    ? buildCanonicalQueryUnderstanding(query)
+    : null;
+
+  const isRecommendationIntent = !isAmbiguous && Boolean(
+    (canonicalUnderstanding && canonicalUnderstanding.intent &&
+      (canonicalUnderstanding.intent.primary === 'ask_program_recommendation' ||
+       canonicalUnderstanding.intent.primary === 'ask_program_fit_reasoning')) ||
+    (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION') ||
+    isBroadSchoolBackgroundWithoutSpecificPreference(query) ||
+    (detectProgramFitSignals(normalizeQueryForSignals(query)).length > 0 &&
+     !semanticFrame.domain?.includes('FEE') &&
+     entities.length <= 1)
+  );
+
+  if (planType !== PLAN_TYPE.AMBIGUOUS_CLARIFICATION && isRecommendationIntent && !options.taskGraph) {
+    planType = PLAN_TYPE.RECOMMENDATION;
+  }
+
+  // 5. Build task graph
   const tasks = [];
   if (planType === PLAN_TYPE.AMBIGUOUS_CLARIFICATION) {
     tasks.push({
@@ -116,6 +139,20 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
       dependsOn: [],
       verifiedInputs: {
         inheritedEntity: null,
+        sessionActiveDomain: sessionData.activeDomain || null
+      }
+    });
+  } else if (planType === PLAN_TYPE.RECOMMENDATION) {
+    tasks.push({
+      id: 'task_rec_0',
+      stepIndex: 0,
+      type: 'RECOMMENDATION_TASK',
+      query: query,
+      targetEntities: targetEntities,
+      requiredAspects: ['program_recommendation', 'curriculum_fit'],
+      dependsOn: [],
+      verifiedInputs: {
+        inheritedEntity: contextActiveEntity,
         sessionActiveDomain: sessionData.activeDomain || null
       }
     });
