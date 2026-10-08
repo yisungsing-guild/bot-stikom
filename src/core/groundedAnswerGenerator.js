@@ -1065,11 +1065,12 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     };
   }
 
-  // In test environment or when OpenAI key is absent/circuit open, use structured deterministic summary immediately
+  // In test environment, when OpenAI key is absent/circuit open, or fast fallback requested, use structured deterministic summary immediately
   const isTestOrNoKey = process.env.NODE_ENV === 'test' || 
     !process.env.OPENAI_API_KEY || 
     process.env.OPENAI_API_KEY.startsWith('mock') || 
-    openaiCircuitOpen;
+    openaiCircuitOpen ||
+    Boolean(arbitratedEvidence && (arbitratedEvidence.fastFallback || arbitratedEvidence.deterministicOnly));
 
   if (isTestOrNoKey) {
     const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, accepted, arbitratedEvidence);
@@ -1093,6 +1094,11 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       };
     }
 
+    const requestOptions = { timeout: 2000 };
+    if (arbitratedEvidence && arbitratedEvidence.signal) {
+      requestOptions.signal = arbitratedEvidence.signal;
+    }
+
     const completion = await engine.client.chat.completions.create({
       model: engine.model,
       messages: [
@@ -1101,7 +1107,7 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       ],
       max_completion_tokens: 600,
       temperature: 0.1
-    });
+    }, requestOptions);
 
     const reply = completion.choices?.[0]?.message?.content || '';
     return {
@@ -1110,7 +1116,7 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       source: 'llm_grounded_synthesis'
     };
   } catch (err) {
-    if (err.status === 429 || /credits|quota|rate limit/i.test(err.message)) {
+    if (err.status === 429 || /credits|quota|rate limit/i.test(err.message) || err.name === 'AbortError' || /timeout|aborted/i.test(err.message)) {
       openaiCircuitOpen = true;
     }
     logger.warn({ err: err.message }, '[GroundedAnswerGenerator] LLM synthesis fallback to grounded summary');

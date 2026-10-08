@@ -14,7 +14,14 @@
  * 6. Provenance Continuity: Factual claims must be backed by accepted evidence.
  */
 
-const { TOTAL_TURN_BUDGET_MS, PLAN_TYPE, GRAPH_COMPLETION_STATE } = require('./contracts');
+const {
+  TOTAL_TURN_BUDGET_MS,
+  REPLAN_START_DEADLINE_MS,
+  GRAPH_EXECUTION_DEADLINE_MS,
+  GRAPH_RESERVED_FINALIZATION_MS,
+  PLAN_TYPE,
+  GRAPH_COMPLETION_STATE
+} = require('./contracts');
 const { executeTaskGraph } = require('./taskGraphExecutor');
 const plannerModule = require('./phase2Planner');
 const { getSession, updateSession } = require('../core/conversationState');
@@ -23,6 +30,7 @@ const { verifyFinalAnswer } = require('../core/finalAnswerVerifier');
 const { synthesizeAnswer } = require('../core/groundedAnswerGenerator');
 const { ANSWERABILITY_STATUS } = require('../core/answerabilityGate');
 const boundedReflection = require('./boundedReflection');
+const { createTurnController } = require('./turnController');
 const logger = require('../logger');
 
 /**
@@ -46,16 +54,20 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
   const startTime = Date.now();
   const isShadowMode = Boolean(options && options.executionMode === 'SHADOW');
   const shouldDispatch = Boolean(options && options.executeDispatch) && !isShadowMode;
-  const internalOptions = { ...options, executeDispatch: false };
+  const turnControl = options.turnControl || createTurnController({ timeoutMs: TOTAL_TURN_BUDGET_MS });
+  const internalOptions = { ...options, executeDispatch: false, turnControl, signal: turnControl.signal };
   let timedOut = false;
 
-  // Global turn timeout Promise race against TOTAL_TURN_BUDGET_MS (2500ms)
+  // Execution cutoff uses existing frozen REPLAN_START_DEADLINE_MS (1500ms) authority,
+  // leaving adequate finalization/fallback budget (1000ms) to ensure processTurn completes <= TOTAL_TURN_BUDGET_MS (2500ms)
+  const bridgeTimeoutMs = options.timeoutMs || REPLAN_START_DEADLINE_MS;
   let timeoutHandle = null;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutHandle = setTimeout(() => {
       timedOut = true;
-      reject(new Error(`phase2_timeout_budget_exceeded_${TOTAL_TURN_BUDGET_MS}ms`));
-    }, TOTAL_TURN_BUDGET_MS);
+      turnControl.tryAcceptFallback(`phase2_timeout_budget_exceeded_${bridgeTimeoutMs}ms`);
+      reject(new Error(`phase2_timeout_budget_exceeded_${bridgeTimeoutMs}ms`));
+    }, bridgeTimeoutMs);
   });
 
   const executionPromise = (async () => {
@@ -87,8 +99,14 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         throw new Error(`clarification_verifier_failure: ${verification.reason}`);
       }
 
+      // Atomically claim terminal Phase 2 acceptance before committing or dispatching
+      const won = turnControl.tryAcceptPhase2();
+      if (!won) {
+        return null;
+      }
+
       // Safe session state update (only after verification passed and not in shadow mode)
-      if (!isShadowMode && chatId) {
+      if (!isShadowMode && chatId && turnControl.canCommitSession('phase2')) {
         await updateSession(chatId, {
           dataPatch: {
             lastQuery: rawQuery,
@@ -98,7 +116,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       }
 
       // Single Outbound Dispatch if requested
-      if (shouldDispatch && chatId) {
+      if (shouldDispatch && chatId && turnControl.canDispatch('phase2')) {
         await outboundDispatcher.sendOutboundMessage(chatId, clarificationAnswer);
       }
 
@@ -118,6 +136,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         rawQuery,
         subQueryResults: [subQueryResult],
         finalAnswer: clarificationAnswer,
+        turnControl,
         phase2Meta: {
           handledBy: 'phase2_bridge',
           planType: plan.planType,
@@ -149,12 +168,18 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         answerability: ANSWERABILITY_STATUS.ANSWERABLE
       };
 
+      const won = turnControl.tryAcceptPhase2();
+      if (!won) {
+        return null;
+      }
+
       return {
         chatId,
         rawQuery,
         subQueryResults: [subQueryResult],
         structuredRecommendation: recResult,
         plan,
+        turnControl,
         phase2Meta: {
           handledBy: 'phase2_recommendation_engine',
           planType: plan.planType,
@@ -277,28 +302,35 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         } else {
           const factsText = Object.values(graphResult.consolidatedFacts || {}).map(f => `${f.aspect}: ${JSON.stringify(f.value)}`).join(', ');
           finalGraphAnswer = factsText || 'Informasi berhasil diproses.';
-
-          // Atomic session persistence (Step 4 & Step 5) for non-comparative graph tasks
-          if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
-            const deltaState = plan.contextDelta.resolvedState;
-            await updateSession(chatId, {
-              dataPatch: {
-                activeDomain: deltaState.activeDomain,
-                activeEntity: deltaState.activeEntity,
-                preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
-                entityProvenance: deltaState.entityProvenance,
-                lastQuery: rawQuery,
-                lastAnswer: finalGraphAnswer
-              }
-            });
-          }
         }
       } else {
         // Graph did not succeed -> zero session mutation
         finalGraphAnswer = 'Maaf, informasi yang diminta belum dapat dipenuhi secara lengkap.';
       }
 
-      if (!isComparative && shouldDispatch && chatId && finalGraphAnswer) {
+      const won = turnControl.tryAcceptPhase2();
+      if (!won) {
+        return null;
+      }
+
+      if (isSuccessfulGraph && !isComparative) {
+        // Atomic session persistence (Step 4 & Step 5) for non-comparative graph tasks
+        if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState && turnControl.canCommitSession('phase2')) {
+          const deltaState = plan.contextDelta.resolvedState;
+          await updateSession(chatId, {
+            dataPatch: {
+              activeDomain: deltaState.activeDomain,
+              activeEntity: deltaState.activeEntity,
+              preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
+              entityProvenance: deltaState.entityProvenance,
+              lastQuery: rawQuery,
+              lastAnswer: finalGraphAnswer
+            }
+          });
+        }
+      }
+
+      if (!isComparative && shouldDispatch && chatId && finalGraphAnswer && turnControl.canDispatch('phase2')) {
         await outboundDispatcher.sendOutboundMessage(chatId, finalGraphAnswer);
       }
 
@@ -309,6 +341,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         comparisonEnvelope,
         targetEntities,
         plan,
+        turnControl,
         finalAnswer: finalGraphAnswer,
         phase2Meta: {
           handledBy: 'phase2_task_graph',
@@ -379,8 +412,13 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       phase1Result.finalAnswer = phase1Result.subQueryResults.map(r => r.answer).filter(Boolean).join('\n\n');
     }
 
+    const won = turnControl.tryAcceptPhase2();
+    if (!won) {
+      return null;
+    }
+
     // Atomically commit context delta to session only after verified completion (Step 4)
-    if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState) {
+    if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState && turnControl.canCommitSession('phase2')) {
       const deltaState = plan.contextDelta.resolvedState;
       await updateSession(chatId, {
         dataPatch: {
@@ -395,11 +433,12 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     }
 
     // Single Outbound Dispatch if requested
-    if (shouldDispatch && chatId && phase1Result.finalAnswer) {
+    if (shouldDispatch && chatId && phase1Result.finalAnswer && turnControl.canDispatch('phase2')) {
       await outboundDispatcher.sendOutboundMessage(chatId, phase1Result.finalAnswer);
     }
 
     // Attach backward-compatible Phase 2 metadata
+    phase1Result.turnControl = turnControl;
     phase1Result.phase2Meta = {
       handledBy: 'phase2_bridge',
       planType: plan.planType,
@@ -414,18 +453,31 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
   try {
     const result = await Promise.race([executionPromise, timeoutPromise]);
     if (timeoutHandle) clearTimeout(timeoutHandle);
+    if (!result) {
+      throw new Error(turnControl.fallbackReason || 'phase2_superseded_by_fallback');
+    }
+    result.turnControl = turnControl;
     return result;
   } catch (err) {
     if (timeoutHandle) clearTimeout(timeoutHandle);
+    turnControl.tryAcceptFallback(err.message);
+
     logger.warn({
       chatId,
       error: err.message,
-      timedOut,
+      timedOut: timedOut || Boolean(err.message && err.message.includes('timeout')),
       elapsedMs: Date.now() - startTime
     }, '[Phase2Bridge] Phase 2 failed or timed out; executing single fallback to Phase 1');
 
     // Single Fallback to Phase 1 Core (Zero double dispatch)
-    const fallbackResult = await phase1PipelineFn(chatId, rawQuery, { ...options, executeDispatch: shouldDispatch });
+    const fallbackOptions = {
+      ...options,
+      executeDispatch: shouldDispatch,
+      turnControl,
+      fastFallback: true
+    };
+    const fallbackResult = await phase1PipelineFn(chatId, rawQuery, fallbackOptions);
+    fallbackResult.turnControl = turnControl;
     fallbackResult.phase2Meta = {
       handledBy: 'phase1_fallback',
       reason: err.message,

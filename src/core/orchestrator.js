@@ -77,7 +77,11 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
       }
 
       // Atomic session persistence (Step 4 & Step 7 context commit)
-      if (!isShadowMode && chatId) {
+      const turnControl = bridgeResult.turnControl;
+      const canCommit = turnControl ? turnControl.canCommitSession('phase2') : true;
+      const canSend = turnControl ? turnControl.canDispatch('phase2') : true;
+
+      if (!isShadowMode && chatId && canCommit) {
         await updateSession(chatId, {
           dataPatch: {
             activeDomain: 'academic_recommendation',
@@ -89,7 +93,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
         });
       }
 
-      if (!isShadowMode && executeDispatch && chatId && finalAnswer) {
+      if (!isShadowMode && executeDispatch && chatId && finalAnswer && canSend) {
         await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
       }
 
@@ -119,7 +123,11 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
       bridgeResult.finalAnswer = finalAnswer;
 
       // Atomic session persistence
-      if (!isShadowMode && chatId && bridgeResult.plan && bridgeResult.plan.contextDelta && bridgeResult.plan.contextDelta.resolvedState) {
+      const turnControl = bridgeResult.turnControl;
+      const canCommit = turnControl ? turnControl.canCommitSession('phase2') : true;
+      const canSend = turnControl ? turnControl.canDispatch('phase2') : true;
+
+      if (!isShadowMode && chatId && bridgeResult.plan && bridgeResult.plan.contextDelta && bridgeResult.plan.contextDelta.resolvedState && canCommit) {
         const deltaState = bridgeResult.plan.contextDelta.resolvedState;
         await updateSession(chatId, {
           dataPatch: {
@@ -133,7 +141,7 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
         });
       }
 
-      if (!isShadowMode && executeDispatch && chatId && finalAnswer) {
+      if (!isShadowMode && executeDispatch && chatId && finalAnswer && canSend) {
         await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
       }
 
@@ -170,7 +178,8 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
  * Pure deterministic Phase 1 pipeline execution.
  * Returns structured result for shadow logging or outbound delivery.
  */
-async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatch = false, executionMode, sessionSnapshot } = {}) {
+async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
+  const { executeDispatch = false, executionMode, sessionSnapshot, turnControl, fastFallback, signal } = options;
   const isShadowMode = executionMode === 'SHADOW';
   const session = sessionSnapshot
     ? JSON.parse(JSON.stringify(sessionSnapshot))
@@ -234,7 +243,10 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatc
 
     if (answerability.status === ANSWERABILITY_STATUS.ANSWERABLE || answerability.status === ANSWERABILITY_STATUS.PARTIAL) {
       // 6. Grounded LLM Synthesis
-      const synthesis = await synthesizeAnswer(frame, arbitrated);
+      const synthOpts = { ...arbitrated };
+      if (options && options.fastFallback) synthOpts.fastFallback = true;
+      if (options && options.signal) synthOpts.signal = options.signal;
+      const synthesis = await synthesizeAnswer(frame, synthOpts);
       if (synthesis.success && synthesis.answer) {
         // 7. Universal Final Verification
         verification = verifyFinalAnswer(synthesis.answer, frame, arbitrated);
@@ -270,7 +282,11 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatc
   const finalAnswer = subQueryResults.map(r => r.answer).filter(Boolean).join('\n\n');
 
   // Update session state with authoritative current turn domain & entity
-  if (!isShadowMode && chatId && subFrames.length > 0) {
+  const owner = (turnControl && turnControl.isFallbackAccepted()) ? 'fallback' : 'phase1';
+  const canCommit = turnControl ? turnControl.canCommitSession(owner) : true;
+  const canSend = turnControl ? turnControl.canDispatch(owner) : true;
+
+  if (!isShadowMode && chatId && subFrames.length > 0 && canCommit) {
     const primaryFrame = subFrames[0];
     await updateSession(chatId, {
       dataPatch: {
@@ -285,7 +301,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, { executeDispatc
   }
 
   // Dispatch if requested
-  if (!isShadowMode && executeDispatch && chatId) {
+  if (!isShadowMode && executeDispatch && chatId && canSend) {
     await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
   }
 
