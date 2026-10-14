@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { performance } = require('perf_hooks');
 const { OpenAI } = require('openai');
 const { AIReplyEngine } = require('./aiEngine');
+const { isGeminiProviderActive, getGeminiAdapter } = require('../providers/geminiProvider');
 const logger = require('../logger');
 const prisma = require('../db');
 const { normalizeMojibakePunctuationForWhatsapp, sanitizeWhatsappText } = require('../utils/textSanitizer');
@@ -16,6 +17,7 @@ const {
 } = require('./evidenceSelector');
 const { enrichChunkWithCategory } = require('./docCategoryClassifier');
 const { enrichChunkWithGovernance, isChunkGovernanceAllowed } = require('./runtimeGovernance');
+const { normalizeChunkMetadata } = require('./metadataNormalizationPipeline');
 const { auditLogger } = require('./ragAuditLogger');
 const { parseCompactRupiahNumber } = require('../utils/rupiahParser');
 const {
@@ -10000,6 +10002,16 @@ function isSameLogicalDocument(existingItem, incomingMeta = {}) {
 }
 
 async function computeEmbedding(text) {
+  if (isGeminiProviderActive()) {
+    try {
+      const adapter = getGeminiAdapter();
+      return await adapter.embedText(text);
+    } catch (err) {
+      logger.warn({ err: err.message }, '[RAG] Gemini embedding failed');
+      return [];
+    }
+  }
+
   // If OpenAI key available, use embeddings API
   if (process.env.OPENAI_API_KEY) {
     try {
@@ -10490,6 +10502,25 @@ async function _executeIngestTrainingData(trainingId, text, source = 'upload', o
         enrichedChunk = enrichChunkWithGovernance(enrichedChunk, governance || {});
       } catch (govErr) {
         logger.warn({ err: govErr.message }, '[RAG] Failed to enrich chunk governance');
+      }
+      try {
+        const norm = normalizeChunkMetadata({
+          sourceFile: resolvedSourceFile || resolvedFilename,
+          filename: resolvedFilename,
+          chunk,
+          text: chunk,
+          docCategory: enrichedChunk.category || enrichedChunk.docCategory
+        });
+        enrichedChunk = {
+          ...enrichedChunk,
+          canonicalEntity: norm.canonicalEntity,
+          academicLevel: norm.academicLevel,
+          provenanceBasis: norm.provenanceBasis,
+          isVerifiable: norm.isVerifiable,
+          normalizedCategory: norm.docCategory
+        };
+      } catch (normErr) {
+        logger.warn({ err: normErr.message }, '[RAG] Failed to normalize chunk metadata');
       }
       filteredIndex.push(enrichedChunk);
       newChunksForTraining.push(enrichedChunk);
@@ -14293,7 +14324,7 @@ async function query(question, topK = 8, options = null) {
       };
     }
 
-    const ragModel = (process.env.OPENAI_RAG_MODEL || '').toString().trim() || (process.env.OPENAI_MODEL || 'gpt-5.2');
+    const ragModel = (process.env.OPENAI_RAG_MODEL || '').toString().trim() || (process.env.OPENAI_MODEL || 'gpt-6-luna');
     const ragTimeoutMsRaw = parseInt(process.env.OPENAI_RAG_TIMEOUT_MS || process.env.OPENAI_TIMEOUT_MS || '20000', 10);
     const ragTimeoutMs = (Number.isFinite(ragTimeoutMsRaw) && ragTimeoutMsRaw > 0) ? ragTimeoutMsRaw : 20000;
     

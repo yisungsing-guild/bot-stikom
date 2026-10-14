@@ -32,6 +32,7 @@
 const fs = require('fs');
 const path = require('path');
 const { OpenAI } = require('openai');
+const { isGeminiProviderActive, getGeminiAdapter } = require('../providers/geminiProvider');
 const prisma = require('../db');
 const shadowDb = require('./shadowDb');
 const {
@@ -243,6 +244,9 @@ function getQueryEmbeddingCacheStats() {
 }
 
 function getOpenAIClient(apiKey, timeoutMs = 1500) {
+  if (isGeminiProviderActive()) {
+    return getGeminiAdapter({ timeoutMs });
+  }
   return new OpenAI({ apiKey, timeout: timeoutMs });
 }
 
@@ -280,9 +284,9 @@ async function computeBatchQueryEmbeddings(texts, timeoutMs = 1500, abortSignal 
     return results;
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = isGeminiProviderActive() ? process.env.GEMINI_API_KEY : process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not configured for query embedding.');
+    throw new Error(`${isGeminiProviderActive() ? 'GEMINI_API_KEY' : 'OPENAI_API_KEY'} is not configured for query embedding.`);
   }
 
   const tMiss0 = Date.now();
@@ -563,6 +567,7 @@ function buildCorpusEvidenceFromCandidate(candidate, binding, corpusRecord = nul
 }
 
 let prewarmedCanonicalCorpus = null;
+let lastLoadedPath = null;
 
 /**
  * Accesses prewarmed canonical corpus index from memory without extra DB queries.
@@ -574,7 +579,8 @@ function getCorpusIndex(context = {}) {
   if (context && Array.isArray(context.semanticIndex) && context.semanticIndex.length >= 829) {
     return context.semanticIndex;
   }
-  if (prewarmedCanonicalCorpus && prewarmedCanonicalCorpus.length >= 829) {
+  const currentPath = process.env.RAG_INDEX_PATH || null;
+  if (prewarmedCanonicalCorpus && prewarmedCanonicalCorpus.length >= 829 && lastLoadedPath === currentPath) {
     return prewarmedCanonicalCorpus;
   }
   const candidatePaths = [
@@ -590,6 +596,7 @@ function getCorpusIndex(context = {}) {
         const data = JSON.parse(raw);
         if (Array.isArray(data) && data.length >= 829) {
           prewarmedCanonicalCorpus = data;
+          lastLoadedPath = currentPath;
           return data;
         }
       } catch (_) {}

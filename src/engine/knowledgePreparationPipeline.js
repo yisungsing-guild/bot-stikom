@@ -3,6 +3,12 @@ const path = require('path');
 const crypto = require('crypto');
 const { chunkText, extractFaqPairsDetailed } = require('./chunker');
 const { classifyDocumentCategoryDetailed } = require('./docCategoryClassifier');
+const {
+  extractDocumentMetadata,
+  extractDocumentMetadataSync,
+  tagChunkMetadata,
+  saveIngestedChunksToJsonl
+} = require('./documentIngestionMetadata');
 
 const RUNTIME_DIR = path.resolve(__dirname, '..', '..', 'data', 'runtime');
 const MANIFEST_PATH = path.join(RUNTIME_DIR, 'knowledge_preparation_manifest.jsonl');
@@ -362,7 +368,24 @@ function detectConflictSignals({ entities, category, facts }) {
   return signals;
 }
 
-function prepareKnowledgeDocument({ content, filename, sourceUrl, trainingDataId, divisionKey, storageType } = {}) {
+function prepareKnowledgeDocument({
+  content,
+  filename,
+  sourceUrl,
+  trainingDataId,
+  divisionKey,
+  storageType,
+  catalog,
+  metadataOptions,
+  precomputedMetadata,
+  persistChunksPath
+} = {}, options = {}) {
+  const combinedOptions = Object.assign({}, options, {
+    catalog: catalog || options.catalog,
+    precomputedMetadata: precomputedMetadata || options.precomputedMetadata,
+    metadataOptions: metadataOptions || options.metadataOptions,
+    persistChunksPath: persistChunksPath || options.persistChunksPath
+  });
   const rawText = String(content || '');
   const cleanedText = stripHeaderFooterNoise(rawText);
   const text = compact(cleanedText || rawText);
@@ -399,6 +422,34 @@ function prepareKnowledgeDocument({ content, filename, sourceUrl, trainingDataId
     requiresHumanApproval: mustReview,
     decisionSource: 'knowledge_preparation_pipeline'
   };
+
+  // Phase D Ingestion Metadata Extraction (Synchronous / Precomputed / Catalog Upsert)
+  const docMetaInput = {
+    id: trainingDataId || filename || 'doc_' + sha256(text).slice(0, 12),
+    source: filename || sourceUrl || 'knowledge_pipeline',
+    text,
+    metadata: combinedOptions.precomputedMetadata || null
+  };
+
+  const documentMetadata = extractDocumentMetadataSync(docMetaInput, {
+    precomputedMetadata: combinedOptions.precomputedMetadata,
+    catalog: combinedOptions.catalog,
+    ...(combinedOptions.metadataOptions || {})
+  });
+
+  // Tag chunks with entityIds, providedAspects, and provenance
+  const ingestedChunks = chunks.map((chunkStr, idx) => {
+    return tagChunkMetadata(chunkStr, documentMetadata, {
+      chunkIndex: idx,
+      chunkAspects: combinedOptions.precomputedMetadata?.chunkAspects?.[idx] || null
+    });
+  });
+
+  // Persist chunks to local storage if requested
+  let persistenceResult = null;
+  if (combinedOptions.persistChunksPath) {
+    persistenceResult = saveIngestedChunksToJsonl(ingestedChunks, combinedOptions.persistChunksPath);
+  }
 
   return {
     version: 3,
@@ -445,7 +496,149 @@ function prepareKnowledgeDocument({ content, filename, sourceUrl, trainingDataId
       embeddingRequired: true,
       indexVersioningRequired: true,
       indexEligibility: approval.status === 'auto_approved_candidate' ? 'eligible' : 'hold_for_review'
-    }
+    },
+    documentMetadata,
+    ingestedChunks,
+    persistence: persistenceResult
+  };
+}
+
+async function prepareKnowledgeDocumentAsync({
+  content,
+  filename,
+  sourceUrl,
+  trainingDataId,
+  divisionKey,
+  storageType,
+  catalog,
+  metadataOptions,
+  precomputedMetadata,
+  persistChunksPath,
+  client,
+  model
+} = {}, options = {}) {
+  const combinedOptions = Object.assign({}, options, {
+    catalog: catalog || options.catalog,
+    precomputedMetadata: precomputedMetadata || options.precomputedMetadata,
+    metadataOptions: metadataOptions || options.metadataOptions,
+    persistChunksPath: persistChunksPath || options.persistChunksPath,
+    client: client || options.client,
+    model: model || options.model
+  });
+
+  const rawText = String(content || '');
+  const cleanedText = stripHeaderFooterNoise(rawText);
+  const text = compact(cleanedText || rawText);
+  const fileType = detectFileType(filename);
+  const structure = detectDocumentStructure(cleanedText || rawText);
+  const structuredTables = extractStructuredTables(cleanedText || rawText);
+  const categoryDetailed = classifyDocumentCategoryDetailed(text, filename || '', { sourceUrl, divisionKey, storageType });
+  const category = categoryDetailed && (categoryDetailed.category || categoryDetailed.bestCategory) || 'UNKNOWN';
+  const faqPairsDetailed = extractFaqPairsDetailed(cleanedText || text);
+  const chunks = chunkText(text, { minSize: 300, maxSize: 800 });
+  const entities = extractEntities(text);
+  const aliases = extractAliases(entities);
+  const facts = extractFacts(cleanedText || text);
+  const rules = extractRules(cleanedText || text);
+  const faqCandidateValues = [
+    ...faqPairsDetailed.map((pair) => [pair.question, pair.answer].filter(Boolean).join(' ')),
+    ...extractFaqCandidates(cleanedText || text).map((pair) => [pair.question, pair.answer].filter(Boolean).join(' '))
+  ];
+  const faqCandidates = unique(faqCandidateValues, 40).map((value) => {
+    const questionMatch = value.match(/^(.+?\?)\s+(.+)$/);
+    return questionMatch ? { question: questionMatch[1], answer: questionMatch[2].slice(0, 500) } : { question: value.slice(0, 220), answer: value.slice(0, 500) };
+  });
+  const authority = detectSourceAuthority(filename, sourceUrl, text);
+  const versions = extractVersionSignals(text, filename);
+  const effectiveDates = extractEffectiveDates(text);
+  const duplicateSignals = detectDuplicateSignals(text);
+  const conflictSignals = detectConflictSignals({ entities, category, facts });
+  const quality = scoreQuality({ text, chunks, entities, facts, rules, faqCandidates, category, structure: { ...structure, structuredTableCount: structuredTables.length }, authority });
+  const approvalReasons = unique([...quality.reasons, ...conflictSignals], 24);
+  const mustReview = quality.band === 'low' || authority.level === 'low' || conflictSignals.length > 0 || category === 'UNKNOWN';
+  const approval = {
+    status: mustReview ? 'review_required' : 'auto_approved_candidate',
+    reasons: approvalReasons,
+    requiresHumanApproval: mustReview,
+    decisionSource: 'knowledge_preparation_pipeline'
+  };
+
+  const docMetaInput = {
+    id: trainingDataId || filename || 'doc_' + sha256(text).slice(0, 12),
+    source: filename || sourceUrl || 'knowledge_pipeline',
+    text,
+    metadata: combinedOptions.precomputedMetadata || null
+  };
+
+  const documentMetadata = await extractDocumentMetadata(docMetaInput, {
+    client: combinedOptions.client,
+    model: combinedOptions.model,
+    precomputedMetadata: combinedOptions.precomputedMetadata,
+    catalog: combinedOptions.catalog,
+    ...(combinedOptions.metadataOptions || {})
+  });
+
+  const ingestedChunks = chunks.map((chunkStr, idx) => {
+    return tagChunkMetadata(chunkStr, documentMetadata, {
+      chunkIndex: idx,
+      chunkAspects: combinedOptions.precomputedMetadata?.chunkAspects?.[idx] || null
+    });
+  });
+
+  let persistenceResult = null;
+  if (combinedOptions.persistChunksPath) {
+    persistenceResult = saveIngestedChunksToJsonl(ingestedChunks, combinedOptions.persistChunksPath);
+  }
+
+  return {
+    version: 3,
+    generatedAt: new Date().toISOString(),
+    trainingDataId: trainingDataId || null,
+    filename: filename || null,
+    sourceUrl: sourceUrl || null,
+    divisionKey: divisionKey || null,
+    storageType: storageType || null,
+    documentIntake: {
+      fileType,
+      sourceAuthority: authority,
+      preprocessing: {
+        rawLength: rawText.length,
+        cleanedLength: text.length,
+        headerFooterRemovalApplied: rawText.length !== text.length
+      }
+    },
+    documentUnderstanding: {
+      category,
+      categoryConfidence: categoryDetailed && categoryDetailed.confidence != null ? categoryDetailed.confidence : null,
+      structure: { ...structure, structuredTableCount: structuredTables.length, structuredTableDomains: unique(structuredTables.map((table) => table.domain), 12) },
+      structuredTables,
+      versions,
+      effectiveDates,
+      entities,
+      aliases
+    },
+    knowledgeExtraction: {
+      factCandidates: facts,
+      ruleCandidates: rules,
+      faqCandidates,
+      knowledgeUnits: {
+        faqPairCount: faqPairsDetailed.length,
+        chunkingStrategy: faqPairsDetailed.length ? 'faq_qna_pair_chunking' : (structuredTables.length ? 'table_or_section_aware_chunking' : 'semantic_sentence_chunking')
+      }
+    },
+    qualityControl: { duplicateSignals, conflictSignals, quality, approval },
+    indexingPlan: {
+      chunkCount: chunks.length,
+      chunkMinMax: { minSize: 300, maxSize: 800 },
+      chunkingStrategy: faqPairsDetailed.length ? 'faq_qna_pair_chunking' : (structuredTables.length ? 'table_or_section_aware_chunking' : 'semantic_sentence_chunking'),
+      qaPairCount: faqPairsDetailed.length,
+      embeddingRequired: true,
+      indexVersioningRequired: true,
+      indexEligibility: approval.status === 'auto_approved_candidate' ? 'eligible' : 'hold_for_review'
+    },
+    documentMetadata,
+    ingestedChunks,
+    persistence: persistenceResult
   };
 }
 function buildKnowledgePreparationGovernance(record, baseMetadata = {}) {
@@ -459,6 +652,7 @@ function buildKnowledgePreparationGovernance(record, baseMetadata = {}) {
 
   return {
     ...metadata,
+    documentMetadata: prep.documentMetadata || null,
     knowledgePreparation: {
       version: prep.version || 3,
       generatedAt: prep.generatedAt || new Date().toISOString(),
@@ -499,6 +693,7 @@ module.exports = {
   MANIFEST_PATH,
   SOURCE_REGISTRY_PATH,
   prepareKnowledgeDocument,
+  prepareKnowledgeDocumentAsync,
   buildKnowledgePreparationGovernance,
   appendKnowledgePreparationManifest,
   ensureSourceRegistry

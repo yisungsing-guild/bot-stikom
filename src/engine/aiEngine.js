@@ -4,6 +4,13 @@ const fs = require('fs');
 const path = require('path');
 const { buildSelectedEvidenceContext } = require('./evidenceSelector');
 const { OPENAI_USAGE } = require('./openaiUsage');
+const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
+const {
+  isGeminiProviderActive,
+  getGeminiAdapter,
+  hasUsableGeminiApiKey,
+  getGeminiModel
+} = require('../providers/geminiProvider');
 
 // Phrases that indicate the model could not find an answer in provided data
 const NOT_FOUND_PHRASES = [
@@ -534,7 +541,7 @@ function buildFallbackMessage(question, department, tone) {
 
 // AI Reply Engine menggunakan model OpenAI (default via env; fallback aman)
 class AIReplyEngine {
-  constructor(apiKey, model = 'gpt-5.2', options = {}) {
+  constructor(apiKey, model = 'gpt-6-luna', options = {}) {
     this.apiKey = apiKey;
     this.model = normalizeOpenAiModel(model);
 
@@ -546,8 +553,13 @@ class AIReplyEngine {
     const timeoutMsRaw = typeof opts.timeoutMs === 'number' ? opts.timeoutMs : parseInt(process.env.OPENAI_TIMEOUT_MS || '20000', 10);
     const timeoutMs = (Number.isFinite(timeoutMsRaw) && timeoutMsRaw > 0) ? timeoutMsRaw : 20000;
 
-    // OpenAI Node SDK supports a client-level timeout.
-    this.client = new OpenAI({ apiKey, timeout: timeoutMs });
+    if (isGeminiProviderActive()) {
+      this.client = getGeminiAdapter({ timeoutMs });
+      this.model = getGeminiModel();
+    } else {
+      // OpenAI Node SDK supports a client-level timeout.
+      this.client = new OpenAI({ apiKey, timeout: timeoutMs });
+    }
 
     this.maxOutputTokens = Number.isFinite(opts.maxOutputTokens)
       ? opts.maxOutputTokens
@@ -662,8 +674,8 @@ Jika (trainingData) disediakan, sertakan data konteks utama setelah instruksi di
   // Dapatkan reply dari ChatGPT
   async getReply(userMessage, trainingData = '') {
     try {
-      if (!this.apiKey) {
-        throw new Error('OpenAI API key tidak dikonfigurasi');
+      if (!this.apiKey && !isGeminiProviderActive()) {
+        throw new Error('AI API key tidak dikonfigurasi');
       }
 
       // Reuse prebuilt system prompt when no additional trainingData provided
@@ -671,24 +683,26 @@ Jika (trainingData) disediakan, sertakan data konteks utama setelah instruksi di
         ? this.buildSystemPrompt(trainingData)
         : this.systemPrompt;
 
-      logger.info({ preview: userMessage.substring(0, 50) }, '[AI] Mengirim pesan ke OpenAI');
+      logger.info({ preview: userMessage.substring(0, 50), provider: isGeminiProviderActive() ? 'gemini' : 'openai' }, '[AI] Mengirim pesan ke AI Engine');
 
-      const completion = await this.client.chat.completions.create({
-        model: this.model,
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: userMessage
-          }
-        ],
-        max_completion_tokens: this.maxOutputTokens,
-        temperature: this.temperature,
-        top_p: this.topP
-      });
+      const completion = await this.client.chat.completions.create(
+        sanitizeOpenAiChatPayload({
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: userMessage
+            }
+          ],
+          max_completion_tokens: this.maxOutputTokens,
+          temperature: this.temperature,
+          top_p: this.topP
+        })
+      );
 
       let reply = completion.choices?.[0]?.message?.content || '';
 
@@ -944,16 +958,18 @@ Mau tahu detail kurikulum?\n\nCONFIDENCE: HIGH\n\nSOURCE_CHUNKS:\n- ringkasan co
       const temperature = compactPrompt ? 0.1 : 0.3;
       const topP = compactPrompt ? 0.1 : this.ragTopP;
 
-      const completion = await this.client.chat.completions.create({
-        model: this.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        max_completion_tokens: completionBudget,
-        temperature,
-        top_p: topP
-      });
+      const completion = await this.client.chat.completions.create(
+        sanitizeOpenAiChatPayload({
+          model: this.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          max_completion_tokens: completionBudget,
+          temperature,
+          top_p: topP
+        })
+      );
 
 
       let reply = completion.choices?.[0]?.message?.content || '';
@@ -1033,20 +1049,22 @@ Mau tahu detail kurikulum?\n\nCONFIDENCE: HIGH\n\nSOURCE_CHUNKS:\n- ringkasan co
   async extractAndIndexTrainingData(text) {
     try {
       // Gunakan AI untuk extract key information dari text
-      const completion = await this.client.chat.completions.create({
-        model: this.model,
-        messages: [
-          {
-            role: 'system',
-            content: 'Extract key information and ringkasan pertanyaan-jawaban dari text berikut. Format: Q: ... A: ...'
-          },
-          {
-            role: 'user',
-            content: text
-          }
-        ],
-        max_completion_tokens: Math.max(300, Math.min(1200, this.maxOutputTokens * 2))
-      });
+      const completion = await this.client.chat.completions.create(
+        sanitizeOpenAiChatPayload({
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'Extract key information and ringkasan pertanyaan-jawaban dari text berikut. Format: Q: ... A: ...'
+            },
+            {
+              role: 'user',
+              content: text
+            }
+          ],
+          max_completion_tokens: Math.max(300, Math.min(1200, this.maxOutputTokens * 2))
+        })
+      );
 
       const extracted = completion.choices?.[0]?.message?.content || '';
       logger.info('[AI] Training data extracted');

@@ -725,7 +725,11 @@ class FileParser {
           sourceUrl: safeSourceUrl,
           trainingDataId: training.id,
           divisionKey,
-          storageType
+          storageType,
+          catalog: options && options.catalog,
+          precomputedMetadata: options && options.precomputedMetadata,
+          metadataOptions: options && options.metadataOptions,
+          persistChunksPath: options && options.persistChunksPath
         });
         appendKnowledgePreparationManifest(knowledgePreparation);
         knowledgePreparationGovernance = buildKnowledgePreparationGovernance(

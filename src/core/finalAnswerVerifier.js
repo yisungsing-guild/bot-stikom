@@ -97,16 +97,38 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   const { entities = [] } = semanticFrame;
   const excludedEntities = (arbitratedEvidence.retrievalPlan && arbitratedEvidence.retrievalPlan.excludedConflictingEntities) || [];
   
+  function isComparativeSentence(sentence, excluded) {
+    const hasContrast = /\b(berbeda\s+(?:dengan|halnya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti)\b/i.test(sentence);
+    const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan)\b/i.test(sentence);
+    const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const isDirectSubject = new RegExp(`^(?:program\\s+studi|prodi|jurusan)?\\s*${escaped}\\s+(?:adalah|merupakan|berfokus|memiliki|yaitu)\\b`, 'i').test(sentence.trim());
+    return (hasContrast || isPrerequisite) && !isDirectSubject;
+  }
+
   for (const excluded of excludedEntities) {
     if (excluded && excluded.length >= 4) {
       if (GENERIC_COMMON_WORDS.has(excluded.toLowerCase().trim())) continue;
       const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`\\b${escaped}\\b`, 'i');
       if (regex.test(text)) {
-        return {
-          pass: false,
-          reason: `entity_contradiction_conflicting_sibling_in_answer: ${excluded}`
-        };
+        // Differentiate legitimate educational comparative mentions from actual contradictions
+        const sentences = text.split(/(?<=[.!?\n])\s+/);
+        const allMatchesAreComparative = sentences
+          .filter(s => regex.test(s))
+          .every(s => isComparativeSentence(s, excluded));
+
+        const hasTargetMention = entities.some(e => {
+          const canon = (e.canonical || e.name || String(e)).replace(/^(S1|S2|D3|D4)\s+/i, '');
+          const esc = canon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return new RegExp(`\\b${esc}\\b`, 'i').test(text);
+        });
+
+        if (!allMatchesAreComparative || !hasTargetMention) {
+          return {
+            pass: false,
+            reason: `entity_contradiction_conflicting_sibling_in_answer: ${excluded}`
+          };
+        }
       }
 
       // If excluded is a program (e.g. S1 Sistem Komputer), also check for program title patterns
@@ -121,18 +143,30 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
         const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const titleRegex = new RegExp(`(?:Program\\s+Studi|Prodi|Jurusan)\\s+${escapedBase}\\b|\\b${escapedBase}\\s*\\((?:S1|S2|D3|D4)\\)`, 'i');
         if (titleRegex.test(text)) {
-          return {
-            pass: false,
-            reason: `entity_contradiction_conflicting_sibling_in_answer: ${excluded}`
-          };
+          const sentences = text.split(/(?<=[.!?\n])\s+/);
+          const allComparative = sentences
+            .filter(s => titleRegex.test(s))
+            .every(s => isComparativeSentence(s, base));
+          if (!allComparative) {
+            return {
+              pass: false,
+              reason: `entity_contradiction_conflicting_sibling_in_answer: ${excluded}`
+            };
+          }
         }
       }
     }
   }
 
+  const isUnsupported = Boolean(
+    arbitratedEvidence.retrievalPlan?.isUnsupportedEntity ||
+    semanticFrame.isUnsupportedEntity ||
+    /tidak diselenggarakan di ITB STIKOM Bali/i.test(text)
+  );
+
   // 3. Temporal Claim Grounding Check (Detect ungrounded currentness claims)
   const temporalClaimPattern = /\b(saat ini|sekarang|hari ini|masih buka|masih dibuka|masih tersedia|masih menerima|sudah tutup|telah ditutup|sedang aktif|berlaku aktif)\b/i;
-  if (temporalClaimPattern.test(text)) {
+  if (temporalClaimPattern.test(text) && !isUnsupported) {
     // If the answer asserts a temporal claim, arbitrated evidence must exist
     if (!arbitratedEvidence.accepted || arbitratedEvidence.accepted.length === 0) {
       return {
@@ -160,8 +194,8 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   }
 
   // 4. Aspect / Requested Field Consistency Check
-  const isFeeInquiry = semanticFrame.domain === 'TUITION_FEE' || 
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)));
+  const isFeeInquiry = (semanticFrame.domain === 'TUITION_FEE' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)))) && !isUnsupported;
 
   if (isFeeInquiry) {
     const hasFeeKeywords = /\b(biaya|pendidikan|dpp|spp|uang pangkal|rp|cicil|pembayaran|nominal)\b/i.test(text);
@@ -175,14 +209,55 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   }
 
   const isCurriculumInquiry = semanticFrame.domain === 'ACADEMIC_CURRICULUM' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses'].includes(a)));
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses', 'competencies'].includes(a)));
 
-  if (isCurriculumInquiry) {
-    const hasCurriculumKeywords = /\b(kurikulum|mata\s*kuliah|matkul|sks|semester|silabus)\b/i.test(text);
+  if (isCurriculumInquiry && !isUnsupported) {
+    const hasCurriculumKeywords = /\b(berfokus|mempelajari|kurikulum|mata\s*kuliah|matkul|sks|semester|silabus|kompetensi|pembelajaran|fokus|bidang|pemrograman|keahlian)\b/i.test(text);
     if (!hasCurriculumKeywords) {
       return {
         pass: false,
         reason: 'aspect_mismatch_answer_lacks_curriculum_evidence'
+      };
+    }
+  }
+
+  const isContactInquiry = semanticFrame.intent === 'PMB_CONTACT_INQUIRY' ||
+    (semanticFrame.aspects && semanticFrame.aspects.includes('contact'));
+
+  if (isContactInquiry && !isUnsupported) {
+    const hasContactDetails = /\b(whatsapp|wa|telepon|telp|nomor|call|email|humas|pmb|08\d{8,}|0361|\.ac\.id)\b/i.test(text);
+    const isExplicitAbstain = /tidak\s+ditemukan|belum\s+tersedia|tidak\s+dapat\s+diverifikasi/i.test(text);
+    if (!hasContactDetails && !isExplicitAbstain) {
+      return {
+        pass: false,
+        reason: 'aspect_mismatch_answer_lacks_contact_evidence'
+      };
+    }
+  }
+
+  // 5. Unsolicited Recommendation Check (Only allowed if user explicitly requested recommendations)
+  const isRecommendationInquiry = semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' ||
+    semanticFrame.intent === 'PROGRAM_RECOMMENDATION';
+
+  if (!isRecommendationInquiry) {
+    const unsolicitedRecommendationRegex = /\b(rekomendasi\s+untuk\s+(?:anda|kamu|kakak)|program\s+studi\s+yang\s+(?:paling\s+)?cocok\s+untuk\s+(?:anda|kamu|kakak)|jika\s+(?:anda|kamu|kakak)\s+(?:tertarik|berminat)\b[^\n]*\bpilihlah\b)\b/i;
+    if (unsolicitedRecommendationRegex.test(text)) {
+      return {
+        pass: false,
+        reason: 'unsolicited_recommendation_in_non_recommendation_inquiry'
+      };
+    }
+  }
+
+  // 6. Heading Repetition / Raw Fragment Stacking Check
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length >= 25);
+  const lineCounts = {};
+  for (const line of lines) {
+    lineCounts[line] = (lineCounts[line] || 0) + 1;
+    if (lineCounts[line] >= 3) {
+      return {
+        pass: false,
+        reason: 'repeated_heading_or_fragment_detected'
       };
     }
   }

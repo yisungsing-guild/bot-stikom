@@ -2,9 +2,9 @@
 
 /**
  * src/reasoning/phase2Bridge.js
- * 
+ *
  * Phase 2 Step 2 & 3: Orchestrator Handoff, Phase 1 Bridge, Bounded Reflection & Replan.
- * 
+ *
  * Strict Invariants:
  * 1. Safe Feature Flag: ENABLE_PHASE2_REASONING=true to enable, false/unknown treats as false.
  * 2. Single Source of Truth: Never duplicates Phase 1 retrieval, arbiter, or verifier.
@@ -24,6 +24,7 @@ const {
 } = require('./contracts');
 const { executeTaskGraph } = require('./taskGraphExecutor');
 const plannerModule = require('./phase2Planner');
+const { resolveSemanticFrameAsync } = require('../core/semanticFrameResolver');
 const { getSession, updateSession } = require('../core/conversationState');
 const outboundDispatcher = require('../core/outboundDispatcher');
 const { verifyFinalAnswer } = require('../core/finalAnswerVerifier');
@@ -44,7 +45,7 @@ function isPhase2Enabled() {
 
 /**
  * Executes a turn through Phase 2 Bridge with strict timeout, reflection, and Phase 1 fallback guarantee.
- * 
+ *
  * @param {string} chatId
  * @param {string} rawQuery
  * @param {object} options
@@ -54,13 +55,19 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
   const startTime = Date.now();
   const isShadowMode = Boolean(options && options.executionMode === 'SHADOW');
   const shouldDispatch = Boolean(options && options.executeDispatch) && !isShadowMode;
-  const turnControl = options.turnControl || createTurnController({ timeoutMs: TOTAL_TURN_BUDGET_MS });
+  const isTestEnv = process.env.NODE_ENV === 'test';
+  const defaultTurnBudgetMs = (!isTestEnv && process.env.OPENAI_API_KEY)
+    ? (parseInt(process.env.TURN_BUDGET_MS, 10) || 20000)
+    : TOTAL_TURN_BUDGET_MS;
+  const turnControl = options.turnControl || createTurnController({ timeoutMs: options.timeoutMs || defaultTurnBudgetMs });
   const internalOptions = { ...options, executeDispatch: false, turnControl, signal: turnControl.signal };
   let timedOut = false;
 
-  // Execution cutoff uses existing frozen REPLAN_START_DEADLINE_MS (1500ms) authority,
-  // leaving adequate finalization/fallback budget (1000ms) to ensure processTurn completes <= TOTAL_TURN_BUDGET_MS (2500ms)
-  const bridgeTimeoutMs = options.timeoutMs || REPLAN_START_DEADLINE_MS;
+  // Execution cutoff: when real LLM is available, use extended budget; otherwise use 10000ms
+  const defaultBridgeTimeoutMs = process.env.OPENAI_API_KEY
+    ? (parseInt(process.env.PHASE2_BRIDGE_TIMEOUT_MS, 10) || 25000)
+    : 10000;
+  const bridgeTimeoutMs = options.timeoutMs || defaultBridgeTimeoutMs;
   let timeoutHandle = null;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutHandle = setTimeout(() => {
@@ -77,13 +84,41 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       : await getSession(chatId);
     const sessionData = session ? (session.data || {}) : {};
 
-    // 2. Build execution plan via Phase 2 planner
-    const planResult = await plannerModule.buildExecutionPlan(rawQuery, sessionData, { ...options, startTime });
+    // 2. Resolve semantic frame asynchronously via modelSemanticParser if not already provided
+    let semanticFrame = options.semanticFrame;
+    if (!semanticFrame && typeof resolveSemanticFrameAsync === 'function' && !options.syncOnly && !isTestEnv) {
+      semanticFrame = await resolveSemanticFrameAsync(rawQuery, sessionData, { ...options, startTime });
+    }
+
+    // Build execution plan via Phase 2 planner bounded by deadline
+    const plannerTimeoutMs = options.plannerTimeoutMs || REPLAN_START_DEADLINE_MS;
+    let plannerTimer = null;
+    const plannerTimeoutPromise = new Promise((_, reject) => {
+      plannerTimer = setTimeout(() => {
+        turnControl.tryAcceptFallback(`phase2_timeout_budget_exceeded_planner_${plannerTimeoutMs}ms`);
+        reject(new Error(`phase2_timeout_budget_exceeded_planner_${plannerTimeoutMs}ms`));
+      }, plannerTimeoutMs);
+    });
+
+    let planResult;
+    try {
+      planResult = await Promise.race([
+        plannerModule.buildExecutionPlan(rawQuery, sessionData, { ...options, semanticFrame, startTime }),
+        plannerTimeoutPromise
+      ]);
+    } finally {
+      if (plannerTimer) clearTimeout(plannerTimer);
+    }
+
     if (!planResult || !planResult.success || !planResult.plan) {
       throw new Error(`invalid_plan: ${planResult ? planResult.error : 'null_plan'}`);
     }
 
     const { plan } = planResult;
+    internalOptions.plannerExecutionPlan = plan;
+    internalOptions.unsupportedEntity = Boolean(plan.unsupportedEntity || plan.isUnsupportedEntity);
+    internalOptions.unsupportedEntityName = plan.unsupportedEntityName || plan.unsupportedProgramName || null;
+    internalOptions.entityResolutionStatus = plan.entityResolutionStatus || (plan.targetEntities?.length ? 'RESOLVED' : 'UNRESOLVED');
 
     // 3. Ambiguous Clarification Handling (Step 1/2 Scope)
     if (plan.planType === PLAN_TYPE.AMBIGUOUS_CLARIFICATION) {
@@ -91,7 +126,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         .map((opt, idx) => `${idx + 1}. ${opt.canonical}`)
         .join('\n');
 
-      const clarificationAnswer = `Untuk memberikan informasi yang tepat, program studi mana yang ingin Kakak tanyakan?\n\n${optionsList}\n\nSilakan sebutkan nama program studi di atas.`;
+      const clarificationAnswer = `Untuk memberikan informasi yang tepat, mohon jelaskan program studi atau jenjang mana yang ingin Kakak tanyakan?\n\n${optionsList}\n\nSilakan sebutkan program studi pilihan Kakak.`;
 
       // Verification via Phase 1 Universal Verifier
       const verification = verifyFinalAnswer(clarificationAnswer, { rawQuery, entities: [] }, {});
@@ -121,12 +156,17 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       }
 
       const subQueryResult = {
-        frame: { domain: 'GENERAL', intent: 'AMBIGUOUS_CLARIFICATION', entities: [] },
+        frame: { domain: 'GENERAL', intent: 'AMBIGUOUS_CLARIFICATION', ambiguityLevel: 'HIGH', entities: [] },
+        semanticFrame: { domain: 'GENERAL', intent: 'AMBIGUOUS_CLARIFICATION', ambiguityLevel: 'HIGH', entities: [] },
         plan,
+        candidates: [],
+        allCandidates: [],
+        preArbitrationTop12: [],
         candidatesCount: 0,
         acceptedCount: 0,
         rejectedCount: 0,
-        answerability: ANSWERABILITY_STATUS.ANSWERABLE,
+        answerability: ANSWERABILITY_STATUS.CLARIFICATION_REQUIRED || 'CLARIFICATION_REQUIRED',
+        status: 'clarification_needed',
         answer: clarificationAnswer,
         verification
       };
@@ -134,8 +174,76 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       return {
         chatId,
         rawQuery,
+        status: 'clarification_needed',
         subQueryResults: [subQueryResult],
         finalAnswer: clarificationAnswer,
+        clarificationOptions: plan.clarificationOptions,
+        turnControl,
+        phase2Meta: {
+          handledBy: 'phase2_bridge',
+          planType: plan.planType,
+          replan: {
+            replanExecuted: false,
+            replanDecision: boundedReflection.REPLAN_DECISION.NO_REPLAN_SUFFICIENT,
+            replanAttempts: 0
+          },
+          latencyMs: Date.now() - startTime,
+          fallbackTriggered: false
+        }
+      };
+    }
+
+    // 3.1 Out-of-Domain Interception Handling
+    const isOutOfDomain = plan.metadata?.frameDomain === 'OUT_OF_DOMAIN' ||
+      plan.metadata?.frameIntent === 'OUT_OF_DOMAIN_INQUIRY' ||
+      internalOptions.semanticFrame?.domain === 'OUT_OF_DOMAIN' ||
+      planResult.plan?.domain === 'OUT_OF_DOMAIN';
+
+    if (isOutOfDomain) {
+      const oodAnswer = 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.';
+
+      const won = turnControl.tryAcceptPhase2();
+      if (!won) {
+        return null;
+      }
+
+      if (!isShadowMode && chatId && turnControl.canCommitSession('phase2')) {
+        await updateSession(chatId, {
+          dataPatch: {
+            lastQuery: rawQuery,
+            lastAnswer: oodAnswer
+          }
+        });
+      }
+
+      if (shouldDispatch && chatId && turnControl.canDispatch('phase2')) {
+        await outboundDispatcher.sendOutboundMessage(chatId, oodAnswer);
+      }
+
+      const subQueryResult = {
+        frame: { domain: 'OUT_OF_DOMAIN', intent: 'OUT_OF_DOMAIN_INQUIRY', entities: [] },
+        semanticFrame: { domain: 'OUT_OF_DOMAIN', intent: 'OUT_OF_DOMAIN_INQUIRY', entities: [] },
+        plan,
+        candidates: [],
+        allCandidates: [],
+        preArbitrationTop12: [],
+        candidatesCount: 0,
+        acceptedCount: 0,
+        rejectedCount: 0,
+        answerability: 'OUT_OF_DOMAIN',
+        status: 'out_of_domain',
+        answer: oodAnswer,
+        verification: { pass: true, reason: 'out_of_domain_terminal' },
+        arbitrated: { accepted: [], rejected: [] },
+        arbitratedEvidence: { accepted: [], rejected: [] }
+      };
+
+      return {
+        chatId,
+        rawQuery,
+        status: 'out_of_domain',
+        subQueryResults: [subQueryResult],
+        finalAnswer: oodAnswer,
         turnControl,
         phase2Meta: {
           handledBy: 'phase2_bridge',
@@ -334,9 +442,44 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         await outboundDispatcher.sendOutboundMessage(chatId, finalGraphAnswer);
       }
 
+      const graphSubResults = [];
+      if (graphResult.allNodes && graphResult.allNodes.size > 0) {
+        for (const [nodeId, node] of graphResult.allNodes.entries()) {
+          if (node.type === TASK_TYPE.RETRIEVAL_QUERY && node.output) {
+            const accepted = node.output.acceptedEvidence || [];
+            graphSubResults.push({
+              taskId: nodeId,
+              frame: { domain: plan.domain || 'ACADEMIC_PROGRAM', intent: plan.intent || 'RETRIEVAL_TASK', entities: node.input?.targetEntity ? [{ canonical: node.input.targetEntity }] : [] },
+              semanticFrame: { domain: plan.domain || 'ACADEMIC_PROGRAM', intent: plan.intent || 'RETRIEVAL_TASK', entities: node.input?.targetEntity ? [{ canonical: node.input.targetEntity }] : [] },
+              candidates: accepted,
+              allCandidates: accepted,
+              preArbitrationTop12: accepted.slice(0, 12),
+              arbitrated: { accepted, rejected: [] },
+              arbitratedEvidence: { accepted, rejected: [] },
+              answer: node.output.answer || '',
+              answerability: node.output.answerability || 'ANSWERABLE'
+            });
+          }
+        }
+      }
+      if (graphSubResults.length === 0) {
+        graphSubResults.push({
+          frame: { domain: 'TASK_GRAPH', intent: plan.planType, entities: targetEntities.map(t => ({ canonical: t })) },
+          semanticFrame: { domain: 'TASK_GRAPH', intent: plan.planType, entities: targetEntities.map(t => ({ canonical: t })) },
+          candidates: [],
+          allCandidates: [],
+          preArbitrationTop12: [],
+          arbitrated: { accepted: [], rejected: [] },
+          arbitratedEvidence: { accepted: [], rejected: [] },
+          answer: finalGraphAnswer,
+          answerability: isSuccessfulGraph ? 'ANSWERABLE' : 'UNANSWERABLE'
+        });
+      }
+
       return {
         chatId,
         rawQuery,
+        subQueryResults: graphSubResults,
         graphResult,
         comparisonEnvelope,
         targetEntities,
@@ -474,7 +617,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       ...options,
       executeDispatch: shouldDispatch,
       turnControl,
-      fastFallback: true
+      fastFallback: options.fastFallback !== undefined ? options.fastFallback : (timedOut && !process.env.OPENAI_API_KEY)
     };
     const fallbackResult = await phase1PipelineFn(chatId, rawQuery, fallbackOptions);
     fallbackResult.turnControl = turnControl;

@@ -138,6 +138,16 @@ tests/*
 !tests/phase2ShadowEvaluation.test.js
 !tests/phase2ProductionUat.test.js
 !tests/phase2TurnConcurrency.test.js
+!tests/phase2AnswerQualityUAT.test.js
+!tests/modelSemanticParser.test.js
+!tests/retrievalContract.test.js
+!tests/evidenceArbiter.semanticScope.test.js
+!tests/retrievalContract.generalization.test.js
+!tests/retrievalContract.realCorpusE2E.test.js
+!tests/fonnteWebhookRoutingPolicy.test.js
+!tests/finalClosureRegression.test.js
+!tests/finalBoundedRemediationRegression.test.js
+!tests/q030TargetedFixRegression.test.js
 tools/
 quarantined_backups/
 

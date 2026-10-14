@@ -1,9 +1,26 @@
-const { querySemanticRag } = require('../src/engine/semanticRagEngine');
+const { querySemanticRag, getActiveTrainingDataFromDb } = require('../src/engine/semanticRagEngine');
 const prisma = require('../src/db');
 
 describe('semantic small-talk guard', () => {
   const oldApiKey = process.env.OPENAI_API_KEY;
   const oldCache = process.env.SEMANTIC_RAG_RESULT_CACHE_MS;
+  let originalTrainingData;
+
+  beforeAll(async () => {
+    originalTrainingData = prisma.trainingData;
+    // Provide a deterministic mock/fixture so cold-start cache warmup does not attempt external network connections
+    prisma.trainingData = {
+      count: jest.fn(async () => 0),
+      findFirst: jest.fn(async () => null),
+      findMany: jest.fn(async () => [])
+    };
+    // Deterministically prewarm the engine cache prior to per-request measurement
+    await getActiveTrainingDataFromDb();
+  });
+
+  afterAll(() => {
+    prisma.trainingData = originalTrainingData;
+  });
 
   beforeEach(() => {
     delete process.env.OPENAI_API_KEY;
@@ -27,7 +44,6 @@ describe('semantic small-talk guard', () => {
   });
 
   test('answers clear conversational small-talk before expensive knowledge paths', async () => {
-    const originalTrainingData = prisma.trainingData;
     let trainingCalls = 0;
     prisma.trainingData = {
       count: jest.fn(async () => { trainingCalls += 1; return 0; }),
@@ -71,7 +87,11 @@ describe('semantic small-talk guard', () => {
         expect(Date.now() - start).toBeLessThan(5000);
       }
     } finally {
-      prisma.trainingData = originalTrainingData;
+      prisma.trainingData = {
+        count: jest.fn(async () => 0),
+        findFirst: jest.fn(async () => null),
+        findMany: jest.fn(async () => [])
+      };
     }
   });
 

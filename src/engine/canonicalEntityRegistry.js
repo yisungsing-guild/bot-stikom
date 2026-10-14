@@ -12,7 +12,11 @@ const CANONICAL_ENTITIES = [
     type: 'program',
     family: 'academic_program',
     degree: 'S1',
-    aliases: ['sistem informasi', 'si', 's1 si', 's1 sistem informasi', 'prodi si', 'jurusan si', 'sarjana sistem informasi']
+    aliases: ['sistem informasi', 'si', 's1 si', 's1 sistem informasi', 'prodi si', 'jurusan si', 'sarjana sistem informasi', 'sisfo', 's1 sisfo'],
+    aliasGovernance: {
+      'sisfo': { status: 'REQUIRES_REVIEW', reason: 'Informal conversational Indonesian syllable acronym; absent from official STIKOM institutional documents' },
+      's1 sisfo': { status: 'REQUIRES_REVIEW', reason: 'Informal conversational Indonesian syllable acronym; absent from official STIKOM institutional documents' }
+    }
   },
   {
     canonical: 'S1 Teknologi Informasi',
@@ -47,7 +51,27 @@ const CANONICAL_ENTITIES = [
     type: 'program',
     family: 'academic_program',
     degree: 'S2',
-    aliases: ['s2 sistem informasi', 's2 si', 'magister sistem informasi', 'pascasarjana sistem informasi', 'magister si']
+    aliases: [
+      's2 sistem informasi', 's2 si', 's2 sisfo', 'magister sistem informasi',
+      'magister sisfo', 'pascasarjana sistem informasi', 'magister si',
+      's2 magister sistem informasi', 'prodi s2 sistem informasi',
+      'program studi magister sistem informasi'
+    ],
+    aliasGovernance: {
+      's2 sisfo': { status: 'REQUIRES_REVIEW', reason: 'Informal conversational Indonesian syllable acronym; absent from official STIKOM institutional documents' },
+      'magister sisfo': { status: 'REQUIRES_REVIEW', reason: 'Informal conversational Indonesian syllable acronym; absent from official STIKOM institutional documents' }
+    }
+  },
+  {
+    canonical: 'Gelar Magister Komputer (M.Kom.)',
+    type: 'academic_degree',
+    family: 'academic_degree',
+    degree: 'S2',
+    aliases: [
+      'gelar magister komputer', 'magister komputer', 'm.kom', 'm.kom.',
+      'gelar m.kom', 'gelar magister komputer (m.kom.)', 'gelar s2 magister komputer',
+      'gelar magister'
+    ]
   },
 
   // Academic Degree Scopes (Generic Institutional Scope)
@@ -80,6 +104,7 @@ const CANONICAL_ENTITIES = [
     family: 'student_organization',
     aliases: [
       'himaprodi teknologi informasi', 'himaprodi ti', 'hima ti', 'himpunan mahasiswa teknologi informasi',
+      'himpunan mahasiswa program studi teknologi informasi', 'himpunan mahasiswa prodi teknologi informasi',
       'himpunan mahasiswa ti', 'himpunan ti', 'hima teknologi informasi'
     ]
   },
@@ -89,6 +114,7 @@ const CANONICAL_ENTITIES = [
     family: 'student_organization',
     aliases: [
       'himaprodi sistem informasi', 'himaprodi si', 'hima si', 'himpunan mahasiswa sistem informasi',
+      'himpunan mahasiswa program studi sistem informasi', 'himpunan mahasiswa prodi sistem informasi',
       'himpunan mahasiswa si', 'himpunan si', 'hima sistem informasi'
     ]
   },
@@ -98,6 +124,7 @@ const CANONICAL_ENTITIES = [
     family: 'student_organization',
     aliases: [
       'himaprodi bisnis digital', 'himaprodi bd', 'hima bd', 'himpunan mahasiswa bisnis digital',
+      'himpunan mahasiswa program studi bisnis digital', 'himpunan mahasiswa prodi bisnis digital',
       'himpunan mahasiswa bd', 'himpunan bd', 'hima bisnis digital'
     ]
   },
@@ -107,6 +134,7 @@ const CANONICAL_ENTITIES = [
     family: 'student_organization',
     aliases: [
       'himaprodi sistem komputer', 'himaprodi sk', 'hima sk', 'himpunan mahasiswa sistem komputer',
+      'himpunan mahasiswa program studi sistem komputer', 'himpunan mahasiswa prodi sistem komputer',
       'himpunan mahasiswa sk', 'himpunan sk', 'hima sistem komputer'
     ]
   },
@@ -206,22 +234,10 @@ const CANONICAL_ENTITIES = [
     aliases: ['ukm teater biner', 'teater biner', 'teater']
   },
   {
-    canonical: 'UKM Tabuh Bramara Gita',
-    type: 'student_activity_unit',
-    family: 'student_organization',
-    aliases: ['ukm tabuh', 'tabuh', 'bramara gita', 'ukm bramara gita', 'karawitan', 'gamelan']
-  },
-  {
     canonical: 'UKM Syntax',
     type: 'student_activity_unit',
     family: 'student_organization',
     aliases: ['ukm syntax', 'syntax', 'synamon']
-  },
-  {
-    canonical: 'UKM DOS',
-    type: 'student_activity_unit',
-    family: 'student_organization',
-    aliases: ['ukm dos', 'dos', 'dance of stikom']
   },
   {
     canonical: 'UKM U2M',
@@ -281,7 +297,7 @@ const CANONICAL_ENTITIES = [
     canonical: 'UKM Tabuh (Bramara Gita)',
     type: 'student_activity_unit',
     family: 'student_organization',
-    aliases: ['ukm tabuh', 'tabuh', 'bramara gita', 'ukm bramara gita', 'gamelan', 'tabuh bali', 'seni tabuh', 'megambel']
+    aliases: ['ukm tabuh', 'tabuh', 'bramara gita', 'ukm bramara gita', 'ukm tabuh bramara gita', 'karawitan', 'gamelan', 'tabuh bali', 'seni tabuh', 'megambel']
   },
   {
     canonical: 'UKM Robotika (Robotics)',
@@ -381,6 +397,8 @@ const CANONICAL_ENTITIES = [
     role: 'double_degree',
     family: 'international_program',
     scope: 'international',
+    degree: 'S1',
+    parentProgram: 'S1 Sistem Informasi',
     country: 'Malaysia',
     partnerName: 'HELP University Malaysia',
     credentials: [
@@ -415,13 +433,18 @@ const CANONICAL_ENTITIES = [
     family: 'international_program',
     country: 'Japan',
     programKind: 'internship',
-    aliases: ['hi-think', 'hi think', 'hithink', 'program hi think', 'program hi-think', 'magang jepang', 'program jepang', 'jepang magang']
+    aliases: [
+      'hi-think', 'hi think', 'hithink', 'program hi think', 'program hi-think',
+      'magang jepang', 'program jepang', 'jepang magang', 'hi-think internship', 'hi think internship',
+      'program magang jepang', 'magang kerja sama jepang', 'magang kerja sama dengan jepang',
+      'program magang kerja sama dengan jepang', 'magang ke jepang'
+    ]
   },
   {
     canonical: 'GCCP',
     type: 'international_program',
     family: 'international_program',
-    aliases: ['gccp', 'global cloud computing program']
+    aliases: ['gccp', 'global cross cultural program', 'global cross cultural']
   },
   {
     canonical: 'BCCP',
@@ -675,6 +698,11 @@ function hasExplicitProgramSemantics(text) {
     || /\b(?:beda|bedanya|perbedaan|banding|bandingkan|versus|vs)\b/i.test(s);
 }
 
+function hasExplicitCampusLocationSemantics(text) {
+  const s = String(text || '').toLowerCase();
+  return /\b(?:kampus|stikom|itb\s+stikom|kuliah|universitas|institut|gedung|lokasi|alamat|prodi|jurusan|biaya|asrama|parkir|fasilitas|pmb|daftar|pendaftaran|cabang)\b/i.test(s);
+}
+
 function hasPriorProgramContext(priorState, canonicalName, code) {
   if (!priorState || typeof priorState !== 'object') return false;
   const unwrap = priorState.sessionState || priorState.conversationState || priorState.priorSessionOrState || priorState.sessionData || priorState.data || priorState.session || priorState;
@@ -708,8 +736,10 @@ function isPmbPriorContext(priorState) {
  * Returns array of matched entities with priority metrics.
  */
 function matchCanonicalEntities(text, options = {}) {
-  const norm = normalizeText(text);
+  let norm = normalizeText(text);
   if (!norm) return [];
+  norm = norm.replace(/\bberkewarganegaraan\s+asing\b/g, 'asing')
+             .replace(/\bwarga\s+negara\s+asing\b/g, 'asing');
 
   const matched = [];
   for (const entry of CANONICAL_ENTITIES) {
@@ -728,6 +758,19 @@ function matchCanonicalEntities(text, options = {}) {
           const hasSemantics = hasExplicitProgramSemantics(norm);
           const hasPrior = hasPriorProgramContext(options, entry.canonical, entry.degree);
           if (!isUppercase && !hasSemantics && !hasPrior) {
+            continue;
+          }
+        }
+        if (aliasNorm === 'ti' && (entry.canonical === 'S1 Teknologi Informasi' || entry.canonical === 'Teknologi Informasi')) {
+          const withoutSmkTi = norm.replace(/\bsmk\s+ti\b/gi, '').trim();
+          if (!new RegExp(`(^|\\s)ti(\\s|$)`, 'i').test(withoutSmkTi)) {
+            continue;
+          }
+        }
+        if (entry.family === 'campus_location' && /^(?:denpasar|jimbaran|abiansemal|renon|pusat)$/i.test(aliasNorm)) {
+          const hasCampusContext = hasExplicitCampusLocationSemantics(norm);
+          const hasPrior = hasPriorProgramContext(options, entry.canonical, entry.type);
+          if (!hasCampusContext && !hasPrior) {
             continue;
           }
         }
@@ -762,8 +805,19 @@ function matchCanonicalEntities(text, options = {}) {
     });
   });
 
+  // Deduplicate by canonical identity: each canonical entity appears at most once
+  const deduplicated = [];
+  const seenCanonicals = new Set();
+  for (const item of filtered) {
+    const key = item.canonical.toLowerCase().trim();
+    if (!seenCanonicals.has(key)) {
+      seenCanonicals.add(key);
+      deduplicated.push(item);
+    }
+  }
+
   // Sort by specificity: specific programs rank above generic academic scope, then by canonical length
-  return filtered.sort((a, b) => {
+  return deduplicated.sort((a, b) => {
     if (a.family === 'academic_program' && b.family === 'academic_scope') return -1;
     if (b.family === 'academic_program' && a.family === 'academic_scope') return 1;
     return b.canonical.length - a.canonical.length;
@@ -802,12 +856,32 @@ function resolveUniqueCanonicalEntityByQualifiers(qualifiers = {}) {
   });
   return matches.length === 1 ? { ...matches[0] } : null;
 }
+function normalizeEntityPhrase(str) {
+  let s = normalizeText(str);
+  if (!s) return '';
+  // Generic Indonesian qualifier / organizational / academic prefix stripping
+  s = s.replace(/\b(?:program\s+studi|prodi|jurusan|unit\s+kegiatan\s+mahasiswa|ukm|himpunan\s+mahasiswa|himaprodi|hima|organisasi\s+mahasiswa|ormawa)\b/g, ' ');
+  s = s.replace(/\bcalon\b/g, ' ');
+  s = s.replace(/\b(?:kerja\s+sama\s+dengan|kerjasama\s+dengan)\b/g, ' ');
+  // Generic institutional phrasing equivalences
+  s = s.replace(/\bberkewarganegaraan\s+asing\b/g, 'asing');
+  s = s.replace(/\bwarga\s+negara\s+asing\b/g, 'asing');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
 function findCanonicalEntity(identifier) {
   if (!identifier) return null;
   const target = normalizeText(identifier);
   for (const entry of CANONICAL_ENTITIES) {
     if (normalizeText(entry.canonical) === target) return entry;
     if (entry.aliases.some(a => normalizeText(a) === target)) return entry;
+  }
+  const stripped = normalizeEntityPhrase(target);
+  if (stripped && stripped !== target) {
+    for (const entry of CANONICAL_ENTITIES) {
+      if (normalizeText(entry.canonical) === stripped) return entry;
+      if (entry.aliases.some(a => normalizeText(a) === stripped)) return entry;
+    }
   }
   return null;
 }
@@ -830,9 +904,25 @@ function areEntitiesEquivalent(entityA, entityB) {
   return false;
 }
 
+const HISTORICAL_BENCHMARK_LABELS = {
+  'Magister Ilmu Komputer': {
+    status: 'HISTORICAL_BENCHMARK_LABEL',
+    targetOfficialEntity: 'S2 Sistem Informasi',
+    academicLevel: 'S2',
+    reason: 'Legacy benchmark/gold evaluation label; unsupported by institutional sources where official program is S2 Magister Sistem Informasi'
+  },
+  'S2 Magister Ilmu Komputer': {
+    status: 'HISTORICAL_BENCHMARK_LABEL',
+    targetOfficialEntity: 'S2 Sistem Informasi',
+    academicLevel: 'S2',
+    reason: 'Legacy benchmark/gold evaluation label; unsupported by institutional sources where official program is S2 Magister Sistem Informasi'
+  }
+};
+
 module.exports = {
   CANONICAL_ENTITIES,
   CANONICAL_INTEREST_PROFILES,
+  HISTORICAL_BENCHMARK_LABELS,
   normalizeText,
   stripIndonesianAffixes,
   matchCanonicalEntities,
@@ -840,5 +930,48 @@ module.exports = {
   areEntitiesEquivalent,
   resolveCanonicalInterestProfile,
   resolveCanonicalInterestProfiles,
-  resolveUniqueCanonicalEntityByQualifiers
+  resolveUniqueCanonicalEntityByQualifiers,
+  normalizeEntityPhrase,
+  exportLegacyEntitiesAsCatalogRecords
 };
+
+/**
+ * Generic structural metadata adapter for KnowledgeCatalogService compatibility.
+ * Does NOT alter any canonical entities or aliases in CANONICAL_ENTITIES.
+ */
+function exportLegacyEntitiesAsCatalogRecords() {
+  return CANONICAL_ENTITIES.map(entry => {
+    let family = 'academic_program';
+    if (entry.family === 'academic_program' || entry.family === 'international_program' || entry.family === 'academic_scope') {
+      family = 'academic_program';
+    } else if (entry.family === 'student_organization') {
+      family = 'student_organization';
+    } else if (entry.family === 'facility' || entry.family === 'campus_service' || entry.family === 'campus_facility') {
+      family = 'campus_service';
+    } else if (entry.family === 'scholarship') {
+      family = 'scholarship';
+    } else if (entry.family === 'admission_track') {
+      family = 'admission_track';
+    }
+
+    const academicLevel = ['S1', 'S2', 'D3'].includes(entry.degree) ? entry.degree : null;
+    const isClosedDomain = family === 'academic_program';
+
+    return {
+      id: (entry.canonical || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''),
+      canonical: entry.canonical,
+      family,
+      academicLevel,
+      aliases: Array.isArray(entry.aliases) ? entry.aliases.slice() : [],
+      parentEntityId: null,
+      provenanceDocumentId: 'canonical_entity_registry_legacy',
+      isClosedDomain,
+      metadata: {
+        sourceDocument: 'src/engine/canonicalEntityRegistry.js',
+        sourceType: 'legacy_canonical_registry',
+        legacyType: entry.type || null,
+        legacyFamily: entry.family || null
+      }
+    };
+  });
+}

@@ -28,7 +28,11 @@ function sanitizeWhatsAppMarkdown(text) {
   out = out.replace(/GǪ[\s\S]*?GǪ/g, '');
   out = out.replace(/\[chunk_\d+\]/gi, '');
   out = out.replace(/governanceMetadata:\s*\{[^}]*\}/gi, '');
-  out = out.replace(/\s{2,}/g, ' ');
+  out = out.replace(/\(Isikan Nama[^)]*\)/gi, '');
+  out = out.replace(/\b(?:Staf|Sekretaris Prodi|dst)\.{3,}/gi, '');
+  out = out.replace(/\|\s*S[12]\s*\|\s*\d+(?:\s+\d+){4,}\s*\|\s*dst\.*/gi, '');
+  out = out.replace(/\.{4,}/g, '');
+  out = out.replace(/[ \t]{2,}/g, ' ');
 
   return out.trim();
 }

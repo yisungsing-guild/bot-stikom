@@ -12,7 +12,7 @@
  * -> SubQuery 2: "apa keuntungan GCCP" (BENEFIT)
  */
 
-const { resolveSemanticFrame } = require('./semanticFrameResolver');
+const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('./semanticFrameResolver');
 
 // Conjunction separators indicating multi-intent
 const MULTI_INTENT_CONJUNCTION_REGEX = /(?:,\s*(?:serta|dan|plus)\s*|\s+(?:dan|serta|sekaligus|dan juga|plus)\s+(?=apa|bagaimana|berapa|apakah|kapan|keuntungan|syarat|biaya|fasilitas|training|rekrutmen|pembuatan|prosedur|kontak|prospek|peluang|beasiswa|ada\s+beasiswa))/i;
@@ -23,18 +23,24 @@ function hasMultipleIntents(rawQuery) {
 }
 
 /**
- * Splits query string into subquery strings and builds individual SemanticFrames
+ * Synchronous query decomposition (for deterministic tests and baseline compatibility)
  */
 function decomposeQuery(rawQuery, sessionData = {}) {
   const query = String(rawQuery || '').trim();
   if (!query) return [];
 
-  // Check if multiple question marks or explicit conjunctions exist
   let parts = [];
   if (/\?.*\?/.test(query)) {
     parts = query.split('?').map(p => p.trim()).filter(Boolean).map(p => p + '?');
   } else if (MULTI_INTENT_CONJUNCTION_REGEX.test(query)) {
-    parts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
+    const rawParts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
+    // Guard against splitting compound noun phrases (e.g. "Profesi dan peluang kerja apa saja...")
+    // A valid first subquery must have at least 3 words and a verb/interrogative pronoun, or not end as a bare noun fragment
+    if (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
+      parts = [query];
+    } else {
+      parts = rawParts;
+    }
   }
 
   if (parts.length <= 1) {
@@ -42,8 +48,6 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     return [singleFrame];
   }
 
-  // Inherit subject entity across parts if one part is elided
-  // Example: "apa itu GCCP" (has GCCP) dan "apa keuntungannya" (elided GCCP)
   const firstFrame = resolveSemanticFrame(parts[0], sessionData);
   const subjectEntities = firstFrame.entities || [];
 
@@ -51,14 +55,12 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     let queryToResolve = part;
     if (idx > 0 && subjectEntities.length > 0) {
       const entityName = subjectEntities[0].canonical || subjectEntities[0].name || '';
-      // If the part is an elided question like "apa keuntungannya", append the entity
       if (!queryToResolve.toLowerCase().includes(entityName.toLowerCase())) {
         queryToResolve = `${part} ${entityName}`;
       }
     }
 
     let subFrame = resolveSemanticFrame(queryToResolve, sessionData);
-    // Ensure entities are attached
     if (idx > 0 && subFrame.entities.length === 0 && subjectEntities.length > 0) {
       subFrame.entities = [...subjectEntities];
       if (firstFrame.domain !== 'GENERAL' && subFrame.domain === 'GENERAL') {
@@ -71,7 +73,66 @@ function decomposeQuery(rawQuery, sessionData = {}) {
   return subFrames;
 }
 
+/**
+ * Asynchronous query decomposition leveraging AI semantic frame resolution
+ */
+async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
+  const query = String(rawQuery || '').trim();
+  if (!query) return [];
+
+  let parts = [];
+  if (/\?.*\?/.test(query)) {
+    parts = query.split('?').map(p => p.trim()).filter(Boolean).map(p => p + '?');
+  } else if (MULTI_INTENT_CONJUNCTION_REGEX.test(query)) {
+    const rawParts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
+    if (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
+      parts = [query];
+    } else {
+      parts = rawParts;
+    }
+  }
+
+  if (parts.length <= 1) {
+    const singleFrame = (typeof resolveSemanticFrameAsync === 'function')
+      ? await resolveSemanticFrameAsync(query, sessionData, options)
+      : resolveSemanticFrame(query, sessionData, options);
+    return [singleFrame];
+  }
+
+  const firstFrame = (typeof resolveSemanticFrameAsync === 'function')
+    ? await resolveSemanticFrameAsync(parts[0], sessionData, options)
+    : resolveSemanticFrame(parts[0], sessionData, options);
+  const subjectEntities = firstFrame.entities || [];
+
+  const subFrames = [firstFrame];
+  for (let idx = 1; idx < parts.length; idx++) {
+    const part = parts[idx];
+    let queryToResolve = part;
+    if (subjectEntities.length > 0) {
+      const entityName = subjectEntities[0].canonical || subjectEntities[0].name || '';
+      if (entityName && !queryToResolve.toLowerCase().includes(entityName.toLowerCase())) {
+        queryToResolve = `${part} ${entityName}`;
+      }
+    }
+
+    let subFrame = (typeof resolveSemanticFrameAsync === 'function')
+      ? await resolveSemanticFrameAsync(queryToResolve, sessionData, options)
+      : resolveSemanticFrame(queryToResolve, sessionData, options);
+
+    if (subFrame.entities.length === 0 && subjectEntities.length > 0) {
+      subFrame.entities = [...subjectEntities];
+      if (firstFrame.domain !== 'GENERAL' && subFrame.domain === 'GENERAL') {
+        subFrame.domain = firstFrame.domain;
+      }
+    }
+    subFrames.push(subFrame);
+  }
+
+  return subFrames;
+}
+
 module.exports = {
   hasMultipleIntents,
-  decomposeQuery
+  decomposeQuery,
+  decomposeQueryAsync
 };

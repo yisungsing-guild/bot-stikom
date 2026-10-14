@@ -11,6 +11,7 @@
  *  */
 
 const { CANONICAL_ENTITIES, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
+const { buildRetrievalContract } = require('./retrievalContract');
 
 function buildRetrievalPlan(semanticFrame) {
   if (!semanticFrame) {
@@ -25,8 +26,12 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   const { normalizedQuery, domain, intent, entities, aspects, temporal } = semanticFrame;
-  const targetEntities = (entities || []).map(e => e.canonical || e.name || String(e));
-  const normalizedText = String(normalizedQuery || '').toLowerCase();
+  const retrievalContract = buildRetrievalContract(semanticFrame);
+  const contractTargets = retrievalContract.scopeConstraints?.targetEntities || [];
+  const targetEntities = contractTargets.length > 0
+    ? contractTargets
+    : (entities || []).map(e => e.canonical || e.name || String(e));
+  const normalizedText = String(normalizedQuery || semanticFrame.rawQuery || '').toLowerCase();
 
   const GENERIC_COMMON_WORDS = new Set([
     'akademik', 'kuliah', 'kampus', 'stikom', 'bali', 'mahasiswa', 'program',
@@ -37,12 +42,14 @@ function buildRetrievalPlan(semanticFrame) {
   // Generic discovery of conflicting / sibling entities to exclude across mutually exclusive families
   // INVARIANT: Explicitly requested entities in targetEntities must NEVER be excluded!
   // Invariant: Non-mutually-exclusive families like campus facilities or scholarships do not exclude each other
-  const MUTUALLY_EXCLUSIVE_FAMILIES = new Set(['academic_program', 'international_program']);
+  const MUTUALLY_EXCLUSIVE_FAMILIES = new Set(['academic_program']);
   const targetEntitySet = new Set(targetEntities.map(t => t.toLowerCase()));
   const excludedConflictingEntities = [];
   for (const ent of targetEntities) {
     const canonicalObj = findCanonicalEntity(ent);
-    if (canonicalObj && canonicalObj.family && MUTUALLY_EXCLUSIVE_FAMILIES.has(canonicalObj.family)) {
+    const isMutuallyExclusive = canonicalObj && canonicalObj.family &&
+      (MUTUALLY_EXCLUSIVE_FAMILIES.has(canonicalObj.family) || (canonicalObj.role && canonicalObj.role === 'double_degree'));
+    if (isMutuallyExclusive) {
       const siblings = CANONICAL_ENTITIES.filter(other => {
         if (targetEntitySet.has(other.canonical.toLowerCase())) return false;
         if (other.family !== canonicalObj.family) return false;
@@ -81,12 +88,18 @@ function buildRetrievalPlan(semanticFrame) {
     .trim();
 
   const queryVariants = [];
-  if (intent === 'INSTITUTIONAL_ACCREDITATION') {
-    if (targetEntities.length === 0) {
-      targetEntities.push('Institut Teknologi dan Bisnis STIKOM Bali');
+
+  // Program & Institutional Accreditation query variants
+  if (domain === 'ACCREDITATION' || intent === 'INSTITUTIONAL_ACCREDITATION' || intent === 'PROGRAM_ACCREDITATION' || (aspects && (aspects.includes('accreditation') || aspects.includes('akreditasi')))) {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`sertifikat akreditasi ban-pt lam infokom ${ent} baik sekali peringkat resmi`);
+        queryVariants.push(`akreditasi program studi ${ent} peringkat sertifikat status`);
+        queryVariants.push(`status akreditasi ${ent}`);
+      }
+    } else {
+      queryVariants.push('status akreditasi institusi program studi ITB STIKOM Bali BAN PT LAM INFOKOM');
     }
-    queryVariants.push('konversi peringkat akreditasi perguruan tinggi institut teknologi dan bisnis stikom bali');
-    queryVariants.push('akreditasi institusi BAN-PT perguruan tinggi');
   }
 
   // Tuition fee query variants prioritized
@@ -119,32 +132,96 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // Organization & UKM query variants
-  if (domain === 'ORGANIZATION_UKM' || (aspects && aspects.includes('student_organization'))) {
+  if (domain === 'ORGANIZATION_UKM' || (aspects && (aspects.includes('organization') || aspects.includes('student_organization')))) {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`organisasi kemahasiswaan himaprodi himpunan mahasiswa ${ent} cakra pragnya filosofi profil kegiatan`);
+        queryVariants.push(`organisasi kemahasiswaan himaprodi himpunan mahasiswa ${ent}`);
+        queryVariants.push(`profile ${ent} kegiatan visi misi`);
+      }
+    }
     queryVariants.push('unit kegiatan mahasiswa UKM ormawa ITB STIKOM Bali');
     queryVariants.push('daftar organisasi kemahasiswaan himaprodi');
   }
 
   // Career Center & Internship query variants
-  if (domain === 'CAREER_CENTER' || (aspects && aspects.includes('internship'))) {
-    queryVariants.push('career center inkubator bisnis inbis magang kerja sama industri ITB STIKOM Bali');
-    queryVariants.push('layanan bursa kerja dan kemitraan');
+  if (domain === 'CAREER_CENTER' || (aspects && (aspects.includes('career') || aspects.includes('internship') || aspects.includes('career_prospects')))) {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`peluang karir prospek kerja profesi lulusan ${ent}`);
+        queryVariants.push(`peluang pekerjaan ${ent}`);
+      }
+    } else {
+      queryVariants.push('career center inkubator bisnis inbis magang kerja sama industri ITB STIKOM Bali');
+      queryVariants.push('layanan bursa kerja dan kemitraan');
+    }
+  }
+
+  // Admission Schedule & Waves query variants
+  if (intent === 'ADMISSION_SCHEDULE' || (aspects && aspects.includes('schedule'))) {
+    queryVariants.push('jadwal gelombang pendaftaran PMB periode pendaftaran kalender pendaftaran tanggal penting');
+    queryVariants.push('jadwal pendaftaran mahasiswa baru gelombang PMB ITB STIKOM Bali');
+    queryVariants.push('batas waktu penutupan pendaftaran gelombang reguler PMB');
+    queryVariants.push('waktu pendaftaran dibuka ditutup gelombang');
+  }
+
+  // PMB Contact query variants
+  if (intent === 'PMB_CONTACT_INQUIRY' || (aspects && aspects.includes('contact'))) {
+    queryVariants.push('kontak PMB whatsapp call center telepon email pendaftaran customer service ITB STIKOM Bali');
+    queryVariants.push('nomor kontak informasi pendaftaran mahasiswa baru PMB');
+  }
+
+  // Payment confirmation procedure query variants
+  if (intent === 'PAYMENT_CONFIRMATION_PROCEDURE' || ((aspects && aspects.includes('procedure')) && (aspects && (aspects.includes('fee') || aspects.includes('tuition'))))) {
+    queryVariants.push('tata cara prosedur konfirmasi pembayaran biaya kuliah bukti bayar rekening keuangan ITB STIKOM Bali');
+    queryVariants.push('konfirmasi pembayaran pendaftaran mahasiswa baru');
+  }
+
+  // Admission Requirements & Documents query variants
+  if (intent === 'ADMISSION_REQUIREMENTS' || (aspects && aspects.includes('requirements'))) {
+    queryVariants.push('syarat dokumen berkas pendaftaran mahasiswa baru ijazah skl kk ktp pasfoto PMB ITB STIKOM Bali');
+    queryVariants.push('persyaratan berkas pendaftaran mahasiswa baru');
+  }
+
+  // Foreign Student / Visa / International query variants
+  const isForeignQuery = (semanticFrame.participantScope === 'foreign') ||
+    (/\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar|e30b)\b/i.test(normalizedText));
+  if (isForeignQuery) {
+    queryVariants.push('persyaratan pengajuan jenis visa e30b vitas visa masuk dokumen apa saja yang dibutuhkan untuk visa pelajar mahasiswa asing');
+    queryVariants.push('persyaratan pengajuan visa bagi mahasiswa asing izin belajar kitas itas e30b');
+    queryVariants.push('visa mahasiswa asing izin belajar penjamin sponsor penjaminan ITAS SKTT');
+    queryVariants.push('FAQ pengurusan mahasiswa asing visa izin belajar');
+  }
+
+  // Thesis Guidance Procedure query variants
+  if (intent === 'THESIS_GUIDANCE_PROCEDURE' || (aspects && (aspects.includes('guidance_procedure') || aspects.includes('thesis_stages')))) {
+    queryVariants.push('tahapan pelaksanaan bimbingan tugas akhir skripsi pedoman ta dosen pembimbing pengerjaan skripsi');
+    queryVariants.push('buku pedoman tugas akhir pembimbingan tahapan pelaksanaan bimbingan ta');
+    queryVariants.push('prosedur bimbingan tugas akhir dosen pembimbing utama pendamping');
   }
 
   // PMB Inquiry & Procedure query variants
   if (domain === 'PMB' || intent === 'GENERAL_PMB_INQUIRY' || intent === 'ADMISSION_PROCEDURE') {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`syarat pendaftaran dan prosedur alur ${ent}`);
+        queryVariants.push(`persyaratan pendaftaran masuk ${ent}`);
+      }
+    }
     queryVariants.push('informasi pendaftaran mahasiswa baru PMB jalur reguler kelas karyawan');
     queryVariants.push('syarat pendaftaran dan prosedur alur PMB STIKOM Bali');
     queryVariants.push('alur pendaftaran mahasiswa baru pmb.stikom-bali.ac.id');
   }
 
-  // Academic Curriculum query variants
-  if (domain === 'ACADEMIC_CURRICULUM' || intent === 'CURRICULUM_INQUIRY' || (aspects && (aspects.includes('curriculum') || aspects.includes('courses')))) {
+  // Academic Curriculum query variants (guarded: do not inject curriculum keywords into accreditation or thesis guidance queries)
+  if (((domain === 'ACADEMIC_CURRICULUM' && (!aspects || !aspects.includes('accreditation')) && intent !== 'THESIS_GUIDANCE_PROCEDURE') || intent === 'CURRICULUM_INQUIRY' || (aspects && (aspects.includes('curriculum') || aspects.includes('courses')))) && (!aspects || !aspects.includes('accreditation') || aspects.includes('curriculum')) && intent !== 'THESIS_GUIDANCE_PROCEDURE') {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`kurikulum 2025 program studi ${ent} mata kuliah sks semester`);
         queryVariants.push(`sebaran mata kuliah kurikulum ${ent}`);
         queryVariants.push(`${ent} Semester I II III IV V VI VII VIII SKS`);
-        queryVariants.push(`${ent} mata kuliah semester SKS`);
+        queryVariants.push(`${ent} mata kuliah semester SKS kompetensi keahlian`);
+        queryVariants.push(`materi mata kuliah yang dipelajari program studi ${ent}`);
       }
     } else {
       queryVariants.push('kurikulum 2025 program studi mata kuliah sks semester');
@@ -159,7 +236,7 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // Program Overview / Definition query variants
-  if (intent === 'PROGRAM_OVERVIEW' || intent === 'DEFINITION' || intent === 'PROGRAM_COMPARISON') {
+  if (intent === 'PROGRAM_OVERVIEW' || intent === 'DEFINITION' || intent === 'PROGRAM_COMPARISON' || (aspects && aspects.includes('overview')) || domain === 'ACADEMIC_PROGRAM') {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`penjelasan prodi dan karier masa depan ${ent} yang dipelajari peluang kerja`);
@@ -174,7 +251,9 @@ function buildRetrievalPlan(semanticFrame) {
   if (intent === 'STUDY_MODE' || (aspects && aspects.includes('class_schedule'))) {
     queryVariants.push('kelas karyawan kelas sore kuliah sambil bekerja jadwal fleksibel');
     queryVariants.push('pilihan kelas reguler kelas sore pendaftaran PMB');
-    queryVariants.push('kuliah sambil kerja di luar negeri fasilitas stikom');
+    if (/\b(?:luar\s*negeri|jepang|internasional)\b/i.test(normalizedText)) {
+      queryVariants.push('kuliah sambil kerja di luar negeri fasilitas stikom');
+    }
   }
 
   // Degree Award query variants
@@ -199,8 +278,20 @@ function buildRetrievalPlan(semanticFrame) {
     }
   }
 
+  // Location / Campus query variants
+  if (intent === 'CAMPUS_LOCATION' || intent === 'STUDY_LOCATION' || (aspects && (aspects.includes('location') || aspects.includes('study_location')))) {
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`lokasi kampus tempat kuliah ${ent}`);
+        queryVariants.push(`alamat kampus tempat studi ${ent}`);
+      }
+    } else {
+      queryVariants.push('lokasi kampus tempat kuliah alamat');
+    }
+  }
+
   // Program Curriculum query variants
-  if (intent === 'CURRICULUM_INQUIRY' || domain === 'ACADEMIC_CURRICULUM') {
+  if ((intent === 'CURRICULUM_INQUIRY' || domain === 'ACADEMIC_CURRICULUM') && (!aspects || !aspects.includes('accreditation') || aspects.includes('curriculum'))) {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`kurikulum ${ent} mata kuliah`);
@@ -214,20 +305,31 @@ function buildRetrievalPlan(semanticFrame) {
     if (!queryVariants.includes(combined)) queryVariants.push(combined);
   }
   if (cleanKeywords && !queryVariants.includes(cleanKeywords)) queryVariants.push(cleanKeywords);
-  if (normalizedQuery && !queryVariants.includes(normalizedQuery)) queryVariants.push(normalizedQuery);
+  const fallbackQuery = String(normalizedQuery || semanticFrame.rawQuery || '').trim();
+  if (fallbackQuery && !queryVariants.includes(fallbackQuery)) queryVariants.push(fallbackQuery);
+
 
   return {
     domain,
     intent,
+    academicLevel: semanticFrame.academicLevel || null,
     retrievalRequired: semanticFrame.retrievalRequired !== false,
+    participantScope: semanticFrame.participantScope || (/\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar)\b/i.test(normalizedText) ? 'foreign' : 'domestic'),
     targetEntities,
     excludedConflictingEntities,
     requiredAspects: aspects || [],
     temporalConstraint: temporal ? temporal.constraint : 'GENERAL',
-    queryVariants
+    queryVariants,
+    unsupportedEntity: Boolean(semanticFrame.unsupportedEntity || semanticFrame.isUnsupportedEntity),
+    unsupportedEntityName: semanticFrame.unsupportedEntityName || semanticFrame.unsupportedProgramName || null,
+    entityResolutionStatus: semanticFrame.entityResolutionStatus || (targetEntities.length ? 'RESOLVED' : 'UNRESOLVED'),
+    isUnsupportedEntity: Boolean(semanticFrame.unsupportedEntity || semanticFrame.isUnsupportedEntity),
+    unsupportedProgramName: semanticFrame.unsupportedEntityName || semanticFrame.unsupportedProgramName || null,
+    retrievalContract
   };
 }
 
 module.exports = {
-  buildRetrievalPlan
+  buildRetrievalPlan,
+  buildRetrievalContract
 };

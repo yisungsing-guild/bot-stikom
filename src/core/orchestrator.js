@@ -2,10 +2,10 @@
 
 /**
  * src/core/orchestrator.js
- * 
+ *
  * Greenfield Single Decision Maker Orchestrator.
  * Connects the entire end-to-end pipeline:
- * 
+ *
  * Inbound Query
  * -> SemanticFrameResolver
  * -> MultiIntentResolver
@@ -19,7 +19,7 @@
  */
 
 const { getSession, updateSession } = require('./conversationState');
-const { decomposeQuery } = require('./multiIntentResolver');
+const { decomposeQuery, decomposeQueryAsync } = require('./multiIntentResolver');
 const { buildRetrievalPlan } = require('./retrievalPlanner');
 const { retrieveCandidates } = require('./retrievalService');
 const { arbitrateEvidence } = require('./evidenceArbiter');
@@ -187,11 +187,80 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
   const sessionData = session ? (session.data || {}) : {};
 
   // 1. Decompose Query into SemanticFrames
-  const subFrames = decomposeQuery(rawQuery, sessionData);
+  const subFrames = (typeof decomposeQueryAsync === 'function' && !options.syncOnly)
+    ? await decomposeQueryAsync(rawQuery, sessionData, options)
+    : decomposeQuery(rawQuery, sessionData);
 
   const subQueryResults = [];
 
   for (const frame of subFrames) {
+    // Check if planner passed unsupported entity flag
+    if (options.unsupportedEntity || options.plannerExecutionPlan?.unsupportedEntity) {
+      frame.unsupportedEntity = true;
+      frame.unsupportedEntityName = options.unsupportedEntityName || options.plannerExecutionPlan?.unsupportedEntityName;
+      frame.entityResolutionStatus = 'UNSUPPORTED';
+      frame.isUnsupportedEntity = true;
+      frame.unsupportedProgramName = frame.unsupportedEntityName;
+      frame.domain = 'UNSUPPORTED_PROGRAM';
+      frame.intent = 'UNSUPPORTED_PROGRAM_INQUIRY';
+      frame.retrievalRequired = false;
+    }
+
+    // Explicit Unsupported Entity Fail-Closed Hand-off
+    if (frame.unsupportedEntity || frame.isUnsupportedEntity || frame.domain === 'UNSUPPORTED_PROGRAM') {
+      const synthRes = await synthesizeAnswer(frame, {
+        unsupportedEntity: true,
+        unsupportedEntityName: frame.unsupportedEntityName,
+        retrievalPlan: { unsupportedEntity: true, unsupportedEntityName: frame.unsupportedEntityName }
+      });
+      const verifRes = verifyFinalAnswer(synthRes.answer, frame, {
+        unsupportedEntity: true,
+        unsupportedEntityName: frame.unsupportedEntityName,
+        retrievalPlan: { unsupportedEntity: true, unsupportedEntityName: frame.unsupportedEntityName }
+      });
+      subQueryResults.push({
+        frame,
+        semanticFrame: frame,
+        plan: null,
+        candidates: [],
+        allCandidates: [],
+        preArbitrationTop12: [],
+        candidatesCount: 0,
+        acceptedCount: 0,
+        rejectedCount: 0,
+        answerability: ANSWERABILITY_STATUS.ANSWERABLE,
+        status: 'unsupported_program',
+        answer: synthRes.answer,
+        verification: verifRes,
+        arbitrated: { accepted: [], rejected: [] },
+        arbitratedEvidence: { accepted: [], rejected: [] }
+      });
+      continue;
+    }
+
+    // Explicit Out-of-Domain Terminal Hand-off
+    if (frame.domain === 'OUT_OF_DOMAIN' || frame.intent === 'OUT_OF_DOMAIN_INQUIRY') {
+      const oodReply = 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.';
+      subQueryResults.push({
+        frame,
+        semanticFrame: frame,
+        plan: null,
+        candidates: [],
+        allCandidates: [],
+        preArbitrationTop12: [],
+        candidatesCount: 0,
+        acceptedCount: 0,
+        rejectedCount: 0,
+        answerability: 'OUT_OF_DOMAIN',
+        status: 'out_of_domain',
+        answer: oodReply,
+        verification: { pass: true, reason: 'out_of_domain_terminal' },
+        arbitrated: { accepted: [], rejected: [] },
+        arbitratedEvidence: { accepted: [], rejected: [] }
+      });
+      continue;
+    }
+
     // Check if conversational non-retrieval intent
     if (frame.domain === 'CONVERSATIONAL' || frame.retrievalRequired === false) {
       let reply = '';
@@ -230,6 +299,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     // 4. Stage B: Strict Evidence Arbitration (Hard Entity Lock, Temporal, Aspect)
     const arbitrated = arbitrateEvidence(candidates, plan);
     arbitrated.retrievalPlan = plan;
+    arbitrated.rawAccepted = [...arbitrated.accepted];
     if (arbitrated.accepted.length > 10) {
       arbitrated.accepted = arbitrated.accepted.slice(0, 10);
     }
@@ -265,16 +335,24 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       verification = { pass: true, reason: 'safe_unknown' };
     }
 
+    const subStatus = answerability.status === ANSWERABILITY_STATUS.UNKNOWN ? 'corpus_gap' : undefined;
+
     subQueryResults.push({
       frame,
+      semanticFrame: frame,
       plan,
+      candidates,
+      allCandidates: candidates,
+      preArbitrationTop12: candidates.slice(0, 12),
       candidatesCount: candidates.length,
       acceptedCount: arbitrated.accepted.length,
       rejectedCount: arbitrated.rejected.length,
       answerability: answerability.status,
+      status: subStatus,
       answer,
       verification,
-      arbitrated
+      arbitrated,
+      arbitratedEvidence: arbitrated
     });
   }
 
@@ -291,8 +369,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
-        activeEntity: primaryFrame.entities.length > 0 
-          ? primaryFrame.entities[0].canonical 
+        activeEntity: primaryFrame.entities.length > 0
+          ? primaryFrame.entities[0].canonical
           : (sessionData.activeEntity || null),
         lastQuery: rawQuery,
         lastAnswer: finalAnswer
@@ -305,9 +383,14 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     await outboundDispatcher.sendOutboundMessage(chatId, finalAnswer);
   }
 
+  const primaryStatus = subQueryResults[0]?.status ||
+    (subQueryResults[0]?.frame?.domain === 'UNSUPPORTED_PROGRAM' ? 'unsupported_program' :
+     (subQueryResults[0]?.frame?.domain === 'OUT_OF_DOMAIN' ? 'out_of_domain' : undefined));
+
   return {
     chatId,
     rawQuery,
+    status: primaryStatus,
     subQueryResults,
     finalAnswer
   };
