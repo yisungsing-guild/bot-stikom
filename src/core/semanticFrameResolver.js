@@ -63,7 +63,7 @@ const CANONICAL_DOMAIN_LEXICON = [
   'fasilitas', 'laboratorium', 'perpustakaan', 'organisasi'
 ];
 
-const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking)\b/i;
+const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking|undergraduate|bachelor|master|postgraduate|study\s+programs?|academic\s+programs?|degree\s+programs?|majors?)\b/i;
 
 const PROTECTED_CANONICAL_WORDS = new Set([
   'dan', 'atau', 'ke', 'di', 'dari', 'pada', 'untuk', 'dengan', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'saya', 'kami', 'kita', 'dia', 'ini', 'itu', 'apa', 'siapa', 'mana', 'kapan', 'sudah', 'belum', 'tidak', 'bukan'
@@ -421,16 +421,16 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   // 6. Available Programs Listing (Generic Scope vs Specific Entity)
   const hasSpecificProgramEntity = entities.some(e => e.family === 'academic_program' && e.type === 'program');
   const hasStudentOrgEntity = entities.some(e => e.family === 'student_organization');
-  const hasProgramConcept = /\b(?:program\s*studi|jurusan|prodi|fakultas|pilihan\s+kuliah|kuliah)(?:nya)?\b/i.test(normalized);
-  const hasListingConcept = /\b(?:apa\s+saja|ada\s+apa|pilihan|daftar|list|opsi|tersedia|bisa\s+ambil\s+apa|punya|mau\s+lihat|pilihannya|apa)\b/i.test(normalized);
+  const hasProgramConcept = /\b(?:program\s*studi|jurusan|prodi|fakultas|pilihan\s+kuliah|kuliah|study\s+programs?|majors?|departments?|facult(?:y|ies)|(?:undergraduate|bachelor|master|postgraduate|diploma|degree|academic|study)\s+programs?)(?:nya)?\b/i.test(normalized);
+  const hasListingConcept = /\b(?:apa\s+saja|ada\s+apa|pilihan|daftar|list|opsi|tersedia|bisa\s+ambil\s+apa|punya|mau\s+lihat|pilihannya|apa|what(?:\s+are|\s+is)?|which|available|offered|offer|options?)\b/i.test(normalized);
 
   const isAvailableProgramsInquiry = !hasSpecificProgramEntity && !hasStudentOrgEntity && hasProgramConcept && hasListingConcept &&
-    !/\b(?:biaya|bayar|daftar\s+ulang|syarat|akreditasi|kurikulum|matkul|beasiswa|lokasi|jadwal|bingung|rekomendasi|rekomendasikan|cocok|saran|minat|himpunan|himaprodi|hima|ukm|ormawa)\b/i.test(normalized);
+    !/\b(?:biaya|bayar|daftar\s+ulang|syarat|akreditasi|kurikulum|matkul|beasiswa|lokasi|jadwal|bingung|rekomendasi|rekomendasikan|cocok|saran|minat|himpunan|himaprodi|hima|ukm|ormawa|fee|fees|cost|tuition|scholarship|requirements?)\b/i.test(normalized);
 
   if (isAvailableProgramsInquiry) {
-    const isS1Only = /\b(s1|sarjana)\b/i.test(normalized) && !/\b(s2|d3)\b/i.test(normalized);
-    const isS2Only = /\b(s2|magister|pascasarjana)\b/i.test(normalized);
-    const isD3Only = /\b(d3|diploma)\b/i.test(normalized);
+    const isS1Only = /\b(s1|sarjana|bachelor|undergraduate)\b/i.test(normalized) && !/\b(s2|d3|master|graduate|postgraduate|diploma|associate)\b/i.test(normalized);
+    const isS2Only = /\b(s2|magister|pascasarjana|master|graduate|postgraduate)\b/i.test(normalized);
+    const isD3Only = /\b(d3|diploma|associate)\b/i.test(normalized);
     const scopeLevel = isS1Only ? 'S1' : (isS2Only ? 'S2' : (isD3Only ? 'D3' : 'ALL'));
 
     return {
@@ -1140,7 +1140,12 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     // Determine domain from validated concept or fallback
     let domain = validated.domain || syncFrame.domain;
     const isContextInheritedTurn = Boolean(syncFrame.contextDependency?.shouldInherit || interpretation.contextDependency?.isFollowUp || (sessionData && sessionData.activeEntity));
-    if (syncFrame.domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn) {
+    const hasValidModelConcept = Array.isArray(interpretation.semanticConcepts) &&
+      interpretation.semanticConcepts.length > 0 &&
+      interpretation.semanticConcepts.some(c => ['ACADEMIC_OFFERING', 'FINANCIAL_COST', 'ADMISSION_ONBOARDING', 'QUALITY_ACCREDITATION', 'CAMPUS_LIFE', 'INTERNATIONAL_STUDY', 'CAREER_EMPLOYMENT'].includes(c));
+    const isModelOOD = validated.domain === 'OUT_OF_DOMAIN' || validated.speechAct === 'OFF_TOPIC';
+
+    if (syncFrame.domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn && (!hasValidModelConcept || isModelOOD)) {
       domain = 'OUT_OF_DOMAIN';
     } else if (['CONVERSATIONAL', 'SCHOLARSHIP', 'ORGANIZATION_UKM', 'FACILITIES', 'INTERNATIONAL'].includes(syncFrame.domain)) {
       domain = syncFrame.domain;
@@ -1176,7 +1181,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     const speechAct = validated.speechAct;
     const primaryConcept = interpretation.semanticConcepts?.[0] || null;
 
-    if ((syncFrame.domain === 'OUT_OF_DOMAIN' || domain === 'OUT_OF_DOMAIN') && !isContextInheritedTurn) {
+    if (domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn) {
       intent = 'OUT_OF_DOMAIN_INQUIRY';
       domain = 'OUT_OF_DOMAIN';
     } else if (syncFrame.domain === 'CONVERSATIONAL') {

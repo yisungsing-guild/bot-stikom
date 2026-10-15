@@ -99,7 +99,7 @@ const CANONICAL_ENTITIES = [
     degree: 'S1',
     aliases: [
       'program sarjana (s1)', 'program sarjana', 'jurusan sarjana', 'prodi sarjana', 'program s1', 'jurusan s1', 'prodi s1', 'sarjana', 'strata 1',
-      'bachelor program', 'undergraduate program', 'bachelor degree'
+      'bachelor program', 'undergraduate program', 'bachelor degree', 'undergraduate study programs', 'undergraduate programs', 'undergraduate study program', 'bachelor study programs', 'bachelor programs', 'undergraduate degrees'
     ]
   },
   {
@@ -109,7 +109,7 @@ const CANONICAL_ENTITIES = [
     degree: 'D3',
     aliases: [
       'program diploma (d3)', 'program diploma', 'jurusan diploma', 'prodi diploma', 'program d3', 'jurusan d3', 'prodi d3', 'diploma', 'diploma 3',
-      'diploma program', 'associate degree'
+      'diploma program', 'associate degree', 'diploma programs', 'diploma study programs', 'diploma study program', 'associate degree program'
     ]
   },
   {
@@ -119,7 +119,7 @@ const CANONICAL_ENTITIES = [
     degree: 'S2',
     aliases: [
       'program pascasarjana (s2)', 'program pascasarjana', 'program magister', 'jurusan s2', 'prodi s2', 'program s2', 'magister', 'pascasarjana',
-      'master program', 'graduate program', 'postgraduate program'
+      'master program', 'graduate program', 'postgraduate program', 'master programs', 'master study programs', 'master study program', 'graduate programs', 'graduate study programs', 'postgraduate programs', 'postgraduate study programs', 'master degree'
     ]
   },
 
