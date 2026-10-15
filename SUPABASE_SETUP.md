@@ -32,17 +32,17 @@
 
 **A) Direct connection (untuk server persist; IPv6 by default)**
 ```
-postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres?sslmode=require
+postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require
 ```
 
 **B) Pooler Session mode (recommended untuk server IPv4-only)**
 ```
-postgresql://postgres.[PROJECT_REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres?sslmode=require
+postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require
 ```
 
 **C) Pooler Transaction mode (serverless/koneksi singkat; Prisma perlu pgbouncer=true)**
 ```
-postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT_REF].supabase.co:6543/postgres?sslmode=require&pgbouncer=true&connection_limit=1
+postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require
 ```
 
 Catatan:
@@ -59,12 +59,12 @@ Buka file `.env` di root project Anda dan isi `DATABASE_URL` sesuai metode konek
 
 Contoh (Pooler Session mode untuk IPv4):
 ```bash
-DATABASE_URL="postgresql://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-YOUR_REGION.pooler.supabase.com:5432/postgres?sslmode=require"
+DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require"
 ```
 
 Contoh (Direct connection):
 ```bash
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require"
+DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require"
 ```
 
 **⚠️ PENTING:**
@@ -102,10 +102,10 @@ datasource db {
 Di `.env`:
 ```bash
 # Connection pooling untuk queries
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:6543/postgres?pgbouncer=true"
+DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require"
 
 # Direct connection untuk migrations
-DIRECT_URL="postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres"
+DIRECT_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require"
 ```
 
 ---
@@ -178,7 +178,7 @@ async function uploadFile(file, fileName) {
 
 **Tambahkan ke `.env`:**
 ```bash
-SUPABASE_URL="https://xxxxxxxxxxxxx.supabase.co"
+SUPABASE_URL="https://[PROJECT-REF].supabase.co"
 SUPABASE_ANON_KEY="your-anon-key"
 ```
 
@@ -266,7 +266,7 @@ Kalau `DATABASE_URL` kamu sudah punya query parameter (mis. `?pgbouncer=true`), 
 ### Error: `SSL connection required`
 Tambahkan `?sslmode=require` di connection string:
 ```bash
-DATABASE_URL="postgresql://postgres:pass@db.xxx.supabase.co:6543/postgres?sslmode=require"
+DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require"
 ```
 
 ### Performance Lambat
