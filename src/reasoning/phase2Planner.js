@@ -127,7 +127,7 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   // Fee inquiries without entity or level: "berapa biaya kuliahnya?", "biayanya berapa?", "berapa spp-nya?"
   // Note: Facility/service fees (e.g. parkir, kantin, gedung pernikahan) are NOT tuition fee program inquiries!
   // Note: Specific scholarship inquiries (e.g. "beasiswa penuh dari Pemerintah Daerah Provinsi Papua") are NOT ambiguous tuition fee inquiries!
-  const isFacilityOrServiceFee = /\b(?:parkir|kantin|katering|makanan|aula|resepsi|sewa)\b/i.test(q) ||
+  const isFacilityOrServiceFee = /\b(?:parkir|parking|kantin|canteen|katering|catering|makanan|food|aula|hall|resepsi|sewa|rent)\b/i.test(q) ||
     (/\bgedung\b/i.test(q) && !/\b(?:uang|biaya)\s+gedung\b/i.test(q));
   const isScholarshipOrSponsorship = /\b(?:beasiswa|sponsor|sponsorship|bantuan\s+dana|keringanan\s+biaya)\b/i.test(q);
   const isGraduationOrCertificationFee = /\b(?:wisuda|yudisium|sertifikasi)\b/i.test(q);
@@ -144,7 +144,7 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   const isSpecialScopeRequirement = semanticFrame?.domain === 'SCHOLARSHIP' ||
     semanticFrame?.domain === 'INTERNATIONAL' ||
     semanticFrame?.participantScope === 'foreign' ||
-    /\b(?:visa|itas|kitas|izin\s+belajar|asing|beasiswa|tugas\s+akhir|skripsi|yudisium|wisuda|bimbingan)\b/i.test(q);
+    /\b(?:visa|itas|kitas|izin\s+belajar|asing|beasiswa|tugas\s+akhir|skripsi|final\s+project|thesis|defen[sd]e?|yudisium|wisuda|graduation|bimbingan|pertukaran|student\s+exchange|exchange)\b/i.test(q);
 
   if (!isSpecialScopeRequirement &&
       (semanticFrame?.intent === 'ADMISSION_REQUIREMENTS' || (semanticFrame?.domain === 'PMB' && aspects.includes('requirements'))) &&
@@ -154,7 +154,7 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
 
   // Schedule inquiries without context: "kapan perkuliahan dimulai?", "jadwal kuliah kapan?", "kapan batas akhir pendaftaran?"
   // If asking for registration/admission schedule without specific prodi or specific wave/gelombang:
-  const isFacilityOrCanteen = /\b(?:kantin|menu|makanan|bus|shuttle|parkir)\b/i.test(q);
+  const isFacilityOrCanteen = /\b(?:kantin|menu|makanan|bus|shuttle|parkir|parking)\b/i.test(q);
   if (!isFacilityOrCanteen && (aspects.includes('schedule') || semanticFrame?.intent === 'ADMISSION_SCHEDULE')) {
     if (!semanticFrame.academicLevel) {
       // If it asks for batas akhir/jadwal pendaftaran but does not specify gelombang (1, 2, 3) or jalur

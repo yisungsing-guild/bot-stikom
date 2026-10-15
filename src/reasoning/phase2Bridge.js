@@ -32,6 +32,7 @@ const { synthesizeAnswer } = require('../core/groundedAnswerGenerator');
 const { ANSWERABILITY_STATUS } = require('../core/answerabilityGate');
 const boundedReflection = require('./boundedReflection');
 const { createTurnController } = require('./turnController');
+const { detectQueryLanguage } = require('../utils/languageDetector');
 const logger = require('../logger');
 
 /**
@@ -200,7 +201,10 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       planResult.plan?.domain === 'OUT_OF_DOMAIN';
 
     if (isOutOfDomain) {
-      const oodAnswer = 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.';
+      const isEn = internalOptions.semanticFrame?.language === 'en' || detectQueryLanguage(rawQuery) === 'en';
+      const oodAnswer = isEn
+        ? 'We apologize, but this service only provides information regarding academics, admissions (PMB), study programs, tuition fees, and facilities at ITB STIKOM Bali. Your question is outside our service scope.'
+        : 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.';
 
       const won = turnControl.tryAcceptPhase2();
       if (!won) {

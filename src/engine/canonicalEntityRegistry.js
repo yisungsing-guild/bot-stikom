@@ -12,7 +12,10 @@ const CANONICAL_ENTITIES = [
     type: 'program',
     family: 'academic_program',
     degree: 'S1',
-    aliases: ['sistem informasi', 'si', 's1 si', 's1 sistem informasi', 'prodi si', 'jurusan si', 'sarjana sistem informasi', 'sisfo', 's1 sisfo'],
+    aliases: [
+      'sistem informasi', 'si', 's1 si', 's1 sistem informasi', 'prodi si', 'jurusan si', 'sarjana sistem informasi', 'sisfo', 's1 sisfo',
+      'information systems', 'bachelor of information systems', 'bachelor in information systems', 'undergraduate information systems'
+    ],
     aliasGovernance: {
       'sisfo': { status: 'REQUIRES_REVIEW', reason: 'Informal conversational Indonesian syllable acronym; absent from official STIKOM institutional documents' },
       's1 sisfo': { status: 'REQUIRES_REVIEW', reason: 'Informal conversational Indonesian syllable acronym; absent from official STIKOM institutional documents' }
@@ -23,28 +26,40 @@ const CANONICAL_ENTITIES = [
     type: 'program',
     family: 'academic_program',
     degree: 'S1',
-    aliases: ['teknologi informasi', 'ti', 's1 ti', 's1 teknologi informasi', 'prodi ti', 'jurusan ti', 'sarjana teknologi informasi']
+    aliases: [
+      'teknologi informasi', 'ti', 's1 ti', 's1 teknologi informasi', 'prodi ti', 'jurusan ti', 'sarjana teknologi informasi',
+      'information technology', 'bachelor of information technology', 'bachelor in information technology', 'undergraduate information technology'
+    ]
   },
   {
     canonical: 'S1 Bisnis Digital',
     type: 'program',
     family: 'academic_program',
     degree: 'S1',
-    aliases: ['bisnis digital', 'bd', 's1 bd', 's1 bisnis digital', 'prodi bd', 'jurusan bd', 'sarjana bisnis digital']
+    aliases: [
+      'bisnis digital', 'bd', 's1 bd', 's1 bisnis digital', 'prodi bd', 'jurusan bd', 'sarjana bisnis digital',
+      'digital business', 'bachelor of digital business', 'bachelor in digital business', 'undergraduate digital business'
+    ]
   },
   {
     canonical: 'S1 Sistem Komputer',
     type: 'program',
     family: 'academic_program',
     degree: 'S1',
-    aliases: ['sistem komputer', 'sk', 's1 sk', 's1 sistem komputer', 'prodi sk', 'jurusan sk', 'sarjana sistem komputer']
+    aliases: [
+      'sistem komputer', 'sk', 's1 sk', 's1 sistem komputer', 'prodi sk', 'jurusan sk', 'sarjana sistem komputer',
+      'computer engineering', 'computer systems', 'bachelor of computer engineering', 'bachelor in computer engineering', 'bachelor of computer systems'
+    ]
   },
   {
     canonical: 'D3 Manajemen Informatika',
     type: 'program',
     family: 'academic_program',
     degree: 'D3',
-    aliases: ['manajemen informatika', 'mi', 'd3 mi', 'd3 manajemen informatika', 'diploma manajemen informatika', 'prodi mi']
+    aliases: [
+      'manajemen informatika', 'mi', 'd3 mi', 'd3 manajemen informatika', 'diploma manajemen informatika', 'prodi mi',
+      'informatics management', 'd3 informatics management', 'diploma of informatics management', 'diploma in informatics management'
+    ]
   },
   {
     canonical: 'S2 Sistem Informasi',
@@ -55,7 +70,9 @@ const CANONICAL_ENTITIES = [
       's2 sistem informasi', 's2 si', 's2 sisfo', 'magister sistem informasi',
       'magister sisfo', 'pascasarjana sistem informasi', 'magister si',
       's2 magister sistem informasi', 'prodi s2 sistem informasi',
-      'program studi magister sistem informasi'
+      'program studi magister sistem informasi',
+      'master of information systems', 'master in information systems', 'master of science in information systems', 'graduate information systems', 's2 information systems',
+      'magister of information systems', 'master of information system', 'master degree in information systems'
     ],
     aliasGovernance: {
       's2 sisfo': { status: 'REQUIRES_REVIEW', reason: 'Informal conversational Indonesian syllable acronym; absent from official STIKOM institutional documents' },
@@ -70,7 +87,7 @@ const CANONICAL_ENTITIES = [
     aliases: [
       'gelar magister komputer', 'magister komputer', 'm.kom', 'm.kom.',
       'gelar m.kom', 'gelar magister komputer (m.kom.)', 'gelar s2 magister komputer',
-      'gelar magister'
+      'gelar magister', 'master of computer degree', 'm.kom degree'
     ]
   },
 
@@ -80,21 +97,30 @@ const CANONICAL_ENTITIES = [
     type: 'academic_scope',
     family: 'academic_scope',
     degree: 'S1',
-    aliases: ['program sarjana (s1)', 'program sarjana', 'jurusan sarjana', 'prodi sarjana', 'program s1', 'jurusan s1', 'prodi s1', 'sarjana', 'strata 1']
+    aliases: [
+      'program sarjana (s1)', 'program sarjana', 'jurusan sarjana', 'prodi sarjana', 'program s1', 'jurusan s1', 'prodi s1', 'sarjana', 'strata 1',
+      'bachelor program', 'undergraduate program', 'bachelor degree'
+    ]
   },
   {
     canonical: 'Program Diploma (D3)',
     type: 'academic_scope',
     family: 'academic_scope',
     degree: 'D3',
-    aliases: ['program diploma (d3)', 'program diploma', 'jurusan diploma', 'prodi diploma', 'program d3', 'jurusan d3', 'prodi d3', 'diploma', 'diploma 3']
+    aliases: [
+      'program diploma (d3)', 'program diploma', 'jurusan diploma', 'prodi diploma', 'program d3', 'jurusan d3', 'prodi d3', 'diploma', 'diploma 3',
+      'diploma program', 'associate degree'
+    ]
   },
   {
     canonical: 'Program Pascasarjana (S2)',
     type: 'academic_scope',
     family: 'academic_scope',
     degree: 'S2',
-    aliases: ['program pascasarjana (s2)', 'program pascasarjana', 'program magister', 'jurusan s2', 'prodi s2', 'program s2', 'magister', 'pascasarjana']
+    aliases: [
+      'program pascasarjana (s2)', 'program pascasarjana', 'program magister', 'jurusan s2', 'prodi s2', 'program s2', 'magister', 'pascasarjana',
+      'master program', 'graduate program', 'postgraduate program'
+    ]
   },
 
   // Student Associations (HIMAPRODI / HIMA)

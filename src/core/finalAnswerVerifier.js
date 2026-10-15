@@ -98,10 +98,10 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   const excludedEntities = (arbitratedEvidence.retrievalPlan && arbitratedEvidence.retrievalPlan.excludedConflictingEntities) || [];
   
   function isComparativeSentence(sentence, excluded) {
-    const hasContrast = /\b(berbeda\s+(?:dengan|halnya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti)\b/i.test(sentence);
-    const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan)\b/i.test(sentence);
+    const hasContrast = /\b(berbeda\s+(?:dengan|halnya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti|differs?\s+(?:from)?|compared\s+(?:to|with)|whereas|while|unlike|contrast|difference)\b/i.test(sentence);
+    const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan|graduate|graduates|degree|background|bachelor|prerequisite|requirements)\b/i.test(sentence);
     const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const isDirectSubject = new RegExp(`^(?:program\\s+studi|prodi|jurusan)?\\s*${escaped}\\s+(?:adalah|merupakan|berfokus|memiliki|yaitu)\\b`, 'i').test(sentence.trim());
+    const isDirectSubject = new RegExp(`^(?:program\\s+studi|prodi|jurusan|study\\s+program|program|major)?\\s*${escaped}\\s+(?:adalah|merupakan|berfokus|memiliki|yaitu|is|focuses|offers)\\b`, 'i').test(sentence.trim());
     return (hasContrast || isPrerequisite) && !isDirectSubject;
   }
 
@@ -161,11 +161,11 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   const isUnsupported = Boolean(
     arbitratedEvidence.retrievalPlan?.isUnsupportedEntity ||
     semanticFrame.isUnsupportedEntity ||
-    /tidak diselenggarakan di ITB STIKOM Bali/i.test(text)
+    /tidak diselenggarakan di ITB STIKOM Bali|is currently not offered at ITB STIKOM Bali/i.test(text)
   );
 
   // 3. Temporal Claim Grounding Check (Detect ungrounded currentness claims)
-  const temporalClaimPattern = /\b(saat ini|sekarang|hari ini|masih buka|masih dibuka|masih tersedia|masih menerima|sudah tutup|telah ditutup|sedang aktif|berlaku aktif)\b/i;
+  const temporalClaimPattern = /\b(saat ini|sekarang|hari ini|masih buka|masih dibuka|masih tersedia|masih menerima|sudah tutup|telah ditutup|sedang aktif|berlaku aktif|currently|at present|now|still open|still active|closed)\b/i;
   if (temporalClaimPattern.test(text) && !isUnsupported) {
     // If the answer asserts a temporal claim, arbitrated evidence must exist
     if (!arbitratedEvidence.accepted || arbitratedEvidence.accepted.length === 0) {
@@ -198,7 +198,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)))) && !isUnsupported;
 
   if (isFeeInquiry) {
-    const hasFeeKeywords = /\b(biaya|pendidikan|dpp|spp|uang pangkal|rp|cicil|pembayaran|nominal)\b/i.test(text);
+    const hasFeeKeywords = /\b(biaya|pendidikan|dpp|spp|uang pangkal|rp|cicil|pembayaran|nominal|fee|fees|tuition|cost|costs|costing|pay|pays|paying|payment|payments|installment|installments|price|prices)\b/i.test(text);
     const hasCurriculumOnly = /\b(semester\s+[ivx\d]+\s+no\s+nama\s+mata\s+kuliah|praktikum\s+[a-z]+|kurikulum\s+2025)\b/i.test(text) && !hasFeeKeywords;
     if (!hasFeeKeywords || hasCurriculumOnly) {
       return {
@@ -212,7 +212,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses', 'competencies'].includes(a)));
 
   if (isCurriculumInquiry && !isUnsupported) {
-    const hasCurriculumKeywords = /\b(berfokus|mempelajari|kurikulum|mata\s*kuliah|matkul|sks|semester|silabus|kompetensi|pembelajaran|fokus|bidang|pemrograman|keahlian)\b/i.test(text);
+    const hasCurriculumKeywords = /\b(berfokus|mempelajari|kurikulum|mata\s*kuliah|matkul|sks|semester|silabus|kompetensi|pembelajaran|fokus|bidang|pemrograman|keahlian|focus(?:es|ed|ing)?|learn(?:s|ing|ed)?|stud(?:y|ies|ied|ying)|teach(?:es|ing)?|taught|cover(?:s|ed|ing)?|skill(?:s)?|hardware|software|network(?:s|ing)?|programming|system(?:s)?|specializ(?:e|es|ed|ing|ation)|curriculum|courses?|credits?|semesters?|syllabus|competenc(?:y|ies)|degree(?:s)?|duration|career(?:s)?|jobs?|roles?|graduates?|qualification(?:s)?|prerequisite(?:s)?|requirement(?:s)?|defen(?:d|se|ses)|final\s+project|thesis|transcript|registration|clearance|supervis(?:or|ion)|advis(?:or|ing)|persyaratan|syarat|skripsi|bimbingan)\b/i.test(text);
     if (!hasCurriculumKeywords) {
       return {
         pass: false,
@@ -225,8 +225,8 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
     (semanticFrame.aspects && semanticFrame.aspects.includes('contact'));
 
   if (isContactInquiry && !isUnsupported) {
-    const hasContactDetails = /\b(whatsapp|wa|telepon|telp|nomor|call|email|humas|pmb|08\d{8,}|0361|\.ac\.id)\b/i.test(text);
-    const isExplicitAbstain = /tidak\s+ditemukan|belum\s+tersedia|tidak\s+dapat\s+diverifikasi/i.test(text);
+    const hasContactDetails = /\b(whatsapp|wa|telepon|telp|nomor|call|phone|contact|email|humas|pmb|08\d{8,}|0361|\.ac\.id)\b/i.test(text);
+    const isExplicitAbstain = /tidak\s+ditemukan|belum\s+tersedia|tidak\s+dapat\s+diverifikasi|not\s+(?:listed|found|available|recorded)|unrecorded/i.test(text);
     if (!hasContactDetails && !isExplicitAbstain) {
       return {
         pass: false,

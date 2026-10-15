@@ -12,6 +12,8 @@
  * - Does not invent facts.
  */
 
+const { detectQueryLanguage } = require('../utils/languageDetector');
+
 const ANSWERABILITY_STATUS = Object.freeze({
   ANSWERABLE: 'ANSWERABLE',
   PARTIAL: 'PARTIAL',
@@ -22,6 +24,7 @@ const ANSWERABILITY_STATUS = Object.freeze({
 
 function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
   const { accepted = [], rejected = [] } = arbitratedEvidence;
+  const isEn = semanticFrame?.language === 'en' || detectQueryLanguage(semanticFrame?.rawQuery) === 'en';
 
   // 1. If no accepted evidence exists
   if (!accepted || accepted.length === 0) {
@@ -30,35 +33,44 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       return {
         status: ANSWERABILITY_STATUS.ESCALATE,
         reason: 'missed_process_requires_staff_assistance',
-        guidance: 'Mohon hubungi bagian Bagian Akademik (BAAK) atau dosen wali untuk penanganan keterlambatan perwalian.'
+        guidance: isEn
+          ? 'Please contact the Academic Administration Bureau (BAAK) or your academic advisor regarding late enrollment/advising.'
+          : 'Mohon hubungi bagian Bagian Akademik (BAAK) atau dosen wali untuk penanganan keterlambatan perwalian.'
       };
     }
 
     if (semanticFrame.domain === 'TUITION_FEE' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)))) {
       const isFacilityOrInfrastructure = semanticFrame.domain === 'FACILITIES' ||
         (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'campus_infrastructure'].includes(a))) ||
-        (semanticFrame.entities && semanticFrame.entities.some(e => ['campus_facility', 'facility'].includes(e.family || e.type)));
+        (semanticFrame.entities && semanticFrame.entities.some(e => ['campus_facility', 'facility'].includes(e.family || e.type))) ||
+        /\b(?:parkir|parking)\b/i.test(semanticFrame.rawQuery || '');
       if (isFacilityOrInfrastructure) {
         return {
           status: ANSWERABILITY_STATUS.UNKNOWN,
           reason: 'insufficient_facility_fee_evidence',
-          guidance: 'Informasi resmi mengenai tarif atau biaya fasilitas tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
+          guidance: isEn
+            ? 'Official information regarding parking or facility fees is not listed in the available guidelines.'
+            : 'Informasi resmi mengenai tarif atau biaya fasilitas tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
         };
       }
       return {
         status: ANSWERABILITY_STATUS.UNKNOWN,
         reason: 'insufficient_fee_evidence',
-        guidance: 'Informasi resmi mengenai rincian biaya kuliah untuk program studi tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
+        guidance: isEn
+          ? 'Official information regarding tuition fee details for that study program is not fully listed in the available guide.'
+          : 'Informasi resmi mengenai rincian biaya kuliah untuk program studi tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
       };
     }
 
     // Check for private contact inquiries (e.g. personal WA/phone of rector, kaprodi)
-    const isPrivateContact = /\b(nomor\s+pribadi|wa\s+pribadi|whatsapp\s+pribadi|nomor\s+hp|kontak\s+pribadi)\b/i.test(semanticFrame.rawQuery || '');
+    const isPrivateContact = /\b(nomor\s+pribadi|wa\s+pribadi|whatsapp\s+pribadi|nomor\s+hp|kontak\s+pribadi|private\s+contact|personal\s+number)\b/i.test(semanticFrame.rawQuery || '');
     if (isPrivateContact) {
       return {
         status: ANSWERABILITY_STATUS.UNKNOWN,
         reason: 'corpus_gap',
-        guidance: 'Mohon maaf, nomor kontak pribadi tidak dipublikasikan dalam panduan resmi. Silakan menghubungi saluran resmi kampus atau humas ITB STIKOM Bali.'
+        guidance: isEn
+          ? 'We apologize, but personal contact numbers are not published in official guidelines. Please contact the official university offices or public relations.'
+          : 'Mohon maaf, nomor kontak pribadi tidak dipublikasikan dalam panduan resmi. Silakan menghubungi saluran resmi kampus atau humas ITB STIKOM Bali.'
       };
     }
 
@@ -66,7 +78,9 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     return {
       status: ANSWERABILITY_STATUS.UNKNOWN,
       reason: 'corpus_gap',
-      guidance: 'Informasi resmi terkait hal ini belum tercantum secara lengkap dalam panduan yang tersedia.'
+      guidance: isEn
+        ? 'Official information regarding this matter is not fully listed in the available guidelines.'
+        : 'Informasi resmi terkait hal ini belum tercantum secara lengkap dalam panduan yang tersedia.'
     };
   }
 
@@ -91,7 +105,9 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
           reason: 'insufficient_fee_aspect_coverage',
           coveredAspects: [],
           missingAspects: requiredAspects,
-          guidance: 'Informasi resmi mengenai rincian biaya kuliah untuk program studi tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
+          guidance: isEn
+            ? 'Official information regarding tuition fee details for that study program is not fully listed in the available guide.'
+            : 'Informasi resmi mengenai rincian biaya kuliah untuk program studi tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
         };
       }
       return {
@@ -99,7 +115,9 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         reason: 'insufficient_aspect_evidence',
         coveredAspects: [],
         missingAspects: requiredAspects,
-        guidance: 'Informasi resmi terkait aspek tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
+        guidance: isEn
+          ? 'Official information regarding that aspect is not fully listed in the available guidelines.'
+          : 'Informasi resmi terkait aspek tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
       };
     }
 
@@ -109,7 +127,9 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         reason: 'partial_aspect_coverage',
         coveredAspects,
         missingAspects,
-        guidance: `Informasi terkait ${missingAspects.join(', ')} belum tercantum secara lengkap dalam panduan yang tersedia.`
+        guidance: isEn
+          ? `Information regarding ${missingAspects.join(', ')} is not fully listed in the available guidelines.`
+          : `Informasi terkait ${missingAspects.join(', ')} belum tercantum secara lengkap dalam panduan yang tersedia.`
       };
     }
   }
@@ -129,7 +149,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
   // the accepted evidence must explicitly mention the specific inquiry topic, rather than generic campus FAQ.
   const rawQ = String(semanticFrame.rawQuery || '').toLowerCase();
   const isPrivateContact = /\b(?:nomor\s+)?(?:wa|whatsapp|hp|handphone|telepon|telp|kontak)\s+pribadi\b|\b(?:nomor\s+pribadi|kontak\s+pribadi)\b/i.test(rawQ);
-  const isParkingFee = /\b(parkir(?:\s+inap)?|tarif\s+parkir)\b/i.test(rawQ);
+  const isParkingFee = /\b(parkir(?:\s+inap)?|tarif\s+parkir|parking|parking\s+(?:fee|rate|subscription))\b/i.test(rawQ);
   const isCanteenMenu = /\b(kantin|menu\s+makanan|katering)\b/i.test(rawQ);
   const isShuttleBus = /\b(bus\s+shuttle|shuttle\s+bus)\b/i.test(rawQ);
   const isSpecificExternalScholarship = /\b(pemda|pemerintah\s+daerah|provinsi\s+papua|beasiswa\s+pemda)\b/i.test(rawQ);
@@ -146,13 +166,16 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     };
   }
 
-  if (isParkingFee && !/\b(parkir|tarif\s+parkir)\b/i.test(combinedEvidenceText)) {
+  if (isParkingFee && !/\b(parkir|tarif\s+parkir|parking)\b/i.test(combinedEvidenceText)) {
+    const isEn = semanticFrame.language === 'en';
     return {
       status: ANSWERABILITY_STATUS.UNKNOWN,
       reason: 'corpus_gap_parking_fee_unrecorded',
       coveredAspects: [],
       missingAspects: ['parking_fee'],
-      guidance: 'Informasi resmi mengenai tarif parkir inap kendaraan belum tercantum secara lengkap dalam panduan yang tersedia.'
+      guidance: isEn
+        ? 'Official information regarding annual student car parking subscriptions is currently not listed in the available campus guidelines. Please confirm directly with campus administration.'
+        : 'Informasi resmi mengenai tarif parkir inap kendaraan belum tercantum secara lengkap dalam panduan yang tersedia.'
     };
   }
 

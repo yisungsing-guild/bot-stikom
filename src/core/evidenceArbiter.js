@@ -81,16 +81,58 @@ function isCandidateMatchingTargetEntity(candidateTextOrObj, targetEntityStr) {
   const targetNorm = targetEntityStr.toLowerCase();
   const fileNorm = candidateFile.toLowerCase();
 
-  // 0.5 Metadata and Multi-program scope matching via candidate object properties
-  if (typeof candidateTextOrObj === 'object') {
-    const targetCode = getProgramCodeFromEntity(targetEntityStr);
+  const isObjectCandidate = typeof candidateTextOrObj === 'object';
+  const candLevelRaw = isObjectCandidate ? (candidateTextOrObj.academicLevel || candidateTextOrObj.level || (candidateTextOrObj.metadata && (candidateTextOrObj.metadata.academicLevel || candidateTextOrObj.metadata.level))) : null;
+  const candLevel = candLevelRaw ? String(candLevelRaw).toUpperCase() : null;
+  const targetCode = getProgramCodeFromEntity(targetEntityStr);
 
-    // Hard program isolation: single-program candidate cannot match a conflicting target program
-    const candProg = candidateTextOrObj.program ? String(candidateTextOrObj.program).toUpperCase() : null;
-    if (targetCode && candProg && candProg !== targetCode && (candidateTextOrObj.scope === 'PROGRAM_SINGLE' || candProg !== 'MULTI')) {
+  const hasS1OrUndergrad = /\b(?:s1|sarjana|d3|diploma)\b/i.test(candidateFile) ||
+    /\b(?:s1|sarjana|d3|diploma)\b/i.test(candidateText);
+
+  // 1. Strict degree & academic level isolation (Runs BEFORE any metadata/context acceptance)
+  if (/^S1\b/i.test(targetEntityStr)) {
+    if (candLevel === 'S2') return false;
+    if (/\b(magister|s2|pascasarjana)\b/i.test(cleanText) && !hasS1OrUndergrad) {
+      return false;
+    }
+  }
+  if (/^S2\b/i.test(targetEntityStr)) {
+    if (candLevel && ['S1', 'D3'].includes(candLevel)) return false;
+    if (candLevel !== 'S2' && !/\b(magister|s2|pascasarjana)\b/i.test(cleanText) && !/\b(magister|s2|pascasarjana)\b/i.test(fileNorm)) {
+      return false;
+    }
+  }
+  if (/^D3\b/i.test(targetEntityStr)) {
+    if (candLevel && ['S1', 'S2'].includes(candLevel)) return false;
+    if (candLevel !== 'D3' && !/\b(d3|diploma|ahli madya)\b/i.test(cleanText) && !/\b(d3|diploma|ahli madya)\b/i.test(fileNorm)) {
+      return false;
+    }
+  }
+
+  // 2. Hard program isolation & sibling header exclusion (Runs BEFORE contextEntities acceptance)
+  if (isObjectCandidate) {
+    let candProg = candidateTextOrObj.program ? String(candidateTextOrObj.program).toUpperCase() : null;
+    const isCandidateS2 = (candLevel === 'S2' ||
+      /(?:pascasarjana|magister)/i.test(candidateFile) ||
+      /\b(?:program pascasarjana|magister sistem informasi|s2 sistem informasi)\b/i.test(candidateText)) && !hasS1OrUndergrad;
+    if (isCandidateS2 && (candProg === 'SI' || !candProg)) {
+      candProg = 'S2';
+    }
+    if (targetCode && candProg && candProg !== targetCode && (candidateTextOrObj.scope === 'PROGRAM_SINGLE' || (candidateTextOrObj.program && candProg !== 'MULTI'))) {
       return false;
     }
 
+    // Section header check: if candidate header explicitly names a single DIFFERENT program, reject!
+    const headerMatch = (candidateText || '').match(/^\[Program:\s*([^\]]+)\]/i);
+    if (headerMatch) {
+      const headerProg = headerMatch[1].trim();
+      const headerCode = getProgramCodeFromEntity(headerProg);
+      if (headerCode && targetCode && headerCode !== targetCode && !headerProg.includes(',')) {
+        return false;
+      }
+    }
+
+    // Direct entity metadata matches
     if (candidateTextOrObj.canonicalEntity && normalizePunctuation(candidateTextOrObj.canonicalEntity) === targetNorm) {
       return true;
     }
@@ -101,28 +143,31 @@ function isCandidateMatchingTargetEntity(candidateTextOrObj, targetEntityStr) {
       return true;
     }
 
-    if (candidateTextOrObj.scope === 'PROGRAM_MULTI') {
-      const supportedEntities = Array.isArray(candidateTextOrObj.supportedEntities)
+    // Context entities match for valid multi-program documents
+    if (Array.isArray(candidateTextOrObj.contextEntities) && candidateTextOrObj.contextEntities.length > 0) {
+      const targetNormPunc = normalizePunctuation(targetEntityStr);
+      if (candidateTextOrObj.contextEntities.some(ce => normalizePunctuation(ce) === targetNormPunc)) {
+        return true;
+      }
+      if (targetCode && candidateTextOrObj.contextEntities.some(ce => getProgramCodeFromEntity(ce) === targetCode)) {
+        return true;
+      }
+    }
+
+    const isMultiProg = candidateTextOrObj.scope === 'PROGRAM_MULTI' ||
+      (Array.isArray(candidateTextOrObj.contextEntities) && candidateTextOrObj.contextEntities.length > 1);
+
+    if (isMultiProg) {
+      const supportedEntities = Array.isArray(candidateTextOrObj.supportedEntities) && candidateTextOrObj.supportedEntities.length > 0
         ? candidateTextOrObj.supportedEntities.map(normalizePunctuation)
-        : [];
-      const supportedPrograms = Array.isArray(candidateTextOrObj.supportedPrograms)
+        : (Array.isArray(candidateTextOrObj.contextEntities) ? candidateTextOrObj.contextEntities.map(normalizePunctuation) : []);
+      const supportedPrograms = Array.isArray(candidateTextOrObj.supportedPrograms) && candidateTextOrObj.supportedPrograms.length > 0
         ? candidateTextOrObj.supportedPrograms.map(p => String(p).toUpperCase())
-        : (candidateTextOrObj.program === 'MULTI' ? ['SI', 'TI', 'BD'] : []);
+        : (Array.isArray(candidateTextOrObj.contextEntities) ? candidateTextOrObj.contextEntities.map(getProgramCodeFromEntity).filter(Boolean) : (candidateTextOrObj.program === 'MULTI' ? ['SI', 'TI', 'BD'] : []));
       if (supportedEntities.includes(normalizePunctuation(targetEntityStr)) || (targetCode && supportedPrograms.includes(targetCode))) {
         return true;
       }
     }
-  }
-
-  // Strict degree isolation (e.g. S1 vs S2/Magister/Pascasarjana)
-  if (/^S1\b/i.test(targetEntityStr) && /\b(magister|s2|pascasarjana)\b/i.test(cleanText) && !/\b(s1|sarjana)\b/i.test(cleanText)) {
-    return false;
-  }
-  if (/^S2\b/i.test(targetEntityStr) && !/\b(magister|s2|pascasarjana)\b/i.test(cleanText) && !/\b(magister|s2|pascasarjana)\b/i.test(fileNorm)) {
-    return false;
-  }
-  if (/^D3\b/i.test(targetEntityStr) && !/\b(d3|diploma|ahli madya)\b/i.test(cleanText) && !/\b(d3|diploma|ahli madya)\b/i.test(fileNorm)) {
-    return false;
   }
 
   // 1. Direct substring match (in text or in certificate filename)
@@ -427,9 +472,16 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
   // 1.2 Candidate Metadata Single-Program Scope Isolation Gate
   const candRawProg = candidate ? (candidate.program || candidate.canonicalEntity || '') : '';
-  const candProgCode = candidate?.scope === 'PROGRAM_SINGLE'
+  let candProgCode = candidate?.scope === 'PROGRAM_SINGLE'
     ? (candidate.program ? String(candidate.program).toUpperCase() : null)
     : (getProgramCodeFromEntity(candRawProg) || (candidate?.id?.match(/^curr-([a-z0-9]+)/i) ? candidate.id.match(/^curr-([a-z0-9]+)/i)[1].toUpperCase() : null));
+
+  const isCandidateS2 = candidate?.academicLevel === 'S2' || candidate?.level === 'S2' ||
+    /(?:pascasarjana|magister)/i.test(candidate?.source_file || candidate?.filename || candidate?.sourceDocument || '') ||
+    /\b(?:program pascasarjana|magister sistem informasi|s2 sistem informasi)\b/i.test(candidate?.text || candidate?.chunk || '');
+  if (isCandidateS2 && (candProgCode === 'SI' || candRawProg === 'SI' || !candProgCode)) {
+    candProgCode = 'S2';
+  }
 
   if (Array.isArray(targetEntities) && targetEntities.length > 0 && candProgCode) {
     const targetCodes = targetEntities.map(te => getProgramCodeFromEntity(te)).filter(Boolean);
@@ -456,6 +508,43 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
           reason: `candidate_multi_scope_supports_${supportedPrograms.join('_')}_not_${targetCodes.join('_')}`
         };
       }
+    }
+  }
+
+  // 1.4 Thesis / Skripsi inquiry guard: Academic calendar chunks must NEVER be accepted as thesis guidelines
+  const isAskingThesisDirectly = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|bimbingan\s+ta|sidang\s+ta|ujian\s+proposal)\b/i.test(queryText);
+  if (isAskingThesisDirectly) {
+    const isAcademicCalendar = (candidateFile && /kalender\s+akademik/i.test(candidateFile)) ||
+      /\b(kalender\s+akademik|ssrkjsm|kuliah\s+pertemuan\s+(?:ke-)?\d+|polling\s+mata\s+kuliah)\b/i.test(text);
+    if (isAcademicCalendar) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_ASPECT_MISMATCH',
+        reason: 'evidence_is_academic_calendar_not_thesis_guideline'
+      };
+    }
+
+    const queryMentionsD3 = /\b(?:d3|diploma|manajemen\s+informatika|mi)\b/i.test(queryText);
+    const candIsD3 = candidate.academicLevel === 'D3' || candidate.program === 'MI' || (candidateFile && /curr-mi/i.test(candidateFile));
+    if (!queryMentionsD3 && candIsD3) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_SCOPE_MISMATCH',
+        reason: 'evidence_is_d3_curriculum_not_s1_thesis_guideline'
+      };
+    }
+  }
+
+  // 1.5 Academic Level Isolation Gate: Conflicting non-Umum academic levels must be REJECTED
+  const planLevel = retrievalPlan.academicLevel || retrievalPlan.targetLevel;
+  if (planLevel && planLevel !== 'Umum') {
+    const candLevel = candidate.academicLevel;
+    if (candLevel && candLevel !== 'Umum' && candLevel !== planLevel) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_SCOPE_MISMATCH',
+        reason: `candidate_level_${candLevel}_conflicts_with_target_level_${planLevel}`
+      };
     }
   }
 
@@ -496,15 +585,17 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   }
 
   // 3. Aspect Compatibility & Ownership Check
+  const candTextLower = text.toLowerCase();
   const providedAspects = [];
   const isFeeChunk = candidate.docCategory === 'BIAYA' ||
     (candidateFile && /rincian biaya/i.test(candidateFile)) ||
     /\b(biaya|tarif|sewa|pendidikan per semester|dpp|spp|uang pangkal|waktu pembayaran|pendaftaran \d|dicicil|potongan biaya|angsuran)\b/i.test(text);
 
-  const isCurriculumChunk = /\b(kurikulum|mata\s*kuliah|matkul|sks|semester\s+[ivx\d]+\s+no\s+nama\s+mata\s+kuliah|praktikum)\b/i.test(text);
+  const isCurriculumChunk = /\b(kurikulum|mata\s*kuliah|matkul|sks|semester\s+[ivx\d]+\s+no\s+nama\s+mata\s+kuliah|praktikum)\b/i.test(text) &&
+    !(candidateFile && /kalender\s+akademik/i.test(candidateFile));
   const isOverviewChunk = /\b(deskripsi singkat|profil|fokus pada|fokus pendidikan|keahlian dalam bidang|visi|misi|program studi terlihat|penjelasan prodi|peluang kerja|yang dipelajari|perbedaan)\b/i.test(text);
-  const isCareerChunk = /\b(peluang kerja|prospek karir|profesi lulusan|career center|magang|internship|cdc)\b/i.test(text) ||
-    (candidateFile && /company-profile-cdc/i.test(candidateFile));
+  const isCareerChunk = /\b(peluang kerja|prospek karir|prospek karier|profesi lulusan|career center|magang|internship|cdc)\b/i.test(text) ||
+    (candidateFile && /(?:company-profile-cdc|penjelasan prodi dan karier)/i.test(candidateFile));
   const isScholarshipChunk = /\b(beasiswa|kip-?kuliah|potongan\s+dpp|keringanan\s+biaya|bantuan\s+dana|skss)\b/i.test(text);
   const isFacilityChunk = /\b(laboratorium|lab\b|perpustakaan|asrama|dormitory|sarana\s+dan\s+prasarana|ruang\s+kelas|gedung\s+kampus)\b/i.test(text) ||
     (/\bfasilitas\b/i.test(text) && !/kurikulum|keunggulan\s+program|visi|misi/i.test(text));
@@ -539,6 +630,9 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   if (isEsportsChunk) providedAspects.push('esports_gaming');
   if (isSportsChunk) providedAspects.push('sports');
   if (isAccreditationChunk) providedAspects.push('akreditasi', 'peringkat', 'sk_akreditasi', 'accreditation');
+  const isThesisChunk = (candidateFile && /(?:pedoman\s+ta|pedoman\s+skripsi)/i.test(candidateFile)) ||
+    /\b(pedoman\s+tugas\s+akhir|persyaratan\s+akademik|141\s+sks|tugas\s+akhir|bimbingan\s+tugas\s+akhir)\b/i.test(candTextLower);
+  if (isThesisChunk) providedAspects.push('thesis_requirements', 'academic_requirements', 'guidelines', 'pedoman_ta', 'thesis_stages', 'guidance_procedure');
 
   // Program Overview / Definition: Guard against administrative signature blocks, thesis guide kaprodi lines, or pure institutional history
   if (retrievalPlan.intent === 'PROGRAM_OVERVIEW' || retrievalPlan.intent === 'DEFINITION') {
@@ -571,7 +665,6 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
   // Foreign Student FAQ Scope Guard:
   // Chunks from "FAQ PENGURUSAN MAHASISWA ASING" (visa, ITAS, izin belajar WNA) must NOT be accepted for general domestic inquiries
-  const candTextLower = text.toLowerCase();
   const isForeignStudentChunk = candSourceFile.includes('mahasiswa asing') ||
     /\b(faq pengurusan mahasiswa asing|izin belajar baru|perpanjangan itas|pengurusan visa e30b|sktt orang asing)\b/i.test(candTextLower);
   const querySpecificallyAsksForeign = retrievalPlan.participantScope === 'foreign' ||
@@ -586,8 +679,6 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   }
 
   // PMB domain guard: exclude thesis, yudisium, wisuda, and proposal defense chunks from PMB admission questions
-  // (Guard does NOT trigger if intent specifically inquires about thesis, graduation, academic curriculum, or foreign student visa)
-  const isAskingThesisDirectly = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|bimbingan\s+ta|sidang\s+ta|ujian\s+proposal)\b/i.test(queryText);
   if (retrievalPlan.domain === 'PMB' && !querySpecificallyAsksForeign && !isAskingThesisDirectly && !['GRADUATION_REQUIREMENTS', 'THESIS_GUIDANCE_PROCEDURE'].includes(retrievalPlan.intent)) {
     const isThesisOrGraduation = /\b(yudisium|wisuda|tugas\s+akhir|sidang\s+ta|ujian\s+proposal)\b/i.test(text) ||
       (candidateFile && /(?:yudisium|wisuda|pedoman\s+ta)/i.test(candidateFile));
@@ -605,7 +696,8 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     const wantsContact = requiredAspects.some(a => ['contact', 'helpdesk'].includes(a)) || retrievalPlan.intent === 'PMB_CONTACT_INQUIRY';
     const wantsSchedule = requiredAspects.some(a => ['schedule', 'wave_info'].includes(a)) || retrievalPlan.intent === 'ADMISSION_SCHEDULE';
     const wantsFee = requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)) || retrievalPlan.domain === 'TUITION_FEE';
-    const wantsCurriculum = requiredAspects.some(a => ['curriculum', 'courses'].includes(a)) || retrievalPlan.domain === 'ACADEMIC_CURRICULUM';
+    const wantsCareer = requiredAspects.some(a => ['career', 'career_prospects', 'prospek_karir'].includes(a)) || retrievalPlan.intent === 'CAREER_PROSPECTS_INQUIRY';
+    const wantsCurriculum = !wantsCareer && (requiredAspects.some(a => ['curriculum', 'courses'].includes(a)) || retrievalPlan.domain === 'ACADEMIC_CURRICULUM');
     const wantsOverview = requiredAspects.some(a => ['overview', 'definition', 'curriculum_difference'].includes(a));
     const wantsScholarship = requiredAspects.some(a => ['scholarship', 'discount'].includes(a)) || retrievalPlan.domain === 'SCHOLARSHIP';
     const wantsFacilities = requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES';
@@ -635,6 +727,15 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
       const isDormitoryFeeQuery = /\b(?:sewa|tarif|biaya|harga)\b/i.test(queryStr) &&
         /\b(?:asrama|kamar\s+asrama|dormitory|kost)\b/i.test(queryStr);
       if (isDormitoryFeeQuery) {
+        const isDoubleDegreeDoc = candidateFile && /double\s*degree/i.test(candidateFile);
+        const queryAsksDoubleDegree = /\b(?:double\s*degree|dual\s*degree|dnui|china)\b/i.test(queryStr);
+        if (isDoubleDegreeDoc && !queryAsksDoubleDegree) {
+          return {
+            accepted: false,
+            disposition: 'REJECT_SCOPE_MISMATCH',
+            reason: 'evidence_is_double_degree_dormitory_not_domestic'
+          };
+        }
         const chunkHasDormitoryFee = /\b(?:asrama|dormitory|kamar|sewa\s+kamar)\b/i.test(text) &&
           /\b(?:rp|tarif|biaya|sewa|gratis|shared\s+room)\b/i.test(text);
         if (!chunkHasDormitoryFee) {
@@ -712,6 +813,15 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
       const isDormitoryFeeQuery = /\b(?:sewa|tarif|biaya|harga)\b/i.test(queryStr) &&
         /\b(?:asrama|kamar\s+asrama|dormitory|kost)\b/i.test(queryStr);
       if (isDormitoryFeeQuery) {
+        const isDoubleDegreeDoc = candidateFile && /double\s*degree/i.test(candidateFile);
+        const queryAsksDoubleDegree = /\b(?:double\s*degree|dual\s*degree|dnui|china)\b/i.test(queryStr);
+        if (isDoubleDegreeDoc && !queryAsksDoubleDegree) {
+          return {
+            accepted: false,
+            disposition: 'REJECT_SCOPE_MISMATCH',
+            reason: 'evidence_is_double_degree_dormitory_not_domestic'
+          };
+        }
         const chunkHasDormitoryFee = /\b(?:asrama|dormitory|kamar|sewa\s+kamar)\b/i.test(text) &&
           /\b(?:rp|tarif|biaya|sewa|gratis|shared\s+room)\b/i.test(text);
         if (!chunkHasDormitoryFee) {
@@ -748,8 +858,26 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         };
       }
     }
-    const wantsCareer = requiredAspects.some(a => ['career', 'career_prospects', 'prospek_karir'].includes(a)) || retrievalPlan.intent === 'CAREER_PROSPECTS_INQUIRY';
     if (wantsCareer) {
+      const isFeeDoc = isFeeChunk || (candidateFile && /rincian biaya/i.test(candidateFile));
+      if (isFeeDoc) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_is_fee_document_not_career_prospect'
+        };
+      }
+      const isMultiProgramOverview = (candidate.scope === 'PROGRAM_MULTI' || (candidate.supportedPrograms && candidate.supportedPrograms.length > 1) ||
+        /\b(?:program\s+studi\s+deskripsi\s+singkat)\b/i.test(text)) &&
+        !/\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|peluang\s+kerja|profesi\s+lulusan|career\s+center)\b/i.test(text) &&
+        !/(?:company-profile-cdc|penjelasan prodi dan karier)/i.test(candidateFile);
+      if (isMultiProgramOverview) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_is_multi_program_overview_not_career_prospect'
+        };
+      }
       if (!isCareerChunk && !isOverviewChunk) {
         return {
           accepted: false,

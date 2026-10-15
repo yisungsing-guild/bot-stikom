@@ -240,7 +240,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
 
     // Explicit Out-of-Domain Terminal Hand-off
     if (frame.domain === 'OUT_OF_DOMAIN' || frame.intent === 'OUT_OF_DOMAIN_INQUIRY') {
-      const oodReply = 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.';
+      const oodReply = frame.language === 'en'
+        ? 'I apologize, but I currently specialize in providing information regarding academics, admissions (PMB), study programs, tuition fees, and facilities at ITB STIKOM Bali. Your question is outside our campus information service scope.'
+        : 'Mohon maaf, layanan ini khusus melayani informasi seputar akademik, PMB, program studi, biaya kuliah, dan fasilitas ITB STIKOM Bali. Pertanyaan Anda berada di luar cakupan layanan informasi kampus kami.';
       subQueryResults.push({
         frame,
         semanticFrame: frame,
@@ -391,6 +393,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     chatId,
     rawQuery,
     status: primaryStatus,
+    semanticFrame: subQueryResults[0]?.frame,
     subQueryResults,
     finalAnswer
   };

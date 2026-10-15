@@ -54,7 +54,8 @@ function getChunkSectionMap(corpus) {
     /Kurikulum\s+Program\s+Studi\s+([A-Za-z\s]+?)(?:\s*\(Tahun|\n|$)/i,
     /Profil\s+Program\s+Studi\s+(?:Program\s+Studi\s+)?([A-Za-z\s]+?)(?:\s+di\s+ITB|\n|$)/i,
     /(?:Program\s+Studi|Jenjang)\s+(Magister\s+Sistem\s+Informasi|S2\s+Sistem\s+Informasi)/i,
-    /###\s+(?:Program\s+Studi\s+)?([A-Za-z0-9\s,\(\)]+?)(?:\n|$)/i
+    /###\s+(?:Program\s+Studi\s+)?([A-Za-z0-9\s,\(\)]+?)(?:\n|$)/i,
+    /Penjelasan\s+Prodi\s+dan\s+Karier\s+Masa\s+Depan\s*:\s*([A-Za-z\s]+?)(?:\||\n|$)/i
   ];
 
   for (const [, group] of fileGroups.entries()) {
@@ -67,11 +68,14 @@ function getChunkSectionMap(corpus) {
       for (const pat of SECTION_PATTERNS) {
         const m = txt.match(pat);
         if (m) {
-          const candidateName = m[1].trim();
+          let candidateName = m[1].trim();
+          if (/manajemen\s+informasi/i.test(candidateName)) {
+            candidateName = 'D3 Manajemen Informatika';
+          }
           for (const ent of CANONICAL_ENTITIES) {
             if (ent.family === 'academic_program') {
               const base = ent.canonical.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase();
-              if (candidateName.toLowerCase().includes(base)) {
+              if (candidateName.toLowerCase().includes(base) || candidateName.toLowerCase() === ent.canonical.toLowerCase()) {
                 // If candidateName explicitly mentions D3, S2, or S1, match the exact degree
                 if (/\b(?:d3|diploma)\b/i.test(candidateName) && !ent.canonical.startsWith('D3')) continue;
                 if (/\b(?:s2|magister)\b/i.test(candidateName) && !ent.canonical.startsWith('S2')) continue;
@@ -127,11 +131,19 @@ function getFileContextMap(corpus) {
       if (progMatch) {
         const pName = progMatch[1].trim();
         for (const ent of CANONICAL_ENTITIES) {
-          if (ent.family === 'academic_program' && (
-            pName.toLowerCase().includes(ent.canonical.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase()) ||
-            (ent.aliases && ent.aliases.some(a => a.length >= 3 && pName.toLowerCase().includes(a)))
-          )) {
-            entities.add(ent.canonical);
+          if (ent.family === 'academic_program') {
+            const hasS2 = /\b(?:s2|magister|pascasarjana)\b/i.test(pName) || /\b(?:s2|magister|pascasarjana)\b/i.test(f);
+            const hasD3 = /\b(?:d3|diploma)\b/i.test(pName) || /\b(?:d3|diploma)\b/i.test(f);
+            if (ent.canonical.startsWith('S2') && !hasS2) continue;
+            if (ent.canonical.startsWith('D3') && !hasD3) continue;
+            if (ent.canonical.startsWith('S1') && hasS2 && !/\b(?:s1|sarjana)\b/i.test(pName) && !/\b(?:s1|sarjana)\b/i.test(f)) continue;
+
+            if (
+              pName.toLowerCase().includes(ent.canonical.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase()) ||
+              (ent.aliases && ent.aliases.some(a => a.length >= 3 && pName.toLowerCase().includes(a)))
+            ) {
+              entities.add(ent.canonical);
+            }
           }
         }
       }
@@ -139,6 +151,10 @@ function getFileContextMap(corpus) {
       // Check filename for canonical entities & aliases
       for (const ent of CANONICAL_ENTITIES) {
         if (ent.aliases && ent.aliases.some(a => a.length >= 2 && new RegExp('\\b' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(f))) {
+          const hasS2 = /\b(?:s2|magister|pascasarjana)\b/i.test(f);
+          const hasD3 = /\b(?:d3|diploma)\b/i.test(f);
+          if (ent.canonical.startsWith('S2') && !hasS2) continue;
+          if (ent.canonical.startsWith('D3') && !hasD3) continue;
           entities.add(ent.canonical);
         }
       }
@@ -261,9 +277,36 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       }
     }
 
+    // Aspect & Category alignment: Career prospects
+    const isCareerQuery = (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.includes('career_prospects')) ||
+      retrievalPlan.intent === 'CAREER_PROSPECTS' ||
+      /\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|kar(?:i)?er|prospek\s+kerja|profesi\s+lulusan)\b/i.test(query);
+    if (isCareerQuery) {
+      if (/penjelasan prodi dan karier/i.test(f) || /peluang kerja|profil lulusan/i.test(rawText)) {
+        score *= 2.5;
+      }
+      if (/rincian biaya/i.test(f) || ctx?.category === 'BIAYA') {
+        score *= 0.1;
+      }
+    }
+
+    // Aspect & Category alignment: Thesis requirements & guidelines
+    const isThesisQuery = (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.some(a => ['pedoman_ta', 'thesis_requirements', 'guidance_procedure', 'thesis_stages'].includes(a))) ||
+      retrievalPlan.intent === 'THESIS_REQUIREMENTS' ||
+      retrievalPlan.intent === 'THESIS_GUIDANCE_PROCEDURE' ||
+      /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(query);
+    if (isThesisQuery) {
+      if (/(?:pedoman\s+ta|pedoman\s+skripsi)/i.test(f) || /tugas akhir|skripsi/i.test(rawText)) {
+        score *= 3.0;
+      }
+      if (/kalender\s+akademik/i.test(f)) {
+        score *= 0.2;
+      }
+    }
+
     // Boost overview, career, double degree, and facility docs for non-semester-specific overview queries
     const isOverview = !isFeeQuery && !/\b(?:semester\s+(?:[1-8]|i{1,3}|iv|v|vi|vii|viii))\b/i.test(query) &&
-      /\b(?:mata\s+kuliah|kurikulum|bidang\s+keahlian|kompetensi|fokus|profil|peluang\s+karir|prospek\s+kerja|double\s+degree|dual\s+degree|fasilitas|gelar)\b/i.test(query);
+      /\b(?:mata\s+kuliah|kurikulum|bidang\s+keahlian|kompetensi|fokus|profil|peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|prospek\s+kerja|double\s+degree|dual\s+degree|fasilitas|gelar)\b/i.test(query);
 
     if (isOverview) {
       if (/deskripsi singkat|profil program studi|fokus pada/i.test(rawText)) {
@@ -281,9 +324,17 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       if (/fasilitas-stikom/i.test(f) && /\bfasilitas\b/i.test(query)) {
         score *= 4.0;
       }
-      if (/faq pengurusan mahasiswa asing/i.test(f) && /\b(?:asing|izin\s+belajar)\b/i.test(query)) {
+      if (/faq pengurusan mahasiswa asing/i.test(f) && /\basing\b/i.test(query)) {
         score *= 3.0;
       }
+    }
+
+    // Aspect & Category alignment: Foreign student study permits
+    const isStudyPermitQuery = (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.some(a => ['study_permit', 'izin_belajar'].includes(a))) ||
+      retrievalPlan.intent === 'STUDY_PERMIT_INQUIRY' ||
+      /\b(?:izin\s+belajar|study\s+permit)\b/i.test(query);
+    if (isStudyPermitQuery && (/faq pengurusan mahasiswa asing/i.test(f) || /izin belajar|study permit/i.test(rawText))) {
+      score *= 3.0;
     }
 
     // Negative invariant: foreign visa/student FAQ should not dominate general domestic PMB queries

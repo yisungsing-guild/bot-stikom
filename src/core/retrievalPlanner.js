@@ -126,7 +126,9 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // Facilities query variants
-  if (domain === 'FACILITIES' || (aspects && aspects.includes('facilities'))) {
+  if (domain === 'FACILITIES' || (aspects && (aspects.includes('facilities') || aspects.includes('lab')))) {
+    queryVariants.push('fasilitas laboratorium praktikum mahasiswa hardware networking database smart intelligent system ITB STIKOM Bali');
+    queryVariants.push('laboratorium riset dan praktik mahasiswa embedded system IoT mobile technology');
     queryVariants.push('fasilitas laboratorium komputer perpustakaan asrama kampus ITB STIKOM Bali');
     queryVariants.push('sarana dan prasarana fasilitas mahasiswa');
   }
@@ -185,16 +187,33 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Foreign Student / Visa / International query variants
   const isForeignQuery = (semanticFrame.participantScope === 'foreign') ||
-    (/\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar|e30b)\b/i.test(normalizedText));
+    (/\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar|study\s+permit|e30b)\b/i.test(normalizedText));
   if (isForeignQuery) {
-    queryVariants.push('persyaratan pengajuan jenis visa e30b vitas visa masuk dokumen apa saja yang dibutuhkan untuk visa pelajar mahasiswa asing');
-    queryVariants.push('persyaratan pengajuan visa bagi mahasiswa asing izin belajar kitas itas e30b');
-    queryVariants.push('visa mahasiswa asing izin belajar penjamin sponsor penjaminan ITAS SKTT');
-    queryVariants.push('FAQ pengurusan mahasiswa asing visa izin belajar');
+    if (/\b(izin\s+belajar|study\s+permit)\b/i.test(normalizedText)) {
+      queryVariants.push('prosedur pengurusan izin belajar study permit mahasiswa asing ITB STIKOM Bali');
+      queryVariants.push('dokumen yang diperlukan untuk pengurusan pengajuan izin belajar mahasiswa asing');
+      queryVariants.push('FAQ pengurusan mahasiswa asing izin belajar study permit');
+    }
+    if (/\b(visa|e30b|vitas)\b/i.test(normalizedText) || !/\b(izin\s+belajar|study\s+permit)\b/i.test(normalizedText)) {
+      queryVariants.push('persyaratan pengajuan jenis visa e30b vitas visa masuk dokumen apa saja yang dibutuhkan untuk visa pelajar mahasiswa asing');
+      queryVariants.push('persyaratan pengajuan visa bagi mahasiswa asing izin belajar kitas itas e30b');
+    }
+    if (/\b(itas|kitas|sktt)\b/i.test(normalizedText)) {
+      queryVariants.push('visa mahasiswa asing izin belajar penjamin sponsor penjaminan ITAS SKTT');
+    }
   }
 
-  // Thesis Guidance Procedure query variants
-  if (intent === 'THESIS_GUIDANCE_PROCEDURE' || (aspects && (aspects.includes('guidance_procedure') || aspects.includes('thesis_stages')))) {
+  // International Program & Student Exchange query variants
+  if (domain === 'INTERNATIONAL' || (aspects && (aspects.includes('international') || aspects.includes('student_exchange')))) {
+    queryVariants.push('apa itu student exchange di ITB STIKOM Bali alur dan syarat');
+    queryVariants.push('syarat mengikuti program student exchange pertukaran mahasiswa pelajar internasional');
+    queryVariants.push('program internasional pertukaran mahasiswa student exchange kampus mitra luar negeri');
+  }
+
+  // Thesis Requirements & Guidance Procedure query variants (e.g. Q056, Q058)
+  if (intent === 'THESIS_REQUIREMENTS' || intent === 'THESIS_GUIDANCE_PROCEDURE' || (aspects && (aspects.includes('pedoman_ta') || aspects.includes('thesis_requirements') || aspects.includes('guidance_procedure') || aspects.includes('thesis_stages')))) {
+    queryVariants.push('persyaratan akademik mengajukan tugas akhir pedoman ta jenjang s1');
+    queryVariants.push('buku pedoman tugas akhir persyaratan pendaftaran skripsi ipk minimal seminar terbuka transkrip nilai akademik sementara');
     queryVariants.push('tahapan pelaksanaan bimbingan tugas akhir skripsi pedoman ta dosen pembimbing pengerjaan skripsi');
     queryVariants.push('buku pedoman tugas akhir pembimbingan tahapan pelaksanaan bimbingan ta');
     queryVariants.push('prosedur bimbingan tugas akhir dosen pembimbing utama pendamping');
@@ -257,13 +276,16 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // Degree Award query variants
-  if (intent === 'DEGREE_AWARD' || (aspects && aspects.includes('degree_award'))) {
+  if (intent === 'DEGREE_AWARD' || (aspects && (aspects.includes('degree_award') || aspects.includes('duration') || aspects.includes('study_period')))) {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`gelar lulusan ${ent} sarjana komputer magister diploma`);
+        queryVariants.push(`masa studi durasi kuliah ${ent} semester lulusan`);
+        queryVariants.push(`apa gelar lulusannya berapa lama masa studi ${ent}`);
       }
     } else {
       queryVariants.push('gelar lulusan sarjana komputer magister diploma ITB STIKOM Bali');
+      queryVariants.push('masa studi durasi kuliah semester lulus');
     }
   }
 
