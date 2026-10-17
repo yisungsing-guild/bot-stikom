@@ -512,6 +512,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
 
     // 5. Standard Handoff to Phase 1 Deterministic Execution Core
     // Phase 1 executes retrieval, arbitration, answerability, synthesis, & verification
+    internalOptions.semanticFrame = plan.semanticFrame || semanticFrame;
     const phase1Result = await phase1PipelineFn(chatId, rawQuery, internalOptions);
 
     let replanMetadata = {

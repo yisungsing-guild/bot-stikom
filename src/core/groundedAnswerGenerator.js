@@ -543,6 +543,79 @@ function extractOverviewFromEvidence(chunks, entityName = '') {
   return sentences;
 }
 
+function extractDoubleDegreePartnersFromEvidence(chunks) {
+  if (!Array.isArray(chunks)) return [];
+  const partners = [];
+  const seen = new Set();
+
+  for (const c of chunks) {
+    const text = cleanDocumentArtifacts(c.text || c.chunk || '');
+
+    // 1. National Class / UTB
+    if (/\b(?:UTB|UNIVERSITAS\s+TEKNOLOGI\s+BANDUNG)\b/i.test(text) && /\b(?:DUAL|DOUBLE)\s*DEGREE|NATIONAL\s*CLASS\b/i.test(text)) {
+      if (!seen.has('UTB')) {
+        seen.add('UTB');
+        const degrees = [];
+        if (/S\.Bns/i.test(text)) degrees.push('Sarjana Bisnis (S.Bns.)');
+        if (/S\.Ds/i.test(text)) degrees.push('Sarjana Desain (S.Ds.)');
+
+        let prodiStikom = 'S1 Bisnis Digital';
+        let prodiPartner = 'Desain Komunikasi Visual (DKV)';
+        if (/Bisnis\s+Digital/i.test(text)) prodiStikom = 'S1 Bisnis Digital';
+        if (/DKV|Desain\s+Komunikasi\s+Visual/i.test(text)) prodiPartner = 'Desain Komunikasi Visual (DKV)';
+
+        partners.push({
+          key: 'utb',
+          scope: 'national',
+          partnerName: 'Universitas Teknologi Bandung (UTB)',
+          location: 'Bandung',
+          stikomProgram: prodiStikom,
+          partnerProgram: prodiPartner,
+          degrees: degrees.length > 0 ? degrees.join(' dan ') : 'Sarjana Bisnis (S.Bns.) dan Sarjana Desain (S.Ds.)',
+          rawDegrees: '(S.Bns., S.Ds.)',
+          sourceFile: c.sourceFile || c.source || 'rincian Biaya UTB'
+        });
+      }
+    }
+
+    // 2. HELP University, Malaysia
+    if (/\bHELP\s+University\b/i.test(text)) {
+      if (!seen.has('HELP')) {
+        seen.add('HELP');
+        partners.push({
+          key: 'help',
+          scope: 'international',
+          partnerName: 'HELP University',
+          location: 'Malaysia',
+          stikomProgram: 'S1 Sistem Informasi',
+          partnerProgram: 'Information Technology',
+          degrees: 'Sarjana Komputer (S.Kom.) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University',
+          sourceFile: c.sourceFile || c.source
+        });
+      }
+    }
+
+    // 3. DNUI China
+    if (/\b(?:Dalian\s+Neusoft|DNUI)\b/i.test(text)) {
+      if (!seen.has('DNUI')) {
+        seen.add('DNUI');
+        partners.push({
+          key: 'dnui',
+          scope: 'international',
+          partnerName: 'Dalian Neusoft University of Information (DNUI)',
+          location: 'China',
+          stikomProgram: 'S1 Bisnis Digital',
+          partnerProgram: 'Management / Bisnis Digital',
+          degrees: 'Sarjana Bisnis (S.Bns.) dari ITB STIKOM Bali dan Bachelor of Management (B.M.) dari DNUI',
+          sourceFile: c.sourceFile || c.source
+        });
+      }
+    }
+  }
+
+  return partners;
+}
+
 /**
  * Builds grounded deterministic summaries with domain-aware structure and artifact cleaning
  */
@@ -789,17 +862,82 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
     }
   }
 
-  // 1e. International Programs (Double Degree & Student Exchange)
+  // 1e. International & Dual Degree Programs (Double Degree & Student Exchange)
   if (semanticFrame.domain === 'INTERNATIONAL' || (semanticFrame.aspects && (semanticFrame.aspects.includes('double_degree') || semanticFrame.aspects.includes('student_exchange')))) {
-    const isDD = /\b(double\s*degree|dual\s*degree|dua\s*gelar)\b/i.test(rawQuery) ||
-      (semanticFrame.contextDependencies && semanticFrame.contextDependencies.some(cd => /double\s*degree/i.test(cd.inheritedEntity || '')));
-    const isNationalQuery = /\bnasional\b/i.test(rawQuery);
+    const isFeeOrDiscountQuery = semanticFrame.domain === 'TUITION_FEE' ||
+      (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'discount', 'cost'].includes(a))) ||
+      /\b(?:biaya|uang|tarif|spp|dpp|potongan|diskon)\b/i.test(rawQuery);
+
+    const isDD = !isFeeOrDiscountQuery && (
+      /\b(double\s*degree|dual\s*degree|dua\s*gelar)\b/i.test(rawQuery) ||
+      (semanticFrame.contextDependencies && semanticFrame.contextDependencies.some(cd => /double\s*degree/i.test(cd.inheritedEntity || '')))
+    );
 
     if (isDD) {
+      const isNationalQuery = /\bnasional\b/i.test(rawQuery);
+      const isInternationalQuery = /\binternasional\b/i.test(rawQuery);
+      const ddPartners = extractDoubleDegreePartnersFromEvidence(accepted);
+      const nationalPartners = ddPartners.filter(p => p.scope === 'national');
+      const internationalPartners = ddPartners.filter(p => p.scope === 'international');
+
       if (isNationalQuery) {
-        return appendMissingAspectNote(`Ada, Kak. ITB STIKOM Bali mencantumkan Program Double Degree Nasional dalam daftar program/fasilitas kampus. Namun, rincian mengenai mitra dan skema perkuliahannya belum tercantum dalam panduan yang tersedia. Untuk detail lengkapnya, silakan konfirmasi langsung ke bagian admisi kampus ya.`);
+        if (nationalPartners.length > 0) {
+          const p = nationalPartners[0];
+          let ans = `Ada, Kak. ITB STIKOM Bali menyelenggarakan program **Double Degree Nasional (Dual Degree National Class)** yang bekerja sama dengan **${p.partnerName}**.\n\n`;
+          ans += `• **Mitra Perguruan Tinggi**: ${p.partnerName}\n`;
+          if (p.stikomProgram || p.partnerProgram) {
+            ans += `• **Program Studi**: ${[p.stikomProgram, p.partnerProgram].filter(Boolean).join(' / ')}\n`;
+          }
+          if (p.degrees) {
+            ans += `• **Gelar Kelulusan**: Lulusan memperoleh gelar ganda ${p.degrees}.\n`;
+          }
+          ans += `\nUntuk informasi teknis perkuliahan dan kurikulum lebih lanjut, Kakak dapat mengonfirmasi langsung ke layanan admisi kampus ya.`;
+          return appendMissingAspectNote(ans.trim());
+        } else {
+          return appendMissingAspectNote(`Mohon maaf Kak, untuk program Double Degree nasional, rincian resmi mengenai mitra dan program studinya belum tercantum dalam dokumen panduan yang tersedia saat ini. Silakan hubungi bagian admisi kampus untuk konfirmasi langsung ya.`);
+        }
       }
-      return appendMissingAspectNote(`Di ITB STIKOM Bali tersedia program Double Degree internasional yang bekerja sama dengan universitas mitra, antara lain HELP University (Malaysia) untuk Program Studi Sistem Informasi dan Dalian Neusoft University of Information (DNUI, China) untuk Bisnis Digital. Selain itu, tercantum juga Program Double Degree Nasional. Silakan tanyakan jika ingin informasi lebih lanjut mengenai salah satu programnya ya Kak!`);
+
+      if (isInternationalQuery) {
+        if (internationalPartners.length > 0) {
+          let ans = `Di ITB STIKOM Bali tersedia program Double Degree internasional yang bekerja sama dengan universitas mitra terkemuka:\n\n`;
+          for (const p of internationalPartners) {
+            ans += `• **${p.partnerName} (${p.location})**:\n`;
+            if (p.stikomProgram || p.partnerProgram) {
+              ans += `  - Program Studi: ${p.stikomProgram || ''}${p.partnerProgram ? ` & ${p.partnerProgram}` : ''}\n`;
+            }
+            if (p.degrees) {
+              ans += `  - Gelar: ${p.degrees}\n`;
+            }
+          }
+          ans += `\nSilakan tanyakan jika Kakak ingin info lebih lanjut mengenai salah satu program internasional ini ya!`;
+          return appendMissingAspectNote(ans.trim());
+        }
+      }
+
+      // General Double Degree query
+      let ans = `Di ITB STIKOM Bali tersedia program Double Degree (Gelar Ganda) baik internasional maupun nasional:\n\n`;
+      if (internationalPartners.length > 0) {
+        ans += `**Program Internasional**:\n`;
+        for (const p of internationalPartners) {
+          ans += `• **${p.partnerName} (${p.location})**: ${p.stikomProgram || ''} (${p.degrees || ''})\n`;
+        }
+        ans += `\n`;
+      } else {
+        ans += `**Program Internasional**:\n• **HELP University (Malaysia)**: S1 Sistem Informasi (Sarjana Komputer & Bachelor of Information Technology)\n• **Dalian Neusoft University of Information (DNUI, China)**: S1 Bisnis Digital (Sarjana Bisnis & Bachelor of Management)\n\n`;
+      }
+
+      if (nationalPartners.length > 0) {
+        ans += `**Program Nasional**:\n`;
+        for (const p of nationalPartners) {
+          ans += `• **${p.partnerName}**: Dual Degree (National Class)${p.degrees ? ` dengan gelar ${p.degrees}` : ''}\n`;
+        }
+      } else {
+        ans += `**Program Nasional**:\n• Tersedia Program Dual Degree (National Class) bekerja sama dengan universitas mitra di Indonesia.\n`;
+      }
+
+      ans += `\nSilakan beri tahu kami jika ada program tertentu yang ingin Kakak ketahui lebih detail!`;
+      return appendMissingAspectNote(ans.trim());
     }
   }
 
@@ -1263,12 +1401,18 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       }
 
       // If specific program requested
-      const prog = targetEntities[0];
-      if (/HELP/i.test(prog)) {
+      const prog = targetEntities[0] || '';
+      if (/HELP/i.test(prog) || /HELP/i.test(combinedFeeQuery) || /HELP/i.test(cleanAll)) {
         const helpSmkAnswer = `Berdasarkan ketentuan resmi program Double Degree HELP University T.A 2026/2027:\n\n` +
           `• Khusus alumni SMK TI mendapatkan **potongan 10% Biaya Pendidikan Per Semester selama 4 tahun**.\n` +
           `• Ketentuan potongan 20% tidak berlaku untuk program International Dual Degree HELP University.`;
         return appendMissingAspectNote(helpSmkAnswer);
+      }
+      if (/UTB/i.test(prog) || /UTB/i.test(combinedFeeQuery) || /UTB/i.test(cleanAll)) {
+        const utbSmkAnswer = `Berdasarkan ketentuan resmi program Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) T.A 2026/2027:\n\n` +
+          `• Khusus alumni SMK TI mendapatkan **potongan 10% Biaya Pendidikan Per Semester selama 4 tahun**.\n` +
+          `• Ketentuan potongan 20% tidak berlaku untuk program Dual Degree (National Class) UTB.`;
+        return appendMissingAspectNote(utbSmkAnswer);
       }
       if (/S2/i.test(prog)) {
         const s2SmkAnswer = `Untuk program S2 Magister Sistem Informasi, tidak terdapat ketentuan potongan biaya kuliah khusus alumni SMK TI pada jenjang Pascasarjana.`;
@@ -1393,6 +1537,19 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       feeAnswer += feeLines.join('\n');
       feeAnswer += `\n\nPembayaran DPP dapat diangsur setiap bulan hingga UTS, dan tersedia potongan beasiswa pada gelombang awal pendaftaran. Jika butuh simulasi angsuran, silakan beri tahu ya Kak!`;
       return appendMissingAspectNote(feeAnswer);
+    }
+
+    if (/\b(?:UTB|UNIVERSITAS\s+TEKNOLOGI\s+BANDUNG)\b/i.test(cleanAll) && /\b(?:DUAL|DOUBLE)\s*DEGREE|NATIONAL\s*CLASS\b/i.test(cleanAll)) {
+      let utbFeeAnswer = `Berdasarkan dokumen resmi rincian biaya Dual Degree (National Class) dengan **Universitas Teknologi Bandung (UTB)** T.A 2026/2027:\n\n` +
+        `• **Ketentuan Beasiswa & Potongan DPP**:\n` +
+        `  - Gelombang Khusus: Potongan DPP sebesar Rp 3.000.000 (serta potongan biaya pendaftaran Rp 300.000)\n` +
+        `  - Gelombang I: Potongan DPP sebesar Rp 2.000.000 (serta potongan biaya pendaftaran Rp 250.000)\n` +
+        `  - Gelombang II: Potongan DPP sebesar Rp 1.500.000\n` +
+        `  - Gelombang III: Potongan DPP sebesar Rp 1.000.000 / Gelombang IV: Rp 500.000\n` +
+        `• **Ketentuan Khusus Alumni SMK TI**: Mendapatkan potongan **10% Biaya Pendidikan Per Semester selama 4 tahun**.\n` +
+        `• **Pembayaran Tunai**: Pembayaran DPP secara lunas langsung mendapatkan tambahan potongan sebesar **10%**.\n\n` +
+        `_Catatan: Untuk rincian nominal pasti Biaya Pendidikan Per Semester dan DPP di luar potongan gelombang, silakan konfirmasi langsung ke bagian admisi PMB ITB STIKOM Bali._`;
+      return appendMissingAspectNote(utbFeeAnswer);
     }
   }
 

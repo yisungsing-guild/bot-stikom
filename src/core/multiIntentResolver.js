@@ -13,6 +13,7 @@
  */
 
 const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('./semanticFrameResolver');
+const { CAMPUS_WIDE_DOMAINS } = require('../reasoning/contracts');
 
 // Conjunction separators indicating multi-intent
 const MULTI_INTENT_CONJUNCTION_REGEX = /(?:,\s*(?:serta|dan|plus)\s*|\s+(?:dan|serta|sekaligus|dan juga|plus)\s+(?=apa|bagaimana|berapa|apakah|kapan|keuntungan|syarat|biaya|fasilitas|training|rekrutmen|pembuatan|prosedur|kontak|prospek|peluang|beasiswa|ada\s+beasiswa))/i;
@@ -20,6 +21,83 @@ const MULTI_INTENT_CONJUNCTION_REGEX = /(?:,\s*(?:serta|dan|plus)\s*|\s+(?:dan|s
 function hasMultipleIntents(rawQuery) {
   if (!rawQuery) return false;
   return MULTI_INTENT_CONJUNCTION_REGEX.test(rawQuery) || /\?.*\?/.test(rawQuery);
+}
+
+/**
+ * Safely isolates session data for subquery resolution without mutating shared objects.
+ * Performs targeted cloning of arrays and nested dictionaries without prototype pollution.
+ */
+function isolateSubquerySession(sessionData = {}) {
+  if (!sessionData || typeof sessionData !== 'object') return {};
+  const isolated = { ...sessionData };
+
+  // 1. contextHistory: array of turn objects
+  if (Array.isArray(sessionData.contextHistory)) {
+    isolated.contextHistory = sessionData.contextHistory.map(item => {
+      if (typeof item !== 'object' || item === null) return item;
+      return {
+        ...item,
+        entities: Array.isArray(item.entities)
+          ? item.entities.map(e => (typeof e === 'object' && e !== null ? { ...e } : e))
+          : item.entities,
+        activeEntity: (item.activeEntity && typeof item.activeEntity === 'object')
+          ? { ...item.activeEntity }
+          : item.activeEntity
+      };
+    });
+  }
+
+  // 2. recentEntities: array of entity objects or strings
+  if (Array.isArray(sessionData.recentEntities)) {
+    isolated.recentEntities = sessionData.recentEntities.map(e =>
+      (typeof e === 'object' && e !== null ? { ...e } : e)
+    );
+  }
+
+  // 3. activeEntity & preservedBackgroundEntity: single entity objects
+  if (sessionData.activeEntity && typeof sessionData.activeEntity === 'object') {
+    isolated.activeEntity = { ...sessionData.activeEntity };
+  }
+  if (sessionData.preservedBackgroundEntity && typeof sessionData.preservedBackgroundEntity === 'object') {
+    isolated.preservedBackgroundEntity = { ...sessionData.preservedBackgroundEntity };
+  }
+
+  // 4. pendingClarification: clarification context and candidate objects
+  if (sessionData.pendingClarification && typeof sessionData.pendingClarification === 'object') {
+    isolated.pendingClarification = {
+      ...sessionData.pendingClarification,
+      candidates: Array.isArray(sessionData.pendingClarification.candidates)
+        ? sessionData.pendingClarification.candidates.map(c => (typeof c === 'object' && c !== null ? { ...c } : c))
+        : sessionData.pendingClarification.candidates,
+      options: Array.isArray(sessionData.pendingClarification.options)
+        ? [...sessionData.pendingClarification.options]
+        : sessionData.pendingClarification.options
+    };
+  }
+
+  // 5. data: custom session data slots and entities
+  if (sessionData.data && typeof sessionData.data === 'object') {
+    isolated.data = {
+      ...sessionData.data,
+      entities: Array.isArray(sessionData.data.entities)
+        ? sessionData.data.entities.map(e => (typeof e === 'object' && e !== null ? { ...e } : e))
+        : (sessionData.data.entities && typeof sessionData.data.entities === 'object')
+          ? { ...sessionData.data.entities }
+          : sessionData.data.entities,
+      slots: (sessionData.data.slots && typeof sessionData.data.slots === 'object')
+        ? { ...sessionData.data.slots }
+        : sessionData.data.slots
+    };
+  }
+
+  // 6. lastRetrievedPrograms: array of program objects
+  if (Array.isArray(sessionData.lastRetrievedPrograms)) {
+    isolated.lastRetrievedPrograms = sessionData.lastRetrievedPrograms.map(p =>
+      (typeof p === 'object' && p !== null ? { ...p } : p)
+    );
+  }
+
+  return isolated;
 }
 
 /**
@@ -48,7 +126,8 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     return [singleFrame];
   }
 
-  const firstFrame = resolveSemanticFrame(parts[0], sessionData);
+  const firstSessionData = isolateSubquerySession(sessionData);
+  const firstFrame = resolveSemanticFrame(parts[0], firstSessionData);
   const subjectEntities = firstFrame.entities || [];
   const topicMatch = (firstFrame.rawQuery || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
   const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
@@ -57,23 +136,29 @@ function decomposeQuery(rawQuery, sessionData = {}) {
 
   const subFrames = parts.map((part, idx) => {
     let queryToResolve = part;
-    if (idx > 0 && inferredTopic) {
+    const hasExplicitAnaphora = /\b(?:nya|tersebut|itu|ini)\b/i.test(part) || /\b(?:program|jurusan|prodi)\s+(?:ini|tersebut)\b/i.test(part);
+    const isCampusAssetSubject = /\b(?:fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|beasiswa|lokasi|alamat|gedung|kantin)\b/i.test(part);
+    const isIndependentPmbSchedule = /\b(?:gelombang|buka\s+gelombang|jadwal\s+pmb|periode\s+pmb|kapan\s+buka|kapan\s+tutup)\b/i.test(part) && !hasExplicitAnaphora;
+    const isIndependentSubject = isCampusAssetSubject || isIndependentPmbSchedule;
+    const isAnaphoric = hasExplicitAnaphora || /^(?:kalau|bagaimana|dan|lalu|apa|apakah|adakah|ada|berapa|syarat|biaya|jadwal|akreditasi)\b/i.test(part.trim());
+
+    if (idx > 0 && inferredTopic && !isIndependentSubject && isAnaphoric) {
       if (!queryToResolve.toLowerCase().includes(inferredTopic.toLowerCase())) {
         queryToResolve = `${part} ${inferredTopic}`;
       }
     }
 
-    let subFrame = resolveSemanticFrame(queryToResolve, sessionData);
+    const subSessionData = isolateSubquerySession(sessionData);
+    let subFrame = idx === 0 ? firstFrame : resolveSemanticFrame(queryToResolve, subSessionData);
     if (idx > 0) {
-      if (subFrame.entities.length === 0 && subjectEntities.length > 0) {
+      const isNonProdiDomain = ['FACILITIES', 'ORGANIZATION_UKM', 'ORGANIZATION', 'CAMPUS_SERVICE', 'CAMPUS_LIFE', 'CAREER_CENTER', 'SCHOLARSHIP'].includes(subFrame.domain) ||
+        (subFrame.domain === 'PMB_SCHEDULE') ||
+        (subFrame.intent === 'CURRENT_ENROLLMENT_STATUS');
+
+      if (!isIndependentSubject && !isNonProdiDomain && subFrame.entities.length === 0 && subjectEntities.length > 0) {
         subFrame.entities = [...subjectEntities];
       }
-      if (firstFrame.domain !== 'GENERAL' && (subFrame.domain === 'GENERAL' || subFrame.domain === 'OUT_OF_DOMAIN')) {
-        subFrame.domain = firstFrame.domain;
-        if (subFrame.intent === 'OUT_OF_DOMAIN_INQUIRY' || subFrame.intent === 'GENERAL_INQUIRY') {
-          subFrame.intent = firstFrame.intent;
-        }
-      }
+      // Never force subFrame.domain or intent from firstFrame
     }
     return subFrame;
   });
@@ -107,9 +192,10 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     return [singleFrame];
   }
 
+  const firstSessionData = isolateSubquerySession(sessionData);
   const firstFrame = (typeof resolveSemanticFrameAsync === 'function')
-    ? await resolveSemanticFrameAsync(parts[0], sessionData, options)
-    : resolveSemanticFrame(parts[0], sessionData, options);
+    ? await resolveSemanticFrameAsync(parts[0], firstSessionData, options)
+    : resolveSemanticFrame(parts[0], firstSessionData, options);
   const subjectEntities = firstFrame.entities || [];
   const topicMatch = (firstFrame.rawQuery || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
   const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
@@ -120,25 +206,31 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
   for (let idx = 1; idx < parts.length; idx++) {
     const part = parts[idx];
     let queryToResolve = part;
-    if (inferredTopic) {
+    const hasExplicitAnaphora = /\b(?:nya|tersebut|itu|ini)\b/i.test(part) || /\b(?:program|jurusan|prodi)\s+(?:ini|tersebut)\b/i.test(part);
+    const isCampusAssetSubject = /\b(?:fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|beasiswa|lokasi|alamat|gedung|kantin)\b/i.test(part);
+    const isIndependentPmbSchedule = /\b(?:gelombang|buka\s+gelombang|jadwal\s+pmb|periode\s+pmb|kapan\s+buka|kapan\s+tutup)\b/i.test(part) && !hasExplicitAnaphora;
+    const isIndependentSubject = isCampusAssetSubject || isIndependentPmbSchedule;
+    const isAnaphoric = hasExplicitAnaphora || /^(?:kalau|bagaimana|dan|lalu|apa|apakah|adakah|ada|berapa|syarat|biaya|jadwal|akreditasi)\b/i.test(part.trim());
+
+    if (inferredTopic && !isIndependentSubject && isAnaphoric) {
       if (!queryToResolve.toLowerCase().includes(inferredTopic.toLowerCase())) {
         queryToResolve = `${part} ${inferredTopic}`;
       }
     }
 
+    const subSessionData = isolateSubquerySession(sessionData);
     let subFrame = (typeof resolveSemanticFrameAsync === 'function')
-      ? await resolveSemanticFrameAsync(queryToResolve, sessionData, options)
-      : resolveSemanticFrame(queryToResolve, sessionData, options);
+      ? await resolveSemanticFrameAsync(queryToResolve, subSessionData, options)
+      : resolveSemanticFrame(queryToResolve, subSessionData, options);
 
-    if (subFrame.entities.length === 0 && subjectEntities.length > 0) {
+    const isNonProdiDomain = ['FACILITIES', 'ORGANIZATION_UKM', 'ORGANIZATION', 'CAMPUS_SERVICE', 'CAMPUS_LIFE', 'CAREER_CENTER', 'SCHOLARSHIP'].includes(subFrame.domain) ||
+      (subFrame.domain === 'PMB_SCHEDULE') ||
+      (subFrame.intent === 'CURRENT_ENROLLMENT_STATUS');
+
+    if (!isIndependentSubject && !isNonProdiDomain && subFrame.entities.length === 0 && subjectEntities.length > 0) {
       subFrame.entities = [...subjectEntities];
     }
-    if (firstFrame.domain !== 'GENERAL' && (subFrame.domain === 'GENERAL' || subFrame.domain === 'OUT_OF_DOMAIN')) {
-      subFrame.domain = firstFrame.domain;
-      if (subFrame.intent === 'OUT_OF_DOMAIN_INQUIRY' || subFrame.intent === 'GENERAL_INQUIRY') {
-        subFrame.intent = firstFrame.intent;
-      }
-    }
+    // Never force subFrame.domain or intent from firstFrame
     subFrames.push(subFrame);
   }
 
@@ -148,5 +240,6 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
 module.exports = {
   hasMultipleIntents,
   decomposeQuery,
-  decomposeQueryAsync
+  decomposeQueryAsync,
+  isolateSubquerySession
 };

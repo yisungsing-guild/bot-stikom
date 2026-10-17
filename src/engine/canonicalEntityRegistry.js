@@ -402,6 +402,18 @@ const CANONICAL_ENTITIES = [
     aliases: ['kampus abiansemal', 'abiansemal', 'kampus badung']
   },
 
+  // Double Degree / Dual Degree Programs & Collaborations
+  {
+    canonical: 'Double Degree',
+    type: 'program',
+    role: 'double_degree',
+    family: 'academic_program',
+    aliases: [
+      'double degree', 'dual degree', 'dua gelar', 'gelar ganda', 'dual qualification',
+      'program double degree', 'program dual degree', 'program dua gelar', 'program gelar ganda'
+    ]
+  },
+
   // International Programs & Collaborations
   {
     canonical: 'Double Degree DNUI',

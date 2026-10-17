@@ -154,6 +154,13 @@ tests/*
 !tests/corpusIntegrityContract.test.js
 !tests/crossDomainArchitecturalRootCause.test.js
 !tests/corpusHydrationContract.test.js
+!tests/crossDomainArchitecturePhaseAB.test.js
+!tests/crossDomainArchitecturePhaseC.test.js
+!tests/crossDomainArchitecturePhaseD.test.js
+!tests/candidateMetadataInconsistencies.test.js
+!tests/fixtures/
+!tests/fixtures/candidateMetadataFixture.json
+
 tools/
 quarantined_backups/
 

@@ -33,7 +33,7 @@ function isPgVectorProductionEnabled() {
   return mode === 'hybrid' || mode === 'vector' || enabled || hybrid;
 }
 
-const { CANONICAL_ENTITIES } = require('../engine/canonicalEntityRegistry');
+const { CANONICAL_ENTITIES, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
 
 let cachedFileContextMap = null;
 let cachedChunkSectionMap = null;
@@ -312,11 +312,14 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
 
     const matchesTarget = targetEntities.some(te => {
       const base = te.replace(/^(s1|d3|s2)\s+/i, '');
+      const canon = findCanonicalEntity(te);
+      const aliases = (canon && Array.isArray(canon.aliases)) ? canon.aliases.map(a => a.toLowerCase()) : [];
       return sectionProg.includes(te) ||
         sectionProg.includes(base) ||
-        ctxEntities.some(ce => ce.includes(te) || ce.includes(base)) ||
+        ctxEntities.some(ce => ce.includes(te) || ce.includes(base) || aliases.some(al => ce.includes(al))) ||
         rawText.includes(te) ||
-        (base.length >= 4 && rawText.includes(base));
+        (base.length >= 4 && rawText.includes(base)) ||
+        aliases.some(al => al.length >= 4 && rawText.includes(al));
     });
 
     const matchesExcluded = excludedEntities.some(ex => {
@@ -339,9 +342,12 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     }
 
     // Aspect & Category alignment: Career prospects
-    const isCareerQuery = (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.includes('career_prospects')) ||
+    // Must be verified against original query intent and validated plan aspects, NOT polluted synthetic variants
+    const userQueryText = String(retrievalPlan.rawQuery || retrievalPlan.normalizedQuery || (contract ? contract.queryText : '')).toLowerCase();
+    const isCareerQuery = (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.some(a => ['career_prospects', 'career', 'prospek_karir'].includes(a))) ||
       retrievalPlan.intent === 'CAREER_PROSPECTS' ||
-      /\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|kar(?:i)?er|prospek\s+kerja|profesi\s+lulusan)\b/i.test(query);
+      retrievalPlan.intent === 'CAREER_PROSPECTS_INQUIRY' ||
+      /\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|kar(?:i)?er|prospek\s+kerja|profesi\s+lulusan)\b/i.test(userQueryText);
     if (isCareerQuery) {
       if (/penjelasan prodi dan karier/i.test(f) || /peluang kerja|profil lulusan/i.test(rawText)) {
         score *= 2.5;
@@ -379,8 +385,8 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       if (/penjelasan prodi dan karier/i.test(f)) {
         score *= 2.5;
       }
-      if (/chatbot\s*-\s*double\s*degree/i.test(f) && /\b(?:double|dual|degree|help|dnui)\b/i.test(query)) {
-        score *= 3.0;
+      if (/\b(?:double\s*degree|dual\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(rawText) && targetEntities.some(te => /degree|gelar/i.test(te))) {
+        score *= 2.0;
       }
       if (/fasilitas-stikom/i.test(f) && /\bfasilitas\b/i.test(query)) {
         score *= 4.0;

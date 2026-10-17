@@ -19,7 +19,7 @@
  */
 
 const { getSession, updateSession } = require('./conversationState');
-const { decomposeQuery, decomposeQueryAsync } = require('./multiIntentResolver');
+const { decomposeQuery, decomposeQueryAsync, hasMultipleIntents } = require('./multiIntentResolver');
 const { buildRetrievalPlan } = require('./retrievalPlanner');
 const { retrieveCandidates } = require('./retrievalService');
 const { arbitrateEvidence } = require('./evidenceArbiter');
@@ -232,6 +232,37 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
 }
 
 /**
+ * Validates that a precomputed semanticFrame strictly matches the rawQuery being processed.
+ * Prevents stale or cross-turn frame reuse from corrupting pipeline execution.
+ */
+function isSemanticFrameMatchingQuery(frame, rawQuery) {
+  if (!frame || typeof frame !== 'object') return false;
+  if (typeof rawQuery !== 'string') return false;
+
+  const targetRaw = rawQuery.trim();
+  const targetNorm = targetRaw.toLowerCase().replace(/\s+/g, ' ');
+
+  const frameRaw = typeof frame.rawQuery === 'string'
+    ? frame.rawQuery.trim()
+    : (typeof frame.raw === 'string' ? frame.raw.trim() : (typeof frame.query === 'string' ? frame.query.trim() : null));
+
+  if (frameRaw !== null) {
+    if (frameRaw === targetRaw || frameRaw.toLowerCase() === targetRaw.toLowerCase()) {
+      return true;
+    }
+  }
+
+  if (typeof frame.normalizedQuery === 'string') {
+    const frameNorm = frame.normalizedQuery.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (frameNorm === targetNorm) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Pure deterministic Phase 1 pipeline execution.
  * Returns structured result for shadow logging or outbound delivery.
  */
@@ -244,9 +275,19 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
   const sessionData = session ? (session.data || {}) : {};
 
   // 1. Decompose Query into SemanticFrames
-  const subFrames = (typeof decomposeQueryAsync === 'function' && !options.syncOnly)
-    ? await decomposeQueryAsync(rawQuery, sessionData, options)
-    : decomposeQuery(rawQuery, sessionData);
+  let subFrames;
+  const isFrameReusable = options.semanticFrame &&
+    isSemanticFrameMatchingQuery(options.semanticFrame, rawQuery) &&
+    typeof hasMultipleIntents === 'function' &&
+    !hasMultipleIntents(rawQuery);
+
+  if (isFrameReusable) {
+    subFrames = [options.semanticFrame];
+  } else {
+    subFrames = (typeof decomposeQueryAsync === 'function' && !options.syncOnly)
+      ? await decomposeQueryAsync(rawQuery, sessionData, options)
+      : decomposeQuery(rawQuery, sessionData);
+  }
 
   const subQueryResults = [];
 
@@ -404,21 +445,40 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         // 7. Universal Final Verification
         const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
         verification = verifFn(synthesis.answer, frame, arbitrated);
-        if (verification.outcome !== VERIFICATION_OUTCOME.VERIFICATION_FAILED) {
-          answer = synthesis.answer;
-        } else {
-          logger.warn({ reason: verification.reason }, '[Orchestrator] Synthesized answer blocked by Final Verifier');
-          answer = 'Mohon maaf, informasi resmi yang terverifikasi belum dapat dipastikan secara lengkap saat ini. Silakan hubungi bagian informasi kampus untuk bantuan langsung.';
-          verification = {
-            pass: false,
-            outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
-            interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
-            isInterception: true,
-            status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
-            reason: verification.reason || 'blocked_by_final_verifier',
-            isGrounded: false,
-            handledSafely: true
-          };
+
+        // Deterministic Recovery if synthesis failed verification or yielded unjustified SAFE_UNKNOWN on ANSWERABLE turn
+        const isUnjustifiedSafeUnknown = verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN &&
+          answerability.status === ANSWERABILITY_STATUS.ANSWERABLE;
+
+        if (verification.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED || isUnjustifiedSafeUnknown) {
+          logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting deterministic recovery');
+          const recoverySummary = groundedAnswerGenerator.buildGroundedDeterministicSummary(frame, arbitrated.accepted, arbitrated);
+          if (recoverySummary) {
+            const recoveryVerif = verifFn(recoverySummary, frame, arbitrated);
+            if (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.pass) {
+              answer = recoverySummary;
+              verification = recoveryVerif;
+            }
+          }
+        }
+
+        if (!answer) {
+          if (verification.outcome !== VERIFICATION_OUTCOME.VERIFICATION_FAILED) {
+            answer = synthesis.answer;
+          } else {
+            logger.warn({ reason: verification.reason }, '[Orchestrator] Synthesized answer blocked by Final Verifier');
+            answer = 'Mohon maaf, informasi resmi yang terverifikasi belum dapat dipastikan secara lengkap saat ini. Silakan hubungi bagian informasi kampus untuk bantuan langsung.';
+            verification = {
+              pass: false,
+              outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+              interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+              isInterception: true,
+              status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+              reason: verification.reason || 'blocked_by_final_verifier',
+              isGrounded: false,
+              handledSafely: true
+            };
+          }
         }
       } else {
         answer = 'Informasi resmi mengenai hal tersebut belum tercantum secara lengkap dalam panduan yang tersedia.';

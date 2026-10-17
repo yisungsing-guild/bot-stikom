@@ -21,6 +21,8 @@
  *   These MUST NEVER trigger context inheritance on their own.
  */
 
+const { CONTEXT_DECISION } = require('../reasoning/contracts');
+
 // Non-referential discourse adverbs and modals ending in -nya that do NOT reference a prior entity
 const NON_REFERENTIAL_NYA_WORDS = new Set([
   'sebenarnya', 'sebenar',
@@ -49,7 +51,8 @@ const NON_REFERENTIAL_NYA_WORDS = new Set([
   'cocoknya', 'cocok',
   'pasnya', 'pas',
   'kurangnya', 'kurang',
-  'makinnya', 'makin'
+  'makinnya', 'makin',
+  'olahraganya', 'olahraga'
 ]);
 
 // Genuine ellipsis starts (e.g. "bagaimana dengan...", "kalau yang...", "what about...", "how about...")
@@ -67,7 +70,7 @@ function hasExplicitPronounReference(query) {
   }
 
   // 2. Bound anaphoric enclitic -nya on nouns (e.g. biayanya, syaratnya, kurikulumnya, studinya, akreditasinya)
-  // Must distinguish from non-referential discourse adverbs and modals (e.g. sebenarnya, harusnya, biasanya)
+  // Must distinguish from non-referential discourse adverbs and modals (e.g. sebenarnya, harusnya, biasanya, olahraganya)
   const matches = q.match(/\b([a-z]{3,})nya\b/gi);
   if (matches) {
     for (const match of matches) {
@@ -109,18 +112,63 @@ function isGenuineEllipsis(query) {
 
 /**
  * Determines whether the current query should inherit context from prior session turns.
- * Returns { shouldInherit: boolean, reason: string }
+ * Returns { shouldInherit: boolean, reason: string, decision: string, inheritedDomain, inheritedEntity, scopeModifier }
  */
 function evaluateContextDependency(currentQuery, sessionData = {}) {
   if (!currentQuery) {
-    return { shouldInherit: false, reason: 'empty_query' };
+    return { shouldInherit: false, reason: 'empty_query', decision: CONTEXT_DECISION.TOPIC_SHIFT };
   }
 
   const query = currentQuery.trim().toLowerCase();
 
   // If session has no prior state, cannot inherit
   if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.lastQuery)) {
-    return { shouldInherit: false, reason: 'no_session_history' };
+    return { shouldInherit: false, reason: 'no_session_history', decision: CONTEXT_DECISION.TOPIC_SHIFT };
+  }
+
+  // Guard 0.1: Underspecified single-word question without predicate (e.g. "Berapa?", "Kapan?")
+  const isSingleWordAmbiguous = /^(?:berapa|kapan|apakah|ada|dimana|bagaimana)\??$/i.test(query);
+  if (isSingleWordAmbiguous) {
+    return {
+      shouldInherit: false,
+      reason: 'ambiguous_query',
+      decision: CONTEXT_DECISION.AMBIGUOUS_FOLLOW_UP
+    };
+  }
+
+  // Guard 0.2: Independent PMB / Enrollment wave status inquiry (e.g. "sekarang buka gelombang berapa")
+  // without an explicit program pronoun reference is an independent institutional PMB inquiry (TOPIC_SHIFT).
+  const isIndependentPmbWaveQuery = /\b(?:gelombang|buka\s+gelombang|gelombang\s+berapa|jadwal\s+pmb|periode\s+pmb|masih\s+dibuka|kapan\s+buka|kapan\s+tutup)\b/i.test(query) &&
+    !/\b(?:nya|program\s+ini|jurusan\s+ini)\b/i.test(query);
+  if (isIndependentPmbWaveQuery) {
+    return {
+      shouldInherit: false,
+      reason: 'independent_pmb_inquiry',
+      decision: CONTEXT_DECISION.TOPIC_SHIFT
+    };
+  }
+
+  // Guard 0.3: Specific disambiguation for generic schedule follow-up ("Jadwalnya kapan?")
+  const isGenericScheduleQuery = /^(?:kapan\s+jadwalnya|jadwalnya\s+kapan|kapan\s+jadwal|jadwalnya)\??$/i.test(query);
+  if (isGenericScheduleQuery) {
+    if (sessionData.activeDomain === 'PMB' || sessionData.activeIntent === 'ADMISSION_SCHEDULE') {
+      return {
+        shouldInherit: true,
+        reason: 'admission_schedule_continuation',
+        decision: CONTEXT_DECISION.BOUND_CONTINUATION,
+        inheritedDomain: 'PMB',
+        inheritedIntent: 'ADMISSION_SCHEDULE',
+        inheritedEntity: sessionData.activeEntity || null
+      };
+    }
+    if (sessionData.activeDomain === 'TUITION_FEE') {
+      // In tuition fee context, "jadwalnya kapan?" is ambiguous between payment schedule, lecture schedule, or pmb schedule
+      return {
+        shouldInherit: false,
+        reason: 'ambiguous_schedule_followup',
+        decision: CONTEXT_DECISION.AMBIGUOUS_FOLLOW_UP
+      };
+    }
   }
 
   const isAcademicActiveEntity = sessionData.activeEntity && (
@@ -131,7 +179,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
      !sessionData.activeDomain?.startsWith('ORGANIZATION'))
   );
 
-  // Guard: Campus-wide service domain inquiries must not inherit academic program entities
+  // Guard 1: Campus-wide service domain inquiries must not inherit academic program entities
   // Covers: FACILITIES, ORGANIZATION_UKM, SCHOLARSHIP, CAMPUS_SERVICE, CAREER_CENTER
   const isCampusWideQuery =
     (/\b(?:ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi(?:\s+mahasiswa)?|ormawa|ekskul|ekstrakurikuler|student\s+clubs?|student\s+organizations?)\b/i.test(query) &&
@@ -143,7 +191,8 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   if (isCampusWideQuery && isAcademicActiveEntity) {
     return {
       shouldInherit: false,
-      reason: 'campus_wide_domain_isolation'
+      reason: 'campus_wide_domain_isolation',
+      decision: CONTEXT_DECISION.TOPIC_SHIFT
     };
   }
 
@@ -162,15 +211,32 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   if (isAcademicProgramOrFeeQuery && isNonAcademicSession && !query.includes('tari') && !query.includes('ukm')) {
     return {
       shouldInherit: false,
-      reason: 'cross_domain_isolation'
+      reason: 'cross_domain_isolation',
+      decision: CONTEXT_DECISION.TOPIC_SHIFT
     };
   }
 
-  // Check 1: Genuine Ellipsis
+  // Check 1: Genuine Ellipsis with Scope Modification (e.g. Double Degree -> "Ada yang nasional?")
+  const isNationalScopeEllipsis = /\b(?:nasional|dalam\s+negeri|lokal|domestik)\b/i.test(query);
+  const isPriorDoubleDegree = sessionData.activeEntity === 'Double Degree' ||
+    (typeof sessionData.lastQuery === 'string' && /\b(?:double|dual)\s*degree\b/i.test(sessionData.lastQuery)) ||
+    sessionData.activeDomain === 'INTERNATIONAL';
+
   if (isGenuineEllipsis(query)) {
+    if (isNationalScopeEllipsis && isPriorDoubleDegree) {
+      return {
+        shouldInherit: true,
+        reason: 'scope_modification_national',
+        decision: CONTEXT_DECISION.ENTITY_SCOPE_MODIFICATION,
+        inheritedDomain: 'ACADEMIC_PROGRAM',
+        inheritedEntity: 'Double Degree',
+        scopeModifier: 'national'
+      };
+    }
     return {
       shouldInherit: true,
       reason: 'genuine_ellipsis',
+      decision: CONTEXT_DECISION.BOUND_CONTINUATION,
       inheritedDomain: sessionData.activeDomain,
       inheritedEntity: sessionData.activeEntity
     };
@@ -181,17 +247,19 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     return {
       shouldInherit: true,
       reason: 'pronoun_reference',
+      decision: CONTEXT_DECISION.BOUND_CONTINUATION,
       inheritedDomain: sessionData.activeDomain,
       inheritedEntity: sessionData.activeEntity
     };
   }
 
-  // Check 3: Attribute Continuation without explicit entity (e.g. "gelar apa yang didapat dan berapa lama masa studi?" / "what degree would I receive and how long would the program take?")
+  // Check 3: Attribute Continuation without explicit entity
   const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation)\b/i.test(query);
   if (isAttributeInquiry && sessionData.activeEntity) {
     return {
       shouldInherit: true,
       reason: 'attribute_continuation',
+      decision: CONTEXT_DECISION.BOUND_CONTINUATION,
       inheritedDomain: sessionData.activeDomain || 'ACADEMIC_PROGRAM',
       inheritedEntity: sessionData.activeEntity
     };
@@ -200,12 +268,14 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   // DEFAULT: Current turn is independent and authoritative!
   return {
     shouldInherit: false,
-    reason: 'independent_current_turn'
+    reason: 'independent_current_turn',
+    decision: CONTEXT_DECISION.TOPIC_SHIFT
   };
 }
 
 module.exports = {
   hasExplicitPronounReference,
   isGenuineEllipsis,
-  evaluateContextDependency
+  evaluateContextDependency,
+  CONTEXT_DECISION
 };

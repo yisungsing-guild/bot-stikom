@@ -122,6 +122,38 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       if (req === 'facilities') {
         return /\b(fasilitas|lab|laboratorium|perpustakaan|asrama|dormitory)\b/i.test(combinedEvidenceText);
       }
+      if (req === 'double_degree') {
+        return /\b(double\s*degree|dual\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'international_program') {
+        return /\b(internasional|international|luar\s+negeri|dnui|help\s*university|dalian|china|malaysia)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'national_program') {
+        // Evaluate substantively per candidate rather than stitching unrelated fragments
+        return accepted.some(cand => {
+          const candText = (cand.text || cand.chunk || '').toLowerCase();
+          const candFile = (cand.sourceFile || cand.source || '').toLowerCase();
+          // Exclude pure facility listings or accreditation certificates
+          if (/fasilitas-stikom/i.test(candFile) || /akreditasi|ban-pt|lam-infokom/i.test(candFile)) {
+            return false;
+          }
+          // Pure international documents (HELP / DNUI) alone do not satisfy national program
+          const isPureInternational = /\b(?:help\s*university|dalian|neusoft|dnui)\b/i.test(candText) &&
+            !/\b(?:utb|universitas\s+teknologi\s+bandung|national\s*class|kelas\s*nasional)\b/i.test(candText);
+          if (isPureInternational) return false;
+
+          // Must explicitly demonstrate national dual degree/program scope with substantive partner, degree, or track details
+          const hasDualDegree = /\b(?:dual\s*degree|double\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(candText);
+          const hasNationalClass = /\b(?:national\s*class|kelas\s*nasional)\b/i.test(candText);
+          const hasUtbPartner = /\b(?:utb|universitas\s+teknologi\s+bandung)\b/i.test(candText);
+          const hasSubstantiveDetails = /\b(?:s\.ds|s\.kom|bandung|biaya|semester|penyelenggaraan|sarjana)\b/i.test(candText);
+
+          return (hasDualDegree && hasNationalClass) || (hasDualDegree && hasUtbPartner && hasSubstantiveDetails);
+        });
+      }
+      if (req === 'partnership') {
+        return /\b(mitra|kerjasama|kerja\s*sama|partner|partnership|kolaborasi|mou|moa|universitas\s+teknologi\s+bandung|utb|help\s*university|dnui)\b/i.test(combinedEvidenceText);
+      }
       if (req === 'organization' || req === 'student_organization') {
         return /\b(ukm|ormawa|organisasi|hima|himaprodi|ekstrakurikuler)\b/i.test(combinedEvidenceText);
       }

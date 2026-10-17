@@ -113,6 +113,7 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   if (semanticFrame) {
     if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' ||
         semanticFrame.intent === 'GENERAL_PMB_INQUIRY' ||
+        semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
         semanticFrame.intent === 'PAYMENT_CONFIRMATION_PROCEDURE' ||
         semanticFrame.speechAct === 'GENERAL_GREETING') {
       return false;

@@ -121,6 +121,17 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
 
   const { entities = [] } = semanticFrame;
   const excludedEntities = (arbitratedEvidence.retrievalPlan && arbitratedEvidence.retrievalPlan.excludedConflictingEntities) || [];
+
+  const isDDInquiry = entities.some(e => /double\s*degree|dual\s*degree/i.test(e.canonical || e.name || String(e))) ||
+    /\b(?:double|dual)\s*degree|dua\s*gelar\b/i.test(semanticFrame.rawQuery || '') ||
+    (semanticFrame.aspects && semanticFrame.aspects.includes('double_degree'));
+
+  const DD_COLLABORATING_PROGRAMS = new Set([
+    's1 bisnis digital', 'bisnis digital', 's1 bd', 'bd',
+    's1 sistem informasi', 'sistem informasi', 's1 si', 'si',
+    's1 teknologi informasi', 'teknologi informasi', 's1 ti', 'ti',
+    'sarjana bisnis digital', 'sarjana sistem informasi', 'prodi bd', 'prodi si'
+  ]);
   
   function isComparativeSentence(sentence, excluded) {
     const hasContrast = /\b(berbeda\s+(?:dengan|halnya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti|differs?\s+(?:from)?|compared\s+(?:to|with)|whereas|while|unlike|contrast|difference)\b/i.test(sentence);
@@ -133,6 +144,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   for (const excluded of excludedEntities) {
     if (excluded && excluded.length >= 4) {
       if (GENERIC_COMMON_WORDS.has(excluded.toLowerCase().trim())) continue;
+      if (isDDInquiry && DD_COLLABORATING_PROGRAMS.has(excluded.toLowerCase().trim())) continue;
       const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`\\b${escaped}\\b`, 'i');
       if (regex.test(text)) {
@@ -264,6 +276,60 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     }
   }
 
+  // 7. Negative Controls & Domain-Aspect Integrity Checks
+  const rawQuery = String(semanticFrame.rawQuery || '').toLowerCase();
+
+  // 7a. Accreditation negative control: Must not be answered with Double Degree
+  const isAccreditationQuery = semanticFrame.domain === 'ACCREDITATION' ||
+    (semanticFrame.aspects && semanticFrame.aspects.includes('accreditation')) ||
+    /\b(?:akreditasi|peringkat\s+akreditasi|ban-?pt|lam\s+infokom)\b/i.test(rawQuery);
+  if (isAccreditationQuery && !/\b(?:dual|double)\s*degree\b/i.test(rawQuery)) {
+    if (/\b(?:dual|double)\s*degree|national\s*class|utb\b/i.test(text) && !/\bakreditasi\b/i.test(text)) {
+      return failVerification('domain_aspect_mismatch_accreditation_answered_with_double_degree');
+    }
+  }
+
+  // 7b. Facilities negative control: Must not use facility list as substantive Double Degree claim
+  const isFacilityInquiry = semanticFrame.domain === 'FACILITIES' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'lab', 'campus_infrastructure'].includes(a)));
+  if (isFacilityInquiry && !/\b(?:double|dual)\s*degree\b/i.test(rawQuery)) {
+    if (/\b(?:dual|double)\s*degree\s+(?:national|nasional)\b/i.test(text) && !/\b(?:lab|laboratorium|ruang\s+kuliah|perpustakaan|wi-?fi|gedung)\b/i.test(text)) {
+      return failVerification('domain_aspect_mismatch_facilities_answered_with_double_degree');
+    }
+  }
+
+  // 7c. National Double Degree Integrity Checks
+  const isNationalDDQuery = /\bnasional\b/i.test(rawQuery) &&
+    (semanticFrame.aspects?.includes('double_degree') ||
+     semanticFrame.relation === 'NATIONAL_DOUBLE_DEGREE' ||
+     /\b(?:dual|double)\s*degree|dua\s*gelar\b/i.test(rawQuery) ||
+     semanticFrame.contextDependencies?.some(cd => /double\s*degree/i.test(cd.inheritedEntity || '')));
+
+  if (isNationalDDQuery) {
+    // Cannot claim partner is Universitas Teknologi Bali (must be Bandung / UTB)
+    if (/universitas\s+teknologi\s+bali/i.test(text)) {
+      return failVerification('partner_name_contradiction_bali_instead_of_bandung');
+    }
+
+    // Cannot use facility framing ("daftar program/fasilitas kampus") as substitute for program
+    if (/daftar\s+(?:program\s*\/\s*)?fasilitas\s+kampus/i.test(text)) {
+      return failVerification('forbidden_facility_framing_for_national_double_degree');
+    }
+
+    // Unjustified refusal check when UTB evidence is present in accepted evidence
+    const hasUtbAccepted = arbitratedEvidence?.accepted?.some(c => {
+      const cText = c.text || c.chunk || '';
+      return /\b(?:UTB|UNIVERSITAS\s+TEKNOLOGI\s+BANDUNG)\b/i.test(cText);
+    });
+
+    if (hasUtbAccepted) {
+      const isRefusingPartner = /\b(?:mitra.*belum\s+tercantum|rincian\s+mengenai\s+mitra.*belum|belum\s+tercantum\s+dalam\s+panduan)\b/i.test(text);
+      if (isRefusingPartner && !/\b(?:Bandung|UTB)\b/i.test(text)) {
+        return failVerification('unjustified_refusal_national_partner_available');
+      }
+    }
+  }
+
   // Outcome Classification (when all structural failure gates pass)
   if (isUnsupported) {
     return {
@@ -277,15 +343,39 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   }
 
   const isExplicitAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan)|tidak\s+(?:ditemukan|tersedia|tercantum)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
+  const isAnswerable = arbitratedEvidence?.answerability === 'ANSWERABLE' ||
+    arbitratedEvidence?.answerabilityStatus === 'ANSWERABLE';
+
+  const hasSubstantiveContent = text.length > 80 && (
+    /\b(antara\s+lain|meliputi|bekerja\s+sama|mitra|lulusan\s+memperoleh|potongan|persyaratan|berikut|kurikulum)\b/i.test(text)
+  );
+
   if (isExplicitAbstain) {
-    return {
-      pass: false,
-      outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
-      status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
-      reason: 'safe_unknown',
-      isGrounded: false,
-      handledSafely: true
-    };
+    if (!hasSubstantiveContent) {
+      // Total refusal: If answerability is ANSWERABLE and evidence exists, this refusal is unjustified!
+      if (isAnswerable && arbitratedEvidence?.accepted?.length > 0) {
+        return failVerification('unjustified_refusal_evidence_available');
+      }
+      return {
+        pass: false,
+        outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        reason: 'safe_unknown',
+        isGrounded: false,
+        handledSafely: true
+      };
+    }
+    // Substantive content accompanied by missing aspect disclosure (grounded partial answer)
+    if (arbitratedEvidence?.accepted && arbitratedEvidence.accepted.length > 0) {
+      return {
+        pass: true,
+        outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+        status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+        reason: 'verified_grounded_partial_disclosure',
+        isGrounded: true,
+        handledSafely: true
+      };
+    }
   }
 
   const isEscalationGuidance = /\b(silakan\s+(?:menghubungi|berkonsultasi|konfirmasi|hubungi)\s+(?:dosen\s+wali|bagian\s+akademik|admisi|pmb|pusat\s+informasi)|contact\s+the\s+admission\s+office)\b/i.test(text) &&

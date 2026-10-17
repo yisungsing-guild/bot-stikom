@@ -110,6 +110,14 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
 
   const q = String(rawQuery || '').toLowerCase().trim();
 
+  // If query is an institutional inquiry (PMB wave, schedule, tuition fee, facilities, contact)
+  if (/\b(?:gelombang|buka\s+gelombang|sekarang\s+buka|jadwal\s+pmb|jadwal\s+pendaftaran|biaya|tarif|fasilitas|lokasi|alamat|kontak)\b/i.test(q)) {
+    // Only continue if query explicitly mentions academic major markers (e.g. "jurusan kedokteran buka gelombang berapa")
+    if (!/\b(?:jurusan|prodi|program\s+studi|fakultas|s1|s2|d3)\b/i.test(q)) {
+      return null;
+    }
+  }
+
   // If query is a general available programs or education levels listing inquiry without specific discipline mention
   if (/\b(?:apa\s+saja|ada\s+apa|daftar\s+prodi|list\s+jurusan|bisa\s+ambil\s+apa)\b/i.test(q) &&
       !/\b(?:apakah\s+(?:ada|tersedia)|ada\s+nggak|punya)\b/i.test(q)) {
@@ -136,7 +144,8 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
     'apa', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'pilihan', 'saja', 'aja', 'kak',
     'ya', 'nih', 'dong', 'kah', 'sore', 'malam', 'karyawan', 'reguler', 'eksekutif',
     'lebih', 'baik', 'ambil', 'pilih', 'mana', 'bagus', 'cocok', 'rekomendasi', 'saran',
-    'prodi', 'jurusan'
+    'prodi', 'jurusan', 'berapa', 'kapan', 'bagaimana', 'gimana', 'dimana', 'kenapa',
+    'mengapa', 'siapa', 'gelombang'
   ]);
 
   // Pattern 1: Program marker + optional degree level + candidate noun (e.g. "jurusan farmasi", "prodi s1 hubungan internasional")
@@ -171,7 +180,7 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
   if (presenceMatch && presenceMatch[1]) {
     const candidate = presenceMatch[1].trim();
     const isDomainWord = CANONICAL_DOMAIN_LEXICON.includes(candidate) ||
-      /^(?:kelas|program|kuliah|jalur|jenjang|beasiswa|asrama|magang|s1|s2|d3|sarjana|diploma|magister)$/i.test(candidate);
+      /^(?:kelas|program|kuliah|jalur|jenjang|beasiswa|asrama|magang|s1|s2|d3|sarjana|diploma|magister|gelombang|pendaftaran|pmb|jadwal|biaya|fasilitas|syarat)$/i.test(candidate);
     const tokens = candidate.split(/\s+/);
     if (!isDomainWord && candidate.length >= 4 && !tokens.some(tok => STOP_TOKENS.has(tok))) {
       const known = findCanonicalEntity(candidate);
@@ -352,8 +361,24 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
-  // 3. International Programs & Collaborations (Double Degree, Magang Luar Negeri, GCCP, Student Exchange)
-  if (entities.some(e => e.family === 'international_program') || /\b(double degree|dual degree|international program|pertukaran\s+(?:pelajar|mahasiswa)|student exchange|gccp|bccp|magang\s+(?:ke\s+)?jepang|hi-?think|international\s+student\s+exchange|exchange\s+options?|study\s+abroad)\b/i.test(normalized)) {
+  // 3. International & Dual/Double Degree Programs & Collaborations
+  if (entities.some(e => e.family === 'international_program' || e.canonical === 'Double Degree' || e.role === 'double_degree') || /\b(double degree|dual degree|international program|pertukaran\s+(?:pelajar|mahasiswa)|student exchange|gccp|bccp|magang\s+(?:ke\s+)?jepang|hi-?think|international\s+student\s+exchange|exchange\s+options?|study\s+abroad)\b/i.test(normalized)) {
+    const isNationalScope = /\b(?:nasional|dalam\s+negeri|lokal|domestik)\b/i.test(normalized) ||
+      /\b(?:nasional|dalam\s+negeri|lokal|domestik)\b/i.test(unstemmed) ||
+      /\b(?:nasional|dalam\s+negeri|lokal|domestik)\b/i.test(raw);
+
+    if (isNationalScope) {
+      return {
+        domain: 'ACADEMIC_PROGRAM',
+        intent: 'PROGRAM_OVERVIEW',
+        retrievalRequired: true,
+        userState: 'INQUIRING',
+        desiredAction: 'PROVIDE_PROGRAM_INFO',
+        aspects: ['double_degree', 'national_program', 'partnership'],
+        relation: 'NATIONAL_DOUBLE_DEGREE'
+      };
+    }
+
     let intent = 'INTERNATIONAL_PROGRAM_INFO';
     const aspects = [];
     let relation = 'PROGRAM_DETAILS';
@@ -558,12 +583,14 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   const isStudentOrgKeyword = /\b(ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|ormawa|hima\b|himaprodi|senat\s+mahasiswa|balma|ekstrakurikuler|student\s+clubs?|student\s+organizations?|campus\s+clubs?)\b/i.test(normalized);
   const isActivityInterest = /\b(gaming|game|gamer|esport|esports|e-sports|olahraga|olah\s*raga|sports?|futsal|basket|badminton|bulutangkis|paduan\s+suara|teater|tari|musik|music|band|robotik|ksl)\b/i.test(normalized);
   const isJoinVerb = /\b(?:bergabung|gabung|join)\b/i.test(normalized);
+  const isFacilityKeyword = /\b(fasilitas(?:nya)?|laboratorium(?:nya)?|lab(?:nya)?|perpustakaan|asrama|dormitory|ruang\s+kelas|gedung\s+kampus|aula|gedung\s+aula|gedung\s+serbaguna|auditorium|hall|sewa\s+gedung|facilit(?:y|ies)|campus\s+facilities|classrooms?|parkir(?:an)?|parking)\b/i.test(normalized);
   const candidateDomain = sessionData?.activeDomain || sessionData?.lastDomain || sessionData?.data?.activeDomain || sessionData?.data?.lastDomain || null;
 
-  if (entities.some(e => e.family === 'student_organization') ||
+  if (!isFacilityKeyword && (
+      entities.some(e => e.family === 'student_organization') ||
       isStudentOrgKeyword ||
       (isActivityInterest && (isStudentOrgKeyword || /\b(?:suka|minat|hobi|bakat|passion)\b/i.test(normalized) || !/\b(?:prodi|jurusan|kuliah|s1|d3|s2)\b/i.test(normalized))) ||
-      (isJoinVerb && (candidateDomain === 'ORGANIZATION_UKM' || isStudentOrgKeyword))) {
+      (isJoinVerb && (candidateDomain === 'ORGANIZATION_UKM' || isStudentOrgKeyword)))) {
     const isEsports = /\b(gaming|game|gamer|esport|esports|e-sports)\b/i.test(normalized);
     const isSport = /\b(olahraga|olah\s*raga|sports?|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(normalized);
     const isArts = /\b(seni|budaya|tari|musik|music|band|teater|paduan\s+suara|fotografi)\b/i.test(normalized);
@@ -601,6 +628,9 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     const facilityAspects = ['facilities', 'lab', 'campus_infrastructure'];
     if (/\b(tarif|biaya|sewa|harga|bayar|fee|fees|rent|rental|cost|price)\b/i.test(normalized)) {
       facilityAspects.push('fee', 'sewa_gedung');
+    }
+    if (/\b(olahraga|olah\s*raga|sports?|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(normalized)) {
+      facilityAspects.push('sports');
     }
     return {
       domain: 'FACILITIES',
@@ -839,6 +869,15 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   }
   let entities = Array.from(seenEntities.values());
 
+  // Bare Double Degree detection
+  if (!entities.some(e => /double\s*degree|dual\s*degree/i.test(e.canonical)) && /\b(?:double\s*degree|dual\s*degree)\b/i.test(normalized)) {
+    entities.push({
+      canonical: 'Double Degree',
+      type: 'program',
+      family: 'academic_program'
+    });
+  }
+
   // 2b. Separate primary targets from modifier entities (admission_track, participant_scope, academic_scope)
   const MODIFIER_FAMILIES = new Set(['admission_track', 'participant_scope', 'academic_scope']);
   const PRIMARY_FAMILIES = new Set(['academic_program', 'international_program', 'campus_service', 'student_organization', 'facility', 'campus_facility']);
@@ -868,6 +907,13 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
         canonical: inheritedCanon.canonical,
         type: inheritedCanon.type,
         family: inheritedCanon.family,
+        inherited: true
+      });
+    } else if (contextDep.inheritedEntity === 'Double Degree' || /double\s*degree/i.test(contextDep.inheritedEntity)) {
+      effectiveTargetEntities.push({
+        canonical: 'Double Degree',
+        type: 'international_program',
+        family: 'international_program',
         inherited: true
       });
     }
@@ -1005,6 +1051,8 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     language: detectQueryLanguage(raw),
     subQueries: [],
     contextDependencies: contextDep.shouldInherit ? [contextDep] : [],
+    contextEvaluation: contextDep,
+    contextDecision: contextDep.decision,
     unsupportedEntity: isUnsupported,
     unsupportedEntityName: unsupportedName,
     entityResolutionStatus: isUnsupported ? 'UNSUPPORTED' : (effectiveTargetEntities.length > 0 ? 'RESOLVED' : 'UNRESOLVED'),

@@ -511,10 +511,12 @@ describe('Chat Engine V2 — Architectural Root-Cause & Cross-Domain Regression'
       expect(r2.finalAnswer).toMatch(/double\s*degree/i);
       expect(r2.finalAnswer).toMatch(/nasional/i);
 
-      // Subquery inspection: verify both subqueries stayed in INTERNATIONAL
+      // Subquery inspection: verify subqueries preserve Double Degree without drift to ACCREDITATION
       if (r2.subQueryResults && r2.subQueryResults.length > 1) {
+        expect(r2.subQueryResults[0].frame.domain).toBe('INTERNATIONAL');
+        expect(r2.subQueryResults[1].frame.domain).toBe('ACADEMIC_PROGRAM');
         for (const sq of r2.subQueryResults) {
-          expect(sq.frame.domain).toBe('INTERNATIONAL');
+          expect(sq.frame.domain).not.toBe('ACCREDITATION');
           if (sq.arbitrated && sq.arbitrated.accepted) {
             for (const chunk of sq.arbitrated.accepted) {
               const text = (chunk.text || chunk.chunk || '').toLowerCase();

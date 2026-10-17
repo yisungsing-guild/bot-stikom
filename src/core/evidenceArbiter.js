@@ -102,9 +102,14 @@ function isCandidateMatchingTargetEntity(candidateTextOrObj, targetEntityStr) {
       return false;
     }
   }
+  const isMultiLevelCandidate = isObjectCandidate && candidateTextOrObj.scope === 'PROGRAM_MULTI' &&
+    (candidateTextOrObj.correctedLevel === 'S1_D3' ||
+     (Array.isArray(candidateTextOrObj.supportedPrograms) && candidateTextOrObj.supportedPrograms.includes('MI')));
+
   if (/^D3\b/i.test(targetEntityStr)) {
-    if (candLevel && ['S1', 'S2'].includes(candLevel)) return false;
-    if (candLevel !== 'D3' && !/\b(d3|diploma|ahli madya)\b/i.test(cleanText) && !/\b(d3|diploma|ahli madya)\b/i.test(fileNorm)) {
+    if (candLevel === 'S2') return false;
+    if (candLevel === 'S1' && !isMultiLevelCandidate) return false;
+    if (candLevel !== 'D3' && !isMultiLevelCandidate && !/\b(d3|diploma|ahli madya)\b/i.test(cleanText) && !/\b(d3|diploma|ahli madya)\b/i.test(fileNorm)) {
       return false;
     }
   }
@@ -550,7 +555,10 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   const planLevel = retrievalPlan.academicLevel || retrievalPlan.targetLevel;
   if (planLevel && planLevel !== 'Umum') {
     const candLevel = candidate.academicLevel;
-    if (candLevel && candLevel !== 'Umum' && candLevel !== planLevel) {
+    const isMultiLevelMatch = candidate.scope === 'PROGRAM_MULTI' &&
+      (candidate.correctedLevel === 'S1_D3' ||
+       (Array.isArray(candidate.supportedPrograms) && candidate.supportedPrograms.includes('MI') && ['S1', 'D3'].includes(String(planLevel).toUpperCase())));
+    if (candLevel && candLevel !== 'Umum' && candLevel !== planLevel && !isMultiLevelMatch) {
       return {
         accepted: false,
         disposition: 'REJECT_SCOPE_MISMATCH',
@@ -645,6 +653,22 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   if (isAccreditationChunk) providedAspects.push('akreditasi', 'peringkat', 'sk_akreditasi', 'accreditation');
   if (isLocationChunk) providedAspects.push('location', 'study_location', 'campus_location');
   if (isDurationChunk) providedAspects.push('duration', 'study_duration');
+
+  const isDoubleDegreeChunk = /\b(double\s*degree|dual\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(text);
+  if (isDoubleDegreeChunk) providedAspects.push('double_degree');
+
+  const isNationalProgramChunk = /\b(?:national\s*class|kelas\s*nasional|program\s*nasional)\b/i.test(text) ||
+    (isDoubleDegreeChunk && /\b(?:utb|universitas\s+teknologi\s+bandung|dalam\s+negeri)\b/i.test(text));
+  if (isNationalProgramChunk && !/fasilitas-stikom/i.test(candidateFile)) {
+    providedAspects.push('national_program');
+  }
+
+  const isInternationalProgramChunk = /\b(?:internasional|international|luar\s+negeri|help\s*university|malaysia|dalian|neusoft|dnui)\b/i.test(text);
+  if (isInternationalProgramChunk) providedAspects.push('international_program');
+
+  const isPartnershipChunk = /\b(?:mitra|kerjasama|kerja\s*sama|partner|partnership|kolaborasi|mou|moa|universitas\s+teknologi\s+bandung|utb|help\s*university|dnui)\b/i.test(text);
+  if (isPartnershipChunk) providedAspects.push('partnership');
+
   const isThesisChunk = (candidateFile && /(?:pedoman\s+ta|pedoman\s+skripsi)/i.test(candidateFile)) ||
     /\b(pedoman\s+tugas\s+akhir|persyaratan\s+akademik|141\s+sks|tugas\s+akhir|bimbingan\s+tugas\s+akhir)\b/i.test(candTextLower);
   if (isThesisChunk) providedAspects.push('thesis_requirements', 'academic_requirements', 'guidelines', 'pedoman_ta', 'thesis_stages', 'guidance_procedure');
@@ -668,7 +692,8 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         reason: 'evidence_is_institutional_history_not_program_overview'
       };
     }
-    const isPureFeeDocument = (candidateFile && /rincian biaya/i.test(candidateFile)) && !isOverviewChunk;
+    const hasProgramOrTrackContent = /\b(?:dual\s*degree|double\s*degree|dua\s*gelar|gelar\s*ganda|national\s*class|kelas\s*nasional|program\s*studi|kurikulum|mata\s*kuliah)\b/i.test(text);
+    const isPureFeeDocument = (candidateFile && /rincian biaya/i.test(candidateFile)) && !isOverviewChunk && !hasProgramOrTrackContent;
     if (isPureFeeDocument) {
       return {
         accepted: false,

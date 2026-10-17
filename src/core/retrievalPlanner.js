@@ -217,17 +217,20 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
   }
 
   // International Program & Student Exchange / Double Degree query variants
-  if (domain === 'INTERNATIONAL' || (aspects && (aspects.includes('international') || aspects.includes('student_exchange') || aspects.includes('double_degree')))) {
-    const inheritedEntity = semanticFrame.contextDependencies?.[0]?.inheritedEntity;
-    const sessionData = options?.sessionData;
-    const isDD = /\b(double\s*degree|dual\s*degree|dua\s*gelar)\b/i.test(normalizedText) ||
-      targetEntities.some(e => /double\s*degree/i.test(e)) ||
-      (typeof inheritedEntity === 'string' && /double\s*degree/i.test(inheritedEntity)) ||
-      (sessionData && sessionData.activeEntity === 'Double Degree') ||
-      (sessionData && sessionData.lastQuery && /\b(double\s*degree|dual\s*degree)\b/i.test(sessionData.lastQuery));
-    if (isDD) {
+  const isDDQuery = /\b(double\s*degree|dual\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(normalizedText) ||
+    targetEntities.some(e => /double\s*degree|dual\s*degree/i.test(e)) ||
+    (typeof semanticFrame.contextDependencies?.[0]?.inheritedEntity === 'string' && /double\s*degree|dual\s*degree/i.test(semanticFrame.contextDependencies[0].inheritedEntity)) ||
+    (options?.sessionData && (options.sessionData.activeEntity === 'Double Degree' || options.sessionData.activeEntity === 'Dual Degree UTB')) ||
+    (options?.sessionData?.lastQuery && /\b(double\s*degree|dual\s*degree)\b/i.test(options.sessionData.lastQuery));
+
+  if (domain === 'INTERNATIONAL' || (aspects && (aspects.includes('international') || aspects.includes('student_exchange') || aspects.includes('double_degree') || aspects.includes('national_program'))) || isDDQuery) {
+    if (isDDQuery) {
       queryVariants.push('program double degree ITB STIKOM Bali HELP University Malaysia Dalian Neusoft DNUI');
-      queryVariants.push('program double degree nasional internasional mitra kurikulum syarat gelar');
+      queryVariants.push('program double degree dual degree nasional internasional mitra kurikulum syarat gelar');
+      queryVariants.push('program dual degree dua gelar gelar ganda ITB STIKOM Bali');
+      if ((aspects && aspects.includes('national_program')) || /\b(?:nasional|national)\b/i.test(normalizedText)) {
+        queryVariants.push('dual degree national class program kerjasama nasional ITB STIKOM Bali');
+      }
     } else {
       queryVariants.push('apa itu student exchange di ITB STIKOM Bali alur dan syarat');
       queryVariants.push('syarat mengikuti program student exchange pertukaran mahasiswa pelajar internasional');
@@ -306,7 +309,11 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
   if (intent === 'PROGRAM_OVERVIEW' || intent === 'DEFINITION' || intent === 'PROGRAM_COMPARISON' || (aspects && aspects.includes('overview')) || domain === 'ACADEMIC_PROGRAM') {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
-        queryVariants.push(`penjelasan prodi dan karier masa depan ${ent} yang dipelajari peluang kerja`);
+        if ((aspects && (aspects.includes('career_prospects') || aspects.includes('career'))) || intent === 'CAREER_PROSPECTS' || intent === 'CAREER_PROSPECTS_INQUIRY') {
+          queryVariants.push(`penjelasan prodi dan karier masa depan ${ent} yang dipelajari peluang kerja`);
+        } else {
+          queryVariants.push(`penjelasan program studi ${ent} fokus kurikulum profil`);
+        }
         queryVariants.push(`profil program studi ${ent} fokus pendidikan keahlian visi`);
         queryVariants.push(`deskripsi profil program studi ${ent}`);
         queryVariants.push(`tentang ${ent}`);
