@@ -566,52 +566,148 @@ function buildCorpusEvidenceFromCandidate(candidate, binding, corpusRecord = nul
   };
 }
 
+const CANONICAL_CORPUS_MIN_CHUNKS = 829;
+const CANONICAL_SNAPSHOT_PATH = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  'data',
+  'runtime',
+  'index_snapshots',
+  '2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy',
+  'rag_index.json'
+);
+
 let prewarmedCanonicalCorpus = null;
 let lastLoadedPath = null;
+
+function _resetCorpusCacheForTesting() {
+  prewarmedCanonicalCorpus = null;
+  lastLoadedPath = null;
+}
 
 /**
  * Accesses prewarmed canonical corpus index from memory without extra DB queries.
  *
  * @param {Object} [context]
+ * @param {Object} [options]
+ * @param {boolean} [options.requireCanonical=false] - When true, fails closed if corpus < 829 chunks
  * @returns {Array} Array of canonical corpus records
  */
-function getCorpusIndex(context = {}) {
-  if (context && Array.isArray(context.semanticIndex) && context.semanticIndex.length >= 829) {
+function getCorpusIndex(context = {}, options = {}) {
+  const requireCanonical = Boolean(options && options.requireCanonical);
+
+  // 1. Check in-memory context override
+  if (context && Array.isArray(context.semanticIndex)) {
+    if (context.semanticIndex.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
+      return context.semanticIndex;
+    }
+    if (requireCanonical) {
+      if (logger && typeof logger.warn === 'function') {
+        logger.warn({
+          count: context.semanticIndex.length,
+          minRequired: CANONICAL_CORPUS_MIN_CHUNKS
+        }, '[pgvectorShadowProvider] Context index is below canonical minimum threshold; failing closed for V2');
+      }
+      return [];
+    }
     return context.semanticIndex;
   }
+
   const currentPath = process.env.RAG_INDEX_PATH || null;
-  if (prewarmedCanonicalCorpus && prewarmedCanonicalCorpus.length >= 829 && lastLoadedPath === currentPath) {
+
+  // 2. Check cached canonical corpus
+  if (prewarmedCanonicalCorpus && prewarmedCanonicalCorpus.length >= CANONICAL_CORPUS_MIN_CHUNKS && lastLoadedPath === currentPath) {
     return prewarmedCanonicalCorpus;
   }
-  const candidatePaths = [
-    process.env.RAG_INDEX_PATH,
-    path.resolve(__dirname, '..', '..', 'data', 'runtime', 'index_snapshots', '2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy', 'rag_index.json'),
-    path.resolve(__dirname, '..', 'data', 'rag_index.json')
-  ].filter(Boolean);
 
-  for (const p of candidatePaths) {
-    if (fs.existsSync(p)) {
+  // 3. If explicit RAG_INDEX_PATH is configured in environment
+  if (currentPath) {
+    if (!fs.existsSync(currentPath)) {
+      if (logger && typeof logger.error === 'function') {
+        logger.error({ configuredPath: currentPath }, '[pgvectorShadowProvider] Configured RAG_INDEX_PATH does not exist');
+      }
+      if (requireCanonical) return [];
+    } else {
       try {
-        const raw = fs.readFileSync(p, 'utf8');
+        const raw = fs.readFileSync(currentPath, 'utf8');
         const data = JSON.parse(raw);
-        if (Array.isArray(data) && data.length >= 829) {
+        if (Array.isArray(data) && data.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
           prewarmedCanonicalCorpus = data;
           lastLoadedPath = currentPath;
+          return data;
+        }
+        if (logger && typeof logger.error === 'function') {
+          logger.error({
+            configuredPath: currentPath,
+            isArray: Array.isArray(data),
+            count: Array.isArray(data) ? data.length : 0,
+            minRequired: CANONICAL_CORPUS_MIN_CHUNKS
+          }, '[pgvectorShadowProvider] Configured RAG_INDEX_PATH contains invalid JSON or insufficient chunks');
+        }
+      } catch (err) {
+        if (logger && typeof logger.error === 'function') {
+          logger.error({ configuredPath: currentPath, err: err.message }, '[pgvectorShadowProvider] Failed to parse configured RAG_INDEX_PATH');
+        }
+      }
+      if (requireCanonical) return [];
+    }
+  } else {
+    // 4. If RAG_INDEX_PATH is NOT configured, check canonical snapshot path
+    if (fs.existsSync(CANONICAL_SNAPSHOT_PATH)) {
+      try {
+        const raw = fs.readFileSync(CANONICAL_SNAPSHOT_PATH, 'utf8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data) && data.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
+          prewarmedCanonicalCorpus = data;
+          lastLoadedPath = null;
+          return data;
+        }
+      } catch (_) {}
+    }
+    // Also check secondary candidate in data/rag_index.json only if >= 829
+    const secondaryCandidate = path.resolve(__dirname, '..', 'data', 'rag_index.json');
+    if (fs.existsSync(secondaryCandidate)) {
+      try {
+        const raw = fs.readFileSync(secondaryCandidate, 'utf8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data) && data.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
+          prewarmedCanonicalCorpus = data;
+          lastLoadedPath = null;
           return data;
         }
       } catch (_) {}
     }
   }
 
+  // 5. If canonical index is strictly required (Chat Engine V2), FAIL CLOSED
+  if (requireCanonical) {
+    if (logger && typeof logger.error === 'function') {
+      logger.error({
+        minRequired: CANONICAL_CORPUS_MIN_CHUNKS,
+        hasExplicitPath: Boolean(currentPath)
+      }, '[pgvectorShadowProvider] Canonical corpus index is unavailable or below required threshold; fail-closed for Chat Engine V2');
+    }
+    return [];
+  }
+
+  // 6. Legacy V1 fallback (preserves old behavior when canonical is not required)
   try {
     const { getCachedSemanticIndex } = require('./semanticRagEngine');
     if (typeof getCachedSemanticIndex === 'function') {
       const idx = getCachedSemanticIndex();
       if (Array.isArray(idx) && idx.length > 0) {
+        if (logger && typeof logger.warn === 'function') {
+          logger.warn({
+            count: idx.length,
+            minRequired: CANONICAL_CORPUS_MIN_CHUNKS
+          }, '[pgvectorShadowProvider] Falling back to legacy semantic index below canonical threshold');
+        }
         return idx;
       }
     }
   } catch (_) {}
+
   return [];
 }
 
@@ -1606,6 +1702,8 @@ module.exports = {
   getQueryEmbeddingCacheStats,
   normalizeCacheKey,
   observeShadowRetrieval,
-  pureEvaluateShadowCandidates
+  pureEvaluateShadowCandidates,
+  CANONICAL_CORPUS_MIN_CHUNKS,
+  _resetCorpusCacheForTesting
 };
 

@@ -558,7 +558,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   const isStudentOrgKeyword = /\b(ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|ormawa|hima\b|himaprodi|senat\s+mahasiswa|balma|ekstrakurikuler|student\s+clubs?|student\s+organizations?|campus\s+clubs?)\b/i.test(normalized);
   const isActivityInterest = /\b(gaming|game|gamer|esport|esports|e-sports|olahraga|olah\s*raga|sports?|futsal|basket|badminton|bulutangkis|paduan\s+suara|teater|tari|musik|music|band|robotik|ksl)\b/i.test(normalized);
   const isJoinVerb = /\b(?:bergabung|gabung|join)\b/i.test(normalized);
-  const candidateDomain = sessionData.activeDomain || sessionData.lastDomain || sessionData.data?.activeDomain || sessionData.data?.lastDomain || null;
+  const candidateDomain = sessionData?.activeDomain || sessionData?.lastDomain || sessionData?.data?.activeDomain || sessionData?.data?.lastDomain || null;
 
   if (entities.some(e => e.family === 'student_organization') ||
       isStudentOrgKeyword ||

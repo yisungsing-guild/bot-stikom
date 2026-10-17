@@ -13,6 +13,7 @@
 
 const { 
   getCorpusIndex, 
+  CANONICAL_CORPUS_MIN_CHUNKS,
   searchVectorChunksMultiBinding, 
   computeBatchQueryEmbeddings, 
   computeBindingRRF 
@@ -176,7 +177,7 @@ function getFileContextMap(corpus) {
  * 2. Production PostgreSQL PgVector Cosine Search (rag.corpus_vector_chunks) when active
  * 3. Reciprocal Rank Fusion (RRF) to merge and rank candidates
  */
-async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContractMode = false, enableHybridShadow = false, retrievalMode = 'auto' } = {}) {
+async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContractMode = false, enableHybridShadow = false, retrievalMode = 'auto', context = {} } = {}) {
   // Dedicated shadow-only boundary: legacy callers never receive contract early-exit behavior
   const contract = retrievalPlan.retrievalContract;
   if (isShadowContractMode && contract) {
@@ -187,9 +188,12 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     }
   }
 
-  const corpus = getCorpusIndex();
-  if (!Array.isArray(corpus) || corpus.length === 0) {
-    logger.warn('[RetrievalService] Corpus index is empty or not loaded');
+  const corpus = getCorpusIndex(context, { requireCanonical: true });
+  if (!Array.isArray(corpus) || corpus.length < CANONICAL_CORPUS_MIN_CHUNKS) {
+    logger.error({
+      corpusSize: Array.isArray(corpus) ? corpus.length : 0,
+      minRequired: CANONICAL_CORPUS_MIN_CHUNKS
+    }, '[RetrievalService] Canonical corpus index is unavailable or below required threshold; failing closed');
     return [];
   }
 
@@ -709,8 +713,25 @@ async function retrieveCandidatesScopedWithContract(retrievalContract, options =
   return retrieveCandidates(plan, { ...options, isShadowContractMode: true });
 }
 
+/**
+ * Safe diagnostic readiness check for Chat Engine V2 corpus.
+ * Returns structured metadata without exposing chunk content or secrets.
+ */
+function verifyCorpusReadiness(context = {}) {
+  const corpus = getCorpusIndex(context, { requireCanonical: true });
+  const isReady = Array.isArray(corpus) && corpus.length >= CANONICAL_CORPUS_MIN_CHUNKS;
+  return {
+    isReady,
+    chunkCount: Array.isArray(corpus) ? corpus.length : 0,
+    minRequired: CANONICAL_CORPUS_MIN_CHUNKS,
+    status: isReady ? 'READY' : 'UNAVAILABLE'
+  };
+}
+
 module.exports = {
   retrieveCandidates,
   retrieveCandidatesScopedWithContract,
-  isPgVectorProductionEnabled
+  isPgVectorProductionEnabled,
+  verifyCorpusReadiness,
+  CANONICAL_CORPUS_MIN_CHUNKS
 };

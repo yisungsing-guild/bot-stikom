@@ -150,6 +150,7 @@ tests/*
 !tests/q030TargetedFixRegression.test.js
 !tests/crossDomainArchitectureRegression.test.js
 !tests/academicCatalogScope.test.js
+!tests/corpusIntegrityContract.test.js
 tools/
 quarantined_backups/
 
