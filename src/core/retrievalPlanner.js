@@ -18,7 +18,7 @@ const {
   resolveAcademicScope
 } = require('./academicCatalog');
 
-function buildRetrievalPlan(semanticFrame) {
+function buildRetrievalPlan(semanticFrame, options = {}) {
   if (!semanticFrame) {
     return {
       domain: 'GENERAL',
@@ -216,11 +216,23 @@ function buildRetrievalPlan(semanticFrame) {
     }
   }
 
-  // International Program & Student Exchange query variants
-  if (domain === 'INTERNATIONAL' || (aspects && (aspects.includes('international') || aspects.includes('student_exchange')))) {
-    queryVariants.push('apa itu student exchange di ITB STIKOM Bali alur dan syarat');
-    queryVariants.push('syarat mengikuti program student exchange pertukaran mahasiswa pelajar internasional');
-    queryVariants.push('program internasional pertukaran mahasiswa student exchange kampus mitra luar negeri');
+  // International Program & Student Exchange / Double Degree query variants
+  if (domain === 'INTERNATIONAL' || (aspects && (aspects.includes('international') || aspects.includes('student_exchange') || aspects.includes('double_degree')))) {
+    const inheritedEntity = semanticFrame.contextDependencies?.[0]?.inheritedEntity;
+    const sessionData = options?.sessionData;
+    const isDD = /\b(double\s*degree|dual\s*degree|dua\s*gelar)\b/i.test(normalizedText) ||
+      targetEntities.some(e => /double\s*degree/i.test(e)) ||
+      (typeof inheritedEntity === 'string' && /double\s*degree/i.test(inheritedEntity)) ||
+      (sessionData && sessionData.activeEntity === 'Double Degree') ||
+      (sessionData && sessionData.lastQuery && /\b(double\s*degree|dual\s*degree)\b/i.test(sessionData.lastQuery));
+    if (isDD) {
+      queryVariants.push('program double degree ITB STIKOM Bali HELP University Malaysia Dalian Neusoft DNUI');
+      queryVariants.push('program double degree nasional internasional mitra kurikulum syarat gelar');
+    } else {
+      queryVariants.push('apa itu student exchange di ITB STIKOM Bali alur dan syarat');
+      queryVariants.push('syarat mengikuti program student exchange pertukaran mahasiswa pelajar internasional');
+      queryVariants.push('program internasional pertukaran mahasiswa student exchange kampus mitra luar negeri');
+    }
   }
 
   // Thesis Requirements & Guidance Procedure query variants (e.g. Q056, Q058)

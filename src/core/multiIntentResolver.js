@@ -50,21 +50,29 @@ function decomposeQuery(rawQuery, sessionData = {}) {
 
   const firstFrame = resolveSemanticFrame(parts[0], sessionData);
   const subjectEntities = firstFrame.entities || [];
+  const topicMatch = (firstFrame.rawQuery || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
+  const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
+    (topicMatch ? topicMatch[0] : null) ||
+    (sessionData && sessionData.activeEntity ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name) : null);
 
   const subFrames = parts.map((part, idx) => {
     let queryToResolve = part;
-    if (idx > 0 && subjectEntities.length > 0) {
-      const entityName = subjectEntities[0].canonical || subjectEntities[0].name || '';
-      if (!queryToResolve.toLowerCase().includes(entityName.toLowerCase())) {
-        queryToResolve = `${part} ${entityName}`;
+    if (idx > 0 && inferredTopic) {
+      if (!queryToResolve.toLowerCase().includes(inferredTopic.toLowerCase())) {
+        queryToResolve = `${part} ${inferredTopic}`;
       }
     }
 
     let subFrame = resolveSemanticFrame(queryToResolve, sessionData);
-    if (idx > 0 && subFrame.entities.length === 0 && subjectEntities.length > 0) {
-      subFrame.entities = [...subjectEntities];
-      if (firstFrame.domain !== 'GENERAL' && subFrame.domain === 'GENERAL') {
+    if (idx > 0) {
+      if (subFrame.entities.length === 0 && subjectEntities.length > 0) {
+        subFrame.entities = [...subjectEntities];
+      }
+      if (firstFrame.domain !== 'GENERAL' && (subFrame.domain === 'GENERAL' || subFrame.domain === 'OUT_OF_DOMAIN')) {
         subFrame.domain = firstFrame.domain;
+        if (subFrame.intent === 'OUT_OF_DOMAIN_INQUIRY' || subFrame.intent === 'GENERAL_INQUIRY') {
+          subFrame.intent = firstFrame.intent;
+        }
       }
     }
     return subFrame;
@@ -103,15 +111,18 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     ? await resolveSemanticFrameAsync(parts[0], sessionData, options)
     : resolveSemanticFrame(parts[0], sessionData, options);
   const subjectEntities = firstFrame.entities || [];
+  const topicMatch = (firstFrame.rawQuery || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
+  const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
+    (topicMatch ? topicMatch[0] : null) ||
+    (sessionData && sessionData.activeEntity ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name) : null);
 
   const subFrames = [firstFrame];
   for (let idx = 1; idx < parts.length; idx++) {
     const part = parts[idx];
     let queryToResolve = part;
-    if (subjectEntities.length > 0) {
-      const entityName = subjectEntities[0].canonical || subjectEntities[0].name || '';
-      if (entityName && !queryToResolve.toLowerCase().includes(entityName.toLowerCase())) {
-        queryToResolve = `${part} ${entityName}`;
+    if (inferredTopic) {
+      if (!queryToResolve.toLowerCase().includes(inferredTopic.toLowerCase())) {
+        queryToResolve = `${part} ${inferredTopic}`;
       }
     }
 
@@ -121,8 +132,11 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
 
     if (subFrame.entities.length === 0 && subjectEntities.length > 0) {
       subFrame.entities = [...subjectEntities];
-      if (firstFrame.domain !== 'GENERAL' && subFrame.domain === 'GENERAL') {
-        subFrame.domain = firstFrame.domain;
+    }
+    if (firstFrame.domain !== 'GENERAL' && (subFrame.domain === 'GENERAL' || subFrame.domain === 'OUT_OF_DOMAIN')) {
+      subFrame.domain = firstFrame.domain;
+      if (subFrame.intent === 'OUT_OF_DOMAIN_INQUIRY' || subFrame.intent === 'GENERAL_INQUIRY') {
+        subFrame.intent = firstFrame.intent;
       }
     }
     subFrames.push(subFrame);

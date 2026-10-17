@@ -706,6 +706,18 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     }
   }
 
+  // International domain guard: prevent accreditation certificates from satisfying international program inquiries
+  if ((retrievalPlan.domain === 'INTERNATIONAL' || retrievalPlan.intent === 'INTERNATIONAL_PROGRAM_INFO') &&
+      !/\b(akreditasi|terakreditasi|ban-?pt|lam-?infokom)\b/i.test(retrievalPlan.rawQuery)) {
+    if (isAccreditationChunk && !/\b(double\s*degree|dual\s*degree|student\s*exchange|internasional)\b/i.test(text)) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_DOMAIN_MISMATCH',
+        reason: 'evidence_is_accreditation_not_international_program'
+      };
+    }
+  }
+
   // Strict aspect matching against retrievalPlan.requiredAspects
   if (Array.isArray(requiredAspects) && requiredAspects.length > 0 && !requiredAspects.includes('general')) {
     const wantsContact = requiredAspects.some(a => ['contact', 'helpdesk'].includes(a)) || retrievalPlan.intent === 'PMB_CONTACT_INQUIRY';

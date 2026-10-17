@@ -888,6 +888,16 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
 
   if (contextDep.shouldInherit && contextDep.inheritedDomain && (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN')) {
     domain = contextDep.inheritedDomain;
+    if (domain === 'INTERNATIONAL') {
+      intent = 'INTERNATIONAL_PROGRAM_INFO';
+      inferred.retrievalRequired = true;
+      inferred.desiredAction = 'PROVIDE_INTERNATIONAL_PROGRAM_INFO';
+      inferred.relation = 'INTERNATIONAL_PROGRAM';
+    } else if (inferred.desiredAction === 'REFUSE_OUT_OF_DOMAIN') {
+      inferred.retrievalRequired = true;
+      inferred.desiredAction = 'PROVIDE_INFO';
+      inferred.relation = 'CONTEXT_INHERITED';
+    }
   }
 
   // Extract Academic Level
@@ -1384,8 +1394,11 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         intent = 'CURRICULUM_INQUIRY';
         domain = 'ACADEMIC_CURRICULUM';
       } else if (aspects.includes('accreditation')) {
-        intent = 'ACCREDITATION_INQUIRY';
-        domain = 'ACCREDITATION';
+        const hasAccreditationSemantics = /\b(akreditasi|peringkat|ban-?pt|lam-?infokom|sk\s+akreditasi|accreditation|accredited)\b/i.test(rawQuery);
+        if (hasAccreditationSemantics) {
+          intent = 'ACCREDITATION_INQUIRY';
+          domain = 'ACCREDITATION';
+        }
       } else if (aspects.includes('career') || aspects.includes('career_prospects') || aspects.includes('prospek_karir') || primaryConcept === 'CAREER_PROSPECT') {
         const hasAcademicProgram = (resolvedEntities || []).some(e => e.family === 'academic_program' || e.type === 'program');
         intent = 'CAREER_PROSPECTS_INQUIRY';

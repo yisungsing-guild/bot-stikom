@@ -238,6 +238,32 @@ function computeContextDelta(previousSession = {}, currentTurn = {}) {
     activeEntity = firstExplicitEntity;
     preservedBackgroundEntity = null;
     entityProvenance = ENTITY_PROVENANCE.EXPLICIT_CURRENT_TURN;
+  } else if (semanticFrame.domain === 'INTERNATIONAL') {
+    const isDD = /\b(double\s*degree|dual\s*degree)\b/i.test(query);
+    const isExchange = /\b(student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|gccp)\b/i.test(query);
+    if (isDD) {
+      if (activeEntity && activeEntity !== 'Double Degree') {
+        actions.push(CONTEXT_ACTION.ENTITY_REPLACED);
+      } else if (!activeEntity) {
+        actions.push(CONTEXT_ACTION.ENTITY_ADDED);
+      } else {
+        actions.push(CONTEXT_ACTION.CONTEXT_PRESERVED);
+      }
+      activeEntity = 'Double Degree';
+      preservedBackgroundEntity = null;
+      entityProvenance = ENTITY_PROVENANCE.EXPLICIT_CURRENT_TURN;
+    } else if (isExchange) {
+      if (activeEntity && activeEntity !== 'Student Exchange') {
+        actions.push(CONTEXT_ACTION.ENTITY_REPLACED);
+      } else if (!activeEntity) {
+        actions.push(CONTEXT_ACTION.ENTITY_ADDED);
+      } else {
+        actions.push(CONTEXT_ACTION.CONTEXT_PRESERVED);
+      }
+      activeEntity = 'Student Exchange';
+      preservedBackgroundEntity = null;
+      entityProvenance = ENTITY_PROVENANCE.EXPLICIT_CURRENT_TURN;
+    }
   }
 
   // 5. CURRENT TURN DOMAIN DETECTION

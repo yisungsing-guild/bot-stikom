@@ -497,6 +497,13 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     if (primaryFrame.entities.length > 0) {
       newActiveEntity = primaryFrame.entities[0].canonical;
       newPreservedEntity = null;
+    } else if (primaryFrame.domain === 'INTERNATIONAL') {
+      const isDD = /\b(double\s*degree|dual\s*degree)\b/i.test(rawQuery);
+      const isExchange = /\b(student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|gccp)\b/i.test(rawQuery);
+      if (isDD) newActiveEntity = 'Double Degree';
+      else if (isExchange) newActiveEntity = 'Student Exchange';
+      else newActiveEntity = sessionData.activeEntity || null;
+      newPreservedEntity = null;
     } else if (isCampusWide) {
       // Campus-wide query without explicit entity: isolate activeEntity to background
       newActiveEntity = null;

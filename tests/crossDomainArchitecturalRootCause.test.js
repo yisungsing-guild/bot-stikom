@@ -479,4 +479,92 @@ describe('Chat Engine V2 — Architectural Root-Cause & Cross-Domain Regression'
       expect(answerability.reason).toBe('corpus_gap');
     });
   });
+
+  describe('Section 8: Double Degree Nasional Anti-Accreditation Regression', () => {
+    test('8.1: Exact Production Reproduction — Decomposed Multi-Intent Turn 2 Stays in INTERNATIONAL Domain', async () => {
+      const chatId = 'test-dd-nasional-prod-' + Date.now();
+
+      // Turn 1
+      const q1 = 'Apa itu double degree? Dan double degree apa saja yang ada di stikom Bali?';
+      const r1 = await processTurn(chatId, q1, { syncOnly: true });
+
+      expect(r1).toBeDefined();
+      expect(r1.finalAnswer).toBeDefined();
+      expect(r1.finalAnswer).toMatch(/(?:HELP|program|gelar|double\s*degree)/i);
+
+      // Turn 2: Exact production failure query
+      const q2 = 'Cuma 2 aja double Degree di stikom bali? Apakah tidak ada yang nasional?';
+      const r2 = await processTurn(chatId, q2, {
+        syncOnly: true,
+        sessionSnapshot: r1.sessionSnapshot
+      });
+
+      expect(r2).toBeDefined();
+      expect(r2.finalAnswer).toBeDefined();
+
+      // Must NOT drift into accreditation domain or mention accreditation agencies
+      expect(r2.finalAnswer).not.toMatch(/\bBAN-?PT\b/i);
+      expect(r2.finalAnswer).not.toMatch(/\bLAM\s*-?\s*INFOKOM\b/i);
+      expect(r2.finalAnswer).not.toMatch(/\bakreditasi\b/i);
+
+      // Must address Double Degree and acknowledge existence of Program Double Degree Nasional
+      expect(r2.finalAnswer).toMatch(/double\s*degree/i);
+      expect(r2.finalAnswer).toMatch(/nasional/i);
+
+      // Subquery inspection: verify both subqueries stayed in INTERNATIONAL
+      if (r2.subQueryResults && r2.subQueryResults.length > 1) {
+        for (const sq of r2.subQueryResults) {
+          expect(sq.frame.domain).toBe('INTERNATIONAL');
+          if (sq.arbitrated && sq.arbitrated.accepted) {
+            for (const chunk of sq.arbitrated.accepted) {
+              const text = (chunk.text || chunk.chunk || '').toLowerCase();
+              expect(text).not.toContain('sertifikat akreditasi');
+              expect(text).not.toContain('peringkat akreditasi');
+            }
+          }
+        }
+      }
+    });
+
+    test('8.2: Elliptical Follow-Up Turn — "Apakah tidak ada yang nasional?" Inherits Double Degree Entity', async () => {
+      const chatId = 'test-dd-nasional-ellipsis-' + Date.now();
+
+      // Turn 1
+      const q1 = 'Apa itu double degree? Dan double degree apa saja yang ada di stikom Bali?';
+      const r1 = await processTurn(chatId, q1, { syncOnly: true });
+
+      // Turn 2: Ellipsis follow-up
+      const q2 = 'Apakah tidak ada yang nasional?';
+      const r2 = await processTurn(chatId, q2, {
+        syncOnly: true,
+        sessionSnapshot: r1.sessionSnapshot
+      });
+
+      expect(r2).toBeDefined();
+      expect(r2.finalAnswer).toBeDefined();
+
+      // Must NOT answer with accreditation
+      expect(r2.finalAnswer).not.toMatch(/\bBAN-?PT\b/i);
+      expect(r2.finalAnswer).not.toMatch(/\bLAM\s*-?\s*INFOKOM\b/i);
+      expect(r2.finalAnswer).not.toMatch(/\bakreditasi\b/i);
+
+      // Must NOT be refused as out-of-domain
+      expect(r2.finalAnswer).not.toContain('berada di luar cakupan layanan');
+
+      // Must remain on topic
+      expect(r2.finalAnswer).toMatch(/nasional/i);
+    });
+
+    test('8.3: Independent Accreditation Query Is NOT Hijacked by INTERNATIONAL Domain', async () => {
+      const chatId = 'test-accreditation-independent-' + Date.now();
+      const q = 'Bagaimana akreditasi kampus ITB STIKOM Bali dan status BAN-PT saat ini?';
+      const res = await processTurn(chatId, q, { syncOnly: true });
+
+      expect(res).toBeDefined();
+      expect(res.finalAnswer).toBeDefined();
+      // Must answer accreditation question with accreditation information
+      expect(res.finalAnswer).toMatch(/(?:akreditasi|BAN-?PT|LAM\s*-?\s*INFOKOM|Baik\s*Sekali)/i);
+      expect(res.subQueryResults[0]?.frame?.domain).not.toBe('INTERNATIONAL');
+    });
+  });
 });

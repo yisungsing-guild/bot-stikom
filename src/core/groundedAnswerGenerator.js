@@ -732,9 +732,12 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
   }
 
   // 1d. Degree Award and Study Duration Inquiries
-  const isDegreeOrDuration = semanticFrame.intent === 'DEGREE_AWARD' ||
+  const isDoubleDegreeMention = /\b(?:double|dual)\s*degree\b/i.test(rawQuery);
+  const isDegreeOrDuration = semanticFrame.domain !== 'INTERNATIONAL' && !isDoubleDegreeMention && (
+    semanticFrame.intent === 'DEGREE_AWARD' ||
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['degree_award', 'study_duration', 'degree'].includes(a))) ||
-    /\b(?:gelar|sebutan\s+lulusan|masa\s+studi|lama\s+studi|durasi\s+studi|degree|study\s+duration|duration|how\s+long)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+    /\b(?:gelar|sebutan\s+lulusan|masa\s+studi|lama\s+studi|durasi\s+studi|study\s+duration|duration|how\s+long)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))
+  );
   if (isDegreeOrDuration) {
     let degreeFound = null;
     let durationFound = null;
@@ -783,6 +786,20 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
         ans += `\n_Catatan: Informasi mengenai masa studi belum tercantum dalam dokumen panduan yang tersedia._\n`;
       }
       return appendMissingAspectNote(ans.trim());
+    }
+  }
+
+  // 1e. International Programs (Double Degree & Student Exchange)
+  if (semanticFrame.domain === 'INTERNATIONAL' || (semanticFrame.aspects && (semanticFrame.aspects.includes('double_degree') || semanticFrame.aspects.includes('student_exchange')))) {
+    const isDD = /\b(double\s*degree|dual\s*degree|dua\s*gelar)\b/i.test(rawQuery) ||
+      (semanticFrame.contextDependencies && semanticFrame.contextDependencies.some(cd => /double\s*degree/i.test(cd.inheritedEntity || '')));
+    const isNationalQuery = /\bnasional\b/i.test(rawQuery);
+
+    if (isDD) {
+      if (isNationalQuery) {
+        return appendMissingAspectNote(`Ada, Kak. ITB STIKOM Bali mencantumkan Program Double Degree Nasional dalam daftar program/fasilitas kampus. Namun, rincian mengenai mitra dan skema perkuliahannya belum tercantum dalam panduan yang tersedia. Untuk detail lengkapnya, silakan konfirmasi langsung ke bagian admisi kampus ya.`);
+      }
+      return appendMissingAspectNote(`Di ITB STIKOM Bali tersedia program Double Degree internasional yang bekerja sama dengan universitas mitra, antara lain HELP University (Malaysia) untuk Program Studi Sistem Informasi dan Dalian Neusoft University of Information (DNUI, China) untuk Bisnis Digital. Selain itu, tercantum juga Program Double Degree Nasional. Silakan tanyakan jika ingin informasi lebih lanjut mengenai salah satu programnya ya Kak!`);
     }
   }
 

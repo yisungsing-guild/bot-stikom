@@ -55,6 +55,7 @@ const NON_REFERENTIAL_NYA_WORDS = new Set([
 // Genuine ellipsis starts (e.g. "bagaimana dengan...", "kalau yang...", "what about...", "how about...")
 const GENUINE_ELLIPSIS_REGEX = /^(kalau|bagaimana\s+dengan|gimana\s+dengan|lalu|kalo|what\s+about|how\s+about|and)\s+(the\s+|yang\s+)?([a-z0-9\s]+)\??$/i;
 const PREDICATE_ELLIPSIS_REGEX = /^(?:bagaimana\s+cara\s+bergabung|gimana\s+cara\s+bergabung|cara\s+bergabungnya(?:\s+gimana)?|cara\s+bergabung|masih\s+bisa\s+daftar|bisa\s+daftar\s+sekarang|kapan\s+jadwalnya|kapan\s+batasnya|kapan\s+buka|syaratnya\s+apa|biayanya\s+berapa|cara\s+daftarnya\s+gimana)\??$/i;
+const EXISTENCE_ELLIPSIS_REGEX = /^(?:apakah\s+)?(?:tidak\s+ada|ada)\s+(?:yang\s+)?([a-z0-9\s]+)\??$/i;
 
 function hasExplicitPronounReference(query) {
   if (!query || typeof query !== 'string') return false;
@@ -84,6 +85,14 @@ function isGenuineEllipsis(query) {
   if (!query) return false;
   const trimmed = query.trim().toLowerCase();
   if (PREDICATE_ELLIPSIS_REGEX.test(trimmed)) return true;
+  const existMatch = trimmed.match(EXISTENCE_ELLIPSIS_REGEX);
+  if (existMatch) {
+    const remnant = (existMatch[1] || '').trim();
+    const words = remnant.split(/\s+/).filter(Boolean);
+    if (words.length <= 4 && !/\b(?:kuliah|kampus|stikom|beasiswa|jurusan|prodi|daftar)\b/i.test(remnant)) {
+      return true;
+    }
+  }
   const match = trimmed.match(GENUINE_ELLIPSIS_REGEX);
   if (match) {
     const remnant = (match[3] || '').trim();
