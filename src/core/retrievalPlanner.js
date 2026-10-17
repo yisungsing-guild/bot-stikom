@@ -12,6 +12,11 @@
 
 const { CANONICAL_ENTITIES, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
 const { buildRetrievalContract } = require('./retrievalContract');
+const {
+  ACADEMIC_SCOPE_STATUS,
+  normalizeAcademicScope,
+  resolveAcademicScope
+} = require('./academicCatalog');
 
 function buildRetrievalPlan(semanticFrame) {
   if (!semanticFrame) {
@@ -134,7 +139,7 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // Organization & UKM query variants
-  if (domain === 'ORGANIZATION_UKM' || (aspects && (aspects.includes('organization') || aspects.includes('student_organization')))) {
+  if (domain === 'ORGANIZATION_UKM' || (aspects && (aspects.includes('organization') || aspects.includes('student_organization') || aspects.includes('ukm') || aspects.includes('sports') || aspects.includes('arts_culture')))) {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`organisasi kemahasiswaan himaprodi himpunan mahasiswa ${ent} cakra pragnya filosofi profil kegiatan`);
@@ -142,8 +147,16 @@ function buildRetrievalPlan(semanticFrame) {
         queryVariants.push(`profile ${ent} kegiatan visi misi`);
       }
     }
+    if (/\b(seni|budaya|tari|musik|band|teater|paduan\s+suara|fotografi)\b/i.test(normalizedText)) {
+      queryVariants.push('unit kegiatan mahasiswa UKM seni tari pragina musik teater biner paduan suara vos himatography');
+      queryVariants.push('SK PEMBINA ORMAWA UKM seni budaya tari musik teater biner vos himatography');
+    }
+    if (/\b(olahraga|olah\s*raga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(normalizedText)) {
+      queryVariants.push('unit kegiatan mahasiswa UKM olahraga futsal basket bulutangkis badminton boss kebugaran ghost');
+      queryVariants.push('SK PEMBINA ORMAWA UKM olahraga futsal basket boss ghost');
+    }
     queryVariants.push('unit kegiatan mahasiswa UKM ormawa ITB STIKOM Bali');
-    queryVariants.push('daftar organisasi kemahasiswaan himaprodi');
+    queryVariants.push('daftar organisasi kemahasiswaan himaprodi SK PEMBINA ORMAWA');
   }
 
   // Career Center & Internship query variants
@@ -249,9 +262,32 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Available Academic Programs List query variants
   if (intent === 'AVAILABLE_PROGRAMS_LIST') {
-    queryVariants.push('program studi sarjana diploma magister ITB STIKOM Bali');
-    queryVariants.push('pilihan jurusan program studi S1 D3 S2 ITB STIKOM Bali');
-    queryVariants.push('program sarjana S1 Sistem Informasi Sistem Komputer Teknologi Informasi Bisnis Digital');
+    const academicScope = semanticFrame.academicScope || resolveAcademicScope(semanticFrame);
+    if (academicScope.status === ACADEMIC_SCOPE_STATUS.SUPPORTED) {
+      if (academicScope.level === 'S1') {
+        queryVariants.push('program sarjana S1 Sistem Informasi Sistem Komputer Teknologi Informasi Bisnis Digital');
+        queryVariants.push('daftar pilihan program studi sarjana S1 ITB STIKOM Bali');
+      } else if (academicScope.level === 'D3') {
+        queryVariants.push('program diploma D3 Manajemen Informatika ITB STIKOM Bali');
+        queryVariants.push('daftar program studi vokasi D3 Manajemen Informatika');
+      } else if (academicScope.level === 'S2') {
+        queryVariants.push('program pascasarjana S2 Magister Sistem Informasi M.Kom ITB STIKOM Bali');
+        queryVariants.push('program studi S2 Magister Sistem Informasi');
+      } else {
+        queryVariants.push('program studi sarjana diploma magister ITB STIKOM Bali');
+        queryVariants.push('pilihan jurusan program studi S1 D3 S2 ITB STIKOM Bali');
+        queryVariants.push('program sarjana S1 Sistem Informasi Sistem Komputer Teknologi Informasi Bisnis Digital');
+      }
+    } else if (academicScope.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED) {
+      // UNSUPPORTED scope must NEVER broaden to ALL or inject offered degree variants
+      const rawMention = academicScope.rawMention ? academicScope.rawMention.toUpperCase() : 'PROGRAM';
+      queryVariants.push(`program studi jenjang ${rawMention} ITB STIKOM Bali`);
+    } else {
+      // UNSPECIFIED: general institutional catalog queries allowed
+      queryVariants.push('program studi sarjana diploma magister ITB STIKOM Bali');
+      queryVariants.push('pilihan jurusan program studi S1 D3 S2 ITB STIKOM Bali');
+      queryVariants.push('program sarjana S1 Sistem Informasi Sistem Komputer Teknologi Informasi Bisnis Digital');
+    }
   }
 
   // Program Overview / Definition query variants
@@ -331,10 +367,14 @@ function buildRetrievalPlan(semanticFrame) {
   if (fallbackQuery && !queryVariants.includes(fallbackQuery)) queryVariants.push(fallbackQuery);
 
 
+  const resolvedScope = semanticFrame.academicScope || resolveAcademicScope(semanticFrame);
+
   return {
     domain,
     intent,
     academicLevel: semanticFrame.academicLevel || null,
+    academicScope: resolvedScope,
+    scopeLevel: semanticFrame.scopeLevel || resolvedScope.level || (resolvedScope.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED ? 'UNSUPPORTED' : null),
     retrievalRequired: semanticFrame.retrievalRequired !== false,
     participantScope: semanticFrame.participantScope || (/\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar)\b/i.test(normalizedText) ? 'foreign' : 'domestic'),
     targetEntities,

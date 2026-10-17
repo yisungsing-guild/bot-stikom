@@ -237,15 +237,97 @@ describe('Phase 2 Step 8: Shadow Evaluation Mode', () => {
   test('Scenario H: Non-blocking async path -> Phase 1 returns before slow shadow completes', async () => {
     delete process.env.ENABLE_PHASE2_REASONING;
     process.env.PHASE2_SHADOW_MODE = 'true';
+    const origResolverMode = process.env.SEMANTIC_RESOLVER_MODE;
+    process.env.SEMANTIC_RESOLVER_MODE = 'sync';
 
-    const p1Start = Date.now();
-    const result = await processTurn('test_h_' + Date.now(), 'Halo STIKOM');
-    const p1Duration = Date.now() - p1Start;
+    try {
+      // 1. End-to-end Orchestrator processTurn non-blocking execution
+      const p1Start = Date.now();
+      const result = await processTurn('test_h_' + Date.now(), 'Halo STIKOM');
+      const p1Duration = Date.now() - p1Start;
 
-    // Phase 1 response must return fast and not await any slow async shadow work
-    expect(result).toBeDefined();
-    expect(result.finalAnswer).toBeTruthy();
-    expect(p1Duration).toBeLessThan(2000);
+      expect(result).toBeDefined();
+      expect(result.finalAnswer).toBeTruthy();
+      expect(p1Duration).toBeLessThan(2000);
+
+      // 2. Deterministic Asynchronous Non-Blocking Shadow Execution Proof
+      // Simulates slow Phase 2 async dependency using runShadowEvaluationSafely seam
+      let phase2Started = false;
+      let phase2Completed = false;
+      let releasePhase2Dependency;
+      const slowPhase2Dependency = new Promise(resolve => {
+        releasePhase2Dependency = resolve;
+      });
+
+      const mockSlowBridge = jest.fn(async () => {
+        phase2Started = true;
+        await slowPhase2Dependency;
+        phase2Completed = true;
+        return {
+          finalAnswer: 'P2 slow answer',
+          subQueryResults: [{ answer: 'P2 slow answer', verification: { pass: true } }]
+        };
+      });
+
+      const p1Result = { finalAnswer: 'Authoritative P1 Answer', subQueryResults: [] };
+      let shadowCompleted = false;
+
+      // Fire in background via setImmediate exactly as orchestrator does
+      const shadowPromise = new Promise((resolve, reject) => {
+        setImmediate(() => {
+          runShadowEvaluationSafely({
+            chatId: 'test_h_async_' + Date.now(),
+            rawQuery: 'Query test non-blocking',
+            p1Result,
+            p1LatencyMs: 50,
+            phase2BridgeFn: mockSlowBridge
+          })
+            .then(res => {
+              shadowCompleted = true;
+              resolve(res);
+            })
+            .catch(reject);
+        });
+      });
+
+      // Assert: Phase 1 is already complete, but Phase 2 shadow has NOT completed
+      expect(p1Result.finalAnswer).toBeTruthy();
+      expect(phase2Completed).toBe(false);
+      expect(shadowCompleted).toBe(false);
+
+      // Let event loop tick to allow setImmediate to start Phase 2
+      await new Promise(resolve => setImmediate(resolve));
+      expect(phase2Started).toBe(true);
+      expect(phase2Completed).toBe(false);
+      expect(shadowCompleted).toBe(false);
+
+      // Release Phase 2 dependency and await shadow completion
+      releasePhase2Dependency();
+      const telemetry = await shadowPromise;
+
+      expect(phase2Completed).toBe(true);
+      expect(shadowCompleted).toBe(true);
+      expect(telemetry).toBeDefined();
+      expect(telemetry.readOnlyVerified).toBe(true);
+
+      // 3. Phase 2 failure containment (failure does not leak or throw)
+      const mockFailingBridge = jest.fn(async () => {
+        throw new Error('phase2_background_crash');
+      });
+      const failResult = await runShadowEvaluationSafely({
+        chatId: 'test_h_fail_' + Date.now(),
+        rawQuery: 'Query failure containment',
+        p1Result,
+        p1LatencyMs: 50,
+        phase2BridgeFn: mockFailingBridge
+      });
+      expect(failResult).toBeDefined();
+      expect(failResult.regressionDetected).toBe(true);
+      expect(failResult.diffs.some(d => d.includes('phase2_background_crash'))).toBe(true);
+    } finally {
+      if (origResolverMode === undefined) delete process.env.SEMANTIC_RESOLVER_MODE;
+      else process.env.SEMANTIC_RESOLVER_MODE = origResolverMode;
+    }
   });
 
   // I. canonical entity matching

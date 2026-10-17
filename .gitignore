@@ -148,6 +148,8 @@ tests/*
 !tests/finalClosureRegression.test.js
 !tests/finalBoundedRemediationRegression.test.js
 !tests/q030TargetedFixRegression.test.js
+!tests/crossDomainArchitectureRegression.test.js
+!tests/academicCatalogScope.test.js
 tools/
 quarantined_backups/
 

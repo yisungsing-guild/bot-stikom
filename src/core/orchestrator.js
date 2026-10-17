@@ -24,12 +24,15 @@ const { buildRetrievalPlan } = require('./retrievalPlanner');
 const { retrieveCandidates } = require('./retrievalService');
 const { arbitrateEvidence } = require('./evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('./answerabilityGate');
-const { synthesizeAnswer } = require('./groundedAnswerGenerator');
-const { verifyFinalAnswer } = require('./finalAnswerVerifier');
+const groundedAnswerGenerator = require('./groundedAnswerGenerator');
+const finalAnswerVerifier = require('./finalAnswerVerifier');
+const { synthesizeAnswer } = groundedAnswerGenerator;
+const { verifyFinalAnswer } = finalAnswerVerifier;
 const outboundDispatcher = require('./outboundDispatcher');
 const logger = require('../logger');
 const { isPhase2Enabled, executePhase2Bridge } = require('../reasoning/phase2Bridge');
 const { isPhase2ShadowModeEnabled, runShadowEvaluationSafely } = require('../reasoning/shadowEvaluator');
+const { VERIFICATION_OUTCOME } = require('../reasoning/contracts');
 
 /**
  * Processes a single turn inquiry through the orchestrator.
@@ -56,24 +59,49 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
       };
 
       let finalAnswer = null;
+      let recVerification = null;
       const synthRes = await synthesizeAnswer(frame, {}, null, recResult);
 
       if (synthRes && synthRes.success && synthRes.answer) {
         const verifRes = verifyFinalAnswer(synthRes.answer, frame, {}, null, recResult);
-        if (verifRes && verifRes.pass) {
+        if (verifRes && (verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || verifRes.pass)) {
           finalAnswer = synthRes.answer;
+          recVerification = verifRes;
+        } else if (verifRes && verifRes.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN) {
+          finalAnswer = synthRes.answer;
+          recVerification = verifRes;
         } else {
           logger.warn({ reason: verifRes ? verifRes.reason : 'unknown' }, '[Orchestrator] Recommendation answer blocked by verifier');
           finalAnswer = 'Mohon maaf, rekomendasi program studi belum dapat dipastikan secara lengkap saat ini. Silakan berkonsultasi langsung dengan admisi PMB ITB STIKOM Bali.';
+          recVerification = {
+            pass: false,
+            outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+            interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+            isInterception: true,
+            status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+            reason: verifRes?.reason || 'recommendation_blocked_escalation',
+            isGrounded: false,
+            handledSafely: true
+          };
         }
       } else {
         finalAnswer = 'Mohon maaf, rekomendasi program studi belum dapat diproses.';
+        recVerification = {
+          pass: false,
+          outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          interceptedFrom: null,
+          isInterception: false,
+          status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          reason: 'recommendation_synthesis_failed',
+          isGrounded: false,
+          handledSafely: true
+        };
       }
 
       bridgeResult.finalAnswer = finalAnswer;
       if (bridgeResult.subQueryResults && bridgeResult.subQueryResults[0]) {
         bridgeResult.subQueryResults[0].answer = finalAnswer;
-        bridgeResult.subQueryResults[0].verification = { pass: finalAnswer === synthRes?.answer };
+        bridgeResult.subQueryResults[0].verification = recVerification;
       }
 
       // Atomic session persistence (Step 4 & Step 7 context commit)
@@ -106,21 +134,50 @@ async function processTurn(chatId, rawQuery, { executeDispatch = false, executio
       const frame = { domain: 'ACADEMIC_PROGRAM', intent: 'ask_program_comparison', entities: targetEntities };
 
       let finalAnswer = null;
+      let compVerification = null;
       const synthRes = await synthesizeAnswer(frame, {}, bridgeResult.comparisonEnvelope);
 
       if (synthRes && synthRes.success && synthRes.answer) {
         const verifRes = verifyFinalAnswer(synthRes.answer, frame, {}, bridgeResult.comparisonEnvelope);
-        if (verifRes && verifRes.pass) {
+        if (verifRes && (verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || verifRes.pass)) {
           finalAnswer = synthRes.answer;
+          compVerification = verifRes;
+        } else if (verifRes && verifRes.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN) {
+          finalAnswer = synthRes.answer;
+          compVerification = verifRes;
         } else {
           logger.warn({ reason: verifRes ? verifRes.reason : 'unknown' }, '[Orchestrator] Comparative answer blocked by verifier');
           finalAnswer = 'Mohon maaf, informasi perbandingan resmi yang terverifikasi belum dapat dipastikan secara lengkap saat ini.';
+          compVerification = {
+            pass: false,
+            outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+            interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+            isInterception: true,
+            status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+            reason: verifRes?.reason || 'comparative_blocked_escalation',
+            isGrounded: false,
+            handledSafely: true
+          };
         }
       } else {
         finalAnswer = 'Mohon maaf, informasi perbandingan resmi belum dapat diproses.';
+        compVerification = {
+          pass: false,
+          outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          interceptedFrom: null,
+          isInterception: false,
+          status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          reason: 'comparative_synthesis_failed',
+          isGrounded: false,
+          handledSafely: true
+        };
       }
 
       bridgeResult.finalAnswer = finalAnswer;
+      if (bridgeResult.subQueryResults && bridgeResult.subQueryResults[0]) {
+        bridgeResult.subQueryResults[0].answer = finalAnswer;
+        bridgeResult.subQueryResults[0].verification = compVerification;
+      }
 
       // Atomic session persistence
       const turnControl = bridgeResult.turnControl;
@@ -228,7 +285,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         candidatesCount: 0,
         acceptedCount: 0,
         rejectedCount: 0,
-        answerability: ANSWERABILITY_STATUS.ANSWERABLE,
+        answerability: ANSWERABILITY_STATUS.UNKNOWN,
         status: 'unsupported_program',
         answer: synthRes.answer,
         verification: verifRes,
@@ -256,7 +313,16 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         answerability: 'OUT_OF_DOMAIN',
         status: 'out_of_domain',
         answer: oodReply,
-        verification: { pass: true, reason: 'out_of_domain_terminal' },
+        verification: {
+          pass: false,
+          outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          interceptedFrom: null,
+          isInterception: false,
+          status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          reason: 'out_of_domain_terminal',
+          isGrounded: false,
+          handledSafely: true
+        },
         arbitrated: { accepted: [], rejected: [] },
         arbitratedEvidence: { accepted: [], rejected: [] }
       });
@@ -286,7 +352,14 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         rejectedCount: 0,
         answerability: ANSWERABILITY_STATUS.ANSWERABLE,
         answer: reply,
-        verification: { pass: true, reason: 'conversational_verified' }
+        verification: {
+          pass: true,
+          outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+          status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+          reason: 'conversational_verified',
+          isGrounded: true,
+          handledSafely: true
+        }
       });
       continue;
     }
@@ -311,30 +384,77 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     arbitrated.missingAspects = answerability.missingAspects || [];
 
     let answer = null;
-    let verification = { pass: false, reason: 'unprocessed' };
+    let verification = {
+      pass: false,
+      outcome: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+      status: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+      reason: 'unprocessed',
+      isGrounded: false,
+      handledSafely: false
+    };
 
     if (answerability.status === ANSWERABILITY_STATUS.ANSWERABLE || answerability.status === ANSWERABILITY_STATUS.PARTIAL) {
       // 6. Grounded LLM Synthesis
       const synthOpts = { ...arbitrated };
       if (options && options.fastFallback) synthOpts.fastFallback = true;
       if (options && options.signal) synthOpts.signal = options.signal;
-      const synthesis = await synthesizeAnswer(frame, synthOpts);
+      const synthFn = groundedAnswerGenerator.synthesizeAnswer || synthesizeAnswer;
+      const synthesis = await synthFn(frame, synthOpts);
       if (synthesis.success && synthesis.answer) {
         // 7. Universal Final Verification
-        verification = verifyFinalAnswer(synthesis.answer, frame, arbitrated);
-        if (verification.pass) {
+        const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
+        verification = verifFn(synthesis.answer, frame, arbitrated);
+        if (verification.outcome !== VERIFICATION_OUTCOME.VERIFICATION_FAILED) {
           answer = synthesis.answer;
         } else {
           logger.warn({ reason: verification.reason }, '[Orchestrator] Synthesized answer blocked by Final Verifier');
           answer = 'Mohon maaf, informasi resmi yang terverifikasi belum dapat dipastikan secara lengkap saat ini. Silakan hubungi bagian informasi kampus untuk bantuan langsung.';
+          verification = {
+            pass: false,
+            outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+            interceptedFrom: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+            isInterception: true,
+            status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+            reason: verification.reason || 'blocked_by_final_verifier',
+            isGrounded: false,
+            handledSafely: true
+          };
         }
+      } else {
+        answer = 'Informasi resmi mengenai hal tersebut belum tercantum secara lengkap dalam panduan yang tersedia.';
+        verification = {
+          pass: false,
+          outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          interceptedFrom: null,
+          isInterception: false,
+          status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+          reason: synthesis?.reason || 'safe_unknown',
+          isGrounded: false,
+          handledSafely: true
+        };
       }
     } else if (answerability.status === ANSWERABILITY_STATUS.ESCALATE) {
       answer = answerability.guidance || 'Untuk kendala perwalian atau administrasi, silakan menghubungi dosen wali atau bagian akademik kampus.';
-      verification = { pass: true, reason: 'escalation_guidance' };
+      verification = {
+        pass: false,
+        outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+        interceptedFrom: null,
+        isInterception: false,
+        status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+        reason: answerability.reason || 'escalation_guidance',
+        isGrounded: false,
+        handledSafely: true
+      };
     } else {
       answer = answerability.guidance || 'Informasi mengenai hal tersebut belum tercantum dalam panduan resmi yang tersedia.';
-      verification = { pass: true, reason: 'safe_unknown' };
+      verification = {
+        pass: false,
+        outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        reason: answerability.reason || 'safe_unknown',
+        isGrounded: false,
+        handledSafely: true
+      };
     }
 
     const subStatus = answerability.status === ANSWERABILITY_STATUS.UNKNOWN ? 'corpus_gap' : undefined;
@@ -368,12 +488,36 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
 
   if (!isShadowMode && chatId && subFrames.length > 0 && canCommit) {
     const primaryFrame = subFrames[0];
+    const { CAMPUS_WIDE_DOMAINS } = require('../reasoning/contracts');
+    const isCampusWide = primaryFrame.domain && CAMPUS_WIDE_DOMAINS.includes(primaryFrame.domain.toUpperCase());
+
+    let newActiveEntity = null;
+    let newPreservedEntity = sessionData.preservedBackgroundEntity || null;
+
+    if (primaryFrame.entities.length > 0) {
+      newActiveEntity = primaryFrame.entities[0].canonical;
+      newPreservedEntity = null;
+    } else if (isCampusWide) {
+      // Campus-wide query without explicit entity: isolate activeEntity to background
+      newActiveEntity = null;
+      if (sessionData.activeEntity) {
+        newPreservedEntity = sessionData.activeEntity;
+      }
+    } else if (primaryFrame.domain === sessionData.activeDomain ||
+               ['ACADEMIC_CURRICULUM', 'TUITION_FEE', 'ACADEMIC_PROGRAM', 'ACADEMIC_ADMISSION'].includes(primaryFrame.domain)) {
+      newActiveEntity = sessionData.activeEntity || null;
+    } else {
+      newActiveEntity = null;
+      if (sessionData.activeEntity) {
+        newPreservedEntity = sessionData.activeEntity;
+      }
+    }
+
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
-        activeEntity: primaryFrame.entities.length > 0
-          ? primaryFrame.entities[0].canonical
-          : (sessionData.activeEntity || null),
+        activeEntity: newActiveEntity,
+        preservedBackgroundEntity: newPreservedEntity,
         lastQuery: rawQuery,
         lastAnswer: finalAnswer
       }

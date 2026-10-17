@@ -14,6 +14,8 @@
  * 3. Evidence Grounding: Answers must not contradict accepted evidence.
  */
 
+const { VERIFICATION_OUTCOME } = require('../reasoning/contracts');
+
 const RAW_DOCUMENT_LEAK_PATTERNS = [
   /GǪ.*GǪ/i,
   /\[chunk_\d+\]/i,
@@ -29,24 +31,43 @@ const RAW_DOCUMENT_LEAK_PATTERNS = [
   /Ketua Program Studi S1-/i
 ];
 
-function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
+function failVerification(reason, extra = {}) {
+  return {
+    pass: false,
+    outcome: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+    status: VERIFICATION_OUTCOME.VERIFICATION_FAILED,
+    reason,
+    isGrounded: false,
+    handledSafely: false,
+    ...extra
+  };
+}
+
+function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEvidence = {}, comparisonEnvelope = null, recommendationResult = null) {
   if (recommendationResult && (recommendationResult.mode === 'RECOMMENDATION' || recommendationResult.provenance?.version === 'phase2-step7')) {
     const text = String(candidateAnswer || '').trim();
     if (!text) {
-      return { pass: false, reason: 'empty_answer' };
+      return failVerification('empty_answer');
     }
     if (/\bpasti\s+cocok\b/i.test(text) || /\bpasti\s+pilih\b/i.test(text)) {
-      return { pass: false, reason: 'recommendation_absolute_claim_forbidden' };
+      return failVerification('recommendation_absolute_claim_forbidden');
     }
     const { sanitizeWhatsAppMarkdown } = require('./outboundRenderer');
     const sanitized = sanitizeWhatsAppMarkdown(candidateAnswer);
     if (sanitized !== candidateAnswer) {
-      return { pass: false, reason: 'outbound_sanitizer_non_idempotent' };
+      return failVerification('outbound_sanitizer_non_idempotent');
     }
     if (!/admisi\s+PMB|ketentuan\s+resmi/i.test(text)) {
-      return { pass: false, reason: 'recommendation_lacks_pmb_advisory' };
+      return failVerification('recommendation_lacks_pmb_advisory');
     }
-    return { pass: true, reason: 'verified_recommendation' };
+    return {
+      pass: true,
+      outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      reason: 'verified_recommendation',
+      isGrounded: true,
+      handledSafely: true
+    };
   }
 
   if (comparisonEnvelope && comparisonEnvelope.mode === 'COMPARATIVE') {
@@ -55,35 +76,39 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
 
     const validation = validateComparisonEnvelope(comparisonEnvelope);
     if (!validation.valid) {
-      return { pass: false, reason: 'comparative_envelope_invalid', diagnosticCode: validation.code };
+      return failVerification('comparative_envelope_invalid', { diagnosticCode: validation.code });
     }
 
     const expectedText = renderTextFromPlan(comparisonEnvelope.renderPlan);
     if (candidateAnswer !== expectedText) {
-      return { pass: false, reason: 'comparative_text_divergence' };
+      return failVerification('comparative_text_divergence');
     }
 
     // Outbound fixed-point idempotence assertion
     const sanitized = sanitizeWhatsAppMarkdown(candidateAnswer);
     if (sanitized !== candidateAnswer) {
-      return { pass: false, reason: 'outbound_sanitizer_non_idempotent' };
+      return failVerification('outbound_sanitizer_non_idempotent');
     }
 
-    return { pass: true };
+    return {
+      pass: true,
+      outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      reason: 'verified_comparative',
+      isGrounded: true,
+      handledSafely: true
+    };
   }
 
   const text = String(candidateAnswer || '').trim();
   if (!text) {
-    return { pass: false, reason: 'empty_answer' };
+    return failVerification('empty_answer');
   }
 
   // 1. Raw Document Leak Check
   for (const pattern of RAW_DOCUMENT_LEAK_PATTERNS) {
     if (pattern.test(text)) {
-      return {
-        pass: false,
-        reason: 'raw_document_metadata_leak_detected'
-      };
+      return failVerification('raw_document_metadata_leak_detected');
     }
   }
 
@@ -124,10 +149,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
         });
 
         if (!allMatchesAreComparative || !hasTargetMention) {
-          return {
-            pass: false,
-            reason: `entity_contradiction_conflicting_sibling_in_answer: ${excluded}`
-          };
+          return failVerification(`entity_contradiction_conflicting_sibling_in_answer: ${excluded}`);
         }
       }
 
@@ -148,10 +170,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
             .filter(s => titleRegex.test(s))
             .every(s => isComparativeSentence(s, base));
           if (!allComparative) {
-            return {
-              pass: false,
-              reason: `entity_contradiction_conflicting_sibling_in_answer: ${excluded}`
-            };
+            return failVerification(`entity_contradiction_conflicting_sibling_in_answer: ${excluded}`);
           }
         }
       }
@@ -159,8 +178,12 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   }
 
   const isUnsupported = Boolean(
-    arbitratedEvidence.retrievalPlan?.isUnsupportedEntity ||
-    semanticFrame.isUnsupportedEntity ||
+    arbitratedEvidence?.unsupportedEntity ||
+    arbitratedEvidence?.retrievalPlan?.unsupportedEntity ||
+    arbitratedEvidence?.retrievalPlan?.isUnsupportedEntity ||
+    semanticFrame?.isUnsupportedEntity ||
+    semanticFrame?.unsupportedEntity ||
+    semanticFrame?.domain === 'UNSUPPORTED_PROGRAM' ||
     /tidak diselenggarakan di ITB STIKOM Bali|is currently not offered at ITB STIKOM Bali/i.test(text)
   );
 
@@ -169,10 +192,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   if (temporalClaimPattern.test(text) && !isUnsupported) {
     // If the answer asserts a temporal claim, arbitrated evidence must exist
     if (!arbitratedEvidence.accepted || arbitratedEvidence.accepted.length === 0) {
-      return {
-        pass: false,
-        reason: 'unsupported_temporal_claim_zero_evidence'
-      };
+      return failVerification('unsupported_temporal_claim_zero_evidence');
     }
 
     // If query has constraint NOW, verify that accepted evidence actually supports temporal validity
@@ -185,10 +205,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
           /\b(periode 202[1-6]-202[6-9]|berlaku sampai 202[6-9]|baik sekali|sk|surat keputusan)\b/i.test(cText);
       });
       if (!hasTemporalEvidence) {
-        return {
-          pass: false,
-          reason: 'unsupported_temporal_claim_lacks_valid_temporal_evidence'
-        };
+        return failVerification('unsupported_temporal_claim_lacks_valid_temporal_evidence');
       }
     }
   }
@@ -201,10 +218,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
     const hasFeeKeywords = /\b(biaya|pendidikan|dpp|spp|uang pangkal|rp|cicil|pembayaran|nominal|fee|fees|tuition|cost|costs|costing|pay|pays|paying|payment|payments|installment|installments|price|prices)\b/i.test(text);
     const hasCurriculumOnly = /\b(semester\s+[ivx\d]+\s+no\s+nama\s+mata\s+kuliah|praktikum\s+[a-z]+|kurikulum\s+2025)\b/i.test(text) && !hasFeeKeywords;
     if (!hasFeeKeywords || hasCurriculumOnly) {
-      return {
-        pass: false,
-        reason: 'aspect_mismatch_answer_lacks_fee_evidence'
-      };
+      return failVerification('aspect_mismatch_answer_lacks_fee_evidence');
     }
   }
 
@@ -214,10 +228,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   if (isCurriculumInquiry && !isUnsupported) {
     const hasCurriculumKeywords = /\b(berfokus|mempelajari|kurikulum|mata\s*kuliah|matkul|sks|semester|silabus|kompetensi|pembelajaran|fokus|bidang|pemrograman|keahlian|focus(?:es|ed|ing)?|learn(?:s|ing|ed)?|stud(?:y|ies|ied|ying)|teach(?:es|ing)?|taught|cover(?:s|ed|ing)?|skill(?:s)?|hardware|software|network(?:s|ing)?|programming|system(?:s)?|specializ(?:e|es|ed|ing|ation)|curriculum|courses?|credits?|semesters?|syllabus|competenc(?:y|ies)|degree(?:s)?|duration|career(?:s)?|jobs?|roles?|graduates?|qualification(?:s)?|prerequisite(?:s)?|requirement(?:s)?|defen(?:d|se|ses)|final\s+project|thesis|transcript|registration|clearance|supervis(?:or|ion)|advis(?:or|ing)|persyaratan|syarat|skripsi|bimbingan)\b/i.test(text);
     if (!hasCurriculumKeywords) {
-      return {
-        pass: false,
-        reason: 'aspect_mismatch_answer_lacks_curriculum_evidence'
-      };
+      return failVerification('aspect_mismatch_answer_lacks_curriculum_evidence');
     }
   }
 
@@ -228,10 +239,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
     const hasContactDetails = /\b(whatsapp|wa|telepon|telp|nomor|call|phone|contact|email|humas|pmb|08\d{8,}|0361|\.ac\.id)\b/i.test(text);
     const isExplicitAbstain = /tidak\s+ditemukan|belum\s+tersedia|tidak\s+dapat\s+diverifikasi|not\s+(?:listed|found|available|recorded)|unrecorded/i.test(text);
     if (!hasContactDetails && !isExplicitAbstain) {
-      return {
-        pass: false,
-        reason: 'aspect_mismatch_answer_lacks_contact_evidence'
-      };
+      return failVerification('aspect_mismatch_answer_lacks_contact_evidence');
     }
   }
 
@@ -242,10 +250,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   if (!isRecommendationInquiry) {
     const unsolicitedRecommendationRegex = /\b(rekomendasi\s+untuk\s+(?:anda|kamu|kakak)|program\s+studi\s+yang\s+(?:paling\s+)?cocok\s+untuk\s+(?:anda|kamu|kakak)|jika\s+(?:anda|kamu|kakak)\s+(?:tertarik|berminat)\b[^\n]*\bpilihlah\b)\b/i;
     if (unsolicitedRecommendationRegex.test(text)) {
-      return {
-        pass: false,
-        reason: 'unsolicited_recommendation_in_non_recommendation_inquiry'
-      };
+      return failVerification('unsolicited_recommendation_in_non_recommendation_inquiry');
     }
   }
 
@@ -255,16 +260,96 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame, arbitratedEvidence = 
   for (const line of lines) {
     lineCounts[line] = (lineCounts[line] || 0) + 1;
     if (lineCounts[line] >= 3) {
-      return {
-        pass: false,
-        reason: 'repeated_heading_or_fragment_detected'
-      };
+      return failVerification('repeated_heading_or_fragment_detected');
     }
   }
 
+  // Outcome Classification (when all structural failure gates pass)
+  if (isUnsupported) {
+    return {
+      pass: false,
+      outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      reason: 'unsupported_program_safe_refusal',
+      isGrounded: false,
+      handledSafely: true
+    };
+  }
+
+  const isExplicitAbstain = /\b(belum\s+(?:tercantum|tersedia|ditemukan)|tidak\s+(?:ditemukan|tersedia|tercantum)|tidak\s+dapat\s+(?:diverifikasi|dipastikan)|belum\s+dapat\s+dipastikan|not\s+(?:listed|found|available|recorded)|unrecorded)\b/i.test(text);
+  if (isExplicitAbstain) {
+    return {
+      pass: false,
+      outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+      reason: 'safe_unknown',
+      isGrounded: false,
+      handledSafely: true
+    };
+  }
+
+  const isEscalationGuidance = /\b(silakan\s+(?:menghubungi|berkonsultasi|konfirmasi|hubungi)\s+(?:dosen\s+wali|bagian\s+akademik|admisi|pmb|pusat\s+informasi)|contact\s+the\s+admission\s+office)\b/i.test(text) &&
+    (!arbitratedEvidence?.accepted || arbitratedEvidence.accepted.length === 0);
+  if (isEscalationGuidance) {
+    return {
+      pass: false,
+      outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+      status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+      reason: 'escalation_guidance',
+      isGrounded: false,
+      handledSafely: true
+    };
+  }
+
+  const isClarification = (
+    semanticFrame?.intent === 'AMBIGUOUS_CLARIFICATION' ||
+    /\b(mohon\s+jelaskan\s+program\s+studi|pilihan\s+Kakak)\b/i.test(text)
+  );
+  if (isClarification) {
+    return {
+      pass: false,
+      outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+      status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+      reason: 'clarification_prompt',
+      isGrounded: false,
+      handledSafely: true
+    };
+  }
+
+  const isCatalog = (
+    semanticFrame?.intent === 'AVAILABLE_PROGRAMS_LIST' ||
+    semanticFrame?.intent === 'PROGRAM_CATALOG_INQUIRY' ||
+    /\b(Program Sarjana \(S1\)|Program Diploma \(D3\)|Program Pascasarjana \(S2\))\b/i.test(text)
+  );
+  if (isCatalog) {
+    return {
+      pass: true,
+      outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      reason: 'verified_catalog',
+      isGrounded: true,
+      handledSafely: true
+    };
+  }
+
+  if (arbitratedEvidence?.accepted && arbitratedEvidence.accepted.length > 0) {
+    return {
+      pass: true,
+      outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+      reason: 'verified_grounded',
+      isGrounded: true,
+      handledSafely: true
+    };
+  }
+
   return {
-    pass: true,
-    reason: 'verified_grounded'
+    pass: false,
+    outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+    status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+    reason: 'safe_unknown',
+    isGrounded: false,
+    handledSafely: true
   };
 }
 

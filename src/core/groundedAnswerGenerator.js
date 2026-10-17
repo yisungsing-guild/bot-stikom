@@ -14,6 +14,14 @@
 
 const { AIReplyEngine } = require('../engine/aiEngine');
 const { CANONICAL_ENTITIES } = require('../engine/canonicalEntityRegistry');
+const {
+  ACADEMIC_SCOPE_STATUS,
+  INSTITUTIONAL_ACADEMIC_CATALOG,
+  normalizeAcademicScope,
+  getCatalogEntriesByScope,
+  resolveAcademicScope,
+  generateGroundedCatalogSummary
+} = require('./academicCatalog');
 const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
 const { detectQueryLanguage } = require('../utils/languageDetector');
 const logger = require('../logger');
@@ -510,63 +518,8 @@ function extractOverviewFromEvidence(chunks, entityName = '') {
  * Builds grounded deterministic summaries with domain-aware structure and artifact cleaning
  */
 function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitratedEvidence = {}) {
-  const isFacilityInquiry = semanticFrame.domain === 'FACILITIES' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'lab', 'campus_infrastructure'].includes(a)));
-  // Institutional Catalog List does not require external evidence chunks
-  if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' && !isFacilityInquiry) {
-    const scopeLevel = semanticFrame.scopeLevel || 'ALL';
-    if (scopeLevel === 'S1') {
-      return `Di ITB STIKOM Bali, ada 4 pilihan **Program Sarjana (S1)** yang bisa Kakak pilih:
-
-1. **S1 Sistem Informasi**
-   Fokus pada perancangan sistem enterprise, tata kelola TI, basis data, dan analisis bisnis digital.
-2. **S1 Sistem Komputer**
-   Fokus pada perangkat keras (hardware), Internet of Things (IoT), embedded system, robotika, dan keamanan jaringan.
-3. **S1 Teknologi Informasi**
-   Fokus pada keamanan siber (cyber security), integrasi sistem ICT, cloud computing, dan infrastruktur jaringan.
-4. **S1 Bisnis Digital**
-   Fokus pada inovasi bisnis berbasis teknologi, e-commerce, digital marketing, analitika bisnis, dan pengembangan startup.
-
-Semua program S1 berbeban studi 144 SKS (8 semester). Tersedia kelas reguler maupun kelas sore/karyawan bagi yang kuliah sambil bekerja. Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id. Tertarik dengan salah satu prodi di atas?`;
-    }
-
-    return `ITB STIKOM Bali menyelenggarakan program studi di berbagai jenjang berikut:
-
-• **Program Sarjana (S1)**:
-  1. S1 Sistem Informasi
-  2. S1 Sistem Komputer
-  3. S1 Teknologi Informasi
-  4. S1 Bisnis Digital
-
-• **Program Diploma (D3)**:
-  1. D3 Manajemen Informatika
-
-• **Program Pascasarjana (S2)**:
-  1. S2 Magister Sistem Informasi (M.Kom)
-
-• **Program Kelas Internasional**:
-  1. International Dual Degree (bekerja sama dengan mitra luar negeri)
-
-Pendaftaran dapat diakses melalui portal resmi https://pmb.stikom-bali.ac.id. Jika Kakak ingin mengetahui rincian biaya atau kurikulum prodi tertentu, silakan tanyakan ya!`;
-  }
-
-  if (!accepted || accepted.length === 0) return null;
-
   const rawQuery = (semanticFrame.rawQuery || '').toLowerCase();
   const userLang = semanticFrame.language || detectQueryLanguage(rawQuery || '');
-  const cleanAll = accepted.map(a => cleanDocumentArtifacts(a.text)).join('\n\n');
-
-  // Prioritize specific academic program over broad degree scope
-  const programEntity = (semanticFrame.entities || []).find(e => e.family === 'academic_program' || e.type === 'program');
-  const targetEntities = (semanticFrame.entities || []).map(e => e.canonical || e.name || String(e));
-  if (programEntity && targetEntities.length > 1 && targetEntities[0] !== programEntity.canonical) {
-    const pIdx = targetEntities.indexOf(programEntity.canonical);
-    if (pIdx > 0) {
-      targetEntities.splice(pIdx, 1);
-      targetEntities.unshift(programEntity.canonical);
-    }
-  }
-  const entityLabel = (programEntity && programEntity.canonical) || targetEntities[0] || 'program terkait';
   const missingAspects = arbitratedEvidence.missingAspects || [];
 
   // Helper to append missing aspect notes
@@ -593,6 +546,52 @@ Pendaftaran dapat diakses melalui portal resmi https://pmb.stikom-bali.ac.id. Ji
     const missingNames = missingAspects.map(a => aspectLabels[a] || a);
     return `${answerText}\n\n_Untuk informasi mengenai ${missingNames.join(', ')}, saat ini belum tercantum dalam panduan resmi yang tersedia. Kakak bisa mengonfirmasinya langsung ke bagian admisi kampus ya._`;
   }
+
+  const isFacilityInquiry = semanticFrame.domain === 'FACILITIES' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'lab', 'campus_infrastructure'].includes(a)));
+  const hasSpecificProgramEntity = Array.isArray(semanticFrame.entities) &&
+    semanticFrame.entities.some(e => {
+      const can = (e.canonical || e.name || String(e)).toLowerCase();
+      return /^(?:s1|s2|d3|d4)\s+/i.test(can) && e.type !== 'academic_scope';
+    });
+  const isAcademicCatalogDomain = !semanticFrame.domain || semanticFrame.domain === 'ACADEMIC_PROGRAM';
+
+  // Institutional Academic Catalog Listing with verified degree scope filtering
+  if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' && isAcademicCatalogDomain && !isFacilityInquiry && !hasSpecificProgramEntity) {
+    const scopeResolution = semanticFrame.academicScope ||
+      arbitratedEvidence?.retrievalPlan?.academicScope ||
+      resolveAcademicScope(semanticFrame.scopeLevel || semanticFrame.academicLevel || semanticFrame);
+
+    // UNSUPPORTED degree scope must NEVER be silently broadened to ALL or answered with general catalog
+    if (scopeResolution.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED) {
+      return null;
+    }
+
+    const canonicalScope = scopeResolution.status === ACADEMIC_SCOPE_STATUS.SUPPORTED
+      ? scopeResolution.level
+      : 'ALL';
+
+    const catalogSummary = generateGroundedCatalogSummary(canonicalScope, userLang);
+    if (!catalogSummary) return null;
+
+    return appendMissingAspectNote(catalogSummary);
+  }
+
+  if (!accepted || accepted.length === 0) return null;
+
+  const cleanAll = accepted.map(a => cleanDocumentArtifacts(a.text)).join('\n\n');
+
+  // Prioritize specific academic program over broad degree scope
+  const programEntity = (semanticFrame.entities || []).find(e => e.family === 'academic_program' || e.type === 'program');
+  const targetEntities = (semanticFrame.entities || []).map(e => e.canonical || e.name || String(e));
+  if (programEntity && targetEntities.length > 1 && targetEntities[0] !== programEntity.canonical) {
+    const pIdx = targetEntities.indexOf(programEntity.canonical);
+    if (pIdx > 0) {
+      targetEntities.splice(pIdx, 1);
+      targetEntities.unshift(programEntity.canonical);
+    }
+  }
+  const entityLabel = (programEntity && programEntity.canonical) || targetEntities[0] || 'program terkait';
 
   // 0b. Requirements & Guidelines from accepted policy/guideline documents (e.g. Thesis Guidelines)
   const isRequirementInquiry = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|persyaratan\s+akademik|syarat\s+akademik|final\s+project|thesis|academic\s+requirements?|graduation\s+requirements?)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
@@ -680,46 +679,6 @@ Pendaftaran resmi dapat diakses melalui portal:
 
 Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per prodi, jadwal gelombang pendaftaran, atau persyaratan beasiswa?`;
     return appendMissingAspectNote(pmbAnswer);
-  }
-
-  // 1b. Available Academic Programs Listing (Generic Scope vs Specific Entity)
-  if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' && !isFacilityInquiry) {
-    const scopeLevel = semanticFrame.scopeLevel || 'ALL';
-    if (scopeLevel === 'S1') {
-      const s1Answer = `Di ITB STIKOM Bali, ada 4 pilihan **Program Sarjana (S1)** yang bisa Kakak pilih:
-
-1. **S1 Sistem Informasi**
-   Fokus pada perancangan sistem enterprise, tata kelola TI, basis data, dan analisis bisnis digital.
-2. **S1 Sistem Komputer**
-   Fokus pada perangkat keras (hardware), Internet of Things (IoT), embedded system, robotika, dan keamanan jaringan.
-3. **S1 Teknologi Informasi**
-   Fokus pada keamanan siber (cyber security), integrasi sistem ICT, cloud computing, dan infrastruktur jaringan.
-4. **S1 Bisnis Digital**
-   Fokus pada inovasi bisnis berbasis teknologi, e-commerce, digital marketing, analitika bisnis, dan pengembangan startup.
-
-Semua program S1 berbeban studi 144 SKS (8 semester). Tersedia kelas reguler maupun kelas sore/karyawan bagi mahasiswa yang kuliah sambil bekerja. Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(s1Answer);
-    }
-
-    const allProdiAnswer = `ITB STIKOM Bali menyelenggarakan program studi di berbagai jenjang berikut:
-
-• **Program Sarjana (S1)**:
-  1. S1 Sistem Informasi
-  2. S1 Sistem Komputer
-  3. S1 Teknologi Informasi
-  4. S1 Bisnis Digital
-
-• **Program Diploma (D3)**:
-  1. D3 Manajemen Informatika
-
-• **Program Pascasarjana (S2)**:
-  1. S2 Magister Sistem Informasi (M.Kom)
-
-• **Program Kelas Internasional**:
-  1. International Dual Degree (bekerja sama dengan mitra luar negeri)
-
-Pendaftaran dapat diakses melalui portal resmi https://pmb.stikom-bali.ac.id. Jika Kakak ingin mengetahui rincian biaya atau kurikulum prodi tertentu, silakan tanyakan ya!`;
-    return appendMissingAspectNote(allProdiAnswer);
   }
 
   // 1c. Facilities & Laboratories Inquiries
@@ -916,23 +875,90 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     const isEsports = /\b(gaming|game|gamer|esport|esports|e-sports|e-sport)\b/i.test(rawQuery) ||
       targetEntities.some(e => /athena|esport/i.test(e));
     if (isEsports) {
-      const esportsAnswer = `Bagi mahasiswa yang berminat di bidang gaming dan olahraga elektronik (esports), kampus memiliki wadah resmi yaitu **UKM Athena E-Sports**.
-
-UKM ini menjadi wadah pengembangan minat, bakat, serta tim kompetitif mahasiswa di bidang electronic sports (seperti Mobile Legends, PUBG Mobile, Valorant, dll.), termasuk pembinaan untuk kejuaraan antar perguruan tinggi. Pendaftaran anggota dibuka saat orientasi mahasiswa baru (GMTI) dan masa open recruitment UKM.`;
-      return appendMissingAspectNote(esportsAnswer);
+      const hasEsportsEvidence = /\b(?:athena|esport|esports|e-sports|gaming|game)\b/i.test(cleanAll);
+      if (hasEsportsEvidence) {
+        const esportsAnswer = `Berdasarkan dokumen resmi kampus, bagi mahasiswa yang berminat di bidang gaming dan olahraga elektronik, kampus menyediakan wadah resmi yaitu **UKM Athena E-Sports**.\n\nUKM ini menjadi wadah pengembangan minat, bakat, serta tim kompetitif mahasiswa di bidang electronic sports (seperti Mobile Legends, PUBG Mobile, Valorant, dll.).\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+        return appendMissingAspectNote(esportsAnswer);
+      }
+      return null;
     }
 
-    const isSport = /\b(olahraga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(rawQuery);
+    const isSport = /\b(olahraga|olah\s*raga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(rawQuery);
     if (isSport) {
-      const sportAnswer = `Untuk menyalurkan minat dan bakat di bidang olahraga, ITB STIKOM Bali menyediakan beberapa Unit Kegiatan Mahasiswa (UKM) aktif:
+      const officialSports = [
+        {
+          name: 'UKM FUTSAL',
+          desc: 'Latihan rutin, sparing partner, dan partisipasi turnamen futsal mahasiswa.',
+          regex: /\b(?:futsal)\b/i
+        },
+        {
+          name: 'UKM BASKET',
+          desc: 'Pembinaan tim basket putra/putri serta kompetisi mahasiswa.',
+          regex: /\b(?:basket)\b/i
+        },
+        {
+          name: 'UKM BOSS',
+          desc: 'Latihan rutin dan turnamen bulutangkis (Badminton Organization of STIKOM Student).',
+          regex: /\b(?:boss\b|bulutangkis|badminton)\b/i
+        },
+        {
+          name: 'UKM GHoST',
+          desc: 'Kegiatan fitness, gym, dan pembinaan kebugaran fisik mahasiswa (Gymnastic and Health of STIKOM Bali).',
+          regex: /\b(?:ghost|kebugaran|gym|fitness)\b/i
+        }
+      ];
 
-• **UKM Futsal**: Latihan rutin, sparing partner, dan partisipasi turnamen futsal antar perguruan tinggi.
-• **UKM Basket**: Pembinaan tim basket putra/putri serta kompetisi mahasiswa.
-• **UKM Bulutangkis (BOS - Badminton Of STIKOM Bali)**: Latihan rutin dan turnamen tahunan STIKOM Badminton Cup.
-• **UKM Kebugaran (GHoST - Gymnastic and Health of STIKOM Bali)**: Kegiatan fitness, gym, dan pembinaan kebugaran fisik mahasiswa.
+      const supportedSports = officialSports.filter(item => item.regex.test(cleanAll));
+      if (supportedSports.length > 0) {
+        const sportList = supportedSports.map(s => `• **${s.name}**: ${s.desc}`).join('\n');
+        const sportAnswer = `Berdasarkan dokumen resmi kampus, berikut Unit Kegiatan Mahasiswa (UKM) bidang olahraga yang tercatat aktif:\n\n${sportList}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+        return appendMissingAspectNote(sportAnswer);
+      }
+      return null;
+    }
 
-Mahasiswa baru dapat bergabung saat orientasi kampus (GMTI) atau saat pendaftaran terbuka UKM.`;
-      return appendMissingAspectNote(sportAnswer);
+    const isArts = /\b(seni|budaya|tari|musik|band|teater|paduan\s+suara|fotografi|lukis|gambar)\b/i.test(rawQuery);
+    if (isArts) {
+      const officialArts = [
+        {
+          name: 'Unit Kegiatan Tari Tradisional “PRAGINA”',
+          desc: 'Pembinaan seni tari tradisional Bali, tari kreasi nusantara, dan pementasan seni budaya.',
+          regex: /\b(?:pragina|tari\s+tradisional|ukm\s+tari)\b/i
+        },
+        {
+          name: 'UKM MUSIK',
+          desc: 'Komunitas minat musik, olah vokal, band mahasiswa, dan festival musik kampus.',
+          regex: /\b(?:ukm\s+musik|\bmusik\b|u2m)\b/i
+        },
+        {
+          name: 'UKM Voice of STIKOM Bali (VOS)',
+          desc: 'Paduan suara mahasiswa untuk upacara wisuda, kompetisi paduan suara, dan konser.',
+          regex: /\b(?:voice\s+of\s+stikom|vos|paduan\s+suara)\b/i
+        },
+        {
+          name: 'UKM TEATER BINER',
+          desc: 'Seni peran, drama panggung, dan pementasan teater mahasiswa.',
+          regex: /\b(?:teater\s+biner|ukm\s+teater|\bteater\b)\b/i
+        },
+        {
+          name: 'UKM HIMATOGRAPHY',
+          desc: 'Pelatihan teknik fotografi, hunting foto bersama, dan pameran karya visual.',
+          regex: /\b(?:himatography|ukm\s+fotografi|\bfotografi\b)\b/i
+        },
+        {
+          name: 'UKM Tabuh (Bramara Gita)',
+          desc: 'Pelestarian seni karawitan dan tabuh tradisional Bali.',
+          regex: /\b(?:bramara\s+gita|\btabuh\b|gamelan)\b/i
+        }
+      ];
+
+      const supportedArts = officialArts.filter(item => item.regex.test(cleanAll));
+      if (supportedArts.length > 0) {
+        const artsList = supportedArts.map(a => `• **${a.name}**: ${a.desc}`).join('\n');
+        const artsAnswer = `Berdasarkan dokumen resmi kampus, berikut Unit Kegiatan Mahasiswa (UKM) bidang seni dan budaya yang tercatat aktif:\n\n${artsList}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+        return appendMissingAspectNote(artsAnswer);
+      }
+      return null;
     }
 
     const isHima = /\b(?:himpunan\s+mahasiswa|himaprodi|hima)\b/i.test(rawQuery) || targetEntities.some(e => /hima/i.test(e));
@@ -958,16 +984,21 @@ Mahasiswa baru dapat bergabung saat orientasi kampus (GMTI) atau saat pendaftara
       }
     }
 
+    const isJoining = /\b(?:bergabung|gabung|daftar|join|pendaftaran)\b/i.test(rawQuery);
+    if (isJoining) {
+      return appendMissingAspectNote('Untuk bergabung dengan Unit Kegiatan Mahasiswa (UKM) di ITB STIKOM Bali, informasi pendaftaran dan masa penerimaan anggota dikoordinasikan langsung melalui Direktorat Kemahasiswaan & Ormawa atau agenda kegiatan kemahasiswaan kampus.');
+    }
+
     const orgAnswer = `Kegiatan mahasiswa di ITB STIKOM Bali dinaungi oleh Organisasi Mahasiswa (Ormawa) dan Unit Kegiatan Mahasiswa (UKM):
 
 • **Organisasi Mahasiswa**: Senat Mahasiswa, Balma (Badan Legislatif Mahasiswa), serta Himpunan Mahasiswa Program Studi (HIMAPRODI) tiap jurusan.
 • **Unit Kegiatan Mahasiswa (UKM)**:
   - Bidang Esports & Teknologi: UKM Athena E-Sports, KSL (Linux), Komunitas Robotika.
-  - Bidang Olahraga: Futsal, basket, bulutangkis, kebugaran.
-  - Bidang Seni & Budaya: Tari tradisional Bali, musik/band, paduan suara, fotografi, teater.
+  - Bidang Olahraga: Futsal, basket, bulutangkis (UKM BOSS), kebugaran (UKM GHoST).
+  - Bidang Seni & Budaya: Tari tradisional (Unit Kegiatan Tari Tradisional “PRAGINA”), musik (UKM MUSIK), paduan suara (UKM Voice of STIKOM Bali/VOS), fotografi (UKM HIMATOGRAPHY), teater (UKM TEATER BINER).
   - Bidang Sosial & Khusus: KSR PMI, Resimen Mahasiswa.
 
-Mahasiswa bebas memilih dan bergabung dengan UKM sesuai minat saat orientasi kampus (GMTI).`;
+Untuk informasi pendaftaran dan kegiatan ormawa/UKM lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
     return appendMissingAspectNote(orgAnswer);
   }
 
@@ -1675,8 +1706,28 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     });
   const isFacilityInquiry = semanticFrame.domain === 'FACILITIES' ||
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'lab', 'campus_infrastructure'].includes(a)));
-  if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' && !hasSpecificProgramEntity && !isFacilityInquiry) {
+  const isAcademicCatalogDomain = !semanticFrame.domain || semanticFrame.domain === 'ACADEMIC_PROGRAM';
+  if (isAcademicCatalogDomain && semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' && !hasSpecificProgramEntity && !isFacilityInquiry) {
+    const scopeResolution = semanticFrame.academicScope ||
+      arbitratedEvidence?.retrievalPlan?.academicScope ||
+      resolveAcademicScope(semanticFrame.scopeLevel || semanticFrame.academicLevel || semanticFrame);
+
+    if (scopeResolution.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED) {
+      return {
+        success: false,
+        answer: null,
+        reason: 'unsupported_degree_scope'
+      };
+    }
+
     const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, arbitratedEvidence.accepted || [], arbitratedEvidence);
+    if (!synthesizedText) {
+      return {
+        success: false,
+        answer: null,
+        reason: 'unsupported_degree_scope'
+      };
+    }
     return {
       success: true,
       answer: synthesizedText,
@@ -1861,5 +1912,9 @@ module.exports = {
   cleanDocumentArtifacts,
   buildGroundedDeterministicSummary,
   synthesizeAnswer,
-  renderRecommendationAnswer
+  renderRecommendationAnswer,
+  normalizeAcademicScope,
+  getCatalogEntriesByScope,
+  generateGroundedCatalogSummary,
+  INSTITUTIONAL_ACADEMIC_CATALOG
 };

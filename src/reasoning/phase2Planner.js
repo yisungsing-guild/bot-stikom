@@ -286,6 +286,10 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     : null;
 
   const NON_RECOMMENDATION_INTENTS = new Set([
+    'CONVERSATIONAL_GREETING',
+    'CONVERSATIONAL_SMALL_TALK',
+    'CONVERSATIONAL_ACKNOWLEDGEMENT',
+    'ADVERSARIAL_INJECTION_DEFENSE',
     'PROGRAM_ACCREDITATION',
     'INSTITUTIONAL_ACCREDITATION',
     'ACCREDITATION_INQUIRY',
@@ -303,15 +307,23 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     'TUITION_FEE_INQUIRY',
     'FACILITY_INQUIRY',
     'SCHOLARSHIP_INQUIRY',
+    'ORGANIZATION_INQUIRY',
+    'CAMPUS_SERVICE_INQUIRY',
+    'CAREER_CENTER_INQUIRY',
     'OUT_OF_DOMAIN_INQUIRY'
   ]);
   const NON_RECOMMENDATION_DOMAINS = new Set([
+    'CONVERSATIONAL',
     'TUITION_FEE',
     'SCHOLARSHIP',
     'FACILITIES',
+    'CAMPUS_SERVICE',
+    'CAREER_CENTER',
     'ORGANIZATION_UKM',
     'ACCREDITATION',
-    'CAREER_CENTER',
+    'ACADEMIC_CURRICULUM',
+    'PMB',
+    'INTERNATIONAL',
     'OUT_OF_DOMAIN'
   ]);
 
@@ -325,27 +337,42 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     'study_duration', 'durasi', 'masa_studi',
     'schedule', 'jadwal',
     'requirements', 'syarat',
-    'scholarship', 'beasiswa'
+    'scholarship', 'beasiswa',
+    'student_organization', 'ukm', 'sports', 'arts_culture', 'organisasi', 'ormawa',
+    'service_info', 'support', 'career_services', 'internship'
   ]);
 
   const hasFactualAspect = Array.isArray(semanticFrame.aspects) &&
     semanticFrame.aspects.some(a => FACTUAL_ASPECTS.has(String(a).toLowerCase()));
 
+  const effectiveDomain = semanticFrame.domain || sessionData.activeDomain || null;
+
   const isExplicitNonRecommendation =
     NON_RECOMMENDATION_INTENTS.has(semanticFrame.intent) ||
-    NON_RECOMMENDATION_DOMAINS.has(semanticFrame.domain) ||
-    Boolean(semanticFrame.domain?.includes('FEE')) ||
+    NON_RECOMMENDATION_DOMAINS.has(effectiveDomain) ||
+    Boolean(effectiveDomain?.includes('FEE')) ||
     hasFactualAspect ||
     isUnsupportedEntity;
 
-  const isRecommendationIntent = !isAmbiguous && !isExplicitNonRecommendation && Boolean(
-    (canonicalUnderstanding && canonicalUnderstanding.intent &&
-      (canonicalUnderstanding.intent.primary === 'ask_program_recommendation' ||
-       canonicalUnderstanding.intent.primary === 'ask_program_fit_reasoning')) ||
-    (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION' || semanticFrame.speechAct === 'SEEK_ADVICE') ||
-    /\b(?:bingung|rekomendasi|rekomendasikan|cocok(?:nya)?|saran|pilih\s+(?:prodi|jurusan)|ambil\s+(?:prodi|jurusan)|minat\s+saya)\b/i.test(query) ||
-    isBroadSchoolBackgroundWithoutSpecificPreference(query)
+  // Program recommendation is exclusively for selecting or evaluating fit for an academic study program / major
+  const isTargetingAcademicProgram = Boolean(
+    (canonicalUnderstanding?.intent && (
+      canonicalUnderstanding.intent.primary === 'ask_program_recommendation' ||
+      canonicalUnderstanding.intent.primary === 'ask_program_fit_reasoning'
+    )) ||
+    (semanticFrame.domain === 'ACADEMIC_RECOMMENDATION' || semanticFrame.intent === 'PROGRAM_RECOMMENDATION') ||
+    isBroadSchoolBackgroundWithoutSpecificPreference(query) ||
+    (detectProgramFitSignals(normalizeQueryForSignals(query)).length > 0 &&
+     !effectiveDomain?.includes('FEE') &&
+     entities.length <= 1) ||
+    ((/\b(?:rekomendasi|rekomendasikan|cocok(?:nya)?|saran|bingung\s+pilih|pilih|ambil|pas)\b/i.test(query) || semanticFrame.speechAct === 'SEEK_ADVICE') &&
+     /\b(?:prodi|jurusan|program\s*studi|kuliah)\b/i.test(query) &&
+     !/\b(?:ukm|unit\s+kegiatan\s+mahasiswa|organisasi|ormawa|hima|beasiswa|inkubator|career|fasilitas)\b/i.test(query))
   );
+
+  const isRecommendationIntent = !isAmbiguous &&
+    !isExplicitNonRecommendation &&
+    isTargetingAcademicProgram;
 
   if (planType !== PLAN_TYPE.AMBIGUOUS_CLARIFICATION && isRecommendationIntent && !options.taskGraph) {
     planType = PLAN_TYPE.RECOMMENDATION;

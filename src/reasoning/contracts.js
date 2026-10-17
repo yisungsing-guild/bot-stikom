@@ -70,10 +70,12 @@ const CONTEXT_TTL_MS = 30 * 60 * 1000; // 30 minutes TTL baseline
 const CAMPUS_WIDE_DOMAINS = Object.freeze([
   'FACILITIES',
   'ORGANIZATION',
+  'ORGANIZATION_UKM',
   'SCHOLARSHIP',
   'SCHEDULE',
   'PMB_SCHEDULE',
   'CAMPUS_LIFE',
+  'CAMPUS_SERVICE',
   'GENERAL_ADMISSION'
 ]);
 
@@ -355,6 +357,13 @@ function getAuthoritativeProgramOptions(options = {}) {
 
 // 4. SHADOW MODE CONTRACT (READ-ONLY TELEMETRY)
 function createShadowTelemetry(params = {}) {
+  const p2FactualVerificationPass = typeof params.p2FactualVerificationPass === 'boolean'
+    ? params.p2FactualVerificationPass
+    : Boolean(params.p2VerificationPass);
+  const p2OperationalSafetyPass = typeof params.p2OperationalSafetyPass === 'boolean'
+    ? params.p2OperationalSafetyPass
+    : Boolean(params.p2HandledSafely !== undefined ? params.p2HandledSafely : params.p2VerificationPass);
+
   return {
     queryId: params.queryId || `shadow_${Date.now()}`,
     timestamp: new Date().toISOString(),
@@ -366,7 +375,25 @@ function createShadowTelemetry(params = {}) {
     entityMatch: Boolean(params.entityMatch),
     intentMatch: Boolean(params.intentMatch),
     evidenceOverlapRatio: typeof params.evidenceOverlapRatio === 'number' ? params.evidenceOverlapRatio : 1.0,
-    p2VerificationPass: Boolean(params.p2VerificationPass),
+
+    // Separated Telemetry Metrics
+    p2FactualVerificationPass,
+    p2OperationalSafetyPass,
+    p2HandledSafely: p2OperationalSafetyPass,
+    safeUnknownCount: typeof params.safeUnknownCount === 'number' ? params.safeUnknownCount : 0,
+    normalEscalationCount: typeof params.normalEscalationCount === 'number' ? params.normalEscalationCount : 0,
+    integrityFailureCount: typeof params.integrityFailureCount === 'number' ? params.integrityFailureCount : 0,
+    interceptedFailureCount: typeof params.interceptedFailureCount === 'number' ? params.interceptedFailureCount : 0,
+
+    // Separated Regression Classification
+    safetyRegressionDetected: Boolean(params.safetyRegressionDetected),
+    factualRegressionDetected: Boolean(params.factualRegressionDetected),
+    answerabilityRegressionDetected: Boolean(params.answerabilityRegressionDetected),
+    groundedRefusalDifference: Boolean(params.groundedRefusalDifference),
+    answerabilityDifference: Boolean(params.answerabilityDifference),
+
+    // Backward-Compatibility Aliases
+    p2VerificationPass: typeof params.p2VerificationPass === 'boolean' ? params.p2VerificationPass : p2OperationalSafetyPass,
     regressionDetected: Boolean(params.regressionDetected),
     diffs: Array.isArray(params.diffs) ? params.diffs : [],
     readOnlyVerified: true
@@ -544,6 +571,12 @@ const COMPUTATION_STATE = Object.freeze({
   INVALID_SCOPE: 'INVALID_SCOPE'
 });
 
+const ACADEMIC_SCOPE_STATUS = Object.freeze({
+  UNSPECIFIED: 'UNSPECIFIED',
+  SUPPORTED: 'SUPPORTED',
+  UNSUPPORTED: 'UNSUPPORTED'
+});
+
 const ASPECT_COMPARATOR_REGISTRY = Object.freeze({
   tuition_fee: 'NUMERIC_PERIOD',
   registration_fee: 'NUMERIC_PERIOD',
@@ -569,6 +602,15 @@ const ASPECT_COMPARATOR_REGISTRY = Object.freeze({
   study_mode: 'SCALAR_EQUALITY',
   campus_location: 'SCALAR_EQUALITY'
 });
+
+const VERIFICATION_OUTCOME = Object.freeze({
+  VERIFIED_FACTUAL: 'VERIFIED_FACTUAL',
+  SAFE_UNKNOWN: 'SAFE_UNKNOWN',
+  ESCALATION_GUIDANCE: 'ESCALATION_GUIDANCE',
+  VERIFICATION_FAILED: 'VERIFICATION_FAILED'
+});
+
+const VERIFICATION_STATUS = VERIFICATION_OUTCOME;
 
 module.exports = {
   TOTAL_TURN_BUDGET_MS,
@@ -613,5 +655,8 @@ module.exports = {
   PRESENTATION_NOTICE_CODE,
   COMPARATIVE_TRANSPORT_VALIDATION_CODE,
   ASPECT_COMPARATOR_REGISTRY,
-  COMPUTATION_STATE
+  COMPUTATION_STATE,
+  ACADEMIC_SCOPE_STATUS,
+  VERIFICATION_OUTCOME,
+  VERIFICATION_STATUS
 };

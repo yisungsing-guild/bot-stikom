@@ -22,7 +22,8 @@
 const {
   TOTAL_TURN_BUDGET_MS,
   createShadowTelemetry,
-  assertShadowModeSafety
+  assertShadowModeSafety,
+  VERIFICATION_OUTCOME
 } = require('./contracts');
 const { getSession } = require('../core/conversationState');
 const { synthesizeAnswer } = require('../core/groundedAnswerGenerator');
@@ -264,7 +265,12 @@ async function evaluateShadowTurn(params = {}) {
 
   // 2. Execute Phase 2 in strict read-only SHADOW execution mode
   let p2Result = null;
-  let p2VerificationPass = false;
+  let p2FactualVerificationPass = false;
+  let p2OperationalSafetyPass = false;
+  let safeUnknownCount = 0;
+  let normalEscalationCount = 0;
+  let integrityFailureCount = 0;
+  let interceptedFailureCount = 0;
   let p2Error = null;
 
   try {
@@ -298,8 +304,30 @@ async function evaluateShadowTurn(params = {}) {
         const synthRes = await synthesizeAnswer(frame, {}, null, recResult);
         if (synthRes && synthRes.success && synthRes.answer) {
           const verifRes = verifyFinalAnswer(synthRes.answer, frame, {}, null, recResult);
-          p2VerificationPass = Boolean(verifRes && verifRes.pass);
+          const isFactual = verifRes && (verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL ||
+            (verifRes.pass === true && verifRes.outcome !== VERIFICATION_OUTCOME.SAFE_UNKNOWN && verifRes.outcome !== VERIFICATION_OUTCOME.ESCALATION_GUIDANCE));
+          p2FactualVerificationPass = Boolean(isFactual);
+          p2OperationalSafetyPass = Boolean(verifRes && (verifRes.handledSafely || verifRes.outcome !== VERIFICATION_OUTCOME.VERIFICATION_FAILED));
+          if (!p2OperationalSafetyPass || (verifRes && verifRes.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED)) {
+            integrityFailureCount++;
+          }
+          if (verifRes) {
+            if (verifRes.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN) {
+              safeUnknownCount++;
+            } else if (verifRes.outcome === VERIFICATION_OUTCOME.ESCALATION_GUIDANCE) {
+              if (verifRes.interceptedFrom === VERIFICATION_OUTCOME.VERIFICATION_FAILED || verifRes.isInterception) {
+                interceptedFailureCount++;
+                integrityFailureCount++;
+              } else {
+                normalEscalationCount++;
+              }
+            }
+          }
           p2Result.finalAnswer = synthRes.answer;
+        } else {
+          p2FactualVerificationPass = false;
+          p2OperationalSafetyPass = false;
+          integrityFailureCount++;
         }
       } else if (p2Result.comparisonEnvelope) {
         const targetEntities = p2Result.targetEntities || [];
@@ -307,15 +335,75 @@ async function evaluateShadowTurn(params = {}) {
         const synthRes = await synthesizeAnswer(frame, {}, p2Result.comparisonEnvelope);
         if (synthRes && synthRes.success && synthRes.answer) {
           const verifRes = verifyFinalAnswer(synthRes.answer, frame, {}, p2Result.comparisonEnvelope);
-          p2VerificationPass = Boolean(verifRes && verifRes.pass);
+          const isFactual = verifRes && (verifRes.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL ||
+            (verifRes.pass === true && verifRes.outcome !== VERIFICATION_OUTCOME.SAFE_UNKNOWN && verifRes.outcome !== VERIFICATION_OUTCOME.ESCALATION_GUIDANCE));
+          p2FactualVerificationPass = Boolean(isFactual);
+          p2OperationalSafetyPass = Boolean(verifRes && (verifRes.handledSafely || verifRes.outcome !== VERIFICATION_OUTCOME.VERIFICATION_FAILED));
+          if (!p2OperationalSafetyPass || (verifRes && verifRes.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED)) {
+            integrityFailureCount++;
+          }
+          if (verifRes) {
+            if (verifRes.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN) {
+              safeUnknownCount++;
+            } else if (verifRes.outcome === VERIFICATION_OUTCOME.ESCALATION_GUIDANCE) {
+              if (verifRes.interceptedFrom === VERIFICATION_OUTCOME.VERIFICATION_FAILED || verifRes.isInterception) {
+                interceptedFailureCount++;
+                integrityFailureCount++;
+              } else {
+                normalEscalationCount++;
+              }
+            }
+          }
           p2Result.finalAnswer = synthRes.answer;
+        } else {
+          p2FactualVerificationPass = false;
+          p2OperationalSafetyPass = false;
+          integrityFailureCount++;
         }
       } else if (Array.isArray(p2Result.subQueryResults)) {
-        p2VerificationPass = p2Result.subQueryResults.every(
-          s => s.verification ? s.verification.pass : Boolean(s.answer)
-        );
+        if (p2Result.subQueryResults.length === 0) {
+          p2FactualVerificationPass = Boolean(p2Result.finalAnswer);
+          p2OperationalSafetyPass = Boolean(p2Result.finalAnswer);
+        } else {
+          p2FactualVerificationPass = true;
+          p2OperationalSafetyPass = true;
+
+          for (const s of p2Result.subQueryResults) {
+            const v = s.verification;
+            if (!v) {
+              if (!s.answer) {
+                p2OperationalSafetyPass = false;
+                p2FactualVerificationPass = false;
+              }
+              continue;
+            }
+
+            const isFactual = v.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL ||
+              (v.pass === true && v.outcome !== VERIFICATION_OUTCOME.SAFE_UNKNOWN && v.outcome !== VERIFICATION_OUTCOME.ESCALATION_GUIDANCE);
+            if (!isFactual) {
+              p2FactualVerificationPass = false;
+            }
+
+            if (!v.handledSafely || v.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED) {
+              p2OperationalSafetyPass = false;
+              integrityFailureCount++;
+            }
+
+            if (v.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN) {
+              safeUnknownCount++;
+            } else if (v.outcome === VERIFICATION_OUTCOME.ESCALATION_GUIDANCE) {
+              if (v.interceptedFrom === VERIFICATION_OUTCOME.VERIFICATION_FAILED || v.isInterception) {
+                interceptedFailureCount++;
+                integrityFailureCount++;
+              } else {
+                normalEscalationCount++;
+              }
+            }
+          }
+        }
       } else {
-        p2VerificationPass = Boolean(p2Result.finalAnswer);
+        p2FactualVerificationPass = Boolean(p2Result.finalAnswer);
+        p2OperationalSafetyPass = Boolean(p2Result.finalAnswer);
       }
     }
   } catch (err) {
@@ -351,13 +439,97 @@ async function evaluateShadowTurn(params = {}) {
     diffs.push('intent_mismatch');
   }
 
-  if (!p2VerificationPass) {
+  const p2VerificationPass = p2OperationalSafetyPass;
+
+  if (!p2OperationalSafetyPass) {
+    diffs.push('p2_safety_failure');
     diffs.push('p2_verification_failure');
   }
 
-  // Regression definition: P1 produced a valid verified answer, but P2 threw error or failed verifier
+  // Regression definition: P1 produced a valid verified answer, but P2 threw error or failed safety
   const p1Success = Boolean(p1Result && p1Result.finalAnswer && !p1Result.error);
-  const regressionDetected = Boolean(p1Success && (!p2Result || !p2VerificationPass || p2Error));
+  const safetyRegressionDetected = Boolean(p1Success && (!p2Result || !p2OperationalSafetyPass || p2Error));
+
+  const p1FactualPass = Boolean(
+    p1Result?.subQueryResults?.length > 0
+      ? p1Result.subQueryResults.every(s =>
+          s.verification?.pass === true &&
+          (s.verification?.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL ||
+           (s.verification?.outcome !== VERIFICATION_OUTCOME.SAFE_UNKNOWN && s.verification?.outcome !== VERIFICATION_OUTCOME.ESCALATION_GUIDANCE))
+        )
+      : p1Result?.finalAnswer
+  );
+
+  const p1HasAcceptedEvidence = p1Evidence.length > 0;
+  const p2HasAcceptedEvidence = p2Evidence.length > 0;
+
+  // Did P1 have any subquery where evidence was explicitly grounded?
+  const p1HasGroundedEvidence = Boolean(
+    p1HasAcceptedEvidence && (
+      p1Result?.subQueryResults?.length > 0
+        ? p1Result.subQueryResults.some(s => s.verification?.isGrounded === true || (s.acceptedCount > 0 && s.verification?.pass))
+        : true
+    )
+  );
+
+  const p2HasSafeUnknown = Boolean(
+    safeUnknownCount > 0 ||
+    p2Result?.subQueryResults?.some(s => s.verification?.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN || s.answerability === 'UNKNOWN')
+  );
+
+  const isUnsupportedEntity = Boolean(
+    p2Result?.subQueryResults?.some(s => s.status === 'unsupported_program' || s.frame?.unsupportedEntity || s.frame?.isUnsupportedEntity) ||
+    p1Result?.subQueryResults?.some(s => s.status === 'unsupported_program' || s.frame?.unsupportedEntity || s.frame?.isUnsupportedEntity)
+  );
+
+  const isCorpusGap = Boolean(
+    !p2HasAcceptedEvidence && (
+      p2Result?.subQueryResults?.some(s => s.status === 'corpus_gap' || s.answerability === 'UNKNOWN') ||
+      p2HasSafeUnknown
+    )
+  );
+
+  const isJustifiedRefusal = p2HasSafeUnknown && (!p2HasAcceptedEvidence) && (isCorpusGap || isUnsupportedEntity);
+
+  // Grounded refusal difference: P2 safely abstains because evidence is absent (corpus gap or unsupported program),
+  // while P1 produced an answer without trusted grounded evidence, or on an unsupported entity.
+  const groundedRefusalDifference = Boolean(
+    isJustifiedRefusal && (!p1HasGroundedEvidence || isUnsupportedEntity)
+  );
+
+  // Factual regression: P1 had verified factual answer, P2 failed factual verification,
+  // and this was NOT a justified safe refusal for proven corpus gap or unsupported entity.
+  const factualRegressionDetected = Boolean(
+    p1FactualPass && !p2FactualVerificationPass && !groundedRefusalDifference
+  );
+
+  const p1Answerable = Boolean(
+    p1Result?.subQueryResults?.length > 0
+      ? p1Result.subQueryResults.some(s => s.answerability === 'ANSWERABLE')
+      : Boolean(p1Result?.finalAnswer)
+  );
+  const p2Answerable = Boolean(
+    p2Result?.subQueryResults?.length > 0
+      ? p2Result.subQueryResults.some(s => s.answerability === 'ANSWERABLE')
+      : Boolean(p2Result?.finalAnswer && !p2HasSafeUnknown)
+  );
+
+  const answerabilityDifference = Boolean(p1Answerable !== p2Answerable);
+  const answerabilityRegressionDetected = Boolean(
+    p1Answerable && !p2Answerable && !groundedRefusalDifference
+  );
+
+  if (groundedRefusalDifference) {
+    diffs.push('grounded_refusal_difference');
+  }
+  if (answerabilityDifference && !diffs.includes('answerability_difference')) {
+    diffs.push('answerability_difference');
+  }
+  if (factualRegressionDetected && !diffs.includes('factual_regression')) {
+    diffs.push('factual_regression');
+  }
+
+  const regressionDetected = Boolean(safetyRegressionDetected || (p1Success && !p2Result));
 
   // 5. Build official telemetry payload
   return createShadowTelemetry({
@@ -369,6 +541,18 @@ async function evaluateShadowTurn(params = {}) {
     entityMatch,
     intentMatch,
     evidenceOverlapRatio,
+    p2FactualVerificationPass,
+    p2OperationalSafetyPass,
+    p2HandledSafely: p2OperationalSafetyPass,
+    safeUnknownCount,
+    normalEscalationCount,
+    integrityFailureCount,
+    interceptedFailureCount,
+    safetyRegressionDetected,
+    factualRegressionDetected,
+    answerabilityRegressionDetected,
+    groundedRefusalDifference,
+    answerabilityDifference,
     p2VerificationPass,
     regressionDetected,
     diffs

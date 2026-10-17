@@ -20,7 +20,8 @@ const {
   GRAPH_EXECUTION_DEADLINE_MS,
   GRAPH_RESERVED_FINALIZATION_MS,
   PLAN_TYPE,
-  GRAPH_COMPLETION_STATE
+  GRAPH_COMPLETION_STATE,
+  VERIFICATION_OUTCOME
 } = require('./contracts');
 const { executeTaskGraph } = require('./taskGraphExecutor');
 const plannerModule = require('./phase2Planner');
@@ -127,11 +128,11 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         .map((opt, idx) => `${idx + 1}. ${opt.canonical}`)
         .join('\n');
 
-      const clarificationAnswer = `Untuk memberikan informasi yang tepat, mohon jelaskan program studi atau jenjang mana yang ingin Kakak tanyakan?\n\n${optionsList}\n\nSilakan sebutkan program studi pilihan Kakak.`;
+      const clarificationAnswer = `Untuk memberikan informasi yang tepat, mohon jelaskan program studi mana yang ingin Kakak tanyakan?\n\n${optionsList}\n\nSilakan sebutkan program studi pilihan Kakak.`;
 
       // Verification via Phase 1 Universal Verifier
       const verification = verifyFinalAnswer(clarificationAnswer, { rawQuery, entities: [] }, {});
-      if (!verification.pass) {
+      if (verification.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED) {
         throw new Error(`clarification_verifier_failure: ${verification.reason}`);
       }
 
@@ -236,8 +237,16 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         rejectedCount: 0,
         answerability: 'OUT_OF_DOMAIN',
         status: 'out_of_domain',
-        answer: oodAnswer,
-        verification: { pass: true, reason: 'out_of_domain_terminal' },
+        verification: {
+          pass: false,
+          outcome: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          interceptedFrom: null,
+          isInterception: false,
+          status: VERIFICATION_OUTCOME.ESCALATION_GUIDANCE,
+          reason: 'out_of_domain_terminal',
+          isGrounded: false,
+          handledSafely: true
+        },
         arbitrated: { accepted: [], rejected: [] },
         arbitratedEvidence: { accepted: [], rejected: [] }
       };
@@ -543,7 +552,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
             const synthesis = await synthesizeAnswer(sub.frame, replanResult.arbitrated);
             if (synthesis.success && synthesis.answer) {
               const verification = verifyFinalAnswer(synthesis.answer, sub.frame, replanResult.arbitrated);
-              if (verification.pass) {
+              if (verification.pass || verification.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL) {
                 sub.answer = synthesis.answer;
                 sub.verification = verification;
                 sub.answerability = replanResult.answerability.status;

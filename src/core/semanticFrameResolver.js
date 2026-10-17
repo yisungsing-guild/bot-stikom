@@ -26,6 +26,7 @@
 const { matchCanonicalEntities, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
 const { evaluateContextDependency } = require('./contextResolver');
 const { detectQueryLanguage } = require('../utils/languageDetector');
+const { ACADEMIC_SCOPE_STATUS, resolveAcademicScope } = require('./academicCatalog');
 const modelSemanticParser = require('./modelSemanticParser');
 const { validateSemanticInterpretation, compareFrames } = require('./semanticInterpretationValidator');
 const logger = require('../logger');
@@ -112,6 +113,21 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
   // If query is a general available programs or education levels listing inquiry without specific discipline mention
   if (/\b(?:apa\s+saja|ada\s+apa|daftar\s+prodi|list\s+jurusan|bisa\s+ambil\s+apa)\b/i.test(q) &&
       !/\b(?:apakah\s+(?:ada|tersedia)|ada\s+nggak|punya)\b/i.test(q)) {
+    return null;
+  }
+
+  // If query is asking for program recommendation / fit based on hobbies, interests, or topic skills
+  let hasSignals = false;
+  try {
+    const { detectProgramFitSignals } = require('../engine/programFitReasoning');
+    if (typeof detectProgramFitSignals === 'function') {
+      hasSignals = detectProgramFitSignals(q).length > 0;
+    }
+  } catch (_) {}
+
+  if ((/\b(?:cocok(?:nya)?|rekomendasi|saran|pas|bingung)\b/i.test(q) &&
+      /\b(?:jurusan|prodi|program\s*studi|kuliah)\b/i.test(q)) ||
+      (hasSignals && /\b(?:tertarik|suka|minat|hobi|passion|senang|bakat)\b/i.test(q))) {
     return null;
   }
 
@@ -421,17 +437,51 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   // 6. Available Programs Listing (Generic Scope vs Specific Entity)
   const hasSpecificProgramEntity = entities.some(e => e.family === 'academic_program' && e.type === 'program');
   const hasStudentOrgEntity = entities.some(e => e.family === 'student_organization');
-  const hasProgramConcept = /\b(?:program\s*studi|jurusan|prodi|fakultas|pilihan\s+kuliah|kuliah|study\s+programs?|majors?|departments?|facult(?:y|ies)|(?:undergraduate|bachelor|master|postgraduate|diploma|degree|academic|study)\s+programs?)(?:nya)?\b/i.test(normalized);
+  // 6b. Program Recommendation Inquiry (e.g. "cocoknya masuk prodi apa", "rekomendasi jurusan", "suka coding software dan bikin aplikasi", "jurusan apa yang pas")
+  const isNonAcademicInquiry = entities.some(e => ['scholarship', 'campus_service', 'student_organization', 'facility', 'campus_facility'].includes(e.family)) ||
+    /\b(?:beasiswa|kip\s*kuliah|kip-?k|inkubator|inbis|career\s+center|cdc\b|ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|ormawa|hima\b|himaprodi|student\s+clubs?|student\s+organizations?|asrama|laboratorium|fasilitas)\b/i.test(normalized);
+
+  let hasFitSignals = false;
+  try {
+    const { detectProgramFitSignals } = require('../engine/programFitReasoning');
+    if (typeof detectProgramFitSignals === 'function') {
+      hasFitSignals = detectProgramFitSignals(normalized).length > 0;
+    }
+  } catch (_) {}
+
+  const isRecommendationInquiry = !isNonAcademicInquiry && (
+    (/\b(?:rekomendasi|rekomendasikan|cocok(?:nya)?|saran|bingung\s+pilih|pas)\b/i.test(normalized) &&
+     (/\b(?:prodi|jurusan|program\s*studi|kuliah)\b/i.test(normalized) || /\b(?:suka|minat|hobi|bakat|passion)\b/i.test(normalized))) ||
+    (hasFitSignals && /\b(?:suka|minat|hobi|bakat|passion|tertarik|senang|ingin|cita-?cita|pas|cocok)\b/i.test(normalized))
+  );
+
+  if (isRecommendationInquiry) {
+    return {
+      domain: 'ACADEMIC_RECOMMENDATION',
+      intent: 'PROGRAM_RECOMMENDATION',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_PROGRAM_RECOMMENDATION',
+      aspects: ['recommendation', 'program_fit'],
+      relation: 'PROGRAM_RECOMMENDATION'
+    };
+  }
+
+  // 6a. Available Academic Programs List (Generic query across all programs)
+  const hasProgramConcept = /\b(?:program\s*(?:studi|sarjana|diploma|magister|doktor)?|jurusan|prodi|fakultas|jenjang|pilihan\s+kuliah|kuliah|study\s+programs?|majors?|departments?|facult(?:y|ies)|(?:undergraduate|bachelor|master|postgraduate|doctoral|doctorate|phd|diploma|degree|academic|study)\s+programs?|s1|s2|s3|d3|d4)(?:nya)?\b/i.test(normalized);
   const hasListingConcept = /\b(?:apa\s+saja|ada\s+apa|pilihan|daftar|list|opsi|tersedia|bisa\s+ambil\s+apa|punya|mau\s+lihat|pilihannya|apa|what(?:\s+are|\s+is)?|which|available|offered|offer|options?)\b/i.test(normalized);
 
   const isAvailableProgramsInquiry = !hasSpecificProgramEntity && !hasStudentOrgEntity && hasProgramConcept && hasListingConcept &&
     !/\b(?:biaya|bayar|daftar\s+ulang|syarat|akreditasi|kurikulum|matkul|beasiswa|lokasi|jadwal|bingung|rekomendasi|rekomendasikan|cocok|saran|minat|himpunan|himaprodi|hima|ukm|ormawa|fee|fees|cost|tuition|scholarship|requirements?)\b/i.test(normalized);
 
   if (isAvailableProgramsInquiry) {
-    const isS1Only = /\b(s1|sarjana|bachelor|undergraduate)\b/i.test(normalized) && !/\b(s2|d3|master|graduate|postgraduate|diploma|associate)\b/i.test(normalized);
-    const isS2Only = /\b(s2|magister|pascasarjana|master|graduate|postgraduate)\b/i.test(normalized);
-    const isD3Only = /\b(d3|diploma|associate)\b/i.test(normalized);
-    const scopeLevel = isS1Only ? 'S1' : (isS2Only ? 'S2' : (isD3Only ? 'D3' : 'ALL'));
+    const scopeResolution = resolveAcademicScope(normalized + ' ' + raw);
+    let scopeLevel = 'ALL';
+    if (scopeResolution.status === ACADEMIC_SCOPE_STATUS.SUPPORTED) {
+      scopeLevel = scopeResolution.level;
+    } else if (scopeResolution.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED) {
+      scopeLevel = 'UNSUPPORTED';
+    }
 
     return {
       domain: 'ACADEMIC_PROGRAM',
@@ -441,7 +491,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       desiredAction: 'PROVIDE_PROGRAMS_LIST',
       aspects: ['program_list', 'degrees'],
       relation: `AVAILABLE_PROGRAMS_${scopeLevel}`,
-      scopeLevel
+      scopeLevel,
+      academicScope: scopeResolution
     };
   }
 
@@ -502,12 +553,18 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 11. Organization & UKM Inquiry
+  const isStudentOrgKeyword = /\b(ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|ormawa|hima\b|himaprodi|senat\s+mahasiswa|balma|ekstrakurikuler|student\s+clubs?|student\s+organizations?|campus\s+clubs?)\b/i.test(normalized);
+  const isActivityInterest = /\b(gaming|game|gamer|esport|esports|e-sports|olahraga|olah\s*raga|sports?|futsal|basket|badminton|bulutangkis|paduan\s+suara|teater|tari|musik|music|band|robotik|ksl)\b/i.test(normalized);
+  const isJoinVerb = /\b(?:bergabung|gabung|join)\b/i.test(normalized);
+  const candidateDomain = sessionData.activeDomain || sessionData.lastDomain || sessionData.data?.activeDomain || sessionData.data?.lastDomain || null;
+
   if (entities.some(e => e.family === 'student_organization') ||
-      /\b(ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi\s+mahasiswa|ormawa|hima\b|himaprodi|senat\s+mahasiswa|balma|ekstrakurikuler)\b/i.test(normalized) ||
-      /\b(gaming|game|gamer|esport|esports|e-sports|futsal|basket|badminton|bulutangkis|paduan\s+suara|teater|tari|robotik|ksl)\b/i.test(normalized)) {
+      isStudentOrgKeyword ||
+      (isActivityInterest && (isStudentOrgKeyword || /\b(?:suka|minat|hobi|bakat|passion)\b/i.test(normalized) || !/\b(?:prodi|jurusan|kuliah|s1|d3|s2)\b/i.test(normalized))) ||
+      (isJoinVerb && (candidateDomain === 'ORGANIZATION_UKM' || isStudentOrgKeyword))) {
     const isEsports = /\b(gaming|game|gamer|esport|esports|e-sports)\b/i.test(normalized);
-    const isSport = /\b(olahraga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(normalized);
-    const isArts = /\b(seni|budaya|tari|musik|band|teater|paduan\s+suara|fotografi)\b/i.test(normalized);
+    const isSport = /\b(olahraga|olah\s*raga|sports?|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(normalized);
+    const isArts = /\b(seni|budaya|tari|musik|music|band|teater|paduan\s+suara|fotografi)\b/i.test(normalized);
     const isTech = /\b(penalaran|robotika|linux|coding|pemrograman|syntax)\b/i.test(normalized);
 
     const aspects = ['student_organization', 'activities', 'ukm'];
@@ -631,7 +688,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 15. Admission / PMB Schedule & General Topic Opener
   if (/\b(?:pmb|pendaftaran|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
-      (/\bdaftar\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan)\b/i.test(normalized))) {
+      (/\bdaftar\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized))) {
     const isNow = TEMPORAL_NOW_REGEX.test(normalized);
     if (isNow && /\b(?:gelombang|buka|tutup|jadwal|periode|kapan)\b/i.test(normalized)) {
       return {
@@ -839,6 +896,8 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     academicLevel = 'S1';
   } else if (/\b(?:d3|diploma|ahli madya|associate)\b/i.test(normalized) || /\b(?:d3|diploma|ahli madya|associate)\b/i.test(raw) || effectiveTargetEntities.some(e => /^D3\b/i.test(e.canonical || ''))) {
     academicLevel = 'D3';
+  } else if (/\b(?:s[- ]?3|doktor(?:al)?|doctor(?:ate)?|ph\.?d|d[- ]?4|diploma\s*[- ]?4|diploma\s*[- ]?iv|sarjana\s+terapan)\b/i.test(normalized) || /\b(?:s[- ]?3|doktor(?:al)?|doctor(?:ate)?|ph\.?d|d[- ]?4|diploma\s*[- ]?4|diploma\s*[- ]?iv|sarjana\s+terapan)\b/i.test(raw)) {
+    academicLevel = 'UNSUPPORTED';
   }
 
   // Re-align S1 Sistem Informasi to S2 Sistem Informasi if academic level is S2
@@ -903,10 +962,19 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   const isMultiTarget = effectiveTargetEntities.length > 1 &&
     /\b(?:dan|serta|maupun|dan juga)\b/i.test(normalized);
 
+  const academicScope = inferred.academicScope || resolveAcademicScope(raw);
+  const effectiveScopeLevel = academicScope.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED
+    ? 'UNSUPPORTED'
+    : (academicScope.status === ACADEMIC_SCOPE_STATUS.SUPPORTED
+      ? academicScope.level
+      : (inferred.scopeLevel || (inferred.intent === 'AVAILABLE_PROGRAMS_LIST' ? (academicLevel || 'ALL') : null)));
+
   const oldFrame = {
     rawQuery: raw,
     normalizedQuery: normalized,
     academicLevel,
+    academicScope,
+    scopeLevel: effectiveScopeLevel,
     domain,
     intent,
     retrievalRequired: inferred.retrievalRequired !== false,
@@ -1147,11 +1215,20 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
 
     if (syncFrame.domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn && (!hasValidModelConcept || isModelOOD)) {
       domain = 'OUT_OF_DOMAIN';
-    } else if (['CONVERSATIONAL', 'SCHOLARSHIP', 'ORGANIZATION_UKM', 'FACILITIES', 'INTERNATIONAL'].includes(syncFrame.domain)) {
+    } else if (['CONVERSATIONAL', 'SCHOLARSHIP', 'ORGANIZATION_UKM', 'FACILITIES', 'INTERNATIONAL', 'CAMPUS_SERVICE', 'CAREER_CENTER', 'ADMISSION_TRACK', 'ADMISSION_QUOTA'].includes(syncFrame.domain)) {
       domain = syncFrame.domain;
+    } else if (resolvedEntities.some(e => e.family === 'campus_service' || e.inferredCategory === 'campus_service') || (validated.candidateEntities || []).some(e => e.inferredCategory === 'campus_service')) {
+      domain = 'CAMPUS_SERVICE';
+    } else if (resolvedEntities.some(e => e.family === 'scholarship' || e.inferredCategory === 'scholarship') || (validated.candidateEntities || []).some(e => e.inferredCategory === 'scholarship')) {
+      domain = 'SCHOLARSHIP';
+    } else if (resolvedEntities.some(e => e.family === 'student_organization' || e.inferredCategory === 'student_organization') || (validated.candidateEntities || []).some(e => e.inferredCategory === 'student_organization')) {
+      domain = 'ORGANIZATION_UKM';
     } else if (interpretation.semanticConcepts && interpretation.semanticConcepts.length > 0) {
       const primaryConcept = interpretation.semanticConcepts[0];
-      if (primaryConcept === 'FINANCIAL_COST') domain = 'TUITION_FEE';
+      if (primaryConcept === 'FINANCIAL_COST') {
+        const isScholarship = syncFrame.domain === 'SCHOLARSHIP' || /\b(?:beasiswa|kip\s*kuliah|kip-?k)\b/i.test(rawQuery);
+        domain = isScholarship ? 'SCHOLARSHIP' : 'TUITION_FEE';
+      }
       else if (primaryConcept === 'ADMISSION_ONBOARDING') domain = 'PMB';
       else if (primaryConcept === 'ACADEMIC_OFFERING') domain = 'ACADEMIC_PROGRAM';
       else if (primaryConcept === 'QUALITY_ACCREDITATION') {
@@ -1159,8 +1236,11 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         domain = hasAccreditationSemantics ? 'ACCREDITATION' : syncFrame.domain;
       }
       else if (primaryConcept === 'CAMPUS_LIFE') {
-        const isOrg = /\b(?:himpunan|hima|himaprodi|ormawa|ukm|organisasi)\b/i.test(rawQuery) || syncFrame.domain === 'ORGANIZATION_UKM';
-        domain = isOrg ? 'ORGANIZATION_UKM' : 'FACILITIES';
+        const isOrg = /\b(?:himpunan|hima|himaprodi|ormawa|ukm|organisasi|student\s+clubs?|student\s+organizations?)\b/i.test(rawQuery) || syncFrame.domain === 'ORGANIZATION_UKM';
+        const isService = /\b(?:inbis|inkubator|career|cdc)\b/i.test(rawQuery) || syncFrame.domain === 'CAMPUS_SERVICE' || syncFrame.domain === 'CAREER_CENTER' || (validated.candidateEntities || []).some(e => e.inferredCategory === 'campus_service');
+        if (isOrg) domain = 'ORGANIZATION_UKM';
+        else if (isService) domain = syncFrame.domain === 'CAREER_CENTER' ? 'CAREER_CENTER' : 'CAMPUS_SERVICE';
+        else domain = 'FACILITIES';
       }
       else if (primaryConcept === 'INTERNATIONAL_STUDY') domain = 'INTERNATIONAL';
       else if (primaryConcept === 'CAREER_EMPLOYMENT') {
@@ -1191,17 +1271,43 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       intent = 'CONVERSATIONAL_GREETING';
       domain = 'CONVERSATIONAL';
     } else if (speechAct === 'SEEK_ADVICE') {
-      intent = 'PROGRAM_RECOMMENDATION';
-      domain = 'ACADEMIC_RECOMMENDATION';
+      if (domain === 'SCHOLARSHIP' || syncFrame.domain === 'SCHOLARSHIP' || /\b(?:beasiswa|kip\s*kuliah|kip-?k)\b/i.test(rawQuery)) {
+        domain = 'SCHOLARSHIP';
+        intent = 'SCHOLARSHIP_INQUIRY';
+      } else if (domain === 'CAMPUS_SERVICE' || syncFrame.domain === 'CAMPUS_SERVICE' || /\b(?:inkubator|inbis)\b/i.test(rawQuery) || (validated.candidateEntities || []).some(e => e.inferredCategory === 'campus_service')) {
+        domain = 'CAMPUS_SERVICE';
+        intent = 'CAMPUS_SERVICE_INQUIRY';
+      } else if (domain === 'ORGANIZATION_UKM' || syncFrame.domain === 'ORGANIZATION_UKM' || /\b(?:ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi|ormawa|hima\b|himaprodi|ekskul|ekstrakurikuler|student\s+clubs?|student\s+organizations?)\b/i.test(rawQuery) || (validated.candidateEntities || []).some(e => e.inferredCategory === 'student_organization')) {
+        domain = 'ORGANIZATION_UKM';
+        intent = 'ORGANIZATION_INQUIRY';
+      } else if (domain === 'CAREER_CENTER' || syncFrame.domain === 'CAREER_CENTER' || /\b(?:career\s+center|cdc\b|magang|internship)\b/i.test(rawQuery)) {
+        domain = 'CAREER_CENTER';
+        intent = 'CAREER_CENTER_INQUIRY';
+      } else {
+        intent = 'PROGRAM_RECOMMENDATION';
+        domain = 'ACADEMIC_RECOMMENDATION';
+      }
     } else if (speechAct === 'COMPARE') {
       intent = 'PROGRAM_COMPARISON';
       domain = 'ACADEMIC_PROGRAM';
     } else if (speechAct === 'DISCOVER_LIST') {
-      if (aspects.includes('fee') || primaryConcept === 'FINANCIAL_COST' || domain === 'TUITION_FEE') {
+      if (domain === 'SCHOLARSHIP' || syncFrame.domain === 'SCHOLARSHIP' || /\b(?:beasiswa|kip\s*kuliah|kip-?k)\b/i.test(rawQuery)) {
+        domain = 'SCHOLARSHIP';
+        intent = 'SCHOLARSHIP_INQUIRY';
+      } else if (domain === 'CAMPUS_SERVICE' || syncFrame.domain === 'CAMPUS_SERVICE' || /\b(?:inkubator|inbis)\b/i.test(rawQuery) || (validated.candidateEntities || []).some(e => e.inferredCategory === 'campus_service')) {
+        domain = 'CAMPUS_SERVICE';
+        intent = 'CAMPUS_SERVICE_INQUIRY';
+      } else if (domain === 'ORGANIZATION_UKM' || syncFrame.domain === 'ORGANIZATION_UKM' || /\b(?:ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi|ormawa|hima\b|himaprodi|ekskul|ekstrakurikuler|student\s+clubs?|student\s+organizations?)\b/i.test(rawQuery) || (validated.candidateEntities || []).some(e => e.inferredCategory === 'student_organization')) {
+        domain = 'ORGANIZATION_UKM';
+        intent = 'ORGANIZATION_INQUIRY';
+      } else if (domain === 'CAREER_CENTER' || syncFrame.domain === 'CAREER_CENTER' || /\b(?:career\s+center|cdc\b|magang|internship)\b/i.test(rawQuery)) {
+        domain = 'CAREER_CENTER';
+        intent = 'CAREER_CENTER_INQUIRY';
+      } else if (aspects.includes('fee') || primaryConcept === 'FINANCIAL_COST' || domain === 'TUITION_FEE') {
         intent = 'TUITION_FEE_INQUIRY';
         domain = 'TUITION_FEE';
         if (!aspects.includes('components')) aspects.push('components');
-      } else if (domain === 'FACILITIES' || aspects.includes('facilities') || aspects.includes('lab') || aspects.includes('campus_infrastructure') || primaryConcept === 'CAMPUS_LIFE') {
+      } else if (domain === 'FACILITIES' || aspects.includes('facilities') || aspects.includes('lab') || aspects.includes('campus_infrastructure') || (primaryConcept === 'CAMPUS_LIFE' && !syncFrame.domain?.includes('SERVICE') && !(validated.candidateEntities || []).some(e => e.inferredCategory === 'campus_service'))) {
         intent = 'FACILITY_INQUIRY';
         domain = 'FACILITIES';
       } else if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery)) {
@@ -1219,7 +1325,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       } else if (domain === 'INTERNATIONAL' || primaryConcept === 'INTERNATIONAL_STUDY' || resolvedEntities.some(e => e.family === 'international_program')) {
         intent = 'INTERNATIONAL_PROGRAM_INFO';
         domain = 'INTERNATIONAL';
-      } else if (resolvedEntities.length > 0 && !resolvedEntities.every(e => e.type === 'academic_scope')) {
+      } else if (resolvedEntities.length > 0 && !resolvedEntities.every(e => e.type === 'academic_scope' || e.family === 'academic_scope' || e.type === 'academic_level')) {
         intent = 'PROGRAM_OVERVIEW';
         domain = 'ACADEMIC_PROGRAM';
       } else {
@@ -1227,7 +1333,21 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         domain = 'ACADEMIC_PROGRAM';
       }
     } else if (speechAct === 'EXPLAIN_PROCEDURE' || speechAct === 'INQUIRE_PROPERTY' || speechAct === 'VERIFY_STATUS') {
-      if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery)) {
+      if (domain === 'SCHOLARSHIP' || syncFrame.domain === 'SCHOLARSHIP' || /\b(?:beasiswa|kip\s*kuliah|kip-?k)\b/i.test(rawQuery)) {
+        domain = 'SCHOLARSHIP';
+        intent = 'SCHOLARSHIP_INQUIRY';
+      } else if (domain === 'CAMPUS_SERVICE' || syncFrame.domain === 'CAMPUS_SERVICE' || /\b(?:inkubator|inbis)\b/i.test(rawQuery) || (validated.candidateEntities || []).some(e => e.inferredCategory === 'campus_service')) {
+        domain = 'CAMPUS_SERVICE';
+        intent = 'CAMPUS_SERVICE_INQUIRY';
+      } else if (domain === 'ORGANIZATION_UKM' || syncFrame.domain === 'ORGANIZATION_UKM' ||
+        /\b(?:ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi|ormawa|hima\b|himaprodi|student\s+clubs?|student\s+organizations?)\b/i.test(rawQuery) ||
+        (/\b(?:bergabung|gabung|join)\b/i.test(rawQuery) && (sessionData.activeDomain === 'ORGANIZATION_UKM' || sessionData.lastDomain === 'ORGANIZATION_UKM'))) {
+        domain = 'ORGANIZATION_UKM';
+        intent = 'ORGANIZATION_INQUIRY';
+      } else if (domain === 'CAREER_CENTER' || syncFrame.domain === 'CAREER_CENTER' || /\b(?:career\s+center|cdc\b|magang|internship)\b/i.test(rawQuery)) {
+        domain = 'CAREER_CENTER';
+        intent = 'CAREER_CENTER_INQUIRY';
+      } else if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery)) {
         intent = 'THESIS_REQUIREMENTS';
         domain = 'ACADEMIC_CURRICULUM';
       } else if (domain === 'INTERNATIONAL' || syncFrame.domain === 'INTERNATIONAL' || primaryConcept === 'INTERNATIONAL_STUDY' || resolvedEntities.some(e => e.family === 'international_program') || /\b(pertukaran\s+(?:pelajar|mahasiswa)|student\s+exchange)\b/i.test(rawQuery)) {
@@ -1279,14 +1399,23 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     const rawDetected = detectedUnsupportedMention || syncFrame.unsupportedProgramName;
     const isUnsupported = Boolean(rawDetected);
     const unsupportedName = isUnsupported ? rawDetected : null;
-
     const isOOD = domain === 'OUT_OF_DOMAIN';
+
+    const academicScope = syncFrame.academicScope || resolveAcademicScope(rawQuery);
+    const effectiveScopeLevel = academicScope.status === ACADEMIC_SCOPE_STATUS.UNSUPPORTED
+      ? 'UNSUPPORTED'
+      : (academicScope.status === ACADEMIC_SCOPE_STATUS.SUPPORTED
+        ? academicScope.level
+        : (syncFrame.scopeLevel ||
+          (effectiveLevel === 'S1' ? 'S1' : (effectiveLevel === 'S2' ? 'S2' : (effectiveLevel === 'D3' ? 'D3' : (intent === 'AVAILABLE_PROGRAMS_LIST' ? 'ALL' : null))))));
 
     return {
       rawQuery,
       speechAct,
       normalizedQuery: syncFrame.normalizedQuery,
-      academicLevel: validated.scopeConstraints?.academicLevel || syncFrame.academicLevel || null,
+      academicLevel: effectiveLevel,
+      academicScope,
+      scopeLevel: effectiveScopeLevel,
       domain: isUnsupported ? 'UNSUPPORTED_PROGRAM' : domain,
       intent: isUnsupported ? 'UNSUPPORTED_PROGRAM_INQUIRY' : intent,
       retrievalRequired: speechAct !== 'GENERAL_GREETING' && !isUnsupported && !isOOD,
