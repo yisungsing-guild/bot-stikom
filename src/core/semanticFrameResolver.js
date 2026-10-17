@@ -358,8 +358,10 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     const aspects = [];
     let relation = 'PROGRAM_DETAILS';
 
-    const hasLocationSignal = /\b(?:full\s+di\s+stikom|di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|kuliah\s+di\s+luar|ke\s+luar\s+negeri|onsite|offline|china|cina|malaysia|dalian)\b/i.test(normalized) ||
-      /\b(?:full\s+di\s+stikom|di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|kuliah\s+di\s+luar|ke\s+luar\s+negeri|onsite|offline|china|cina|malaysia|dalian)\b/i.test(unstemmed);
+    const hasLocationSignal = /\b(?:full\s+di\s+stikom|di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|kuliah\s+di\s+luar|ke\s+luar\s+negeri|onsite|offline|where(?:\s+is)?|study\s+location)\b/i.test(normalized) ||
+      /\b(?:full\s+di\s+stikom|di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|kuliah\s+di\s+luar|ke\s+luar\s+negeri|onsite|offline|where(?:\s+is)?|study\s+location)\b/i.test(unstemmed) ||
+      /\b(?:kuliah|studi|perkuliahan|pergi|berangkat|harus|wajib)\s+(?:ke|di)\s+(?:china|cina|malaysia|dalian)\b/i.test(normalized) ||
+      /\b(?:kuliah|studi|perkuliahan|pergi|berangkat|harus|wajib)\s+(?:ke|di)\s+(?:china|cina|malaysia|dalian)\b/i.test(unstemmed);
 
     if (hasLocationSignal) {
       intent = 'STUDY_LOCATION';

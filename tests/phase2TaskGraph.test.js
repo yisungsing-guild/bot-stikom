@@ -33,6 +33,7 @@ const {
 } = require('../src/reasoning/taskGraphExecutor');
 const { getSession, updateSession } = require('../src/core/conversationState');
 const { executePhase2Bridge } = require('../src/reasoning/phase2Bridge');
+const plannerModule = require('../src/reasoning/phase2Planner');
 
 describe('Phase 2 Step 5: Task Graph Contract, Topology & Execution Suite', () => {
 
@@ -675,18 +676,18 @@ describe('Phase 2 Step 5: Task Graph Contract, Topology & Execution Suite', () =
         rootTaskIds: ['t1'],
         nodes: [{ taskId: 't1', taskType: TASK_TYPE.RETRIEVAL_QUERY, criticality: TASK_CRITICALITY.REQUIRED, dependsOn: [], input: { queryText: 'q' } }]
       });
-      let callCount = 0;
+      const spy = jest.spyOn(plannerModule, 'buildExecutionPlan').mockImplementationOnce(async () => {
+        // Delay to simulate timeout in bridge
+        await new Promise(r => setTimeout(r, 3500));
+        return { success: true, plan: { planType: 'DIRECT' } };
+      });
       const mockPhase1 = jest.fn(async () => {
-        callCount++;
-        if (callCount === 1) {
-          // Delay to simulate timeout in bridge
-          await new Promise(r => setTimeout(r, 3500));
-        }
         return { answer: 'timeout fallback answer' };
       });
-      const res = await executePhase2Bridge(chatId, 'q', { taskGraph: graph }, mockPhase1);
+      const res = await executePhase2Bridge(chatId, 'q', { taskGraph: graph, timeoutMs: 2500 }, mockPhase1);
       expect(res.phase2Meta.fallbackTriggered).toBe(true);
       expect(res.phase2Meta.handledBy).toBe('phase1_fallback');
+      spy.mockRestore();
     }, 10000);
 
     test('41. finalization failure does not commit unverified context', async () => {

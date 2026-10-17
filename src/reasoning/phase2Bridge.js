@@ -66,9 +66,9 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
   let timedOut = false;
 
   // Execution cutoff: when real LLM is available, use extended budget; otherwise use 10000ms
-  const defaultBridgeTimeoutMs = process.env.OPENAI_API_KEY
-    ? (parseInt(process.env.PHASE2_BRIDGE_TIMEOUT_MS, 10) || 25000)
-    : 10000;
+  const defaultBridgeTimeoutMs = process.env.PHASE2_BRIDGE_TIMEOUT_MS
+    ? parseInt(process.env.PHASE2_BRIDGE_TIMEOUT_MS, 10)
+    : (process.env.OPENAI_API_KEY ? 25000 : 10000);
   const bridgeTimeoutMs = options.timeoutMs || defaultBridgeTimeoutMs;
   let timeoutHandle = null;
   const timeoutPromise = new Promise((_, reject) => {

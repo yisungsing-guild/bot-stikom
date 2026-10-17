@@ -246,7 +246,7 @@ describe('Phase 2 Step 3: Bounded Reflection & Controlled Replan', () => {
     });
 
     const chatId = 'test_replan_timeout_' + Date.now();
-    const result = await processTurn(chatId, 'biaya kuliah sistem komputer per semester?');
+    const result = await processTurn(chatId, 'biaya kuliah sistem komputer per semester?', { timeoutMs: 2500 });
 
     expect(result.finalAnswer).toMatch(/sistem komputer/i);
     expect(result.phase2Meta.handledBy).toBe('phase1_fallback');

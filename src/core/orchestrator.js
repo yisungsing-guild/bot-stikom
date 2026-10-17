@@ -40,10 +40,10 @@ const { VERIFICATION_OUTCOME } = require('../reasoning/contracts');
  * If Phase 2 is disabled, runs Phase 1 deterministic pipeline directly.
  * If Phase 2 is disabled and Phase 2 Shadow Mode is enabled, fires shadow evaluation asynchronously.
  */
-async function processTurn(chatId, rawQuery, { executeDispatch = false, executionMode } = {}) {
+async function processTurn(chatId, rawQuery, { executeDispatch = false, executionMode, ...restOptions } = {}) {
   const isShadowMode = executionMode === 'SHADOW';
   if (isPhase2Enabled()) {
-    const bridgeResult = await executePhase2Bridge(chatId, rawQuery, { executeDispatch, executionMode }, (cId, q, opt) => {
+    const bridgeResult = await executePhase2Bridge(chatId, rawQuery, { executeDispatch, executionMode, ...restOptions }, (cId, q, opt) => {
       return runPhase1DeterministicPipeline(cId, q, opt);
     });
 

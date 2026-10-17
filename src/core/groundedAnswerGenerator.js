@@ -449,6 +449,35 @@ function extractCareersFromEvidence(chunks) {
   return Array.from(careers);
 }
 
+function extractYangDipelajariFromEvidence(chunks, entityName = '') {
+  if (!Array.isArray(chunks)) return [];
+  const subjects = new Set();
+  const entBase = entityName.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase();
+
+  for (const c of chunks) {
+    const rawText = c.text || c.chunk || '';
+    const lines = rawText.split('\n');
+    for (const line of lines) {
+      if (entBase && !line.toLowerCase().includes(entBase) && lines.length > 1) {
+        continue;
+      }
+      const m = line.match(/(?:Yang\s+Dipelajari|col3)\s*:\s*([^|\n]+)/i);
+      if (m) {
+        const val = m[1].trim();
+        if (val && !/^(?:Yang Dipelajari|col\d+|prodi)$/i.test(val)) {
+          val.split(/,|;/).forEach(s => {
+            const item = s.trim();
+            if (item && item.length > 2 && item.length < 70 && !/ringkasan|sheet/i.test(item)) {
+              subjects.add(item);
+            }
+          });
+        }
+      }
+    }
+  }
+  return Array.from(subjects);
+}
+
 function extractAccreditationFromEvidence(chunks, entityName = '') {
   if (!Array.isArray(chunks)) return null;
   for (const c of chunks) {
@@ -1052,8 +1081,11 @@ Untuk informasi pendaftaran dan kegiatan ormawa/UKM lebih lanjut, silakan menghu
     return appendMissingAspectNote(exchangeAnswer);
   }
 
-  const isCurriculumInquiry = semanticFrame.domain === 'ACADEMIC_CURRICULUM' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses'].includes(a)));
+  const isCurriculumInquiry = (semanticFrame.domain === 'ACADEMIC_CURRICULUM' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses'].includes(a)))) &&
+    !semanticFrame.isComparison &&
+    semanticFrame.intent !== 'PROGRAM_COMPARISON' &&
+    targetEntities.length <= 1;
 
   if (isCurriculumInquiry) {
     const isSk = /\b(sistem komputer|sk)\b/i.test(entityLabel) || /\b(sistem komputer|sk)\b/i.test(rawQuery);
@@ -1452,6 +1484,7 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
     // 1. Multi-entity comparison
     if (targetEntities.length > 1) {
       const entityBlocks = [];
+      const diffSummaries = [];
       for (const ent of targetEntities) {
         const entBase = ent.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase();
         const entChunks = accepted.filter(c => {
@@ -1462,27 +1495,52 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
         const activeChunks = entChunks.length > 0 ? entChunks : accepted;
         const careers = extractCareersFromEvidence(activeChunks);
         const focusSentences = extractOverviewFromEvidence(activeChunks, ent);
+        const subjects = extractYangDipelajariFromEvidence(activeChunks, ent);
 
         let block = `**${ent}**:\n`;
         if (focusSentences.length > 0) {
           const focusLabel = userLang === 'en' ? 'Core Focus' : 'Fokus Utama';
           block += `• **${focusLabel}**: ${focusSentences[0]}\n`;
         }
+        if (subjects.length > 0) {
+          const subjectLabel = userLang === 'en' ? 'What You Study' : 'Yang Dipelajari';
+          block += `• **${subjectLabel}**: ${subjects.slice(0, 8).join(', ')}\n`;
+        }
         if (careers.length > 0) {
           const careerLabel = userLang === 'en' ? 'Career Prospects' : 'Peluang Kerja';
           block += `• **${careerLabel}**: ${careers.slice(0, 8).join(', ')}\n`;
         }
         entityBlocks.push(block);
+
+        if (subjects.length > 0) {
+          const topSub = subjects.slice(0, 3).join(', ');
+          diffSummaries.push(userLang === 'en'
+            ? `- **${ent}**: focuses primarily on ${topSub}.`
+            : `- **${ent}**: berfokus pada ${topSub}.`);
+        } else if (focusSentences.length > 0) {
+          const snippet = focusSentences[0].split(/[.,;]/)[0].trim();
+          diffSummaries.push(userLang === 'en'
+            ? `- **${ent}**: focuses on ${snippet}.`
+            : `- **${ent}**: berfokus pada ${snippet}.`);
+        }
       }
+
       if (entityBlocks.length >= 2) {
+        const diffTitle = userLang === 'en' ? 'Key Differences' : 'Perbedaan Utama';
+        const diffSection = diffSummaries.length >= 2
+          ? `\n**${diffTitle}**:\n${diffSummaries.join('\n')}\n`
+          : '';
+
         if (userLang === 'en') {
           let compAnswer = `Here is the comparison between the study programs at ITB STIKOM Bali you inquired about:\n\n` +
             entityBlocks.join('\n') +
+            (diffSection ? `\n${diffSection}` : '') +
             `\nFor further details regarding curriculum differences, please visit pmb.stikom-bali.ac.id or contact campus admissions.`;
           return appendMissingAspectNote(compAnswer);
         }
         let compAnswer = `Berikut perbandingan program studi di ITB STIKOM Bali yang Kakak tanyakan:\n\n` +
           entityBlocks.join('\n') +
+          (diffSection ? `\n${diffSection}` : '') +
           `\nUntuk informasi lebih detail mengenai kurikulum masing-masing program studi, silakan kunjungi portal pmb.stikom-bali.ac.id atau hubungi layanan admisi kampus.`;
         return appendMissingAspectNote(compAnswer);
       }
