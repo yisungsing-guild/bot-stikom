@@ -13,6 +13,7 @@
 
 const { 
   getCorpusIndex, 
+  ensureCanonicalCorpus,
   CANONICAL_CORPUS_MIN_CHUNKS,
   searchVectorChunksMultiBinding, 
   computeBatchQueryEmbeddings, 
@@ -171,6 +172,61 @@ function getFileContextMap(corpus) {
 }
 
 /**
+ * Systemically extracts academic properties (level, scope, supportedPrograms)
+ * ensuring multi-program documents (e.g. tuition fee matrices covering SI, TI, BD)
+ * are properly classified with scope 'PROGRAM_MULTI' and supported programs.
+ */
+function extractCandidateAcademicProperties(doc = {}, metadata = {}, contextEntities = [], sectionProg = null) {
+  const levels = new Set();
+  if (doc.academicLevel) levels.add(String(doc.academicLevel).toUpperCase());
+  if (metadata.academicLevel) levels.add(String(metadata.academicLevel).toUpperCase());
+  if (Array.isArray(doc.academicLevels)) doc.academicLevels.forEach(l => l && levels.add(String(l).toUpperCase()));
+  if (Array.isArray(metadata.academicLevels)) metadata.academicLevels.forEach(l => l && levels.add(String(l).toUpperCase()));
+
+  if (sectionProg) {
+    const m = sectionProg.match(/\b(S1|S2|D3|D4)\b/i);
+    if (m) levels.add(m[1].toUpperCase());
+  }
+
+  if (Array.isArray(contextEntities)) {
+    for (const ent of contextEntities) {
+      if (typeof ent === 'string') {
+        const m = ent.match(/\b(S1|S2|D3|D4)\b/i);
+        if (m) levels.add(m[1].toUpperCase());
+      }
+    }
+  }
+
+  const progStr = doc.program || metadata.program || '';
+  if (progStr) {
+    const m = progStr.match(/\b(S1|S2|D3|D4)\b/i);
+    if (m) levels.add(m[1].toUpperCase());
+  }
+
+  const academicLevels = Array.from(levels);
+  const academicLevel = doc.academicLevel || metadata.academicLevel || (academicLevels.length > 0 ? academicLevels[0] : null);
+
+  const supportedPrograms = (Array.isArray(doc.supportedPrograms) && doc.supportedPrograms.length > 0)
+    ? doc.supportedPrograms
+    : ((Array.isArray(metadata.supportedPrograms) && metadata.supportedPrograms.length > 0)
+      ? metadata.supportedPrograms
+      : (Array.isArray(contextEntities) && contextEntities.length > 0 ? contextEntities : (progStr ? [progStr] : [])));
+
+  let scope = doc.scope || metadata.scope || null;
+  if (!scope) {
+    if (supportedPrograms.length > 1) {
+      scope = 'PROGRAM_MULTI';
+    } else if (supportedPrograms.length === 1) {
+      scope = 'PROGRAM_SINGLE';
+    } else {
+      scope = 'INSTITUTION';
+    }
+  }
+
+  return { academicLevel, academicLevels, supportedPrograms, scope };
+}
+
+/**
  * Retrieves candidates matching RetrievalPlan
  * Integrates:
  * 1. BM25 Sparse Search over Governed Canonical Corpus (829 chunks)
@@ -188,6 +244,7 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     }
   }
 
+  await ensureCanonicalCorpus(context, { requireCanonical: true });
   const corpus = getCorpusIndex(context, { requireCanonical: true });
   if (!Array.isArray(corpus) || corpus.length < CANONICAL_CORPUS_MIN_CHUNKS) {
     logger.error({
@@ -412,15 +469,7 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
         ? metadata.providedAspects
         : []);
 
-    const academicLevel = doc.academicLevel || metadata.academicLevel ||
-      ((sectionProg && sectionProg.match(/^(S1|S2|D3|D4)\b/i))
-        ? sectionProg.match(/^(S1|S2|D3|D4)\b/i)[0]
-        : ((contextEntities && contextEntities.length === 1 && contextEntities[0].match(/^(S1|S2|D3|D4)\b/i))
-          ? contextEntities[0].match(/^(S1|S2|D3|D4)\b/i)[0]
-          : (doc.program ? (doc.program.match(/^(S1|S2|D3|D4)\b/i) || [])[0] : null)));
-
-    const academicLevels = doc.academicLevels || metadata.academicLevels || (academicLevel ? [academicLevel] : []);
-
+    const { academicLevel, academicLevels, supportedPrograms, scope } = extractCandidateAcademicProperties(doc, metadata, contextEntities, sectionProg);
     const provenanceDocumentId = doc.provenanceDocumentId || metadata.provenanceDocumentId || doc.trainingId || doc.id || null;
 
     return {
@@ -433,12 +482,13 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       rawText,
       chunk: enrichedText,
       source,
+      sourceFile,
       source_file: sourceFile,
       sourceDocument: sourceFile,
       program: doc.program || metadata.program || null,
       canonicalEntity: doc.canonicalEntity || metadata.canonicalEntity || null,
-      scope: doc.scope || metadata.scope || null,
-      supportedPrograms: doc.supportedPrograms || metadata.supportedPrograms || [],
+      scope,
+      supportedPrograms,
       level: doc.level || metadata.level || academicLevel || null,
       correctedLevel: doc.correctedLevel || metadata.correctedLevel || null,
       metadata,
@@ -524,11 +574,7 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           : ((Array.isArray(metadata.providedAspects) && metadata.providedAspects.length > 0)
             ? metadata.providedAspects
             : []);
-        const academicLevel = doc.academicLevel || metadata.academicLevel ||
-          ((contextEntities && contextEntities.length > 0 && contextEntities[0].match(/^(S1|S2|D3|D4)\b/i))
-            ? contextEntities[0].match(/^(S1|S2|D3|D4)\b/i)[0]
-            : (doc.program ? (doc.program.match(/^(S1|S2|D3|D4)\b/i) || [])[0] : null));
-        const academicLevels = doc.academicLevels || metadata.academicLevels || (academicLevel ? [academicLevel] : []);
+        const { academicLevel, academicLevels, supportedPrograms, scope } = extractCandidateAcademicProperties(doc, metadata, contextEntities, null);
         const provenanceDocumentId = doc.provenanceDocumentId || metadata.provenanceDocumentId || doc.trainingId || doc.id || null;
 
         return {
@@ -545,8 +591,8 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           sourceDocument: sourceFile,
           program: doc.program || metadata.program || null,
           canonicalEntity: doc.canonicalEntity || metadata.canonicalEntity || null,
-          scope: doc.scope || metadata.scope || null,
-          supportedPrograms: doc.supportedPrograms || metadata.supportedPrograms || [],
+          scope,
+          supportedPrograms,
           level: doc.level || metadata.level || academicLevel || null,
           correctedLevel: doc.correctedLevel || metadata.correctedLevel || null,
           metadata,
@@ -630,11 +676,7 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           : ((Array.isArray(metadata.providedAspects) && metadata.providedAspects.length > 0)
             ? metadata.providedAspects
             : []);
-        const academicLevel = doc.academicLevel || metadata.academicLevel ||
-          ((contextEntities && contextEntities.length > 0 && contextEntities[0].match(/^(S1|S2|D3|D4)\b/i))
-            ? contextEntities[0].match(/^(S1|S2|D3|D4)\b/i)[0]
-            : (doc.program ? (doc.program.match(/^(S1|S2|D3|D4)\b/i) || [])[0] : null));
-        const academicLevels = doc.academicLevels || metadata.academicLevels || (academicLevel ? [academicLevel] : []);
+        const { academicLevel, academicLevels, supportedPrograms, scope } = extractCandidateAcademicProperties(doc, metadata, contextEntities, sectionProg);
         const provenanceDocumentId = doc.provenanceDocumentId || metadata.provenanceDocumentId || doc.trainingId || doc.id || null;
 
         return {
@@ -650,12 +692,13 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           rawText,
           chunk: enrichedText,
           source,
+          sourceFile,
           source_file: sourceFile,
           sourceDocument: sourceFile,
           program: doc.program || metadata.program || null,
           canonicalEntity: doc.canonicalEntity || metadata.canonicalEntity || null,
-          scope: doc.scope || metadata.scope || null,
-          supportedPrograms: doc.supportedPrograms || metadata.supportedPrograms || [],
+          scope,
+          supportedPrograms,
           level: doc.level || metadata.level || academicLevel || null,
           correctedLevel: doc.correctedLevel || metadata.correctedLevel || null,
           metadata,
@@ -685,6 +728,7 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
         rawText: item.chunk || '',
         chunk: item.chunk || '',
         source: item.source_file || 'pgvector_hybrid',
+        sourceFile: item.source_file || 'pgvector_hybrid',
         source_file: item.source_file || 'pgvector_hybrid',
         sourceDocument: item.source_file || 'pgvector_hybrid',
         metadata: item,

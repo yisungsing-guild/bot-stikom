@@ -68,6 +68,7 @@ data/runtime/*.pid
 !data/runtime/knowledge_source_registry.json
 !data/runtime/knowledge_preparation_manifest.jsonl
 !data/runtime/dynamic_alias_dictionary.json
+!data/runtime/canonical_corpus_manifest.json
 
 # Root-level debug/test scratch files
 /*.out
@@ -151,6 +152,8 @@ tests/*
 !tests/crossDomainArchitectureRegression.test.js
 !tests/academicCatalogScope.test.js
 !tests/corpusIntegrityContract.test.js
+!tests/crossDomainArchitecturalRootCause.test.js
+!tests/corpusHydrationContract.test.js
 tools/
 quarantined_backups/
 

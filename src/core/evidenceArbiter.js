@@ -471,33 +471,44 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   }
 
   // 1.2 Candidate Metadata Single-Program Scope Isolation Gate
-  const candRawProg = candidate ? (candidate.program || candidate.canonicalEntity || '') : '';
-  let candProgCode = candidate?.scope === 'PROGRAM_SINGLE'
-    ? (candidate.program ? String(candidate.program).toUpperCase() : null)
-    : (getProgramCodeFromEntity(candRawProg) || (candidate?.id?.match(/^curr-([a-z0-9]+)/i) ? candidate.id.match(/^curr-([a-z0-9]+)/i)[1].toUpperCase() : null));
+  const isMultiProgramCandidate = candidate?.scope === 'PROGRAM_MULTI' ||
+    (Array.isArray(candidate?.supportedPrograms) && candidate.supportedPrograms.length > 1);
 
-  const isCandidateS2 = candidate?.academicLevel === 'S2' || candidate?.level === 'S2' ||
-    /(?:pascasarjana|magister)/i.test(candidate?.source_file || candidate?.filename || candidate?.sourceDocument || '') ||
-    /\b(?:program pascasarjana|magister sistem informasi|s2 sistem informasi)\b/i.test(candidate?.text || candidate?.chunk || '');
-  if (isCandidateS2 && (candProgCode === 'SI' || candRawProg === 'SI' || !candProgCode)) {
-    candProgCode = 'S2';
-  }
+  if (!isMultiProgramCandidate) {
+    const candRawProg = candidate ? (candidate.program || candidate.canonicalEntity || '') : '';
+    let candProgCode = candidate?.scope === 'PROGRAM_SINGLE'
+      ? (candidate.program ? String(candidate.program).toUpperCase() : null)
+      : (getProgramCodeFromEntity(candRawProg) || (candidate?.id?.match(/^curr-([a-z0-9]+)/i) ? candidate.id.match(/^curr-([a-z0-9]+)/i)[1].toUpperCase() : null));
 
-  if (Array.isArray(targetEntities) && targetEntities.length > 0 && candProgCode) {
-    const targetCodes = targetEntities.map(te => getProgramCodeFromEntity(te)).filter(Boolean);
-    if (targetCodes.length > 0 && !targetCodes.includes(candProgCode)) {
-      return {
-        accepted: false,
-        disposition: 'REJECT_SCOPE_COLLISION',
-        reason: `candidate_scoped_to_program_${candProgCode}_not_${targetCodes.join('_')}`
-      };
+    const hasUndergradLevel = candidate?.academicLevel === 'S1' || candidate?.level === 'S1' ||
+      candidate?.academicLevel === 'D3' || candidate?.level === 'D3' ||
+      (Array.isArray(candidate?.academicLevels) && (candidate.academicLevels.includes('S1') || candidate.academicLevels.includes('D3')));
+
+    const isCandidateS2 = (candidate?.academicLevel === 'S2' || candidate?.level === 'S2' ||
+      /(?:pascasarjana|magister)/i.test(candidate?.source_file || candidate?.filename || candidate?.sourceDocument || '') ||
+      /\b(?:program pascasarjana|magister sistem informasi|s2 sistem informasi)\b/i.test(candidate?.text || candidate?.chunk || '')) &&
+      !hasUndergradLevel;
+
+    if (isCandidateS2 && (candProgCode === 'SI' || candRawProg === 'SI')) {
+      candProgCode = 'S2';
+    }
+
+    if (Array.isArray(targetEntities) && targetEntities.length > 0 && candProgCode) {
+      const targetCodes = targetEntities.map(te => getProgramCodeFromEntity(te)).filter(Boolean);
+      if (targetCodes.length > 0 && !targetCodes.includes(candProgCode)) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_SCOPE_COLLISION',
+          reason: `candidate_scoped_to_program_${candProgCode}_not_${targetCodes.join('_')}`
+        };
+      }
     }
   }
 
   // 1.3 Candidate Metadata Multi-Program Scope Isolation Gate
-  if (candidate && candidate.scope === 'PROGRAM_MULTI') {
-    const supportedPrograms = Array.isArray(candidate.supportedPrograms)
-      ? candidate.supportedPrograms.map(p => String(p).toUpperCase())
+  if (isMultiProgramCandidate || (candidate && candidate.scope === 'PROGRAM_MULTI')) {
+    const supportedPrograms = Array.isArray(candidate.supportedPrograms) && candidate.supportedPrograms.length > 0
+      ? candidate.supportedPrograms.map(p => getProgramCodeFromEntity(p) || String(p).toUpperCase())
       : (candidate.program === 'MULTI' ? ['SI', 'TI', 'BD'] : []);
     if (Array.isArray(targetEntities) && targetEntities.length > 0 && supportedPrograms.length > 0) {
       const targetCodes = targetEntities.map(te => getProgramCodeFromEntity(te)).filter(Boolean);

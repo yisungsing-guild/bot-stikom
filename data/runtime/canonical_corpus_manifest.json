@@ -1,0 +1,31 @@
+{
+  "manifestVersion": 2,
+  "description": "Canonical corpus manifest defining explicit identity, byte hashes, migration hashes, and deterministic logical content hashes for Chat Engine V2",
+  "canonicalCorpus": {
+    "corpusVersion": "2026-08-11T04-15-00-138Z_production_ready",
+    "minRequiredChunks": 829,
+    "expectedChunks": 829,
+    "canonicalContentHashVersion": 2,
+    "canonicalContentHashSchemaVersion": "v2-canonical-json",
+    "historicalMigrationSha256": "787bfb8fb46a56d308a832a1d97a79447207c10a369e2172f78d267fe3bda4b4",
+    "diskSnapshotSha256": "64fea392973d7ff16e008e566126d2e8ac4aa8350354443038433d85c0aa0b21",
+    "canonicalContentSha256": "f0a97bc3528e7a415299e4e11fadf2420bae65bd1ffbb4997f2a5f0242a74852",
+    "embeddingVersion": "text-embedding-3-small-1536-corpus-787bfb8f-v1",
+    "embeddingModel": "text-embedding-3-small",
+    "embeddingDimension": 1536,
+    "sourceOrigin": "rag.corpus_vector_chunks",
+    "governingDecree": "SK-BIAYA-TA-2026/2027",
+    "primaryApprovedFile": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+    "hashDefinitions": {
+      "historicalMigrationSha256": "Raw byte SHA-256 of pre-migration canonical snapshot file (25,116,785 bytes) recorded in scratch/release_manifest.json and scripts/migrate_pgvector_chunks.js before embedding vectors were serialized into local snapshot file. Note: This is an input migration artifact hash, not an embedding vector hash.",
+      "diskSnapshotSha256": "Raw byte SHA-256 of local snapshot file on disk data/runtime/index_snapshots/2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy/rag_index.json (34,670,163 bytes) containing 829 records with 1536-dimension embedding arrays.",
+      "canonicalContentSha256": "Deterministic SHA-256 logical content hash (Schema v2-canonical-json). Evaluated over all records sorted by id ascending (code-point order). Each record is normalized into a canonical JSON line with strictly sorted keys: academicLevel, campus, category, docCategory, id, program, programName, sourceFile, text. CRLF normalized to LF, strings trimmed, empty/absent values normalized to null. Records separated by newline (\\n) and UTF-8 encoded. Invariant between PostgreSQL rows and disk snapshot. Immune to delimiter collisions and protects retrieval & scope metadata."
+    }
+  },
+  "candidateCorpus": {
+    "corpusVersion": "2026-09-curriculum_2025",
+    "minRequiredChunks": 829,
+    "expectedChunks": 863,
+    "embeddingVersion": "text-embedding-3-small-1536-corpus-787bfb8f-v1"
+  }
+}
