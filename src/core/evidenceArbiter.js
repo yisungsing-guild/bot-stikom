@@ -623,6 +623,8 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   const isScheduleChunk = /\b(gelombang|jadwal|kalender\s+pendaftaran|periode|tahap\s+\d|waktu\s+pendaftaran)\b/i.test(text);
   const isPaymentProcedureChunk = /\b(konfirmasi\s+pembayaran|bukti\s+bayar|transfer|tata\s+cara\s+pembayaran|rekening|waktu\s+pembayaran)\b/i.test(text);
   const isAccreditationChunk = /\b(akreditasi|terakreditasi|ban-?pt|lam-?infokom|peringkat\s+akreditasi|sk\s+akreditasi|\/sk\/ban-pt\/|\/sk\/lam-infokom\/|terakreditasi\s+(?:baik|unggul|a|b))\b/i.test(text);
+  const isLocationChunk = /\b(lokasi|tempat|kampus|alamat|gedung|ruang|china|dalian|neusoft|malaysia|luar\s+negeri|dalam\s+negeri|onsite|online|daring|luring|jalan|jl\.|denpasar|renon|jimbaran|full\s+di\s+stikom)\b/i.test(text);
+  const isDurationChunk = /\b(masa\s+studi|durasi|berapa\s+tahun|berapa\s+semester|tahun\s+1|tahun\s+2|tahun\s+3|tahun\s+4|semester\s+[1-8]|\d\s+semester|\d\s+tahun)\b/i.test(text);
 
   if (isFeeChunk) providedAspects.push('fee', 'tuition', 'dpp', 'components');
   if (isCurriculumChunk) providedAspects.push('curriculum', 'courses', 'competencies');
@@ -641,6 +643,8 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   if (isEsportsChunk) providedAspects.push('esports_gaming');
   if (isSportsChunk) providedAspects.push('sports');
   if (isAccreditationChunk) providedAspects.push('akreditasi', 'peringkat', 'sk_akreditasi', 'accreditation');
+  if (isLocationChunk) providedAspects.push('location', 'study_location', 'campus_location');
+  if (isDurationChunk) providedAspects.push('duration', 'study_duration');
   const isThesisChunk = (candidateFile && /(?:pedoman\s+ta|pedoman\s+skripsi)/i.test(candidateFile)) ||
     /\b(pedoman\s+tugas\s+akhir|persyaratan\s+akademik|141\s+sks|tugas\s+akhir|bimbingan\s+tugas\s+akhir)\b/i.test(candTextLower);
   if (isThesisChunk) providedAspects.push('thesis_requirements', 'academic_requirements', 'guidelines', 'pedoman_ta', 'thesis_stages', 'guidance_procedure');

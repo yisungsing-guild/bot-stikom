@@ -334,4 +334,149 @@ describe('Chat Engine V2 — Architectural Root-Cause & Cross-Domain Regression'
       expect(feeChunk.chunk).toContain('6.500.000');
     });
   });
+
+  describe('Section 7: Cross-Domain Aspect & Entity Grounding Integrity', () => {
+    test('7.1: Double Degree DNUI study location query is answerable from genuine DNUI documents', async () => {
+      const frame = {
+        domain: 'INTERNATIONAL',
+        intent: 'INTERNATIONAL_PROGRAM_INFO',
+        targetEntities: ['Double Degree DNUI'],
+        aspects: ['location']
+      };
+      const plan = {
+        domain: 'INTERNATIONAL',
+        intent: 'INTERNATIONAL_PROGRAM_INFO',
+        targetEntities: ['Double Degree DNUI'],
+        requiredAspects: ['location'],
+        normalizedQuery: 'double degree dnui perkuliahan full di stikom bali'
+      };
+
+      const candidates = await retrieveCandidates(plan, { topK: 10 });
+      const arbitrated = arbitrateEvidence(candidates, plan);
+
+      expect(arbitrated.accepted.length).toBeGreaterThan(0);
+      const dnuiDocChunk = arbitrated.accepted.find(c =>
+        (c.sourceFile || '').includes('Double Degree') &&
+        /(?:china|dalian|indonesia|online|onsite)/i.test(c.text || c.chunk || '')
+      );
+      expect(dnuiDocChunk).toBeDefined();
+
+      const answerability = evaluateAnswerability(frame, arbitrated);
+      expect(answerability.status).toBe(ANSWERABILITY_STATUS.ANSWERABLE);
+      expect(answerability.coveredAspects).toContain('location');
+    });
+
+    test('7.2: Chunk about location of another program/entity does not satisfy DNUI location query', () => {
+      const plan = {
+        domain: 'INTERNATIONAL',
+        intent: 'INTERNATIONAL_PROGRAM_INFO',
+        targetEntities: ['Double Degree DNUI'],
+        requiredAspects: ['location'],
+        normalizedQuery: 'double degree dnui lokasi'
+      };
+
+      // Candidate about campus location of S1 Sistem Informasi or generic STIKOM Jimbaran/Renon
+      const nonDnuiCandidate = {
+        id: 'mock-location-si',
+        chunk: 'Kampus ITB STIKOM Bali beralamat di Jl. Raya Puputan No. 86 Renon Denpasar dan Kampus Jimbaran untuk Program S1 Sistem Informasi.',
+        sourceFile: 'profil-kampus.pdf',
+        canonicalEntity: 'S1 Sistem Informasi',
+        program: 'SI',
+        scope: 'PROGRAM_SINGLE',
+        academicLevel: 'S1'
+      };
+
+      const arbitrated = arbitrateEvidence([nonDnuiCandidate], plan);
+      // Must be rejected due to entity mismatch (candidate is scoped to SI, not DNUI)
+      expect(arbitrated.accepted.length).toBe(0);
+      expect(arbitrated.rejected.length).toBe(1);
+    });
+
+    test('7.3: Evidence discussing fees does not automatically answer accreditation or duration queries', () => {
+      const accreditationFrame = {
+        domain: 'ACCREDITATION',
+        intent: 'ACCREDITATION_INQUIRY',
+        targetEntities: ['S1 Sistem Informasi'],
+        aspects: ['accreditation']
+      };
+
+      const durationFrame = {
+        domain: 'ACADEMIC_PROGRAM',
+        intent: 'PROGRAM_INFO',
+        targetEntities: ['S1 Sistem Informasi'],
+        aspects: ['duration']
+      };
+
+      // Candidate strictly discussing fee without accreditation or duration terms
+      const pureFeeCandidate = {
+        id: 'mock-pure-fee',
+        chunk: 'Rincian biaya kuliah per semester untuk program studi S1 Sistem Informasi sebesar Rp6.500.000 dengan biaya pendaftaran Rp250.000.',
+        sourceFile: 'biaya.pdf',
+        canonicalEntity: 'S1 Sistem Informasi',
+        program: 'SI',
+        scope: 'PROGRAM_SINGLE',
+        academicLevel: 'S1'
+      };
+
+      // Accreditation test
+      const arbFeeForAccreditation = {
+        accepted: [pureFeeCandidate],
+        rejected: []
+      };
+      const ansAccreditation = evaluateAnswerability(accreditationFrame, arbFeeForAccreditation);
+      expect(ansAccreditation.status).not.toBe(ANSWERABILITY_STATUS.ANSWERABLE);
+      expect(ansAccreditation.missingAspects).toContain('accreditation');
+
+      // Duration test
+      const ansDuration = evaluateAnswerability(durationFrame, arbFeeForAccreditation);
+      expect(ansDuration.status).not.toBe(ANSWERABILITY_STATUS.ANSWERABLE);
+      expect(ansDuration.missingAspects).toContain('duration');
+    });
+
+    test('7.4: Evidence lacking explicit aspect tags is accepted if document content substantively supports the answer', () => {
+      const locationFrame = {
+        domain: 'INTERNATIONAL',
+        intent: 'INTERNATIONAL_PROGRAM_INFO',
+        targetEntities: ['Double Degree DNUI'],
+        aspects: ['location']
+      };
+
+      // Chunk with no providedAspects metadata, but text substantively details the study location
+      const untaggedChunk = {
+        id: 'mock-untagged-dnui-loc',
+        chunk: 'Perkuliahan diselenggarakan tahun ke-1 dan ke-2 di Indonesia, tahun ke-3 online, dan tahun ke-4 onsite di kampus DNUI China.',
+        sourceFile: 'panduan-dnui.pdf',
+        canonicalEntity: 'Double Degree DNUI',
+        scope: 'INTERNATIONAL_DUAL_DEGREE',
+        providedAspects: [] // explicitly empty aspect tags
+      };
+
+      const arbitrated = {
+        accepted: [untaggedChunk],
+        rejected: []
+      };
+
+      const answerability = evaluateAnswerability(locationFrame, arbitrated);
+      expect(answerability.status).toBe(ANSWERABILITY_STATUS.ANSWERABLE);
+      expect(answerability.coveredAspects).toContain('location');
+    });
+
+    test('7.5: Inadequate or empty evidence results in UNKNOWN/SAFE_UNKNOWN and does not fabricate answers', () => {
+      const frame = {
+        domain: 'ACCREDITATION',
+        intent: 'ACCREDITATION_INQUIRY',
+        targetEntities: ['S1 Kedokteran Gigi'],
+        aspects: ['accreditation']
+      };
+
+      const emptyArbitrated = {
+        accepted: [],
+        rejected: [{ id: 'cand-1', reason: 'unsupported_entity' }]
+      };
+
+      const answerability = evaluateAnswerability(frame, emptyArbitrated);
+      expect(answerability.status).toBe(ANSWERABILITY_STATUS.UNKNOWN);
+      expect(answerability.reason).toBe('corpus_gap');
+    });
+  });
 });

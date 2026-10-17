@@ -95,8 +95,44 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       }
     }
 
-    const coveredAspects = requiredAspects.filter(req => allProvidedAspects.has(req));
-    const missingAspects = requiredAspects.filter(req => !allProvidedAspects.has(req));
+    const combinedEvidenceText = accepted.map(c => c.text || c.chunk || '').join(' ').toLowerCase();
+    const isAspectCovered = (req) => {
+      if (allProvidedAspects.has(req)) return true;
+      if (req === 'location' || req === 'study_location' || req === 'campus_location') {
+        return /\b(lokasi|tempat|kampus|alamat|gedung|ruang|china|dalian|neusoft|malaysia|luar\s+negeri|dalam\s+negeri|onsite|online|daring|luring|jalan|jl\.|denpasar|renon|jimbaran|full\s+di\s+stikom)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'duration' || req === 'study_duration') {
+        return /\b(durasi|masa\s+studi|tahun\s+\d|\d\s+tahun|\d\s+semester|semester\s+\d)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'career' || req === 'career_prospects') {
+        return /\b(karir|karier|prospek|peluang\s+kerja|profesi|pekerjaan)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'curriculum' || req === 'courses') {
+        return /\b(kurikulum|mata\s*kuliah|matkul|sks|praktikum)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'accreditation' || req === 'akreditasi') {
+        return /\b(akreditasi|terakreditasi|peringkat|unggul|baik|ban-pt|lam-infokom)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'fee' || req === 'tuition') {
+        return /\b(biaya|tarif|spp|dpp|uang\s+kuliah|rp\s*[\d\.]+|juta)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'scholarship') {
+        return /\b(beasiswa|potongan|keringanan|kip)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'facilities') {
+        return /\b(fasilitas|lab|laboratorium|perpustakaan|asrama|dormitory)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'organization' || req === 'student_organization') {
+        return /\b(ukm|ormawa|organisasi|hima|himaprodi|ekstrakurikuler)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'requirements' || req === 'admission_requirements') {
+        return /\b(syarat|persyaratan|berkas|dokumen|ijazah|rapor)\b/i.test(combinedEvidenceText);
+      }
+      return false;
+    };
+
+    const coveredAspects = requiredAspects.filter(isAspectCovered);
+    const missingAspects = requiredAspects.filter(req => !isAspectCovered(req));
 
     if (coveredAspects.length === 0) {
       if (semanticFrame.domain === 'TUITION_FEE' || requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a))) {

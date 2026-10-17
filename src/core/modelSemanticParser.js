@@ -401,7 +401,7 @@ async function parseSemanticInterpretation(input, options = {}) {
     const providerStart = Date.now();
     const isNewerGptModel = /^gpt-(?:[4-9]|4o)/i.test(model) || /^o\d/i.test(model);
     const isGpt6OrReasoning = /gpt-6|luna|o1|o3/i.test(model);
-    const tokenLimit = 300;
+    const tokenLimit = parseInt(process.env.SEMANTIC_PARSER_MAX_TOKENS || (options && options.tokenLimit) || '800', 10);
     const requestPayload = {
       model,
       messages,
