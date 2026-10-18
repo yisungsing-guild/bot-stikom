@@ -514,6 +514,81 @@ describe('Chat Engine V2 — Phase A+B Architecture Suite', () => {
       expect(clone2.pendingClarification.options).toEqual(['A', 'B']);
       expect(clone2.data.slots.major).toBe('S1 Sistem Informasi');
     });
+
+    test('8.8: Multi-Intent Fee + Accreditation ("Berapa biaya dan akreditasi Teknologi Informasi?") retains entity on both subqueries', () => {
+      const compoundQ = 'Berapa biaya dan akreditasi Teknologi Informasi?';
+      expect(hasMultipleIntents(compoundQ)).toBe(true);
+
+      const frames = decomposeQuery(compoundQ);
+      expect(frames.length).toBe(2);
+
+      // Subquery 1: Fee
+      expect(frames[0].domain).toBe('TUITION_FEE');
+      expect(frames[0].intent).toBe('TUITION_FEE_INQUIRY');
+      expect(frames[0].entities.some(e => e.canonical === 'S1 Teknologi Informasi')).toBe(true);
+
+      // Subquery 2: Accreditation
+      expect(frames[1].domain).toBe('ACADEMIC_PROGRAM');
+      expect(frames[1].intent).toBe('PROGRAM_ACCREDITATION');
+      expect(frames[1].entities.some(e => e.canonical === 'S1 Teknologi Informasi')).toBe(true);
+
+      // Distinct retrieval plans
+      const plan1 = buildExecutionPlan(frames[0]);
+      const plan2 = buildExecutionPlan(frames[1]);
+      expect(plan1).toBeDefined();
+      expect(plan2).toBeDefined();
+      expect(plan1.targetDomain).toBe('TUITION_FEE');
+      expect(plan2.targetDomain).toBe('ACADEMIC_PROGRAM');
+    });
+
+    test('8.9: Multi-Intent Fee + Accreditation ("Apa biaya serta akreditasi S1 Teknologi Informasi?") decomposes symmetrically', async () => {
+      const compoundQ = 'Apa biaya serta akreditasi S1 Teknologi Informasi?';
+      expect(hasMultipleIntents(compoundQ)).toBe(true);
+
+      const frames = await decomposeQueryAsync(compoundQ);
+      expect(frames.length).toBe(2);
+
+      // Subquery 1: Fee
+      expect(frames[0].domain).toBe('TUITION_FEE');
+      expect(frames[0].entities.some(e => e.canonical === 'S1 Teknologi Informasi')).toBe(true);
+
+      // Subquery 2: Accreditation
+      expect(frames[1].domain).toBe('ACADEMIC_PROGRAM');
+      expect(frames[1].entities.some(e => e.canonical === 'S1 Teknologi Informasi')).toBe(true);
+    }, 30000);
+
+    test('8.10: Single fee queries are NOT falsely split into multiple intents', () => {
+      const singleQueries = [
+        'Berapa biaya kuliah S1 Teknologi Informasi?',
+        'Berapa biaya pendaftaran S1 Teknologi Informasi?',
+        'Berapa rincian biaya S1 Sistem Informasi?'
+      ];
+
+      for (const q of singleQueries) {
+        expect(hasMultipleIntents(q)).toBe(false);
+        const frames = decomposeQuery(q);
+        expect(frames.length).toBe(1);
+      }
+    });
+
+    test('8.11: Multi-intent Fee + Accreditation produces grounded final answer without hallucinating fee or accreditation', async () => {
+      const result = await processTurn('multi-ti-accred-test', 'Berapa biaya dan akreditasi Teknologi Informasi?');
+      expect(result).toBeDefined();
+      expect(result.text).toBeDefined();
+      expect(result.subQueryResults).toBeDefined();
+      expect(result.subQueryResults.length).toBe(2);
+
+      // Both subqueries must be answerable
+      const ans0 = result.subQueryResults[0].answerability?.status || result.subQueryResults[0].answerability;
+      const ans1 = result.subQueryResults[1].answerability?.status || result.subQueryResults[1].answerability;
+      expect(ans0).toBe('ANSWERABLE');
+      expect(ans1).toBe('ANSWERABLE');
+
+      // Check final answer contains grounded fees and accreditation
+      expect(result.text).toMatch(/Teknologi Informasi/i);
+      expect(result.text).toMatch(/Baik/i); // BAN-PT accreditation status
+      expect(result.text).toMatch(/500\.000/); // pendaftaran
+    }, 30000);
   });
 
   // =========================================================================

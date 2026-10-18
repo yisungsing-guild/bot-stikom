@@ -146,6 +146,7 @@ tests/*
 !tests/retrievalContract.generalization.test.js
 !tests/retrievalContract.realCorpusE2E.test.js
 !tests/fonnteWebhookRoutingPolicy.test.js
+!tests/fonnteWebhookSecurity.test.js
 !tests/finalClosureRegression.test.js
 !tests/finalBoundedRemediationRegression.test.js
 !tests/q030TargetedFixRegression.test.js

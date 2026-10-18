@@ -465,6 +465,14 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       }
     }
 
+    if (/sertifikat\s+akreditasi/i.test(sourceFile)) {
+      const certChunks = corpus.filter(c => (c.sourceFile || c.filename) === sourceFile);
+      const fullCertText = certChunks.map(c => c.chunk || c.text || '').filter(Boolean).join('\n');
+      if (fullCertText.length < 1000) {
+        enrichedText = fullCertText;
+      }
+    }
+
     const entityIds = doc.entityIds || metadata.entityIds ||
       (contextEntities && contextEntities.length > 0 ? contextEntities : (doc.program ? [doc.program] : []));
 
@@ -572,6 +580,14 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           }
         }
 
+        if (/sertifikat\s+akreditasi/i.test(sourceFile)) {
+          const certChunks = corpus.filter(c => (c.sourceFile || c.filename) === sourceFile);
+          const fullCertText = certChunks.map(c => c.chunk || c.text || '').filter(Boolean).join('\n');
+          if (fullCertText.length < 1000) {
+            enrichedText = fullCertText;
+          }
+        }
+
         const entityIds = doc.entityIds || metadata.entityIds ||
           (contextEntities && contextEntities.length > 0 ? contextEntities : (doc.program ? [doc.program] : []));
         const rawCategory = metadata.docCategory || doc.docCategory || (ctx ? ctx.category : doc.category) || item.doc_category;
@@ -671,6 +687,14 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           const hasAnyEnt = ctx.entities.some(e => rawText.toLowerCase().includes(e.toLowerCase()));
           if (!hasAnyEnt && (ctx.category === 'BIAYA' || /rincian biaya/i.test(sourceFile))) {
             enrichedText = `[Program: ${ctx.entities.join(', ')}] ${rawText}`;
+          }
+        }
+
+        if (/sertifikat\s+akreditasi/i.test(sourceFile)) {
+          const certChunks = corpus.filter(c => (c.sourceFile || c.filename) === sourceFile);
+          const fullCertText = certChunks.map(c => c.chunk || c.text || '').filter(Boolean).join('\n');
+          if (fullCertText.length < 1000) {
+            enrichedText = fullCertText;
           }
         }
 

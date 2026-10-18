@@ -530,6 +530,11 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       acceptedCount: arbitrated.accepted.length,
       rejectedCount: arbitrated.rejected.length,
       answerability: answerability.status,
+      answerabilityDetails: {
+        status: answerability.status,
+        missingAspects: answerability.missingAspects || [],
+        reason: answerability.reason || null
+      },
       status: subStatus,
       answer,
       verification,
@@ -606,7 +611,10 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     status: primaryStatus,
     semanticFrame: subQueryResults[0]?.frame,
     subQueryResults,
-    finalAnswer
+    finalAnswer,
+    answer: finalAnswer,
+    text: finalAnswer,
+    reply: finalAnswer
   };
 }
 

@@ -4137,6 +4137,16 @@ router.get('/analytics/export/csv', async (req, res, next) => {
  * GET /admin/whatsapp/config
  * Retrieve current WhatsApp configuration (without sensitive data)
  */
+function redactWebhookUrl(rawUrl) {
+  const s = typeof rawUrl === 'string' ? rawUrl : '';
+  if (!s) return '';
+  return s
+    .replace(/([?&]token=)[^&]+/gi, '$1<redacted>')
+    .replace(/([?&]verify_token=)[^&]+/gi, '$1<redacted>')
+    .replace(/([?&]key=)[^&]+/gi, '$1<redacted>')
+    .replace(/([?&]api_key=)[^&]+/gi, '$1<redacted>');
+}
+
 router.get('/whatsapp/config', async (req, res, next) => {
   try {
     console.log('[GET /admin/whatsapp/config] Mengambil konfigurasi WhatsApp...');
@@ -4150,8 +4160,8 @@ router.get('/whatsapp/config', async (req, res, next) => {
       provider: process.env.WHATSAPP_PROVIDER || 'mock',
       phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ? '***' + process.env.WHATSAPP_PHONE_NUMBER_ID.slice(-6) : '',
       businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID ? '***' + process.env.WHATSAPP_BUSINESS_ACCOUNT_ID.slice(-6) : '',
-      webhookVerifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '',
-      webhookUrl: process.env.WHATSAPP_WEBHOOK_URL || '',
+      webhookVerifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ? '***' + String(process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN).slice(-4) : '',
+      webhookUrl: redactWebhookUrl(process.env.WHATSAPP_WEBHOOK_URL || ''),
       isConfigured: isWatiMode || isFonnteMode
         ? Boolean(process.env.WHATSAPP_API_KEY)
         : Boolean(process.env.WHATSAPP_API_KEY && process.env.WHATSAPP_PHONE_NUMBER_ID),
@@ -4311,66 +4321,62 @@ router.post('/whatsapp/health', async (req, res, next) => {
 router.get('/whatsapp/webhook-setup', async (req, res, next) => {
   try {
     const webhookUrl = process.env.WHATSAPP_WEBHOOK_URL || 'https://your-domain.com/webhook';
-    const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'your_verify_token_here';
+    const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
+    const maskedToken = verifyToken ? '***' + String(verifyToken).slice(-4) : '';
 
     const isWatiMode = (process.env.WHATSAPP_API_ENDPOINT || '').toLowerCase().includes('wati') ||
       String(process.env.WHATSAPP_PROVIDER || '').toLowerCase() === 'wati';
+    const isFonnteMode = (process.env.WHATSAPP_API_ENDPOINT || '').toLowerCase().includes('fonnte.com') ||
+      String(process.env.WHATSAPP_PROVIDER || '').toLowerCase() === 'fonnte';
 
-    // Best-effort suggestion for the correct callback URL.
-    // - Meta Cloud API expects `/webhook`
-    // - WATI should point to `/wati/webhook` (we also accept `/webhook` for compatibility)
-    let suggestedWebhookUrl = webhookUrl;
+    let suggestedWebhookUrl = redactWebhookUrl(webhookUrl);
     try {
       const u = new URL(webhookUrl);
-      // Normalize path before appending
       const basePath = String(u.pathname || '/').replace(/\/+$/, '');
-      const base = basePath.replace(/\/(wati\/webhook|webhook)$/i, '');
-      u.pathname = isWatiMode ? `${base}/wati/webhook` : `${base}/webhook`;
+      const base = basePath.replace(/\/(wati\/webhook|fonnte\/webhook|webhook)$/i, '');
+      u.pathname = isFonnteMode ? `${base}/fonnte/webhook` : (isWatiMode ? `${base}/wati/webhook` : `${base}/webhook`);
 
-      // WATI often doesn't support a separate token/secret field.
-      // In production, if verifyToken is configured and token requirement is not explicitly disabled,
-      // include the token in the URL query so requests can be authenticated.
-      const watiRequireTokenRaw = String(process.env.WATI_WEBHOOK_REQUIRE_TOKEN || '').toLowerCase().trim();
-      const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-      const hasVerifyToken = Boolean(String(verifyToken || '').trim());
-      const requireWatiToken =
-        watiRequireTokenRaw === 'true' ? true :
-        watiRequireTokenRaw === 'false' ? false :
-        (isProduction && hasVerifyToken);
-      if (isWatiMode && requireWatiToken && hasVerifyToken) {
+      if (maskedToken) {
         if (!u.searchParams.has('token') && !u.searchParams.has('verify_token')) {
-          u.searchParams.set('token', verifyToken);
+          u.searchParams.set('token', maskedToken);
+        } else {
+          if (u.searchParams.has('token')) u.searchParams.set('token', maskedToken);
+          if (u.searchParams.has('verify_token')) u.searchParams.set('verify_token', maskedToken);
         }
       }
 
       suggestedWebhookUrl = u.toString();
     } catch (e) {
-      // keep as-is if invalid URL
+      suggestedWebhookUrl = redactWebhookUrl(suggestedWebhookUrl);
     }
 
     res.send({
       instructions: {
-        step1: isWatiMode
-          ? 'Login ke WATI Dashboard dan buka pengaturan Webhook'
-          : 'Login ke Facebook Developers (https://developers.facebook.com)',
-        step2: isWatiMode
-          ? 'Atur webhook untuk event pesan masuk (incoming messages)'
-          : 'Buka WhatsApp Business App > Settings > Webhooks',
+        step1: isFonnteMode
+          ? 'Login ke Fonnte Dashboard dan buka menu Device > Webhook'
+          : (isWatiMode
+            ? 'Login ke WATI Dashboard dan buka pengaturan Webhook'
+            : 'Login ke Facebook Developers (https://developers.facebook.com)'),
+        step2: isFonnteMode
+          ? 'Masukkan Webhook URL callback dengan menyertakan token autentikasi'
+          : (isWatiMode
+            ? 'Atur webhook untuk event pesan masuk (incoming messages)'
+            : 'Buka WhatsApp Business App > Settings > Webhooks'),
         step3: `Atur URL callback: ${suggestedWebhookUrl}`,
-        step4: `Atur Verify Token/Token: ${verifyToken}`,
-        step5: isWatiMode
-          ? 'Pastikan event inbound message aktif (nama event tergantung WATI)'
-          : 'Subscribe ke events: messages, message_status',
+        step4: `Atur Verify Token/Token: ${maskedToken || 'your_verify_token_here'}`,
+        step5: isFonnteMode
+          ? 'Pastikan webhook status aktif pada device yang terhubung'
+          : (isWatiMode
+            ? 'Pastikan event inbound message aktif (nama event tergantung WATI)'
+            : 'Subscribe ke events: messages, message_status'),
         step6: 'Save konfigurasi'
       },
       currentConfig: {
-        webhookUrl,
+        webhookUrl: redactWebhookUrl(webhookUrl),
         suggestedWebhookUrl,
-        verifyToken,
+        verifyToken: maskedToken,
         environment: process.env.NODE_ENV || 'development',
-        note: isWatiMode
-          ? 'Mode WATI terdeteksi. Gunakan /wati/webhook. Jika server mewajibkan token (umumnya production), dan WATI tidak punya field token/secret, tambahkan ?token=<verifyToken> di URL. Server juga menerima /webhook sebagai alias. Untuk development, gunakan ngrok untuk expose server lokal.'
-          : 'Untuk development, gunakan ngrok: https://ngrok.com untuk expose server lokal'
+        note: 'Nilai token rahasia disamarkan demi keamanan. Gunakan token rahasia yang tersimpan di environment variables server.'
       }
     });
   } catch (err) {

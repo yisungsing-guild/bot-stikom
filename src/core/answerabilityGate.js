@@ -110,8 +110,8 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       if (req === 'curriculum' || req === 'courses') {
         return /\b(kurikulum|mata\s*kuliah|matkul|sks|praktikum)\b/i.test(combinedEvidenceText);
       }
-      if (req === 'accreditation' || req === 'akreditasi') {
-        return /\b(akreditasi|terakreditasi|peringkat|unggul|baik|ban-pt|lam-infokom)\b/i.test(combinedEvidenceText);
+      if (req === 'accreditation' || req === 'akreditasi' || req === 'peringkat' || req === 'sk_akreditasi') {
+        return /\b(akreditasi|terakreditasi|peringkat|unggul|baik|ban-pt|lam-infokom|sk|nomor)\b/i.test(combinedEvidenceText);
       }
       if (req === 'fee' || req === 'tuition') {
         return /\b(biaya|tarif|spp|dpp|uang\s+kuliah|rp\s*[\d\.]+|juta)\b/i.test(combinedEvidenceText);

@@ -117,6 +117,20 @@ function isCandidateMatchingTargetEntity(candidateTextOrObj, targetEntityStr) {
   // 2. Hard program isolation & sibling header exclusion (Runs BEFORE contextEntities acceptance)
   if (isObjectCandidate) {
     let candProg = candidateTextOrObj.program ? String(candidateTextOrObj.program).toUpperCase() : null;
+    if (candProg === 'SK') {
+      const progName = candidateTextOrObj.programName || (candidateTextOrObj.metadata && candidateTextOrObj.metadata.programName) || '';
+      if (progName && getProgramCodeFromEntity(progName)) {
+        candProg = getProgramCodeFromEntity(progName);
+      } else if (/\b(?:akreditasi\s+ti|teknologi\s+informasi)\b/i.test(candidateFile) || /\b(?:program studi teknologi informasi|sarjana.*teknologi informasi)\b/i.test(candidateText)) {
+        candProg = 'TI';
+      } else if (/\b(?:akreditasi\s+si|sistem\s+informasi)\b/i.test(candidateFile) || /\b(?:program studi sistem informasi|sarjana.*sistem informasi)\b/i.test(candidateText)) {
+        candProg = 'SI';
+      } else if (/\b(?:akreditasi\s+bd|bisnis\s+digital)\b/i.test(candidateFile) || /\b(?:program studi bisnis digital|sarjana.*bisnis digital)\b/i.test(candidateText)) {
+        candProg = 'BD';
+      } else if (/\b(?:akreditasi\s+mi|manajemen\s+informatika)\b/i.test(candidateFile) || /\b(?:program studi manajemen informatika|diploma.*manajemen informatika)\b/i.test(candidateText)) {
+        candProg = 'MI';
+      }
+    }
     const isCandidateS2 = (candLevel === 'S2' ||
       /(?:pascasarjana|magister)/i.test(candidateFile) ||
       /\b(?:program pascasarjana|magister sistem informasi|s2 sistem informasi)\b/i.test(candidateText)) && !hasS1OrUndergrad;
@@ -480,10 +494,27 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     (Array.isArray(candidate?.supportedPrograms) && candidate.supportedPrograms.length > 1);
 
   if (!isMultiProgramCandidate) {
-    const candRawProg = candidate ? (candidate.program || candidate.canonicalEntity || '') : '';
+    const candRawProg = candidate ? (candidate.programName || candidate.program || candidate.canonicalEntity || '') : '';
     let candProgCode = candidate?.scope === 'PROGRAM_SINGLE'
       ? (candidate.program ? String(candidate.program).toUpperCase() : null)
       : (getProgramCodeFromEntity(candRawProg) || (candidate?.id?.match(/^curr-([a-z0-9]+)/i) ? candidate.id.match(/^curr-([a-z0-9]+)/i)[1].toUpperCase() : null));
+
+    // Guard: SK Akreditasi / SK Rektor chunks where program field was populated as 'SK' (Surat Keputusan) instead of actual academic program
+    const candidateFile = candidate?.filename || candidate?.sourceFile || candidate?.source_file || candidate?.sourceDocument || '';
+    const candidateText = candidate?.text || candidate?.chunk || '';
+    if (candProgCode === 'SK' || String(candidate?.program || '').toUpperCase() === 'SK') {
+      if (candidate?.programName && getProgramCodeFromEntity(candidate.programName)) {
+        candProgCode = getProgramCodeFromEntity(candidate.programName);
+      } else if (/\b(?:akreditasi\s+ti|teknologi\s+informasi)\b/i.test(candidateFile) || /\b(?:program studi teknologi informasi|sarjana.*teknologi informasi)\b/i.test(candidateText)) {
+        candProgCode = 'TI';
+      } else if (/\b(?:akreditasi\s+si|sistem\s+informasi)\b/i.test(candidateFile) || /\b(?:program studi sistem informasi|sarjana.*sistem informasi)\b/i.test(candidateText)) {
+        candProgCode = 'SI';
+      } else if (/\b(?:akreditasi\s+bd|bisnis\s+digital)\b/i.test(candidateFile) || /\b(?:program studi bisnis digital|sarjana.*bisnis digital)\b/i.test(candidateText)) {
+        candProgCode = 'BD';
+      } else if (/\b(?:akreditasi\s+mi|manajemen\s+informatika)\b/i.test(candidateFile) || /\b(?:program studi manajemen informatika|diploma.*manajemen informatika)\b/i.test(candidateText)) {
+        candProgCode = 'MI';
+      }
+    }
 
     const hasUndergradLevel = candidate?.academicLevel === 'S1' || candidate?.level === 'S1' ||
       candidate?.academicLevel === 'D3' || candidate?.level === 'D3' ||
@@ -1084,6 +1115,18 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
       const bIsAuthoritative = /\b(Penjelasan Prodi|Fokus Pendidikan|Yang Dipelajari|Peluang Kerja|Visi)\b/i.test(b.text);
       if (aIsAuthoritative && !bIsAuthoritative) return -1;
       if (!aIsAuthoritative && bIsAuthoritative) return 1;
+      return 0;
+    });
+  }
+
+  if (retrievalPlan.domain === 'ACCREDITATION' || retrievalPlan.intent === 'PROGRAM_ACCREDITATION' || retrievalPlan.intent === 'INSTITUTIONAL_ACCREDITATION' || (retrievalPlan.requiredAspects && (retrievalPlan.requiredAspects.includes('accreditation') || retrievalPlan.requiredAspects.includes('akreditasi')))) {
+    accepted.sort((a, b) => {
+      const aText = a.text || a.chunk || '';
+      const bText = b.text || b.chunk || '';
+      const aHasCore = /\b(BAN-?PT|LAM-?INFOKOM|Akreditasi\s*(?:Baik|Baik\s+Sekali|Unggul|A|B)|peringkat\s+akreditasi|Surat\s+Keputusan|No\.\s*\d+\/SK)\b/i.test(aText);
+      const bHasCore = /\b(BAN-?PT|LAM-?INFOKOM|Akreditasi\s*(?:Baik|Baik\s+Sekali|Unggul|A|B)|peringkat\s+akreditasi|Surat\s+Keputusan|No\.\s*\d+\/SK)\b/i.test(bText);
+      if (aHasCore && !bHasCore) return -1;
+      if (!aHasCore && bHasCore) return 1;
       return 0;
     });
   }

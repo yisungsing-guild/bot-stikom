@@ -219,8 +219,17 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
  * Builds an initial validated ExecutionPlan for inbound query
  */
 function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
-  const query = String(rawQuery || '').trim();
-  if (!query) {
+  let query = '';
+  let precomputedFrame = options.semanticFrame || null;
+
+  if (rawQuery && typeof rawQuery === 'object' && !Array.isArray(rawQuery)) {
+    precomputedFrame = rawQuery;
+    query = String(rawQuery.rawQuery || rawQuery.normalizedQuery || '').trim();
+  } else {
+    query = String(rawQuery || '').trim();
+  }
+
+  if (!query && !precomputedFrame) {
     return {
       success: false,
       error: 'empty_query',
@@ -229,7 +238,7 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
   }
 
   // 1. Resolve semantic frame: precomputed frame if provided, otherwise synchronous resolution
-  const semanticFrame = options.semanticFrame || resolveSemanticFrame(query, sessionData, options);
+  const semanticFrame = precomputedFrame || resolveSemanticFrame(query, sessionData, options);
 
   // 2. Compute explicit Context Delta (Step 4 integration)
   const contextDelta = computeContextDelta({ data: sessionData }, { rawQuery: query, semanticFrame });
@@ -484,6 +493,8 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
       activeEntity: contextActiveEntity,
       inheritedFromSession: isInherited
     },
+    targetDomain: semanticFrame.domain,
+    targetIntent: semanticFrame.intent,
     metadata: {
       plannerVersion: 'phase2-step5',
       frameDomain: semanticFrame.domain,
@@ -498,14 +509,20 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     return {
       success: false,
       error: validation.reason,
-      plan: null
+      plan: null,
+      targetDomain: semanticFrame.domain,
+      targetIntent: semanticFrame.intent
     };
   }
 
   return {
     success: true,
     error: null,
-    plan
+    plan,
+    targetDomain: semanticFrame.domain,
+    targetIntent: semanticFrame.intent,
+    domain: semanticFrame.domain,
+    intent: semanticFrame.intent
   };
 }
 

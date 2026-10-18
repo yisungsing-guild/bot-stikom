@@ -16,7 +16,7 @@ const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('./semanticF
 const { CAMPUS_WIDE_DOMAINS } = require('../reasoning/contracts');
 
 // Conjunction separators indicating multi-intent
-const MULTI_INTENT_CONJUNCTION_REGEX = /(?:,\s*(?:serta|dan|plus)\s*|\s+(?:dan|serta|sekaligus|dan juga|plus)\s+(?=apa|bagaimana|berapa|apakah|kapan|keuntungan|syarat|biaya|fasilitas|training|rekrutmen|pembuatan|prosedur|kontak|prospek|peluang|beasiswa|ada\s+beasiswa))/i;
+const MULTI_INTENT_CONJUNCTION_REGEX = /(?:,\s*(?:serta|dan|plus)\s*|\s+(?:dan|serta|sekaligus|dan juga|plus)\s+(?=apa|bagaimana|berapa|apakah|kapan|keuntungan|syarat|biaya|fasilitas|training|rekrutmen|pembuatan|prosedur|kontak|prospek|peluang|beasiswa|ada\s+beasiswa|akreditasi|peringkat\s+akreditasi))/i;
 
 function hasMultipleIntents(rawQuery) {
   if (!rawQuery) return false;
@@ -112,9 +112,11 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     parts = query.split('?').map(p => p.trim()).filter(Boolean).map(p => p + '?');
   } else if (MULTI_INTENT_CONJUNCTION_REGEX.test(query)) {
     const rawParts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
+    const isMultiIntentPair = (/\bbiaya\b/i.test(query) && /\bakreditasi\b/i.test(query)) ||
+      (/\b(syarat|fasilitas|beasiswa)\b/i.test(query) && /\b(biaya|akreditasi)\b/i.test(query));
     // Guard against splitting compound noun phrases (e.g. "Profesi dan peluang kerja apa saja...")
     // A valid first subquery must have at least 3 words and a verb/interrogative pronoun, or not end as a bare noun fragment
-    if (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
+    if (!isMultiIntentPair && rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
       parts = [query];
     } else {
       parts = rawParts;
@@ -127,12 +129,30 @@ function decomposeQuery(rawQuery, sessionData = {}) {
   }
 
   const firstSessionData = isolateSubquerySession(sessionData);
-  const firstFrame = resolveSemanticFrame(parts[0], firstSessionData);
-  const subjectEntities = firstFrame.entities || [];
-  const topicMatch = (firstFrame.rawQuery || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
+  let firstFrame = resolveSemanticFrame(parts[0], firstSessionData);
+  let subjectEntities = firstFrame.entities || [];
+  if (subjectEntities.length === 0) {
+    const fullFrame = resolveSemanticFrame(query, sessionData);
+    if (fullFrame.entities && fullFrame.entities.length > 0) {
+      subjectEntities = fullFrame.entities;
+    }
+  }
+  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
   const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
     (topicMatch ? topicMatch[0] : null) ||
     (sessionData && sessionData.activeEntity ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name) : null);
+
+  // If first subquery lacked entity but entity exists in whole query / other subquery, re-resolve firstFrame with inferred topic
+  if (inferredTopic && (!firstFrame.entities || firstFrame.entities.length === 0)) {
+    let reResolvedQuery = parts[0];
+    if (!reResolvedQuery.toLowerCase().includes(inferredTopic.toLowerCase())) {
+      reResolvedQuery = `${parts[0]} ${inferredTopic}`;
+    }
+    firstFrame = resolveSemanticFrame(reResolvedQuery, firstSessionData);
+    if ((!firstFrame.entities || firstFrame.entities.length === 0) && subjectEntities.length > 0) {
+      firstFrame.entities = [...subjectEntities];
+    }
+  }
 
   const subFrames = parts.map((part, idx) => {
     let queryToResolve = part;
@@ -143,8 +163,18 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     const isAnaphoric = hasExplicitAnaphora || /^(?:kalau|bagaimana|dan|lalu|apa|apakah|adakah|ada|berapa|syarat|biaya|jadwal|akreditasi)\b/i.test(part.trim());
 
     if (idx > 0 && inferredTopic && !isIndependentSubject && isAnaphoric) {
-      if (!queryToResolve.toLowerCase().includes(inferredTopic.toLowerCase())) {
+      const inferredLower = inferredTopic.toLowerCase();
+      const partLower = part.toLowerCase();
+      const hasCoreMention = partLower.includes(inferredLower) ||
+        (inferredLower.includes('teknologi informasi') && partLower.includes('teknologi informasi')) ||
+        (inferredLower.includes('sistem informasi') && partLower.includes('sistem informasi')) ||
+        (inferredLower.includes('sistem komputer') && partLower.includes('sistem komputer')) ||
+        (inferredLower.includes('bisnis digital') && partLower.includes('bisnis digital'));
+
+      if (!hasCoreMention) {
         queryToResolve = `${part} ${inferredTopic}`;
+      } else if (!partLower.includes('s1') && inferredLower.startsWith('s1 ')) {
+        queryToResolve = part.replace(/\b(teknologi informasi|sistem informasi|sistem komputer|bisnis digital)\b/i, 'S1 $1');
       }
     }
 
@@ -178,7 +208,9 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     parts = query.split('?').map(p => p.trim()).filter(Boolean).map(p => p + '?');
   } else if (MULTI_INTENT_CONJUNCTION_REGEX.test(query)) {
     const rawParts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
-    if (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
+    const isMultiIntentPair = (/\bbiaya\b/i.test(query) && /\bakreditasi\b/i.test(query)) ||
+      (/\b(syarat|fasilitas|beasiswa)\b/i.test(query) && /\b(biaya|akreditasi)\b/i.test(query));
+    if (!isMultiIntentPair && rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
       parts = [query];
     } else {
       parts = rawParts;
@@ -193,14 +225,36 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
   }
 
   const firstSessionData = isolateSubquerySession(sessionData);
-  const firstFrame = (typeof resolveSemanticFrameAsync === 'function')
+  let firstFrame = (typeof resolveSemanticFrameAsync === 'function')
     ? await resolveSemanticFrameAsync(parts[0], firstSessionData, options)
     : resolveSemanticFrame(parts[0], firstSessionData, options);
-  const subjectEntities = firstFrame.entities || [];
-  const topicMatch = (firstFrame.rawQuery || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
+  let subjectEntities = firstFrame.entities || [];
+  if (subjectEntities.length === 0) {
+    const fullFrame = (typeof resolveSemanticFrameAsync === 'function')
+      ? await resolveSemanticFrameAsync(query, sessionData, options)
+      : resolveSemanticFrame(query, sessionData, options);
+    if (fullFrame.entities && fullFrame.entities.length > 0) {
+      subjectEntities = fullFrame.entities;
+    }
+  }
+  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
   const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
     (topicMatch ? topicMatch[0] : null) ||
     (sessionData && sessionData.activeEntity ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name) : null);
+
+  // If first subquery lacked entity but entity exists in whole query / other subquery, re-resolve firstFrame with inferred topic
+  if (inferredTopic && (!firstFrame.entities || firstFrame.entities.length === 0)) {
+    let reResolvedQuery = parts[0];
+    if (!reResolvedQuery.toLowerCase().includes(inferredTopic.toLowerCase())) {
+      reResolvedQuery = `${parts[0]} ${inferredTopic}`;
+    }
+    firstFrame = (typeof resolveSemanticFrameAsync === 'function')
+      ? await resolveSemanticFrameAsync(reResolvedQuery, firstSessionData, options)
+      : resolveSemanticFrame(reResolvedQuery, firstSessionData, options);
+    if ((!firstFrame.entities || firstFrame.entities.length === 0) && subjectEntities.length > 0) {
+      firstFrame.entities = [...subjectEntities];
+    }
+  }
 
   const subFrames = [firstFrame];
   for (let idx = 1; idx < parts.length; idx++) {
@@ -213,8 +267,18 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     const isAnaphoric = hasExplicitAnaphora || /^(?:kalau|bagaimana|dan|lalu|apa|apakah|adakah|ada|berapa|syarat|biaya|jadwal|akreditasi)\b/i.test(part.trim());
 
     if (inferredTopic && !isIndependentSubject && isAnaphoric) {
-      if (!queryToResolve.toLowerCase().includes(inferredTopic.toLowerCase())) {
+      const inferredLower = inferredTopic.toLowerCase();
+      const partLower = part.toLowerCase();
+      const hasCoreMention = partLower.includes(inferredLower) ||
+        (inferredLower.includes('teknologi informasi') && partLower.includes('teknologi informasi')) ||
+        (inferredLower.includes('sistem informasi') && partLower.includes('sistem informasi')) ||
+        (inferredLower.includes('sistem komputer') && partLower.includes('sistem komputer')) ||
+        (inferredLower.includes('bisnis digital') && partLower.includes('bisnis digital'));
+
+      if (!hasCoreMention) {
         queryToResolve = `${part} ${inferredTopic}`;
+      } else if (!partLower.includes('s1') && inferredLower.startsWith('s1 ')) {
+        queryToResolve = part.replace(/\b(teknologi informasi|sistem informasi|sistem komputer|bisnis digital)\b/i, 'S1 $1');
       }
     }
 

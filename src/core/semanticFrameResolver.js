@@ -1444,8 +1444,9 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       } else if (aspects.includes('accreditation')) {
         const hasAccreditationSemantics = /\b(akreditasi|peringkat|ban-?pt|lam-?infokom|sk\s+akreditasi|accreditation|accredited)\b/i.test(rawQuery);
         if (hasAccreditationSemantics) {
-          intent = 'ACCREDITATION_INQUIRY';
-          domain = 'ACCREDITATION';
+          const hasAcademicProgram = (resolvedEntities || []).some(e => e.family === 'academic_program' || e.type === 'program') || /\b(prodi|jurusan|program studi|s1|d3|s2|bachelor|master|diploma)\b/i.test(rawQuery);
+          intent = hasAcademicProgram ? 'PROGRAM_ACCREDITATION' : 'ACCREDITATION_INQUIRY';
+          domain = hasAcademicProgram ? 'ACADEMIC_PROGRAM' : 'ACCREDITATION';
         }
       } else if (aspects.includes('career') || aspects.includes('career_prospects') || aspects.includes('prospek_karir') || primaryConcept === 'CAREER_PROSPECT') {
         const hasAcademicProgram = (resolvedEntities || []).some(e => e.family === 'academic_program' || e.type === 'program');
