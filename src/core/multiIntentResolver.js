@@ -137,9 +137,13 @@ function decomposeQuery(rawQuery, sessionData = {}) {
       subjectEntities = fullFrame.entities;
     }
   }
-  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
+  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas|akreditasi\s*(?:institusi|kampus|stikom)?|biaya\s*kuliah|pmb)\b/i);
+  const fallbackDomainTopic = firstFrame.domain === 'ACCREDITATION' ? 'akreditasi ITB STIKOM Bali' :
+    (firstFrame.domain === 'SCHOLARSHIP' ? 'beasiswa' :
+    (firstFrame.domain === 'PMB' ? 'PMB' : null));
   const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
     (topicMatch ? topicMatch[0] : null) ||
+    fallbackDomainTopic ||
     (sessionData && sessionData.activeEntity ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name) : null);
 
   // If first subquery lacked entity but entity exists in whole query / other subquery, re-resolve firstFrame with inferred topic
@@ -179,6 +183,14 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     }
 
     const subSessionData = isolateSubquerySession(sessionData);
+    subSessionData.lastQuery = parts[idx - 1];
+    subSessionData.contextHistory = [
+      ...(subSessionData.contextHistory || []),
+      { role: 'user', content: parts[idx - 1] }
+    ];
+    if (firstFrame.entities && firstFrame.entities.length > 0) {
+      subSessionData.activeEntity = firstFrame.entities[0];
+    }
     let subFrame = idx === 0 ? firstFrame : resolveSemanticFrame(queryToResolve, subSessionData);
     if (idx > 0) {
       const isNonProdiDomain = ['FACILITIES', 'ORGANIZATION_UKM', 'ORGANIZATION', 'CAMPUS_SERVICE', 'CAMPUS_LIFE', 'CAREER_CENTER', 'SCHOLARSHIP'].includes(subFrame.domain) ||
@@ -188,7 +200,13 @@ function decomposeQuery(rawQuery, sessionData = {}) {
       if (!isIndependentSubject && !isNonProdiDomain && subFrame.entities.length === 0 && subjectEntities.length > 0) {
         subFrame.entities = [...subjectEntities];
       }
-      // Never force subFrame.domain or intent from firstFrame
+      if (subFrame.domain === 'OUT_OF_DOMAIN' && firstFrame.domain && firstFrame.domain !== 'OUT_OF_DOMAIN' && isAnaphoric) {
+        subFrame.domain = firstFrame.domain;
+        if (firstFrame.intent) subFrame.intent = firstFrame.intent;
+        if (firstFrame.entities && firstFrame.entities.length > 0) {
+          subFrame.entities = [...firstFrame.entities];
+        }
+      }
     }
     return subFrame;
   });
@@ -237,9 +255,13 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
       subjectEntities = fullFrame.entities;
     }
   }
-  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas)\b/i);
+  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas|akreditasi\s*(?:institusi|kampus|stikom)?|biaya\s*kuliah|pmb)\b/i);
+  const fallbackDomainTopic = firstFrame.domain === 'ACCREDITATION' ? 'akreditasi ITB STIKOM Bali' :
+    (firstFrame.domain === 'SCHOLARSHIP' ? 'beasiswa' :
+    (firstFrame.domain === 'PMB' ? 'PMB' : null));
   const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
     (topicMatch ? topicMatch[0] : null) ||
+    fallbackDomainTopic ||
     (sessionData && sessionData.activeEntity ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name) : null);
 
   // If first subquery lacked entity but entity exists in whole query / other subquery, re-resolve firstFrame with inferred topic
@@ -283,6 +305,14 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     }
 
     const subSessionData = isolateSubquerySession(sessionData);
+    subSessionData.lastQuery = parts[idx - 1];
+    subSessionData.contextHistory = [
+      ...(subSessionData.contextHistory || []),
+      { role: 'user', content: parts[idx - 1] }
+    ];
+    if (firstFrame.entities && firstFrame.entities.length > 0) {
+      subSessionData.activeEntity = firstFrame.entities[0];
+    }
     let subFrame = (typeof resolveSemanticFrameAsync === 'function')
       ? await resolveSemanticFrameAsync(queryToResolve, subSessionData, options)
       : resolveSemanticFrame(queryToResolve, subSessionData, options);
@@ -294,7 +324,13 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     if (!isIndependentSubject && !isNonProdiDomain && subFrame.entities.length === 0 && subjectEntities.length > 0) {
       subFrame.entities = [...subjectEntities];
     }
-    // Never force subFrame.domain or intent from firstFrame
+    if (subFrame.domain === 'OUT_OF_DOMAIN' && firstFrame.domain && firstFrame.domain !== 'OUT_OF_DOMAIN' && isAnaphoric) {
+      subFrame.domain = firstFrame.domain;
+      if (firstFrame.intent) subFrame.intent = firstFrame.intent;
+      if (firstFrame.entities && firstFrame.entities.length > 0) {
+        subFrame.entities = [...firstFrame.entities];
+      }
+    }
     subFrames.push(subFrame);
   }
 

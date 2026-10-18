@@ -54,8 +54,8 @@ function isExplicitUnsupportedProgram(rawQuery, semanticFrame = {}) {
     if (semanticFrame.unsupportedEntity || semanticFrame.isUnsupportedEntity) {
       return semanticFrame.unsupportedEntityName || semanticFrame.unsupportedProgramName || 'tersebut';
     }
-    if (semanticFrame.unsupportedEntity === false || semanticFrame.isUnsupportedEntity === false) {
-      return null;
+    if (semanticFrame.unconfirmedProgram) {
+      return semanticFrame.unconfirmedProgram;
     }
   }
 
@@ -80,10 +80,14 @@ function isExplicitUnsupportedProgram(rawQuery, semanticFrame = {}) {
   // Check linguistic discipline patterns if no supported entity
   const qStr = semanticFrame?.rawQuery || rawQuery;
   if (qStr && typeof qStr === 'string') {
-    const { detectUnsupportedProgram } = require('../core/semanticFrameResolver');
+    const { detectUnsupportedProgram, detectUnconfirmedProgram } = require('../core/semanticFrameResolver');
     if (typeof detectUnsupportedProgram === 'function') {
       const detected = detectUnsupportedProgram(qStr, semanticFrame?.entities || []);
       if (detected) return detected;
+    }
+    if (typeof detectUnconfirmedProgram === 'function') {
+      const unconfirmed = detectUnconfirmedProgram(qStr, semanticFrame?.entities || []);
+      if (unconfirmed) return unconfirmed;
     }
   }
 
@@ -95,6 +99,13 @@ function isExplicitUnsupportedProgram(rawQuery, semanticFrame = {}) {
  */
 function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   if (isExplicitUnsupportedProgram(rawQuery, semanticFrame)) {
+    return false;
+  }
+  if (semanticFrame?.unconfirmedProgram) {
+    return false;
+  }
+  const candidateEntities = Array.isArray(semanticFrame?.candidateEntities) ? semanticFrame.candidateEntities : [];
+  if (candidateEntities.some(c => (c.inferredCategory === 'academic_program' || c.inferredCategory === 'discipline') && (c.rawMention || c.canonical))) {
     return false;
   }
 
@@ -109,15 +120,24 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
     return false;
   }
 
-  // Pure institutional general inquiries, available listings, or greetings are not ambiguous
+  // Pure institutional general inquiries, available listings, academic advising, or greetings are not ambiguous
   if (semanticFrame) {
     if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' ||
         semanticFrame.intent === 'GENERAL_PMB_INQUIRY' ||
         semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
         semanticFrame.intent === 'PAYMENT_CONFIRMATION_PROCEDURE' ||
+        semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
+        semanticFrame.intent === 'INSTITUTIONAL_ACCREDITATION' ||
+        semanticFrame.domain === 'ACADEMIC_PROCESS' ||
+        semanticFrame.domain === 'INSTITUTIONAL' ||
         semanticFrame.speechAct === 'GENERAL_GREETING') {
       return false;
     }
+  }
+
+  // Academic advising, perwalian, and E-KRS procedures are university-wide institutional processes
+  if (/\b(?:perwalian|dosen\s+wali|bimbingan\s+perwalian|e-?krs|supportperwalian)\b/i.test(q)) {
+    return false;
   }
 
   // Broad/general multi-program questions like "apa saja komponen biaya" are institutional general inquiries

@@ -19,7 +19,8 @@
 
 const {
   resolveSemanticFrame,
-  resolveSemanticFrameAsync
+  resolveSemanticFrameAsync,
+  detectUnsupportedProgram
 } = require('../src/core/semanticFrameResolver');
 
 const {
@@ -36,8 +37,10 @@ const { buildExecutionPlan } = require('../src/reasoning/phase2Planner');
 const { buildRetrievalPlan } = require('../src/core/retrievalPlanner');
 const {
   ACADEMIC_SCOPE_STATUS,
+  PROGRAM_AVAILABILITY_STATUS,
   SUPPORTED_CANONICAL_DEGREES,
-  resolveAcademicScope
+  resolveAcademicScope,
+  evaluateProgramAvailability
 } = require('../src/core/academicCatalog');
 
 describe('Phase 2B-1: Academic Catalog Scope & Grounding Verification', () => {
@@ -663,4 +666,106 @@ describe('Phase 2B-1: Academic Catalog Scope & Grounding Verification', () => {
     });
   });
 
+  // =========================================================================
+  // Property 13: Program Availability Status & Provenance Tri-State Evaluation
+  // =========================================================================
+  describe('Property 13: Program Availability Status & Provenance Tri-State Evaluation', () => {
+    test('13a. "offered" requires official evidence supporting program existence', () => {
+      const offeredCandidates = [
+        'S1 Sistem Informasi',
+        'Sistem Komputer',
+        'Teknologi Informasi',
+        'Bisnis Digital',
+        'D3 Manajemen Informatika',
+        'Magister Sistem Informasi',
+        'Double Degree'
+      ];
+
+      for (const name of offeredCandidates) {
+        const result = evaluateProgramAvailability(name);
+        expect(result.status).toBe(PROGRAM_AVAILABILITY_STATUS.OFFERED);
+        expect(result.canonicalName).toBeTruthy();
+        expect(result.provenance).not.toBeNull();
+        expect(result.provenance.sourceDocumentName).toBeTruthy();
+        expect([
+          'VERIFIED_ACTIVE',
+          'HISTORICAL_UNVERIFIED_PERIOD',
+          'VERIFIED_CORPUS_ACTIVE',
+          'VERIFIED_FROM_LOCAL_CORPUS',
+          'PARTIALLY_VERIFIED_FROM_CORPUS_DATASET'
+        ]).toContain(result.provenance.verificationStatus);
+      }
+    });
+
+    test('13b. "not_offered" requires sufficient source supporting exclusion within scope and period', () => {
+      const unofferedCandidates = [
+        'S3 Doktor Ilmu Komputer',
+        'Program Doktor Sistem Informasi',
+        'D4 Rekayasa Perangkat Lunak',
+        'Diploma 4',
+        'SMK TI'
+      ];
+
+      for (const name of unofferedCandidates) {
+        const result = evaluateProgramAvailability(name);
+        expect(result.status).toBe(PROGRAM_AVAILABILITY_STATUS.NOT_OFFERED);
+        expect(result.canonicalName).toBeNull();
+        expect(result.provenance).not.toBeNull();
+        expect(result.provenance.sourceDocumentId).toBe('DOC-CORPUS-DEGREE-LIMITS');
+        expect(result.provenance.verificationStatus).toBe('VERIFIED_ACTIVE');
+        expect(result.reason).toBe('degree_level_outside_institutional_scope');
+      }
+    });
+
+    test('13c. "unknown" is strictly used when evidence is insufficient (no unverified negative assumptions)', () => {
+      // Programs/disciplines not in catalog, unknown aliases, or arbitrary queries
+      // must NOT be assumed as "not_offered" without explicit official decrees
+      const unknownCandidates = [
+        'Kedokteran',
+        'Teknik Mesin',
+        'Psikologi',
+        'Akuntansi',
+        'Hukum Internasional',
+        'Teknik Nuklir',
+        'Sastra Belanda',
+        'Program Studi Siluman 123',
+        'XYZ Major Alias'
+      ];
+
+      for (const name of unknownCandidates) {
+        const result = evaluateProgramAvailability(name);
+        expect(result.status).toBe(PROGRAM_AVAILABILITY_STATUS.UNKNOWN);
+        expect(result.canonicalName).toBeNull();
+        expect(result.provenance).toBeNull();
+        expect(result.reason).toBe('insufficient_evidence_for_availability_determination');
+      }
+    });
+
+    test('13d. "unknown" is safely preserved on empty candidate, null, or whitespace-only inputs', () => {
+      expect(evaluateProgramAvailability(null).status).toBe(PROGRAM_AVAILABILITY_STATUS.UNKNOWN);
+      expect(evaluateProgramAvailability('').status).toBe(PROGRAM_AVAILABILITY_STATUS.UNKNOWN);
+      expect(evaluateProgramAvailability('   ').status).toBe(PROGRAM_AVAILABILITY_STATUS.UNKNOWN);
+      expect(evaluateProgramAvailability(undefined).status).toBe(PROGRAM_AVAILABILITY_STATUS.UNKNOWN);
+    });
+
+    test('13e. detectUnsupportedProgram in semanticFrameResolver does not treat "unknown" programs as unsupported', () => {
+      // Direct detection: unknown candidates return null (not unsupported)
+      expect(detectUnsupportedProgram('apakah ada jurusan teknik mesin di stikom?')).toBeNull();
+      expect(detectUnsupportedProgram('apakah ada jurusan kedokteran di stikom?')).toBeNull();
+
+      // Resolved frame does not route to UNSUPPORTED_PROGRAM domain
+      const frameMesin = resolveSemanticFrame('apakah ada jurusan teknik mesin di stikom?');
+      expect(frameMesin.domain).not.toBe('UNSUPPORTED_PROGRAM');
+      expect(frameMesin.unsupportedProgramName).toBeFalsy();
+
+      const frameKedokteran = resolveSemanticFrame('apakah ada jurusan kedokteran di stikom?');
+      expect(frameKedokteran.domain).not.toBe('UNSUPPORTED_PROGRAM');
+      expect(frameKedokteran.unsupportedProgramName).toBeFalsy();
+
+      // But explicitly unsupported degree levels with statutory limits MUST be detected
+      const frameS3 = resolveSemanticFrame('apakah ada program s3 doktor di stikom?');
+      expect(frameS3.academicScope.status).toBe(ACADEMIC_SCOPE_STATUS.UNSUPPORTED);
+      expect(frameS3.scopeLevel).toBe('UNSUPPORTED');
+    });
+  });
 });

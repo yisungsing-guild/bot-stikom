@@ -186,7 +186,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
      !/\b(?:hima\b|himaprodi|himpunan)\b/i.test(query)) ||
     /\b(?:fasilitas|laboratorium|lab\b|perpustakaan|asrama|gedung|kantin|parkir|parking|lapangan)\b/i.test(query) ||
     /\b(?:beasiswa|kip\s*kuliah|kip-?k|bantuan\s+dana|keringanan\s+biaya)\b/i.test(query) ||
-    /\b(?:inkubator|inbis|career\s+center|cdc\b|layanan\s+kampus|bimbingan\s+karir)\b/i.test(query);
+    /\b(?:inkubator|inbis|career\s+center|cdc\b|layanan\s+kampus|bimbingan\s+karir|perwalian|dosen\s+wali|konsultasi\s+akademik|bimbingan\s+akademik)\b/i.test(query);
 
   if (isCampusWideQuery && isAcademicActiveEntity) {
     return {

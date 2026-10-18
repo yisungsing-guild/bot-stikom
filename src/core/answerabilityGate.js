@@ -28,6 +28,14 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
 
   // 1. If no accepted evidence exists
   if (!accepted || accepted.length === 0) {
+    // Institutional academic catalog inquiries are grounded in institutional catalog
+    if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST') {
+      return {
+        status: ANSWERABILITY_STATUS.ANSWERABLE,
+        reason: 'institutional_academic_catalog'
+      };
+    }
+
     // If user query represents a missed academic process or complaint -> ESCALATE to admin/academic staff
     if (semanticFrame.intent === 'MISSED_ACADEMIC_PROCESS' || semanticFrame.userState === 'LATE') {
       return {
@@ -160,6 +168,9 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       if (req === 'requirements' || req === 'admission_requirements') {
         return /\b(syarat|persyaratan|berkas|dokumen|ijazah|rapor)\b/i.test(combinedEvidenceText);
       }
+      if (req === 'academic_advising' || req === 'dosen_wali' || req === 'krs' || req === 'academic_process' || req === 'perwalian') {
+        return /\b(perwalian|dosen\s*wali|krs|e-krs|supportperwalian|bimbingan|polling)\b/i.test(combinedEvidenceText);
+      }
       return false;
     };
 
@@ -176,6 +187,17 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
           guidance: isEn
             ? 'Official information regarding tuition fee details for that study program is not fully listed in the available guide.'
             : 'Informasi resmi mengenai rincian biaya kuliah untuk program studi tersebut belum tercantum secara lengkap dalam panduan yang tersedia.'
+        };
+      }
+      if (semanticFrame.domain === 'ACADEMIC_PROCESS' || semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' || requiredAspects.some(a => ['academic_advising', 'dosen_wali', 'perwalian'].includes(a))) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'insufficient_advising_aspect_evidence',
+          coveredAspects: [],
+          missingAspects: requiredAspects,
+          guidance: isEn
+            ? 'Academic advising (**perwalian**) with your Academic Advisor (Dosen Wali) is an essential academic consultation process required before the semester begins to approve course selections (KRS). Specific handling procedures or contact details for advising delays cannot be confirmed from verified official documents at this time. Please consult your Academic Advisor (Dosen Wali) directly or contact the Academic Administration Bureau (BAAK).'
+            : 'Bimbingan perwalian dengan Dosen Wali di ITB STIKOM Bali merupakan proses akademik wajib sebelum perkuliahan semester baru untuk menyetujui Kartu Rencana Studi (KRS). Rincian prosedur resmi penanganan keterlambatan perwalian maupun kontak bantuan teknis belum dapat dipastikan dari dokumen resmi yang terverifikasi saat ini. Mahasiswa disarankan untuk langsung berkonsultasi dengan Dosen Wali masing-masing atau menghubungi Bagian Layanan Akademik (BAAK) ITB STIKOM Bali.'
         };
       }
       return {
@@ -274,6 +296,23 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       coveredAspects: [],
       missingAspects: ['regional_scholarship'],
       guidance: 'Informasi resmi terkait program beasiswa khusus dari Pemerintah Daerah tersebut belum tercantum dalam dokumen resmi yang tersedia.'
+    };
+  }
+
+  const isAdvisingInquiry = semanticFrame.domain === 'ACADEMIC_PROCESS' ||
+    semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
+    /\b(?:perwalian|dosen\s*wali|bimbingan\s+perwalian|e-krs)\b/i.test(rawQ);
+
+  if (isAdvisingInquiry && !/\b(perwalian|dosen\s*wali)\b/i.test(combinedEvidenceText)) {
+    const isEn = semanticFrame.language === 'en';
+    return {
+      status: ANSWERABILITY_STATUS.UNKNOWN,
+      reason: 'corpus_gap_academic_advising_unrecorded',
+      coveredAspects: [],
+      missingAspects: ['academic_advising'],
+      guidance: isEn
+        ? 'Academic advising (**perwalian**) with your Academic Advisor (Dosen Wali) is an essential academic consultation process required before the semester begins to approve course selections (KRS). Specific handling procedures or contact details for advising delays cannot be confirmed from verified official documents at this time. Please consult your Academic Advisor (Dosen Wali) directly or contact the Academic Administration Bureau (BAAK).'
+        : 'Bimbingan perwalian dengan Dosen Wali di ITB STIKOM Bali merupakan proses akademik wajib sebelum perkuliahan semester baru untuk menyetujui Kartu Rencana Studi (KRS). Rincian prosedur resmi penanganan keterlambatan perwalian maupun kontak bantuan teknis belum dapat dipastikan dari dokumen resmi yang terverifikasi saat ini. Mahasiswa disarankan untuk langsung berkonsultasi dengan Dosen Wali masing-masing atau menghubungi Bagian Layanan Akademik (BAAK) ITB STIKOM Bali.'
     };
   }
 

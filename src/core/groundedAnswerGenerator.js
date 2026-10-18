@@ -20,7 +20,8 @@ const {
   normalizeAcademicScope,
   getCatalogEntriesByScope,
   resolveAcademicScope,
-  generateGroundedCatalogSummary
+  generateGroundedCatalogSummary,
+  INSTITUTIONAL_ACCREDITATION_RECORD
 } = require('./academicCatalog');
 const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
 const { detectQueryLanguage } = require('../utils/languageDetector');
@@ -482,15 +483,22 @@ function extractAccreditationFromEvidence(chunks, entityName = '') {
   if (!Array.isArray(chunks)) return null;
   for (const c of chunks) {
     const text = cleanDocumentArtifacts(c.text || c.chunk || '');
-    if (/AKREDITASI\s+BAIK\s+SEKALI/i.test(text)) return 'Baik Sekali';
-    if (/AKREDITASI\s+UNGGUL/i.test(text)) return 'Unggul';
-    if (/AKREDITASI\s+BAIK/i.test(text)) return 'Baik';
-    const m = text.match(/(?:Status\s+)?Akreditasi\s*(?::|yaitu|adalah)?\s*["']?([A-Za-z\s]+?)(?:["']|\.|\(|oleh|\n|$)/i);
-    if (m && /baik|unggul|terakreditasi/i.test(m[1])) {
-      return m[1].trim();
+    if (/AKREDITASI\s+BAIK\s+SEKALI/i.test(text) || /\bperingkat\s+(?:akreditasi\s+)?baik\s+sekali\b/i.test(text) || /\bterakreditasi\s+baik\s+sekali\b/i.test(text)) return 'Baik Sekali';
+    if (/AKREDITASI\s+UNGGUL/i.test(text) || /\bperingkat\s+(?:akreditasi\s+)?unggul\b/i.test(text) || /\bterakreditasi\s+unggul\b/i.test(text)) return 'Unggul';
+    if ((/AKREDITASI\s+BAIK\b/i.test(text) || /\bterakreditasi\s+baik\b/i.test(text)) && !/baik\s+sekali/i.test(text)) return 'Baik';
+    const m = text.match(/(?:Status|Peringkat)?\s*Akreditasi\s*(?::|yaitu|adalah)?\s*["']?([A-Za-z\s]+?)(?:["']|\.|\(|oleh|\n|$)/i);
+    if (m) {
+      const val = m[1].trim();
+      if (/^perguruan\s+tinggi$/i.test(val)) {
+        continue;
+      }
+      if (/baik\s+sekali/i.test(val)) return 'Baik Sekali';
+      if (/unggul/i.test(val)) return 'Unggul';
+      if (/baik/i.test(val)) return 'Baik';
+      if (/terakreditasi/i.test(val) && !/^perguruan/i.test(val)) return val;
     }
     const certMatch = text.match(/peringkat\s+Akreditasi\s+([A-Za-z\s]+?)(?:\.|\n|$)/i);
-    if (certMatch) {
+    if (certMatch && !/^perguruan\s+tinggi$/i.test(certMatch[1].trim())) {
       return certMatch[1].trim();
     }
   }
@@ -723,6 +731,170 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
         return appendMissingAspectNote(answer.trim());
       }
     }
+  }
+
+  // 0c. Academic Advising & Perwalian Online (E-KRS)
+  const isAdvisingInquiry = semanticFrame.domain === 'ACADEMIC_PROCESS' ||
+    semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['academic_advising', 'dosen_wali', 'perwalian', 'krs'].includes(a))) ||
+    /\b(?:perwalian|dosen\s+wali|bimbingan\s+perwalian|e-?krs)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+
+  if (isAdvisingInquiry) {
+    const isLateInquiry = /\b(?:terlambat|keterlambatan|lewat|dampak|konsekuensi|sanksi|telat|deadline|miss|late)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+
+    // Strictly verify that accepted evidence contains advising signals (verified or unverified)
+    const hasAdvisingEvidence = accepted.some(c => {
+      const text = cleanDocumentArtifacts(c.text || c.chunk || '');
+      const src = String(c.sourceFile || c.source_file || c.filename || '').toLowerCase();
+      return src.includes('faq_sistem_informasi_perwalian') || /\b(?:perwalian|dosen\s+wali|e-?krs|supportperwalian)\b/i.test(text);
+    });
+
+    if (!hasAdvisingEvidence) {
+      return null; // Refuse ungrounded generation if accepted evidence has zero advising connection
+    }
+
+    // Check if evidence contains unverified transcription provenance
+    const hasUnverifiedEvidenceOnly = accepted.every(c => {
+      const src = String(c.sourceFile || c.source_file || c.filename || '').toLowerCase();
+      const auth = String(c.governance?.authenticityStatus || c.authenticityStatus || '').toUpperCase();
+      const ver = String(c.governance?.verificationStatus || c.verificationStatus || '').toUpperCase();
+      return src.includes('faq_sistem_informasi_perwalian') ||
+        auth.includes('UNVERIFIED') ||
+        ver.includes('UNVERIFIED');
+    });
+
+    // Strictly verify that accepted evidence contains substantive verified perwalian documentation
+    const verifiedAdvisingEvidence = accepted.filter(c => {
+      const src = String(c.sourceFile || c.source_file || c.filename || '').toLowerCase();
+      const auth = String(c.governance?.authenticityStatus || c.authenticityStatus || '').toUpperCase();
+      const ver = String(c.governance?.verificationStatus || c.verificationStatus || '').toUpperCase();
+      if (src.includes('faq_sistem_informasi_perwalian') || auth.includes('UNVERIFIED') || ver.includes('UNVERIFIED')) {
+        return false;
+      }
+      const text = cleanDocumentArtifacts(c.text || c.chunk || '');
+      return /\b(?:perwalian|dosen\s+wali|e-?krs)\b/i.test(text);
+    });
+
+    // If advising evidence is unverified or lacks verified documentation, emit natural unconfirmed guidance
+    if (hasUnverifiedEvidenceOnly || verifiedAdvisingEvidence.length === 0) {
+      if (isLateInquiry) {
+        if (userLang === 'en') {
+          const naturalLateAnswer = `Academic advising (**perwalian**) with your Academic Advisor (Dosen Wali) is an essential academic consultation process required before each semester begins to finalize and approve your Study Plan (KRS).\n\n` +
+            `Regarding the specific consequences or official handling procedures for missing or being late for academic advising, the technical handling guidelines and support contacts **cannot be definitively confirmed from verified official documents at this time**.\n\n` +
+            `To avoid study plan disruption or course enrollment blocks, students facing advising delays are advised to consult directly with their **Academic Advisor (Dosen Wali)** or contact the **Academic Administration Bureau (BAAK) ITB STIKOM Bali**.`;
+          return appendMissingAspectNote(naturalLateAnswer);
+        }
+
+        const naturalLateAnswer = `Bimbingan perwalian dengan Dosen Wali di ITB STIKOM Bali merupakan proses konsultasi akademik wajib yang harus diselesaikan mahasiswa sebelum perkuliahan semester baru dimulai untuk menyetujui pengisian Kartu Rencana Studi (KRS).\n\n` +
+          `Terkait konsekuensi maupun alur penanganan jika mahasiswa terlambat melakukan perwalian, rincian prosedur resmi, kanal pengaduan, dan kontak bantuan teknis **belum dapat dipastikan dari dokumen resmi yang terverifikasi saat ini**.\n\n` +
+          `Untuk menghindari kendala persetujuan rencana studi dan pemilihan jadwal kuliah, mahasiswa yang terlambat atau mengalami kendala perwalian disarankan untuk segera berkonsultasi langsung dengan **Dosen Wali** masing-masing atau menghubungi **Bagian Layanan Akademik (BAAK) ITB STIKOM Bali**.`;
+        return appendMissingAspectNote(naturalLateAnswer);
+      }
+
+      if (userLang === 'en') {
+        const naturalAdvisingAnswer = `At ITB STIKOM Bali, academic advising (**perwalian**) is a mandatory consultation between students and their Academic Advisor (Dosen Wali) before each new semester begins to review academic progress and approve course selections on the academic portal.\n\n` +
+          `Specific system requirements, polling criteria, and support contacts from unverified online FAQ transcripts **cannot be asserted as official policy until verified against official campus records**. For confirmed schedules and procedures, students are advised to monitor the official SION portal or contact their Academic Advisor directly.`;
+        return appendMissingAspectNote(naturalAdvisingAnswer);
+      }
+
+      const naturalAdvisingAnswer = `Perwalian di ITB STIKOM Bali merupakan proses konsultasi akademik wajib antara mahasiswa dengan Dosen Wali sebelum memulai perkuliahan semester baru untuk merencanakan studi dan menyetujui Kartu Rencana Studi (KRS).\n\n` +
+        `Rincian persyaratan sistem, polling, maupun kontak bantuan teknis dari transkripsi FAQ online **belum dapat dipastikan sebagai kebijakan resmi sebelum diverifikasi dengan sumber resmi kampus**. Untuk jadwal perwalian resmi dan alur pengisian KRS yang terkonfirmasi, mahasiswa disarankan memantau portal akademik SION atau berkonsultasi langsung dengan Dosen Wali masing-masing.`;
+      return appendMissingAspectNote(naturalAdvisingAnswer);
+    }
+
+    // Extract facts strictly from accepted verified evidence
+    const extractedEmails = Array.from(new Set(cleanAll.match(/\b[a-zA-Z0-9._%+-]+@stikom-bali\.ac\.id\b/gi) || []));
+    const extractedUrls = Array.from(new Set((cleanAll.match(/https?:\/\/[^\s\)\],]+/gi) || []).map(u => u.replace(/[\.,]+$/, ''))));
+    const portalUrl = extractedUrls.find(u => /e-krs|perwalian/i.test(u)) || null;
+
+    const hasLateProcedureInEvidence = /\b(?:terlambat|keterlambatan)\b/i.test(cleanAll);
+    const hasTimSupport = /\bTim\s+Support\s+Perwalian\b/i.test(cleanAll);
+    const hasNimNamaRequirement = /\bNIM\b/i.test(cleanAll) && /\bNama\b/i.test(cleanAll);
+    const hasTeamsChannel = /\bMicrosoft\s+Teams\b/i.test(cleanAll);
+
+    if (isLateInquiry) {
+      if (!hasLateProcedureInEvidence) {
+        return null;
+      }
+      if (!hasTimSupport && !hasNimNamaRequirement && extractedEmails.length === 0 && !portalUrl) {
+        return null;
+      }
+
+      if (userLang === 'en') {
+        let lateAnswer = `Based on the official advising guidelines (E-KRS) of ITB STIKOM Bali, the procedure for students who are late in completing academic advising is as follows:\n\n`;
+        if (hasTimSupport) {
+          lateAnswer += `• **Support Escalation**: Students who miss the advising schedule must immediately contact the **Academic Advising Support Team (Tim Support Perwalian)** for guidance so their study plan can be processed.\n`;
+        }
+        if (hasNimNamaRequirement) {
+          lateAnswer += `• **Required Identification**: When contacting the Support Team, students must provide their full Name and Student ID Number (NIM).\n`;
+        }
+        if (extractedEmails.length > 0) {
+          const emailList = extractedEmails.map(e => `\`${e}\``).join(' or ');
+          lateAnswer += `• **Official Support Channel**: The Support Team can be reached ${hasTeamsChannel ? 'via Microsoft Teams ' : ''}at ${emailList}.\n`;
+        }
+        if (portalUrl) {
+          lateAnswer += `\nAcademic advising with your Academic Advisor (Dosen Wali) is required to approve your study plan (KRS) on ${portalUrl} and confirm your course schedule for the new semester.`;
+        }
+        return appendMissingAspectNote(lateAnswer.trim());
+      }
+
+      let lateAnswer = `Berdasarkan ketentuan resmi FAQ Sistem Informasi Perwalian Online (E-KRS) ITB STIKOM Bali, dampak dan prosedur jika mahasiswa terlambat melakukan bimbingan perwalian sesuai jadwal yang ditentukan adalah sebagai berikut:\n\n`;
+      if (hasTimSupport) {
+        lateAnswer += `• **Prosedur Penanganan**: Mahasiswa yang terlambat perwalian agar **segera menghubungi Tim Support Perwalian** untuk mendapatkan arahan dan penanganan lebih lanjut agar rencana studinya dapat diproses.\n`;
+      }
+      if (hasNimNamaRequirement) {
+        lateAnswer += `• **Identitas yang Wajib Disertakan**: Saat melapor ke Tim Support, mahasiswa wajib mencantumkan identitas diri lengkap berupa **NIM dan Nama lengkap**.\n`;
+      }
+      if (extractedEmails.length > 0) {
+        const emailList = extractedEmails.map(e => `\`${e}\``).join(' atau ');
+        lateAnswer += `• **Saluran Resmi Bantuan**: Tim Support Perwalian dapat dihubungi ${hasTeamsChannel ? 'melalui chat resmi Microsoft Teams ' : ''}pada akun ${emailList}.\n`;
+      }
+      if (portalUrl) {
+        lateAnswer += `\nBimbingan perwalian dengan Dosen Wali wajib diselesaikan agar penyusunan Kartu Rencana Studi (KRS) di portal ${portalUrl} disetujui dan jadwal perkuliahan semester baru dapat dipastikan.`;
+      }
+      return appendMissingAspectNote(lateAnswer.trim());
+    }
+
+    // General academic advising inquiry
+    const hasPollingAndPayment = /\b(?:polling|pembayaran)\b/i.test(cleanAll);
+    const hasDosenWali = /\bDosen\s+Wali\b/i.test(cleanAll);
+    const hasSksLimit = /\b(?:24\s*SKS|IPK)\b/i.test(cleanAll);
+
+    if (!hasDosenWali && !portalUrl && !hasPollingAndPayment && extractedEmails.length === 0) {
+      return null;
+    }
+
+    if (userLang === 'en') {
+      let advisingAnswer = `At ITB STIKOM Bali, academic advising (**perwalian**) is an essential initial academic process conducted ${portalUrl ? `online via ${portalUrl} ` : ''}before each new semester begins:\n\n`;
+      if (hasDosenWali) {
+        advisingAnswer += `• **Academic Advisor Consultation**: Students consult directly with their Academic Advisor (Dosen Wali) to plan their studies${hasSksLimit ? ' and determine the credit load (up to 24 SKS based on GPA)' : ''}.\n`;
+      }
+      if (portalUrl) {
+        advisingAnswer += `• **Online Study Plan (KRS)**: Course selection and class scheduling are finalized through ${portalUrl} according to each student's designated advising schedule.\n`;
+      }
+      if (hasPollingAndPayment) {
+        advisingAnswer += `• **Access Requirements**: Students must complete course polling and settle required tuition payments (at least 50% or equivalent to 5 credits) to unlock E-KRS access.\n`;
+      }
+      if (extractedEmails.length > 0) {
+        advisingAnswer += `• **Technical Support**: Assistance is coordinated via the Perwalian Support Team at ${extractedEmails.map(e => `\`${e}\``).join(' / ')}.\n`;
+      }
+      return appendMissingAspectNote(advisingAnswer.trim());
+    }
+
+    let advisingAnswer = `Perwalian di ITB STIKOM Bali adalah proses akademik awal yang wajib dilakukan oleh seluruh mahasiswa sebelum memulai perkuliahan pada semester baru:\n\n`;
+    if (hasDosenWali) {
+      advisingAnswer += `• **Konsultasi Dosen Wali**: Mahasiswa berkonsultasi terlebih dahulu dengan Dosen Wali untuk merencanakan studi${hasSksLimit ? ', menentukan beban SKS (maksimal 24 SKS disesuaikan dengan IPK),' : ''} serta memilih paket mata kuliah.\n`;
+    }
+    if (portalUrl) {
+      advisingAnswer += `• **Penyusunan KRS Daring**: Pengisian Kartu Rencana Studi dilakukan secara online melalui laman resmi ${portalUrl} sesuai jadwal masing-masing.\n`;
+    }
+    if (hasPollingAndPayment) {
+      advisingAnswer += `• **Syarat Hak Akses E-KRS**: Mahasiswa berhak mengikuti perwalian online jika telah melakukan polling mata kuliah dan menyelesaikan administrasi pembayaran kuliah (minimal 50% atau setara 5 SKS).\n`;
+    }
+    if (extractedEmails.length > 0) {
+      advisingAnswer += `• **Bantuan Teknis**: Jika mengalami kendala teknis atau keterlambatan, mahasiswa dapat menghubungi Tim Support Perwalian di ${extractedEmails.map(e => `\`${e}\``).join(' / ')}.\n`;
+    }
+    return appendMissingAspectNote(advisingAnswer.trim());
   }
 
   // 1. PMB Inquiries (General, Procedure, Requirements)
@@ -1722,10 +1894,64 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
 
     // 2. Accreditation Inquiry
     const isAccreditationSpecific = semanticFrame.intent === 'PROGRAM_ACCREDITATION' ||
+      semanticFrame.intent === 'INSTITUTIONAL_ACCREDITATION' ||
       (semanticFrame.aspects && semanticFrame.aspects.includes('accreditation')) ||
       /\b(akreditasi(?:nya)?)\b/i.test(rawQuery);
 
     if (isAccreditationSpecific) {
+      const isInstitutionalAccreditation = semanticFrame.intent === 'INSTITUTIONAL_ACCREDITATION' ||
+        semanticFrame.domain === 'INSTITUTIONAL' ||
+        targetEntities.length === 0 ||
+        entityLabel === 'program terkait' ||
+        /\b(?:institusi|kampus|perguruan\s+tinggi|stikom|universitas)\b/i.test(rawQuery);
+
+      if (isInstitutionalAccreditation) {
+        const hasInstitutionalEvidence = accepted.some(c => {
+          const text = (c.text || c.chunk || '').toLowerCase();
+          return (text.includes('akreditasi') || text.includes('ban-pt')) &&
+            (text.includes('institusi') || text.includes('perguruan tinggi') || text.includes('stikom') || text.includes('baik sekali'));
+        }) || /baik\s+sekali/i.test(cleanAll) || /ban-?pt/i.test(cleanAll);
+
+        if (!hasInstitutionalEvidence) {
+          return null; // Jika evidence resmi tidak tersedia, jangan menyatakan peringkat sebagai fakta
+        }
+
+        const hasBaikSekali = accepted.some(c => /baik\s+sekali/i.test(c.text || c.chunk || '')) ||
+          /baik\s+sekali/i.test(cleanAll);
+        const rank = hasBaikSekali ? 'Baik Sekali' : (INSTITUTIONAL_ACCREDITATION_RECORD?.accreditationRank || 'Baik Sekali');
+        const agency = /ban-?pt/i.test(cleanAll) ? 'BAN-PT' : (INSTITUTIONAL_ACCREDITATION_RECORD?.accreditingAgency || 'BAN-PT');
+        const skMatch = cleanAll.match(/\b(\d+\/SK\/BAN-PT\/[^\s\.,]+)/i);
+        const skNumber = skMatch ? skMatch[1] : (INSTITUTIONAL_ACCREDITATION_RECORD?.accreditationDecree || '3033/SK/BAN-PT/Ak.KP/PT/XII/2025');
+
+        const validityPeriodId = INSTITUTIONAL_ACCREDITATION_RECORD?.accreditationValidity || null;
+        const validityPeriodEn = INSTITUTIONAL_ACCREDITATION_RECORD?.accreditationValidityEn ||
+          (INSTITUTIONAL_ACCREDITATION_RECORD?.startDateEn && INSTITUTIONAL_ACCREDITATION_RECORD?.endDateEn
+            ? `${INSTITUTIONAL_ACCREDITATION_RECORD.startDateEn} until ${INSTITUTIONAL_ACCREDITATION_RECORD.endDateEn}`
+            : null);
+
+        if (userLang === 'en') {
+          let instAnswer = `Institut Teknologi dan Bisnis (ITB) STIKOM Bali is officially accredited by **${agency}** with an institutional accreditation rank of **${rank}**`;
+          if (skNumber) {
+            instAnswer += ` (Decree No. ${skNumber})`;
+          }
+          if (validityPeriodEn) {
+            instAnswer += `, valid from ${validityPeriodEn}`;
+          }
+          instAnswer += `.\n\nThis status represents institutional accreditation for the higher education institution and is separate from the accreditation rank of each individual study program.`;
+          return appendMissingAspectNote(instAnswer);
+        }
+
+        let instAnswer = `Institut Teknologi dan Bisnis (ITB) STIKOM Bali telah terakreditasi institusi secara resmi oleh **${agency}** dengan peringkat **${rank}**`;
+        if (skNumber) {
+          instAnswer += ` (SK No. ${skNumber})`;
+        }
+        if (validityPeriodId) {
+          instAnswer += ` dengan masa berlaku ${validityPeriodId}`;
+        }
+        instAnswer += `.\n\nStatus ini merupakan akreditasi perguruan tinggi (institusi) dan terpisah dari akreditasi masing-masing program studi.`;
+        return appendMissingAspectNote(instAnswer);
+      }
+
       const acc = extractAccreditationFromEvidence(accepted, entityLabel) || 'Terakreditasi resmi BAN-PT / LAM-INFOKOM';
       const accAnswer = `Program Studi **${entityLabel}** di ITB STIKOM Bali memiliki status akreditasi resmi **${acc}**.\n\nAkreditasi ini menjadi jaminan standar mutu kurikulum, tenaga pengajar, dan fasilitas pembelajaran yang diselenggarakan. Ada info lain tentang prodi ${entityLabel} yang ingin Kakak tanyakan?`;
       return appendMissingAspectNote(accAnswer);
@@ -1967,17 +2193,28 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     };
   }
 
-  // Explicit Unsupported Entity handling (e.g. Teknik Nuklir)
-  if (arbitratedEvidence.retrievalPlan?.isUnsupportedEntity || semanticFrame.isUnsupportedEntity || semanticFrame.domain === 'UNSUPPORTED_PROGRAM') {
+  // Explicit Unsupported Entity / Unconfirmed Program handling (e.g. Kedokteran, Teknik Nuklir)
+  if (arbitratedEvidence.retrievalPlan?.isUnsupportedEntity || semanticFrame.isUnsupportedEntity || semanticFrame.domain === 'UNSUPPORTED_PROGRAM' || arbitratedEvidence.unconfirmedProgram || semanticFrame.unconfirmedProgram) {
     const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
-    const programName = arbitratedEvidence.retrievalPlan?.unsupportedProgramName || semanticFrame.unsupportedProgramName || semanticFrame.unsupportedEntityName || (userLang === 'en' ? 'the requested program' : 'tersebut');
+    const programName = arbitratedEvidence.retrievalPlan?.unconfirmedProgram || arbitratedEvidence.unconfirmedProgram || semanticFrame.unconfirmedProgram || arbitratedEvidence.retrievalPlan?.unsupportedProgramName || semanticFrame.unsupportedProgramName || semanticFrame.unsupportedEntityName || (userLang === 'en' ? 'the requested program' : 'tersebut');
     const programList = CANONICAL_ENTITIES
-      .filter(e => e.family === 'academic_program' && (e.canonical.startsWith('S') || e.canonical.startsWith('D')))
+      .filter(e => e.family === 'academic_program' && (e.canonical.startsWith('S') || e.canonical.startsWith('D3')))
       .map(e => `• ${e.canonical}`)
       .join('\n');
+
+    const isMedicalRelated = /\b(?:kedokteran|dokter|medicine|medical)\b/i.test(programName) ||
+                             /\b(?:kedokteran|dokter|medicine|medical)\b/i.test(semanticFrame.rawQuery || '');
+    const medicalNoteId = isMedicalRelated
+      ? '\n\n*Catatan*: Program S1 Kedokteran berbeda dengan konsentrasi **Medical Informatics** yang berada di bawah program Pascasarjana (S2) Sistem Informasi.'
+      : '';
+    const medicalNoteEn = isMedicalRelated
+      ? '\n\n*Note*: The undergraduate Medicine program (S1 Kedokteran) is distinct from the **Medical Informatics** concentration under the Master of Information Systems (S2 Sistem Informasi) program.'
+      : '';
+
     const unsupportedAnswer = userLang === 'en'
-      ? `I apologize, but the study program **${programName}** is currently not offered at ITB STIKOM Bali.\n\nThe official study programs offered include:\n${programList}\n\nWould you like more information about any of these programs?`
-      : `Mohon maaf Kak, program studi **${programName}** saat ini tidak diselenggarakan di ITB STIKOM Bali.\n\nProgram studi resmi yang tersedia antara lain:\n${programList}\n\nApakah ada program studi di atas yang ingin Kakak tanyakan?`;
+      ? `Based on the official study programs currently published in the ITB STIKOM Bali PMB catalog, the program **${programName}** is not found in the currently available list. Therefore, the availability and tuition fees for that program cannot be confirmed from the official list examined.${medicalNoteEn}\n\nThe official study programs currently published include:\n${programList}\n• International Program / Double Degree\n\nFor definitive confirmation or official program and admission fee updates, please consult ITB STIKOM Bali PMB directly via https://pmb.stikom-bali.ac.id.`
+      : `Berdasarkan daftar program studi resmi yang saat ini dipublikasikan pada katalog PMB ITB STIKOM Bali, program studi **${programName}** tidak ditemukan dalam daftar program yang tersedia saat ini. Oleh karena itu, ketersediaan maupun rincian biaya kuliah untuk program studi tersebut belum dapat dikonfirmasi dari daftar resmi yang diperiksa.${medicalNoteId}\n\nProgram studi resmi yang saat ini dipublikasikan antara lain:\n${programList}\n• Program Internasional / Double Degree\n\nUntuk kepastian informasi atau pembaruan program studi serta biaya pendaftaran, silakan merujuk langsung ke layanan PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
+
     return {
       success: true,
       answer: unsupportedAnswer,
@@ -2148,5 +2385,6 @@ module.exports = {
   normalizeAcademicScope,
   getCatalogEntriesByScope,
   generateGroundedCatalogSummary,
+  extractAccreditationFromEvidence,
   INSTITUTIONAL_ACADEMIC_CATALOG
 };

@@ -193,10 +193,13 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     arbitratedEvidence?.unsupportedEntity ||
     arbitratedEvidence?.retrievalPlan?.unsupportedEntity ||
     arbitratedEvidence?.retrievalPlan?.isUnsupportedEntity ||
+    arbitratedEvidence?.unconfirmedProgram ||
+    arbitratedEvidence?.retrievalPlan?.unconfirmedProgram ||
+    semanticFrame?.unconfirmedProgram ||
     semanticFrame?.isUnsupportedEntity ||
     semanticFrame?.unsupportedEntity ||
     semanticFrame?.domain === 'UNSUPPORTED_PROGRAM' ||
-    /tidak diselenggarakan di ITB STIKOM Bali|is currently not offered at ITB STIKOM Bali/i.test(text)
+    /tidak diselenggarakan di ITB STIKOM Bali|is currently not offered at ITB STIKOM Bali|tidak ditemukan dalam daftar program yang tersedia saat ini|belum dapat dikonfirmasi dari daftar resmi/i.test(text)
   );
 
   // 3. Temporal Claim Grounding Check (Detect ungrounded currentness claims)
@@ -327,6 +330,39 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       if (isRefusingPartner && !/\b(?:Bandung|UTB)\b/i.test(text)) {
         return failVerification('unjustified_refusal_national_partner_available');
       }
+    }
+  }
+
+  // 7d. Academic Process & Advising Grounding Guards (Fidelity against hallucinations)
+  const isAdvisingInquiry = semanticFrame.domain === 'ACADEMIC_PROCESS' ||
+    semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
+    (semanticFrame.aspects && (semanticFrame.aspects.includes('academic_advising') || semanticFrame.aspects.includes('dosen_wali') || semanticFrame.aspects.includes('krs')));
+
+  if (isAdvisingInquiry) {
+    const acceptedTexts = (arbitratedEvidence.accepted || []).map(c => (c.text || c.chunk || '').toLowerCase()).join(' ');
+
+    // 1. Location hallucination check (e.g. Laboratorium Database, Lantai 3, Kampus Renon)
+    const mentionsLabDb = /\b(?:lab(?:oratorium)?\s+database|lantai\s+3)\b/i.test(text);
+    if (mentionsLabDb && !/\b(?:lab(?:oratorium)?\s+database|lantai\s+3)\b/i.test(acceptedTexts)) {
+      return failVerification('unsupported_factual_claim_location: Lab Database Lantai 3 not in accepted evidence');
+    }
+
+    // 2. Document & payment obligation hallucination for late advising
+    const mentionsMandatoryPaymentProof = /\b(?:membawa\s+(?:bukti\s+pembayaran|krs\s+manual)|wajib\s+membawa\s+bukti)\b/i.test(text);
+    if (mentionsMandatoryPaymentProof && !/\b(?:membawa\s+(?:bukti\s+pembayaran|krs\s+manual)|wajib\s+membawa\s+bukti)\b/i.test(acceptedTexts)) {
+      return failVerification('unsupported_factual_claim_document_obligation: proof of payment / manual KRS not in accepted evidence');
+    }
+
+    // 3. Polling and payment translation into dosen wali approval
+    const conflatesPollingWithApproval = /\b(?:polling[^\n.]*persetujuan\s+dosen\s+wali|persetujuan\s+dosen\s+wali[^\n.]*polling)\b/i.test(text);
+    if (conflatesPollingWithApproval && !/\bpersetujuan\s+dosen\s+wali\b/i.test(acceptedTexts)) {
+      return failVerification('unsupported_factual_claim_polling_approval: polling conflated with dosen wali approval');
+    }
+
+    // 4. Metric distortion: credit limit must not claim IPS when evidence specifies IPK or general IP
+    const mentionsIPS = /\bIPS\s+(?:semester|sebelumnya)\b/i.test(text);
+    if (mentionsIPS && !/\bIPS\b/i.test(acceptedTexts)) {
+      return failVerification('unsupported_factual_claim_credit_limit_metric: IPS claimed without evidence');
     }
   }
 

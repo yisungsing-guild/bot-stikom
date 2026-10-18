@@ -247,6 +247,16 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
     queryVariants.push('prosedur bimbingan tugas akhir dosen pembimbing utama pendamping');
   }
 
+  // Academic Advising & Perwalian / E-KRS query variants
+  if (domain === 'ACADEMIC_PROCESS' || intent === 'ACADEMIC_ADVISING_INQUIRY' || (aspects && (aspects.includes('academic_advising') || aspects.includes('dosen_wali') || aspects.includes('krs'))) || /\b(?:perwalian|dosen\s+wali|e-krs|alur\s+krs|penyusunan\s+krs)\b/i.test(normalizedText)) {
+    queryVariants.push('perwalian online e-krs jadwal konsultasi dosen wali alur penyusunan krs');
+    queryVariants.push('prosedur perwalian mahasiswa wajib e-krs stikom bali');
+    queryVariants.push('konsultasi dosen wali pemilihan jadwal mata kuliah perwalian e-krs');
+    queryVariants.push('keterlambatan perwalian terlambat jadwal tim support perwalian');
+    queryVariants.push('kontak bantuan tim support perwalian supportperwalian microsoft teams kendala keterlambatan');
+    queryVariants.push('beban sks semester syarat pembayaran perwalian polling e-krs');
+  }
+
   // PMB Inquiry & Procedure query variants
   if (domain === 'PMB' || intent === 'GENERAL_PMB_INQUIRY' || intent === 'ADMISSION_PROCEDURE') {
     if (targetEntities.length > 0) {

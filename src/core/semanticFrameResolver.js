@@ -26,7 +26,7 @@
 const { matchCanonicalEntities, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
 const { evaluateContextDependency } = require('./contextResolver');
 const { detectQueryLanguage } = require('../utils/languageDetector');
-const { ACADEMIC_SCOPE_STATUS, resolveAcademicScope } = require('./academicCatalog');
+const { ACADEMIC_SCOPE_STATUS, PROGRAM_AVAILABILITY_STATUS, resolveAcademicScope, evaluateProgramAvailability } = require('./academicCatalog');
 const modelSemanticParser = require('./modelSemanticParser');
 const { validateSemanticInterpretation, compareFrames } = require('./semanticInterpretationValidator');
 const logger = require('../logger');
@@ -102,6 +102,15 @@ function approximateDomainToken(token) {
   return bestMatch || token;
 }
 
+const STOP_TOKENS = new Set([
+  'di', 'ke', 'dari', 'pada', 'untuk', 'dengan', 'yang', 'ini', 'itu', 'tersebut',
+  'apa', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'pilihan', 'saja', 'aja', 'kak',
+  'ya', 'nih', 'dong', 'kah', 'sore', 'malam', 'karyawan', 'reguler', 'eksekutif',
+  'lebih', 'baik', 'ambil', 'pilih', 'mana', 'bagus', 'cocok', 'rekomendasi', 'saran',
+  'prodi', 'jurusan', 'berapa', 'kapan', 'bagaimana', 'gimana', 'dimana', 'kenapa',
+  'mengapa', 'siapa', 'gelombang'
+]);
+
 function detectUnsupportedProgram(rawQuery, entities = []) {
   const hasSupportedProgram = entities.some(
     e => e.family === 'academic_program' || e.family === 'international_program'
@@ -139,40 +148,62 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
     return null;
   }
 
-  const STOP_TOKENS = new Set([
-    'di', 'ke', 'dari', 'pada', 'untuk', 'dengan', 'yang', 'ini', 'itu', 'tersebut',
-    'apa', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'pilihan', 'saja', 'aja', 'kak',
-    'ya', 'nih', 'dong', 'kah', 'sore', 'malam', 'karyawan', 'reguler', 'eksekutif',
-    'lebih', 'baik', 'ambil', 'pilih', 'mana', 'bagus', 'cocok', 'rekomendasi', 'saran',
-    'prodi', 'jurusan', 'berapa', 'kapan', 'bagaimana', 'gimana', 'dimana', 'kenapa',
-    'mengapa', 'siapa', 'gelombang'
-  ]);
+  function isDegreeOrGeneralAcademicCandidate(candidate) {
+    if (!candidate || typeof candidate !== 'string') return false;
+    const c = candidate.toLowerCase().trim();
+    if (/^(?:vokasi|vokasional|diploma|sarjana|magister|pascasarjana|s1|s2|d3|pendidikan\s+vokasi|program\s+vokasi|prodi\s+vokasi|kuliah\s+vokasi)$/i.test(c)) {
+      return true;
+    }
+    const words = c.split(/\s+/);
+    if (words.length > 0 && words.every(w => /^(?:pendidikan|program|prodi|jurusan|jalur|jenjang|vokasi|vokasional|diploma|sarjana|magister|pascasarjana|d3|s1|s2)$/i.test(w))) {
+      return true;
+    }
+    try {
+      const { resolveAcademicScope } = require('./academicCatalog');
+      const scope = resolveAcademicScope(c);
+      if (scope && scope.isSupported) {
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // If query is inquiring about vocational / diploma / general degree levels
+  if (/\b(?:pendidikan\s+vokasi|prodi\s+vokasi|jurusan\s+vokasi|kuliah\s+vokasi|program\s+vokasi)\b/i.test(q)) {
+    return null;
+  }
+
+  function evaluateCandidate(candidate) {
+    if (!candidate || candidate.length < 3) return null;
+    if (isDegreeOrGeneralAcademicCandidate(candidate)) return null;
+    const tokens = candidate.split(/\s+/);
+    if (tokens.some(tok => STOP_TOKENS.has(tok))) return null;
+
+    const avail = evaluateProgramAvailability(candidate);
+    // Explicit availability contract:
+    // - 'offered': program is officially offered -> not unsupported (return null)
+    // - 'not_offered': supported by official institutional source (degree level outside institutional scope or discipline outside statutory faculties) -> return candidate
+    // - 'unknown': evidence insufficient to conclude offered or not_offered -> do NOT conclude not_offered (return null)
+    if (avail && avail.status === PROGRAM_AVAILABILITY_STATUS.NOT_OFFERED) {
+      return candidate;
+    }
+    return null;
+  }
 
   // Pattern 1: Program marker + optional degree level + candidate noun (e.g. "jurusan farmasi", "prodi s1 hubungan internasional")
   const markerMatch = q.match(/\b(?:jurusan|prodi|program\s+studi|fakultas|bidang\s+studi)\s+(?:(?:s1|s2|d3)\s+)?([a-z\s]+?)(?:\s+(?:di\s+stikom|di\s+itb|di\s+bali|berapa|apa|syarat|biaya|ada|atau|jika)|$)/i);
   if (markerMatch && markerMatch[1]) {
     const candidate = markerMatch[1].trim();
-    const candidateTokens = candidate.split(/\s+/);
-    const hasStopWord = candidateTokens.some(tok => STOP_TOKENS.has(tok));
-    if (candidate.length >= 3 && !hasStopWord) {
-      const known = findCanonicalEntity(candidate);
-      if (!known) {
-        return candidate;
-      }
-    }
+    const result = evaluateCandidate(candidate);
+    if (result) return result;
   }
 
   // Pattern 2: Generic higher-education discipline prefixes (e.g. "teknik [X]", "ilmu [X]", "sastra [X]", "desain [X]")
   const disciplineMatch = q.match(/\b((?:teknik|ilmu|sastra|desain|kedokteran|pendidikan)\s+[a-z]+)\b/i);
   if (disciplineMatch && disciplineMatch[1]) {
     const candidate = disciplineMatch[1].trim();
-    const tokens = candidate.split(/\s+/);
-    if (!tokens.some(tok => STOP_TOKENS.has(tok))) {
-      const known = findCanonicalEntity(candidate);
-      if (!known) {
-        return candidate;
-      }
-    }
+    const result = evaluateCandidate(candidate);
+    if (result) return result;
   }
 
   // Pattern 3: Direct inquiry of unoffered program presence: "apakah ada [X] di stikom"
@@ -180,12 +211,49 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
   if (presenceMatch && presenceMatch[1]) {
     const candidate = presenceMatch[1].trim();
     const isDomainWord = CANONICAL_DOMAIN_LEXICON.includes(candidate) ||
-      /^(?:kelas|program|kuliah|jalur|jenjang|beasiswa|asrama|magang|s1|s2|d3|sarjana|diploma|magister|gelombang|pendaftaran|pmb|jadwal|biaya|fasilitas|syarat)$/i.test(candidate);
-    const tokens = candidate.split(/\s+/);
-    if (!isDomainWord && candidate.length >= 4 && !tokens.some(tok => STOP_TOKENS.has(tok))) {
-      const known = findCanonicalEntity(candidate);
-      if (!known) {
-        return candidate;
+      /^(?:kelas|program|kuliah|jalur|jenjang|beasiswa|asrama|magang|s1|s2|d3|sarjana|diploma|magister|vokasi|vokasional|gelombang|pendaftaran|pmb|jadwal|biaya|fasilitas|syarat)$/i.test(candidate);
+    if (!isDomainWord) {
+      const result = evaluateCandidate(candidate);
+      if (result) return result;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Detects whether a query mentions a specific academic program or discipline
+ * that is not in the published official catalog, but whose availability status
+ * is 'unknown' (insufficient evidence to conclude permanently not offered).
+ */
+function detectUnconfirmedProgram(rawQuery, entities = []) {
+  if (!rawQuery || typeof rawQuery !== 'string') return null;
+  const hasSupportedProgram = (entities || []).some(
+    e => e.family === 'academic_program' || e.family === 'international_program'
+  );
+  if (hasSupportedProgram) return null;
+
+  const q = rawQuery.toLowerCase();
+
+  // Explicit discipline keywords (ID & EN)
+  const explicitDisciplineMatch = q.match(/\b((?:s[123]\s+)?(?:kedokteran(?:\s+gigi|\s+hewan)?|dokter|farmasi|keperawatan|kebidanan|psikologi|hukum|arsitektur|akuntansi|manajemen(?!\s+informatika)|teknik\s+[a-z]+|sastra\s+[a-z]+|pendidikan\s+[a-z]+|ilmu\s+[a-z]+|medicine|medical|pharmacy|psychology|dentistry|law|architecture))\b/i);
+  if (explicitDisciplineMatch && explicitDisciplineMatch[1]) {
+    const rawCand = explicitDisciplineMatch[1].trim();
+    const cleanCand = rawCand.replace(/^s[123]\s+/i, '').trim();
+    const avail = evaluateProgramAvailability(cleanCand);
+    if (avail && avail.status === PROGRAM_AVAILABILITY_STATUS.UNKNOWN) {
+      return cleanCand.charAt(0).toUpperCase() + cleanCand.slice(1);
+    }
+  }
+
+  // Generic prefix: masuk / kuliah / daftar / prodi / jurusan + candidate
+  const candidateMatch = q.match(/\b(?:masuk|kuliah|daftar|ambil|jurusan|prodi|program\s+studi|fakultas|biaya\s+(?:kuliah\s+)?)\s*(?:(?:s1|s2|d3)\s+)?([a-z\s]+?)(?:\s+(?:di\s+stikom|di\s+itb|berapa|apa|syarat|biaya|uang|ada)|$)/i);
+  if (candidateMatch && candidateMatch[1]) {
+    const cand = candidateMatch[1].trim();
+    if (cand.length >= 4 && !STOP_TOKENS.has(cand)) {
+      const avail = evaluateProgramAvailability(cand);
+      if (avail && avail.status === PROGRAM_AVAILABILITY_STATUS.UNKNOWN) {
+        return cand.charAt(0).toUpperCase() + cand.slice(1);
       }
     }
   }
@@ -244,7 +312,7 @@ function normalizeQueryText(text) {
  */
 function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unstemmed = '', raw = '') {
   // 0. Conversational Greeting & Small Talk (Non-Retrieval)
-  if (/^(hallo+|halo+|hai+|hi+|hei+|pagi|siang|sore|malam|assalamu'?alaikum|selamat\s+(pagi|siang|sore|malam)|sampurasun|om\s+swastiastu)\b/i.test(normalized) &&
+  if (/^(hallo+|halo+|hello+|hey+|hai+|hi+|hei+|pagi|siang|sore|malam|good\s+(?:morning|afternoon|evening)|assalamu'?alaikum|selamat\s+(?:pagi|siang|sore|malam)|sampurasun|om\s+swastiastu)\b/i.test(normalized) &&
       !/\b(biaya|daftar|jurusan|prodi|beasiswa|kuliah|akreditasi|perwalian|krs|mata\s*kuliah|sks)\b/i.test(normalized)) {
     return {
       domain: 'CONVERSATIONAL',
@@ -257,7 +325,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
-  if (/\b(apa\s+kha?bar|bagaimana\s+kha?bar(?:mu)?|gimana\s+kha?bar(?:mu)?|kha?bar(?:nya)?\s+gimana|kamu\s+siapa|siapa\s+kamu|kamu\s+robot)\b/i.test(normalized)) {
+  if (/\b(apa\s+kha?bar|bagaimana\s+kha?bar(?:mu)?|gimana\s+kha?bar(?:mu)?|kha?bar(?:nya)?\s+gimana|how\s+are\s+you|how\s+r\s+u|how\s+do\s+you\s+do|how\'?s\s+it\s+going|kamu\s+siapa|siapa\s+kamu|kamu\s+robot)\b/i.test(normalized)) {
     return {
       domain: 'CONVERSATIONAL',
       intent: 'CONVERSATIONAL_SMALL_TALK',
@@ -448,8 +516,21 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
+  // 4b. Academic Advising, Dosen Wali, Perwalian & E-KRS Process (Prioritized before curriculum inquiry)
+  if (/\b(?:perwalian|dosen\s+wali|bimbingan\s+akademik|konsultasi\s+akademik|academic\s+advising|academic\s+advisor|e-krs|krs\s+online|alur\s+krs|penyusunan\s+krs|revisi\s+krs|terlambat\s+perwalian|keterlambatan\s+perwalian)\b/i.test(normalized)) {
+    return {
+      domain: 'ACADEMIC_PROCESS',
+      intent: 'ACADEMIC_ADVISING_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_ADVISING_INFO',
+      aspects: ['academic_advising', 'dosen_wali', 'krs'],
+      relation: 'ACADEMIC_ADVISING'
+    };
+  }
+
   // 5. Program Curriculum Inquiry (Priority over general program info)
-  if (/\b(kurikulum(?:nya)?|mata\s*kuliah|matkul|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul|belajar\s+mata\s*kuliah|semester\s*(?:[1-8]|[ivx]+)|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran)\b/i.test(normalized)) {
+  if (/\b(kurikulum(?:nya)?|mata\s*kuliah|matkul|sebaran\s*mata\s*kuliah|silabus|daftar\s*matkul|belajar\s+mata\s*kuliah|semester\s*(?:[1-8]|[ivx]+)|(?:apa\s+yang\s+)?dipelajari|pembelajaran|materi\s+kuliah|pelajaran)\b/i.test(normalized) && !/\b(?:dosen\s+wali|perwalian|e-krs)\b/i.test(normalized)) {
     return {
       domain: 'ACADEMIC_CURRICULUM',
       intent: 'CURRICULUM_INQUIRY',
@@ -495,8 +576,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 6a. Available Academic Programs List (Generic query across all programs)
-  const hasProgramConcept = /\b(?:program\s*(?:studi|sarjana|diploma|magister|doktor)?|jurusan|prodi|fakultas|jenjang|pilihan\s+kuliah|kuliah|study\s+programs?|majors?|departments?|facult(?:y|ies)|(?:undergraduate|bachelor|master|postgraduate|doctoral|doctorate|phd|diploma|degree|academic|study)\s+programs?|s1|s2|s3|d3|d4)(?:nya)?\b/i.test(normalized);
-  const hasListingConcept = /\b(?:apa\s+saja|ada\s+apa|pilihan|daftar|list|opsi|tersedia|bisa\s+ambil\s+apa|punya|mau\s+lihat|pilihannya|apa|what(?:\s+are|\s+is)?|which|available|offered|offer|options?)\b/i.test(normalized);
+  const hasProgramConcept = /\b(?:program\s*(?:studi|sarjana|diploma|magister|doktor|vokasi)?|jurusan|prodi|fakultas|jenjang|pilihan\s+kuliah|kuliah|vokasi|pendidikan\s+vokasi|study\s+programs?|majors?|departments?|facult(?:y|ies)|(?:undergraduate|bachelor|master|postgraduate|doctoral|doctorate|phd|diploma|vocational|degree|academic|study)\s+programs?|vocational|s1|s2|s3|d3|d4)(?:nya)?\b/i.test(normalized);
+  const hasListingConcept = /\b(?:apa\s+saja|ada\s+apa|apakah\s+(?:ada|tersedia)|ada|punya|buka|pilihan|daftar|list|opsi|tersedia|bisa\s+ambil\s+apa|mau\s+lihat|pilihannya|apa|what(?:\s+are|\s+is)?|which|available|offered|offer|options?)\b/i.test(normalized);
 
   const isAvailableProgramsInquiry = !hasSpecificProgramEntity && !hasStudentOrgEntity && hasProgramConcept && hasListingConcept &&
     !/\b(?:biaya|bayar|daftar\s+ulang|syarat|akreditasi|kurikulum|matkul|beasiswa|lokasi|jadwal|bingung|rekomendasi|rekomendasikan|cocok|saran|minat|himpunan|himaprodi|hima|ukm|ormawa|fee|fees|cost|tuition|scholarship|requirements?)\b/i.test(normalized);
@@ -718,6 +799,19 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
+  // 14d. Academic Advising & Dosen Wali / Perwalian
+  if (/\b(?:perwalian|dosen\s+wali|bimbingan\s+akademik|konsultasi\s+akademik|konsultasi\s+mata\s+kuliah|academic\s+advising|academic\s+advisor)\b/i.test(normalized)) {
+    return {
+      domain: 'ACADEMIC_PROCESS',
+      intent: 'ACADEMIC_ADVISING_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_ADVISING_INFO',
+      aspects: ['academic_advising', 'dosen_wali', 'krs'],
+      relation: 'ACADEMIC_ADVISING'
+    };
+  }
+
   // 15. Admission / PMB Schedule & General Topic Opener
   if (/\b(?:pmb|pendaftaran|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
       (/\bdaftar\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized))) {
@@ -764,7 +858,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 14. Program Comparison (Perbedaan Prodi)
   const hasProgramEntity = entities.some(e => e.family === 'academic_program' || e.type === 'program');
-  if (/\b(perbedaan|beda|bedanya|banding|dibandingkan|difference|differ|compare|comparison|versus|vs)\b/i.test(normalized) &&
+  if (/\b(perbedaan|beda|bedanya|banding|dibandingkan|difference|different|differ|compare|comparison|versus|vs)\b/i.test(normalized) &&
       (/\b(prodi|jurusan|program\s+studi|program|programs|majors?|courses?)\b/i.test(normalized) || hasProgramEntity || entities.length >= 2)) {
     return {
       domain: 'ACADEMIC_PROGRAM',
@@ -1016,6 +1110,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   const unsupp = inferred.unsupportedEntityName || inferred.unsupportedProgramName || detectUnsupportedProgram(normalized, effectiveTargetEntities);
   const isUnsupported = Boolean(inferred.unsupportedEntity || inferred.isUnsupportedEntity || unsupp);
   const unsupportedName = isUnsupported ? (unsupp || 'tersebut') : null;
+  const unconfirmedProg = detectUnconfirmedProgram(raw, effectiveTargetEntities);
 
   const isMultiTarget = effectiveTargetEntities.length > 1 &&
     /\b(?:dan|serta|maupun|dan juga)\b/i.test(normalized);
@@ -1037,6 +1132,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     intent,
     retrievalRequired: inferred.retrievalRequired !== false,
     entities: effectiveTargetEntities,
+    candidateEntities: unconfirmedProg ? [{ rawMention: unconfirmedProg, inferredCategory: 'academic_program', academicLevel: null }] : [],
     modifiers,
     constraints: {
       admissionTrack: modifiers.find(m => m.family === 'admission_track')?.canonical || null,
@@ -1053,6 +1149,8 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     contextDependencies: contextDep.shouldInherit ? [contextDep] : [],
     contextEvaluation: contextDep,
     contextDecision: contextDep.decision,
+    unconfirmedProgram: unconfirmedProg,
+    programAvailability: unconfirmedProg ? PROGRAM_AVAILABILITY_STATUS.UNKNOWN : (isUnsupported ? PROGRAM_AVAILABILITY_STATUS.NOT_OFFERED : (effectiveTargetEntities.length > 0 ? PROGRAM_AVAILABILITY_STATUS.OFFERED : null)),
     unsupportedEntity: isUnsupported,
     unsupportedEntityName: unsupportedName,
     entityResolutionStatus: isUnsupported ? 'UNSUPPORTED' : (effectiveTargetEntities.length > 0 ? 'RESOLVED' : 'UNRESOLVED'),
@@ -1266,6 +1364,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     }
 
     // Determine domain from validated concept or fallback
+    const speechAct = validated.speechAct;
     let domain = validated.domain || syncFrame.domain;
     const isContextInheritedTurn = Boolean(syncFrame.contextDependency?.shouldInherit || interpretation.contextDependency?.isFollowUp || (sessionData && sessionData.activeEntity));
     const hasValidModelConcept = Array.isArray(interpretation.semanticConcepts) &&
@@ -1273,9 +1372,11 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       interpretation.semanticConcepts.some(c => ['ACADEMIC_OFFERING', 'FINANCIAL_COST', 'ADMISSION_ONBOARDING', 'QUALITY_ACCREDITATION', 'CAMPUS_LIFE', 'INTERNATIONAL_STUDY', 'CAREER_EMPLOYMENT'].includes(c));
     const isModelOOD = validated.domain === 'OUT_OF_DOMAIN' || validated.speechAct === 'OFF_TOPIC';
 
-    if (syncFrame.domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn && (!hasValidModelConcept || isModelOOD)) {
+    if (speechAct === 'GENERAL_GREETING' || syncFrame.domain === 'CONVERSATIONAL') {
+      domain = 'CONVERSATIONAL';
+    } else if (syncFrame.domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn && (!hasValidModelConcept || isModelOOD)) {
       domain = 'OUT_OF_DOMAIN';
-    } else if (['CONVERSATIONAL', 'SCHOLARSHIP', 'ORGANIZATION_UKM', 'FACILITIES', 'INTERNATIONAL', 'CAMPUS_SERVICE', 'CAREER_CENTER', 'ADMISSION_TRACK', 'ADMISSION_QUOTA'].includes(syncFrame.domain)) {
+    } else if (['SCHOLARSHIP', 'ORGANIZATION_UKM', 'FACILITIES', 'INTERNATIONAL', 'CAMPUS_SERVICE', 'CAREER_CENTER', 'ADMISSION_TRACK', 'ADMISSION_QUOTA'].includes(syncFrame.domain)) {
       domain = syncFrame.domain;
     } else if (resolvedEntities.some(e => e.family === 'campus_service' || e.inferredCategory === 'campus_service') || (validated.candidateEntities || []).some(e => e.inferredCategory === 'campus_service')) {
       domain = 'CAMPUS_SERVICE';
@@ -1318,18 +1419,14 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     if (syncFrame.aspects) {
       syncFrame.aspects.forEach(a => { if (!aspects.includes(a)) aspects.push(a); });
     }
-    const speechAct = validated.speechAct;
     const primaryConcept = interpretation.semanticConcepts?.[0] || null;
 
-    if (domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn) {
+    if (domain === 'CONVERSATIONAL' || speechAct === 'GENERAL_GREETING') {
+      domain = 'CONVERSATIONAL';
+      intent = syncFrame.intent === 'CONVERSATIONAL_SMALL_TALK' ? 'CONVERSATIONAL_SMALL_TALK' : 'CONVERSATIONAL_GREETING';
+    } else if (domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn) {
       intent = 'OUT_OF_DOMAIN_INQUIRY';
       domain = 'OUT_OF_DOMAIN';
-    } else if (syncFrame.domain === 'CONVERSATIONAL') {
-      intent = syncFrame.intent;
-      domain = 'CONVERSATIONAL';
-    } else if (speechAct === 'GENERAL_GREETING') {
-      intent = 'CONVERSATIONAL_GREETING';
-      domain = 'CONVERSATIONAL';
     } else if (speechAct === 'SEEK_ADVICE') {
       if (domain === 'SCHOLARSHIP' || syncFrame.domain === 'SCHOLARSHIP' || /\b(?:beasiswa|kip\s*kuliah|kip-?k)\b/i.test(rawQuery)) {
         domain = 'SCHOLARSHIP';
@@ -1498,8 +1595,8 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       userState: syncFrame.userState,
       desiredAction: isUnsupported ? 'REFUSE_UNSUPPORTED_PROGRAM' : (isOOD ? 'REFUSE_OUT_OF_DOMAIN' : syncFrame.desiredAction),
       language: detectQueryLanguage(rawQuery),
-      subQueries: [],
-      contextDependencies: validated.contextDependency?.isFollowUp ? [validated.contextDependency] : [],
+      unconfirmedProgram: syncFrame.unconfirmedProgram || detectUnconfirmedProgram(rawQuery, resolvedEntities),
+      programAvailability: syncFrame.programAvailability || (syncFrame.unconfirmedProgram ? PROGRAM_AVAILABILITY_STATUS.UNKNOWN : (isUnsupported ? PROGRAM_AVAILABILITY_STATUS.NOT_OFFERED : (resolvedEntities.length > 0 ? PROGRAM_AVAILABILITY_STATUS.OFFERED : null))),
       unsupportedEntity: isUnsupported,
       unsupportedEntityName: unsupportedName,
       entityResolutionStatus: isUnsupported ? 'UNSUPPORTED' : (resolvedEntities.length > 0 ? 'RESOLVED' : 'UNRESOLVED'),
@@ -1534,5 +1631,7 @@ module.exports = {
   resolveSemanticFrameWithShadow,
   getShadowAuditHistory,
   clearShadowAuditHistory,
-  detectQueryLanguage
+  detectQueryLanguage,
+  detectUnsupportedProgram,
+  detectUnconfirmedProgram
 };

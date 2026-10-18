@@ -634,6 +634,34 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     };
   }
 
+  // 2.2 Unverified Transcription / Pending Verification Provenance Gate
+  const candidateSource = String(candidate.sourceFile || candidate.source_file || candidate.filename || candidateFile || candidate.source || candidate.sourceDocument || '').toLowerCase();
+  const candAuthStatus = String(
+    candidate.governance?.authenticityStatus ||
+    candidate.authenticityStatus ||
+    candidate.metadata?.authenticityStatus ||
+    candidate.raw_metadata?.authenticityStatus ||
+    ''
+  ).toUpperCase();
+  const candVerStatus = String(
+    candidate.governance?.verificationStatus ||
+    candidate.verificationStatus ||
+    candidate.metadata?.verificationStatus ||
+    candidate.raw_metadata?.verificationStatus ||
+    ''
+  ).toUpperCase();
+  const isUnverifiedTranscription = candidateSource.includes('faq_sistem_informasi_perwalian') ||
+    candidateSource.includes('faq_perwalian') ||
+    candAuthStatus.includes('UNVERIFIED') ||
+    candVerStatus.includes('UNVERIFIED');
+  if (isUnverifiedTranscription) {
+    return {
+      accepted: false,
+      disposition: 'REJECT_UNVERIFIED_PROVENANCE',
+      reason: 'evidence_source_is_unverified_transcription_pending_official_raw_comparison'
+    };
+  }
+
   // 3. Aspect Compatibility & Ownership Check
   const candTextLower = text.toLowerCase();
   const providedAspects = [];

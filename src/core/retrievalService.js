@@ -39,8 +39,9 @@ let cachedFileContextMap = null;
 let cachedChunkSectionMap = null;
 
 function getChunkSectionMap(corpus) {
-  if (cachedChunkSectionMap) return cachedChunkSectionMap;
+  if (cachedChunkSectionMap && cachedChunkSectionMap._corpusLength === corpus.length) return cachedChunkSectionMap;
   cachedChunkSectionMap = new Map();
+  cachedChunkSectionMap._corpusLength = corpus.length;
 
   const fileGroups = new Map();
   for (let i = 0; i < corpus.length; i++) {
@@ -111,8 +112,9 @@ function getChunkSectionMap(corpus) {
 }
 
 function getFileContextMap(corpus) {
-  if (cachedFileContextMap) return cachedFileContextMap;
+  if (cachedFileContextMap && cachedFileContextMap._corpusLength === corpus.length) return cachedFileContextMap;
   cachedFileContextMap = new Map();
+  cachedFileContextMap._corpusLength = corpus.length;
 
   for (const doc of corpus) {
     const f = doc.sourceFile || doc.filename || '';
@@ -245,14 +247,57 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
   }
 
   await ensureCanonicalCorpus(context, { requireCanonical: true });
-  const corpus = getCorpusIndex(context, { requireCanonical: true });
-  if (!Array.isArray(corpus) || corpus.length < CANONICAL_CORPUS_MIN_CHUNKS) {
+  const canonicalCorpus = getCorpusIndex(context, { requireCanonical: true });
+  if (!Array.isArray(canonicalCorpus) || canonicalCorpus.length < CANONICAL_CORPUS_MIN_CHUNKS) {
     logger.error({
-      corpusSize: Array.isArray(corpus) ? corpus.length : 0,
+      corpusSize: Array.isArray(canonicalCorpus) ? canonicalCorpus.length : 0,
       minRequired: CANONICAL_CORPUS_MIN_CHUNKS
     }, '[RetrievalService] Canonical corpus index is unavailable or below required threshold; failing closed');
     return [];
   }
+
+  // Augment canonical baseline with verified dynamic ingested training chunks (e.g. FAQ perwalian)
+  let corpus = canonicalCorpus;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const ragPath = path.resolve(__dirname, '..', 'data', 'rag_index.json');
+    if (fs.existsSync(ragPath)) {
+      const dynamicRaw = fs.readFileSync(ragPath, 'utf8');
+      const dynamicData = JSON.parse(dynamicRaw);
+      if (Array.isArray(dynamicData)) {
+        const canonicalIdSet = new Set(canonicalCorpus.map(c => String(c.id || c.source_record_id || c.vector_chunk_id || '')));
+        const extraChunks = dynamicData.filter(c => {
+          if (!c) return false;
+          const cid = String(c.id || c.source_record_id || '');
+          if (canonicalIdSet.has(cid)) return false;
+          // Isolate unverified transcription sources from candidate retrieval corpus
+          const src = String(c.sourceFile || c.source_file || c.filename || c.source || c.sourceDocument || '').toLowerCase();
+          const ver = String(
+            c.governance?.verificationStatus ||
+            c.verificationStatus ||
+            c.metadata?.verificationStatus ||
+            c.raw_metadata?.verificationStatus ||
+            ''
+          ).toUpperCase();
+          const auth = String(
+            c.governance?.authenticityStatus ||
+            c.authenticityStatus ||
+            c.metadata?.authenticityStatus ||
+            c.raw_metadata?.authenticityStatus ||
+            ''
+          ).toUpperCase();
+          if (src.includes('faq_sistem_informasi_perwalian') || src.includes('faq_perwalian') || ver.includes('UNVERIFIED') || auth.includes('UNVERIFIED')) {
+            return false;
+          }
+          return (c.chunk || c.text) && (c.trainingId || c.governance);
+        });
+        if (extraChunks.length > 0) {
+          corpus = canonicalCorpus.concat(extraChunks);
+        }
+      }
+    }
+  } catch (_) {}
 
   let variants = [];
   if (retrievalPlan.targetEntities && retrievalPlan.targetEntities.length > 1) {

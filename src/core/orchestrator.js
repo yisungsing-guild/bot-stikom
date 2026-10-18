@@ -26,7 +26,7 @@ const { arbitrateEvidence } = require('./evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('./answerabilityGate');
 const groundedAnswerGenerator = require('./groundedAnswerGenerator');
 const finalAnswerVerifier = require('./finalAnswerVerifier');
-const { synthesizeAnswer } = groundedAnswerGenerator;
+const { synthesizeAnswer, buildGroundedDeterministicSummary } = groundedAnswerGenerator;
 const { verifyFinalAnswer } = finalAnswerVerifier;
 const outboundDispatcher = require('./outboundDispatcher');
 const logger = require('../logger');
@@ -304,17 +304,28 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       frame.retrievalRequired = false;
     }
 
-    // Explicit Unsupported Entity Fail-Closed Hand-off
-    if (frame.unsupportedEntity || frame.isUnsupportedEntity || frame.domain === 'UNSUPPORTED_PROGRAM') {
+    // Explicit Unsupported / Unconfirmed Entity Fail-Closed Hand-off
+    if (frame.unsupportedEntity || frame.isUnsupportedEntity || frame.domain === 'UNSUPPORTED_PROGRAM' || frame.unconfirmedProgram) {
+      const progName = frame.unconfirmedProgram || frame.unsupportedEntityName || frame.unsupportedProgramName;
       const synthRes = await synthesizeAnswer(frame, {
         unsupportedEntity: true,
-        unsupportedEntityName: frame.unsupportedEntityName,
-        retrievalPlan: { unsupportedEntity: true, unsupportedEntityName: frame.unsupportedEntityName }
+        unsupportedEntityName: progName,
+        unconfirmedProgram: frame.unconfirmedProgram,
+        retrievalPlan: {
+          unsupportedEntity: true,
+          unsupportedEntityName: progName,
+          unconfirmedProgram: frame.unconfirmedProgram
+        }
       });
       const verifRes = verifyFinalAnswer(synthRes.answer, frame, {
         unsupportedEntity: true,
-        unsupportedEntityName: frame.unsupportedEntityName,
-        retrievalPlan: { unsupportedEntity: true, unsupportedEntityName: frame.unsupportedEntityName }
+        unsupportedEntityName: progName,
+        unconfirmedProgram: frame.unconfirmedProgram,
+        retrievalPlan: {
+          unsupportedEntity: true,
+          unsupportedEntityName: progName,
+          unconfirmedProgram: frame.unconfirmedProgram
+        }
       });
       subQueryResults.push({
         frame,
@@ -327,7 +338,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         acceptedCount: 0,
         rejectedCount: 0,
         answerability: ANSWERABILITY_STATUS.UNKNOWN,
-        status: 'unsupported_program',
+        status: frame.unconfirmedProgram ? 'unconfirmed_program' : 'unsupported_program',
         answer: synthRes.answer,
         verification: verifRes,
         arbitrated: { accepted: [], rejected: [] },
@@ -373,16 +384,27 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     // Check if conversational non-retrieval intent
     if (frame.domain === 'CONVERSATIONAL' || frame.retrievalRequired === false) {
       let reply = '';
+      const isEnglish = frame.language === 'en' || frame.detectedLanguage === 'en';
       if (frame.intent === 'CONVERSATIONAL_GREETING') {
-        reply = 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
+        reply = isEnglish
+          ? 'Hello! Welcome to the official information service of ITB STIKOM Bali. How can I assist you with admissions (PMB), study programs, tuition fees, or campus academic details?'
+          : 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
       } else if (frame.intent === 'CONVERSATIONAL_SMALL_TALK') {
-        reply = 'Kabar baik! Terima kasih sudah menyapa. Saya adalah asisten virtual resmi ITB STIKOM Bali. Ada informasi kampus yang ingin Anda tanyakan hari ini?';
+        reply = isEnglish
+          ? 'I am doing great, thank you! I am the official virtual assistant of ITB STIKOM Bali. Is there any campus information you would like to know today?'
+          : 'Kabar baik! Terima kasih sudah menyapa. Saya adalah asisten virtual resmi ITB STIKOM Bali. Ada informasi kampus yang ingin Anda tanyakan hari ini?';
       } else if (frame.intent === 'CONVERSATIONAL_ACKNOWLEDGEMENT') {
-        reply = 'Sama-sama! Senang bisa membantu. Ada informasi lain seputar ITB STIKOM Bali yang ingin Anda ketahui?';
+        reply = isEnglish
+          ? "You're very welcome! Glad I could help. Is there anything else you would like to know about ITB STIKOM Bali?"
+          : 'Sama-sama! Senang bisa membantu. Ada informasi lain seputar ITB STIKOM Bali yang ingin Anda ketahui?';
       } else if (frame.intent === 'ADVERSARIAL_INJECTION_DEFENSE') {
-        reply = 'Mohon maaf, saya adalah asisten informasi resmi ITB STIKOM Bali dan hanya melayani pertanyaan seputar informasi kampus, PMB, program studi, biaya kuliah, dan kegiatan akademik.';
+        reply = isEnglish
+          ? 'I apologize, but as the official information assistant of ITB STIKOM Bali, I only assist with inquiries regarding campus information, admissions, academic programs, tuition fees, and university activities.'
+          : 'Mohon maaf, saya adalah asisten informasi resmi ITB STIKOM Bali dan hanya melayani pertanyaan seputar informasi kampus, PMB, program studi, biaya kuliah, dan kegiatan akademik.';
       } else {
-        reply = 'Halo! Saya asisten resmi ITB STIKOM Bali. Silakan beri tahu informasi apa yang ingin Anda ketahui seputar kampus kami.';
+        reply = isEnglish
+          ? 'Hello! I am the official assistant of ITB STIKOM Bali. Please let me know what information you need regarding our campus.'
+          : 'Halo! Saya asisten resmi ITB STIKOM Bali. Silakan beri tahu informasi apa yang ingin Anda ketahui seputar kampus kami.';
       }
 
       subQueryResults.push({
@@ -481,17 +503,35 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           }
         }
       } else {
-        answer = 'Informasi resmi mengenai hal tersebut belum tercantum secara lengkap dalam panduan yang tersedia.';
-        verification = {
-          pass: false,
-          outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
-          interceptedFrom: null,
-          isInterception: false,
-          status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
-          reason: synthesis?.reason || 'safe_unknown',
-          isGrounded: false,
-          handledSafely: true
-        };
+        const recoverySummary = buildGroundedDeterministicSummary(frame, arbitrated.accepted, arbitrated);
+        if (recoverySummary) {
+          const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
+          const recoveryVerif = verifFn(recoverySummary, frame, arbitrated);
+          if (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.pass || recoveryVerif.outcome === VERIFICATION_OUTCOME.ESCALATION_GUIDANCE) {
+            answer = recoverySummary;
+            verification = recoveryVerif;
+          }
+        }
+        if (!answer) {
+          const isAdvisingInquiry = frame.domain === 'ACADEMIC_PROCESS' ||
+            frame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
+            /\b(?:perwalian|dosen\s*wali|bimbingan\s+perwalian)\b/i.test(frame.rawQuery || '');
+          if (isAdvisingInquiry) {
+            answer = answerability.guidance || 'Bimbingan perwalian dengan Dosen Wali di ITB STIKOM Bali merupakan proses akademik wajib sebelum perkuliahan semester baru untuk menyetujui Kartu Rencana Studi (KRS). Rincian prosedur resmi penanganan keterlambatan perwalian maupun kontak bantuan teknis belum dapat dipastikan dari dokumen resmi yang terverifikasi saat ini. Mahasiswa disarankan untuk langsung berkonsultasi dengan Dosen Wali masing-masing atau menghubungi Bagian Layanan Akademik (BAAK) ITB STIKOM Bali.';
+          } else {
+            answer = answerability.guidance || 'Informasi resmi mengenai hal tersebut belum tercantum secara lengkap dalam panduan yang tersedia.';
+          }
+          verification = {
+            pass: false,
+            outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+            interceptedFrom: null,
+            isInterception: false,
+            status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+            reason: synthesis?.reason || 'safe_unknown',
+            isGrounded: false,
+            handledSafely: true
+          };
+        }
       }
     } else if (answerability.status === ANSWERABILITY_STATUS.ESCALATE) {
       answer = answerability.guidance || 'Untuk kendala perwalian atau administrasi, silakan menghubungi dosen wali atau bagian akademik kampus.';
