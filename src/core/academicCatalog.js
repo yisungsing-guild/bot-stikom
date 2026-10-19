@@ -29,6 +29,8 @@ const SUPPORTED_CANONICAL_DEGREES = Object.freeze(['S1', 'D3', 'S2', 'FBV', 'FIK
 
 const UNSUPPORTED_DEGREE_PATTERN = /\b(?:s[- ]?3|doktor(?:al)?|doctor(?:al|ate)?|ph\.?d|d[- ]?4|diploma\s*[- ]?4|diploma\s*[- ]?iv|sarjana\s+terapan|d[- ]?1|d[- ]?2|diploma\s*[- ]?1|diploma\s*[- ]?2|smk|sma)\b/i;
 
+const UNSUPPORTED_STATUTORY_DISCIPLINE_PATTERN = /\b(?:kedokteran(?:\s+gigi)?|dokter|farmasi|farmakologi|keperawatan|kebidanan|psikologi|hukum|arsitektur|teknik\s+(?:nuklir|sipil|mesin|kimia|perminyakan|pertambangan|geologi|kelautan|penerbangan|dirgantara)|sastra\s+[a-z]+|pendidikan\s+(?:dokter|guru|anak|usia\s+dini|sekolah\s+dasar)|medicine|pharmacy|dentistry|nursing|law)\b/i;
+
 /**
  * Resolves an academic degree scope request into an unambiguous structured contract.
  *
@@ -715,6 +717,25 @@ function evaluateProgramAvailability(candidateName) {
         verificationStatus: 'VERIFIED_ACTIVE'
       }),
       reason: 'degree_level_outside_institutional_scope'
+    };
+  }
+
+  // 2b. Check if explicitly unsupported discipline outside statutory faculties
+  // Institutional scope: ITB STIKOM Bali only operates FIK (Informatics & Computing) and FBV (Business & Vocational).
+  // Disciplines outside these statutory faculties are confirmed NOT_OFFERED by official institutional registry.
+  if (UNSUPPORTED_STATUTORY_DISCIPLINE_PATTERN.test(lower)) {
+    return {
+      status: PROGRAM_AVAILABILITY_STATUS.NOT_OFFERED,
+      canonicalName: null,
+      rawMention: trimmed,
+      provenance: Object.freeze({
+        sourceDocumentId: 'DOC-CORPUS-STATUTORY-FACULTIES',
+        sourceDocumentName: 'Statuta ITB STIKOM Bali & Keputusan BAN-PT/LAM INFOKOM (FIK & FBV)',
+        sourcePath: 'Pedoman TA S1 2019 Revisi 1.pdf',
+        sourceUrl: 'https://pmb.stikom-bali.ac.id/ (blocked: Cloudflare 403 Challenge)',
+        verificationStatus: 'VERIFIED_ACTIVE'
+      }),
+      reason: 'discipline_outside_statutory_faculties'
     };
   }
 

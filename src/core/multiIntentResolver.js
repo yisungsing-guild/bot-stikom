@@ -137,14 +137,22 @@ function decomposeQuery(rawQuery, sessionData = {}) {
       subjectEntities = fullFrame.entities;
     }
   }
-  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas|akreditasi\s*(?:institusi|kampus|stikom)?|biaya\s*kuliah|pmb)\b/i);
+  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas|akreditasi\s*(?:institusi|kampus|stikom)?|biaya\s*kuliah|perwalian|krs|sidang|wisuda|yudisium|pmb|izin\s+belajar|study\s+permit|visa(?:\s+study|\s+studi|\s+e30b)?|itas|kitas|paspor|rpl)\b/i);
   const fallbackDomainTopic = firstFrame.domain === 'ACCREDITATION' ? 'akreditasi ITB STIKOM Bali' :
     (firstFrame.domain === 'SCHOLARSHIP' ? 'beasiswa' :
-    (firstFrame.domain === 'PMB' ? 'PMB' : null));
+    (firstFrame.domain === 'ACADEMIC_PROCESS' || firstFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' || firstFrame.aspects?.includes('academic_advising') || firstFrame.aspects?.includes('perwalian') ? 'perwalian' :
+    (firstFrame.domain === 'PMB' ? 'PMB' : null)));
+  const sessionActiveEntityName = (sessionData && sessionData.activeEntity)
+    ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name)
+    : null;
+  const isAdvisingContext = firstFrame.domain === 'ACADEMIC_PROCESS' || firstFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' || /\b(?:perwalian|krs|dosen\s+wali)\b/i.test(query);
+  const safeSessionEntity = isAdvisingContext ? null : sessionActiveEntityName;
+
+  const antecedentTopic = topicMatch ? topicMatch[0] : null;
   const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
-    (topicMatch ? topicMatch[0] : null) ||
+    antecedentTopic ||
     fallbackDomainTopic ||
-    (sessionData && sessionData.activeEntity ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name) : null);
+    safeSessionEntity;
 
   // If first subquery lacked entity but entity exists in whole query / other subquery, re-resolve firstFrame with inferred topic
   if (inferredTopic && (!firstFrame.entities || firstFrame.entities.length === 0)) {
@@ -160,27 +168,41 @@ function decomposeQuery(rawQuery, sessionData = {}) {
 
   const subFrames = parts.map((part, idx) => {
     let queryToResolve = part;
-    const hasExplicitAnaphora = /\b(?:nya|tersebut|itu|ini)\b/i.test(part) || /\b(?:program|jurusan|prodi)\s+(?:ini|tersebut)\b/i.test(part);
+    const hasExplicitAnaphora = /\w+nya\b/i.test(part) || /\b(?:nya|tersebut|itu|ini)\b/i.test(part) || /\b(?:program|jurusan|prodi)\s+(?:ini|tersebut)\b/i.test(part);
     const isCampusAssetSubject = /\b(?:fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|beasiswa|lokasi|alamat|gedung|kantin)\b/i.test(part);
     const isIndependentPmbSchedule = /\b(?:gelombang|buka\s+gelombang|jadwal\s+pmb|periode\s+pmb|kapan\s+buka|kapan\s+tutup)\b/i.test(part) && !hasExplicitAnaphora;
     const isIndependentSubject = isCampusAssetSubject || isIndependentPmbSchedule;
-    const isAnaphoric = hasExplicitAnaphora || /^(?:kalau|bagaimana|dan|lalu|apa|apakah|adakah|ada|berapa|syarat|biaya|jadwal|akreditasi)\b/i.test(part.trim());
+    const isAnaphoric = hasExplicitAnaphora || /^(?:kalau|bagaimana|dan|lalu|apa|apakah|adakah|ada|berapa|syarat|biaya|jadwal|akreditasi|cara|mekanisme|gimana)\b/i.test(part.trim()) || /\b(?:gimana|bagaimana)\b/i.test(part);
+    const isProceduralInquiry = /\b(?:cara(?:\s+mengurus|\s+daftar|\s+buat|\s+pengajuan)?|bagaimana\s+caranya|alur(?:nya)?|prosedur(?:nya)?|syarat(?:nya)?|proses(?:nya)?|mekanisme(?:nya)?)\b/i.test(part);
 
-    if (idx > 0 && inferredTopic && !isIndependentSubject && isAnaphoric) {
-      const inferredLower = inferredTopic.toLowerCase();
+    if (idx > 0 && !isIndependentSubject && isAnaphoric) {
       const partLower = part.toLowerCase();
-      const hasCoreMention = partLower.includes(inferredLower) ||
-        (inferredLower.includes('teknologi informasi') && partLower.includes('teknologi informasi')) ||
-        (inferredLower.includes('sistem informasi') && partLower.includes('sistem informasi')) ||
-        (inferredLower.includes('sistem komputer') && partLower.includes('sistem komputer')) ||
-        (inferredLower.includes('bisnis digital') && partLower.includes('bisnis digital'));
+      const prevClause = parts[idx - 1] || '';
+      const prevSpecificTopic = prevClause.match(/\b(izin\s+belajar|study\s+permit|visa(?:\s+study|\s+studi|\s+e30b)?|itas|kitas|paspor|sktt|beasiswa\s+[a-z]+|beasiswa|jalur\s+rpl|rpl|perwalian|krs|wisuda|yudisium|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|double\s*degree|dual\s*degree)\b/i);
 
-      if (!hasCoreMention) {
-        queryToResolve = `${part} ${inferredTopic}`;
-      } else if (!partLower.includes('s1') && inferredLower.startsWith('s1 ')) {
-        queryToResolve = part.replace(/\b(teknologi informasi|sistem informasi|sistem komputer|bisnis digital)\b/i, 'S1 $1');
+      if (isProceduralInquiry && prevSpecificTopic) {
+        // High-precision inheritance: inherit the procedural subject (e.g. "izin belajar") plus relevant participant scope
+        const entityScope = subjectEntities.length > 0 ? (subjectEntities[0].canonical || subjectEntities[0].name) : '';
+        const scopeClean = entityScope.replace(/\s*\([^)]*\)/g, '').trim();
+        if (!partLower.includes(prevSpecificTopic[0].toLowerCase())) {
+          queryToResolve = `${part} ${prevSpecificTopic[0]} ${scopeClean}`.trim();
+        }
+      } else if (inferredTopic) {
+        const inferredLower = inferredTopic.toLowerCase();
+        const hasCoreMention = partLower.includes(inferredLower) ||
+          (inferredLower.includes('teknologi informasi') && partLower.includes('teknologi informasi')) ||
+          (inferredLower.includes('sistem informasi') && partLower.includes('sistem informasi')) ||
+          (inferredLower.includes('sistem komputer') && partLower.includes('sistem komputer')) ||
+          (inferredLower.includes('bisnis digital') && partLower.includes('bisnis digital'));
+
+        if (!hasCoreMention) {
+          queryToResolve = `${part} ${inferredTopic}`;
+        } else if (!partLower.includes('s1') && inferredLower.startsWith('s1 ')) {
+          queryToResolve = part.replace(/\b(teknologi informasi|sistem informasi|sistem komputer|bisnis digital)\b/i, 'S1 $1');
+        }
       }
     }
+
 
     const subSessionData = isolateSubquerySession(sessionData);
     subSessionData.lastQuery = parts[idx - 1];
@@ -188,6 +210,9 @@ function decomposeQuery(rawQuery, sessionData = {}) {
       ...(subSessionData.contextHistory || []),
       { role: 'user', content: parts[idx - 1] }
     ];
+    if (firstFrame.domain && firstFrame.domain !== 'OUT_OF_DOMAIN') {
+      subSessionData.activeDomain = firstFrame.domain;
+    }
     if (firstFrame.entities && firstFrame.entities.length > 0) {
       subSessionData.activeEntity = firstFrame.entities[0];
     }
@@ -200,11 +225,14 @@ function decomposeQuery(rawQuery, sessionData = {}) {
       if (!isIndependentSubject && !isNonProdiDomain && subFrame.entities.length === 0 && subjectEntities.length > 0) {
         subFrame.entities = [...subjectEntities];
       }
-      if (subFrame.domain === 'OUT_OF_DOMAIN' && firstFrame.domain && firstFrame.domain !== 'OUT_OF_DOMAIN' && isAnaphoric) {
+      if (subFrame.domain === 'OUT_OF_DOMAIN' && firstFrame.domain && firstFrame.domain !== 'OUT_OF_DOMAIN' && (isAnaphoric || isProceduralInquiry)) {
         subFrame.domain = firstFrame.domain;
-        if (firstFrame.intent) subFrame.intent = firstFrame.intent;
+        subFrame.intent = isProceduralInquiry ? 'PROGRAM_PROCEDURE' : (firstFrame.intent || 'GENERAL_INFO');
         if (firstFrame.entities && firstFrame.entities.length > 0) {
           subFrame.entities = [...firstFrame.entities];
+        }
+        if (isProceduralInquiry) {
+          subFrame.aspects = Array.from(new Set([...(subFrame.aspects || []), 'procedure', 'requirements', 'flow']));
         }
       }
     }
@@ -255,12 +283,13 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
       subjectEntities = fullFrame.entities;
     }
   }
-  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas|akreditasi\s*(?:institusi|kampus|stikom)?|biaya\s*kuliah|pmb)\b/i);
+  const topicMatch = (query || '').match(/\b(double\s*degree|dual\s*degree|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|beasiswa|fasilitas|akreditasi\s*(?:institusi|kampus|stikom)?|biaya\s*kuliah|perwalian|krs|sidang|wisuda|yudisium|pmb|izin\s+belajar|study\s+permit|visa(?:\s+study|\s+studi|\s+e30b)?|itas|kitas|paspor|rpl)\b/i);
   const fallbackDomainTopic = firstFrame.domain === 'ACCREDITATION' ? 'akreditasi ITB STIKOM Bali' :
     (firstFrame.domain === 'SCHOLARSHIP' ? 'beasiswa' :
     (firstFrame.domain === 'PMB' ? 'PMB' : null));
+  const antecedentTopic = topicMatch ? topicMatch[0] : null;
   const inferredTopic = (subjectEntities.length > 0 && (subjectEntities[0].canonical || subjectEntities[0].name)) ||
-    (topicMatch ? topicMatch[0] : null) ||
+    antecedentTopic ||
     fallbackDomainTopic ||
     (sessionData && sessionData.activeEntity ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name) : null);
 
@@ -282,25 +311,38 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
   for (let idx = 1; idx < parts.length; idx++) {
     const part = parts[idx];
     let queryToResolve = part;
-    const hasExplicitAnaphora = /\b(?:nya|tersebut|itu|ini)\b/i.test(part) || /\b(?:program|jurusan|prodi)\s+(?:ini|tersebut)\b/i.test(part);
+    const hasExplicitAnaphora = /\w+nya\b/i.test(part) || /\b(?:nya|tersebut|itu|ini)\b/i.test(part) || /\b(?:program|jurusan|prodi)\s+(?:ini|tersebut)\b/i.test(part);
     const isCampusAssetSubject = /\b(?:fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|beasiswa|lokasi|alamat|gedung|kantin)\b/i.test(part);
     const isIndependentPmbSchedule = /\b(?:gelombang|buka\s+gelombang|jadwal\s+pmb|periode\s+pmb|kapan\s+buka|kapan\s+tutup)\b/i.test(part) && !hasExplicitAnaphora;
     const isIndependentSubject = isCampusAssetSubject || isIndependentPmbSchedule;
-    const isAnaphoric = hasExplicitAnaphora || /^(?:kalau|bagaimana|dan|lalu|apa|apakah|adakah|ada|berapa|syarat|biaya|jadwal|akreditasi)\b/i.test(part.trim());
+    const isAnaphoric = hasExplicitAnaphora || /^(?:kalau|bagaimana|dan|lalu|apa|apakah|adakah|ada|berapa|syarat|biaya|jadwal|akreditasi|cara|mekanisme|gimana)\b/i.test(part.trim()) || /\b(?:gimana|bagaimana)\b/i.test(part);
+    const isProceduralInquiry = /\b(?:cara(?:\s+mengurus|\s+daftar|\s+buat|\s+pengajuan)?|bagaimana\s+caranya|alur(?:nya)?|prosedur(?:nya)?|syarat(?:nya)?|proses(?:nya)?|mekanisme(?:nya)?)\b/i.test(part);
 
-    if (inferredTopic && !isIndependentSubject && isAnaphoric) {
-      const inferredLower = inferredTopic.toLowerCase();
+    if (idx > 0 && !isIndependentSubject && isAnaphoric) {
       const partLower = part.toLowerCase();
-      const hasCoreMention = partLower.includes(inferredLower) ||
-        (inferredLower.includes('teknologi informasi') && partLower.includes('teknologi informasi')) ||
-        (inferredLower.includes('sistem informasi') && partLower.includes('sistem informasi')) ||
-        (inferredLower.includes('sistem komputer') && partLower.includes('sistem komputer')) ||
-        (inferredLower.includes('bisnis digital') && partLower.includes('bisnis digital'));
+      const prevClause = parts[idx - 1] || '';
+      const prevSpecificTopic = prevClause.match(/\b(izin\s+belajar|study\s+permit|visa(?:\s+study|\s+studi|\s+e30b)?|itas|kitas|paspor|sktt|beasiswa\s+[a-z]+|beasiswa|jalur\s+rpl|rpl|perwalian|krs|wisuda|yudisium|student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|double\s*degree|dual\s*degree)\b/i);
 
-      if (!hasCoreMention) {
-        queryToResolve = `${part} ${inferredTopic}`;
-      } else if (!partLower.includes('s1') && inferredLower.startsWith('s1 ')) {
-        queryToResolve = part.replace(/\b(teknologi informasi|sistem informasi|sistem komputer|bisnis digital)\b/i, 'S1 $1');
+      if (isProceduralInquiry && prevSpecificTopic) {
+        // High-precision inheritance: inherit the procedural subject (e.g. "izin belajar") plus relevant participant scope
+        const entityScope = subjectEntities.length > 0 ? (subjectEntities[0].canonical || subjectEntities[0].name) : '';
+        const scopeClean = entityScope.replace(/\s*\([^)]*\)/g, '').trim();
+        if (!partLower.includes(prevSpecificTopic[0].toLowerCase())) {
+          queryToResolve = `${part} ${prevSpecificTopic[0]} ${scopeClean}`.trim();
+        }
+      } else if (inferredTopic) {
+        const inferredLower = inferredTopic.toLowerCase();
+        const hasCoreMention = partLower.includes(inferredLower) ||
+          (inferredLower.includes('teknologi informasi') && partLower.includes('teknologi informasi')) ||
+          (inferredLower.includes('sistem informasi') && partLower.includes('sistem informasi')) ||
+          (inferredLower.includes('sistem komputer') && partLower.includes('sistem komputer')) ||
+          (inferredLower.includes('bisnis digital') && partLower.includes('bisnis digital'));
+
+        if (!hasCoreMention) {
+          queryToResolve = `${part} ${inferredTopic}`;
+        } else if (!partLower.includes('s1') && inferredLower.startsWith('s1 ')) {
+          queryToResolve = part.replace(/\b(teknologi informasi|sistem informasi|sistem komputer|bisnis digital)\b/i, 'S1 $1');
+        }
       }
     }
 
@@ -310,6 +352,9 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
       ...(subSessionData.contextHistory || []),
       { role: 'user', content: parts[idx - 1] }
     ];
+    if (firstFrame.domain && firstFrame.domain !== 'OUT_OF_DOMAIN') {
+      subSessionData.activeDomain = firstFrame.domain;
+    }
     if (firstFrame.entities && firstFrame.entities.length > 0) {
       subSessionData.activeEntity = firstFrame.entities[0];
     }
@@ -324,11 +369,14 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     if (!isIndependentSubject && !isNonProdiDomain && subFrame.entities.length === 0 && subjectEntities.length > 0) {
       subFrame.entities = [...subjectEntities];
     }
-    if (subFrame.domain === 'OUT_OF_DOMAIN' && firstFrame.domain && firstFrame.domain !== 'OUT_OF_DOMAIN' && isAnaphoric) {
+    if (subFrame.domain === 'OUT_OF_DOMAIN' && firstFrame.domain && firstFrame.domain !== 'OUT_OF_DOMAIN' && (isAnaphoric || isProceduralInquiry)) {
       subFrame.domain = firstFrame.domain;
-      if (firstFrame.intent) subFrame.intent = firstFrame.intent;
+      subFrame.intent = isProceduralInquiry ? 'PROGRAM_PROCEDURE' : (firstFrame.intent || 'GENERAL_INFO');
       if (firstFrame.entities && firstFrame.entities.length > 0) {
         subFrame.entities = [...firstFrame.entities];
+      }
+      if (isProceduralInquiry) {
+        subFrame.aspects = Array.from(new Set([...(subFrame.aspects || []), 'procedure', 'requirements', 'flow']));
       }
     }
     subFrames.push(subFrame);

@@ -217,7 +217,7 @@ Aspects:
 Rules:
 1. Understand colloquial Indonesian, abbreviations, typos, and slang by SEMANTIC MEANING, not literal character matching.
 2. DO NOT answer questions or invent facts/catalogs.
-3. Candidate entities: Extract ONLY specific named entities (programs, institutions, specific clubs/organizations, specific partners). DO NOT extract generic common nouns, verbs, or full prepositional phrases as candidate entities (e.g. "maba", "awal masuk", "calon pendaftar lokal", "upload bukti", "konsultasi", "registrasi online" are NOT candidate entities; they belong to aspects/concepts).
+3. Candidate entities: Extract ONLY specific named entities (programs, institutions, specific clubs/organizations, specific partners). DO NOT extract generic common nouns, verbs, degree levels, broad domain categories, or phrases with conjunctions/prepositions (e.g. "maba", "teknik atau komputer", "tambahan dan potongan", "pengalaman kerja ke SKS", "yang dibuka di pascasarjana", "pendidikan vokasi", "semua prodi", "konsultasi", "registrasi online" are NOT candidate entities; they belong to aspects/concepts/scopeConstraints).
 4. For follow-ups (ellipsis/anaphora), set contextDependency.isFollowUp=true with appropriate referenceType. DO NOT invent unmentioned entities.
 5. For multi-entity or inherently ambiguous inquiries, preserve all candidate entities and set ambiguityLevel="HIGH".
 6. Return only the structured JSON.`;
@@ -351,7 +351,7 @@ async function parseSemanticInterpretation(input, options = {}) {
     return buildSafeUnknownInterpretation('', 'empty_query');
   }
 
-  const timeoutMs = parseInt(options.timeoutMs || process.env.SEMANTIC_PARSER_TIMEOUT_MS || '15000', 10);
+  const timeoutMs = parseInt(options.timeoutMs || process.env.SEMANTIC_PARSER_TIMEOUT_MS || '4500', 10);
   const model = String(
     options.model ||
     process.env.SEMANTIC_PARSER_MODEL ||
@@ -423,17 +423,41 @@ async function parseSemanticInterpretation(input, options = {}) {
 
     const sanitizedPayload = sanitizeOpenAiChatPayload(requestPayload);
 
+    // Controlled adaptive API execution with empirical parameter retry
+    const callApi = async () => {
+      try {
+        return await client.chat.completions.create(sanitizedPayload, { signal: abortController.signal });
+      } catch (apiErr) {
+        const msg = String(apiErr?.message || '');
+        // 1. Empirical proof: Model rejects non-default temperature
+        if (/temperature/i.test(msg) && sanitizedPayload.temperature !== undefined) {
+          logger.warn({ status: apiErr.status, reason: 'temperature_rejected' }, '[modelSemanticParser] API rejected temperature parameter; retrying without temperature');
+          const retryPayload = { ...sanitizedPayload };
+          delete retryPayload.temperature;
+          delete retryPayload.top_p;
+          return await client.chat.completions.create(retryPayload, { signal: abortController.signal });
+        }
+        // 2. Empirical proof: Model rejects max_tokens in favor of max_completion_tokens
+        if (/max_tokens/i.test(msg) && sanitizedPayload.max_tokens !== undefined) {
+          logger.warn({ status: apiErr.status, reason: 'max_tokens_rejected' }, '[modelSemanticParser] API rejected max_tokens; retrying with max_completion_tokens');
+          const retryPayload = { ...sanitizedPayload };
+          retryPayload.max_completion_tokens = retryPayload.max_tokens;
+          delete retryPayload.max_tokens;
+          return await client.chat.completions.create(retryPayload, { signal: abortController.signal });
+        }
+        throw apiErr;
+      }
+    };
+
     const response = await Promise.race([
-      client.chat.completions.create(
-        sanitizedPayload,
-        { signal: abortController.signal }
-      ),
+      callApi(),
       timeoutPromise
     ]);
     const providerLatencyMs = Date.now() - providerStart;
 
     const parseStart = Date.now();
     const rawContent = response?.choices?.[0]?.message?.content;
+
 
     if (!rawContent) {
       const elapsedMs = Date.now() - startTime;

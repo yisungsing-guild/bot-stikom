@@ -47,7 +47,11 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       };
     }
 
-    if (semanticFrame.domain === 'TUITION_FEE' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)))) {
+    const isScholarship = semanticFrame.domain === 'SCHOLARSHIP' ||
+      semanticFrame.intent === 'SCHOLARSHIP_INQUIRY' ||
+      (semanticFrame.entities && semanticFrame.entities.some(e => e.family === 'scholarship'));
+
+    if (!isScholarship && (semanticFrame.domain === 'TUITION_FEE' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a))))) {
       const isFacilityOrInfrastructure = semanticFrame.domain === 'FACILITIES' ||
         (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'campus_infrastructure'].includes(a))) ||
         (semanticFrame.entities && semanticFrame.entities.some(e => ['campus_facility', 'facility'].includes(e.family || e.type))) ||
@@ -109,8 +113,8 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       if (req === 'location' || req === 'study_location' || req === 'campus_location') {
         return /\b(lokasi|tempat|kampus|alamat|gedung|ruang|china|dalian|neusoft|malaysia|luar\s+negeri|dalam\s+negeri|onsite|online|daring|luring|jalan|jl\.|denpasar|renon|jimbaran|full\s+di\s+stikom)\b/i.test(combinedEvidenceText);
       }
-      if (req === 'duration' || req === 'study_duration') {
-        return /\b(durasi|masa\s+studi|tahun\s+\d|\d\s+tahun|\d\s+semester|semester\s+\d)\b/i.test(combinedEvidenceText);
+      if (req === 'duration' || req === 'study_duration' || req === 'schedule' || req === 'timeline') {
+        return /\b(durasi|masa\s+studi|tahun\s+\d|\d\s+tahun|\d\s+semester|semester\s+\d|jadwal|gelombang|periode|waktu|proses|terbit|minggu|bulan|hari)\b/i.test(combinedEvidenceText);
       }
       if (req === 'career' || req === 'career_prospects') {
         return /\b(karir|karier|prospek|peluang\s+kerja|profesi|pekerjaan)\b/i.test(combinedEvidenceText);
@@ -126,6 +130,9 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       }
       if (req === 'scholarship') {
         return /\b(beasiswa|potongan|keringanan|kip)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'rpl' || req === 'credit_transfer' || req === 'rekognisi_pembelajaran_lampau') {
+        return /\b(rpl|rekognisi\s*pembelajaran\s*lampau|transfer|konversi|pengakuan\s*sks|tipe\s*a|pengalaman\s*kerja)\b/i.test(combinedEvidenceText);
       }
       if (req === 'facilities') {
         return /\b(fasilitas|lab|laboratorium|perpustakaan|asrama|dormitory)\b/i.test(combinedEvidenceText);
@@ -178,7 +185,11 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     const missingAspects = requiredAspects.filter(req => !isAspectCovered(req));
 
     if (coveredAspects.length === 0) {
-      if (semanticFrame.domain === 'TUITION_FEE' || requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a))) {
+      const isScholarship = semanticFrame.domain === 'SCHOLARSHIP' ||
+        semanticFrame.intent === 'SCHOLARSHIP_INQUIRY' ||
+        (semanticFrame.entities && semanticFrame.entities.some(e => e.family === 'scholarship'));
+
+      if (!isScholarship && (semanticFrame.domain === 'TUITION_FEE' || requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)))) {
         return {
           status: ANSWERABILITY_STATUS.UNKNOWN,
           reason: 'insufficient_fee_aspect_coverage',

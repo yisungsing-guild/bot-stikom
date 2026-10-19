@@ -8957,7 +8957,12 @@ function buildAdministrativeCanonicalAnswer(question) {
     if (has(/\b(?:foto|photo)\b/i)) return answer('Ya. Foto formal diperlukan sebagai salah satu dokumen pengajuan Izin Belajar mahasiswa asing.');
     if (has(/\b(?:paspor|passport)\b/i)) return answer('Ya. Paspor diperlukan untuk pengajuan Izin Belajar mahasiswa asing.');
     if (has(/\b(?:dokumen|berkas|syarat|persyaratan|diperlukan|pengajuan)\b/i)) return answer('Dokumen pengajuan Izin Belajar mahasiswa asing meliputi foto formal, scan paspor, Financial Statement, Statement Letter, Medical Statement, Letter of Acceptance/LOA, ijazah, dan transkrip.');
-    if (has(/\b(?:berapa lama|lama proses|waktu|durasi|minggu|1\s*-?\s*2|1 sampai 2|satu sampai dua)\b/i)) return answer('Proses pembuatan Izin Belajar untuk mahasiswa internasional/asing umumnya membutuhkan waktu sekitar 1-2 minggu kerja, bergantung pada kelengkapan dokumen dan proses verifikasi.');
+    if (has(/\b(?:berapa lama|lama proses|waktu|durasi|minggu|1\s*-?\s*2|1 sampai 2|satu sampai dua)\b/i)) {
+      if (has(/\b(?:perpanjang|perpanjangan|extension)\b/i)) {
+        return answer('Proses perpanjangan Izin Belajar umumnya membutuhkan waktu sekitar 1-2 minggu kerja, bergantung pada kelengkapan dokumen dan proses verifikasi.');
+      }
+      return answer('Berdasarkan dokumen resmi yang tersedia, durasi waktu sekitar 1–2 minggu secara spesifik tercantum untuk proses perpanjangan Izin Belajar (serta pengajuan Visa E30B). Untuk penerbitan awal Izin Belajar bagi mahasiswa baru, estimasi durasi pasti belum dicantumkan dalam panduan resmi dan dikoordinasikan langsung bersama International Office ITB STIKOM Bali.');
+    }
     if (has(/\b(?:biaya|bayar|gratis)\b/i)) return answer('Pengurusan Izin Belajar tidak dikenakan biaya dari data yang tersedia.');
     if (has(/\b(?:siapa|international office|kampus|sendiri|dibantu)\b/i)) return answer('Pengurusan Izin Belajar dibantu oleh kampus/International Office. Mahasiswa menyiapkan dokumen yang diminta, lalu kampus membantu proses pengajuannya.');
     return answer('Pengurusan Izin Belajar dilakukan dengan menyiapkan dokumen persyaratan mahasiswa asing, lalu kampus/International Office membantu proses pengajuannya sesuai prosedur pemerintah.');
@@ -10871,15 +10876,14 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
 
 function buildLinkedInProgramEvidenceAnswer() {
   return [
-    'Program LinkedIn Learning di ITB STIKOM Bali diselenggarakan melalui Career Development Center (CDC) / Career Center, khusus bagi Alumni ITB STIKOM Bali.',
+    'Program LinkedIn Learning di ITB STIKOM Bali diselenggarakan melalui Career Development Center (CDC) / Career Center untuk memfasilitasi sertifikasi dan pengembangan kompetensi profesional mahasiswa dan alumni.',
     '',
-    'Informasi resmi program LinkedIn Learning:',
-    '- Sasaran: Khusus Alumni ITB STIKOM Bali.',
-    '- Biaya program: Rp 200.000 / tahun.',
-    '- Manfaat & Fasilitas: Akses ke ribuan kursus LinkedIn Learning, sertifikasi profesional internasional (bidang teknologi, bisnis, AI, desain, dan lainnya), optimalisasi profil LinkedIn (professional branding), serta upskilling & reskilling untuk meningkatkan daya saing karier.',
-    '- Dukungan Career Center: Menyelenggarakan pelatihan optimalisasi LinkedIn, penyusunan CV profesional, persiapan wawancara kerja, bimbingan karier, serta memfasilitasi informasi lowongan dan magang.',
+    'Informasi program LinkedIn Learning:',
+    '- Sasaran: Pengembangan karier mahasiswa dan alumni ITB STIKOM Bali.',
+    '- Manfaat & Fasilitas: Akses ke materi kursus LinkedIn Learning, sertifikasi profesional internasional, optimalisasi profil profesional, serta peningkatan keahlian kerja.',
+    '- Biaya & Registrasi: Rincian biaya langganan resmi saat ini belum tercantum secara spesifik dalam panduan terverifikasi. Mahasiswa disarankan untuk mengonfirmasi langsung ke Career Center.',
     '',
-    'Untuk pendaftaran dan informasi lebih lanjut, kakak dapat mengunjungi https://cdc.stikom-bali.ac.id/ atau menghubungi Career Center / CDC di kontak 081-399-5000.'
+    'Untuk pendaftaran dan informasi terkini, silakan mengunjungi portal resmi CDC (https://cdc.stikom-bali.ac.id/) atau layanan kemahasiswaan ITB STIKOM Bali.'
   ].join('\n');
 }
 
@@ -24179,6 +24183,7 @@ module.exports = {
   selectAcademicDocumentSection,
   selectAcademicDocumentSectionDetailed,
   tryDirectAcademicAdminUploadedSectionAnswer,
+  buildLinkedInProgramEvidenceAnswer,
   observePlanDrivenShadow: (...args) => {
     try {
       return require('./shadowIntegration').observePlanDrivenShadow(...args);

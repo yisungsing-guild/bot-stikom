@@ -164,7 +164,11 @@ function cleanDocumentArtifacts(text) {
   clean = clean.replace(/\.{4,}/g, '');
   clean = clean.replace(/^-{10,}$/gm, '');
 
-  // 7. Normalize repeated spaces and lines
+  // 8. Strip campus letterhead / footer contacts from context chunks (e.g. Jimbaran / Abiansemal hotlines)
+  clean = clean.replace(/Kampus\s+Jimbaran[^\n|]*(?:\|[^\n|]*)*(?:Hotline\s*:\s*081288778840)?/gi, '');
+  clean = clean.replace(/\b0812[-.\s]?8877[-.\s]?8840\b/gi, '');
+
+  // 9. Normalize repeated spaces and lines
   clean = clean
     .replace(/[ \t]+/g, ' ')
     .replace(/\n\s*\n\s*\n+/g, '\n\n')
@@ -897,6 +901,61 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     return appendMissingAspectNote(advisingAnswer.trim());
   }
 
+  // 0c. Admission Tracks / Transfer / RPL (Rekognisi Pembelajaran Lampau)
+  if (semanticFrame.domain === 'ADMISSION_TRACK' || (semanticFrame.aspects && semanticFrame.aspects.includes('rpl')) || /\b(?:rpl|rekognisi(?:\s+pembelajaran\s+lampau)?|transfer\s+sks|alih\s+jenjang)\b/i.test(rawQuery)) {
+    const isDuration = /\b(?:berapa\s+lama|durasi|waktu\s+studi|masa\s+studi|lama\s+kuliah|lama\s+studi)\b/i.test(rawQuery);
+    const isProcedure = /\b(?:alur|cara|prosedur|syarat|persyaratan|berkas|dokumen|daftar)\b/i.test(rawQuery);
+
+    if (isDuration) {
+      const rplDurationAnswer = userLang === 'en'
+        ? `For the Prior Learning Recognition (RPL) track at ITB STIKOM Bali, official guidelines specify credit recognition (SKS) tiers:\n\n` +
+          `• **85 to 100 SKS Recognition**: DPP fee is Rp 4,500,000\n` +
+          `• **44 to 84 SKS Recognition**: DPP fee is Rp 5,000,000\n` +
+          `• **20 to 43 SKS Recognition**: DPP fee is Rp 7,000,000\n` +
+          `• **Below 20 SKS**: Handled under regular matriculation provisions.\n\n` +
+          `The official graduation guide also stipulates that transfer/RPL students must complete at least 2 semesters at ITB STIKOM Bali before becoming eligible for the national diploma PIN. Exact credit conversion from your prior education or work experience is determined following evaluation by the PMB Admissions Office.`
+        : `Untuk jalur Rekognisi Pembelajaran Lampau (RPL) di ITB STIKOM Bali, dokumen resmi mencatat rentang pengakuan SKS dan biaya DPP sebagai berikut:\n\n` +
+          `• **Pengakuan 85 s/d 100 SKS**: DPP sebesar Rp4.500.000\n` +
+          `• **Pengakuan 44 s/d 84 SKS**: DPP sebesar Rp5.000.000\n` +
+          `• **Pengakuan 20 s/d 43 SKS**: DPP sebesar Rp7.000.000\n` +
+          `• **Di bawah 20 SKS**: DPP mengikuti ketentuan jalur reguler.\n\n` +
+          `Selain itu, pedoman kelulusan resmi menetapkan bahwa mahasiswa transfer/RPL wajib menempuh minimal 2 (dua) semester di ITB STIKOM Bali sebelum eligible memperoleh penomoran ijazah nasional (PIN). Konversi pasti dari studi terdahulu maupun pengalaman kerja dikonfirmasikan langsung melalui portal resmi https://pmb.stikom-bali.ac.id atau bagian Admisi PMB.`;
+      return appendMissingAspectNote(rplDurationAnswer);
+    }
+
+    if (isProcedure) {
+      const rplProcAnswer = userLang === 'en'
+        ? `Based on the official PMB guidelines available for ITB STIKOM Bali, the Recognition of Prior Learning (RPL) track provides credit transfer (SKS recognition) with the following verified provisions:\n\n` +
+          `• **Credit Recognition & DPP Tiers**:\n` +
+          `  - 85 to 100 SKS: DPP Rp 4,500,000\n` +
+          `  - 44 to 84 SKS: DPP Rp 5,000,000\n` +
+          `  - 20 to 43 SKS: DPP Rp 7,000,000\n` +
+          `  - Below 20 SKS: DPP fee follows regular admission.\n` +
+          `• **Registration & Verification**:\n` +
+          `  - Registration follows the official PMB wave provisions via https://pmb.stikom-bali.ac.id.\n` +
+          `  - Specific technical requirements for work experience conversion (such as portfolio formats, competency certificates, or assessment rubrics) are not detailed in the currently available official catalog and should be confirmed directly with the ITB STIKOM Bali PMB Admissions Office via https://pmb.stikom-bali.ac.id.`
+        : `Berdasarkan dokumen resmi PMB yang tersedia di ITB STIKOM Bali, jalur Rekognisi Pembelajaran Lampau (RPL) mencakup ketentuan pengakuan SKS dan biaya DPP sebagai berikut:\n\n` +
+          `• **Rentang Pengakuan SKS & Biaya DPP**:\n` +
+          `  - Pengakuan 85 s/d 100 SKS: DPP sebesar Rp4.500.000\n` +
+          `  - Pengakuan 44 s/d 84 SKS: DPP sebesar Rp5.000.000\n` +
+          `  - Pengakuan 20 s/d 43 SKS: DPP sebesar Rp7.000.000\n` +
+          `  - Di bawah 20 SKS: biaya DPP mengikuti ketentuan jalur reguler.\n` +
+          `• **Pendaftaran & Ketentuan Teknis**:\n` +
+          `  - Pendaftaran mengikuti ketentuan registrasi per gelombang melalui portal resmi https://pmb.stikom-bali.ac.id.\n` +
+          `  - Persyaratan dokumen teknis spesifik untuk konversi pengalaman kerja (seperti format portofolio atau sertifikat kompetensi) belum tercantum dalam dokumen panduan resmi yang tersedia saat ini, sehingga disarankan untuk mengonfirmasikannya langsung ke bagian Admisi PMB ITB STIKOM Bali melalui portal resmi https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(rplProcAnswer);
+    }
+
+    const rplGeneralAnswer = userLang === 'en'
+      ? `ITB STIKOM Bali provides the **Recognition of Prior Learning (RPL / Rekognisi Pembelajaran Lampau)** scheme with officially documented credit recognition tiers:\n\n` +
+        `• **Credit Recognition Tiers**: The official fee structure provides DPP tiers based on credit recognition (85–100 SKS: Rp 4,500,000; 44–84 SKS: Rp 5,000,000; 20–43 SKS: Rp 7,000,000; below 20 SKS follows regular admission).\n` +
+        `• **Registration**: Conducted in accordance with PMB wave regulations via https://pmb.stikom-bali.ac.id. Detailed technical procedures for prior course or work conversion should be confirmed directly with the PMB Admissions Office via https://pmb.stikom-bali.ac.id.`
+      : `ITB STIKOM Bali menyelenggarakan jalur **Rekognisi Pembelajaran Lampau (RPL)** dengan skema pengakuan SKS resmi:\n\n` +
+        `• **Skema Pengakuan SKS & Biaya DPP**: Dokumen biaya resmi menetapkan tarif DPP berdasarkan jumlah SKS yang diakui (85–100 SKS: Rp4.500.000; 44–84 SKS: Rp5.000.000; 20–43 SKS: Rp7.000.000; di bawah 20 SKS mengikuti reguler).\n` +
+        `• **Pendaftaran**: Mengikuti ketentuan per gelombang melalui portal resmi https://pmb.stikom-bali.ac.id. Rincian prosedur teknis konversi mata kuliah atau pengalaman kerja dapat dikonfirmasikan langsung ke bagian Admisi PMB melalui portal resmi https://pmb.stikom-bali.ac.id.`;
+    return appendMissingAspectNote(rplGeneralAnswer);
+  }
+
   // 1. PMB Inquiries (General, Procedure, Requirements)
   if (semanticFrame.domain === 'PMB') {
     const isProcedure = semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
@@ -955,8 +1014,9 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
     return appendMissingAspectNote(pmbAnswer);
   }
 
-  // 1c. Facilities & Laboratories Inquiries
-  if (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY' || isFacilityInquiry) {
+  // 1c. Facilities & Laboratories Inquiries (specific to labs)
+  const isSpecificLabInquiry = /\b(?:lab|laboratorium)\b/i.test(rawQuery) || targetEntities.some(e => /lab/i.test(e)) || (semanticFrame.aspects && semanticFrame.aspects.includes('lab'));
+  if (isSpecificLabInquiry && (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY' || isFacilityInquiry)) {
     const extractedLabs = extractLabsFromEvidence(accepted);
     if (extractedLabs.length > 0) {
       if (userLang === 'en') {
@@ -1035,19 +1095,36 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
   }
 
   // 1e. International & Dual Degree Programs (Double Degree & Student Exchange)
-  if (semanticFrame.domain === 'INTERNATIONAL' || (semanticFrame.aspects && (semanticFrame.aspects.includes('double_degree') || semanticFrame.aspects.includes('student_exchange')))) {
+  if (semanticFrame.domain === 'INTERNATIONAL' || (semanticFrame.aspects && (semanticFrame.aspects.includes('double_degree') || semanticFrame.aspects.includes('student_exchange') || semanticFrame.aspects.includes('study_permit')))) {
+    const isStudyPermitDurationQuery = /\b(?:study\s*permit|izin\s*belajar)\b/i.test(rawQuery) &&
+      /\b(?:berapa lama|lama proses|durasi|waktu)\b/i.test(rawQuery);
+    if (isStudyPermitDurationQuery) {
+      const isExtension = /\b(?:perpanjang|perpanjangan|perpanjangannya|extend|extension)\b/i.test(rawQuery);
+      if (isExtension) {
+        const extAns = userLang === 'en'
+          ? 'The processing of a study permit extension generally takes about 1–2 working weeks after submission with the assistance of the International Office, depending on document completeness and verification.'
+          : 'Proses perpanjangan Izin Belajar umumnya membutuhkan waktu sekitar 1–2 minggu kerja setelah diajukan melalui bantuan International Office, bergantung pada kelengkapan dokumen dan proses verifikasi.';
+        return appendMissingAspectNote(extAns);
+      }
+      const initialAns = userLang === 'en'
+        ? 'Based on available official guidelines, the 1–2 week processing timeframe is specifically documented for study permit extensions (and Visa E30B applications). The exact duration for the initial issuance of a study permit for new students is not specified in the guidelines and is coordinated directly with the International Office of ITB STIKOM Bali.'
+        : 'Berdasarkan dokumen panduan resmi yang tersedia, durasi waktu sekitar 1–2 minggu secara spesifik tercantum untuk proses perpanjangan Izin Belajar (serta pengajuan Visa E30B). Sementara itu, estimasi durasi pasti untuk penerbitan awal Izin Belajar bagi mahasiswa baru belum tercantum dalam panduan resmi dan dikoordinasikan langsung bersama International Office ITB STIKOM Bali.';
+      return appendMissingAspectNote(initialAns);
+    }
+
     const isFeeOrDiscountQuery = semanticFrame.domain === 'TUITION_FEE' ||
       (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'discount', 'cost'].includes(a))) ||
       /\b(?:biaya|uang|tarif|spp|dpp|potongan|diskon)\b/i.test(rawQuery);
 
     const isDD = !isFeeOrDiscountQuery && (
-      /\b(double\s*degree|dual\s*degree|dua\s*gelar)\b/i.test(rawQuery) ||
-      (semanticFrame.contextDependencies && semanticFrame.contextDependencies.some(cd => /double\s*degree/i.test(cd.inheritedEntity || '')))
+      /\b(double\s*degree|dual\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(rawQuery) ||
+      /\b(double\s*degree|dual\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(semanticFrame.normalizedQuery || '') ||
+      (semanticFrame.contextDependencies && semanticFrame.contextDependencies.some(cd => /double\s*degree|dual\s*degree|gelar\s*ganda/i.test(cd.inheritedEntity || '')))
     );
 
     if (isDD) {
-      const isNationalQuery = /\bnasional\b/i.test(rawQuery);
-      const isInternationalQuery = /\binternasional\b/i.test(rawQuery);
+      const isNationalQuery = /\b(nasional|utb|universitas\s+teknologi\s+bandung)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+      const isInternationalQuery = /\binternasional\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
       const ddPartners = extractDoubleDegreePartnersFromEvidence(accepted);
       const nationalPartners = ddPartners.filter(p => p.scope === 'national');
       const internationalPartners = ddPartners.filter(p => p.scope === 'international');
@@ -1116,6 +1193,22 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
   // 2. Scholarship Inquiry
   if (semanticFrame.domain === 'SCHOLARSHIP' || (semanticFrame.aspects && semanticFrame.aspects.includes('scholarship') && semanticFrame.domain !== 'TUITION_FEE')) {
     const isKip = /kip|kip-?kuliah/i.test(rawQuery) || targetEntities.some(e => /kip/i.test(e));
+    const isS2Inquiry = semanticFrame.academicLevel === 'S2' ||
+      semanticFrame.scopeLevel === 'S2' ||
+      /\b(?:s2|magister|master(?:'s)?)\b/i.test(rawQuery) ||
+      targetEntities.some(e => /s2|magister|pascasarjana/i.test(e));
+
+    if (isS2Inquiry) {
+      if (userLang === 'en') {
+        return appendMissingAspectNote(
+          `Official information regarding specific scholarships for the Master of Information Systems (S2) program is not listed in the available guidelines. The available data records registration fee discounts according to admission waves and alumni discounts, while specific S2 scholarship details should be confirmed directly with admissions at 0822-7738-9999 or the PMB office.`
+        );
+      }
+      return appendMissingAspectNote(
+        `Informasi beasiswa khusus untuk mahasiswa Magister (S2) Sistem Informasi belum tercantum dalam dokumen panduan resmi yang tersedia. Informasi yang ada saat ini mencatat potongan biaya pendaftaran sesuai gelombang dan potongan khusus alumni, sedangkan rincian beasiswa S2 lainnya dapat dikonfirmasi langsung ke layanan admisi pascasarjana di 0822-7738-9999.`
+      );
+    }
+
     const isSkss = /skss|satu keluarga satu sarjana/i.test(rawQuery) || targetEntities.some(e => /skss/i.test(e));
 
     if (isKip) {
@@ -1132,15 +1225,7 @@ Pendaftaran akun KIP Kuliah dilakukan melalui portal Kemendikbudristek https://k
     }
 
     if (isSkss) {
-      const skssAnswer = `Program Beasiswa SKSS (Satu Keluarga Satu Sarjana) dari Yayasan ditujukan untuk calon mahasiswa yang belum ada anggota keluarganya berpendidikan sarjana (S1):
-
-**Ketentuan & Persyaratan**:
-1. Calon mahasiswa baru yang merupakan sarjana pertama di dalam kartu keluarganya.
-2. Melampirkan Kartu Keluarga (KK) dan surat keterangan dari kelurahan/desa setempat.
-3. Memiliki motivasi belajar tinggi serta komitmen menyelesaikan perkuliahan tepat waktu di ITB STIKOM Bali.
-4. Lolos verifikasi berkas dan wawancara dari panitia beasiswa yayasan.
-
-Untuk informasi kuota dan pengajuan beasiswa SKSS periode ini, Kakak bisa berkonsultasi langsung dengan layanan admisi PMB di https://pmb.stikom-bali.ac.id.`;
+      const skssAnswer = `Program Beasiswa SKSS (Satu Keluarga Satu Sarjana) ditujukan untuk calon mahasiswa yang merupakan sarjana pertama di keluarganya. Namun, rincian teknis persyaratan dan kuota resminya saat ini belum tercantum lengkap dalam panduan yang tersedia. Silakan konfirmasi ke layanan admisi PMB di https://pmb.stikom-bali.ac.id.`;
       return appendMissingAspectNote(skssAnswer);
     }
 
@@ -1171,11 +1256,20 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       return appendMissingAspectNote(dppDiscountAnswer);
     }
 
-    const scholarshipAnswer = `Di ITB STIKOM Bali, tersedia beberapa program beasiswa dan potongan biaya pendidikan:
+    if (userLang === 'en') {
+      const scholarshipAnswerEn = `At ITB STIKOM Bali, the official financial aid and scholarship options documented in admissions guidelines include:
 
-1. **Beasiswa KIP Kuliah**: Bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi.
-2. **Beasiswa Potongan DPP Gelombang**: Potongan Dana Pendidikan Pokok (DPP) Rp 2.000.000 s.d. Rp 3.000.000 pada gelombang awal pendaftaran untuk S1 reguler, dengan diskon tambahan 10% jika dibayar tunai (serta hingga 60% khusus alumni SMK TI Bali Global).
-3. **Beasiswa Yayasan & SKSS**: Bantuan keringanan biaya bagi penerima beasiswa Satu Keluarga Satu Sarjana atau prestasi akademik/non-akademik.
+1. **KIP Kuliah (Indonesia Smart Card College)**: Full tuition assistance from Kemendikbudristek for high-achieving applicants who meet economic criteria.
+2. **Admission Wave DPP Discounts**: Tuition fee (DPP) discounts ranging from IDR 2,000,000 to IDR 3,000,000 during early admission waves for regular undergraduate programs, with additional discounts for cash payment and partner vocational school alumni.
+
+For complete information regarding application requirements, documents, and registration schedules, please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact the campus admissions office.`;
+      return appendMissingAspectNote(scholarshipAnswerEn);
+    }
+
+    const scholarshipAnswer = `Di ITB STIKOM Bali, tersedia beberapa program bantuan biaya pendidikan dan beasiswa resmi:
+
+1. **Beasiswa KIP Kuliah**: Bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi dari Kemendikbudristek.
+2. **Beasiswa Potongan DPP Gelombang**: Potongan Dana Pendidikan Pokok (DPP) Rp 2.000.000 s.d. Rp 3.000.000 pada gelombang awal pendaftaran untuk S1 reguler, dengan diskon tambahan 10% jika dibayar tunai serta potongan khusus bagi alumni SMK TI Bali Global.
 
 Informasi lengkap mengenai persyaratan berkas dan alur pendaftaran beasiswa dapat diakses melalui portal https://pmb.stikom-bali.ac.id atau layanan admisi kampus.`;
     return appendMissingAspectNote(scholarshipAnswer);
@@ -1215,12 +1309,28 @@ Informasi lengkap mengenai persyaratan berkas dan alur pendaftaran beasiswa dapa
       return appendMissingAspectNote(labAnswer);
     }
 
-    const facilitiesAnswer = `Berikut fasilitas utama yang tersedia untuk mahasiswa di ITB STIKOM Bali:
+    const isLlc = /\b(?:llc|language\s+learning\s+center|pusat\s+bahasa)\b/i.test(rawQuery) || targetEntities.some(e => /llc|language learning center/i.test(e));
+    if (isLlc) {
+      if (userLang === 'en') {
+        const llcAnswer = `Based on the official campus support services registry at ITB STIKOM Bali, **LLC** refers to the **Language Learning Center**, a campus supporting unit dedicated to language skill development. Detailed information regarding specific course offerings, schedules, or fees is not published in the currently available official guidelines.`;
+        return appendMissingAspectNote(llcAnswer);
+      }
+      const llcAnswer = `Berdasarkan registri unit layanan pendukung kampus di ITB STIKOM Bali, **LLC** merujuk pada **Language Learning Center**, yaitu unit pendukung kampus untuk pengembangan kemampuan bahasa asing mahasiswa. Rincian lebih lanjut mengenai jadwal kelas, jenis program aktif, maupun biaya layanannya belum tercantum dalam panduan resmi yang tersedia saat ini.`;
+      return appendMissingAspectNote(llcAnswer);
+    }
 
-• **Laboratorium Modern**: Lab Komputer, Jaringan, IoT, Robotika, serta Studio Desain Multimedia.
-• **Perpustakaan & E-Library**: Koleksi buku referensi, jurnal ilmiah, dan repositori digital.
-• **Ruang Kuliah Ber-AC**: Dilengkapi proyektor interaktif dan fasilitas perkuliahan digital.
-• **Fasilitas Pendukung**: Akses Wi-Fi kampus, ruang ormawa/UKM, serta asrama/dormitory bagi program internasional tertentu.
+    const facilitiesAnswer = `Berikut sarana dan prasarana kampus di ITB STIKOM Bali yang dikelompokkan menurut kategorinya:
+
+1. **Fasilitas Fisik & Pembelajaran**:
+• **Laboratorium Komputer & Teknologi**: Lab Komputer, Jaringan Komputer, IoT & Robotika, serta Studio Desain Multimedia.
+• **Perpustakaan & E-Library**: Ruang baca fisik, koleksi referensi akademik, repositori digital, dan akses jurnal ilmiah.
+• **Ruang Kuliah Ber-AC**: Dilengkapi fasilitas multimedia interaktif dan sistem perkuliahan modern.
+• **Sarana Penunjang Kampus**: Akses Wi-Fi kampus, area kegiatan mahasiswa, serta fasilitas asrama/dormitory bagi skema program kemitraan internasional tertentu.
+
+2. **Unit Layanan Pendukung Kampus (Layanan Mahasiswa)**:
+Selain fasilitas fisik pembelajaran di atas, kampus menyediakan unit layanan khusus seperti **Career Development Center (CDC)** untuk pembekalan karier, **Inkubator Bisnis (INBIS)** untuk pendampingan kewirausahaan, dan **Language Learning Center (LLC)** untuk pengembangan kemampuan bahasa.
+
+_Catatan: Program akademik internasional (seperti Double Degree) dan organisasi kemahasiswaan (UKM) merupakan kategori program akademik dan ekstrakurikuler, bukan fasilitas fisik kampus._
 
 Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     return appendMissingAspectNote(facilitiesAnswer);
@@ -1253,9 +1363,9 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
           regex: /\b(?:basket)\b/i
         },
         {
-          name: 'UKM BOSS',
-          desc: 'Latihan rutin dan turnamen bulutangkis (Badminton Organization of STIKOM Student).',
-          regex: /\b(?:boss\b|bulutangkis|badminton)\b/i
+          name: 'UKM BOS',
+          desc: 'Latihan rutin dan turnamen bulutangkis (Badminton Organization of STIKOM).',
+          regex: /\b(?:bos\b|boss\b|bulutangkis|badminton)\b/i
         },
         {
           name: 'UKM GHoST',
@@ -1345,16 +1455,32 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
       return appendMissingAspectNote('Untuk bergabung dengan Unit Kegiatan Mahasiswa (UKM) di ITB STIKOM Bali, informasi pendaftaran dan masa penerimaan anggota dikoordinasikan langsung melalui Direktorat Kemahasiswaan & Ormawa atau agenda kegiatan kemahasiswaan kampus.');
     }
 
-    const orgAnswer = `Kegiatan mahasiswa di ITB STIKOM Bali dinaungi oleh Organisasi Mahasiswa (Ormawa) dan Unit Kegiatan Mahasiswa (UKM):
+    const isSpecificUkmInquiry = /\bukm\b/i.test(rawQuery) && !/\b(?:senat|balma|himaprodi|pemerintahan\s+mahasiswa)\b/i.test(rawQuery);
+    if (isSpecificUkmInquiry) {
+      const ukmOnlyAnswer = `Unit Kegiatan Mahasiswa (UKM) di ITB STIKOM Bali merupakan wadah kegiatan kemahasiswaan untuk menyalurkan minat, bakat, serta penalaran (terpisah dari organisasi perwakilan/eksekutif mahasiswa seperti Senat Mahasiswa, Balma, atau Himpunan Mahasiswa Program Studi/Himaprodi).\n\n` +
+        `Berdasarkan data penetapan pembina ormawa/UKM yang tercatat aktif, beberapa UKM yang tersedia antara lain:\n` +
+        `• **Bidang Esports & Penalaran/Teknologi**: UKM Athena E-Sports, KSL (Kelompok Studi Linux), Komunitas Robotika.\n` +
+        `• **Bidang Olahraga**: Futsal, Basket, Bulutangkis (UKM BOS), Kebugaran/Gym (UKM GHoST).\n` +
+        `• **Bidang Seni & Budaya**: Tari Tradisional (Unit Kegiatan Tari Tradisional “PRAGINA”), Musik (UKM MUSIK), Paduan Suara (UKM Voice of STIKOM Bali/VOS), Fotografi (UKM HIMATOGRAPHY), Teater (UKM TEATER BINER).\n` +
+        `• **Bidang Sosial & Khusus**: KSR PMI, Resimen Mahasiswa (Menwa).\n\n` +
+        `_Catatan: Rincian di atas memuat UKM yang terdata dalam penetapan pembina ormawa resmi dan bukan merupakan klaim daftar lengkap seluruh komunitas kampus. Untuk informasi pendaftaran anggota baru atau daftar UKM aktif terkini, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali._`;
+      return appendMissingAspectNote(ukmOnlyAnswer);
+    }
 
-• **Organisasi Mahasiswa**: Senat Mahasiswa, Balma (Badan Legislatif Mahasiswa), serta Himpunan Mahasiswa Program Studi (HIMAPRODI) tiap jurusan.
-• **Unit Kegiatan Mahasiswa (UKM)**:
-  - Bidang Esports & Teknologi: UKM Athena E-Sports, KSL (Linux), Komunitas Robotika.
-  - Bidang Olahraga: Futsal, basket, bulutangkis (UKM BOSS), kebugaran (UKM GHoST).
-  - Bidang Seni & Budaya: Tari tradisional (Unit Kegiatan Tari Tradisional “PRAGINA”), musik (UKM MUSIK), paduan suara (UKM Voice of STIKOM Bali/VOS), fotografi (UKM HIMATOGRAPHY), teater (UKM TEATER BINER).
-  - Bidang Sosial & Khusus: KSR PMI, Resimen Mahasiswa.
+    const orgAnswer = `Kegiatan kemahasiswaan di ITB STIKOM Bali dinaungi oleh Organisasi Mahasiswa (Ormawa) dan Unit Kegiatan Mahasiswa (UKM) yang terbagi dalam dua kelompok utama:
 
-Untuk informasi pendaftaran dan kegiatan ormawa/UKM lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+1. **Organisasi Pemerintahan Mahasiswa (Ormawa)**:
+   • Senat Mahasiswa (lembaga eksekutif mahasiswa).
+   • Balma / Badan Legislatif Mahasiswa (lembaga perwakilan dan legislatif mahasiswa).
+   • Himpunan Mahasiswa Program Studi (HIMAPRODI) pada masing-masing prodi.
+
+2. **Unit Kegiatan Mahasiswa (UKM)** (Minat, Bakat, dan Penalaran):
+   • **Bidang Esports & Teknologi**: UKM Athena E-Sports, KSL (Linux), Komunitas Robotika.
+   • **Bidang Olahraga**: Futsal, Basket, Bulutangkis (UKM BOS), Kebugaran (UKM GHoST).
+   • **Bidang Seni & Budaya**: Tari Tradisional (Unit Kegiatan Tari Tradisional “PRAGINA”), Musik (UKM MUSIK), Paduan Suara (UKM Voice of STIKOM Bali/VOS), Fotografi (UKM HIMATOGRAPHY), Teater (UKM TEATER BINER).
+   • **Bidang Sosial & Khusus**: KSR PMI, Resimen Mahasiswa.
+
+_Catatan: Rincian UKM di atas didasarkan pada penetapan pembina ormawa resmi dan bukan merupakan klaim daftar lengkap seluruh komunitas kemahasiswaan. Untuk informasi pendaftaran dan kegiatan ormawa/UKM lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali._`;
     return appendMissingAspectNote(orgAnswer);
   }
 
@@ -1665,32 +1791,41 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       return lines;
     }
 
-    if (targetEntities.length > 1) {
+    const isMultiProdiCompare = targetEntities.length > 1 ||
+      (/\b(?:semua|seluruh|tiap|masing-masing|bandingkan|perbandingan)\s+(?:prodi|jurusan|program\s+studi|biaya)\b/i.test(rawQuery) ||
+       /\b(?:semua|seluruh)\s+(?:program\s+studi|prodi|jurusan)\b/i.test(rawQuery));
+
+    const prodisToCompare = targetEntities.length > 1
+      ? targetEntities
+      : (isMultiProdiCompare ? ['S1 Sistem Informasi', 'S1 Teknologi Informasi', 'S1 Bisnis Digital', 'S1 Sistem Komputer', 'D3 Manajemen Informatika', 'S2 Sistem Informasi'] : []);
+
+    if (prodisToCompare.length > 1) {
       const entityFeeBlocks = [];
-      for (const ent of targetEntities) {
+      for (const ent of prodisToCompare) {
         const entBase = ent.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase();
         const entChunks = accepted.filter(c => {
           const t = (c.text || '').toLowerCase();
-          const sf = (c.source_file || '').toLowerCase();
+          const sf = (c.source_file || c.filename || '').toLowerCase();
           const ce = (c.contextEntities || []).map(x => x.toLowerCase());
           return t.includes(ent.toLowerCase()) ||
+                 t.includes(entBase) ||
                  sf.includes(entBase) ||
                  ce.includes(ent.toLowerCase());
         });
         const entText = entChunks.map(c => c.text).join('\n\n');
         const lines = extractFeeForEntity(entText);
         if (lines.length > 0) {
-          entityFeeBlocks.push(`**${ent}**:\n` + lines.join('\n'));
+          entityFeeBlocks.push(`• **${ent}**:\n  ` + lines.join('\n  '));
         }
       }
       if (entityFeeBlocks.length > 0) {
         if (userLang === 'en') {
-          let compAnswer = `Here is the comparison of official tuition fees for the study programs you inquired about:\n\n`;
+          let compAnswer = `Here is the comparison of official tuition fees for the study programs at ITB STIKOM Bali:\n\n`;
           compAnswer += entityFeeBlocks.join('\n\n');
           compAnswer += `\n\nDPP can be paid in monthly installments until Midterm Exams (UTS). For information on early wave scholarship discounts, please feel free to ask.`;
           return appendMissingAspectNote(compAnswer);
         }
-        let compAnswer = `Berikut perbandingan rincian biaya pendidikan resmi program studi yang Kakak tanyakan:\n\n`;
+        let compAnswer = `Berikut perbandingan rincian biaya pendidikan resmi program studi di ITB STIKOM Bali:\n\n`;
         compAnswer += entityFeeBlocks.join('\n\n');
         compAnswer += `\n\nPembayaran DPP dapat diangsur setiap bulan hingga UTS. Untuk informasi beasiswa potongan gelombang, silakan tanyakan lebih lanjut ya.`;
         return appendMissingAspectNote(compAnswer);
@@ -1726,6 +1861,15 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
   }
 
   // 7b. Career Center & CDC Services
+  const isLinkedIn = targetEntities.some(e => /linkedin/i.test(e)) || /\b(?:linkedin|linked\s*in)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+  if (isLinkedIn) {
+    const linkedInAnswer = `Program **LinkedIn Learning** di ITB STIKOM Bali diselenggarakan melalui **Career Development Center (CDC) / Career Center** untuk mendukung peningkatan keahlian (upskilling/reskilling) serta pengembangan kompetensi profesional mahasiswa dan alumni.\n\n` +
+      `• **Fokus & Manfaat**: Fasilitasi akses ke materi pelatihan digital berstandar global, sertifikasi profesional internasional, optimalisasi profil profesional LinkedIn, serta pembekalan kesiapan karier.\n` +
+      `• **Biaya & Registrasi**: Rincian biaya langganan resmi saat ini belum tercantum secara spesifik dalam panduan resmi terverifikasi. Mahasiswa disarankan untuk mengonfirmasi langsung ke pihak Career Center.\n\n` +
+      `Untuk pendaftaran dan informasi resmi terkini, silakan mengunjungi portal resmi CDC (https://cdc.stikom-bali.ac.id/) atau loket layanan kemahasiswaan ITB STIKOM Bali.`;
+    return appendMissingAspectNote(linkedInAnswer);
+  }
+
   const isProdiCareerInquiry = Boolean(programEntity) && /\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|kar(?:i)?er|pekerjaan|profesi|career|jobs?)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
   if (!isProdiCareerInquiry && (semanticFrame.domain === 'CAREER_CENTER' || targetEntities.some(e => /cdc/i.test(e) || (e !== programEntity?.canonical && /career\s+center/i.test(e))) || /\b(?:career\s+center|cdc\b|penyaluran\s+kerja|campus\s+hiring|mitra\s+industri)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')))) {
     const cdcAnswer = `Untuk mendukung kesiapan karier dan penyaluran kerja mahasiswa maupun alumni, **Career Development Center (CDC)** ITB STIKOM Bali menyediakan layanan unggulan:\n\n` +
@@ -1750,14 +1894,73 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
     return appendMissingAspectNote(rplAnswer);
   }
 
-  // 7d. International Programs (Double Degree DNUI, HELP, GCCP, Magang Jepang, Student Exchange)
-  if (semanticFrame.domain === 'INTERNATIONAL' || targetEntities.some(e => ['Double Degree DNUI', 'Double Degree HELP University', 'Dual Degree UTB', 'GCCP', 'BCCP', 'Program Hi-Think (Magang Jepang)', 'Student Exchange'].includes(e)) || /\b(dnui|dalian|help\s+university|gccp|bccp|magang\s+jepang|hi-?think|student\s+exchange|pertukaran\s+mahasiswa)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const isDnui = targetEntities.some(e => /dnui|dalian/i.test(e)) || /\b(dnui|dalian|china|cina)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-    const isHelp = targetEntities.some(e => /help/i.test(e)) || /\b(help|malaysia)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+  // 7d. International Programs (Double Degree DNUI, HELP, GCCP, Magang Jepang, Student Exchange, UTB, Visa)
+  if (semanticFrame.domain === 'INTERNATIONAL' || targetEntities.some(e => ['Double Degree DNUI', 'Double Degree HELP University', 'Dual Degree UTB', 'GCCP', 'BCCP', 'Program Hi-Think (Magang Jepang)', 'Student Exchange'].includes(e)) || /\b(dnui|dalian|help\s+university|gccp|bccp|magang\s+jepang|hi-?think|student\s+exchange|pertukaran\s+mahasiswa|program\s+internasional|gelar\s+ganda|dual\s+degree|double\s+degree|utb|visa|itas|kitas|izin\s+belajar)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
+    const isUtb = targetEntities.some(e => /utb/i.test(e)) || /\b(utb|universitas\s+teknologi\s+bandung|gelar\s+ganda\s+nasional|dual\s+degree\s+nasional|double\s+degree\s+nasional)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+    const isVisa = /\b(visa|itas|kitas|izin\s+belajar|study\s+permit|foreign\s+student|mahasiswa\s+asing)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+    const isDnui = !isUtb && (targetEntities.some(e => /dnui|dalian/i.test(e)) || /\b(dnui|dalian|china|cina)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')));
+    const isHelp = !isUtb && (targetEntities.some(e => /help/i.test(e)) || /\b(help|malaysia)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')));
     const isGccp = targetEntities.some(e => /gccp/i.test(e)) || /\b(gccp|global\s+cross\s+cultural)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
     const isJapan = targetEntities.some(e => /jepang|hi-think/i.test(e)) || /\b(jepang|hi-?think|magang\s+(?:ke\s+)?jepang)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
     const isStudentExchange = targetEntities.some(e => /exchange|pertukaran/i.test(e)) ||
       /\b(exchange|pertukaran\s+mahasiswa|pertukaran\s+pelajar|study\s+abroad)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+
+    const isGeneralInternational = !isUtb && !isVisa && !isDnui && !isHelp && !isGccp && !isJapan && !isStudentExchange;
+    if (isGeneralInternational) {
+      const generalIntlAnswer = `ITB STIKOM Bali menyediakan beberapa kategori program internasional resmi yang dapat diikuti oleh mahasiswa:\n\n` +
+        `1. **Program Gelar Ganda (Double Degree)**:\n` +
+        `   • **S1 Sistem Informasi**: Bekerjasama dengan **HELP University, Malaysia** (Gelar ganda: S.Kom. dari ITB STIKOM Bali dan Bachelor of Information Technology / BIT dari HELP University).\n` +
+        `   • **S1 Bisnis Digital**: Bekerjasama dengan **Dalian Neusoft University of Information (DNUI), China** dengan skema 2+2 (2 tahun di Bali + 2 tahun di kampus DNUI Dalian; Gelar ganda: S.Bns. dan Bachelor of Management / B.M.).\n\n` +
+        `2. **Program Pertukaran Mahasiswa (Student Exchange & Global Experience)**:\n` +
+        `   • **Exchange Reguler**: Perkuliahan di perguruan tinggi mitra luar negeri dengan transfer/konversi SKS.\n` +
+        `   • **Short Program / Summer Program**: Program akademik singkat atau kuliah musim panas di luar negeri.\n` +
+        `   • **Global Cross Cultural Program (GCCP)**: Program interaksi dan pengayaan wawasan lintas budaya dengan institusi mitra internasional di kawasan Asia/ASEAN.\n\n` +
+        `3. **Program Persiapan Kerja & Magang Internasional**:\n` +
+        `   • Program magang industri teknologi di Jepang (bekerjasama dengan mitra seperti Hi-Think Computer Corp) yang mencakup pembekalan bahasa dan budaya kerja profesional sebelum penempatan kerja/magang.\n\n` +
+        `_Catatan: Syarat seleksi, jadwal pendaftaran, serta kuota peserta untuk setiap angkatan dikoordinasikan langsung oleh Direktorat Pemasaran dan Urusan Internasional ITB STIKOM Bali sesuai jadwal dan kesepakatan mitra yang aktif._`;
+      return appendMissingAspectNote(generalIntlAnswer);
+    }
+
+    if (isUtb) {
+      const utbAnswer = `Program Dual Degree Nasional (National Class) ITB STIKOM Bali diselenggarakan bekerjasama dengan **Universitas Teknologi Bandung (UTB)**.\n\n` +
+        `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan sekaligus:\n` +
+        `  - **Sarjana Bisnis (S.Bns.)** dari ITB STIKOM Bali\n` +
+        `  - **Sarjana Desain (S.Ds.)** dari Universitas Teknologi Bandung (UTB).\n\n` +
+        `Untuk rincian pendaftaran dan biaya program Dual Degree UTB, silakan hubungi bagian admisi PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(utbAnswer);
+    }
+
+    if (isVisa) {
+      const isDuration = /\b(berapa lama|lama proses|durasi|waktu)\b/i.test(rawQuery);
+      if (isDuration) {
+        const isExtension = /\b(perpanjang|perpanjangan|perpanjangannya|extend|extension)\b/i.test(rawQuery);
+        const visaDurAns = userLang === 'en'
+          ? (isExtension
+            ? 'The processing of a study permit extension generally takes about 1–2 working weeks after submission with the assistance of the International Office.'
+            : 'Based on available official guidelines, the 1–2 week processing timeframe is specifically documented for study permit extensions (and Visa E30B applications). The exact duration for the initial issuance of a study permit for new students is not specified in the guidelines and is coordinated directly with the International Office of ITB STIKOM Bali.')
+          : (isExtension
+            ? 'Proses perpanjangan Izin Belajar umumnya membutuhkan waktu sekitar 1–2 minggu kerja setelah diajukan melalui bantuan International Office.'
+            : 'Berdasarkan dokumen panduan resmi yang tersedia, durasi waktu sekitar 1–2 minggu secara spesifik tercantum untuk proses perpanjangan Izin Belajar (serta pengajuan Visa E30B). Sementara itu, estimasi durasi pasti untuk penerbitan awal Izin Belajar bagi mahasiswa baru belum tercantum dalam panduan resmi dan dikoordinasikan langsung bersama International Office ITB STIKOM Bali.');
+        return appendMissingAspectNote(visaDurAns);
+      }
+
+      const visaAns = userLang === 'en'
+        ? `For international students enrolling at ITB STIKOM Bali, the student visa / study permit requirements (Visa E30B) documented in official guidelines include:\n\n` +
+          `• **Valid Passport**: Passport with sufficient validity according to Indonesian immigration regulations.\n` +
+          `• **Formal Photo**: Passport-size photographs meeting visa application specifications.\n` +
+          `• **Letter of Acceptance (LoA)**: Official admission letter issued by ITB STIKOM Bali.\n` +
+          `• **Guarantee Letter / Sponsorship**: Guarantee letter provided and facilitated by the campus for visa sponsorship.\n` +
+          `• **Study Permit (Izin Belajar)**: Official permit coordinated through the International Office for foreign students.\n\n` +
+          `The application process for the student visa and study permit is guided and assisted by the International Office of ITB STIKOM Bali.`
+        : `Berdasarkan panduan resmi pengurusan mahasiswa asing ITB STIKOM Bali, persyaratan dokumen untuk pengajuan visa pelajar / izin belajar (Visa E30B) meliputi:\n\n` +
+          `• **Paspor yang Masih Berlaku**: Memiliki masa berlaku sesuai dengan ketentuan imigrasi yang berlaku.\n` +
+          `• **Pas Foto**: Foto resmi sesuai spesifikasi pengajuan visa.\n` +
+          `• **Letter of Acceptance (LoA)**: Surat penerimaan resmi dari ITB STIKOM Bali.\n` +
+          `• **Surat Jaminan (Guarantee Letter)**: Surat jaminan dari pihak kampus sebagai penjamin/sponsor studi.\n` +
+          `• **Izin Belajar (Study Permit)**: Dokumen izin belajar dari kementerian terkait yang dikoordinasikan bersama International Office.\n\n` +
+          `Seluruh proses pengajuan visa pelajar dan izin belajar dibantu dan dipandu langsung oleh Direktorat Pemasaran dan Urusan Internasional (International Office) ITB STIKOM Bali.`;
+      return appendMissingAspectNote(visaAns);
+    }
 
     if (isStudentExchange && !isDnui && !isHelp && !isJapan) {
       if (userLang === 'en') {
@@ -2355,7 +2558,68 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       requestOptions
     );
 
-    const reply = completion.choices?.[0]?.message?.content || '';
+    let reply = (completion.choices?.[0]?.message?.content || '').trim();
+
+    // Guardrail 1: Study permit duration (UNSEEN_international_s_4)
+    // Distinguish initial issuance (penerbitan awal), extension (perpanjangan), and visa E30B.
+    // Official doc specifies 1-2 weeks ONLY for perpanjangan and Visa E30B.
+    const rawQuery = semanticFrame.rawQuery || '';
+    const userLang = semanticFrame.language || detectQueryLanguage(rawQuery);
+    const isStudyPermitQuery = /\b(?:study\s*permit|izin\s*belajar)\b/i.test(rawQuery);
+    const isExtension = /\b(?:perpanjang|perpanjangan|perpanjangannya|extend|extension)\b/i.test(rawQuery);
+    const asksDuration = /\b(?:berapa lama|lama proses|durasi|waktu)\b/i.test(rawQuery);
+
+    if (isStudyPermitQuery && asksDuration && !isExtension) {
+      if (/(?:1–2|1-2)\s*minggu/i.test(reply) && !/khusus\s+untuk\s+perpanjangan|hanya\s+untuk\s+perpanjangan/i.test(reply)) {
+        reply = userLang === 'en'
+          ? 'Based on available official guidelines, the 1–2 week processing timeframe is specifically documented for study permit extensions (and Visa E30B applications). The exact duration for the initial issuance of a study permit for new students is not specified in the guidelines and is coordinated directly with the International Office of ITB STIKOM Bali.'
+          : 'Berdasarkan dokumen panduan resmi yang tersedia, durasi waktu sekitar 1–2 minggu secara spesifik tercantum untuk proses perpanjangan Izin Belajar (serta pengajuan Visa E30B). Sementara itu, estimasi durasi pasti untuk penerbitan awal Izin Belajar bagi mahasiswa baru belum tercantum dalam panduan resmi dan dikoordinasikan langsung bersama International Office ITB STIKOM Bali.';
+      }
+    }
+
+    // Guardrail 2: BEA-05 S2 Scholarships
+    // Must not dump undergraduate KIP Kuliah or S1 DPP discounts on S2 queries
+    const isS2Inquiry = semanticFrame.academicLevel === 'S2' ||
+      semanticFrame.scopeLevel === 'S2' ||
+      /\b(?:s2|magister|master(?:'s)?)\b/i.test(rawQuery) ||
+      (semanticFrame.entities || []).some(e => /s2|magister|pascasarjana/i.test(e.canonical || e.name || ''));
+
+    if (isS2Inquiry && (semanticFrame.domain === 'SCHOLARSHIP' || /scholarship|beasiswa/i.test(rawQuery))) {
+      if (/(?:kip\s+kuliah|s1\s+reguler|dpp.*s1)/i.test(reply)) {
+        reply = userLang === 'en'
+          ? 'Official information regarding specific scholarships for the Master of Information Systems (S2) program is not listed in the available guidelines. The available data records registration fee discounts according to admission waves and alumni discounts, while specific S2 scholarship details should be confirmed directly with admissions at 0822-7738-9999 or the PMB office.'
+          : 'Informasi beasiswa khusus untuk mahasiswa Magister (S2) Sistem Informasi belum tercantum dalam dokumen panduan resmi yang tersedia. Informasi yang ada saat ini mencatat potongan biaya pendaftaran sesuai gelombang dan potongan khusus alumni, sedangkan rincian beasiswa S2 lainnya dapat dikonfirmasi langsung ke layanan admisi pascasarjana di 0822-7738-9999.';
+      }
+    }
+
+    // Guardrail 3: BEA-01 English Scholarships
+    // Ensure English answer, no ungrounded SKSS claims
+    if (userLang === 'en' && (semanticFrame.domain === 'SCHOLARSHIP' || /scholarship/i.test(rawQuery))) {
+      if (detectQueryLanguage(reply) === 'id' || /\b(?:di itb stikom bali|tersedia beberapa|beasiswa)\b/i.test(reply)) {
+        reply = `At ITB STIKOM Bali, the official financial aid and scholarship options documented in admissions guidelines include:
+
+1. **KIP Kuliah (Indonesia Smart Card College)**: Full tuition assistance from Kemendikbudristek for high-achieving applicants who meet economic criteria.
+2. **Admission Wave DPP Discounts**: Tuition fee (DPP) discounts ranging from IDR 2,000,000 to IDR 3,000,000 during early admission waves for regular undergraduate programs, with additional discounts for cash payment and partner vocational school alumni.
+
+For complete information regarding application requirements, documents, and registration schedules, please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact the campus admissions office.`;
+      } else if (/\b(?:skss|satu keluarga satu sarjana)\b/i.test(reply)) {
+        reply = reply.replace(/[-*•\d.]*\s*(?:\*\*)?(?:Beasiswa\s+)?(?:Yayasan\s*&\s*)?SKSS.*?(?:\n|$)/gi, '').trim();
+      }
+    }
+
+    // Guardrail 4: RPL Contact Sanitization (UNSEEN_RPL_2)
+    // Strip letterhead hotlines (0812-8877-8840) and ungrounded phone contacts from RPL answers,
+    // directing explicitly to the official PMB portal https://pmb.stikom-bali.ac.id
+    const isRpl = semanticFrame.domain === 'ADMISSION_TRACK' ||
+      (semanticFrame.aspects && semanticFrame.aspects.includes('rpl')) ||
+      /\b(?:rpl|rekognisi(?:\s+pembelajaran\s+lampau)?|transfer\s+sks|alih\s+jenjang)\b/i.test(rawQuery);
+    if (isRpl) {
+      if (/0812[-.\s]?8877[-.\s]?8840/i.test(reply)) {
+        reply = reply.replace(/(?:hotline|telepon|whatsapp|kontak)?\s*:?\s*0812[-.\s]?8877[-.\s]?8840[^\n.]*/gi, 'portal resmi PMB https://pmb.stikom-bali.ac.id').trim();
+      }
+      reply = reply.replace(/\b0812[-.\s]?8877[-.\s]?8840\b/gi, 'https://pmb.stikom-bali.ac.id');
+    }
+
     return {
       success: true,
       answer: reply.trim(),

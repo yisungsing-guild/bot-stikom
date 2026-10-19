@@ -52,7 +52,13 @@ const NON_REFERENTIAL_NYA_WORDS = new Set([
   'pasnya', 'pas',
   'kurangnya', 'kurang',
   'makinnya', 'makin',
-  'olahraganya', 'olahraga'
+  'olahraganya', 'olahraga',
+  'dampaknya', 'dampak',
+  'akibatnya', 'akibat',
+  'efeknya', 'efek',
+  'konsekuensinya', 'konsekuensi',
+  'solusinya', 'solusi',
+  'prosedurnya', 'prosedur'
 ]);
 
 // Genuine ellipsis starts (e.g. "bagaimana dengan...", "kalau yang...", "what about...", "how about...")
@@ -188,7 +194,13 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     /\b(?:beasiswa|kip\s*kuliah|kip-?k|bantuan\s+dana|keringanan\s+biaya)\b/i.test(query) ||
     /\b(?:inkubator|inbis|career\s+center|cdc\b|layanan\s+kampus|bimbingan\s+karir|perwalian|dosen\s+wali|konsultasi\s+akademik|bimbingan\s+akademik)\b/i.test(query);
 
-  if (isCampusWideQuery && isAcademicActiveEntity) {
+  const isPmbSession = sessionData.activeDomain === 'PMB' ||
+    sessionData.activeIntent?.startsWith('ADMISSION') ||
+    sessionData.activeIntent?.startsWith('PMB') ||
+    sessionData.lastDomain === 'pmb' ||
+    (typeof sessionData.activeEntity === 'string' && sessionData.activeEntity.toLowerCase() === 'pmb');
+
+  if (isCampusWideQuery && (isAcademicActiveEntity || isPmbSession)) {
     return {
       shouldInherit: false,
       reason: 'campus_wide_domain_isolation',

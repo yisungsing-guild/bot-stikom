@@ -767,7 +767,8 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   const isForeignStudentChunk = candSourceFile.includes('mahasiswa asing') ||
     /\b(faq pengurusan mahasiswa asing|izin belajar baru|perpanjangan itas|pengurusan visa e30b|sktt orang asing)\b/i.test(candTextLower);
   const querySpecificallyAsksForeign = retrievalPlan.participantScope === 'foreign' ||
-    Boolean(retrievalPlan.queryVariants && retrievalPlan.queryVariants.some(q => /\b(mahasiswa\s+asing|visa|itas|kitas|izin\s+belajar|e-visa)\b/i.test(q)));
+    Boolean(retrievalPlan.queryVariants && retrievalPlan.queryVariants.some(q => /\b(mahasiswa\s+(?:asing|internasional|luar\s+negeri)|foreign\s+students?|international\s+students?|visa|itas|kitas|izin\s+belajar|study\s+permit|e-visa)\b/i.test(q))) ||
+    /\b(mahasiswa\s+(?:asing|internasional|luar\s+negeri)|foreign\s+students?|international\s+students?|study\s+permit|izin\s+belajar)\b/i.test(retrievalPlan.rawQuery || '');
 
   if (isForeignStudentChunk && !querySpecificallyAsksForeign) {
     return {
@@ -825,13 +826,26 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         };
       }
     } else if (wantsSchedule) {
-      const hasScheduleSignal = /\b(gelombang|jadwal|periode|pendaftaran|buka|tutup|kalender|oktober|desember|januari|februari|maret|april|mei|juni|juli|agustus|september)\b/i.test(text);
-      if (!hasScheduleSignal || isHobbyChunk || isCurriculumChunk) {
-        return {
-          accepted: false,
-          disposition: 'REJECT_ASPECT_MISMATCH',
-          reason: 'evidence_does_not_contain_admission_schedule'
-        };
+      const isForeignDocumentInquiry = querySpecificallyAsksForeign || requiredAspects.includes('study_permit') || retrievalPlan.domain === 'INTERNATIONAL';
+      if (isForeignDocumentInquiry) {
+        const isDocumentTopicMatch = isForeignStudentChunk || /\b(izin\s+belajar|study\s+permit|visa|itas|kitas|paspor|imigrasi)\b/i.test(text);
+        const hasTimelineSignal = /\b(?:1\s*[-–]\s*2\s*minggu|\d+\s*(?:minggu|hari|bulan)|proses\s*(?:pengajuan|penerbitan|perpanjangan)|waktu|durasi)\b/i.test(text);
+        if (!isDocumentTopicMatch || !hasTimelineSignal || isHobbyChunk || isCurriculumChunk) {
+          return {
+            accepted: false,
+            disposition: 'REJECT_ASPECT_MISMATCH',
+            reason: 'evidence_does_not_contain_foreign_document_timeline'
+          };
+        }
+      } else {
+        const hasScheduleSignal = /\b(gelombang|jadwal|periode|pendaftaran|buka|tutup|kalender|oktober|desember|januari|februari|maret|april|mei|juni|juli|agustus|september)\b/i.test(text);
+        if (!hasScheduleSignal || isHobbyChunk || isCurriculumChunk) {
+          return {
+            accepted: false,
+            disposition: 'REJECT_ASPECT_MISMATCH',
+            reason: 'evidence_does_not_contain_admission_schedule'
+          };
+        }
       }
     } else if (wantsFee) {
       const queryStr = (retrievalPlan.query || retrievalPlan.rawQuery || (retrievalPlan.queryVariants && retrievalPlan.queryVariants.join(' ')) || '').toLowerCase();

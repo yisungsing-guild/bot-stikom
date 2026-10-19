@@ -159,6 +159,7 @@ tests/*
 !tests/crossDomainArchitecturePhaseC.test.js
 !tests/crossDomainArchitecturePhaseD.test.js
 !tests/candidateMetadataInconsistencies.test.js
+!tests/whatsappRegressionReport19Oct.test.js
 !tests/fixtures/
 !tests/fixtures/candidateMetadataFixture.json
 

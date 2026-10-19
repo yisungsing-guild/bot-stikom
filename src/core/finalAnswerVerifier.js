@@ -237,8 +237,12 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     }
   }
 
-  const isCurriculumInquiry = semanticFrame.domain === 'ACADEMIC_CURRICULUM' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses', 'competencies'].includes(a)));
+  let isAdvisingInquiry = semanticFrame.domain === 'ACADEMIC_PROCESS' ||
+    semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['academic_advising', 'dosen_wali', 'perwalian'].includes(a)));
+
+  const isCurriculumInquiry = !isAdvisingInquiry && (semanticFrame.domain === 'ACADEMIC_CURRICULUM' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses', 'competencies'].includes(a))));
 
   if (isCurriculumInquiry && !isUnsupported) {
     const hasCurriculumKeywords = /\b(berfokus|mempelajari|kurikulum|mata\s*kuliah|matkul|sks|semester|silabus|kompetensi|pembelajaran|fokus|bidang|pemrograman|keahlian|focus(?:es|ed|ing)?|learn(?:s|ing|ed)?|stud(?:y|ies|ied|ying)|teach(?:es|ing)?|taught|cover(?:s|ed|ing)?|skill(?:s)?|hardware|software|network(?:s|ing)?|programming|system(?:s)?|specializ(?:e|es|ed|ing|ation)|curriculum|courses?|credits?|semesters?|syllabus|competenc(?:y|ies)|degree(?:s)?|duration|career(?:s)?|jobs?|roles?|graduates?|qualification(?:s)?|prerequisite(?:s)?|requirement(?:s)?|defen(?:d|se|ses)|final\s+project|thesis|transcript|registration|clearance|supervis(?:or|ion)|advis(?:or|ing)|persyaratan|syarat|skripsi|bimbingan)\b/i.test(text);
@@ -334,7 +338,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   }
 
   // 7d. Academic Process & Advising Grounding Guards (Fidelity against hallucinations)
-  const isAdvisingInquiry = semanticFrame.domain === 'ACADEMIC_PROCESS' ||
+  isAdvisingInquiry = isAdvisingInquiry || semanticFrame.domain === 'ACADEMIC_PROCESS' ||
     semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
     (semanticFrame.aspects && (semanticFrame.aspects.includes('academic_advising') || semanticFrame.aspects.includes('dosen_wali') || semanticFrame.aspects.includes('krs')));
 
@@ -383,7 +387,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     arbitratedEvidence?.answerabilityStatus === 'ANSWERABLE';
 
   const hasSubstantiveContent = text.length > 80 && (
-    /\b(antara\s+lain|meliputi|bekerja\s+sama|mitra|lulusan\s+memperoleh|potongan|persyaratan|berikut|kurikulum)\b/i.test(text)
+    /\b(antara\s+lain|meliputi|bekerja\s+sama|mitra|lulusan\s+memperoleh|potongan|persyaratan|berikut|kurikulum|discounts?|requirements?|available|guidelines?|recorded|includes?|tuition|admissions?|scholarships?)\b/i.test(text)
   );
 
   if (isExplicitAbstain) {

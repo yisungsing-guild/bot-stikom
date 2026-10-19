@@ -116,6 +116,9 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
       }
     } else {
       queryVariants.push('rincian biaya pendidikan mahasiswa baru kelas reguler');
+      queryVariants.push('rincian biaya pendidikan kuliah DPP SPP per semester program studi S1 D3 S2 ITB STIKOM Bali');
+      queryVariants.push('biaya pendidikan per semester Sistem Informasi Teknologi Informasi Bisnis Digital Sistem Komputer Manajemen Informatika');
+      queryVariants.push('perbandingan biaya per semester semua program studi S1 D3 S2');
     }
   }
 
@@ -152,8 +155,8 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
       queryVariants.push('SK PEMBINA ORMAWA UKM seni budaya tari musik teater biner vos himatography');
     }
     if (/\b(olahraga|olah\s*raga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(normalizedText)) {
-      queryVariants.push('unit kegiatan mahasiswa UKM olahraga futsal basket bulutangkis badminton boss kebugaran ghost');
-      queryVariants.push('SK PEMBINA ORMAWA UKM olahraga futsal basket boss ghost');
+      queryVariants.push('unit kegiatan mahasiswa UKM olahraga futsal basket bulutangkis badminton bos boss kebugaran ghost');
+      queryVariants.push('SK PEMBINA ORMAWA UKM olahraga futsal basket bos boss ghost');
     }
     queryVariants.push('unit kegiatan mahasiswa UKM ormawa ITB STIKOM Bali');
     queryVariants.push('daftar organisasi kemahasiswaan himaprodi SK PEMBINA ORMAWA');
@@ -230,6 +233,7 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
       queryVariants.push('program dual degree dua gelar gelar ganda ITB STIKOM Bali');
       if ((aspects && aspects.includes('national_program')) || /\b(?:nasional|national)\b/i.test(normalizedText)) {
         queryVariants.push('dual degree national class program kerjasama nasional ITB STIKOM Bali');
+        queryVariants.push('universitas teknologi bandung UTB gelar ganda nasional kerjasama');
       }
     } else {
       queryVariants.push('apa itu student exchange di ITB STIKOM Bali alur dan syarat');
@@ -255,6 +259,20 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
     queryVariants.push('keterlambatan perwalian terlambat jadwal tim support perwalian');
     queryVariants.push('kontak bantuan tim support perwalian supportperwalian microsoft teams kendala keterlambatan');
     queryVariants.push('beban sks semester syarat pembayaran perwalian polling e-krs');
+  }
+
+  // RPL / Prior Learning Recognition query variants
+  if (intent === 'RPL_INQUIRY' || intent === 'RPL_PROCEDURE' || intent === 'RPL_DURATION' || domain === 'ADMISSION_TRACK' || (aspects && (aspects.includes('rpl') || aspects.includes('credit_transfer'))) || /\brpl\b/i.test(normalizedText)) {
+    queryVariants.push('PEDOMAN PENYELENGGARAAN REKOGNISI PEMBELAJARAN LAMPAU RPL TIPE A ITB STIKOM BALI');
+    queryVariants.push('Untuk mahasiswa program Rekognisi Pembelajaran Lampau RPL Dana Pendidikan Pokok DPP');
+    queryVariants.push('pendaftaran mahasiswa jalur RPL rekognisi pembelajaran lampau transfer sks konversi pengakuan');
+    queryVariants.push('ketentuan transfer sks D3 D2 D1 pengakuan sks lama kuliah jalur RPL S1');
+  }
+
+  // Campus Location & Addresses query variants
+  if ((aspects && (aspects.includes('location') || aspects.includes('campus_location'))) || /\b(lokasi\s+kampus|alamat\s+kampus|kampus.*(?:dimana|di mana)|gedung\s+kampus)\b/i.test(normalizedText)) {
+    queryVariants.push('lokasi kampus ITB STIKOM Bali Renon Denpasar Jimbaran Badung Abiansemal');
+    queryVariants.push('alamat kampus ITB STIKOM Bali Jl Raya Puputan Renon');
   }
 
   // PMB Inquiry & Procedure query variants
