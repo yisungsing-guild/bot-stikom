@@ -28,7 +28,11 @@ const RAW_DOCUMENT_LEAK_PATTERNS = [
   /\|\s*col\d+\s*:/i,
   /PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN/i,
   /2\.\s*Profil Saat Ini\s*•\s*Status:\s*Perguruan tinggi bertaraf internasional/i,
-  /Ketua Program Studi S1-/i
+  /Ketua Program Studi S1-/i,
+  /Gunakan nama file, caption, atau input manual/i,
+  /input manual tambahan untuk memberi konteks/i,
+  /\|\s*visi\s*Akademik\s*\|/i,
+  /\|\s*kelas\s+Karir\s*\|/i
 ];
 
 function failVerification(reason, extra = {}) {
@@ -255,8 +259,8 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     (semanticFrame.aspects && semanticFrame.aspects.includes('contact'));
 
   if (isContactInquiry && !isUnsupported) {
-    const hasContactDetails = /\b(whatsapp|wa|telepon|telp|nomor|call|phone|contact|email|humas|pmb|08\d{8,}|0361|\.ac\.id)\b/i.test(text);
-    const isExplicitAbstain = /tidak\s+ditemukan|belum\s+tersedia|tidak\s+dapat\s+diverifikasi|not\s+(?:listed|found|available|recorded)|unrecorded/i.test(text);
+    const hasContactDetails = /\b(whatsapp|wa|telepon|telp|nomor|call|phone|contact|email|humas|pmb|hotline|08[\d\-.\s]{8,}|0361|\.ac\.id)\b/i.test(text);
+    const isExplicitAbstain = /tidak\s+ditemukan|belum\s+(?:tersedia|tercantum|disebutkan|terdapat)|tidak\s+dapat\s+diverifikasi|not\s+(?:listed|found|available|recorded)|unrecorded/i.test(text);
     if (!hasContactDetails && !isExplicitAbstain) {
       return failVerification('aspect_mismatch_answer_lacks_contact_evidence');
     }
@@ -293,6 +297,28 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   if (isAccreditationQuery && !/\b(?:dual|double)\s*degree\b/i.test(rawQuery)) {
     if (/\b(?:dual|double)\s*degree|national\s*class|utb\b/i.test(text) && !/\bakreditasi\b/i.test(text)) {
       return failVerification('domain_aspect_mismatch_accreditation_answered_with_double_degree');
+    }
+
+    // Ungrounded numeric accreditation score check (e.g. hallucinating "nilai 303" from SK number 3033)
+    const scoreMatch = text.match(/\b(?:nilai|skor)\s+(\d{2,4})\b/i);
+    if (scoreMatch) {
+      const claimedScore = scoreMatch[1];
+      const acceptedTexts = (arbitratedEvidence.accepted || []).map(c => (c.text || c.chunk || '').toLowerCase()).join(' ');
+      const hasVerifiedScore = new RegExp(`\\b(?:nilai|skor)\\s+${claimedScore}\\b`, 'i').test(acceptedTexts);
+      if (!hasVerifiedScore) {
+        return failVerification(`unsupported_accreditation_score_claim: nilai ${claimedScore}`);
+      }
+    }
+  }
+
+  // 7a2. Curriculum table dump negative control: Must not dump full 8 semesters for specific non-curriculum inquiries
+  const hasFullCurriculumDump = /\bSemester\s+I\s*\([^)]*\):.*Semester\s+VIII\s*\([^)]*\):/is.test(text) ||
+    (/\bSemester\s+I\b/i.test(text) && /\bSemester\s+VIII\b/i.test(text) && /\b144\s*SKS\b/i.test(text));
+  if (hasFullCurriculumDump) {
+    const isExplicitCurriculumQuery = /\b(?:kurikulum|mata\s*kuliah|matkul|sebaran\s*matkul|silabus|daftar\s*matkul|ambil\s*apa\s*saja)\b/i.test(rawQuery);
+    const isSpecificPrerequisiteOrThesis = /\b(?:coding|komputer|jago|halaman|lembar|tebal|tugas\s+akhir|skripsi|sion)\b/i.test(rawQuery);
+    if (!isExplicitCurriculumQuery || isSpecificPrerequisiteOrThesis) {
+      return failVerification('aspect_mismatch_curriculum_dump_for_non_curriculum_query');
     }
   }
 
@@ -367,6 +393,36 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     const mentionsIPS = /\bIPS\s+(?:semester|sebelumnya)\b/i.test(text);
     if (mentionsIPS && !/\bIPS\b/i.test(acceptedTexts)) {
       return failVerification('unsupported_factual_claim_credit_limit_metric: IPS claimed without evidence');
+    }
+  }
+
+  // 7e. Tuition Fee Grounding & Calculation Invariants
+  if (isFeeInquiry) {
+    // 1. Prevent equating Gelombang 1A or 1B with Gelombang I without explicit disclaimer
+    const mentionsGelombang1A = /\bgelombang\s+1a\b/i.test(rawQuery);
+    if (mentionsGelombang1A) {
+      const claimsOfficialGelombang1A = /\bpotongan\s+(?:dpp\s+)?gelombang\s+1a\s+sebesar\b/i.test(text) &&
+        !/\btidak\s+tercantum\b|\bbelum\s+dapat\s+dipastikan\b|\bcatatan\b/i.test(text);
+      if (claimsOfficialGelombang1A) {
+        return failVerification('ungrounded_fee_wave_claim_gelombang_1a_equated_without_proof');
+      }
+    }
+
+    // 2. Prevent double counting DPP and DPP installments in the same calculation
+    if (/\b(?:total|subtotal)\b/i.test(text)) {
+      const hasDppAndInstallmentDoubleCount = /\bdpp\s+.*cicilan\s+dpp\s+.*total/i.test(text);
+      if (hasDppAndInstallmentDoubleCount) {
+        return failVerification('fee_arithmetic_double_counted_dpp_and_installment');
+      }
+    }
+
+    // 3. S2 vs S1 fee isolation: S2 inquiry must not output S1 DPP (Rp 14.000.000 or Rp 11.000.000)
+    const isS2Fee = (semanticFrame.entities || []).some(e => /s2|magister|pascasarjana/i.test(e.canonical || e.name || String(e))) ||
+      /\b(?:s2|magister|pascasarjana)\b/i.test(rawQuery);
+    if (isS2Fee) {
+      if (/\b(?:14\.000\.000|11\.000\.000|6\.500\.000|5\.500\.000)\b/.test(text)) {
+        return failVerification('degree_fee_pollution_s1_fees_in_s2_answer');
+      }
     }
   }
 

@@ -355,15 +355,23 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     const ctxEntities = (ctx?.entities || []).map(e => e.toLowerCase());
     const rawText = (doc.chunk || doc.text || '').toLowerCase();
 
+    const isTargetS2 = targetEntities.some(te => /s2|magister|pascasarjana/i.test(te));
+    const isTargetS1 = targetEntities.some(te => /^s1\b/i.test(te));
+    const isDocS2 = /magister|pascasarjana|s2\b/i.test(f) || /magister|pascasarjana|s2\b/i.test(rawText);
+    const isDocS1Only = (/rincian biaya si,ti dan bd|rincian biaya sk dan d3/i.test(f) || /\bs1\s+reguler\b/i.test(rawText)) && !isDocS2;
+
     const matchesTarget = targetEntities.some(te => {
+      const teIsS2 = /s2|magister|pascasarjana/i.test(te);
+      if (teIsS2 && isDocS1Only) return false;
+      if (!teIsS2 && isDocS2) return false;
       const base = te.replace(/^(s1|d3|s2)\s+/i, '');
       const canon = findCanonicalEntity(te);
       const aliases = (canon && Array.isArray(canon.aliases)) ? canon.aliases.map(a => a.toLowerCase()) : [];
       return sectionProg.includes(te) ||
-        sectionProg.includes(base) ||
-        ctxEntities.some(ce => ce.includes(te) || ce.includes(base) || aliases.some(al => ce.includes(al))) ||
+        (!teIsS2 && sectionProg.includes(base)) ||
+        ctxEntities.some(ce => ce.includes(te) || (!teIsS2 && ce.includes(base)) || aliases.some(al => ce.includes(al))) ||
         rawText.includes(te) ||
-        (base.length >= 4 && rawText.includes(base)) ||
+        (!teIsS2 && base.length >= 4 && rawText.includes(base)) ||
         aliases.some(al => al.length >= 4 && rawText.includes(al));
     });
 
@@ -374,15 +382,23 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
 
     if (matchesTarget) {
       score *= 1.8;
-    } else if (matchesExcluded) {
-      score *= 0.5;
+      if (isTargetS2 && isDocS2) {
+        score *= 3.5;
+      }
+    } else if (matchesExcluded || (isTargetS2 && isDocS1Only) || (isTargetS1 && isDocS2)) {
+      score *= 0.1;
     }
 
     // Boost fee documents when query is asking about tuition, fee, or registration cost
     const isFeeQuery = /\b(?:biaya|spp|dpp|uang kuliah|tarif|pembayaran)\b/i.test(query);
     if (isFeeQuery) {
-      if (/rincian biaya/i.test(f) || ctx?.category === 'BIAYA' || /tabel rincian biaya|biaya kuliah per semester/i.test(rawText)) {
-        score *= 2.5;
+      if (isTargetS2) {
+        if (isDocS2) score *= 3.0;
+        else if (isDocS1Only) score *= 0.05;
+      } else {
+        if (/rincian biaya/i.test(f) || ctx?.category === 'BIAYA' || /tabel rincian biaya|biaya kuliah per semester/i.test(rawText)) {
+          score *= 2.5;
+        }
       }
     }
 

@@ -151,6 +151,30 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
     return false;
   }
 
+  // Operational hours inquiries are institutional
+  if (semanticFrame?.intent === 'OPERATIONAL_HOURS_INQUIRY' || /\b(?:jam|waktu)\s+(?:operasional|layanan|kerja|buka)\b/i.test(q)) {
+    return false;
+  }
+
+  // Online lecture platform & application inquiries are campus-wide services
+  if (semanticFrame?.intent === 'ONLINE_LEARNING_PLATFORM' ||
+      (/\b(?:kuliah|perkuliahan)\b/i.test(q) && /\b(?:online|daring)\b/i.test(q) && /\b(?:aplikasi|platform|sistem|lms|media|software|menggunakan|pakai)\b/i.test(q)) ||
+      /\b(?:aplikasi.*online|kuliah.*online.*aplikasi)\b/i.test(q)) {
+    return false;
+  }
+
+  // Research focus inquiries are specific academic program inquiries (e.g. S2 Magister)
+  if (semanticFrame?.intent === 'RESEARCH_FOCUS_INQUIRY' ||
+      /\b(?:fokus\s+riset|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics)\b/i.test(q)) {
+    return false;
+  }
+
+  // Academic support, portal, SION, and Pascasarjana contact inquiries are institutional
+  if (semanticFrame?.intent === 'ACADEMIC_SUPPORT_INQUIRY' ||
+      /\b(?:sion|portal|kendala\s+akademik|masalah\s+akademik)\b/i.test(q)) {
+    return false;
+  }
+
   // General PMB admission opening / deadline schedule is an institutional schedule
   if (/\b(?:kapan|jadwal|periode|batas\s+akhir|when|schedule|deadline)\s+.*(?:pendaftaran|pmb|penerimaan|admission|registration|enrollment)\b/i.test(q) ||
       /\b(?:pendaftaran|pmb|admission|registration)\s+(?:kapan|kapan\s+dibuka|dibuka\s+kapan|kapan\s+mulai|open|start)\b/i.test(q)) {
@@ -235,14 +259,16 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   }
 
   // Program-scoped inquiries with zero entities and no academic level
-  // Note: Specific scholarship inquiries and institutional thesis guidance procedure must NOT trigger prodi clarification
+  // Note: Specific scholarship inquiries, thesis guidance, and specific learning topics (e.g. SEO, coding) must NOT trigger prodi clarification
   const isThesisHandbook = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|bimbingan\s+ta|buku\s+pedoman)\b/i.test(q);
+  const isSpecificTopicLearning = /\b(?:seo|search\s+engine\s+optim(?:ization|isation)|digital\s+marketing|coding|ngoding|pemrograman|ai|artificial\s+intelligence|iot|internet\s+of\s+things|robotika|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics)\b/i.test(q);
   const isProgramScoped =
     (semanticFrame?.domain === 'ACADEMIC_CURRICULUM' ||
      semanticFrame?.domain === 'ACADEMIC_PROGRAM' ||
      semanticFrame?.intent === 'CURRICULUM_INQUIRY') &&
     !isScholarshipOrSponsorship &&
-    !isThesisHandbook;
+    !isThesisHandbook &&
+    !isSpecificTopicLearning;
   if (isProgramScoped && allEntities.length === 0 && !semanticFrame.academicLevel) {
     return true;
   }

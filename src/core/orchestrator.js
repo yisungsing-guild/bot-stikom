@@ -628,6 +628,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
+        activeIntent: primaryFrame.intent,
+        activeAspects: primaryFrame.aspects || [],
+        requestedAspects: primaryFrame.aspects || [],
         activeEntity: newActiveEntity,
         preservedBackgroundEntity: newPreservedEntity,
         lastQuery: rawQuery,

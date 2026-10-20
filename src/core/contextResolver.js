@@ -128,8 +128,74 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   const query = currentQuery.trim().toLowerCase();
 
   // If session has no prior state, cannot inherit
-  if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.lastQuery)) {
-    return { shouldInherit: false, reason: 'no_session_history', decision: CONTEXT_DECISION.TOPIC_SHIFT };
+  if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.lastQuery && !sessionData.activeMenu && !sessionData.data?.activeMenu)) {
+    const hasPronoun = hasExplicitPronounReference(query);
+    return {
+      shouldInherit: false,
+      reason: hasPronoun ? 'unresolved_pronoun_no_history' : 'no_session_history',
+      decision: hasPronoun ? CONTEXT_DECISION.AMBIGUOUS_FOLLOW_UP : CONTEXT_DECISION.TOPIC_SHIFT
+    };
+  }
+
+  // Guard 0: Active Menu Selection Handling (Multi-turn clarification menu selection)
+  const activeMenu = sessionData.activeMenu || (sessionData.data && sessionData.data.activeMenu);
+  if (activeMenu && Array.isArray(activeMenu.options) && activeMenu.options.length > 0) {
+    const options = activeMenu.options;
+    const trimmed = query.trim();
+
+    const numberMatch = trimmed.match(/^(?:nomor|no\.?|pilihan|opsi|yang\s+ke-?|ke-?)?\s*(\d+)\.?$/i);
+    const wordNumbers = {
+      'satu': 1, 'pertama': 1, 'kesatu': 1,
+      'dua': 2, 'kedua': 2,
+      'tiga': 3, 'ketiga': 3,
+      'empat': 4, 'keempat': 4,
+      'lima': 5, 'kelima': 5,
+      'enam': 6, 'keenam': 6,
+      'tujuh': 7, 'ketujuh': 7,
+      'delapan': 8, 'kedelapan': 8
+    };
+
+    let chosenIndex = null;
+    if (numberMatch) {
+      chosenIndex = parseInt(numberMatch[1], 10);
+    } else if (wordNumbers[trimmed]) {
+      chosenIndex = wordNumbers[trimmed];
+    } else {
+      // Check if user answered with the program name matching an option
+      const matchedIdx = options.findIndex(opt => {
+        const optCanon = (opt.canonical || opt.name || String(opt)).toLowerCase();
+        return trimmed === optCanon || trimmed.includes(optCanon) || (optCanon.length >= 6 && optCanon.includes(trimmed));
+      });
+      if (matchedIdx !== -1) {
+        chosenIndex = matchedIdx + 1;
+      }
+    }
+
+    if (chosenIndex !== null) {
+      if (chosenIndex >= 1 && chosenIndex <= options.length) {
+        const selected = options[chosenIndex - 1];
+        const entityCanonical = selected.canonical || selected.name || String(selected);
+        return {
+          shouldInherit: true,
+          reason: 'menu_selection',
+          decision: CONTEXT_DECISION.BOUND_CONTINUATION,
+          inheritedDomain: activeMenu.pendingDomain || sessionData.activeDomain || 'TUITION_FEE',
+          inheritedIntent: activeMenu.pendingIntent || sessionData.activeIntent || 'TUITION_FEE_INQUIRY',
+          inheritedEntity: entityCanonical,
+          selectedMenuOption: selected,
+          clearedMenu: true
+        };
+      } else {
+        // Out of bounds selection
+        return {
+          shouldInherit: false,
+          reason: 'invalid_menu_index',
+          decision: CONTEXT_DECISION.AMBIGUOUS_FOLLOW_UP,
+          invalidIndex: chosenIndex,
+          maxIndex: options.length
+        };
+      }
+    }
   }
 
   // Guard 0.1: Underspecified single-word question without predicate (e.g. "Berapa?", "Kapan?")
@@ -144,7 +210,10 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
 
   // Guard 0.2: Independent PMB / Enrollment wave status inquiry (e.g. "sekarang buka gelombang berapa")
   // without an explicit program pronoun reference is an independent institutional PMB inquiry (TOPIC_SHIFT).
-  const isIndependentPmbWaveQuery = /\b(?:gelombang|buka\s+gelombang|gelombang\s+berapa|jadwal\s+pmb|periode\s+pmb|masih\s+dibuka|kapan\s+buka|kapan\s+tutup)\b/i.test(query) &&
+  // Inquiries asking about wave discounts, fees, or cuts (e.g. "Kalau Gelombang I potongannya berapa?") are fee questions.
+  const isFeeWaveQuery = /\b(?:potongan|diskon|biaya|bayar|dpp|potongannya|diskonnya)\b/i.test(query);
+  const isIndependentPmbWaveQuery = !isFeeWaveQuery &&
+    /\b(?:gelombang|buka\s+gelombang|gelombang\s+berapa|jadwal\s+pmb|periode\s+pmb|masih\s+dibuka|kapan\s+buka|kapan\s+tutup)\b/i.test(query) &&
     !/\b(?:nya|program\s+ini|jurusan\s+ini)\b/i.test(query);
   if (isIndependentPmbWaveQuery) {
     return {

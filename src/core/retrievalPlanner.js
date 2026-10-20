@@ -33,9 +33,14 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
   const { normalizedQuery, domain, intent, entities, aspects, temporal } = semanticFrame;
   const retrievalContract = buildRetrievalContract(semanticFrame);
   const contractTargets = retrievalContract.scopeConstraints?.targetEntities || [];
-  const targetEntities = contractTargets.length > 0
+  let targetEntities = contractTargets.length > 0
     ? contractTargets
     : (entities || []).map(e => e.canonical || e.name || String(e));
+
+  const hasSpecificDD = targetEntities.some(e => /Double Degree (?:DNUI|HELP)|Dual Degree UTB/i.test(e));
+  if (hasSpecificDD) {
+    targetEntities = targetEntities.filter(e => !/^(?:Double|Dual) Degree$/i.test(e.trim()));
+  }
   const normalizedText = String(normalizedQuery || semanticFrame.rawQuery || '').toLowerCase();
 
   const GENERIC_COMMON_WORDS = new Set([
@@ -184,7 +189,12 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
   }
 
   // PMB Contact query variants
-  if (intent === 'PMB_CONTACT_INQUIRY' || (aspects && aspects.includes('contact'))) {
+  const isAcademicOrSionContact = domain === 'CAMPUS_SERVICE' ||
+    intent === 'ACADEMIC_SUPPORT_INQUIRY' ||
+    (aspects && aspects.some(a => ['academic_support', 'sion', 'helpdesk'].includes(a))) ||
+    /\b(?:sion|pascasarjana|akademik|dosen\s*wali|perwalian)\b/i.test(normalizedText);
+
+  if (!isAcademicOrSionContact && (intent === 'PMB_CONTACT_INQUIRY' || (aspects && aspects.includes('contact')))) {
     queryVariants.push('kontak PMB whatsapp call center telepon email pendaftaran customer service ITB STIKOM Bali');
     queryVariants.push('nomor kontak informasi pendaftaran mahasiswa baru PMB');
   }
@@ -267,6 +277,41 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
     queryVariants.push('Untuk mahasiswa program Rekognisi Pembelajaran Lampau RPL Dana Pendidikan Pokok DPP');
     queryVariants.push('pendaftaran mahasiswa jalur RPL rekognisi pembelajaran lampau transfer sks konversi pengakuan');
     queryVariants.push('ketentuan transfer sks D3 D2 D1 pengakuan sks lama kuliah jalur RPL S1');
+  }
+
+  // Operational Hours query variants
+  if (intent === 'OPERATIONAL_HOURS_INQUIRY' || (aspects && aspects.includes('operational_hours')) || /\b(?:jam|waktu)\s+(?:operasional|layanan|kerja|buka)\b/i.test(normalizedText)) {
+    queryVariants.push('jam operasional pelayanan pendaftaran mahasiswa baru PMB kampus Renon Denpasar waktu buka');
+    queryVariants.push('jam operasional kantor layanan administrasi akademik ITB STIKOM Bali');
+  }
+
+  // Online Learning Platform query variants
+  if (intent === 'ONLINE_LEARNING_PLATFORM' || (aspects && aspects.includes('online_learning')) || /\b(?:kuliah|perkuliahan)\s+(?:online|daring)\b/i.test(normalizedText)) {
+    queryVariants.push('perkuliahan online daring aplikasi Microsoft Teams Zoom LMS ITB STIKOM Bali');
+    queryVariants.push('aplikasi yang digunakan untuk perkuliahan online daring link kelas');
+  }
+
+  // S2 Research Focus query variants
+  if (intent === 'RESEARCH_FOCUS_INQUIRY' || (aspects && aspects.includes('research_focus')) || /\b(?:fokus\s+riset|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics)\b/i.test(normalizedText)) {
+    queryVariants.push('fokus riset Magister Sistem Informasi Data Science Cyber Security Enterprise System Medical Informatics');
+    queryVariants.push('bidang peminatan riset tesis program studi S2 Magister Sistem Informasi');
+  }
+
+  // SION & Academic Support query variants
+  if (intent === 'ACADEMIC_SUPPORT_INQUIRY' || (aspects && aspects.some(a => ['academic_support', 'sion', 'helpdesk'].includes(a))) || isAcademicOrSionContact) {
+    if (/\b(?:pascasarjana|magister|s2)\b/i.test(normalizedText)) {
+      queryVariants.push('kontak layanan akademik Pascasarjana hotline telepon 082277389999 244445 ITB STIKOM Bali');
+      queryVariants.push('hotline Pascasarjana sekretariat Magister Sistem Informasi Puputan Renon');
+    } else {
+      queryVariants.push('kendala SION kontak bantuan BAAK DTI Puskom reset password');
+      queryVariants.push('kontak layanan bantuan akademik BAAK ITB STIKOM Bali');
+    }
+  }
+
+  // Specific Learning Topics (SEO, Digital Marketing) query variants
+  if (/\b(?:seo|search\s+engine\s+optim|digital\s+marketing|pemasaran\s+digital)\b/i.test(normalizedText)) {
+    queryVariants.push('kurikulum mata kuliah Bisnis Digital pemasaran digital SEO specialist media sosial');
+    queryVariants.push('profil lulusan S1 Bisnis Digital SEO Specialist Digital Marketing');
   }
 
   // Campus Location & Addresses query variants
@@ -402,6 +447,19 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
         queryVariants.push(`kurikulum ${ent} mata kuliah`);
         queryVariants.push(`sebaran mata kuliah ${ent}`);
       }
+    }
+  }
+
+  // Organization & UKM query variants (Prioritas 5)
+  if (domain === 'ORGANIZATION_UKM' || intent === 'ORGANIZATION_INQUIRY' || (aspects && (aspects.includes('student_organization') || aspects.includes('ukm') || aspects.includes('arts_culture')))) {
+    if ((aspects && aspects.includes('arts_culture')) || /\b(?:kesenian|seni|budaya|tari|musik|teater|paduan\s+suara|tabuh|gamelan)\b/i.test(normalizedText)) {
+      queryVariants.push('Unit Kegiatan Mahasiswa UKM kesenian seni tari tradisional pragina teater biner musik voice of stikom vos tabuh bramara gita ITB STIKOM Bali');
+      queryVariants.push('daftar UKM kesenian seni tari teater musik paduan suara karawitan tabuh ITB STIKOM Bali');
+      queryVariants.push('profil UKM Tari Pragina UKM Musik UKM Teater Biner UKM Voice of STIKOM VOS UKM Tabuh Bramara Gita');
+    } else if ((aspects && aspects.includes('sports')) || /\b(?:olahraga|sports?|futsal|basket|badminton)\b/i.test(normalizedText)) {
+      queryVariants.push('Unit Kegiatan Mahasiswa UKM olahraga futsal basket badminton bulutangkis taekwondo karate ITB STIKOM Bali');
+    } else {
+      queryVariants.push('daftar Unit Kegiatan Mahasiswa UKM ormawa organisasi kemahasiswaan ITB STIKOM Bali');
     }
   }
 

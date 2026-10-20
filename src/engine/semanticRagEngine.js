@@ -1,4 +1,5 @@
 const { OpenAI } = require('openai');
+const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
 const { isScholarshipSelectionReply } = require('./scholarshipIntentClassifier');
 const { hasConcreteNumberOrAmount } = require('../utils/answerAmount');
 const { validateClarificationOutput } = require('../utils/answerOutputContract');
@@ -3172,16 +3173,18 @@ async function rewriteQuestionWithLlm(client, question, options = {}) {
   ].join('\n');
 
   try {
-    const completion = await client.chat.completions.create({
-      model: getModel(),
-      messages: [
-        { role: 'system', content: 'You are a query understanding layer for a grounded RAG chatbot. Return only valid JSON.' },
-        { role: 'user', content: prompt }
-      ],
-      max_completion_tokens: 350,
-      temperature: 0,
-      top_p: 0.1
-    });
+    const completion = await client.chat.completions.create(
+      sanitizeOpenAiChatPayload({
+        model: getModel(),
+        messages: [
+          { role: 'system', content: 'You are a query understanding layer for a grounded RAG chatbot. Return only valid JSON.' },
+          { role: 'user', content: prompt }
+        ],
+        max_completion_tokens: 350,
+        temperature: 0,
+        top_p: 0.1
+      })
+    );
     const obj = extractJsonObject(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content : '');
     if (!obj || typeof obj !== 'object') throw new Error('semantic rewrite returned non-json');
     // Ensure fallback to original question if any field missing
@@ -15144,16 +15147,18 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
     `KONTEKS TRAINING:\n${contextText}`
   ].join('\n');
 
-  const completion = await client.chat.completions.create({
-    model: getModel(),
-    messages: [
-      { role: 'system', content: 'You are a grounded campus assistant. Answer warmly in natural conversational Indonesian, using only supplied context.' },
-      { role: 'user', content: prompt }
-    ],
-    max_completion_tokens: parseInt(process.env.OPENAI_SEMANTIC_RAG_MAX_OUTPUT_TOKENS || process.env.OPENAI_RAG_MAX_OUTPUT_TOKENS || '550', 10),
-    temperature: Number(process.env.OPENAI_SEMANTIC_RAG_TEMPERATURE || '0.3'),
-    top_p: Number(process.env.OPENAI_SEMANTIC_RAG_TOP_P || '0.8')
-  });
+  const completion = await client.chat.completions.create(
+    sanitizeOpenAiChatPayload({
+      model: getModel(),
+      messages: [
+        { role: 'system', content: 'You are a grounded campus assistant. Answer warmly in natural conversational Indonesian, using only supplied context.' },
+        { role: 'user', content: prompt }
+      ],
+      max_completion_tokens: parseInt(process.env.OPENAI_SEMANTIC_RAG_MAX_OUTPUT_TOKENS || process.env.OPENAI_RAG_MAX_OUTPUT_TOKENS || '550', 10),
+      temperature: Number(process.env.OPENAI_SEMANTIC_RAG_TEMPERATURE || '0.3'),
+      top_p: Number(process.env.OPENAI_SEMANTIC_RAG_TOP_P || '0.8')
+    })
+  );
 
   return String(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content || '' : '').trim();
 }
@@ -16391,16 +16396,18 @@ async function verifyAnswerRelevanceWithLlm(client, question, answer, source = '
   ].join('\n');
 
   try {
-    const completion = await client.chat.completions.create({
-      model: getModel(),
-      messages: [
-        { role: 'system', content: 'You are a strict semantic relevance judge for a grounded campus chatbot. Return only valid JSON.' },
-        { role: 'user', content: prompt }
-      ],
-      max_completion_tokens: 180,
-      temperature: 0,
-      top_p: 0.1
-    });
+    const completion = await client.chat.completions.create(
+      sanitizeOpenAiChatPayload({
+        model: getModel(),
+        messages: [
+          { role: 'system', content: 'You are a strict semantic relevance judge for a grounded campus chatbot. Return only valid JSON.' },
+          { role: 'user', content: prompt }
+        ],
+        max_completion_tokens: 180,
+        temperature: 0,
+        top_p: 0.1
+      })
+    );
     const obj = extractJsonObject(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content : '');
     const verdict = String(obj && obj.verdict ? obj.verdict : '').toLowerCase();
     const confidence = Number.isFinite(Number(obj && obj.confidence)) ? Math.max(0, Math.min(1, Number(obj.confidence))) : 0;

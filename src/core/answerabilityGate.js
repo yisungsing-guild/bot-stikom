@@ -178,6 +178,18 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       if (req === 'academic_advising' || req === 'dosen_wali' || req === 'krs' || req === 'academic_process' || req === 'perwalian') {
         return /\b(perwalian|dosen\s*wali|krs|e-krs|supportperwalian|bimbingan|polling)\b/i.test(combinedEvidenceText);
       }
+      if (req === 'online_learning' || req === 'learning_platform' || req === 'aplikasi_kuliah') {
+        return /\b(online|daring|lms|teams|zoom|moodle|e-learning|aplikasi|platform)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'operational_hours' || req === 'jam_operasional') {
+        return /\b(08\.00|17\.00|14\.00|jam|waktu|operasional|senin|sabtu|wita)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'research_focus' || req === 'fokus_riset') {
+        return /\b(riset|penelitian|tesis|data\s+science|cyber\s+security|enterprise|medical)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'academic_support' || req === 'sion') {
+        return /\b(sion|baak|dti|puskom|bantuan|kendala|portal|support)\b/i.test(combinedEvidenceText);
+      }
       return false;
     };
 

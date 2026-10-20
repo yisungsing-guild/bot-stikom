@@ -147,7 +147,16 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         await updateSession(chatId, {
           dataPatch: {
             lastQuery: rawQuery,
-            lastAnswer: clarificationAnswer
+            lastAnswer: clarificationAnswer,
+            activeMenu: {
+              menuType: 'PROGRAM_SELECTION',
+              options: plan.clarificationOptions || [],
+              pendingQuery: rawQuery,
+              pendingDomain: semanticFrame.domain,
+              pendingIntent: semanticFrame.intent,
+              pendingAspects: semanticFrame.aspects || [],
+              timestamp: Date.now()
+            }
           }
         });
       }
@@ -441,11 +450,15 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
           await updateSession(chatId, {
             dataPatch: {
               activeDomain: deltaState.activeDomain,
+              activeIntent: plan.taskGraph?.inferredIntent || semanticFrame?.intent || 'GENERAL',
+              activeAspects: plan.comparisonRequest?.requestedAspects || semanticFrame?.aspects || [],
+              requestedAspects: plan.comparisonRequest?.requestedAspects || semanticFrame?.aspects || [],
               activeEntity: deltaState.activeEntity,
               preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
               entityProvenance: deltaState.entityProvenance,
               lastQuery: rawQuery,
-              lastAnswer: finalGraphAnswer
+              lastAnswer: finalGraphAnswer,
+              activeMenu: null
             }
           });
         }
@@ -577,14 +590,21 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     // Atomically commit context delta to session only after verified completion (Step 4)
     if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState && turnControl.canCommitSession('phase2')) {
       const deltaState = plan.contextDelta.resolvedState;
+      const primarySubFrame = (phase1Result.subQueryResults && phase1Result.subQueryResults[0] && phase1Result.subQueryResults[0].frame) || internalOptions.semanticFrame || {};
+      const activeIntent = primarySubFrame.intent || plan.intent || deltaState.activeIntent || 'GENERAL';
+      const activeAspects = primarySubFrame.aspects || plan.comparisonRequest?.requestedAspects || deltaState.activeAspects || [];
       await updateSession(chatId, {
         dataPatch: {
           activeDomain: deltaState.activeDomain,
+          activeIntent: activeIntent,
+          activeAspects: activeAspects,
+          requestedAspects: activeAspects,
           activeEntity: deltaState.activeEntity,
           preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
           entityProvenance: deltaState.entityProvenance,
           lastQuery: rawQuery,
-          lastAnswer: phase1Result.finalAnswer
+          lastAnswer: phase1Result.finalAnswer,
+          activeMenu: null
         }
       });
     }

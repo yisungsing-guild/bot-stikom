@@ -280,6 +280,18 @@ function computeContextDelta(previousSession = {}, currentTurn = {}) {
       actions.push(CONTEXT_ACTION.CONTEXT_PRESERVED);
     }
     preservedBackgroundEntity = null;
+  } else if (contextDep && contextDep.reason === 'menu_selection') {
+    if (contextDep.inheritedEntity) {
+      activeEntity = contextDep.inheritedEntity;
+      entityProvenance = ENTITY_PROVENANCE.INHERITED_FROM_SESSION;
+    }
+    if (contextDep.inheritedDomain) {
+      activeDomain = contextDep.inheritedDomain;
+    }
+    if (!actions.includes(CONTEXT_ACTION.CONTEXT_PRESERVED)) {
+      actions.push(CONTEXT_ACTION.CONTEXT_PRESERVED);
+    }
+    preservedBackgroundEntity = null;
   }
 
   // 5. CURRENT TURN DOMAIN DETECTION
@@ -309,7 +321,7 @@ function computeContextDelta(previousSession = {}, currentTurn = {}) {
         actions.push(CONTEXT_ACTION.AMBIGUITY_DETECTED);
       }
     }
-  } else if (isCampusWideDomain(activeDomain) || isTopicShift) {
+  } else if ((isCampusWideDomain(activeDomain) && !ENCLITIC_SUFFIX_REGEX.test(query) && !contextDep?.shouldInherit) || isTopicShift) {
     if (explicitEntities.length === 0) {
       // Query is about a campus-wide asset or topic shift without explicit prodi specifier
       // Move activeEntity to preservedBackgroundEntity so query is unconstrained,
@@ -346,7 +358,7 @@ function computeContextDelta(previousSession = {}, currentTurn = {}) {
         actions.push(CONTEXT_ACTION.AMBIGUITY_DETECTED);
       }
     }
-  } else if (activeEntity && explicitEntities.length === 0 && !isStale && !isCampusWideDomain(activeDomain) && !isTopicShift && !isAmbiguousFollowUp) {
+  } else if (activeEntity && explicitEntities.length === 0 && !isStale && (!isCampusWideDomain(activeDomain) || ENCLITIC_SUFFIX_REGEX.test(query) || contextDep?.shouldInherit) && !isTopicShift && !isAmbiguousFollowUp) {
     // Entity was retained from previous turn without explicit query match
     entityProvenance = ENTITY_PROVENANCE.INHERITED_FROM_SESSION;
     if (!actions.includes(CONTEXT_ACTION.CONTEXT_PRESERVED)) {

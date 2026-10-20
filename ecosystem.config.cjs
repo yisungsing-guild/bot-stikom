@@ -1,8 +1,22 @@
 const fs = require('fs');
 const path = require('path');
+const dotenv = require('dotenv');
 
 const prodEnvLocal = path.join(__dirname, '.env.production.local');
+const prodEnvStandard = path.join(__dirname, '.env.production');
+const selectedEnvFile = fs.existsSync(prodEnvLocal) ? prodEnvLocal : (fs.existsSync(prodEnvStandard) ? prodEnvStandard : null);
+let parsedEnv = {};
+if (selectedEnvFile) {
+	try {
+		parsedEnv = dotenv.parse(fs.readFileSync(selectedEnvFile));
+	} catch (e) {
+		// fallback to empty if parse fails
+	}
+}
 const prodEnvPath = fs.existsSync(prodEnvLocal) ? '.env.production.local' : '.env.production';
+
+const resolvedApiKey = process.env.WHATSAPP_API_KEY || parsedEnv.WHATSAPP_API_KEY;
+const resolvedWebhookToken = process.env.PROVIDER_WEBHOOK_TOKEN || parsedEnv.PROVIDER_WEBHOOK_TOKEN;
 
 module.exports = {
 	apps: [
@@ -17,10 +31,10 @@ module.exports = {
 			env_production: {
 				NODE_ENV: 'production',
 				DOTENV_CONFIG_PATH: prodEnvPath,
-				PORT: '4000',
-				// WhatsApp (Fonnte) production env
-				WHATSAPP_API_KEY: 'bF5rBhvgXFffyhWW2fXE',
-				PROVIDER_WEBHOOK_TOKEN: '093245f76124d3bfc4df785f7e429042bd8e8597a331b06a73d0e3df0b99da7c'
+				PORT: process.env.PORT || parsedEnv.PORT || '4000',
+				// WhatsApp credentials loaded securely from environment / secret manager or local env file
+				...(resolvedApiKey ? { WHATSAPP_API_KEY: resolvedApiKey } : {}),
+				...(resolvedWebhookToken ? { PROVIDER_WEBHOOK_TOKEN: resolvedWebhookToken } : {})
 			}
 		},
 		{
