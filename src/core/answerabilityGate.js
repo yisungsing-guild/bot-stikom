@@ -172,8 +172,14 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       if (req === 'organization' || req === 'student_organization') {
         return /\b(ukm|ormawa|organisasi|hima|himaprodi|ekstrakurikuler)\b/i.test(combinedEvidenceText);
       }
-      if (req === 'requirements' || req === 'admission_requirements') {
-        return /\b(syarat|persyaratan|berkas|dokumen|ijazah|rapor)\b/i.test(combinedEvidenceText);
+      if (req === 'requirements' || req === 'admission_requirements' || req === 'procedure' || req === 'flow' || req === 'process') {
+        return /\b(syarat|persyaratan|berkas|dokumen|ijazah|rapor|tahapan|alur|cara|prosedur|daftar|pendaftaran|proses|seleksi|mengajukan|menghubungi|pendampingan)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'location' || req === 'campus_location') {
+        return /\b(renon|jimbaran|abiansemal|denpasar|badung|lokasi|alamat|kampus)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'study_mode' || req === 'magister' || req === 's2') {
+        return /\b(magister|s2|sistem\s+informasi|tatap\s+muka|luring|online|daring|hybrid|renon|perkuliahan|kuliah)\b/i.test(combinedEvidenceText);
       }
       if (req === 'academic_advising' || req === 'dosen_wali' || req === 'krs' || req === 'academic_process' || req === 'perwalian') {
         return /\b(perwalian|dosen\s*wali|krs|e-krs|supportperwalian|bimbingan|polling)\b/i.test(combinedEvidenceText);
@@ -189,6 +195,36 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       }
       if (req === 'academic_support' || req === 'sion') {
         return /\b(sion|baak|dti|puskom|bantuan|kendala|portal|support)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'overview' || req === 'definition') {
+        const targetEntity = (semanticFrame.entities && semanticFrame.entities[0]?.canonical) || '';
+        const targetClean = targetEntity.replace(/^(?:S1|S2|D3|D4)\s+/i, '').toLowerCase();
+        return /\b(adalah|merupakan|yaitu|profil|program|wadah|lembaga|organisasi|jurusan|prodi|fokus|tujuan|layanan)\b/i.test(combinedEvidenceText) ||
+          (targetClean.length > 3 && combinedEvidenceText.includes(targetClean));
+      }
+      if (req === 'service_info' || req === 'support' || req === 'incubation' || req === 'career_services' || req === 'internship' || req === 'cooperation') {
+        return /\b(inkubator|inbis|tenant|startup|wirausaha|layanan\s+industri|pendampingan|career\s+center|cdc|magang|campus\s+hiring|mitra|bursa\s+kerja)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'yudisium' || req === 'wisuda' || req === 'academic_event' || req === 'graduation_rule' || req === 'sks_count') {
+        return /\b(yudisium|wisuda|kalender\s+akademik|bebas\s+pustaka|naskah|skripsi|tugas\s+akhir|kelulusan|ijazah|transkrip|wisudawan)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'activities' || req === 'ukm' || req === 'esports_gaming' || req === 'sports' || req === 'arts_culture' || req === 'reasoning_tech') {
+        return /\b(ukm|ormawa|kegiatan|latihan|pertandingan|turnamen|pembinaan|seni|olahraga|gaming|esport|athena|futsal|basket|pragina|tari|musik|vos|biner|syntax|ksl)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'thesis_requirements' || req === 'thesis_stages' || req === 'guidance_procedure' || req === 'academic_requirements' || req === 'guidelines') {
+        return /\b(pedoman\s+ta|tugas\s+akhir|skripsi|bimbingan|dosen\s+pembimbing|proposal|sidang|syarat|ipk|sks)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'quota' || req === 'dynamic_availability' || req === 'live_status') {
+        return /\b(kuota|daya\s+tampung|pendaftar|gelombang|tersedia)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'class_schedule' || req === 'working_students' || req === 'evening_class') {
+        return /\b(kuliah\s+sore|kelas\s+karyawan|kelas\s+sore|malam|fleksibel|kerja)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'program_list' || req === 'degrees') {
+        return /\b(program\s+studi|jurusan|prodi|sarjana|diploma|magister|s1|d3|s2)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'study_permit' || req === 'visa' || req === 'international_students') {
+        return /\b(visa|itas|kitas|study\s+permit|izin\s+belajar|e30b|mahasiswa\s+asing)\b/i.test(combinedEvidenceText);
       }
       return false;
     };

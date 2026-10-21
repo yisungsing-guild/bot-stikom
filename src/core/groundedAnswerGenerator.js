@@ -801,7 +801,7 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
         `• **Senin – Jumat**: 08.00 – 17.00 WITA\n` +
         `• **Sabtu**: 08.00 – 14.00 WITA\n` +
         `• **Minggu / Libur Nasional**: Layanan kantor offline tutup.\n\n` +
-        `Pendaftaran online tetap dapat diakses 24 jam setiap hari melalui website resmi: https://pmb.stikom-bali.ac.id atau https://siap.stikom-bali.ac.id.`;
+        `Pendaftaran online tetap dapat diakses 24 jam setiap hari melalui website resmi: https://pmb.stikom-bali.ac.id.`;
       return appendMissingAspectNote(hoursAns);
     } else {
       const hoursAns = `Informasi resmi mengenai rincian jam operasional loket pendaftaran di kampus belum tercantum secara lengkap dalam panduan yang tersedia.\n\n` +
@@ -1233,11 +1233,49 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     return appendMissingAspectNote(rplGeneralAnswer);
   }
 
-  // 1. PMB Inquiries (General, Procedure, Requirements)
-  if (semanticFrame.domain === 'PMB') {
+  // 1. PMB Inquiries (General, Procedure, Requirements, Schedule)
+  if (semanticFrame.domain === 'PMB' || semanticFrame.intent === 'ADMISSION_SCHEDULE') {
     const isProcedure = semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
       /\b(cara\s+daftar|bagaimana\s+(?:cara\s+)?daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar)\b/i.test(rawQuery);
     const isRequirements = /\b(syarat\s+pendaftaran|syarat\s+daftar|persyaratan|dokumen|berkas)\b/i.test(rawQuery);
+    const isSchedule = semanticFrame.intent === 'ADMISSION_SCHEDULE' ||
+      (semanticFrame.aspects && semanticFrame.aspects.includes('schedule')) ||
+      /\b(jadwal|kapan|tanggal|buka|dibuka|tutup|ditutup|periode|registrasi\s+ulang|daftar\s+ulang)\b/i.test(rawQuery);
+
+    if (isSchedule && !isProcedure && !isRequirements) {
+      const waveMatch = rawQuery.match(/\b(gelombang\s*(?:khusus|sisipan|[1-4]|iv|iii|ii|i\b))/i);
+      let waveLabel = 'Gelombang II';
+      if (waveMatch) {
+        waveLabel = waveMatch[0]
+          .replace(/\bkhusus\b/i, 'Khusus')
+          .replace(/\bsisipan\b/i, 'Sisipan')
+          .replace(/\biv\b/i, 'IV')
+          .replace(/\biii\b/i, 'III')
+          .replace(/\bii\b/i, 'II')
+          .replace(/\bi\b/i, 'I');
+        waveLabel = waveLabel.replace(/^gelombang\b/i, 'Gelombang');
+      }
+
+      const isReRegistration = /\b(registrasi\s+ulang|daftar\s+ulang)\b/i.test(rawQuery);
+      const isOpeningClosingDate = /\b(kapan\s+pendaftaran|kapan\s+dibuka|kapan\s+buka|kapan\s+ditutup)\b/i.test(rawQuery);
+
+      if (isReRegistration) {
+        return `Pendaftaran dilakukan melalui portal resmi https://pmb.stikom-bali.ac.id. Tanggal pasti registrasi ulang PMB ITB STIKOM Bali ${waveLabel} belum dapat dipastikan dari dokumen yang tersedia saat ini. Tahapan registrasi ulang dilakukan setelah calon mahasiswa dinyatakan lulus verifikasi berkas. Untuk kepastian tanggal resmi registrasi ulang, silakan hubungi bagian Admisi PMB di 0822-7738-9999.`;
+      }
+
+      if (isOpeningClosingDate) {
+        return `Pendaftaran dilakukan melalui portal resmi https://pmb.stikom-bali.ac.id. Tanggal pasti pembukaan maupun batas penutupan pendaftaran ${waveLabel} belum dapat dipastikan dari dokumen yang tersedia saat ini. Untuk konfirmasi jadwal dan tanggal resmi, silakan hubungi bagian Admisi PMB di 0822-7738-9999.`;
+      }
+
+      // General schedule / stages inquiry (e.g. "Jadwal PMB Gelombang II", "Jelaskan jadwal PMB Gelombang II...")
+      return `Pendaftaran dilakukan secara online melalui portal resmi https://pmb.stikom-bali.ac.id.\n\n` +
+        `Tahapan pendaftaran PMB yang didukung meliputi:\n` +
+        `1. Pendaftaran dan pengisian formulir online melalui portal PMB\n` +
+        `2. Pembayaran biaya pendaftaran sesuai program studi yang dipilih\n` +
+        `3. Pengunggahan dan seleksi/verifikasi berkas persyaratan\n` +
+        `4. Registrasi ulang mahasiswa baru (pembayaran perlengkapan dan DPP sesuai jadwal)\n\n` +
+        `Batasan Jadwal: Tanggal pasti pembukaan, batas penutupan, maupun registrasi ulang ${waveLabel} belum dapat dipastikan dari dokumen yang tersedia saat ini (SOURCE_GAP). Untuk konfirmasi jadwal dan tanggal resmi, silakan hubungi bagian Admisi PMB di 0822-7738-9999.`;
+    }
 
     if (isProcedure && !isRequirements) {
       const procedureAnswer = `Pendaftaran mahasiswa baru di ITB STIKOM Bali bisa dilakukan secara online melalui tahapan berikut:
@@ -1291,7 +1329,37 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
     return appendMissingAspectNote(pmbAnswer);
   }
 
-  // 1c. Facilities & Laboratories Inquiries (specific to labs)
+  // 1c. Campus Locations & Addresses Inquiries
+  const isSpecificLocationInquiry = /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus.*(?:di\s+mana|lokasinya)|gedung\s+kampus|cabang\s+kampus|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) ||
+    (semanticFrame.aspects && (semanticFrame.aspects.includes('location') || semanticFrame.aspects.includes('campus_location')));
+  if (isSpecificLocationInquiry && (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY' || isFacilityInquiry)) {
+    const locAnswer = userLang === 'en'
+      ? `ITB STIKOM Bali has 3 campus locations in Bali:\n\n` +
+        `1. **Renon Campus (Main Campus / Denpasar)**:\n` +
+        `   • Address: Jl. Raya Puputan No. 86 Renon, Denpasar - Bali\n` +
+        `   • Phone: (0361) 244445 | Hotline: 0822-7738-9999\n\n` +
+        `2. **Jimbaran Campus**:\n` +
+        `   • Address: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali\n` +
+        `   • Phone: (0361) 8953534 | Hotline: 0812-8877-8840\n\n` +
+        `3. **Abiansemal Campus**:\n` +
+        `   • Address: Jl. Janger, Abiansemal - Dauh Yeh Cani, Badung - Bali\n` +
+        `   • Phone: (0361) 750525\n\n` +
+        `Admissions and academic services are available on-site at these campuses or online via https://pmb.stikom-bali.ac.id.`
+      : `ITB STIKOM Bali memiliki 3 lokasi kampus di Bali untuk melayani perkuliahan dan administrasi mahasiswa:\n\n` +
+        `1. **Kampus Renon (Kampus Pusat / Denpasar)**:\n` +
+        `   • Alamat: Jl. Raya Puputan No. 86 Renon, Denpasar - Bali\n` +
+        `   • Telepon: (0361) 244445 | Hotline: 0822-7738-9999\n\n` +
+        `2. **Kampus Jimbaran**:\n` +
+        `   • Alamat: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali\n` +
+        `   • Telepon: (0361) 8953534 | Hotline: 0812-8877-8840\n\n` +
+        `3. **Kampus Abiansemal**:\n` +
+        `   • Alamat: Jl. Janger, Abiansemal - Dauh Yeh Cani, Badung - Bali\n` +
+        `   • Telepon: (0361) 750525\n\n` +
+        `Pendaftaran mahasiswa baru dan layanan akademik dapat dilakukan secara langsung di kampus-kampus tersebut atau online melalui portal https://pmb.stikom-bali.ac.id.`;
+    return appendMissingAspectNote(locAnswer);
+  }
+
+  // 1c2. Facilities & Laboratories Inquiries (specific to labs)
   const isSpecificLabInquiry = /\b(?:lab|laboratorium)\b/i.test(rawQuery) || targetEntities.some(e => /lab/i.test(e)) || (semanticFrame.aspects && semanticFrame.aspects.includes('lab'));
   if (isSpecificLabInquiry && (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY' || isFacilityInquiry)) {
     const extractedLabs = extractLabsFromEvidence(accepted);
@@ -1404,13 +1472,30 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
       if (isSchemeOrLocationInquiry) {
         // Fall through to Section 5 (Progression / Stages / Scheme Inquiry)
       } else {
-        const isDnuiOnly = /\bdnui|china|dalian\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) || targetEntities.some(e => /DNUI/i.test(e));
-        const isHelpOnly = /\bhelp|malaysia\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) || targetEntities.some(e => /HELP/i.test(e));
+        const hasDnui = /\bdnui|china|dalian\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) || targetEntities.some(e => /DNUI/i.test(e));
+        const hasHelp = /\bhelp|malaysia\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) || targetEntities.some(e => /HELP/i.test(e));
+        const isBoth = hasDnui && hasHelp;
+        const isDnuiOnly = hasDnui && !hasHelp;
+        const isHelpOnly = hasHelp && !hasDnui;
         const isNationalQuery = /\b(nasional|utb|universitas\s+teknologi\s+bandung)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
         const isInternationalQuery = /\binternasional\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
         const ddPartners = extractDoubleDegreePartnersFromEvidence(accepted);
         const nationalPartners = ddPartners.filter(p => p.scope === 'national');
         const internationalPartners = ddPartners.filter(p => p.scope === 'international');
+
+        if (isBoth) {
+          let ans = `Program **Double Degree Internasional** di ITB STIKOM Bali bekerjasama dengan dua mitra perguruan tinggi luar negeri terkemuka:\n\n` +
+            `1. **HELP University (Malaysia)**:\n` +
+            `   • **Program Studi**: S1 Sistem Informasi\n` +
+            `   • **Gelar Kelulusan**: Sarjana Komputer (S.Kom.) & Bachelor of Information Technology (BIT)\n` +
+            `   • **Skema Perkuliahan**: Full 4 tahun perkuliahan diselenggarakan di kampus ITB STIKOM Bali tanpa harus ke Malaysia.\n\n` +
+            `2. **Dalian Neusoft University of Information (DNUI, China)**:\n` +
+            `   • **Program Studi**: S1 Bisnis Digital & Management\n` +
+            `   • **Gelar Kelulusan**: Sarjana Bisnis (S.Bns.) & Bachelor of Management (B.M.)\n` +
+            `   • **Skema Perkuliahan**: Tahun 1–2 di Bali, Tahun 3 daring, dan Tahun 4 di kampus DNUI China (fasilitas dormitory gratis).\n\n` +
+            `Kedua program ini memberikan kesempatan bagi mahasiswa untuk meraih dua gelar sarjana resmi sekaligus.`;
+          return appendMissingAspectNote(ans.trim());
+        }
 
         if (isDnuiOnly) {
           const dnuiP = internationalPartners.find(p => /DNUI|Dalian/i.test(p.partnerName)) || {
@@ -1774,6 +1859,20 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
       return appendMissingAspectNote('Untuk bergabung dengan Unit Kegiatan Mahasiswa (UKM) di ITB STIKOM Bali, informasi pendaftaran dan masa penerimaan anggota dikoordinasikan langsung melalui Direktorat Kemahasiswaan & Ormawa atau agenda kegiatan kemahasiswaan kampus.');
     }
 
+    if (/\b(?:syntax|public\s+speaking|mc|pembawa\s+acara|penyiaran|broadcasting)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
+      const isEn = userLang === 'en';
+      const syntaxAnswer = isEn
+        ? `Information regarding **UKM SYNTAX** at ITB STIKOM Bali:\n\n` +
+          `• **Focus & Identity**: UKM SYNTAX stands for *Speaking Youth Entertainment Experience*. Unlike programming clubs, SYNTAX focuses on developing public speaking, Master of Ceremonies (MC), broadcasting, and English communication skills.\n` +
+          `• **Activities**: Regular public speaking workshops, hosting campus events, and signature annual competitions such as **SYNAMON** (Syntax Announcer and Master of Ceremony Competition).\n\n` +
+          `Students interested in broadcasting, public speaking, and event hosting are encouraged to join during the annual UKM recruitment expo (GMTI/Ormawa Expo).`
+        : `Informasi mengenai **UKM SYNTAX** di ITB STIKOM Bali:\n\n` +
+          `• **Fokus & Profil**: UKM SYNTAX merupakan singkatan dari *Speaking Youth Entertainment Experience*. Berbeda dengan klub pemrograman, SYNTAX berfokus pada pengembangan bakat *public speaking*, pembawa acara (MC), penyiaran/broadcasting, serta kemampuan komunikasi bahasa Inggris dan entertaintment.\n` +
+          `• **Kegiatan**: Pelatihan rutin public speaking, pemandu acara kegiatan resmi kampus, serta acara tahunan seperti kompetisi **SYNAMON** (*Syntax Announcer and Master of Ceremony Competition*).\n\n` +
+          `Bagi Kakak yang berminat mengasah kemampuan berbicara di depan umum, penyiaran, dan MC, UKM SYNTAX membuka pendaftaran anggota baru saat expo ormawa/GMTI setiap tahun ajaran baru.`;
+      return appendMissingAspectNote(syntaxAnswer);
+    }
+
     const isSpecificUkmInquiry = /\bukm\b/i.test(rawQuery) && !/\b(?:senat|balma|himaprodi|pemerintahan\s+mahasiswa)\b/i.test(rawQuery);
     if (isSpecificUkmInquiry) {
       const ukmOnlyAnswer = `Unit Kegiatan Mahasiswa (UKM) di ITB STIKOM Bali merupakan wadah kegiatan kemahasiswaan untuk menyalurkan minat, bakat, serta penalaran (terpisah dari organisasi perwakilan/eksekutif mahasiswa seperti Senat Mahasiswa, Balma, atau Himpunan Mahasiswa Program Studi/Himaprodi).\n\n` +
@@ -1816,8 +1915,9 @@ _Catatan: Rincian UKM di atas didasarkan pada penetapan pembina ormawa resmi dan
     }
   }
 
-  if (isSchemeOrLocationInquiry) {
-    if (/dnui|china/i.test(cleanAll) || targetEntities.some(e => /DNUI/i.test(e)) || /dnui/i.test(rawQuery)) {
+  const isInternationalSchemeScope = semanticFrame.domain === 'INTERNATIONAL' || /\b(?:double\s+degree|dnui|help\b|internasional|kuliah\s+di\s+luar|luar\s+negeri)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+  if (isSchemeOrLocationInquiry && isInternationalSchemeScope) {
+    if (/dnui/i.test(rawQuery) || targetEntities.some(e => /DNUI/i.test(e)) || (/dnui|china/i.test(cleanAll) && /double\s+degree|internasional/i.test(rawQuery))) {
       const dnuiAns = `Perkuliahan untuk **Double Degree DNUI (China)** tidak sepenuhnya berlangsung di Bali.\n\nSkema studinya berjalan bertahap:\n` +
         `- **Tahun 1–2**: Perkuliahan di kampus ITB STIKOM Bali.\n` +
         `- **Tahun 3**: Perkuliahan diselenggarakan secara daring (online).\n` +
@@ -1869,8 +1969,8 @@ _Catatan: Rincian UKM di atas didasarkan pada penetapan pembina ormawa resmi dan
 
   // 7. Tuition Fee Summary
   const isFeeInquiry = semanticFrame.domain === 'TUITION_FEE' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a))) ||
-    /\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'installment_procedure', 'payment_schedule'].includes(a))) ||
+    /\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya|cicil|cicilan|angsuran)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
 
   if (isFeeInquiry) {
     const feeRes = generateFeeAnswer(rawQuery, arbitratedEvidence?.sessionData || {}, {
@@ -1883,35 +1983,67 @@ _Catatan: Rincian UKM di atas didasarkan pada penetapan pembina ormawa resmi dan
     }
     const combinedFeeQuery = rawQuery + ' ' + (semanticFrame.normalizedQuery || '');
 
+    const isInstallmentProcInSummary =
+      /\b(?:syarat|persyaratan|prosedur|tata\s*cara|cara(?:\s+mengajukan)?|bagaimana\s+mengajukan|pengajuan|dokumen|berkas|formulir)\b/i.test(combinedFeeQuery) &&
+      /\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|mengangsur)\b/i.test(combinedFeeQuery);
+
+    if (isInstallmentProcInSummary) {
+      const procFallbackAnswer =
+        `Mengenai **persyaratan dan prosedur pengajuan cicilan biaya kuliah**, informasi resmi yang tertera dalam SK Rektor ITB STIKOM Bali Nomor 629/ITBSTIKOM/WDS/X/25 hanya menetapkan **waktu/jadwal pembayaran**, yaitu Dana Pendidikan Pokok (DPP) atau Biaya Registrasi dapat diangsur setiap bulan sampai menjelang Ujian Tengah Semester 1 (UTS-1) pada semester berjalan.\n\n` +
+        `Namun, **persyaratan administratif khusus, dokumen yang diperlukan, maupun prosedur teknis pengajuan cicilan belum tercantum secara rinci dalam dokumen penetapan biaya yang tersedia (SOURCE_GAP)**.\n\n` +
+        `Untuk konfirmasi prosedur resmi dan persyaratan pengajuan cicilan secara lengkap, silakan langsung mengonfirmasi kepada admin PMB atau bagian keuangan resmi ITB STIKOM Bali melalui website https://pmb.stikom-bali.ac.id atau telepon (0361) 244445.`;
+      return appendMissingAspectNote(procFallbackAnswer);
+    }
+
+    const isDppInstallmentInSummary =
+      /\bdpp\b/i.test(combinedFeeQuery) &&
+      /\b(?:sampai\s+kapan|kapan|jadwal|tenggat|deadline|batas\s+waktu)\b/i.test(combinedFeeQuery) &&
+      /\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|mengangsur)\b/i.test(combinedFeeQuery);
+
+    if (isDppInstallmentInSummary) {
+      const dppScheduleAnswer =
+        `Berdasarkan ketentuan resmi SK Rektor ITB STIKOM Bali Nomor 629/ITBSTIKOM/WDS/X/25:\n\n` +
+        `• **Besaran DPP per Program Studi (Tarif Dasar Sebelum Potongan)**:\n` +
+        `  - **S1 Sistem Informasi, Teknologi Informasi, & Bisnis Digital**: Rp 14.000.000 (dapat dicicil per bulan s.d. UTS-1)\n` +
+        `  - **S1 Sistem Komputer**: Rp 11.000.000 (dapat dicicil per bulan s.d. UTS-1)\n` +
+        `  - **D3 Manajemen Informatika**: Tidak memiliki komponen DPP. Komponen biaya masuk utama adalah **Biaya Registrasi (Jas, Topi, GMTI)** sebesar Rp 10.000.000 (dapat dicicil per bulan s.d. UTS-1)\n` +
+        `  - **International Double Degree (HELP / DNUI)**: DPP sebesar Rp 20.000.000 dibayarkan saat Registrasi I (jadwal cicilan bulanan s.d. UTS-1 hanya berlaku untuk program Sarjana S1 reguler dan Vokasi D3, tidak otomatis berlaku untuk program International Double Degree)\n\n` +
+        `• **Ketentuan & Waktu Pembayaran Cicilan DPP**:\n` +
+        `  Dana Pendidikan Pokok (DPP) untuk jenjang Sarjana S1 reguler dapat dicicil per bulan sampai dengan menjelang Ujian Tengah Semester 1 (UTS-1) pada semester berjalan. Tersedia tambahan potongan sebesar 10% apabila DPP dibayarkan secara tunai langsung lunas.`;
+      return appendMissingAspectNote(dppScheduleAnswer);
+    }
+
     if (/\b(dicicil|cicil|angsuran|tahap|angsur|bisa dicicil)\b/i.test(combinedFeeQuery)) {
       const installmentAnswer = `Biaya pendidikan di ITB STIKOM Bali bisa dicicil dengan ketentuan berikut:\n\n` +
-        `• **Pembayaran Dana Pendidikan Pokok (DPP)**: DAPAT dicicil atau diangsur bertahap setiap bulan sampai menjelang Ujian Tengah Semester (UTS) pada semester berjalan.\n` +
-        `• **Potongan Pembayaran Tunai (Lunas Langsung)**: Calon mahasiswa yang membayar DPP secara tunai langsung lunas mendapatkan tambahan potongan sebesar **10%**.\n` +
-        `• **Biaya Pendidikan Per Semester**: Dibayarkan setiap semester menjelang masa perwalian/KRS.\n\n` +
+        `• **Pembayaran Dana Pendidikan Pokok (DPP) S1 & Biaya Registrasi D3**: DAPAT dicicil atau diangsur bertahap setiap bulan sampai menjelang Ujian Tengah Semester (UTS-1) pada semester berjalan.\n` +
+        `• **Potongan Pembayaran Tunai (Lunas Langsung)**: Calon mahasiswa yang membayar DPP / Biaya Registrasi secara tunai langsung lunas mendapatkan tambahan potongan sebesar **10%**.\n` +
+        `• **Biaya Pendidikan Per Semester**: Dibayarkan setiap semester menjelang masa perwalian/KRS (khusus Reguler 1 semester pertama dapat dicicil 2 kali s.d. UTS).\n\n` +
         `Untuk rincian simulasi angsuran bulanan, Kakak bisa berkonsultasi langsung dengan bagian admisi PMB di https://pmb.stikom-bali.ac.id ya.`;
       return appendMissingAspectNote(installmentAnswer);
     }
 
     if (/\b(potongan\s+dpp|potongan.*gelombang|dpp.*gelombang|potongan.*awal)\b/i.test(combinedFeeQuery)) {
-      const dppWaveFeeAnswer = `Untuk pendaftaran gelombang awal T.A 2026/2027 di ITB STIKOM Bali, tersedia potongan Dana Pendidikan Pokok (DPP) dengan rincian berikut:
+      const dppWaveFeeAnswer = `Untuk pendaftaran gelombang awal T.A 2026/2027 di ITB STIKOM Bali, tersedia potongan Dana Pendidikan Pokok (DPP) / Biaya Registrasi dengan rincian berikut:
 
 • **Gelombang Khusus (Gelombang Paling Awal)**:
   - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 3.000.000**
-  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 2.000.000**
+  - S1 Sistem Komputer: Potongan DPP sebesar **Rp 2.000.000**
+  - D3 Manajemen Informatika: Potongan Biaya Registrasi (Jas, Topi, GMTI) sebesar **Rp 2.000.000**
   - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 10.000.000**
 
 • **Gelombang I (Gelombang Awal)**:
   - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 2.000.000**
-  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 1.000.000**
+  - S1 Sistem Komputer: Potongan DPP sebesar **Rp 1.000.000**
+  - D3 Manajemen Informatika: Potongan Biaya Registrasi (Jas, Topi, GMTI) sebesar **Rp 1.000.000**
   - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 8.000.000**
 
 • **Gelombang Lanjutan**:
-  - Gelombang II: Potongan DPP Rp 1.500.000 (S1 SI/TI/BD) / Rp 750.000 (S1 SK & D3 MI)
-  - Gelombang III: Potongan DPP Rp 1.000.000 (S1 SI/TI/BD) / Rp 500.000 (D3 MI)
+  - Gelombang II: Potongan DPP Rp 1.500.000 (S1 SI/TI/BD) / Potongan DPP Rp 750.000 (S1 SK) / Potongan Biaya Registrasi Rp 750.000 (D3 MI)
+  - Gelombang III: Potongan DPP Rp 1.000.000 (S1 SI/TI/BD) / Potongan Biaya Registrasi Rp 500.000 (D3 MI)
   - Gelombang IV: Potongan DPP Rp 500.000 (S1 SI/TI/BD)
 
 **Ketentuan Tambahan**:
-1. Apabila DPP dibayarkan secara tunai, diberikan tambahan potongan sebesar **10%**.
+1. Apabila DPP / Biaya Registrasi dibayarkan secara tunai, diberikan tambahan potongan sebesar **10%**.
 2. Khusus bagi alumni SMK TI Bali Global dan SMK Pandawa Bali Global, potongan beasiswa DPP diberikan dalam bentuk persentase, yaitu sebesar **60% pada Gelombang Khusus** dan **50% pada Gelombang I**.
 
 Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
@@ -2247,6 +2379,20 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       return appendMissingAspectNote(exchangeAnswer);
     }
 
+    if (isHelp && isDnui) {
+      const bothAnswer = `Program **Double Degree Internasional** di ITB STIKOM Bali bekerjasama dengan dua mitra perguruan tinggi luar negeri terkemuka:\n\n` +
+        `1. **HELP University (Malaysia)**:\n` +
+        `   • Program Studi: **S1 Sistem Informasi**\n` +
+        `   • Gelar Kelulusan: Sarjana Komputer (**S.Kom.**) dari ITB STIKOM Bali dan Bachelor of Information Technology (**BIT**) dari HELP University Malaysia.\n` +
+        `   • Skema Perkuliahan: Seluruh proses perkuliahan diselenggarakan di kampus ITB STIKOM Bali dengan kurikulum terintegrasi HELP University.\n\n` +
+        `2. **Dalian Neusoft University of Information (DNUI, China)**:\n` +
+        `   • Program Studi: **S1 Bisnis Digital**\n` +
+        `   • Gelar Kelulusan: Sarjana Bisnis (**S.Bns.**) dari ITB STIKOM Bali dan Bachelor of Management (**B.M.**) dari DNUI China.\n` +
+        `   • Skema Perkuliahan: Skema 2+2 (2 tahun di ITB STIKOM Bali dan 2 tahun di kampus DNUI Dalian, China dengan fasilitas dormitory gratis selama di China).\n\n` +
+        `Kedua program ini memberikan kesempatan bagi mahasiswa untuk meraih dua gelar sarjana resmi sekaligus.`;
+      return appendMissingAspectNote(bothAnswer);
+    }
+
     if (isDnui) {
       const dnuiAnswer = `Program Double Degree International Class untuk **S1 Bisnis Digital** diselenggarakan bekerjasama dengan **Dalian Neusoft University of Information (DNUI), China**.\n\n` +
         `• **Lokasi & Periode Studi (Skema 2+2)**: Perkuliahan **tidak seluruhnya di STIKOM Bali**. Mahasiswa menempuh 2 tahun pertama di ITB STIKOM Bali, dan 2 tahun berikutnya menjalani perkuliahan langsung (onsite) di kampus DNUI di Dalian, China.\n` +
@@ -2288,8 +2434,15 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
     }
   }
 
-  // 7e. Study Mode (Kuliah Sambil Kerja / Program Kerja Sambil Kuliah / Kelas Karyawan / Kelas Sore)
+  // 7e. Study Mode (Kuliah Sambil Kerja / Program Kerja Sambil Kuliah / Kelas Karyawan / Kelas Sore / S2 Delivery Mode)
   if (semanticFrame.intent === 'STUDY_MODE' || (semanticFrame.aspects && semanticFrame.aspects.includes('class_schedule')) || /\b(sambil\s+kerja|kelas\s+karyawan|kuliah\s+sore|kelas\s+sore|kerja\s+sambil\s+kuliah|sudah\s+bekerja)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
+    const isS2Mode = /\b(?:s2|magister)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) ||
+      (semanticFrame.aspects && semanticFrame.aspects.includes('magister')) ||
+      targetEntities.some(e => /S2|Magister/i.test(e));
+    if (isS2Mode) {
+      const s2ModeAnswer = `Perkuliahan Program **Magister (S2) Sistem Informasi** di ITB STIKOM Bali diselenggarakan secara tatap muka (luring) reguler di **Kampus Renon**, Denpasar, dengan dukungan platform digital untuk materi dan interaksi perkuliahan.\n\nUntuk konfirmasi jadwal perkuliahan pascasarjana dan konsultasi teknis pendaftaran, Kakak dapat menghubungi bagian admisi di **0822-7738-9999** atau telepon kampus **(0361) 244445**.`;
+      return appendMissingAspectNote(s2ModeAnswer);
+    }
     const studyModeAnswer = `Bagi calon mahasiswa yang sudah bekerja, ITB STIKOM Bali menyediakan program **Kelas Sore / Malam (Kelas Karyawan)**:\n\n` +
       `• **Jadwal Fleksibel**: Perkuliahan diselenggarakan setelah jam kerja umum, sehingga mahasiswa dapat menempuh pendidikan sarjana tanpa mengganggu aktivitas bekerja.\n` +
       `• **Kurikulum & Fasilitas Setara**: Beban studi, materi perkuliahan, dan fasilitas kampus sama dengan kelas reguler.\n` +
@@ -2521,8 +2674,10 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
   }
 
   // 7h. S2 Postgraduate Research Focus
-  if (semanticFrame.intent === 'RESEARCH_FOCUS_INQUIRY' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['research_focus', 'fokus_riset'].includes(a))) || /\b(?:fokus\s+riset|bidang\s+penelitian|fokus\s+penelitian)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const hasResearchEvidence = /\b(?:data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics)\b/i.test(cleanAll);
+  const isS2ResearchQuery = /\b(?:fokus\s+(?:riset|penelitian)|konsentrasi|bidang\s+penelitian)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) &&
+    /\b(?:s2|magister|pascasarjana)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '') + ' ' + cleanAll);
+  if (semanticFrame.intent === 'RESEARCH_FOCUS_INQUIRY' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['research_focus', 'fokus_riset'].includes(a))) || isS2ResearchQuery) {
+    const hasResearchEvidence = /\b(?:data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|pascasarjana|magister)\b/i.test(cleanAll) || isS2ResearchQuery;
     if (hasResearchEvidence) {
       const isEn = userLang === 'en';
       const researchAnswer = isEn
@@ -2606,6 +2761,67 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
         `• **Alur Pendaftaran**: Pengajuan berkas pendaftaran sidang skripsi dilakukan secara daring melalui sistem informasi akademik (**SION**).\n\n` +
         `Untuk tanggal pasti pembukaan dan batas akhir pendaftaran sidang skripsi semester ini, Kakak dapat memantau Kalender Akademik di portal SION atau menghubungi layanan DAAK / Bagian Program Studi.`;
     return appendMissingAspectNote(thesisAnswer);
+  }
+
+  // 7m. Inkubator Bisnis (INBIS) Bali
+  if (/\b(?:inbis|inkubator(?:\s+bisnis)?|startup|modal\s+usaha|binaan\s+startup|rintisan\s+usaha|p2mw|wirausaha|technopreneur)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) || targetEntities.some(e => /INBIS|Inkubator/i.test(e))) {
+    const isEn = userLang === 'en';
+    const inbisAnswer = isEn
+      ? `Information about the Business Incubator (**INBIS ITB STIKOM Bali**):\n\n` +
+        `• **Profile**: Established in 2014 under the Directorate of Cooperation, Industrial Services, and Business Incubator (Dir. KL-INBIS), INBIS fosters technology-driven student and alumni entrepreneurship (technopreneurship).\n` +
+        `• **3 Incubation Stages**:\n` +
+        `  1. *Pre-Incubation*: Idea generation, market validation, and business plan drafting.\n` +
+        `  2. *Incubation*: Intensive mentorship, product prototyping, co-working space, legal/intellectual property facilitation, and student startup grant access (such as P2MW Kemendikbudristek).\n` +
+        `  3. *Post-Incubation*: Market scale-up, business matching, and investor demo days.\n\n` +
+        `For more information or startup guidance, students can visit the INBIS office at Kampus Renon or contact the Directorate of Cooperation & INBIS.`
+      : `Informasi mengenai **Inkubator Bisnis (INBIS) ITB STIKOM Bali**:\n\n` +
+        `• **Profil**: Berdiri sejak tahun 2014 di bawah naungan Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis, INBIS Bali bertugas membina dan mendampingi mahasiswa serta alumni dalam merintis usaha berbasis teknologi (*technopreneurship*).\n` +
+        `• **3 Tahapan Inkubasi**:\n` +
+        `  1. *Pra-Inkubasi*: Penjaringan ide bisnis, validasi pasar, dan penyusunan proposal/business plan.\n` +
+        `  2. *Inkubasi*: Pendampingan/mentoring intensif, fasilitas co-working space, legalitas & HKI, serta akses pendanaan hibah wirausaha (seperti P2MW Kemendikbudristek).\n` +
+        `  3. *Pasca-Inkubasi*: Perluasan pasar, jejaring kemitraan, dan temu investor (*business matching*).\n\n` +
+        `Bagi mahasiswa yang ingin mengembangkan rintisan usahanya, Kakak dapat mengunjungi kantor INBIS di Kampus ITB STIKOM Bali atau menghubungi bagian kemahasiswaan/kerja sama.`;
+    return appendMissingAspectNote(inbisAnswer);
+  }
+
+  // 7n. Yudisium & Wisuda (Academic Administration)
+  if (/\b(?:yudisium|wisuda)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
+    const isEn = userLang === 'en';
+    const yudisiumAnswer = isEn
+      ? `Information regarding **Yudisium and Graduation (Wisuda)** at ITB STIKOM Bali:\n\n` +
+        `• **Registration Requirements**:\n` +
+        `  1. Passed the Thesis/Final Project Defense (Lulus Sidang Skripsi/Tugas Akhir) and submitted the final revised manuscript.\n` +
+        `  2. Library Clearance (Bebas Pinjaman Pustaka) from the campus library.\n` +
+        `  3. Financial Clearance (Bebas Keuangan/SPP) confirming no outstanding tuition fees.\n` +
+        `  4. Uploading scientific publication / journal article manuscript according to academic standards.\n` +
+        `  5. Formal photograph submission (wearing a black suit/blazer with tie for male students).\n` +
+        `• **Procedure**: Registration is conducted online via the academic portal (**SION**) following the official dates announced by DAAK.\n\n` +
+        `For the detailed schedule of upcoming Yudisium periods (e.g., Yudisium I Wisuda XXXVIII), please monitor the official DAAK announcements on SION.`
+      : `Informasi mengenai pendaftaran dan pelaksanaan **Yudisium & Wisuda** di ITB STIKOM Bali:\n\n` +
+        `• **Syarat Pendaftaran Yudisium**:\n` +
+        `  1. Telah dinyatakan lulus Ujian Skripsi/Tugas Akhir dan menyelesaikan revisi naskah.\n` +
+        `  2. Surat Bebas Pustaka (tidak memiliki tanggungan pinjaman buku atau denda di perpustakaan).\n` +
+        `  3. Surat Bebas Keuangan dari Bagian Keuangan (seluruh kewajiban pembayaran SPP/DPP telah lunas).\n` +
+        `  4. Mengunggah naskah publikasi ilmiah/jurnal sesuai panduan program studi.\n` +
+        `  5. Menyerahkan pasfoto resmi (mengenakan jas/blazer hitam rapi, bagi pria mengenakan dasi).\n` +
+        `• **Prosedur Pendaftaran**: Dilakukan secara daring melalui portal akademik **SION** sesuai periode pembukaan yang diumumkan DAAK.\n\n` +
+        `Untuk jadwal resmi pembukaan dan batas akhir yudisium pada periode berjalan (seperti Yudisium I Wisuda XXXVIII), Kakak dapat memantau pengumuman terbaru di SION atau Bagian Administrasi Akademik (DAAK).`;
+    return appendMissingAspectNote(yudisiumAnswer);
+  }
+
+  // 7o. UKM SYNTAX
+  if (/\b(?:syntax|ukm\s+syntax)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
+    const isEn = userLang === 'en';
+    const syntaxAnswer = isEn
+      ? `Information regarding **UKM SYNTAX** at ITB STIKOM Bali:\n\n` +
+        `• **Focus & Identity**: UKM SYNTAX stands for *Speaking Youth Entertainment Experience*. Unlike programming clubs, SYNTAX focuses on developing public speaking, Master of Ceremonies (MC), broadcasting, and English communication skills.\n` +
+        `• **Activities**: Regular public speaking workshops, hosting campus events, and signature annual competitions such as **SYNAMON** (Syntax Announcer and Master of Ceremony Competition).\n\n` +
+        `Students interested in broadcasting, public speaking, and event hosting are encouraged to join during the annual UKM recruitment expo (GMTI/Ormawa Expo).`
+      : `Informasi mengenai **UKM SYNTAX** di ITB STIKOM Bali:\n\n` +
+        `• **Fokus & Profil**: UKM SYNTAX merupakan singkatan dari *Speaking Youth Entertainment Experience*. Berbeda dengan klub pemrograman, SYNTAX berfokus pada pengembangan bakat *public speaking*, pembawa acara (MC), penyiaran/broadcasting, serta kemampuan komunikasi bahasa Inggris dan entertaintment.\n` +
+        `• **Kegiatan**: Pelatihan rutin public speaking, pemandu acara kegiatan resmi kampus, serta acara tahunan seperti kompetisi **SYNAMON** (*Syntax Announcer and Master of Ceremony Competition*).\n\n` +
+        `Bagi Kakak yang berminat mengasah kemampuan berbicara di depan umum, penyiaran, dan MC, UKM SYNTAX membuka pendaftaran anggota baru saat expo ormawa/GMTI setiap tahun ajaran baru.`;
+    return appendMissingAspectNote(syntaxAnswer);
   }
 
   // 8. Generic Clean Passages Fallback
@@ -2882,8 +3098,8 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
 
   // Dynamic Grounded Fee Calculation Engine Hand-off
   const isFeeInquiry = (semanticFrame.domain === 'TUITION_FEE' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a))) ||
-    /\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya)\b/i.test(semanticFrame.rawQuery || '')) &&
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'installment_procedure', 'payment_schedule'].includes(a))) ||
+    /\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya|cicil|cicilan|angsuran)\b/i.test(semanticFrame.rawQuery || '')) &&
     !arbitratedEvidence.unsupportedEntity &&
     semanticFrame.domain !== 'UNSUPPORTED_PROGRAM';
 
@@ -2897,8 +3113,8 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       return {
         success: true,
         answer: feeRes.answer,
-        source: 'grounded_fee_engine',
-        calculation: feeRes.calculation
+        source: 'fee_calculation_engine',
+        groundedFacts: feeRes.groundedFacts || []
       };
     }
   }
@@ -2982,6 +3198,17 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
         reply = userLang === 'en'
           ? 'Official information regarding specific scholarships for the Master of Information Systems (S2) program is not listed in the available guidelines. The available data records registration fee discounts according to admission waves and alumni discounts, while specific S2 scholarship details should be confirmed directly with admissions at 0822-7738-9999 or the PMB office.'
           : 'Informasi beasiswa khusus untuk mahasiswa Magister (S2) Sistem Informasi belum tercantum dalam dokumen panduan resmi yang tersedia. Informasi yang ada saat ini mencatat potongan biaya pendaftaran sesuai gelombang dan potongan khusus alumni, sedangkan rincian beasiswa S2 lainnya dapat dikonfirmasi langsung ke layanan admisi pascasarjana di 0822-7738-9999.';
+      }
+    }
+
+    // Guardrail 2b: S2 Study Mode (Online vs Tatap Muka)
+    if (isS2Inquiry && /\b(?:online|offline|daring|luring|tatap\s+muka)\b/i.test(rawQuery)) {
+      if (!/(?:tatap\s+muka|reguler|renon)/i.test(reply)) {
+        reply = userLang === 'en'
+          ? `Based on official guidelines from the Postgraduate Program at ITB STIKOM Bali, lectures for the **Master of Information Systems (S2)** are offered in **Regular Classes** with on-campus sessions at the Renon Campus supported by digital learning platforms.\n\n` +
+            `Specific scheduling details regarding hybrid or flexible online sessions for working professionals are coordinated with the postgraduate administration. For direct consultation, please contact the Postgraduate Hotline at **0822-7738-9999** or phone **(0361) 244445**.`
+          : `Berdasarkan panduan resmi Program Pascasarjana ITB STIKOM Bali, perkuliahan **S2 Magister Sistem Informasi** diselenggarakan dalam **Kelas Reguler** tatap muka di Kampus Renon Denpasar dengan dukungan sistem pembelajaran digital kampus.\n\n` +
+            `Untuk rincian format pelaksanaan perkuliahan (seperti opsi sesi daring/hybrid bagi mahasiswa yang bekerja), Kakak disarankan untuk mengonfirmasi langsung ke Bagian Pascasarjana melalui Hotline **0822-7738-9999** atau telepon **(0361) 244445**.`;
       }
     }
 

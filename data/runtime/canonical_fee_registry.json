@@ -24,11 +24,84 @@
       "skNumber": "629/ITBSTIKOM/WDS/X/25",
       "normalDurationSemesters": 8,
       "components": {
-        "pendaftaran": { "amount": 500000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "jasTopi": { "amount": 750000, "label": "Jas Almamater & Topi", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "kaosTasGmti": { "amount": 750000, "label": "Kaos, Tas, GMTI", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "dpp": { "amount": 14000000, "label": "Dana Pendidikan Pokok (DPP)", "timing": "Dicicil Per Bln s.d UTS-1", "mandatory": true, "type": "dpp", "installment": "Dapat dicicil per bulan s.d. UTS-1", "cashDiscountPercent": 10 },
-        "biayaSemester": { "amount": 6500000, "label": "Biaya Pendidikan Per Semester", "timing": "Menjelang Perwalian", "mandatory": true, "type": "recurring_semester", "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS" },
+        "pendaftaran": {
+          "amount": 500000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 1",
+            "exactQuote": "1. Pendaftaran 500.000 Pada Saat Daftar",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "jasTopi": {
+          "amount": 750000,
+          "label": "Jas Almamater & Topi",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 3",
+            "exactQuote": "3. Jas Alamater, Topi 750.000 Saat Registrasi I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "kaosTasGmti": {
+          "amount": 750000,
+          "label": "Kaos, Tas, GMTI",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 4",
+            "exactQuote": "4. Kaos, Tas, GMTI 750.000 Saat Registrasi I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "dpp": {
+          "amount": 14000000,
+          "label": "Dana Pendidikan Pokok (DPP)",
+          "timing": "Dicicil Per Bln s.d UTS-1",
+          "mandatory": true,
+          "type": "dpp",
+          "installment": "Dapat dicicil per bulan s.d. UTS-1",
+          "cashDiscountPercent": 10,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 2",
+            "exactQuote": "2. Dana Pendidikan Pokok 14.000.000 Dicicil Per Bln s.d UTS-1",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "biayaSemester": {
+          "amount": 6500000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Menjelang Perwalian",
+          "mandatory": true,
+          "type": "recurring_semester",
+          "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 5",
+            "exactQuote": "5. Biaya Pendidikan Per Semester 6.500.000 Menjelang Perwalian Kecuali Reg 1 Dicicil 2 Kali s/d UTS",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
         "pengalamanIndustri": {
           "label": "Biaya Pengalaman Industri",
           "timing": "Dapat dicicil 5 kali per semester dimulai dari semester 3",
@@ -36,25 +109,91 @@
           "type": "optional_choice",
           "mandatory": false,
           "options": {
-            "internasional": { "amount": 5000000, "label": "Internasional" },
-            "nasional": { "amount": 2500000, "label": "Nasional" },
-            "lokal": { "amount": 1500000, "label": "Lokal" }
+            "internasional": {
+              "amount": 5000000,
+              "label": "Internasional"
+            },
+            "nasional": {
+              "amount": 2500000,
+              "label": "Nasional"
+            },
+            "lokal": {
+              "amount": 1500000,
+              "label": "Lokal"
+            }
           }
         }
       },
       "waveDiscounts": {
-        "Gelombang Khusus": { "pendaftaranDiscount": 300000, "dppDiscount": 3000000, "smkTiPercent": 60 },
-        "Gelombang I": { "pendaftaranDiscount": 250000, "dppDiscount": 2000000, "smkTiPercent": 50 },
-        "Gelombang II": { "pendaftaranDiscount": 200000, "dppDiscount": 1500000, "smkTiPercent": 40 },
-        "Gelombang III": { "pendaftaranDiscount": 150000, "dppDiscount": 1000000, "smkTiPercent": 30 },
-        "Gelombang IV": { "pendaftaranDiscount": 100000, "dppDiscount": 500000, "smkTiPercent": 20 },
-        "Gelombang Sisipan": { "pendaftaranDiscount": 0, "dppDiscount": 0, "smkTiPercent": 10 }
+        "Gelombang Khusus": {
+          "pendaftaranDiscount": 300000,
+          "dppDiscount": 3000000,
+          "smkTiPercent": 60,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 300.000; Beasiswa DPP Rp 3.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang I": {
+          "pendaftaranDiscount": 250000,
+          "dppDiscount": 2000000,
+          "smkTiPercent": 50,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 250.000; Beasiswa DPP Rp 2.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang II": {
+          "pendaftaranDiscount": 200000,
+          "dppDiscount": 1500000,
+          "smkTiPercent": 40,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 200.000; Beasiswa DPP Rp 1.500.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang III": {
+          "pendaftaranDiscount": 150000,
+          "dppDiscount": 1000000,
+          "smkTiPercent": 30,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 150.000; Beasiswa DPP Rp 1.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang IV": {
+          "pendaftaranDiscount": 100000,
+          "dppDiscount": 500000,
+          "smkTiPercent": 20
+        },
+        "Gelombang Sisipan": {
+          "pendaftaranDiscount": 0,
+          "dppDiscount": 0,
+          "smkTiPercent": 10
+        }
       },
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
         "cutiPerSemester": 1000000
-      }
+      },
+      "lampiran": "Lampiran -1"
     },
     "S1 Teknologi Informasi": {
       "canonical": "S1 Teknologi Informasi",
@@ -65,11 +204,84 @@
       "skNumber": "629/ITBSTIKOM/WDS/X/25",
       "normalDurationSemesters": 8,
       "components": {
-        "pendaftaran": { "amount": 500000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "jasTopi": { "amount": 750000, "label": "Jas Almamater & Topi", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "kaosTasGmti": { "amount": 750000, "label": "Kaos, Tas, GMTI", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "dpp": { "amount": 14000000, "label": "Dana Pendidikan Pokok (DPP)", "timing": "Dicicil Per Bln s.d UTS-1", "mandatory": true, "type": "dpp", "installment": "Dapat dicicil per bulan s.d. UTS-1", "cashDiscountPercent": 10 },
-        "biayaSemester": { "amount": 6500000, "label": "Biaya Pendidikan Per Semester", "timing": "Menjelang Perwalian", "mandatory": true, "type": "recurring_semester", "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS" },
+        "pendaftaran": {
+          "amount": 500000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 1",
+            "exactQuote": "1. Pendaftaran 500.000 Pada Saat Daftar",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "jasTopi": {
+          "amount": 750000,
+          "label": "Jas Almamater & Topi",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 3",
+            "exactQuote": "3. Jas Alamater, Topi 750.000 Saat Registrasi I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "kaosTasGmti": {
+          "amount": 750000,
+          "label": "Kaos, Tas, GMTI",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 4",
+            "exactQuote": "4. Kaos, Tas, GMTI 750.000 Saat Registrasi I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "dpp": {
+          "amount": 14000000,
+          "label": "Dana Pendidikan Pokok (DPP)",
+          "timing": "Dicicil Per Bln s.d UTS-1",
+          "mandatory": true,
+          "type": "dpp",
+          "installment": "Dapat dicicil per bulan s.d. UTS-1",
+          "cashDiscountPercent": 10,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 2",
+            "exactQuote": "2. Dana Pendidikan Pokok 14.000.000 Dicicil Per Bln s.d UTS-1",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "biayaSemester": {
+          "amount": 6500000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Menjelang Perwalian",
+          "mandatory": true,
+          "type": "recurring_semester",
+          "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 5",
+            "exactQuote": "5. Biaya Pendidikan Per Semester 6.500.000 Menjelang Perwalian Kecuali Reg 1 Dicicil 2 Kali s/d UTS",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
         "pengalamanIndustri": {
           "label": "Biaya Pengalaman Industri",
           "timing": "Dapat dicicil 5 kali per semester dimulai dari semester 3",
@@ -77,25 +289,91 @@
           "type": "optional_choice",
           "mandatory": false,
           "options": {
-            "internasional": { "amount": 5000000, "label": "Internasional" },
-            "nasional": { "amount": 2500000, "label": "Nasional" },
-            "lokal": { "amount": 1500000, "label": "Lokal" }
+            "internasional": {
+              "amount": 5000000,
+              "label": "Internasional"
+            },
+            "nasional": {
+              "amount": 2500000,
+              "label": "Nasional"
+            },
+            "lokal": {
+              "amount": 1500000,
+              "label": "Lokal"
+            }
           }
         }
       },
       "waveDiscounts": {
-        "Gelombang Khusus": { "pendaftaranDiscount": 300000, "dppDiscount": 3000000, "smkTiPercent": 60 },
-        "Gelombang I": { "pendaftaranDiscount": 250000, "dppDiscount": 2000000, "smkTiPercent": 50 },
-        "Gelombang II": { "pendaftaranDiscount": 200000, "dppDiscount": 1500000, "smkTiPercent": 40 },
-        "Gelombang III": { "pendaftaranDiscount": 150000, "dppDiscount": 1000000, "smkTiPercent": 30 },
-        "Gelombang IV": { "pendaftaranDiscount": 100000, "dppDiscount": 500000, "smkTiPercent": 20 },
-        "Gelombang Sisipan": { "pendaftaranDiscount": 0, "dppDiscount": 0, "smkTiPercent": 10 }
+        "Gelombang Khusus": {
+          "pendaftaranDiscount": 300000,
+          "dppDiscount": 3000000,
+          "smkTiPercent": 60,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 300.000; Beasiswa DPP Rp 3.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang I": {
+          "pendaftaranDiscount": 250000,
+          "dppDiscount": 2000000,
+          "smkTiPercent": 50,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 250.000; Beasiswa DPP Rp 2.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang II": {
+          "pendaftaranDiscount": 200000,
+          "dppDiscount": 1500000,
+          "smkTiPercent": 40,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 200.000; Beasiswa DPP Rp 1.500.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang III": {
+          "pendaftaranDiscount": 150000,
+          "dppDiscount": 1000000,
+          "smkTiPercent": 30,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 150.000; Beasiswa DPP Rp 1.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang IV": {
+          "pendaftaranDiscount": 100000,
+          "dppDiscount": 500000,
+          "smkTiPercent": 20
+        },
+        "Gelombang Sisipan": {
+          "pendaftaranDiscount": 0,
+          "dppDiscount": 0,
+          "smkTiPercent": 10
+        }
       },
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
         "cutiPerSemester": 1000000
-      }
+      },
+      "lampiran": "Lampiran -1"
     },
     "S1 Bisnis Digital": {
       "canonical": "S1 Bisnis Digital",
@@ -106,11 +384,84 @@
       "skNumber": "629/ITBSTIKOM/WDS/X/25",
       "normalDurationSemesters": 8,
       "components": {
-        "pendaftaran": { "amount": 500000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "jasTopi": { "amount": 750000, "label": "Jas Almamater & Topi", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "kaosTasGmti": { "amount": 750000, "label": "Kaos, Tas, GMTI", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "dpp": { "amount": 14000000, "label": "Dana Pendidikan Pokok (DPP)", "timing": "Dicicil Per Bln s.d UTS-1", "mandatory": true, "type": "dpp", "installment": "Dapat dicicil per bulan s.d. UTS-1", "cashDiscountPercent": 10 },
-        "biayaSemester": { "amount": 6500000, "label": "Biaya Pendidikan Per Semester", "timing": "Menjelang Perwalian", "mandatory": true, "type": "recurring_semester", "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS" },
+        "pendaftaran": {
+          "amount": 500000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 1",
+            "exactQuote": "1. Pendaftaran 500.000 Pada Saat Daftar",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "jasTopi": {
+          "amount": 750000,
+          "label": "Jas Almamater & Topi",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 3",
+            "exactQuote": "3. Jas Alamater, Topi 750.000 Saat Registrasi I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "kaosTasGmti": {
+          "amount": 750000,
+          "label": "Kaos, Tas, GMTI",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 4",
+            "exactQuote": "4. Kaos, Tas, GMTI 750.000 Saat Registrasi I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "dpp": {
+          "amount": 14000000,
+          "label": "Dana Pendidikan Pokok (DPP)",
+          "timing": "Dicicil Per Bln s.d UTS-1",
+          "mandatory": true,
+          "type": "dpp",
+          "installment": "Dapat dicicil per bulan s.d. UTS-1",
+          "cashDiscountPercent": 10,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 2",
+            "exactQuote": "2. Dana Pendidikan Pokok 14.000.000 Dicicil Per Bln s.d UTS-1",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "biayaSemester": {
+          "amount": 6500000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Menjelang Perwalian",
+          "mandatory": true,
+          "type": "recurring_semester",
+          "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS",
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Butir 5",
+            "exactQuote": "5. Biaya Pendidikan Per Semester 6.500.000 Menjelang Perwalian Kecuali Reg 1 Dicicil 2 Kali s/d UTS",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
         "pengalamanIndustri": {
           "label": "Biaya Pengalaman Industri",
           "timing": "Dapat dicicil 5 kali per semester dimulai dari semester 3",
@@ -118,25 +469,91 @@
           "type": "optional_choice",
           "mandatory": false,
           "options": {
-            "internasional": { "amount": 5000000, "label": "Internasional" },
-            "nasional": { "amount": 2500000, "label": "Nasional" },
-            "lokal": { "amount": 1500000, "label": "Lokal" }
+            "internasional": {
+              "amount": 5000000,
+              "label": "Internasional"
+            },
+            "nasional": {
+              "amount": 2500000,
+              "label": "Nasional"
+            },
+            "lokal": {
+              "amount": 1500000,
+              "label": "Lokal"
+            }
           }
         }
       },
       "waveDiscounts": {
-        "Gelombang Khusus": { "pendaftaranDiscount": 300000, "dppDiscount": 3000000, "smkTiPercent": 60 },
-        "Gelombang I": { "pendaftaranDiscount": 250000, "dppDiscount": 2000000, "smkTiPercent": 50 },
-        "Gelombang II": { "pendaftaranDiscount": 200000, "dppDiscount": 1500000, "smkTiPercent": 40 },
-        "Gelombang III": { "pendaftaranDiscount": 150000, "dppDiscount": 1000000, "smkTiPercent": 30 },
-        "Gelombang IV": { "pendaftaranDiscount": 100000, "dppDiscount": 500000, "smkTiPercent": 20 },
-        "Gelombang Sisipan": { "pendaftaranDiscount": 0, "dppDiscount": 0, "smkTiPercent": 10 }
+        "Gelombang Khusus": {
+          "pendaftaranDiscount": 300000,
+          "dppDiscount": 3000000,
+          "smkTiPercent": 60,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 300.000; Beasiswa DPP Rp 3.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang I": {
+          "pendaftaranDiscount": 250000,
+          "dppDiscount": 2000000,
+          "smkTiPercent": 50,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 250.000; Beasiswa DPP Rp 2.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang II": {
+          "pendaftaranDiscount": 200000,
+          "dppDiscount": 1500000,
+          "smkTiPercent": 40,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 200.000; Beasiswa DPP Rp 1.500.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang III": {
+          "pendaftaranDiscount": 150000,
+          "dppDiscount": 1000000,
+          "smkTiPercent": 30,
+          "provenance": {
+            "document": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -1",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 150.000; Beasiswa DPP Rp 1.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang IV": {
+          "pendaftaranDiscount": 100000,
+          "dppDiscount": 500000,
+          "smkTiPercent": 20
+        },
+        "Gelombang Sisipan": {
+          "pendaftaranDiscount": 0,
+          "dppDiscount": 0,
+          "smkTiPercent": 10
+        }
       },
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
         "cutiPerSemester": 1000000
-      }
+      },
+      "lampiran": "Lampiran -1"
     },
     "S1 Sistem Komputer": {
       "canonical": "S1 Sistem Komputer",
@@ -147,11 +564,84 @@
       "skNumber": "629/ITBSTIKOM/WDS/X/25",
       "normalDurationSemesters": 8,
       "components": {
-        "pendaftaran": { "amount": 500000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "jasTopi": { "amount": 750000, "label": "Jas Almamater & Topi", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "kaosTasGmti": { "amount": 750000, "label": "Kaos, Tas, GMTI", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "dpp": { "amount": 11000000, "label": "Dana Pendidikan Pokok (DPP)", "timing": "Dicicil Per Bln s.d UTS-1", "mandatory": true, "type": "dpp", "installment": "Dapat dicicil per bulan s.d. UTS-1", "cashDiscountPercent": 10 },
-        "biayaSemester": { "amount": 6000000, "label": "Biaya Pendidikan Per Semester", "timing": "Menjelang Perwalian", "mandatory": true, "type": "recurring_semester", "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS" },
+        "pendaftaran": {
+          "amount": 500000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry",
+          "provenance": {
+            "document": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -2",
+            "page": 1,
+            "itemNumber": "Butir 1",
+            "exactQuote": "1. Pendaftaran 500.000 Pada Saat Daftar",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "jasTopi": {
+          "amount": 750000,
+          "label": "Jas Almamater & Topi",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial",
+          "provenance": {
+            "document": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -2",
+            "page": 1,
+            "itemNumber": "Butir 3",
+            "exactQuote": "3. Jas, Topi Almamater 750.000 Saat Registrasi I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "kaosTasGmti": {
+          "amount": 750000,
+          "label": "Kaos, Tas, GMTI",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial",
+          "provenance": {
+            "document": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -2",
+            "page": 1,
+            "itemNumber": "Butir 4",
+            "exactQuote": "4. Kaos, Topi, GMTI 750.000 Saat Registrasi I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "dpp": {
+          "amount": 11000000,
+          "label": "Dana Pendidikan Pokok (DPP)",
+          "timing": "Dicicil Per Bln s.d UTS-1",
+          "mandatory": true,
+          "type": "dpp",
+          "installment": "Dapat dicicil per bulan s.d. UTS-1",
+          "cashDiscountPercent": 10,
+          "provenance": {
+            "document": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -2",
+            "page": 1,
+            "itemNumber": "Butir 2",
+            "exactQuote": "2. Dana Pendidikan Pokok (DPP) 11.000.000 Dicicil Per Bln s.d UTS-1",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "biayaSemester": {
+          "amount": 6000000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Menjelang Perwalian",
+          "mandatory": true,
+          "type": "recurring_semester",
+          "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS",
+          "provenance": {
+            "document": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -2",
+            "page": 1,
+            "itemNumber": "Butir 5",
+            "exactQuote": "5. Biaya Pendidikan Per Semester 6.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
         "pengalamanIndustri": {
           "label": "Biaya Pengalaman Industri",
           "timing": "Dapat dicicil 5 kali per semester dimulai dari semester 3",
@@ -159,25 +649,75 @@
           "type": "optional_choice",
           "mandatory": false,
           "options": {
-            "internasional": { "amount": 5000000, "label": "Internasional" },
-            "nasional": { "amount": 2500000, "label": "Nasional" },
-            "lokal": { "amount": 1500000, "label": "Lokal" }
+            "internasional": {
+              "amount": 5000000,
+              "label": "Internasional"
+            },
+            "nasional": {
+              "amount": 2500000,
+              "label": "Nasional"
+            },
+            "lokal": {
+              "amount": 1500000,
+              "label": "Lokal"
+            }
           }
         }
       },
       "waveDiscounts": {
-        "Gelombang Khusus": { "pendaftaranDiscount": 300000, "dppDiscount": 2000000, "smkTiPercent": 60 },
-        "Gelombang I": { "pendaftaranDiscount": 250000, "dppDiscount": 1000000, "smkTiPercent": 50 },
-        "Gelombang II": { "pendaftaranDiscount": 200000, "dppDiscount": 750000, "smkTiPercent": 40 },
-        "Gelombang III": { "pendaftaranDiscount": 150000, "dppDiscount": 0, "smkTiPercent": 30 },
-        "Gelombang IV": { "pendaftaranDiscount": 100000, "dppDiscount": 0, "smkTiPercent": 20 },
-        "Gelombang Sisipan": { "pendaftaranDiscount": 0, "dppDiscount": 0, "smkTiPercent": 10 }
+        "Gelombang Khusus": {
+          "pendaftaranDiscount": 300000,
+          "dppDiscount": 2000000,
+          "smkTiPercent": 60
+        },
+        "Gelombang I": {
+          "pendaftaranDiscount": 250000,
+          "dppDiscount": 1000000,
+          "smkTiPercent": 50,
+          "provenance": {
+            "document": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -2",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 250.000; Beasiswa DPP Rp 1.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang II": {
+          "pendaftaranDiscount": 200000,
+          "dppDiscount": 750000,
+          "smkTiPercent": 40,
+          "provenance": {
+            "document": "rincian Biaya SK Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -2",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 200.000; Beasiswa DPP Rp 750.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang III": {
+          "pendaftaranDiscount": 150000,
+          "dppDiscount": 500000,
+          "smkTiPercent": 30
+        },
+        "Gelombang IV": {
+          "pendaftaranDiscount": 100000,
+          "dppDiscount": 250000,
+          "smkTiPercent": 20
+        },
+        "Gelombang Sisipan": {
+          "pendaftaranDiscount": 0,
+          "dppDiscount": 0,
+          "smkTiPercent": 10
+        }
       },
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
         "cutiPerSemester": 1000000
-      }
+      },
+      "lampiran": "Lampiran -2"
     },
     "D3 Manajemen Informatika": {
       "canonical": "D3 Manajemen Informatika",
@@ -188,9 +728,55 @@
       "skNumber": "629/ITBSTIKOM/WDS/X/25",
       "normalDurationSemesters": 6,
       "components": {
-        "pendaftaran": { "amount": 500000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "dpp": { "amount": 10000000, "label": "Biaya Registrasi & DPP (Jas, Topi, GMTI)", "timing": "Dicicil Per Bln s.d UTS-1", "mandatory": true, "type": "dpp", "installment": "Dapat dicicil per bulan s.d. UTS-1", "cashDiscountPercent": 10 },
-        "biayaSemester": { "amount": 4500000, "label": "Biaya Pendidikan Per Semester", "timing": "Menjelang Perwalian", "mandatory": true, "type": "recurring_semester", "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS" },
+        "pendaftaran": {
+          "amount": 500000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry",
+          "provenance": {
+            "document": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -3",
+            "page": 1,
+            "itemNumber": "Butir 1",
+            "exactQuote": "1. Pendaftaran 500.000 Pada Saat Daftar",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "dpp": {
+          "amount": 10000000,
+          "label": "Biaya Registrasi (Jas, Topi, GMTI)",
+          "timing": "Dicicil Per Bln s.d UTS-1",
+          "mandatory": true,
+          "type": "dpp",
+          "installment": "Dapat dicicil per bulan s.d. UTS-1",
+          "cashDiscountApplicability": "UNVERIFIED_FOR_REGISTRATION_COMPONENT",
+          "cashDiscountNote": "Klausul 3.c SK 629 Lampiran-3 menyebutkan 'Apabila DPP dibayar tunai potongan ditambah 10%'. Namun pada tabel rincian biaya D3 tidak terdapat komponen DPP melainkan 'Biaya Registrasi (Jas, Topi, GMTI)'. Tidak ada bukti dokumenter eksplisit yang memberlakukan diskon tunai 10% ini pada Biaya Registrasi, sehingga tidak diterapkan otomatis (SOURCE_GAP).",
+          "provenance": {
+            "document": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -3",
+            "page": 1,
+            "itemNumber": "Butir 2",
+            "exactQuote": "2. Biaya Registrasi (Jas,Topi,GMTI) 10.000.000 Dicicil Per Bln s.d UTS-1",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "biayaSemester": {
+          "amount": 4500000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Menjelang Perwalian",
+          "mandatory": true,
+          "type": "recurring_semester",
+          "installment": "Khusus Reg 1 dicicil 2 kali s/d UTS",
+          "provenance": {
+            "document": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -3",
+            "page": 1,
+            "itemNumber": "Butir 3",
+            "exactQuote": "3. Biaya Pendidikan Per Semester 4.500.000 Menjelang Perwalian Kecuali Reg. 1 Dicicil 2 Kali s/d UTS",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
         "pengalamanIndustri": {
           "label": "Biaya Pengalaman Industri",
           "timing": "Dapat dicicil 5 kali per semester dimulai dari semester 3",
@@ -198,25 +784,75 @@
           "type": "optional_choice",
           "mandatory": false,
           "options": {
-            "internasional": { "amount": 5000000, "label": "Internasional" },
-            "nasional": { "amount": 2500000, "label": "Nasional" },
-            "lokal": { "amount": 1500000, "label": "Lokal" }
+            "internasional": {
+              "amount": 5000000,
+              "label": "Internasional"
+            },
+            "nasional": {
+              "amount": 2500000,
+              "label": "Nasional"
+            },
+            "lokal": {
+              "amount": 1500000,
+              "label": "Lokal"
+            }
           }
         }
       },
       "waveDiscounts": {
-        "Gelombang Khusus": { "pendaftaranDiscount": 300000, "dppDiscount": 2000000, "smkTiPercent": 60 },
-        "Gelombang I": { "pendaftaranDiscount": 250000, "dppDiscount": 1000000, "smkTiPercent": 50 },
-        "Gelombang II": { "pendaftaranDiscount": 200000, "dppDiscount": 750000, "smkTiPercent": 40 },
-        "Gelombang III": { "pendaftaranDiscount": 150000, "dppDiscount": 500000, "smkTiPercent": 30 },
-        "Gelombang IV": { "pendaftaranDiscount": 100000, "dppDiscount": 0, "smkTiPercent": 20 },
-        "Gelombang Sisipan": { "pendaftaranDiscount": 0, "dppDiscount": 0, "smkTiPercent": 10 }
+        "Gelombang Khusus": {
+          "pendaftaranDiscount": 300000,
+          "dppDiscount": 2000000,
+          "smkTiPercent": 60
+        },
+        "Gelombang I": {
+          "pendaftaranDiscount": 250000,
+          "dppDiscount": 1000000,
+          "smkTiPercent": 50,
+          "provenance": {
+            "document": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -3",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 250.000; Beasiswa Registrasi/DPP Rp 1.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang II": {
+          "pendaftaranDiscount": 200000,
+          "dppDiscount": 750000,
+          "smkTiPercent": 40,
+          "provenance": {
+            "document": "rincian Biaya D3 Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -3",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3.a",
+            "exactQuote": "Potongan Pendaftaran Rp 200.000; Beasiswa Registrasi/DPP Rp 750.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang III": {
+          "pendaftaranDiscount": 150000,
+          "dppDiscount": 500000,
+          "smkTiPercent": 30
+        },
+        "Gelombang IV": {
+          "pendaftaranDiscount": 100000,
+          "dppDiscount": 250000,
+          "smkTiPercent": 20
+        },
+        "Gelombang Sisipan": {
+          "pendaftaranDiscount": 0,
+          "dppDiscount": 0,
+          "smkTiPercent": 10
+        }
       },
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 20,
         "alumniSmkTiDurationYears": 4,
         "cutiPerSemester": 1000000
-      }
+      },
+      "lampiran": "Lampiran -3"
     },
     "Dual Degree UTB": {
       "canonical": "Dual Degree UTB",
@@ -233,19 +869,76 @@
       "normalDurationSemesters": 8,
       "durationNote": "4 tahun (Semester 8 kuliah praktik 2 bulan di Bandung)",
       "components": {
-        "pendaftaran": { "amount": 500000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "jasTopi": { "amount": 750000, "label": "Jas & Topi Almamater", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "kaosTasGmti": { "amount": 750000, "label": "Kaos, Tas, GMTI", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "dpp": { "amount": 14000000, "label": "Dana Pendidikan Pokok (DPP)", "timing": "Dicicil 2 Kali s/d September", "mandatory": true, "type": "dpp", "installment": "Dicicil 2 kali s/d September", "cashDiscountPercent": 10 },
-        "biayaSemester": { "amount": 7500000, "label": "Biaya Pendidikan Per Semester", "timing": "Dicicil 2 Kali s/d September", "mandatory": true, "type": "recurring_semester", "alumniSmkAmount": 6500000 }
+        "pendaftaran": {
+          "amount": 500000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry"
+        },
+        "jasTopi": {
+          "amount": 750000,
+          "label": "Jas & Topi Almamater",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial"
+        },
+        "kaosTasGmti": {
+          "amount": 750000,
+          "label": "Kaos, Tas, GMTI",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial"
+        },
+        "dpp": {
+          "amount": 14000000,
+          "label": "Dana Pendidikan Pokok (DPP)",
+          "timing": "Dicicil 2 Kali s/d September",
+          "mandatory": true,
+          "type": "dpp",
+          "installment": "Dicicil 2 kali s/d September",
+          "cashDiscountPercent": 10
+        },
+        "biayaSemester": {
+          "amount": 7500000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Dicicil 2 Kali s/d September",
+          "mandatory": true,
+          "type": "recurring_semester",
+          "alumniSmkAmount": 6500000
+        }
       },
       "waveDiscounts": {
-        "Gelombang Khusus": { "pendaftaranDiscount": 300000, "dppDiscount": 3000000, "smkTiPercent": 60 },
-        "Gelombang I": { "pendaftaranDiscount": 250000, "dppDiscount": 2000000, "smkTiPercent": 50 },
-        "Gelombang II": { "pendaftaranDiscount": 200000, "dppDiscount": 1500000, "smkTiPercent": 40 },
-        "Gelombang III": { "pendaftaranDiscount": 150000, "dppDiscount": 1000000, "smkTiPercent": 30 },
-        "Gelombang IV": { "pendaftaranDiscount": 100000, "dppDiscount": 500000, "smkTiPercent": 20 },
-        "Gelombang Sisipan": { "pendaftaranDiscount": 0, "dppDiscount": 0, "smkTiPercent": 10 }
+        "Gelombang Khusus": {
+          "pendaftaranDiscount": 300000,
+          "dppDiscount": 3000000,
+          "smkTiPercent": 60
+        },
+        "Gelombang I": {
+          "pendaftaranDiscount": 250000,
+          "dppDiscount": 2000000,
+          "smkTiPercent": 50
+        },
+        "Gelombang II": {
+          "pendaftaranDiscount": 200000,
+          "dppDiscount": 1500000,
+          "smkTiPercent": 40
+        },
+        "Gelombang III": {
+          "pendaftaranDiscount": 150000,
+          "dppDiscount": 1000000,
+          "smkTiPercent": 30
+        },
+        "Gelombang IV": {
+          "pendaftaranDiscount": 100000,
+          "dppDiscount": 500000,
+          "smkTiPercent": 20
+        },
+        "Gelombang Sisipan": {
+          "pendaftaranDiscount": 0,
+          "dppDiscount": 0,
+          "smkTiPercent": 10
+        }
       },
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 10,
@@ -268,23 +961,113 @@
       "normalDurationSemesters": 8,
       "durationNote": "4 tahun full offline di kampus ITB STIKOM Bali (tidak perlu ke Malaysia)",
       "components": {
-        "pendaftaran": { "amount": 3000000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "bahasaInggris": { "amount": 5000000, "label": "Biaya Penguatan Bahasa Inggris", "timing": "Menjelang Semester II", "mandatory": true, "type": "language_enhancement" },
-        "dpp": { "amount": 20000000, "label": "Dana Pendidikan Pokok (DPP)", "timing": "Saat Registrasi I", "mandatory": true, "type": "dpp", "cashDiscountPercent": 10 },
-        "biayaPerSubject": { "amount": 3000000, "label": "Biaya Pendidikan & Ujian / Subject", "timing": "Awal Semester", "mandatory": true, "type": "per_subject", "note": "Dibayar setiap awal semester sesuai jumlah subject yang diambil" }
+        "pendaftaran": {
+          "amount": 3000000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry",
+          "provenance": {
+            "document": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -4",
+            "page": 1,
+            "itemNumber": "Butir 1",
+            "exactQuote": "1. Pendaftaran 3.000.000 Pada Saat Daftar",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "bahasaInggris": {
+          "amount": 5000000,
+          "label": "Biaya Penguatan Bahasa Inggris",
+          "timing": "Menjelang Semester II",
+          "mandatory": true,
+          "type": "language_enhancement",
+          "provenance": {
+            "document": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -4",
+            "page": 1,
+            "itemNumber": "Butir 3",
+            "exactQuote": "3. Bahasa Inggris 5.000.000 Menjelang Semester II",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "dpp": {
+          "amount": 20000000,
+          "label": "Dana Pendidikan Pokok (DPP)",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "dpp",
+          "provenance": {
+            "document": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -4",
+            "page": 1,
+            "itemNumber": "Butir 2",
+            "exactQuote": "2. Dana Pendidikan Pokok 20.000.000 Saat Registrasi 1",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "biayaPerSubject": {
+          "amount": 3000000,
+          "label": "Biaya Pendidikan & Ujian / Subject",
+          "timing": "Awal Semester",
+          "mandatory": true,
+          "type": "per_subject",
+          "note": "Dibayar setiap awal semester sesuai jumlah subject yang diambil",
+          "provenance": {
+            "document": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -4",
+            "page": 1,
+            "itemNumber": "Butir 4",
+            "exactQuote": "4. Biaya Pendidikan & Ujian/Subject — 3.000.000 Awal Semester",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        }
       },
       "waveDiscounts": {
-        "Gelombang Khusus": { "pendaftaranDiscount": 1500000, "dppDiscount": 10000000, "smkTiPercent": 60 },
-        "Gelombang I": { "pendaftaranDiscount": 1250000, "dppDiscount": 8000000, "smkTiPercent": 50 },
-        "Gelombang II": { "pendaftaranDiscount": 1000000, "dppDiscount": 6000000, "smkTiPercent": 40 },
-        "Gelombang III": { "pendaftaranDiscount": 750000, "dppDiscount": 4000000, "smkTiPercent": 30 },
-        "Gelombang IV": { "pendaftaranDiscount": 500000, "dppDiscount": 2000000, "smkTiPercent": 20 },
-        "Gelombang Sisipan": { "pendaftaranDiscount": 0, "dppDiscount": 0, "smkTiPercent": 10 }
+        "Gelombang Khusus": {
+          "pendaftaranDiscount": 1500000,
+          "dppDiscount": 10000000,
+          "smkTiPercent": 60
+        },
+        "Gelombang I": {
+          "pendaftaranDiscount": 1250000,
+          "dppDiscount": 8000000,
+          "smkTiPercent": 50
+        },
+        "Gelombang II": {
+          "pendaftaranDiscount": 1000000,
+          "dppDiscount": 6000000,
+          "smkTiPercent": 40,
+          "provenance": {
+            "document": "rincian Biaya HELP Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -4",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3",
+            "exactQuote": "Potongan Pendaftaran Rp 1.000.000; Beasiswa DPP Rp 6.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang III": {
+          "pendaftaranDiscount": 750000,
+          "dppDiscount": 4000000,
+          "smkTiPercent": 30
+        },
+        "Gelombang IV": {
+          "pendaftaranDiscount": 500000,
+          "dppDiscount": 2000000,
+          "smkTiPercent": 20
+        },
+        "Gelombang Sisipan": {
+          "pendaftaranDiscount": 0,
+          "dppDiscount": 0,
+          "smkTiPercent": 10
+        }
       },
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 10,
         "alumniSmkTiDurationYears": 4
-      }
+      },
+      "lampiran": "Lampiran -4"
     },
     "Double Degree DNUI": {
       "canonical": "Double Degree DNUI",
@@ -300,44 +1083,207 @@
       "normalDurationSemesters": 8,
       "durationNote": "Tahun 1-2 di ITB STIKOM Bali, Tahun 3 online DNUI, Tahun 4 langsung di DNUI China (fasilitas dormitory shared room gratis)",
       "components": {
-        "pendaftaran": { "amount": 3000000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "bahasaMandarin": { "amount": 5000000, "label": "Biaya Penguatan Bahasa Mandarin", "timing": "Menjelang Semester II", "mandatory": true, "type": "language_enhancement" },
-        "dpp": { "amount": 20000000, "label": "Dana Pendidikan Pokok (DPP)", "timing": "Saat Registrasi I", "mandatory": true, "type": "dpp", "cashDiscountPercent": 10 },
-        "biayaSemester": { "amount": 16000000, "label": "Biaya Pendidikan Per Semester", "timing": "Awal Semester", "mandatory": true, "type": "recurring_semester" }
+        "pendaftaran": {
+          "amount": 3000000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry",
+          "provenance": {
+            "document": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -5",
+            "page": 1,
+            "itemNumber": "Butir 1",
+            "exactQuote": "1. Pendaftaran 3.000.000 Pada Saat Daftar",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "bahasaMandarin": {
+          "amount": 5000000,
+          "label": "Biaya Penguatan Bahasa Mandarin",
+          "timing": "Menjelang Semester II",
+          "mandatory": true,
+          "type": "language_enhancement",
+          "provenance": {
+            "document": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -5",
+            "page": 1,
+            "itemNumber": "Butir 3",
+            "exactQuote": "3. Bahasa Mandarin 5.000.000 Menjelang Semester II",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "dpp": {
+          "amount": 20000000,
+          "label": "Dana Pendidikan Pokok (DPP)",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "dpp",
+          "provenance": {
+            "document": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -5",
+            "page": 1,
+            "itemNumber": "Butir 2",
+            "exactQuote": "2. Dana Pendidikan Pokok 20.000.000 Saat Registrasi I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "biayaSemester": {
+          "amount": 16000000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Awal Semester",
+          "mandatory": true,
+          "type": "recurring_semester",
+          "provenance": {
+            "document": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -5",
+            "page": 1,
+            "itemNumber": "Butir 4",
+            "exactQuote": "4. Biaya Pendidikan Per Semester 16.000.000 Awal Semester",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        }
       },
       "waveDiscounts": {
-        "Gelombang Khusus": { "pendaftaranDiscount": 1500000, "dppDiscount": 10000000, "smkTiPercent": 60 },
-        "Gelombang I": { "pendaftaranDiscount": 1250000, "dppDiscount": 8000000, "smkTiPercent": 50 },
-        "Gelombang II": { "pendaftaranDiscount": 1000000, "dppDiscount": 6000000, "smkTiPercent": 40 },
-        "Gelombang III": { "pendaftaranDiscount": 750000, "dppDiscount": 4000000, "smkTiPercent": 30 },
-        "Gelombang IV": { "pendaftaranDiscount": 500000, "dppDiscount": 2000000, "smkTiPercent": 20 },
-        "Gelombang Sisipan": { "pendaftaranDiscount": 0, "dppDiscount": 0, "smkTiPercent": 10 }
+        "Gelombang Khusus": {
+          "pendaftaranDiscount": 1500000,
+          "dppDiscount": 10000000,
+          "smkTiPercent": 60
+        },
+        "Gelombang I": {
+          "pendaftaranDiscount": 1250000,
+          "dppDiscount": 8000000,
+          "smkTiPercent": 50
+        },
+        "Gelombang II": {
+          "pendaftaranDiscount": 1000000,
+          "dppDiscount": 6000000,
+          "smkTiPercent": 40,
+          "provenance": {
+            "document": "rincian Biaya DNUI Tahun Ajaran 2026-2027.pdf",
+            "lampiran": "Lampiran -5",
+            "page": 1,
+            "itemNumber": "Penjelasan 2 & 3",
+            "exactQuote": "Potongan Pendaftaran Rp 1.000.000; Beasiswa DPP Rp 6.000.000",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang III": {
+          "pendaftaranDiscount": 750000,
+          "dppDiscount": 4000000,
+          "smkTiPercent": 30
+        },
+        "Gelombang IV": {
+          "pendaftaranDiscount": 500000,
+          "dppDiscount": 2000000,
+          "smkTiPercent": 20
+        },
+        "Gelombang Sisipan": {
+          "pendaftaranDiscount": 0,
+          "dppDiscount": 0,
+          "smkTiPercent": 10
+        }
       },
       "specialPolicies": {
         "alumniSmkTiSemesterDiscountPercent": 10,
         "alumniSmkTiDurationYears": 4,
         "freeDormitoryInChina": true
-      }
+      },
+      "lampiran": "Lampiran -5"
     },
     "S2 Sistem Informasi": {
       "canonical": "S2 Sistem Informasi",
       "degree": "S2",
       "scheme": "pascasarjana",
       "academicYear": "2026/2027",
-      "sourceDocument": "Training_Dataset_Pascasarjana_ITB_STIKOM_Bali.xlsx",
+      "sourceDocument": "CamScanner 12-02-2026 14.39 (1).pdf",
+      "skNumber": "629/ITBSTIKOM/WDS/X/25",
+      "lampiran": "Lampiran -8",
       "normalDurationSemesters": 4,
       "components": {
-        "pendaftaran": { "amount": 700000, "label": "Biaya Pendaftaran", "timing": "Sebelum potongan promo yang berlaku", "mandatory": true, "type": "initial_entry" }
+        "pendaftaran": {
+          "amount": 700000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry",
+          "provenance": {
+            "document": "CamScanner 12-02-2026 14.39 (1).pdf",
+            "lampiran": "Lampiran -8",
+            "page": 1,
+            "itemNumber": "Butir 1",
+            "exactQuote": "1. Pendaftaran 700.000 Pada Saat Daftar",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "biayaSemester": {
+          "amount": 10000000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Per Semester",
+          "mandatory": true,
+          "type": "recurring_semester",
+          "provenance": {
+            "document": "CamScanner 12-02-2026 14.39 (1).pdf",
+            "lampiran": "Lampiran -8",
+            "page": 1,
+            "itemNumber": "Butir 2",
+            "exactQuote": "2. Biaya Pendidikan Per Semester 10.000.000 Per Semester",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "pembayaranLunas2Tahun": {
+          "amount": 40000000,
+          "label": "Pembayaran Secara Lunas Selama 2 Tahun (Umum)",
+          "timing": "Pada Saat Registrasi",
+          "type": "lump_sum_option",
+          "provenance": {
+            "document": "CamScanner 12-02-2026 14.39 (1).pdf",
+            "lampiran": "Lampiran -8",
+            "page": 1,
+            "itemNumber": "Butir 3",
+            "exactQuote": "3. Pembayaran Secara Lunas Selama 2 Tahun — 40.000.000 Pada Saat Registrasi",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        }
       },
       "waveDiscounts": {
-        "Gelombang I": { "pendaftaranDiscount": 200000, "dppDiscount": 0 },
-        "Gelombang II": { "pendaftaranDiscount": 100000, "dppDiscount": 0 }
+        "Gelombang I": {
+          "pendaftaranDiscount": 200000,
+          "dppDiscount": 0,
+          "provenance": {
+            "document": "CamScanner 12-02-2026 14.39 (1).pdf",
+            "lampiran": "Lampiran -8",
+            "page": 1,
+            "itemNumber": "Penjelasan 1",
+            "exactQuote": "Rp. 200.000,- Jika Mendaftar pada Gelombang I",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        },
+        "Gelombang II": {
+          "pendaftaranDiscount": 100000,
+          "dppDiscount": 0,
+          "provenance": {
+            "document": "CamScanner 12-02-2026 14.39 (1).pdf",
+            "lampiran": "Lampiran -8",
+            "page": 1,
+            "itemNumber": "Penjelasan 1",
+            "exactQuote": "Rp. 100.000,- Jika Mendaftar pada Gelombang II",
+            "verificationStatus": "VERIFIED_SOURCE"
+          }
+        }
+      },
+      "specialPolicies": {
+        "alumniItbStikomPendaftaranExtraDiscount": 200000,
+        "alumniBeasiswaSemesterDimuka": 2000000,
+        "alumniBeasiswaSemesterPerSemester": 500000,
+        "semester5Tesis": 6000000,
+        "includeMatrikulasiUjianBimbingan": true
       },
       "sourceGaps": {
-        "dpp": "Nominal Dana Pendidikan Pokok (DPP) belum tercantum dalam dokumen resmi pascasarjana yang tersedia saat ini.",
-        "biayaSemester": "Biaya pendidikan per semester (SPP) belum tercantum dalam dokumen resmi pascasarjana yang tersedia saat ini.",
-        "beasiswa": "Beasiswa khusus S2 belum tercantum dalam panduan resmi; dokumen hanya mencatat potongan pendaftaran sesuai gelombang dan alumni.",
-        "hotline": "0822-7738-9999 / (0361) 244445"
+        "dpp": "Pada program Pascasarjana (S2), tidak terdapat komponen Dana Pendidikan Pokok (DPP) terpisah; struktur biaya terdiri dari biaya pendaftaran dan biaya pendidikan per semester (atau paket lunas 2 tahun Rp 40.000.000) berdasarkan Lampiran -8 SK 629 (SOURCE_GAP).",
+        "otherWaves": "Gelombang pendaftaran resmi Pascasarjana dalam SK 629 hanya memuat ketentuan potongan untuk Gelombang I dan Gelombang II. Gelombang lain (III/IV/Khusus) tidak diatur dalam ketetapan resmi ini (SOURCE_GAP).",
+        "hotline": "0822-7738-9999 / (0361) 244445",
+        "alumniPendaftaranStacking": "Keterangan 'Ditambah Rp. 200.000,- Jika Alumni ITB STIKOM Bali' pada Lampiran -8 SK 629 tidak diterapkan pada kalkulasi umum. Ketentuan apakah potongan pendaftaran alumni ini dapat ditumpuk secara kumulatif di atas potongan gelombang reguler atau berdiri sendiri belum dijelaskan dalam dokumen resmi dan memerlukan konfirmasi admisi Pascasarjana (SOURCE_GAP)."
       }
     },
     "RPL Sistem Informasi": {
@@ -348,11 +1294,41 @@
       "sourceDocument": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
       "skNumber": "629/ITBSTIKOM/WDS/X/25",
       "components": {
-        "pendaftaran": { "amount": 500000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "jasTopi": { "amount": 750000, "label": "Jas Almamater & Topi", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "kaosTasGmti": { "amount": 750000, "label": "Kaos, Tas, GMTI", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "dpp": { "amount": 14000000, "label": "Dana Pendidikan Pokok (DPP)", "timing": "Dicicil Per Bln s.d UTS-1", "mandatory": true, "type": "dpp" },
-        "biayaSemester": { "amount": 6500000, "label": "Biaya Pendidikan Per Semester", "timing": "Menjelang Perwalian", "mandatory": true, "type": "recurring_semester" }
+        "pendaftaran": {
+          "amount": 500000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry"
+        },
+        "jasTopi": {
+          "amount": 750000,
+          "label": "Jas Almamater & Topi",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial"
+        },
+        "kaosTasGmti": {
+          "amount": 750000,
+          "label": "Kaos, Tas, GMTI",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial"
+        },
+        "dpp": {
+          "amount": 14000000,
+          "label": "Dana Pendidikan Pokok (DPP)",
+          "timing": "Dicicil Per Bln s.d UTS-1",
+          "mandatory": true,
+          "type": "dpp"
+        },
+        "biayaSemester": {
+          "amount": 6500000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Menjelang Perwalian",
+          "mandatory": true,
+          "type": "recurring_semester"
+        }
       },
       "note": "Biaya konversi SKS portofolio/pengalaman kerja ditentukan setelah hasil asesmen portofolio diterbitkan oleh tim RPL."
     },
@@ -364,11 +1340,41 @@
       "sourceDocument": "rincian Biaya SI,TI dan BD Tahun Ajaran 2026-2027.pdf",
       "skNumber": "629/ITBSTIKOM/WDS/X/25",
       "components": {
-        "pendaftaran": { "amount": 500000, "label": "Biaya Pendaftaran", "timing": "Pada Saat Daftar", "mandatory": true, "type": "initial_entry" },
-        "jasTopi": { "amount": 750000, "label": "Jas Almamater & Topi", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "kaosTasGmti": { "amount": 750000, "label": "Kaos, Tas, GMTI", "timing": "Saat Registrasi I", "mandatory": true, "type": "equipment_initial" },
-        "dpp": { "amount": 14000000, "label": "Dana Pendidikan Pokok (DPP)", "timing": "Dicicil Per Bln s.d UTS-1", "mandatory": true, "type": "dpp" },
-        "biayaSemester": { "amount": 6500000, "label": "Biaya Pendidikan Per Semester", "timing": "Menjelang Perwalian", "mandatory": true, "type": "recurring_semester" }
+        "pendaftaran": {
+          "amount": 500000,
+          "label": "Biaya Pendaftaran",
+          "timing": "Pada Saat Daftar",
+          "mandatory": true,
+          "type": "initial_entry"
+        },
+        "jasTopi": {
+          "amount": 750000,
+          "label": "Jas Almamater & Topi",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial"
+        },
+        "kaosTasGmti": {
+          "amount": 750000,
+          "label": "Kaos, Tas, GMTI",
+          "timing": "Saat Registrasi I",
+          "mandatory": true,
+          "type": "equipment_initial"
+        },
+        "dpp": {
+          "amount": 14000000,
+          "label": "Dana Pendidikan Pokok (DPP)",
+          "timing": "Dicicil Per Bln s.d UTS-1",
+          "mandatory": true,
+          "type": "dpp"
+        },
+        "biayaSemester": {
+          "amount": 6500000,
+          "label": "Biaya Pendidikan Per Semester",
+          "timing": "Menjelang Perwalian",
+          "mandatory": true,
+          "type": "recurring_semester"
+        }
       },
       "note": "Biaya konversi transkrip nilai alih jenjang/pindahan mengikuti ketentuan akademik setelah verifikasi silabus."
     }

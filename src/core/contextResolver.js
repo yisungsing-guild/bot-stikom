@@ -2,10 +2,10 @@
 
 /**
  * src/core/contextResolver.js
- * 
+ *
  * Greenfield Context Policy Layer.
  * Invariant: CURRENT TURN IS AUTHORITATIVE.
- * 
+ *
  * Rules:
  * History is ONLY consulted if:
  * 1. An explicit pronoun/demonstrative reference is present:
@@ -14,7 +14,7 @@
  *    - "Bagaimana dengan DNUI?"
  *    - "Kalau yang S1?"
  *    - "Yang internasional bagaimana?"
- * 
+ *
  * FORBIDDEN:
  * - Word count <= N
  * - The presence of common academic tokens like "kuliah", "daftar", "biaya", "jadwal"
@@ -211,8 +211,30 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   // Guard 0.2: Independent PMB / Enrollment wave status inquiry (e.g. "sekarang buka gelombang berapa")
   // without an explicit program pronoun reference is an independent institutional PMB inquiry (TOPIC_SHIFT).
   // Inquiries asking about wave discounts, fees, or cuts (e.g. "Kalau Gelombang I potongannya berapa?") are fee questions.
-  const isFeeWaveQuery = /\b(?:potongan|diskon|biaya|bayar|dpp|potongannya|diskonnya)\b/i.test(query);
+  const isFeeSession = sessionData.activeDomain === 'TUITION_FEE' ||
+    sessionData.activeIntent === 'TUITION_FEE_INQUIRY' ||
+    /\b(?:biaya|spp|dpp|uang\s+kuliah)\b/i.test(sessionData.lastQuery || '');
+
+  const isRelativeWaveFollowUp = /\b(?:gelombang|gel)\s+(?:berikutnya|selanjutnya|setelahnya|next)\b/i.test(query);
+  const isSpecificWaveFeeFollowUp = isFeeSession &&
+    /\b(?:gelombang|gel)\s*(?:khusus|[0-9]+|[ivxlcdm]+|sisipan)\b/i.test(query) &&
+    /\b(?:berapa|biaya|tarif|total|potongan|diskon|bayar)\b/i.test(query);
+
+  if ((isRelativeWaveFollowUp || isSpecificWaveFeeFollowUp) && isFeeSession) {
+    return {
+      shouldInherit: true,
+      reason: isRelativeWaveFollowUp ? 'relative_wave_fee_continuation' : 'specific_wave_fee_continuation',
+      decision: CONTEXT_DECISION.BOUND_CONTINUATION,
+      inheritedDomain: 'TUITION_FEE',
+      inheritedIntent: 'TUITION_FEE_INQUIRY',
+      inheritedEntity: sessionData.activeEntity || null
+    };
+  }
+
+  const isFeeWaveQuery = /\b(?:potongan|diskon|biaya|bayar|dpp|potongannya|diskonnya|tarif)\b/i.test(query) || isSpecificWaveFeeFollowUp;
+
   const isIndependentPmbWaveQuery = !isFeeWaveQuery &&
+    !isRelativeWaveFollowUp &&
     /\b(?:gelombang|buka\s+gelombang|gelombang\s+berapa|jadwal\s+pmb|periode\s+pmb|masih\s+dibuka|kapan\s+buka|kapan\s+tutup)\b/i.test(query) &&
     !/\b(?:nya|program\s+ini|jurusan\s+ini)\b/i.test(query);
   if (isIndependentPmbWaveQuery) {

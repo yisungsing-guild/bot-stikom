@@ -437,6 +437,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     // 4. Stage B: Strict Evidence Arbitration (Hard Entity Lock, Temporal, Aspect)
     const arbitrated = arbitrateEvidence(candidates, plan);
     arbitrated.retrievalPlan = plan;
+    arbitrated.sessionData = sessionData;
     arbitrated.rawAccepted = [...arbitrated.accepted];
     if (arbitrated.accepted.length > 10) {
       arbitrated.accepted = arbitrated.accepted.slice(0, 10);
@@ -458,7 +459,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
 
     if (answerability.status === ANSWERABILITY_STATUS.ANSWERABLE || answerability.status === ANSWERABILITY_STATUS.PARTIAL) {
       // 6. Grounded LLM Synthesis
-      const synthOpts = { ...arbitrated };
+      const synthOpts = { ...arbitrated, sessionData };
       if (options && options.fastFallback) synthOpts.fastFallback = true;
       if (options && options.signal) synthOpts.signal = options.signal;
       const synthFn = groundedAnswerGenerator.synthesizeAnswer || synthesizeAnswer;
@@ -474,7 +475,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
 
         if (verification.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED || isUnjustifiedSafeUnknown) {
           logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting deterministic recovery');
-          const recoverySummary = groundedAnswerGenerator.buildGroundedDeterministicSummary(frame, arbitrated.accepted, arbitrated);
+          const rawRecovery = groundedAnswerGenerator.buildGroundedDeterministicSummary(frame, arbitrated.accepted, arbitrated);
+          const recoverySummary = typeof rawRecovery === 'object' && rawRecovery !== null ? (rawRecovery.answer || rawRecovery.text) : rawRecovery;
           if (recoverySummary) {
             const recoveryVerif = verifFn(recoverySummary, frame, arbitrated);
             if (recoveryVerif.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || recoveryVerif.pass) {
@@ -503,7 +505,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           }
         }
       } else {
-        const recoverySummary = buildGroundedDeterministicSummary(frame, arbitrated.accepted, arbitrated);
+        const rawRecovery = buildGroundedDeterministicSummary(frame, arbitrated.accepted, arbitrated);
+        const recoverySummary = typeof rawRecovery === 'object' && rawRecovery !== null ? (rawRecovery.answer || rawRecovery.text) : rawRecovery;
         if (recoverySummary) {
           const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
           const recoveryVerif = verifFn(recoverySummary, frame, arbitrated);
@@ -557,7 +560,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       };
     }
 
-    const subStatus = answerability.status === ANSWERABILITY_STATUS.UNKNOWN ? 'corpus_gap' : undefined;
+    const subStatus = (answerability.status === ANSWERABILITY_STATUS.UNKNOWN || verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN)
+      ? 'corpus_gap'
+      : undefined;
 
     subQueryResults.push({
       frame,
@@ -625,6 +630,17 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       }
     }
 
+    let currentWave = null;
+    if (primaryFrame.feeScope?.registrationWave) {
+      currentWave = primaryFrame.feeScope.registrationWave;
+    } else {
+      const { extractAllMentionedWaves } = require('./feeCalculationEngine');
+      const detected = extractAllMentionedWaves(rawQuery);
+      if (detected && detected.length > 0) {
+        currentWave = detected[0];
+      }
+    }
+
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
@@ -633,6 +649,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         requestedAspects: primaryFrame.aspects || [],
         activeEntity: newActiveEntity,
         preservedBackgroundEntity: newPreservedEntity,
+        lastActiveWave: currentWave || sessionData.lastActiveWave || null,
         lastQuery: rawQuery,
         lastAnswer: finalAnswer
       }
@@ -648,10 +665,72 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     (subQueryResults[0]?.frame?.domain === 'UNSUPPORTED_PROGRAM' ? 'unsupported_program' :
      (subQueryResults[0]?.frame?.domain === 'OUT_OF_DOMAIN' ? 'out_of_domain' : undefined));
 
+  const hasCorpusGap = subQueryResults.some(s =>
+    s.status === 'corpus_gap' ||
+    s.verification?.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN ||
+    s.answerability === ANSWERABILITY_STATUS.UNKNOWN ||
+    s.answerability === ANSWERABILITY_STATUS.PARTIAL
+  );
+
+  const allVerified = subQueryResults.length > 0 && subQueryResults.every(s =>
+    s.verification?.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL
+  );
+
+  let overallStatus = primaryStatus;
+  if (hasCorpusGap && !['out_of_domain', 'unsupported_program'].includes(primaryStatus)) {
+    overallStatus = 'corpus_gap';
+  }
+
+  let overallVerificationOutcome;
+  let overallVerificationReason;
+  if (allVerified) {
+    overallVerificationOutcome = VERIFICATION_OUTCOME.VERIFIED_FACTUAL;
+    overallVerificationReason = 'all_subqueries_verified';
+  } else if (hasCorpusGap) {
+    overallVerificationOutcome = VERIFICATION_OUTCOME.SAFE_UNKNOWN;
+    overallVerificationReason = 'contains_unconfirmed_aspects';
+  } else {
+    overallVerificationOutcome = subQueryResults[0]?.verification?.outcome || VERIFICATION_OUTCOME.SAFE_UNKNOWN;
+    overallVerificationReason = subQueryResults[0]?.verification?.reason || 'unconfirmed';
+  }
+
+  const overallVerification = {
+    pass: allVerified,
+    outcome: overallVerificationOutcome,
+    status: overallVerificationOutcome,
+    reason: overallVerificationReason,
+    isGrounded: allVerified,
+    handledSafely: true
+  };
+
+  const verifiedFacts = [];
+  const unconfirmedAspects = [];
+  for (const s of subQueryResults) {
+    if (s.verification?.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL) {
+      verifiedFacts.push({
+        intent: s.intent || s.frame?.intent,
+        domain: s.frame?.domain,
+        query: s.query || s.frame?.rawQuery
+      });
+    } else {
+      unconfirmedAspects.push({
+        intent: s.intent || s.frame?.intent,
+        domain: s.frame?.domain,
+        reason: s.verification?.reason || s.answerabilityDetails?.reason || 'unconfirmed',
+        missingAspects: s.answerabilityDetails?.missingAspects || []
+      });
+    }
+  }
+
   return {
     chatId,
     rawQuery,
-    status: primaryStatus,
+    intent: subQueryResults.length === 1 ? subQueryResults[0]?.frame?.intent : 'MULTI_INTENT',
+    status: overallStatus,
+    verification: overallVerification,
+    verifiedFacts,
+    unconfirmedAspects,
+    hasUnconfirmedAspects: hasCorpusGap,
     semanticFrame: subQueryResults[0]?.frame,
     subQueryResults,
     finalAnswer,

@@ -1,0 +1,182 @@
+[
+  {
+    "id": "fee-ti-wave-1a",
+    "query": "berapa biaya teknologi informasi gelombang 1A",
+    "category": "tuition_fee",
+    "expectedProgram": "TI",
+    "expectedKeywords": ["teknologi informasi", "gelombang", "biaya"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["sistem informasi", "pasal", "beasiswa"]
+  },
+  {
+    "id": "fee-si-wave-2",
+    "query": "berapa biaya sistem informasi gelombang 2",
+    "category": "tuition_fee",
+    "expectedProgram": "SI",
+    "expectedKeywords": ["sistem informasi", "gelombang", "biaya"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["teknologi informasi", "pasal"]
+  },
+  {
+    "id": "fee-bd",
+    "query": "berapa biaya bisnis digital gelombang 1",
+    "category": "tuition_fee",
+    "expectedProgram": "BD",
+    "expectedKeywords": ["bisnis digital", "gelombang", "biaya"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["sistem informasi"]
+  },
+  {
+    "id": "fee-dkv",
+    "query": "berapa biaya DKV gelombang 1",
+    "category": "tuition_fee",
+    "expectedProgram": "DKV",
+    "expectedKeywords": ["dkv", "gelombang", "biaya"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "scholarship-typo",
+    "query": "adakah beasisw untuk TI",
+    "category": "scholarship",
+    "expectedProgram": "TI",
+    "expectedKeywords": ["beasiswa", "ti"],
+    "expectedSourcePatterns": ["beasiswa", "kip"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "scholarship-bd",
+    "query": "adakah beasiswa untuk mahasiswa bisnis digital",
+    "category": "scholarship",
+    "expectedProgram": "BD",
+    "expectedKeywords": ["beasiswa", "bisnis digital"],
+    "expectedSourcePatterns": ["beasiswa", "kip"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "double-degree-info",
+    "query": "apakah ada program double degree dengan universitas luar negeri",
+    "category": "double_degree",
+    "expectedProgram": null,
+    "expectedKeywords": ["double degree", "universitas luar negeri", "program"],
+    "expectedSourcePatterns": ["double", "degree"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "international-program-eligibility",
+    "query": "bagaimana syarat pendaftaran program internasional",
+    "category": "international_program",
+    "expectedProgram": null,
+    "expectedKeywords": ["program internasional", "syarat pendaftaran"],
+    "expectedSourcePatterns": ["internasional", "exchange"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "exchange-program-duration",
+    "query": "lama program exchange berapa semester",
+    "category": "exchange_program",
+    "expectedProgram": null,
+    "expectedKeywords": ["exchange", "semester", "lama program"],
+    "expectedSourcePatterns": ["exchange", "program pertukaran"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "program-studi-tk",
+    "query": "apa saja mata kuliah teknik komputer semester 1",
+    "category": "program_studi",
+    "expectedProgram": "TK",
+    "expectedKeywords": ["teknik komputer", "mata kuliah", "semester 1"],
+    "expectedSourcePatterns": ["mata kuliah", "kurikulum"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "program-studi-rpl",
+    "query": "kurikulum rekayasa perangkat lunak semester 1",
+    "category": "program_studi",
+    "expectedProgram": "RPL",
+    "expectedKeywords": ["rekayasa perangkat lunak", "kurikulum", "semester 1"],
+    "expectedSourcePatterns": ["kurikulum", "mata kuliah"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "program-studi-si-kurikulum",
+    "query": "apa saja mata kuliah sistem informasi",
+    "category": "program_studi",
+    "expectedProgram": "SI",
+    "expectedKeywords": ["sistem informasi", "mata kuliah"],
+    "expectedSourcePatterns": ["mata kuliah", "kurikulum"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "program-studi-mm",
+    "query": "apa persyaratan masuk multimedia",
+    "category": "program_studi",
+    "expectedProgram": "MM",
+    "expectedKeywords": ["multimedia", "persyaratan masuk"],
+    "expectedSourcePatterns": ["persyaratan", "penerimaan"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "program-studi-dkv",
+    "query": "apakah DKV perlu portofolio untuk pendaftaran",
+    "category": "program_studi",
+    "expectedProgram": "DKV",
+    "expectedKeywords": ["dkv", "portofolio", "pendaftaran"],
+    "expectedSourcePatterns": ["portofolio", "pendaftaran"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "tuition-fee-financial",
+    "query": "berapa total biaya kuliah dan DPP untuk sistem informasi",
+    "category": "tuition_fee",
+    "expectedProgram": "SI",
+    "expectedKeywords": ["total biaya", "dpp", "sistem informasi"],
+    "expectedSourcePatterns": ["biaya", "dpp"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "registration-international",
+    "query": "bagaimana alur pendaftaran mahasiswa internasional",
+    "category": "international_program",
+    "expectedProgram": null,
+    "expectedKeywords": ["pendaftaran", "mahasiswa internasional"],
+    "expectedSourcePatterns": ["internasional", "pmb"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "double-degree-mitra",
+    "query": "apakah ada double degree dengan universitas mitra asing",
+    "category": "double_degree",
+    "expectedProgram": null,
+    "expectedKeywords": ["double degree", "universitas mitra asing"],
+    "expectedSourcePatterns": ["double", "degree"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "exchange-program-partner",
+    "query": "apa syarat untuk ikut program pertukaran mahasiswa",
+    "category": "exchange_program",
+    "expectedProgram": null,
+    "expectedKeywords": ["program pertukaran", "syarat", "mahasiswa"],
+    "expectedSourcePatterns": ["exchange", "pertukaran"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "tuition-fee-campus-support",
+    "query": "berapa biaya kuliah DKV dan besaran DPP",
+    "category": "tuition_fee",
+    "expectedProgram": "DKV",
+    "expectedKeywords": ["biaya kuliah", "dpp", "dkv"],
+    "expectedSourcePatterns": ["biaya", "dpp"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "international-program-scholarship",
+    "query": "apakah ada beasiswa untuk program internasional",
+    "category": "international_program",
+    "expectedProgram": null,
+    "expectedKeywords": ["beasiswa", "program internasional"],
+    "expectedSourcePatterns": ["beasiswa", "internasional"],
+    "forbiddenKeywords": ["biaya"]
+  }
+]

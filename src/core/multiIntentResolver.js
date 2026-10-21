@@ -2,10 +2,10 @@
 
 /**
  * src/core/multiIntentResolver.js
- * 
+ *
  * Greenfield Multi-Intent Decomposition Layer.
  * Decomposes compound questions into discrete, independently retrievable SubQueries.
- * 
+ *
  * Example:
  * "apa itu GCCP dan apa keuntungannya?"
  * -> SubQuery 1: "apa itu GCCP" (DEFINITION)
@@ -16,7 +16,7 @@ const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('./semanticF
 const { CAMPUS_WIDE_DOMAINS } = require('../reasoning/contracts');
 
 // Conjunction separators indicating multi-intent
-const MULTI_INTENT_CONJUNCTION_REGEX = /(?:,\s*(?:serta|dan|plus)\s*|\s+(?:dan|serta|sekaligus|dan juga|plus)\s+(?=apa|bagaimana|berapa|apakah|kapan|keuntungan|syarat|biaya|fasilitas|training|rekrutmen|pembuatan|prosedur|kontak|prospek|peluang|beasiswa|ada\s+beasiswa|akreditasi|peringkat\s+akreditasi))/i;
+const MULTI_INTENT_CONJUNCTION_REGEX = /(?:,\s*(?:serta|dan|plus)\s*|\s+(?:dan|serta|sekaligus|dan juga|plus)\s+(?=apa|bagaimana|berapa|apakah|kapan|keuntungan|syarat|biaya|rincian|jadwal|waktu|fasilitas|training|rekrutmen|pembuatan|prosedur|kontak|prospek|peluang|beasiswa|ada\s+beasiswa|akreditasi|peringkat\s+akreditasi))/i;
 
 function hasMultipleIntents(rawQuery) {
   if (!rawQuery) return false;
@@ -113,7 +113,8 @@ function decomposeQuery(rawQuery, sessionData = {}) {
   } else if (MULTI_INTENT_CONJUNCTION_REGEX.test(query)) {
     const rawParts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
     const isMultiIntentPair = (/\bbiaya\b/i.test(query) && /\bakreditasi\b/i.test(query)) ||
-      (/\b(syarat|fasilitas|beasiswa)\b/i.test(query) && /\b(biaya|akreditasi)\b/i.test(query));
+      (/\b(syarat|fasilitas|beasiswa)\b/i.test(query) && /\b(biaya|akreditasi)\b/i.test(query)) ||
+      (/\b(biaya|rincian)\b/i.test(query) && /\b(jadwal|kapan|registrasi\s*ulang)\b/i.test(query));
     // Guard against splitting compound noun phrases (e.g. "Profesi dan peluang kerja apa saja...")
     // A valid first subquery must have at least 3 words and a verb/interrogative pronoun, or not end as a bare noun fragment
     if (!isMultiIntentPair && rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
@@ -154,6 +155,8 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     fallbackDomainTopic ||
     safeSessionEntity;
 
+  const waveMatch = (query || '').match(/\b(?:gelombang|gel\.?)\s*(?:khusus|early\s*bird|umum|[1-9][a-c]?|[ivx]+[a-c]?)\b/i);
+
   // If first subquery lacked entity but entity exists in whole query / other subquery, re-resolve firstFrame with inferred topic
   if (inferredTopic && (!firstFrame.entities || firstFrame.entities.length === 0)) {
     let reResolvedQuery = parts[0];
@@ -163,6 +166,15 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     firstFrame = resolveSemanticFrame(reResolvedQuery, firstSessionData);
     if ((!firstFrame.entities || firstFrame.entities.length === 0) && subjectEntities.length > 0) {
       firstFrame.entities = [...subjectEntities];
+    }
+  }
+
+  // Wave inheritance for first subquery if compound query mentions a specific wave
+  if (waveMatch && !firstFrame.feeScope?.registrationWave && !parts[0].toLowerCase().includes(waveMatch[0].toLowerCase())) {
+    const isFeeOrSchedule = firstFrame.domain === 'TUITION_FEE' || firstFrame.domain === 'PMB' || /\b(biaya|dpp|spp|tarif|jadwal|buka|tutup|pendaftaran)\b/i.test(parts[0]);
+    if (isFeeOrSchedule) {
+      let reResolvedQuery = `${parts[0]} ${waveMatch[0]}`;
+      firstFrame = resolveSemanticFrame(reResolvedQuery, firstSessionData);
     }
   }
 
@@ -200,6 +212,13 @@ function decomposeQuery(rawQuery, sessionData = {}) {
         } else if (!partLower.includes('s1') && inferredLower.startsWith('s1 ')) {
           queryToResolve = part.replace(/\b(teknologi informasi|sistem informasi|sistem komputer|bisnis digital)\b/i, 'S1 $1');
         }
+      }
+    }
+
+    if (idx > 0 && waveMatch && !queryToResolve.toLowerCase().includes(waveMatch[0].toLowerCase())) {
+      const isFeeOrSchedulePart = hasExplicitAnaphora || /\b(?:biaya|rincian|dpp|spp|tarif|jadwal|buka|tutup|pendaftaran|registrasi)\b/i.test(part);
+      if (isFeeOrSchedulePart) {
+        queryToResolve = `${queryToResolve} ${waveMatch[0]}`;
       }
     }
 
@@ -255,7 +274,8 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
   } else if (MULTI_INTENT_CONJUNCTION_REGEX.test(query)) {
     const rawParts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
     const isMultiIntentPair = (/\bbiaya\b/i.test(query) && /\bakreditasi\b/i.test(query)) ||
-      (/\b(syarat|fasilitas|beasiswa)\b/i.test(query) && /\b(biaya|akreditasi)\b/i.test(query));
+      (/\b(syarat|fasilitas|beasiswa)\b/i.test(query) && /\b(biaya|akreditasi)\b/i.test(query)) ||
+      (/\b(biaya|rincian)\b/i.test(query) && /\b(jadwal|kapan|registrasi\s*ulang)\b/i.test(query));
     if (!isMultiIntentPair && rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
       parts = [query];
     } else {
@@ -293,6 +313,8 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     fallbackDomainTopic ||
     (sessionData && sessionData.activeEntity ? (typeof sessionData.activeEntity === 'string' ? sessionData.activeEntity : sessionData.activeEntity.canonical || sessionData.activeEntity.name) : null);
 
+  const waveMatch = (query || '').match(/\b(?:gelombang|gel\.?)\s*(?:khusus|early\s*bird|umum|[1-9][a-c]?|[ivx]+[a-c]?)\b/i);
+
   // If first subquery lacked entity but entity exists in whole query / other subquery, re-resolve firstFrame with inferred topic
   if (inferredTopic && (!firstFrame.entities || firstFrame.entities.length === 0)) {
     let reResolvedQuery = parts[0];
@@ -304,6 +326,17 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
       : resolveSemanticFrame(reResolvedQuery, firstSessionData, options);
     if ((!firstFrame.entities || firstFrame.entities.length === 0) && subjectEntities.length > 0) {
       firstFrame.entities = [...subjectEntities];
+    }
+  }
+
+  // Wave inheritance for first subquery if compound query mentions a specific wave
+  if (waveMatch && !firstFrame.feeScope?.registrationWave && !parts[0].toLowerCase().includes(waveMatch[0].toLowerCase())) {
+    const isFeeOrSchedule = firstFrame.domain === 'TUITION_FEE' || firstFrame.domain === 'PMB' || /\b(biaya|dpp|spp|tarif|jadwal|buka|tutup|pendaftaran)\b/i.test(parts[0]);
+    if (isFeeOrSchedule) {
+      let reResolvedQuery = `${parts[0]} ${waveMatch[0]}`;
+      firstFrame = (typeof resolveSemanticFrameAsync === 'function')
+        ? await resolveSemanticFrameAsync(reResolvedQuery, firstSessionData, options)
+        : resolveSemanticFrame(reResolvedQuery, firstSessionData, options);
     }
   }
 
@@ -343,6 +376,13 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
         } else if (!partLower.includes('s1') && inferredLower.startsWith('s1 ')) {
           queryToResolve = part.replace(/\b(teknologi informasi|sistem informasi|sistem komputer|bisnis digital)\b/i, 'S1 $1');
         }
+      }
+    }
+
+    if (idx > 0 && waveMatch && !queryToResolve.toLowerCase().includes(waveMatch[0].toLowerCase())) {
+      const isFeeOrSchedulePart = hasExplicitAnaphora || /\b(?:biaya|rincian|dpp|spp|tarif|jadwal|buka|tutup|pendaftaran|registrasi)\b/i.test(part);
+      if (isFeeOrSchedulePart) {
+        queryToResolve = `${queryToResolve} ${waveMatch[0]}`;
       }
     }
 

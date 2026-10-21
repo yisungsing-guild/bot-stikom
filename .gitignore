@@ -160,6 +160,12 @@ tests/*
 !tests/crossDomainArchitecturePhaseD.test.js
 !tests/candidateMetadataInconsistencies.test.js
 !tests/whatsappRegressionReport19Oct.test.js
+!tests/feeCalculationGelombang2C.test.js
+!tests/feeCrossWaveMatrix.test.js
+!tests/feeIntentAndScheduleRouting.test.js
+!tests/feeComparisonEngine.paymentEvidence.test.js
+!tests/conversationalAcceptanceEngine.test.js
+!tests/comprehensiveMultiDomainAcceptance.test.js
 !tests/fixtures/
 !tests/fixtures/candidateMetadataFixture.json
 

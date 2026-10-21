@@ -1,0 +1,184 @@
+[
+  {
+    "id": "fee-ti-wave-1a",
+    "query": "berapa biaya teknologi informasi gelombang 1A",
+    "category": "tuition_fee",
+    "expectedProgram": "TI",
+    "expectedKeywords": ["teknologi informasi", "gelombang", "biaya"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["sistem informasi", "sistem komputer", "pasal", "force majeure"]
+  },
+  {
+    "id": "fee-si-wave-2",
+    "query": "berapa biaya sistem informasi gelombang 2",
+    "category": "tuition_fee",
+    "expectedProgram": "SI",
+    "expectedKeywords": ["sistem informasi", "gelombang", "biaya"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["teknologi informasi", "pasal"]
+  },
+  {
+    "id": "registration-deadline-ti",
+    "query": "batas waktu pendaftaran teknologi informasi",
+    "category": "registration",
+    "expectedProgram": "TI",
+    "expectedKeywords": ["pendaftaran", "batas waktu", "teknologi informasi"],
+    "expectedSourcePatterns": ["pmb", "jadwal"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "scholarship-si",
+    "query": "apakah ada beasiswa untuk Sistem Informasi",
+    "category": "scholarship",
+    "expectedProgram": "SI",
+    "expectedKeywords": ["beasiswa", "sistem informasi"],
+    "expectedSourcePatterns": ["beasiswa", "kip"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "double-degree",
+    "query": "apakah ada double degree atau kemitraan internasional",
+    "category": "international_program",
+    "expectedProgram": null,
+    "expectedKeywords": ["double degree", "internasional", "kemitraan"],
+    "expectedSourcePatterns": ["exchange", "double"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "facilities-mm",
+    "query": "fasilitas multimedia apa saja di kampus",
+    "category": "facilities",
+    "expectedProgram": "MM",
+    "expectedKeywords": ["multimedia", "lab", "fasilitas"],
+    "expectedSourcePatterns": ["fasilitas", "laboratorium"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "career-dkv",
+    "query": "prospek karier untuk lulusan DKV",
+    "category": "career",
+    "expectedProgram": "DKV",
+    "expectedKeywords": ["karier", "lulus", "desain komunikasi visual"],
+    "expectedSourcePatterns": ["karier", "prospek"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "academic-rpl",
+    "query": "kurikulum RPL semester 1",
+    "category": "curriculum",
+    "expectedProgram": "RPL",
+    "expectedKeywords": ["kurikulum", "semester", "rekayasa perangkat lunak"],
+    "expectedSourcePatterns": ["kurikulum", "mata kuliah"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "ukm-info",
+    "query": "unit kegiatan mahasiswa apa saja di kampus",
+    "category": "student_life",
+    "expectedProgram": null,
+    "expectedKeywords": ["ukm", "unit kegiatan mahasiswa", "organisasi"],
+    "expectedSourcePatterns": ["ukm", "kegiatan"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "typo-query",
+    "query": "berapa biay teknogi informasii",
+    "category": "tuition_fee",
+    "expectedProgram": "TI",
+    "expectedKeywords": ["teknologi informasi", "biaya"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["sistem informasi"]
+  },
+  {
+    "id": "abbr-query-si",
+    "query": "biaya SI gelombang 1",
+    "category": "tuition_fee",
+    "expectedProgram": "SI",
+    "expectedKeywords": ["si", "gelombang", "biaya"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["ti"]
+  },
+  {
+    "id": "strong-keyword-query",
+    "query": "biaya pendaftaran DKV 2026",
+    "category": "tuition_fee",
+    "expectedProgram": "DKV",
+    "expectedKeywords": ["pendaftaran", "biaya", "dkv"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "semantic-strong",
+    "query": "berapa total biaya masuk dan DPP untuk Teknologi Informasi",
+    "category": "tuition_fee",
+    "expectedProgram": "TI",
+    "expectedKeywords": ["total biaya", "dpp", "teknologi informasi"],
+    "expectedSourcePatterns": ["biaya", "dpp"],
+    "forbiddenKeywords": ["ukm"]
+  },
+  {
+    "id": "out-of-domain",
+    "query": "cuaca hari ini di bali",
+    "category": "unknown",
+    "expectedProgram": null,
+    "expectedKeywords": ["cuaca", "bali"],
+    "expectedSourcePatterns": [],
+    "forbiddenKeywords": ["biaya"],
+    "expectedNoRetrieval": true
+  },
+  {
+    "id": "small-talk",
+    "query": "halo apa kabar",
+    "category": "small_talk",
+    "expectedProgram": null,
+    "expectedKeywords": [],
+    "expectedSourcePatterns": [],
+    "forbiddenKeywords": ["biaya"],
+    "expectedNoRetrieval": true
+  },
+  {
+    "id": "fee-bd",
+    "query": "berapa biaya bisnis digital gelombang 1",
+    "category": "tuition_fee",
+    "expectedProgram": "BD",
+    "expectedKeywords": ["bisnis digital", "gelombang", "biaya"],
+    "expectedSourcePatterns": ["biaya", "pmb"],
+    "forbiddenKeywords": ["sistem informasi"]
+  },
+  {
+    "id": "registration-help",
+    "query": "dokumen apa saja untuk pendaftaran pmb",
+    "category": "registration",
+    "expectedProgram": null,
+    "expectedKeywords": ["pendaftaran", "dokumen", "pmb"],
+    "expectedSourcePatterns": ["pmb", "syarat"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "scholarship-typo",
+    "query": "adakah beasisw untuk TI?",
+    "category": "scholarship",
+    "expectedProgram": "TI",
+    "expectedKeywords": ["beasiswa", "ti"],
+    "expectedSourcePatterns": ["beasiswa", "kip"],
+    "forbiddenKeywords": ["biaya"]
+  },
+  {
+    "id": "facility-typo",
+    "query": "fasilitas lab komputer",
+    "category": "facilities",
+    "expectedProgram": "TK",
+    "expectedKeywords": ["lab", "komputer", "fasilitas"],
+    "expectedSourcePatterns": ["fasilitas", "lab"],
+    "forbiddenKeywords": ["beasiswa"]
+  },
+  {
+    "id": "library-hours",
+    "query": "jam operasional perpustakaan kampus",
+    "category": "facilities",
+    "expectedProgram": null,
+    "expectedKeywords": ["perpustakaan", "jam operasional"],
+    "expectedSourcePatterns": ["perpustakaan", "jam operasional"],
+    "forbiddenKeywords": ["biaya"]
+  }
+]

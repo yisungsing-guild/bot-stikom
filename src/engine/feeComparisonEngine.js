@@ -1749,21 +1749,7 @@ function buildGroundedPaymentScheduleAnswer(question, found, options = {}) {
   const asksInitialPayment = feeType === 'initial_fee' || /\b(?:pembayaran|bayar|tahap)\s+pertama\b/i.test(q);
   if (!asksInstallment && !asksInitialPayment) return null;
   if (asksInstallment && /\b(?:syarat|persyaratan|pengajuan|dokumen|berkas|permohonan)\b/i.test(q)) {
-    return {
-      answer: [
-        'Berdasarkan ketentuan dan prosedur administrasi keuangan di ITB STIKOM Bali, syarat pengajuan permohonan cicilan biaya kuliah / DPP antara lain:',
-        '',
-        '1. Mengajukan surat permohonan cicilan secara resmi kepada Bagian Keuangan kampus.',
-        '2. Melampirkan identitas pendaftaran atau kartu mahasiswa dan dokumen pendukung keuangan.',
-        '3. Menyetujui skema pembayaran cicilan secara bertahap sesuai jadwal yang disepakati sebelum batas waktu UTS.',
-        '',
-        'Untuk formulir permohonan dan konfirmasi persetujuan cicilan, kakak dapat menghubungi Bagian Keuangan ITB STIKOM Bali.'
-      ].join('\n'),
-      source: 'semantic-rag-fee-installment',
-      program: null,
-      profile: null,
-      contexts: [{ source: 'dokumen_biaya_pmb', text: 'Permohonan cicilan biaya kuliah dan DPP diajukan melalui Bagian Keuangan dengan syarat permohonan tertulis.' }]
-    };
+    return null;
   }
   if (found?.program && found?.profile) {
     const chunks = (found.profile.chunks || []).map(item => ({

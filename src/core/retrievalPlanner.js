@@ -180,8 +180,29 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
     }
   }
 
+  // Campus Service (INBIS / Business Incubator / Startup) query variants
+  if (domain === 'CAMPUS_SERVICE' || targetEntities.some(e => /inbis|inkubator/i.test(e)) || /\b(?:inbis|inkubator\s+bisnis|startup|wirausaha|modal\s+usaha|binaan\s+startup|p2mw)\b/i.test(normalizedText)) {
+    queryVariants.push('profil lembaga inkubator bisnis inbis bali stikom startup wirausaha mahasiswa tahapan');
+    queryVariants.push('program pra inkubasi inkubasi pasca inkubasi pendampingan wirausaha tenant inbis bali');
+    queryVariants.push('fasilitas inkubator bisnis co-working space lab pendanaan P2MW kemendikbudristek modal binaan');
+  }
+
+  // S2 Postgraduate / Pascasarjana query variants
+  if (/\b(?:s2|magister|pascasarjana)\b/i.test(normalizedText) || targetEntities.some(e => /s2|magister/i.test(e))) {
+    queryVariants.push('Program Studi Magister Sistem Informasi S2 pascasarjana fokus penelitian konsentrasi Cyber Security Data Science Enterprise System Medical Informatics');
+    queryVariants.push('Program Magister Sistem Informasi kelas reguler tatap muka alamat Renon hotline 082277389999');
+    queryVariants.push('Training Dataset Pascasarjana ITB STIKOM Bali FAQ Magister Sistem Informasi');
+  }
+
+  // Academic Events & Ceremonies (Yudisium, Wisuda) query variants
+  if (intent === 'ACADEMIC_EVENT_SCHEDULE' || domain === 'ACADEMIC_SCHEDULE' || /\b(?:yudisium|wisuda)\b/i.test(normalizedText)) {
+    queryVariants.push('informasi pendaftaran pelaksanaan yudisium wisuda syarat bebas pustaka keuangan jadwal');
+    queryVariants.push('pengumuman yudisium wisuda semester ganjil genap persyaratan berkas foto');
+    queryVariants.push('persyaratan pendaftaran yudisium bebas administrasi keuangan perpustakaan naskah');
+  }
+
   // Admission Schedule & Waves query variants
-  if (intent === 'ADMISSION_SCHEDULE' || (aspects && aspects.includes('schedule'))) {
+  if (intent === 'ADMISSION_SCHEDULE' || (aspects && aspects.includes('schedule') && !/\b(?:yudisium|wisuda)\b/i.test(normalizedText))) {
     queryVariants.push('jadwal gelombang pendaftaran PMB periode pendaftaran kalender pendaftaran tanggal penting');
     queryVariants.push('jadwal pendaftaran mahasiswa baru gelombang PMB ITB STIKOM Bali');
     queryVariants.push('batas waktu penutupan pendaftaran gelombang reguler PMB');
@@ -189,7 +210,7 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
   }
 
   // PMB Contact query variants
-  const isAcademicOrSionContact = domain === 'CAMPUS_SERVICE' ||
+  const isAcademicOrSionContact = (domain === 'CAMPUS_SERVICE' && intent === 'ACADEMIC_SUPPORT_INQUIRY') ||
     intent === 'ACADEMIC_SUPPORT_INQUIRY' ||
     (aspects && aspects.some(a => ['academic_support', 'sion', 'helpdesk'].includes(a))) ||
     /\b(?:sion|pascasarjana|akademik|dosen\s*wali|perwalian)\b/i.test(normalizedText);
@@ -394,12 +415,17 @@ function buildRetrievalPlan(semanticFrame, options = {}) {
     }
   }
 
-  // Study Mode (Kelas Karyawan / Kuliah Sambil Kerja) query variants
-  if (intent === 'STUDY_MODE' || (aspects && aspects.includes('class_schedule'))) {
-    queryVariants.push('kelas karyawan kelas sore kuliah sambil bekerja jadwal fleksibel');
-    queryVariants.push('pilihan kelas reguler kelas sore pendaftaran PMB');
-    if (/\b(?:luar\s*negeri|jepang|internasional)\b/i.test(normalizedText)) {
-      queryVariants.push('kuliah sambil kerja di luar negeri fasilitas stikom');
+  // Study Mode (Kelas Karyawan / Kuliah Sambil Kerja / S2 Study Mode) query variants
+  if (intent === 'STUDY_MODE' || (aspects && (aspects.includes('class_schedule') || aspects.includes('study_mode')))) {
+    if ((aspects && (aspects.includes('magister') || aspects.includes('s2'))) || /\b(?:s2|magister|pascasarjana)\b/i.test(normalizedText)) {
+      queryVariants.unshift('perkuliahan tatap muka luring program magister s2 sistem informasi renon denpasar');
+      queryVariants.unshift('magister sistem informasi perkuliahan tatap muka luring jadwal kuliah s2 renon hotline 0822-7738-9999');
+    } else {
+      queryVariants.push('kelas karyawan kelas sore kuliah sambil bekerja jadwal fleksibel');
+      queryVariants.push('pilihan kelas reguler kelas sore pendaftaran PMB');
+      if (/\b(?:luar\s*negeri|jepang|internasional)\b/i.test(normalizedText)) {
+        queryVariants.push('kuliah sambil kerja di luar negeri fasilitas stikom');
+      }
     }
   }
 

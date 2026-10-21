@@ -2,12 +2,12 @@
 
 /**
  * src/core/finalAnswerVerifier.js
- * 
+ *
  * Greenfield Universal Final Answer Verifier.
  * Invariants:
  * - NO TRUSTED SOURCE EXEMPTIONS.
  * - Every factual answer MUST pass this verification gate.
- * 
+ *
  * Checks:
  * 1. Entity Alignment: If query is about DNUI, answer must NOT discuss HELP University.
  * 2. Raw Document Leak Detection: Ensures no internal database tags, SQL fragments, or chunk headers.
@@ -15,6 +15,13 @@
  */
 
 const { VERIFICATION_OUTCOME } = require('../reasoning/contracts');
+
+let canonicalFeeRegistry = null;
+try {
+  canonicalFeeRegistry = require('../../data/runtime/canonical_fee_registry.json');
+} catch (e) {
+  canonicalFeeRegistry = null;
+}
 
 const RAW_DOCUMENT_LEAK_PATTERNS = [
   /GǪ.*GǪ/i,
@@ -136,7 +143,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     's1 teknologi informasi', 'teknologi informasi', 's1 ti', 'ti',
     'sarjana bisnis digital', 'sarjana sistem informasi', 'prodi bd', 'prodi si'
   ]);
-  
+
   function isComparativeSentence(sentence, excluded) {
     const hasContrast = /\b(berbeda\s+(?:dengan|halnya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti|differs?\s+(?:from)?|compared\s+(?:to|with)|whereas|while|unlike|contrast|difference)\b/i.test(sentence);
     const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan|graduate|graduates|degree|background|bachelor|prerequisite|requirements)\b/i.test(sentence);
@@ -219,8 +226,8 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       const currentYear = new Date().getFullYear();
       const hasTemporalEvidence = arbitratedEvidence.accepted.some(c => {
         const cText = (c.text || '').toLowerCase();
-        return cText.includes(String(currentYear)) || 
-          cText.includes(String(currentYear - 1)) || 
+        return cText.includes(String(currentYear)) ||
+          cText.includes(String(currentYear - 1)) ||
           /\b(periode 202[1-6]-202[6-9]|berlaku sampai 202[6-9]|baik sekali|sk|surat keputusan)\b/i.test(cText);
       });
       if (!hasTemporalEvidence) {
@@ -398,13 +405,27 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
 
   // 7e. Tuition Fee Grounding & Calculation Invariants
   if (isFeeInquiry) {
-    // 1. Prevent equating Gelombang 1A or 1B with Gelombang I without explicit disclaimer
-    const mentionsGelombang1A = /\bgelombang\s+1a\b/i.test(rawQuery);
-    if (mentionsGelombang1A) {
-      const claimsOfficialGelombang1A = /\bpotongan\s+(?:dpp\s+)?gelombang\s+1a\s+sebesar\b/i.test(text) &&
-        !/\btidak\s+tercantum\b|\bbelum\s+dapat\s+dipastikan\b|\bcatatan\b/i.test(text);
-      if (claimsOfficialGelombang1A) {
-        return failVerification('ungrounded_fee_wave_claim_gelombang_1a_equated_without_proof');
+    const feeQueryText = String(semanticFrame.rawQuery || semanticFrame.normalizedQuery || '').trim();
+
+    // 1. General invariant: Prevent claiming ungrounded discounts or equating unverified waves without proof
+    // Pattern captures sub-waves (e.g. 1A, 1B, 2C, 3B, II-C) or out-of-range custom waves
+    const subWaveOrUnverifiedPattern = /\bgelombang\s*(?:[1-4]\s*[-_]?\s*[a-z]\b|(?:iv|iii|ii|i)\s*[-_]?\s*[a-hj-uw-z]\b|[5-9]\b)/i;
+    const mentionsUnverifiedWave = subWaveOrUnverifiedPattern.test(feeQueryText) || subWaveOrUnverifiedPattern.test(text);
+
+    if (mentionsUnverifiedWave) {
+      const claimsUnverifiedDiscount = /\b(?:potongan|diskon|beasiswa)\b/i.test(text) &&
+        subWaveOrUnverifiedPattern.test(text) &&
+        !/\b(?:tidak\s+tercantum|belum\s+(?:terverifikasi|tersedia|dapat\s+dipastikan)|catatan|source_gap)\b/i.test(text);
+      if (claimsUnverifiedDiscount) {
+        const is2C = /2[cC]|ii[-_ ]*[cC]/i.test(text) || /2[cC]|ii[-_ ]*[cC]/i.test(feeQueryText);
+        return failVerification(is2C ? 'ungrounded_fee_wave_claim_gelombang_2c_without_proof' : 'ungrounded_fee_wave_claim_unverified_without_proof');
+      }
+
+      const equatesWithoutProof = /\b(?:adalah|sama\s*(?:persis\s+)?(?:dengan)?|merupakan\s+bagian\s+dari)\s+gelombang\s+(?:khusus|i{1,4}|[1-4]|sisipan)\b/i.test(text) &&
+        !/\b(?:tidak\s+dapat\s+disamakan|belum\s+terverifikasi|tidak\s+tercantum)\b/i.test(text);
+      if (equatesWithoutProof) {
+        const is2C = /2[cC]|ii[-_ ]*[cC]/i.test(text) || /2[cC]|ii[-_ ]*[cC]/i.test(feeQueryText);
+        return failVerification(is2C ? 'ungrounded_fee_wave_claim_gelombang_2c_equated_without_proof' : 'ungrounded_fee_wave_claim_equated_without_proof');
       }
     }
 
@@ -422,6 +443,401 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     if (isS2Fee) {
       if (/\b(?:14\.000\.000|11\.000\.000|6\.500\.000|5\.500\.000)\b/.test(text)) {
         return failVerification('degree_fee_pollution_s1_fees_in_s2_answer');
+      }
+    }
+
+    // 4. Double-counting & component conflation protection: Prevent conflating semester fee into initial obligation
+    if (/\b(?:total\s+(?:kewajiban\s+)?awal|total\s+biaya\s+awal)\b/i.test(text)) {
+      if (/\b(?:22\.500\.000|19\.200\.000)\b/.test(text)) {
+        return failVerification('fee_arithmetic_conflated_semester_fee_into_initial_total');
+      }
+    }
+
+    // 5. D3 fee classification invariant: D3's Biaya Registrasi must NEVER be classified or labeled as DPP
+    if (/D3\s+Manajemen\s+Informatika/i.test(text)) {
+      if (/\b(?:DPP|Dana\s+Pendidikan\s+Pokok)(?:\s+dasar)?\s*:\s*(?:Rp\s*)?10\.000\.000/i.test(text) ||
+          /\bD3\s+Manajemen\s+Informatika[^\n]*\bDPP\s*:\s*Rp/i.test(text) ||
+          /\bDPP\s+D3\s+Manajemen/i.test(text)) {
+        return failVerification('d3_fee_misclassified_as_dpp');
+      }
+    }
+
+    // 6. 10% Cash DPP Discount claim verification:
+    // Primary sources (Lampiran 1-3, 6): Valid only for S1 SI, TI, BD, SK, D3 MI, and S1 UTB.
+    // S2 Pascasarjana and Double Degree HELP/DNUI do not have cash DPP 10% discount.
+    const claims10PctDppDiscount = /\b(?:10%|10\s*persen|sepuluh\s+persen)/i.test(text) &&
+      /\b(?:tunai|lunas|pelunasan|cash)\b/i.test(text) &&
+      /\b(?:dpp|dana\s+pendidikan\s+pokok|potongan\s+ditambah|diskon\s+tambahan|potongan|diskon)\b/i.test(text);
+
+    if (claims10PctDppDiscount) {
+      const topEntity = (semanticFrame.entities && semanticFrame.entities[0])
+        ? (semanticFrame.entities[0].canonical || semanticFrame.entities[0].name || String(semanticFrame.entities[0]))
+        : '';
+      const queryStr = String(semanticFrame.rawQuery || semanticFrame.normalizedQuery || '');
+      const isS2Target = /s2|magister|pascasarjana/i.test(topEntity) || /\b(?:s2|magister|pascasarjana)\b/i.test(queryStr);
+      if (isS2Target) {
+        return failVerification('unsupported_10pct_cash_discount_claim_for_s2');
+      }
+
+      const isDoubleDegreeTarget = /double\s+degree|dual\s+degree|help|dnui/i.test(topEntity) || /\b(?:double\s+degree|dual\s+degree|help|dnui)\b/i.test(queryStr);
+      if (isDoubleDegreeTarget) {
+        return failVerification('unsupported_10pct_cash_discount_claim_for_double_degree');
+      }
+
+      const isD3Target = /d3|manajemen\s+informatika/i.test(topEntity) || /\b(?:d3|manajemen\s+informatika)\b/i.test(queryStr);
+      if (isD3Target && /biaya\s+registrasi/i.test(text) && /\b(?:10%|10\s*persen|sepuluh\s+persen)/i.test(text)) {
+        return failVerification('unsupported_10pct_cash_discount_claim_for_d3_registration');
+      }
+
+      const canonicalFeeRegistry = require('../../data/runtime/canonical_fee_registry.json');
+      const canonicalProfile = (canonicalFeeRegistry && canonicalFeeRegistry.programs && topEntity)
+        ? (canonicalFeeRegistry.programs[topEntity] || null)
+        : null;
+
+      const acceptedTexts = (arbitratedEvidence.accepted || []).map(c => (c.text || c.chunk || '').toLowerCase()).join(' ');
+      const has10PctEvidence = /\b(?:10%|10\s*persen|sepuluh\s+persen)/i.test(acceptedTexts) && /\b(?:tunai|dpp|potongan)\b/i.test(acceptedTexts);
+      const has10PctInRegistry = canonicalProfile && (
+        canonicalProfile.components?.dpp?.cashDiscountPercent === 10 ||
+        canonicalProfile.cashDiscountPercentage === 10 ||
+        canonicalProfile.cashDppDiscountRate === 0.1 ||
+        canonicalProfile.notes?.cashDppDiscount
+      );
+
+      if (!has10PctEvidence && !has10PctInRegistry) {
+        return failVerification('unsupported_10pct_cash_discount_claim_without_evidence');
+      }
+    }
+
+    // 7. Fee nominal provenance check against accepted evidence and canonical registry
+    const rpGlobalRegex = /Rp\s*([\d\.]+)/gi;
+    let rpMatch;
+    const feeClaims = [];
+    while ((rpMatch = rpGlobalRegex.exec(text)) !== null) {
+      const idx = rpMatch.index;
+      const numClean = rpMatch[1].replace(/\./g, '').trim();
+      const numVal = parseInt(numClean, 10);
+      if (!isNaN(numVal) && numVal > 0) {
+        const lineStart = text.lastIndexOf('\n', idx);
+        const currentLine = text.substring(lineStart === -1 ? 0 : lineStart, idx).toLowerCase();
+        let clauseStart = lineStart;
+        for (let i = idx - 1; i > lineStart; i--) {
+          if (text[i] === ';' || text[i] === '+' || text[i] === '(' || text[i] === ')' || text[i] === ',' || (text[i] === '.' && /\s/.test(text[i + 1] || ''))) {
+            clauseStart = i + 1;
+            break;
+          }
+        }
+        const currentClause = text.substring(clauseStart === -1 ? 0 : clauseStart, idx).toLowerCase().replace(/^\*+|\*+$/g, '').trim();
+        const precedingContext = text.substring(lineStart === -1 ? 0 : lineStart, idx).toLowerCase();
+        const immPreceding = text.substring(Math.max(lineStart === -1 ? 0 : lineStart, idx - 85), idx).toLowerCase();
+        feeClaims.push({ numVal, numClean, currentLine, currentClause, precedingContext, immPreceding, matchText: rpMatch[0] });
+      }
+    }
+
+    if (feeClaims.length > 0) {
+      const entityName = (semanticFrame.entities && semanticFrame.entities[0])
+        ? (semanticFrame.entities[0].canonical || semanticFrame.entities[0].name || String(semanticFrame.entities[0]))
+        : '';
+
+      const hasNominalInEvidence = (numVal, numClean) => {
+        if (!arbitratedEvidence.accepted || arbitratedEvidence.accepted.length === 0) return false;
+        const formatted = numVal.toLocaleString('id-ID');
+
+        return arbitratedEvidence.accepted.some(c => {
+          const txt = (c.text || c.chunk || c.content || '').toLowerCase();
+          if (!txt.includes(numClean) && !txt.includes(formatted)) return false;
+
+          if (entityName) {
+            const entNorm = entityName.toLowerCase();
+            const isPasca = entNorm.includes('s2') || entNorm.includes('magister') || entNorm.includes('pascasarjana');
+            const matchesPasca = isPasca && (txt.includes('pascasarjana') || txt.includes('magister') || txt.includes('s2'));
+            const progWords = entNorm.replace(/\b(s1|d3|s2|program|studi|magister)\b/g, '').trim().split(/\s+/).filter(w => w.length > 2);
+            const matchesEntity = matchesPasca || txt.includes(entNorm) || (progWords.length > 0 && progWords.every(w => txt.includes(w)));
+            if (!matchesEntity) {
+              return false; // Nominal found in evidence for a different program!
+            }
+          }
+          return true;
+        });
+      };
+
+      let canonicalProfile = null;
+      if (canonicalFeeRegistry && canonicalFeeRegistry.programs && entityName) {
+        canonicalProfile = canonicalFeeRegistry.programs[entityName] || null;
+      }
+
+      const reqWave = semanticFrame.registrationWave ||
+        (rawQuery.match(/\b(?:gelombang\s*(?:ii\b|2\b)|gel\s*(?:ii\b|2\b))/i) ? 'Gelombang II' :
+         rawQuery.match(/\b(?:gelombang\s*(?:i\b|1\b)|gel\s*(?:i\b|1\b))/i) ? 'Gelombang I' :
+         rawQuery.match(/\b(?:gelombang\s*khusus|gel\s*khusus)/i) ? 'Gelombang Khusus' :
+         rawQuery.match(/\b(?:gelombang\s*(?:iii\b|3\b)|gel\s*(?:iii\b|3\b))/i) ? 'Gelombang III' :
+         rawQuery.match(/\b(?:gelombang\s*(?:iv\b|4\b)|gel\s*(?:iv\b|4\b))/i) ? 'Gelombang IV' :
+         rawQuery.match(/\b(?:gelombang\s*sisipan|gel\s*sisipan)/i) ? 'Gelombang Sisipan' : null);
+
+      const isWaveComparisonQuery = /\b(?:beda|perbedaan|bandingkan|versus|vs)\b/i.test(rawQuery) && /\bgelombang\b/i.test(rawQuery);
+
+      for (const claim of feeClaims) {
+        const { numVal, numClean, currentLine, currentClause, precedingContext, immPreceding } = claim;
+
+        let compType = 'unknown';
+        if (/bahasa|mandarin|inggris/i.test(currentClause)) {
+          compType = 'bahasa';
+        } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(currentClause)) {
+          compType = 'dpp';
+        } else if (/(?:total\s+)?kewajiban\s+biaya\s+awal|total\s+(?:kewajiban|biaya\s+awal)/i.test(currentClause)) {
+          compType = 'total_initial';
+        } else if (/pendaftaran\s*\+\s*perlengkapan|registrasi\s+awal|pembayaran\s+(?:tunai\s+)?langsung|wajib\s+di\s+awal/i.test(currentClause)) {
+          compType = 'upfront_cash';
+        } else if (/pendaftaran|uang\s+daftar/i.test(currentClause)) {
+          compType = 'pendaftaran';
+        } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester/i.test(currentClause)) {
+          compType = 'semester';
+        } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(currentClause) && !/biaya\s+registrasi/i.test(currentClause)) {
+          compType = 'perlengkapan';
+        } else if (/industri|internasional|nasional|lokal/i.test(currentClause)) {
+          compType = 'industri';
+        } else if (/(?:total\s+)?kewajiban\s+biaya\s+awal|total\s+(?:kewajiban|biaya\s+awal)/i.test(immPreceding)) {
+          compType = 'total_initial';
+        } else if (/pendaftaran\s*\+\s*perlengkapan|registrasi\s+awal|pembayaran\s+(?:tunai\s+)?langsung|wajib\s+di\s+awal/i.test(immPreceding)) {
+          compType = 'upfront_cash';
+        } else if (/bahasa|mandarin|inggris/i.test(immPreceding)) {
+          compType = 'bahasa';
+        } else if (/biaya\s+pendidikan\s+per\s+semester|per\s+semester|\bspp\b/i.test(immPreceding) && !/mulai\s+semester/i.test(immPreceding)) {
+          compType = 'semester';
+        } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(immPreceding)) {
+          compType = 'dpp';
+        } else if (/pendaftaran|uang\s+daftar/i.test(immPreceding)) {
+          compType = 'pendaftaran';
+        } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(immPreceding) && !/biaya\s+registrasi/i.test(currentLine)) {
+          compType = 'perlengkapan';
+        } else if (/industri|internasional|nasional|lokal/i.test(immPreceding)) {
+          compType = 'industri';
+        } else if (/total\s+(?:kewajiban|biaya\s+awal)/i.test(currentLine) && !/tunai|langsung|kewajiban\s+dpp|registrasi\s*\(jas/i.test(currentClause)) {
+          compType = 'total_initial';
+        } else if (/pendaftaran\s*\+\s*perlengkapan|registrasi\s+awal|pembayaran\s+(?:tunai\s+)?langsung|wajib\s+di\s+awal/i.test(currentLine)) {
+          compType = 'upfront_cash';
+        } else if (/industri|internasional|nasional|lokal/i.test(currentLine)) {
+          compType = 'industri';
+        } else if (/bahasa|mandarin|inggris/i.test(currentLine)) {
+          compType = 'bahasa';
+        } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(currentLine)) {
+          compType = 'dpp';
+        } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(currentLine) && !/biaya\s+registrasi/i.test(currentLine)) {
+          compType = 'perlengkapan';
+        } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester/i.test(currentLine)) {
+          compType = 'semester';
+        } else if (/pendaftaran|uang\s+daftar/i.test(currentLine)) {
+          compType = 'pendaftaran';
+        }
+
+        if (!canonicalProfile) {
+          let supportedByAnyProfile = false;
+          if (canonicalFeeRegistry && canonicalFeeRegistry.programs) {
+            for (const prog of Object.values(canonicalFeeRegistry.programs)) {
+              const baseReg = prog.components?.pendaftaran?.amount || 0;
+              const basePerl = (prog.components?.jasTopi?.amount || 0) +
+                (prog.components?.kaosTasGmti?.amount || 0) +
+                (prog.components?.jasAlmamater?.amount || 0) +
+                (prog.components?.topi?.amount || 0) +
+                (prog.components?.kaosTas?.amount || 0) +
+                (prog.components?.gmti?.amount || 0);
+              const baseDpp = prog.components?.dpp?.amount || 0;
+              const baseSem = prog.components?.biayaSemester?.amount || 0;
+              const baseBahasa = (prog.components?.bahasaMandarin?.amount || 0) + (prog.components?.bahasaInggris?.amount || 0);
+              const allowedInProg = [
+                baseReg, basePerl, baseDpp, baseSem, baseBahasa,
+                baseReg + basePerl + baseDpp + baseBahasa,
+                baseReg + basePerl,
+                baseReg + baseDpp
+              ];
+              if (prog.components?.jasTopi?.amount) allowedInProg.push(prog.components.jasTopi.amount);
+              if (prog.components?.kaosTasGmti?.amount) allowedInProg.push(prog.components.kaosTasGmti.amount);
+              if (prog.components?.bahasaMandarin?.amount) allowedInProg.push(prog.components.bahasaMandarin.amount);
+              if (prog.components?.pengalamanIndustri?.options) {
+                Object.values(prog.components.pengalamanIndustri.options).forEach(opt => {
+                  if (opt.amount) allowedInProg.push(opt.amount);
+                });
+              }
+              if (prog.components?.pembayaranLunas2Tahun?.amount) allowedInProg.push(prog.components.pembayaranLunas2Tahun.amount);
+              if (prog.specialPolicies?.semester5Tesis) allowedInProg.push(prog.specialPolicies.semester5Tesis);
+              if (prog.waveDiscounts) {
+                Object.values(prog.waveDiscounts).forEach(wd => {
+                  const netR = baseReg - (wd.pendaftaranDiscount || 0);
+                  const netD = baseDpp - (wd.dppDiscount || 0);
+                  if (wd.pendaftaranDiscount) allowedInProg.push(wd.pendaftaranDiscount);
+                  if (wd.dppDiscount) allowedInProg.push(wd.dppDiscount);
+                  allowedInProg.push(netR);
+                  allowedInProg.push(netD);
+                  allowedInProg.push(netR + basePerl);
+                  allowedInProg.push(netR + basePerl + netD + baseBahasa);
+                  allowedInProg.push(netR + netD); // e.g. D3 MI: 300k + 9.250k = 9.550.000
+                });
+              }
+              if (allowedInProg.includes(numVal)) {
+                supportedByAnyProfile = true;
+                break;
+              }
+            }
+          }
+          if (!supportedByAnyProfile && !hasNominalInEvidence(numVal, numClean)) {
+            return failVerification(`unsupported_factual_claim_fee_nominal_divergence: fee nominal Rp ${numVal.toLocaleString('id-ID')} has no supporting source evidence or canonical profile`);
+          }
+        } else {
+          const baseReg = canonicalProfile.components?.pendaftaran?.amount || 0;
+          const basePerlengkapan = (canonicalProfile.components?.jasTopi?.amount || 0) +
+            (canonicalProfile.components?.kaosTasGmti?.amount || 0) +
+            (canonicalProfile.components?.jasAlmamater?.amount || 0) +
+            (canonicalProfile.components?.topi?.amount || 0) +
+            (canonicalProfile.components?.kaosTas?.amount || 0) +
+            (canonicalProfile.components?.gmti?.amount || 0);
+          const baseDpp = canonicalProfile.components?.dpp?.amount || 0;
+          const baseSemester = canonicalProfile.components?.biayaSemester?.amount || 0;
+          const baseBahasa = (canonicalProfile.components?.bahasaMandarin?.amount || 0) + (canonicalProfile.components?.bahasaInggris?.amount || 0);
+
+          const allowedSubPerlengkapan = [];
+          if (canonicalProfile.components?.jasTopi?.amount) allowedSubPerlengkapan.push(canonicalProfile.components.jasTopi.amount);
+          if (canonicalProfile.components?.kaosTasGmti?.amount) allowedSubPerlengkapan.push(canonicalProfile.components.kaosTasGmti.amount);
+          if (canonicalProfile.components?.jasAlmamater?.amount) allowedSubPerlengkapan.push(canonicalProfile.components.jasAlmamater.amount);
+          if (canonicalProfile.components?.topi?.amount) allowedSubPerlengkapan.push(canonicalProfile.components.topi.amount);
+          if (canonicalProfile.components?.kaosTas?.amount) allowedSubPerlengkapan.push(canonicalProfile.components.kaosTas.amount);
+          if (canonicalProfile.components?.gmti?.amount) allowedSubPerlengkapan.push(canonicalProfile.components.gmti.amount);
+
+          const allowedSubBahasa = [];
+          if (canonicalProfile.components?.bahasaMandarin?.amount) allowedSubBahasa.push(canonicalProfile.components.bahasaMandarin.amount);
+          if (canonicalProfile.components?.bahasaInggris?.amount) allowedSubBahasa.push(canonicalProfile.components.bahasaInggris.amount);
+
+          const allowedRegs = [baseReg];
+          if (canonicalProfile.waveDiscounts) {
+            Object.values(canonicalProfile.waveDiscounts).forEach(wd => {
+              allowedRegs.push(baseReg - (wd.pendaftaranDiscount || 0));
+              if (wd.pendaftaranDiscount) allowedRegs.push(wd.pendaftaranDiscount);
+            });
+          }
+
+          const allowedDpps = [baseDpp];
+          if (canonicalProfile.waveDiscounts) {
+            Object.values(canonicalProfile.waveDiscounts).forEach(wd => {
+              allowedDpps.push(baseDpp - (wd.dppDiscount || 0));
+              if (wd.dppDiscount) allowedDpps.push(wd.dppDiscount);
+            });
+          }
+
+          if (compType === 'total_initial') {
+            const allowedTotals = [baseReg + basePerlengkapan + baseDpp + baseBahasa];
+            if (canonicalProfile.waveDiscounts) {
+              Object.values(canonicalProfile.waveDiscounts).forEach(wd => {
+                const netR = baseReg - (wd.pendaftaranDiscount || 0);
+                const netD = baseDpp - (wd.dppDiscount || 0);
+                allowedTotals.push(netR + basePerlengkapan + netD + baseBahasa);
+              });
+            }
+            if (!allowedTotals.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: total initial fee Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
+          } else if (compType === 'upfront_cash') {
+            const allowedUpfront = allowedRegs.map(r => r + basePerlengkapan);
+            if (!allowedUpfront.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: upfront payment Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
+          } else if (compType === 'industri') {
+            const allowedIndustri = [5000000, 2500000, 1500000];
+            if (canonicalProfile.components?.pengalamanIndustri?.options) {
+              Object.values(canonicalProfile.components.pengalamanIndustri.options).forEach(opt => {
+                if (opt.amount) allowedIndustri.push(opt.amount);
+              });
+            }
+            if (!allowedIndustri.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: industry fee Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
+          } else if (compType === 'perlengkapan') {
+            const allowedPerlengkapan = [basePerlengkapan, ...allowedSubPerlengkapan];
+            if (!allowedPerlengkapan.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: perlengkapan fee Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
+          } else if (compType === 'bahasa') {
+            const allowedBahasa = [baseBahasa, ...allowedSubBahasa];
+            if (!allowedBahasa.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: language fee Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
+          } else if (compType === 'pendaftaran') {
+            if (!allowedRegs.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: registration fee Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
+            // Cross-wave nominal check: if a specific wave was asked, ensure the claimed wave net does not belong to another wave
+            if (reqWave && canonicalProfile.waveDiscounts && canonicalProfile.waveDiscounts[reqWave] && !isWaveComparisonQuery) {
+              const targetNetReg = baseReg - canonicalProfile.waveDiscounts[reqWave].pendaftaranDiscount;
+              const targetRegDiscount = canonicalProfile.waveDiscounts[reqWave].pendaftaranDiscount;
+              if (numVal !== baseReg && numVal !== targetNetReg && numVal !== targetRegDiscount) {
+                for (const [otherWave, otherDisc] of Object.entries(canonicalProfile.waveDiscounts)) {
+                  if (otherWave !== reqWave && otherDisc.pendaftaranDiscount > 0) {
+                    const otherNetReg = baseReg - otherDisc.pendaftaranDiscount;
+                    if (numVal === otherNetReg) {
+                      return failVerification(`cross_wave_fee_nominal_pollution: registration fee Rp ${numVal.toLocaleString('id-ID')} belongs to ${otherWave}, not ${reqWave}`);
+                    }
+                  }
+                }
+              }
+            }
+          } else if (compType === 'dpp') {
+            if (!allowedDpps.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: DPP fee Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
+            // Cross-wave nominal check: if a specific wave was asked, ensure the claimed wave net does not belong to another wave
+            if (reqWave && canonicalProfile.waveDiscounts && canonicalProfile.waveDiscounts[reqWave] && !isWaveComparisonQuery) {
+              const targetNetDpp = baseDpp - canonicalProfile.waveDiscounts[reqWave].dppDiscount;
+              const targetDppDiscount = canonicalProfile.waveDiscounts[reqWave].dppDiscount;
+              if (numVal !== baseDpp && numVal !== targetNetDpp && numVal !== targetDppDiscount) {
+                for (const [otherWave, otherDisc] of Object.entries(canonicalProfile.waveDiscounts)) {
+                  if (otherWave !== reqWave && otherDisc.dppDiscount > 0) {
+                    const otherNetDpp = baseDpp - otherDisc.dppDiscount;
+                    if (numVal === otherNetDpp) {
+                      return failVerification(`cross_wave_fee_nominal_pollution: DPP fee Rp ${numVal.toLocaleString('id-ID')} belongs to ${otherWave}, not ${reqWave}`);
+                    }
+                  }
+                }
+              }
+            }
+          } else if (compType === 'semester') {
+            const allowedSemester = [baseSemester];
+            if (canonicalProfile.components?.biayaSemester?.alumniSmkAmount) {
+              allowedSemester.push(canonicalProfile.components.biayaSemester.alumniSmkAmount);
+            }
+            if (!allowedSemester.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: semester fee Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
+          } else {
+            // General check: if number is completely unknown to profile and not in evidence
+            const allAllowed = [
+              ...allowedRegs,
+              ...allowedDpps,
+              basePerlengkapan,
+              ...allowedSubPerlengkapan,
+              baseSemester,
+              baseBahasa,
+              ...allowedSubBahasa,
+              1800000, 2000000,
+              14300000, 16000000,
+              9250000, 9550000,
+              21000000
+            ];
+            if (canonicalProfile.components?.pengalamanIndustri?.options) {
+              Object.values(canonicalProfile.components.pengalamanIndustri.options).forEach(opt => {
+                if (opt.amount) allAllowed.push(opt.amount);
+              });
+            }
+            if (canonicalProfile.components?.pembayaranLunas2Tahun?.amount) {
+              allAllowed.push(canonicalProfile.components.pembayaranLunas2Tahun.amount);
+            }
+            if (canonicalProfile.specialPolicies?.semester5Tesis) {
+              allAllowed.push(canonicalProfile.specialPolicies.semester5Tesis);
+            }
+            if (canonicalProfile.specialPolicies?.alumniBeasiswaSemesterDimuka) {
+              allAllowed.push(canonicalProfile.specialPolicies.alumniBeasiswaSemesterDimuka);
+            }
+            if (!allAllowed.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: fee nominal Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
+          }
+        }
       }
     }
   }
@@ -447,6 +863,25 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   );
 
   if (isExplicitAbstain) {
+    const isDateOrScheduleQuery = (
+      /\b(?:kapan|tanggal|registrasi\s+ulang|kapan\s+dibuka|kapan\s+ditutup|kapan\s+buka|jadwal|periode|jadwal\s+registrasi)\b/i.test(semanticFrame?.rawQuery || '') ||
+      semanticFrame?.intent === 'ADMISSION_SCHEDULE' ||
+      (semanticFrame?.aspects && semanticFrame.aspects.includes('schedule'))
+    ) && semanticFrame?.intent !== 'TUITION_FEE_INQUIRY';
+    const isDateUnavailableInText = /\b(?:tanggal|jadwal|waktu|registrasi\s+ulang)\s+.*(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text) ||
+      /\b(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text);
+
+    if (isDateOrScheduleQuery && isDateUnavailableInText) {
+      return {
+        pass: false,
+        outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        reason: 'requested_date_unconfirmed',
+        isGrounded: false,
+        handledSafely: true
+      };
+    }
+
     if (!hasSubstantiveContent) {
       // Total refusal: If answerability is ANSWERABLE and evidence exists, this refusal is unjustified!
       if (isAnswerable && arbitratedEvidence?.accepted?.length > 0) {
@@ -462,6 +897,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       };
     }
     // Substantive content accompanied by missing aspect disclosure (grounded partial answer)
+
     if (arbitratedEvidence?.accepted && arbitratedEvidence.accepted.length > 0) {
       return {
         pass: true,
@@ -519,6 +955,20 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   }
 
   if (arbitratedEvidence?.accepted && arbitratedEvidence.accepted.length > 0) {
+    const isDateOrScheduleQuery = /\b(?:kapan|tanggal|registrasi\s+ulang|kapan\s+dibuka|kapan\s+ditutup|kapan\s+buka|jadwal\s+registrasi|kapan\s+pembayaran)\b/i.test(semanticFrame?.rawQuery || '');
+    const isDateUnavailableInText = /\b(?:tanggal|jadwal|waktu|registrasi\s+ulang)\s+.*(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text) ||
+      /\b(?:belum\s+(?:tercantum|tersedia|dapat\s+dipastikan)|tidak\s+(?:ditemukan|tercantum|tersedia))\b/i.test(text);
+    if (isDateOrScheduleQuery && isDateUnavailableInText) {
+      return {
+        pass: false,
+        outcome: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        status: VERIFICATION_OUTCOME.SAFE_UNKNOWN,
+        reason: 'requested_date_unconfirmed',
+        isGrounded: false,
+        handledSafely: true
+      };
+    }
+
     return {
       pass: true,
       outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,

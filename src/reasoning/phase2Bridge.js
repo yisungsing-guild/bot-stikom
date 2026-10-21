@@ -447,6 +447,18 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         // Atomic session persistence (Step 4 & Step 5) for non-comparative graph tasks
         if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState && turnControl.canCommitSession('phase2')) {
           const deltaState = plan.contextDelta.resolvedState;
+          let currentWave = null;
+          if (semanticFrame && semanticFrame.feeScope && semanticFrame.feeScope.registrationWave) {
+            currentWave = semanticFrame.feeScope.registrationWave;
+          } else {
+            const { extractAllMentionedWaves } = require('../core/feeCalculationEngine');
+            const detected = extractAllMentionedWaves(rawQuery);
+            if (detected && detected.length > 0) {
+              currentWave = detected[0];
+            }
+          }
+          const activeWave = currentWave || sessionData.lastActiveWave || null;
+
           await updateSession(chatId, {
             dataPatch: {
               activeDomain: deltaState.activeDomain,
@@ -456,6 +468,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
               activeEntity: deltaState.activeEntity,
               preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
               entityProvenance: deltaState.entityProvenance,
+              lastActiveWave: activeWave,
               lastQuery: rawQuery,
               lastAnswer: finalGraphAnswer,
               activeMenu: null
@@ -593,6 +606,19 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       const primarySubFrame = (phase1Result.subQueryResults && phase1Result.subQueryResults[0] && phase1Result.subQueryResults[0].frame) || internalOptions.semanticFrame || {};
       const activeIntent = primarySubFrame.intent || plan.intent || deltaState.activeIntent || 'GENERAL';
       const activeAspects = primarySubFrame.aspects || plan.comparisonRequest?.requestedAspects || deltaState.activeAspects || [];
+
+      let currentWave = null;
+      if (primarySubFrame && primarySubFrame.feeScope && primarySubFrame.feeScope.registrationWave) {
+        currentWave = primarySubFrame.feeScope.registrationWave;
+      } else {
+        const { extractAllMentionedWaves } = require('../core/feeCalculationEngine');
+        const detected = extractAllMentionedWaves(rawQuery);
+        if (detected && detected.length > 0) {
+          currentWave = detected[0];
+        }
+      }
+      const activeWave = currentWave || sessionData.lastActiveWave || null;
+
       await updateSession(chatId, {
         dataPatch: {
           activeDomain: deltaState.activeDomain,
@@ -602,6 +628,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
           activeEntity: deltaState.activeEntity,
           preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
           entityProvenance: deltaState.entityProvenance,
+          lastActiveWave: activeWave,
           lastQuery: rawQuery,
           lastAnswer: phase1Result.finalAnswer,
           activeMenu: null

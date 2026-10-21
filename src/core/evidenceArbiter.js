@@ -814,7 +814,8 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     const wantsScholarship = requiredAspects.some(a => ['scholarship', 'discount'].includes(a)) || retrievalPlan.domain === 'SCHOLARSHIP';
     const wantsFacilities = requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES';
     const wantsOrg = requiredAspects.some(a => ['student_organization', 'ukm'].includes(a)) || retrievalPlan.domain === 'ORGANIZATION_UKM';
-    const wantsPmbGeneral = requiredAspects.some(a => ['admission_overview', 'procedure', 'admission_pathways'].includes(a)) || (retrievalPlan.domain === 'PMB' && (retrievalPlan.intent === 'GENERAL_PMB_INQUIRY' || retrievalPlan.intent === 'ADMISSION_PROCEDURE'));
+    const isPmbDomain = retrievalPlan.domain === 'PMB' || ['GENERAL_PMB_INQUIRY', 'ADMISSION_PROCEDURE', 'ADMISSION_SCHEDULE', 'PMB_CONTACT_INQUIRY'].includes(retrievalPlan.intent);
+    const wantsPmbGeneral = isPmbDomain && (requiredAspects.some(a => ['admission_overview', 'procedure', 'admission_pathways'].includes(a)) || ['GENERAL_PMB_INQUIRY', 'ADMISSION_PROCEDURE'].includes(retrievalPlan.intent));
 
     if (wantsContact) {
       const hasContactSignal = /\b(whatsapp|wa|telepon|telp|call\s*center|email|kontak|08\d{8,}|\+62|0361|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
