@@ -653,30 +653,35 @@ function getCorpusIndex(context = {}, options = {}) {
       if (requireCanonical) return [];
     }
   } else {
-    // 4. If RAG_INDEX_PATH is NOT configured, check canonical snapshot path
-    if (fs.existsSync(CANONICAL_SNAPSHOT_PATH)) {
-      try {
-        const raw = fs.readFileSync(CANONICAL_SNAPSHOT_PATH, 'utf8');
-        const data = JSON.parse(raw);
-        if (Array.isArray(data) && data.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
-          prewarmedCanonicalCorpus = data;
-          lastLoadedPath = null;
-          return data;
-        }
-      } catch (_) {}
-    }
-    // Also check secondary candidate in data/rag_index.json only if >= 829
-    const secondaryCandidate = path.resolve(__dirname, '..', 'data', 'rag_index.json');
-    if (fs.existsSync(secondaryCandidate)) {
-      try {
-        const raw = fs.readFileSync(secondaryCandidate, 'utf8');
-        const data = JSON.parse(raw);
-        if (Array.isArray(data) && data.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
-          prewarmedCanonicalCorpus = data;
-          lastLoadedPath = null;
-          return data;
-        }
-      } catch (_) {}
+    // 4. If RAG_INDEX_PATH is NOT configured, check candidate paths in prioritized order
+    let ragPathsIndexPath = null;
+    try {
+      const { getRagIndexPath } = require('../utils/ragPaths');
+      if (typeof getRagIndexPath === 'function') {
+        ragPathsIndexPath = getRagIndexPath();
+      }
+    } catch (_) {}
+
+    const candidatePaths = [
+      CANONICAL_SNAPSHOT_PATH,
+      ragPathsIndexPath,
+      path.resolve(__dirname, '..', '..', 'data', 'rag_index.json'),
+      path.resolve(__dirname, '..', 'data', 'rag_index.json'),
+      '/data/rag_index.json'
+    ].filter(Boolean);
+
+    for (const candPath of candidatePaths) {
+      if (fs.existsSync(candPath)) {
+        try {
+          const raw = fs.readFileSync(candPath, 'utf8');
+          const data = JSON.parse(raw);
+          if (Array.isArray(data) && data.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
+            prewarmedCanonicalCorpus = data;
+            lastLoadedPath = null;
+            return data;
+          }
+        } catch (_) {}
+      }
     }
   }
 

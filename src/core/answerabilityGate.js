@@ -26,6 +26,18 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
   const { accepted = [], rejected = [] } = arbitratedEvidence;
   const isEn = semanticFrame?.language === 'en' || detectQueryLanguage(semanticFrame?.rawQuery) === 'en';
 
+  // 0. Technical Failure Fail-Closed: Corpus Unavailable
+  if (arbitratedEvidence.corpusUnavailable) {
+    return {
+      status: ANSWERABILITY_STATUS.UNKNOWN,
+      reason: 'corpus_unavailable_technical_failure',
+      isTechnicalFailure: true,
+      guidance: isEn
+        ? 'We apologize, but official information regarding this matter is not listed in the accessible guidelines at this time due to a technical issue. Please try again shortly or contact the ITB STIKOM Bali information desk.'
+        : 'Informasi resmi mengenai hal tersebut belum tercantum dalam panduan yang dapat diakses saat ini karena kendala teknis pada sistem informasi. Silakan coba beberapa saat lagi atau hubungi bagian informasi kampus ITB STIKOM Bali.'
+    };
+  }
+
   // 1. If no accepted evidence exists
   if (!accepted || accepted.length === 0) {
     // If user query represents a missed academic process or complaint -> ESCALATE to admin/academic staff

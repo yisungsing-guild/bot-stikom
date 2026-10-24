@@ -21,7 +21,7 @@
 const { getSession, updateSession } = require('./conversationState');
 const { decomposeQuery, decomposeQueryAsync, hasMultipleIntents } = require('./multiIntentResolver');
 const { buildRetrievalPlan } = require('./retrievalPlanner');
-const { retrieveCandidates } = require('./retrievalService');
+const { retrieveCandidates, verifyCorpusReadiness } = require('./retrievalService');
 const { arbitrateEvidence } = require('./evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('./answerabilityGate');
 const groundedAnswerGenerator = require('./groundedAnswerGenerator');
@@ -440,12 +440,15 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     frame.retrievalPlan = plan;
 
     // 3. Stage A: Wide Candidate Recall (fetch top 16 candidates)
+    const isCorpusReady = verifyCorpusReadiness(options.context || {}).isReady;
     const candidates = await retrieveCandidates(plan, { topK: 16 });
 
     // 4. Stage B: Strict Evidence Arbitration (Hard Entity Lock, Temporal, Aspect)
     const arbitrated = arbitrateEvidence(candidates, plan);
     arbitrated.retrievalPlan = plan;
     arbitrated.sessionData = sessionData;
+    arbitrated.corpusUnavailable = !isCorpusReady;
+    arbitrated.retrievalStatus = isCorpusReady ? 'OK' : 'CORPUS_UNAVAILABLE';
     arbitrated.rawAccepted = [...arbitrated.accepted];
     if (arbitrated.accepted.length > 10) {
       arbitrated.accepted = arbitrated.accepted.slice(0, 10);
@@ -529,6 +532,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
             /\b(?:perwalian|dosen\s*wali|bimbingan\s+perwalian)\b/i.test(frame.rawQuery || '');
           if (isAdvisingInquiry) {
             answer = answerability.guidance || 'Bimbingan perwalian dengan Dosen Wali di ITB STIKOM Bali merupakan proses akademik wajib sebelum perkuliahan semester baru untuk menyetujui Kartu Rencana Studi (KRS). Rincian prosedur resmi penanganan keterlambatan perwalian maupun kontak bantuan teknis belum dapat dipastikan dari dokumen resmi yang terverifikasi saat ini. Mahasiswa disarankan untuk langsung berkonsultasi dengan Dosen Wali masing-masing atau menghubungi Bagian Layanan Akademik (BAAK) ITB STIKOM Bali.';
+          } else if (synthesis && (synthesis.budgetExceeded || synthesis.budgetReason)) {
+            answer = 'Mohon maaf, layanan asisten cerdas saat ini mencapai batas kuota operasional harian. Silakan hubungi bagian informasi kampus ITB STIKOM Bali untuk bantuan langsung.';
           } else {
             answer = answerability.guidance || 'Informasi resmi mengenai hal tersebut belum tercantum secara lengkap dalam panduan yang tersedia.';
           }

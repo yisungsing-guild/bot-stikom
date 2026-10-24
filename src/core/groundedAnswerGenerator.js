@@ -2060,18 +2060,19 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       });
 
       if (!reservation.allowed) {
-        logger.warn({ reason: reservation.reason, model: engine.model }, '[GroundedAnswerGenerator] Budget reservation denied; falling back to grounded summary');
+        const denialReason = reservation.reason || 'UNKNOWN_REASON';
+        logger.warn({ reason: denialReason, model: engine.model }, `[GroundedAnswerGenerator] Budget reservation denied (${denialReason}); falling back to grounded summary`);
         const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
         return {
           success: true,
           answer: synthesizedText,
           source: 'grounded_deterministic_summary',
-          budgetExceeded: reservation.reason === 'DAILY_BUDGET_EXCEEDED',
-          budgetReason: reservation.reason
+          budgetExceeded: denialReason === 'DAILY_BUDGET_EXCEEDED',
+          budgetReason: denialReason
         };
       }
     } else if (process.env.NODE_ENV !== 'test') {
-      logger.warn('[GroundedAnswerGenerator] Persistent budget ledger unavailable in non-test runtime; falling back to grounded summary');
+      logger.warn({ reason: 'PERSISTENT_LEDGER_UNAVAILABLE' }, '[GroundedAnswerGenerator] Persistent budget ledger unavailable in non-test runtime (PERSISTENT_LEDGER_UNAVAILABLE); falling back to grounded summary');
       const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
       return {
         success: true,

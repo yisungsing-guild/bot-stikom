@@ -444,10 +444,11 @@ async function parseSemanticInterpretation(input, options = {}) {
 
       if (!reservation.allowed) {
         const elapsedMs = Date.now() - startTime;
-        logger.warn({ rawQuery, reason: reservation.reason, model }, '[modelSemanticParser] Budget reservation denied; failing closed to safe UNKNOWN');
-        return buildSafeUnknownInterpretation(rawQuery, reservation.reason || 'budget_reservation_denied', {
+        const denialReason = reservation.reason || 'UNKNOWN_REASON';
+        logger.warn({ rawQuery, reason: denialReason, model }, `[modelSemanticParser] Budget reservation denied (${denialReason}); failing closed to safe UNKNOWN`);
+        return buildSafeUnknownInterpretation(rawQuery, denialReason, {
           requestedModel: model,
-          budgetExceeded: reservation.reason === 'DAILY_BUDGET_EXCEEDED',
+          budgetExceeded: denialReason === 'DAILY_BUDGET_EXCEEDED',
           reservation,
           totalLatencyMs: elapsedMs,
           elapsedMs
@@ -455,7 +456,7 @@ async function parseSemanticInterpretation(input, options = {}) {
       }
     } else if (process.env.NODE_ENV !== 'test') {
       const elapsedMs = Date.now() - startTime;
-      logger.warn({ rawQuery }, '[modelSemanticParser] Persistent budget ledger unavailable in non-test runtime; failing closed');
+      logger.warn({ rawQuery, reason: 'PERSISTENT_LEDGER_UNAVAILABLE' }, '[modelSemanticParser] Persistent budget ledger unavailable in non-test runtime (PERSISTENT_LEDGER_UNAVAILABLE); failing closed');
       return buildSafeUnknownInterpretation(rawQuery, 'PERSISTENT_LEDGER_UNAVAILABLE', {
         requestedModel: model,
         budgetExceeded: false,

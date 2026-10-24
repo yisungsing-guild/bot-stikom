@@ -1064,7 +1064,9 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
     unsupportedEntityName: retrievalPlan.unsupportedEntityName || retrievalPlan.unsupportedProgramName || null,
     entityResolutionStatus: retrievalPlan.entityResolutionStatus || 'RESOLVED',
     shadowContractArbitration,
-    shadowComparison
+    shadowComparison,
+    corpusUnavailable: Boolean(candidates && candidates.corpusUnavailable),
+    retrievalStatus: (candidates && candidates.retrievalStatus) || 'OK'
   };
 }
 

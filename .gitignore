@@ -61,7 +61,10 @@ baileys-auth/
 data/rag_index*.json
 data/vec_index/
 data/ingest/
-data/runtime/index_snapshots/
+data/runtime/index_snapshots/*
+!data/runtime/index_snapshots/2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy/
+data/runtime/index_snapshots/2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy/*
+!data/runtime/index_snapshots/2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy/rag_index.json
 data/runtime/*.log
 data/runtime/*.pid
 !data/runtime/
