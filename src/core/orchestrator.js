@@ -33,7 +33,8 @@ const logger = require('../logger');
 const { isPhase2Enabled, executePhase2Bridge } = require('../reasoning/phase2Bridge');
 const { isPhase2ShadowModeEnabled, runShadowEvaluationSafely } = require('../reasoning/shadowEvaluator');
 const { VERIFICATION_OUTCOME } = require('../reasoning/contracts');
-const { isUnifiedSemanticPipelineEnabled, processUnifiedTurn } = require('./unifiedSemanticEngine');
+const isUnifiedSemanticPipelineEnabled = () => false;
+const processUnifiedTurn = null;
 
 /**
  * Processes a single turn inquiry through the orchestrator.

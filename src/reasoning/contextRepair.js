@@ -25,7 +25,6 @@ const {
   ENTITY_PROVENANCE,
   CONTEXT_TTL_MS,
   CAMPUS_WIDE_DOMAINS,
-  CONTEXT_DECISION,
   validateContextDelta
 } = require('./contracts');
 const { findCanonicalEntity, matchCanonicalEntities } = require('../engine/canonicalEntityRegistry');
@@ -239,59 +238,6 @@ function computeContextDelta(previousSession = {}, currentTurn = {}) {
     activeEntity = firstExplicitEntity;
     preservedBackgroundEntity = null;
     entityProvenance = ENTITY_PROVENANCE.EXPLICIT_CURRENT_TURN;
-  } else if (semanticFrame.domain === 'INTERNATIONAL') {
-    const isDD = /\b(double\s*degree|dual\s*degree)\b/i.test(query);
-    const isExchange = /\b(student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|gccp)\b/i.test(query);
-    if (isDD) {
-      if (activeEntity && activeEntity !== 'Double Degree') {
-        actions.push(CONTEXT_ACTION.ENTITY_REPLACED);
-      } else if (!activeEntity) {
-        actions.push(CONTEXT_ACTION.ENTITY_ADDED);
-      } else {
-        actions.push(CONTEXT_ACTION.CONTEXT_PRESERVED);
-      }
-      activeEntity = 'Double Degree';
-      preservedBackgroundEntity = null;
-      entityProvenance = ENTITY_PROVENANCE.EXPLICIT_CURRENT_TURN;
-    } else if (isExchange) {
-      if (activeEntity && activeEntity !== 'Student Exchange') {
-        actions.push(CONTEXT_ACTION.ENTITY_REPLACED);
-      } else if (!activeEntity) {
-        actions.push(CONTEXT_ACTION.ENTITY_ADDED);
-      } else {
-        actions.push(CONTEXT_ACTION.CONTEXT_PRESERVED);
-      }
-      activeEntity = 'Student Exchange';
-      preservedBackgroundEntity = null;
-      entityProvenance = ENTITY_PROVENANCE.EXPLICIT_CURRENT_TURN;
-    }
-  }
-
-  // 4b. Context Dependency & Scope Modification handling
-  const contextDep = (semanticFrame.contextDependencies && semanticFrame.contextDependencies[0]) ||
-    semanticFrame.contextEvaluation;
-
-  if (contextDep && contextDep.decision === CONTEXT_DECISION.ENTITY_SCOPE_MODIFICATION) {
-    if (!activeEntity && contextDep.inheritedEntity) {
-      activeEntity = contextDep.inheritedEntity;
-    }
-    entityProvenance = ENTITY_PROVENANCE.INHERITED_FROM_SESSION;
-    if (!actions.includes(CONTEXT_ACTION.CONTEXT_PRESERVED)) {
-      actions.push(CONTEXT_ACTION.CONTEXT_PRESERVED);
-    }
-    preservedBackgroundEntity = null;
-  } else if (contextDep && contextDep.reason === 'menu_selection') {
-    if (contextDep.inheritedEntity) {
-      activeEntity = contextDep.inheritedEntity;
-      entityProvenance = ENTITY_PROVENANCE.INHERITED_FROM_SESSION;
-    }
-    if (contextDep.inheritedDomain) {
-      activeDomain = contextDep.inheritedDomain;
-    }
-    if (!actions.includes(CONTEXT_ACTION.CONTEXT_PRESERVED)) {
-      actions.push(CONTEXT_ACTION.CONTEXT_PRESERVED);
-    }
-    preservedBackgroundEntity = null;
   }
 
   // 5. CURRENT TURN DOMAIN DETECTION
@@ -304,27 +250,11 @@ function computeContextDelta(previousSession = {}, currentTurn = {}) {
     activeDomain = semanticFrame.domain;
   }
 
-  // 6. CAMPUS-WIDE DOMAIN, TOPIC SHIFT, OR AMBIGUOUS FOLLOW-UP EXCEPTION (Invariant 5)
-  const isTopicShift = contextDep && contextDep.decision === CONTEXT_DECISION.TOPIC_SHIFT;
-  const isAmbiguousFollowUp = contextDep && contextDep.decision === CONTEXT_DECISION.AMBIGUOUS_FOLLOW_UP;
-
-  if (isAmbiguousFollowUp) {
+  // 6. CAMPUS-WIDE DOMAIN EXCEPTION (Invariant 5)
+  if (isCampusWideDomain(activeDomain)) {
     if (explicitEntities.length === 0) {
-      // Ambiguous follow-up without explicit entity: do NOT interpret query under activeEntity.
-      // Safely preserve activeEntity as background / clarification anchor.
-      if (activeEntity) {
-        preservedBackgroundEntity = activeEntity;
-        activeEntity = null;
-        entityProvenance = ENTITY_PROVENANCE.NONE;
-      }
-      if (!actions.includes(CONTEXT_ACTION.AMBIGUITY_DETECTED)) {
-        actions.push(CONTEXT_ACTION.AMBIGUITY_DETECTED);
-      }
-    }
-  } else if ((isCampusWideDomain(activeDomain) && !ENCLITIC_SUFFIX_REGEX.test(query) && !contextDep?.shouldInherit) || isTopicShift) {
-    if (explicitEntities.length === 0) {
-      // Query is about a campus-wide asset or topic shift without explicit prodi specifier
-      // Move activeEntity to preservedBackgroundEntity so query is unconstrained,
+      // Query is about a campus-wide asset without explicit prodi specifier
+      // Move activeEntity to preservedBackgroundEntity so campus-wide query is unconstrained,
       // but ready to be restored if next query asks for prodi curriculum/fee!
       if (activeEntity) {
         preservedBackgroundEntity = activeEntity;
@@ -343,7 +273,7 @@ function computeContextDelta(previousSession = {}, currentTurn = {}) {
   }
 
   // 7. ENCLITIC & ELLIPSIS INHERITANCE (Invariant 7 & Invariant 3)
-  if (!activeEntity && !isStale && !isCampusWideDomain(activeDomain) && !isTopicShift && !isAmbiguousFollowUp) {
+  if (!activeEntity && !isStale && !isCampusWideDomain(activeDomain)) {
     const hasEnclitic = ENCLITIC_SUFFIX_REGEX.test(query);
     const hasEllipsis = ELLIPSIS_FOLLOWUP_REGEX.test(query);
 
@@ -358,7 +288,7 @@ function computeContextDelta(previousSession = {}, currentTurn = {}) {
         actions.push(CONTEXT_ACTION.AMBIGUITY_DETECTED);
       }
     }
-  } else if (activeEntity && explicitEntities.length === 0 && !isStale && (!isCampusWideDomain(activeDomain) || ENCLITIC_SUFFIX_REGEX.test(query) || contextDep?.shouldInherit) && !isTopicShift && !isAmbiguousFollowUp) {
+  } else if (activeEntity && explicitEntities.length === 0 && !isStale && !isCampusWideDomain(activeDomain)) {
     // Entity was retained from previous turn without explicit query match
     entityProvenance = ENTITY_PROVENANCE.INHERITED_FROM_SESSION;
     if (!actions.includes(CONTEXT_ACTION.CONTEXT_PRESERVED)) {

@@ -2,12 +2,12 @@
 
 /**
  * tests/candidateMetadataInconsistencies.test.js
- *
+ * 
  * Offline Verification Suite for:
  * 1. S2 Entity Semantics: Program Name vs Academic Degree vs Legacy Benchmark Label
  * 2. Fee Discount Clause Scope (chunk 3674b161-f08b-49b5-9e0a-e05a1874198c)
  * 3. Candidate Corpus Invariance & Manifest Consistency
- *
+ * 
  * Deterministic and offline: Zero external API calls, zero production mutation.
  */
 
@@ -29,12 +29,6 @@ describe('Finalize S2 Entity Semantics and Fee-Clause Scope', () => {
     'candidate_curriculum_2025',
     'rag_index.json'
   );
-  const fixturePath = path.resolve(
-    __dirname,
-    'fixtures',
-    'candidateMetadataFixture.json'
-  );
-  const manifestPath = path.resolve(__dirname, '..', 'scratch', 'scope_correction_manifest.json');
 
   let corpus;
   let chunkDoubleDegree;
@@ -42,26 +36,12 @@ describe('Finalize S2 Entity Semantics and Fee-Clause Scope', () => {
   let chunkS2B;
   let chunkS2C;
   let chunkFeeDiscount;
-  let isFullSnapshot = false;
-  let deterministicFixture = null;
 
   beforeAll(() => {
-    deterministicFixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
-
-    if (fs.existsSync(candidateSnapshotPath)) {
-      process.env.RAG_INDEX_PATH = candidateSnapshotPath;
-      corpus = getCorpusIndex();
-      if (Array.isArray(corpus) && corpus.length === 863) {
-        isFullSnapshot = true;
-      } else {
-        corpus = deterministicFixture.chunks;
-      }
-    } else {
-      corpus = deterministicFixture.chunks;
-    }
-
+    process.env.RAG_INDEX_PATH = candidateSnapshotPath;
+    corpus = getCorpusIndex();
     expect(Array.isArray(corpus)).toBe(true);
-    expect(corpus.length).toBeGreaterThanOrEqual(8);
+    expect(corpus.length).toBe(863);
 
     chunkDoubleDegree = corpus.find(c => c.id === '278c7c2a-3f2c-411b-b2dd-1bd02ddc469f');
     chunkS2A = corpus.find(c => c.id === 'ee59cda5-4ef4-415c-9d00-38f042c7b7c9');
@@ -69,11 +49,6 @@ describe('Finalize S2 Entity Semantics and Fee-Clause Scope', () => {
     chunkS2C = corpus.find(c => c.id === 'fe3bb7da-532b-4ff2-a91a-0e5bd07e0487');
     chunkFeeDiscount = corpus.find(c => c.id === '3674b161-f08b-49b5-9e0a-e05a1874198c');
   });
-
-  afterAll(() => {
-    delete process.env.RAG_INDEX_PATH;
-  });
-
 
   describe('A. Double Degree (chunk 278c7c2a-3f2c-411b-b2dd-1bd02ddc469f)', () => {
     test('1. Metadata correctly separates parent program (SI) from Double Degree track, removing legacy SK', () => {
@@ -455,12 +430,8 @@ describe('Finalize S2 Entity Semantics and Fee-Clause Scope', () => {
 
   describe('3. Candidate Index Invariance & Manifest Consistency', () => {
     test('a. Chunk text, chunk ID, and 1536-dim embedding vectors are strictly preserved', () => {
-      let manifest;
-      if (fs.existsSync(manifestPath)) {
-        manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-      } else {
-        manifest = deterministicFixture.manifest;
-      }
+      const manifestPath = path.resolve(__dirname, '..', 'scratch', 'scope_correction_manifest.json');
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
       expect(Array.isArray(manifest)).toBe(true);
       expect(manifest.length).toBe(20);
@@ -499,12 +470,8 @@ describe('Finalize S2 Entity Semantics and Fee-Clause Scope', () => {
       }
     });
 
-    test('b. Candidate corpus length is intact with 0 corrupted records', () => {
-      if (isFullSnapshot) {
-        expect(corpus.length).toBe(863);
-      } else {
-        expect(corpus.length).toBe(deterministicFixture.chunks.length);
-      }
+    test('b. Candidate corpus length is intact at 863 chunks with 0 corrupted records', () => {
+      expect(corpus.length).toBe(863);
       const corrupted = corpus.filter(c => !c.id || !(c.chunk || c.text) || !Array.isArray(c.embedding) || c.embedding.length !== 1536);
       expect(corrupted.length).toBe(0);
     });

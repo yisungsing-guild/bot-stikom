@@ -269,7 +269,19 @@ const CANONICAL_ENTITIES = [
     canonical: 'UKM U2M',
     type: 'student_activity_unit',
     family: 'student_organization',
-    aliases: ['ukm u2m', 'u2m', 'unit musik mahasiswa', 'musik']
+    aliases: ['ukm u2m', 'u2m', 'unit usaha mahasiswa', 'kewirausahaan']
+  },
+  {
+    canonical: 'UKM Musik',
+    type: 'student_activity_unit',
+    family: 'student_organization',
+    aliases: ['ukm musik', 'musik', 'band', 'akustik']
+  },
+  {
+    canonical: 'UKM BOSS',
+    type: 'student_activity_unit',
+    family: 'student_organization',
+    aliases: ['ukm boss', 'boss', 'bulutangkis', 'badminton']
   },
   {
     canonical: 'UKM Paskamras',
@@ -402,18 +414,6 @@ const CANONICAL_ENTITIES = [
     aliases: ['kampus abiansemal', 'abiansemal', 'kampus badung']
   },
 
-  // Double Degree / Dual Degree Programs & Collaborations
-  {
-    canonical: 'Double Degree',
-    type: 'program',
-    role: 'double_degree',
-    family: 'academic_program',
-    aliases: [
-      'double degree', 'dual degree', 'dua gelar', 'gelar ganda', 'dual qualification',
-      'program double degree', 'program dual degree', 'program dua gelar', 'program gelar ganda'
-    ]
-  },
-
   // International Programs & Collaborations
   {
     canonical: 'Double Degree DNUI',
@@ -457,11 +457,7 @@ const CANONICAL_ENTITIES = [
       'Sarjana Desain (S.Ds) dari UTB (pada peminatan Desain Komunikasi Visual)',
       'Sarjana Komputer (S.Kom) atau Sarjana Bisnis dari ITB STIKOM Bali sesuai program kemitraan'
     ],
-    aliases: [
-      'utb', 'universitas teknologi bandung', 'dual degree utb', 'double degree utb',
-      'double degree nasional', 'dual degree nasional', 'gelar ganda nasional', 'dua gelar nasional',
-      'national class double degree', 'national class dual degree'
-    ]
+    aliases: ['utb', 'universitas teknologi bandung', 'dual degree utb', 'double degree utb']
   },
   {
     canonical: 'Student Exchange',
@@ -589,7 +585,7 @@ const CANONICAL_ENTITIES = [
     type: 'participant_scope',
     family: 'participant_scope',
     scope: 'foreign_student',
-    aliases: ['mahasiswa asing', 'foreign student', 'international student', 'izin belajar', 'visa study', 'visa pelajar', 'visa', 'study permit', 'mahasiswa luar negeri']
+    aliases: ['mahasiswa asing', 'foreign student', 'international student', 'izin belajar', 'visa study', 'study permit', 'mahasiswa luar negeri']
   },
   {
     canonical: 'Alumni ITB STIKOM Bali',
@@ -809,21 +805,6 @@ function matchCanonicalEntities(text, options = {}) {
             continue;
           }
         }
-        if (aliasNorm === 'sk' && (entry.canonical === 'S1 Sistem Komputer' || entry.canonical === 'Sistem Komputer')) {
-          // Reject administrative decree references (Surat Keputusan)
-          const isDecreeReference = /\b(?:nomor|no\.?|salinan|terbitan)\s+sk\b/i.test(norm)
-            || /\bsk\s+(?:ban-?pt|lam-?infokom|rektor|pembina|yayasan|pendirian|akreditasi|\d+)/i.test(norm)
-            || /\b(?:nomor\s+sk|no\s+sk|sk\s+nomor)\b/i.test(norm);
-          if (isDecreeReference) {
-            continue;
-          }
-          const isUppercase = /\bSK\b/.test(text);
-          const hasSemantics = hasExplicitProgramSemantics(norm);
-          const hasPrior = hasPriorProgramContext(options, entry.canonical, entry.degree);
-          if (!isUppercase && !hasSemantics && !hasPrior) {
-            continue;
-          }
-        }
         if (entry.family === 'campus_location' && /^(?:denpasar|jimbaran|abiansemal|renon|pusat)$/i.test(aliasNorm)) {
           const hasCampusContext = hasExplicitCampusLocationSemantics(norm);
           const hasPrior = hasPriorProgramContext(options, entry.canonical, entry.type);
@@ -852,15 +833,13 @@ function matchCanonicalEntities(text, options = {}) {
     }
   }
 
-  // Filter out matches whose alias is completely contained within another match's alias as a whole word/phrase
+  // Filter out matches whose alias is completely contained within another match's alias
   const filtered = matched.filter((item, idx) => {
     return !matched.some((other, oIdx) => {
       if (idx === oIdx) return false;
       const otherAlias = normalizeText(other.matchedAlias);
       const itemAlias = normalizeText(item.matchedAlias);
-      if (otherAlias === itemAlias || other.canonical === item.canonical) return false;
-      const escaped = itemAlias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      return new RegExp(`(^|\\s)${escaped}(\\s|$)`).test(otherAlias);
+      return otherAlias !== itemAlias && otherAlias.includes(itemAlias) && other.canonical !== item.canonical;
     });
   });
 

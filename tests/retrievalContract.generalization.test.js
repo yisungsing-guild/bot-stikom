@@ -2,7 +2,7 @@
 
 /**
  * tests/retrievalContract.generalization.test.js
- *
+ * 
  * Phase F Generalization Benchmark: 60 Unseen Queries.
  * Evaluates semantic scope correctness, evidence precision, level precision,
  * family precision, unsupported protection, and pipeline latency.
@@ -542,7 +542,7 @@ describe('Phase F: Generalization Evaluation (60 Unseen Queries)', () => {
           expect(accepted.acceptanceReason).toBeDefined();
 
           // Check Entity Precision
-          const matchesEntity = accepted.entityIds.some(id =>
+          const matchesEntity = accepted.entityIds.some(id => 
             contract.scopeConstraints.targetEntities.some(t => String(id).toLowerCase().includes(t.toLowerCase()))
           );
           if (contract.scopeConstraints.targetEntities.length > 0 && !matchesEntity) {

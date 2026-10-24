@@ -35,11 +35,7 @@ const RAW_DOCUMENT_LEAK_PATTERNS = [
   /\|\s*col\d+\s*:/i,
   /PROGRAM STUDI SISTEM INFORMASI, TEKNOLOGI INFORMASI, DAN/i,
   /2\.\s*Profil Saat Ini\s*•\s*Status:\s*Perguruan tinggi bertaraf internasional/i,
-  /Ketua Program Studi S1-/i,
-  /Gunakan nama file, caption, atau input manual/i,
-  /input manual tambahan untuk memberi konteks/i,
-  /\|\s*visi\s*Akademik\s*\|/i,
-  /\|\s*kelas\s+Karir\s*\|/i
+  /Ketua Program Studi S1-/i
 ];
 
 function failVerification(reason, extra = {}) {
@@ -496,11 +492,18 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
 
       const acceptedTexts = (arbitratedEvidence.accepted || []).map(c => (c.text || c.chunk || '').toLowerCase()).join(' ');
       const has10PctEvidence = /\b(?:10%|10\s*persen|sepuluh\s+persen)/i.test(acceptedTexts) && /\b(?:tunai|dpp|potongan)\b/i.test(acceptedTexts);
-      const has10PctInRegistry = canonicalProfile && (
+      const has10PctInRegistry = canonicalProfile ? (
         canonicalProfile.components?.dpp?.cashDiscountPercent === 10 ||
         canonicalProfile.cashDiscountPercentage === 10 ||
         canonicalProfile.cashDppDiscountRate === 0.1 ||
         canonicalProfile.notes?.cashDppDiscount
+      ) : (
+        Object.values(canonicalFeeRegistry?.programs || {}).some(p =>
+          p.components?.dpp?.cashDiscountPercent === 10 ||
+          p.cashDiscountPercentage === 10 ||
+          p.cashDppDiscountRate === 0.1 ||
+          p.notes?.cashDppDiscount
+        )
       );
 
       if (!has10PctEvidence && !has10PctInRegistry) {

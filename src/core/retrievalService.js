@@ -13,7 +13,6 @@
 
 const { 
   getCorpusIndex, 
-  ensureCanonicalCorpus,
   CANONICAL_CORPUS_MIN_CHUNKS,
   searchVectorChunksMultiBinding, 
   computeBatchQueryEmbeddings, 
@@ -33,15 +32,14 @@ function isPgVectorProductionEnabled() {
   return mode === 'hybrid' || mode === 'vector' || enabled || hybrid;
 }
 
-const { CANONICAL_ENTITIES, findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
+const { CANONICAL_ENTITIES } = require('../engine/canonicalEntityRegistry');
 
 let cachedFileContextMap = null;
 let cachedChunkSectionMap = null;
 
 function getChunkSectionMap(corpus) {
-  if (cachedChunkSectionMap && cachedChunkSectionMap._corpusLength === corpus.length) return cachedChunkSectionMap;
+  if (cachedChunkSectionMap) return cachedChunkSectionMap;
   cachedChunkSectionMap = new Map();
-  cachedChunkSectionMap._corpusLength = corpus.length;
 
   const fileGroups = new Map();
   for (let i = 0; i < corpus.length; i++) {
@@ -112,9 +110,8 @@ function getChunkSectionMap(corpus) {
 }
 
 function getFileContextMap(corpus) {
-  if (cachedFileContextMap && cachedFileContextMap._corpusLength === corpus.length) return cachedFileContextMap;
+  if (cachedFileContextMap) return cachedFileContextMap;
   cachedFileContextMap = new Map();
-  cachedFileContextMap._corpusLength = corpus.length;
 
   for (const doc of corpus) {
     const f = doc.sourceFile || doc.filename || '';
@@ -174,61 +171,6 @@ function getFileContextMap(corpus) {
 }
 
 /**
- * Systemically extracts academic properties (level, scope, supportedPrograms)
- * ensuring multi-program documents (e.g. tuition fee matrices covering SI, TI, BD)
- * are properly classified with scope 'PROGRAM_MULTI' and supported programs.
- */
-function extractCandidateAcademicProperties(doc = {}, metadata = {}, contextEntities = [], sectionProg = null) {
-  const levels = new Set();
-  if (doc.academicLevel) levels.add(String(doc.academicLevel).toUpperCase());
-  if (metadata.academicLevel) levels.add(String(metadata.academicLevel).toUpperCase());
-  if (Array.isArray(doc.academicLevels)) doc.academicLevels.forEach(l => l && levels.add(String(l).toUpperCase()));
-  if (Array.isArray(metadata.academicLevels)) metadata.academicLevels.forEach(l => l && levels.add(String(l).toUpperCase()));
-
-  if (sectionProg) {
-    const m = sectionProg.match(/\b(S1|S2|D3|D4)\b/i);
-    if (m) levels.add(m[1].toUpperCase());
-  }
-
-  if (Array.isArray(contextEntities)) {
-    for (const ent of contextEntities) {
-      if (typeof ent === 'string') {
-        const m = ent.match(/\b(S1|S2|D3|D4)\b/i);
-        if (m) levels.add(m[1].toUpperCase());
-      }
-    }
-  }
-
-  const progStr = doc.program || metadata.program || '';
-  if (progStr) {
-    const m = progStr.match(/\b(S1|S2|D3|D4)\b/i);
-    if (m) levels.add(m[1].toUpperCase());
-  }
-
-  const academicLevels = Array.from(levels);
-  const academicLevel = doc.academicLevel || metadata.academicLevel || (academicLevels.length > 0 ? academicLevels[0] : null);
-
-  const supportedPrograms = (Array.isArray(doc.supportedPrograms) && doc.supportedPrograms.length > 0)
-    ? doc.supportedPrograms
-    : ((Array.isArray(metadata.supportedPrograms) && metadata.supportedPrograms.length > 0)
-      ? metadata.supportedPrograms
-      : (Array.isArray(contextEntities) && contextEntities.length > 0 ? contextEntities : (progStr ? [progStr] : [])));
-
-  let scope = doc.scope || metadata.scope || null;
-  if (!scope) {
-    if (supportedPrograms.length > 1) {
-      scope = 'PROGRAM_MULTI';
-    } else if (supportedPrograms.length === 1) {
-      scope = 'PROGRAM_SINGLE';
-    } else {
-      scope = 'INSTITUTION';
-    }
-  }
-
-  return { academicLevel, academicLevels, supportedPrograms, scope };
-}
-
-/**
  * Retrieves candidates matching RetrievalPlan
  * Integrates:
  * 1. BM25 Sparse Search over Governed Canonical Corpus (829 chunks)
@@ -246,58 +188,14 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     }
   }
 
-  await ensureCanonicalCorpus(context, { requireCanonical: true });
-  const canonicalCorpus = getCorpusIndex(context, { requireCanonical: true });
-  if (!Array.isArray(canonicalCorpus) || canonicalCorpus.length < CANONICAL_CORPUS_MIN_CHUNKS) {
+  const corpus = getCorpusIndex(context, { requireCanonical: true });
+  if (!Array.isArray(corpus) || corpus.length < CANONICAL_CORPUS_MIN_CHUNKS) {
     logger.error({
-      corpusSize: Array.isArray(canonicalCorpus) ? canonicalCorpus.length : 0,
+      corpusSize: Array.isArray(corpus) ? corpus.length : 0,
       minRequired: CANONICAL_CORPUS_MIN_CHUNKS
     }, '[RetrievalService] Canonical corpus index is unavailable or below required threshold; failing closed');
     return [];
   }
-
-  // Augment canonical baseline with verified dynamic ingested training chunks (e.g. FAQ perwalian)
-  let corpus = canonicalCorpus;
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const ragPath = path.resolve(__dirname, '..', 'data', 'rag_index.json');
-    if (fs.existsSync(ragPath)) {
-      const dynamicRaw = fs.readFileSync(ragPath, 'utf8');
-      const dynamicData = JSON.parse(dynamicRaw);
-      if (Array.isArray(dynamicData)) {
-        const canonicalIdSet = new Set(canonicalCorpus.map(c => String(c.id || c.source_record_id || c.vector_chunk_id || '')));
-        const extraChunks = dynamicData.filter(c => {
-          if (!c) return false;
-          const cid = String(c.id || c.source_record_id || '');
-          if (canonicalIdSet.has(cid)) return false;
-          // Isolate unverified transcription sources from candidate retrieval corpus
-          const src = String(c.sourceFile || c.source_file || c.filename || c.source || c.sourceDocument || '').toLowerCase();
-          const ver = String(
-            c.governance?.verificationStatus ||
-            c.verificationStatus ||
-            c.metadata?.verificationStatus ||
-            c.raw_metadata?.verificationStatus ||
-            ''
-          ).toUpperCase();
-          const auth = String(
-            c.governance?.authenticityStatus ||
-            c.authenticityStatus ||
-            c.metadata?.authenticityStatus ||
-            c.raw_metadata?.authenticityStatus ||
-            ''
-          ).toUpperCase();
-          if (src.includes('faq_sistem_informasi_perwalian') || src.includes('faq_perwalian') || ver.includes('UNVERIFIED') || auth.includes('UNVERIFIED')) {
-            return false;
-          }
-          return (c.chunk || c.text) && (c.trainingId || c.governance);
-        });
-        if (extraChunks.length > 0) {
-          corpus = canonicalCorpus.concat(extraChunks);
-        }
-      }
-    }
-  } catch (_) {}
 
   let variants = [];
   if (retrievalPlan.targetEntities && retrievalPlan.targetEntities.length > 1) {
@@ -355,24 +253,13 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
     const ctxEntities = (ctx?.entities || []).map(e => e.toLowerCase());
     const rawText = (doc.chunk || doc.text || '').toLowerCase();
 
-    const isTargetS2 = targetEntities.some(te => /s2|magister|pascasarjana/i.test(te));
-    const isTargetS1 = targetEntities.some(te => /^s1\b/i.test(te));
-    const isDocS2 = /magister|pascasarjana|s2\b/i.test(f) || /magister|pascasarjana|s2\b/i.test(rawText);
-    const isDocS1Only = (/rincian biaya si,ti dan bd|rincian biaya sk dan d3/i.test(f) || /\bs1\s+reguler\b/i.test(rawText)) && !isDocS2;
-
     const matchesTarget = targetEntities.some(te => {
-      const teIsS2 = /s2|magister|pascasarjana/i.test(te);
-      if (teIsS2 && isDocS1Only) return false;
-      if (!teIsS2 && isDocS2) return false;
       const base = te.replace(/^(s1|d3|s2)\s+/i, '');
-      const canon = findCanonicalEntity(te);
-      const aliases = (canon && Array.isArray(canon.aliases)) ? canon.aliases.map(a => a.toLowerCase()) : [];
       return sectionProg.includes(te) ||
-        (!teIsS2 && sectionProg.includes(base)) ||
-        ctxEntities.some(ce => ce.includes(te) || (!teIsS2 && ce.includes(base)) || aliases.some(al => ce.includes(al))) ||
+        sectionProg.includes(base) ||
+        ctxEntities.some(ce => ce.includes(te) || ce.includes(base)) ||
         rawText.includes(te) ||
-        (!teIsS2 && base.length >= 4 && rawText.includes(base)) ||
-        aliases.some(al => al.length >= 4 && rawText.includes(al));
+        (base.length >= 4 && rawText.includes(base));
     });
 
     const matchesExcluded = excludedEntities.some(ex => {
@@ -382,33 +269,22 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
 
     if (matchesTarget) {
       score *= 1.8;
-      if (isTargetS2 && isDocS2) {
-        score *= 3.5;
-      }
-    } else if (matchesExcluded || (isTargetS2 && isDocS1Only) || (isTargetS1 && isDocS2)) {
-      score *= 0.1;
+    } else if (matchesExcluded) {
+      score *= 0.5;
     }
 
     // Boost fee documents when query is asking about tuition, fee, or registration cost
     const isFeeQuery = /\b(?:biaya|spp|dpp|uang kuliah|tarif|pembayaran)\b/i.test(query);
     if (isFeeQuery) {
-      if (isTargetS2) {
-        if (isDocS2) score *= 3.0;
-        else if (isDocS1Only) score *= 0.05;
-      } else {
-        if (/rincian biaya/i.test(f) || ctx?.category === 'BIAYA' || /tabel rincian biaya|biaya kuliah per semester/i.test(rawText)) {
-          score *= 2.5;
-        }
+      if (/rincian biaya/i.test(f) || ctx?.category === 'BIAYA' || /tabel rincian biaya|biaya kuliah per semester/i.test(rawText)) {
+        score *= 2.5;
       }
     }
 
     // Aspect & Category alignment: Career prospects
-    // Must be verified against original query intent and validated plan aspects, NOT polluted synthetic variants
-    const userQueryText = String(retrievalPlan.rawQuery || retrievalPlan.normalizedQuery || (contract ? contract.queryText : '')).toLowerCase();
-    const isCareerQuery = (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.some(a => ['career_prospects', 'career', 'prospek_karir'].includes(a))) ||
+    const isCareerQuery = (retrievalPlan.requiredAspects && retrievalPlan.requiredAspects.includes('career_prospects')) ||
       retrievalPlan.intent === 'CAREER_PROSPECTS' ||
-      retrievalPlan.intent === 'CAREER_PROSPECTS_INQUIRY' ||
-      /\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|kar(?:i)?er|prospek\s+kerja|profesi\s+lulusan)\b/i.test(userQueryText);
+      /\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|kar(?:i)?er|prospek\s+kerja|profesi\s+lulusan)\b/i.test(query);
     if (isCareerQuery) {
       if (/penjelasan prodi dan karier/i.test(f) || /peluang kerja|profil lulusan/i.test(rawText)) {
         score *= 2.5;
@@ -446,8 +322,8 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       if (/penjelasan prodi dan karier/i.test(f)) {
         score *= 2.5;
       }
-      if (/\b(?:double\s*degree|dual\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(rawText) && targetEntities.some(te => /degree|gelar/i.test(te))) {
-        score *= 2.0;
+      if (/chatbot\s*-\s*double\s*degree/i.test(f) && /\b(?:double|dual|degree|help|dnui)\b/i.test(query)) {
+        score *= 3.0;
       }
       if (/fasilitas-stikom/i.test(f) && /\bfasilitas\b/i.test(query)) {
         score *= 4.0;
@@ -473,6 +349,18 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       score *= 0.1;
     }
 
+    // SK Pembina Ormawa prioritization for general organization and category list inquiries
+    const isUkmCategoryList = (
+      retrievalPlan?.intent === 'ORGANIZATION_CATEGORY_LIST' ||
+      retrievalPlan?.intent === 'ORGANIZATION_LIST' ||
+      retrievalPlan?.intent === 'DISCOVER_LIST' ||
+      (retrievalPlan?.domain === 'ORGANIZATION_UKM' && (!retrievalPlan.targetEntities || retrievalPlan.targetEntities.length === 0)) ||
+      /\b(?:kategori|bidang\s+(?:seni|olahraga|teknologi|kerohanian)|apa\s+saja\s+ukm|daftar\s+ukm|ormawa\s+apa\s+saja|rekomendasi\s+ukm)\b/i.test(query)
+    );
+    if (isUkmCategoryList && /sk\s+pembina\s+ormawa/i.test(f)) {
+      score *= 2.5;
+    }
+
     return { index: r.index, score };
   });
   
@@ -487,8 +375,18 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
   const isOverviewQuery = !/\b(?:semester\s+(?:[1-8]|i{1,3}|iv|v|vi|vii|viii))\b/i.test(query) &&
     /\b(?:mata\s+kuliah|kurikulum|bidang\s+keahlian|kompetensi|fokus|profil|peluang\s+karir|prospek\s+kerja|double\s+degree|dual\s+degree|fasilitas|gelar|biaya|spp)\b/i.test(query);
 
+  const isUkmCategoryListQuery = (
+    retrievalPlan?.intent === 'ORGANIZATION_CATEGORY_LIST' ||
+    retrievalPlan?.intent === 'ORGANIZATION_LIST' ||
+    retrievalPlan?.intent === 'DISCOVER_LIST' ||
+    (retrievalPlan?.domain === 'ORGANIZATION_UKM' && (!retrievalPlan.targetEntities || retrievalPlan.targetEntities.length === 0)) ||
+    /\b(?:kategori|bidang\s+(?:seni|olahraga|teknologi|kerohanian)|apa\s+saja\s+ukm|daftar\s+ukm|ormawa\s+apa\s+saja|rekomendasi\s+ukm)\b/i.test(query)
+  );
+
   let bm25Sorted = [];
   const syllabusCountPerProgram = new Map();
+  const ukmDocCountMap = new Map();
+
   for (const item of rawBm25Sorted) {
     const doc = corpus[item.index];
     const isSyllabus = /^curr-/i.test(doc.id);
@@ -497,6 +395,15 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       const c = syllabusCountPerProgram.get(progKey) || 0;
       if (c >= 3) continue;
       syllabusCountPerProgram.set(progKey, c + 1);
+    }
+    if (isUkmCategoryListQuery) {
+      const src = (doc.sourceFile || doc.filename || doc.source || '').toLowerCase();
+      const isSpecificProfile = /profil.*ukm|profile.*ormawa|profiling\s+ukm|buku\s+ormawa/i.test(src) && !/sk\s+pembina/i.test(src);
+      if (isSpecificProfile) {
+        const c = ukmDocCountMap.get(src) || 0;
+        if (c >= 1) continue; // Cap to 1 chunk per individual UKM profile so candidate pool is diverse
+        ukmDocCountMap.set(src, c + 1);
+      }
     }
     bm25Sorted.push(item);
     if (bm25Sorted.length >= candidatePoolDepth) break;
@@ -526,14 +433,6 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       }
     }
 
-    if (/sertifikat\s+akreditasi/i.test(sourceFile)) {
-      const certChunks = corpus.filter(c => (c.sourceFile || c.filename) === sourceFile);
-      const fullCertText = certChunks.map(c => c.chunk || c.text || '').filter(Boolean).join('\n');
-      if (fullCertText.length < 1000) {
-        enrichedText = fullCertText;
-      }
-    }
-
     const entityIds = doc.entityIds || metadata.entityIds ||
       (contextEntities && contextEntities.length > 0 ? contextEntities : (doc.program ? [doc.program] : []));
 
@@ -544,7 +443,15 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
         ? metadata.providedAspects
         : []);
 
-    const { academicLevel, academicLevels, supportedPrograms, scope } = extractCandidateAcademicProperties(doc, metadata, contextEntities, sectionProg);
+    const academicLevel = doc.academicLevel || metadata.academicLevel ||
+      ((sectionProg && sectionProg.match(/^(S1|S2|D3|D4)\b/i))
+        ? sectionProg.match(/^(S1|S2|D3|D4)\b/i)[0]
+        : ((contextEntities && contextEntities.length === 1 && contextEntities[0].match(/^(S1|S2|D3|D4)\b/i))
+          ? contextEntities[0].match(/^(S1|S2|D3|D4)\b/i)[0]
+          : (doc.program ? (doc.program.match(/^(S1|S2|D3|D4)\b/i) || [])[0] : null)));
+
+    const academicLevels = doc.academicLevels || metadata.academicLevels || (academicLevel ? [academicLevel] : []);
+
     const provenanceDocumentId = doc.provenanceDocumentId || metadata.provenanceDocumentId || doc.trainingId || doc.id || null;
 
     return {
@@ -557,13 +464,12 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       rawText,
       chunk: enrichedText,
       source,
-      sourceFile,
       source_file: sourceFile,
       sourceDocument: sourceFile,
       program: doc.program || metadata.program || null,
       canonicalEntity: doc.canonicalEntity || metadata.canonicalEntity || null,
-      scope,
-      supportedPrograms,
+      scope: doc.scope || metadata.scope || null,
+      supportedPrograms: doc.supportedPrograms || metadata.supportedPrograms || [],
       level: doc.level || metadata.level || academicLevel || null,
       correctedLevel: doc.correctedLevel || metadata.correctedLevel || null,
       metadata,
@@ -641,14 +547,6 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           }
         }
 
-        if (/sertifikat\s+akreditasi/i.test(sourceFile)) {
-          const certChunks = corpus.filter(c => (c.sourceFile || c.filename) === sourceFile);
-          const fullCertText = certChunks.map(c => c.chunk || c.text || '').filter(Boolean).join('\n');
-          if (fullCertText.length < 1000) {
-            enrichedText = fullCertText;
-          }
-        }
-
         const entityIds = doc.entityIds || metadata.entityIds ||
           (contextEntities && contextEntities.length > 0 ? contextEntities : (doc.program ? [doc.program] : []));
         const rawCategory = metadata.docCategory || doc.docCategory || (ctx ? ctx.category : doc.category) || item.doc_category;
@@ -657,7 +555,11 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           : ((Array.isArray(metadata.providedAspects) && metadata.providedAspects.length > 0)
             ? metadata.providedAspects
             : []);
-        const { academicLevel, academicLevels, supportedPrograms, scope } = extractCandidateAcademicProperties(doc, metadata, contextEntities, null);
+        const academicLevel = doc.academicLevel || metadata.academicLevel ||
+          ((contextEntities && contextEntities.length > 0 && contextEntities[0].match(/^(S1|S2|D3|D4)\b/i))
+            ? contextEntities[0].match(/^(S1|S2|D3|D4)\b/i)[0]
+            : (doc.program ? (doc.program.match(/^(S1|S2|D3|D4)\b/i) || [])[0] : null));
+        const academicLevels = doc.academicLevels || metadata.academicLevels || (academicLevel ? [academicLevel] : []);
         const provenanceDocumentId = doc.provenanceDocumentId || metadata.provenanceDocumentId || doc.trainingId || doc.id || null;
 
         return {
@@ -674,8 +576,8 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           sourceDocument: sourceFile,
           program: doc.program || metadata.program || null,
           canonicalEntity: doc.canonicalEntity || metadata.canonicalEntity || null,
-          scope,
-          supportedPrograms,
+          scope: doc.scope || metadata.scope || null,
+          supportedPrograms: doc.supportedPrograms || metadata.supportedPrograms || [],
           level: doc.level || metadata.level || academicLevel || null,
           correctedLevel: doc.correctedLevel || metadata.correctedLevel || null,
           metadata,
@@ -751,14 +653,6 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           }
         }
 
-        if (/sertifikat\s+akreditasi/i.test(sourceFile)) {
-          const certChunks = corpus.filter(c => (c.sourceFile || c.filename) === sourceFile);
-          const fullCertText = certChunks.map(c => c.chunk || c.text || '').filter(Boolean).join('\n');
-          if (fullCertText.length < 1000) {
-            enrichedText = fullCertText;
-          }
-        }
-
         const entityIds = doc.entityIds || metadata.entityIds ||
           (contextEntities && contextEntities.length > 0 ? contextEntities : (doc.program ? [doc.program] : []));
         const rawCategory = metadata.docCategory || doc.docCategory || (ctx ? ctx.category : doc.category) || item.doc_category;
@@ -767,7 +661,11 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           : ((Array.isArray(metadata.providedAspects) && metadata.providedAspects.length > 0)
             ? metadata.providedAspects
             : []);
-        const { academicLevel, academicLevels, supportedPrograms, scope } = extractCandidateAcademicProperties(doc, metadata, contextEntities, sectionProg);
+        const academicLevel = doc.academicLevel || metadata.academicLevel ||
+          ((contextEntities && contextEntities.length > 0 && contextEntities[0].match(/^(S1|S2|D3|D4)\b/i))
+            ? contextEntities[0].match(/^(S1|S2|D3|D4)\b/i)[0]
+            : (doc.program ? (doc.program.match(/^(S1|S2|D3|D4)\b/i) || [])[0] : null));
+        const academicLevels = doc.academicLevels || metadata.academicLevels || (academicLevel ? [academicLevel] : []);
         const provenanceDocumentId = doc.provenanceDocumentId || metadata.provenanceDocumentId || doc.trainingId || doc.id || null;
 
         return {
@@ -783,13 +681,12 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
           rawText,
           chunk: enrichedText,
           source,
-          sourceFile,
           source_file: sourceFile,
           sourceDocument: sourceFile,
           program: doc.program || metadata.program || null,
           canonicalEntity: doc.canonicalEntity || metadata.canonicalEntity || null,
-          scope,
-          supportedPrograms,
+          scope: doc.scope || metadata.scope || null,
+          supportedPrograms: doc.supportedPrograms || metadata.supportedPrograms || [],
           level: doc.level || metadata.level || academicLevel || null,
           correctedLevel: doc.correctedLevel || metadata.correctedLevel || null,
           metadata,
@@ -819,7 +716,6 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
         rawText: item.chunk || '',
         chunk: item.chunk || '',
         source: item.source_file || 'pgvector_hybrid',
-        sourceFile: item.source_file || 'pgvector_hybrid',
         source_file: item.source_file || 'pgvector_hybrid',
         sourceDocument: item.source_file || 'pgvector_hybrid',
         metadata: item,

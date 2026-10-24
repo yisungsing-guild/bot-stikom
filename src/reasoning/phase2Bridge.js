@@ -25,7 +25,7 @@ const {
 } = require('./contracts');
 const { executeTaskGraph } = require('./taskGraphExecutor');
 const plannerModule = require('./phase2Planner');
-const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('../core/semanticFrameResolver');
+const { resolveSemanticFrameAsync } = require('../core/semanticFrameResolver');
 const { getSession, updateSession } = require('../core/conversationState');
 const outboundDispatcher = require('../core/outboundDispatcher');
 const { verifyFinalAnswer } = require('../core/finalAnswerVerifier');
@@ -65,14 +65,6 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
   const internalOptions = { ...options, executeDispatch: false, turnControl, signal: turnControl.signal };
   let timedOut = false;
 
-  // Input validation: fail-closed if required parameters are missing or invalid
-  if (typeof rawQuery !== 'string' || !rawQuery.trim()) {
-    throw new Error('phase2_bridge_invalid_input: rawQuery must be a non-empty string');
-  }
-  if (typeof phase1PipelineFn !== 'function') {
-    throw new Error('phase2_bridge_invalid_input: phase1PipelineFn must be a function');
-  }
-
   // Execution cutoff: when real LLM is available, use extended budget; otherwise use 10000ms
   const defaultBridgeTimeoutMs = process.env.PHASE2_BRIDGE_TIMEOUT_MS
     ? parseInt(process.env.PHASE2_BRIDGE_TIMEOUT_MS, 10)
@@ -94,27 +86,10 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       : await getSession(chatId);
     const sessionData = session ? (session.data || {}) : {};
 
-    // 2. Resolve semantic frame: prefer provided, then async parser, then deterministic sync fallback
+    // 2. Resolve semantic frame asynchronously via modelSemanticParser if not already provided
     let semanticFrame = options.semanticFrame;
-    if (!semanticFrame) {
-      if (typeof resolveSemanticFrameAsync === 'function' && !options.syncOnly && !isTestEnv) {
-        try {
-          semanticFrame = await resolveSemanticFrameAsync(rawQuery, sessionData, { ...options, startTime });
-        } catch (err) {
-          logger.warn({ err: err.message }, '[Phase2Bridge] resolveSemanticFrameAsync threw error; falling back to synchronous resolver');
-        }
-      }
-      if (!semanticFrame && typeof resolveSemanticFrame === 'function') {
-        semanticFrame = resolveSemanticFrame(rawQuery, sessionData);
-      }
-    }
-
-    // Invariant check: semanticFrame must never be undefined or missing required contract fields
-    if (!semanticFrame || typeof semanticFrame !== 'object') {
-      throw new Error('phase2_bridge_invariant_violation: semanticFrame is undefined after resolution');
-    }
-    if (!semanticFrame.domain || !semanticFrame.intent) {
-      throw new Error(`phase2_bridge_invariant_violation: semanticFrame missing required fields (domain: ${semanticFrame?.domain}, intent: ${semanticFrame?.intent})`);
+    if (!semanticFrame && typeof resolveSemanticFrameAsync === 'function' && !options.syncOnly && !isTestEnv) {
+      semanticFrame = await resolveSemanticFrameAsync(rawQuery, sessionData, { ...options, startTime });
     }
 
     // Build execution plan via Phase 2 planner bounded by deadline
@@ -153,11 +128,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         .map((opt, idx) => `${idx + 1}. ${opt.canonical}`)
         .join('\n');
 
-      const isShiftEveningQuery = /\b(?:kelas\s+malam|kelas\s+karyawan|kelas\s+sore|shift|kerja\s+shift|kuliah\s+sambil\s+kerja)\b/i.test(rawQuery);
-      const topicPrefix = isShiftEveningQuery
-        ? 'Terkait perkuliahan kelas sore/karyawan untuk yang bekerja shift, '
-        : '';
-      const clarificationAnswer = `${topicPrefix}Untuk memberikan informasi jadwal dan ketentuan yang tepat, mohon jelaskan program studi mana yang ingin Kakak tanyakan?\n\n${optionsList}\n\nSilakan sebutkan program studi pilihan Kakak.`;
+      const clarificationAnswer = `Untuk memberikan informasi yang tepat, mohon jelaskan program studi mana yang ingin Kakak tanyakan?\n\n${optionsList}\n\nSilakan sebutkan program studi pilihan Kakak.`;
 
       // Verification via Phase 1 Universal Verifier
       const verification = verifyFinalAnswer(clarificationAnswer, { rawQuery, entities: [] }, {});
@@ -176,16 +147,7 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         await updateSession(chatId, {
           dataPatch: {
             lastQuery: rawQuery,
-            lastAnswer: clarificationAnswer,
-            activeMenu: {
-              menuType: 'PROGRAM_SELECTION',
-              options: plan.clarificationOptions || [],
-              pendingQuery: rawQuery,
-              pendingDomain: semanticFrame.domain,
-              pendingIntent: semanticFrame.intent,
-              pendingAspects: semanticFrame.aspects || [],
-              timestamp: Date.now()
-            }
+            lastAnswer: clarificationAnswer
           }
         });
       }
@@ -476,31 +438,14 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         // Atomic session persistence (Step 4 & Step 5) for non-comparative graph tasks
         if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState && turnControl.canCommitSession('phase2')) {
           const deltaState = plan.contextDelta.resolvedState;
-          let currentWave = null;
-          if (semanticFrame && semanticFrame.feeScope && semanticFrame.feeScope.registrationWave) {
-            currentWave = semanticFrame.feeScope.registrationWave;
-          } else {
-            const { extractAllMentionedWaves } = require('../core/feeCalculationEngine');
-            const detected = extractAllMentionedWaves(rawQuery);
-            if (detected && detected.length > 0) {
-              currentWave = detected[0];
-            }
-          }
-          const activeWave = currentWave || sessionData.lastActiveWave || null;
-
           await updateSession(chatId, {
             dataPatch: {
               activeDomain: deltaState.activeDomain,
-              activeIntent: plan.taskGraph?.inferredIntent || semanticFrame?.intent || 'GENERAL',
-              activeAspects: plan.comparisonRequest?.requestedAspects || semanticFrame?.aspects || [],
-              requestedAspects: plan.comparisonRequest?.requestedAspects || semanticFrame?.aspects || [],
               activeEntity: deltaState.activeEntity,
               preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
               entityProvenance: deltaState.entityProvenance,
-              lastActiveWave: activeWave,
               lastQuery: rawQuery,
-              lastAnswer: finalGraphAnswer,
-              activeMenu: null
+              lastAnswer: finalGraphAnswer
             }
           });
         }
@@ -567,7 +512,6 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
 
     // 5. Standard Handoff to Phase 1 Deterministic Execution Core
     // Phase 1 executes retrieval, arbitration, answerability, synthesis, & verification
-    internalOptions.semanticFrame = plan.semanticFrame || semanticFrame;
     const phase1Result = await phase1PipelineFn(chatId, rawQuery, internalOptions);
 
     let replanMetadata = {
@@ -632,35 +576,14 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     // Atomically commit context delta to session only after verified completion (Step 4)
     if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState && turnControl.canCommitSession('phase2')) {
       const deltaState = plan.contextDelta.resolvedState;
-      const primarySubFrame = (phase1Result.subQueryResults && phase1Result.subQueryResults[0] && phase1Result.subQueryResults[0].frame) || internalOptions.semanticFrame || {};
-      const activeIntent = primarySubFrame.intent || plan.intent || deltaState.activeIntent || 'GENERAL';
-      const activeAspects = primarySubFrame.aspects || plan.comparisonRequest?.requestedAspects || deltaState.activeAspects || [];
-
-      let currentWave = null;
-      if (primarySubFrame && primarySubFrame.feeScope && primarySubFrame.feeScope.registrationWave) {
-        currentWave = primarySubFrame.feeScope.registrationWave;
-      } else {
-        const { extractAllMentionedWaves } = require('../core/feeCalculationEngine');
-        const detected = extractAllMentionedWaves(rawQuery);
-        if (detected && detected.length > 0) {
-          currentWave = detected[0];
-        }
-      }
-      const activeWave = currentWave || sessionData.lastActiveWave || null;
-
       await updateSession(chatId, {
         dataPatch: {
           activeDomain: deltaState.activeDomain,
-          activeIntent: activeIntent,
-          activeAspects: activeAspects,
-          requestedAspects: activeAspects,
           activeEntity: deltaState.activeEntity,
           preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
           entityProvenance: deltaState.entityProvenance,
-          lastActiveWave: activeWave,
           lastQuery: rawQuery,
-          lastAnswer: phase1Result.finalAnswer,
-          activeMenu: null
+          lastAnswer: phase1Result.finalAnswer
         }
       });
     }

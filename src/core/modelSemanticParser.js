@@ -19,6 +19,7 @@
 const { OpenAI } = require('openai');
 const logger = require('../logger');
 const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
+const { globalBudgetLedger } = require('./budgetLedger');
 
 const ALLOWED_SPEECH_ACTS = Object.freeze([
   'DISCOVER_LIST',
@@ -217,7 +218,7 @@ Aspects:
 Rules:
 1. Understand colloquial Indonesian, abbreviations, typos, and slang by SEMANTIC MEANING, not literal character matching.
 2. DO NOT answer questions or invent facts/catalogs.
-3. Candidate entities: Extract ONLY specific named entities (programs, institutions, specific clubs/organizations, specific partners). DO NOT extract generic common nouns, verbs, degree levels, broad domain categories, or phrases with conjunctions/prepositions (e.g. "maba", "teknik atau komputer", "tambahan dan potongan", "pengalaman kerja ke SKS", "yang dibuka di pascasarjana", "pendidikan vokasi", "semua prodi", "konsultasi", "registrasi online" are NOT candidate entities; they belong to aspects/concepts/scopeConstraints).
+3. Candidate entities: Extract ONLY specific named entities (programs, institutions, specific clubs/organizations, specific partners). DO NOT extract generic common nouns, verbs, or full prepositional phrases as candidate entities (e.g. "maba", "awal masuk", "calon pendaftar lokal", "upload bukti", "konsultasi", "registrasi online" are NOT candidate entities; they belong to aspects/concepts).
 4. For follow-ups (ellipsis/anaphora), set contextDependency.isFollowUp=true with appropriate referenceType. DO NOT invent unmentioned entities.
 5. For multi-entity or inherently ambiguous inquiries, preserve all candidate entities and set ambiguityLevel="HIGH".
 6. Return only the structured JSON.`;
@@ -317,6 +318,10 @@ let sharedClientInstance = null;
  */
 function resolveClient(customClient, timeoutMs) {
   if (customClient) return customClient;
+  // Prevent tests from accidentally reading local credentials and initiating paid live API calls
+  if (process.env.NODE_ENV === 'test' && process.env.ALLOW_LIVE_OPENAI_TESTS !== 'true' && process.env.MODEL_SEMANTIC_REAL_TEST !== 'true') {
+    return null;
+  }
   if (!sharedClientInstance) {
     const apiKey = String(process.env.OPENAI_API_KEY || '').trim();
     if (!apiKey) return null;
@@ -351,7 +356,7 @@ async function parseSemanticInterpretation(input, options = {}) {
     return buildSafeUnknownInterpretation('', 'empty_query');
   }
 
-  const timeoutMs = parseInt(options.timeoutMs || process.env.SEMANTIC_PARSER_TIMEOUT_MS || '4500', 10);
+  const timeoutMs = parseInt(options.timeoutMs || process.env.SEMANTIC_PARSER_TIMEOUT_MS || '15000', 10);
   const model = String(
     options.model ||
     process.env.SEMANTIC_PARSER_MODEL ||
@@ -401,7 +406,7 @@ async function parseSemanticInterpretation(input, options = {}) {
     const providerStart = Date.now();
     const isNewerGptModel = /^gpt-(?:[4-9]|4o)/i.test(model) || /^o\d/i.test(model);
     const isGpt6OrReasoning = /gpt-6|luna|o1|o3/i.test(model);
-    const tokenLimit = parseInt(process.env.SEMANTIC_PARSER_MAX_TOKENS || (options && options.tokenLimit) || '800', 10);
+    const tokenLimit = 300;
     const requestPayload = {
       model,
       messages,
@@ -423,41 +428,88 @@ async function parseSemanticInterpretation(input, options = {}) {
 
     const sanitizedPayload = sanitizeOpenAiChatPayload(requestPayload);
 
-    // Controlled adaptive API execution with empirical parameter retry
-    const callApi = async () => {
-      try {
-        return await client.chat.completions.create(sanitizedPayload, { signal: abortController.signal });
-      } catch (apiErr) {
-        const msg = String(apiErr?.message || '');
-        // 1. Empirical proof: Model rejects non-default temperature
-        if (/temperature/i.test(msg) && sanitizedPayload.temperature !== undefined) {
-          logger.warn({ status: apiErr.status, reason: 'temperature_rejected' }, '[modelSemanticParser] API rejected temperature parameter; retrying without temperature');
-          const retryPayload = { ...sanitizedPayload };
-          delete retryPayload.temperature;
-          delete retryPayload.top_p;
-          return await client.chat.completions.create(retryPayload, { signal: abortController.signal });
-        }
-        // 2. Empirical proof: Model rejects max_tokens in favor of max_completion_tokens
-        if (/max_tokens/i.test(msg) && sanitizedPayload.max_tokens !== undefined) {
-          logger.warn({ status: apiErr.status, reason: 'max_tokens_rejected' }, '[modelSemanticParser] API rejected max_tokens; retrying with max_completion_tokens');
-          const retryPayload = { ...sanitizedPayload };
-          retryPayload.max_completion_tokens = retryPayload.max_tokens;
-          delete retryPayload.max_tokens;
-          return await client.chat.completions.create(retryPayload, { signal: abortController.signal });
-        }
-        throw apiErr;
-      }
-    };
+    const ledger = options.budgetLedger || (globalBudgetLedger.isAvailable() ? globalBudgetLedger : null);
+    let reservation = null;
 
-    const response = await Promise.race([
-      callApi(),
-      timeoutPromise
-    ]);
+    if (ledger) {
+      reservation = await ledger.reserveBudget({
+        purpose: 'call_1_semantic_parser',
+        model,
+        maxPromptTokens: 500,
+        maxCompletionTokens: tokenLimit,
+        maxBudgetUSD: options.maxBudgetUSD,
+        operationId: options.operationId,
+        now: options.now || new Date()
+      });
+
+      if (!reservation.allowed) {
+        const elapsedMs = Date.now() - startTime;
+        logger.warn({ rawQuery, reason: reservation.reason, model }, '[modelSemanticParser] Budget reservation denied; failing closed to safe UNKNOWN');
+        return buildSafeUnknownInterpretation(rawQuery, reservation.reason || 'budget_reservation_denied', {
+          requestedModel: model,
+          budgetExceeded: reservation.reason === 'DAILY_BUDGET_EXCEEDED',
+          reservation,
+          totalLatencyMs: elapsedMs,
+          elapsedMs
+        });
+      }
+    } else if (process.env.NODE_ENV !== 'test') {
+      const elapsedMs = Date.now() - startTime;
+      logger.warn({ rawQuery }, '[modelSemanticParser] Persistent budget ledger unavailable in non-test runtime; failing closed');
+      return buildSafeUnknownInterpretation(rawQuery, 'PERSISTENT_LEDGER_UNAVAILABLE', {
+        requestedModel: model,
+        budgetExceeded: false,
+        totalLatencyMs: elapsedMs,
+        elapsedMs
+      });
+    }
+
+    let response;
+    try {
+      response = await Promise.race([
+        client.chat.completions.create(
+          sanitizedPayload,
+          { signal: abortController.signal }
+        ),
+        timeoutPromise
+      ]);
+    } catch (apiErr) {
+      if (reservation && reservation.reservationId) {
+        const isTimeout =
+          apiErr?.name === 'TimeoutError' ||
+          apiErr?.name === 'AbortError' ||
+          /timeout|aborted/i.test(apiErr?.message || '');
+        await ledger.reconcileBudget({
+          reservationId: reservation.reservationId,
+          reservedUSD: reservation.reservedUSD,
+          model,
+          error: apiErr,
+          isPreRequest: false,
+          status: isTimeout ? 'AMBIGUOUS_FAILURE' : 'FAILED'
+        });
+      }
+      throw apiErr;
+    }
+
     const providerLatencyMs = Date.now() - providerStart;
+
+    // Reconcile budget on success with verified token usage
+    const usage = response?.usage;
+    const promptTokens = usage?.prompt_tokens || 0;
+    const completionTokens = usage?.completion_tokens || 0;
+    if (reservation && reservation.reservationId) {
+      await ledger.reconcileBudget({
+        reservationId: reservation.reservationId,
+        reservedUSD: reservation.reservedUSD,
+        actualPromptTokens: promptTokens,
+        actualCompletionTokens: completionTokens,
+        model,
+        status: 'SUCCESS'
+      });
+    }
 
     const parseStart = Date.now();
     const rawContent = response?.choices?.[0]?.message?.content;
-
 
     if (!rawContent) {
       const elapsedMs = Date.now() - startTime;

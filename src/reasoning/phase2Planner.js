@@ -54,8 +54,8 @@ function isExplicitUnsupportedProgram(rawQuery, semanticFrame = {}) {
     if (semanticFrame.unsupportedEntity || semanticFrame.isUnsupportedEntity) {
       return semanticFrame.unsupportedEntityName || semanticFrame.unsupportedProgramName || 'tersebut';
     }
-    if (semanticFrame.unconfirmedProgram) {
-      return semanticFrame.unconfirmedProgram;
+    if (semanticFrame.unsupportedEntity === false || semanticFrame.isUnsupportedEntity === false) {
+      return null;
     }
   }
 
@@ -80,14 +80,10 @@ function isExplicitUnsupportedProgram(rawQuery, semanticFrame = {}) {
   // Check linguistic discipline patterns if no supported entity
   const qStr = semanticFrame?.rawQuery || rawQuery;
   if (qStr && typeof qStr === 'string') {
-    const { detectUnsupportedProgram, detectUnconfirmedProgram } = require('../core/semanticFrameResolver');
+    const { detectUnsupportedProgram } = require('../core/semanticFrameResolver');
     if (typeof detectUnsupportedProgram === 'function') {
       const detected = detectUnsupportedProgram(qStr, semanticFrame?.entities || []);
       if (detected) return detected;
-    }
-    if (typeof detectUnconfirmedProgram === 'function') {
-      const unconfirmed = detectUnconfirmedProgram(qStr, semanticFrame?.entities || []);
-      if (unconfirmed) return unconfirmed;
     }
   }
 
@@ -99,13 +95,6 @@ function isExplicitUnsupportedProgram(rawQuery, semanticFrame = {}) {
  */
 function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   if (isExplicitUnsupportedProgram(rawQuery, semanticFrame)) {
-    return false;
-  }
-  if (semanticFrame?.unconfirmedProgram) {
-    return false;
-  }
-  const candidateEntities = Array.isArray(semanticFrame?.candidateEntities) ? semanticFrame.candidateEntities : [];
-  if (candidateEntities.some(c => (c.inferredCategory === 'academic_program' || c.inferredCategory === 'discipline') && (c.rawMention || c.canonical))) {
     return false;
   }
 
@@ -120,86 +109,27 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
     return false;
   }
 
-  // Institutional queries, general listings, academic advising, or greetings are not ambiguous
+  // Pure institutional general inquiries, available listings, or greetings are not ambiguous
   if (semanticFrame) {
     if (semanticFrame.intent === 'AVAILABLE_PROGRAMS_LIST' ||
         semanticFrame.intent === 'GENERAL_PMB_INQUIRY' ||
-        semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
         semanticFrame.intent === 'PAYMENT_CONFIRMATION_PROCEDURE' ||
-        semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
-        semanticFrame.intent === 'INSTITUTIONAL_ACCREDITATION' ||
-        semanticFrame.domain === 'ACADEMIC_PROCESS' ||
-        semanticFrame.domain === 'INSTITUTIONAL' ||
-        semanticFrame.domain === 'SCHOLARSHIP' ||
         semanticFrame.speechAct === 'GENERAL_GREETING') {
       return false;
     }
   }
 
-  // Academic advising, perwalian, and E-KRS procedures are university-wide institutional processes
-  if (/\b(?:perwalian|dosen\s+wali|bimbingan\s+perwalian|e-?krs|supportperwalian)\b/i.test(q)) {
-    return false;
-  }
-
-  // RPL (Rekognisi Pembelajaran Lampau) is an institutional admission / credit-transfer route
-  if (/\b(?:rpl|rekognisi\s+pembelajaran\s+lampau)\b/i.test(q)) {
-    return false;
-  }
-
-  // Campus location and address inquiries are institutional (Renon, Jimbaran, Abiansemal)
-  if (/\b(?:lokasi(?:\s+kampus)?|alamat(?:\s+kampus)?|di\s+mana\s+kampus(?:nya)?|letak\s+kampus|campus\s+location|where\s+is\s+(?:the\s+)?campus)\b/i.test(q)) {
-    return false;
-  }
-
-  // Operational hours inquiries are institutional
-  if (semanticFrame?.intent === 'OPERATIONAL_HOURS_INQUIRY' || /\b(?:jam|waktu)\s+(?:operasional|layanan|kerja|buka)\b/i.test(q)) {
-    return false;
-  }
-
-  // Online lecture platform & application inquiries are campus-wide services
-  if (semanticFrame?.intent === 'ONLINE_LEARNING_PLATFORM' ||
-      (/\b(?:kuliah|perkuliahan)\b/i.test(q) && /\b(?:online|daring)\b/i.test(q) && /\b(?:aplikasi|platform|sistem|lms|media|software|menggunakan|pakai)\b/i.test(q)) ||
-      /\b(?:aplikasi.*online|kuliah.*online.*aplikasi)\b/i.test(q)) {
-    return false;
-  }
-
-  // Research focus inquiries are specific academic program inquiries (e.g. S2 Magister)
-  if (semanticFrame?.intent === 'RESEARCH_FOCUS_INQUIRY' ||
-      /\b(?:fokus\s+riset|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics)\b/i.test(q)) {
-    return false;
-  }
-
-  // Academic support, portal, SION, and Pascasarjana contact inquiries are institutional
-  if (semanticFrame?.intent === 'ACADEMIC_SUPPORT_INQUIRY' ||
-      /\b(?:sion|portal|kendala\s+akademik|masalah\s+akademik)\b/i.test(q)) {
-    return false;
-  }
-
-  // General PMB admission opening / deadline schedule is an institutional schedule
-  if (/\b(?:kapan|jadwal|periode|batas\s+akhir|when|schedule|deadline)\s+.*(?:pendaftaran|pmb|penerimaan|admission|registration|enrollment)\b/i.test(q) ||
-      /\b(?:pendaftaran|pmb|admission|registration)\s+(?:kapan|kapan\s+dibuka|dibuka\s+kapan|kapan\s+mulai|open|start)\b/i.test(q)) {
-    return false;
-  }
-
-  // Broad/general multi-program questions like "apa saja komponen biaya" or requests for all prodi fees / comparison
-  if (/\b(?:apa\s+saja|rincian|daftar|list|compare|comparison)\s+(?:komponen\s+)?(?:biaya|tuition|fee)\b/i.test(q) ||
-      /\bkomponen\s+biaya\b/i.test(q) ||
-      /\b(?:semua|seluruh|tiap|masing-masing|all|across\s+all)\s+(?:prodi|jurusan|program\s+studi|programs?|study\s+programs?)\b/i.test(q) ||
-      /\b(?:paling\s+rendah|terendah|paling\s+murah|lowest|cheapest)\b/i.test(q) ||
-      /\brincian\s+biaya\s+(?:kuliah\s+)?(?:untuk\s+)?(?:semua|seluruh)\b/i.test(q)) {
-    return false;
-  }
-
-  // General scholarships or financial aids are institutional
-  const isScholarshipOrSponsorship = /\b(?:beasiswa|sponsor|sponsorship|bantuan\s+dana|keringanan\s+biaya|kip|skss|scholarship|scholarships|financial\s+aid)\b/i.test(q);
-  if (isScholarshipOrSponsorship || semanticFrame?.domain === 'SCHOLARSHIP' || semanticFrame?.intent === 'SCHOLARSHIP_INQUIRY') {
+  // Broad/general multi-program questions like "apa saja komponen biaya" are institutional general inquiries
+  if (/\b(?:apa\s+saja|rincian|daftar)\s+(?:komponen\s+)?biaya\b/i.test(q) || /\bkomponen\s+biaya\b/i.test(q)) {
     return false;
   }
 
   // Fee inquiries without entity or level: "berapa biaya kuliahnya?", "biayanya berapa?", "berapa spp-nya?"
   // Note: Facility/service fees (e.g. parkir, kantin, gedung pernikahan) are NOT tuition fee program inquiries!
+  // Note: Specific scholarship inquiries (e.g. "beasiswa penuh dari Pemerintah Daerah Provinsi Papua") are NOT ambiguous tuition fee inquiries!
   const isFacilityOrServiceFee = /\b(?:parkir|parking|kantin|canteen|katering|catering|makanan|food|aula|hall|resepsi|sewa|rent)\b/i.test(q) ||
     (/\bgedung\b/i.test(q) && !/\b(?:uang|biaya)\s+gedung\b/i.test(q));
+  const isScholarshipOrSponsorship = /\b(?:beasiswa|sponsor|sponsorship|bantuan\s+dana|keringanan\s+biaya)\b/i.test(q);
   const isGraduationOrCertificationFee = /\b(?:wisuda|yudisium|sertifikasi)\b/i.test(q);
   if (!isFacilityOrServiceFee && !isScholarshipOrSponsorship && !isGraduationOrCertificationFee &&
       (semanticFrame?.domain === 'TUITION_FEE' || semanticFrame?.intent === 'TUITION_FEE_INQUIRY' || aspects.includes('fee') || aspects.includes('tuition')) &&
@@ -210,11 +140,11 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
 
   // Requirements inquiries without entity or level: "bagaimana syarat pendaftarannya?", "syarat masuknya apa?"
   // Note: Only general PMB / admission requirements lacking program/level should require prodi clarification.
-  // Foreign student visa, study permit, scholarships, and thesis/graduation rules must NOT be hijacked.
+  // Foreign student visa, scholarships, and thesis/graduation rules must NOT be hijacked.
   const isSpecialScopeRequirement = semanticFrame?.domain === 'SCHOLARSHIP' ||
     semanticFrame?.domain === 'INTERNATIONAL' ||
     semanticFrame?.participantScope === 'foreign' ||
-    /\b(?:visa|itas|kitas|izin\s+belajar|study\s+permit|asing|internasional|foreign|beasiswa|tugas\s+akhir|skripsi|final\s+project|thesis|defen[sd]e?|yudisium|wisuda|graduation|bimbingan|pertukaran|student\s+exchange|exchange|rpl)\b/i.test(q);
+    /\b(?:visa|itas|kitas|izin\s+belajar|asing|beasiswa|tugas\s+akhir|skripsi|final\s+project|thesis|defen[sd]e?|yudisium|wisuda|graduation|bimbingan|pertukaran|student\s+exchange|exchange)\b/i.test(q);
 
   if (!isSpecialScopeRequirement &&
       (semanticFrame?.intent === 'ADMISSION_REQUIREMENTS' || (semanticFrame?.domain === 'PMB' && aspects.includes('requirements'))) &&
@@ -222,16 +152,26 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
     return true;
   }
 
-  // Schedule inquiries without context: "kapan perkuliahan dimulai?", "jadwal kuliah kapan?"
+  // Schedule inquiries without context: "kapan perkuliahan dimulai?", "jadwal kuliah kapan?", "kapan batas akhir pendaftaran?"
+  // If asking for registration/admission schedule without specific prodi or specific wave/gelombang:
   const isFacilityOrCanteen = /\b(?:kantin|menu|makanan|bus|shuttle|parkir|parking)\b/i.test(q);
-  if (!isFacilityOrCanteen && !isSpecialScopeRequirement && (aspects.includes('schedule') || semanticFrame?.intent === 'ADMISSION_SCHEDULE')) {
+  if (!isFacilityOrCanteen && (aspects.includes('schedule') || semanticFrame?.intent === 'ADMISSION_SCHEDULE')) {
     if (!semanticFrame.academicLevel) {
+      // If it asks for batas akhir/jadwal pendaftaran but does not specify gelombang (1, 2, 3) or jalur
+      if (/\b(?:batas\s+akhir|jadwal|periode|kapan)\s+(?:pendaftaran|pmb)\b/i.test(q) && !/\b(?:gelombang\s+\d|jalur\s+[a-z]+)\b/i.test(q)) {
+        return true;
+      }
       if (!/\b(?:pendaftaran|gelombang|pmb)\b/i.test(q)) {
         return true;
       }
     }
   }
 
+  // Campus location inquiries without specific branch or campus name: "di mana lokasi kampusnya?", "alamat kampus di mana?"
+  if (/\b(?:lokasi(?:\s+kampus)?|alamat(?:\s+kampus)?|di\s+mana\s+kampus(?:nya)?|letak\s+kampus)\b/i.test(q) &&
+      !/\b(?:renon|jimbaran|abiansemal|stikom\s+bali)\b/i.test(q)) {
+    return true;
+  }
 
   // Degree inquiries without target program: "gelar apa yang didapatkan?", "gelarnya apa setelah lulus?"
   if (/\b(?:gelar\s+apa|apa\s+gelar|gelarnya\s+apa)\b/i.test(q) && !semanticFrame.academicLevel &&
@@ -246,7 +186,7 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   }
 
   // Study duration inquiries without target program or level: "berapa lama waktu studinya sampai lulus?", "berapa lama kuliahnya?"
-  if (!isSpecialScopeRequirement && /\b(?:berapa\s+lama\s+(?:waktu\s+)?studi(?:nya)?|lama\s+kuliah(?:nya)?|berapa\s+tahun\s+kuliah(?:nya)?)\b/i.test(q) &&
+  if (/\b(?:berapa\s+lama\s+(?:waktu\s+)?studi(?:nya)?|lama\s+kuliah(?:nya)?|berapa\s+tahun\s+kuliah(?:nya)?)\b/i.test(q) &&
       !semanticFrame.academicLevel && !allEntities.some(e => e.family === 'academic_program' || e.family === 'international_program')) {
     return true;
   }
@@ -259,17 +199,15 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   }
 
   // Program-scoped inquiries with zero entities and no academic level
-  // Note: Specific scholarship inquiries, thesis guidance, and specific learning topics (e.g. SEO, coding) must NOT trigger prodi clarification
+  // Note: Specific scholarship inquiries and institutional thesis guidance procedure must NOT trigger prodi clarification
   const isThesisHandbook = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|bimbingan\s+ta|buku\s+pedoman)\b/i.test(q);
-  const isSpecificTopicLearning = /\b(?:seo|search\s+engine\s+optim(?:ization|isation)|digital\s+marketing|coding|ngoding|pemrograman|ai|artificial\s+intelligence|iot|internet\s+of\s+things|robotika|data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics)\b/i.test(q);
   const isProgramScoped =
     (semanticFrame?.domain === 'ACADEMIC_CURRICULUM' ||
      semanticFrame?.domain === 'ACADEMIC_PROGRAM' ||
      semanticFrame?.intent === 'CURRICULUM_INQUIRY') &&
     !isScholarshipOrSponsorship &&
-    !isThesisHandbook &&
-    !isSpecificTopicLearning;
-  if (isProgramScoped && programEntities.length === 0 && !semanticFrame.academicLevel) {
+    !isThesisHandbook;
+  if (isProgramScoped && allEntities.length === 0 && !semanticFrame.academicLevel) {
     return true;
   }
 
@@ -280,17 +218,8 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
  * Builds an initial validated ExecutionPlan for inbound query
  */
 function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
-  let query = '';
-  let precomputedFrame = options.semanticFrame || null;
-
-  if (rawQuery && typeof rawQuery === 'object' && !Array.isArray(rawQuery)) {
-    precomputedFrame = rawQuery;
-    query = String(rawQuery.rawQuery || rawQuery.normalizedQuery || '').trim();
-  } else {
-    query = String(rawQuery || '').trim();
-  }
-
-  if (!query && !precomputedFrame) {
+  const query = String(rawQuery || '').trim();
+  if (!query) {
     return {
       success: false,
       error: 'empty_query',
@@ -299,7 +228,7 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
   }
 
   // 1. Resolve semantic frame: precomputed frame if provided, otherwise synchronous resolution
-  const semanticFrame = precomputedFrame || resolveSemanticFrame(query, sessionData, options);
+  const semanticFrame = options.semanticFrame || resolveSemanticFrame(query, sessionData, options);
 
   // 2. Compute explicit Context Delta (Step 4 integration)
   const contextDelta = computeContextDelta({ data: sessionData }, { rawQuery: query, semanticFrame });
@@ -554,8 +483,6 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
       activeEntity: contextActiveEntity,
       inheritedFromSession: isInherited
     },
-    targetDomain: semanticFrame.domain,
-    targetIntent: semanticFrame.intent,
     metadata: {
       plannerVersion: 'phase2-step5',
       frameDomain: semanticFrame.domain,
@@ -570,20 +497,14 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     return {
       success: false,
       error: validation.reason,
-      plan: null,
-      targetDomain: semanticFrame.domain,
-      targetIntent: semanticFrame.intent
+      plan: null
     };
   }
 
   return {
     success: true,
     error: null,
-    plan,
-    targetDomain: semanticFrame.domain,
-    targetIntent: semanticFrame.intent,
-    domain: semanticFrame.domain,
-    intent: semanticFrame.intent
+    plan
   };
 }
 

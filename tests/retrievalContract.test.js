@@ -2,7 +2,7 @@
 
 /**
  * tests/retrievalContract.test.js
- *
+ * 
  * Phase F Semantic Retrieval Contract & Dynamic Evidence Arbitration Test Suite.
  * Validates deterministic contract generation, scope binding, metadata states,
  * and evidence arbitration invariants.

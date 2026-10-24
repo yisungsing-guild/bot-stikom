@@ -19,18 +19,18 @@
       "Futsal",
       "Basket",
       "Bos",
-      "Athena Esports"
+      "Athena Esports",
+      "Ghost"
     ],
     "Teknologi dan Penalaran": [
       "Syntax",
       "Ksl",
-      "Mcos",
-      "Rade",
-      "Ghost"
+      "Rade"
     ],
     "Kerohanian": [
       "Kmhd",
-      "Pmk"
+      "Pmk",
+      "Mcos"
     ],
     "Khusus dan Pengabdian Masyarakat": [
       "Ksr",
@@ -47,5 +47,199 @@
       "Himas Jimbaran"
     ]
   },
-  "others": []
+  "others": [],
+  "organizationMetadata": {
+    "Musik": {
+      "officialName": "UKM MUSIK",
+      "category": "Kesenian dan Kebudayaan",
+      "aliases": ["ukm musik", "musik", "band", "akustik"],
+      "defaultDesc": "Komunitas minat musik, olah vokal, band mahasiswa, dan festival musik kampus."
+    },
+    "Tari": {
+      "officialName": "Unit Kegiatan Tari Tradisional “PRAGINA”",
+      "category": "Kesenian dan Kebudayaan",
+      "aliases": ["pragina", "tari tradisional", "ukm tari", "tari bali", "tari"],
+      "defaultDesc": "Pembinaan seni tari tradisional Bali, tari kreasi nusantara, dan pementasan seni budaya."
+    },
+    "Tabuh": {
+      "officialName": "UKM Tabuh (Bramara Gita)",
+      "category": "Kesenian dan Kebudayaan",
+      "aliases": ["bramara gita", "tabuh", "gamelan", "karawitan", "megambel"],
+      "defaultDesc": "Pelestarian seni karawitan dan tabuh tradisional Bali."
+    },
+    "Teater Biner": {
+      "officialName": "UKM TEATER BINER",
+      "category": "Kesenian dan Kebudayaan",
+      "aliases": ["teater biner", "ukm teater", "teater"],
+      "defaultDesc": "Seni peran, drama panggung, dan pementasan teater mahasiswa."
+    },
+    "D.o.s": {
+      "officialName": "UKM D.O.S",
+      "category": "Kesenian dan Kebudayaan",
+      "aliases": ["d.o.s", "dos", "dance of stikom", "modern dance"],
+      "defaultDesc": "Wadah pengembangan minat dan bakat tari modern (modern dance) mahasiswa."
+    },
+    "Vos": {
+      "officialName": "UKM Voice of STIKOM Bali (VOS)",
+      "category": "Kesenian dan Kebudayaan",
+      "aliases": ["voice of stikom", "vos", "paduan suara"],
+      "defaultDesc": "Paduan suara mahasiswa untuk upacara wisuda, kompetisi paduan suara, dan konser."
+    },
+    "Himatography": {
+      "officialName": "UKM HIMATOGRAPHY",
+      "category": "Kesenian dan Kebudayaan",
+      "aliases": ["himatography", "ukm fotografi", "fotografi"],
+      "defaultDesc": "Pelatihan teknik fotografi, hunting foto bersama, dan pameran karya visual."
+    },
+    "Multimedia": {
+      "officialName": "UKM MULTIMEDIA",
+      "category": "Kesenian dan Kebudayaan",
+      "aliases": ["multimedia", "ukm multimedia", "ukm mm", "desain grafis", "3d modeling", "video editing"],
+      "defaultDesc": "Pusat inkubasi talenta industri kreatif digital, desain grafis, audio-video editing, dan 3D modeling."
+    },
+    "Jcos": {
+      "officialName": "UKM JCOS",
+      "category": "Kesenian dan Kebudayaan",
+      "aliases": ["jcos", "japanese community of stikom", "kebudayaan jepang", "komunitas jepang"],
+      "defaultDesc": "Komunitas peminat bahasa dan kebudayaan Jepang (Japanese Community of STIKOM Bali)."
+    },
+    "Futsal": {
+      "officialName": "UKM FUTSAL",
+      "category": "Olahraga",
+      "aliases": ["futsal", "ukm futsal", "sepak bola"],
+      "defaultDesc": "Latihan rutin, sparing partner, dan partisipasi turnamen futsal mahasiswa."
+    },
+    "Basket": {
+      "officialName": "UKM BASKET",
+      "category": "Olahraga",
+      "aliases": ["basket", "ukm basket", "bola basket"],
+      "defaultDesc": "Pembinaan tim basket putra/putri serta kompetisi mahasiswa."
+    },
+    "Bos": {
+      "officialName": "UKM BOSS",
+      "category": "Olahraga",
+      "aliases": ["boss", "bulutangkis", "badminton", "ukm boss", "bos"],
+      "defaultDesc": "Latihan rutin dan turnamen bulutangkis (Badminton Organization of STIKOM Student)."
+    },
+    "Athena Esports": {
+      "officialName": "UKM Athena E-Sports",
+      "category": "Olahraga",
+      "aliases": ["athena esports", "athena esport", "athena", "esport", "esports", "gaming"],
+      "defaultDesc": "Pengembangan minat, bakat, serta tim kompetitif mahasiswa di bidang electronic sports."
+    },
+    "Ghost": {
+      "officialName": "UKM GHoST",
+      "category": "Olahraga",
+      "aliases": ["ghost", "kebugaran", "gym", "fitness", "bodybuilding"],
+      "defaultDesc": "Kegiatan fitness, gym, dan pembinaan kebugaran fisik mahasiswa (Gymnastic and Health of STIKOM Bali)."
+    },
+    "Syntax": {
+      "officialName": "UKM SYNTAX",
+      "category": "Teknologi dan Penalaran",
+      "aliases": ["syntax", "ukm syntax", "programming", "coding", "software development"],
+      "defaultDesc": "Wadah pengembangan keterampilan pemrograman, software development, dan kompetisi coding."
+    },
+    "Ksl": {
+      "officialName": "UKM KSL",
+      "category": "Teknologi dan Penalaran",
+      "aliases": ["ksl", "kelompok studi linux", "sahabat linux", "linux", "open source"],
+      "defaultDesc": "Komunitas Sahabat Linux untuk pendalaman open source, sistem operasi Linux, dan networking."
+    },
+    "Rade": {
+      "officialName": "UKM RADE",
+      "category": "Teknologi dan Penalaran",
+      "aliases": ["rade", "ukm rade", "robotika", "robotics", "hardware"],
+      "defaultDesc": "Riset dan pengembangan otomasi, sistem kendali, hardware, dan robotika mahasiswa."
+    },
+    "Kmhd": {
+      "officialName": "UKM KMHD",
+      "category": "Kerohanian",
+      "aliases": ["kmhd", "kesatuan mahasiswa hindu dharma", "hindu"],
+      "defaultDesc": "Pembinaan kerohanian, dharma wacana, dan upacara keagamaan bagi mahasiswa Hindu."
+    },
+    "Pmk": {
+      "officialName": "UKM PMK",
+      "category": "Kerohanian",
+      "aliases": ["pmk", "persekutuan mahasiswa kristen", "kristen"],
+      "defaultDesc": "Wadah ibadah, persekutuan doa, dan penguatan nilai kerohanian bagi mahasiswa Kristen."
+    },
+    "Mcos": {
+      "officialName": "UKM MCOS",
+      "category": "Kerohanian",
+      "aliases": ["mcos", "muslim community of stikom", "islam", "muslim"],
+      "defaultDesc": "Wadah pembinaan rohani Islam, kajian, dan peringatan hari besar keagamaan mahasiswa Muslim."
+    },
+    "Ksr": {
+      "officialName": "UKM KSR",
+      "category": "Khusus dan Pengabdian Masyarakat",
+      "aliases": ["ksr", "korps sukarela", "pmi", "palang merah"],
+      "defaultDesc": "Unit kepalangmerahan dan bantuan sosial kemanusiaan (KSR PMI Unit ITB STIKOM Bali)."
+    },
+    "Mapala Kompas": {
+      "officialName": "UKM MAPALA KOMPAS",
+      "category": "Khusus dan Pengabdian Masyarakat",
+      "aliases": ["mapala kompas", "mapala", "pecinta alam", "kompas"],
+      "defaultDesc": "Aktivitas penjelajahan alam bebas, konservasi lingkungan hidup, dan pendakian."
+    },
+    "Paskamras": {
+      "officialName": "UKM PASKAMRAS",
+      "category": "Khusus dan Pengabdian Masyarakat",
+      "aliases": ["paskamras", "pasukan pengibar bendera", "paskibra"],
+      "defaultDesc": "Pasukan pengibar bendera dan pembinaan kedisiplinan serta kepemimpinan protokoler."
+    },
+    "Progress": {
+      "officialName": "UKM PROGRESS",
+      "category": "Khusus dan Pengabdian Masyarakat",
+      "aliases": ["progress", "ukm progress"],
+      "defaultDesc": "Pengembangan kreativitas, kepemimpinan, dan kegiatan pengabdian sosial mahasiswa."
+    },
+    "U2M": {
+      "officialName": "UKM U2M",
+      "category": "Khusus dan Pengabdian Masyarakat",
+      "aliases": ["u2m", "unit usaha mahasiswa", "kewirausahaan", "entrepreneurship"],
+      "defaultDesc": "Unit Usaha Mahasiswa yang berfokus pada pengembangan jiwa kewirausahaan (entrepreneurship)."
+    },
+    "Badan Eksekutif Mahasiswa": {
+      "officialName": "Badan Eksekutif Mahasiswa (BEM)",
+      "category": "Badan Legislatif dan Eksekutif",
+      "aliases": ["bem", "bem pm", "badan eksekutif mahasiswa"],
+      "defaultDesc": "Lembaga eksekutif mahasiswa tingkat institut yang mengkoordinasikan program kerja ormawa."
+    },
+    "Dewan Perwakilan Mahasiswa": {
+      "officialName": "Dewan Perwakilan Mahasiswa (DPM)",
+      "category": "Badan Legislatif dan Eksekutif",
+      "aliases": ["dpm", "dewan perwakilan mahasiswa", "balma", "senat"],
+      "defaultDesc": "Lembaga legislatif mahasiswa tingkat institut yang menjalankan fungsi pengawasan dan aspirasi."
+    },
+    "Himaprodi BD": {
+      "officialName": "HIMAPRODI Bisnis Digital",
+      "category": "Himpunan Mahasiswa Program Studi",
+      "aliases": ["himaprodi bd", "hima bd", "himaprodi bisnis digital"],
+      "defaultDesc": "Himpunan mahasiswa program studi S1 Bisnis Digital ITB STIKOM Bali."
+    },
+    "Himaprodi SI": {
+      "officialName": "HIMAPRODI Sistem Informasi",
+      "category": "Himpunan Mahasiswa Program Studi",
+      "aliases": ["himaprodi si", "hima si", "himaprodi sistem informasi"],
+      "defaultDesc": "Himpunan mahasiswa program studi S1 Sistem Informasi ITB STIKOM Bali."
+    },
+    "Himaprodi SK": {
+      "officialName": "HIMAPRODI Sistem Komputer",
+      "category": "Himpunan Mahasiswa Program Studi",
+      "aliases": ["himaprodi sk", "hima sk", "himaprodi sistem komputer"],
+      "defaultDesc": "Himpunan mahasiswa program studi S1 Sistem Komputer ITB STIKOM Bali."
+    },
+    "Himaprodi TI": {
+      "officialName": "HIMAPRODI Teknologi Informasi",
+      "category": "Himpunan Mahasiswa Program Studi",
+      "aliases": ["himaprodi ti", "hima ti", "himaprodi teknologi informasi"],
+      "defaultDesc": "Himpunan mahasiswa program studi S1 Teknologi Informasi ITB STIKOM Bali."
+    },
+    "Himas Jimbaran": {
+      "officialName": "HIMAS Jimbaran",
+      "category": "Himpunan Mahasiswa Program Studi",
+      "aliases": ["himas jimbaran", "himas", "himpunan mahasiswa jimbaran"],
+      "defaultDesc": "Himpunan mahasiswa ITB STIKOM Bali Kampus Jimbaran."
+    }
+  }
 }

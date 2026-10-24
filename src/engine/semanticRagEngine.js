@@ -1,5 +1,4 @@
 const { OpenAI } = require('openai');
-const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
 const { isScholarshipSelectionReply } = require('./scholarshipIntentClassifier');
 const { hasConcreteNumberOrAmount } = require('../utils/answerAmount');
 const { validateClarificationOutput } = require('../utils/answerOutputContract');
@@ -3173,18 +3172,16 @@ async function rewriteQuestionWithLlm(client, question, options = {}) {
   ].join('\n');
 
   try {
-    const completion = await client.chat.completions.create(
-      sanitizeOpenAiChatPayload({
-        model: getModel(),
-        messages: [
-          { role: 'system', content: 'You are a query understanding layer for a grounded RAG chatbot. Return only valid JSON.' },
-          { role: 'user', content: prompt }
-        ],
-        max_completion_tokens: 350,
-        temperature: 0,
-        top_p: 0.1
-      })
-    );
+    const completion = await client.chat.completions.create({
+      model: getModel(),
+      messages: [
+        { role: 'system', content: 'You are a query understanding layer for a grounded RAG chatbot. Return only valid JSON.' },
+        { role: 'user', content: prompt }
+      ],
+      max_completion_tokens: 350,
+      temperature: 0,
+      top_p: 0.1
+    });
     const obj = extractJsonObject(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content : '');
     if (!obj || typeof obj !== 'object') throw new Error('semantic rewrite returned non-json');
     // Ensure fallback to original question if any field missing
@@ -8960,12 +8957,7 @@ function buildAdministrativeCanonicalAnswer(question) {
     if (has(/\b(?:foto|photo)\b/i)) return answer('Ya. Foto formal diperlukan sebagai salah satu dokumen pengajuan Izin Belajar mahasiswa asing.');
     if (has(/\b(?:paspor|passport)\b/i)) return answer('Ya. Paspor diperlukan untuk pengajuan Izin Belajar mahasiswa asing.');
     if (has(/\b(?:dokumen|berkas|syarat|persyaratan|diperlukan|pengajuan)\b/i)) return answer('Dokumen pengajuan Izin Belajar mahasiswa asing meliputi foto formal, scan paspor, Financial Statement, Statement Letter, Medical Statement, Letter of Acceptance/LOA, ijazah, dan transkrip.');
-    if (has(/\b(?:berapa lama|lama proses|waktu|durasi|minggu|1\s*-?\s*2|1 sampai 2|satu sampai dua)\b/i)) {
-      if (has(/\b(?:perpanjang|perpanjangan|extension)\b/i)) {
-        return answer('Proses perpanjangan Izin Belajar umumnya membutuhkan waktu sekitar 1-2 minggu kerja, bergantung pada kelengkapan dokumen dan proses verifikasi.');
-      }
-      return answer('Berdasarkan dokumen resmi yang tersedia, durasi waktu sekitar 1–2 minggu secara spesifik tercantum untuk proses perpanjangan Izin Belajar (serta pengajuan Visa E30B). Untuk penerbitan awal Izin Belajar bagi mahasiswa baru, estimasi durasi pasti belum dicantumkan dalam panduan resmi dan dikoordinasikan langsung bersama International Office ITB STIKOM Bali.');
-    }
+    if (has(/\b(?:berapa lama|lama proses|waktu|durasi|minggu|1\s*-?\s*2|1 sampai 2|satu sampai dua)\b/i)) return answer('Proses pembuatan Izin Belajar untuk mahasiswa internasional/asing umumnya membutuhkan waktu sekitar 1-2 minggu kerja, bergantung pada kelengkapan dokumen dan proses verifikasi.');
     if (has(/\b(?:biaya|bayar|gratis)\b/i)) return answer('Pengurusan Izin Belajar tidak dikenakan biaya dari data yang tersedia.');
     if (has(/\b(?:siapa|international office|kampus|sendiri|dibantu)\b/i)) return answer('Pengurusan Izin Belajar dibantu oleh kampus/International Office. Mahasiswa menyiapkan dokumen yang diminta, lalu kampus membantu proses pengajuannya.');
     return answer('Pengurusan Izin Belajar dilakukan dengan menyiapkan dokumen persyaratan mahasiswa asing, lalu kampus/International Office membantu proses pengajuannya sesuai prosedur pemerintah.');
@@ -10879,14 +10871,15 @@ function buildSpecificFacilityAnswerFromIndex(question, indexForQuery) {
 
 function buildLinkedInProgramEvidenceAnswer() {
   return [
-    'Program LinkedIn Learning di ITB STIKOM Bali diselenggarakan melalui Career Development Center (CDC) / Career Center untuk memfasilitasi sertifikasi dan pengembangan kompetensi profesional mahasiswa dan alumni.',
+    'Program LinkedIn Learning di ITB STIKOM Bali diselenggarakan melalui Career Development Center (CDC) / Career Center, khusus bagi Alumni ITB STIKOM Bali.',
     '',
-    'Informasi program LinkedIn Learning:',
-    '- Sasaran: Pengembangan karier mahasiswa dan alumni ITB STIKOM Bali.',
-    '- Manfaat & Fasilitas: Akses ke materi kursus LinkedIn Learning, sertifikasi profesional internasional, optimalisasi profil profesional, serta peningkatan keahlian kerja.',
-    '- Biaya & Registrasi: Rincian biaya langganan resmi saat ini belum tercantum secara spesifik dalam panduan terverifikasi. Mahasiswa disarankan untuk mengonfirmasi langsung ke Career Center.',
+    'Informasi resmi program LinkedIn Learning:',
+    '- Sasaran: Khusus Alumni ITB STIKOM Bali.',
+    '- Biaya program: Rp 200.000 / tahun.',
+    '- Manfaat & Fasilitas: Akses ke ribuan kursus LinkedIn Learning, sertifikasi profesional internasional (bidang teknologi, bisnis, AI, desain, dan lainnya), optimalisasi profil LinkedIn (professional branding), serta upskilling & reskilling untuk meningkatkan daya saing karier.',
+    '- Dukungan Career Center: Menyelenggarakan pelatihan optimalisasi LinkedIn, penyusunan CV profesional, persiapan wawancara kerja, bimbingan karier, serta memfasilitasi informasi lowongan dan magang.',
     '',
-    'Untuk pendaftaran dan informasi terkini, silakan mengunjungi portal resmi CDC (https://cdc.stikom-bali.ac.id/) atau layanan kemahasiswaan ITB STIKOM Bali.'
+    'Untuk pendaftaran dan informasi lebih lanjut, kakak dapat mengunjungi https://cdc.stikom-bali.ac.id/ atau menghubungi Career Center / CDC di kontak 081-399-5000.'
   ].join('\n');
 }
 
@@ -15147,18 +15140,16 @@ async function answerFromContexts(client, question, rewrite, contexts, options =
     `KONTEKS TRAINING:\n${contextText}`
   ].join('\n');
 
-  const completion = await client.chat.completions.create(
-    sanitizeOpenAiChatPayload({
-      model: getModel(),
-      messages: [
-        { role: 'system', content: 'You are a grounded campus assistant. Answer warmly in natural conversational Indonesian, using only supplied context.' },
-        { role: 'user', content: prompt }
-      ],
-      max_completion_tokens: parseInt(process.env.OPENAI_SEMANTIC_RAG_MAX_OUTPUT_TOKENS || process.env.OPENAI_RAG_MAX_OUTPUT_TOKENS || '550', 10),
-      temperature: Number(process.env.OPENAI_SEMANTIC_RAG_TEMPERATURE || '0.3'),
-      top_p: Number(process.env.OPENAI_SEMANTIC_RAG_TOP_P || '0.8')
-    })
-  );
+  const completion = await client.chat.completions.create({
+    model: getModel(),
+    messages: [
+      { role: 'system', content: 'You are a grounded campus assistant. Answer warmly in natural conversational Indonesian, using only supplied context.' },
+      { role: 'user', content: prompt }
+    ],
+    max_completion_tokens: parseInt(process.env.OPENAI_SEMANTIC_RAG_MAX_OUTPUT_TOKENS || process.env.OPENAI_RAG_MAX_OUTPUT_TOKENS || '550', 10),
+    temperature: Number(process.env.OPENAI_SEMANTIC_RAG_TEMPERATURE || '0.3'),
+    top_p: Number(process.env.OPENAI_SEMANTIC_RAG_TOP_P || '0.8')
+  });
 
   return String(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content || '' : '').trim();
 }
@@ -16396,18 +16387,16 @@ async function verifyAnswerRelevanceWithLlm(client, question, answer, source = '
   ].join('\n');
 
   try {
-    const completion = await client.chat.completions.create(
-      sanitizeOpenAiChatPayload({
-        model: getModel(),
-        messages: [
-          { role: 'system', content: 'You are a strict semantic relevance judge for a grounded campus chatbot. Return only valid JSON.' },
-          { role: 'user', content: prompt }
-        ],
-        max_completion_tokens: 180,
-        temperature: 0,
-        top_p: 0.1
-      })
-    );
+    const completion = await client.chat.completions.create({
+      model: getModel(),
+      messages: [
+        { role: 'system', content: 'You are a strict semantic relevance judge for a grounded campus chatbot. Return only valid JSON.' },
+        { role: 'user', content: prompt }
+      ],
+      max_completion_tokens: 180,
+      temperature: 0,
+      top_p: 0.1
+    });
     const obj = extractJsonObject(completion && completion.choices && completion.choices[0] && completion.choices[0].message ? completion.choices[0].message.content : '');
     const verdict = String(obj && obj.verdict ? obj.verdict : '').toLowerCase();
     const confidence = Number.isFinite(Number(obj && obj.confidence)) ? Math.max(0, Math.min(1, Number(obj.confidence))) : 0;
@@ -24190,7 +24179,6 @@ module.exports = {
   selectAcademicDocumentSection,
   selectAcademicDocumentSectionDetailed,
   tryDirectAcademicAdminUploadedSectionAnswer,
-  buildLinkedInProgramEvidenceAnswer,
   observePlanDrivenShadow: (...args) => {
     try {
       return require('./shadowIntegration').observePlanDrivenShadow(...args);

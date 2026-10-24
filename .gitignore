@@ -104,6 +104,7 @@ data/runtime/*.pid
 # Non-deploy test/audit/tool folders
 tests/*
 !tests/budgetCostAndReconciliation.test.js
+!tests/persistentAiBudgetGuard.test.js
 !tests/evidenceEvaluator.test.js
 !tests/semanticFrame.test.js
 !tests/bindingRetrievalPlanner.test.js

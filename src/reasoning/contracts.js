@@ -76,17 +76,8 @@ const CAMPUS_WIDE_DOMAINS = Object.freeze([
   'PMB_SCHEDULE',
   'CAMPUS_LIFE',
   'CAMPUS_SERVICE',
-  'GENERAL_ADMISSION',
-  'PMB',
-  'ADMISSION'
+  'GENERAL_ADMISSION'
 ]);
-
-const CONTEXT_DECISION = Object.freeze({
-  TOPIC_SHIFT: 'topic_shift',
-  BOUND_CONTINUATION: 'bound_continuation',
-  ENTITY_SCOPE_MODIFICATION: 'entity_scope_modification',
-  AMBIGUOUS_FOLLOW_UP: 'ambiguous_follow_up'
-});
 
 function validateContextDelta(delta) {
   if (!delta || typeof delta !== 'object') {
@@ -631,7 +622,6 @@ module.exports = {
   ENTITY_PROVENANCE,
   CONTEXT_TTL_MS,
   CAMPUS_WIDE_DOMAINS,
-  CONTEXT_DECISION,
   validateContextDelta,
   TASK_TYPE,
   TASK_STATUS,

@@ -2,11 +2,11 @@
 
 /**
  * tests/retrievalContract.realCorpusE2E.test.js
- *
+ * 
  * Phase F.1 Real Corpus Retrieval End-to-End Benchmark.
  * Validates the full chain against the REAL 829-chunk corpus:
- * RAW QUERY -> MODEL/GREENFIELD SEMANTIC FRAME -> RETRIEVAL CONTRACT
- * -> REAL RETRIEVAL SERVICE (BM25 + pgvector) -> REAL CHUNKS
+ * RAW QUERY -> MODEL/GREENFIELD SEMANTIC FRAME -> RETRIEVAL CONTRACT 
+ * -> REAL RETRIEVAL SERVICE (BM25 + pgvector) -> REAL CHUNKS 
  * -> METADATA FILTER -> EVIDENCE ARBITRATION -> ACCEPTED EVIDENCE.
  */
 
@@ -22,32 +22,6 @@ const { getCorpusIndex } = require('../src/engine/pgvectorShadowProvider');
 const { FileParser } = require('../src/engine/fileParser');
 const { prepareKnowledgeDocument } = require('../src/engine/knowledgePreparationPipeline');
 const { KnowledgeCatalogService } = require('../src/engine/knowledgeCatalogService');
-const { findCanonicalEntity } = require('../src/engine/canonicalEntityRegistry');
-
-function matchesCanonicalEntity(chunk, expEntity) {
-  const canon = findCanonicalEntity(expEntity);
-  const aliases = canon && canon.aliases ? [canon.canonical, ...canon.aliases] : [expEntity];
-  const chunkText = (chunk.text || chunk.chunk || '').toLowerCase();
-  const chunkIds = (chunk.entityIds || []).map(id => String(id).toLowerCase());
-
-  // Direct entityId match
-  for (const al of aliases) {
-    const alNorm = al.toLowerCase().replace(/_/g, ' ').trim();
-    if (chunkIds.some(id => id === alNorm)) return true;
-  }
-
-  // Word-boundary text match
-  for (const al of aliases) {
-    const alNorm = al.toLowerCase().trim();
-    if (alNorm.length >= 3) {
-      const escaped = alNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(`(?:^|[^a-z0-9])${escaped}(?:[^a-z0-9]|$)`, 'i');
-      if (re.test(chunkText)) return true;
-    }
-  }
-
-  return false;
-}
 
 describe('Phase F.1: Real Corpus Retrieval End-to-End Benchmark', () => {
   const corpus = getCorpusIndex();
@@ -280,12 +254,16 @@ describe('Phase F.1: Real Corpus Retrieval End-to-End Benchmark', () => {
 
         // Entity Precision
         if (testCase.isCompare && testCase.expectedEntities) {
-          const matches = testCase.expectedEntities.some(expEntity => matchesCanonicalEntity(chunk, expEntity));
+          const matches = testCase.expectedEntities.some(expEntity =>
+            (chunk.entityIds || []).some(id => String(id).toLowerCase().includes(expEntity.toLowerCase())) ||
+            (chunk.text || '').toLowerCase().includes(expEntity.toLowerCase())
+          );
           if (matches) {
             acceptedEvidenceEntityPrecisionSum++;
           }
         } else if (testCase.expectedEntity) {
-          const matches = matchesCanonicalEntity(chunk, testCase.expectedEntity);
+          const matches = (chunk.entityIds || []).some(id => String(id).toLowerCase().includes(testCase.expectedEntity.toLowerCase())) ||
+            (chunk.text || '').toLowerCase().includes(testCase.expectedEntity.toLowerCase());
           if (matches) {
             acceptedEvidenceEntityPrecisionSum++;
           }

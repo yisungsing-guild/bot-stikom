@@ -235,8 +235,7 @@ describe('Chat Engine V2 — Canonical Corpus Integrity & Fail-Closed Contract',
     expect(Array.isArray(legacyCorpus)).toBe(true);
     expect(legacyCorpus.length).toBe(85);
     expect(legacyCorpus.length).toBeLessThan(CANONICAL_CORPUS_MIN_CHUNKS);
-  }, 15000);
-
+  });
 
   // 7. Regresi Legacy V1 tetap berfungsi sesuai kontrak sebelumnya
   test('Case 7: Legacy V1 pipeline (semanticRagEngine) remains fully functional', async () => {

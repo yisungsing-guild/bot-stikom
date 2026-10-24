@@ -31,7 +31,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const { OpenAI } = require('openai');
 const { isGeminiProviderActive, getGeminiAdapter } = require('../providers/geminiProvider');
 const prisma = require('../db');
@@ -52,11 +51,6 @@ try {
 let customTelemetrySink = null;
 function setTelemetrySink(fn) {
   customTelemetrySink = fn;
-}
-
-let customBudgetLedger = null;
-function setBudgetLedger(ledger) {
-  customBudgetLedger = ledger;
 }
 
 function emitTelemetry(record) {
@@ -290,75 +284,8 @@ async function computeBatchQueryEmbeddings(texts, timeoutMs = 1500, abortSignal 
     return results;
   }
 
-  // 1. Check if embedding model is verified in catalog before paid request
-  let budgetReservation = null;
-  let budgetLedger = customBudgetLedger;
-  if (!budgetLedger) {
-    try {
-      const { globalBudgetLedger } = require('../core/budgetLedger');
-      budgetLedger = globalBudgetLedger;
-    } catch (_) {}
-  }
-
-  // If persistent ledger is not available, fail-closed to BM25/lexical retrieval (no paid API call)
-  if (!budgetLedger || typeof budgetLedger.reserveBudget !== 'function' || !budgetLedger.isAvailable()) {
-    if (logger && typeof logger.warn === 'function') {
-      logger.warn('[pgvectorShadowProvider] Persistent budget ledger unavailable; skipping embedding API and falling back to lexical search');
-    }
-    return results;
-  }
-
-  const effectiveEmbedModel = process.env.EMBEDDING_MODEL || EMBEDDING_MODEL;
-
-  // Check model pricing in catalog before network call (fail-closed)
-  try {
-    const { getModelRate } = require('../core/budgetLedger');
-    const rateInfo = getModelRate(effectiveEmbedModel, { type: 'embedding' });
-    if (rateInfo.isFallback) {
-      if (logger && typeof logger.warn === 'function') {
-        logger.warn({ model: effectiveEmbedModel }, '[pgvectorShadowProvider] Embedding model is unverified in catalog; skipping paid embedding and falling back to lexical search');
-      }
-      return results;
-    }
-  } catch (_) {}
-
-  // Reserve estimated embedding cost based on whole batch with conservative factor (2.5 chars/token)
-  const estimatedTokens = uncachedTexts.reduce((acc, t) => acc + Math.max(16, Math.ceil(String(t).length / 2.5)), 0);
-  let estimatedCostUSD = 0.000001;
-  try {
-    const { calculateEmbeddingCostUSD } = require('../core/budgetLedger');
-    estimatedCostUSD = calculateEmbeddingCostUSD(estimatedTokens, effectiveEmbedModel);
-  } catch (_) {
-    estimatedCostUSD = Math.max(0.000001, (estimatedTokens * 0.02) / 1000000);
-  }
-
-  budgetReservation = await budgetLedger.reserveBudget({
-    estimatedUSD: estimatedCostUSD,
-    purpose: 'embedding_batch',
-    model: effectiveEmbedModel
-  });
-
-  if (!budgetReservation || !budgetReservation.allowed) {
-    if (logger && typeof logger.warn === 'function') {
-      logger.warn({ reason: budgetReservation?.reason, spent: budgetReservation?.spentUSD, model: effectiveEmbedModel }, '[pgvectorShadowProvider] Embedding budget reservation denied; falling back to lexical search without embedding');
-    }
-    // Fail-closed to BM25/lexical mode: return results where uncached remain null so retrieval continues via BM25
-    return results;
-  }
-
   const apiKey = isGeminiProviderActive() ? process.env.GEMINI_API_KEY : process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    if (budgetReservation && budgetLedger) {
-      await budgetLedger.reconcileBudget({
-        reservationId: budgetReservation.reservationId,
-        reservedUSD: budgetReservation.reservedUSD,
-        actualPromptTokens: 0,
-        actualCompletionTokens: 0,
-        model: effectiveEmbedModel,
-        status: 'FAILED',
-        isPreRequest: true
-      });
-    }
     throw new Error(`${isGeminiProviderActive() ? 'GEMINI_API_KEY' : 'OPENAI_API_KEY'} is not configured for query embedding.`);
   }
 
@@ -367,40 +294,10 @@ async function computeBatchQueryEmbeddings(texts, timeoutMs = 1500, abortSignal 
     ? module.exports.getOpenAIClient(apiKey, timeoutMs)
     : new OpenAI({ apiKey, timeout: timeoutMs });
   const requestOptions = abortSignal ? { signal: abortSignal } : {};
-
-  let resp;
-  try {
-    resp = await client.embeddings.create({
-      model: effectiveEmbedModel,
-      input: uncachedTexts
-    }, requestOptions);
-
-    // Reconcile embedding budget using actual usage
-    if (budgetReservation && budgetLedger) {
-      const actualTokens = resp.usage?.prompt_tokens || resp.usage?.total_tokens || uncachedTexts.reduce((acc, t) => acc + Math.ceil(String(t).length / 2.5), 0);
-      await budgetLedger.reconcileBudget({
-        reservationId: budgetReservation.reservationId,
-        reservedUSD: budgetReservation.reservedUSD,
-        actualPromptTokens: actualTokens,
-        actualCompletionTokens: 0,
-        model: effectiveEmbedModel,
-        status: 'SUCCESS'
-      });
-    }
-  } catch (embedErr) {
-    if (budgetReservation && budgetLedger) {
-      await budgetLedger.reconcileBudget({
-        reservationId: budgetReservation.reservationId,
-        reservedUSD: budgetReservation.reservedUSD,
-        actualPromptTokens: 0,
-        actualCompletionTokens: 0,
-        model: effectiveEmbedModel,
-        status: 'FAILED',
-        error: embedErr
-      });
-    }
-    throw embedErr;
-  }
+  const resp = await client.embeddings.create({
+    model: EMBEDDING_MODEL,
+    input: uncachedTexts
+  }, requestOptions);
 
   const missDurationMs = Date.now() - tMiss0;
   cacheMissCount += uncachedTexts.length;
@@ -670,417 +567,31 @@ function buildCorpusEvidenceFromCandidate(candidate, binding, corpusRecord = nul
 }
 
 const CANONICAL_CORPUS_MIN_CHUNKS = 829;
-const CANONICAL_CORPUS_EXPECTED_CHUNKS = 829;
-
-const CANONICAL_SNAPSHOT_PATHS = [
-  path.resolve(__dirname, '..', '..', 'data', 'runtime', 'index_snapshots', '2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy', 'rag_index.json'),
-  path.resolve(__dirname, '..', '..', 'data', 'runtime', 'index_snapshots', '2026-08-11T04-15-00-138Z_after-final-knowledgeprep-ready', 'rag_index.json'),
-  path.resolve(__dirname, '..', '..', 'data', 'runtime', 'canonical_rag_index.json')
-];
-
-const CANONICAL_SNAPSHOT_PATH = CANONICAL_SNAPSHOT_PATHS[0];
-
-const CANONICAL_MANIFEST_PATH = path.resolve(
+const CANONICAL_SNAPSHOT_PATH = path.resolve(
   __dirname,
   '..',
   '..',
   'data',
   'runtime',
-  'canonical_corpus_manifest.json'
+  'index_snapshots',
+  '2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy',
+  'rag_index.json'
 );
 
 let prewarmedCanonicalCorpus = null;
 let lastLoadedPath = null;
-let isHydratingFromDb = null;
 
 function _resetCorpusCacheForTesting() {
   prewarmedCanonicalCorpus = null;
   lastLoadedPath = null;
-  isHydratingFromDb = null;
 }
 
-/**
- * Reads and strictly validates the canonical corpus manifest.
- * Fails controlled if file is missing, unparseable, or missing required integrity fields.
- *
- * @returns {{ valid: boolean, manifest?: Object, expectedHash?: string, expectedChunks?: number, minRequiredChunks?: number, schemaVersion?: string, error?: string, message?: string, path?: string }}
- */
-function getCanonicalManifest() {
-  if (!fs.existsSync(CANONICAL_MANIFEST_PATH)) {
-    return { valid: false, error: 'manifest_missing', path: CANONICAL_MANIFEST_PATH };
-  }
-  try {
-    const manifestRaw = fs.readFileSync(CANONICAL_MANIFEST_PATH, 'utf8');
-    const manifest = JSON.parse(manifestRaw);
-    const corpus = manifest?.canonicalCorpus;
-    if (!corpus || typeof corpus !== 'object') {
-      return { valid: false, error: 'manifest_missing_canonical_corpus_section' };
-    }
-    const expectedHash = corpus.canonicalContentSha256;
-    if (!expectedHash || typeof expectedHash !== 'string' || expectedHash.trim().length === 0) {
-      return { valid: false, error: 'manifest_missing_or_empty_canonical_content_hash' };
-    }
-    const expectedChunks = corpus.expectedChunks;
-    if (typeof expectedChunks !== 'number' || expectedChunks <= 0) {
-      return { valid: false, error: 'manifest_missing_or_invalid_expected_chunks' };
-    }
-    const minRequiredChunks = corpus.minRequiredChunks;
-    if (typeof minRequiredChunks !== 'number' || minRequiredChunks <= 0) {
-      return { valid: false, error: 'manifest_missing_or_invalid_min_required_chunks' };
-    }
-    return {
-      valid: true,
-      manifest,
-      expectedHash: expectedHash.trim(),
-      expectedChunks,
-      minRequiredChunks,
-      schemaVersion: corpus.canonicalContentHashSchemaVersion || 'v2-canonical-json'
-    };
-  } catch (err) {
-    return { valid: false, error: 'manifest_parse_failed', message: err.message };
-  }
-}
-
-/**
- * Reads canonical expected content hash from canonical_corpus_manifest.json if available.
- * Fails controlled (returns null) if manifest is missing or invalid.
- */
-function getCanonicalExpectedHash() {
-  const m = getCanonicalManifest();
-  return m.valid ? m.expectedHash : null;
-}
-
-/**
- * Normalizes a corpus record (from disk snapshot or PostgreSQL row) into a canonical record structure
- * with identical property names, types, and defaults.
- */
-function normalizeCanonicalRecord(r) {
-  const meta = (r.raw_metadata && typeof r.raw_metadata === 'object') ? r.raw_metadata : {};
-  const id = String(r.id || r.source_record_id || r.vector_chunk_id || '').trim();
-  const text = String(r.chunk || r.text || '').replace(/\r\n/g, '\n').trim();
-  const sourceFile = String(r.source_file || r.sourceFile || r.filename || r.source || '').trim();
-
-  const progVal = r.program !== undefined && r.program !== null ? r.program : (meta.program !== undefined && meta.program !== null ? meta.program : null);
-  const program = (progVal !== null && String(progVal).trim() !== '') ? String(progVal).trim() : null;
-
-  const progNameVal = r.program_name !== undefined && r.program_name !== null ? r.program_name : (r.programName !== undefined && r.programName !== null ? r.programName : (meta.programName || meta.program_name || null));
-  const programName = (progNameVal !== null && String(progNameVal).trim() !== '') ? String(progNameVal).trim() : null;
-
-  const campusVal = r.campus !== undefined && r.campus !== null ? r.campus : (meta.campus || null);
-  const campus = (campusVal !== null && String(campusVal).trim() !== '') ? String(campusVal).trim() : null;
-
-  const catVal = r.category !== undefined && r.category !== null ? r.category : (meta.category || null);
-  const category = (catVal !== null && String(catVal).trim() !== '') ? String(catVal).trim() : null;
-
-  const docCatVal = r.doc_category !== undefined && r.doc_category !== null ? r.doc_category : (r.docCategory !== undefined && r.docCategory !== null ? r.docCategory : (meta.docCategory || meta.doc_category || null));
-  const docCategory = (docCatVal !== null && String(docCatVal).trim() !== '') ? String(docCatVal).trim() : null;
-
-  const levelVal = r.academicLevel !== undefined && r.academicLevel !== null ? r.academicLevel : (meta.academicLevel || null);
-  const academicLevel = (levelVal !== null && String(levelVal).trim() !== '') ? String(levelVal).trim() : null;
-
-  return {
-    academicLevel,
-    campus,
-    category,
-    docCategory,
-    id,
-    program,
-    programName,
-    sourceFile,
-    text
-  };
-}
-
-/**
- * Computes deterministic canonical logical content hash over corpus records (Schema v2-canonical-json).
- * Sorts records by ID ascending (code-point order), normalizes CRLF to LF, trims strings,
- * maps nulls predictably, and serializes each record to an unambiguous canonical JSON string
- * with alphabetically sorted keys.
- *
- * Guaranteed to produce identical SHA-256 whether records originate from JSON snapshot or PostgreSQL rows.
- * Delimiter-safe against pipe (|), newline, quote, or unicode injection.
- */
-function computeCanonicalContentHash(records) {
-  if (!Array.isArray(records) || records.length === 0) return null;
-  const sorted = [...records].map(normalizeCanonicalRecord).sort((a, b) => {
-    return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
-  });
-
-  const hash = crypto.createHash('sha256');
-  for (const norm of sorted) {
-    const line = JSON.stringify({
-      academicLevel: norm.academicLevel,
-      campus: norm.campus,
-      category: norm.category,
-      docCategory: norm.docCategory,
-      id: norm.id,
-      program: norm.program,
-      programName: norm.programName,
-      sourceFile: norm.sourceFile,
-      text: norm.text
-    });
-    hash.update(line + '\n', 'utf8');
-  }
-  return hash.digest('hex');
-}
-
-/**
- * Validates corpus array integrity:
- * 1. Manifest presence and validity (mandatory for canonical corpus)
- * 2. Array structure and safety minimum threshold (minRequiredChunks)
- * 3. Exact expected record count (expectedChunks) for versioned corpus identity
- * 4. Record object validity, stable ID presence, non-duplicate IDs
- * 5. Non-empty text content
- * 6. Deterministic canonical content SHA-256 match
- */
-function validateCorpusIntegrity(records, options = {}) {
-  const requireCanonical = Boolean(options && options.requireCanonical !== false);
-  const requireManifest = Boolean(options && (options.requireManifest !== undefined ? options.requireManifest : requireCanonical));
-
-  let minChunks = options.minChunks || CANONICAL_CORPUS_MIN_CHUNKS;
-  let expectedChunks = options.expectedChunks !== undefined ? options.expectedChunks : (requireCanonical ? CANONICAL_CORPUS_EXPECTED_CHUNKS : null);
-  let expectedHash = options.expectedContentHash || null;
-
-  if (requireManifest) {
-    const manifestCheck = getCanonicalManifest();
-    if (!manifestCheck.valid) {
-      return {
-        valid: false,
-        reason: 'manifest_missing_or_invalid',
-        error: manifestCheck.error,
-        details: manifestCheck.message || null
-      };
-    }
-    if (options.minChunks === undefined) minChunks = manifestCheck.minRequiredChunks;
-    if (options.expectedChunks === undefined) expectedChunks = manifestCheck.expectedChunks;
-    if (options.expectedContentHash === undefined) expectedHash = manifestCheck.expectedHash;
-  }
-
-  if (!Array.isArray(records)) {
-    return { valid: false, reason: 'invalid_records_type', count: 0 };
-  }
-
-  // Safety threshold check
-  if (records.length < minChunks) {
-    return { valid: false, reason: 'insufficient_records', count: records.length, minRequired: minChunks };
-  }
-
-  // Exact versioned corpus count check
-  if (expectedChunks != null && records.length !== expectedChunks) {
-    return { valid: false, reason: 'chunk_count_mismatch', expected: expectedChunks, actual: records.length };
-  }
-
-  const seenIds = new Set();
-  for (let i = 0; i < records.length; i++) {
-    const r = records[i];
-    if (!r || typeof r !== 'object') {
-      return { valid: false, reason: 'invalid_record_element', index: i };
-    }
-    const id = String(r.id || r.source_record_id || r.vector_chunk_id || '').trim();
-    if (!id) {
-      return { valid: false, reason: 'missing_record_id', index: i };
-    }
-    if (seenIds.has(id)) {
-      return { valid: false, reason: 'duplicate_record_id', duplicateId: id, index: i };
-    }
-    seenIds.add(id);
-
-    const text = r.chunk || r.text;
-    if (typeof text !== 'string' || text.trim().length === 0) {
-      return { valid: false, reason: 'empty_chunk_text', id, index: i };
-    }
-  }
-
-  let computedHash = null;
-  if (expectedHash) {
-    computedHash = computeCanonicalContentHash(records);
-    if (computedHash !== expectedHash) {
-      return { valid: false, reason: 'content_hash_mismatch', expected: expectedHash, computed: computedHash };
-    }
-  }
-
-  return { valid: true, count: records.length, hash: computedHash };
-
-}
-
-/**
- * Ensures canonical corpus is loaded into memory.
- * Resolves across:
- * 1. context.semanticIndex override
- * 2. In-memory prewarmed corpus
- * 3. Configured RAG_INDEX_PATH
- * 4. Verified local canonical snapshot paths
- * 5. Database fallback hydration from PostgreSQL rag.corpus_vector_chunks (when running in container without local snapshot)
- *
- * @param {Object} [context]
- * @param {Object} [options]
- * @returns {Promise<Array>}
- */
-async function ensureCanonicalCorpus(context = {}, options = {}) {
-  const requireCanonical = Boolean(options && options.requireCanonical !== false);
-
-  // 1. Context override
-  if (context && Array.isArray(context.semanticIndex)) {
-    const check = validateCorpusIntegrity(context.semanticIndex, { requireCanonical });
-    if (check.valid) {
-      prewarmedCanonicalCorpus = context.semanticIndex;
-      return prewarmedCanonicalCorpus;
-    }
-    if (requireCanonical) return [];
-  }
-
-  const currentPath = process.env.RAG_INDEX_PATH || null;
-
-  // 2. Already cached in memory
-  if (prewarmedCanonicalCorpus && prewarmedCanonicalCorpus.length >= CANONICAL_CORPUS_MIN_CHUNKS && lastLoadedPath === currentPath) {
-    return prewarmedCanonicalCorpus;
-  }
-
-  // 3. If explicit RAG_INDEX_PATH is set
-  if (currentPath) {
-    if (!fs.existsSync(currentPath)) {
-      if (logger && typeof logger.error === 'function') {
-        logger.error({ configuredPath: currentPath }, '[pgvectorShadowProvider] Configured RAG_INDEX_PATH does not exist');
-      }
-      if (requireCanonical) return [];
-    } else {
-      try {
-        const raw = fs.readFileSync(currentPath, 'utf8');
-        const data = JSON.parse(raw);
-        const check = validateCorpusIntegrity(data, { requireCanonical });
-        if (check.valid) {
-          prewarmedCanonicalCorpus = data;
-          lastLoadedPath = currentPath;
-          return prewarmedCanonicalCorpus;
-        } else {
-          if (logger && typeof logger.error === 'function') {
-            logger.error({ configuredPath: currentPath, reason: check.reason }, '[pgvectorShadowProvider] Configured RAG_INDEX_PATH failed integrity check');
-          }
-        }
-      } catch (err) {
-        if (logger && typeof logger.error === 'function') {
-          logger.error({ configuredPath: currentPath, err: err.message }, '[pgvectorShadowProvider] Failed to parse configured RAG_INDEX_PATH');
-        }
-      }
-      if (requireCanonical) return [];
-    }
-  }
-
-  // 4. Check known snapshot file paths on disk
-  for (const candidatePath of CANONICAL_SNAPSHOT_PATHS) {
-    if (fs.existsSync(candidatePath)) {
-      try {
-        const raw = fs.readFileSync(candidatePath, 'utf8');
-        const data = JSON.parse(raw);
-        const check = validateCorpusIntegrity(data, { requireCanonical });
-        if (check.valid) {
-          prewarmedCanonicalCorpus = data;
-          lastLoadedPath = null;
-          return prewarmedCanonicalCorpus;
-        }
-      } catch (_) {}
-    }
-  }
-
-  // 5. Database Fallback Hydration from PostgreSQL Neon DB rag.corpus_vector_chunks
-  if (!currentPath) {
-    if (!isHydratingFromDb) {
-      isHydratingFromDb = (async () => {
-        try {
-          const sql = `
-            SELECT
-              vector_chunk_id,
-              source_record_id,
-              source_record_index,
-              source_file,
-              chunk,
-              program,
-              program_name,
-              campus,
-              category,
-              doc_category,
-              raw_metadata
-            FROM rag.corpus_vector_chunks
-            ORDER BY source_record_index ASC;
-          `;
-          const res = await shadowDb.queryShadowDb(sql);
-          const rows = res && res.rows ? res.rows : [];
-          if (rows.length < CANONICAL_CORPUS_MIN_CHUNKS) {
-            if (logger && typeof logger.warn === 'function') {
-              logger.warn({ count: rows.length, minRequired: CANONICAL_CORPUS_MIN_CHUNKS }, '[pgvectorShadowProvider] Hydration returned fewer than minimum required chunks');
-            }
-            return null;
-          }
-
-          const hydrated = rows.map((r, idx) => {
-            const meta = (r.raw_metadata && typeof r.raw_metadata === 'object') ? r.raw_metadata : {};
-            const recordId = r.source_record_id || r.vector_chunk_id || meta.id || `db_chunk_${idx}`;
-            return {
-              ...meta,
-              id: recordId,
-              source_record_id: recordId,
-              source_record_index: r.source_record_index != null ? r.source_record_index : idx,
-              index: r.source_record_index != null ? r.source_record_index : idx,
-              chunk: r.chunk,
-              text: r.chunk,
-              sourceFile: r.source_file || meta.sourceFile || meta.filename || '',
-              filename: r.source_file || meta.filename || meta.sourceFile || '',
-              program: r.program || meta.program || null,
-              programName: r.program_name || meta.programName || null,
-              campus: r.campus || meta.campus || null,
-              category: r.category || meta.category || null,
-              docCategory: r.doc_category || meta.docCategory || null,
-              raw_metadata: meta
-            };
-          });
-
-          const check = validateCorpusIntegrity(hydrated, { requireCanonical });
-          if (!check.valid) {
-            if (logger && typeof logger.error === 'function') {
-              logger.error({ reason: check.reason }, '[pgvectorShadowProvider] Database hydrated corpus failed integrity check');
-            }
-            return null;
-          }
-
-          prewarmedCanonicalCorpus = hydrated;
-          lastLoadedPath = null;
-          return hydrated;
-        } catch (err) {
-          if (logger && typeof logger.warn === 'function') {
-            logger.warn({ err: err.message }, '[pgvectorShadowProvider] Failed to hydrate canonical corpus from database');
-          }
-          return null;
-        } finally {
-          isHydratingFromDb = null;
-        }
-      })();
-    }
-
-    const dbResult = await isHydratingFromDb;
-    if (dbResult && dbResult.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
-      return dbResult;
-    }
-  }
-
-  // 6. Fail-closed
-  if (requireCanonical) {
-    if (logger && typeof logger.error === 'function') {
-      logger.error({
-        minRequired: CANONICAL_CORPUS_MIN_CHUNKS,
-        hasExplicitPath: Boolean(currentPath)
-      }, '[pgvectorShadowProvider] Canonical corpus index is unavailable or below required threshold; fail-closed for Chat Engine V2');
-    }
-    return [];
-  }
-
-  return [];
-}
 /**
  * Accesses prewarmed canonical corpus index from memory without extra DB queries.
  *
  * @param {Object} [context]
  * @param {Object} [options]
- * @param {boolean} [options.requireCanonical=false] - When true, fails closed if corpus fails canonical integrity
+ * @param {boolean} [options.requireCanonical=false] - When true, fails closed if corpus < 829 chunks
  * @returns {Array} Array of canonical corpus records
  */
 function getCorpusIndex(context = {}, options = {}) {
@@ -1088,17 +599,15 @@ function getCorpusIndex(context = {}, options = {}) {
 
   // 1. Check in-memory context override
   if (context && Array.isArray(context.semanticIndex)) {
+    if (context.semanticIndex.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
+      return context.semanticIndex;
+    }
     if (requireCanonical) {
-      const check = validateCorpusIntegrity(context.semanticIndex, { requireCanonical: true });
-      if (check.valid) {
-        return context.semanticIndex;
-      }
       if (logger && typeof logger.warn === 'function') {
         logger.warn({
-          reason: check.reason,
           count: context.semanticIndex.length,
           minRequired: CANONICAL_CORPUS_MIN_CHUNKS
-        }, '[pgvectorShadowProvider] Context index failed canonical integrity check; failing closed for V2');
+        }, '[pgvectorShadowProvider] Context index is below canonical minimum threshold; failing closed for V2');
       }
       return [];
     }
@@ -1123,24 +632,18 @@ function getCorpusIndex(context = {}, options = {}) {
       try {
         const raw = fs.readFileSync(currentPath, 'utf8');
         const data = JSON.parse(raw);
-        if (requireCanonical) {
-          const check = validateCorpusIntegrity(data, { requireCanonical: true });
-          if (check.valid) {
-            prewarmedCanonicalCorpus = data;
-            lastLoadedPath = currentPath;
-            return data;
-          }
-          if (logger && typeof logger.error === 'function') {
-            logger.error({
-              configuredPath: currentPath,
-              reason: check.reason,
-              count: Array.isArray(data) ? data.length : 0,
-              minRequired: CANONICAL_CORPUS_MIN_CHUNKS
-            }, '[pgvectorShadowProvider] Configured RAG_INDEX_PATH failed canonical integrity check');
-          }
-          return [];
-        } else if (Array.isArray(data)) {
+        if (Array.isArray(data) && data.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
+          prewarmedCanonicalCorpus = data;
+          lastLoadedPath = currentPath;
           return data;
+        }
+        if (logger && typeof logger.error === 'function') {
+          logger.error({
+            configuredPath: currentPath,
+            isArray: Array.isArray(data),
+            count: Array.isArray(data) ? data.length : 0,
+            minRequired: CANONICAL_CORPUS_MIN_CHUNKS
+          }, '[pgvectorShadowProvider] Configured RAG_INDEX_PATH contains invalid JSON or insufficient chunks');
         }
       } catch (err) {
         if (logger && typeof logger.error === 'function') {
@@ -1150,20 +653,30 @@ function getCorpusIndex(context = {}, options = {}) {
       if (requireCanonical) return [];
     }
   } else {
-    // 4. If RAG_INDEX_PATH is NOT configured, check canonical snapshot paths
-    for (const candidatePath of CANONICAL_SNAPSHOT_PATHS) {
-      if (fs.existsSync(candidatePath)) {
-        try {
-          const raw = fs.readFileSync(candidatePath, 'utf8');
-          const data = JSON.parse(raw);
-          const check = validateCorpusIntegrity(data, { requireCanonical: true });
-          if (check.valid) {
-            prewarmedCanonicalCorpus = data;
-            lastLoadedPath = null;
-            return data;
-          }
-        } catch (_) {}
-      }
+    // 4. If RAG_INDEX_PATH is NOT configured, check canonical snapshot path
+    if (fs.existsSync(CANONICAL_SNAPSHOT_PATH)) {
+      try {
+        const raw = fs.readFileSync(CANONICAL_SNAPSHOT_PATH, 'utf8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data) && data.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
+          prewarmedCanonicalCorpus = data;
+          lastLoadedPath = null;
+          return data;
+        }
+      } catch (_) {}
+    }
+    // Also check secondary candidate in data/rag_index.json only if >= 829
+    const secondaryCandidate = path.resolve(__dirname, '..', 'data', 'rag_index.json');
+    if (fs.existsSync(secondaryCandidate)) {
+      try {
+        const raw = fs.readFileSync(secondaryCandidate, 'utf8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data) && data.length >= CANONICAL_CORPUS_MIN_CHUNKS) {
+          prewarmedCanonicalCorpus = data;
+          lastLoadedPath = null;
+          return data;
+        }
+      } catch (_) {}
     }
   }
 
@@ -1173,7 +686,7 @@ function getCorpusIndex(context = {}, options = {}) {
       logger.error({
         minRequired: CANONICAL_CORPUS_MIN_CHUNKS,
         hasExplicitPath: Boolean(currentPath)
-      }, '[pgvectorShadowProvider] Canonical corpus index is unavailable or failed integrity check; fail-closed for Chat Engine V2');
+      }, '[pgvectorShadowProvider] Canonical corpus index is unavailable or below required threshold; fail-closed for Chat Engine V2');
     }
     return [];
   }
@@ -2167,7 +1680,6 @@ module.exports = {
   getActiveShadowJobs,
   _resetActiveShadowJobs,
   setTelemetrySink,
-  setBudgetLedger,
   emitTelemetry,
   getFieldNaturalSemantics,
   getOpenAIClient,
@@ -2192,13 +1704,6 @@ module.exports = {
   observeShadowRetrieval,
   pureEvaluateShadowCandidates,
   CANONICAL_CORPUS_MIN_CHUNKS,
-  CANONICAL_CORPUS_EXPECTED_CHUNKS,
-  CANONICAL_SNAPSHOT_PATHS,
-  CANONICAL_MANIFEST_PATH,
-  getCanonicalManifest,
-  getCanonicalExpectedHash,
-  ensureCanonicalCorpus,
-  validateCorpusIntegrity,
-  computeCanonicalContentHash,
   _resetCorpusCacheForTesting
 };
+

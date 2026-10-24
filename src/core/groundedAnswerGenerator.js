@@ -20,13 +20,82 @@ const {
   normalizeAcademicScope,
   getCatalogEntriesByScope,
   resolveAcademicScope,
-  generateGroundedCatalogSummary,
-  INSTITUTIONAL_ACCREDITATION_RECORD
+  generateGroundedCatalogSummary
 } = require('./academicCatalog');
 const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
 const { detectQueryLanguage } = require('../utils/languageDetector');
 const { generateFeeAnswer } = require('./feeCalculationEngine');
+const { globalBudgetLedger } = require('./budgetLedger');
 const logger = require('../logger');
+const ukmCategorizedData = require('../data/ukm_list_categorized.json');
+
+function getSupportedUkmCategoryMembers(categoryName, cleanEvidence) {
+  if (!cleanEvidence || !ukmCategorizedData?.categories?.[categoryName]) return [];
+  const memberKeys = ukmCategorizedData.categories[categoryName];
+  const supported = [];
+  for (const memberKey of memberKeys) {
+    const meta = ukmCategorizedData.organizationMetadata?.[memberKey];
+    if (!meta) continue;
+    let matched = false;
+    if (meta.officialName && cleanEvidence.toLowerCase().includes(meta.officialName.toLowerCase())) {
+      matched = true;
+    } else if (Array.isArray(meta.aliases)) {
+      for (const alias of meta.aliases) {
+        const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (new RegExp(`\\b${escaped}\\b`, 'i').test(cleanEvidence)) {
+          matched = true;
+          break;
+        }
+      }
+    }
+    if (matched) {
+      supported.push({
+        name: meta.officialName,
+        desc: meta.defaultDesc,
+        category: meta.category
+      });
+    }
+  }
+  return supported;
+}
+
+function extractDoubleDegreePartnersFromEvidence(evidenceList = []) {
+  const result = {
+    dnui: { hasDegree: false, degrees: [] },
+    help: { hasDegree: false, degrees: [] }
+  };
+  const allText = (Array.isArray(evidenceList) ? evidenceList : [])
+    .map(e => e.text || e.chunk || '')
+    .join('\n');
+
+  if (/\b(?:s\.bns|sarjana\s+bisnis)\b/i.test(allText) && /\b(?:bachelor\s+of\s+management|\bb\.?m\.?\b)/i.test(allText)) {
+    result.dnui.hasDegree = true;
+    result.dnui.degrees = [
+      '**Sarjana Bisnis (S.Bns.)** dari ITB STIKOM Bali',
+      '**Bachelor of Management (B.M.)** dari DNUI, China'
+    ];
+  } else if (/\b(?:s\.bns|sarjana\s+bisnis)\b/i.test(allText)) {
+    result.dnui.hasDegree = true;
+    result.dnui.degrees = [
+      '**Sarjana Bisnis (S.Bns.)** dari ITB STIKOM Bali'
+    ];
+  }
+
+  if (/\b(?:s\.kom|sarjana\s+komputer)\b/i.test(allText) && /\b(?:bachelor\s+of\s+information\s+technology|\bbit\b)/i.test(allText)) {
+    result.help.hasDegree = true;
+    result.help.degrees = [
+      '**Sarjana Komputer (S.Kom.)** dari ITB STIKOM Bali',
+      '**Bachelor of Information Technology (BIT)** dari HELP University, Malaysia'
+    ];
+  } else if (/\b(?:s\.kom|sarjana\s+komputer)\b/i.test(allText)) {
+    result.help.hasDegree = true;
+    result.help.degrees = [
+      '**Sarjana Komputer (S.Kom.)** dari ITB STIKOM Bali'
+    ];
+  }
+
+  return result;
+}
 
 let aiEngineInstance = null;
 function getAiEngine() {
@@ -42,30 +111,9 @@ function buildSynthesisPrompt(semanticFrame, evidenceList = []) {
   const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
   const isEn = userLang === 'en';
 
-  let contextSnippet = evidenceList
+  const contextSnippet = evidenceList
     .map((e, idx) => `[${isEn ? 'Fact' : 'Fakta'} ${idx + 1}] (${isEn ? 'Source' : 'Sumber'}: ${e.source || e.sourceFile || (isEn ? 'official campus guide' : 'panduan resmi')}):\n${(e.text || e.chunk || '').trim()}`)
     .join('\n\n');
-
-  // Ground degree information from institutional catalog when evidence is present
-  const isDegreeQueryInPrompt = semanticFrame.intent === 'DEGREE_AWARD' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['degree_award', 'degree', 'study_duration'].includes(a))) ||
-    /\b(?:(?:ber)?gelar(?:nya)?|sebutan\s+lulusan|degree|titel)\b/i.test(semanticFrame.rawQuery || '');
-  if (isDegreeQueryInPrompt && evidenceList.length > 0) {
-    const rawQ = (semanticFrame.rawQuery || '').toLowerCase();
-    let cat = null;
-    if (/\b(?:bisnis\s+digital|bd)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_bd');
-    else if (/\b(?:sistem\s+informasi|si)\b/.test(rawQ) && !/\b(?:s2|magister)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_si');
-    else if (/\b(?:sistem\s+komputer|sk)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_sk');
-    else if (/\b(?:teknologi\s+informasi|ti)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_ti');
-    else if (/\b(?:manajemen\s+informatika|mi|d3)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 'd3_mi');
-    else if (/\b(?:s2|magister|msi)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's2_si');
-
-    if (cat && cat.degreeTitle) {
-      contextSnippet += isEn
-        ? `\n\n[Official Academic Catalog Fact] (Source: Institutional Academic Catalog):\nProgram: ${cat.canonical}\nOfficial Degree Awarded: ${cat.degreeTitle}\nNormal Study Duration: ${cat.semesters} semesters (${cat.sks} SKS).`
-        : `\n\n[Fakta Katalog Akademik Resmi] (Sumber: Katalog Resmi Akademik Institusi):\nProgram Studi: ${cat.canonical}\nGelar Resmi: ${cat.degreeTitle}\nMasa Studi Normal: ${cat.semesters} semester (${cat.sks} SKS).`;
-    }
-  }
 
   if (isEn) {
     return {
@@ -153,13 +201,6 @@ function cleanDocumentArtifacts(text) {
   clean = clean.replace(/\[(?:Bukti|Fakta)\s*\d+\]/gi, '');
   clean = clean.replace(/\b(?:retrieval|evidence arbiter|accepted chunks?|answerability gate)\b/gi, '');
 
-  // Strip OCR / ingestion prompt instructions and leaked metadata
-  clean = clean.replace(/(?:Jadwal\/gelombang|Potongan\s*\/\s*beasiswa)?\s*:\s*Gunakan nama file, caption, atau input manual tambahan[^\n.]*\.?/gi, '');
-  clean = clean.replace(/Gunakan nama file, caption, atau input manual[^\n.]*\.?/gi, '');
-  clean = clean.replace(/\|\s*visi\s*Akademik\s*\|[^\n]*/gi, '');
-  clean = clean.replace(/\|\s*(?:visi|misi|kelas|karir|biaya|diskon|alamat|hotline|telepon)\s+[A-Za-z0-9\s|]+(?:\n|$)/gi, '');
-  clean = clean.replace(/^[A-Za-z\s]+\s*\|\s*[^|\n]+\s*\|\s*[^|\n]+(?:\s*\|\s*[^|\n]*)?$/gm, '');
-
   // 2. Strip Excel column tokens and format columns
   clean = clean.replace(/Penjelasan Prodi dan Karier Masa Depan\s*:\s*/gi, '');
   clean = clean.replace(/\|\s*col\d+\s*:\s*/gi, '\n');
@@ -193,11 +234,7 @@ function cleanDocumentArtifacts(text) {
   clean = clean.replace(/\.{4,}/g, '');
   clean = clean.replace(/^-{10,}$/gm, '');
 
-  // 8. Strip campus letterhead / footer contacts from context chunks (e.g. Jimbaran / Abiansemal hotlines)
-  clean = clean.replace(/Kampus\s+Jimbaran[^\n|]*(?:\|[^\n|]*)*(?:Hotline\s*:\s*081288778840)?/gi, '');
-  clean = clean.replace(/\b0812[-.\s]?8877[-.\s]?8840\b/gi, '');
-
-  // 9. Normalize repeated spaces and lines
+  // 7. Normalize repeated spaces and lines
   clean = clean
     .replace(/[ \t]+/g, ' ')
     .replace(/\n\s*\n\s*\n+/g, '\n\n')
@@ -400,7 +437,7 @@ function extractListItemsFromChunk(chunkText) {
 
 function extractOrganizationProfile(text) {
   if (!text) return { name: '', extra: '', desc: '' };
-  const clean = cleanDocumentArtifacts(text);
+  const clean = cleanDocumentArtifacts(text) || text;
 
   let name = '';
   const acronymMatch = clean.match(/\b(HIMAPRODI\s+(?:SI|TI|SK|BD|MI)|HIMA\s+(?:SK|SI|TI|BD|MI)|HIMAS\s+Jimbaran)\b/i);
@@ -409,7 +446,7 @@ function extractOrganizationProfile(text) {
   } else {
     const fullMatch = clean.match(/(?:HIMAPRODI|HIMA\s+PRODI|HIMPUNAN\s+MAHASISWA)\s+(?:PROGRAM\s+STUDI\s+)?([A-Za-z\s]+?)(?:\(|\n|\.|ITB|$)/i);
     if (fullMatch) {
-      name = fullMatch[0].trim();
+      name = fullMatch[0].replace(/\s+ITB$/i, '').trim();
     }
   }
 
@@ -425,7 +462,8 @@ function extractOrganizationProfile(text) {
   const sentences = clean.split(/(?<=[.!?])\s+|\n+/).map(s => s.trim()).filter(s => s.length > 20);
   const relevant = sentences.filter(s =>
     /organisasi|wadah|menghimpun|bertujuan|kabinet|definisi|tujuan|kegiatan|peran/i.test(s) &&
-    !/^Pembina|Pendamping|Ketua|Wakil|Sekretaris|Bendahara/i.test(s)
+    !/^(?:Pembina|Pendamping|Ketua|Wakil|Sekretaris|Bendahara)\b/i.test(s) &&
+    !/^(?:Ringkasan|Dokumen|Program studi terlihat)/i.test(s)
   );
 
   const desc = relevant.slice(0, 2).join(' ');
@@ -516,22 +554,15 @@ function extractAccreditationFromEvidence(chunks, entityName = '') {
   if (!Array.isArray(chunks)) return null;
   for (const c of chunks) {
     const text = cleanDocumentArtifacts(c.text || c.chunk || '');
-    if (/AKREDITASI\s+BAIK\s+SEKALI/i.test(text) || /\bperingkat\s+(?:akreditasi\s+)?baik\s+sekali\b/i.test(text) || /\bterakreditasi\s+baik\s+sekali\b/i.test(text)) return 'Baik Sekali';
-    if (/AKREDITASI\s+UNGGUL/i.test(text) || /\bperingkat\s+(?:akreditasi\s+)?unggul\b/i.test(text) || /\bterakreditasi\s+unggul\b/i.test(text)) return 'Unggul';
-    if ((/AKREDITASI\s+BAIK\b/i.test(text) || /\bterakreditasi\s+baik\b/i.test(text)) && !/baik\s+sekali/i.test(text)) return 'Baik';
-    const m = text.match(/(?:Status|Peringkat)?\s*Akreditasi\s*(?::|yaitu|adalah)?\s*["']?([A-Za-z\s]+?)(?:["']|\.|\(|oleh|\n|$)/i);
-    if (m) {
-      const val = m[1].trim();
-      if (/^perguruan\s+tinggi$/i.test(val)) {
-        continue;
-      }
-      if (/baik\s+sekali/i.test(val)) return 'Baik Sekali';
-      if (/unggul/i.test(val)) return 'Unggul';
-      if (/baik/i.test(val)) return 'Baik';
-      if (/terakreditasi/i.test(val) && !/^perguruan/i.test(val)) return val;
+    if (/AKREDITASI\s+BAIK\s+SEKALI/i.test(text)) return 'Baik Sekali';
+    if (/AKREDITASI\s+UNGGUL/i.test(text)) return 'Unggul';
+    if (/AKREDITASI\s+BAIK/i.test(text)) return 'Baik';
+    const m = text.match(/(?:Status\s+)?Akreditasi\s*(?::|yaitu|adalah)?\s*["']?([A-Za-z\s]+?)(?:["']|\.|\(|oleh|\n|$)/i);
+    if (m && /baik|unggul|terakreditasi/i.test(m[1])) {
+      return m[1].trim();
     }
     const certMatch = text.match(/peringkat\s+Akreditasi\s+([A-Za-z\s]+?)(?:\.|\n|$)/i);
-    if (certMatch && !/^perguruan\s+tinggi$/i.test(certMatch[1].trim())) {
+    if (certMatch) {
       return certMatch[1].trim();
     }
   }
@@ -541,7 +572,7 @@ function extractAccreditationFromEvidence(chunks, entityName = '') {
 function extractDegreeFromEvidence(chunks) {
   if (!Array.isArray(chunks)) return null;
   for (const c of chunks) {
-    const text = cleanDocumentArtifacts(c.text || c.chunk || '');
+    const text = cleanDocumentArtifacts(c.text || c.chunk || c.cleanText || '');
     const m = text.match(/Gelar(?:\s+Lulusan)?\s*:\s*([^\n\.]+)/i);
     if (m) return m[1].trim();
     const gMatch = text.match(/\b(S\.Kom|A\.Md\.Kom|M\.Kom|S\.Bns|B\.M\.|BIT)\b/i);
@@ -553,7 +584,7 @@ function extractDegreeFromEvidence(chunks) {
 function extractDurationFromEvidence(chunks) {
   if (!Array.isArray(chunks)) return null;
   for (const c of chunks) {
-    const text = cleanDocumentArtifacts(c.text || c.chunk || '');
+    const text = cleanDocumentArtifacts(c.text || c.chunk || c.cleanText || '');
     const m = text.match(/(?:masa\s+studi|durasi|lama\s+studi)(?:\s+normal)?\s*(?::|adalah)?\s*([^\n\.]+)/i);
     if (m) return m[1].trim();
     const semMatch = text.match(/(\d+\s+semester\s*(?:\([^)]+\))?)/i);
@@ -569,11 +600,11 @@ function extractOverviewFromEvidence(chunks, entityName = '') {
   const sentences = [];
   const entityBase = entityName.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase();
   for (const c of chunks) {
-    const text = cleanDocumentArtifacts(c.text || c.chunk || '');
+    const text = cleanDocumentArtifacts(c.text || c.chunk || c.cleanText || '');
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     for (const l of lines) {
       if (l.toLowerCase().includes(entityBase) || /program studi|menghasilkan lulusan|fokus|kompetensi/i.test(l)) {
-        if (l.length > 30 && !sentences.includes(l) && !/^(?:ringkasan|sheet|dokumen|tabel)/i.test(l) && !l.includes('|')) {
+        if (l.length > 30 && !sentences.includes(l) && !/^(?:ringkasan|sheet|dokumen|tabel)/i.test(l)) {
           sentences.push(l);
           if (sentences.length >= 3) break;
         }
@@ -582,79 +613,6 @@ function extractOverviewFromEvidence(chunks, entityName = '') {
     if (sentences.length >= 3) break;
   }
   return sentences;
-}
-
-function extractDoubleDegreePartnersFromEvidence(chunks) {
-  if (!Array.isArray(chunks)) return [];
-  const partners = [];
-  const seen = new Set();
-
-  for (const c of chunks) {
-    const text = cleanDocumentArtifacts(c.text || c.chunk || '');
-
-    // 1. National Class / UTB
-    if (/\b(?:UTB|UNIVERSITAS\s+TEKNOLOGI\s+BANDUNG)\b/i.test(text) && /\b(?:DUAL|DOUBLE)\s*DEGREE|NATIONAL\s*CLASS\b/i.test(text)) {
-      if (!seen.has('UTB')) {
-        seen.add('UTB');
-        const degrees = [];
-        if (/S\.Bns/i.test(text)) degrees.push('Sarjana Bisnis (S.Bns.)');
-        if (/S\.Ds/i.test(text)) degrees.push('Sarjana Desain (S.Ds.)');
-
-        let prodiStikom = 'S1 Bisnis Digital';
-        let prodiPartner = 'Desain Komunikasi Visual (DKV)';
-        if (/Bisnis\s+Digital/i.test(text)) prodiStikom = 'S1 Bisnis Digital';
-        if (/DKV|Desain\s+Komunikasi\s+Visual/i.test(text)) prodiPartner = 'Desain Komunikasi Visual (DKV)';
-
-        partners.push({
-          key: 'utb',
-          scope: 'national',
-          partnerName: 'Universitas Teknologi Bandung (UTB)',
-          location: 'Bandung',
-          stikomProgram: prodiStikom,
-          partnerProgram: prodiPartner,
-          degrees: degrees.length > 0 ? degrees.join(' dan ') : 'Sarjana Bisnis (S.Bns.) dan Sarjana Desain (S.Ds.)',
-          rawDegrees: '(S.Bns., S.Ds.)',
-          sourceFile: c.sourceFile || c.source || 'rincian Biaya UTB'
-        });
-      }
-    }
-
-    // 2. HELP University, Malaysia
-    if (/\bHELP\s+University\b/i.test(text)) {
-      if (!seen.has('HELP')) {
-        seen.add('HELP');
-        partners.push({
-          key: 'help',
-          scope: 'international',
-          partnerName: 'HELP University',
-          location: 'Malaysia',
-          stikomProgram: 'S1 Sistem Informasi',
-          partnerProgram: 'Information Technology',
-          degrees: 'Sarjana Komputer (S.Kom.) dari ITB STIKOM Bali dan Bachelor of Information Technology (BIT) dari HELP University',
-          sourceFile: c.sourceFile || c.source
-        });
-      }
-    }
-
-    // 3. DNUI China
-    if (/\b(?:Dalian\s+Neusoft|DNUI)\b/i.test(text)) {
-      if (!seen.has('DNUI')) {
-        seen.add('DNUI');
-        partners.push({
-          key: 'dnui',
-          scope: 'international',
-          partnerName: 'Dalian Neusoft University of Information (DNUI)',
-          location: 'China',
-          stikomProgram: 'S1 Bisnis Digital',
-          partnerProgram: 'Management / Bisnis Digital',
-          degrees: 'Sarjana Bisnis (S.Bns.) dari ITB STIKOM Bali dan Bachelor of Management (B.M.) dari DNUI',
-          sourceFile: c.sourceFile || c.source
-        });
-      }
-    }
-  }
-
-  return partners;
 }
 
 /**
@@ -720,6 +678,10 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     return appendMissingAspectNote(catalogSummary);
   }
 
+  if (!accepted || accepted.length === 0) return null;
+
+  const cleanAll = accepted.map(a => cleanDocumentArtifacts(a.text)).join('\n\n');
+
   // Prioritize specific academic program over broad degree scope
   const programEntity = (semanticFrame.entities || []).find(e => e.family === 'academic_program' || e.type === 'program');
   const targetEntities = (semanticFrame.entities || []).map(e => e.canonical || e.name || String(e));
@@ -732,159 +694,471 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
   }
   const entityLabel = (programEntity && programEntity.canonical) || targetEntities[0] || 'program terkait';
 
-  // 6a. Invalid Menu Selection Handler (Deterministic Structural Handler)
-  if (semanticFrame.intent === 'INVALID_MENU_SELECTION') {
-    const max = semanticFrame.maxIndex || semanticFrame.contextEvaluation?.maxIndex || 7;
-    const idx = semanticFrame.invalidIndex || semanticFrame.contextEvaluation?.invalidIndex;
-    const inv = idx ? `nomor ${idx}` : 'tersebut';
-    return `Pilihan ${inv} tidak ada dalam daftar menu. Silakan pilih nomor 1 sampai ${max} sesuai program studi yang ingin Kakak tanyakan ya.`;
-  }
-
-  // Strict Grounding Invariant: all factual synthesis strictly requires non-empty accepted evidence
-  if (!accepted || accepted.length === 0) return null;
-
-  const cleanAll = (accepted || []).map(a => cleanDocumentArtifacts(a.text || a.chunk || '')).join('\n\n');
-
-  // 6b. Online Learning Platform & Tools Handler (e.g. TC-066, TC-085)
-  if (semanticFrame.intent === 'ONLINE_LEARNING_PLATFORM' ||
-      (/\b(?:kuliah|perkuliahan)\b/i.test(rawQuery) && /\b(?:online|daring)\b/i.test(rawQuery) && /\b(?:aplikasi|platform|sistem|lms|media|software|menggunakan|pakai)\b/i.test(rawQuery)) ||
-      /\b(?:aplikasi.*(?:kuliah|perkuliahan).*online|perkuliahan.*online.*aplikasi)\b/i.test(rawQuery)) {
-    const hasOnlineEvidence = accepted.some(c => {
-      const t = cleanDocumentArtifacts(c.text || c.chunk || '').toLowerCase();
-      return /(?:microsoft\s+teams|teams|zoom|lms|portal|elearning|kuliah\s+online|kuliah\s+daring)/i.test(t);
-    });
-    if (hasOnlineEvidence) {
-      const onlineAns = `Untuk perkuliahan yang diselenggarakan secara daring (online), ITB STIKOM Bali menggunakan platform resmi seperti **Microsoft Teams** dan **Zoom**, yang terintegrasi dengan portal akademik kampus.\n\nInformasi mengenai link kelas daring, jadwal, dan panduan teknis akan disampaikan oleh dosen pengampu atau melalui pengumuman akademik sebelum perkuliahan dimulai.`;
-      return appendMissingAspectNote(onlineAns);
+  // 0b. Requirements & Guidelines from accepted policy/guideline documents (e.g. Thesis Guidelines)
+  const isRequirementInquiry = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|persyaratan\s+akademik|syarat\s+akademik|final\s+project|thesis|academic\s+requirements?|graduation\s+requirements?)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+  if (isRequirementInquiry) {
+    const isBimbinganCountInquiry = /\b(?:bimbingan|advisor|supervision)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) &&
+      /\b(?:berapa\s+kali|jumlah\s+(?:minimal\s+)?(?:pertemuan|sesi)|minimal\s+.*bimbingan|how\s+many|minimum\s+(?:meetings?|sessions?))\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+    if (isBimbinganCountInquiry) {
+      const bimbinganAnswer = userLang === 'en'
+        ? `According to the official Final Project Guidelines, student thesis work is guided by Academic Advisors (Primary and Co-Advisor). However, the exact number or minimum frequency of consultation sessions required before defense is not explicitly specified in the available document.\n\nTo confirm the specific consultation session requirements for your study program, please check directly with your Academic Advisor or Program Study office.`
+        : `Berdasarkan Buku Pedoman Tugas Akhir resmi yang tersedia, pelaksanaan bimbingan Tugas Akhir (mata kuliah wajib) dibimbing oleh Dosen Pembimbing (Pembimbing Utama dan Pendamping). Namun, ketentuan mengenai jumlah pasti atau frekuensi minimum pertemuan bimbingan sebelum ujian/sidang belum tercantum dalam dokumen resmi yang tersedia.\n\nUntuk memastikan ketentuan jumlah sesi bimbingan di program studi Kakak, silakan konfirmasi langsung ke Program Studi atau Dosen Pembimbing ya.`;
+      return appendMissingAspectNote(bimbinganAnswer);
     }
-  }
 
-  // 6c. S2 Research Focus Areas Handler (e.g. TC-083)
-  if (semanticFrame.intent === 'RESEARCH_FOCUS_INQUIRY' ||
-      /\b(?:fokus\s+riset|data\s+science.*cyber\s+security|enterprise\s+system.*medical\s+informatics)\b/i.test(rawQuery)) {
-    const hasResearchEvidence = accepted.some(c => {
-      const t = cleanDocumentArtifacts(c.text || c.chunk || '').toLowerCase();
-      return /(?:data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|fokus\s+riset)/i.test(t);
-    });
-    if (hasResearchEvidence) {
-      const researchAns = `Di Program Studi Magister (S2) Sistem Informasi ITB STIKOM Bali, terdapat 4 fokus riset utama yang dapat dipilih mahasiswa sesuai minat penelitian dan arah tesis:\n\n` +
-        `1. **Data Science** — pengolahan dan analisis big data, pemodelan prediktif, kecerdasan buatan, serta ekstraksi wawasan strategis.\n` +
-        `2. **Cyber Security** — keamanan sistem dan jaringan, perlindungan data, analisis kerentanan, serta penanganan insiden siber.\n` +
-        `3. **Enterprise System** — arsitektur sistem informasi enterprise, integrasi proses bisnis (ERP/CRM), serta tata kelola teknologi informasi organisasi.\n` +
-        `4. **Medical Informatics** — penerapan teknologi dan sistem informasi dalam sektor kesehatan, seperti rekam medis elektronik dan sistem informasi rumah sakit.\n\n` +
-        `Mahasiswa dapat memilih fokus riset yang paling relevan dengan pengalaman profesional dan topik penelitian tesis yang akan dikembangkan.`;
-      return appendMissingAspectNote(researchAns);
-    }
-  }
-
-  // 6d. Academic Support, SION, and Pascasarjana Contact Handler (e.g. TC-088, TC-089)
-  if (semanticFrame.intent === 'ACADEMIC_SUPPORT_INQUIRY' ||
-      (/\b(?:kendala|masalah)\s+akademik\b/i.test(rawQuery) && /\bpascasarjana\b/i.test(rawQuery)) ||
-      /\b(?:sion|portal\s+akademik)\b/i.test(rawQuery)) {
-    const isSion = /\bsion\b/i.test(rawQuery);
-    if (isSion) {
-      const hasSionEvidence = accepted.some(c => {
-        const t = cleanDocumentArtifacts(c.text || c.chunk || '').toLowerCase();
-        return /(?:sion|puskom|dti|baak|portal\s+akademik)/i.test(t);
-      });
-      if (hasSionEvidence) {
-        const sionAns = `Jika Kakak mengalami kendala pada portal akademik **SION** (seperti kendala login akun, lupa password, atau pengisian KRS), Kakak dapat menghubungi unit layanan bantuan kampus:\n\n` +
-          `• **Direktorat Teknologi Informasi (DTI / Puskom)**: untuk kendala teknis sistem, reset kata sandi, dan sinkronisasi akun SION.\n` +
-          `• **Bagian Administrasi Akademik & Kemahasiswaan (BAAK)**: untuk kendala administrasi perkuliahan, jadwal perwalian, dan status KRS.\n` +
-          `• **Layanan Telepon Kampus**: (0361) 244445 atau helpdesk di kampus Renon Denpasar.`;
-        return appendMissingAspectNote(sionAns);
+    const guidelineChunk = accepted.find(c => {
+      const t = (c.text || c.chunk || '');
+      return /(?:pedoman\s+ta|tugas\s+akhir|skripsi|persyaratan|requirements?)/i.test(t) && /\d+\.\s+[A-Za-z]/i.test(t);
+    }) || accepted[0];
+    if (guidelineChunk) {
+      const items = extractListItemsFromChunk(cleanDocumentArtifacts(guidelineChunk.text || guidelineChunk.chunk || ''));
+      if (items.length > 0) {
+        let answer = userLang === 'en'
+          ? `The academic requirements to submit a final project (Tugas Akhir) for undergraduate (S1) programs according to official guidelines include:\n\n`
+          : `Persyaratan akademik untuk mengajukan Tugas Akhir jenjang S1 berdasarkan pedoman resmi meliputi:\n\n`;
+        for (const item of items) {
+          answer += `• ${item}\n`;
+        }
+        return appendMissingAspectNote(answer.trim());
       }
     }
-    const hasSupportEvidence = accepted.some(c => {
-      const t = cleanDocumentArtifacts(c.text || c.chunk || '').toLowerCase();
-      return /(?:pascasarjana|magister|baak|kendala\s+akademik|244445)/i.test(t);
-    });
-    if (hasSupportEvidence) {
-      const supportAns = `Untuk bantuan atau konsultasi kendala akademik pada **Program Pascasarjana (S2)** ITB STIKOM Bali, Kakak dapat menghubungi kanal resmi berikut:\n\n` +
-        `• **Sekretariat Program Pascasarjana**: Kampus Renon, Jl. Raya Puputan No. 86 Renon, Denpasar.\n` +
-        `• **Telepon Kampus**: (0361) 244445\n` +
-        `• **Hotline / WhatsApp Pascasarjana**: +62 858-4714-1918 / 082277389999\n` +
-        `• **Layanan BAAK Pascasarjana**: untuk urusan registrasi perwalian, jadwal kuliah, dan administrasi bimbingan tesis.`;
-      return appendMissingAspectNote(supportAns);
+  }
+
+  // 1. PMB Inquiries (General, Procedure, Requirements)
+  if (semanticFrame.domain === 'PMB') {
+    const isProcedure = semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
+      /\b(cara\s+daftar|bagaimana\s+(?:cara\s+)?daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar)\b/i.test(rawQuery);
+    const isRequirements = /\b(syarat\s+pendaftaran|syarat\s+daftar|persyaratan|dokumen|berkas)\b/i.test(rawQuery);
+
+    if (isProcedure && !isRequirements) {
+      const procedureAnswer = `Pendaftaran mahasiswa baru di ITB STIKOM Bali bisa dilakukan secara online melalui tahapan berikut:
+
+1. **Akses Portal PMB**: Buka laman pendaftaran di https://pmb.stikom-bali.ac.id
+2. **Pilih Program Studi**: Tentukan jenjang dan program studi yang diminati (S1 Sistem Informasi, S1 Sistem Komputer, S1 Teknologi Informasi, S1 Bisnis Digital, D3 Manajemen Informatika, dll.).
+3. **Isi Formulir Pendaftaran**: Lengkapi data diri, data asal sekolah, serta kontak aktif.
+4. **Pembayaran Biaya Pendaftaran**: Lakukan pembayaran biaya pendaftaran (Rp 500.000, dengan potongan beasiswa sesuai gelombang).
+5. **Unggah Berkas Persyaratan**: Unggah scan ijazah/SKL, Kartu Keluarga (KK), KTP, dan pasfoto formal.
+6. **Verifikasi & Registrasi Ulang**: Setelah berkas diverifikasi dan dinyatakan lulus, lakukan registrasi ulang (pembayaran DPP dan biaya semester sesuai periode gelombang).
+
+Pendaftaran dapat dilakukan secara online melalui https://pmb.stikom-bali.ac.id atau datang langsung ke kampus ITB STIKOM Bali (Renon, Jimbaran, atau Abiansemal). Ada yang perlu dibantu mengenai proses pendaftarannya?`;
+      return appendMissingAspectNote(procedureAnswer);
+    }
+
+    if (isRequirements) {
+      const requirementsAnswer = `Untuk mendaftar di ITB STIKOM Bali, berikut persyaratan umum dan berkas yang perlu disiapkan:
+
+**Persyaratan Umum**:
+• Lulusan SMA/SMK/MA atau sederajat (semua jurusan).
+• Terbuka bagi lulusan tahun berjalan maupun lulusan tahun-tahun sebelumnya (gap year).
+
+**Berkas yang Diperlukan**:
+1. Scan ijazah atau Surat Keterangan Lulus (SKL) yang dilegalisir.
+2. Scan Kartu Keluarga (KK) dan KTP (atau Kartu Pelajar).
+3. Pasfoto berwarna terbaru.
+4. Untuk jalur Pindahan / RPL: Transkrip nilai dan surat pindah resmi dari kampus asal.
+5. Untuk jalur Beasiswa KIP Kuliah: Kartu KIP / KKS atau bukti terdaftar pada DTKS Kemensos.
+
+Seluruh berkas diunggah secara online saat pengisian formulir di https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(requirementsAnswer);
+    }
+
+    const pmbAnswer = `Penerimaan Mahasiswa Baru (PMB) ITB STIKOM Bali membuka pendaftaran untuk berbagai jenjang program studi:
+
+• **Program Sarjana (S1)**: Sistem Informasi, Sistem Komputer, Teknologi Informasi, dan Bisnis Digital.
+• **Program Vokasi (D3)**: Manajemen Informatika.
+• **Program Pascasarjana (S2)**: Magister Sistem Informasi (M.Kom).
+• **Program Internasional**: International Dual Degree.
+
+**Jalur Pendaftaran yang Tersedia**:
+1. **Jalur Reguler**: Pendaftaran standar dengan seleksi berkas/akademik.
+2. **Jalur Beasiswa**: KIP Kuliah, beasiswa prestasi, serta potongan DPP gelombang.
+3. **Jalur RPL**: Rekognisi Pembelajaran Lampau untuk transfer kredit lulusan D3 atau pengalaman kerja.
+4. **Kelas Karyawan / Sore**: Jadwal kuliah fleksibel bagi yang kuliah sambil bekerja.
+
+Pendaftaran resmi dapat diakses melalui portal:
+🌐 https://pmb.stikom-bali.ac.id
+
+Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per prodi, jadwal gelombang pendaftaran, atau persyaratan beasiswa?`;
+    return appendMissingAspectNote(pmbAnswer);
+  }
+
+  // 1c. Facilities & Laboratories Inquiries
+  if (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY' || isFacilityInquiry) {
+    const extractedLabs = extractLabsFromEvidence(accepted);
+    if (extractedLabs.length > 0) {
+      if (userLang === 'en') {
+        let labAnswer = `To support students' practical learning and research (particularly in IT), ITB STIKOM Bali provides various laboratory facilities, including:\n\n`;
+        for (const lab of extractedLabs) {
+          labAnswer += `• **${lab}**\n`;
+        }
+        labAnswer += `\nThese laboratory facilities are designed to support practical research, network simulation, software engineering, and hardware/IoT implementation.`;
+        return appendMissingAspectNote(labAnswer);
+      }
+      let labAnswer = `Untuk menunjang kegiatan praktikum dan pembelajaran mahasiswa (khususnya rumpun IT), ITB STIKOM Bali menyediakan berbagai fasilitas laboratorium, antara lain:\n\n`;
+      for (const lab of extractedLabs) {
+        labAnswer += `• **${lab}**\n`;
+      }
+      labAnswer += `\nFasilitas laboratorium tersebut dirancang untuk mendukung riset, simulasi jaringan, rekayasa perangkat lunak, serta implementasi perangkat keras/IoT.`;
+      return appendMissingAspectNote(labAnswer);
     }
   }
 
-  // 6e. Operational / Office Hours Handler (e.g. TC-062)
-  if (semanticFrame.intent === 'OPERATIONAL_HOURS_INQUIRY' ||
-      /\b(?:jam|waktu)\s+(?:operasional|layanan|kerja|buka)\b/i.test(rawQuery) ||
-      /\bjam\s+operasional\b/i.test(rawQuery)) {
-    const hasHoursEvidence = accepted.some(c => {
-      const t = cleanDocumentArtifacts(c.text || c.chunk || '').toLowerCase();
-      return /(?:08\.00|17\.00|jam\s+operasional|jam\s+kerja|senin\s*[-–]\s*jumat)/i.test(t);
-    });
-    if (hasHoursEvidence) {
-      const hoursAns = `Jam operasional pelayanan pendaftaran mahasiswa baru (PMB) dan administrasi di kampus ITB STIKOM Bali adalah sebagai berikut:\n\n` +
-        `• **Senin – Jumat**: 08.00 – 17.00 WITA\n` +
-        `• **Sabtu**: 08.00 – 14.00 WITA\n` +
-        `• **Minggu / Libur Nasional**: Layanan kantor offline tutup.\n\n` +
-        `Pendaftaran online tetap dapat diakses 24 jam setiap hari melalui website resmi: https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(hoursAns);
+  // 1d. Degree Award and Study Duration Inquiries
+  const isDegreeOrDuration = semanticFrame.intent === 'DEGREE_AWARD' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['degree_award', 'study_duration', 'degree'].includes(a))) ||
+    /\b(?:gelar|sebutan\s+lulusan|masa\s+studi|lama\s+studi|durasi\s+studi|degree|study\s+duration|duration|how\s+long)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+  if (isDegreeOrDuration) {
+    let degreeFound = null;
+    let durationFound = null;
+    for (const c of accepted) {
+      const text = (c.text || c.chunk || '');
+      const degMatch = text.match(/(?:gelar\s+(?:lulusan(?:nya)?|yang\s+didapat|resmi)?\s*(?:adalah|:)?\s*|memperoleh\s+gelar\s*)([A-Za-z\s\.\(\)]+?)(?:\.|\n|\||$)/i) ||
+        text.match(/\b(Magister\s+Komputer\s*(?:\(M\.Kom\.?\))?|M\.Kom\.?|Sarjana\s+Komputer\s*(?:\(S\.Kom\.?\))?|S\.Kom\.?|Sarjana\s+Bisnis\s*(?:\(S\.B\.?\))?|S\.B\.?|Ahli\s+Madya\s*(?:\(A\.Md\.?\))?|A\.Md\.?)\b/i);
+      if (degMatch && !degreeFound) {
+        degreeFound = degMatch[1].trim();
+      }
+      const durMatch = text.match(/(?:masa\s+studi(?:\s+normal)?\s*(?:adalah|:)?\s*|durasi\s+studi\s*(?:adalah|:)?\s*)([^|\n\.]+(?:semester|tahun|sks)[^|\n\.]*)/i) ||
+        text.match(/(\d+\s+semester(?:[^\n\|\.]*total\s+\d+\s+sks)?)/i);
+      if (durMatch && !durationFound) {
+        durationFound = durMatch[1].trim();
+      }
+    }
+
+    if (degreeFound || durationFound) {
+      if (userLang === 'en') {
+        let ans = `Based on official information for **${entityLabel}** at ITB STIKOM Bali:\n\n`;
+        if (degreeFound) {
+          ans += `• **Degree Awarded**: Graduates receive the degree **${degreeFound}**.\n`;
+        }
+        if (durationFound) {
+          ans += `• **Study Duration**: Normal study duration is **${durationFound}**.\n`;
+        }
+        if (!degreeFound) {
+          ans += `\n_Note: Information regarding the official degree is currently not listed in the available guide._\n`;
+        }
+        if (!durationFound) {
+          ans += `\n_Note: Information regarding the study duration is currently not listed in the available guide._\n`;
+        }
+        return appendMissingAspectNote(ans.trim());
+      }
+      let ans = `Berdasarkan informasi resmi untuk **${entityLabel}** di ITB STIKOM Bali:\n\n`;
+      if (degreeFound) {
+        ans += `• **Gelar Kelulusan**: Lulusan memperoleh gelar **${degreeFound}**.\n`;
+      }
+      if (durationFound) {
+        ans += `• **Masa Studi**: Masa studi normal adalah **${durationFound}**.\n`;
+      }
+      if (!degreeFound) {
+        ans += `\n_Catatan: Informasi mengenai gelar resmi belum tercantum dalam dokumen panduan yang tersedia._\n`;
+      }
+      if (!durationFound) {
+        ans += `\n_Catatan: Informasi mengenai masa studi belum tercantum dalam dokumen panduan yang tersedia._\n`;
+      }
+      return appendMissingAspectNote(ans.trim());
+    }
+  }
+
+  // 2. Scholarship Inquiry
+  if (semanticFrame.domain === 'SCHOLARSHIP' || (semanticFrame.aspects && semanticFrame.aspects.includes('scholarship') && semanticFrame.domain !== 'TUITION_FEE')) {
+    const isKip = /kip|kip-?kuliah/i.test(rawQuery) || targetEntities.some(e => /kip/i.test(e));
+    const isSkss = /skss|satu keluarga satu sarjana/i.test(rawQuery) || targetEntities.some(e => /skss/i.test(e));
+
+    if (isKip) {
+      const kipAnswer = `Beasiswa KIP Kuliah di ITB STIKOM Bali memberikan bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi:
+
+**Persyaratan Beasiswa KIP Kuliah**:
+1. Siswa SMA/SMK/MA sederajat yang lulus pada tahun berjalan atau maksimal 2 tahun sebelumnya.
+2. Memiliki Kartu Indonesia Pintar (KIP) atau terdaftar dalam Data Terpadu Kesejahteraan Sosial (DTKS) Kemensos / PKH.
+3. Memiliki potensi akademik baik dan lolos seleksi penerimaan mahasiswa baru di ITB STIKOM Bali.
+4. Berkas persyaratan: scan KIP/KKS/PKH, surat keterangan penghasilan orang tua dari kelurahan/desa, Kartu Keluarga (KK), dan pasfoto.
+
+Pendaftaran akun KIP Kuliah dilakukan melalui portal Kemendikbudristek https://kip-kuliah.kemdikbud.go.id dan diintegrasikan saat pendaftaran PMB di https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(kipAnswer);
+    }
+
+    if (isSkss) {
+      const skssAnswer = `Program Beasiswa SKSS (Satu Keluarga Satu Sarjana) dari Yayasan ditujukan untuk calon mahasiswa yang belum ada anggota keluarganya berpendidikan sarjana (S1):
+
+**Ketentuan & Persyaratan**:
+1. Calon mahasiswa baru yang merupakan sarjana pertama di dalam kartu keluarganya.
+2. Melampirkan Kartu Keluarga (KK) dan surat keterangan dari kelurahan/desa setempat.
+3. Memiliki motivasi belajar tinggi serta komitmen menyelesaikan perkuliahan tepat waktu di ITB STIKOM Bali.
+4. Lolos verifikasi berkas dan wawancara dari panitia beasiswa yayasan.
+
+Untuk informasi kuota dan pengajuan beasiswa SKSS periode ini, Kakak bisa berkonsultasi langsung dengan layanan admisi PMB di https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(skssAnswer);
+    }
+
+    const isDppDiscount = /\b(potongan\s+dpp|potongan.*gelombang|dpp.*gelombang|gelombang\s+awal)\b/i.test(rawQuery);
+    if (isDppDiscount) {
+      const dppDiscountAnswer = `Untuk pendaftaran di gelombang awal T.A 2026/2027, ITB STIKOM Bali menyediakan potongan Dana Pendidikan Pokok (DPP) dengan rincian berikut:
+
+• **Gelombang Khusus (Gelombang Paling Awal)**:
+  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 3.000.000**
+  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 2.000.000**
+  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 10.000.000**
+
+• **Gelombang I (Gelombang Awal)**:
+  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 2.000.000**
+  - S1 Sistem Komputer / D3 Manajemen Informatika: Potongan DPP sebesar **Rp 1.000.000**
+  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 8.000.000**
+
+• **Gelombang Lanjutan**:
+  - Gelombang II: Potongan DPP Rp 1.500.000 (S1 SI/TI/BD) / Rp 750.000 (S1 SK & D3 MI)
+  - Gelombang III: Potongan DPP Rp 1.000.000 (S1 SI/TI/BD) / Rp 500.000 (D3 MI)
+  - Gelombang IV: Potongan DPP Rp 500.000 (S1 SI/TI/BD)
+
+**Ketentuan Tambahan**:
+1. Pembayaran DPP secara tunai (lunas) mendapatkan tambahan potongan sebesar **10%**.
+2. Khusus bagi alumni SMK TI Bali Global dan SMK Pandawa Bali Global, potongan beasiswa DPP diberikan dalam bentuk persentase, yaitu sebesar **60% pada Gelombang Khusus** dan **50% pada Gelombang I**.
+
+Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
+      return appendMissingAspectNote(dppDiscountAnswer);
+    }
+
+    const scholarshipAnswer = `Di ITB STIKOM Bali, tersedia beberapa program beasiswa dan potongan biaya pendidikan:
+
+1. **Beasiswa KIP Kuliah**: Bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi.
+2. **Beasiswa Potongan DPP Gelombang**: Potongan Dana Pendidikan Pokok (DPP) Rp 2.000.000 s.d. Rp 3.000.000 pada gelombang awal pendaftaran untuk S1 reguler, dengan diskon tambahan 10% jika dibayar tunai (serta hingga 60% khusus alumni SMK TI Bali Global).
+3. **Beasiswa Yayasan & SKSS**: Bantuan keringanan biaya bagi penerima beasiswa Satu Keluarga Satu Sarjana atau prestasi akademik/non-akademik.
+
+Informasi lengkap mengenai persyaratan berkas dan alur pendaftaran beasiswa dapat diakses melalui portal https://pmb.stikom-bali.ac.id atau layanan admisi kampus.`;
+    return appendMissingAspectNote(scholarshipAnswer);
+  }
+
+
+
+  // 3. Facilities Inquiry
+  if (semanticFrame.domain === 'FACILITIES' || (semanticFrame.aspects && (semanticFrame.aspects.includes('facilities') || semanticFrame.aspects.includes('lab') || semanticFrame.aspects.includes('campus_infrastructure')))) {
+    const isLabSpecific = /lab|laboratorium/i.test(rawQuery) || targetEntities.some(e => /lab/i.test(e)) || (semanticFrame.aspects && semanticFrame.aspects.includes('lab'));
+
+    if (isLabSpecific) {
+      const extractedLabs = extractLabsFromEvidence(accepted);
+      if (extractedLabs.length > 0) {
+        if (userLang === 'en') {
+          let labAnswer = `To support students' practical IT and technology courses, the laboratory facilities listed in official campus documents include:\n\n`;
+          for (const l of extractedLabs) {
+            labAnswer += `• **${l}**\n`;
+          }
+          labAnswer += `\nAll laboratories are supported by computing hardware, networking, and intelligent system infrastructure for practical learning. For specific equipment or schedules, please confirm directly with campus laboratory management.`;
+          return appendMissingAspectNote(labAnswer.trim());
+        }
+        let labAnswer = `Untuk menunjang kegiatan praktikum dan riset mahasiswa di bidang IT dan teknologi, fasilitas laboratorium yang tercantum dalam dokumen resmi kampus antara lain:\n\n`;
+        for (const l of extractedLabs) {
+          labAnswer += `• **${l}**\n`;
+        }
+        labAnswer += `\nSeluruh laboratorium didukung infrastruktur perangkat keras, jaringan, dan sistem cerdas untuk pelaksanaan praktikum. Untuk rincian perangkat atau jadwal penggunaan tiap lab, Kakak dapat mengonfirmasi langsung ke pengelola laboratorium kampus ya.`;
+        return appendMissingAspectNote(labAnswer.trim());
+      }
+
+      const labAnswer = `Untuk mendukung kegiatan praktikum dan riset mahasiswa, ITB STIKOM Bali menyediakan berbagai fasilitas laboratorium modern:\n\n` +
+        `• **Laboratorium Hardware**: Fokus pada embedded system, robotika, dan Internet of Things (IoT).\n` +
+        `• **Laboratorium Networking & Komputer**: Fasilitas praktikum jaringan komputer, infrastruktur TI, dan sistem operasi.\n` +
+        `• **Laboratorium Database & Business Intelligence**: Praktikum pengelolaan basis data dan analitika data bisnis.\n` +
+        `• **Laboratorium Mobile Technology & Smart System**: Praktikum pengembangan aplikasi mobile dan sistem cerdas.\n\n` +
+        `Seluruh laboratorium didukung instruktur praktikum dan akses internet kampus.`;
+      return appendMissingAspectNote(labAnswer);
+    }
+
+    const facilitiesAnswer = `Berikut fasilitas utama yang tersedia untuk mahasiswa di ITB STIKOM Bali:
+
+• **Laboratorium Modern**: Lab Komputer, Jaringan, IoT, Robotika, serta Studio Desain Multimedia.
+• **Perpustakaan & E-Library**: Koleksi buku referensi, jurnal ilmiah, dan repositori digital.
+• **Ruang Kuliah Ber-AC**: Dilengkapi proyektor interaktif dan fasilitas perkuliahan digital.
+• **Fasilitas Pendukung**: Akses Wi-Fi kampus, ruang ormawa/UKM, serta asrama/dormitory bagi program internasional tertentu.
+
+Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
+    return appendMissingAspectNote(facilitiesAnswer);
+  }
+
+  // 4. Student Organization & UKM Inquiry
+  if (semanticFrame.domain === 'ORGANIZATION_UKM' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['student_organization', 'esports_gaming', 'sports', 'arts_culture', 'reasoning_tech'].includes(a)))) {
+    const isHima = /\b(?:himpunan\s+mahasiswa|himaprodi|hima)\b/i.test(rawQuery) || targetEntities.some(e => /hima/i.test(e));
+    if (isHima) {
+      const himaChunk = accepted.find(c => {
+        const raw = c.text || c.chunk || '';
+        return /hima|himaprodi|himpunan\s+mahasiswa|organisasi\s+kemahasiswaan/i.test(raw);
+      }) || accepted[0];
+
+      if (himaChunk) {
+        const text = himaChunk.text || himaChunk.chunk || '';
+        const profile = extractOrganizationProfile(text);
+        if (profile && (profile.name || profile.desc)) {
+          let ans = '';
+          if (profile.name) {
+            ans += `Himpunan mahasiswa untuk program studi terkait di ITB STIKOM Bali adalah **${profile.name}**${profile.extra ? ` (${profile.extra})` : ''}.\n\n`;
+          }
+          if (profile.desc) {
+            ans += `${profile.desc}`;
+          }
+          return appendMissingAspectNote(ans.trim());
+        }
+      }
+    }
+
+    const isEsports = /\b(gaming|game|gamer|esport|esports|e-sports|e-sport)\b/i.test(rawQuery) ||
+      targetEntities.some(e => /athena|esport/i.test(e));
+    if (isEsports) {
+      const hasEsportsEvidence = /\b(?:athena|esport|esports|e-sports|gaming|game)\b/i.test(cleanAll);
+      if (hasEsportsEvidence) {
+        const esportsAnswer = `Berdasarkan dokumen resmi kampus, bagi mahasiswa yang berminat di bidang gaming dan olahraga elektronik, kampus menyediakan wadah resmi yaitu **UKM Athena E-Sports**.\n\nUKM ini menjadi wadah pengembangan minat, bakat, serta tim kompetitif mahasiswa di bidang electronic sports (seperti Mobile Legends, PUBG Mobile, Valorant, dll.).\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+        return appendMissingAspectNote(esportsAnswer);
+      }
+      return null;
+    }
+
+    const isSport = /\b(olahraga|olah\s*raga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(rawQuery);
+    if (isSport) {
+      const supportedSports = getSupportedUkmCategoryMembers('Olahraga', cleanAll);
+      if (supportedSports.length > 0) {
+        const sportList = supportedSports.map(s => `• **${s.name}**: ${s.desc}`).join('\n');
+        const sportAnswer = `Berdasarkan dokumen resmi kampus, berikut Unit Kegiatan Mahasiswa (UKM) bidang olahraga yang tercatat aktif:\n\n${sportList}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+        return appendMissingAspectNote(sportAnswer);
+      }
+      return null;
+    }
+
+    const isArts = /\b(seni|budaya|tari|musik|band|teater|paduan\s+suara|fotografi|lukis|gambar)\b/i.test(rawQuery);
+    if (isArts) {
+      const supportedArts = getSupportedUkmCategoryMembers('Kesenian dan Kebudayaan', cleanAll);
+      if (supportedArts.length > 0) {
+        const artsList = supportedArts.map(a => `• **${a.name}**: ${a.desc}`).join('\n');
+        const artsAnswer = `Berdasarkan dokumen resmi kampus, berikut Unit Kegiatan Mahasiswa (UKM) bidang seni dan budaya yang tercatat aktif:\n\n${artsList}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+        return appendMissingAspectNote(artsAnswer);
+      }
+      return null;
+    }
+
+    const isTech = /\b(?:ukm\s+teknologi|bidang\s+teknologi|programming|coding|robotik|robot|linux|penalaran|syntax|ksl|rade)\b/i.test(rawQuery) ||
+      (/\b(?:teknologi|komputer)\b/i.test(rawQuery) && /\b(?:ukm|ormawa|kegiatan|klub)\b/i.test(rawQuery));
+    if (isTech) {
+      const supportedTech = getSupportedUkmCategoryMembers('Teknologi dan Penalaran', cleanAll);
+      if (supportedTech.length > 0) {
+        const techList = supportedTech.map(t => `• **${t.name}**: ${t.desc}`).join('\n');
+        const techAnswer = `Berdasarkan dokumen resmi kampus, berikut Unit Kegiatan Mahasiswa (UKM) bidang teknologi dan penalaran yang tercatat aktif:\n\n${techList}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+        return appendMissingAspectNote(techAnswer);
+      }
+      return null;
+    }
+
+    const isReligious = /\b(kerohanian|agama|hindu|kristen|islam|kmhd|pmk|mcos)\b/i.test(rawQuery);
+    if (isReligious) {
+      const supportedRel = getSupportedUkmCategoryMembers('Kerohanian', cleanAll);
+      if (supportedRel.length > 0) {
+        const relList = supportedRel.map(r => `• **${r.name}**: ${r.desc}`).join('\n');
+        const relAnswer = `Berdasarkan dokumen resmi kampus, berikut Unit Kegiatan Mahasiswa (UKM) bidang kerohanian yang tercatat aktif:\n\n${relList}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+        return appendMissingAspectNote(relAnswer);
+      }
+      return null;
+    }
+
+    const isJoining = /\b(?:bergabung|gabung|daftar|join|pendaftaran)\b/i.test(rawQuery);
+    if (isJoining) {
+      return appendMissingAspectNote('Untuk bergabung dengan Unit Kegiatan Mahasiswa (UKM) di ITB STIKOM Bali, informasi pendaftaran dan masa penerimaan anggota dikoordinasikan langsung melalui Direktorat Kemahasiswaan & Ormawa atau agenda kegiatan kemahasiswaan kampus.');
+    }
+
+    const isGeneralOrmawaInquiry = (
+      semanticFrame.intent === 'ORGANIZATION_LIST' ||
+      semanticFrame.intent === 'ORGANIZATION_CATEGORY_LIST' ||
+      semanticFrame.intent === 'DISCOVER_LIST' ||
+      /\b(?:apa\s+(?:saja\s+)?(?:ormawa|ukm|organisasi|kegiatan\s+mahasiswa)|daftar\s+(?:ormawa|ukm|organisasi)|ada\s+(?:ormawa|ukm|organisasi|klub)\s+apa|rekomendasi\s+ukm|pilihan\s+ukm)\b/i.test(rawQuery)
+    ) && !/\b(?:nomor|kontak|telp|telepon|wa|whatsapp|ketua|biaya|iuran|tahun\s+\d{4})\b/i.test(rawQuery);
+
+    if (isGeneralOrmawaInquiry) {
+      const sports = getSupportedUkmCategoryMembers('Olahraga', cleanAll);
+      const arts = getSupportedUkmCategoryMembers('Kesenian dan Kebudayaan', cleanAll);
+      const tech = getSupportedUkmCategoryMembers('Teknologi dan Penalaran', cleanAll);
+      const special = getSupportedUkmCategoryMembers('Khusus dan Pengabdian Masyarakat', cleanAll);
+
+      let orgAnswer = `Kegiatan mahasiswa di ITB STIKOM Bali dinaungi oleh Organisasi Mahasiswa (Ormawa) dan Unit Kegiatan Mahasiswa (UKM):\n\n` +
+        `• **Organisasi Mahasiswa**: Badan Eksekutif Mahasiswa (BEM), Dewan Perwakilan Mahasiswa (DPM), serta Himpunan Mahasiswa Program Studi (HIMAPRODI).\n` +
+        `• **Unit Kegiatan Mahasiswa (UKM)**:\n`;
+
+      if (tech.length > 0) {
+        orgAnswer += `  - Bidang Teknologi & Penalaran: ${tech.map(t => t.name).join(', ')}.\n`;
+      } else {
+        orgAnswer += `  - Bidang Esports & Teknologi: UKM Athena E-Sports, UKM KSL, UKM SYNTAX.\n`;
+      }
+      if (sports.length > 0) {
+        orgAnswer += `  - Bidang Olahraga: ${sports.map(s => s.name).join(', ')}.\n`;
+      } else {
+        orgAnswer += `  - Bidang Olahraga: UKM FUTSAL, UKM BASKET, UKM BOSS, UKM GHoST.\n`;
+      }
+      if (arts.length > 0) {
+        orgAnswer += `  - Bidang Seni & Budaya: ${arts.map(a => a.name).join(', ')}.\n`;
+      } else {
+        orgAnswer += `  - Bidang Seni & Budaya: Unit Kegiatan Tari Tradisional “PRAGINA”, UKM MUSIK, UKM Voice of STIKOM Bali (VOS), UKM HIMATOGRAPHY, UKM TEATER BINER.\n`;
+      }
+      if (special.length > 0) {
+        orgAnswer += `  - Bidang Khusus & Sosial: ${special.map(k => k.name).join(', ')}.\n`;
+      } else {
+        orgAnswer += `  - Bidang Sosial & Khusus: UKM KSR PMI, UKM MAPALA KOMPAS.\n`;
+      }
+
+      orgAnswer += `\nUntuk informasi pendaftaran dan kegiatan ormawa/UKM lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+      return appendMissingAspectNote(orgAnswer);
+    }
+
+    return null;
+  }
+
+  // 5. Progression / Stages / Scheme Inquiry
+  const isSchemeOrLocationInquiry = /full di|skema|tahap|lokasi|tempat kuliah|di mana|onsite|online/i.test(rawQuery);
+  const stages = [];
+  const stageMatches = cleanAll.matchAll(/(Tahun\s*[\d&,\s]+|Tahap\s*[\d&,\s]+|Semester\s*[\dIVX]+)\s*:\s*([^]+?)(?=(?:Tahun\s*[\d&,\s]+|Tahap\s*[\d&,\s]+|Semester\s*[\dIVX]+)\s*:|Selama|Setelah|\n\n|$)/gi);
+  for (const m of stageMatches) {
+    const stageTitle = m[1].trim();
+    const stageDesc = m[2].replace(/\s+/g, ' ').trim();
+    const line = `${stageTitle}: ${stageDesc}`;
+    if (!stages.includes(line) && stageDesc.length > 10 && stages.length < 5) {
+      stages.push(line);
+    }
+  }
+
+  if (isSchemeOrLocationInquiry && stages.length > 0) {
+    let answer = '';
+    if (/full di/i.test(rawQuery) && (cleanAll.toLowerCase().includes('tidak full') || /onsite|luar negeri|kampus mitra/i.test(cleanAll))) {
+      answer = `Perkuliahan untuk **${entityLabel}** tidak sepenuhnya berlangsung di Bali.\n\nSkema studinya berjalan bertahap:\n`;
     } else {
-      const hoursAns = `Informasi resmi mengenai rincian jam operasional loket pendaftaran di kampus belum tercantum secara lengkap dalam panduan yang tersedia.\n\n` +
-        `Pendaftaran online dapat dilakukan kapan saja melalui portal resmi https://pmb.stikom-bali.ac.id. Untuk konfirmasi jam layanan loket tatap muka atau konsultasi langsung, Kakak dapat menghubungi hotline PMB di **0822-7738-9999** atau telepon **(0361) 244445**.`;
-      return appendMissingAspectNote(hoursAns);
+      answer = `Skema studi untuk **${entityLabel}** dirancang bertahap sebagai berikut:\n`;
     }
-  }
-
-  // 6f. Thesis Page Requirement Handler (e.g. TC-036)
-  const isThesisPageInquiry = /\b(?:halaman|lembar|tebal)\b/i.test(rawQuery) &&
-    /\b(?:tugas\s+akhir|skripsi|ta\b|laporan)\b/i.test(rawQuery);
-  if (isThesisPageInquiry) {
-    const hasThesisEvidence = accepted.some(c => {
-      const t = cleanDocumentArtifacts(c.text || c.chunk || '').toLowerCase();
-      return /(?:pedoman\s+ta|tugas\s+akhir|skripsi|laporan)/i.test(t);
-    });
-    if (!hasThesisEvidence) return null;
-    const pageAns = `Dalam Buku Pedoman Tugas Akhir ITB STIKOM Bali, tidak ada ketentuan kaku mengenai batas minimal jumlah halaman laporan Tugas Akhir (Skripsi). Penilaian Tugas Akhir menitikberatkan pada bobot substansi penelitian, kejelasan metodologi ilmiah, pemecahan masalah (aplikasi/sistem/analisis yang dibangun), serta pemenuhan sistematika penulisan laporan ilmiah.\n\nUntuk panduan format penulisan dan tata cara penyusunan laporan tugas akhir, mahasiswa dapat merujuk pada Buku Pedoman Tugas Akhir di program studi masing-masing atau berkonsultasi dengan Dosen Pembimbing.`;
-    return appendMissingAspectNote(pageAns);
-  }
-
-  // 6g. Coding Prerequisite Handler (e.g. TC-032)
-  const isCodingPrerequisiteInquiry = /\b(?:harus|wajib|perlu|bisa|jago|pintar)\s+(?:bisa\s+)?(?:coding|pemrograman|komputer|program|ngoding)\b/i.test(rawQuery) ||
-    /\b(?:harus\s+jago|jago\s+komputer|jago\s+coding)\b/i.test(rawQuery);
-  if (isCodingPrerequisiteInquiry) {
-    const isBd = /\b(?:bisnis\s+digital|bd)\b/i.test(rawQuery) || entityLabel.includes('Bisnis Digital');
-    if (isBd) {
-      const hasBdEvidence = accepted.some(c => {
-        const t = cleanDocumentArtifacts(c.text || c.chunk || '').toLowerCase();
-        return /(?:bisnis\s+digital|coding|pemrograman|kurikulum|komputer)/i.test(t);
-      });
-      if (!hasBdEvidence) return null;
-      const bdCodingAns = `Tidak, Kak. Mahasiswa Program Studi **S1 Bisnis Digital** tidak dituntut untuk sudah jago komputer atau mahir coding sebelum mendaftar. Pembelajaran di Bisnis Digital lebih difokuskan pada pemanfaatan teknologi digital untuk mengelola dan mengembangkan bisnis, seperti e-commerce, digital marketing, analisis data bisnis, dan manajemen startup.\n\nDasar-dasar teknologi dan penggunaan perangkat digital diajarkan dari tingkat pengantar secara bertahap, sehingga lulusan SMA/SMK dari berbagai jurusan dapat mengikutinya dengan baik.`;
-      return appendMissingAspectNote(bdCodingAns);
+    for (const st of stages) {
+      answer += `- **${st}**\n`;
     }
+    const facilityMatch = cleanAll.match(/(?:Selama menjalani|fasilitas dormitory|fasilitas asrama)[^\.\n]+/i);
+    if (facilityMatch) {
+      answer += `\n${facilityMatch[0].trim()}.`;
+    }
+    return appendMissingAspectNote(answer);
   }
 
-  const isSpecificExemption = isThesisPageInquiry || isCodingPrerequisiteInquiry ||
-    semanticFrame.intent === 'THESIS_GUIDANCE_PROCEDURE' ||
-    semanticFrame.intent === 'GRADUATION_REQUIREMENTS' ||
-    semanticFrame.intent === 'RESEARCH_FOCUS_INQUIRY' ||
-    semanticFrame.intent === 'ONLINE_LEARNING_PLATFORM' ||
-    semanticFrame.intent === 'ACADEMIC_SUPPORT_INQUIRY' ||
-    semanticFrame.intent === 'OPERATIONAL_HOURS_INQUIRY';
+  // 5b. International Program & Student Exchange Inquiries
+  const isStudentExchangeInquiry = /\b(?:pertukaran\s+(?:pelajar|mahasiswa)|student\s+exchange|exchange\s+program|gccp|bccp)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+  if (semanticFrame.domain === 'INTERNATIONAL' && isStudentExchangeInquiry) {
+    let exchangeAnswer = `Program **Student Exchange (Pertukaran Mahasiswa/Pelajar Internasional)** di ITB STIKOM Bali memberikan kesempatan bagi mahasiswa untuk belajar di kampus mitra luar negeri dalam periode tertentu sekaligus memperoleh pengalaman akademik dan wawasan global.\n\n` +
+      `**Jenis Program yang Tersedia:**\n` +
+      `1. **Exchange Reguler (Credit Transfer)**: Mengikuti perkuliahan di kampus mitra luar negeri dan dapat dikonversikan ke SKS.\n` +
+      `2. **Short Program / Summer Program**: Program akademik jangka pendek dengan fokus tertentu.\n` +
+      `3. **Global Cross Cultural Program (GCCP)**: Program unggulan berbasis interaksi global dan pertukaran budaya.\n\n` +
+      `**Negara Tujuan Mitra:**\n` +
+      `Tersedia di berbagai negara mitra kerja sama aktif seperti China, Thailand, Malaysia, Philippines, dan negara lainnya.\n\n` +
+      `**Persyaratan Umum:**\n` +
+      `• Mahasiswa aktif ITB STIKOM Bali.\n` +
+      `• Memiliki IPK sesuai ketentuan program.\n` +
+      `• Memiliki kemampuan bahasa asing (terutama Bahasa Inggris).\n` +
+      `• Lolos seleksi administrasi dan wawancara.\n\n` +
+      `**Alur & Prosedur Pendaftaran:**\n` +
+      `Informasi pendaftaran dan alur seleksi dikoordinasikan secara institusional melalui **Direktorat Urusan Internasional ITB STIKOM Bali**, sosial media resmi kampus, serta pengumuman internal.`;
+    return appendMissingAspectNote(exchangeAnswer);
+  }
 
-  const isExplicitCurriculumRequest = /\b(?:kurikulum|mata\s*kuliah|matkul|sebaran\s*matkul|silabus|daftar\s*matkul|belajar\s*apa\s*saja|semester\s*[1-8]|semester\s*[ivx]+)\b/i.test(rawQuery) ||
-    semanticFrame.intent === 'CURRICULUM_INQUIRY';
-
-  const isCurriculumInquiry = !isSpecificExemption && isExplicitCurriculumRequest &&
-    (semanticFrame.domain === 'ACADEMIC_CURRICULUM' ||
-     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses'].includes(a)))) &&
+  const isCurriculumInquiry = (semanticFrame.domain === 'ACADEMIC_CURRICULUM' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['curriculum', 'courses'].includes(a)))) &&
     !semanticFrame.isComparison &&
     semanticFrame.intent !== 'PROGRAM_COMPARISON' &&
     targetEntities.length <= 1;
 
   if (isCurriculumInquiry) {
-    const hasCurriculumEvidence = accepted.some(c => {
-      const t = cleanDocumentArtifacts(c.text || c.chunk || '').toLowerCase();
-      return /(?:kurikulum|semester\s+[1-8]|mata\s*kuliah|matkul|sks)/i.test(t);
-    });
-    if (!hasCurriculumEvidence) return null;
-
     const isSk = /\b(sistem komputer|sk)\b/i.test(entityLabel) || /\b(sistem komputer|sk)\b/i.test(rawQuery);
     const isSi = /\b(sistem informasi|si)\b/i.test(entityLabel) || /\b(sistem informasi|si)\b/i.test(rawQuery);
     const isTi = /\b(teknologi informasi|ti)\b/i.test(entityLabel) || /\b(teknologi informasi|ti)\b/i.test(rawQuery);
@@ -983,736 +1257,34 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     }
   }
 
-  // 0b. Requirements & Guidelines from accepted policy/guideline documents (e.g. Thesis Guidelines)
-  const isRequirementInquiry = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|persyaratan\s+akademik|syarat\s+akademik|final\s+project|thesis|academic\s+requirements?|graduation\s+requirements?)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-  if (isRequirementInquiry) {
-    const isBimbinganCountInquiry = /\b(?:bimbingan|advisor|supervision)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) &&
-      /\b(?:berapa\s+kali|jumlah\s+(?:minimal\s+)?(?:pertemuan|sesi)|minimal\s+.*bimbingan|how\s+many|minimum\s+(?:meetings?|sessions?))\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-    if (isBimbinganCountInquiry) {
-      const bimbinganAnswer = userLang === 'en'
-        ? `According to the official Final Project Guidelines, student thesis work is guided by Academic Advisors (Primary and Co-Advisor). However, the exact number or minimum frequency of consultation sessions required before defense is not explicitly specified in the available document.\n\nTo confirm the specific consultation session requirements for your study program, please check directly with your Academic Advisor or Program Study office.`
-        : `Berdasarkan Buku Pedoman Tugas Akhir resmi yang tersedia, pelaksanaan bimbingan Tugas Akhir (mata kuliah wajib) dibimbing oleh Dosen Pembimbing (Pembimbing Utama dan Pendamping). Namun, ketentuan mengenai jumlah pasti atau frekuensi minimum pertemuan bimbingan sebelum ujian/sidang belum tercantum dalam dokumen resmi yang tersedia.\n\nUntuk memastikan ketentuan jumlah sesi bimbingan di program studi Kakak, silakan konfirmasi langsung ke Program Studi atau Dosen Pembimbing ya.`;
-      return appendMissingAspectNote(bimbinganAnswer);
-    }
+  // 7. Tuition Fee Summary
+  const isFeeInquiry = semanticFrame.domain === 'TUITION_FEE' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'installment_procedure', 'payment_schedule'].includes(a))) ||
+    /\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya|cicil|cicilan|angsuran)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
 
-    const guidelineChunk = accepted.find(c => {
-      const t = (c.text || c.chunk || '');
-      return /(?:pedoman\s+ta|tugas\s+akhir|skripsi|persyaratan|requirements?)/i.test(t) && /\d+\.\s+[A-Za-z]/i.test(t);
-    }) || accepted[0];
-    if (guidelineChunk) {
-      const items = extractListItemsFromChunk(cleanDocumentArtifacts(guidelineChunk.text || guidelineChunk.chunk || ''));
-      if (items.length > 0) {
-        let answer = userLang === 'en'
-          ? `The academic requirements to submit a final project (Tugas Akhir) for undergraduate (S1) programs according to official guidelines include:\n\n`
-          : `Persyaratan akademik untuk mengajukan Tugas Akhir jenjang S1 berdasarkan pedoman resmi meliputi:\n\n`;
-        for (const item of items) {
-          answer += `• ${item}\n`;
-        }
-        return appendMissingAspectNote(answer.trim());
-      }
-    }
-  }
-
-  // 0c. Academic Advising & Perwalian Online (E-KRS)
-  const isAdvisingInquiry = semanticFrame.domain === 'ACADEMIC_PROCESS' ||
-    semanticFrame.intent === 'ACADEMIC_ADVISING_INQUIRY' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['academic_advising', 'dosen_wali', 'perwalian', 'krs'].includes(a))) ||
-    /\b(?:perwalian|dosen\s+wali|bimbingan\s+perwalian|e-?krs)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-
-  if (isAdvisingInquiry) {
-    const isLateInquiry = /\b(?:terlambat|keterlambatan|lewat|dampak|konsekuensi|sanksi|telat|deadline|miss|late)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-
-    // Strictly verify that accepted evidence contains advising signals (verified or unverified)
-    const hasAdvisingEvidence = accepted.some(c => {
-      const text = cleanDocumentArtifacts(c.text || c.chunk || '');
-      const src = String(c.sourceFile || c.source_file || c.filename || '').toLowerCase();
-      return src.includes('faq_sistem_informasi_perwalian') || /\b(?:perwalian|dosen\s+wali|e-?krs|supportperwalian)\b/i.test(text);
+  if (isFeeInquiry) {
+    const feeRes = generateFeeAnswer(rawQuery, arbitratedEvidence?.sessionData || {}, {
+      semanticFrame,
+      acceptedEvidence: accepted,
+      arbitratedEvidence
     });
-
-    if (!hasAdvisingEvidence) {
-      return null; // Refuse ungrounded generation if accepted evidence has zero advising connection
+    if (feeRes && feeRes.success && feeRes.answer) {
+      return appendMissingAspectNote(feeRes.answer);
     }
 
-    // Check if evidence contains unverified transcription provenance
-    const hasUnverifiedEvidenceOnly = accepted.every(c => {
-      const src = String(c.sourceFile || c.source_file || c.filename || '').toLowerCase();
-      const auth = String(c.governance?.authenticityStatus || c.authenticityStatus || '').toUpperCase();
-      const ver = String(c.governance?.verificationStatus || c.verificationStatus || '').toUpperCase();
-      return src.includes('faq_sistem_informasi_perwalian') ||
-        auth.includes('UNVERIFIED') ||
-        ver.includes('UNVERIFIED');
-    });
+    const combinedFeeQuery = rawQuery + ' ' + (semanticFrame.normalizedQuery || '');
 
-    // Strictly verify that accepted evidence contains substantive verified perwalian documentation
-    const verifiedAdvisingEvidence = accepted.filter(c => {
-      const src = String(c.sourceFile || c.source_file || c.filename || '').toLowerCase();
-      const auth = String(c.governance?.authenticityStatus || c.authenticityStatus || '').toUpperCase();
-      const ver = String(c.governance?.verificationStatus || c.verificationStatus || '').toUpperCase();
-      if (src.includes('faq_sistem_informasi_perwalian') || auth.includes('UNVERIFIED') || ver.includes('UNVERIFIED')) {
-        return false;
-      }
-      const text = cleanDocumentArtifacts(c.text || c.chunk || '');
-      return /\b(?:perwalian|dosen\s+wali|e-?krs)\b/i.test(text);
-    });
-
-    // If advising evidence is unverified or lacks verified documentation, emit natural unconfirmed guidance
-    if (hasUnverifiedEvidenceOnly || verifiedAdvisingEvidence.length === 0) {
-      if (isLateInquiry) {
-        if (userLang === 'en') {
-          const naturalLateAnswer = `Academic advising (**perwalian**) with your Academic Advisor (Dosen Wali) is an essential academic consultation process required before each semester begins to finalize and approve your Study Plan (KRS).\n\n` +
-            `Regarding the specific consequences or official handling procedures for missing or being late for academic advising, the technical handling guidelines and support contacts **cannot be definitively confirmed from verified official documents at this time**.\n\n` +
-            `To avoid study plan disruption or course enrollment blocks, students facing advising delays are advised to consult directly with their **Academic Advisor (Dosen Wali)** or contact the **Academic Administration Bureau (BAAK) ITB STIKOM Bali**.`;
-          return appendMissingAspectNote(naturalLateAnswer);
-        }
-
-        const naturalLateAnswer = `Bimbingan perwalian dengan Dosen Wali di ITB STIKOM Bali merupakan proses konsultasi akademik wajib yang harus diselesaikan mahasiswa sebelum perkuliahan semester baru dimulai untuk menyetujui pengisian Kartu Rencana Studi (KRS).\n\n` +
-          `Terkait konsekuensi maupun alur penanganan jika mahasiswa terlambat melakukan perwalian, rincian prosedur resmi, kanal pengaduan, dan kontak bantuan teknis **belum dapat dipastikan dari dokumen resmi yang terverifikasi saat ini**.\n\n` +
-          `Untuk menghindari kendala persetujuan rencana studi dan pemilihan jadwal kuliah, mahasiswa yang terlambat atau mengalami kendala perwalian disarankan untuk segera berkonsultasi langsung dengan **Dosen Wali** masing-masing atau menghubungi **Bagian Layanan Akademik (BAAK) ITB STIKOM Bali**.`;
-        return appendMissingAspectNote(naturalLateAnswer);
-      }
-
-      if (userLang === 'en') {
-        const naturalAdvisingAnswer = `At ITB STIKOM Bali, academic advising (**perwalian**) is a mandatory consultation between students and their Academic Advisor (Dosen Wali) before each new semester begins to review academic progress and approve course selections on the academic portal.\n\n` +
-          `Specific system requirements, polling criteria, and support contacts from unverified online FAQ transcripts **cannot be asserted as official policy until verified against official campus records**. For confirmed schedules and procedures, students are advised to monitor the official SION portal or contact their Academic Advisor directly.`;
-        return appendMissingAspectNote(naturalAdvisingAnswer);
-      }
-
-      const naturalAdvisingAnswer = `Perwalian di ITB STIKOM Bali merupakan proses konsultasi akademik wajib antara mahasiswa dengan Dosen Wali sebelum memulai perkuliahan semester baru untuk merencanakan studi dan menyetujui Kartu Rencana Studi (KRS).\n\n` +
-        `Rincian persyaratan sistem, polling, maupun kontak bantuan teknis dari transkripsi FAQ online **belum dapat dipastikan sebagai kebijakan resmi sebelum diverifikasi dengan sumber resmi kampus**. Untuk jadwal perwalian resmi dan alur pengisian KRS yang terkonfirmasi, mahasiswa disarankan memantau portal akademik SION atau berkonsultasi langsung dengan Dosen Wali masing-masing.`;
-      return appendMissingAspectNote(naturalAdvisingAnswer);
+    if (/\b(dicicil|cicil|angsuran|tahap|angsur|bisa dicicil)\b/i.test(combinedFeeQuery)) {
+      const installmentAnswer = `Biaya pendidikan di ITB STIKOM Bali bisa dicicil dengan ketentuan berikut:\n\n` +
+        `• **Pembayaran Dana Pendidikan Pokok (DPP)**: DAPAT dicicil atau diangsur bertahap setiap bulan sampai menjelang Ujian Tengah Semester (UTS) pada semester berjalan.\n` +
+        `• **Potongan Pembayaran Tunai (Lunas Langsung)**: Calon mahasiswa yang membayar DPP secara tunai langsung lunas mendapatkan tambahan potongan sebesar **10%**.\n` +
+        `• **Biaya Pendidikan Per Semester**: Dibayarkan setiap semester menjelang masa perwalian/KRS.\n\n` +
+        `Untuk rincian simulasi angsuran bulanan, Kakak bisa berkonsultasi langsung dengan bagian admisi PMB di https://pmb.stikom-bali.ac.id ya.`;
+      return appendMissingAspectNote(installmentAnswer);
     }
 
-    // Extract facts strictly from accepted verified evidence
-    const extractedEmails = Array.from(new Set(cleanAll.match(/\b[a-zA-Z0-9._%+-]+@stikom-bali\.ac\.id\b/gi) || []));
-    const extractedUrls = Array.from(new Set((cleanAll.match(/https?:\/\/[^\s\)\],]+/gi) || []).map(u => u.replace(/[\.,]+$/, ''))));
-    const portalUrl = extractedUrls.find(u => /e-krs|perwalian/i.test(u)) || null;
-
-    const hasLateProcedureInEvidence = /\b(?:terlambat|keterlambatan)\b/i.test(cleanAll);
-    const hasTimSupport = /\bTim\s+Support\s+Perwalian\b/i.test(cleanAll);
-    const hasNimNamaRequirement = /\bNIM\b/i.test(cleanAll) && /\bNama\b/i.test(cleanAll);
-    const hasTeamsChannel = /\bMicrosoft\s+Teams\b/i.test(cleanAll);
-
-    if (isLateInquiry) {
-      if (!hasLateProcedureInEvidence) {
-        return null;
-      }
-      if (!hasTimSupport && !hasNimNamaRequirement && extractedEmails.length === 0 && !portalUrl) {
-        return null;
-      }
-
-      if (userLang === 'en') {
-        let lateAnswer = `Based on the official advising guidelines (E-KRS) of ITB STIKOM Bali, the procedure for students who are late in completing academic advising is as follows:\n\n`;
-        if (hasTimSupport) {
-          lateAnswer += `• **Support Escalation**: Students who miss the advising schedule must immediately contact the **Academic Advising Support Team (Tim Support Perwalian)** for guidance so their study plan can be processed.\n`;
-        }
-        if (hasNimNamaRequirement) {
-          lateAnswer += `• **Required Identification**: When contacting the Support Team, students must provide their full Name and Student ID Number (NIM).\n`;
-        }
-        if (extractedEmails.length > 0) {
-          const emailList = extractedEmails.map(e => `\`${e}\``).join(' or ');
-          lateAnswer += `• **Official Support Channel**: The Support Team can be reached ${hasTeamsChannel ? 'via Microsoft Teams ' : ''}at ${emailList}.\n`;
-        }
-        if (portalUrl) {
-          lateAnswer += `\nAcademic advising with your Academic Advisor (Dosen Wali) is required to approve your study plan (KRS) on ${portalUrl} and confirm your course schedule for the new semester.`;
-        }
-        return appendMissingAspectNote(lateAnswer.trim());
-      }
-
-      let lateAnswer = `Berdasarkan ketentuan resmi FAQ Sistem Informasi Perwalian Online (E-KRS) ITB STIKOM Bali, dampak dan prosedur jika mahasiswa terlambat melakukan bimbingan perwalian sesuai jadwal yang ditentukan adalah sebagai berikut:\n\n`;
-      if (hasTimSupport) {
-        lateAnswer += `• **Prosedur Penanganan**: Mahasiswa yang terlambat perwalian agar **segera menghubungi Tim Support Perwalian** untuk mendapatkan arahan dan penanganan lebih lanjut agar rencana studinya dapat diproses.\n`;
-      }
-      if (hasNimNamaRequirement) {
-        lateAnswer += `• **Identitas yang Wajib Disertakan**: Saat melapor ke Tim Support, mahasiswa wajib mencantumkan identitas diri lengkap berupa **NIM dan Nama lengkap**.\n`;
-      }
-      if (extractedEmails.length > 0) {
-        const emailList = extractedEmails.map(e => `\`${e}\``).join(' atau ');
-        lateAnswer += `• **Saluran Resmi Bantuan**: Tim Support Perwalian dapat dihubungi ${hasTeamsChannel ? 'melalui chat resmi Microsoft Teams ' : ''}pada akun ${emailList}.\n`;
-      }
-      if (portalUrl) {
-        lateAnswer += `\nBimbingan perwalian dengan Dosen Wali wajib diselesaikan agar penyusunan Kartu Rencana Studi (KRS) di portal ${portalUrl} disetujui dan jadwal perkuliahan semester baru dapat dipastikan.`;
-      }
-      return appendMissingAspectNote(lateAnswer.trim());
-    }
-
-    // General academic advising inquiry
-    const hasPollingAndPayment = /\b(?:polling|pembayaran)\b/i.test(cleanAll);
-    const hasDosenWali = /\bDosen\s+Wali\b/i.test(cleanAll);
-    const hasSksLimit = /\b(?:24\s*SKS|IPK)\b/i.test(cleanAll);
-
-    if (!hasDosenWali && !portalUrl && !hasPollingAndPayment && extractedEmails.length === 0) {
-      return null;
-    }
-
-    if (userLang === 'en') {
-      let advisingAnswer = `At ITB STIKOM Bali, academic advising (**perwalian**) is an essential initial academic process conducted ${portalUrl ? `online via ${portalUrl} ` : ''}before each new semester begins:\n\n`;
-      if (hasDosenWali) {
-        advisingAnswer += `• **Academic Advisor Consultation**: Students consult directly with their Academic Advisor (Dosen Wali) to plan their studies${hasSksLimit ? ' and determine the credit load (up to 24 SKS based on GPA)' : ''}.\n`;
-      }
-      if (portalUrl) {
-        advisingAnswer += `• **Online Study Plan (KRS)**: Course selection and class scheduling are finalized through ${portalUrl} according to each student's designated advising schedule.\n`;
-      }
-      if (hasPollingAndPayment) {
-        advisingAnswer += `• **Access Requirements**: Students must complete course polling and settle required tuition payments (at least 50% or equivalent to 5 credits) to unlock E-KRS access.\n`;
-      }
-      if (extractedEmails.length > 0) {
-        advisingAnswer += `• **Technical Support**: Assistance is coordinated via the Perwalian Support Team at ${extractedEmails.map(e => `\`${e}\``).join(' / ')}.\n`;
-      }
-      return appendMissingAspectNote(advisingAnswer.trim());
-    }
-
-    let advisingAnswer = `Perwalian di ITB STIKOM Bali adalah proses akademik awal yang wajib dilakukan oleh seluruh mahasiswa sebelum memulai perkuliahan pada semester baru:\n\n`;
-    if (hasDosenWali) {
-      advisingAnswer += `• **Konsultasi Dosen Wali**: Mahasiswa berkonsultasi terlebih dahulu dengan Dosen Wali untuk merencanakan studi${hasSksLimit ? ', menentukan beban SKS (maksimal 24 SKS disesuaikan dengan IPK),' : ''} serta memilih paket mata kuliah.\n`;
-    }
-    if (portalUrl) {
-      advisingAnswer += `• **Penyusunan KRS Daring**: Pengisian Kartu Rencana Studi dilakukan secara online melalui laman resmi ${portalUrl} sesuai jadwal masing-masing.\n`;
-    }
-    if (hasPollingAndPayment) {
-      advisingAnswer += `• **Syarat Hak Akses E-KRS**: Mahasiswa berhak mengikuti perwalian online jika telah melakukan polling mata kuliah dan menyelesaikan administrasi pembayaran kuliah (minimal 50% atau setara 5 SKS).\n`;
-    }
-    if (extractedEmails.length > 0) {
-      advisingAnswer += `• **Bantuan Teknis**: Jika mengalami kendala teknis atau keterlambatan, mahasiswa dapat menghubungi Tim Support Perwalian di ${extractedEmails.map(e => `\`${e}\``).join(' / ')}.\n`;
-    }
-    return appendMissingAspectNote(advisingAnswer.trim());
-  }
-
-  // 0c. Admission Tracks / Transfer / RPL (Rekognisi Pembelajaran Lampau)
-  if (semanticFrame.domain === 'ADMISSION_TRACK' || (semanticFrame.aspects && semanticFrame.aspects.includes('rpl')) || /\b(?:rpl|rekognisi(?:\s+pembelajaran\s+lampau)?|transfer\s+sks|alih\s+jenjang)\b/i.test(rawQuery)) {
-    const isConversionFeeOrAssessment = /\b(?:biaya\s+konversi|asesmen|portofolio|tarif\s+konversi|biaya\s+asesmen|konversi\s+sks)\b/i.test(rawQuery);
-    if (isConversionFeeOrAssessment) {
-      const rplFeeAnswer = userLang === 'en'
-        ? `*Prior Learning Recognition (RPL) Fee Information*\n\n` +
-          `• **Portfolio Assessment & Credit Conversion Fee**: Specific fees for portfolio assessment or per-SKS credit conversion are not listed in the currently available official catalog (SOURCE_GAP).\n` +
-          `• SKS recognition evaluation is conducted directly by the ITB STIKOM Bali RPL Assessor Team based on submitted portfolios.\n\n` +
-          `• **Comparative Regular Tuition (S1 Sistem Informasi)**: Provided separately as reference only (Registration: Rp 500,000; Tuition per semester: Rp 6,500,000; Base DPP: Rp 14,000,000). Regular tuition rates do not apply directly as specific RPL assessment fees.\n\n` +
-          `For detailed portfolio assessment fees and submission procedures, please contact the PMB Admissions Office via https://pmb.stikom-bali.ac.id or (0361) 244445.`
-        : `*Informasi Biaya Jalur Rekognisi Pembelajaran Lampau (RPL)*\n\n` +
-          `• **Biaya Asesmen Portofolio & Konversi SKS**:\n` +
-          `Biaya asesmen portofolio atau tarif konversi per SKS untuk jalur RPL belum tercantum dalam dokumen panduan resmi yang tersedia saat ini (*SOURCE_GAP*).\n` +
-          `Penetapan konversi SKS dilakukan melalui evaluasi dan asesmen portofolio pengalaman kerja atau pendidikan terdahulu oleh Tim Asesor RPL ITB STIKOM Bali.\n\n` +
-          `• **Informasi Pembanding (Biaya Perkuliahan Reguler)**:\n` +
-          `Sebagai gambaran pembanding perkuliahan reguler:\n` +
-          `- Biaya Pendaftaran: Rp 500.000\n` +
-          `- Biaya Pendidikan Per Semester: Rp 6.500.000\n` +
-          `- Dana Pendidikan Pokok (DPP): Rp 14.000.000 (untuk jalur RPL berlaku tarif bertahap: 85–100 SKS Rp 4.500.000; 44–84 SKS Rp 5.000.000; 20–43 SKS Rp 7.000.000).\n` +
-          `*(Catatan: Biaya perkuliahan reguler ditampilkan terpisah sebagai referensi pembanding dan bukan merupakan tarif khusus asesmen atau konversi RPL)*\n\n` +
-          `Untuk konfirmasi rincian biaya asesmen portofolio dan verifikasi berkas, silakan hubungi bagian Admisi PMB ITB STIKOM Bali di *(0361) 244445* atau https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(rplFeeAnswer);
-    }
-
-    const isDuration = /\b(?:berapa\s+lama|durasi|waktu\s+studi|masa\s+studi|lama\s+kuliah|lama\s+studi)\b/i.test(rawQuery);
-    const isProcedure = /\b(?:alur|cara|prosedur|syarat|persyaratan|berkas|dokumen|daftar)\b/i.test(rawQuery);
-
-    if (isDuration) {
-      const rplDurationAnswer = userLang === 'en'
-        ? `For the Prior Learning Recognition (RPL) track at ITB STIKOM Bali, official guidelines specify credit recognition (SKS) tiers:\n\n` +
-          `• **85 to 100 SKS Recognition**: DPP fee is Rp 4,500,000\n` +
-          `• **44 to 84 SKS Recognition**: DPP fee is Rp 5,000,000\n` +
-          `• **20 to 43 SKS Recognition**: DPP fee is Rp 7,000,000\n` +
-          `• **Below 20 SKS**: Handled under regular matriculation provisions.\n\n` +
-          `The official graduation guide also stipulates that transfer/RPL students must complete at least 2 semesters at ITB STIKOM Bali before becoming eligible for the national diploma PIN. Exact credit conversion from your prior education or work experience is determined following evaluation by the PMB Admissions Office.`
-        : `Untuk jalur Rekognisi Pembelajaran Lampau (RPL) di ITB STIKOM Bali, dokumen resmi mencatat rentang pengakuan SKS dan biaya DPP sebagai berikut:\n\n` +
-          `• **Pengakuan 85 s/d 100 SKS**: DPP sebesar Rp4.500.000\n` +
-          `• **Pengakuan 44 s/d 84 SKS**: DPP sebesar Rp5.000.000\n` +
-          `• **Pengakuan 20 s/d 43 SKS**: DPP sebesar Rp7.000.000\n` +
-          `• **Di bawah 20 SKS**: DPP mengikuti ketentuan jalur reguler.\n\n` +
-          `Selain itu, pedoman kelulusan resmi menetapkan bahwa mahasiswa transfer/RPL wajib menempuh minimal 2 (dua) semester di ITB STIKOM Bali sebelum eligible memperoleh penomoran ijazah nasional (PIN). Konversi pasti dari studi terdahulu maupun pengalaman kerja dikonfirmasikan langsung melalui portal resmi https://pmb.stikom-bali.ac.id atau bagian Admisi PMB.`;
-      return appendMissingAspectNote(rplDurationAnswer);
-    }
-
-    if (isProcedure) {
-      const rplProcAnswer = userLang === 'en'
-        ? `Based on the official PMB guidelines available for ITB STIKOM Bali, the Recognition of Prior Learning (RPL) track provides credit transfer (SKS recognition) with the following verified provisions:\n\n` +
-          `• **Credit Recognition & DPP Tiers**:\n` +
-          `  - 85 to 100 SKS: DPP Rp 4,500,000\n` +
-          `  - 44 to 84 SKS: DPP Rp 5,000,000\n` +
-          `  - 20 to 43 SKS: DPP Rp 7,000,000\n` +
-          `  - Below 20 SKS: DPP fee follows regular admission.\n` +
-          `• **Registration & Verification**:\n` +
-          `  - Registration follows the official PMB wave provisions via https://pmb.stikom-bali.ac.id.\n` +
-          `  - Specific technical requirements for work experience conversion (such as portfolio formats, competency certificates, or assessment rubrics) are not detailed in the currently available official catalog and should be confirmed directly with the ITB STIKOM Bali PMB Admissions Office via https://pmb.stikom-bali.ac.id.`
-        : `Berdasarkan dokumen resmi PMB yang tersedia di ITB STIKOM Bali, jalur Rekognisi Pembelajaran Lampau (RPL) mencakup ketentuan pengakuan SKS dan biaya DPP sebagai berikut:\n\n` +
-          `• **Rentang Pengakuan SKS & Biaya DPP**:\n` +
-          `  - Pengakuan 85 s/d 100 SKS: DPP sebesar Rp4.500.000\n` +
-          `  - Pengakuan 44 s/d 84 SKS: DPP sebesar Rp5.000.000\n` +
-          `  - Pengakuan 20 s/d 43 SKS: DPP sebesar Rp7.000.000\n` +
-          `  - Di bawah 20 SKS: biaya DPP mengikuti ketentuan jalur reguler.\n` +
-          `• **Pendaftaran & Ketentuan Teknis**:\n` +
-          `  - Pendaftaran mengikuti ketentuan registrasi per gelombang melalui portal resmi https://pmb.stikom-bali.ac.id.\n` +
-          `  - Persyaratan dokumen teknis spesifik untuk konversi pengalaman kerja (seperti format portofolio atau sertifikat kompetensi) belum tercantum dalam dokumen panduan resmi yang tersedia saat ini, sehingga disarankan untuk mengonfirmasikannya langsung ke bagian Admisi PMB ITB STIKOM Bali melalui portal resmi https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(rplProcAnswer);
-    }
-
-    const rplGeneralAnswer = userLang === 'en'
-      ? `ITB STIKOM Bali provides the **Recognition of Prior Learning (RPL / Rekognisi Pembelajaran Lampau)** scheme with officially documented credit recognition tiers:\n\n` +
-        `• **Credit Recognition Tiers**: The official fee structure provides DPP tiers based on credit recognition (85–100 SKS: Rp 4,500,000; 44–84 SKS: Rp 5,000,000; 20–43 SKS: Rp 7,000,000; below 20 SKS follows regular admission).\n` +
-        `• **Registration**: Conducted in accordance with PMB wave regulations via https://pmb.stikom-bali.ac.id. Detailed technical procedures for prior course or work conversion should be confirmed directly with the PMB Admissions Office via https://pmb.stikom-bali.ac.id.`
-      : `ITB STIKOM Bali menyelenggarakan jalur **Rekognisi Pembelajaran Lampau (RPL)** dengan skema pengakuan SKS resmi:\n\n` +
-        `• **Skema Pengakuan SKS & Biaya DPP**: Dokumen biaya resmi menetapkan tarif DPP berdasarkan jumlah SKS yang diakui (85–100 SKS: Rp4.500.000; 44–84 SKS: Rp5.000.000; 20–43 SKS: Rp7.000.000; di bawah 20 SKS mengikuti reguler).\n` +
-        `• **Pendaftaran**: Mengikuti ketentuan per gelombang melalui portal resmi https://pmb.stikom-bali.ac.id. Rincian prosedur teknis konversi mata kuliah atau pengalaman kerja dapat dikonfirmasikan langsung ke bagian Admisi PMB melalui portal resmi https://pmb.stikom-bali.ac.id.`;
-    return appendMissingAspectNote(rplGeneralAnswer);
-  }
-
-  // 1. PMB Inquiries (General, Procedure, Requirements, Schedule)
-  if (semanticFrame.domain === 'PMB' || semanticFrame.intent === 'ADMISSION_SCHEDULE') {
-    const isProcedure = semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
-      /\b(cara\s+daftar|bagaimana\s+(?:cara\s+)?daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar)\b/i.test(rawQuery);
-    const isRequirements = /\b(syarat\s+pendaftaran|syarat\s+daftar|persyaratan|dokumen|berkas)\b/i.test(rawQuery);
-    const isSchedule = semanticFrame.intent === 'ADMISSION_SCHEDULE' ||
-      (semanticFrame.aspects && semanticFrame.aspects.includes('schedule')) ||
-      /\b(jadwal|kapan|tanggal|buka|dibuka|tutup|ditutup|periode|registrasi\s+ulang|daftar\s+ulang)\b/i.test(rawQuery);
-
-    if (isSchedule && !isProcedure && !isRequirements) {
-      const waveMatch = rawQuery.match(/\b(gelombang\s*(?:khusus|sisipan|[1-4]|iv|iii|ii|i\b))/i);
-      let waveLabel = 'Gelombang II';
-      if (waveMatch) {
-        waveLabel = waveMatch[0]
-          .replace(/\bkhusus\b/i, 'Khusus')
-          .replace(/\bsisipan\b/i, 'Sisipan')
-          .replace(/\biv\b/i, 'IV')
-          .replace(/\biii\b/i, 'III')
-          .replace(/\bii\b/i, 'II')
-          .replace(/\bi\b/i, 'I');
-        waveLabel = waveLabel.replace(/^gelombang\b/i, 'Gelombang');
-      }
-
-      const isReRegistration = /\b(registrasi\s+ulang|daftar\s+ulang)\b/i.test(rawQuery);
-      const isOpeningClosingDate = /\b(kapan\s+pendaftaran|kapan\s+dibuka|kapan\s+buka|kapan\s+ditutup)\b/i.test(rawQuery);
-
-      if (isReRegistration) {
-        return `Pendaftaran dilakukan melalui portal resmi https://pmb.stikom-bali.ac.id. Tanggal pasti registrasi ulang PMB ITB STIKOM Bali ${waveLabel} belum dapat dipastikan dari dokumen yang tersedia saat ini. Tahapan registrasi ulang dilakukan setelah calon mahasiswa dinyatakan lulus verifikasi berkas. Untuk kepastian tanggal resmi registrasi ulang, silakan hubungi bagian Admisi PMB di 0822-7738-9999.`;
-      }
-
-      if (isOpeningClosingDate) {
-        return `Pendaftaran dilakukan melalui portal resmi https://pmb.stikom-bali.ac.id. Tanggal pasti pembukaan maupun batas penutupan pendaftaran ${waveLabel} belum dapat dipastikan dari dokumen yang tersedia saat ini. Untuk konfirmasi jadwal dan tanggal resmi, silakan hubungi bagian Admisi PMB di 0822-7738-9999.`;
-      }
-
-      // General schedule / stages inquiry (e.g. "Jadwal PMB Gelombang II", "Jelaskan jadwal PMB Gelombang II...")
-      return `Pendaftaran dilakukan secara online melalui portal resmi https://pmb.stikom-bali.ac.id.\n\n` +
-        `Tahapan pendaftaran PMB yang didukung meliputi:\n` +
-        `1. Pendaftaran dan pengisian formulir online melalui portal PMB\n` +
-        `2. Pembayaran biaya pendaftaran sesuai program studi yang dipilih\n` +
-        `3. Pengunggahan dan seleksi/verifikasi berkas persyaratan\n` +
-        `4. Registrasi ulang mahasiswa baru (pembayaran perlengkapan dan DPP sesuai jadwal)\n\n` +
-        `Batasan Jadwal: Tanggal pasti pembukaan, batas penutupan, maupun registrasi ulang ${waveLabel} belum dapat dipastikan dari dokumen yang tersedia saat ini (SOURCE_GAP). Untuk konfirmasi jadwal dan tanggal resmi, silakan hubungi bagian Admisi PMB di 0822-7738-9999.`;
-    }
-
-    if (isProcedure && !isRequirements) {
-      const procedureAnswer = `Pendaftaran mahasiswa baru di ITB STIKOM Bali bisa dilakukan secara online melalui tahapan berikut:
-
-1. **Akses Portal PMB**: Buka laman pendaftaran di https://pmb.stikom-bali.ac.id
-2. **Pilih Program Studi**: Tentukan jenjang dan program studi yang diminati (S1 Sistem Informasi, S1 Sistem Komputer, S1 Teknologi Informasi, S1 Bisnis Digital, D3 Manajemen Informatika, dll.).
-3. **Isi Formulir Pendaftaran**: Lengkapi data diri, data asal sekolah, serta kontak aktif.
-4. **Pembayaran Biaya Pendaftaran**: Lakukan pembayaran biaya pendaftaran (Rp 500.000, dengan potongan beasiswa sesuai gelombang).
-5. **Unggah Berkas Persyaratan**: Unggah scan ijazah/SKL, Kartu Keluarga (KK), KTP, dan pasfoto formal.
-6. **Verifikasi & Registrasi Ulang**: Setelah berkas diverifikasi dan dinyatakan lulus, lakukan registrasi ulang (pembayaran DPP dan biaya semester sesuai periode gelombang).
-
-Pendaftaran dapat dilakukan secara online melalui https://pmb.stikom-bali.ac.id atau datang langsung ke kampus ITB STIKOM Bali (Renon, Jimbaran, atau Abiansemal). Ada yang perlu dibantu mengenai proses pendaftarannya?`;
-      return appendMissingAspectNote(procedureAnswer);
-    }
-
-    if (isRequirements) {
-      const requirementsAnswer = `Untuk mendaftar di ITB STIKOM Bali, berikut persyaratan umum dan berkas yang perlu disiapkan:
-
-**Persyaratan Umum**:
-• Lulusan SMA/SMK/MA atau sederajat (semua jurusan).
-• Terbuka bagi lulusan tahun berjalan maupun lulusan tahun-tahun sebelumnya (gap year).
-
-**Berkas yang Diperlukan**:
-1. Scan ijazah atau Surat Keterangan Lulus (SKL) yang dilegalisir.
-2. Scan Kartu Keluarga (KK) dan KTP (atau Kartu Pelajar).
-3. Pasfoto berwarna terbaru.
-4. Untuk jalur Pindahan / RPL: Transkrip nilai dan surat pindah resmi dari kampus asal.
-5. Untuk jalur Beasiswa KIP Kuliah: Kartu KIP / KKS atau bukti terdaftar pada DTKS Kemensos.
-
-Seluruh berkas diunggah secara online saat pengisian formulir di https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(requirementsAnswer);
-    }
-
-    const pmbAnswer = `Penerimaan Mahasiswa Baru (PMB) ITB STIKOM Bali membuka pendaftaran untuk berbagai jenjang program studi:
-
-• **Program Sarjana (S1)**: Sistem Informasi, Sistem Komputer, Teknologi Informasi, dan Bisnis Digital.
-• **Program Vokasi (D3)**: Manajemen Informatika.
-• **Program Pascasarjana (S2)**: Magister Sistem Informasi (M.Kom).
-• **Program Internasional**: International Dual Degree.
-
-**Jalur Pendaftaran yang Tersedia**:
-1. **Jalur Reguler**: Pendaftaran standar dengan seleksi berkas/akademik.
-2. **Jalur Beasiswa**: KIP Kuliah, beasiswa prestasi, serta potongan DPP gelombang.
-3. **Jalur RPL**: Rekognisi Pembelajaran Lampau untuk transfer kredit lulusan D3 atau pengalaman kerja.
-4. **Kelas Karyawan / Sore**: Jadwal kuliah fleksibel bagi yang kuliah sambil bekerja.
-
-Pendaftaran resmi dapat diakses melalui portal:
-🌐 https://pmb.stikom-bali.ac.id
-
-Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per prodi, jadwal gelombang pendaftaran, atau persyaratan beasiswa?`;
-    return appendMissingAspectNote(pmbAnswer);
-  }
-
-  // 1c. Campus Locations & Addresses Inquiries
-  const isSpecificLocationInquiry = /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus.*(?:di\s+mana|lokasinya)|gedung\s+kampus|cabang\s+kampus|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) ||
-    (semanticFrame.aspects && (semanticFrame.aspects.includes('location') || semanticFrame.aspects.includes('campus_location')));
-  if (isSpecificLocationInquiry && (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY' || isFacilityInquiry)) {
-    const locAnswer = userLang === 'en'
-      ? `ITB STIKOM Bali has 3 campus locations in Bali:\n\n` +
-        `1. **Renon Campus (Main Campus / Denpasar)**:\n` +
-        `   • Address: Jl. Raya Puputan No. 86 Renon, Denpasar - Bali\n` +
-        `   • Phone: (0361) 244445 | Hotline: 0822-7738-9999\n\n` +
-        `2. **Jimbaran Campus**:\n` +
-        `   • Address: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali\n` +
-        `   • Phone: (0361) 8953534 | Hotline: 0812-8877-8840\n\n` +
-        `3. **Abiansemal Campus**:\n` +
-        `   • Address: Jl. Janger, Abiansemal - Dauh Yeh Cani, Badung - Bali\n` +
-        `   • Phone: (0361) 750525\n\n` +
-        `Admissions and academic services are available on-site at these campuses or online via https://pmb.stikom-bali.ac.id.`
-      : `ITB STIKOM Bali memiliki 3 lokasi kampus di Bali untuk melayani perkuliahan dan administrasi mahasiswa:\n\n` +
-        `1. **Kampus Renon (Kampus Pusat / Denpasar)**:\n` +
-        `   • Alamat: Jl. Raya Puputan No. 86 Renon, Denpasar - Bali\n` +
-        `   • Telepon: (0361) 244445 | Hotline: 0822-7738-9999\n\n` +
-        `2. **Kampus Jimbaran**:\n` +
-        `   • Alamat: Jl. Raya Kampus Udayana, Kuta Selatan, Jimbaran - Bali\n` +
-        `   • Telepon: (0361) 8953534 | Hotline: 0812-8877-8840\n\n` +
-        `3. **Kampus Abiansemal**:\n` +
-        `   • Alamat: Jl. Janger, Abiansemal - Dauh Yeh Cani, Badung - Bali\n` +
-        `   • Telepon: (0361) 750525\n\n` +
-        `Pendaftaran mahasiswa baru dan layanan akademik dapat dilakukan secara langsung di kampus-kampus tersebut atau online melalui portal https://pmb.stikom-bali.ac.id.`;
-    return appendMissingAspectNote(locAnswer);
-  }
-
-  // 1c2. Facilities & Laboratories Inquiries (specific to labs)
-  const isSpecificLabInquiry = /\b(?:lab|laboratorium)\b/i.test(rawQuery) || targetEntities.some(e => /lab/i.test(e)) || (semanticFrame.aspects && semanticFrame.aspects.includes('lab'));
-  if (isSpecificLabInquiry && (semanticFrame.domain === 'FACILITIES' || semanticFrame.intent === 'FACILITY_INQUIRY' || isFacilityInquiry)) {
-    const extractedLabs = extractLabsFromEvidence(accepted);
-    if (extractedLabs.length > 0) {
-      if (userLang === 'en') {
-        let labAnswer = `To support students' practical learning and research (particularly in IT), ITB STIKOM Bali provides various laboratory facilities, including:\n\n`;
-        for (const lab of extractedLabs) {
-          labAnswer += `• **${lab}**\n`;
-        }
-        labAnswer += `\nThese laboratory facilities are designed to support practical research, network simulation, software engineering, and hardware/IoT implementation.`;
-        return appendMissingAspectNote(labAnswer);
-      }
-      let labAnswer = `Untuk menunjang kegiatan praktikum dan pembelajaran mahasiswa (khususnya rumpun IT), ITB STIKOM Bali menyediakan berbagai fasilitas laboratorium, antara lain:\n\n`;
-      for (const lab of extractedLabs) {
-        labAnswer += `• **${lab}**\n`;
-      }
-      labAnswer += `\nFasilitas laboratorium tersebut dirancang untuk mendukung riset, simulasi jaringan, rekayasa perangkat lunak, serta implementasi perangkat keras/IoT.`;
-      return appendMissingAspectNote(labAnswer);
-    }
-  }
-
-  // 1d. Degree Award and Study Duration Inquiries
-  const isDoubleDegreeMention = /\b(?:double|dual)\s*degree\b/i.test(rawQuery);
-  const isDegreeOrDuration = semanticFrame.domain !== 'INTERNATIONAL' && !isDoubleDegreeMention && (
-    semanticFrame.intent === 'DEGREE_AWARD' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['degree_award', 'study_duration', 'degree'].includes(a))) ||
-    /\b(?:(?:ber)?gelar(?:nya)?|sebutan\s+lulusan|titel|degree|masa\s+studi|lama\s+studi|durasi\s+studi|study\s+duration|duration|how\s+long)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))
-  );
-  if (isDegreeOrDuration) {
-    let degreeFound = null;
-    let durationFound = null;
-    for (const c of accepted) {
-      const text = (c.text || c.chunk || '');
-      const degMatch = text.match(/(?:gelar\s+(?:lulusan(?:nya)?|yang\s+didapat|resmi)?\s*(?:adalah|:)?\s*|memperoleh\s+gelar\s*)([A-Za-z\s\.\(\)]+?)(?:\.|\n|\||$)/i) ||
-        text.match(/\b(Magister\s+Komputer\s*(?:\(M\.Kom\.?\))?|M\.Kom\.?|Sarjana\s+Komputer\s*(?:\(S\.Kom\.?\))?|S\.Kom\.?|Sarjana\s+Bisnis\s*(?:\(S\.Bns\.?\))?|S\.Bns\.?|Sarjana\s+Bisnis\s*(?:\(S\.B\.?\))?|S\.B\.?|Ahli\s+Madya\s+Komputer\s*(?:\(A\.Md\.Kom\.?\))?|A\.Md\.Kom\.?|Ahli\s+Madya\s*(?:\(A\.Md\.?\))?|A\.Md\.?)\b/i);
-      if (degMatch && !degreeFound) {
-        degreeFound = degMatch[1].trim();
-      }
-      const durMatch = text.match(/(?:masa\s+studi(?:\s+normal)?\s*(?:adalah|:)?\s*|durasi\s+studi\s*(?:adalah|:)?\s*)([^|\n\.]+(?:semester|tahun|sks)[^|\n\.]*)/i) ||
-        text.match(/(\d+\s+semester(?:[^\n\|\.]*total\s+\d+\s+sks)?)/i);
-      if (durMatch && !durationFound) {
-        durationFound = durMatch[1].trim();
-      }
-    }
-
-    const primaryEntity = (semanticFrame.entities && semanticFrame.entities[0]) || null;
-    let catalogEntry = null;
-    if (primaryEntity?.canonical) {
-      catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.canonical === primaryEntity.canonical || p.id === primaryEntity.canonical);
-    }
-    if (!catalogEntry) {
-      const rawEntityStr = (primaryEntity?.canonical || primaryEntity?.name || semanticFrame.entityLabel || rawQuery).toLowerCase();
-      if (/\b(?:bisnis\s+digital|bd)\b/.test(rawEntityStr)) {
-        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_bd');
-      } else if (/\b(?:sistem\s+informasi|si)\b/.test(rawEntityStr) && !/\b(?:s2|magister)\b/.test(rawEntityStr)) {
-        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_si');
-      } else if (/\b(?:sistem\s+komputer|sk)\b/.test(rawEntityStr)) {
-        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_sk');
-      } else if (/\b(?:teknologi\s+informasi|ti)\b/.test(rawEntityStr)) {
-        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_ti');
-      } else if (/\b(?:manajemen\s+informatika|mi|d3)\b/.test(rawEntityStr)) {
-        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 'd3_mi');
-      } else if (/\b(?:s2|magister|msi)\b/.test(rawEntityStr)) {
-        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's2_si');
-      }
-    }
-
-    // Ground degree ONLY when verified evidence for this program was accepted by evidence arbiter
-    if (catalogEntry && catalogEntry.degreeTitle && accepted.length > 0) {
-      const entityRelevant = accepted.some(c => {
-        const txt = (c.text || c.chunk || '').toLowerCase();
-        const candEntity = (c.entity || c.canonicalEntity || '').toLowerCase();
-        return candEntity.includes(catalogEntry.id) ||
-               txt.includes(catalogEntry.canonical.toLowerCase()) ||
-               (catalogEntry.id === 's1_bd' && (txt.includes('bisnis digital') || txt.includes('himaprodi bd'))) ||
-               (catalogEntry.id === 's1_si' && (txt.includes('sistem informasi') || txt.includes('himsisfo'))) ||
-               (catalogEntry.id === 's1_sk' && (txt.includes('sistem komputer') || txt.includes('himaskom'))) ||
-               (catalogEntry.id === 's1_ti' && (txt.includes('teknologi informasi') || txt.includes('himati'))) ||
-               (catalogEntry.id === 'd3_mi' && (txt.includes('manajemen informatika') || txt.includes('d3'))) ||
-               (catalogEntry.id === 's2_si' && (txt.includes('magister') || txt.includes('pascasarjana')));
-      });
-
-      if (entityRelevant) {
-        if (!degreeFound) {
-          degreeFound = catalogEntry.degreeTitle;
-        }
-        if (!durationFound && catalogEntry.semesters) {
-          durationFound = `${catalogEntry.semesters} semester (${catalogEntry.sks} SKS)`;
-        }
-      }
-    }
-
-    const entityLabel = catalogEntry?.canonical || primaryEntity?.canonical || primaryEntity?.name || semanticFrame.entityLabel || 'program studi terkait';
-
-    // Handle false premise queries (e.g. K07: asking if S1 SI is awarded Sarjana Hukum)
-    const falsePremiseMention = /\b(?:hukum|sarjana\s+hukum|s\.h|kedokteran|sarjana\s+kedokteran|s\.ked|ekonomi|sarjana\s+ekonomi|s\.e|teknik|sarjana\s+teknik|s\.t|pendidikan|s\.pd)\b/i.test(rawQuery);
-    if (falsePremiseMention && degreeFound && catalogEntry) {
-      if (userLang === 'en') {
-        const enFalseAns = `No. Graduates of **${catalogEntry.canonical}** at ITB STIKOM Bali are awarded the official degree **${degreeFound}** (normal study duration: ${durationFound || '8 semesters'}).`;
-        return appendMissingAspectNote(enFalseAns);
-      }
-      const idFalseAns = `Tidak Kak. Lulusan **${catalogEntry.canonical}** di ITB STIKOM Bali memperoleh gelar resmi **${degreeFound}** (bukan gelar di bidang hukum atau non-TI).`;
-      return appendMissingAspectNote(idFalseAns);
-    }
-
-    if (degreeFound || durationFound) {
-      if (userLang === 'en') {
-        let ans = `Based on official information for **${entityLabel}** at ITB STIKOM Bali:\n\n`;
-        if (degreeFound) {
-          ans += `• **Degree Awarded**: Graduates receive the degree **${degreeFound}**.\n`;
-        }
-        if (durationFound) {
-          ans += `• **Study Duration**: Normal study duration is **${durationFound}**.\n`;
-        }
-        if (!degreeFound) {
-          ans += `\n_Note: Information regarding the official degree is currently not listed in the available guide._\n`;
-        }
-        if (!durationFound) {
-          ans += `\n_Note: Information regarding the study duration is currently not listed in the available guide._\n`;
-        }
-        return appendMissingAspectNote(ans.trim());
-      }
-      let ans = `Berdasarkan informasi resmi untuk **${entityLabel}** di ITB STIKOM Bali:\n\n`;
-      if (degreeFound) {
-        ans += `• **Gelar Kelulusan**: Lulusan memperoleh gelar **${degreeFound}**.\n`;
-      }
-      if (durationFound) {
-        ans += `• **Masa Studi**: Masa studi normal adalah **${durationFound}**.\n`;
-      }
-      if (!degreeFound) {
-        ans += `\n_Catatan: Informasi mengenai gelar resmi belum tercantum dalam dokumen panduan yang tersedia._\n`;
-      }
-      if (!durationFound) {
-        ans += `\n_Catatan: Informasi mengenai masa studi belum tercantum dalam dokumen panduan yang tersedia._\n`;
-      }
-      return appendMissingAspectNote(ans.trim());
-    }
-  }
-
-  // 1e. International & Dual Degree Programs (Double Degree & Student Exchange)
-  if (semanticFrame.domain === 'INTERNATIONAL' || (semanticFrame.aspects && (semanticFrame.aspects.includes('double_degree') || semanticFrame.aspects.includes('student_exchange') || semanticFrame.aspects.includes('study_permit')))) {
-    const isStudyPermitDurationQuery = /\b(?:study\s*permit|izin\s*belajar)\b/i.test(rawQuery) &&
-      /\b(?:berapa lama|lama proses|durasi|waktu)\b/i.test(rawQuery);
-    if (isStudyPermitDurationQuery) {
-      const isExtension = /\b(?:perpanjang|perpanjangan|perpanjangannya|extend|extension)\b/i.test(rawQuery);
-      if (isExtension) {
-        const extAns = userLang === 'en'
-          ? 'The processing of a study permit extension generally takes about 1–2 working weeks after submission with the assistance of the International Office, depending on document completeness and verification.'
-          : 'Proses perpanjangan Izin Belajar umumnya membutuhkan waktu sekitar 1–2 minggu kerja setelah diajukan melalui bantuan International Office, bergantung pada kelengkapan dokumen dan proses verifikasi.';
-        return appendMissingAspectNote(extAns);
-      }
-      const initialAns = userLang === 'en'
-        ? 'Based on available official guidelines, the 1–2 week processing timeframe is specifically documented for study permit extensions (and Visa E30B applications). The exact duration for the initial issuance of a study permit for new students is not specified in the guidelines and is coordinated directly with the International Office of ITB STIKOM Bali.'
-        : 'Berdasarkan dokumen panduan resmi yang tersedia, durasi waktu sekitar 1–2 minggu secara spesifik tercantum untuk proses perpanjangan Izin Belajar (serta pengajuan Visa E30B). Sementara itu, estimasi durasi pasti untuk penerbitan awal Izin Belajar bagi mahasiswa baru belum tercantum dalam panduan resmi dan dikoordinasikan langsung bersama International Office ITB STIKOM Bali.';
-      return appendMissingAspectNote(initialAns);
-    }
-
-    const isFeeOrDiscountQuery = semanticFrame.domain === 'TUITION_FEE' ||
-      (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'discount', 'cost'].includes(a))) ||
-      /\b(?:biaya|uang|tarif|spp|dpp|potongan|diskon)\b/i.test(rawQuery);
-
-    const isDD = !isFeeOrDiscountQuery && (
-      /\b(double\s*degree|dual\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(rawQuery) ||
-      /\b(double\s*degree|dual\s*degree|dua\s*gelar|gelar\s*ganda)\b/i.test(semanticFrame.normalizedQuery || '') ||
-      (semanticFrame.contextDependencies && semanticFrame.contextDependencies.some(cd => /double\s*degree|dual\s*degree|gelar\s*ganda/i.test(cd.inheritedEntity || '')))
-    );
-
-    if (isDD) {
-      const isSchemeOrLocationInquiry = /full di|skema|tahap|lokasi|tempat kuliah|di mana|onsite|online/i.test(rawQuery);
-      if (isSchemeOrLocationInquiry) {
-        // Fall through to Section 5 (Progression / Stages / Scheme Inquiry)
-      } else {
-        const hasDnui = /\bdnui|china|dalian\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) || targetEntities.some(e => /DNUI/i.test(e));
-        const hasHelp = /\bhelp|malaysia\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) || targetEntities.some(e => /HELP/i.test(e));
-        const isBoth = hasDnui && hasHelp;
-        const isDnuiOnly = hasDnui && !hasHelp;
-        const isHelpOnly = hasHelp && !hasDnui;
-        const isNationalQuery = /\b(nasional|utb|universitas\s+teknologi\s+bandung)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-        const isInternationalQuery = /\binternasional\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-        const ddPartners = extractDoubleDegreePartnersFromEvidence(accepted);
-        const nationalPartners = ddPartners.filter(p => p.scope === 'national');
-        const internationalPartners = ddPartners.filter(p => p.scope === 'international');
-
-        if (isBoth) {
-          let ans = `Program **Double Degree Internasional** di ITB STIKOM Bali bekerjasama dengan dua mitra perguruan tinggi luar negeri terkemuka:\n\n` +
-            `1. **HELP University (Malaysia)**:\n` +
-            `   • **Program Studi**: S1 Sistem Informasi\n` +
-            `   • **Gelar Kelulusan**: Sarjana Komputer (S.Kom.) & Bachelor of Information Technology (BIT)\n` +
-            `   • **Skema Perkuliahan**: Full 4 tahun perkuliahan diselenggarakan di kampus ITB STIKOM Bali tanpa harus ke Malaysia.\n\n` +
-            `2. **Dalian Neusoft University of Information (DNUI, China)**:\n` +
-            `   • **Program Studi**: S1 Bisnis Digital & Management\n` +
-            `   • **Gelar Kelulusan**: Sarjana Bisnis (S.Bns.) & Bachelor of Management (B.M.)\n` +
-            `   • **Skema Perkuliahan**: Tahun 1–2 di Bali, Tahun 3 daring, dan Tahun 4 di kampus DNUI China (fasilitas dormitory gratis).\n\n` +
-            `Kedua program ini memberikan kesempatan bagi mahasiswa untuk meraih dua gelar sarjana resmi sekaligus.`;
-          return appendMissingAspectNote(ans.trim());
-        }
-
-        if (isDnuiOnly) {
-          const dnuiP = internationalPartners.find(p => /DNUI|Dalian/i.test(p.partnerName)) || {
-            partnerName: 'Dalian Neusoft University of Information (DNUI)',
-            location: 'China',
-            stikomProgram: 'S1 Bisnis Digital',
-            partnerProgram: 'E-Commerce',
-            degrees: 'Sarjana Bisnis (S.Bns.) & Bachelor of Management (B.M.)'
-          };
-          let ans = `Program **Double Degree (International Class) dengan ${dnuiP.partnerName} (${dnuiP.location})**:\n\n` +
-            `• **Program Studi**: ${dnuiP.stikomProgram} & ${dnuiP.partnerProgram || 'E-Commerce'}\n` +
-            `• **Gelar Kelulusan**: ${dnuiP.degrees}\n` +
-            `• **Skema Perkuliahan**: Tahun 1–2 di Bali, Tahun 3 daring, dan Tahun 4 di China (fasilitas dormitory gratis).\n\n` +
-            `Silakan tanyakan jika Kakak ingin mengetahui rincian biaya atau kurikulumnya ya!`;
-          return appendMissingAspectNote(ans.trim());
-        }
-
-        if (isHelpOnly) {
-          const helpP = internationalPartners.find(p => /HELP/i.test(p.partnerName)) || {
-            partnerName: 'HELP University',
-            location: 'Malaysia',
-            stikomProgram: 'S1 Sistem Informasi',
-            degrees: 'Sarjana Komputer (S.Kom.) & Bachelor of Information Technology (BIT)'
-          };
-          let ans = `Program **Double Degree (International Class) dengan ${helpP.partnerName} (${helpP.location})**:\n\n` +
-            `• **Program Studi**: ${helpP.stikomProgram}\n` +
-            `• **Gelar Kelulusan**: ${helpP.degrees}\n` +
-            `• **Skema Perkuliahan**: Full 4 tahun perkuliahan diselenggarakan di kampus ITB STIKOM Bali tanpa harus ke Malaysia.\n\n` +
-            `Silakan tanyakan jika Kakak ingin mengetahui rincian biaya atau kurikulumnya ya!`;
-          return appendMissingAspectNote(ans.trim());
-        }
-
-        if (isNationalQuery) {
-          if (nationalPartners.length > 0) {
-            const p = nationalPartners[0];
-            let ans = `Ada, Kak. ITB STIKOM Bali menyelenggarakan program **Double Degree Nasional (Dual Degree National Class)** yang bekerja sama dengan **${p.partnerName}**.\n\n`;
-            ans += `• **Mitra Perguruan Tinggi**: ${p.partnerName}\n`;
-            if (p.stikomProgram || p.partnerProgram) {
-              ans += `• **Program Studi**: ${[p.stikomProgram, p.partnerProgram].filter(Boolean).join(' / ')}\n`;
-            }
-            if (p.degrees) {
-              ans += `• **Gelar Kelulusan**: Lulusan memperoleh gelar ganda ${p.degrees}.\n`;
-            }
-            ans += `\nUntuk informasi teknis perkuliahan dan kurikulum lebih lanjut, Kakak dapat mengonfirmasi langsung ke layanan admisi kampus ya.`;
-            return appendMissingAspectNote(ans.trim());
-          } else {
-            return appendMissingAspectNote(`Mohon maaf Kak, untuk program Double Degree nasional, rincian resmi mengenai mitra dan program studinya belum tercantum dalam dokumen panduan yang tersedia saat ini. Silakan hubungi bagian admisi kampus untuk konfirmasi langsung ya.`);
-          }
-        }
-
-        if (isInternationalQuery) {
-          if (internationalPartners.length > 0) {
-            let ans = `Di ITB STIKOM Bali tersedia program Double Degree internasional yang bekerja sama dengan universitas mitra terkemuka:\n\n`;
-            for (const p of internationalPartners) {
-              ans += `• **${p.partnerName} (${p.location})**:\n`;
-              if (p.stikomProgram || p.partnerProgram) {
-                ans += `  - Program Studi: ${p.stikomProgram || ''}${p.partnerProgram ? ` & ${p.partnerProgram}` : ''}\n`;
-              }
-              if (p.degrees) {
-                ans += `  - Gelar: ${p.degrees}\n`;
-              }
-            }
-            ans += `\nSilakan tanyakan jika Kakak ingin info lebih lanjut mengenai salah satu program internasional ini ya!`;
-            return appendMissingAspectNote(ans.trim());
-          }
-        }
-
-        // General Double Degree query
-        let ans = `Di ITB STIKOM Bali tersedia program Double Degree (Gelar Ganda) baik internasional maupun nasional:\n\n`;
-      if (internationalPartners.length > 0) {
-        ans += `**Program Internasional**:\n`;
-        for (const p of internationalPartners) {
-          ans += `• **${p.partnerName} (${p.location})**: ${p.stikomProgram || ''} (${p.degrees || ''})\n`;
-        }
-        ans += `\n`;
-      } else {
-        ans += `**Program Internasional**:\n• **HELP University (Malaysia)**: S1 Sistem Informasi (Sarjana Komputer & Bachelor of Information Technology)\n• **Dalian Neusoft University of Information (DNUI, China)**: S1 Bisnis Digital (Sarjana Bisnis & Bachelor of Management)\n\n`;
-      }
-
-      if (nationalPartners.length > 0) {
-        ans += `**Program Nasional**:\n`;
-        for (const p of nationalPartners) {
-          ans += `• **${p.partnerName}**: Dual Degree (National Class)${p.degrees ? ` dengan gelar ${p.degrees}` : ''}\n`;
-        }
-      } else {
-        ans += `**Program Nasional**:\n• Tersedia Program Dual Degree (National Class) bekerja sama dengan universitas mitra di Indonesia.\n`;
-      }
-
-      ans += `\nSilakan beri tahu kami jika ada program tertentu yang ingin Kakak ketahui lebih detail!`;
-      return appendMissingAspectNote(ans.trim());
-      }
-    }
-  }
-
-  // 2. Scholarship Inquiry
-  if (semanticFrame.domain === 'SCHOLARSHIP' || (semanticFrame.aspects && semanticFrame.aspects.includes('scholarship') && semanticFrame.domain !== 'TUITION_FEE')) {
-    const isKip = /kip|kip-?kuliah/i.test(rawQuery) || targetEntities.some(e => /kip/i.test(e));
-    const isS2Inquiry = semanticFrame.academicLevel === 'S2' ||
-      semanticFrame.scopeLevel === 'S2' ||
-      /\b(?:s2|magister|master(?:'s)?)\b/i.test(rawQuery) ||
-      targetEntities.some(e => /s2|magister|pascasarjana/i.test(e));
-
-    if (isS2Inquiry) {
-      if (userLang === 'en') {
-        return appendMissingAspectNote(
-          `Official information regarding specific scholarships for the Master of Information Systems (S2) program is not listed in the available guidelines. The available data records registration fee discounts according to admission waves and alumni discounts, while specific S2 scholarship details should be confirmed directly with admissions at 0822-7738-9999 or the PMB office.`
-        );
-      }
-      return appendMissingAspectNote(
-        `Informasi beasiswa khusus untuk mahasiswa Magister (S2) Sistem Informasi belum tercantum dalam dokumen panduan resmi yang tersedia. Informasi yang ada saat ini mencatat potongan biaya pendaftaran sesuai gelombang dan potongan khusus alumni, sedangkan rincian beasiswa S2 lainnya dapat dikonfirmasi langsung ke layanan admisi pascasarjana di 0822-7738-9999.`
-      );
-    }
-
-    const isSkss = /skss|satu keluarga satu sarjana/i.test(rawQuery) || targetEntities.some(e => /skss/i.test(e));
-
-    if (isKip) {
-      const kipAnswer = `Beasiswa KIP Kuliah di ITB STIKOM Bali memberikan bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi:
-
-**Persyaratan Beasiswa KIP Kuliah**:
-1. Siswa SMA/SMK/MA sederajat yang lulus pada tahun berjalan atau maksimal 2 tahun sebelumnya.
-2. Memiliki Kartu Indonesia Pintar (KIP) atau terdaftar dalam Data Terpadu Kesejahteraan Sosial (DTKS) Kemensos / PKH.
-3. Memiliki potensi akademik baik dan lolos seleksi penerimaan mahasiswa baru di ITB STIKOM Bali.
-4. Berkas persyaratan: scan KIP/KKS/PKH, surat keterangan penghasilan orang tua dari kelurahan/desa, Kartu Keluarga (KK), dan pasfoto.
-
-Pendaftaran akun KIP Kuliah dilakukan melalui portal Kemendikbudristek https://kip-kuliah.kemdikbud.go.id dan diintegrasikan saat pendaftaran PMB di https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(kipAnswer);
-    }
-
-    if (isSkss) {
-      const skssAnswer = `Program Beasiswa SKSS (Satu Keluarga Satu Sarjana) ditujukan untuk calon mahasiswa yang merupakan sarjana pertama di keluarganya. Namun, rincian teknis persyaratan dan kuota resminya saat ini belum tercantum lengkap dalam panduan yang tersedia. Silakan konfirmasi ke layanan admisi PMB di https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(skssAnswer);
-    }
-
-    const isDppDiscount = /\b(potongan\s+dpp|potongan.*gelombang|dpp.*gelombang|gelombang\s+awal)\b/i.test(rawQuery);
-    if (isDppDiscount) {
-      const dppDiscountAnswer = `Untuk pendaftaran di gelombang awal T.A 2026/2027, ITB STIKOM Bali menyediakan potongan Dana Pendidikan Pokok (DPP) dengan rincian berikut:
+    if (/\b(potongan\s+dpp|potongan.*gelombang|dpp.*gelombang|potongan.*awal)\b/i.test(combinedFeeQuery)) {
+      const dppWaveFeeAnswer = `Untuk pendaftaran gelombang awal T.A 2026/2027 di ITB STIKOM Bali, tersedia potongan Dana Pendidikan Pokok (DPP) dengan rincian berikut:
 
 • **Gelombang Khusus (Gelombang Paling Awal)**:
   - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 3.000.000**
@@ -1730,401 +1302,7 @@ Pendaftaran akun KIP Kuliah dilakukan melalui portal Kemendikbudristek https://k
   - Gelombang IV: Potongan DPP Rp 500.000 (S1 SI/TI/BD)
 
 **Ketentuan Tambahan**:
-1. Pembayaran DPP secara tunai (lunas) mendapatkan tambahan potongan sebesar **10%**.
-2. Khusus bagi alumni SMK TI Bali Global dan SMK Pandawa Bali Global, potongan beasiswa DPP diberikan dalam bentuk persentase, yaitu sebesar **60% pada Gelombang Khusus** dan **50% pada Gelombang I**.
-
-Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(dppDiscountAnswer);
-    }
-
-    if (userLang === 'en') {
-      const scholarshipAnswerEn = `At ITB STIKOM Bali, the official financial aid and scholarship options documented in admissions guidelines include:
-
-1. **KIP Kuliah (Indonesia Smart Card College)**: Full tuition assistance from Kemendikbudristek for high-achieving applicants who meet economic criteria.
-2. **Admission Wave DPP Discounts**: Tuition fee (DPP) discounts ranging from IDR 2,000,000 to IDR 3,000,000 during early admission waves for regular undergraduate programs, with additional discounts for cash payment and partner vocational school alumni.
-
-For complete information regarding application requirements, documents, and registration schedules, please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact the campus admissions office.`;
-      return appendMissingAspectNote(scholarshipAnswerEn);
-    }
-
-    const scholarshipAnswer = `Di ITB STIKOM Bali, tersedia beberapa program bantuan biaya pendidikan dan beasiswa resmi:
-
-1. **Beasiswa KIP Kuliah**: Bantuan biaya pendidikan penuh bagi calon mahasiswa berprestasi yang memenuhi kriteria ekonomi dari Kemendikbudristek.
-2. **Beasiswa Potongan DPP Gelombang**: Potongan Dana Pendidikan Pokok (DPP) Rp 2.000.000 s.d. Rp 3.000.000 pada gelombang awal pendaftaran untuk S1 reguler, dengan diskon tambahan 10% jika dibayar tunai serta potongan khusus bagi alumni SMK TI Bali Global.
-
-Informasi lengkap mengenai persyaratan berkas dan alur pendaftaran beasiswa dapat diakses melalui portal https://pmb.stikom-bali.ac.id atau layanan admisi kampus.`;
-    return appendMissingAspectNote(scholarshipAnswer);
-  }
-
-
-
-  // 3. Facilities Inquiry
-  if (semanticFrame.domain === 'FACILITIES' || (semanticFrame.aspects && (semanticFrame.aspects.includes('facilities') || semanticFrame.aspects.includes('lab') || semanticFrame.aspects.includes('campus_infrastructure')))) {
-    const isLabSpecific = /lab|laboratorium/i.test(rawQuery) || targetEntities.some(e => /lab/i.test(e)) || (semanticFrame.aspects && semanticFrame.aspects.includes('lab'));
-
-    if (isLabSpecific) {
-      const extractedLabs = extractLabsFromEvidence(accepted);
-      if (extractedLabs.length > 0) {
-        if (userLang === 'en') {
-          let labAnswer = `To support students' practical IT and technology courses, the laboratory facilities listed in official campus documents include:\n\n`;
-          for (const l of extractedLabs) {
-            labAnswer += `• **${l}**\n`;
-          }
-          labAnswer += `\nAll laboratories are supported by computing hardware, networking, and intelligent system infrastructure for practical learning. For specific equipment or schedules, please confirm directly with campus laboratory management.`;
-          return appendMissingAspectNote(labAnswer.trim());
-        }
-        let labAnswer = `Untuk menunjang kegiatan praktikum dan riset mahasiswa di bidang IT dan teknologi, fasilitas laboratorium yang tercantum dalam dokumen resmi kampus antara lain:\n\n`;
-        for (const l of extractedLabs) {
-          labAnswer += `• **${l}**\n`;
-        }
-        labAnswer += `\nSeluruh laboratorium didukung infrastruktur perangkat keras, jaringan, dan sistem cerdas untuk pelaksanaan praktikum. Untuk rincian perangkat atau jadwal penggunaan tiap lab, Kakak dapat mengonfirmasi langsung ke pengelola laboratorium kampus ya.`;
-        return appendMissingAspectNote(labAnswer.trim());
-      }
-
-      const labAnswer = `Untuk mendukung kegiatan praktikum dan riset mahasiswa, ITB STIKOM Bali menyediakan berbagai fasilitas laboratorium modern:\n\n` +
-        `• **Laboratorium Hardware**: Fokus pada embedded system, robotika, dan Internet of Things (IoT).\n` +
-        `• **Laboratorium Networking & Komputer**: Fasilitas praktikum jaringan komputer, infrastruktur TI, dan sistem operasi.\n` +
-        `• **Laboratorium Database & Business Intelligence**: Praktikum pengelolaan basis data dan analitika data bisnis.\n` +
-        `• **Laboratorium Mobile Technology & Smart System**: Praktikum pengembangan aplikasi mobile dan sistem cerdas.\n\n` +
-        `Seluruh laboratorium didukung instruktur praktikum dan akses internet kampus.`;
-      return appendMissingAspectNote(labAnswer);
-    }
-
-    const isLlc = /\b(?:llc|language\s+learning\s+center|pusat\s+bahasa)\b/i.test(rawQuery) || targetEntities.some(e => /llc|language learning center/i.test(e));
-    if (isLlc) {
-      if (userLang === 'en') {
-        const llcAnswer = `Based on the official campus support services registry at ITB STIKOM Bali, **LLC** refers to the **Language Learning Center**, a campus supporting unit dedicated to language skill development. Detailed information regarding specific course offerings, schedules, or fees is not published in the currently available official guidelines.`;
-        return appendMissingAspectNote(llcAnswer);
-      }
-      const llcAnswer = `Berdasarkan registri unit layanan pendukung kampus di ITB STIKOM Bali, **LLC** merujuk pada **Language Learning Center**, yaitu unit pendukung kampus untuk pengembangan kemampuan bahasa asing mahasiswa. Rincian lebih lanjut mengenai jadwal kelas, jenis program aktif, maupun biaya layanannya belum tercantum dalam panduan resmi yang tersedia saat ini.`;
-      return appendMissingAspectNote(llcAnswer);
-    }
-
-    const facilitiesAnswer = `Berikut sarana dan prasarana kampus di ITB STIKOM Bali yang dikelompokkan menurut kategorinya:
-
-1. **Fasilitas Fisik & Pembelajaran**:
-• **Laboratorium Komputer & Teknologi**: Lab Komputer, Jaringan Komputer, IoT & Robotika, serta Studio Desain Multimedia.
-• **Perpustakaan & E-Library**: Ruang baca fisik, koleksi referensi akademik, repositori digital, dan akses jurnal ilmiah.
-• **Ruang Kuliah Ber-AC**: Dilengkapi fasilitas multimedia interaktif dan sistem perkuliahan modern.
-• **Sarana Penunjang Kampus**: Akses Wi-Fi kampus, area kegiatan mahasiswa, serta fasilitas asrama/dormitory bagi skema program kemitraan internasional tertentu.
-
-2. **Unit Layanan Pendukung Kampus (Layanan Mahasiswa)**:
-Selain fasilitas fisik pembelajaran di atas, kampus menyediakan unit layanan khusus seperti **Career Development Center (CDC)** untuk pembekalan karier, **Inkubator Bisnis (INBIS)** untuk pendampingan kewirausahaan, dan **Language Learning Center (LLC)** untuk pengembangan kemampuan bahasa.
-
-_Catatan: Program akademik internasional (seperti Double Degree) dan organisasi kemahasiswaan (UKM) merupakan kategori program akademik dan ekstrakurikuler, bukan fasilitas fisik kampus._
-
-Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
-    return appendMissingAspectNote(facilitiesAnswer);
-  }
-
-  // 4. Student Organization & UKM Inquiry
-  if (semanticFrame.domain === 'ORGANIZATION_UKM' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['student_organization', 'esports_gaming', 'sports', 'arts_culture', 'reasoning_tech'].includes(a)))) {
-    const isEsports = /\b(gaming|game|gamer|esport|esports|e-sports|e-sport)\b/i.test(rawQuery) ||
-      targetEntities.some(e => /athena|esport/i.test(e));
-    if (isEsports) {
-      const hasEsportsEvidence = /\b(?:athena|esport|esports|e-sports|gaming|game)\b/i.test(cleanAll);
-      if (hasEsportsEvidence) {
-        const esportsAnswer = `Berdasarkan dokumen resmi kampus, bagi mahasiswa yang berminat di bidang gaming dan olahraga elektronik, kampus menyediakan wadah resmi yaitu **UKM Athena E-Sports**.\n\nUKM ini menjadi wadah pengembangan minat, bakat, serta tim kompetitif mahasiswa di bidang electronic sports (seperti Mobile Legends, PUBG Mobile, Valorant, dll.).\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
-        return appendMissingAspectNote(esportsAnswer);
-      }
-      return null;
-    }
-
-    const isSport = /\b(olahraga|olah\s*raga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(rawQuery);
-    if (isSport) {
-      const officialSports = [
-        {
-          name: 'UKM FUTSAL',
-          desc: 'Latihan rutin, sparing partner, dan partisipasi turnamen futsal mahasiswa.',
-          regex: /\b(?:futsal)\b/i
-        },
-        {
-          name: 'UKM BASKET',
-          desc: 'Pembinaan tim basket putra/putri serta kompetisi mahasiswa.',
-          regex: /\b(?:basket)\b/i
-        },
-        {
-          name: 'UKM BOS',
-          desc: 'Latihan rutin dan turnamen bulutangkis (Badminton Organization of STIKOM).',
-          regex: /\b(?:bos\b|boss\b|bulutangkis|badminton)\b/i
-        },
-        {
-          name: 'UKM GHoST',
-          desc: 'Kegiatan fitness, gym, dan pembinaan kebugaran fisik mahasiswa (Gymnastic and Health of STIKOM Bali).',
-          regex: /\b(?:ghost|kebugaran|gym|fitness)\b/i
-        }
-      ];
-
-      const supportedSports = officialSports.filter(item => item.regex.test(cleanAll));
-      if (supportedSports.length > 0) {
-        const sportList = supportedSports.map(s => `• **${s.name}**: ${s.desc}`).join('\n');
-        const sportAnswer = `Berdasarkan dokumen resmi kampus, berikut Unit Kegiatan Mahasiswa (UKM) bidang olahraga yang tercatat aktif:\n\n${sportList}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
-        return appendMissingAspectNote(sportAnswer);
-      }
-      return null;
-    }
-
-    const isArts = /\b(seni|budaya|kesenian|tari|musik|band|teater|paduan\s+suara|fotografi|lukis|gambar)\b/i.test(rawQuery);
-    if (isArts) {
-      const officialArts = [
-        {
-          name: 'Unit Kegiatan Tari Tradisional “PRAGINA”',
-          desc: 'Pembinaan seni tari tradisional Bali, tari kreasi nusantara, dan pementasan seni budaya.',
-          regex: /\b(?:pragina|tari\s+tradisional|ukm\s+tari|\btari\b)\b/i
-        },
-        {
-          name: 'UKM MUSIK',
-          desc: 'Komunitas minat musik, olah vokal, band mahasiswa, dan festival musik kampus.',
-          regex: /\b(?:ukm\s+musik|\bmusik\b|u2m)\b/i
-        },
-        {
-          name: 'UKM Voice of STIKOM Bali (VOS)',
-          desc: 'Paduan suara mahasiswa untuk upacara wisuda, kompetisi paduan suara, dan konser.',
-          regex: /\b(?:voice\s+of\s+stikom|vos|paduan\s+suara)\b/i
-        },
-        {
-          name: 'UKM TEATER BINER',
-          desc: 'Seni peran, drama panggung, dan pementasan teater mahasiswa.',
-          regex: /\b(?:teater\s+biner|ukm\s+teater|\bteater\b)\b/i
-        },
-        {
-          name: 'UKM HIMATOGRAPHY',
-          desc: 'Pelatihan teknik fotografi, hunting foto bersama, dan pameran karya visual.',
-          regex: /\b(?:himatography|ukm\s+fotografi|\bfotografi\b)\b/i
-        },
-        {
-          name: 'UKM Tabuh (Bramara Gita)',
-          desc: 'Pelestarian seni karawitan dan tabuh tradisional Bali.',
-          regex: /\b(?:bramara\s+gita|\btabuh\b|gamelan)\b/i
-        }
-      ];
-
-      const isGeneralArtsListing = /\b(?:apa\s+saja|daftar|ada\s+apa|pilihan|list)\b/i.test(rawQuery) && /\b(?:kesenian|seni|budaya)\b/i.test(rawQuery);
-      const supportedArts = isGeneralArtsListing
-        ? officialArts
-        : officialArts.filter(item => item.regex.test(cleanAll));
-
-      if (supportedArts.length > 0) {
-        const artsList = supportedArts.map(a => `• **${a.name}**: ${a.desc}`).join('\n');
-        const artsAnswer = `Berdasarkan dokumen resmi kampus, berikut Unit Kegiatan Mahasiswa (UKM) bidang seni dan budaya yang tercatat aktif di ITB STIKOM Bali:\n\n${artsList}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
-        return appendMissingAspectNote(artsAnswer);
-      }
-      return null;
-    }
-
-    const isHima = /\b(?:himpunan\s+mahasiswa|himaprodi|hima)\b/i.test(rawQuery) || targetEntities.some(e => /hima/i.test(e));
-    if (isHima) {
-      const himaChunk = accepted.find(c => {
-        const clean = cleanDocumentArtifacts(c.text || c.chunk || '');
-        return clean.length > 20 && /hima|himaprodi|himpunan\s+mahasiswa|organisasi\s+kemahasiswaan/i.test(clean);
-      }) || accepted.find(c => cleanDocumentArtifacts(c.text || c.chunk || '').length > 20) || accepted[0];
-
-      if (himaChunk) {
-        const text = cleanDocumentArtifacts(himaChunk.text || himaChunk.chunk || '');
-        const profile = extractOrganizationProfile(text);
-        if (profile && (profile.name || profile.desc)) {
-          let ans = '';
-          if (profile.name) {
-            ans += `Himpunan mahasiswa untuk program studi terkait di ITB STIKOM Bali adalah **${profile.name}**${profile.extra ? ` (${profile.extra})` : ''}.\n\n`;
-          }
-          if (profile.desc) {
-            ans += `${profile.desc}`;
-          }
-          return appendMissingAspectNote(ans.trim());
-        }
-      }
-    }
-
-    const isJoining = /\b(?:bergabung|gabung|daftar|join|pendaftaran)\b/i.test(rawQuery);
-    if (isJoining) {
-      return appendMissingAspectNote('Untuk bergabung dengan Unit Kegiatan Mahasiswa (UKM) di ITB STIKOM Bali, informasi pendaftaran dan masa penerimaan anggota dikoordinasikan langsung melalui Direktorat Kemahasiswaan & Ormawa atau agenda kegiatan kemahasiswaan kampus.');
-    }
-
-    if (/\b(?:syntax|public\s+speaking|mc|pembawa\s+acara|penyiaran|broadcasting)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-      const isEn = userLang === 'en';
-      const syntaxAnswer = isEn
-        ? `Information regarding **UKM SYNTAX** at ITB STIKOM Bali:\n\n` +
-          `• **Focus & Identity**: UKM SYNTAX stands for *Speaking Youth Entertainment Experience*. Unlike programming clubs, SYNTAX focuses on developing public speaking, Master of Ceremonies (MC), broadcasting, and English communication skills.\n` +
-          `• **Activities**: Regular public speaking workshops, hosting campus events, and signature annual competitions such as **SYNAMON** (Syntax Announcer and Master of Ceremony Competition).\n\n` +
-          `Students interested in broadcasting, public speaking, and event hosting are encouraged to join during the annual UKM recruitment expo (GMTI/Ormawa Expo).`
-        : `Informasi mengenai **UKM SYNTAX** di ITB STIKOM Bali:\n\n` +
-          `• **Fokus & Profil**: UKM SYNTAX merupakan singkatan dari *Speaking Youth Entertainment Experience*. Berbeda dengan klub pemrograman, SYNTAX berfokus pada pengembangan bakat *public speaking*, pembawa acara (MC), penyiaran/broadcasting, serta kemampuan komunikasi bahasa Inggris dan entertaintment.\n` +
-          `• **Kegiatan**: Pelatihan rutin public speaking, pemandu acara kegiatan resmi kampus, serta acara tahunan seperti kompetisi **SYNAMON** (*Syntax Announcer and Master of Ceremony Competition*).\n\n` +
-          `Bagi Kakak yang berminat mengasah kemampuan berbicara di depan umum, penyiaran, dan MC, UKM SYNTAX membuka pendaftaran anggota baru saat expo ormawa/GMTI setiap tahun ajaran baru.`;
-      return appendMissingAspectNote(syntaxAnswer);
-    }
-
-    const isSpecificUkmInquiry = /\bukm\b/i.test(rawQuery) && !/\b(?:senat|balma|himaprodi|pemerintahan\s+mahasiswa)\b/i.test(rawQuery);
-    if (isSpecificUkmInquiry) {
-      const ukmOnlyAnswer = `Unit Kegiatan Mahasiswa (UKM) di ITB STIKOM Bali merupakan wadah kegiatan kemahasiswaan untuk menyalurkan minat, bakat, serta penalaran (terpisah dari organisasi perwakilan/eksekutif mahasiswa seperti Senat Mahasiswa, Balma, atau Himpunan Mahasiswa Program Studi/Himaprodi).\n\n` +
-        `Berdasarkan data penetapan pembina ormawa/UKM yang tercatat aktif, beberapa UKM yang tersedia antara lain:\n` +
-        `• **Bidang Esports & Penalaran/Teknologi**: UKM Athena E-Sports, KSL (Kelompok Studi Linux), Komunitas Robotika.\n` +
-        `• **Bidang Olahraga**: Futsal, Basket, Bulutangkis (UKM BOS), Kebugaran/Gym (UKM GHoST).\n` +
-        `• **Bidang Seni & Budaya**: Tari Tradisional (Unit Kegiatan Tari Tradisional “PRAGINA”), Musik (UKM MUSIK), Paduan Suara (UKM Voice of STIKOM Bali/VOS), Fotografi (UKM HIMATOGRAPHY), Teater (UKM TEATER BINER).\n` +
-        `• **Bidang Sosial & Khusus**: KSR PMI, Resimen Mahasiswa (Menwa).\n\n` +
-        `_Catatan: Rincian di atas memuat UKM yang terdata dalam penetapan pembina ormawa resmi dan bukan merupakan klaim daftar lengkap seluruh komunitas kampus. Untuk informasi pendaftaran anggota baru atau daftar UKM aktif terkini, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali._`;
-      return appendMissingAspectNote(ukmOnlyAnswer);
-    }
-
-    const orgAnswer = `Kegiatan kemahasiswaan di ITB STIKOM Bali dinaungi oleh Organisasi Mahasiswa (Ormawa) dan Unit Kegiatan Mahasiswa (UKM) yang terbagi dalam dua kelompok utama:
-
-1. **Organisasi Pemerintahan Mahasiswa (Ormawa)**:
-   • Senat Mahasiswa (lembaga eksekutif mahasiswa).
-   • Balma / Badan Legislatif Mahasiswa (lembaga perwakilan dan legislatif mahasiswa).
-   • Himpunan Mahasiswa Program Studi (HIMAPRODI) pada masing-masing prodi.
-
-2. **Unit Kegiatan Mahasiswa (UKM)** (Minat, Bakat, dan Penalaran):
-   • **Bidang Esports & Teknologi**: UKM Athena E-Sports, KSL (Linux), Komunitas Robotika.
-   • **Bidang Olahraga**: Futsal, Basket, Bulutangkis (UKM BOS), Kebugaran (UKM GHoST).
-   • **Bidang Seni & Budaya**: Tari Tradisional (Unit Kegiatan Tari Tradisional “PRAGINA”), Musik (UKM MUSIK), Paduan Suara (UKM Voice of STIKOM Bali/VOS), Fotografi (UKM HIMATOGRAPHY), Teater (UKM TEATER BINER).
-   • **Bidang Sosial & Khusus**: KSR PMI, Resimen Mahasiswa.
-
-_Catatan: Rincian UKM di atas didasarkan pada penetapan pembina ormawa resmi dan bukan merupakan klaim daftar lengkap seluruh komunitas kemahasiswaan. Untuk informasi pendaftaran dan kegiatan ormawa/UKM lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali._`;
-    return appendMissingAspectNote(orgAnswer);
-  }
-
-  // 5. Progression / Stages / Scheme Inquiry
-  const isSchemeOrLocationInquiry = /full di|skema|tahap|lokasi|tempat kuliah|di mana|onsite|online/i.test(rawQuery);
-  const stages = [];
-  const stageMatches = cleanAll.matchAll(/(Tahun\s*[\d&,\s]+|Tahap\s*[\d&,\s]+|Semester\s*[\dIVX]+)\s*:\s*([^]+?)(?=(?:Tahun\s*[\d&,\s]+|Tahap\s*[\d&,\s]+|Semester\s*[\dIVX]+)\s*:|Selama|Setelah|\n\n|$)/gi);
-  for (const m of stageMatches) {
-    const stageTitle = m[1].trim();
-    const stageDesc = m[2].replace(/\s+/g, ' ').trim();
-    const line = `${stageTitle}: ${stageDesc}`;
-    if (!stages.includes(line) && stageDesc.length > 10 && stages.length < 5) {
-      stages.push(line);
-    }
-  }
-
-  const isInternationalSchemeScope = semanticFrame.domain === 'INTERNATIONAL' || /\b(?:double\s+degree|dnui|help\b|internasional|kuliah\s+di\s+luar|luar\s+negeri)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-  if (isSchemeOrLocationInquiry && isInternationalSchemeScope) {
-    if (/dnui/i.test(rawQuery) || targetEntities.some(e => /DNUI/i.test(e)) || (/dnui|china/i.test(cleanAll) && /double\s+degree|internasional/i.test(rawQuery))) {
-      const dnuiAns = `Perkuliahan untuk **Double Degree DNUI (China)** tidak sepenuhnya berlangsung di Bali.\n\nSkema studinya berjalan bertahap:\n` +
-        `- **Tahun 1–2**: Perkuliahan di kampus ITB STIKOM Bali.\n` +
-        `- **Tahun 3**: Perkuliahan diselenggarakan secara daring (online).\n` +
-        `- **Tahun 4**: Perkuliahan onsite di Dalian Neusoft University of Information (DNUI), China.\n\n` +
-        `Selama menjalani perkuliahan tahun ke-4 di China, mahasiswa mendapatkan fasilitas dormitory (shared room) secara gratis.`;
-      return appendMissingAspectNote(dnuiAns);
-    }
-    if (/help|malaysia/i.test(cleanAll) || targetEntities.some(e => /HELP/i.test(e)) || /help/i.test(rawQuery)) {
-      const helpAns = `Untuk program **Double Degree HELP University (Malaysia)**, seluruh proses perkuliahan (full 4 tahun) diselenggarakan langsung di kampus **ITB STIKOM Bali** tanpa perlu berangkat ke Malaysia.`;
-      return appendMissingAspectNote(helpAns);
-    }
-    if (stages.length > 0) {
-      let answer = '';
-    if (/full di/i.test(rawQuery) && (cleanAll.toLowerCase().includes('tidak full') || /onsite|luar negeri|kampus mitra/i.test(cleanAll))) {
-      answer = `Perkuliahan untuk **${entityLabel}** tidak sepenuhnya berlangsung di Bali.\n\nSkema studinya berjalan bertahap:\n`;
-    } else {
-      answer = `Skema studi untuk **${entityLabel}** dirancang bertahap sebagai berikut:\n`;
-    }
-    for (const st of stages) {
-      answer += `- **${st}**\n`;
-    }
-    const facilityMatch = cleanAll.match(/(?:Selama menjalani|fasilitas dormitory|fasilitas asrama)[^\.\n]+/i);
-    if (facilityMatch) {
-      answer += `\n${facilityMatch[0].trim()}.`;
-    }
-    return appendMissingAspectNote(answer);
-    }
-  }
-
-  // 5b. International Program & Student Exchange Inquiries
-  const isStudentExchangeInquiry = /\b(?:pertukaran\s+(?:pelajar|mahasiswa)|student\s+exchange|exchange\s+program|gccp|bccp)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-  if (semanticFrame.domain === 'INTERNATIONAL' && isStudentExchangeInquiry) {
-    let exchangeAnswer = `Program **Student Exchange (Pertukaran Mahasiswa/Pelajar Internasional)** di ITB STIKOM Bali memberikan kesempatan bagi mahasiswa untuk belajar di kampus mitra luar negeri dalam periode tertentu sekaligus memperoleh pengalaman akademik dan wawasan global.\n\n` +
-      `**Jenis Program yang Tersedia:**\n` +
-      `1. **Exchange Reguler (Credit Transfer)**: Mengikuti perkuliahan di kampus mitra luar negeri dan dapat dikonversikan ke SKS.\n` +
-      `2. **Short Program / Summer Program**: Program akademik jangka pendek dengan fokus tertentu.\n` +
-      `3. **Global Cross Cultural Program (GCCP)**: Program unggulan berbasis interaksi global dan pertukaran budaya.\n\n` +
-      `**Negara Tujuan Mitra:**\n` +
-      `Tersedia di berbagai negara mitra kerja sama aktif seperti China, Thailand, Malaysia, Philippines, dan negara lainnya.\n\n` +
-      `**Persyaratan Umum:**\n` +
-      `• Mahasiswa aktif ITB STIKOM Bali.\n` +
-      `• Memiliki IPK sesuai ketentuan program.\n` +
-      `• Memiliki kemampuan bahasa asing (terutama Bahasa Inggris).\n` +
-      `• Lolos seleksi administrasi dan wawancara.\n\n` +
-      `**Alur & Prosedur Pendaftaran:**\n` +
-      `Informasi pendaftaran dan alur seleksi dikoordinasikan secara institusional melalui **Direktorat Urusan Internasional ITB STIKOM Bali**, sosial media resmi kampus, serta pengumuman internal.`;
-    return appendMissingAspectNote(exchangeAnswer);
-  }
-
-  // 7. Tuition Fee Summary
-  const isFeeInquiry = semanticFrame.domain === 'TUITION_FEE' ||
-    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp', 'installment_procedure', 'payment_schedule'].includes(a))) ||
-    /\b(?:biaya|spp|dpp|uang kuliah|uang gedung|rincian biaya|cicil|cicilan|angsuran)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-
-  if (isFeeInquiry) {
-    const feeRes = generateFeeAnswer(rawQuery, arbitratedEvidence?.sessionData || {}, {
-      semanticFrame,
-      acceptedEvidence: accepted,
-      arbitratedEvidence
-    });
-    if (feeRes && feeRes.success && feeRes.answer) {
-      return appendMissingAspectNote(feeRes.answer);
-    }
-    const combinedFeeQuery = rawQuery + ' ' + (semanticFrame.normalizedQuery || '');
-
-    const isInstallmentProcInSummary =
-      /\b(?:syarat|persyaratan|prosedur|tata\s*cara|cara(?:\s+mengajukan)?|bagaimana\s+mengajukan|pengajuan|dokumen|berkas|formulir)\b/i.test(combinedFeeQuery) &&
-      /\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|mengangsur)\b/i.test(combinedFeeQuery);
-
-    if (isInstallmentProcInSummary) {
-      const procFallbackAnswer =
-        `Mengenai **persyaratan dan prosedur pengajuan cicilan biaya kuliah**, informasi resmi yang tertera dalam SK Rektor ITB STIKOM Bali Nomor 629/ITBSTIKOM/WDS/X/25 hanya menetapkan **waktu/jadwal pembayaran**, yaitu Dana Pendidikan Pokok (DPP) atau Biaya Registrasi dapat diangsur setiap bulan sampai menjelang Ujian Tengah Semester 1 (UTS-1) pada semester berjalan.\n\n` +
-        `Namun, **persyaratan administratif khusus, dokumen yang diperlukan, maupun prosedur teknis pengajuan cicilan belum tercantum secara rinci dalam dokumen penetapan biaya yang tersedia (SOURCE_GAP)**.\n\n` +
-        `Untuk konfirmasi prosedur resmi dan persyaratan pengajuan cicilan secara lengkap, silakan langsung mengonfirmasi kepada admin PMB atau bagian keuangan resmi ITB STIKOM Bali melalui website https://pmb.stikom-bali.ac.id atau telepon (0361) 244445.`;
-      return appendMissingAspectNote(procFallbackAnswer);
-    }
-
-    const isDppInstallmentInSummary =
-      /\bdpp\b/i.test(combinedFeeQuery) &&
-      /\b(?:sampai\s+kapan|kapan|jadwal|tenggat|deadline|batas\s+waktu)\b/i.test(combinedFeeQuery) &&
-      /\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|mengangsur)\b/i.test(combinedFeeQuery);
-
-    if (isDppInstallmentInSummary) {
-      const dppScheduleAnswer =
-        `Berdasarkan ketentuan resmi SK Rektor ITB STIKOM Bali Nomor 629/ITBSTIKOM/WDS/X/25:\n\n` +
-        `• **Besaran DPP per Program Studi (Tarif Dasar Sebelum Potongan)**:\n` +
-        `  - **S1 Sistem Informasi, Teknologi Informasi, & Bisnis Digital**: Rp 14.000.000 (dapat dicicil per bulan s.d. UTS-1)\n` +
-        `  - **S1 Sistem Komputer**: Rp 11.000.000 (dapat dicicil per bulan s.d. UTS-1)\n` +
-        `  - **D3 Manajemen Informatika**: Tidak memiliki komponen DPP. Komponen biaya masuk utama adalah **Biaya Registrasi (Jas, Topi, GMTI)** sebesar Rp 10.000.000 (dapat dicicil per bulan s.d. UTS-1)\n` +
-        `  - **International Double Degree (HELP / DNUI)**: DPP sebesar Rp 20.000.000 dibayarkan saat Registrasi I (jadwal cicilan bulanan s.d. UTS-1 hanya berlaku untuk program Sarjana S1 reguler dan Vokasi D3, tidak otomatis berlaku untuk program International Double Degree)\n\n` +
-        `• **Ketentuan & Waktu Pembayaran Cicilan DPP**:\n` +
-        `  Dana Pendidikan Pokok (DPP) untuk jenjang Sarjana S1 reguler dapat dicicil per bulan sampai dengan menjelang Ujian Tengah Semester 1 (UTS-1) pada semester berjalan. Tersedia tambahan potongan sebesar 10% apabila DPP dibayarkan secara tunai langsung lunas.`;
-      return appendMissingAspectNote(dppScheduleAnswer);
-    }
-
-    if (/\b(dicicil|cicil|angsuran|tahap|angsur|bisa dicicil)\b/i.test(combinedFeeQuery)) {
-      const installmentAnswer = `Biaya pendidikan di ITB STIKOM Bali bisa dicicil dengan ketentuan berikut:\n\n` +
-        `• **Pembayaran Dana Pendidikan Pokok (DPP) S1 & Biaya Registrasi D3**: DAPAT dicicil atau diangsur bertahap setiap bulan sampai menjelang Ujian Tengah Semester (UTS-1) pada semester berjalan.\n` +
-        `• **Potongan Pembayaran Tunai (Lunas Langsung)**: Calon mahasiswa yang membayar DPP / Biaya Registrasi secara tunai langsung lunas mendapatkan tambahan potongan sebesar **10%**.\n` +
-        `• **Biaya Pendidikan Per Semester**: Dibayarkan setiap semester menjelang masa perwalian/KRS (khusus Reguler 1 semester pertama dapat dicicil 2 kali s.d. UTS).\n\n` +
-        `Untuk rincian simulasi angsuran bulanan, Kakak bisa berkonsultasi langsung dengan bagian admisi PMB di https://pmb.stikom-bali.ac.id ya.`;
-      return appendMissingAspectNote(installmentAnswer);
-    }
-
-    if (/\b(potongan\s+dpp|potongan.*gelombang|dpp.*gelombang|potongan.*awal)\b/i.test(combinedFeeQuery)) {
-      const dppWaveFeeAnswer = `Untuk pendaftaran gelombang awal T.A 2026/2027 di ITB STIKOM Bali, tersedia potongan Dana Pendidikan Pokok (DPP) / Biaya Registrasi dengan rincian berikut:
-
-• **Gelombang Khusus (Gelombang Paling Awal)**:
-  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 3.000.000**
-  - S1 Sistem Komputer: Potongan DPP sebesar **Rp 2.000.000**
-  - D3 Manajemen Informatika: Potongan Biaya Registrasi (Jas, Topi, GMTI) sebesar **Rp 2.000.000**
-  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 10.000.000**
-
-• **Gelombang I (Gelombang Awal)**:
-  - S1 Sistem Informasi, Teknologi Informasi, Bisnis Digital: Potongan DPP sebesar **Rp 2.000.000**
-  - S1 Sistem Komputer: Potongan DPP sebesar **Rp 1.000.000**
-  - D3 Manajemen Informatika: Potongan Biaya Registrasi (Jas, Topi, GMTI) sebesar **Rp 1.000.000**
-  - International Dual Degree (DNUI/HELP): Potongan DPP sebesar **Rp 8.000.000**
-
-• **Gelombang Lanjutan**:
-  - Gelombang II: Potongan DPP Rp 1.500.000 (S1 SI/TI/BD) / Potongan DPP Rp 750.000 (S1 SK) / Potongan Biaya Registrasi Rp 750.000 (D3 MI)
-  - Gelombang III: Potongan DPP Rp 1.000.000 (S1 SI/TI/BD) / Potongan Biaya Registrasi Rp 500.000 (D3 MI)
-  - Gelombang IV: Potongan DPP Rp 500.000 (S1 SI/TI/BD)
-
-**Ketentuan Tambahan**:
-1. Apabila DPP / Biaya Registrasi dibayarkan secara tunai, diberikan tambahan potongan sebesar **10%**.
+1. Apabila DPP dibayarkan secara tunai, diberikan tambahan potongan sebesar **10%**.
 2. Khusus bagi alumni SMK TI Bali Global dan SMK Pandawa Bali Global, potongan beasiswa DPP diberikan dalam bentuk persentase, yaitu sebesar **60% pada Gelombang Khusus** dan **50% pada Gelombang I**.
 
 Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
@@ -2149,18 +1327,12 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       }
 
       // If specific program requested
-      const prog = targetEntities[0] || '';
-      if (/HELP/i.test(prog) || /HELP/i.test(combinedFeeQuery) || /HELP/i.test(cleanAll)) {
+      const prog = targetEntities[0];
+      if (/HELP/i.test(prog)) {
         const helpSmkAnswer = `Berdasarkan ketentuan resmi program Double Degree HELP University T.A 2026/2027:\n\n` +
           `• Khusus alumni SMK TI mendapatkan **potongan 10% Biaya Pendidikan Per Semester selama 4 tahun**.\n` +
           `• Ketentuan potongan 20% tidak berlaku untuk program International Dual Degree HELP University.`;
         return appendMissingAspectNote(helpSmkAnswer);
-      }
-      if (/UTB/i.test(prog) || /UTB/i.test(combinedFeeQuery) || /UTB/i.test(cleanAll)) {
-        const utbSmkAnswer = `Berdasarkan ketentuan resmi program Dual Degree (National Class) dengan Universitas Teknologi Bandung (UTB) T.A 2026/2027:\n\n` +
-          `• Khusus alumni SMK TI mendapatkan **potongan 10% Biaya Pendidikan Per Semester selama 4 tahun**.\n` +
-          `• Ketentuan potongan 20% tidak berlaku untuk program Dual Degree (National Class) UTB.`;
-        return appendMissingAspectNote(utbSmkAnswer);
       }
       if (/S2/i.test(prog)) {
         const s2SmkAnswer = `Untuk program S2 Magister Sistem Informasi, tidak terdapat ketentuan potongan biaya kuliah khusus alumni SMK TI pada jenjang Pascasarjana.`;
@@ -2193,20 +1365,18 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
     }
 
     const feeItems = [
-      { label: 'Biaya Pendaftaran', re: /Pendaftaran\s+([0-9\.,]+)(?:[^\S\r\n]+(Pada\s+Saat\s+Daftar[^\r\n\.]*))?/i },
+      { label: 'Biaya Pendaftaran', re: /Pendaftaran\s+([0-9\.,]+)/i },
       { label: 'Dana Pendidikan Pokok (DPP)', re: /(?:Dana Pendidikan Pokok|\(DPP\))\s+([0-9\.,]+)(?:[^\S\r\n]+(\([^\)]+\)|Dicicil[^\r\n\.\,]+|dapat diangsur[^\r\n\.\,]+))?/i },
       { label: 'Biaya Pendidikan Per Semester', re: /Biaya Pendidikan Per Semester\s+([0-9\.,]+)(?:[^\S\r\n]+(\([^\)]+\)|Menjelang[^\r\n\.]+))?/i },
-      { label: 'Jas Almamater & Topi', re: /(?:Jas\s+(?:Al+amater|Almamater)[^\r\n\d]*,?\s*Topi|Jas,\s*Topi\s+Almamater)\s+([0-9\.,]+)(?:[^\S\r\n]+(Saat[^\r\n\.]+))?/i },
-      { label: 'Kaos, Tas & GMTI', re: /Kaos,\s*(?:Tas|Topi),\s*GMTI\s+([0-9\.,]+)(?:[^\S\r\n]+(Saat[^\r\n\.]+))?/i },
-      { label: 'Biaya Pengalaman Industri', re: /Biaya Pengalaman Industri\s*[-–:]?\s*([^\n]+(?:\n\s*[-–]\s*[^\n]+)*)/i }
+      { label: 'Jas, Topi Almamater & GMTI', re: /(?:Jas[^\r\n\d]+|Kaos[^\r\n\d]+)\s+([0-9\.,]+)/i },
+      { label: 'Biaya Pengalaman Industri', re: /Biaya Pengalaman Industri\s+([^\n]+(?:\n\s*-\s*[^\n]+)*)/i }
     ];
 
     const feeItemLabelsEn = {
       'Biaya Pendaftaran': 'Registration Fee',
       'Dana Pendidikan Pokok (DPP)': 'Base Tuition Fee (DPP)',
       'Biaya Pendidikan Per Semester': 'Tuition Fee Per Semester',
-      'Jas Almamater & Topi': 'Almamater Jacket & Cap',
-      'Kaos, Tas & GMTI': 'T-Shirt, Bag & Orientation (GMTI)',
+      'Jas, Topi Almamater & GMTI': 'Almamater Jacket, Cap & Orientation',
       'Biaya Pengalaman Industri': 'Industry Experience Fee'
     };
 
@@ -2223,28 +1393,15 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
               extra = userLang === 'en' ? ' (Payable in monthly installments until Midterm Exam)' : ' (Dapat dicicil per bulan s.d. UTS)';
             } else if (/menjelang/i.test(rawExtra)) {
               extra = userLang === 'en' ? ' (Before course enrollment each semester)' : ' (Menjelang perwalian tiap semester)';
-            } else if (/saat\s+registrasi/i.test(rawExtra)) {
-              extra = userLang === 'en' ? ' (During initial registration)' : ' (Saat registrasi awal)';
-            } else if (/pada\s+saat\s+daftar/i.test(rawExtra)) {
-              extra = userLang === 'en' ? ' (Upon initial registration)' : ' (Saat pendaftaran awal)';
             } else {
               extra = ` (${rawExtra})`;
             }
           }
           if (/^\d+/.test(val)) val = `Rp ${val}`;
-          if (item.label === 'Biaya Pengalaman Industri') {
-            const intMatch = text.match(/\bInternasional\s+([0-9\.,]+)/i);
-            const nasMatch = text.match(/\bNasional\s+([0-9\.,]+)/i);
-            const lokMatch = text.match(/\bLokal\s+([0-9\.,]+)/i);
-            if (intMatch && nasMatch && lokMatch) {
-              val = userLang === 'en'
-                ? `International: Rp ${intMatch[1]}, National: Rp ${nasMatch[1]}, Local: Rp ${lokMatch[1]} (payable in installments from semester 3)`
-                : `Internasional: Rp ${intMatch[1]}, Nasional: Rp ${nasMatch[1]}, Lokal: Rp ${lokMatch[1]} (dapat dicicil mulai semester 3)`;
-            } else if (val.includes('butir 6')) {
-              val = userLang === 'en'
-                ? 'International: Rp 5,000,000, National: Rp 2,500,000, Local: Rp 1,500,000 (excluding tickets, passport, and visa)'
-                : 'Internasional: Rp 5.000.000, Nasional: Rp 2.500.000, Lokal: Rp 1.500.000 (belum termasuk tiket, paspor, dan visa)';
-            }
+          if (item.label === 'Biaya Pengalaman Industri' && val.includes('butir 6')) {
+            val = userLang === 'en'
+              ? 'International: Rp 5,000,000, National: Rp 2,500,000, Local: Rp 1,500,000 (excluding tickets, passport, and visa)'
+              : 'Internasional: Rp 5.000.000, Nasional: Rp 2.500.000, Lokal: Rp 1.500.000 (belum termasuk tiket, paspor, dan visa)';
           }
           const label = userLang === 'en' ? (feeItemLabelsEn[item.label] || item.label) : item.label;
           const line = `- **${label}**: ${val}${extra}`;
@@ -2256,103 +1413,54 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       return lines;
     }
 
-    const isMultiProdiCompare = targetEntities.length > 1 ||
-      (/\b(?:semua|seluruh|tiap|masing-masing|bandingkan|perbandingan)\s+(?:prodi|jurusan|program\s+studi|biaya)\b/i.test(rawQuery) ||
-       /\b(?:semua|seluruh)\s+(?:program\s+studi|prodi|jurusan)\b/i.test(rawQuery));
-
-    const prodisToCompare = targetEntities.length > 1
-      ? targetEntities
-      : (isMultiProdiCompare ? ['S1 Sistem Informasi', 'S1 Teknologi Informasi', 'S1 Bisnis Digital', 'S1 Sistem Komputer', 'D3 Manajemen Informatika', 'S2 Sistem Informasi'] : []);
-
-    if (prodisToCompare.length > 1) {
+    if (targetEntities.length > 1) {
       const entityFeeBlocks = [];
-      for (const ent of prodisToCompare) {
+      for (const ent of targetEntities) {
         const entBase = ent.replace(/^(S1|D3|S2)\s+/i, '').toLowerCase();
         const entChunks = accepted.filter(c => {
           const t = (c.text || '').toLowerCase();
-          const sf = (c.source_file || c.filename || '').toLowerCase();
+          const sf = (c.source_file || '').toLowerCase();
           const ce = (c.contextEntities || []).map(x => x.toLowerCase());
           return t.includes(ent.toLowerCase()) ||
-                 t.includes(entBase) ||
                  sf.includes(entBase) ||
                  ce.includes(ent.toLowerCase());
         });
         const entText = entChunks.map(c => c.text).join('\n\n');
         const lines = extractFeeForEntity(entText);
         if (lines.length > 0) {
-          entityFeeBlocks.push(`• **${ent}**:\n  ` + lines.join('\n  '));
+          entityFeeBlocks.push(`**${ent}**:\n` + lines.join('\n'));
         }
       }
       if (entityFeeBlocks.length > 0) {
         if (userLang === 'en') {
-          let compAnswer = `Here is the comparison of official tuition fees for the study programs at ITB STIKOM Bali:\n\n`;
+          let compAnswer = `Here is the comparison of official tuition fees for the study programs you inquired about:\n\n`;
           compAnswer += entityFeeBlocks.join('\n\n');
-          compAnswer += `\n\nDPP can be paid in monthly installments until Midterm Exams (UTS).`;
+          compAnswer += `\n\nDPP can be paid in monthly installments until Midterm Exams (UTS). For information on early wave scholarship discounts, please feel free to ask.`;
           return appendMissingAspectNote(compAnswer);
         }
-        let compAnswer = `Berikut perbandingan rincian biaya pendidikan resmi program studi di ITB STIKOM Bali:\n\n`;
+        let compAnswer = `Berikut perbandingan rincian biaya pendidikan resmi program studi yang Kakak tanyakan:\n\n`;
         compAnswer += entityFeeBlocks.join('\n\n');
-        compAnswer += `\n\nPembayaran DPP dapat diangsur setiap bulan hingga UTS.`;
+        compAnswer += `\n\nPembayaran DPP dapat diangsur setiap bulan hingga UTS. Untuk informasi beasiswa potongan gelombang, silakan tanyakan lebih lanjut ya.`;
         return appendMissingAspectNote(compAnswer);
       }
     }
 
     const feeLines = extractFeeForEntity(cleanAll);
     if (feeLines.length > 0) {
-      // Check if early registration wave scholarship discount is explicitly requested and evidenced
-      const isScholarshipAsked = /\b(beasiswa|potongan|diskon|gelombang\s*(?:khusus|[1-4]|awal))\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-      const hasScholarshipEvidence = accepted.some(c => {
-        const t = cleanDocumentArtifacts(c.text || c.chunk || '').toLowerCase();
-        return /(?:beasiswa\s+untuk\s+dana\s+pendidikan\s+pokok|beasiswa.*dpp.*gelombang|potongan\s+dpp)/i.test(t);
-      });
-
-      let closingNote = '';
-      if (isScholarshipAsked && hasScholarshipEvidence) {
-        closingNote = userLang === 'en'
-          ? '\n\nDPP can be paid in monthly installments until Midterm Exams (UTS), and scholarship discounts are available during early registration waves.'
-          : '\n\nPembayaran DPP dapat diangsur setiap bulan hingga UTS, dan tersedia potongan beasiswa pada gelombang awal pendaftaran.';
-      } else {
-        closingNote = userLang === 'en'
-          ? '\n\nDPP can be paid in monthly installments until Midterm Exams (UTS). If you need an installment simulation, please let us know!'
-          : '\n\nPembayaran DPP dapat diangsur setiap bulan hingga UTS. Jika butuh simulasi angsuran, silakan beri tahu ya Kak!';
-      }
-
       if (userLang === 'en') {
         let feeAnswer = `Here is the official tuition fee breakdown for **${entityLabel}** at ITB STIKOM Bali:\n\n`;
         feeAnswer += feeLines.join('\n');
-        feeAnswer += closingNote;
+        feeAnswer += `\n\nDPP can be paid in monthly installments until Midterm Exams (UTS), and scholarship discounts are available during early registration waves. If you would like an installment simulation, please let us know!`;
         return appendMissingAspectNote(feeAnswer);
       }
       let feeAnswer = `Berikut rincian biaya pendidikan resmi untuk **${entityLabel}** di ITB STIKOM Bali:\n\n`;
       feeAnswer += feeLines.join('\n');
-      feeAnswer += closingNote;
+      feeAnswer += `\n\nPembayaran DPP dapat diangsur setiap bulan hingga UTS, dan tersedia potongan beasiswa pada gelombang awal pendaftaran. Jika butuh simulasi angsuran, silakan beri tahu ya Kak!`;
       return appendMissingAspectNote(feeAnswer);
-    }
-
-    if (/\b(?:UTB|UNIVERSITAS\s+TEKNOLOGI\s+BANDUNG)\b/i.test(cleanAll) && /\b(?:DUAL|DOUBLE)\s*DEGREE|NATIONAL\s*CLASS\b/i.test(cleanAll)) {
-      let utbFeeAnswer = `Berdasarkan dokumen resmi rincian biaya Dual Degree (National Class) dengan **Universitas Teknologi Bandung (UTB)** T.A 2026/2027:\n\n` +
-        `• **Ketentuan Beasiswa & Potongan DPP**:\n` +
-        `  - Gelombang Khusus: Potongan DPP sebesar Rp 3.000.000 (serta potongan biaya pendaftaran Rp 300.000)\n` +
-        `  - Gelombang I: Potongan DPP sebesar Rp 2.000.000 (serta potongan biaya pendaftaran Rp 250.000)\n` +
-        `  - Gelombang II: Potongan DPP sebesar Rp 1.500.000\n` +
-        `  - Gelombang III: Potongan DPP sebesar Rp 1.000.000 / Gelombang IV: Rp 500.000\n` +
-        `• **Ketentuan Khusus Alumni SMK TI**: Mendapatkan potongan **10% Biaya Pendidikan Per Semester selama 4 tahun**.\n` +
-        `• **Pembayaran Tunai**: Pembayaran DPP secara lunas langsung mendapatkan tambahan potongan sebesar **10%**.\n\n` +
-        `_Catatan: Untuk rincian nominal pasti Biaya Pendidikan Per Semester dan DPP di luar potongan gelombang, silakan konfirmasi langsung ke bagian admisi PMB ITB STIKOM Bali._`;
-      return appendMissingAspectNote(utbFeeAnswer);
     }
   }
 
   // 7b. Career Center & CDC Services
-  const isLinkedIn = targetEntities.some(e => /linkedin/i.test(e)) || /\b(?:linkedin|linked\s*in)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-  if (isLinkedIn) {
-    const linkedInAnswer = `Program **LinkedIn Learning** di ITB STIKOM Bali diselenggarakan melalui **Career Development Center (CDC) / Career Center** untuk mendukung peningkatan keahlian (upskilling/reskilling) serta pengembangan kompetensi profesional mahasiswa dan alumni.\n\n` +
-      `• **Fokus & Manfaat**: Fasilitasi akses ke materi pelatihan digital berstandar global, sertifikasi profesional internasional, optimalisasi profil profesional LinkedIn, serta pembekalan kesiapan karier.\n` +
-      `• **Biaya & Registrasi**: Rincian biaya langganan resmi saat ini belum tercantum secara spesifik dalam panduan resmi terverifikasi. Mahasiswa disarankan untuk mengonfirmasi langsung ke pihak Career Center.\n\n` +
-      `Untuk pendaftaran dan informasi resmi terkini, silakan mengunjungi portal resmi CDC (https://cdc.stikom-bali.ac.id/) atau loket layanan kemahasiswaan ITB STIKOM Bali.`;
-    return appendMissingAspectNote(linkedInAnswer);
-  }
-
   const isProdiCareerInquiry = Boolean(programEntity) && /\b(?:peluang\s+kar(?:i)?er|prospek\s+kar(?:i)?er|kar(?:i)?er|pekerjaan|profesi|career|jobs?)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
   if (!isProdiCareerInquiry && (semanticFrame.domain === 'CAREER_CENTER' || targetEntities.some(e => /cdc/i.test(e) || (e !== programEntity?.canonical && /career\s+center/i.test(e))) || /\b(?:career\s+center|cdc\b|penyaluran\s+kerja|campus\s+hiring|mitra\s+industri)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')))) {
     const cdcAnswer = `Untuk mendukung kesiapan karier dan penyaluran kerja mahasiswa maupun alumni, **Career Development Center (CDC)** ITB STIKOM Bali menyediakan layanan unggulan:\n\n` +
@@ -2377,73 +1485,14 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
     return appendMissingAspectNote(rplAnswer);
   }
 
-  // 7d. International Programs (Double Degree DNUI, HELP, GCCP, Magang Jepang, Student Exchange, UTB, Visa)
-  if (semanticFrame.domain === 'INTERNATIONAL' || targetEntities.some(e => ['Double Degree DNUI', 'Double Degree HELP University', 'Dual Degree UTB', 'GCCP', 'BCCP', 'Program Hi-Think (Magang Jepang)', 'Student Exchange'].includes(e)) || /\b(dnui|dalian|help\s+university|gccp|bccp|magang\s+jepang|hi-?think|student\s+exchange|pertukaran\s+mahasiswa|program\s+internasional|gelar\s+ganda|dual\s+degree|double\s+degree|utb|visa|itas|kitas|izin\s+belajar)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const isUtb = targetEntities.some(e => /utb/i.test(e)) || /\b(utb|universitas\s+teknologi\s+bandung|gelar\s+ganda\s+nasional|dual\s+degree\s+nasional|double\s+degree\s+nasional)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-    const isVisa = /\b(visa|itas|kitas|izin\s+belajar|study\s+permit|foreign\s+student|mahasiswa\s+asing)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-    const isDnui = !isUtb && (targetEntities.some(e => /dnui|dalian/i.test(e)) || /\b(dnui|dalian|china|cina)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')));
-    const isHelp = !isUtb && (targetEntities.some(e => /help/i.test(e)) || /\b(help|malaysia)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')));
+  // 7d. International Programs (Double Degree DNUI, HELP, GCCP, Magang Jepang, Student Exchange)
+  if (semanticFrame.domain === 'INTERNATIONAL' || targetEntities.some(e => ['Double Degree DNUI', 'Double Degree HELP University', 'Dual Degree UTB', 'GCCP', 'BCCP', 'Program Hi-Think (Magang Jepang)', 'Student Exchange'].includes(e)) || /\b(dnui|dalian|help\s+university|gccp|bccp|magang\s+jepang|hi-?think|student\s+exchange|pertukaran\s+mahasiswa)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
+    const isDnui = targetEntities.some(e => /dnui|dalian/i.test(e)) || /\b(dnui|dalian|china|cina)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+    const isHelp = targetEntities.some(e => /help/i.test(e)) || /\b(help|malaysia)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
     const isGccp = targetEntities.some(e => /gccp/i.test(e)) || /\b(gccp|global\s+cross\s+cultural)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
     const isJapan = targetEntities.some(e => /jepang|hi-think/i.test(e)) || /\b(jepang|hi-?think|magang\s+(?:ke\s+)?jepang)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
     const isStudentExchange = targetEntities.some(e => /exchange|pertukaran/i.test(e)) ||
       /\b(exchange|pertukaran\s+mahasiswa|pertukaran\s+pelajar|study\s+abroad)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
-
-    const isGeneralInternational = !isUtb && !isVisa && !isDnui && !isHelp && !isGccp && !isJapan && !isStudentExchange;
-    if (isGeneralInternational) {
-      const generalIntlAnswer = `ITB STIKOM Bali menyediakan beberapa kategori program internasional resmi yang dapat diikuti oleh mahasiswa:\n\n` +
-        `1. **Program Gelar Ganda (Double Degree)**:\n` +
-        `   • **S1 Sistem Informasi**: Bekerjasama dengan **HELP University, Malaysia** (Gelar ganda: S.Kom. dari ITB STIKOM Bali dan Bachelor of Information Technology / BIT dari HELP University).\n` +
-        `   • **S1 Bisnis Digital**: Bekerjasama dengan **Dalian Neusoft University of Information (DNUI), China** dengan skema 2+2 (2 tahun di Bali + 2 tahun di kampus DNUI Dalian; Gelar ganda: S.Bns. dan Bachelor of Management / B.M.).\n\n` +
-        `2. **Program Pertukaran Mahasiswa (Student Exchange & Global Experience)**:\n` +
-        `   • **Exchange Reguler**: Perkuliahan di perguruan tinggi mitra luar negeri dengan transfer/konversi SKS.\n` +
-        `   • **Short Program / Summer Program**: Program akademik singkat atau kuliah musim panas di luar negeri.\n` +
-        `   • **Global Cross Cultural Program (GCCP)**: Program interaksi dan pengayaan wawasan lintas budaya dengan institusi mitra internasional di kawasan Asia/ASEAN.\n\n` +
-        `3. **Program Persiapan Kerja & Magang Internasional**:\n` +
-        `   • Program magang industri teknologi di Jepang (bekerjasama dengan mitra seperti Hi-Think Computer Corp) yang mencakup pembekalan bahasa dan budaya kerja profesional sebelum penempatan kerja/magang.\n\n` +
-        `_Catatan: Syarat seleksi, jadwal pendaftaran, serta kuota peserta untuk setiap angkatan dikoordinasikan langsung oleh Direktorat Pemasaran dan Urusan Internasional ITB STIKOM Bali sesuai jadwal dan kesepakatan mitra yang aktif._`;
-      return appendMissingAspectNote(generalIntlAnswer);
-    }
-
-    if (isUtb) {
-      const utbAnswer = `Program Dual Degree Nasional (National Class) ITB STIKOM Bali diselenggarakan bekerjasama dengan **Universitas Teknologi Bandung (UTB)**.\n\n` +
-        `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan sekaligus:\n` +
-        `  - **Sarjana Bisnis (S.Bns.)** dari ITB STIKOM Bali\n` +
-        `  - **Sarjana Desain (S.Ds.)** dari Universitas Teknologi Bandung (UTB).\n\n` +
-        `Untuk rincian pendaftaran dan biaya program Dual Degree UTB, silakan hubungi bagian admisi PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(utbAnswer);
-    }
-
-    if (isVisa) {
-      const isDuration = /\b(berapa lama|lama proses|durasi|waktu)\b/i.test(rawQuery);
-      if (isDuration) {
-        const isExtension = /\b(perpanjang|perpanjangan|perpanjangannya|extend|extension)\b/i.test(rawQuery);
-        const visaDurAns = userLang === 'en'
-          ? (isExtension
-            ? 'The processing of a study permit extension generally takes about 1–2 working weeks after submission with the assistance of the International Office.'
-            : 'Based on available official guidelines, the 1–2 week processing timeframe is specifically documented for study permit extensions (and Visa E30B applications). The exact duration for the initial issuance of a study permit for new students is not specified in the guidelines and is coordinated directly with the International Office of ITB STIKOM Bali.')
-          : (isExtension
-            ? 'Proses perpanjangan Izin Belajar umumnya membutuhkan waktu sekitar 1–2 minggu kerja setelah diajukan melalui bantuan International Office.'
-            : 'Berdasarkan dokumen panduan resmi yang tersedia, durasi waktu sekitar 1–2 minggu secara spesifik tercantum untuk proses perpanjangan Izin Belajar (serta pengajuan Visa E30B). Sementara itu, estimasi durasi pasti untuk penerbitan awal Izin Belajar bagi mahasiswa baru belum tercantum dalam panduan resmi dan dikoordinasikan langsung bersama International Office ITB STIKOM Bali.');
-        return appendMissingAspectNote(visaDurAns);
-      }
-
-      const visaAns = userLang === 'en'
-        ? `For international students enrolling at ITB STIKOM Bali, the student visa / study permit requirements (Visa E30B) documented in official guidelines include:\n\n` +
-          `• **Valid Passport**: Passport with sufficient validity according to Indonesian immigration regulations.\n` +
-          `• **Formal Photo**: Passport-size photographs meeting visa application specifications.\n` +
-          `• **Letter of Acceptance (LoA)**: Official admission letter issued by ITB STIKOM Bali.\n` +
-          `• **Guarantee Letter / Sponsorship**: Guarantee letter provided and facilitated by the campus for visa sponsorship.\n` +
-          `• **Study Permit (Izin Belajar)**: Official permit coordinated through the International Office for foreign students.\n\n` +
-          `The application process for the student visa and study permit is guided and assisted by the International Office of ITB STIKOM Bali.`
-        : `Berdasarkan panduan resmi pengurusan mahasiswa asing ITB STIKOM Bali, persyaratan dokumen untuk pengajuan visa pelajar / izin belajar (Visa E30B) meliputi:\n\n` +
-          `• **Paspor yang Masih Berlaku**: Memiliki masa berlaku sesuai dengan ketentuan imigrasi yang berlaku.\n` +
-          `• **Pas Foto**: Foto resmi sesuai spesifikasi pengajuan visa.\n` +
-          `• **Letter of Acceptance (LoA)**: Surat penerimaan resmi dari ITB STIKOM Bali.\n` +
-          `• **Surat Jaminan (Guarantee Letter)**: Surat jaminan dari pihak kampus sebagai penjamin/sponsor studi.\n` +
-          `• **Izin Belajar (Study Permit)**: Dokumen izin belajar dari kementerian terkait yang dikoordinasikan bersama International Office.\n\n` +
-          `Seluruh proses pengajuan visa pelajar dan izin belajar dibantu dan dipandu langsung oleh Direktorat Pemasaran dan Urusan Internasional (International Office) ITB STIKOM Bali.`;
-      return appendMissingAspectNote(visaAns);
-    }
 
     if (isStudentExchange && !isDnui && !isHelp && !isJapan) {
       if (userLang === 'en') {
@@ -2460,35 +1509,35 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       return appendMissingAspectNote(exchangeAnswer);
     }
 
-    if (isHelp && isDnui) {
-      const bothAnswer = `Program **Double Degree Internasional** di ITB STIKOM Bali bekerjasama dengan dua mitra perguruan tinggi luar negeri terkemuka:\n\n` +
-        `1. **HELP University (Malaysia)**:\n` +
-        `   • Program Studi: **S1 Sistem Informasi**\n` +
-        `   • Gelar Kelulusan: Sarjana Komputer (**S.Kom.**) dari ITB STIKOM Bali dan Bachelor of Information Technology (**BIT**) dari HELP University Malaysia.\n` +
-        `   • Skema Perkuliahan: Seluruh proses perkuliahan diselenggarakan di kampus ITB STIKOM Bali dengan kurikulum terintegrasi HELP University.\n\n` +
-        `2. **Dalian Neusoft University of Information (DNUI, China)**:\n` +
-        `   • Program Studi: **S1 Bisnis Digital**\n` +
-        `   • Gelar Kelulusan: Sarjana Bisnis (**S.Bns.**) dari ITB STIKOM Bali dan Bachelor of Management (**B.M.**) dari DNUI China.\n` +
-        `   • Skema Perkuliahan: Skema 2+2 (2 tahun di ITB STIKOM Bali dan 2 tahun di kampus DNUI Dalian, China dengan fasilitas dormitory gratis selama di China).\n\n` +
-        `Kedua program ini memberikan kesempatan bagi mahasiswa untuk meraih dua gelar sarjana resmi sekaligus.`;
-      return appendMissingAspectNote(bothAnswer);
-    }
-
     if (isDnui) {
+      const ddPartnerEvidence = extractDoubleDegreePartnersFromEvidence(accepted);
+      let degreeSection = '';
+      if (ddPartnerEvidence.dnui.hasDegree && ddPartnerEvidence.dnui.degrees.length > 0) {
+        degreeSection = `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan sekaligus:\n` +
+          ddPartnerEvidence.dnui.degrees.map(d => `  - ${d}`).join('\n') + `\n\n`;
+      } else {
+        degreeSection = `• **Gelar Akademik**: Rincian gelar kesarjanaan untuk program ini belum tercantum secara lengkap dalam dokumen resmi yang tersedia saat ini.\n\n`;
+      }
+
       const dnuiAnswer = `Program Double Degree International Class untuk **S1 Bisnis Digital** diselenggarakan bekerjasama dengan **Dalian Neusoft University of Information (DNUI), China**.\n\n` +
         `• **Lokasi & Periode Studi (Skema 2+2)**: Perkuliahan **tidak seluruhnya di STIKOM Bali**. Mahasiswa menempuh 2 tahun pertama di ITB STIKOM Bali, dan 2 tahun berikutnya menjalani perkuliahan langsung (onsite) di kampus DNUI di Dalian, China.\n` +
-        `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan sekaligus:\n` +
-        `  - **Sarjana Bisnis (S.Bns.)** dari ITB STIKOM Bali\n` +
-        `  - **Bachelor of Management (B.M.)** dari DNUI, China.\n\n` +
+        degreeSection +
         `Untuk informasi pendaftaran dan rincian biaya program DNUI, silakan hubungi bagian admisi internasional ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
       return appendMissingAspectNote(dnuiAnswer);
     }
 
     if (isHelp) {
+      const ddPartnerEvidence = extractDoubleDegreePartnersFromEvidence(accepted);
+      let degreeSection = '';
+      if (ddPartnerEvidence.help.hasDegree && ddPartnerEvidence.help.degrees.length > 0) {
+        degreeSection = `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan resmi:\n` +
+          ddPartnerEvidence.help.degrees.map(d => `  - ${d}`).join('\n') + `\n\n`;
+      } else {
+        degreeSection = `• **Gelar Akademik**: Rincian gelar kesarjanaan untuk program ini belum tercantum secara lengkap dalam dokumen resmi yang tersedia saat ini.\n\n`;
+      }
+
       const helpAnswer = `Program Double Degree untuk **S1 Sistem Informasi** diselenggarakan bekerjasama dengan **HELP University, Malaysia**.\n\n` +
-        `• **Gelar Akademik**: Lulusan memperoleh dua gelar kesarjanaan resmi:\n` +
-        `  - **Sarjana Komputer (S.Kom.)** dari ITB STIKOM Bali\n` +
-        `  - **Bachelor of Information Technology (BIT)** dari HELP University Malaysia.\n\n` +
+        degreeSection +
         `Perkuliahan diselenggarakan di kampus ITB STIKOM Bali dengan kurikulum terintegrasi HELP University.`;
       return appendMissingAspectNote(helpAnswer);
     }
@@ -2515,15 +1564,8 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
     }
   }
 
-  // 7e. Study Mode (Kuliah Sambil Kerja / Program Kerja Sambil Kuliah / Kelas Karyawan / Kelas Sore / S2 Delivery Mode)
+  // 7e. Study Mode (Kuliah Sambil Kerja / Program Kerja Sambil Kuliah / Kelas Karyawan / Kelas Sore)
   if (semanticFrame.intent === 'STUDY_MODE' || (semanticFrame.aspects && semanticFrame.aspects.includes('class_schedule')) || /\b(sambil\s+kerja|kelas\s+karyawan|kuliah\s+sore|kelas\s+sore|kerja\s+sambil\s+kuliah|sudah\s+bekerja)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const isS2Mode = /\b(?:s2|magister)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) ||
-      (semanticFrame.aspects && semanticFrame.aspects.includes('magister')) ||
-      targetEntities.some(e => /S2|Magister/i.test(e));
-    if (isS2Mode) {
-      const s2ModeAnswer = `Perkuliahan Program **Magister (S2) Sistem Informasi** di ITB STIKOM Bali diselenggarakan secara tatap muka (luring) reguler di **Kampus Renon**, Denpasar, dengan dukungan platform digital untuk materi dan interaksi perkuliahan.\n\nUntuk konfirmasi jadwal perkuliahan pascasarjana dan konsultasi teknis pendaftaran, Kakak dapat menghubungi bagian admisi di **0822-7738-9999** atau telepon kampus **(0361) 244445**.`;
-      return appendMissingAspectNote(s2ModeAnswer);
-    }
     const studyModeAnswer = `Bagi calon mahasiswa yang sudah bekerja, ITB STIKOM Bali menyediakan program **Kelas Sore / Malam (Kelas Karyawan)**:\n\n` +
       `• **Jadwal Fleksibel**: Perkuliahan diselenggarakan setelah jam kerja umum, sehingga mahasiswa dapat menempuh pendidikan sarjana tanpa mengganggu aktivitas bekerja.\n` +
       `• **Kurikulum & Fasilitas Setara**: Beban studi, materi perkuliahan, dan fasilitas kampus sama dengan kelas reguler.\n` +
@@ -2601,64 +1643,10 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
 
     // 2. Accreditation Inquiry
     const isAccreditationSpecific = semanticFrame.intent === 'PROGRAM_ACCREDITATION' ||
-      semanticFrame.intent === 'INSTITUTIONAL_ACCREDITATION' ||
       (semanticFrame.aspects && semanticFrame.aspects.includes('accreditation')) ||
       /\b(akreditasi(?:nya)?)\b/i.test(rawQuery);
 
     if (isAccreditationSpecific) {
-      const isInstitutionalAccreditation = semanticFrame.intent === 'INSTITUTIONAL_ACCREDITATION' ||
-        semanticFrame.domain === 'INSTITUTIONAL' ||
-        targetEntities.length === 0 ||
-        entityLabel === 'program terkait' ||
-        /\b(?:institusi|kampus|perguruan\s+tinggi|stikom|universitas)\b/i.test(rawQuery);
-
-      if (isInstitutionalAccreditation) {
-        const hasInstitutionalEvidence = accepted.some(c => {
-          const text = (c.text || c.chunk || '').toLowerCase();
-          return (text.includes('akreditasi') || text.includes('ban-pt')) &&
-            (text.includes('institusi') || text.includes('perguruan tinggi') || text.includes('stikom') || text.includes('baik sekali'));
-        }) || /baik\s+sekali/i.test(cleanAll) || /ban-?pt/i.test(cleanAll);
-
-        if (!hasInstitutionalEvidence) {
-          return null; // Jika evidence resmi tidak tersedia, jangan menyatakan peringkat sebagai fakta
-        }
-
-        const hasBaikSekali = accepted.some(c => /baik\s+sekali/i.test(c.text || c.chunk || '')) ||
-          /baik\s+sekali/i.test(cleanAll);
-        const rank = hasBaikSekali ? 'Baik Sekali' : (INSTITUTIONAL_ACCREDITATION_RECORD?.accreditationRank || 'Baik Sekali');
-        const agency = /ban-?pt/i.test(cleanAll) ? 'BAN-PT' : (INSTITUTIONAL_ACCREDITATION_RECORD?.accreditingAgency || 'BAN-PT');
-        const skMatch = cleanAll.match(/\b(\d+\/SK\/BAN-PT\/[^\s\.,]+)/i);
-        const skNumber = skMatch ? skMatch[1] : (INSTITUTIONAL_ACCREDITATION_RECORD?.accreditationDecree || '3033/SK/BAN-PT/Ak.KP/PT/XII/2025');
-
-        const validityPeriodId = INSTITUTIONAL_ACCREDITATION_RECORD?.accreditationValidity || null;
-        const validityPeriodEn = INSTITUTIONAL_ACCREDITATION_RECORD?.accreditationValidityEn ||
-          (INSTITUTIONAL_ACCREDITATION_RECORD?.startDateEn && INSTITUTIONAL_ACCREDITATION_RECORD?.endDateEn
-            ? `${INSTITUTIONAL_ACCREDITATION_RECORD.startDateEn} until ${INSTITUTIONAL_ACCREDITATION_RECORD.endDateEn}`
-            : null);
-
-        if (userLang === 'en') {
-          let instAnswer = `Institut Teknologi dan Bisnis (ITB) STIKOM Bali is officially accredited by **${agency}** with an institutional accreditation rank of **${rank}**`;
-          if (skNumber) {
-            instAnswer += ` (Decree No. ${skNumber})`;
-          }
-          if (validityPeriodEn) {
-            instAnswer += `, valid from ${validityPeriodEn}`;
-          }
-          instAnswer += `.\n\nThis status represents institutional accreditation for the higher education institution and is separate from the accreditation rank of each individual study program.`;
-          return appendMissingAspectNote(instAnswer);
-        }
-
-        let instAnswer = `Institut Teknologi dan Bisnis (ITB) STIKOM Bali telah terakreditasi institusi secara resmi oleh **${agency}** dengan peringkat **${rank}**`;
-        if (skNumber) {
-          instAnswer += ` (SK No. ${skNumber})`;
-        }
-        if (validityPeriodId) {
-          instAnswer += ` dengan masa berlaku ${validityPeriodId}`;
-        }
-        instAnswer += `.\n\nStatus ini merupakan akreditasi perguruan tinggi (institusi) dan terpisah dari akreditasi masing-masing program studi.`;
-        return appendMissingAspectNote(instAnswer);
-      }
-
       const acc = extractAccreditationFromEvidence(accepted, entityLabel) || 'Terakreditasi resmi BAN-PT / LAM-INFOKOM';
       const accAnswer = `Program Studi **${entityLabel}** di ITB STIKOM Bali memiliki status akreditasi resmi **${acc}**.\n\nAkreditasi ini menjadi jaminan standar mutu kurikulum, tenaga pengajar, dan fasilitas pembelajaran yang diselenggarakan. Ada info lain tentang prodi ${entityLabel} yang ingin Kakak tanyakan?`;
       return appendMissingAspectNote(accAnswer);
@@ -2740,169 +1728,6 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       overviewAnswer += `\n\nUntuk informasi kurikulum dan pendaftaran lebih lanjut, silakan tanyakan saja ya Kak atau kunjungi portal pmb.stikom-bali.ac.id!`;
       return appendMissingAspectNote(overviewAnswer);
     }
-  }
-
-  // 7g. Online Learning Platforms
-  if (semanticFrame.intent === 'ONLINE_LEARNING_PLATFORM' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['online_learning', 'learning_platform', 'aplikasi_kuliah'].includes(a))) || /\b(?:kuliah|perkuliahan)\s+(?:online|daring)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const hasOnlineEvidence = /\b(?:e-learning|teams|zoom|moodle|pembelajaran\s+daring|portal\s+akademik|sion)\b/i.test(cleanAll);
-    if (hasOnlineEvidence) {
-      const isEn = userLang === 'en';
-      const onlineAnswer = isEn
-        ? `For online/distance learning at ITB STIKOM Bali, the campus utilizes the official **E-Learning STIKOM Bali** platform integrated with the student academic portal (**SION**).\n\nFor virtual face-to-face sessions, webinars, and live class coordination, the university officially supports **Microsoft Teams** and **Zoom**.\n\nStudents receive official institutional accounts to access these platforms upon enrollment.`
-        : `Untuk perkuliahan yang dilaksanakan secara daring (online), ITB STIKOM Bali menggunakan platform resmi pembelajaran daring kampus yaitu **E-Learning STIKOM Bali** yang terintegrasi dengan portal akademik mahasiswa (**SION**).\n\nUntuk sesi perkuliahan tatap muka virtual (video conference) dan koordinasi kelas online, kampus dan dosen menggunakan aplikasi **Microsoft Teams** dan **Zoom**.\n\nAkses ke platform perkuliahan daring ini diberikan kepada seluruh mahasiswa aktif menggunakan akun resmi kampus.`;
-      return appendMissingAspectNote(onlineAnswer);
-    }
-  }
-
-  // 7h. S2 Postgraduate Research Focus
-  const isS2ResearchQuery = /\b(?:fokus\s+(?:riset|penelitian)|konsentrasi|bidang\s+penelitian)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) &&
-    /\b(?:s2|magister|pascasarjana)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '') + ' ' + cleanAll);
-  if (semanticFrame.intent === 'RESEARCH_FOCUS_INQUIRY' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['research_focus', 'fokus_riset'].includes(a))) || isS2ResearchQuery) {
-    const hasResearchEvidence = /\b(?:data\s+science|cyber\s+security|enterprise\s+system|medical\s+informatics|pascasarjana|magister)\b/i.test(cleanAll) || isS2ResearchQuery;
-    if (hasResearchEvidence) {
-      const isEn = userLang === 'en';
-      const researchAnswer = isEn
-        ? `At ITB STIKOM Bali, the Master of Information Systems (S2) program offers 4 primary research focus areas for thesis development:\n\n` +
-          `1. **Data Science**: Big data processing, predictive modeling, artificial intelligence, and strategic analytics.\n` +
-          `2. **Cyber Security**: Information security, network protection, cryptographic protocols, and vulnerability analysis.\n` +
-          `3. **Enterprise System**: Enterprise architecture, business process integration (ERP/CRM), and corporate IT governance.\n` +
-          `4. **Medical Informatics**: Healthcare technology applications, electronic medical records, and hospital information systems.\n\n` +
-          `Students can select the research focus that best aligns with their professional expertise and proposed master's thesis topic.`
-        : `Program Studi Magister (S2) Sistem Informasi ITB STIKOM Bali memiliki 4 fokus riset unggulan yang dapat dipilih oleh mahasiswa untuk penelitian dan penyusunan tesis:\n\n` +
-          `1. **Data Science**: Pengolahan data besar (big data), analitik bisnis, kecerdasan buatan (AI), dan machine learning.\n` +
-          `2. **Cyber Security**: Keamanan jaringan komputer, perlindungan data privasi, kriptografi, dan analisis kerentanan sistem.\n` +
-          `3. **Enterprise System**: Perancangan dan integrasi sistem skala organisasi/perusahaan, ERP, serta tata kelola teknologi informasi.\n` +
-          `4. **Medical Informatics**: Penerapan teknologi informasi pada bidang kesehatan, rekam medis elektronik, dan sistem informasi manajemen rumah sakit.\n\n` +
-          `Mahasiswa dapat memfokuskan penelitian tesisnya pada salah satu bidang riset tersebut sesuai latar belakang keahlian dan minat profesional.`;
-      return appendMissingAspectNote(researchAnswer);
-    }
-  }
-
-  // 7i. Specific Learning Topics / Subjects (e.g. SEO in S1 Bisnis Digital)
-  if (/\b(?:seo|search\s+engine\s+optim(?:ization|isation))\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const hasSeoEvidence = /\b(?:seo|search\s+engine\s+optim|optimasi\s+mesin\s+pencari|bisnis\s+digital)\b/i.test(cleanAll);
-    if (hasSeoEvidence) {
-      const isEn = userLang === 'en';
-      const seoAnswer = isEn
-        ? `Yes, Search Engine Optimization (**SEO**) and search engine marketing are taught at ITB STIKOM Bali, specifically in the **S1 Digital Business (Bisnis Digital)** program under the Digital Marketing and E-Commerce curriculum. Furthermore, graduates of Digital Business have career profiles as **SEO Specialists** and Digital Marketing Specialists.`
-        : `Ya, materi terkait **SEO (Search Engine Optimization) / Optimasi Mesin Pencari** dipelajari di ITB STIKOM Bali, khususnya pada Program Studi **S1 Bisnis Digital**.\n\n` +
-          `Materi ini menjadi bagian dari kurikulum **Pemasaran Digital (Digital Marketing)** dan E-Commerce, di mana mahasiswa mempelajari strategi peningkatan visibilitas bisnis di mesin pencari, pemasaran konten, serta analitik web. Lulusan S1 Bisnis Digital juga memiliki profil karier resmi sebagai **SEO Specialist** dan Digital Marketing Specialist.`;
-      return appendMissingAspectNote(seoAnswer);
-    }
-  }
-
-  // 7j. PMB Operational Hours
-  if (semanticFrame.intent === 'OPERATIONAL_HOURS_INQUIRY' || (semanticFrame.aspects && semanticFrame.aspects.includes('operational_hours')) || /\b(?:jam|waktu)\s+(?:operasional|layanan|buka|kerja)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const hasHoursEvidence = /\b(?:08\.00|17\.00|14\.00|senin\s*[-–]\s*jumat)\b/i.test(cleanAll);
-    const isEn = userLang === 'en';
-    if (hasHoursEvidence) {
-      const hoursAnswer = isEn
-        ? `The operational hours for admissions (PMB) and campus administrative services at ITB STIKOM Bali are:\n\n` +
-          `• **Monday – Friday**: 08:00 – 17:00 WITA\n` +
-          `• **Saturday**: 08:00 – 14:00 WITA\n\n` +
-          `Online registration is available 24 hours a day via the official PMB portal at https://pmb.stikom-bali.ac.id.`
-        : `Jam operasional layanan pendaftaran mahasiswa baru (PMB) dan administrasi kampus ITB STIKOM Bali adalah:\n\n` +
-          `• **Senin – Jumat**: Pukul 08.00 – 17.00 WITA\n` +
-          `• **Sabtu**: Pukul 08.00 – 14.00 WITA\n\n` +
-          `Pendaftaran online tetap dapat diakses 24 jam melalui portal resmi https://pmb.stikom-bali.ac.id.`;
-      return appendMissingAspectNote(hoursAnswer);
-    } else {
-      const hoursAnswer = isEn
-        ? `Official guidelines currently available do not list specific desk service hours for in-person campus registration.\n\n` +
-          `Online registration is available 24/7 at https://pmb.stikom-bali.ac.id. For counter service hours and direct inquiries, please contact the admissions hotline at **0822-7738-9999** or phone **(0361) 244445**.`
-        : `Informasi resmi mengenai rincian jam operasional loket pendaftaran di kampus belum tercantum secara lengkap dalam panduan yang tersedia.\n\n` +
-          `Pendaftaran online dapat dilakukan kapan saja melalui portal resmi https://pmb.stikom-bali.ac.id. Untuk konfirmasi jam layanan loket tatap muka atau konsultasi langsung, Kakak dapat menghubungi hotline PMB di **0822-7738-9999** atau telepon **(0361) 244445**.`;
-      return appendMissingAspectNote(hoursAnswer);
-    }
-  }
-
-  // 7k. S2 Lecture Mode (Online vs Offline)
-  if (/\b(?:s2|magister)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) && /\b(?:online|offline|daring|luring|tatap\s+muka)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const isEn = userLang === 'en';
-    const s2ModeAnswer = isEn
-      ? `Based on official guidelines from the Postgraduate Program at ITB STIKOM Bali, lectures for the **Master of Information Systems (S2)** are offered in **Regular Classes** with on-campus sessions supported by digital learning platforms.\n\n` +
-        `Specific scheduling details regarding hybrid or flexible online sessions for working professionals are coordinated with the postgraduate administration. For direct consultation, please contact the Postgraduate Hotline at **0822-7738-9999** or phone **(0361) 244445**.`
-      : `Berdasarkan panduan resmi Program Pascasarjana ITB STIKOM Bali, perkuliahan **S2 Magister Sistem Informasi** diselenggarakan dalam **Kelas Reguler** tatap muka di Kampus Renon Denpasar dengan dukungan sistem pembelajaran digital kampus.\n\n` +
-        `Untuk rincian format pelaksanaan perkuliahan (seperti opsi sesi daring/hybrid bagi mahasiswa yang bekerja), Kakak disarankan untuk mengonfirmasi langsung ke Bagian Pascasarjana melalui Hotline **0822-7738-9999** atau telepon **(0361) 244445**.`;
-    return appendMissingAspectNote(s2ModeAnswer);
-  }
-
-  // 7l. Thesis / Final Project / Sidang Skripsi / Sidang Tugas Akhir
-  if (/\b(?:skripsi|tugas\s+akhir|sidang\s+skripsi|sidang\s+ta)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const isEn = userLang === 'en';
-    const thesisAnswer = isEn
-      ? `Information regarding Thesis / Final Project Defense (**Sidang Skripsi / Tugas Akhir**) at ITB STIKOM Bali:\n\n` +
-        `• **Schedule & Registration**: Registration for undergraduate thesis defense (Sidang Skripsi/TA) follows the official **Academic Calendar** published each semester by the Directorate of Academic Administration (DAAK).\n` +
-        `• **Prerequisites**: Students must complete all prerequisite coursework, have their final project manuscript approved by supervisors, submit plagiarism check results, and satisfy administrative/financial clearance.\n` +
-        `• **Submission Portal**: Registration and document submission are conducted online through the academic portal (**SION**).\n\n` +
-        `For the exact registration opening and closing dates for the current semester, please check the Academic Calendar on SION or contact DAAK / your academic advisor.`
-      : `Informasi pendaftaran dan pelaksanaan **Sidang Skripsi / Tugas Akhir (TA)** di ITB STIKOM Bali:\n\n` +
-        `• **Jadwal & Pembukaan**: Pembukaan pendaftaran sidang skripsi (Tugas Akhir) dibuka secara berkala sesuai dengan jadwal pada **Kalender Akademik** resmi yang diterbitkan oleh Direktorat Administrasi Akademik dan Kemahasiswaan (DAAK) pada setiap semester berjalan.\n` +
-        `• **Syarat Pendaftaran**: Mahasiswa telah menyelesaikan seluruh mata kuliah prasyarat, naskah Tugas Akhir/Skripsi telah disetujui oleh dosen pembimbing, memenuhi batas uji plagiarisme, serta bebas tanggungan administrasi dan keuangan.\n` +
-        `• **Alur Pendaftaran**: Pengajuan berkas pendaftaran sidang skripsi dilakukan secara daring melalui sistem informasi akademik (**SION**).\n\n` +
-        `Untuk tanggal pasti pembukaan dan batas akhir pendaftaran sidang skripsi semester ini, Kakak dapat memantau Kalender Akademik di portal SION atau menghubungi layanan DAAK / Bagian Program Studi.`;
-    return appendMissingAspectNote(thesisAnswer);
-  }
-
-  // 7m. Inkubator Bisnis (INBIS) Bali
-  if (/\b(?:inbis|inkubator(?:\s+bisnis)?|startup|modal\s+usaha|binaan\s+startup|rintisan\s+usaha|p2mw|wirausaha|technopreneur)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) || targetEntities.some(e => /INBIS|Inkubator/i.test(e))) {
-    const isEn = userLang === 'en';
-    const inbisAnswer = isEn
-      ? `Information about the Business Incubator (**INBIS ITB STIKOM Bali**):\n\n` +
-        `• **Profile**: Established in 2014 under the Directorate of Cooperation, Industrial Services, and Business Incubator (Dir. KL-INBIS), INBIS fosters technology-driven student and alumni entrepreneurship (technopreneurship).\n` +
-        `• **3 Incubation Stages**:\n` +
-        `  1. *Pre-Incubation*: Idea generation, market validation, and business plan drafting.\n` +
-        `  2. *Incubation*: Intensive mentorship, product prototyping, co-working space, legal/intellectual property facilitation, and student startup grant access (such as P2MW Kemendikbudristek).\n` +
-        `  3. *Post-Incubation*: Market scale-up, business matching, and investor demo days.\n\n` +
-        `For more information or startup guidance, students can visit the INBIS office at Kampus Renon or contact the Directorate of Cooperation & INBIS.`
-      : `Informasi mengenai **Inkubator Bisnis (INBIS) ITB STIKOM Bali**:\n\n` +
-        `• **Profil**: Berdiri sejak tahun 2014 di bawah naungan Direktorat Kerja Sama, Layanan Industri, dan Inkubator Bisnis, INBIS Bali bertugas membina dan mendampingi mahasiswa serta alumni dalam merintis usaha berbasis teknologi (*technopreneurship*).\n` +
-        `• **3 Tahapan Inkubasi**:\n` +
-        `  1. *Pra-Inkubasi*: Penjaringan ide bisnis, validasi pasar, dan penyusunan proposal/business plan.\n` +
-        `  2. *Inkubasi*: Pendampingan/mentoring intensif, fasilitas co-working space, legalitas & HKI, serta akses pendanaan hibah wirausaha (seperti P2MW Kemendikbudristek).\n` +
-        `  3. *Pasca-Inkubasi*: Perluasan pasar, jejaring kemitraan, dan temu investor (*business matching*).\n\n` +
-        `Bagi mahasiswa yang ingin mengembangkan rintisan usahanya, Kakak dapat mengunjungi kantor INBIS di Kampus ITB STIKOM Bali atau menghubungi bagian kemahasiswaan/kerja sama.`;
-    return appendMissingAspectNote(inbisAnswer);
-  }
-
-  // 7n. Yudisium & Wisuda (Academic Administration)
-  if (/\b(?:yudisium|wisuda)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const isEn = userLang === 'en';
-    const yudisiumAnswer = isEn
-      ? `Information regarding **Yudisium and Graduation (Wisuda)** at ITB STIKOM Bali:\n\n` +
-        `• **Registration Requirements**:\n` +
-        `  1. Passed the Thesis/Final Project Defense (Lulus Sidang Skripsi/Tugas Akhir) and submitted the final revised manuscript.\n` +
-        `  2. Library Clearance (Bebas Pinjaman Pustaka) from the campus library.\n` +
-        `  3. Financial Clearance (Bebas Keuangan/SPP) confirming no outstanding tuition fees.\n` +
-        `  4. Uploading scientific publication / journal article manuscript according to academic standards.\n` +
-        `  5. Formal photograph submission (wearing a black suit/blazer with tie for male students).\n` +
-        `• **Procedure**: Registration is conducted online via the academic portal (**SION**) following the official dates announced by DAAK.\n\n` +
-        `For the detailed schedule of upcoming Yudisium periods (e.g., Yudisium I Wisuda XXXVIII), please monitor the official DAAK announcements on SION.`
-      : `Informasi mengenai pendaftaran dan pelaksanaan **Yudisium & Wisuda** di ITB STIKOM Bali:\n\n` +
-        `• **Syarat Pendaftaran Yudisium**:\n` +
-        `  1. Telah dinyatakan lulus Ujian Skripsi/Tugas Akhir dan menyelesaikan revisi naskah.\n` +
-        `  2. Surat Bebas Pustaka (tidak memiliki tanggungan pinjaman buku atau denda di perpustakaan).\n` +
-        `  3. Surat Bebas Keuangan dari Bagian Keuangan (seluruh kewajiban pembayaran SPP/DPP telah lunas).\n` +
-        `  4. Mengunggah naskah publikasi ilmiah/jurnal sesuai panduan program studi.\n` +
-        `  5. Menyerahkan pasfoto resmi (mengenakan jas/blazer hitam rapi, bagi pria mengenakan dasi).\n` +
-        `• **Prosedur Pendaftaran**: Dilakukan secara daring melalui portal akademik **SION** sesuai periode pembukaan yang diumumkan DAAK.\n\n` +
-        `Untuk jadwal resmi pembukaan dan batas akhir yudisium pada periode berjalan (seperti Yudisium I Wisuda XXXVIII), Kakak dapat memantau pengumuman terbaru di SION atau Bagian Administrasi Akademik (DAAK).`;
-    return appendMissingAspectNote(yudisiumAnswer);
-  }
-
-  // 7o. UKM SYNTAX
-  if (/\b(?:syntax|ukm\s+syntax)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
-    const isEn = userLang === 'en';
-    const syntaxAnswer = isEn
-      ? `Information regarding **UKM SYNTAX** at ITB STIKOM Bali:\n\n` +
-        `• **Focus & Identity**: UKM SYNTAX stands for *Speaking Youth Entertainment Experience*. Unlike programming clubs, SYNTAX focuses on developing public speaking, Master of Ceremonies (MC), broadcasting, and English communication skills.\n` +
-        `• **Activities**: Regular public speaking workshops, hosting campus events, and signature annual competitions such as **SYNAMON** (Syntax Announcer and Master of Ceremony Competition).\n\n` +
-        `Students interested in broadcasting, public speaking, and event hosting are encouraged to join during the annual UKM recruitment expo (GMTI/Ormawa Expo).`
-      : `Informasi mengenai **UKM SYNTAX** di ITB STIKOM Bali:\n\n` +
-        `• **Fokus & Profil**: UKM SYNTAX merupakan singkatan dari *Speaking Youth Entertainment Experience*. Berbeda dengan klub pemrograman, SYNTAX berfokus pada pengembangan bakat *public speaking*, pembawa acara (MC), penyiaran/broadcasting, serta kemampuan komunikasi bahasa Inggris dan entertaintment.\n` +
-        `• **Kegiatan**: Pelatihan rutin public speaking, pemandu acara kegiatan resmi kampus, serta acara tahunan seperti kompetisi **SYNAMON** (*Syntax Announcer and Master of Ceremony Competition*).\n\n` +
-        `Bagi Kakak yang berminat mengasah kemampuan berbicara di depan umum, penyiaran, dan MC, UKM SYNTAX membuka pendaftaran anggota baru saat expo ormawa/GMTI setiap tahun ajaran baru.`;
-    return appendMissingAspectNote(syntaxAnswer);
   }
 
   // 8. Generic Clean Passages Fallback
@@ -3063,28 +1888,17 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
     };
   }
 
-  // Explicit Unsupported Entity / Unconfirmed Program handling (e.g. Kedokteran, Teknik Nuklir)
-  if (arbitratedEvidence.retrievalPlan?.isUnsupportedEntity || semanticFrame.isUnsupportedEntity || semanticFrame.domain === 'UNSUPPORTED_PROGRAM' || arbitratedEvidence.unconfirmedProgram || semanticFrame.unconfirmedProgram) {
+  // Explicit Unsupported Entity handling (e.g. Teknik Nuklir)
+  if (arbitratedEvidence.retrievalPlan?.isUnsupportedEntity || semanticFrame.isUnsupportedEntity || semanticFrame.domain === 'UNSUPPORTED_PROGRAM') {
     const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
-    const programName = arbitratedEvidence.retrievalPlan?.unconfirmedProgram || arbitratedEvidence.unconfirmedProgram || semanticFrame.unconfirmedProgram || arbitratedEvidence.retrievalPlan?.unsupportedProgramName || semanticFrame.unsupportedProgramName || semanticFrame.unsupportedEntityName || (userLang === 'en' ? 'the requested program' : 'tersebut');
+    const programName = arbitratedEvidence.retrievalPlan?.unsupportedProgramName || semanticFrame.unsupportedProgramName || semanticFrame.unsupportedEntityName || (userLang === 'en' ? 'the requested program' : 'tersebut');
     const programList = CANONICAL_ENTITIES
-      .filter(e => e.family === 'academic_program' && (e.canonical.startsWith('S') || e.canonical.startsWith('D3')))
+      .filter(e => e.family === 'academic_program' && (e.canonical.startsWith('S') || e.canonical.startsWith('D')))
       .map(e => `• ${e.canonical}`)
       .join('\n');
-
-    const isMedicalRelated = /\b(?:kedokteran|dokter|medicine|medical)\b/i.test(programName) ||
-                             /\b(?:kedokteran|dokter|medicine|medical)\b/i.test(semanticFrame.rawQuery || '');
-    const medicalNoteId = isMedicalRelated
-      ? '\n\n*Catatan*: Program S1 Kedokteran berbeda dengan konsentrasi **Medical Informatics** yang berada di bawah program Pascasarjana (S2) Sistem Informasi.'
-      : '';
-    const medicalNoteEn = isMedicalRelated
-      ? '\n\n*Note*: The undergraduate Medicine program (S1 Kedokteran) is distinct from the **Medical Informatics** concentration under the Master of Information Systems (S2 Sistem Informasi) program.'
-      : '';
-
     const unsupportedAnswer = userLang === 'en'
-      ? `Based on the official study programs currently published in the ITB STIKOM Bali PMB catalog, the program **${programName}** is not found in the currently available list. Therefore, the availability and tuition fees for that program cannot be confirmed from the official list examined.${medicalNoteEn}\n\nThe official study programs currently published include:\n${programList}\n• International Program / Double Degree\n\nFor definitive confirmation or official program and admission fee updates, please consult ITB STIKOM Bali PMB directly via https://pmb.stikom-bali.ac.id.`
-      : `Berdasarkan daftar program studi resmi yang saat ini dipublikasikan pada katalog PMB ITB STIKOM Bali, program studi **${programName}** tidak ditemukan dalam daftar program yang tersedia saat ini. Oleh karena itu, ketersediaan maupun rincian biaya kuliah untuk program studi tersebut belum dapat dikonfirmasi dari daftar resmi yang diperiksa.${medicalNoteId}\n\nProgram studi resmi yang saat ini dipublikasikan antara lain:\n${programList}\n• Program Internasional / Double Degree\n\nUntuk kepastian informasi atau pembaruan program studi serta biaya pendaftaran, silakan merujuk langsung ke layanan PMB ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
-
+      ? `I apologize, but the study program **${programName}** is currently not offered at ITB STIKOM Bali.\n\nThe official study programs offered include:\n${programList}\n\nWould you like more information about any of these programs?`
+      : `Mohon maaf Kak, program studi **${programName}** saat ini tidak diselenggarakan di ITB STIKOM Bali.\n\nProgram studi resmi yang tersedia antara lain:\n${programList}\n\nApakah ada program studi di atas yang ingin Kakak tanyakan?`;
     return {
       success: true,
       answer: unsupportedAnswer,
@@ -3201,11 +2015,13 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   }
 
   // In test environment, when OpenAI key is absent/circuit open, or fast fallback requested, use structured deterministic summary immediately
-  const isTestOrNoKey = process.env.NODE_ENV === 'test' ||
+  const isTestOrNoKey = !arbitratedEvidence?.aiEngine && (
+    process.env.NODE_ENV === 'test' ||
     !process.env.OPENAI_API_KEY ||
     process.env.OPENAI_API_KEY.startsWith('mock') ||
     openaiCircuitOpen ||
-    Boolean(arbitratedEvidence && (arbitratedEvidence.fastFallback || arbitratedEvidence.deterministicOnly));
+    Boolean(arbitratedEvidence && (arbitratedEvidence.fastFallback || arbitratedEvidence.deterministicOnly))
+  );
 
   if (isTestOrNoKey) {
     const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
@@ -3219,7 +2035,7 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   const { systemPrompt, userPrompt } = buildSynthesisPrompt(semanticFrame, generationEvidence);
 
   try {
-    const engine = getAiEngine();
+    const engine = (arbitratedEvidence && arbitratedEvidence.aiEngine) || getAiEngine();
     if (!engine || !engine.apiKey) {
       const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
       return {
@@ -3229,148 +2045,103 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       };
     }
 
+    const ledger = (arbitratedEvidence && arbitratedEvidence.budgetLedger) || (globalBudgetLedger.isAvailable() ? globalBudgetLedger : null);
+    let reservation = null;
+
+    if (ledger) {
+      reservation = await ledger.reserveBudget({
+        purpose: 'call_2_grounded_generator',
+        model: engine.model,
+        maxPromptTokens: 1500,
+        maxCompletionTokens: 600,
+        maxBudgetUSD: arbitratedEvidence && arbitratedEvidence.maxBudgetUSD,
+        operationId: arbitratedEvidence && arbitratedEvidence.operationId,
+        now: (arbitratedEvidence && arbitratedEvidence.now) || new Date()
+      });
+
+      if (!reservation.allowed) {
+        logger.warn({ reason: reservation.reason, model: engine.model }, '[GroundedAnswerGenerator] Budget reservation denied; falling back to grounded summary');
+        const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
+        return {
+          success: true,
+          answer: synthesizedText,
+          source: 'grounded_deterministic_summary',
+          budgetExceeded: reservation.reason === 'DAILY_BUDGET_EXCEEDED',
+          budgetReason: reservation.reason
+        };
+      }
+    } else if (process.env.NODE_ENV !== 'test') {
+      logger.warn('[GroundedAnswerGenerator] Persistent budget ledger unavailable in non-test runtime; falling back to grounded summary');
+      const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
+      return {
+        success: true,
+        answer: synthesizedText,
+        source: 'grounded_deterministic_summary',
+        budgetExceeded: false,
+        budgetReason: 'PERSISTENT_LEDGER_UNAVAILABLE'
+      };
+    }
+
     const timeoutMs = parseInt(process.env.OPENAI_TIMEOUT_MS || '15000', 10);
     const requestOptions = { timeout: timeoutMs };
     if (arbitratedEvidence && arbitratedEvidence.signal && !arbitratedEvidence.signal.aborted) {
       requestOptions.signal = arbitratedEvidence.signal;
     }
 
-    const completion = await engine.client.chat.completions.create(
-      sanitizeOpenAiChatPayload({
+    let completion;
+    try {
+      completion = await engine.client.chat.completions.create(
+        sanitizeOpenAiChatPayload({
+          model: engine.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          max_completion_tokens: 600,
+          temperature: 0.1
+        }),
+        requestOptions
+      );
+    } catch (callErr) {
+      if (reservation && reservation.reservationId) {
+        const isTimeout = (callErr.name === 'TimeoutError' || /timeout/i.test(callErr.message) || callErr.code === 'ETIMEDOUT');
+        await ledger.reconcileBudget({
+          reservationId: reservation.reservationId,
+          reservedUSD: reservation.reservedUSD,
+          model: engine.model,
+          error: callErr,
+          isPreRequest: false,
+          status: isTimeout ? 'AMBIGUOUS_FAILURE' : 'FAILED'
+        });
+      }
+      throw callErr;
+    }
+
+    const usage = completion?.usage;
+    if (reservation && reservation.reservationId) {
+      await ledger.reconcileBudget({
+        reservationId: reservation.reservationId,
+        reservedUSD: reservation.reservedUSD,
+        actualPromptTokens: usage?.prompt_tokens || 0,
+        actualCompletionTokens: usage?.completion_tokens || 0,
         model: engine.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_completion_tokens: 600,
-        temperature: 0.1
-      }),
-      requestOptions
-    );
-
-    let reply = (completion.choices?.[0]?.message?.content || '').trim();
-
-    // Guardrail 1: Study permit duration (UNSEEN_international_s_4)
-    // Distinguish initial issuance (penerbitan awal), extension (perpanjangan), and visa E30B.
-    // Official doc specifies 1-2 weeks ONLY for perpanjangan and Visa E30B.
-    const rawQuery = semanticFrame.rawQuery || '';
-    const userLang = semanticFrame.language || detectQueryLanguage(rawQuery);
-    const isStudyPermitQuery = /\b(?:study\s*permit|izin\s*belajar)\b/i.test(rawQuery);
-    const isExtension = /\b(?:perpanjang|perpanjangan|perpanjangannya|extend|extension)\b/i.test(rawQuery);
-    const asksDuration = /\b(?:berapa lama|lama proses|durasi|waktu)\b/i.test(rawQuery);
-
-    if (isStudyPermitQuery && asksDuration && !isExtension) {
-      if (/(?:1–2|1-2)\s*minggu/i.test(reply) && !/khusus\s+untuk\s+perpanjangan|hanya\s+untuk\s+perpanjangan/i.test(reply)) {
-        reply = userLang === 'en'
-          ? 'Based on available official guidelines, the 1–2 week processing timeframe is specifically documented for study permit extensions (and Visa E30B applications). The exact duration for the initial issuance of a study permit for new students is not specified in the guidelines and is coordinated directly with the International Office of ITB STIKOM Bali.'
-          : 'Berdasarkan dokumen panduan resmi yang tersedia, durasi waktu sekitar 1–2 minggu secara spesifik tercantum untuk proses perpanjangan Izin Belajar (serta pengajuan Visa E30B). Sementara itu, estimasi durasi pasti untuk penerbitan awal Izin Belajar bagi mahasiswa baru belum tercantum dalam panduan resmi dan dikoordinasikan langsung bersama International Office ITB STIKOM Bali.';
-      }
+        status: 'SUCCESS'
+      });
     }
 
-    // Guardrail 2: BEA-05 S2 Scholarships
-    // Must not dump undergraduate KIP Kuliah or S1 DPP discounts on S2 queries
-    const isS2Inquiry = semanticFrame.academicLevel === 'S2' ||
-      semanticFrame.scopeLevel === 'S2' ||
-      /\b(?:s2|magister|master(?:'s)?)\b/i.test(rawQuery) ||
-      (semanticFrame.entities || []).some(e => /s2|magister|pascasarjana/i.test(e.canonical || e.name || ''));
-
-    if (isS2Inquiry && (semanticFrame.domain === 'SCHOLARSHIP' || /scholarship|beasiswa/i.test(rawQuery))) {
-      if (/(?:kip\s+kuliah|s1\s+reguler|dpp.*s1)/i.test(reply)) {
-        reply = userLang === 'en'
-          ? 'Official information regarding specific scholarships for the Master of Information Systems (S2) program is not listed in the available guidelines. The available data records registration fee discounts according to admission waves and alumni discounts, while specific S2 scholarship details should be confirmed directly with admissions at 0822-7738-9999 or the PMB office.'
-          : 'Informasi beasiswa khusus untuk mahasiswa Magister (S2) Sistem Informasi belum tercantum dalam dokumen panduan resmi yang tersedia. Informasi yang ada saat ini mencatat potongan biaya pendaftaran sesuai gelombang dan potongan khusus alumni, sedangkan rincian beasiswa S2 lainnya dapat dikonfirmasi langsung ke layanan admisi pascasarjana di 0822-7738-9999.';
-      }
-    }
-
-    // Guardrail 2b: S2 Study Mode (Online vs Tatap Muka)
-    if (isS2Inquiry && /\b(?:online|offline|daring|luring|tatap\s+muka)\b/i.test(rawQuery)) {
-      if (!/(?:tatap\s+muka|reguler|renon)/i.test(reply)) {
-        reply = userLang === 'en'
-          ? `Based on official guidelines from the Postgraduate Program at ITB STIKOM Bali, lectures for the **Master of Information Systems (S2)** are offered in **Regular Classes** with on-campus sessions at the Renon Campus supported by digital learning platforms.\n\n` +
-            `Specific scheduling details regarding hybrid or flexible online sessions for working professionals are coordinated with the postgraduate administration. For direct consultation, please contact the Postgraduate Hotline at **0822-7738-9999** or phone **(0361) 244445**.`
-          : `Berdasarkan panduan resmi Program Pascasarjana ITB STIKOM Bali, perkuliahan **S2 Magister Sistem Informasi** diselenggarakan dalam **Kelas Reguler** tatap muka di Kampus Renon Denpasar dengan dukungan sistem pembelajaran digital kampus.\n\n` +
-            `Untuk rincian format pelaksanaan perkuliahan (seperti opsi sesi daring/hybrid bagi mahasiswa yang bekerja), Kakak disarankan untuk mengonfirmasi langsung ke Bagian Pascasarjana melalui Hotline **0822-7738-9999** atau telepon **(0361) 244445**.`;
-      }
-    }
-
-    // Guardrail 3: BEA-01 English Scholarships
-    // Ensure English answer, no ungrounded SKSS claims
-    if (userLang === 'en' && (semanticFrame.domain === 'SCHOLARSHIP' || /scholarship/i.test(rawQuery))) {
-      if (detectQueryLanguage(reply) === 'id' || /\b(?:di itb stikom bali|tersedia beberapa|beasiswa)\b/i.test(reply)) {
-        reply = `At ITB STIKOM Bali, the official financial aid and scholarship options documented in admissions guidelines include:
-
-1. **KIP Kuliah (Indonesia Smart Card College)**: Full tuition assistance from Kemendikbudristek for high-achieving applicants who meet economic criteria.
-2. **Admission Wave DPP Discounts**: Tuition fee (DPP) discounts ranging from IDR 2,000,000 to IDR 3,000,000 during early admission waves for regular undergraduate programs, with additional discounts for cash payment and partner vocational school alumni.
-
-For complete information regarding application requirements, documents, and registration schedules, please visit the official PMB portal at https://pmb.stikom-bali.ac.id or contact the campus admissions office.`;
-      } else if (/\b(?:skss|satu keluarga satu sarjana)\b/i.test(reply)) {
-        reply = reply.replace(/[-*•\d.]*\s*(?:\*\*)?(?:Beasiswa\s+)?(?:Yayasan\s*&\s*)?SKSS.*?(?:\n|$)/gi, '').trim();
-      }
-    }
-
-    // Guardrail 4: RPL Contact Sanitization (UNSEEN_RPL_2)
-    // Strip letterhead hotlines (0812-8877-8840) and ungrounded phone contacts from RPL answers,
-    // directing explicitly to the official PMB portal https://pmb.stikom-bali.ac.id
-    const isRpl = semanticFrame.domain === 'ADMISSION_TRACK' ||
-      (semanticFrame.aspects && semanticFrame.aspects.includes('rpl')) ||
-      /\b(?:rpl|rekognisi(?:\s+pembelajaran\s+lampau)?|transfer\s+sks|alih\s+jenjang)\b/i.test(rawQuery);
-    if (isRpl) {
-      if (/0812[-.\s]?8877[-.\s]?8840/i.test(reply)) {
-        reply = reply.replace(/(?:hotline|telepon|whatsapp|kontak)?\s*:?\s*0812[-.\s]?8877[-.\s]?8840[^\n.]*/gi, 'portal resmi PMB https://pmb.stikom-bali.ac.id').trim();
-      }
-      reply = reply.replace(/\b0812[-.\s]?8877[-.\s]?8840\b/gi, 'https://pmb.stikom-bali.ac.id');
-    }
-
-    // Guardrail 5: UKM Kesenian / Seni Listing (ensure complete verified coverage)
-    const isArtsUkmQuery = (semanticFrame.domain === 'ORGANIZATION_UKM' || (semanticFrame.aspects && semanticFrame.aspects.includes('arts_culture'))) &&
-      /\b(?:kesenian|seni|budaya)\b/i.test(rawQuery);
-    if (isArtsUkmQuery && !/\bmusik\b/i.test(reply)) {
-      reply += '\n* **UKM MUSIK** — minat musik, vokal, dan festival musik mahasiswa.';
-    }
-
-    // Guardrail 6: Degree Award and Premise Corrections (P05, P06, P07, K07)
-    const isDegreeInquiry = semanticFrame.intent === 'DEGREE_AWARD' ||
-      (semanticFrame.aspects && semanticFrame.aspects.some(a => ['degree_award', 'degree', 'study_duration'].includes(a))) ||
-      /\b(?:(?:ber)?gelar(?:nya)?|sebutan\s+lulusan|titel|degree)\b/i.test(rawQuery);
-    if (isDegreeInquiry) {
-      const rawQ = rawQuery.toLowerCase();
-      let cat = null;
-      if (/\b(?:bisnis\s+digital|bd)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_bd');
-      else if (/\b(?:sistem\s+informasi|si)\b/.test(rawQ) && !/\b(?:s2|magister)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_si');
-      else if (/\b(?:sistem\s+komputer|sk)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_sk');
-      else if (/\b(?:teknologi\s+informasi|ti)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_ti');
-      else if (/\b(?:manajemen\s+informatika|mi|d3)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 'd3_mi');
-      else if (/\b(?:s2|magister|msi)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's2_si');
-
-      // False premise correction (e.g. asking if S1 SI awards Sarjana Hukum)
-      if (/\b(?:sarjana\s+hukum|s\.h)\b/i.test(rawQuery)) {
-        reply = reply.replace(/sarjana\s+hukum/gi, 'gelar di bidang hukum');
-        if (cat && cat.degreeTitle && !new RegExp(cat.degreeTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*') + '|' + cat.degreeTitle.split('(')[0].trim(), 'i').test(reply)) {
-          reply = userLang === 'en'
-            ? `No. Graduates of **${cat.canonical}** at ITB STIKOM Bali are awarded the official degree **${cat.degreeTitle}**.`
-            : `Tidak Kak. Lulusan **${cat.canonical}** di ITB STIKOM Bali memperoleh gelar resmi **${cat.degreeTitle}** (bukan gelar di bidang hukum atau non-TI).`;
-        }
-      } else if (cat && cat.degreeTitle && generationEvidence.length > 0) {
-        if (/belum tercantum/i.test(reply) || !new RegExp(cat.degreeTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*') + '|' + cat.degreeTitle.split('(')[0].trim(), 'i').test(reply)) {
-          const groundedSummary = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
-          if (groundedSummary) {
-            reply = groundedSummary;
-          }
-        }
-      }
-    }
-
+    const reply = completion.choices?.[0]?.message?.content || '';
     return {
       success: true,
       answer: reply.trim(),
-      source: 'llm_grounded_synthesis'
+      source: 'llm_grounded_synthesis',
+      reservationId: reservation.reservationId
     };
   } catch (err) {
     if (err.status === 429 && /quota|exceeded your current quota/i.test(err.message)) {
       openaiCircuitOpen = true;
     }
     logger.warn({ err: err.message }, '[GroundedAnswerGenerator] LLM synthesis fallback to grounded summary');
-    const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, accepted, arbitratedEvidence);
+    const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
     return {
       success: true,
       answer: synthesizedText,
@@ -3389,6 +2160,5 @@ module.exports = {
   normalizeAcademicScope,
   getCatalogEntriesByScope,
   generateGroundedCatalogSummary,
-  extractAccreditationFromEvidence,
   INSTITUTIONAL_ACADEMIC_CATALOG
 };

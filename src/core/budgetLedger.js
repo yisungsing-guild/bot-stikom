@@ -215,11 +215,27 @@ const RESERVATION_TOKEN_CEILINGS = Object.freeze({
     maxPromptTokens: 1200,
     maxCompletionTokens: 500
   },
+  call_1_semantic_parser: {
+    maxPromptTokens: 1200,
+    maxCompletionTokens: 500
+  },
+  semantic_parser: {
+    maxPromptTokens: 1200,
+    maxCompletionTokens: 500
+  },
   semantic_understanding: {
     maxPromptTokens: 1200,
     maxCompletionTokens: 500
   },
   call_2: {
+    maxPromptTokens: 2500,
+    maxCompletionTokens: 600
+  },
+  call_2_grounded_generator: {
+    maxPromptTokens: 2500,
+    maxCompletionTokens: 600
+  },
+  grounded_generator: {
     maxPromptTokens: 2500,
     maxCompletionTokens: 600
   },
@@ -325,11 +341,12 @@ function classifyApiFailure(error) {
 }
 
 /**
- * Resolves maximum daily budget from environment or default $0.50.
+ * Resolves maximum daily budget from environment.
+ * Invariant: Fails closed (returns null) if not explicitly set to a finite positive number.
  */
 function getDailyBudgetCeiling() {
-  const envVal = parseFloat(process.env.MAX_DAILY_API_BUDGET_USD);
-  return Number.isFinite(envVal) && envVal > 0 ? envVal : 0.50;
+  const envVal = parseFloat(process.env.AI_DAILY_BUDGET_CEILING_USD || process.env.MAX_DAILY_API_BUDGET_USD);
+  return Number.isFinite(envVal) && envVal > 0 ? envVal : null;
 }
 
 /**
@@ -507,6 +524,7 @@ class BudgetLedgerManager {
     maxBudgetUSD = null,
     model = null,
     customRates = null,
+    operationId = null,
     now = new Date()
   } = {}) {
     if (!this.isAvailable()) {
@@ -514,6 +532,15 @@ class BudgetLedgerManager {
         allowed: false,
         reason: 'PERSISTENT_LEDGER_UNAVAILABLE',
         error: 'No persistent budget ledger is connected. Refusing paid model call to prevent unmetered spend.'
+      };
+    }
+
+    const ceiling = maxBudgetUSD != null ? maxBudgetUSD : getDailyBudgetCeiling();
+    if (ceiling == null || !Number.isFinite(ceiling) || ceiling <= 0) {
+      return {
+        allowed: false,
+        reason: 'DAILY_BUDGET_CEILING_NOT_CONFIGURED',
+        error: 'AI daily budget ceiling is not configured or invalid. Refusing paid model call (fail-closed) to prevent unmetered spend.'
       };
     }
 
@@ -547,11 +574,36 @@ class BudgetLedgerManager {
     });
 
     const dateYMD = getMakassarDateYMD(now);
-    const ceiling = maxBudgetUSD != null ? maxBudgetUSD : getDailyBudgetCeiling();
     const reservationId = `res_${dateYMD}_${purpose}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     try {
       return await this.adapter.executeAtomic(dateYMD, async (ledger) => {
+        if (!ledger.settlements) ledger.settlements = {};
+
+        // Idempotency: If operationId is provided and already active or settled, skip re-reservation
+        if (operationId) {
+          const existing = Object.entries(ledger.settlements).find(
+            ([id, s]) => s.operationId === operationId || id === operationId
+          );
+          if (existing) {
+            const [existingId, s] = existing;
+            return {
+              updatedLedger: null,
+              result: {
+                allowed: s.status === 'ACTIVE' || s.status === 'SETTLED',
+                idempotentSkip: true,
+                reservationId: existingId,
+                dateYMD,
+                reservedUSD: s.reservedUSD || 0.0,
+                spentUSD: ledger.spentUSD || 0.0,
+                ambiguousUSD: ledger.ambiguousUSD || 0.0,
+                maxBudgetUSD: ceiling,
+                model: s.model || effectiveModel
+              }
+            };
+          }
+        }
+
         const currentSpent = ledger.spentUSD || 0.0;
         const currentReserved = ledger.reservedUSD || 0.0;
         const currentAmbiguous = ledger.ambiguousUSD || 0.0;
@@ -575,12 +627,12 @@ class BudgetLedgerManager {
 
         // Record reservation atomically with model tracking
         ledger.reservedUSD = currentReserved + requiredReservationUSD;
-        if (!ledger.settlements) ledger.settlements = {};
         ledger.settlements[reservationId] = {
           status: 'ACTIVE',
           purpose,
           model: effectiveModel,
           reservedUSD: requiredReservationUSD,
+          operationId: operationId || null,
           createdAt: new Date().toISOString()
         };
 
@@ -644,7 +696,17 @@ class BudgetLedgerManager {
       return await this.adapter.executeAtomic(effectiveDateYMD, async (ledger) => {
         if (!ledger.settlements) ledger.settlements = {};
 
-        const existingSettlement = ledger.settlements[reservationId];
+        let effectiveReservationId = reservationId;
+        let existingSettlement = ledger.settlements[reservationId];
+        if (!existingSettlement) {
+          const found = Object.entries(ledger.settlements).find(
+            ([id, s]) => s.operationId === reservationId || id === reservationId
+          );
+          if (found) {
+            effectiveReservationId = found[0];
+            existingSettlement = found[1];
+          }
+        }
 
         // Idempotency: If already settled, released, or retained as ambiguous, do not process twice
         if (existingSettlement && (
@@ -657,7 +719,7 @@ class BudgetLedgerManager {
             result: {
               reconciled: existingSettlement.status === 'SETTLED',
               idempotentSkip: true,
-              reservationId,
+              reservationId: effectiveReservationId,
               status: existingSettlement.status,
               costStatus: existingSettlement.costStatus,
               actualCostUSD: existingSettlement.actualCostUSD,
@@ -698,7 +760,7 @@ class BudgetLedgerManager {
           ledger.spentUSD = (ledger.spentUSD || 0.0) + actualCostUSD;
           const differenceUSD = releaseAmount - actualCostUSD;
 
-          ledger.settlements[reservationId] = {
+          ledger.settlements[effectiveReservationId] = {
             status: 'SETTLED',
             costStatus: 'RECONCILED',
             purpose: existingSettlement?.purpose || 'unknown',
@@ -723,7 +785,7 @@ class BudgetLedgerManager {
             updatedLedger: ledger,
             result: {
               reconciled: true,
-              reservationId,
+              reservationId: effectiveReservationId,
               status: 'SETTLED',
               costStatus: 'RECONCILED',
               actualCostUSD,
@@ -749,7 +811,7 @@ class BudgetLedgerManager {
           ledger.reservedUSD = Math.max(0, (ledger.reservedUSD || 0.0) - releaseAmount);
           const differenceUSD = releaseAmount;
 
-          ledger.settlements[reservationId] = {
+          ledger.settlements[effectiveReservationId] = {
             status: 'RELEASED',
             costStatus: 'VERIFIED_ZERO',
             purpose: existingSettlement?.purpose || 'unknown',
@@ -766,7 +828,7 @@ class BudgetLedgerManager {
             updatedLedger: ledger,
             result: {
               reconciled: true,
-              reservationId,
+              reservationId: effectiveReservationId,
               status: 'RELEASED',
               costStatus: 'VERIFIED_ZERO',
               actualCostUSD: 0.0,
@@ -786,7 +848,7 @@ class BudgetLedgerManager {
         ledger.reservedUSD = Math.max(0, (ledger.reservedUSD || 0.0) - releaseAmount);
         ledger.ambiguousUSD = (ledger.ambiguousUSD || 0.0) + releaseAmount;
 
-        ledger.settlements[reservationId] = {
+        ledger.settlements[effectiveReservationId] = {
           status: 'AMBIGUOUS_RETAINED',
           costStatus: 'UNKNOWN',
           purpose: existingSettlement?.purpose || 'unknown',
@@ -803,7 +865,7 @@ class BudgetLedgerManager {
           updatedLedger: ledger,
           result: {
             reconciled: false,
-            reservationId,
+            reservationId: effectiveReservationId,
             status: 'AMBIGUOUS_RETAINED',
             costStatus: 'UNKNOWN',
             actualCostUSD: null,
@@ -837,8 +899,19 @@ class BudgetLedgerManager {
     if (!this.isAvailable()) {
       return { available: false, remainingUSD: 0.0, ceilingUSD: 0.0, spentUSD: 0.0, reservedUSD: 0.0, ambiguousUSD: 0.0 };
     }
-    const effectiveDateYMD = dateYMD || getMakassarDateYMD(now);
     const ceiling = maxBudgetUSD != null ? maxBudgetUSD : getDailyBudgetCeiling();
+    if (ceiling == null || !Number.isFinite(ceiling) || ceiling <= 0) {
+      return {
+        available: false,
+        reason: 'DAILY_BUDGET_CEILING_NOT_CONFIGURED',
+        remainingUSD: 0.0,
+        ceilingUSD: 0.0,
+        spentUSD: 0.0,
+        reservedUSD: 0.0,
+        ambiguousUSD: 0.0
+      };
+    }
+    const effectiveDateYMD = dateYMD || getMakassarDateYMD(now);
     const ledger = await this.adapter.getDayLedger(effectiveDateYMD);
     const spentUSD = ledger.spentUSD || 0.0;
     const reservedUSD = ledger.reservedUSD || 0.0;

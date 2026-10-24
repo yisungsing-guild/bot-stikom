@@ -2,7 +2,7 @@
 
 /**
  * tests/modelSemanticParser.test.js
- *
+ * 
  * Phase A Test Suite: Generic Model-Driven Semantic Parser.
  * Part A: Contract & Schema Validation Tests (Mocked Provider).
  * Part B: Optional Real-Model Semantic Smoke Tests (Gated by MODEL_SEMANTIC_REAL_TEST=true).
@@ -651,7 +651,7 @@ describe('Phase A Contract & Validation Tests (Mocked Provider)', () => {
       { client: inspectingClient, model: 'gpt-5.2-custom' }
     );
     expect(capturedPayload.model).toBe('gpt-5.2-custom');
-    expect(capturedPayload.max_completion_tokens).toBe(800);
+    expect(capturedPayload.max_completion_tokens).toBe(300);
     expect(capturedPayload.max_tokens).toBeUndefined();
     expect(resOpt.metadata.model).toBe('gpt-5.2-custom');
     expect(resOpt.metadata.responseModel).toBe('gpt-5.2-custom');
@@ -663,7 +663,7 @@ describe('Phase A Contract & Validation Tests (Mocked Provider)', () => {
       { client: inspectingClient, model: 'gpt-6-luna' }
     );
     expect(capturedPayload.model).toBe('gpt-6-luna');
-    expect(capturedPayload.max_completion_tokens).toBe(800);
+    expect(capturedPayload.max_completion_tokens).toBe(300);
     expect(capturedPayload.max_tokens).toBeUndefined();
     expect(resLuna.metadata.model).toBe('gpt-6-luna');
 
@@ -673,7 +673,7 @@ describe('Phase A Contract & Validation Tests (Mocked Provider)', () => {
       { client: inspectingClient, model: 'gpt-3.5-turbo' }
     );
     expect(capturedPayload.model).toBe('gpt-3.5-turbo');
-    expect(capturedPayload.max_tokens).toBe(800);
+    expect(capturedPayload.max_tokens).toBe(300);
     expect(capturedPayload.max_completion_tokens).toBeUndefined();
   });
 

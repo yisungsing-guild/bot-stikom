@@ -2,10 +2,10 @@
 
 /**
  * src/core/contextResolver.js
- *
+ * 
  * Greenfield Context Policy Layer.
  * Invariant: CURRENT TURN IS AUTHORITATIVE.
- *
+ * 
  * Rules:
  * History is ONLY consulted if:
  * 1. An explicit pronoun/demonstrative reference is present:
@@ -14,14 +14,12 @@
  *    - "Bagaimana dengan DNUI?"
  *    - "Kalau yang S1?"
  *    - "Yang internasional bagaimana?"
- *
+ * 
  * FORBIDDEN:
  * - Word count <= N
  * - The presence of common academic tokens like "kuliah", "daftar", "biaya", "jadwal"
  *   These MUST NEVER trigger context inheritance on their own.
  */
-
-const { CONTEXT_DECISION } = require('../reasoning/contracts');
 
 // Non-referential discourse adverbs and modals ending in -nya that do NOT reference a prior entity
 const NON_REFERENTIAL_NYA_WORDS = new Set([
@@ -51,20 +49,12 @@ const NON_REFERENTIAL_NYA_WORDS = new Set([
   'cocoknya', 'cocok',
   'pasnya', 'pas',
   'kurangnya', 'kurang',
-  'makinnya', 'makin',
-  'olahraganya', 'olahraga',
-  'dampaknya', 'dampak',
-  'akibatnya', 'akibat',
-  'efeknya', 'efek',
-  'konsekuensinya', 'konsekuensi',
-  'solusinya', 'solusi',
-  'prosedurnya', 'prosedur'
+  'makinnya', 'makin'
 ]);
 
 // Genuine ellipsis starts (e.g. "bagaimana dengan...", "kalau yang...", "what about...", "how about...")
 const GENUINE_ELLIPSIS_REGEX = /^(kalau|bagaimana\s+dengan|gimana\s+dengan|lalu|kalo|what\s+about|how\s+about|and)\s+(the\s+|yang\s+)?([a-z0-9\s]+)\??$/i;
 const PREDICATE_ELLIPSIS_REGEX = /^(?:bagaimana\s+cara\s+bergabung|gimana\s+cara\s+bergabung|cara\s+bergabungnya(?:\s+gimana)?|cara\s+bergabung|masih\s+bisa\s+daftar|bisa\s+daftar\s+sekarang|kapan\s+jadwalnya|kapan\s+batasnya|kapan\s+buka|syaratnya\s+apa|biayanya\s+berapa|cara\s+daftarnya\s+gimana)\??$/i;
-const EXISTENCE_ELLIPSIS_REGEX = /^(?:apakah\s+)?(?:tidak\s+ada|ada)\s+(?:yang\s+)?([a-z0-9\s]+)\??$/i;
 
 function hasExplicitPronounReference(query) {
   if (!query || typeof query !== 'string') return false;
@@ -76,7 +66,7 @@ function hasExplicitPronounReference(query) {
   }
 
   // 2. Bound anaphoric enclitic -nya on nouns (e.g. biayanya, syaratnya, kurikulumnya, studinya, akreditasinya)
-  // Must distinguish from non-referential discourse adverbs and modals (e.g. sebenarnya, harusnya, biasanya, olahraganya)
+  // Must distinguish from non-referential discourse adverbs and modals (e.g. sebenarnya, harusnya, biasanya)
   const matches = q.match(/\b([a-z]{3,})nya\b/gi);
   if (matches) {
     for (const match of matches) {
@@ -94,14 +84,6 @@ function isGenuineEllipsis(query) {
   if (!query) return false;
   const trimmed = query.trim().toLowerCase();
   if (PREDICATE_ELLIPSIS_REGEX.test(trimmed)) return true;
-  const existMatch = trimmed.match(EXISTENCE_ELLIPSIS_REGEX);
-  if (existMatch) {
-    const remnant = (existMatch[1] || '').trim();
-    const words = remnant.split(/\s+/).filter(Boolean);
-    if (words.length <= 4 && !/\b(?:kuliah|kampus|stikom|beasiswa|jurusan|prodi|daftar)\b/i.test(remnant)) {
-      return true;
-    }
-  }
   const match = trimmed.match(GENUINE_ELLIPSIS_REGEX);
   if (match) {
     const remnant = (match[3] || '').trim();
@@ -118,154 +100,18 @@ function isGenuineEllipsis(query) {
 
 /**
  * Determines whether the current query should inherit context from prior session turns.
- * Returns { shouldInherit: boolean, reason: string, decision: string, inheritedDomain, inheritedEntity, scopeModifier }
+ * Returns { shouldInherit: boolean, reason: string }
  */
 function evaluateContextDependency(currentQuery, sessionData = {}) {
   if (!currentQuery) {
-    return { shouldInherit: false, reason: 'empty_query', decision: CONTEXT_DECISION.TOPIC_SHIFT };
+    return { shouldInherit: false, reason: 'empty_query' };
   }
 
   const query = currentQuery.trim().toLowerCase();
 
   // If session has no prior state, cannot inherit
-  if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.lastQuery && !sessionData.activeMenu && !sessionData.data?.activeMenu)) {
-    const hasPronoun = hasExplicitPronounReference(query);
-    return {
-      shouldInherit: false,
-      reason: hasPronoun ? 'unresolved_pronoun_no_history' : 'no_session_history',
-      decision: hasPronoun ? CONTEXT_DECISION.AMBIGUOUS_FOLLOW_UP : CONTEXT_DECISION.TOPIC_SHIFT
-    };
-  }
-
-  // Guard 0: Active Menu Selection Handling (Multi-turn clarification menu selection)
-  const activeMenu = sessionData.activeMenu || (sessionData.data && sessionData.data.activeMenu);
-  if (activeMenu && Array.isArray(activeMenu.options) && activeMenu.options.length > 0) {
-    const options = activeMenu.options;
-    const trimmed = query.trim();
-
-    const numberMatch = trimmed.match(/^(?:nomor|no\.?|pilihan|opsi|yang\s+ke-?|ke-?)?\s*(\d+)\.?$/i);
-    const wordNumbers = {
-      'satu': 1, 'pertama': 1, 'kesatu': 1,
-      'dua': 2, 'kedua': 2,
-      'tiga': 3, 'ketiga': 3,
-      'empat': 4, 'keempat': 4,
-      'lima': 5, 'kelima': 5,
-      'enam': 6, 'keenam': 6,
-      'tujuh': 7, 'ketujuh': 7,
-      'delapan': 8, 'kedelapan': 8
-    };
-
-    let chosenIndex = null;
-    if (numberMatch) {
-      chosenIndex = parseInt(numberMatch[1], 10);
-    } else if (wordNumbers[trimmed]) {
-      chosenIndex = wordNumbers[trimmed];
-    } else {
-      // Check if user answered with the program name matching an option
-      const matchedIdx = options.findIndex(opt => {
-        const optCanon = (opt.canonical || opt.name || String(opt)).toLowerCase();
-        return trimmed === optCanon || trimmed.includes(optCanon) || (optCanon.length >= 6 && optCanon.includes(trimmed));
-      });
-      if (matchedIdx !== -1) {
-        chosenIndex = matchedIdx + 1;
-      }
-    }
-
-    if (chosenIndex !== null) {
-      if (chosenIndex >= 1 && chosenIndex <= options.length) {
-        const selected = options[chosenIndex - 1];
-        const entityCanonical = selected.canonical || selected.name || String(selected);
-        return {
-          shouldInherit: true,
-          reason: 'menu_selection',
-          decision: CONTEXT_DECISION.BOUND_CONTINUATION,
-          inheritedDomain: activeMenu.pendingDomain || sessionData.activeDomain || 'TUITION_FEE',
-          inheritedIntent: activeMenu.pendingIntent || sessionData.activeIntent || 'TUITION_FEE_INQUIRY',
-          inheritedEntity: entityCanonical,
-          selectedMenuOption: selected,
-          clearedMenu: true
-        };
-      } else {
-        // Out of bounds selection
-        return {
-          shouldInherit: false,
-          reason: 'invalid_menu_index',
-          decision: CONTEXT_DECISION.AMBIGUOUS_FOLLOW_UP,
-          invalidIndex: chosenIndex,
-          maxIndex: options.length
-        };
-      }
-    }
-  }
-
-  // Guard 0.1: Underspecified single-word question without predicate (e.g. "Berapa?", "Kapan?")
-  const isSingleWordAmbiguous = /^(?:berapa|kapan|apakah|ada|dimana|bagaimana)\??$/i.test(query);
-  if (isSingleWordAmbiguous) {
-    return {
-      shouldInherit: false,
-      reason: 'ambiguous_query',
-      decision: CONTEXT_DECISION.AMBIGUOUS_FOLLOW_UP
-    };
-  }
-
-  // Guard 0.2: Independent PMB / Enrollment wave status inquiry (e.g. "sekarang buka gelombang berapa")
-  // without an explicit program pronoun reference is an independent institutional PMB inquiry (TOPIC_SHIFT).
-  // Inquiries asking about wave discounts, fees, or cuts (e.g. "Kalau Gelombang I potongannya berapa?") are fee questions.
-  const isFeeSession = sessionData.activeDomain === 'TUITION_FEE' ||
-    sessionData.activeIntent === 'TUITION_FEE_INQUIRY' ||
-    /\b(?:biaya|spp|dpp|uang\s+kuliah)\b/i.test(sessionData.lastQuery || '');
-
-  const isRelativeWaveFollowUp = /\b(?:gelombang|gel)\s+(?:berikutnya|selanjutnya|setelahnya|next)\b/i.test(query);
-  const isSpecificWaveFeeFollowUp = isFeeSession &&
-    /\b(?:gelombang|gel)\s*(?:khusus|[0-9]+|[ivxlcdm]+|sisipan)\b/i.test(query) &&
-    /\b(?:berapa|biaya|tarif|total|potongan|diskon|bayar)\b/i.test(query);
-
-  if ((isRelativeWaveFollowUp || isSpecificWaveFeeFollowUp) && isFeeSession) {
-    return {
-      shouldInherit: true,
-      reason: isRelativeWaveFollowUp ? 'relative_wave_fee_continuation' : 'specific_wave_fee_continuation',
-      decision: CONTEXT_DECISION.BOUND_CONTINUATION,
-      inheritedDomain: 'TUITION_FEE',
-      inheritedIntent: 'TUITION_FEE_INQUIRY',
-      inheritedEntity: sessionData.activeEntity || null
-    };
-  }
-
-  const isFeeWaveQuery = /\b(?:potongan|diskon|biaya|bayar|dpp|potongannya|diskonnya|tarif)\b/i.test(query) || isSpecificWaveFeeFollowUp;
-
-  const isIndependentPmbWaveQuery = !isFeeWaveQuery &&
-    !isRelativeWaveFollowUp &&
-    /\b(?:gelombang|buka\s+gelombang|gelombang\s+berapa|jadwal\s+pmb|periode\s+pmb|masih\s+dibuka|kapan\s+buka|kapan\s+tutup)\b/i.test(query) &&
-    !/\b(?:nya|program\s+ini|jurusan\s+ini)\b/i.test(query);
-  if (isIndependentPmbWaveQuery) {
-    return {
-      shouldInherit: false,
-      reason: 'independent_pmb_inquiry',
-      decision: CONTEXT_DECISION.TOPIC_SHIFT
-    };
-  }
-
-  // Guard 0.3: Specific disambiguation for generic schedule follow-up ("Jadwalnya kapan?")
-  const isGenericScheduleQuery = /^(?:kapan\s+jadwalnya|jadwalnya\s+kapan|kapan\s+jadwal|jadwalnya)\??$/i.test(query);
-  if (isGenericScheduleQuery) {
-    if (sessionData.activeDomain === 'PMB' || sessionData.activeIntent === 'ADMISSION_SCHEDULE') {
-      return {
-        shouldInherit: true,
-        reason: 'admission_schedule_continuation',
-        decision: CONTEXT_DECISION.BOUND_CONTINUATION,
-        inheritedDomain: 'PMB',
-        inheritedIntent: 'ADMISSION_SCHEDULE',
-        inheritedEntity: sessionData.activeEntity || null
-      };
-    }
-    if (sessionData.activeDomain === 'TUITION_FEE') {
-      // In tuition fee context, "jadwalnya kapan?" is ambiguous between payment schedule, lecture schedule, or pmb schedule
-      return {
-        shouldInherit: false,
-        reason: 'ambiguous_schedule_followup',
-        decision: CONTEXT_DECISION.AMBIGUOUS_FOLLOW_UP
-      };
-    }
+  if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.lastQuery)) {
+    return { shouldInherit: false, reason: 'no_session_history' };
   }
 
   const isAcademicActiveEntity = sessionData.activeEntity && (
@@ -276,26 +122,19 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
      !sessionData.activeDomain?.startsWith('ORGANIZATION'))
   );
 
-  // Guard 1: Campus-wide service domain inquiries must not inherit academic program entities
+  // Guard: Campus-wide service domain inquiries must not inherit academic program entities
   // Covers: FACILITIES, ORGANIZATION_UKM, SCHOLARSHIP, CAMPUS_SERVICE, CAREER_CENTER
   const isCampusWideQuery =
     (/\b(?:ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi(?:\s+mahasiswa)?|ormawa|ekskul|ekstrakurikuler|student\s+clubs?|student\s+organizations?)\b/i.test(query) &&
      !/\b(?:hima\b|himaprodi|himpunan)\b/i.test(query)) ||
     /\b(?:fasilitas|laboratorium|lab\b|perpustakaan|asrama|gedung|kantin|parkir|parking|lapangan)\b/i.test(query) ||
     /\b(?:beasiswa|kip\s*kuliah|kip-?k|bantuan\s+dana|keringanan\s+biaya)\b/i.test(query) ||
-    /\b(?:inkubator|inbis|career\s+center|cdc\b|layanan\s+kampus|bimbingan\s+karir|perwalian|dosen\s+wali|konsultasi\s+akademik|bimbingan\s+akademik)\b/i.test(query);
+    /\b(?:inkubator|inbis|career\s+center|cdc\b|layanan\s+kampus|bimbingan\s+karir)\b/i.test(query);
 
-  const isPmbSession = sessionData.activeDomain === 'PMB' ||
-    sessionData.activeIntent?.startsWith('ADMISSION') ||
-    sessionData.activeIntent?.startsWith('PMB') ||
-    sessionData.lastDomain === 'pmb' ||
-    (typeof sessionData.activeEntity === 'string' && sessionData.activeEntity.toLowerCase() === 'pmb');
-
-  if (isCampusWideQuery && (isAcademicActiveEntity || isPmbSession)) {
+  if (isCampusWideQuery && isAcademicActiveEntity) {
     return {
       shouldInherit: false,
-      reason: 'campus_wide_domain_isolation',
-      decision: CONTEXT_DECISION.TOPIC_SHIFT
+      reason: 'campus_wide_domain_isolation'
     };
   }
 
@@ -314,32 +153,15 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   if (isAcademicProgramOrFeeQuery && isNonAcademicSession && !query.includes('tari') && !query.includes('ukm')) {
     return {
       shouldInherit: false,
-      reason: 'cross_domain_isolation',
-      decision: CONTEXT_DECISION.TOPIC_SHIFT
+      reason: 'cross_domain_isolation'
     };
   }
 
-  // Check 1: Genuine Ellipsis with Scope Modification (e.g. Double Degree -> "Ada yang nasional?")
-  const isNationalScopeEllipsis = /\b(?:nasional|dalam\s+negeri|lokal|domestik)\b/i.test(query);
-  const isPriorDoubleDegree = sessionData.activeEntity === 'Double Degree' ||
-    (typeof sessionData.lastQuery === 'string' && /\b(?:double|dual)\s*degree\b/i.test(sessionData.lastQuery)) ||
-    sessionData.activeDomain === 'INTERNATIONAL';
-
+  // Check 1: Genuine Ellipsis
   if (isGenuineEllipsis(query)) {
-    if (isNationalScopeEllipsis && isPriorDoubleDegree) {
-      return {
-        shouldInherit: true,
-        reason: 'scope_modification_national',
-        decision: CONTEXT_DECISION.ENTITY_SCOPE_MODIFICATION,
-        inheritedDomain: 'ACADEMIC_PROGRAM',
-        inheritedEntity: 'Double Degree',
-        scopeModifier: 'national'
-      };
-    }
     return {
       shouldInherit: true,
       reason: 'genuine_ellipsis',
-      decision: CONTEXT_DECISION.BOUND_CONTINUATION,
       inheritedDomain: sessionData.activeDomain,
       inheritedEntity: sessionData.activeEntity
     };
@@ -350,19 +172,17 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     return {
       shouldInherit: true,
       reason: 'pronoun_reference',
-      decision: CONTEXT_DECISION.BOUND_CONTINUATION,
       inheritedDomain: sessionData.activeDomain,
       inheritedEntity: sessionData.activeEntity
     };
   }
 
-  // Check 3: Attribute Continuation without explicit entity
+  // Check 3: Attribute Continuation without explicit entity (e.g. "gelar apa yang didapat dan berapa lama masa studi?" / "what degree would I receive and how long would the program take?")
   const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation)\b/i.test(query);
   if (isAttributeInquiry && sessionData.activeEntity) {
     return {
       shouldInherit: true,
       reason: 'attribute_continuation',
-      decision: CONTEXT_DECISION.BOUND_CONTINUATION,
       inheritedDomain: sessionData.activeDomain || 'ACADEMIC_PROGRAM',
       inheritedEntity: sessionData.activeEntity
     };
@@ -371,14 +191,12 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   // DEFAULT: Current turn is independent and authoritative!
   return {
     shouldInherit: false,
-    reason: 'independent_current_turn',
-    decision: CONTEXT_DECISION.TOPIC_SHIFT
+    reason: 'independent_current_turn'
   };
 }
 
 module.exports = {
   hasExplicitPronounReference,
   isGenuineEllipsis,
-  evaluateContextDependency,
-  CONTEXT_DECISION
+  evaluateContextDependency
 };

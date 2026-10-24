@@ -79,7 +79,7 @@ describe('Phase 2 Golden Answer Quality UAT Suite', () => {
       const t1Query = 'jelaskan program Double Degree';
       const t1Frame = resolveSemanticFrame(t1Query, {});
       const t1Delta = computeContextDelta({}, { rawQuery: t1Query, semanticFrame: t1Frame });
-
+      
       const sessionAfterT1 = {
         activeEntity: t1Delta.resolvedState.activeEntity || 'Double Degree',
         activeDomain: t1Delta.resolvedState.activeDomain || 'INTERNATIONAL',
@@ -213,7 +213,7 @@ describe('Phase 2 Golden Answer Quality UAT Suite', () => {
     test('Legitimate educational comparative mention is accepted by verifier', () => {
       const targetQuery = 'apa yang dipelajari di Sistem Informasi?';
       const semanticFrame = resolveSemanticFrame(targetQuery);
-
+      
       const candidateAnswer = `Program Studi S1 Sistem Informasi berfokus pada analisis proses bisnis, perancangan sistem enterprise, manajemen basis data, dan tata kelola teknologi informasi, berbeda dengan Sistem Komputer yang lebih menitikberatkan pada perangkat keras dan embedded system.`;
 
       const arbitratedEvidence = {
@@ -262,7 +262,7 @@ describe('Phase 2 Golden Answer Quality UAT Suite', () => {
       const dirtyRawText = `
 Profil Program Studi S1 Sistem Informasi:
 1. Identitas Program Studi
-(Isikan Nama Sekretaris Prodi) | S2 | 1 2 3 4 5 6 7 8 9 10 11 12 | dst...............
+(Isikan Nama Sekretaris Prodi) | S2 | 1 2 3 4 5 6 7 8 9 10 11 12 | dst............... 
 4 | Staf..... (Isikan Nama Staf) | S1
 Fokus keilmuan: Analisis sistem dan basis data.
 `;
@@ -313,7 +313,7 @@ Fokus keilmuan: Analisis sistem dan basis data.
     test('Available prodi answer gives direct, readable response without verbose disclaimers', async () => {
       const frame = resolveSemanticFrame('apa saja prodi di stikom?');
       const synthesized = await synthesizeAnswer(frame, {});
-
+      
       expect(synthesized).toBeDefined();
       expect(synthesized.success).toBe(true);
       const text = synthesized.answer;

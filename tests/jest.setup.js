@@ -2,6 +2,8 @@
  * Filters noisy logs while still allowing unexpected logs through.
  */
 
+process.env.NODE_ENV = 'test';
+
 const original = {
   log: console.log,
   info: console.info,

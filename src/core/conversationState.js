@@ -23,8 +23,6 @@ const DEFAULT_SESSION_DATA = Object.freeze({
   turnCount: 0
 });
 
-const memorySessionCache = new Map();
-
 async function getSession(chatId) {
   if (!chatId) return { chatId: null, state: 'root', data: { ...DEFAULT_SESSION_DATA } };
 
@@ -34,51 +32,35 @@ async function getSession(chatId) {
     });
 
     if (session) {
-      const sessionObj = {
+      return {
         chatId: session.chatId,
         state: session.state || 'root',
         data: session.data && typeof session.data === 'object' ? session.data : { ...DEFAULT_SESSION_DATA }
       };
-      memorySessionCache.set(String(chatId), sessionObj);
-      return sessionObj;
     }
   } catch (err) {
-    logger.warn({ err: err.message, chatId }, '[ConversationState] Failed to fetch session from DB, using fallback memory cache');
+    logger.warn({ err: err.message, chatId }, '[ConversationState] Failed to fetch session from DB');
   }
 
-  const cached = memorySessionCache.get(String(chatId));
-  if (cached) {
-    return cached;
-  }
-
-  const newSession = {
+  return {
     chatId: String(chatId),
     state: 'root',
     data: { ...DEFAULT_SESSION_DATA }
   };
-  memorySessionCache.set(String(chatId), newSession);
-  return newSession;
 }
 
 async function updateSession(chatId, { state = 'root', dataPatch = {} } = {}) {
   if (!chatId) return null;
 
-  const current = await getSession(chatId);
-  const updatedData = {
-    ...current.data,
-    ...dataPatch,
-    lastTurnTs: Date.now(),
-    turnCount: (current.data.turnCount || 0) + 1
-  };
-
-  const updatedSession = {
-    chatId: String(chatId),
-    state,
-    data: updatedData
-  };
-  memorySessionCache.set(String(chatId), updatedSession);
-
   try {
+    const current = await getSession(chatId);
+    const updatedData = {
+      ...current.data,
+      ...dataPatch,
+      lastTurnTs: Date.now(),
+      turnCount: (current.data.turnCount || 0) + 1
+    };
+
     const result = await prisma.session.upsert({
       where: { chatId: String(chatId) },
       create: {
@@ -94,8 +76,8 @@ async function updateSession(chatId, { state = 'root', dataPatch = {} } = {}) {
 
     return result;
   } catch (err) {
-    logger.error({ err: err.message, chatId }, '[ConversationState] Failed to update session in DB, retained in memory cache');
-    return updatedSession;
+    logger.error({ err: err.message, chatId }, '[ConversationState] Failed to update session');
+    return null;
   }
 }
 

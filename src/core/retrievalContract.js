@@ -721,14 +721,8 @@ function arbitrateEvidenceWithContract(candidates = [], contract = {}, options =
       sourceDocument: candidate.source_file || candidate.source || 'canonical_corpus',
       provenanceDocumentId: candidate.provenanceDocumentId || candidate.metadata?.provenanceDocumentId || null,
       entityIds: candidate.entityIds || candidate.metadata?.entityIds || (targetEntities.length ? [targetEntities[0]] : []),
-      providedAspects: (candidate.providedAspects && candidate.providedAspects.length > 0)
-        ? candidate.providedAspects
-        : ((candidate.metadata?.providedAspects && candidate.metadata.providedAspects.length > 0)
-            ? candidate.metadata.providedAspects
-            : (requestedAspects.length > 0 ? requestedAspects : ['overview'])),
-      academicLevel: (requestedLevel && requestedLevel !== 'ALL')
-        ? requestedLevel
-        : (candidate.academicLevel || candidate.metadata?.academicLevel || null),
+      providedAspects: candidate.providedAspects || candidate.metadata?.providedAspects || requestedAspects,
+      academicLevel: candidate.academicLevel || candidate.metadata?.academicLevel || requestedLevel,
       metadataState: metaEval.state
     });
   }
