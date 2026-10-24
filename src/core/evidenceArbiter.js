@@ -840,6 +840,34 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
           reason: 'evidence_does_not_contain_organization_aspect'
         };
       }
+      const wantsSports = (retrievalPlan.aspects && retrievalPlan.aspects.includes('sports')) ||
+        /\b(?:olahraga|olah\s*raga|sport|sports)\b/i.test(retrievalPlan.rawQuery || '');
+      const wantsArts = (retrievalPlan.aspects && retrievalPlan.aspects.includes('arts_culture')) ||
+        /\b(?:seni|kesenian|budaya|kebudayaan|tari|musik|teater)\b/i.test(retrievalPlan.rawQuery || '');
+      const wantsEsports = (retrievalPlan.aspects && retrievalPlan.aspects.includes('esports_gaming')) ||
+        /\b(?:esport|esports|gaming)\b/i.test(retrievalPlan.rawQuery || '');
+
+      if (wantsSports && !isSportsChunk && !/olahraga/i.test(text)) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_match_sports_ukm_aspect'
+        };
+      }
+      if (wantsArts && !/\b(?:seni|budaya|tari|musik|teater|paduan\s+suara|vokal|karawitan|tabuh|fotografi|multimedia|dance|drama|lukis)\b/i.test(text)) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_match_arts_culture_ukm_aspect'
+        };
+      }
+      if (wantsEsports && !isEsportsChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_match_esports_ukm_aspect'
+        };
+      }
     } else if (wantsPmbGeneral) {
       const satisfiesForeign = querySpecificallyAsksForeign && isForeignStudentChunk;
       if (!isPmbGeneralChunk && !isFeeChunk && !isScholarshipChunk && !satisfiesForeign) {

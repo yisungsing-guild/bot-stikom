@@ -51,6 +51,16 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       };
     }
 
+    if (semanticFrame.domain === 'ORGANIZATION_UKM' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['student_organization', 'ukm'].includes(a)))) {
+      return {
+        status: ANSWERABILITY_STATUS.UNKNOWN,
+        reason: 'insufficient_ukm_evidence',
+        guidance: isEn
+          ? 'Official information regarding the requested student club or activity has not been verified from the available campus records.'
+          : 'Informasi resmi mengenai Unit Kegiatan Mahasiswa (UKM) atau kegiatan tersebut belum berhasil diverifikasi dari sumber resmi kampus yang tersedia saat ini.'
+      };
+    }
+
     if (semanticFrame.domain === 'TUITION_FEE' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)))) {
       const isFacilityOrInfrastructure = semanticFrame.domain === 'FACILITIES' ||
         (semanticFrame.aspects && semanticFrame.aspects.some(a => ['facilities', 'campus_infrastructure'].includes(a))) ||

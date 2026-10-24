@@ -511,7 +511,9 @@ function validateSemanticInterpretation(interpretation, priorContext = null, opt
 
   // Resolve primary domain
   let resolvedDomain = 'GENERAL';
-  if (interpretation.semanticConcepts.length > 0) {
+  if (finalEntities.some(e => e.inferredCategory === 'student_organization') || (Array.isArray(interpretation.requestedAspects) && interpretation.requestedAspects.includes('organization'))) {
+    resolvedDomain = 'ORGANIZATION_UKM';
+  } else if (interpretation.semanticConcepts.length > 0) {
     resolvedDomain = CONCEPT_TO_DOMAIN_MAP[interpretation.semanticConcepts[0]] || 'GENERAL';
   } else if (normPrior.priorDomain && isEligibleForInheritance) {
     resolvedDomain = normPrior.priorDomain;

@@ -1272,4 +1272,196 @@ describe('Chat Engine V2 — Cross-Domain Architecture Regression Suite', () => 
     });
   });
 
+  // =========================================================================
+  // GROUP J: UKM & UNSUPPORTED PROGRAM DOMAIN INVARIANTS & ASYNC RESOLUTION
+  // Invariants:
+  // 1. UKM queries (arts/culture, sports, campus activities) must NEVER be hijacked
+  //    into UNSUPPORTED_PROGRAM.
+  // 2. Genuine unoffered academic programs (kedokteran, farmasi, hukum) must remain
+  //    correctly classified as UNSUPPORTED_PROGRAM.
+  // 3. Tuition fee and campus facility queries must strictly preserve their domains.
+  // 4. Synchronous resolver fallback must NOT leak false unsupportedProgramName
+  //    into valid asynchronous model interpretations.
+  // =========================================================================
+  describe('Group J: UKM & Unsupported Program Domain Invariants & Async Resolution', () => {
+
+    test('J.1: Variasi pertanyaan UKM seni tetap di domain ORGANIZATION_UKM', () => {
+      const artQueries = [
+        'Apa ada UKM seni di STIKOM Bali?',
+        'Apakah ada UKM seni?',
+        'UKM seni ada gak?',
+        'Apakah ada unit kegiatan mahasiswa bidang kesenian dan kebudayaan?'
+      ];
+
+      for (const q of artQueries) {
+        const frame = resolveSemanticFrame(q);
+        expect(frame.domain).toBe('ORGANIZATION_UKM');
+        expect(frame.intent).toBe('ORGANIZATION_INQUIRY');
+        expect(frame.unsupportedEntity).toBe(false);
+        expect(frame.unsupportedProgramName).toBeNull();
+        expect(frame.retrievalRequired).toBe(true);
+      }
+    });
+
+    test('J.2: Pertanyaan UKM olahraga tetap di domain ORGANIZATION_UKM', () => {
+      const sportQueries = [
+        'Apakah ada UKM olahraga?',
+        'ada ukm olahraga apa aja di stikom?',
+        'di kampus ada ukm futsal atau basket gak?'
+      ];
+
+      for (const q of sportQueries) {
+        const frame = resolveSemanticFrame(q);
+        expect(frame.domain).toBe('ORGANIZATION_UKM');
+        expect(frame.intent).toBe('ORGANIZATION_INQUIRY');
+        expect(frame.unsupportedEntity).toBe(false);
+        expect(frame.unsupportedProgramName).toBeNull();
+        expect(frame.retrievalRequired).toBe(true);
+      }
+    });
+
+    test('J.3: Pertanyaan program studi yang benar-benar tidak tersedia tetap dikenali sebagai UNSUPPORTED_PROGRAM', () => {
+      const unsuppQueries = [
+        { q: 'Apakah ada jurusan kedokteran di STIKOM?', expected: 'kedokteran' },
+        { q: 'Apakah ada prodi farmasi di STIKOM Bali?', expected: 'farmasi' },
+        { q: 'ada jurusan hukum gak di stikom?', expected: 'hukum' },
+        { q: 'apakah ada s1 teknik nuklir di kampus?', expected: 'teknik nuklir' }
+      ];
+
+      for (const { q, expected } of unsuppQueries) {
+        const frame = resolveSemanticFrame(q);
+        expect(frame.domain).toBe('UNSUPPORTED_PROGRAM');
+        expect(frame.intent).toBe('UNSUPPORTED_PROGRAM_INQUIRY');
+        expect(frame.unsupportedEntity).toBe(true);
+        expect(frame.unsupportedProgramName.toLowerCase()).toContain(expected.toLowerCase());
+        expect(frame.retrievalRequired).toBe(false);
+      }
+    });
+
+    test('J.4: Pertanyaan biaya dan fasilitas tidak berubah domain', () => {
+      const feeFrame = resolveSemanticFrame('Berapa biaya kuliah S1 Sistem Informasi?');
+      expect(feeFrame.domain).toBe('TUITION_FEE');
+      expect(feeFrame.intent).toBe('TUITION_FEE_INQUIRY');
+      expect(feeFrame.unsupportedEntity).toBe(false);
+
+      const facQueries = [
+        'Apakah ada fasilitas laboratorium komputer?',
+        'fasilitas lab apa saja yang tersedia di stikom?'
+      ];
+      for (const q of facQueries) {
+        const facFrame = resolveSemanticFrame(q);
+        expect(facFrame.domain).toBe('FACILITIES');
+        expect(facFrame.intent).toBe('FACILITY_INQUIRY');
+        expect(facFrame.unsupportedEntity).toBe(false);
+      }
+    });
+
+    test('J.5: Hasil resolver sinkron yang keliru tidak dapat menimpa interpretasi asinkron yang valid', async () => {
+      // Mock client returning valid ORGANIZATION_UKM understanding
+      const client = createMockModelClient({
+        speechAct: 'INQUIRE_OFFERING',
+        semanticConcepts: ['CAMPUS_LIFE'],
+        candidateEntities: [{ mention: 'UKM Seni', inferredCategory: 'student_organization' }],
+        requestedAspects: ['organization', 'arts_culture'],
+        scopeConstraints: { academicLevel: null, studyMode: null, locationConstraint: null },
+        contextDependency: { isFollowUp: false, referenceType: 'none' },
+        confidence: 0.96,
+        ambiguityLevel: 'LOW'
+      });
+
+      const frame = await resolveSemanticFrameAsync(
+        'Apa ada UKM seni di STIKOM Bali?',
+        {},
+        { client }
+      );
+
+      // Invariant: domain must strictly remain ORGANIZATION_UKM and never leak unsupportedProgramName
+      expect(frame.domain).toBe('ORGANIZATION_UKM');
+      expect(frame.intent).toBe('ORGANIZATION_INQUIRY');
+      expect(frame.unsupportedEntity).toBe(false);
+      expect(frame.unsupportedProgramName).toBeNull();
+      expect(frame.retrievalRequired).toBe(true);
+    });
+
+    test('J.6: Asynchronous resolver retains UNSUPPORTED_PROGRAM when model confirms unoffered discipline', async () => {
+      const client = createMockModelClient({
+        speechAct: 'INQUIRE_OFFERING',
+        semanticConcepts: ['ACADEMIC_STUDY'],
+        candidateEntities: [{ mention: 'Kedokteran', inferredCategory: 'unsupported_program' }],
+        requestedAspects: ['overview'],
+        scopeConstraints: { academicLevel: null, studyMode: null, locationConstraint: null },
+        contextDependency: { isFollowUp: false, referenceType: 'none' },
+        confidence: 0.95,
+        ambiguityLevel: 'LOW'
+      });
+
+      const frame = await resolveSemanticFrameAsync(
+        'Apakah ada jurusan kedokteran di STIKOM?',
+        {},
+        { client }
+      );
+
+      expect(frame.domain).toBe('UNSUPPORTED_PROGRAM');
+      expect(frame.intent).toBe('UNSUPPORTED_PROGRAM_INQUIRY');
+      expect(frame.unsupportedEntity).toBe(true);
+    });
+
+    test('J.7: Asynchronous resolver preserves TUITION_FEE and FACILITIES domains', async () => {
+      // Async TUITION_FEE
+      const feeClient = createMockModelClient({
+        speechAct: 'INQUIRE_PROPERTY',
+        semanticConcepts: ['FINANCIAL_COST'],
+        candidateEntities: [{ mention: 'S1 Sistem Informasi', inferredCategory: 'academic_program' }],
+        requestedAspects: ['fee'],
+        scopeConstraints: { academicLevel: 'S1', studyMode: null, locationConstraint: null },
+        contextDependency: { isFollowUp: false, referenceType: 'none' },
+        confidence: 0.98,
+        ambiguityLevel: 'LOW'
+      });
+      const feeFrame = await resolveSemanticFrameAsync(
+        'Berapa biaya kuliah S1 Sistem Informasi?',
+        {},
+        { client: feeClient }
+      );
+      expect(feeFrame.domain).toBe('TUITION_FEE');
+      expect(feeFrame.intent).toBe('TUITION_FEE_INQUIRY');
+      expect(feeFrame.unsupportedEntity).toBe(false);
+
+      // Async FACILITIES
+      const facClient = createMockModelClient({
+        speechAct: 'INQUIRE_PROPERTY',
+        semanticConcepts: ['CAMPUS_LIFE'],
+        candidateEntities: [{ mention: 'Laboratorium Komputer', inferredCategory: 'facility' }],
+        requestedAspects: ['facilities'],
+        scopeConstraints: { academicLevel: null, studyMode: null, locationConstraint: null },
+        contextDependency: { isFollowUp: false, referenceType: 'none' },
+        confidence: 0.96,
+        ambiguityLevel: 'LOW'
+      });
+      const facFrame = await resolveSemanticFrameAsync(
+        'Apakah ada fasilitas laboratorium komputer?',
+        {},
+        { client: facClient }
+      );
+      expect(facFrame.domain).toBe('FACILITIES');
+      expect(facFrame.intent).toBe('FACILITY_INQUIRY');
+      expect(facFrame.unsupportedEntity).toBe(false);
+    });
+
+    test('J.8: Jawaban saat bukti UKM tidak ditemukan menyatakan informasi belum berhasil diverifikasi (bukan klaim ketiadaan absolut)', () => {
+      const ukmFrame = resolveSemanticFrame('Apakah ada UKM polo berkuda di kampus?');
+      expect(ukmFrame.domain).toBe('ORGANIZATION_UKM');
+
+      const answerability = evaluateAnswerability(ukmFrame, [], []);
+      expect(answerability.status).toBe(ANSWERABILITY_STATUS.UNKNOWN);
+      expect(answerability.reason).toBe('insufficient_ukm_evidence');
+
+      // Invariant: Tidak mengklaim ketiadaan absolut, menyatakan belum berhasil diverifikasi dari sumber resmi
+      expect(answerability.guidance).toMatch(/belum berhasil diverifikasi dari sumber resmi/i);
+      expect(answerability.guidance).not.toMatch(/tidak ada sama sekali/i);
+      expect(answerability.guidance).not.toMatch(/bukan program studi/i);
+    });
+
+  });
+
 });

@@ -103,16 +103,22 @@ function approximateDomainToken(token) {
 }
 
 function detectUnsupportedProgram(rawQuery, entities = []) {
-  const hasSupportedProgram = entities.some(
-    e => e.family === 'academic_program' || e.family === 'international_program'
+  const hasKnownEntity = entities.some(
+    e => ['academic_program', 'international_program', 'student_organization', 'facility', 'scholarship', 'campus_service'].includes(e.family || e.type)
   );
-  if (hasSupportedProgram) return null;
+  if (hasKnownEntity) return null;
 
   const q = String(rawQuery || '').toLowerCase().trim();
 
+  // If query belongs to non-academic domains (student organizations, facilities, tuition, scholarship, career, etc.)
+  const NON_ACADEMIC_DOMAIN_INDICATORS = /\b(?:ukm\b|unit\s+kegiatan\s+mahasiswa|organisasi|ormawa|hima\b|himaprodi|senat|balma|ekskul|ekstrakurikuler|fasilitas|laboratorium|lab\b|perpustakaan|asrama|dormitory|ruang\s+kelas|gedung\s+kampus|aula|parkir|biaya|spp|dpp|tarif|bayar|cicilan|angsuran|beasiswa|kip\s*kuliah|kip-?k|keringanan\s+biaya|karir|karier|loker|lowongan|magang|internship|cdc)\b/i;
+  if (NON_ACADEMIC_DOMAIN_INDICATORS.test(q)) {
+    return null;
+  }
+
   // If query is a general available programs or education levels listing inquiry without specific discipline mention
-  if (/\b(?:apa\s+saja|ada\s+apa|daftar\s+prodi|list\s+jurusan|bisa\s+ambil\s+apa)\b/i.test(q) &&
-      !/\b(?:apakah\s+(?:ada|tersedia)|ada\s+nggak|punya)\b/i.test(q)) {
+  if (/\b(?:apa\s+saja|ada\s+apa|daftar\s+prodi|list\s+jurusan|bisa\s+ambil\s+apa|what\s+(?:.*?\s+)?(?:programs?|majors?|degrees?)\s+(?:are\s+)?(?:available|offered)|which\s+programs?)\b/i.test(q) &&
+      !/\b(?:apakah\s+(?:ada|tersedia)|ada\s+nggak|punya|is\s+there)\b/i.test(q)) {
     return null;
   }
 
@@ -136,7 +142,11 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
     'apa', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'pilihan', 'saja', 'aja', 'kak',
     'ya', 'nih', 'dong', 'kah', 'sore', 'malam', 'karyawan', 'reguler', 'eksekutif',
     'lebih', 'baik', 'ambil', 'pilih', 'mana', 'bagus', 'cocok', 'rekomendasi', 'saran',
-    'prodi', 'jurusan'
+    'prodi', 'jurusan',
+    // English generic catalog tokens
+    'program', 'programs', 'study', 'studies', 'course', 'courses', 'major', 'majors',
+    'degree', 'degrees', 'available', 'offered', 'what', 'which', 'any', 'are', 'there',
+    'is', 'in', 'at'
   ]);
 
   // Pattern 1: Program marker + optional degree level + candidate noun (e.g. "jurusan farmasi", "prodi s1 hubungan internasional")
@@ -166,18 +176,27 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
     }
   }
 
-  // Pattern 3: Direct inquiry of unoffered program presence: "apakah ada [X] di stikom"
-  const presenceMatch = q.match(/\b(?:ada|punya|buka|tersedia)\s+([a-z]+(?:\s+[a-z]+)?)(?:\s+(?:di\s+stikom|di\s+itb\s+stikom|di\s+kampus)|$)\b/i);
-  if (presenceMatch && presenceMatch[1]) {
-    const candidate = presenceMatch[1].trim();
-    const isDomainWord = CANONICAL_DOMAIN_LEXICON.includes(candidate) ||
-      /^(?:kelas|program|kuliah|jalur|jenjang|beasiswa|asrama|magang|s1|s2|d3|sarjana|diploma|magister)$/i.test(candidate);
+  // Pattern 3: Explicit degree level + candidate discipline (e.g. "s1 akuntansi", "d3 kebidanan")
+  const degreeMatch = q.match(/\b(?:s1|s2|d3|sarjana|diploma|magister)\s+([a-z\s]+?)(?:\s+(?:di\s+stikom|di\s+itb|di\s+bali|berapa|apa|syarat|biaya|ada|atau|jika)|$)/i);
+  if (degreeMatch && degreeMatch[1]) {
+    const candidate = degreeMatch[1].trim();
     const tokens = candidate.split(/\s+/);
-    if (!isDomainWord && candidate.length >= 4 && !tokens.some(tok => STOP_TOKENS.has(tok))) {
+    if (candidate.length >= 3 && !tokens.some(tok => STOP_TOKENS.has(tok))) {
       const known = findCanonicalEntity(candidate);
       if (!known) {
         return candidate;
       }
+    }
+  }
+
+  // Pattern 4: Direct inquiry of well-known non-offered academic disciplines (e.g. "kedokteran", "farmasi", "kebidanan", "keperawatan", "hukum", "psikologi", "akuntansi", "arsitektur")
+  const commonDisciplines = /\b(kedokteran(?:\s+gigi|\s+hewan)?|farmasi|kebidanan|keperawatan|hukum|psikologi|akuntansi|arsitektur|pertanian|peternakan)\b/i;
+  const directMatch = q.match(commonDisciplines);
+  if (directMatch && directMatch[1]) {
+    const candidate = directMatch[1].trim();
+    const known = findCanonicalEntity(candidate);
+    if (!known) {
+      return candidate;
     }
   }
 
@@ -586,6 +605,32 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       relation = 'UKM_REASONING_TECH';
     }
 
+    if (!entities.some(e => e.family === 'student_organization')) {
+      const namedUkmMatch = normalized.match(/\b(?:ukm|unit\s+kegiatan\s+mahasiswa)\s+(?:olahraga\s+|seni\s+|kebudayaan\s+|bidang\s+)?([a-z]+(?:\s+[a-z]+)?)(?:\s+(?:di\s+stikom|di\s+itb|di\s+bali|di\s+kampus|berapa|apa|syarat|ada|atau|jika)|$)/i);
+      if (namedUkmMatch && namedUkmMatch[1]) {
+        const candUkm = namedUkmMatch[1].trim();
+        const STOP_ORG = new Set([
+          'apa', 'saja', 'aja', 'ada', 'tidak', 'gak', 'nggak', 'bukan', 'itu', 'ini',
+          'yang', 'dan', 'atau', 'olahraga', 'seni', 'budaya', 'teknologi', 'kerohanian',
+          'buka', 'punya', 'tersedia', 'sih', 'kah', 'ya', 'kan', 'dong', 'mana'
+        ]);
+        const tokens = candUkm.split(/\s+/);
+        const hasSubstantiveToken = tokens.every(t => !STOP_ORG.has(t) && t.length >= 3);
+        if (hasSubstantiveToken) {
+          const known = findCanonicalEntity(candUkm) || findCanonicalEntity('UKM ' + candUkm);
+          if (!known) {
+            entities.push({
+              canonical: 'UKM ' + candUkm,
+              rawMention: candUkm,
+              type: 'student_activity_unit',
+              family: 'student_organization',
+              isUnverified: true
+            });
+          }
+        }
+      }
+    }
+
     return {
       domain: 'ORGANIZATION_UKM',
       intent: 'ORGANIZATION_INQUIRY',
@@ -974,9 +1019,10 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   }
   const finalAspects = Array.from(combinedAspects);
 
-  const unsupp = inferred.unsupportedEntityName || inferred.unsupportedProgramName || detectUnsupportedProgram(normalized, effectiveTargetEntities);
-  const isUnsupported = Boolean(inferred.unsupportedEntity || inferred.isUnsupportedEntity || unsupp);
-  const unsupportedName = isUnsupported ? (unsupp || 'tersebut') : null;
+  const isAcademicDomain = ['ACADEMIC_PROGRAM', 'ACADEMIC_CURRICULUM', 'UNSUPPORTED_PROGRAM', 'GENERAL'].includes(domain);
+  const unsupp = isAcademicDomain ? (inferred.unsupportedEntityName || inferred.unsupportedProgramName || detectUnsupportedProgram(normalized, effectiveTargetEntities)) : null;
+  const isUnsupported = Boolean((inferred.unsupportedEntity || inferred.isUnsupportedEntity || unsupp || domain === 'UNSUPPORTED_PROGRAM') && isAcademicDomain);
+  const unsupportedName = isUnsupported ? (unsupp || inferred.unsupportedProgramName || 'tersebut') : null;
 
   const isMultiTarget = effectiveTargetEntities.length > 1 &&
     /\b(?:dan|serta|maupun|dan juga)\b/i.test(normalized);
@@ -1417,9 +1463,10 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     const participantScope = isForeign ? 'foreign' : 'domestic';
 
     // Unsupported entity check: only genuine unoffered majors (e.g. Kedokteran, Teknik Nuklir, Farmasi)
-    const rawDetected = detectedUnsupportedMention || syncFrame.unsupportedProgramName;
-    const isUnsupported = Boolean(rawDetected);
-    const unsupportedName = isUnsupported ? rawDetected : null;
+    const isAcademicDomain = ['ACADEMIC_PROGRAM', 'ACADEMIC_CURRICULUM', 'UNSUPPORTED_PROGRAM', 'GENERAL'].includes(domain);
+    const rawDetected = isAcademicDomain ? (detectedUnsupportedMention || (syncFrame.domain === 'UNSUPPORTED_PROGRAM' ? syncFrame.unsupportedProgramName : null)) : null;
+    const isUnsupported = Boolean(rawDetected || domain === 'UNSUPPORTED_PROGRAM') && isAcademicDomain;
+    const unsupportedName = isUnsupported ? (rawDetected || detectedUnsupportedMention || syncFrame.unsupportedProgramName || 'tersebut') : null;
     const isOOD = domain === 'OUT_OF_DOMAIN';
 
     const academicScope = syncFrame.academicScope || resolveAcademicScope(rawQuery);
