@@ -72,6 +72,8 @@ const PROTECTED_CANONICAL_WORDS = new Set([
   'dan', 'atau', 'ke', 'di', 'dari', 'pada', 'untuk', 'dengan', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'saya', 'kami', 'kita', 'dia', 'ini', 'itu', 'apa', 'siapa', 'mana', 'kapan', 'sudah', 'belum', 'tidak', 'bukan'
 ]);
 
+const SCIENTIFIC_LAW_HOMONYM_TERMS = '(?:gravitasi|newton|termodinamika|kepler|ohm|pascal|bernoulli|kekekalan|gauss|coulomb|faraday|archimedes|boyle|snellius|kirchhoff|mendel|fisika|kimia|alam|rimba|timbal|sebab|permintaan|penawaran)';
+
 function approximateDomainToken(token) {
   if (PROTECTED_CANONICAL_WORDS.has(token) || token.length < 3) return token;
   const tSkel = getConsonantSkeleton(token);
@@ -169,7 +171,10 @@ function isLegitimateUnsupportedProgramCandidate(candidate, rawQuery = '', entit
   const qLower = String(rawQuery || '').toLowerCase();
   const isGeneralDomainQuery = /\b(?:apa\s+saja|ada\s+apa|daftar\s+(?:prodi|jurusan)|pilihan\s+jurusan|biaya|spp|dpp|potongan|tambahan|perbandingan|bandingkan|rpl|rekognisi|konversi|pengalaman\s+kerja|ukm|ormawa|seni|musik|visa|itas|kitas|izin\s+belajar|study\s+permit|vokasi|voksi|diploma|d3|pascasarjana|magister|s2|fbv|fik)\b/i.test(qLower);
 
-  const isSpecificDisciplineKeyword = /\b(?:kedokteran|dokter|farmasi|keperawatan|kebidanan|psikologi|hukum|arsitektur|akuntansi\s+murni|teknik\s+(?!(?:atau|dan|di|ke|untuk)\b)[a-z]+|sastra\s+(?!(?:atau|dan|di|ke|untuk)\b)[a-z]+|pendidikan\s+(?!(?:vokasi|tinggi|sarjana|diploma|formal)\b)[a-z]+|ilmu\s+(?!(?:komputer|informasi)\b)[a-z]+|medicine|pharmacy|dentistry|law)\b/i.test(candLower);
+  const isSpecificDisciplineKeyword = new RegExp(
+    '\\b(?:kedokteran|dokter|farmasi|keperawatan|kebidanan|psikologi|hukum(?!\\s+' + SCIENTIFIC_LAW_HOMONYM_TERMS + ')|arsitektur|akuntansi\\s+murni|teknik\\s+(?!(?:atau|dan|di|ke|untuk)\\b)[a-z]+|sastra\\s+(?!(?:atau|dan|di|ke|untuk)\\b)[a-z]+|pendidikan\\s+(?!(?:vokasi|tinggi|sarjana|diploma|formal)\\b)[a-z]+|ilmu\\s+(?!(?:komputer|informasi)\\b)[a-z]+|medicine|pharmacy|dentistry|law)\\b',
+    'i'
+  ).test(candLower);
 
   if (isGeneralDomainQuery && !isSpecificDisciplineKeyword) {
     return false;
@@ -270,12 +275,20 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
   }
 
   // Pattern 4: Explicit statutory unoffered discipline keywords (e.g. "dokter", "kedokteran", "medicine", "teknik nuklir", "farmasi")
-  const statutoryDisciplineMatch = q.match(/\b(kedokteran(?:\s+gigi)?|dokter|farmasi|farmakologi|keperawatan|kebidanan|psikologi|hukum|arsitektur|teknik\s+(?:nuklir|sipil|mesin|kimia|perminyakan|pertambangan|geologi|kelautan|penerbangan|dirgantara)|sastra\s+[a-z]+|medicine|pharmacy|dentistry|nursing|law)\b/i);
+  const isScientificLawContext = /\b(?:gravitasi|newton|termodinamika|kepler|ohm|pascal|bernoulli|kekekalan|gauss|coulomb|faraday|archimedes|boyle|snellius|kirchhoff|mendel|rumus|fisika|kimia)\b/i.test(q) &&
+    !/\b(?:jurusan|prodi|program\s+studi|fakultas|kuliah|s1|s2|gelar|admisi|pmb|daftar|biaya)\b/i.test(q);
+
+  const statutoryDisciplineMatch = q.match(new RegExp(
+    '\\b(kedokteran(?:\\s+gigi)?|dokter|farmasi|farmakologi|keperawatan|kebidanan|psikologi|hukum(?!\\s+' + SCIENTIFIC_LAW_HOMONYM_TERMS + ')|arsitektur|teknik\\s+(?:nuklir|sipil|mesin|kimia|perminyakan|pertambangan|geologi|kelautan|penerbangan|dirgantara)|sastra\\s+[a-z]+|medicine|pharmacy|dentistry|nursing|law)\\b',
+    'i'
+  ));
   if (statutoryDisciplineMatch && statutoryDisciplineMatch[1]) {
     const rawDisc = statutoryDisciplineMatch[1].trim();
-    const cand = /^(?:dokter)$/i.test(rawDisc) ? 'Kedokteran' : (rawDisc.charAt(0).toUpperCase() + rawDisc.slice(1));
-    const result = evaluateCandidate(cand);
-    if (result) return result;
+    if (!(/^hukum$/i.test(rawDisc) && isScientificLawContext)) {
+      const cand = /^(?:dokter)$/i.test(rawDisc) ? 'Kedokteran' : (rawDisc.charAt(0).toUpperCase() + rawDisc.slice(1));
+      const result = evaluateCandidate(cand);
+      if (result) return result;
+    }
   }
 
   return null;
@@ -352,11 +365,17 @@ function detectUnconfirmedProgram(rawQuery, entities = []) {
 
   // 2. Explicit discipline keywords (ID & EN)
   // Ensure we match genuine discipline nouns, NOT conjunctions or broad track terms.
-  const explicitDisciplineMatch = q.match(/\b((?:s[123]\s+)?(?:kedokteran(?:\s+gigi|\s+hewan)?|dokter|farmasi|keperawatan|kebidanan|psikologi|hukum|arsitektur|akuntansi|manajemen(?!\s+informatika)|teknik\s+(?!(?:atau|dan|di|ke|untuk)\b)[a-z]+|sastra\s+(?!(?:atau|dan|di|ke|untuk)\b)[a-z]+|pendidikan\s+(?!(?:vokasi|tinggi|sarjana|diploma|formal)\b)[a-z]+|ilmu\s+(?!(?:komputer|informasi)\b)[a-z]+|medicine|medical(?!\s+informatics)|pharmacy|psychology|dentistry|law|architecture))\b/i);
+  const explicitDisciplineMatch = q.match(new RegExp(
+    '\\b((?:s[123]\\s+)?(?:kedokteran(?:\\s+gigi|\\s+hewan)?|dokter|farmasi|keperawatan|kebidanan|psikologi|hukum(?!\\s+' + SCIENTIFIC_LAW_HOMONYM_TERMS + ')|arsitektur|akuntansi|manajemen(?!\\s+informatika)|teknik\\s+(?!(?:atau|dan|di|ke|untuk)\\b)[a-z]+|sastra\\s+(?!(?:atau|dan|di|ke|untuk)\\b)[a-z]+|pendidikan\\s+(?!(?:vokasi|tinggi|sarjana|diploma|formal)\\b)[a-z]+|ilmu\\s+(?!(?:komputer|informasi)\\b)[a-z]+|medicine|medical(?!\\s+informatics)|pharmacy|psychology|dentistry|law|architecture))\\b',
+    'i'
+  ));
   if (explicitDisciplineMatch && explicitDisciplineMatch[1]) {
     const rawCand = explicitDisciplineMatch[1].trim();
     const cleanCand = rawCand.replace(/^s[123]\s+/i, '').trim();
-    if (!isDegreeOrGeneralAcademicCandidate(cleanCand)) {
+    const isScientificLawContext = /\b(?:gravitasi|newton|termodinamika|kepler|ohm|pascal|bernoulli|kekekalan|gauss|coulomb|faraday|archimedes|boyle|snellius|kirchhoff|mendel|rumus|fisika|kimia)\b/i.test(q) &&
+      !/\b(?:jurusan|prodi|program\s+studi|fakultas|kuliah|s1|s2|gelar|admisi|pmb|daftar|biaya)\b/i.test(q);
+
+    if (!(/^hukum$/i.test(cleanCand) && isScientificLawContext) && !isDegreeOrGeneralAcademicCandidate(cleanCand)) {
       const avail = evaluateProgramAvailability(cleanCand);
       if (avail && (avail.status === PROGRAM_AVAILABILITY_STATUS.UNKNOWN || avail.status === PROGRAM_AVAILABILITY_STATUS.NOT_OFFERED)) {
         return cleanCand.charAt(0).toUpperCase() + cleanCand.slice(1);
@@ -426,6 +445,21 @@ function normalizeQueryText(text) {
     .replace(/\b(?:aja|sj)\b/g, 'saja')
     .replace(/\bad\b/g, 'ada')
     .replace(/\bmhs\b/g, 'mahasiswa')
+    .replace(/\bmaba\b/g, 'mahasiswa baru')
+    .replace(/\bbyr\b/g, 'biaya')
+    .replace(/\bsyrt\b/g, 'syarat')
+    .replace(/\bkls\b/g, 'kelas')
+    .replace(/\bkmps\b/g, 'kampus')
+    .replace(/\bbrp\b/g, 'berapa')
+    .replace(/\bdimn\b/g, 'dimana')
+    .replace(/\bjmbran\b/g, 'jimbaran')
+    .replace(/\brnon\b/g, 'renon')
+    .replace(/\binfo\b/g, 'informasi')
+    .replace(/\btrf\b/g, 'tarif')
+    .replace(/\bjur\b/g, 'jurusan')
+    .replace(/\bprd\b/g, 'prodi')
+    .replace(/\bkrj\b/g, 'kerja')
+    .replace(/\bklh\b/g, 'kuliah')
     .replace(/\bkpan\b/g, 'kapan')
     .replace(/\bblm\b/g, 'belum')
     .replace(/\bsdh\b/g, 'sudah')
@@ -452,7 +486,24 @@ function normalizeQueryText(text) {
  * Extracts domain and primary intent based on semantic patterns
  */
 function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unstemmed = '', raw = '') {
-  // 0. Conversational Greeting & Small Talk (Non-Retrieval)
+  // 0.0 Conversational Closing / Acknowledgement (Gratitude has precedence over general greeting if no questions asked)
+  const hasGratitude = /\b(terima\s*kasih|makasih|thanks|thank\s*you|matur\s*suksma)\b/i.test(normalized);
+  const isPlainAck = /^(oke+|ok+|baik+|siap|sip|noted|mantap)\b/i.test(normalized);
+  const hasQuestionTerms = /\b(biaya|daftar|jurusan|prodi|beasiswa|kuliah|akreditasi|perwalian|krs|mata\s*kuliah|sks|semester|berapa|kapan|dimana|bagaimana|gimana|syarat|jadwal|apakah)\b/i.test(normalized) || /\?/.test(raw || unstemmed || normalized);
+
+  if ((hasGratitude || isPlainAck) && !hasQuestionTerms) {
+    return {
+      domain: 'CONVERSATIONAL',
+      intent: 'CONVERSATIONAL_ACKNOWLEDGEMENT',
+      retrievalRequired: false,
+      userState: 'ACKNOWLEDGING',
+      desiredAction: 'ACKNOWLEDGE_USER',
+      aspects: ['acknowledgement'],
+      relation: 'ACKNOWLEDGEMENT'
+    };
+  }
+
+  // 0.1 Conversational Greeting & Small Talk (Non-Retrieval)
   if (/^(hallo+|halo+|hello+|hey+|hai+|hi+|hei+|pagi|siang|sore|malam|good\s+(?:morning|afternoon|evening)|assalamu'?alaikum|selamat\s+(?:pagi|siang|sore|malam)|sampurasun|om\s+swastiastu)\b/i.test(normalized) &&
       !/\b(biaya|daftar|jurusan|prodi|beasiswa|kuliah|akreditasi|perwalian|krs|mata\s*kuliah|sks)\b/i.test(normalized)) {
     return {
@@ -475,20 +526,6 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       desiredAction: 'RESPOND_SMALL_TALK',
       aspects: ['small_talk'],
       relation: 'SMALL_TALK'
-    };
-  }
-
-  // 0.05 Conversational Closing / Acknowledgement
-  if (/^(oke+|ok+|baik+|terima\s*kasih|makasih|thanks|thank\s*you|siap|sip|noted|mantap)\b/i.test(normalized) &&
-      !/\b(biaya|daftar|jurusan|prodi|beasiswa|kuliah|akreditasi|perwalian|krs|mata\s*kuliah|sks|semester)\b/i.test(normalized)) {
-    return {
-      domain: 'CONVERSATIONAL',
-      intent: 'CONVERSATIONAL_ACKNOWLEDGEMENT',
-      retrievalRequired: false,
-      userState: 'ACKNOWLEDGING',
-      desiredAction: 'ACKNOWLEDGE_USER',
-      aspects: ['acknowledgement'],
-      relation: 'ACKNOWLEDGEMENT'
     };
   }
 
@@ -558,15 +595,15 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
-  // 2. Admission Tracks / Transfer / RPL (Rekognisi Pembelajaran Lampau)
   const isFeeQuery = /\b(biaya(?:nya)?|biaya kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan)\b/i.test(normalized);
   const admissionTrackEntity = entities.find(e => e.family === 'admission_track');
-  if (!isFeeQuery && (admissionTrackEntity || /\b(?:rpl|rekognisi(?:\s+pembelajaran\s+lampau)?|transfer\s+sks|alih\s+jenjang|lanjut\s+s1|pindahan|konversi|pengalaman\s+kerja)\b/i.test(normalized))) {
-    const isRPL = (admissionTrackEntity && admissionTrackEntity.canonical.includes('RPL')) ||
-      /\b(?:rpl|rekognisi|transfer\s+sks|alih\s+jenjang|konversi|pengalaman\s+kerja)\b/i.test(normalized);
+  const isStudyModeQuery = /\b(?:kelas\s+malam|kelas\s+sore|kelas\s+karyawan|kuliah\s+sore|kuliah\s+malam|sambil\s+kerja|shift)\b/i.test(normalized);
+  if (!isFeeQuery && !isStudyModeQuery && (admissionTrackEntity || /\b(?:rpl|rekognisi(?:\s+pembelajaran\s+lampau)?|transfer(?:\s+sks|\s+s1)?|alih\s+jenjang|lanjut(?:\s+transfer)?\s+s1|pindahan|konversi|pengalaman\s+kerja)\b/i.test(normalized))) {
+    const isRPL = (admissionTrackEntity && (admissionTrackEntity.canonical.includes('RPL') || admissionTrackEntity.canonical.includes('Transfer') || admissionTrackEntity.canonical.includes('Pindahan'))) ||
+      /\b(?:rpl|rekognisi|transfer(?:\s+sks|\s+s1)?|alih\s+jenjang|lanjut(?:\s+transfer)?\s+s1|pindahan|konversi|pengalaman\s+kerja)\b/i.test(normalized);
     const isProcedure = /\b(?:alur|cara|prosedur|syarat|persyaratan|berkas|dokumen|daftar)\b/i.test(normalized);
     const isDuration = /\b(?:berapa\s+lama|durasi|waktu\s+studi|masa\s+studi|lama\s+kuliah|lama\s+studi)\b/i.test(normalized);
-    const aspects = isRPL ? ['rpl', 'credit_transfer', 'procedure', 'requirements'] : ['admission_track', 'requirements'];
+    const aspects = isRPL ? ['rpl', 'credit_transfer', 'admission_track', 'procedure', 'requirements'] : ['admission_track', 'requirements'];
     if (isDuration) {
       aspects.push('duration', 'study_duration');
     }
@@ -761,9 +798,9 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   // 7. Program Overview / Definition / Profile / Career / Degree (Generic across academic programs)
   const hasAcademicProgram = entities.some(e => e.family === 'academic_program' || e.type === 'program');
   const hasStudentOrg = entities.some(e => e.family === 'student_organization') || /\b(himpunan\s+mahasiswa|himaprodi|hima\b|ukm\b|ormawa)\b/i.test(normalized);
-  if (!hasStudentOrg && ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|deskripsi|belajar\s+apa|mempelajari\s+apa|fokus(?:nya)?(?:\s+apa|\s+jurusan)?|kuliah\s+tentang\s+apa|prospek(?:nya)?|peluang\s+kerja|lulusan(?:nya)?\s+(?:bisa\s+)?jadi\s+apa|lulusan|kerja\s+(?:sebagai\s+)?apa|jadi\s+apa|profesi|karir|karier|gelar(?:nya)?)\b/i.test(normalized) && hasAcademicProgram) ||
+  if (!hasStudentOrg && ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|deskripsi|belajar\s+apa|mempelajari\s+apa|fokus(?:nya)?(?:\s+apa|\s+jurusan)?|kuliah\s+tentang\s+apa|prospek(?:nya)?|peluang\s+kerja|lulusan(?:nya)?\s+(?:bisa\s+)?jadi\s+apa|lulusan|kerja\s+(?:sebagai\s+)?apa|jadi\s+apa|profesi|karir|karier|(?:ber)?gelar(?:nya)?|titel|degree)\b/i.test(normalized) && hasAcademicProgram) ||
       (/\b(apa\s+itu\s+program\s+studi|profil\s+prodi|profil\s+program\s+studi)\b/i.test(normalized)))) {
-    const isDegreeInquiry = /\b(gelar(?:nya)?)\b/i.test(normalized);
+    const isDegreeInquiry = /\b(?:(?:ber)?gelar(?:nya)?|titel|degree)\b/i.test(normalized);
     return {
       domain: 'ACADEMIC_PROGRAM',
       intent: isDegreeInquiry ? 'DEGREE_AWARD' : 'PROGRAM_OVERVIEW',
@@ -1869,9 +1906,15 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     const primaryConcept = interpretation.semanticConcepts?.[0] || null;
     const isScholarshipLexicon = /\b(?:beasiswa(?:nya)?|kip\s*kuliah|kip-?k|potongan\s+dpp|keringanan\s+biaya|bantuan\s+(?:dana\s+pendidikan|kuliah|biaya|pendidikan|finansial)|satu\s+keluarga\s+satu\s+sarjana|1k1s|skss|scholarship|scholarships|financial\s+aid)\b/i;
 
-    if (domain === 'CONVERSATIONAL' || speechAct === 'GENERAL_GREETING') {
+    if (domain === 'CONVERSATIONAL' || speechAct === 'GENERAL_GREETING' || speechAct === 'ACKNOWLEDGEMENT') {
       domain = 'CONVERSATIONAL';
-      intent = syncFrame.intent === 'CONVERSATIONAL_SMALL_TALK' ? 'CONVERSATIONAL_SMALL_TALK' : 'CONVERSATIONAL_GREETING';
+      if (syncFrame.intent === 'CONVERSATIONAL_ACKNOWLEDGEMENT' || speechAct === 'ACKNOWLEDGEMENT' || (/\b(?:terima\s*kasih|makasih|thanks|thank\s*you|sama[- ]sama|matur\s*suksma)\b/i.test(rawQuery) && !/\b(?:biaya|daftar|jurusan|prodi|beasiswa|kuliah|akreditasi|perwalian|krs|mata\s*kuliah|sks|semester|berapa|kapan|apakah)\b/i.test(rawQuery))) {
+        intent = 'CONVERSATIONAL_ACKNOWLEDGEMENT';
+      } else if (syncFrame.intent === 'CONVERSATIONAL_SMALL_TALK' || speechAct === 'SMALL_TALK') {
+        intent = 'CONVERSATIONAL_SMALL_TALK';
+      } else {
+        intent = 'CONVERSATIONAL_GREETING';
+      }
     } else if (domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn) {
       intent = 'OUT_OF_DOMAIN_INQUIRY';
       domain = 'OUT_OF_DOMAIN';
@@ -2073,7 +2116,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       scopeLevel: effectiveScopeLevel,
       domain: isUnsupported ? 'UNSUPPORTED_PROGRAM' : domain,
       intent: isUnsupported ? 'UNSUPPORTED_PROGRAM_INQUIRY' : intent,
-      retrievalRequired: speechAct !== 'GENERAL_GREETING' && !isUnsupported && !isOOD,
+      retrievalRequired: domain !== 'CONVERSATIONAL' && speechAct !== 'GENERAL_GREETING' && speechAct !== 'ACKNOWLEDGEMENT' && !isUnsupported && !isOOD,
       entities: resolvedEntities,
       candidateEntities: validated.candidateEntities || [],
       modifiers: syncFrame.modifiers || [],

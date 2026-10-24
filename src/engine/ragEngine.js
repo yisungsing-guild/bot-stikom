@@ -10012,15 +10012,16 @@ async function computeEmbedding(text) {
     }
   }
 
-  // If OpenAI key available, use embeddings API
+  // If OpenAI key available, use budget-controlled cached query embedding
   if (process.env.OPENAI_API_KEY) {
     try {
+      const { computeQueryEmbedding } = require('./pgvectorShadowProvider');
       const timeoutMsRaw = parseInt(process.env.OPENAI_EMBEDDING_TIMEOUT_MS || process.env.OPENAI_TIMEOUT_MS || '20000', 10);
       const timeoutMs = (Number.isFinite(timeoutMsRaw) && timeoutMsRaw > 0) ? timeoutMsRaw : 20000;
-      const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: timeoutMs });
-      const resp = await client.embeddings.create({ model: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small', input: text });
-      const embedding = resp.data?.[0]?.embedding || [];
-      return embedding;
+      const embedding = await computeQueryEmbedding(text, timeoutMs);
+      if (Array.isArray(embedding) && embedding.length > 0) {
+        return embedding;
+      }
     } catch (err) {
       logger.warn({ err: err.message }, '[RAG] OpenAI embedding failed, falling back to mock embedding');
     }

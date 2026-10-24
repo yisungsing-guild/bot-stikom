@@ -54,6 +54,11 @@ function setTelemetrySink(fn) {
   customTelemetrySink = fn;
 }
 
+let customBudgetLedger = null;
+function setBudgetLedger(ledger) {
+  customBudgetLedger = ledger;
+}
+
 function emitTelemetry(record) {
   if (typeof customTelemetrySink === 'function') {
     try {
@@ -285,8 +290,75 @@ async function computeBatchQueryEmbeddings(texts, timeoutMs = 1500, abortSignal 
     return results;
   }
 
+  // 1. Check if embedding model is verified in catalog before paid request
+  let budgetReservation = null;
+  let budgetLedger = customBudgetLedger;
+  if (!budgetLedger) {
+    try {
+      const { globalBudgetLedger } = require('../core/budgetLedger');
+      budgetLedger = globalBudgetLedger;
+    } catch (_) {}
+  }
+
+  // If persistent ledger is not available, fail-closed to BM25/lexical retrieval (no paid API call)
+  if (!budgetLedger || typeof budgetLedger.reserveBudget !== 'function' || !budgetLedger.isAvailable()) {
+    if (logger && typeof logger.warn === 'function') {
+      logger.warn('[pgvectorShadowProvider] Persistent budget ledger unavailable; skipping embedding API and falling back to lexical search');
+    }
+    return results;
+  }
+
+  const effectiveEmbedModel = process.env.EMBEDDING_MODEL || EMBEDDING_MODEL;
+
+  // Check model pricing in catalog before network call (fail-closed)
+  try {
+    const { getModelRate } = require('../core/budgetLedger');
+    const rateInfo = getModelRate(effectiveEmbedModel, { type: 'embedding' });
+    if (rateInfo.isFallback) {
+      if (logger && typeof logger.warn === 'function') {
+        logger.warn({ model: effectiveEmbedModel }, '[pgvectorShadowProvider] Embedding model is unverified in catalog; skipping paid embedding and falling back to lexical search');
+      }
+      return results;
+    }
+  } catch (_) {}
+
+  // Reserve estimated embedding cost based on whole batch with conservative factor (2.5 chars/token)
+  const estimatedTokens = uncachedTexts.reduce((acc, t) => acc + Math.max(16, Math.ceil(String(t).length / 2.5)), 0);
+  let estimatedCostUSD = 0.000001;
+  try {
+    const { calculateEmbeddingCostUSD } = require('../core/budgetLedger');
+    estimatedCostUSD = calculateEmbeddingCostUSD(estimatedTokens, effectiveEmbedModel);
+  } catch (_) {
+    estimatedCostUSD = Math.max(0.000001, (estimatedTokens * 0.02) / 1000000);
+  }
+
+  budgetReservation = await budgetLedger.reserveBudget({
+    estimatedUSD: estimatedCostUSD,
+    purpose: 'embedding_batch',
+    model: effectiveEmbedModel
+  });
+
+  if (!budgetReservation || !budgetReservation.allowed) {
+    if (logger && typeof logger.warn === 'function') {
+      logger.warn({ reason: budgetReservation?.reason, spent: budgetReservation?.spentUSD, model: effectiveEmbedModel }, '[pgvectorShadowProvider] Embedding budget reservation denied; falling back to lexical search without embedding');
+    }
+    // Fail-closed to BM25/lexical mode: return results where uncached remain null so retrieval continues via BM25
+    return results;
+  }
+
   const apiKey = isGeminiProviderActive() ? process.env.GEMINI_API_KEY : process.env.OPENAI_API_KEY;
   if (!apiKey) {
+    if (budgetReservation && budgetLedger) {
+      await budgetLedger.reconcileBudget({
+        reservationId: budgetReservation.reservationId,
+        reservedUSD: budgetReservation.reservedUSD,
+        actualPromptTokens: 0,
+        actualCompletionTokens: 0,
+        model: effectiveEmbedModel,
+        status: 'FAILED',
+        isPreRequest: true
+      });
+    }
     throw new Error(`${isGeminiProviderActive() ? 'GEMINI_API_KEY' : 'OPENAI_API_KEY'} is not configured for query embedding.`);
   }
 
@@ -295,10 +367,40 @@ async function computeBatchQueryEmbeddings(texts, timeoutMs = 1500, abortSignal 
     ? module.exports.getOpenAIClient(apiKey, timeoutMs)
     : new OpenAI({ apiKey, timeout: timeoutMs });
   const requestOptions = abortSignal ? { signal: abortSignal } : {};
-  const resp = await client.embeddings.create({
-    model: EMBEDDING_MODEL,
-    input: uncachedTexts
-  }, requestOptions);
+
+  let resp;
+  try {
+    resp = await client.embeddings.create({
+      model: effectiveEmbedModel,
+      input: uncachedTexts
+    }, requestOptions);
+
+    // Reconcile embedding budget using actual usage
+    if (budgetReservation && budgetLedger) {
+      const actualTokens = resp.usage?.prompt_tokens || resp.usage?.total_tokens || uncachedTexts.reduce((acc, t) => acc + Math.ceil(String(t).length / 2.5), 0);
+      await budgetLedger.reconcileBudget({
+        reservationId: budgetReservation.reservationId,
+        reservedUSD: budgetReservation.reservedUSD,
+        actualPromptTokens: actualTokens,
+        actualCompletionTokens: 0,
+        model: effectiveEmbedModel,
+        status: 'SUCCESS'
+      });
+    }
+  } catch (embedErr) {
+    if (budgetReservation && budgetLedger) {
+      await budgetLedger.reconcileBudget({
+        reservationId: budgetReservation.reservationId,
+        reservedUSD: budgetReservation.reservedUSD,
+        actualPromptTokens: 0,
+        actualCompletionTokens: 0,
+        model: effectiveEmbedModel,
+        status: 'FAILED',
+        error: embedErr
+      });
+    }
+    throw embedErr;
+  }
 
   const missDurationMs = Date.now() - tMiss0;
   cacheMissCount += uncachedTexts.length;
@@ -2065,6 +2167,7 @@ module.exports = {
   getActiveShadowJobs,
   _resetActiveShadowJobs,
   setTelemetrySink,
+  setBudgetLedger,
   emitTelemetry,
   getFieldNaturalSemantics,
   getOpenAIClient,

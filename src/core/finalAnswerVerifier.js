@@ -529,7 +529,20 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
         const currentClause = text.substring(clauseStart === -1 ? 0 : clauseStart, idx).toLowerCase().replace(/^\*+|\*+$/g, '').trim();
         const precedingContext = text.substring(lineStart === -1 ? 0 : lineStart, idx).toLowerCase();
         const immPreceding = text.substring(Math.max(lineStart === -1 ? 0 : lineStart, idx - 85), idx).toLowerCase();
-        feeClaims.push({ numVal, numClean, currentLine, currentClause, precedingContext, immPreceding, matchText: rpMatch[0] });
+
+        let afterIdx = idx + rpMatch[0].length;
+        let lineEnd = text.indexOf('\n', afterIdx);
+        if (lineEnd === -1) lineEnd = text.length;
+        let clauseEnd = lineEnd;
+        for (let i = afterIdx; i < lineEnd; i++) {
+          if (text[i] === ';' || text[i] === '+' || text[i] === '(' || text[i] === ')' || text[i] === ',' || (text[i] === '.' && /\s/.test(text[i + 1] || ''))) {
+            clauseEnd = i;
+            break;
+          }
+        }
+        const followingClause = text.substring(afterIdx, clauseEnd).toLowerCase().replace(/^\*+|\*+$/g, '').trim();
+        const immFollowing = text.substring(afterIdx, Math.min(text.length, afterIdx + 85)).toLowerCase();
+        feeClaims.push({ numVal, numClean, currentLine, currentClause, followingClause, precedingContext, immPreceding, immFollowing, matchText: rpMatch[0] });
       }
     }
 
@@ -575,58 +588,99 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
 
       const isWaveComparisonQuery = /\b(?:beda|perbedaan|bandingkan|versus|vs)\b/i.test(rawQuery) && /\bgelombang\b/i.test(rawQuery);
 
+      const PACKAGE_LUMP_SUM_REGEX = /(?:total\s+)?paket(?:\s+\d+\s+semester)?|pembayaran\s+(?:secara\s+)?lunas|opsi\s+lunas|lunas\s+\d+\s+tahun|lunas\s+selama|total\s+(?:biaya\s+)?studi(?:\s+sampai\s+lulus)?|total\s+keseluruhan\s+studi|selama\s+(?:2\s+tahun|4\s+semester|\d+\s+semester)|sampai\s+lulus/i;
+
       for (const claim of feeClaims) {
-        const { numVal, numClean, currentLine, currentClause, precedingContext, immPreceding } = claim;
+        const { numVal, numClean, currentLine, currentClause, followingClause, precedingContext, immPreceding, immFollowing } = claim;
 
         let compType = 'unknown';
-        if (/bahasa|mandarin|inggris/i.test(currentClause)) {
-          compType = 'bahasa';
-        } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(currentClause)) {
-          compType = 'dpp';
-        } else if (/(?:total\s+)?kewajiban\s+biaya\s+awal|total\s+(?:kewajiban|biaya\s+awal)/i.test(currentClause)) {
-          compType = 'total_initial';
-        } else if (/pendaftaran\s*\+\s*perlengkapan|registrasi\s+awal|pembayaran\s+(?:tunai\s+)?langsung|wajib\s+di\s+awal/i.test(currentClause)) {
-          compType = 'upfront_cash';
-        } else if (/pendaftaran|uang\s+daftar/i.test(currentClause)) {
-          compType = 'pendaftaran';
-        } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester/i.test(currentClause)) {
+        // 1. Check immediate following clause if it specifies the component (e.g. "Rp 10.000.000 per semester")
+        if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester|per\s+semester|tiap\s+semester/i.test(followingClause)) {
           compType = 'semester';
-        } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(currentClause) && !/biaya\s+registrasi/i.test(currentClause)) {
-          compType = 'perlengkapan';
-        } else if (/industri|internasional|nasional|lokal/i.test(currentClause)) {
-          compType = 'industri';
-        } else if (/(?:total\s+)?kewajiban\s+biaya\s+awal|total\s+(?:kewajiban|biaya\s+awal)/i.test(immPreceding)) {
-          compType = 'total_initial';
-        } else if (/pendaftaran\s*\+\s*perlengkapan|registrasi\s+awal|pembayaran\s+(?:tunai\s+)?langsung|wajib\s+di\s+awal/i.test(immPreceding)) {
-          compType = 'upfront_cash';
-        } else if (/bahasa|mandarin|inggris/i.test(immPreceding)) {
-          compType = 'bahasa';
-        } else if (/biaya\s+pendidikan\s+per\s+semester|per\s+semester|\bspp\b/i.test(immPreceding) && !/mulai\s+semester/i.test(immPreceding)) {
-          compType = 'semester';
-        } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(immPreceding)) {
+        } else if (PACKAGE_LUMP_SUM_REGEX.test(followingClause)) {
+          compType = 'package_lump_sum';
+        } else if (/\bdpp\b|dana\s+pendidikan\s+pokok/i.test(followingClause)) {
           compType = 'dpp';
-        } else if (/pendaftaran|uang\s+daftar/i.test(immPreceding)) {
+        } else if (/pendaftaran|uang\s+daftar/i.test(followingClause)) {
           compType = 'pendaftaran';
-        } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(immPreceding) && !/biaya\s+registrasi/i.test(currentLine)) {
-          compType = 'perlengkapan';
-        } else if (/industri|internasional|nasional|lokal/i.test(immPreceding)) {
-          compType = 'industri';
-        } else if (/total\s+(?:kewajiban|biaya\s+awal)/i.test(currentLine) && !/tunai|langsung|kewajiban\s+dpp|registrasi\s*\(jas/i.test(currentClause)) {
-          compType = 'total_initial';
-        } else if (/pendaftaran\s*\+\s*perlengkapan|registrasi\s+awal|pembayaran\s+(?:tunai\s+)?langsung|wajib\s+di\s+awal/i.test(currentLine)) {
-          compType = 'upfront_cash';
-        } else if (/industri|internasional|nasional|lokal/i.test(currentLine)) {
-          compType = 'industri';
-        } else if (/bahasa|mandarin|inggris/i.test(currentLine)) {
-          compType = 'bahasa';
-        } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(currentLine)) {
-          compType = 'dpp';
-        } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(currentLine) && !/biaya\s+registrasi/i.test(currentLine)) {
-          compType = 'perlengkapan';
-        } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester/i.test(currentLine)) {
-          compType = 'semester';
-        } else if (/pendaftaran|uang\s+daftar/i.test(currentLine)) {
-          compType = 'pendaftaran';
+        }
+
+        // 2. Check current preceding clause
+        if (compType === 'unknown') {
+          if (PACKAGE_LUMP_SUM_REGEX.test(currentClause)) {
+            compType = 'package_lump_sum';
+          } else if (/bahasa|mandarin|inggris/i.test(currentClause)) {
+            compType = 'bahasa';
+          } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(currentClause)) {
+            compType = 'dpp';
+          } else if (/(?:total\s+)?kewajiban\s+biaya\s+awal|total\s+(?:kewajiban|biaya\s+awal)/i.test(currentClause)) {
+            compType = 'total_initial';
+          } else if (/pendaftaran\s*\+\s*perlengkapan|registrasi\s+awal|pembayaran\s+(?:tunai\s+)?langsung|wajib\s+di\s+awal/i.test(currentClause)) {
+            compType = 'upfront_cash';
+          } else if (/pendaftaran|uang\s+daftar/i.test(currentClause)) {
+            compType = 'pendaftaran';
+          } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester/i.test(currentClause)) {
+            compType = 'semester';
+          } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(currentClause) && !/biaya\s+registrasi/i.test(currentClause)) {
+            compType = 'perlengkapan';
+          } else if (/industri|internasional|nasional|lokal/i.test(currentClause)) {
+            compType = 'industri';
+          } else if (PACKAGE_LUMP_SUM_REGEX.test(immFollowing || '')) {
+            compType = 'package_lump_sum';
+          }
+        }
+
+        if (compType === 'unknown') {
+          const lastPackageIdx = Math.max(
+            immPreceding.lastIndexOf('lunas'),
+            immPreceding.lastIndexOf('paket'),
+            immPreceding.lastIndexOf('sampai lulus')
+          );
+          const lastSemesterIdx = Math.max(
+            immPreceding.lastIndexOf('per semester'),
+            immPreceding.lastIndexOf('spp')
+          );
+          if (lastPackageIdx > -1 && lastPackageIdx > lastSemesterIdx) {
+            compType = 'package_lump_sum';
+          } else if (/(?:total\s+)?kewajiban\s+biaya\s+awal|total\s+(?:kewajiban|biaya\s+awal)/i.test(immPreceding)) {
+            compType = 'total_initial';
+          } else if (/pendaftaran\s*\+\s*perlengkapan|registrasi\s+awal|pembayaran\s+(?:tunai\s+)?langsung|wajib\s+di\s+awal/i.test(immPreceding)) {
+            compType = 'upfront_cash';
+          } else if (/bahasa|mandarin|inggris/i.test(immPreceding)) {
+            compType = 'bahasa';
+          } else if (/biaya\s+pendidikan\s+per\s+semester|per\s+semester|\bspp\b/i.test(immPreceding) && !/mulai\s+semester/i.test(immPreceding)) {
+            compType = 'semester';
+          } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(immPreceding)) {
+            compType = 'dpp';
+          } else if (/pendaftaran|uang\s+daftar/i.test(immPreceding)) {
+            compType = 'pendaftaran';
+          } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(immPreceding) && !/biaya\s+registrasi/i.test(currentLine)) {
+            compType = 'perlengkapan';
+          } else if (/industri|internasional|nasional|lokal/i.test(immPreceding)) {
+            compType = 'industri';
+          }
+        }
+
+        if (compType === 'unknown') {
+          if (PACKAGE_LUMP_SUM_REGEX.test(currentLine) && !/per\s+semester/i.test(currentClause)) {
+            compType = 'package_lump_sum';
+          } else if (/total\s+(?:kewajiban|biaya\s+awal)/i.test(currentLine) && !/tunai|langsung|kewajiban\s+dpp|registrasi\s*\(jas/i.test(currentClause)) {
+            compType = 'total_initial';
+          } else if (/pendaftaran\s*\+\s*perlengkapan|registrasi\s+awal|pembayaran\s+(?:tunai\s+)?langsung|wajib\s+di\s+awal/i.test(currentLine)) {
+            compType = 'upfront_cash';
+          } else if (/industri|internasional|nasional|lokal/i.test(currentLine)) {
+            compType = 'industri';
+          } else if (/bahasa|mandarin|inggris/i.test(currentLine)) {
+            compType = 'bahasa';
+          } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(currentLine)) {
+            compType = 'dpp';
+          } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(currentLine) && !/biaya\s+registrasi/i.test(currentLine)) {
+            compType = 'perlengkapan';
+          } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester/i.test(currentLine)) {
+            compType = 'semester';
+          } else if (/pendaftaran|uang\s+daftar/i.test(currentLine)) {
+            compType = 'pendaftaran';
+          }
         }
 
         if (!canonicalProfile) {
@@ -658,6 +712,8 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
                 });
               }
               if (prog.components?.pembayaranLunas2Tahun?.amount) allowedInProg.push(prog.components.pembayaranLunas2Tahun.amount);
+              if (prog.components?.pembayaranLunas2Tahun?.amount && baseReg > 0) allowedInProg.push(prog.components.pembayaranLunas2Tahun.amount + baseReg);
+              if (baseSem > 0 && prog.normalDurationSemesters) allowedInProg.push(baseSem * prog.normalDurationSemesters);
               if (prog.specialPolicies?.semester5Tesis) allowedInProg.push(prog.specialPolicies.semester5Tesis);
               if (prog.waveDiscounts) {
                 Object.values(prog.waveDiscounts).forEach(wd => {
@@ -796,12 +852,36 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
                 }
               }
             }
+          } else if (compType === 'package_lump_sum') {
+            const allowedPackage = [];
+            if (canonicalProfile.components?.pembayaranLunas2Tahun?.amount) {
+              allowedPackage.push(canonicalProfile.components.pembayaranLunas2Tahun.amount);
+            }
+            const duration = canonicalProfile.normalDurationSemesters || (canonicalProfile.degree === 'S2' ? 4 : 8);
+            if (baseSemester > 0) {
+              allowedPackage.push(baseSemester * duration);
+            }
+            if (canonicalProfile.components?.pembayaranLunas2Tahun?.amount && baseReg > 0) {
+              allowedPackage.push(canonicalProfile.components.pembayaranLunas2Tahun.amount + baseReg);
+            }
+            const isKnownNonPackageComponent =
+              numVal === baseSemester ||
+              numVal === baseReg ||
+              numVal === basePerlengkapan;
+            if (!allowedPackage.includes(numVal) && (isKnownNonPackageComponent || !hasNominalInEvidence(numVal, numClean))) {
+              return failVerification(`unsupported_factual_claim_fee_nominal_divergence: package/lump sum fee Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
+            }
           } else if (compType === 'semester') {
             const allowedSemester = [baseSemester];
             if (canonicalProfile.components?.biayaSemester?.alumniSmkAmount) {
               allowedSemester.push(canonicalProfile.components.biayaSemester.alumniSmkAmount);
             }
-            if (!allowedSemester.includes(numVal) && !hasNominalInEvidence(numVal, numClean)) {
+            const isKnownNonSemesterComponent =
+              numVal === canonicalProfile.components?.pembayaranLunas2Tahun?.amount ||
+              numVal === canonicalProfile.components?.dpp?.amount ||
+              numVal === baseReg ||
+              numVal === basePerlengkapan;
+            if (!allowedSemester.includes(numVal) && (isKnownNonSemesterComponent || !hasNominalInEvidence(numVal, numClean))) {
               return failVerification(`unsupported_factual_claim_fee_nominal_divergence: semester fee Rp ${numVal.toLocaleString('id-ID')} does not match source or canonical evidence`);
             }
           } else {
@@ -826,6 +906,11 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
             }
             if (canonicalProfile.components?.pembayaranLunas2Tahun?.amount) {
               allAllowed.push(canonicalProfile.components.pembayaranLunas2Tahun.amount);
+              if (baseReg > 0) allAllowed.push(canonicalProfile.components.pembayaranLunas2Tahun.amount + baseReg);
+            }
+            if (baseSemester > 0) {
+              const dur = canonicalProfile.normalDurationSemesters || (canonicalProfile.degree === 'S2' ? 4 : 8);
+              allAllowed.push(baseSemester * dur);
             }
             if (canonicalProfile.specialPolicies?.semester5Tesis) {
               allAllowed.push(canonicalProfile.specialPolicies.semester5Tesis);

@@ -33,15 +33,22 @@ const logger = require('../logger');
 const { isPhase2Enabled, executePhase2Bridge } = require('../reasoning/phase2Bridge');
 const { isPhase2ShadowModeEnabled, runShadowEvaluationSafely } = require('../reasoning/shadowEvaluator');
 const { VERIFICATION_OUTCOME } = require('../reasoning/contracts');
+const { isUnifiedSemanticPipelineEnabled, processUnifiedTurn } = require('./unifiedSemanticEngine');
 
 /**
  * Processes a single turn inquiry through the orchestrator.
+ * If Unified Semantic Pipeline is enabled, routes to processUnifiedTurn (AI-driven understanding & synthesis).
  * If Phase 2 is enabled, executes via Phase 2 Bridge with single fallback to Phase 1.
  * If Phase 2 is disabled, runs Phase 1 deterministic pipeline directly.
  * If Phase 2 is disabled and Phase 2 Shadow Mode is enabled, fires shadow evaluation asynchronously.
  */
 async function processTurn(chatId, rawQuery, { executeDispatch = false, executionMode, ...restOptions } = {}) {
   const isShadowMode = executionMode === 'SHADOW';
+
+  if (isUnifiedSemanticPipelineEnabled() || restOptions.useUnifiedAI) {
+    return await processUnifiedTurn(chatId, rawQuery, { executeDispatch, executionMode, ...restOptions });
+  }
+
   if (isPhase2Enabled()) {
     const bridgeResult = await executePhase2Bridge(chatId, rawQuery, { executeDispatch, executionMode, ...restOptions }, (cId, q, opt) => {
       return runPhase1DeterministicPipeline(cId, q, opt);

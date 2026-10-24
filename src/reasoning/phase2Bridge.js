@@ -25,7 +25,7 @@ const {
 } = require('./contracts');
 const { executeTaskGraph } = require('./taskGraphExecutor');
 const plannerModule = require('./phase2Planner');
-const { resolveSemanticFrameAsync } = require('../core/semanticFrameResolver');
+const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('../core/semanticFrameResolver');
 const { getSession, updateSession } = require('../core/conversationState');
 const outboundDispatcher = require('../core/outboundDispatcher');
 const { verifyFinalAnswer } = require('../core/finalAnswerVerifier');
@@ -65,6 +65,14 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
   const internalOptions = { ...options, executeDispatch: false, turnControl, signal: turnControl.signal };
   let timedOut = false;
 
+  // Input validation: fail-closed if required parameters are missing or invalid
+  if (typeof rawQuery !== 'string' || !rawQuery.trim()) {
+    throw new Error('phase2_bridge_invalid_input: rawQuery must be a non-empty string');
+  }
+  if (typeof phase1PipelineFn !== 'function') {
+    throw new Error('phase2_bridge_invalid_input: phase1PipelineFn must be a function');
+  }
+
   // Execution cutoff: when real LLM is available, use extended budget; otherwise use 10000ms
   const defaultBridgeTimeoutMs = process.env.PHASE2_BRIDGE_TIMEOUT_MS
     ? parseInt(process.env.PHASE2_BRIDGE_TIMEOUT_MS, 10)
@@ -86,10 +94,27 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
       : await getSession(chatId);
     const sessionData = session ? (session.data || {}) : {};
 
-    // 2. Resolve semantic frame asynchronously via modelSemanticParser if not already provided
+    // 2. Resolve semantic frame: prefer provided, then async parser, then deterministic sync fallback
     let semanticFrame = options.semanticFrame;
-    if (!semanticFrame && typeof resolveSemanticFrameAsync === 'function' && !options.syncOnly && !isTestEnv) {
-      semanticFrame = await resolveSemanticFrameAsync(rawQuery, sessionData, { ...options, startTime });
+    if (!semanticFrame) {
+      if (typeof resolveSemanticFrameAsync === 'function' && !options.syncOnly && !isTestEnv) {
+        try {
+          semanticFrame = await resolveSemanticFrameAsync(rawQuery, sessionData, { ...options, startTime });
+        } catch (err) {
+          logger.warn({ err: err.message }, '[Phase2Bridge] resolveSemanticFrameAsync threw error; falling back to synchronous resolver');
+        }
+      }
+      if (!semanticFrame && typeof resolveSemanticFrame === 'function') {
+        semanticFrame = resolveSemanticFrame(rawQuery, sessionData);
+      }
+    }
+
+    // Invariant check: semanticFrame must never be undefined or missing required contract fields
+    if (!semanticFrame || typeof semanticFrame !== 'object') {
+      throw new Error('phase2_bridge_invariant_violation: semanticFrame is undefined after resolution');
+    }
+    if (!semanticFrame.domain || !semanticFrame.intent) {
+      throw new Error(`phase2_bridge_invariant_violation: semanticFrame missing required fields (domain: ${semanticFrame?.domain}, intent: ${semanticFrame?.intent})`);
     }
 
     // Build execution plan via Phase 2 planner bounded by deadline
@@ -128,7 +153,11 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
         .map((opt, idx) => `${idx + 1}. ${opt.canonical}`)
         .join('\n');
 
-      const clarificationAnswer = `Untuk memberikan informasi yang tepat, mohon jelaskan program studi mana yang ingin Kakak tanyakan?\n\n${optionsList}\n\nSilakan sebutkan program studi pilihan Kakak.`;
+      const isShiftEveningQuery = /\b(?:kelas\s+malam|kelas\s+karyawan|kelas\s+sore|shift|kerja\s+shift|kuliah\s+sambil\s+kerja)\b/i.test(rawQuery);
+      const topicPrefix = isShiftEveningQuery
+        ? 'Terkait perkuliahan kelas sore/karyawan untuk yang bekerja shift, '
+        : '';
+      const clarificationAnswer = `${topicPrefix}Untuk memberikan informasi jadwal dan ketentuan yang tepat, mohon jelaskan program studi mana yang ingin Kakak tanyakan?\n\n${optionsList}\n\nSilakan sebutkan program studi pilihan Kakak.`;
 
       // Verification via Phase 1 Universal Verifier
       const verification = verifyFinalAnswer(clarificationAnswer, { rawQuery, entities: [] }, {});

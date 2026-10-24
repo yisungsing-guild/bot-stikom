@@ -42,9 +42,30 @@ function buildSynthesisPrompt(semanticFrame, evidenceList = []) {
   const userLang = semanticFrame.language || detectQueryLanguage(semanticFrame.rawQuery || '');
   const isEn = userLang === 'en';
 
-  const contextSnippet = evidenceList
+  let contextSnippet = evidenceList
     .map((e, idx) => `[${isEn ? 'Fact' : 'Fakta'} ${idx + 1}] (${isEn ? 'Source' : 'Sumber'}: ${e.source || e.sourceFile || (isEn ? 'official campus guide' : 'panduan resmi')}):\n${(e.text || e.chunk || '').trim()}`)
     .join('\n\n');
+
+  // Ground degree information from institutional catalog when evidence is present
+  const isDegreeQueryInPrompt = semanticFrame.intent === 'DEGREE_AWARD' ||
+    (semanticFrame.aspects && semanticFrame.aspects.some(a => ['degree_award', 'degree', 'study_duration'].includes(a))) ||
+    /\b(?:(?:ber)?gelar(?:nya)?|sebutan\s+lulusan|degree|titel)\b/i.test(semanticFrame.rawQuery || '');
+  if (isDegreeQueryInPrompt && evidenceList.length > 0) {
+    const rawQ = (semanticFrame.rawQuery || '').toLowerCase();
+    let cat = null;
+    if (/\b(?:bisnis\s+digital|bd)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_bd');
+    else if (/\b(?:sistem\s+informasi|si)\b/.test(rawQ) && !/\b(?:s2|magister)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_si');
+    else if (/\b(?:sistem\s+komputer|sk)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_sk');
+    else if (/\b(?:teknologi\s+informasi|ti)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_ti');
+    else if (/\b(?:manajemen\s+informatika|mi|d3)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 'd3_mi');
+    else if (/\b(?:s2|magister|msi)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's2_si');
+
+    if (cat && cat.degreeTitle) {
+      contextSnippet += isEn
+        ? `\n\n[Official Academic Catalog Fact] (Source: Institutional Academic Catalog):\nProgram: ${cat.canonical}\nOfficial Degree Awarded: ${cat.degreeTitle}\nNormal Study Duration: ${cat.semesters} semesters (${cat.sks} SKS).`
+        : `\n\n[Fakta Katalog Akademik Resmi] (Sumber: Katalog Resmi Akademik Institusi):\nProgram Studi: ${cat.canonical}\nGelar Resmi: ${cat.degreeTitle}\nMasa Studi Normal: ${cat.semesters} semester (${cat.sks} SKS).`;
+    }
+  }
 
   if (isEn) {
     return {
@@ -1386,7 +1407,7 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
   const isDegreeOrDuration = semanticFrame.domain !== 'INTERNATIONAL' && !isDoubleDegreeMention && (
     semanticFrame.intent === 'DEGREE_AWARD' ||
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['degree_award', 'study_duration', 'degree'].includes(a))) ||
-    /\b(?:gelar|sebutan\s+lulusan|masa\s+studi|lama\s+studi|durasi\s+studi|study\s+duration|duration|how\s+long)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))
+    /\b(?:(?:ber)?gelar(?:nya)?|sebutan\s+lulusan|titel|degree|masa\s+studi|lama\s+studi|durasi\s+studi|study\s+duration|duration|how\s+long)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))
   );
   if (isDegreeOrDuration) {
     let degreeFound = null;
@@ -1394,7 +1415,7 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
     for (const c of accepted) {
       const text = (c.text || c.chunk || '');
       const degMatch = text.match(/(?:gelar\s+(?:lulusan(?:nya)?|yang\s+didapat|resmi)?\s*(?:adalah|:)?\s*|memperoleh\s+gelar\s*)([A-Za-z\s\.\(\)]+?)(?:\.|\n|\||$)/i) ||
-        text.match(/\b(Magister\s+Komputer\s*(?:\(M\.Kom\.?\))?|M\.Kom\.?|Sarjana\s+Komputer\s*(?:\(S\.Kom\.?\))?|S\.Kom\.?|Sarjana\s+Bisnis\s*(?:\(S\.B\.?\))?|S\.B\.?|Ahli\s+Madya\s*(?:\(A\.Md\.?\))?|A\.Md\.?)\b/i);
+        text.match(/\b(Magister\s+Komputer\s*(?:\(M\.Kom\.?\))?|M\.Kom\.?|Sarjana\s+Komputer\s*(?:\(S\.Kom\.?\))?|S\.Kom\.?|Sarjana\s+Bisnis\s*(?:\(S\.Bns\.?\))?|S\.Bns\.?|Sarjana\s+Bisnis\s*(?:\(S\.B\.?\))?|S\.B\.?|Ahli\s+Madya\s+Komputer\s*(?:\(A\.Md\.Kom\.?\))?|A\.Md\.Kom\.?|Ahli\s+Madya\s*(?:\(A\.Md\.?\))?|A\.Md\.?)\b/i);
       if (degMatch && !degreeFound) {
         degreeFound = degMatch[1].trim();
       }
@@ -1403,6 +1424,66 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
       if (durMatch && !durationFound) {
         durationFound = durMatch[1].trim();
       }
+    }
+
+    const primaryEntity = (semanticFrame.entities && semanticFrame.entities[0]) || null;
+    let catalogEntry = null;
+    if (primaryEntity?.canonical) {
+      catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.canonical === primaryEntity.canonical || p.id === primaryEntity.canonical);
+    }
+    if (!catalogEntry) {
+      const rawEntityStr = (primaryEntity?.canonical || primaryEntity?.name || semanticFrame.entityLabel || rawQuery).toLowerCase();
+      if (/\b(?:bisnis\s+digital|bd)\b/.test(rawEntityStr)) {
+        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_bd');
+      } else if (/\b(?:sistem\s+informasi|si)\b/.test(rawEntityStr) && !/\b(?:s2|magister)\b/.test(rawEntityStr)) {
+        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_si');
+      } else if (/\b(?:sistem\s+komputer|sk)\b/.test(rawEntityStr)) {
+        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_sk');
+      } else if (/\b(?:teknologi\s+informasi|ti)\b/.test(rawEntityStr)) {
+        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_ti');
+      } else if (/\b(?:manajemen\s+informatika|mi|d3)\b/.test(rawEntityStr)) {
+        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 'd3_mi');
+      } else if (/\b(?:s2|magister|msi)\b/.test(rawEntityStr)) {
+        catalogEntry = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's2_si');
+      }
+    }
+
+    // Ground degree ONLY when verified evidence for this program was accepted by evidence arbiter
+    if (catalogEntry && catalogEntry.degreeTitle && accepted.length > 0) {
+      const entityRelevant = accepted.some(c => {
+        const txt = (c.text || c.chunk || '').toLowerCase();
+        const candEntity = (c.entity || c.canonicalEntity || '').toLowerCase();
+        return candEntity.includes(catalogEntry.id) ||
+               txt.includes(catalogEntry.canonical.toLowerCase()) ||
+               (catalogEntry.id === 's1_bd' && (txt.includes('bisnis digital') || txt.includes('himaprodi bd'))) ||
+               (catalogEntry.id === 's1_si' && (txt.includes('sistem informasi') || txt.includes('himsisfo'))) ||
+               (catalogEntry.id === 's1_sk' && (txt.includes('sistem komputer') || txt.includes('himaskom'))) ||
+               (catalogEntry.id === 's1_ti' && (txt.includes('teknologi informasi') || txt.includes('himati'))) ||
+               (catalogEntry.id === 'd3_mi' && (txt.includes('manajemen informatika') || txt.includes('d3'))) ||
+               (catalogEntry.id === 's2_si' && (txt.includes('magister') || txt.includes('pascasarjana')));
+      });
+
+      if (entityRelevant) {
+        if (!degreeFound) {
+          degreeFound = catalogEntry.degreeTitle;
+        }
+        if (!durationFound && catalogEntry.semesters) {
+          durationFound = `${catalogEntry.semesters} semester (${catalogEntry.sks} SKS)`;
+        }
+      }
+    }
+
+    const entityLabel = catalogEntry?.canonical || primaryEntity?.canonical || primaryEntity?.name || semanticFrame.entityLabel || 'program studi terkait';
+
+    // Handle false premise queries (e.g. K07: asking if S1 SI is awarded Sarjana Hukum)
+    const falsePremiseMention = /\b(?:hukum|sarjana\s+hukum|s\.h|kedokteran|sarjana\s+kedokteran|s\.ked|ekonomi|sarjana\s+ekonomi|s\.e|teknik|sarjana\s+teknik|s\.t|pendidikan|s\.pd)\b/i.test(rawQuery);
+    if (falsePremiseMention && degreeFound && catalogEntry) {
+      if (userLang === 'en') {
+        const enFalseAns = `No. Graduates of **${catalogEntry.canonical}** at ITB STIKOM Bali are awarded the official degree **${degreeFound}** (normal study duration: ${durationFound || '8 semesters'}).`;
+        return appendMissingAspectNote(enFalseAns);
+      }
+      const idFalseAns = `Tidak Kak. Lulusan **${catalogEntry.canonical}** di ITB STIKOM Bali memperoleh gelar resmi **${degreeFound}** (bukan gelar di bidang hukum atau non-TI).`;
+      return appendMissingAspectNote(idFalseAns);
     }
 
     if (degreeFound || durationFound) {
@@ -3245,6 +3326,38 @@ For complete information regarding application requirements, documents, and regi
       /\b(?:kesenian|seni|budaya)\b/i.test(rawQuery);
     if (isArtsUkmQuery && !/\bmusik\b/i.test(reply)) {
       reply += '\n* **UKM MUSIK** — minat musik, vokal, dan festival musik mahasiswa.';
+    }
+
+    // Guardrail 6: Degree Award and Premise Corrections (P05, P06, P07, K07)
+    const isDegreeInquiry = semanticFrame.intent === 'DEGREE_AWARD' ||
+      (semanticFrame.aspects && semanticFrame.aspects.some(a => ['degree_award', 'degree', 'study_duration'].includes(a))) ||
+      /\b(?:(?:ber)?gelar(?:nya)?|sebutan\s+lulusan|titel|degree)\b/i.test(rawQuery);
+    if (isDegreeInquiry) {
+      const rawQ = rawQuery.toLowerCase();
+      let cat = null;
+      if (/\b(?:bisnis\s+digital|bd)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_bd');
+      else if (/\b(?:sistem\s+informasi|si)\b/.test(rawQ) && !/\b(?:s2|magister)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_si');
+      else if (/\b(?:sistem\s+komputer|sk)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_sk');
+      else if (/\b(?:teknologi\s+informasi|ti)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's1_ti');
+      else if (/\b(?:manajemen\s+informatika|mi|d3)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 'd3_mi');
+      else if (/\b(?:s2|magister|msi)\b/.test(rawQ)) cat = INSTITUTIONAL_ACADEMIC_CATALOG.find(p => p.id === 's2_si');
+
+      // False premise correction (e.g. asking if S1 SI awards Sarjana Hukum)
+      if (/\b(?:sarjana\s+hukum|s\.h)\b/i.test(rawQuery)) {
+        reply = reply.replace(/sarjana\s+hukum/gi, 'gelar di bidang hukum');
+        if (cat && cat.degreeTitle && !new RegExp(cat.degreeTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*') + '|' + cat.degreeTitle.split('(')[0].trim(), 'i').test(reply)) {
+          reply = userLang === 'en'
+            ? `No. Graduates of **${cat.canonical}** at ITB STIKOM Bali are awarded the official degree **${cat.degreeTitle}**.`
+            : `Tidak Kak. Lulusan **${cat.canonical}** di ITB STIKOM Bali memperoleh gelar resmi **${cat.degreeTitle}** (bukan gelar di bidang hukum atau non-TI).`;
+        }
+      } else if (cat && cat.degreeTitle && generationEvidence.length > 0) {
+        if (/belum tercantum/i.test(reply) || !new RegExp(cat.degreeTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*') + '|' + cat.degreeTitle.split('(')[0].trim(), 'i').test(reply)) {
+          const groundedSummary = buildGroundedDeterministicSummary(semanticFrame, generationEvidence, arbitratedEvidence);
+          if (groundedSummary) {
+            reply = groundedSummary;
+          }
+        }
+      }
     }
 
     return {

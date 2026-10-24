@@ -29,7 +29,12 @@ const SUPPORTED_CANONICAL_DEGREES = Object.freeze(['S1', 'D3', 'S2', 'FBV', 'FIK
 
 const UNSUPPORTED_DEGREE_PATTERN = /\b(?:s[- ]?3|doktor(?:al)?|doctor(?:al|ate)?|ph\.?d|d[- ]?4|diploma\s*[- ]?4|diploma\s*[- ]?iv|sarjana\s+terapan|d[- ]?1|d[- ]?2|diploma\s*[- ]?1|diploma\s*[- ]?2|smk|sma)\b/i;
 
-const UNSUPPORTED_STATUTORY_DISCIPLINE_PATTERN = /\b(?:kedokteran(?:\s+gigi)?|dokter|farmasi|farmakologi|keperawatan|kebidanan|psikologi|hukum|arsitektur|teknik\s+(?:nuklir|sipil|mesin|kimia|perminyakan|pertambangan|geologi|kelautan|penerbangan|dirgantara)|sastra\s+[a-z]+|pendidikan\s+(?:dokter|guru|anak|usia\s+dini|sekolah\s+dasar)|medicine|pharmacy|dentistry|nursing|law)\b/i;
+const SCIENTIFIC_LAW_HOMONYM_TERMS = '(?:gravitasi|newton|termodinamika|kepler|ohm|pascal|bernoulli|kekekalan|gauss|coulomb|faraday|archimedes|boyle|snellius|kirchhoff|mendel|fisika|kimia|alam|rimba|timbal|sebab|permintaan|penawaran)';
+
+const UNSUPPORTED_STATUTORY_DISCIPLINE_PATTERN = new RegExp(
+  '\\b(?:kedokteran(?:\\s+gigi)?|dokter|farmasi|farmakologi|keperawatan|kebidanan|psikologi|hukum(?!\\s+' + SCIENTIFIC_LAW_HOMONYM_TERMS + ')|arsitektur|teknik\\s+(?:nuklir|sipil|mesin|kimia|perminyakan|pertambangan|geologi|kelautan|penerbangan|dirgantara)|sastra\\s+[a-z]+|pendidikan\\s+(?:dokter|guru|anak|usia\\s+dini|sekolah\\s+dasar)|medicine|pharmacy|dentistry|nursing|law)\\b',
+  'i'
+);
 
 /**
  * Resolves an academic degree scope request into an unambiguous structured contract.

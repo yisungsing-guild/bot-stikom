@@ -269,7 +269,7 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
     !isScholarshipOrSponsorship &&
     !isThesisHandbook &&
     !isSpecificTopicLearning;
-  if (isProgramScoped && allEntities.length === 0 && !semanticFrame.academicLevel) {
+  if (isProgramScoped && programEntities.length === 0 && !semanticFrame.academicLevel) {
     return true;
   }
 

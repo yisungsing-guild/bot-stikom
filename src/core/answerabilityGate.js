@@ -13,6 +13,7 @@
  */
 
 const { detectQueryLanguage } = require('../utils/languageDetector');
+const { INSTITUTIONAL_ACADEMIC_CATALOG } = require('./academicCatalog');
 
 const ANSWERABILITY_STATUS = Object.freeze({
   ANSWERABLE: 'ANSWERABLE',
@@ -225,6 +226,18 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       }
       if (req === 'study_permit' || req === 'visa' || req === 'international_students') {
         return /\b(visa|itas|kitas|study\s+permit|izin\s+belajar|e30b|mahasiswa\s+asing)\b/i.test(combinedEvidenceText);
+      }
+      if (req === 'degree_award' || req === 'degree' || req === 'study_duration') {
+        const hasTextDegree = /\b(gelar|sarjana|magister|ahli\s+madya|s\.kom|s\.bns|a\.md\.kom|m\.kom|semester|masa\s+studi|durasi)\b/i.test(combinedEvidenceText);
+        const targetEntity = (semanticFrame.entities && semanticFrame.entities[0]?.canonical) || semanticFrame.entityLabel || '';
+        const catalogMatch = INSTITUTIONAL_ACADEMIC_CATALOG.find(p =>
+          p.canonical === targetEntity ||
+          (targetEntity && (p.canonical.toLowerCase().includes(targetEntity.toLowerCase()) || targetEntity.toLowerCase().includes(p.canonical.toLowerCase())))
+        );
+        return hasTextDegree || (Boolean(catalogMatch && catalogMatch.degreeTitle) && accepted.length > 0);
+      }
+      if (req === 'admission_track' || req === 'rpl' || req === 'credit_transfer' || req === 'admission_pathway' || req === 'track') {
+        return /\b(rpl|rekognisi|pembelajaran\s+lampau|transfer|alih\s*jenjang|pindahan|jalur|reguler|beasiswa|pendaftaran|pmb|lanjut(?:\s+ke)?\s+s1|biaya|s1|d3)\b/i.test(combinedEvidenceText);
       }
       return false;
     };
