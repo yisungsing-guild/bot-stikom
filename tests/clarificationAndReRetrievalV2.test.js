@@ -212,4 +212,57 @@ describe('Chat Engine V2 — Understanding, Clarification, Retrieval, and Accura
     });
   });
 
+  describe('Point 12: Wave Fee Inquiry vs PMB Schedule Intent Discrimination', () => {
+    test('Explicit schedule questions on waves route to PMB / ADMISSION_SCHEDULE', () => {
+      const scheduleQueries = [
+        'Gelombang II kapan dibuka?',
+        'Apa jadwal pendaftaran Gelombang II?',
+        'Kapan pendaftaran gelombang 2 ditutup?'
+      ];
+
+      for (const q of scheduleQueries) {
+        const frame = resolveSemanticFrame(q, { activeDomain: 'TUITION_FEE', activeIntent: 'TUITION_FEE_INQUIRY' });
+        expect(frame.domain).toBe('PMB');
+        expect(frame.intent).toBe('ADMISSION_SCHEDULE');
+      }
+    });
+
+    test('Standalone and contextual fee questions on waves route to TUITION_FEE', () => {
+      const feeStandaloneQueries = [
+        'Gelombang 2 berapa?',
+        'Berapa potongan gelombang 1?'
+      ];
+
+      for (const q of feeStandaloneQueries) {
+        const frame = resolveSemanticFrame(q, {});
+        expect(frame.domain).toBe('TUITION_FEE');
+        expect(frame.intent).toBe('TUITION_FEE_INQUIRY');
+      }
+
+      // Contextual follow-up under active fee domain
+      const frameWithCtx = resolveSemanticFrame('Kalau gelombang 2 berapa?', {
+        activeDomain: 'TUITION_FEE',
+        activeIntent: 'TUITION_FEE_INQUIRY',
+        activeEntity: 'S1 Sistem Informasi'
+      });
+      expect(frameWithCtx.domain).toBe('TUITION_FEE');
+      expect(frameWithCtx.intent).toBe('TUITION_FEE_INQUIRY');
+    });
+
+    test('End-to-end multi-turn: S1 SI per semester followed by "Kalau gelombang 2 berapa?"', async () => {
+      const chatId = 'test-e2e-si-wave2-' + Date.now();
+
+      // Turn 1
+      const t1 = await runPhase1DeterministicPipeline(chatId, 'Berapa biaya kuliah S1 Sistem Informasi per semester?', { syncOnly: true });
+      expect(t1.finalAnswer).toMatch(/6\.500\.000/);
+
+      // Turn 2
+      const t2 = await runPhase1DeterministicPipeline(chatId, 'Kalau gelombang 2 berapa?', { syncOnly: true });
+      expect(t2.finalAnswer).toMatch(/Rincian Biaya Kuliah S1 Sistem Informasi — Gelombang II/i);
+      expect(t2.finalAnswer).toMatch(/Rp 14\.300\.000/);
+      expect(t2.finalAnswer).toMatch(/Rp 12\.500\.000/);
+      expect(t2.subQueryResults?.[0]?.verification?.outcome).toBe('VERIFIED_FACTUAL');
+      expect(t2.subQueryResults?.[0]?.verification?.pass).toBe(true);
+    });
+  });
 });

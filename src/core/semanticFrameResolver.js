@@ -715,7 +715,15 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 13. Tuition Fee / Biaya Kuliah (Prioritized before PMB schedule when cost/fee is asked)
-  if (/\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized)) {
+  const isFeeContextFollowUp = (sessionData.activeDomain === 'TUITION_FEE' || sessionData.activeIntent === 'TUITION_FEE_INQUIRY') &&
+    /\b(?:gelombang|gel)\b/i.test(normalized) &&
+    !/\b(?:jadwal|kapan|tanggal|periode|deadline|batas|buka|tutup|dibuka|ditutup)\b/i.test(normalized);
+
+  const isWaveCostInquiry = /\b(?:gelombang|gel)\s+(?:khusus|sisipan|[0-9]+|[ivx]+)\s+(?:berapa|ada\s+potongan|ada\s+diskon|dapat\s+diskon|dapat\s+potongan)\b/i.test(normalized) ||
+    /\b(?:berapa|potongan|diskon)\b.*\b(?:gelombang|gel)\s+(?:khusus|sisipan|[0-9]+|[ivx]+)\b/i.test(normalized);
+
+  if (/\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized) ||
+      isFeeContextFollowUp || isWaveCostInquiry) {
     const isInstallmentProcedure =
       /\b(?:syarat|persyaratan|prosedur|tata\s*cara|cara(?:\s+mengajukan)?|bagaimana\s+mengajukan|pengajuan|dokumen|berkas|formulir)\b/i.test(normalized) &&
       /\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|mengangsur)\b/i.test(normalized);
