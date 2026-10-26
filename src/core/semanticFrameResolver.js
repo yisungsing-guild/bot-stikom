@@ -341,16 +341,35 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   // 1. Specialized Campus Service / Career Center (Takes precedence over generic vocabulary like "fasilitas", "biaya", "cara")
   const campusServiceEntity = entities.find(e => e.family === 'campus_service');
   if (campusServiceEntity || /\b(?:career\s+center|cdc\b|inbis|inkubator\s+bisnis|magang|internship|campus\s+hiring|rekrutmen|kerja\s+sama|mitra\s+industri|penyaluran\s+kerja|perusahaan\s+kami)\b/i.test(normalized)) {
-    const isCareer = (campusServiceEntity && (campusServiceEntity.canonical.includes('CDC') || campusServiceEntity.canonical.includes('Career') || campusServiceEntity.canonical.includes('LinkedIn'))) ||
+    const isCareer = (campusServiceEntity && (campusServiceEntity.canonical.includes('CDC') || campusServiceEntity.canonical.includes('Career') || campusServiceEntity.canonical.includes('Bursa Kerja'))) ||
       /\b(?:career|cdc\b|magang|internship|campus\s+hiring|rekrutmen|penyaluran\s+kerja)\b/i.test(normalized);
+
+    const isCertification = /\b(?:sertifikasi|sertifikat|learning|course|kursus|upskilling|reskilling)\b/i.test(normalized);
+    const isTraining = /\b(?:pelatihan|training|optimalisasi|cv|wawancara|branding|profil)\b/i.test(normalized);
+    const isCooperation = /\b(?:kerja\s*sama|kerjasama|mitra|kemitraan|industri)\b/i.test(normalized);
+    const isInternship = /\b(?:magang|internship|praktik\s+kerja)\b/i.test(normalized);
+
+    const dynamicAspects = [];
+    if (isCertification) dynamicAspects.push('certification');
+    if (isTraining) dynamicAspects.push('training');
+    if (isCooperation) dynamicAspects.push('cooperation');
+    if (isInternship) dynamicAspects.push('internship');
+    if (isCareer) dynamicAspects.push('career_services');
+    dynamicAspects.push('service_info', 'program_info');
+
+    // Generic broad inquiry detection: asks about program/service broadly without specifying a concrete sub-aspect
+    const isBroadProgramInquiry = !isCertification && !isTraining && !isCooperation && !isInternship &&
+      /\b(?:program|info|informasi|tentang|apa\s+itu|ada\s+apa|tersedia)\b/i.test(normalized);
+
     return {
       domain: isCareer ? 'CAREER_CENTER' : 'CAMPUS_SERVICE',
       intent: isCareer ? 'CAREER_CENTER_INQUIRY' : 'CAMPUS_SERVICE_INQUIRY',
       retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: isCareer ? 'PROVIDE_CAREER_CENTER_INFO' : 'PROVIDE_CAMPUS_SERVICE_INFO',
-      aspects: isCareer ? ['internship', 'career_services', 'cooperation', 'facilities'] : ['service_info', 'support'],
-      relation: isCareer ? 'CAREER_SERVICES' : 'CAMPUS_SERVICE'
+      aspects: dynamicAspects,
+      relation: isCareer ? 'CAREER_SERVICES' : 'CAMPUS_SERVICE',
+      isBroadInquiry: Boolean(isBroadProgramInquiry)
     };
   }
 
@@ -1133,7 +1152,12 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     unsupportedEntityName: unsupportedName,
     entityResolutionStatus: isUnsupported ? 'UNSUPPORTED' : (effectiveTargetEntities.length > 0 ? 'RESOLVED' : 'UNRESOLVED'),
     isUnsupportedEntity: isUnsupported,
-    unsupportedProgramName: unsupportedName
+    unsupportedProgramName: unsupportedName,
+    isBroadInquiry: Boolean(inferred.isBroadInquiry),
+    requiresClarification: Boolean(inferred.requiresClarification),
+    clarificationReason: inferred.clarificationReason || null,
+    clarificationPrompt: inferred.clarificationPrompt || null,
+    clarificationOptions: inferred.clarificationOptions || []
   };
 
   // Synchronous shadow record if precomputed interpretation provided

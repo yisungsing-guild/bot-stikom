@@ -282,19 +282,29 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     : await getSession(chatId);
   const sessionData = session ? (session.data || {}) : {};
 
+  // Check if current turn is responding to a pending clarification (Retrieve Clarification)
+  let effectiveQuery = rawQuery;
+  const { evaluateContextDependency } = require('./contextResolver');
+  const contextDep = evaluateContextDependency(rawQuery, sessionData);
+
+  if (contextDep && contextDep.reason === 'clarification_response' && sessionData.pendingClarification) {
+    const origQ = sessionData.pendingClarification.originalQuery || '';
+    effectiveQuery = `${origQ} ${rawQuery}`.trim();
+  }
+
   // 1. Decompose Query into SemanticFrames
   let subFrames;
   const isFrameReusable = options.semanticFrame &&
-    isSemanticFrameMatchingQuery(options.semanticFrame, rawQuery) &&
+    isSemanticFrameMatchingQuery(options.semanticFrame, effectiveQuery) &&
     typeof hasMultipleIntents === 'function' &&
-    !hasMultipleIntents(rawQuery);
+    !hasMultipleIntents(effectiveQuery);
 
   if (isFrameReusable) {
     subFrames = [options.semanticFrame];
   } else {
     subFrames = (typeof decomposeQueryAsync === 'function' && !options.syncOnly)
-      ? await decomposeQueryAsync(rawQuery, sessionData, options)
-      : decomposeQuery(rawQuery, sessionData);
+      ? await decomposeQueryAsync(effectiveQuery, sessionData, options)
+      : decomposeQuery(effectiveQuery, sessionData);
   }
 
   const subQueryResults = [];
@@ -441,10 +451,42 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
 
     // 3. Stage A: Wide Candidate Recall (fetch top 16 candidates)
     const isCorpusReady = verifyCorpusReadiness(options.context || {}).isReady;
-    const candidates = await retrieveCandidates(plan, { topK: 16 });
+    let candidates = await retrieveCandidates(plan, { topK: 16 });
 
     // 4. Stage B: Strict Evidence Arbitration (Hard Entity Lock, Temporal, Aspect)
-    const arbitrated = arbitrateEvidence(candidates, plan);
+    let arbitrated = arbitrateEvidence(candidates, plan);
+
+    // ReAct Reflection: If arbitration accepted 0 candidates, evaluate whether to retry with relaxed plan (Missing Evidence? -> Re-retrieve)
+    if (arbitrated.accepted.length === 0 && !frame.requiresClarification && isCorpusReady) {
+      const relaxedPlan = {
+        ...plan,
+        requiredAspects: [],
+        queryVariants: [
+          ...(plan.targetEntities || []),
+          rawQuery,
+          effectiveQuery
+        ].filter(Boolean)
+      };
+      if (relaxedPlan.retrievalContract) {
+        relaxedPlan.retrievalContract = {
+          ...relaxedPlan.retrievalContract,
+          aspectFilter: null,
+          metadataPolicy: {
+            ...relaxedPlan.retrievalContract.metadataPolicy,
+            hardFilters: ['entity']
+          }
+        };
+      }
+      const retryCandidates = await retrieveCandidates(relaxedPlan, { topK: 16 });
+      if (retryCandidates && retryCandidates.length > 0) {
+        const retryArbitrated = arbitrateEvidence(retryCandidates, relaxedPlan);
+        if (retryArbitrated.accepted.length > 0) {
+          candidates = retryCandidates;
+          arbitrated = retryArbitrated;
+        }
+      }
+    }
+
     arbitrated.retrievalPlan = plan;
     arbitrated.sessionData = sessionData;
     arbitrated.corpusUnavailable = !isCorpusReady;
@@ -549,6 +591,16 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           };
         }
       }
+    } else if (answerability.status === ANSWERABILITY_STATUS.CLARIFY) {
+      answer = answerability.guidance || 'Mohon maaf, bisakah diperjelas informasi spesifik apa yang Kakak butuhkan terkait hal tersebut agar dapat dibantu dengan tepat?';
+      verification = {
+        pass: true,
+        outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+        status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+        reason: 'clarification_requested',
+        isGrounded: true,
+        handledSafely: true
+      };
     } else if (answerability.status === ANSWERABILITY_STATUS.ESCALATE) {
       answer = answerability.guidance || 'Untuk kendala perwalian atau administrasi, silakan menghubungi dosen wali atau bagian akademik kampus.';
       verification = {
@@ -573,9 +625,11 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       };
     }
 
-    const subStatus = (answerability.status === ANSWERABILITY_STATUS.UNKNOWN || verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN)
-      ? 'corpus_gap'
-      : undefined;
+    const subStatus = answerability.status === ANSWERABILITY_STATUS.CLARIFY
+      ? 'needs_clarification'
+      : ((answerability.status === ANSWERABILITY_STATUS.UNKNOWN || verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN)
+        ? 'corpus_gap'
+        : undefined);
 
     subQueryResults.push({
       frame,
@@ -654,6 +708,20 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       }
     }
 
+    const needsClarify = subQueryResults.some(s => s.status === 'needs_clarification');
+    const newPendingClarification = needsClarify
+      ? {
+          originalQuery: rawQuery,
+          frame: primaryFrame,
+          clarificationPrompt: finalAnswer,
+          options: subQueryResults[0]?.answerabilityDetails?.options || []
+        }
+      : null;
+
+    const newClarificationTurnCount = needsClarify
+      ? ((sessionData.clarificationTurnCount || 0) + 1)
+      : 0;
+
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
@@ -663,6 +731,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         activeEntity: newActiveEntity,
         preservedBackgroundEntity: newPreservedEntity,
         lastActiveWave: currentWave || sessionData.lastActiveWave || null,
+        pendingClarification: newPendingClarification,
+        clarificationTurnCount: newClarificationTurnCount,
         lastQuery: rawQuery,
         lastAnswer: finalAnswer
       }

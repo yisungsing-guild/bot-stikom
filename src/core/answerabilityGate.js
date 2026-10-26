@@ -22,6 +22,114 @@ const ANSWERABILITY_STATUS = Object.freeze({
   ESCALATE: 'ESCALATE'
 });
 
+/**
+ * Strips boilerplate prompt template headers from ingestion/OCR artifacts.
+ */
+function stripIngestionBoilerplate(text = '') {
+  return text
+    .replace(/(?:Ringkasan dokumen|Program internasional\s*\/\s*kerja\s*sama internasional|Jadwal\/gelombang|Potongan\s*\/\s*beasiswa|Program studi terlihat)\s*:[^\n]*/gi, '')
+    .trim();
+}
+
+/**
+ * Extracts target entity terms from semanticFrame.
+ */
+function extractEntityTerms(semanticFrame) {
+  const terms = [];
+  if (Array.isArray(semanticFrame?.targetEntities)) {
+    for (const t of semanticFrame.targetEntities) {
+      if (typeof t === 'string' && t.trim()) terms.push(t.trim());
+    }
+  }
+  if (Array.isArray(semanticFrame?.entities)) {
+    for (const e of semanticFrame.entities) {
+      if (e?.name && typeof e.name === 'string') terms.push(e.name.trim());
+      if (e?.canonical && typeof e.canonical === 'string') terms.push(e.canonical.trim());
+    }
+  }
+  return [...new Set(terms.filter(t => t.length > 2))];
+}
+
+/**
+ * Gathers relevant evidence text segments for the inquiry.
+ * If entity terms exist, segments from multi-question chunks must be topically related to the entity.
+ */
+function getTopicalEvidenceSegments(acceptedCandidates = [], entityTerms = []) {
+  const segments = [];
+  const entityRegex = entityTerms.length > 0
+    ? new RegExp(`\\b(?:${entityTerms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'i')
+    : null;
+
+  for (const c of acceptedCandidates) {
+    const raw = (c.chunk || c.text || '');
+    const cleaned = stripIngestionBoilerplate(raw);
+    if (!cleaned) continue;
+
+    if (/(?:(?:^|\n)\s*(?:\d+[\.\)]|Jawaban\s*:))/i.test(cleaned)) {
+      const sections = cleaned.split(/(?=(?:^|\n)\s*(?:\d+[\.\)]|Jawaban\s*:))/i);
+      for (const sec of sections) {
+        const trimmed = sec.trim();
+        if (!trimmed) continue;
+        if (!entityRegex || entityRegex.test(trimmed)) {
+          segments.push(trimmed);
+        }
+      }
+    } else {
+      if (!entityRegex || entityRegex.test(cleaned)) {
+        segments.push(cleaned);
+      }
+    }
+  }
+
+  return segments.length > 0 ? segments : acceptedCandidates.map(c => stripIngestionBoilerplate(c.chunk || c.text || '')).filter(Boolean);
+}
+
+function detectEvidenceFacets(acceptedCandidates = [], semanticFrame = null) {
+  const facets = [];
+  const entityTerms = extractEntityTerms(semanticFrame);
+  const relevantSegments = getTopicalEvidenceSegments(acceptedCandidates, entityTerms);
+  const combinedText = relevantSegments.join('\n');
+
+  if (!combinedText.trim()) return facets;
+
+  // 1. Certification / Course Program Facet
+  const hasCertProgram = /\b(?:program\s+sertifikasi|sertifikasi\s+(?:profesional|kompetensi|internasional)|memperoleh\s+sertifikasi|ujian\s+sertifikasi|kursus\s+(?:online|daring|pelatihan)|(?:linkedin|cisco|oracle|microsoft|google)\s+learning)\b/i.test(combinedText);
+  if (hasCertProgram) {
+    facets.push({ key: 'certification', label: 'program sertifikasi', option: 'sertifikasi' });
+  }
+
+  // 2. Training / Skill Development Facet
+  const hasTrainingProgram = /\b(?:program\s+pelatihan|pelatihan\s+(?:oleh\s+career\s+center|karier|karir|kerja|soft\s*skills?|profil|wawancara|cv)|workshop|pembekalan\s+(?:karier|karir|kerja)|optimalisasi\s+(?:profil|linkedin)|persiapan\s+wawancara\s+kerja)\b/i.test(combinedText);
+  if (hasTrainingProgram) {
+    const isCareerCenter = /\b(?:career\s*center|cdc)\b/i.test(combinedText);
+    facets.push({
+      key: 'training',
+      label: isCareerCenter ? 'pelatihan oleh Career Center' : 'program pelatihan',
+      option: 'pelatihan'
+    });
+  }
+
+  // 3. Institutional Cooperation / Partnership Facet
+  const hasCooperation = /\b(?:program\s+kerja\s*sama|kerja\s*sama\s+(?:resmi|kemitraan|kampus|industri|perusahaan|kelembagaan)|kemitraan\s+strategis|penandatanganan\s+mou|perjanjian\s+kerja\s*sama|mou\s+kemitraan)\b/i.test(combinedText);
+  if (hasCooperation) {
+    facets.push({ key: 'cooperation', label: 'kerja sama kampus', option: 'kerja sama' });
+  }
+
+  // 4. Internship Program Facet
+  const hasInternship = /\b(?:program\s+magang|magang\s+(?:industri|bersertifikat|merdeka|mandiri|kerja)|internship\s+program|penyaluran\s+kerja|campus\s+hiring)\b/i.test(combinedText);
+  if (hasInternship) {
+    facets.push({ key: 'internship', label: 'program magang', option: 'magang' });
+  }
+
+  // 5. Business Incubation Facet
+  const hasIncubation = /\b(?:inkubasi\s+bisnis|inbis|program\s+inkubasi|startup\s+incubator|tenant\s+(?:inbis|bisnis|startup)|wirausaha\s+mahasiswa)\b/i.test(combinedText);
+  if (hasIncubation) {
+    facets.push({ key: 'incubation', label: 'inkubasi bisnis dan startup', option: 'inkubasi' });
+  }
+
+  return facets;
+}
+
 function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
   const { accepted = [], rejected = [] } = arbitratedEvidence;
   const isEn = semanticFrame?.language === 'en' || detectQueryLanguage(semanticFrame?.rawQuery) === 'en';
@@ -35,6 +143,53 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       guidance: isEn
         ? 'We apologize, but official information regarding this matter is not listed in the accessible guidelines at this time due to a technical issue. Please try again shortly or contact the ITB STIKOM Bali information desk.'
         : 'Informasi resmi mengenai hal tersebut belum tercantum dalam panduan yang dapat diakses saat ini karena kendala teknis pada sistem informasi. Silakan coba beberapa saat lagi atau hubungi bagian informasi kampus ITB STIKOM Bali.'
+    };
+  }
+
+  // 0b. Evidence-Grounded Dynamic Ambiguity Clarification Gate
+  // Evaluates whether the user's broad question has multiple verified interpretations in official evidence.
+  // Clarification is NOT assumed beforehand; it is triggered only if:
+  // 1. Session has not already clarified this question (prevents infinite loops)
+  // 2. Query is broad/underspecified without a narrow aspect requested
+  // 3. Official retrieved evidence contains 2 or more distinct verified facets
+  const alreadyClarified = Boolean(
+    arbitratedEvidence?.sessionData?.clarificationTurnCount >= 1 ||
+    arbitratedEvidence?.sessionData?.pendingClarification
+  );
+
+  const frameRawQuery = semanticFrame?.rawQuery || '';
+  const isNarrowAspectQuery = /\b(?:biaya|berapa|bayar|jadwal|kapan|syarat|persyaratan|cara|prosedur|fakultas|jurusan)\b/i.test(frameRawQuery);
+
+  if (!alreadyClarified && (semanticFrame?.isBroadInquiry || (semanticFrame?.requiresClarification && !isNarrowAspectQuery)) && accepted && accepted.length > 0) {
+    const facets = detectEvidenceFacets(accepted, semanticFrame);
+    if (facets.length >= 2) {
+      const labels = facets.map(f => f.label);
+      const formattedOptions = labels.length === 2
+        ? `${labels[0]} atau ${labels[1]}`
+        : `${labels.slice(0, -1).join(', ')}, atau ${labels[labels.length - 1]}`;
+
+      const entityName = (semanticFrame.targetEntities && semanticFrame.targetEntities[0])
+        ? ` terkait ${semanticFrame.targetEntities[0]}`
+        : '';
+
+      const prompt = `Maksud Kakak ${formattedOptions}${entityName}?`;
+
+      return {
+        status: ANSWERABILITY_STATUS.CLARIFY,
+        reason: 'multiple_evidence_interpretations',
+        guidance: prompt,
+        options: facets.map(f => f.option)
+      };
+    }
+  }
+
+  // Fallback if semanticFrame explicitly set requiresClarification
+  if (semanticFrame?.requiresClarification && semanticFrame?.clarificationPrompt) {
+    return {
+      status: ANSWERABILITY_STATUS.CLARIFY,
+      reason: semanticFrame.clarificationReason || 'ambiguous_inquiry',
+      guidance: semanticFrame.clarificationPrompt,
+      options: semanticFrame.clarificationOptions || []
     };
   }
 
@@ -152,6 +307,30 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
           allProvidedAspects.add(req);
         } else if (['membership', 'category', 'ukm_list', 'student_organization', 'ukm'].includes(req) &&
             /\b(?:ukm|organisasi|ormawa)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['career_services', 'career', 'career_prospects'].includes(req) &&
+            /\b(?:karir|karier|kerja|loker|lowongan|magang|pelatihan|cv|wawancara|alumni|rekrutmen|profesi|pekerjaan)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['certification'].includes(req) &&
+            /\b(?:sertifikasi|sertifikat|kompetensi|kursus|learning)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['training'].includes(req) &&
+            /\b(?:pelatihan|training|optimalisasi|pembekalan|workshop)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['cooperation'].includes(req) &&
+            /\b(?:kerja\s*sama|kerjasama|mitra|industri|perusahaan)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['internship'].includes(req) &&
+            /\b(?:magang|internship|praktik\s+kerja)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['service_info', 'program_info', 'support'].includes(req) &&
+            /\b(?:layanan|program|informasi|kegiatan|cdc|center|stikom|kampus|pelatihan|kursus)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['curriculum', 'course'].includes(req) &&
+            /\b(?:kurikulum|matkul|mata\s+kuliah|sks|semester|pembelajaran)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['requirements', 'procedure'].includes(req) &&
+            /\b(?:syarat|persyaratan|berkas|dokumen|alur|prosedur|cara|daftar)\b/i.test(combinedAcceptedText)) {
           allProvidedAspects.add(req);
         }
       }
@@ -282,5 +461,6 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
 
 module.exports = {
   ANSWERABILITY_STATUS,
-  evaluateAnswerability
+  evaluateAnswerability,
+  detectEvidenceFacets
 };

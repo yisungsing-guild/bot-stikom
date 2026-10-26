@@ -56,6 +56,9 @@ const NON_REFERENTIAL_NYA_WORDS = new Set([
 const GENUINE_ELLIPSIS_REGEX = /^(kalau|bagaimana\s+dengan|gimana\s+dengan|lalu|kalo|what\s+about|how\s+about|and)\s+(the\s+|yang\s+)?([a-z0-9\s]+)\??$/i;
 const PREDICATE_ELLIPSIS_REGEX = /^(?:bagaimana\s+cara\s+bergabung|gimana\s+cara\s+bergabung|cara\s+bergabungnya(?:\s+gimana)?|cara\s+bergabung|masih\s+bisa\s+daftar|bisa\s+daftar\s+sekarang|kapan\s+jadwalnya|kapan\s+batasnya|kapan\s+buka|syaratnya\s+apa|biayanya\s+berapa|cara\s+daftarnya\s+gimana)\??$/i;
 
+const SHORTHAND_ELLIPSIS_REGEX = /^(?:yang\s+)?(?:tingkat\s+|jenjang\s+)?(s1|s2|d3|sarjana|diploma|magister|reguler|internasional|pagi|malam|karyawan|gelombang\s*(?:[0-9]+|[ivx]+)|gelombang\s+ke\s*(?:[0-9]+|[ivx]+))\??$/i;
+const SHORT_AFFIRMATION_REGEX = /^(?:iya|ya|betul|benar|yes|oke|ok)\??$/i;
+
 function hasExplicitPronounReference(query) {
   if (!query || typeof query !== 'string') return false;
   const q = query.trim().toLowerCase();
@@ -112,6 +115,32 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   // If session has no prior state, cannot inherit
   if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.lastQuery)) {
     return { shouldInherit: false, reason: 'no_session_history' };
+  }
+
+  // Check 0: Pending Clarification Response
+  if (sessionData && sessionData.pendingClarification) {
+    const isGreeting = /^(halo|hai|pagi|siang|sore|malam|hello|hi)\b/i.test(query);
+    if (!isGreeting) {
+      return {
+        shouldInherit: true,
+        reason: 'clarification_response',
+        pendingClarification: sessionData.pendingClarification,
+        inheritedDomain: sessionData.pendingClarification.frame?.domain || sessionData.activeDomain,
+        inheritedEntity: sessionData.pendingClarification.frame?.entities?.[0] || sessionData.activeEntity
+      };
+    }
+  }
+
+  // Check 0b: Shorthand Ellipsis (e.g. "yang S1", "S1", "gelombang II", "iya")
+  if (sessionData && (sessionData.activeDomain || sessionData.activeEntity)) {
+    if (SHORTHAND_ELLIPSIS_REGEX.test(query) || SHORT_AFFIRMATION_REGEX.test(query)) {
+      return {
+        shouldInherit: true,
+        reason: 'shorthand_ellipsis',
+        inheritedDomain: sessionData.activeDomain,
+        inheritedEntity: sessionData.activeEntity
+      };
+    }
   }
 
   const isAcademicActiveEntity = sessionData.activeEntity && (

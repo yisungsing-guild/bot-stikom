@@ -17,14 +17,40 @@ const DEFAULT_SESSION_DATA = Object.freeze({
   activeDomain: null,
   activeEntity: null,
   activeProgram: null,
+  pendingClarification: null,
+  clarificationTurnCount: 0,
   lastQuery: null,
   lastAnswer: null,
   lastTurnTs: null,
   turnCount: 0
 });
 
+const memorySessionStore = new Map();
+const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes TTL baseline
+
+function isSessionExpired(sessionRecord) {
+  if (!sessionRecord?.data?.lastTurnTs) return false;
+  return (Date.now() - sessionRecord.data.lastTurnTs) > SESSION_TTL_MS;
+}
+
 async function getSession(chatId) {
   if (!chatId) return { chatId: null, state: 'root', data: { ...DEFAULT_SESSION_DATA } };
+
+  if (process.env.NODE_ENV === 'test') {
+    if (memorySessionStore.has(String(chatId))) {
+      const cached = memorySessionStore.get(String(chatId));
+      if (isSessionExpired(cached)) {
+        memorySessionStore.delete(String(chatId));
+      } else {
+        return cached;
+      }
+    }
+    return {
+      chatId: String(chatId),
+      state: 'root',
+      data: { ...DEFAULT_SESSION_DATA }
+    };
+  }
 
   try {
     const session = await prisma.session.findUnique({
@@ -32,14 +58,46 @@ async function getSession(chatId) {
     });
 
     if (session) {
-      return {
+      const dbData = session.data && typeof session.data === 'object' ? session.data : { ...DEFAULT_SESSION_DATA };
+      const cached = memorySessionStore.get(String(chatId));
+
+      const dbTs = dbData.lastTurnTs || 0;
+      const memTs = cached?.data?.lastTurnTs || 0;
+
+      // If cached memory record has a newer turn timestamp than DB (e.g. previous DB write timed out), preserve newer
+      if (cached && memTs > dbTs && !isSessionExpired(cached)) {
+        return cached;
+      }
+
+      const res = {
         chatId: session.chatId,
         state: session.state || 'root',
-        data: session.data && typeof session.data === 'object' ? session.data : { ...DEFAULT_SESSION_DATA }
+        data: dbData
       };
+
+      if (!isSessionExpired(res)) {
+        memorySessionStore.set(String(chatId), res);
+        return res;
+      } else {
+        memorySessionStore.delete(String(chatId));
+        return {
+          chatId: String(chatId),
+          state: 'root',
+          data: { ...DEFAULT_SESSION_DATA }
+        };
+      }
     }
   } catch (err) {
     logger.warn({ err: err.message, chatId }, '[ConversationState] Failed to fetch session from DB');
+  }
+
+  if (memorySessionStore.has(String(chatId))) {
+    const cached = memorySessionStore.get(String(chatId));
+    if (isSessionExpired(cached)) {
+      memorySessionStore.delete(String(chatId));
+    } else {
+      return cached;
+    }
   }
 
   return {
@@ -52,15 +110,26 @@ async function getSession(chatId) {
 async function updateSession(chatId, { state = 'root', dataPatch = {} } = {}) {
   if (!chatId) return null;
 
-  try {
-    const current = await getSession(chatId);
-    const updatedData = {
-      ...current.data,
-      ...dataPatch,
-      lastTurnTs: Date.now(),
-      turnCount: (current.data.turnCount || 0) + 1
-    };
+  const current = await getSession(chatId);
+  const updatedData = {
+    ...current.data,
+    ...dataPatch,
+    lastTurnTs: Date.now(),
+    turnCount: (current.data.turnCount || 0) + 1
+  };
 
+  const sessionObj = {
+    chatId: String(chatId),
+    state,
+    data: updatedData
+  };
+  memorySessionStore.set(String(chatId), sessionObj);
+
+  if (process.env.NODE_ENV === 'test') {
+    return sessionObj;
+  }
+
+  try {
     const result = await prisma.session.upsert({
       where: { chatId: String(chatId) },
       create: {
@@ -77,11 +146,12 @@ async function updateSession(chatId, { state = 'root', dataPatch = {} } = {}) {
     return result;
   } catch (err) {
     logger.error({ err: err.message, chatId }, '[ConversationState] Failed to update session');
-    return null;
+    return sessionObj;
   }
 }
 
 async function resetSession(chatId) {
+  if (chatId) memorySessionStore.delete(String(chatId));
   return updateSession(chatId, {
     state: 'root',
     dataPatch: { ...DEFAULT_SESSION_DATA }

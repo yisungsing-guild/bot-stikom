@@ -153,7 +153,7 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // Facilities query variants
-  if (domain === 'FACILITIES' || (aspects && (aspects.includes('facilities') || aspects.includes('lab')))) {
+  if (domain === 'FACILITIES' || (aspects && (aspects.includes('facilities') || aspects.includes('lab')) && /\b(?:fasilitas|laboratorium|lab|sarana|prasarana|gedung|ruang|perpustakaan|asrama|dormitory)\b/i.test(normalizedText))) {
     queryVariants.push('fasilitas laboratorium praktikum mahasiswa hardware networking database smart intelligent system ITB STIKOM Bali');
     queryVariants.push('laboratorium riset dan praktik mahasiswa embedded system IoT mobile technology');
     queryVariants.push('fasilitas laboratorium komputer perpustakaan asrama kampus ITB STIKOM Bali');
@@ -189,12 +189,23 @@ function buildRetrievalPlan(semanticFrame) {
     queryVariants.push('daftar organisasi kemahasiswaan himaprodi SK PEMBINA ORMAWA');
   }
 
-  // Career Center & Internship query variants
-  if (domain === 'CAREER_CENTER' || (aspects && (aspects.includes('career') || aspects.includes('internship') || aspects.includes('career_prospects')))) {
+  // Career Center & Service / Internship query variants
+  if (domain === 'CAREER_CENTER' || domain === 'CAMPUS_SERVICE' || (aspects && (aspects.includes('career') || aspects.includes('internship') || aspects.includes('career_prospects')))) {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
-        queryVariants.push(`peluang karir prospek kerja profesi lulusan ${ent}`);
-        queryVariants.push(`peluang pekerjaan ${ent}`);
+        const isAcademic = (semanticFrame.entities || []).some(e =>
+          (e.name === ent || e.canonical === ent) && (e.family === 'academic_program' || e.type === 'program')
+        );
+
+        if (isAcademic) {
+          queryVariants.push(`peluang karir prospek kerja profesi lulusan ${ent}`);
+          queryVariants.push(`peluang pekerjaan ${ent}`);
+        } else {
+          queryVariants.push(`program ${ent} ITB STIKOM Bali`);
+          queryVariants.push(`layanan ${ent} mahasiswa alumni sertifikasi pelatihan kerja sama`);
+          queryVariants.push(`${ent} career development center STIKOM Bali`);
+          queryVariants.push(`${ent} kursus sertifikasi pelatihan profesional`);
+        }
       }
     } else {
       queryVariants.push('career center inkubator bisnis inbis magang kerja sama industri ITB STIKOM Bali');

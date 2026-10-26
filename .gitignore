@@ -125,6 +125,7 @@ tests/*
 !tests/phase2UatRemediation.test.js
 !tests/officialFacultyReconciliation.test.js
 !tests/fonnteWebhookAuthRotation.test.js
+!tests/clarificationAndReRetrievalV2.test.js
 !tests/phase2SemanticFrameContract.test.js
 !tests/phase3RetrievalStrategy.test.js
 !tests/phase4ShadowIntegration.test.js
