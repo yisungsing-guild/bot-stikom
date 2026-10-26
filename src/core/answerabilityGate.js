@@ -40,6 +40,26 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
 
   // 1. If no accepted evidence exists
   if (!accepted || accepted.length === 0) {
+    // Institutional Academic Catalog can authoritatively answer faculty mapping
+    if (semanticFrame.intent === 'FACULTY_INQUIRY') {
+      const { resolveFaculty, getFacultyForProgram } = require('./academicCatalog');
+      const rawQ = semanticFrame.rawQuery || '';
+      const isAmbiguousTeknologi = /\bteknologi\b/i.test(rawQ) &&
+        !/\b(?:teknologi\s+informasi|ti)\b/i.test(rawQ) &&
+        /\b(?:masuk|fakultas|jurusan|prodi|bagian|bernaung|di\s+bawah)\b/i.test(rawQ);
+      const targetProgram = (semanticFrame.entities || []).find(e => e.family === 'academic_program' || e.type === 'program');
+      const progFaculty = targetProgram ? getFacultyForProgram(targetProgram.canonical || targetProgram.name) : null;
+      const resolvedFac = resolveFaculty(rawQ);
+      if (progFaculty || (resolvedFac && resolvedFac.canonical) || isAmbiguousTeknologi || /\b(?:fik|fbv|infokom|bisvo)\b/i.test(rawQ)) {
+        return {
+          status: ANSWERABILITY_STATUS.ANSWERABLE,
+          reason: 'institutional_academic_catalog',
+          coveredAspects: ['faculty', 'academic_structure'],
+          missingAspects: []
+        };
+      }
+    }
+
     // If user query represents a missed academic process or complaint -> ESCALATE to admin/academic staff
     if (semanticFrame.intent === 'MISSED_ACADEMIC_PROCESS' || semanticFrame.userState === 'LATE') {
       return {
@@ -107,13 +127,33 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
   }
 
   // 2. Aspect Coverage Verification:
-  // Accepted evidence must cover at least one required aspect if specific aspects are requested
-  const requiredAspects = (semanticFrame.aspects || []).filter(a => a !== 'general');
+  let requiredAspects = (semanticFrame.aspects || []).filter(a => a !== 'general');
+  if (semanticFrame.intent === 'ORGANIZATION_MEMBERSHIP_CHECK') {
+    // In membership verification, the category aspect being questioned is the hypothesis under test, not an evidence requirement
+    requiredAspects = requiredAspects.filter(a => !['arts_culture', 'sports', 'reasoning_tech', 'religious'].includes(a));
+  }
   if (requiredAspects.length > 0) {
     const allProvidedAspects = new Set();
     for (const chunk of accepted) {
       if (Array.isArray(chunk.providedAspects)) {
         chunk.providedAspects.forEach(a => allProvidedAspects.add(a));
+      }
+    }
+
+    // Fallback: If metadata tags were missing but accepted evidence text contains the required content
+    const combinedAcceptedText = accepted.map(c => c.text || c.chunk || '').join(' ').toLowerCase();
+    for (const req of requiredAspects) {
+      if (!allProvidedAspects.has(req)) {
+        if (['location', 'campus_location', 'address'].includes(req) &&
+            /\b(?:kampus|jalan\s+raya\s+puputan|renon|jimbaran|abiansemal)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['faculty', 'academic_structure', 'faculty_mapping'].includes(req) &&
+            /\b(?:fakultas|informatika\s+dan\s+komputer|bisnis\s+dan\s+vokasi|fik|fbv)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        } else if (['membership', 'category', 'ukm_list', 'student_organization', 'ukm'].includes(req) &&
+            /\b(?:ukm|organisasi|ormawa)\b/i.test(combinedAcceptedText)) {
+          allProvidedAspects.add(req);
+        }
       }
     }
 

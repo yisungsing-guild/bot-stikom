@@ -392,6 +392,30 @@ async function watiWebhookHandler(req, res) {
       return;
     }
 
+    const isV2 = String(process.env.CHAT_ENGINE || '').toLowerCase().trim() === 'v2' ||
+      String(process.env.USE_GREENFIELD || '').toLowerCase().trim() === 'true';
+
+    if (isV2) {
+      const { enqueueChat } = require('../engine/chatQueue');
+      const { handleInboundMessage } = require('../core/orchestrator');
+      await enqueueChat(phone, async () => {
+        try {
+          logger.info({ phone, messageId }, '[WATI Webhook] Routing inbound message directly to Greenfield V2');
+          await handleInboundMessage({
+            phone,
+            text,
+            messageId,
+            whatsappMessageId,
+            eventId,
+            ts
+          }, { executeDispatch: true });
+        } catch (v2Err) {
+          logger.error({ err: v2Err.message, phone, messageId }, '[WATI Webhook] Greenfield V2 execution failed');
+        }
+      });
+      return;
+    }
+
     const mode = String(process.env.WATI_WEBHOOK_MODE || 'forward').toLowerCase();
     if (mode === 'echo') {
       // Legacy behavior (not recommended): echo back the same text.

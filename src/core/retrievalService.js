@@ -56,7 +56,8 @@ function getChunkSectionMap(corpus) {
     /Profil\s+Program\s+Studi\s+(?:Program\s+Studi\s+)?([A-Za-z\s]+?)(?:\s+di\s+ITB|\n|$)/i,
     /(?:Program\s+Studi|Jenjang)\s+(Magister\s+Sistem\s+Informasi|S2\s+Sistem\s+Informasi)/i,
     /###\s+(?:Program\s+Studi\s+)?([A-Za-z0-9\s,\(\)]+?)(?:\n|$)/i,
-    /Penjelasan\s+Prodi\s+dan\s+Karier\s+Masa\s+Depan\s*:\s*([A-Za-z\s]+?)(?:\||\n|$)/i
+    /Penjelasan\s+Prodi\s+dan\s+Karier\s+Masa\s+Depan\s*:\s*([A-Za-z\s]+?)(?:\||\n|$)/i,
+    /(?:BIAYA\s+PENDIDIKAN\s+(?:MAHASISWA\s+BARU\s+)?PASCASARJANA|PROGRAM\s+PASCASARJANA)/i
   ];
 
   for (const [, group] of fileGroups.entries()) {
@@ -69,8 +70,10 @@ function getChunkSectionMap(corpus) {
       for (const pat of SECTION_PATTERNS) {
         const m = txt.match(pat);
         if (m) {
-          let candidateName = m[1].trim();
-          if (/manajemen\s+informasi/i.test(candidateName)) {
+          let candidateName = m[1] ? m[1].trim() : m[0].trim();
+          if (/pascasarjana/i.test(m[0])) {
+            candidateName = 'S2 Sistem Informasi';
+          } else if (/manajemen\s+informasi/i.test(candidateName)) {
             candidateName = 'D3 Manajemen Informatika';
           }
           for (const ent of CANONICAL_ENTITIES) {
@@ -125,6 +128,10 @@ function getFileContextMap(corpus) {
       const txt = (c.chunk || c.text || '');
       if (!category && (txt.includes('BIAYA PENDIDIKAN') || /rincian biaya/i.test(f))) {
         category = 'BIAYA';
+      }
+
+      if (/\b(?:pascasarjana|magister)\b/i.test(txt) || /\b(?:pascasarjana|magister)\b/i.test(f)) {
+        entities.add('S2 Sistem Informasi');
       }
 
       // Check program header in text
@@ -273,11 +280,48 @@ async function retrieveCandidates(retrievalPlan = {}, { topK = 6, isShadowContra
       score *= 0.5;
     }
 
+    // Degree-scoping alignment for Fee queries (S2 vs S1/D3)
+    const isS2FeeTarget = (retrievalPlan.academicLevel === 'S2') ||
+      targetEntities.some(te => /\bs2\b/i.test(te)) ||
+      /\b(?:s2|magister|pascasarjana)\b/i.test(query);
+
     // Boost fee documents when query is asking about tuition, fee, or registration cost
-    const isFeeQuery = /\b(?:biaya|spp|dpp|uang kuliah|tarif|pembayaran)\b/i.test(query);
+    const isFeeQuery = /\b(?:biaya|spp|dpp|uang kuliah|tarif|pembayaran)\b/i.test(query) ||
+      retrievalPlan.intent === 'TUITION_FEE_INQUIRY';
     if (isFeeQuery) {
       if (/rincian biaya/i.test(f) || ctx?.category === 'BIAYA' || /tabel rincian biaya|biaya kuliah per semester/i.test(rawText)) {
         score *= 2.5;
+      }
+      if (isS2FeeTarget) {
+        if (/pascasarjana|magister|s2/i.test(f) || /pascasarjana|magister sistem informasi/i.test(rawText)) {
+          score *= 4.0;
+        } else if (/rincian biaya/i.test(f) && !/pascasarjana/i.test(rawText)) {
+          // Penalize undergraduate fee docs when asking specifically for S2/Magister
+          score *= 0.15;
+        }
+      } else {
+        // Query is S1/D3 undergraduate, penalize S2 pascasarjana fee docs
+        if (/pascasarjana/i.test(f) || /biaya pendidikan mahasiswa baru pascasarjana/i.test(rawText)) {
+          score *= 0.2;
+        }
+      }
+    }
+
+    // Boost campus location documents
+    const isLocationQuery = retrievalPlan.intent === 'CAMPUS_LOCATION' ||
+      /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus\s+(?:renon|jimbaran|abiansemal)|dimana\s+kampus)\b/i.test(query);
+    if (isLocationQuery) {
+      if (/fasilitas-stikom|profil|kampus/i.test(f) || /jalan raya puputan|renon|jimbaran|abiansemal/i.test(rawText)) {
+        score *= 3.5;
+      }
+    }
+
+    // Boost faculty structure documents
+    const isFacultyQuery = retrievalPlan.intent === 'FACULTY_INQUIRY' ||
+      /\b(?:fakultas|informatika dan komputer|bisnis dan vokasi)\b/i.test(query);
+    if (isFacultyQuery) {
+      if (/struktur|organisasi|profil|rektorat|pedoman/i.test(f) || /fakultas\s+(?:informatika|bisnis)/i.test(rawText)) {
+        score *= 3.0;
       }
     }
 

@@ -578,6 +578,17 @@ const CANONICAL_SNAPSHOT_PATH = path.resolve(
   'rag_index.json'
 );
 
+const RECONCILED_SNAPSHOT_PATH = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  'data',
+  'runtime',
+  'index_snapshots',
+  '2026-10-26T08-00-00-000Z_reconciled-official-faculty',
+  'rag_index.json'
+);
+
 let prewarmedCanonicalCorpus = null;
 let lastLoadedPath = null;
 
@@ -663,6 +674,7 @@ function getCorpusIndex(context = {}, options = {}) {
     } catch (_) {}
 
     const candidatePaths = [
+      RECONCILED_SNAPSHOT_PATH,
       CANONICAL_SNAPSHOT_PATH,
       ragPathsIndexPath,
       path.resolve(__dirname, '..', '..', 'data', 'rag_index.json'),

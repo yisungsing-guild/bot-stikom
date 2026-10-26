@@ -65,6 +65,9 @@ data/runtime/index_snapshots/*
 !data/runtime/index_snapshots/2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy/
 data/runtime/index_snapshots/2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy/*
 !data/runtime/index_snapshots/2026-08-11T04-14-17-889Z_before-final-knowledgeprep-deploy/rag_index.json
+!data/runtime/index_snapshots/2026-10-26T08-00-00-000Z_reconciled-official-faculty/
+data/runtime/index_snapshots/2026-10-26T08-00-00-000Z_reconciled-official-faculty/*
+!data/runtime/index_snapshots/2026-10-26T08-00-00-000Z_reconciled-official-faculty/rag_index.json
 data/runtime/*.log
 data/runtime/*.pid
 !data/runtime/
@@ -120,6 +123,7 @@ tests/*
 !tests/pgvectorHybridContract.test.js
 !tests/uat30DefectRemediation.test.js
 !tests/phase2UatRemediation.test.js
+!tests/officialFacultyReconciliation.test.js
 !tests/phase2SemanticFrameContract.test.js
 !tests/phase3RetrievalStrategy.test.js
 !tests/phase4ShadowIntegration.test.js

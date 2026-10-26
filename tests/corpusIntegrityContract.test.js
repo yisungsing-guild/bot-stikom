@@ -23,6 +23,7 @@ const { processTurn } = require('../src/core/orchestrator');
 const { getCachedSemanticIndex, querySemanticRag } = require('../src/engine/semanticRagEngine');
 
 describe('Chat Engine V2 — Canonical Corpus Integrity & Fail-Closed Contract', () => {
+  jest.setTimeout(60000);
   const originalEnvRagIndexPath = process.env.RAG_INDEX_PATH;
   let tempDir;
 

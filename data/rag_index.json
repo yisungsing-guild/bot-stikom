@@ -1661,5 +1661,39 @@
       "notes": "Panduan Program Internasional dan Double Degree",
       "migratedAt": "2026-09-29T03:21:53.691Z"
     }
+  },
+  {
+    "id": "official-web-pasca-tentang-sejarah-fakultas",
+    "trainingId": "official-web-pasca-stikom-bali",
+    "chunk": "[Dokumen Resmi ITB STIKOM Bali - Sejarah dan Struktur Fakultas]\nSumber: https://pasca.stikom-bali.ac.id/tentang\nBagian: Sejarah Kami - Penguatan Akademik dan Transformasi Institusi\n\nDalam rangka peningkatan mutu akademik, STMIK STIKOM Bali membuka S1 Sistem Komputer dan D3 Manajemen Informatika sejak 2002, serta S1 Sistem Informasi pada 2009. Pada 7 Mei 2019, STMIK STIKOM Bali beralih bentuk menjadi Institut Teknologi dan Bisnis (ITB) STIKOM Bali berdasarkan keputusan Kementerian Riset, Teknologi, dan Pendidikan Tinggi Republik Indonesia. Pasca alih bentuk, ITB STIKOM Bali membuka S1 Teknologi Informasi, S1 Bisnis Digital, serta Program Magister Sistem Informasi (S2) pada tahun 2020.\n\nSaat ini, ITB STIKOM Bali memiliki dua fakultas:\n1. **Fakultas Informatika dan Komputer (INFOKOM / FIK)**:\n   - S1 Sistem Informasi\n   - S1 Sistem Komputer\n   - S1 Teknologi Informasi\n   - S2 Magister Sistem Informasi\n\n2. **Fakultas Bisnis dan Vokasi (BISVO / FBV)**:\n   - S1 Bisnis Digital\n   - D3 Manajemen Informatika",
+    "chunkHash": "04902600a52aa51aec3e33a72a4ef368a22c10ec69eb039c4ada0451c02dcc2c",
+    "sectionTitle": "Sejarah dan Struktur Fakultas ITB STIKOM Bali",
+    "chunkType": "PROGRAM",
+    "lowConfidence": false,
+    "ocrQualityScore": 1,
+    "embedding": null,
+    "source_file": "https://pasca.stikom-bali.ac.id/tentang",
+    "filename": "pasca_stikom_bali_tentang.html",
+    "docCategory": "PROFIL",
+    "category": "AKADEMIK",
+    "governanceMetadata": {
+      "status": "active",
+      "authority": "tier_1_institutional_history",
+      "authorityTier": 1,
+      "authorityWeight": 100,
+      "version": "PASCASARJANA-OFFICIAL-2026",
+      "validFrom": "2026-01-01T00:00:00.000Z",
+      "validUntil": null,
+      "owner": "DIREKTORAT_PASCASARJANA",
+      "notes": "Sejarah Penguatan Akademik dan Struktur Fakultas Resmi"
+    },
+    "scope": "INSTITUTIONAL_OR_ORG",
+    "academicLevel": "ALL",
+    "level": "ALL",
+    "providedAspects": [
+      "faculty",
+      "academic_structure",
+      "faculty_mapping"
+    ]
   }
 ]

@@ -339,12 +339,188 @@ function generateGroundedCatalogSummary(canonicalScope, userLang = 'id') {
   return null;
 }
 
+/**
+ * Authoritative Institutional Faculty definitions grounded in official institutional documents.
+ */
+const INSTITUTIONAL_FACULTIES = Object.freeze([
+  {
+    id: 'fik',
+    canonical: 'Fakultas Informatika dan Komputer',
+    shortName: 'FIK',
+    aliases: ['fik', 'fakultas informatika dan komputer', 'fakultas informatika', 'fakultas komputer', 'infokom', 'fakultas teknologi informasi', 'fakultas ti'],
+    programs: [
+      'S1 Sistem Informasi',
+      'S1 Sistem Komputer',
+      'S1 Teknologi Informasi',
+      'S2 Magister Sistem Informasi (M.Kom)'
+    ]
+  },
+  {
+    id: 'fbv',
+    canonical: 'Fakultas Bisnis dan Vokasi',
+    shortName: 'FBV',
+    aliases: ['fbv', 'fakultas bisnis dan vokasi', 'fakultas bisnis', 'fakultas vokasi', 'bisvo', 'bisnis dan vokasi'],
+    programs: [
+      'S1 Bisnis Digital',
+      'D3 Manajemen Informatika'
+    ]
+  }
+]);
+
+function resolveFaculty(input) {
+  if (!input) return null;
+  const str = (typeof input === 'string' ? input : (input.rawQuery || input.normalizedQuery || '')).toLowerCase();
+  for (const fac of INSTITUTIONAL_FACULTIES) {
+    if (str.includes(fac.canonical.toLowerCase()) || str.includes(fac.shortName.toLowerCase())) {
+      return fac;
+    }
+    if (fac.aliases.some(a => new RegExp(`\\b${a.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\b`, 'i').test(str))) {
+      return fac;
+    }
+  }
+  return null;
+}
+
+function getFacultyForProgram(programName) {
+  if (!programName) return null;
+  const pLower = String(programName).toLowerCase().trim();
+
+  // Guard against ambiguous solitary 'teknologi' query being misidentified as S1 Teknologi Informasi
+  if (/\bteknologi\b/i.test(pLower) && !/\b(?:teknologi\s+informasi|ti)\b/i.test(pLower)) {
+    return null;
+  }
+
+  for (const fac of INSTITUTIONAL_FACULTIES) {
+    for (const prog of fac.programs) {
+      const progClean = prog.toLowerCase().replace(/^(s1|d3|s2)\s+/i, '');
+      if (pLower.includes(prog.toLowerCase()) || pLower.includes(progClean)) {
+        return fac;
+      }
+    }
+  }
+  return null;
+}
+
+function getProgramsForFaculty(facultyNameOrId) {
+  const fac = resolveFaculty(facultyNameOrId);
+  return fac ? fac.programs : [];
+}
+
+function generateGroundedFacultySummary(query, userLang = 'id') {
+  const isEn = userLang === 'en';
+  const qLower = String(query || '').toLowerCase();
+
+  // 1. Guard against ambiguous "Teknologi" inquiries without "Informasi" - ask for clarification
+  const isAmbiguousTeknologi = /\bteknologi\b/i.test(qLower) &&
+    !/\b(?:teknologi\s+informasi|ti)\b/i.test(qLower) &&
+    /\b(?:masuk|fakultas|jurusan|prodi|bagian|bernaung|di\s+bawah)\b/i.test(qLower);
+
+  if (isAmbiguousTeknologi) {
+    if (isEn) {
+      return `Could you please clarify which study program you are referring to? At ITB STIKOM Bali, are you asking about **S1 Information Technology (Teknologi Informasi)** (under the **Faculty of Informatics and Computer / FIK**), or another program? Please specify the study program name so I can provide the accurate faculty details.`;
+    }
+    return `Mohon klarifikasi program studi yang Kakak maksud. Di ITB STIKOM Bali, apakah yang Kakak maksud adalah program studi **S1 Teknologi Informasi** (bernaung di bawah **Fakultas Informatika dan Komputer / FIK**), atau program studi lainnya? Mohon sebutkan nama program studi secara spesifik agar Tiko dapat memberikan informasi fakultas yang tepat.`;
+  }
+
+  // 2. Check if query asks for both faculties (FIK and FBV) or overall faculty-program division
+  const mentionsFIK = /\b(?:fik|fakultas\s+informatika|informatika\s+dan\s+komputer|infokom)\b/i.test(qLower);
+  const mentionsFBV = /\b(?:fbv|fakultas\s+bisnis|bisnis\s+dan\s+vokasi|bisvo)\b/i.test(qLower);
+  const asksBothFaculties = (mentionsFIK && mentionsFBV) ||
+    (/\b(?:program\s+studi|prodi|jurusan)\b/i.test(qLower) && /\b(?:di\s+fik|di\s+fbv)\b/i.test(qLower) && /\b(?:dan|serta|maupun)\b/i.test(qLower));
+
+  if (asksBothFaculties) {
+    if (isEn) {
+      return `At ITB STIKOM Bali, the study programs under **FIK** and **FBV** are as follows:\n\n` +
+        `1. **Fakultas Informatika dan Komputer (FIK / INFOKOM)**:\n` +
+        `   • S1 Sistem Informasi\n` +
+        `   • S1 Sistem Komputer\n` +
+        `   • S1 Teknologi Informasi\n` +
+        `   • S2 Magister Sistem Informasi (M.Kom)\n\n` +
+        `2. **Fakultas Bisnis dan Vokasi (FBV / BISVO)**:\n` +
+        `   • S1 Bisnis Digital\n` +
+        `   • D3 Manajemen Informatika\n\n` +
+        `Registration can be completed online at https://pmb.stikom-bali.ac.id. Would you like more details about a specific study program?`;
+    }
+    return `Di ITB STIKOM Bali, pembagian program studi di bawah **FIK** dan **FBV** adalah sebagai berikut:\n\n` +
+      `1. **Fakultas Informatika dan Komputer (FIK / INFOKOM)**:\n` +
+      `   • S1 Sistem Informasi\n` +
+      `   • S1 Sistem Komputer\n` +
+      `   • S1 Teknologi Informasi\n` +
+      `   • S2 Magister Sistem Informasi (M.Kom)\n\n` +
+      `2. **Fakultas Bisnis dan Vokasi (FBV / BISVO)**:\n` +
+      `   • S1 Bisnis Digital\n` +
+      `   • D3 Manajemen Informatika\n\n` +
+      `Pendaftaran mahasiswa baru dapat diakses secara online di https://pmb.stikom-bali.ac.id. Ada program studi tertentu yang ingin Kakak ketahui lebih lanjut?`;
+  }
+
+  // 3. If asking which faculty a specific program belongs to
+  const targetedFaculty = getFacultyForProgram(query);
+  if (targetedFaculty) {
+    let matchedProg = targetedFaculty.programs.find(p => {
+      const clean = p.toLowerCase().replace(/^(s1|d3|s2)\s+/i, '');
+      return qLower.includes(p.toLowerCase()) || qLower.includes(clean);
+    }) || targetedFaculty.programs[0];
+
+    if (isEn) {
+      return `At ITB STIKOM Bali, the study program **${matchedProg}** is under the **${targetedFaculty.canonical} (${targetedFaculty.shortName})**.\n\nOther study programs under this faculty include:\n` +
+        targetedFaculty.programs.map((p, idx) => `${idx + 1}. ${p}`).join('\n') +
+        `\n\nWould you like more details about admission or curriculum for this program?`;
+    }
+    return `Di ITB STIKOM Bali, program studi **${matchedProg}** bernaung di bawah **${targetedFaculty.canonical} (${targetedFaculty.shortName})**.\n\nProgram studi yang berada di bawah fakultas ini meliputi:\n` +
+      targetedFaculty.programs.map((p, idx) => `${idx + 1}. ${p}`).join('\n') +
+      `\n\nAda yang ingin Kakak tanyakan lebih lanjut mengenai kurikulum atau pendaftaran prodi ini?`;
+  }
+
+  // 4. If asking what programs are under a single specific faculty (e.g. FBV or FIK)
+  const resolvedFac = resolveFaculty(query);
+  if (resolvedFac) {
+    if (isEn) {
+      return `At ITB STIKOM Bali, the **${resolvedFac.canonical} (${resolvedFac.shortName})** oversees the following study programs:\n\n` +
+        resolvedFac.programs.map((p, idx) => `${idx + 1}. **${p}**`).join('\n') +
+        `\n\nRegistration is open at https://pmb.stikom-bali.ac.id. Are you interested in any of these programs?`;
+    }
+
+    return `Di ITB STIKOM Bali, **${resolvedFac.canonical} (${resolvedFac.shortName})** menaungi program studi berikut:\n\n` +
+      resolvedFac.programs.map((p, idx) => `${idx + 1}. **${p}**`).join('\n') +
+      `\n\nPendaftaran dapat diakses secara online di https://pmb.stikom-bali.ac.id. Tertarik dengan salah satu prodi di atas?`;
+  }
+
+  // 5. Overall faculty overview at ITB STIKOM Bali
+  if (isEn) {
+    return `ITB STIKOM Bali has 2 official faculties overseeing its academic study programs:\n\n` +
+      `1. **Fakultas Informatika dan Komputer (FIK / INFOKOM)**:\n` +
+      `   • S1 Sistem Informasi\n` +
+      `   • S1 Sistem Komputer\n` +
+      `   • S1 Teknologi Informasi\n` +
+      `   • S2 Magister Sistem Informasi (M.Kom)\n\n` +
+      `2. **Fakultas Bisnis dan Vokasi (FBV / BISVO)**:\n` +
+      `   • S1 Bisnis Digital\n` +
+      `   • D3 Manajemen Informatika\n\n` +
+      `Would you like to know more about a specific faculty or study program?`;
+  }
+  return `ITB STIKOM Bali memiliki 2 fakultas resmi yang menaungi program-program studinya:\n\n` +
+    `1. **Fakultas Informatika dan Komputer (FIK / INFOKOM)**:\n` +
+    `   • S1 Sistem Informasi\n` +
+    `   • S1 Sistem Komputer\n` +
+    `   • S1 Teknologi Informasi\n` +
+    `   • S2 Magister Sistem Informasi (M.Kom)\n\n` +
+    `2. **Fakultas Bisnis dan Vokasi (FBV / BISVO)**:\n` +
+    `   • S1 Bisnis Digital\n` +
+    `   • D3 Manajemen Informatika\n\n` +
+    `Apakah ada fakultas atau program studi tertentu yang ingin Kakak ketahui lebih lanjut?`;
+}
+
 module.exports = {
   ACADEMIC_SCOPE_STATUS,
   SUPPORTED_CANONICAL_DEGREES,
   INSTITUTIONAL_ACADEMIC_CATALOG,
+  INSTITUTIONAL_FACULTIES,
   resolveAcademicScope,
   normalizeAcademicScope,
   getCatalogEntriesByScope,
-  generateGroundedCatalogSummary
+  generateGroundedCatalogSummary,
+  resolveFaculty,
+  getFacultyForProgram,
+  getProgramsForFaculty,
+  generateGroundedFacultySummary
 };

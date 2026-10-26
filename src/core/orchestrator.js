@@ -480,9 +480,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
         verification = verifFn(synthesis.answer, frame, arbitrated);
 
-        // Deterministic Recovery if synthesis failed verification or yielded unjustified SAFE_UNKNOWN on ANSWERABLE turn
-        const isUnjustifiedSafeUnknown = verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN &&
-          answerability.status === ANSWERABILITY_STATUS.ANSWERABLE;
+        // Deterministic Recovery if synthesis failed verification or yielded unjustified SAFE_UNKNOWN on ANSWERABLE/PARTIAL turn
+        const isUnjustifiedSafeUnknown = (verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN || !verification.pass) &&
+          (answerability.status === ANSWERABILITY_STATUS.ANSWERABLE || answerability.status === ANSWERABILITY_STATUS.PARTIAL);
 
         if (verification.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED || isUnjustifiedSafeUnknown) {
           logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting deterministic recovery');

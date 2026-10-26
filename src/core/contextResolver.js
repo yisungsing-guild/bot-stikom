@@ -188,6 +188,26 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     };
   }
 
+  // Check 4: Elliptical / Shorthand Faculty or Program inquiry referencing active program entity
+  // (e.g. Turn 1: "Teknologi Informasi masuk fakultas apa?" -> Turn 2: "Teknologi masuk fakultas apa?")
+  const isFacultyOrProgramInquiry = /\b(?:fakultas|masuk\s+fakultas|jurusan|bernaung)\b/i.test(query);
+  if (isFacultyOrProgramInquiry && sessionData.activeEntity) {
+    const activeName = (sessionData.activeEntity.canonical || sessionData.activeEntity.name || String(sessionData.activeEntity)).toLowerCase();
+    const queryTokens = query.split(/\s+/).filter(w => w.length >= 4 && !['masuk', 'fakultas', 'mana', 'apa', 'yang', 'itu'].includes(w));
+    const sharesToken = queryTokens.some(tok => activeName.includes(tok));
+    const mentionsOtherProgram = /\b(?:sistem\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|komputer|bisnis|vokasi)\b/i.test(query) &&
+      !activeName.includes(query.match(/\b(?:sistem\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika)\b/i)?.[0] || '');
+
+    if (sharesToken && !mentionsOtherProgram) {
+      return {
+        shouldInherit: true,
+        reason: 'faculty_shorthand_continuation',
+        inheritedDomain: sessionData.activeDomain || 'ACADEMIC_PROGRAM',
+        inheritedEntity: sessionData.activeEntity
+      };
+    }
+  }
+
   // DEFAULT: Current turn is independent and authoritative!
   return {
     shouldInherit: false,

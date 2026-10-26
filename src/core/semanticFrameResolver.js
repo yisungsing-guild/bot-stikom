@@ -142,7 +142,8 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
     'apa', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'pilihan', 'saja', 'aja', 'kak',
     'ya', 'nih', 'dong', 'kah', 'sore', 'malam', 'karyawan', 'reguler', 'eksekutif',
     'lebih', 'baik', 'ambil', 'pilih', 'mana', 'bagus', 'cocok', 'rekomendasi', 'saran',
-    'prodi', 'jurusan',
+    'prodi', 'jurusan', 'masih', 'buka', 'dibuka', 'tutup', 'ditutup', 'kapan', 'jadwal',
+    'gelombang', 'pendaftaran', 'daftar', 'alur', 'syarat', 'biaya', 'kuliah',
     // English generic catalog tokens
     'program', 'programs', 'study', 'studies', 'course', 'courses', 'major', 'majors',
     'degree', 'degrees', 'available', 'offered', 'what', 'which', 'any', 'are', 'there',
@@ -384,7 +385,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
     if (hasLocationSignal) {
       intent = 'STUDY_LOCATION';
-      aspects.push('location');
+      aspects.push('location', 'study_location');
       relation = 'LOCATION_MODE';
     } else if (/\b(keuntungan(?:nya)?|manfaat(?:nya)?|benefit(?:nya)?|kelebihan(?:nya)?|gelar(?:nya)?)\b/i.test(normalized) ||
                /\b(keuntungan|manfaat|benefit|kelebihan|gelar)\b/i.test(unstemmed)) {
@@ -485,6 +486,24 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       desiredAction: 'PROVIDE_PROGRAM_RECOMMENDATION',
       aspects: ['recommendation', 'program_fit'],
       relation: 'PROGRAM_RECOMMENDATION'
+    };
+  }
+
+  // 5c. Faculty & Institutional Structure Inquiries (Systemic Handling)
+  const isFacultyKeyword = /\b(?:fakultas|faculty|faculties|dekan|fik|fbv|infokom|bisvo)\b/i.test(normalized) || /\b(?:fakultas|faculty|faculties|dekan|fik|fbv|infokom|bisvo)\b/i.test(raw);
+  if (isFacultyKeyword) {
+    const isProdiFacultyMapping = entities.some(e => e.family === 'academic_program' || e.type === 'program') ||
+      /\b(?:masuk\s+fakultas|bagian\s+dari\s+fakultas|di\s+bawah\s+fakultas|fakultas\s+apa|which\s+faculty)\b/i.test(normalized) ||
+      /\b(?:masuk\s+fakultas|bagian\s+dari\s+fakultas|di\s+bawah\s+fakultas|fakultas\s+apa|which\s+faculty)\b/i.test(raw);
+
+    return {
+      domain: 'ACADEMIC_PROGRAM',
+      intent: 'FACULTY_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_FACULTY_INFO',
+      aspects: ['faculty', 'academic_structure'],
+      relation: isProdiFacultyMapping ? 'PRODI_FACULTY_MAPPING' : 'FACULTY_OVERVIEW'
     };
   }
 
@@ -631,9 +650,26 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       }
     }
 
+    const isMembershipCheck = /\b(?:apakah\s+.*?\s+termasuk|termasuk\s+(?:ukm|kategori|bidang)|is\s+.*?\s+(?:a|part\s+of)\b)/i.test(normalized) ||
+      /\b(?:apakah\s+.*?\s+termasuk|termasuk\s+(?:ukm|kategori|bidang)|is\s+.*?\s+(?:a|part\s+of)\b)/i.test(raw);
+
+    const isOrgList = /\b(?:apa\s+(?:saja\s+)?(?:ormawa|ukm|organisasi)|(?:ormawa|ukm|organisasi)\s+apa\s+saja|daftar\s+(?:ormawa|ukm|organisasi)|ada\s+(?:ormawa|ukm|organisasi)\s+apa)\b/i.test(normalized) ||
+      /\b(?:apa\s+(?:saja\s+)?(?:ormawa|ukm|organisasi)|(?:ormawa|ukm|organisasi)\s+apa\s+saja|daftar\s+(?:ormawa|ukm|organisasi)|ada\s+(?:ormawa|ukm|organisasi)\s+apa)\b/i.test(raw);
+
+    let orgIntent = 'ORGANIZATION_INQUIRY';
+    if (isMembershipCheck) {
+      orgIntent = 'ORGANIZATION_MEMBERSHIP_CHECK';
+      aspects.push('membership', 'category');
+      relation = 'UKM_MEMBERSHIP_CHECK';
+    } else if (isOrgList) {
+      orgIntent = 'ORGANIZATION_LIST';
+      aspects.push('ukm_list');
+      relation = 'ORGANIZATION_LIST';
+    }
+
     return {
       domain: 'ORGANIZATION_UKM',
-      intent: 'ORGANIZATION_INQUIRY',
+      intent: orgIntent,
       retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_ORGANIZATION_INFO',
@@ -753,8 +789,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   // 15. Admission / PMB Schedule & General Topic Opener
   if (/\b(?:pmb|pendaftaran|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
       (/\bdaftar\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized))) {
-    const isNow = TEMPORAL_NOW_REGEX.test(normalized);
-    if (isNow && /\b(?:gelombang|buka|tutup|jadwal|periode|kapan)\b/i.test(normalized)) {
+    const isNow = TEMPORAL_NOW_REGEX.test(normalized) || /\b(?:masih|sekarang|saat ini)\b/i.test(normalized);
+    if (isNow && /\b(?:gelombang|buka|dibuka|tutup|ditutup|jadwal|periode|kapan)\b/i.test(normalized)) {
       return {
         domain: 'PMB',
         intent: 'CURRENT_ENROLLMENT_STATUS',
@@ -834,6 +870,21 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       desiredAction: 'PROVIDE_FACILITIES_INFO',
       aspects: ['facilities', 'lab', 'campus_infrastructure'],
       relation: 'CAMPUS_FACILITIES'
+    };
+  }
+
+  // 17. Campus Location / Address Inquiry
+  const isAskingCampusLocation = /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus(?:nya)?\s+di\s*mana|dimana\s+kampus|letak\s+kampus|gedung\s+kampus\s+di\s*mana|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(normalized) ||
+    (/\b(?:lokasi|alamat|di\s*mana|dimana)\b/i.test(normalized) && /\b(?:kampus|stikom|itb\s+stikom)\b/i.test(normalized));
+  if (isAskingCampusLocation) {
+    return {
+      domain: 'FACILITIES',
+      intent: 'CAMPUS_LOCATION',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_LOCATION_INFO',
+      aspects: ['location', 'campus_location', 'address'],
+      relation: 'CAMPUS_LOCATION'
     };
   }
 
@@ -986,11 +1037,31 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     }
   }
 
+  // Handle faculty entities for FACULTY_INQUIRY
+  if (inferred.intent === 'FACULTY_INQUIRY') {
+    effectiveTargetEntities = effectiveTargetEntities.filter(e => e.type !== 'academic_scope' && e.family !== 'academic_scope');
+    const { resolveFaculty } = require('./academicCatalog');
+    const fac = resolveFaculty(raw);
+    if (fac && !effectiveTargetEntities.some(e => e.canonical === fac.canonical)) {
+      effectiveTargetEntities.push({
+        canonical: fac.canonical,
+        type: 'faculty',
+        family: 'academic_faculty',
+        shortName: fac.shortName
+      });
+    }
+  }
+
   // Detect additional requested aspects
   const combinedAspects = new Set(inferred.aspects || []);
   if (/\b(di\s*mana|dimana|lokasi(?:nya)?|tempat\s+kuliah|tempat\s+studi|alamat(?:nya)?|berada\s+di\s*mana)\b/i.test(normalized) ||
       /\b(di\s*mana|dimana|lokasi|tempat\s+kuliah|tempat\s+studi|alamat|berada\s+di\s*mana)\b/i.test(unstemmedQuery)) {
     combinedAspects.add('location');
+    combinedAspects.add('campus_location');
+  }
+  if (/\b(fakultas|faculty)\b/i.test(normalized) || /\b(fakultas|faculty)\b/i.test(unstemmedQuery)) {
+    combinedAspects.add('faculty');
+    combinedAspects.add('academic_structure');
   }
   if (/\b(prospek(?:nya)?|peluang\s+kerja|karir|karier|profesi\s+lulusan)\b/i.test(normalized) ||
       /\b(prospek|peluang\s+kerja|karir|karier|profesi\s+lulusan)\b/i.test(unstemmedQuery)) {
@@ -1328,7 +1399,16 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     const speechAct = validated.speechAct;
     const primaryConcept = interpretation.semanticConcepts?.[0] || null;
 
-    if (domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn) {
+    if (syncFrame.intent === 'FACULTY_INQUIRY') {
+      intent = 'FACULTY_INQUIRY';
+      domain = 'ACADEMIC_PROGRAM';
+    } else if (syncFrame.intent === 'ORGANIZATION_MEMBERSHIP_CHECK') {
+      intent = 'ORGANIZATION_MEMBERSHIP_CHECK';
+      domain = 'ORGANIZATION_UKM';
+    } else if (syncFrame.intent === 'CAMPUS_LOCATION') {
+      intent = 'CAMPUS_LOCATION';
+      domain = 'FACILITIES';
+    } else if (domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn) {
       intent = 'OUT_OF_DOMAIN_INQUIRY';
       domain = 'OUT_OF_DOMAIN';
     } else if (syncFrame.domain === 'CONVERSATIONAL') {

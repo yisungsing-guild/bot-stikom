@@ -216,15 +216,15 @@ describe('Phase 2 Organic WhatsApp UAT Remediation', () => {
   });
 
   // -------------------------------------------------------------------------
-  // P1-4: Bisnis Digital Faculty Safe Data Gap
+  // P1-4: Bisnis Digital Faculty Official Grounding (FBV)
   // -------------------------------------------------------------------------
-  describe('P1-4: Bisnis Digital Faculty Safe Data Gap', () => {
-    test('returns grounded safe data gap when faculty information is not in official corpus', async () => {
+  describe('P1-4: Bisnis Digital Faculty Official Grounding (FBV)', () => {
+    test('returns grounded faculty under FBV based on official institutional source', async () => {
       const res = await querySemanticRag('Program studi Bisnis Digital ada di fakultas apa?');
       expect(res.success).toBe(true);
-      expect(res.source).toBe('semantic-rag-academic-no-data');
-      expect(res.answer).toMatch(/belum menemukan informasi fakultas/i);
-      expect(res.answer).toMatch(/bagian akademik|admin kampus/i);
+      expect(res.source).toBe('semantic-rag-academic-faculty');
+      expect(res.answer).toMatch(/Fakultas Bisnis dan Vokasi/i);
+      expect(res.answer).not.toMatch(/belum menemukan informasi fakultas/i);
     });
   });
 });

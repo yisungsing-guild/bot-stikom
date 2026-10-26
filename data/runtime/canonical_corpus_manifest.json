@@ -27,5 +27,14 @@
     "minRequiredChunks": 829,
     "expectedChunks": 863,
     "embeddingVersion": "text-embedding-3-small-1536-corpus-787bfb8f-v1"
+  },
+  "reconciledOfficialCorpus": {
+    "corpusVersion": "2026-10-26T08-00-00-000Z_reconciled-official-faculty",
+    "minRequiredChunks": 829,
+    "expectedChunks": 830,
+    "diskSnapshotSha256": "3af4342d8f7df938cb181986afd93b4e12571fd353d73d36117befb2a6fabf86",
+    "snapshotDirectory": "data/runtime/index_snapshots/2026-10-26T08-00-00-000Z_reconciled-official-faculty",
+    "sourceOrigin": "https://pasca.stikom-bali.ac.id/tentang",
+    "reconciledAt": "2026-10-26T01:59:20.946Z"
   }
 }

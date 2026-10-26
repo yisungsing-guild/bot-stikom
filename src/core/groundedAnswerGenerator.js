@@ -20,7 +20,8 @@ const {
   normalizeAcademicScope,
   getCatalogEntriesByScope,
   resolveAcademicScope,
-  generateGroundedCatalogSummary
+  generateGroundedCatalogSummary,
+  generateGroundedFacultySummary
 } = require('./academicCatalog');
 const { sanitizeOpenAiChatPayload } = require('../utils/openAiPayloadHelper');
 const { detectQueryLanguage } = require('../utils/languageDetector');
@@ -678,6 +679,37 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     return appendMissingAspectNote(catalogSummary);
   }
 
+  // Institutional Faculty Inquiry (Programs per faculty or faculty assignment)
+  if (semanticFrame.intent === 'FACULTY_INQUIRY') {
+    const facultySummary = generateGroundedFacultySummary(rawQuery, userLang);
+    if (facultySummary) {
+      return appendMissingAspectNote(facultySummary);
+    }
+  }
+
+  // Campus Location Inquiry
+  if (semanticFrame.intent === 'CAMPUS_LOCATION' ||
+      /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus\s+(?:renon|jimbaran|abiansemal)|dimana\s+kampus)\b/i.test(rawQuery)) {
+    const campusLocationAnswer = userLang === 'en'
+      ? `ITB STIKOM Bali has three strategic campus locations in Bali:\n\n` +
+        `1. **Kampus Renon (Main Campus)**:\n` +
+        `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
+        `2. **Kampus Jimbaran**:\n` +
+        `   Jl. Raya Kampus Udayana No. 8, Jimbaran, Kuta Selatan, Badung, Bali.\n\n` +
+        `3. **Kampus Abiansemal**:\n` +
+        `   Jl. Jenderal Sudirman, Blahkiuh, Abiansemal, Badung, Bali.\n\n` +
+        `All three campus locations provide academic consultation, student services, and PMB registration. Feel free to ask if you need further directions or information!`
+      : `ITB STIKOM Bali memiliki tiga lokasi kampus yang strategis di Bali:\n\n` +
+        `1. **Kampus Renon (Kampus Pusat)**:\n` +
+        `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
+        `2. **Kampus Jimbaran**:\n` +
+        `   Jl. Raya Kampus Udayana No. 8, Jimbaran, Kuta Selatan, Badung, Bali.\n\n` +
+        `3. **Kampus Abiansemal**:\n` +
+        `   Jl. Jenderal Sudirman, Blahkiuh, Abiansemal, Badung, Bali.\n\n` +
+        `Ketiga lokasi kampus siap melayani informasi perkuliahan, layanan akademik, serta pendaftaran mahasiswa baru (PMB). Ada lokasi kampus tertentu yang ingin Kakak kunjungi?`;
+    return appendMissingAspectNote(campusLocationAnswer);
+  }
+
   if (!accepted || accepted.length === 0) return null;
 
   const cleanAll = accepted.map(a => cleanDocumentArtifacts(a.text)).join('\n\n');
@@ -973,6 +1005,73 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
 
   // 4. Student Organization & UKM Inquiry
   if (semanticFrame.domain === 'ORGANIZATION_UKM' || (semanticFrame.aspects && semanticFrame.aspects.some(a => ['student_organization', 'esports_gaming', 'sports', 'arts_culture', 'reasoning_tech'].includes(a)))) {
+    // 4a. UKM Membership / Category Verification
+    if (semanticFrame.intent === 'ORGANIZATION_MEMBERSHIP_CHECK') {
+      let matchedOrgKey = null;
+      let matchedOrgMeta = null;
+
+      // Find organization from entities or query text
+      const candidateEntities = (semanticFrame.entities || []).map(e => (e.canonical || e.name || String(e)).toLowerCase());
+      for (const [key, meta] of Object.entries(ukmCategorizedData.organizationMetadata || {})) {
+        const off = (meta.officialName || '').toLowerCase();
+        const short = key.toLowerCase();
+        if (candidateEntities.some(ce => ce.includes(short) || ce.includes(off)) ||
+            rawQuery.includes(short) || rawQuery.includes(off)) {
+          matchedOrgKey = key;
+          matchedOrgMeta = meta;
+          break;
+        }
+        if (Array.isArray(meta.aliases)) {
+          for (const alias of meta.aliases) {
+            if (rawQuery.includes(alias.toLowerCase())) {
+              matchedOrgKey = key;
+              matchedOrgMeta = meta;
+              break;
+            }
+          }
+          if (matchedOrgMeta) break;
+        }
+      }
+
+      if (matchedOrgMeta) {
+        const queryCategorySeni = /\b(?:seni|budaya|kesenian|kebudayaan|tari|musik|teater|vokal)\b/i.test(rawQuery);
+        const queryCategoryOlahraga = /\b(?:olahraga|sport|futsal|basket|bulutangkis|badminton)\b/i.test(rawQuery);
+        const queryCategoryTeknologi = /\b(?:teknologi|penalaran|komputer|coding|programming|robotik|it)\b/i.test(rawQuery);
+        const queryCategoryKerohanian = /\b(?:kerohanian|agama|hindu|kristen|islam)\b/i.test(rawQuery);
+        const queryCategoryKhusus = /\b(?:khusus|pengabdian|sosial|pmi|mapala)\b/i.test(rawQuery);
+
+        let queriedCategoryLabel = null;
+        let isMatch = false;
+
+        if (queryCategorySeni) {
+          queriedCategoryLabel = 'Kesenian dan Kebudayaan';
+          isMatch = matchedOrgMeta.category === 'Kesenian dan Kebudayaan';
+        } else if (queryCategoryOlahraga) {
+          queriedCategoryLabel = 'Olahraga';
+          isMatch = matchedOrgMeta.category === 'Olahraga';
+        } else if (queryCategoryTeknologi) {
+          queriedCategoryLabel = 'Teknologi dan Penalaran';
+          isMatch = matchedOrgMeta.category === 'Teknologi dan Penalaran';
+        } else if (queryCategoryKerohanian) {
+          queriedCategoryLabel = 'Kerohanian';
+          isMatch = matchedOrgMeta.category === 'Kerohanian';
+        } else if (queryCategoryKhusus) {
+          queriedCategoryLabel = 'Khusus dan Pengabdian Masyarakat';
+          isMatch = matchedOrgMeta.category === 'Khusus dan Pengabdian Masyarakat';
+        }
+
+        if (queriedCategoryLabel) {
+          let ans = '';
+          if (isMatch) {
+            ans = `Ya, **${matchedOrgMeta.officialName}** merupakan Unit Kegiatan Mahasiswa (UKM) di ITB STIKOM Bali yang berada di bawah bidang **${matchedOrgMeta.category}**.\n\n${matchedOrgMeta.defaultDesc}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+          } else {
+            ans = `Berdasarkan dokumen resmi kampus, **${matchedOrgMeta.officialName}** bukan merupakan UKM bidang ${queriedCategoryLabel}, melainkan Unit Kegiatan Mahasiswa yang berada di bawah bidang **${matchedOrgMeta.category}**.\n\n${matchedOrgMeta.defaultDesc}\n\nUntuk informasi pendaftaran dan kegiatan lebih lanjut, silakan menghubungi Direktorat Kemahasiswaan & Ormawa ITB STIKOM Bali.`;
+          }
+          return appendMissingAspectNote(ans);
+        }
+      }
+    }
+
     const isHima = /\b(?:himpunan\s+mahasiswa|himaprodi|hima)\b/i.test(rawQuery) || targetEntities.some(e => /hima/i.test(e));
     if (isHima) {
       const himaChunk = accepted.find(c => {
@@ -1061,7 +1160,7 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
       semanticFrame.intent === 'ORGANIZATION_LIST' ||
       semanticFrame.intent === 'ORGANIZATION_CATEGORY_LIST' ||
       semanticFrame.intent === 'DISCOVER_LIST' ||
-      /\b(?:apa\s+(?:saja\s+)?(?:ormawa|ukm|organisasi|kegiatan\s+mahasiswa)|daftar\s+(?:ormawa|ukm|organisasi)|ada\s+(?:ormawa|ukm|organisasi|klub)\s+apa|rekomendasi\s+ukm|pilihan\s+ukm)\b/i.test(rawQuery)
+      /\b(?:apa\s+(?:saja\s+)?(?:ormawa|ukm|organisasi|kegiatan\s+mahasiswa)|(?:ormawa|ukm|organisasi)\s+apa\s+saja|daftar\s+(?:ormawa|ukm|organisasi)|ada\s+(?:ormawa|ukm|organisasi|klub)\s+apa|rekomendasi\s+ukm|pilihan\s+ukm)\b/i.test(rawQuery)
     ) && !/\b(?:nomor|kontak|telp|telepon|wa|whatsapp|ketua|biaya|iuran|tahun\s+\d{4})\b/i.test(rawQuery);
 
     if (isGeneralOrmawaInquiry) {
@@ -1730,6 +1829,14 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
     }
   }
 
+  // 7g. Faculty Inquiry (Grounded in official institutional decree/history)
+  if (semanticFrame.intent === 'FACULTY_INQUIRY' || (semanticFrame.aspects && semanticFrame.aspects.includes('faculty'))) {
+    const facultySummary = generateGroundedFacultySummary(rawQuery, accepted);
+    if (facultySummary) {
+      return appendMissingAspectNote(facultySummary);
+    }
+  }
+
   // 8. Generic Clean Passages Fallback
   const rawClean = cleanDocumentArtifacts(cleanAll);
   if (rawClean && rawClean.length > 30) {
@@ -1886,6 +1993,18 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       answer: synthesizedText,
       source: 'grounded_deterministic_summary'
     };
+  }
+
+  // Institutional Faculty Inquiry handling (grounded in official institutional decree/history)
+  if (semanticFrame.intent === 'FACULTY_INQUIRY' || (semanticFrame.aspects && semanticFrame.aspects.includes('faculty'))) {
+    const facultySummary = generateGroundedFacultySummary(semanticFrame.rawQuery || '', arbitratedEvidence.accepted || []);
+    if (facultySummary) {
+      return {
+        success: true,
+        answer: facultySummary,
+        source: 'grounded_faculty_summary'
+      };
+    }
   }
 
   // Explicit Unsupported Entity handling (e.g. Teknik Nuklir)

@@ -36,13 +36,13 @@ function normalizeSenderNumber(sender) {
 }
 
 function parseFonntePayload(body = {}) {
-  const senderRaw = body.sender || body.from || body.whatsapp_number || body.waId || body.phone || '';
+  const senderRaw = body.sender || body.from || body.whatsapp_number || body.waId || body.phone || body.chatId || '';
   const sender = normalizeSenderNumber(senderRaw);
   
   const textRaw = body.message || body.text || body.body || '';
   const text = cleanZeroWidth(textRaw);
 
-  const messageId = String(body.id || body.message_id || body.messageId || '').trim() ||
+  const messageId = String(body.id || body.message_id || body.messageId || body.whatsappMessageId || '').trim() ||
     `synthetic_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 
   const ts = Number(body.timestamp) || Date.now();

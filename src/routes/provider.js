@@ -8951,7 +8951,23 @@ module.exports = function (provider) {
   });
 
   router.post('/webhook', providerWebhookAuth, (req, res) => {
-    const chatId = req.body && req.body.chatId ? req.body.chatId : 'unknown_chat';
+    const isV2 = String(process.env.CHAT_ENGINE || '').toLowerCase().trim() === 'v2' ||
+      String(process.env.USE_GREENFIELD || '').toLowerCase().trim() === 'true';
+    const chatId = req.body && (req.body.chatId || req.body.phone || req.body.sender) ? (req.body.chatId || req.body.phone || req.body.sender) : 'unknown_chat';
+
+    if (isV2) {
+      res.status(200).send({ ok: true, engine: 'v2' });
+      return enqueueChat(chatId, async () => {
+        try {
+          const { handleInboundMessage } = require('../core/orchestrator');
+          logger.info({ chatId }, '[ChatEngine] /provider/webhook delegating to Greenfield V2');
+          await handleInboundMessage(req.body, { executeDispatch: true });
+        } catch (v2Err) {
+          logger.error({ err: v2Err.message, chatId }, '[ChatEngine] /provider/webhook Greenfield V2 failed');
+        }
+      });
+    }
+
     return enqueueChat(chatId, async () => {
     console.log('WA_RUNTIME_ACTIVE');
     const chatId = req.body.chatId;

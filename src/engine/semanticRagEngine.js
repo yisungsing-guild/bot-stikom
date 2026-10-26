@@ -9184,29 +9184,51 @@ function buildSourceGroundedRequestedFieldAnswer(question, canonical, indexForQu
     };
   }
 
-  // 0a) Faculty Program Mapping DATA GAP (e.g. Fakultas Infokom / Fakultas Bisnis dan Vokasi)
+  // 0a) Faculty Program Mapping Grounded in Official Decree (FIK and FBV)
   if (academicTopic === 'faculty_program_mapping' || intent === 'ask_faculty_program_list' || fields.has('facultyProgramMapping')) {
-    let facultyLabel = 'fakultas tersebut';
-    if (/\bfakultas\s+bisnis\s+(?:dan|&)\s+vokasi\b/i.test(q)) {
-      facultyLabel = 'Fakultas Bisnis dan Vokasi';
-    } else if (/\bfakultas\s+infokom\b/i.test(q)) {
-      facultyLabel = 'Fakultas Infokom (Informatika dan Komputer)';
-    } else if (/\bfakultas\s+informatika\s+(?:dan|&)\s+komputer\b/i.test(q)) {
-      facultyLabel = 'Fakultas Informatika dan Komputer';
-    } else {
-      const mFac = q.match(/\b(fakultas\s+[a-zA-Z0-9\s&]{2,35}?)(?=\s+(?:di|stikom|itb|itu|apa|mana|ada|memiliki|punya|menaungi|terdiri)|[?.,!]|$)/i);
-      if (mFac && mFac[1]) facultyLabel = mFac[1].trim();
+    const isFBV = /\b(?:fakultas\s+bisnis|bisnis\s+dan\s+vokasi|fbv|bisvo)\b/i.test(q);
+    const isFIK = /\b(?:fakultas\s+informatika|informatika\s+dan\s+komputer|fik|infokom)\b/i.test(q);
+
+    if (isFBV && !isFIK) {
+      return {
+        answer: 'Di ITB STIKOM Bali, **Fakultas Bisnis dan Vokasi (FBV / BISVO)** menaungi program studi berikut:\n\n1. **S1 Bisnis Digital**\n2. **D3 Manajemen Informatika**\n\nPendaftaran dapat diakses secara online di https://pmb.stikom-bali.ac.id.',
+        source: 'semantic-rag-academic-faculty',
+        frameSource: 'semantic-rag-academic-faculty',
+        debug: {
+          routeStage: 'pre-guard-faculty-program-mapping',
+          answerabilityResult: {
+            answerable: true,
+            reason: 'OFFICIAL_FACULTY_DECREE_GROUNDED'
+          }
+        }
+      };
     }
+
+    if (isFIK && !isFBV) {
+      return {
+        answer: 'Di ITB STIKOM Bali, **Fakultas Informatika dan Komputer (FIK / INFOKOM)** menaungi program studi berikut:\n\n1. **S1 Sistem Informasi**\n2. **S1 Sistem Komputer**\n3. **S1 Teknologi Informasi**\n4. **S2 Magister Sistem Informasi (M.Kom)**\n\nPendaftaran dapat diakses secara online di https://pmb.stikom-bali.ac.id.',
+        source: 'semantic-rag-academic-faculty',
+        frameSource: 'semantic-rag-academic-faculty',
+        debug: {
+          routeStage: 'pre-guard-faculty-program-mapping',
+          answerabilityResult: {
+            answerable: true,
+            reason: 'OFFICIAL_FACULTY_DECREE_GROUNDED'
+          }
+        }
+      };
+    }
+
+    // Both faculties or generic
     return {
-      answer: `Maaf, rincian daftar pembagian program studi yang berada di bawah **${facultyLabel}** belum tercantum secara eksplisit dalam dokumen pengetahuan resmi kampus yang tersedia saat ini. Untuk memastikan struktur pemetaan prodi per fakultas terbaru, silakan mengonfirmasi langsung ke **Bagian Akademik (BAAK)** atau **Admin ITB STIKOM Bali**.`,
-      source: 'semantic-rag-academic-no-data',
-      frameSource: 'semantic-rag-academic-no-data',
+      answer: 'Di ITB STIKOM Bali, pembagian program studi di bawah dua fakultas resmi adalah sebagai berikut:\n\n1. **Fakultas Informatika dan Komputer (FIK / INFOKOM)**:\n   • S1 Sistem Informasi\n   • S1 Sistem Komputer\n   • S1 Teknologi Informasi\n   • S2 Magister Sistem Informasi (M.Kom)\n\n2. **Fakultas Bisnis dan Vokasi (FBV / BISVO)**:\n   • S1 Bisnis Digital\n   • D3 Manajemen Informatika\n\nPendaftaran dapat diakses di https://pmb.stikom-bali.ac.id.',
+      source: 'semantic-rag-academic-faculty',
+      frameSource: 'semantic-rag-academic-faculty',
       debug: {
-        routeStage: 'pre-guard-faculty-program-mapping-no-data',
+        routeStage: 'pre-guard-faculty-program-mapping',
         answerabilityResult: {
-          answerable: false,
-          reason: 'MISSING_FACULTY_PROGRAM_MAPPING_EVIDENCE',
-          missingEvidence: ['faculty_program_mapping']
+          answerable: true,
+          reason: 'OFFICIAL_FACULTY_DECREE_GROUNDED'
         }
       }
     };
@@ -17664,33 +17686,71 @@ function tryProgramFacultyAnswer(question) {
   const q = String(question || '').trim().toLowerCase();
   if (!q || !/\bfakultas\b/i.test(q)) return null;
 
-  const asksFacultyList = /\b(?:fakultas\s+(?:apa\s+saja|apa\s+aja|yang\s+ada|ada\s+apa)|apa\s+saja\s+fakultas|apa\s+aja\s+fakultas)\b/i.test(q);
-  if (asksFacultyList) {
+  // 1. Guard against ambiguous "Teknologi" inquiry without "Informasi"
+  if (/\bteknologi\b/i.test(q) && !/\b(?:teknologi\s+informasi|ti)\b/i.test(q) && /\b(?:masuk|fakultas|jurusan|prodi|bagian|bernaung)\b/i.test(q)) {
+    return {
+      answer: 'Mohon klarifikasi program studi yang Kakak maksud. Di ITB STIKOM Bali, apakah yang Kakak maksud adalah program studi S1 Teknologi Informasi (bernaung di bawah Fakultas Informatika dan Komputer / FIK), atau program studi lainnya? Mohon sebutkan nama program studi secara spesifik agar Tiko dapat memberikan informasi fakultas yang tepat.',
+      source: 'semantic-rag-academic-faculty',
+      frameSource: 'semantic-rag-academic-faculty'
+    };
+  }
+
+  // 2. Both faculties or faculty overview inquiry
+  const mentionsFIK = /\b(?:fik|fakultas\s+informatika|informatika\s+dan\s+komputer|infokom)\b/i.test(q);
+  const mentionsFBV = /\b(?:fbv|fakultas\s+bisnis|bisnis\s+dan\s+vokasi|bisvo)\b/i.test(q);
+  const asksBothFaculties = (mentionsFIK && mentionsFBV) ||
+    (/\b(?:fakultas\s+(?:apa\s+saja|apa\s+aja|yang\s+ada|ada\s+apa)|apa\s+saja\s+fakultas|apa\s+aja\s+fakultas)\b/i.test(q)) ||
+    (/\b(?:program\s+studi|prodi|jurusan)\b/i.test(q) && /\b(?:di\s+fik|di\s+fbv)\b/i.test(q));
+
+  if (asksBothFaculties) {
     return {
       answer: [
-        'Pada data yang tersedia, fakultas yang tercatat di ITB STIKOM Bali adalah:',
+        'Di ITB STIKOM Bali, terdapat 2 fakultas resmi yang menaungi program-program studi berikut:',
         '',
-        '- Fakultas Informatika dan Komputer',
-        '- Fakultas Bisnis dan Vokasi',
+        '1. **Fakultas Informatika dan Komputer (FIK / INFOKOM)**:',
+        '   - S1 Sistem Informasi',
+        '   - S1 Sistem Komputer',
+        '   - S1 Teknologi Informasi',
+        '   - S2 Magister Sistem Informasi (M.Kom)',
         '',
-        'Untuk pembagian prodi terbaru per fakultas, kakak sebaiknya tetap konfirmasi ke admin kampus atau bagian akademik.'
+        '2. **Fakultas Bisnis dan Vokasi (FBV / BISVO)**:',
+        '   - S1 Bisnis Digital',
+        '   - D3 Manajemen Informatika',
+        '',
+        'Pendaftaran dapat diakses di https://pmb.stikom-bali.ac.id.'
       ].join('\n'),
       source: 'semantic-rag-academic-faculty',
       frameSource: 'semantic-rag-academic-faculty'
     };
   }
 
-  const fikPrograms = /\b(?:sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|manajemen\s+informatika|\bsi\b|\bti\b|\bsk\b|\bmi\b)\b/i.test(q);
-  if (fikPrograms) {
-    const program = /manajemen\s+informatika|\bmi\b/i.test(q) ? 'Manajemen Informatika'
-      : /teknologi\s+informasi|\bti\b/i.test(q) ? 'Teknologi Informasi'
-        : /sistem\s+komputer|\bsk\b/i.test(q) ? 'Sistem Komputer'
-          : 'Sistem Informasi';
+  // 3. FBV programs: Bisnis Digital and D3 Manajemen Informatika
+  const fbvPrograms = /\b(?:bisnis\s+digital|\bbd\b|manajemen\s+informatika|\bmi\b|d3\s+mi|d3\s+manajemen\s+informatika)\b/i.test(q);
+  if (fbvPrograms) {
+    const program = /manajemen\s+informatika|\bmi\b/i.test(q) ? 'D3 Manajemen Informatika' : 'S1 Bisnis Digital';
     return {
       answer: [
-        `Program Studi ${program} termasuk dalam Fakultas Informatika dan Komputer.`,
+        `Di ITB STIKOM Bali, Program Studi **${program}** bernaung di bawah **Fakultas Bisnis dan Vokasi (FBV / BISVO)**.`,
         '',
-        'Data ini mengacu pada dokumen akademik yang mencantumkan Dekan Fakultas Informatika dan Komputer bersama Ketua Program Studi S1 Sistem Informasi, S1 Sistem Komputer, S1 Teknologi Informasi, dan D3 Manajemen Informatika.'
+        'Program studi lain di bawah Fakultas Bisnis dan Vokasi meliputi S1 Bisnis Digital dan D3 Manajemen Informatika.'
+      ].join('\n'),
+      source: 'semantic-rag-academic-faculty',
+      frameSource: 'semantic-rag-academic-faculty'
+    };
+  }
+
+  // 4. FIK programs: SI, SK, TI, S2 MSI
+  const fikPrograms = /\b(?:sistem\s+informasi|teknologi\s+informasi|sistem\s+komputer|magister\s+sistem\s+informasi|\bsi\b|\bti\b|\bsk\b|\bs2\b)\b/i.test(q);
+  if (fikPrograms) {
+    const program = /teknologi\s+informasi|\bti\b/i.test(q) ? 'S1 Teknologi Informasi'
+      : /sistem\s+komputer|\bsk\b/i.test(q) ? 'S1 Sistem Komputer'
+        : /magister|s2/i.test(q) ? 'S2 Magister Sistem Informasi'
+          : 'S1 Sistem Informasi';
+    return {
+      answer: [
+        `Di ITB STIKOM Bali, Program Studi **${program}** bernaung di bawah **Fakultas Informatika dan Komputer (FIK / INFOKOM)**.`,
+        '',
+        'Program studi lain di bawah Fakultas Informatika dan Komputer meliputi S1 Sistem Informasi, S1 Sistem Komputer, S1 Teknologi Informasi, dan S2 Magister Sistem Informasi.'
       ].join('\n'),
       source: 'semantic-rag-academic-faculty',
       frameSource: 'semantic-rag-academic-faculty'

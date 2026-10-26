@@ -31,24 +31,40 @@ async function sendOutboundMessage(chatId, messageText, options = {}) {
     return { success: true, mode: 'mock_simulated', parts: parts.length };
   }
 
+  const isWati = String(process.env.WHATSAPP_PROVIDER || '').toLowerCase().trim() === 'wati' ||
+    (process.env.WHATSAPP_API_ENDPOINT || '').toLowerCase().includes('wati');
+
   try {
     for (const part of parts) {
-      const payload = new URLSearchParams();
-      payload.set('target', chatId);
-      payload.set('message', part);
+      if (isWati) {
+        const watiBase = (process.env.WHATSAPP_API_ENDPOINT || 'https://app-server.wati.io').replace(/\/$/, '');
+        const encoded = encodeURIComponent(part || '');
+        const url = `${watiBase}/api/v1/sendSessionMessage/${chatId}?messageText=${encoded}`;
+        await axios.post(url, null, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          timeout: 10000
+        });
+      } else {
+        const fonnteUrl = (process.env.WHATSAPP_FONNTE_SEND_URL || 'https://api.fonnte.com/send').replace(/\/$/, '');
+        const payload = new URLSearchParams();
+        payload.set('target', chatId);
+        payload.set('message', part);
 
-      await axios.post(fonnteUrl, payload.toString(), {
-        headers: {
-          Authorization: token,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        timeout: 10000
-      });
+        await axios.post(fonnteUrl, payload.toString(), {
+          headers: {
+            Authorization: token,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          timeout: 10000
+        });
+      }
     }
 
     return { success: true, parts: parts.length };
   } catch (err) {
-    logger.error({ err: err.message, chatId }, '[OutboundDispatcher] Failed to send message via Fonnte');
+    logger.error({ err: err.message, chatId, provider: isWati ? 'wati' : 'fonnte' }, '[OutboundDispatcher] Failed to send outbound WhatsApp message');
     return { success: false, error: err.message };
   }
 }

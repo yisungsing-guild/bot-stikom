@@ -47,7 +47,8 @@ function buildRetrievalPlan(semanticFrame) {
   // Generic discovery of conflicting / sibling entities to exclude across mutually exclusive families
   // INVARIANT: Explicitly requested entities in targetEntities must NEVER be excluded!
   // Invariant: Non-mutually-exclusive families like campus facilities or scholarships do not exclude each other
-  const MUTUALLY_EXCLUSIVE_FAMILIES = new Set(['academic_program']);
+  const isFacultyInquiry = intent === 'FACULTY_INQUIRY' || (aspects && aspects.includes('faculty'));
+  const MUTUALLY_EXCLUSIVE_FAMILIES = isFacultyInquiry ? new Set() : new Set(['academic_program']);
   const targetEntitySet = new Set(targetEntities.map(t => t.toLowerCase()));
   const excludedConflictingEntities = [];
   for (const ent of targetEntities) {
@@ -94,6 +95,18 @@ function buildRetrievalPlan(semanticFrame) {
 
   const queryVariants = [];
 
+  // Faculty & Institutional Structure query variants
+  if (intent === 'FACULTY_INQUIRY' || (aspects && (aspects.includes('faculty') || aspects.includes('academic_structure')))) {
+    queryVariants.push('Fakultas Informatika dan Komputer Fakultas Bisnis dan Vokasi ITB STIKOM Bali');
+    queryVariants.push('daftar fakultas dan program studi di bawah fakultas ITB STIKOM Bali');
+    if (targetEntities.length > 0) {
+      for (const ent of targetEntities) {
+        queryVariants.push(`fakultas program studi ${ent}`);
+        queryVariants.push(`program studi ${ent} masuk fakultas apa`);
+      }
+    }
+  }
+
   // Program & Institutional Accreditation query variants
   if (domain === 'ACCREDITATION' || intent === 'INSTITUTIONAL_ACCREDITATION' || intent === 'PROGRAM_ACCREDITATION' || (aspects && (aspects.includes('accreditation') || aspects.includes('akreditasi')))) {
     if (targetEntities.length > 0) {
@@ -109,7 +122,16 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Tuition fee query variants prioritized
   if (domain === 'TUITION_FEE' || (aspects && (aspects.includes('fee') || aspects.includes('tuition')))) {
-    if (targetEntities.length > 0) {
+    const isS2Fee = targetEntities.some(e => /s2|magister|pascasarjana/i.test(e)) ||
+      semanticFrame.academicLevel === 'S2' ||
+      /\b(?:s2|magister|pascasarjana)\b/i.test(normalizedText);
+
+    if (isS2Fee) {
+      queryVariants.push('BIAYA PENDIDIKAN MAHASISWA BARU PASCASARJANA');
+      queryVariants.push('biaya kuliah pascasarjana magister sistem informasi per semester lunas 2 tahun');
+      queryVariants.push('biaya pendidikan mahasiswa baru pascasarjana pendaftaran spp');
+      queryVariants.push('rincian biaya S2 Magister Sistem Informasi');
+    } else if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`rincian biaya pendidikan ${ent}`);
         queryVariants.push(`biaya kuliah ${ent} per semester`);
@@ -346,6 +368,8 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Location / Campus query variants
   if (intent === 'CAMPUS_LOCATION' || intent === 'STUDY_LOCATION' || (aspects && (aspects.includes('location') || aspects.includes('study_location')))) {
+    queryVariants.push('lokasi kampus ITB STIKOM Bali Renon Jimbaran Abiansemal');
+    queryVariants.push('alamat kampus Jalan Raya Puputan Renon Denpasar Kampus Jimbaran Abiansemal');
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`lokasi kampus tempat kuliah ${ent}`);
