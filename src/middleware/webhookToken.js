@@ -34,8 +34,12 @@ function requireWebhookToken(expectedToken, opts = {}) {
   } = opts;
 
   return (req, res, next) => {
-    const expected = (typeof expectedToken === 'string') ? expectedToken.trim() : '';
-    if (!expected) {
+    const rawTokens = Array.isArray(expectedToken) ? expectedToken : [expectedToken];
+    const expectedList = rawTokens
+      .map(t => (typeof t === 'string' ? t.trim() : ''))
+      .filter(Boolean);
+
+    if (!expectedList.length) {
       if (allowIfExpectedMissing) return next();
       return res.status(errorStatus).send({ error: 'webhook token not configured' });
     }
@@ -50,7 +54,7 @@ function requireWebhookToken(expectedToken, opts = {}) {
     const providedFromHeader = typeof headerToken === 'string' ? headerToken : null;
     const provided = firstNonEmptyString(providedFromHeader, bearerToken, queryToken);
 
-    if (provided && constantTimeEquals(provided, expected)) return next();
+    if (provided && expectedList.some(expected => constantTimeEquals(provided, expected))) return next();
 
     if (typeof onReject === 'function') {
       let source = null;
@@ -63,7 +67,7 @@ function requireWebhookToken(expectedToken, opts = {}) {
           path: req.originalUrl,
           hasProvidedToken: Boolean(provided),
           providedTokenLength: provided ? String(provided).length : 0,
-          expectedTokenLength: expected ? String(expected).length : 0,
+          expectedTokenLength: expectedList[0] ? String(expectedList[0]).length : 0,
           source
         })).catch(() => {});
       } catch (e) {
@@ -76,5 +80,6 @@ function requireWebhookToken(expectedToken, opts = {}) {
 }
 
 module.exports = {
-  requireWebhookToken
+  requireWebhookToken,
+  constantTimeEquals
 };

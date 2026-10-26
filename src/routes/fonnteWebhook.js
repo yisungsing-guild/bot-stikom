@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const logger = require('../logger');
-const { requireWebhookToken } = require('../middleware/webhookToken');
+const { requireWebhookToken, constantTimeEquals } = require('../middleware/webhookToken');
 const { normalizeEventText } = require('../lib/normalizer');
 const { enqueueChat } = require('../engine/chatQueue');
 
@@ -87,49 +87,65 @@ async function forwardToProvider(inbound) {
 
 const router = express.Router();
 
-const requireTokenRaw = String(process.env.FONNTE_WEBHOOK_REQUIRE_TOKEN || '').toLowerCase().trim();
-const hasVerifyToken = Boolean(String(process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '').trim());
-const shouldRequireToken = requireTokenRaw === 'true' ? true : (requireTokenRaw === 'false' ? false : hasVerifyToken);
+function getValidVerifyTokens() {
+  const currentToken = String(process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '').trim();
+  const nextToken = String(process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN_NEXT || '').trim();
+  const tokens = [];
+  if (currentToken) tokens.push(currentToken);
+  if (nextToken && nextToken !== currentToken) tokens.push(nextToken);
+  return tokens;
+}
 
 // Optional debug: when true, log payload preview when phone/text extraction fails
 const debugPayload = String(process.env.FONNTE_LOG_PAYLOAD || '').toLowerCase().trim() === 'true';
 
-if (shouldRequireToken) {
-  // Custom middleware: require token from header, bearer, query OR body fields
-  router.use('/webhook', (req, res, next) => {
-    try {
-      const expected = (process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '').toString().trim();
-      if (!expected) return next();
+// Custom middleware: require token from header, bearer, query OR body fields
+// Supports both current token (WHATSAPP_WEBHOOK_VERIFY_TOKEN) and transition token (WHATSAPP_WEBHOOK_VERIFY_TOKEN_NEXT)
+router.use('/webhook', (req, res, next) => {
+  const requireTokenRaw = String(process.env.FONNTE_WEBHOOK_REQUIRE_TOKEN || '').toLowerCase().trim();
+  const validTokens = getValidVerifyTokens();
+  const hasVerifyToken = validTokens.length > 0;
+  const shouldRequireToken = requireTokenRaw === 'true' ? true : (requireTokenRaw === 'false' ? false : hasVerifyToken);
 
-      const headerName = 'x-webhook-token';
-      const headerToken = req.headers ? req.headers[headerName] || req.headers[headerName.toLowerCase()] : null;
-      const query = req.query || {};
-      const queryToken = (typeof query.token === 'string' && query.token.trim()) ? query.token.trim() : ((typeof query.verify_token === 'string' && query.verify_token.trim()) ? query.verify_token.trim() : null);
+  if (!shouldRequireToken) {
+    return next();
+  }
 
-      const auth = req.headers ? (req.headers.authorization || req.headers.Authorization) : null;
-      let bearer = null;
-      if (typeof auth === 'string') {
-        const m = /^bearer\s+(.+)$/i.exec(auth);
-        if (m) bearer = m[1].trim();
-      }
+  if (!validTokens.length) {
+    return res.status(401).send({ error: 'unauthorized' });
+  }
 
-      const body = Object.assign({}, req.query || {}, req.body || {});
-      const bodyToken = (typeof body.token === 'string' && body.token.trim()) ? body.token.trim() : (
-        (typeof body.verify_token === 'string' && body.verify_token.trim()) ? body.verify_token.trim() : (
-          (typeof body.api_key === 'string' && body.api_key.trim()) ? body.api_key.trim() : (typeof body.key === 'string' && body.key.trim() ? body.key.trim() : null)
-        )
-      );
+  try {
+    const headerName = 'x-webhook-token';
+    const headerToken = req.headers ? req.headers[headerName] || req.headers[headerName.toLowerCase()] : null;
+    const query = req.query || {};
+    const queryToken = (typeof query.token === 'string' && query.token.trim()) ? query.token.trim() : ((typeof query.verify_token === 'string' && query.verify_token.trim()) ? query.verify_token.trim() : null);
 
-      const provided = headerToken || bearer || queryToken || bodyToken || null;
-      if (provided && provided === expected) return next();
-
-      // fallback: call original requireWebhookToken for consistent rejection handling
-      return requireWebhookToken(process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN)(req, res, next);
-    } catch (e) {
-      return requireWebhookToken(process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN)(req, res, next);
+    const auth = req.headers ? (req.headers.authorization || req.headers.Authorization) : null;
+    let bearer = null;
+    if (typeof auth === 'string') {
+      const m = /^bearer\s+(.+)$/i.exec(auth);
+      if (m) bearer = m[1].trim();
     }
-  });
-}
+
+    const body = Object.assign({}, req.query || {}, req.body || {});
+    const bodyToken = (typeof body.token === 'string' && body.token.trim()) ? body.token.trim() : (
+      (typeof body.verify_token === 'string' && body.verify_token.trim()) ? body.verify_token.trim() : (
+        (typeof body.api_key === 'string' && body.api_key.trim()) ? body.api_key.trim() : (typeof body.key === 'string' && body.key.trim() ? body.key.trim() : null)
+      )
+    );
+
+    const provided = headerToken || bearer || queryToken || bodyToken || null;
+    if (provided && validTokens.some(expected => constantTimeEquals(provided, expected))) {
+      return next();
+    }
+
+    // fallback: call requireWebhookToken for consistent rejection handling
+    return requireWebhookToken(validTokens)(req, res, next);
+  } catch (e) {
+    return requireWebhookToken(validTokens)(req, res, next);
+  }
+});
 
 router.get(['/webhook', '/'], async (req, res) => {
   const hasInboundQuery = req.query && Object.keys(req.query).some((key) => /^(sender|from|whatsapp_number|waId|message|text|body)$/i.test(key));
@@ -147,9 +163,13 @@ async function handleFonnteWebhook(req, res) {
 
     if (debugPayload && (!phone || !String(text || '').trim())) {
       try {
+        const sanitized = Object.assign({}, body);
+        for (const secretKey of ['token', 'verify_token', 'api_key', 'key', 'password', 'secret']) {
+          if (sanitized[secretKey]) sanitized[secretKey] = '[REDACTED]';
+        }
         const preview = {
           keys: Object.keys(body || {}).slice(0, 40),
-          sample: JSON.stringify(body).slice(0, 1200)
+          sample: JSON.stringify(sanitized).slice(0, 1200)
         };
         logger.info({ preview }, '[Fonnte Webhook] payload preview (missing phone/text)');
       } catch (e) {
