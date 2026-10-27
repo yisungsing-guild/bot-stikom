@@ -127,7 +127,8 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   ]);
 
   const { entities = [] } = semanticFrame;
-  const excludedEntities = (arbitratedEvidence.retrievalPlan && arbitratedEvidence.retrievalPlan.excludedConflictingEntities) || [];
+  const retrievalPlan = arbitratedEvidence.retrievalPlan || arbitratedEvidence.arbitratedEvidence?.retrievalPlan;
+  const excludedEntities = (retrievalPlan && retrievalPlan.excludedConflictingEntities) || [];
 
   const isDDInquiry = entities.some(e => /double\s*degree|dual\s*degree/i.test(e.canonical || e.name || String(e))) ||
     /\b(?:double|dual)\s*degree|dua\s*gelar\b/i.test(semanticFrame.rawQuery || '') ||
@@ -140,12 +141,19 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     'sarjana bisnis digital', 'sarjana sistem informasi', 'prodi bd', 'prodi si'
   ]);
 
+  const isS2Target = entities.some(e => /s2|magister|pascasarjana/i.test(e.canonical || e.name || String(e)));
+
   function isComparativeSentence(sentence, excluded) {
     const hasContrast = /\b(berbeda\s+(?:dengan|halnya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti|differs?\s+(?:from)?|compared\s+(?:to|with)|whereas|while|unlike|contrast|difference)\b/i.test(sentence);
-    const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan|graduate|graduates|degree|background|bachelor|prerequisite|requirements)\b/i.test(sentence);
+    const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan|pendaftar|calon\s+mahasiswa|matrikulasi|s1\s*\/\s*d4|d4|graduate|graduates|degree|background|bachelor|prerequisite|requirements)\b/i.test(sentence);
+    const isInstitutionalListing = /\b(?:pilih\s+(?:program\s+studi|prodi)|pilihan\s+(?:prodi|program|jenjang)|jenjang\s+dan\s+program\s+studi|daftar\s+pilihan\s+prodi|ringkasan\s+dokumen)\b/i.test(sentence);
+    const isS1PrereqForS2 = isS2Target && /^(?:s1|sarjana)\b/i.test(excluded) && (
+      isPrerequisite ||
+      /\b(?:pendidikan\s+sebelumnya|studi\s+sebelumnya|jenjang\s+sarjana|strata\s+1|asal\s+jurusan|latar\s+belakang\s+pendidikan|linier|non-?linier)\b/i.test(sentence)
+    );
     const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const isDirectSubject = new RegExp(`^(?:program\\s+studi|prodi|jurusan|study\\s+program|program|major)?\\s*${escaped}\\s+(?:adalah|merupakan|berfokus|memiliki|yaitu|is|focuses|offers)\\b`, 'i').test(sentence.trim());
-    return (hasContrast || isPrerequisite) && !isDirectSubject;
+    return (hasContrast || isPrerequisite || isInstitutionalListing || isS1PrereqForS2) && !isDirectSubject;
   }
 
   for (const excluded of excludedEntities) {

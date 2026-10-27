@@ -758,15 +758,17 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
 
   // 1. PMB Inquiries (General, Procedure, Requirements)
   if (semanticFrame.domain === 'PMB') {
-    const isProcedure = semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
+    const isRequirements = /\b(syarat\s+(?:untuk\s+)?(?:mendaftar|daftar|masuk)|syarat\s+pendaftaran|persyaratan(?:\s+masuk)?|dokumen|berkas)\b/i.test(rawQuery) ||
+      semanticFrame.intent === 'ADMISSION_REQUIREMENTS';
+    const isProcedure = (semanticFrame.intent === 'ADMISSION_PROCEDURE' && !isRequirements) ||
       /\b(cara\s+daftar|bagaimana\s+(?:cara\s+)?daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar)\b/i.test(rawQuery);
-    const isRequirements = /\b(syarat\s+pendaftaran|syarat\s+daftar|persyaratan|dokumen|berkas)\b/i.test(rawQuery);
 
     if (isProcedure && !isRequirements) {
+      const selectedProdiText = entityLabel || 'S1, D3, S2, atau Program Internasional';
       const procedureAnswer = `Pendaftaran mahasiswa baru di ITB STIKOM Bali bisa dilakukan secara online melalui tahapan berikut:
 
 1. **Akses Portal PMB**: Buka laman pendaftaran di https://pmb.stikom-bali.ac.id
-2. **Pilih Program Studi**: Tentukan jenjang dan program studi yang diminati (S1 Sistem Informasi, S1 Sistem Komputer, S1 Teknologi Informasi, S1 Bisnis Digital, D3 Manajemen Informatika, dll.).
+2. **Pilih Program Studi**: Tentukan jenjang dan program studi yang diminati (${selectedProdiText}).
 3. **Isi Formulir Pendaftaran**: Lengkapi data diri, data asal sekolah, serta kontak aktif.
 4. **Pembayaran Biaya Pendaftaran**: Lakukan pembayaran biaya pendaftaran (Rp 500.000, dengan potongan beasiswa sesuai gelombang).
 5. **Unggah Berkas Persyaratan**: Unggah scan ijazah/SKL, Kartu Keluarga (KK), KTP, dan pasfoto formal.
@@ -777,6 +779,27 @@ Pendaftaran dapat dilakukan secara online melalui https://pmb.stikom-bali.ac.id 
     }
 
     if (isRequirements) {
+      const isS2Target = targetEntities.some(e => /s2|magister|pascasarjana/i.test(String(e))) ||
+        semanticFrame.academicLevel === 'S2' ||
+        /\b(?:s2|magister|pascasarjana)\b/i.test(rawQuery);
+
+      if (isS2Target) {
+        const s2RequirementsAnswer = `Untuk mendaftar pada Program Pascasarjana **S2 Magister Sistem Informasi (M.Kom)** ITB STIKOM Bali, berikut persyaratan dan berkas yang diperlukan:
+
+**Persyaratan Akademik**:
+• Memiliki ijazah Sarjana (S1 / D4) dari perguruan tinggi yang terakreditasi:
+  - Lulusan bidang Komputer / Informatika (S.Kom) dapat langsung mengikuti perkuliahan reguler.
+  - Lulusan bidang Non-Komputer dapat mendaftar dengan menempuh program matrikulasi terlebih dahulu.
+• Memiliki transkrip nilai akademik S1/D4 (dengan IPK yang memenuhi standar kelulusan sarjana).
+
+**Berkas yang Diperlukan**:
+1. Scan ijazah dan transkrip nilai akademik S1/D4 yang dilegalisir.
+2. Scan KTP dan Kartu Keluarga (KK).
+3. Pasfoto formal berwarna terbaru.
+4. Mengisi formulir pendaftaran secara online melalui portal PMB https://pmb.stikom-bali.ac.id.`;
+        return appendMissingAspectNote(s2RequirementsAnswer);
+      }
+
       const requirementsAnswer = `Untuk mendaftar di ITB STIKOM Bali, berikut persyaratan umum dan berkas yang perlu disiapkan:
 
 **Persyaratan Umum**:
@@ -1258,8 +1281,9 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
     targetEntities.length <= 1;
 
   if (isCurriculumInquiry) {
+    const isS2 = /\b(s2|magister|pascasarjana)\b/i.test(entityLabel) || /\b(s2|magister|pascasarjana)\b/i.test(rawQuery);
     const isSk = /\b(sistem komputer|sk)\b/i.test(entityLabel) || /\b(sistem komputer|sk)\b/i.test(rawQuery);
-    const isSi = /\b(sistem informasi|si)\b/i.test(entityLabel) || /\b(sistem informasi|si)\b/i.test(rawQuery);
+    const isSi = !isS2 && (/\b(sistem informasi|si)\b/i.test(entityLabel) || /\b(sistem informasi|si)\b/i.test(rawQuery));
     const isTi = /\b(teknologi informasi|ti)\b/i.test(entityLabel) || /\b(teknologi informasi|ti)\b/i.test(rawQuery);
     const isBd = /\b(bisnis digital|bd)\b/i.test(entityLabel) || /\b(bisnis digital|bd)\b/i.test(rawQuery);
 
@@ -1297,10 +1321,30 @@ Ada fasilitas tertentu yang ingin Kakak tanyakan lebih detail?`;
         }
       }
 
-      let full = `Kurikulum 2025 untuk **${prodiName}** ITB STIKOM Bali dirancang untuk 8 semester (total 144 SKS):\n\n`;
+      const totalSksText = /s2|magister/i.test(prodiName)
+        ? '4 semester (total 36 SKS)'
+        : (/d3/i.test(prodiName) ? '6 semester (total 108 SKS)' : '8 semester (total 144 SKS)');
+      let full = `Kurikulum untuk **${prodiName}** ITB STIKOM Bali dirancang untuk ${totalSksText}:\n\n`;
       full += lines.join('\n');
       full += `\n\nUntuk informasi silabus lengkap per mata kuliah, Kakak dapat mengakses portal akademik SION atau menanyakan semester tertentu.`;
       return appendMissingAspectNote(full);
+    }
+
+    if (isS2) {
+      if (requestedSemester) {
+        const s2SemesterAnswer = `Untuk program **S2 Magister Sistem Informasi (M.Kom)** di ITB STIKOM Bali, rincian daftar mata kuliah spesifik per semester (termasuk Semester ${requestedSemester}) belum tercantum dalam ringkasan kurikulum publik yang terverifikasi.\n\n` +
+          `Secara keseluruhan, kurikulum dirancang dengan total beban studi **36 SKS** untuk **4 semester** (masa studi normal) dengan fokus riset pada Cyber Security, Data Science, Enterprise System, dan Medical Informatics.\n\n` +
+          `Untuk mendapatkan silabus lengkap dan daftar mata kuliah per semester, disarankan untuk mengonfirmasi langsung ke Program Pascasarjana ITB STIKOM Bali atau melalui layanan informasi PMB di https://pmb.stikom-bali.ac.id.`;
+        return appendMissingAspectNote(s2SemesterAnswer);
+      }
+      const s2TotalSksAnswer = `Untuk program **S2 Magister Sistem Informasi (M.Kom)** di ITB STIKOM Bali:\n\n` +
+        `• **Total Beban Studi**: **36 SKS**.\n` +
+        `• **Masa Studi**: Dirancang untuk **4 semester** (masa studi normal), dengan fleksibilitas perkuliahan yang memungkinkan studi diselesaikan dalam 1,5 tahun bagi mahasiswa yang memenuhi syarat.\n` +
+        `• **Gelar Kelulusan**: Magister Komputer (**M.Kom**).\n` +
+        `• **Fokus Keilmuan & Riset**: Cyber Security, Data Science, Enterprise System, dan Medical Informatics.\n` +
+        `• **Fleksibilitas Perkuliahan**: Kurikulum berbasis industri yang dirancang adaptif bagi kalangan profesional maupun akademisi.\n\n` +
+        `Untuk informasi kurikulum lengkap dan pendaftaran resmi, Kakak dapat mengunjungi portal PMB di https://pmb.stikom-bali.ac.id atau menghubungi sekretariat Program Pascasarjana ITB STIKOM Bali.`;
+      return appendMissingAspectNote(s2TotalSksAnswer);
     }
 
     if (isSk) {

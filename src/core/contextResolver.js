@@ -145,7 +145,9 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
 
   const isAcademicActiveEntity = sessionData.activeEntity && (
     sessionData.activeEntity.family === 'academic_program' ||
+    sessionData.activeEntity.family === 'international_program' ||
     sessionData.activeEntity.type === 'program' ||
+    sessionData.activeEntity.type === 'international_program' ||
     (typeof sessionData.activeEntity === 'string' &&
      !['Wisuda', 'Yudisium'].includes(sessionData.activeEntity) &&
      !sessionData.activeDomain?.startsWith('ORGANIZATION'))
@@ -207,12 +209,13 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   }
 
   // Check 3: Attribute Continuation without explicit entity (e.g. "gelar apa yang didapat dan berapa lama masa studi?" / "what degree would I receive and how long would the program take?")
-  const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation)\b/i.test(query);
+  const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|rincian\s+biaya|biaya(?:\s+kuliah)?|spp|dpp|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation)\b/i.test(query);
   if (isAttributeInquiry && sessionData.activeEntity) {
+    const isFee = /\b(rincian\s+biaya|biaya|spp|dpp)\b/i.test(query);
     return {
       shouldInherit: true,
       reason: 'attribute_continuation',
-      inheritedDomain: sessionData.activeDomain || 'ACADEMIC_PROGRAM',
+      inheritedDomain: isFee ? 'TUITION_FEE' : (sessionData.activeDomain || 'ACADEMIC_PROGRAM'),
       inheritedEntity: sessionData.activeEntity
     };
   }

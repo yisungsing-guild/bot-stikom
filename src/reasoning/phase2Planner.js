@@ -134,6 +134,7 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
   if (!isFacilityOrServiceFee && !isScholarshipOrSponsorship && !isGraduationOrCertificationFee &&
       (semanticFrame?.domain === 'TUITION_FEE' || semanticFrame?.intent === 'TUITION_FEE_INQUIRY' || aspects.includes('fee') || aspects.includes('tuition')) &&
       !semanticFrame.academicLevel &&
+      !allEntities.some(e => e.family === 'academic_program' || e.family === 'international_program') &&
       !/\b(?:pendaftaran|registrasi|jas|formulir)\b/i.test(q)) {
     return true;
   }
@@ -256,16 +257,18 @@ function buildExecutionPlan(rawQuery, sessionData = {}, options = {}) {
     isAmbiguous = false;
     targetEntities = [unsupportedProgram];
   } else if (isAmbiguousEntityInquiry(query, semanticFrame)) {
-    const isProgramActiveEntity = sessionData.activeEntity && (
-      typeof sessionData.activeEntity === 'string' &&
-      !['Wisuda', 'Yudisium'].includes(sessionData.activeEntity)
-    );
+    const rawActive = contextActiveEntity || sessionData.activeEntity || (sessionData.conversationState && (sessionData.conversationState.activeEntity || sessionData.conversationState.lastEntity));
+    const activeCanon = typeof rawActive === 'string'
+      ? rawActive
+      : (rawActive?.canonical || rawActive?.name || null);
+    const isProgramActiveEntity = Boolean(activeCanon && !['Wisuda', 'Yudisium'].includes(activeCanon));
+
     if (isProgramActiveEntity) {
-      // INHERIT CONTEXT: activeEntity in sessionData provides sufficient discriminator
-      targetEntities = [sessionData.activeEntity];
+      // INHERIT CONTEXT: activeEntity in sessionData / deltaState provides sufficient discriminator
+      targetEntities = [activeCanon];
       planType = PLAN_TYPE.DIRECT;
       isAmbiguous = false;
-    } else if (targetEntities.length === 0 || !(semanticFrame.entities || []).some(e => e.family === 'academic_program' || e.family === 'international_program')) {
+    } else if (targetEntities.length === 0 || (!targetEntities.some(e => /degree/i.test(String(e))) && !(semanticFrame.entities || []).some(e => e.family === 'academic_program' || e.family === 'international_program'))) {
       // NO ACTIVE CONTEXT: Query is ambiguous. Request clarification with authoritative options.
       planType = PLAN_TYPE.AMBIGUOUS_CLARIFICATION;
       isAmbiguous = true;

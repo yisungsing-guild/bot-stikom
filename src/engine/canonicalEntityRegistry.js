@@ -416,6 +416,22 @@ const CANONICAL_ENTITIES = [
 
   // International Programs & Collaborations
   {
+    canonical: 'International Dual Degree',
+    type: 'international_program',
+    role: 'double_degree',
+    family: 'international_program',
+    scope: 'international',
+    aliases: [
+      'international dual degree',
+      'dual degree',
+      'double degree',
+      'program double degree',
+      'program dual degree',
+      'dua gelar',
+      'gelar ganda'
+    ]
+  },
+  {
     canonical: 'Double Degree DNUI',
     type: 'international_program',
     role: 'double_degree',

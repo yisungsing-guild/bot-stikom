@@ -1355,7 +1355,12 @@ function formatAmbiguousProgramFeeResponse(scopeParams, rawQuery = '') {
   }
 
   // If asking generally about Double Degree without specific partner
-  if (!programEntity && /\b(?:double|dual)\s*degree\b/i.test(rawQuery + ' ' + normQuery)) {
+  if (!programEntity && (
+    /\b(?:double|dual)\s*degree\b/i.test(rawQuery + ' ' + normQuery) ||
+    (entities && entities.some(e => /degree/i.test(String(e)))) ||
+    (sessionCtx?.activeEntity && /degree/i.test(String(sessionCtx.activeEntity.canonical || sessionCtx.activeEntity))) ||
+    (sessionCtx?.conversationState?.activeEntity && /degree/i.test(String(sessionCtx.conversationState.activeEntity.canonical || sessionCtx.conversationState.activeEntity)))
+  )) {
     const ddText = `ITB STIKOM Bali menyelenggarakan 3 program Double / Dual Degree resmi dengan rincian biaya masing-masing:\n\n` +
       `1. **Dual Degree (National Class) UTB Bandung** (S1 Bisnis Digital & Desain Komunikasi Visual)\n` +
       `   - Biaya Pendaftaran: Rp 500.000\n` +
