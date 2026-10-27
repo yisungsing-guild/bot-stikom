@@ -17,9 +17,10 @@ const { resolveSemanticFrame } = require('../src/core/semanticFrameResolver');
 const { evaluateContextDependency } = require('../src/core/contextResolver');
 const { buildExecutionPlan } = require('../src/reasoning/phase2Planner');
 const { PLAN_TYPE, VERIFICATION_OUTCOME } = require('../src/reasoning/contracts');
-const { buildGroundedDeterministicSummary } = require('../src/core/groundedAnswerGenerator');
+const { buildGroundedDeterministicSummary, synthesizeAnswer } = require('../src/core/groundedAnswerGenerator');
 const { generateFeeAnswer } = require('../src/core/feeCalculationEngine');
 const { verifyFinalAnswer } = require('../src/core/finalAnswerVerifier');
+const { buildHumanizedWhatsappReply } = require('../src/utils/whatsappFormatter');
 
 describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
 
@@ -377,6 +378,154 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
 
       expect(verif.outcome).toBe(VERIFICATION_OUTCOME.VERIFICATION_FAILED);
       expect(verif.reason).toMatch(/entity_contradiction_conflicting_sibling_in_answer:\s*S1 Sistem Informasi/i);
+    });
+  });
+
+  describe('6. Five WhatsApp Production Failures Fixes', () => {
+    test('6a: Soft skill inquiry is not classified as OUT_OF_DOMAIN and grounds to CDC & Ormawa', async () => {
+      const queries = [
+        'Kalau program pengembangan soft skill apakah ada?',
+        'Apakah ada program pengembangan softskill?',
+        'Apa saja program pengembangan mahasiswa?'
+      ];
+
+      for (const q of queries) {
+        const frame = resolveSemanticFrame(q, {});
+        expect(frame.domain).not.toBe('OUT_OF_DOMAIN');
+        expect(frame.intent).not.toBe('OUT_OF_DOMAIN_INQUIRY');
+
+        const synth = await synthesizeAnswer(frame, {
+          accepted: [{ text: 'Career Development Center (CDC) menyelenggarakan pelatihan soft skill dan kesiapan kerja.' }]
+        });
+        expect(synth.success).toBe(true);
+        expect(synth.answer).toMatch(/Career Development Center|CDC/i);
+        expect(synth.answer).toMatch(/Organisasi Kemahasiswaan|Ormawa|UKM/i);
+        // Must not invent unverified program names
+        expect(synth.answer).not.toMatch(/kursus bahasa inggris/i);
+      }
+    });
+
+    test('6b: Multi-turn contact follow-up preserves Double Degree context and gives honest contact info', async () => {
+      // Turn 1: user asks about national double degree
+      const turn1Query = 'Apakah ada double degree nasional?';
+      const frame1 = resolveSemanticFrame(turn1Query, {});
+      expect(frame1.domain).not.toBe('UNSUPPORTED_PROGRAM');
+
+      const synth1 = await synthesizeAnswer(frame1, {
+        accepted: [{ text: 'Program Dual Degree UTB bekerja sama dengan Universitas Teknologi Bandung.' }]
+      });
+      expect(synth1.answer).toMatch(/UTB|Universitas Teknologi Bandung/i);
+
+      // Session after Turn 1
+      const sessionAfterTurn1 = {
+        activeEntity: { canonical: 'Dual Degree UTB', type: 'international_program' },
+        activeDomain: 'INTERNATIONAL',
+        lastQuery: turn1Query,
+        lastAnswer: synth1.answer
+      };
+
+      // Turn 2: user asks "Apakah ada kontaknya?"
+      const turn2Query = 'Apakah ada kontaknya?';
+      const frame2 = resolveSemanticFrame(turn2Query, sessionAfterTurn1);
+      // "kontak" must NOT trigger unsupported program detector
+      expect(frame2.domain).not.toBe('UNSUPPORTED_PROGRAM');
+      expect(frame2.isUnsupportedEntity).toBeFalsy();
+
+      const contextDep = evaluateContextDependency(turn2Query, sessionAfterTurn1);
+      expect(contextDep.shouldInherit).toBe(true);
+
+      const synth2 = await synthesizeAnswer(frame2, {
+        sessionData: sessionAfterTurn1,
+        accepted: [{ text: 'Layanan pendaftaran dan informasi kampus ITB STIKOM Bali melalui PMB.' }]
+      });
+      expect(synth2.success).toBe(true);
+      // Must maintain reference to Dual Degree UTB / program
+      expect(synth2.answer).toMatch(/Dual Degree|UTB/i);
+      // Must state limitation honestly (no separate program contact)
+      expect(synth2.answer).toMatch(/belum tercantum nomor kontak khusus|layanan admisi pusat/i);
+      // Must provide verified central PMB portal & verified central telephone
+      expect(synth2.answer).toMatch(/pmb\.stikom-bali\.ac\.id/i);
+      expect(synth2.answer).toMatch(/\(0361\)\s*244445/);
+      expect(synth2.answer).not.toMatch(/0813\s*3898\s*8358/);
+    });
+
+    test('6c: Wisuda inquiry distinguishes from PMB, removes extraction tags, and states date limitation', async () => {
+      const query = 'Kapan jadwal wisuda?';
+      const frame = resolveSemanticFrame(query, {});
+      expect(frame.domain).not.toBe('OUT_OF_DOMAIN');
+
+      const synth = await synthesizeAnswer(frame, {
+        accepted: [{
+          text: 'Ringkasan dokumen:\nProgram internasional: Informasi pendaftaran wisuda genap.\nBiaya pendaftaran: Informasi pendaftaran wisuda genap.\nJadwal/gelombang: Informasi wisuda.'
+        }]
+      });
+      expect(synth.success).toBe(true);
+      const rawAnswer = synth.answer;
+
+      // Must not leak extraction tags
+      expect(rawAnswer).not.toMatch(/^Biaya pendaftaran:/m);
+      expect(rawAnswer).not.toMatch(/^Jadwal\/gelombang:/m);
+      expect(rawAnswer).not.toMatch(/Ringkasan dokumen:/i);
+
+      // Must state date cannot be confirmed
+      expect(rawAnswer).toMatch(/belum dapat dipastikan/i);
+      // Fee and procedure directed to BAAK/finance without ungrounded fee fabrication
+      expect(rawAnswer).toMatch(/biaya/i);
+      expect(rawAnswer).toMatch(/BAAK|SION/i);
+
+      // Formatted WA message must NOT have PMB greeting
+      const formatted = buildHumanizedWhatsappReply({
+        mainAnswer: rawAnswer,
+        userQuery: query
+      });
+      expect(formatted).not.toMatch(/PMB ITB STIKOM Bali/i);
+      expect(formatted).not.toMatch(/Pendaftaran dibuka setiap gelombang/i);
+    });
+
+    test('6d: DKV inquiry associates with Double Degree UTB, not generic prodi dump or standalone major', async () => {
+      const query = 'Apakah ada prodi DKV?';
+      const frame = resolveSemanticFrame(query, {});
+      expect(frame.domain).not.toBe('UNSUPPORTED_PROGRAM');
+
+      const synth = await synthesizeAnswer(frame, {
+        accepted: [{ text: 'Program Dual Degree UTB: S1 Bisnis Digital ITB STIKOM Bali dan S1 Desain Komunikasi Visual UTB.' }]
+      });
+      expect(synth.success).toBe(true);
+      const answer = synth.answer;
+
+      // Must explain it is via Dual Degree with UTB
+      expect(answer).toMatch(/bukan merupakan program studi mandiri/i);
+      expect(answer).toMatch(/Dual Degree|Gelar Ganda/i);
+      expect(answer).toMatch(/Universitas Teknologi Bandung|UTB/i);
+      expect(answer).toMatch(/Bisnis Digital/i);
+      expect(answer).toMatch(/S\.Bns/i);
+      expect(answer).toMatch(/S\.Ds/i);
+
+      // Must NOT dump full unrelated prodi list as the main answer
+      expect(answer).not.toMatch(/•\s*S1\s+Teknologi\s+Informasi\s*\n•\s*S1\s+Sistem\s+Komputer/i);
+    });
+
+    test('6e: LLC inquiry is consistent across modes, explaining facility without fabricating courses', async () => {
+      const queries = ['Apa itu LLC?', 'Program LLC apa saja?'];
+
+      for (const q of queries) {
+        const frame = resolveSemanticFrame(q, {});
+        const synth = await synthesizeAnswer(frame, {
+          accepted: [{ text: 'Fasilitas kampus ITB STIKOM Bali mencakup Language Learning Center (LLC).' }]
+        });
+        expect(synth.success).toBe(true);
+        const answer = synth.answer;
+
+        expect(answer).toMatch(/Language Learning Center/i);
+        expect(answer).toMatch(/fasilitas/i);
+        expect(answer).toMatch(/belum tersedia/i);
+
+        // Must NOT hallucinate courses, TOEFL, certifications
+        expect(answer).not.toMatch(/toefl/i);
+        expect(answer).not.toMatch(/ielts/i);
+        expect(answer).not.toMatch(/kursus bahasa inggris/i);
+        expect(answer).not.toMatch(/sertifikasi bahasa/i);
+      }
     });
   });
 

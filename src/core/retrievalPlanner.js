@@ -213,8 +213,17 @@ function buildRetrievalPlan(semanticFrame) {
     }
   }
 
-  // Admission Schedule & Waves query variants
-  if (intent === 'ADMISSION_SCHEDULE' || (aspects && aspects.includes('schedule'))) {
+  // Graduation / Yudisium query variants
+  const isWisudaQuery = domain === 'ACADEMIC_EVENT' || intent === 'GRADUATION_INQUIRY' ||
+    /\b(?:wisuda|yudisium)\b/i.test(normalizedText);
+  if (isWisudaQuery) {
+    queryVariants.push('informasi pendaftaran wisuda yudisium ITB STIKOM Bali BAAK SION');
+    queryVariants.push('jadwal pelaksanaan wisuda yudisium kelulusan');
+    queryVariants.push('persyaratan pendaftaran wisuda yudisium beban studi tugas akhir skripsi');
+  }
+
+  // Admission Schedule & Waves query variants (guarded: never pollute wisuda with PMB waves)
+  if (!isWisudaQuery && (intent === 'ADMISSION_SCHEDULE' || (aspects && aspects.includes('schedule')))) {
     queryVariants.push('jadwal gelombang pendaftaran PMB periode pendaftaran kalender pendaftaran tanggal penting');
     queryVariants.push('jadwal pendaftaran mahasiswa baru gelombang PMB ITB STIKOM Bali');
     queryVariants.push('batas waktu penutupan pendaftaran gelombang reguler PMB');

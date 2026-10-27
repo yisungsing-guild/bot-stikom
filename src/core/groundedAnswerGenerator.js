@@ -1707,6 +1707,85 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
     }
   }
 
+  // 7d-1. DKV / Desain Komunikasi Visual (Dual Degree UTB)
+  const isDkvInquiry = /\b(?:dkv|desain\s+komunikasi\s+visual)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) ||
+    (targetEntities && targetEntities.some(e => /dkv|desain\s+komunikasi\s+visual/i.test(String(e))));
+
+  if (isDkvInquiry) {
+    const dkvAnswer = `Program studi **Desain Komunikasi Visual (DKV)** bukan merupakan program studi mandiri di ITB STIKOM Bali, melainkan diselenggarakan melalui jalur kemitraan resmi **Program Dual Degree (Gelar Ganda) Nasional** bekerja sama dengan **Universitas Teknologi Bandung (UTB)**:\n\n` +
+      `• **Mekanisme Program**: Mahasiswa menempuh perkuliahan pada program studi **S1 Bisnis Digital** di ITB STIKOM Bali dan program studi **S1 Desain Komunikasi Visual (DKV)** di Universitas Teknologi Bandung (UTB).\n` +
+      `• **Gelar Kelulusan**: Setelah menyelesaikan beban studi, lulusan memperoleh dua gelar sarjana sekaligus, yaitu:\n` +
+      `  - **Sarjana Bisnis (S.Bns.)** dari ITB STIKOM Bali\n` +
+      `  - **Sarjana Desain (S.Ds.)** dari Universitas Teknologi Bandung (UTB)\n\n` +
+      `Jalur ini memadukan keahlian bisnis digital dan desain komunikasi visual kreatif. Informasi kurikulum dan pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
+    return appendMissingAspectNote(dkvAnswer);
+  }
+
+  // 7d-2. LLC (Language Learning Center)
+  const isLlcInquiry = /\b(?:llc|language\s+learning\s+center)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) ||
+    (targetEntities && targetEntities.some(e => /language\s+learning\s+center|llc/i.test(String(e))));
+
+  if (isLlcInquiry) {
+    const llcAnswer = `**Language Learning Center (LLC)** tercantum sebagai salah satu fasilitas resmi kampus di lingkungan ITB STIKOM Bali.\n\n` +
+      `Namun, rincian mengenai program kegiatan, jadwal kursus, maupun jenis pelatihan bahasa spesifik dari LLC belum tersedia dalam dokumen panduan resmi yang terverifikasi saat ini.\n\n` +
+      `Untuk informasi program atau layanan bahasa yang sedang diselenggarakan, silakan mengonfirmasi langsung ke layanan informasi kampus atau bagian akademik ITB STIKOM Bali ya Kak.`;
+    return appendMissingAspectNote(llcAnswer);
+  }
+
+  // 7d-3. Program Pengembangan Softskill / Mahasiswa
+  const isSoftSkillInquiry = semanticFrame.intent === 'STUDENT_DEVELOPMENT_INQUIRY' ||
+    /\b(?:soft\s*skills?|pengembangan\s+(?:soft\s*skills?|mahasiswa|karakter|diri))\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+
+  if (isSoftSkillInquiry) {
+    const softSkillAnswer = `Program Pengembangan Softskill tercantum sebagai salah satu fasilitas dan layanan pengembangan kemahasiswaan di ITB STIKOM Bali.\n\n` +
+      `Berdasarkan dokumen resmi kampus yang tersedia, pengembangan soft skill dan potensi mahasiswa difasilitasi melalui wadah resmi berikut:\n\n` +
+      `1. **Career Development Center (CDC)**:\n` +
+      `   - Menyelenggarakan pelatihan dan workshop pengembangan soft skill serta hard skill yang relevan, bimbingan karier, tracer study, dan persiapan penyerapan lulusan ke dunia industri.\n\n` +
+      `2. **Organisasi Kemahasiswaan (Ormawa) & UKM**:\n` +
+      `   - Wadah pembinaan kepemimpinan, komunikasi, kerja sama tim, dan manajemen organisasi melalui Badan Eksekutif Mahasiswa (BEM), DPM/Balma, Himpunan Mahasiswa Program Studi (HIMA), serta lebih dari 30 Unit Kegiatan Mahasiswa (UKM) di bidang seni, olahraga, dan penalaran teknologi.\n\n` +
+      `3. **Bursa Kerja & Persiapan Karier (Job Fair CDC)**:\n` +
+      `   - Fasilitasi persiapan karier dan kesempatan rekrutmen langsung dengan mitra industri melalui CDC ITB STIKOM Bali.\n\n` +
+      `Untuk jadwal kegiatan pembekalan atau pelatihan soft skill terdekat, mahasiswa dapat menghubungi Career Development Center (CDC) atau bagian Kemahasiswaan ITB STIKOM Bali.`;
+    return appendMissingAspectNote(softSkillAnswer);
+  }
+
+  // 7d-4. Kontak & Narahubung Program / Kampus
+  const isContactInquiry = semanticFrame.intent === 'CONTACT_INQUIRY' ||
+    /\b(?:kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp)?(?:nya)?|telepon(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|hubungi|narahubung(?:nya)?|contact(?:s)?)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+
+  if (isContactInquiry) {
+    const activeProgram = (targetEntities && targetEntities[0]) ||
+      (arbitratedEvidence?.sessionData?.activeEntity?.canonical) ||
+      (semanticFrame.activeEntity?.canonical) ||
+      null;
+
+    let contactIntro = '';
+    if (activeProgram && /Dual Degree|Double Degree|UTB|DNUI|HELP/i.test(activeProgram)) {
+      contactIntro = `Untuk program **${activeProgram}**, saat ini belum tercantum nomor kontak khusus atau narahubung tersendiri yang terpisah dari layanan admisi pusat.\n\n`;
+    }
+
+    const contactAnswer = `${contactIntro}Kakak dapat menghubungi layanan resmi Kampus ITB STIKOM Bali melalui kanal yang terverifikasi berikut:\n\n` +
+      `• **Website PMB**: https://pmb.stikom-bali.ac.id\n` +
+      `• **Telepon Kampus (Pusat)**: (0361) 244445\n` +
+      `• **Email**: info@stikom-bali.ac.id\n` +
+      `• **Lokasi Kampus Pusat**: Jl. Raya Puputan No. 86, Renon, Denpasar, Bali\n\n` +
+      `Layanan kampus siap membantu pertanyaan seputar pendaftaran, persyaratan masuk, dan informasi program perkuliahan.`;
+    return appendMissingAspectNote(contactAnswer);
+  }
+
+  // 7d-5. Wisuda & Yudisium
+  const isWisudaInquiry = /\b(?:wisuda|yudisium)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) ||
+    (targetEntities && targetEntities.some(e => /wisuda|yudisium/i.test(String(e))));
+
+  if (isWisudaInquiry) {
+    const wisudaAnswer = `Mengenai pelaksanaan wisuda dan yudisium di ITB STIKOM Bali:\n\n` +
+      `• **Jadwal Pelaksanaan**: Untuk tanggal pasti pelaksanaan wisuda periode mendatang belum dapat dipastikan dari dokumen resmi yang tersedia saat ini, karena jadwal wisuda ditetapkan dan diumumkan secara berkala melalui surat edaran akademik tersendiri.\n` +
+      `• **Persyaratan**: Pendaftaran wisuda dan yudisium dibuka bagi calon lulusan yang telah menyelesaikan seluruh beban studi/kurikulum serta ujian skripsi/tugas akhir yang dipersyaratkan.\n` +
+      `• **Biaya & Pendaftaran**: Informasi besaran biaya dan alur pendaftaran wisuda dapat dikonfirmasi langsung ke Bagian Layanan Akademik (BAAK) atau bagian keuangan kampus.\n\n` +
+      `Untuk memastikan jadwal tanggal wisuda terbaru dan prosedur administrasinya, mahasiswa disarankan memantau pengumuman resmi di portal SION atau mengonfirmasi langsung ke Biro Administrasi Akademik dan Kemahasiswaan (BAAK) ITB STIKOM Bali.`;
+    return appendMissingAspectNote(wisudaAnswer);
+  }
+
   // 7e. Study Mode (Kuliah Sambil Kerja / Program Kerja Sambil Kuliah / Kelas Karyawan / Kelas Sore)
   if (semanticFrame.intent === 'STUDY_MODE' || (semanticFrame.aspects && semanticFrame.aspects.includes('class_schedule')) || /\b(sambil\s+kerja|kelas\s+karyawan|kuliah\s+sore|kelas\s+sore|kerja\s+sambil\s+kuliah|sudah\s+bekerja)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))) {
     const studyModeAnswer = `Bagi calon mahasiswa yang sudah bekerja, ITB STIKOM Bali menyediakan program **Kelas Sore / Malam (Kelas Karyawan)**:\n\n` +
@@ -2115,6 +2194,39 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
       answer: refinedAnswer,
       source: 'answer_refinement_synthesis'
     };
+  }
+
+  // 5 Grounded Domain Intercepts for WhatsApp Consistency:
+  // LLC, DKV, Wisuda, Soft Skill, Contact
+  const rawQ = semanticFrame.rawQuery || '';
+  const normQ = semanticFrame.normalizedQuery || '';
+  const queryAll = `${rawQ} ${normQ}`.toLowerCase();
+  const frameEntities = Array.isArray(semanticFrame.entities) ? semanticFrame.entities : [];
+
+  const isLlcInquiry = /\b(?:llc|language\s+learning\s+center)\b/i.test(queryAll) ||
+    frameEntities.some(e => /language\s+learning\s+center|llc/i.test(e.canonical || e.name || String(e)));
+
+  const isDkvInquiry = /\b(?:dkv|desain\s+komunikasi\s+visual)\b/i.test(queryAll) ||
+    frameEntities.some(e => /dkv|desain\s+komunikasi\s+visual/i.test(e.canonical || e.name || String(e)));
+
+  const isWisudaInquiry = /\b(?:wisuda|yudisium)\b/i.test(queryAll) ||
+    frameEntities.some(e => /wisuda|yudisium/i.test(e.canonical || e.name || String(e)));
+
+  const isSoftSkillInquiry = semanticFrame.intent === 'STUDENT_DEVELOPMENT_INQUIRY' ||
+    /\b(?:soft\s*skills?|pengembangan\s+(?:soft\s*skills?|mahasiswa|karakter|diri))\b/i.test(queryAll);
+
+  const isContactInquiry = semanticFrame.intent === 'CONTACT_INQUIRY' ||
+    /\b(?:kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp)?(?:nya)?|telepon(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|hubungi|narahubung(?:nya)?|contact(?:s)?)\b/i.test(queryAll);
+
+  if (isLlcInquiry || isDkvInquiry || isWisudaInquiry || isSoftSkillInquiry || isContactInquiry) {
+    const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, arbitratedEvidence.accepted || [], arbitratedEvidence);
+    if (synthesizedText) {
+      return {
+        success: true,
+        answer: synthesizedText,
+        source: 'grounded_deterministic_summary'
+      };
+    }
   }
 
   const accepted = arbitratedEvidence.accepted || [];

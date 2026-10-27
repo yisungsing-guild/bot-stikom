@@ -142,8 +142,10 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
     'apa', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'pilihan', 'saja', 'aja', 'kak',
     'ya', 'nih', 'dong', 'kah', 'sore', 'malam', 'karyawan', 'reguler', 'eksekutif',
     'lebih', 'baik', 'ambil', 'pilih', 'mana', 'bagus', 'cocok', 'rekomendasi', 'saran',
-    'prodi', 'jurusan', 'masih', 'buka', 'dibuka', 'tutup', 'ditutup', 'kapan', 'jadwal',
-    'gelombang', 'pendaftaran', 'daftar', 'alur', 'syarat', 'biaya', 'kuliah',
+    'prodi', 'jurusan',
+    'kontak', 'kontaknya', 'nomor', 'nomornya', 'telepon', 'telp', 'wa', 'whatsapp',
+    'alamat', 'alamatnya', 'lokasi', 'lokasinya', 'biaya', 'biayanya', 'syarat', 'syaratnya',
+    'info', 'informasi', 'brosur',
     // English generic catalog tokens
     'program', 'programs', 'study', 'studies', 'course', 'courses', 'major', 'majors',
     'degree', 'degrees', 'available', 'offered', 'what', 'which', 'any', 'are', 'there',
@@ -900,7 +902,49 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
-  // 17. Campus Location / Address Inquiry
+  // 17. Student Development & Soft Skills Inquiries
+  if (/\b(?:soft\s*skills?|pengembangan\s+(?:soft\s*skills?|karakter|mahasiswa)|pelatihan\s+soft\s*skills?|program\s+pengembangan\s+mahasiswa|career\s+center|pusat\s+karier|cdc)\b/i.test(normalized) ||
+      /\b(?:soft\s*skills?|pengembangan\s+(?:soft\s*skills?|karakter|mahasiswa)|pelatihan\s+soft\s*skills?|program\s+pengembangan\s+mahasiswa|career\s+center|pusat\s+karier|cdc)\b/i.test(unstemmed)) {
+    return {
+      domain: 'CAMPUS_SERVICE',
+      intent: 'STUDENT_DEVELOPMENT_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_STUDENT_DEVELOPMENT_INFO',
+      aspects: ['facilities', 'activities', 'campus_service'],
+      relation: 'CAMPUS_SERVICE'
+    };
+  }
+
+  // 17b. Language Learning Center (LLC) Inquiries
+  if (entities.some(e => /language\s+learning\s+center|llc/i.test(e.canonical || e.name || '')) ||
+      /\b(?:llc|language\s+learning\s+center)\b/i.test(normalized)) {
+    return {
+      domain: 'CAMPUS_SERVICE',
+      intent: 'CAMPUS_SERVICE_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_SERVICE_INFO',
+      aspects: ['facilities', 'campus_service'],
+      relation: 'CAMPUS_SERVICE'
+    };
+  }
+
+  // 18. Contact & Helpdesk Inquiries
+  if (/\b(?:kontak(?:nya)?|nomor(?:nya)?|telepon|telp|whatsapp|wa|narahubung|contact|call\s*center|hotline)\b/i.test(normalized) ||
+      /\b(?:kontak(?:nya)?|nomor(?:nya)?|telepon|telp|whatsapp|wa|narahubung|contact|call\s*center|hotline)\b/i.test(unstemmed)) {
+    return {
+      domain: 'CAMPUS_SERVICE',
+      intent: 'CONTACT_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_CONTACT_INFO',
+      aspects: ['contact', 'phone', 'whatsapp'],
+      relation: 'CAMPUS_SERVICE'
+    };
+  }
+
+  // 19. Campus Location / Address Inquiry
   const isAskingCampusLocation = /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus(?:nya)?\s+di\s*mana|dimana\s+kampus|letak\s+kampus|gedung\s+kampus\s+di\s*mana|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(normalized) ||
     (/\b(?:lokasi|alamat|di\s*mana|dimana)\b/i.test(normalized) && /\b(?:kampus|stikom|itb\s+stikom)\b/i.test(normalized));
   if (isAskingCampusLocation) {

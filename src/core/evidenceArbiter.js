@@ -630,7 +630,13 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   if (isScheduleChunk) providedAspects.push('schedule', 'waves', 'wave_info');
   if (isPaymentProcedureChunk) providedAspects.push('procedure', 'payment_procedure');
   if (isScholarshipChunk) providedAspects.push('scholarship', 'discount', 'requirements');
-  if (isFacilityChunk) providedAspects.push('facilities', 'lab', 'campus_infrastructure');
+  if (isFacilityChunk) providedAspects.push('facilities', 'lab', 'campus_infrastructure', 'campus_service', 'service_info', 'support');
+  if (/\b(?:program\s+pengembangan\s+soft\s*skills?|language\s+learning\s+center|\bllc\b|career\s+center|pusat\s+karier|cdc)\b/i.test(candTextLower)) {
+    providedAspects.push('facilities', 'campus_service', 'activities', 'student_development', 'service_info', 'support');
+  }
+  if (/\b(?:wisuda|yudisium)\b/i.test(candTextLower)) {
+    providedAspects.push('procedure', 'requirements', 'event_info', 'graduation', 'schedule');
+  }
   if (isOrganizationChunk) providedAspects.push('student_organization', 'organization', 'general_organization', 'activities', 'ukm', 'membership', 'category', 'ukm_list');
   if (isPmbGeneralChunk) providedAspects.push('admission_overview', 'procedure', 'admission_pathways', 'requirements', 'documents');
   if (isProgramListChunk) providedAspects.push('program_list', 'degrees');

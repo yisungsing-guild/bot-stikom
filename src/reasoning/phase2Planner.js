@@ -153,10 +153,16 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
     return true;
   }
 
+  // Wisuda / Yudisium inquiries do not require a specific study program for general graduation info
+  if (/\b(?:wisuda|yudisium)\b/i.test(q)) {
+    return false;
+  }
+
   // Schedule inquiries without context: "kapan perkuliahan dimulai?", "jadwal kuliah kapan?", "kapan batas akhir pendaftaran?"
   // If asking for registration/admission schedule without specific prodi or specific wave/gelombang:
   const isFacilityOrCanteen = /\b(?:kantin|menu|makanan|bus|shuttle|parkir|parking)\b/i.test(q);
-  if (!isFacilityOrCanteen && (aspects.includes('schedule') || semanticFrame?.intent === 'ADMISSION_SCHEDULE')) {
+  const isAcademicMilestoneEvent = /\b(?:wisuda|yudisium|tugas\s+akhir|skripsi|sidang)\b/i.test(q);
+  if (!isFacilityOrCanteen && !isAcademicMilestoneEvent && (aspects.includes('schedule') || semanticFrame?.intent === 'ADMISSION_SCHEDULE')) {
     if (!semanticFrame.academicLevel) {
       // If it asks for batas akhir/jadwal pendaftaran but does not specify gelombang (1, 2, 3) or jalur
       if (/\b(?:batas\s+akhir|jadwal|periode|kapan)\s+(?:pendaftaran|pmb)\b/i.test(q) && !/\b(?:gelombang\s+\d|jalur\s+[a-z]+)\b/i.test(q)) {

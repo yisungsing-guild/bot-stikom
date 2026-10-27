@@ -123,7 +123,9 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   const GENERIC_COMMON_WORDS = new Set([
     'akademik', 'kuliah', 'kampus', 'stikom', 'bali', 'mahasiswa', 'program',
     'studi', 'jurusan', 'fakultas', 'pendidikan', 'kurikulum', 'biaya', 'beasiswa',
-    'fasilitas', 'gedung', 'kegiatan', 'organisasi'
+    'fasilitas', 'gedung', 'kegiatan', 'organisasi',
+    'double degree', 'dual degree', 'dua gelar', 'gelar ganda', 'national class', 'international',
+    'program double degree', 'program dual degree', 'international dual degree', 'international double degree'
   ]);
 
   const { entities = [] } = semanticFrame;
@@ -956,7 +958,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     arbitratedEvidence?.answerabilityStatus === 'ANSWERABLE';
 
   const hasSubstantiveContent = text.length > 80 && (
-    /\b(antara\s+lain|meliputi|bekerja\s+sama|mitra|lulusan\s+memperoleh|potongan|persyaratan|berikut|kurikulum|discounts?|requirements?|available|guidelines?|recorded|includes?|tuition|admissions?|scholarships?)\b/i.test(text)
+    /\b(antara\s+lain|meliputi|bekerja\s+sama|mitra|lulusan\s+memperoleh|potongan|persyaratan|berikut|kurikulum|fasilitas|layanan|program|tercantum|resmi|sarana|wadah|discounts?|requirements?|available|guidelines?|recorded|includes?|tuition|admissions?|scholarships?)\b/i.test(text)
   );
 
   if (isExplicitAbstain) {

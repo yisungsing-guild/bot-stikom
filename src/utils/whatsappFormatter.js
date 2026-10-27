@@ -768,6 +768,7 @@ function detectIntentFromQuery(userQuery) {
     { intent: 'prospek_kerja', regex: /\b(prospek kerja|karir|pekerjaan|lulusan|job prospects|bekerja sebagai)\b/ },
     { intent: 'akreditasi', regex: /\b(akreditasi|ban-pt|sk akreditasi|terakreditasi)\b/ },
     { intent: 'lokasi', regex: /\b(lokasi|alamat|berlokasi|letak|cabang|kampus)\b/ },
+    { intent: 'akademik', regex: /\b(wisuda|yudisium)\b/ },
     { intent: 'jadwal_pendaftaran', regex: /\b(jadwal|gelombang|deadline|tanggal|dibuka|tutup)\b/ },
     { intent: 'perbandingan_prodi', regex: /\\b(bedanya|perbedaan|versus|vs|beda antara|dibanding|dibandingkan|lebih baik|mana (?:yang )?lebih baik|lebih cocok|lebih unggul)\\b/ },
     { intent: 'pendaftaran', regex: /\b(pendaftaran|daftar|seleksi)\b/ },
@@ -840,6 +841,7 @@ function detectIntentFromAnswerFromText(mainAnswer) {
   if (feeMarker.test(answer) || feeKeywords.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'biaya' }); } catch (e) {} return 'biaya'; }
   if (/\b(bedanya|perbedaan|versus|vs|beda antara|dibanding|dibandingkan|lebih baik|mana (?:yang )?lebih baik|lebih cocok|lebih unggul|Perbandingan cepat|Perbandingan singkat)\b/i.test(answer)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'perbandingan_prodi' }); } catch (e) {} return 'perbandingan_prodi'; }
   if (/\b(akreditasi|ban-pt|sk akreditasi|terakreditasi)\b/.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'akreditasi' }); } catch (e) {} return 'akreditasi'; }
+  if (/\b(wisuda|yudisium)\b/i.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'akademik' }); } catch (e) {} return 'akademik'; }
   if (/\b(jadwal|gelombang|deadline|tanggal|dibuka|tutup|januari|mei|september|februari|maret|april|juni|juli|agustus|oktober|november|desember)\b/.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'jadwal_pendaftaran' }); } catch (e) {} return 'jadwal_pendaftaran'; }
   if (/\b(cara daftar|langkah pendaftaran|prosedur pendaftaran|persyaratan pendaftaran|dokumen|formulir|ijazah|ktp|status pendaftaran|portal akademik)\b/.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'pendaftaran' }); } catch (e) {} return 'pendaftaran'; }
   if (/\b(prospek kerja|karir|pekerjaan|lowongan|bekerja sebagai|job prospects|lulusan bekerja)\b/.test(normalized)) { try { traceWhatsapp('detectIntentFromAnswerFromText', { answer: mainAnswer, detected: 'prospek_kerja' }); } catch (e) {} return 'prospek_kerja'; }
@@ -914,6 +916,12 @@ function suggestionsForIntent(intent, program) {
         'Mau perbandingan kurikulum dan mata kuliah?',
         'Prospek kerja per program studi',
         'Rekomendasi prodi berdasar minat dan karir'
+      ];
+    case 'akademik':
+      return [
+        'Mau tahu persyaratan pendaftaran wisuda?',
+        'Informasi pengumuman jadwal wisuda terbaru',
+        'Bagaimana prosedur pengurusan yudisium?'
       ];
     case 'general':
       // Generic, domain-agnostic suggestions for unknown topics

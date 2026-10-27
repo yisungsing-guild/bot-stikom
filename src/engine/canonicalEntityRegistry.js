@@ -473,7 +473,11 @@ const CANONICAL_ENTITIES = [
       'Sarjana Desain (S.Ds) dari UTB (pada peminatan Desain Komunikasi Visual)',
       'Sarjana Komputer (S.Kom) atau Sarjana Bisnis dari ITB STIKOM Bali sesuai program kemitraan'
     ],
-    aliases: ['utb', 'universitas teknologi bandung', 'dual degree utb', 'double degree utb']
+    aliases: [
+      'utb', 'universitas teknologi bandung', 'dual degree utb', 'double degree utb',
+      'dkv', 'desain komunikasi visual', 'prodi dkv', 'jurusan dkv',
+      'double degree dkv', 'dual degree dkv', 'double degree utb dkv', 'dual degree utb dkv'
+    ]
   },
   {
     canonical: 'Student Exchange',
@@ -528,6 +532,17 @@ const CANONICAL_ENTITIES = [
     aliases: [
       'program linkedin learning', 'linkedin learning', 'program linkedin',
       'linkedin career center', 'linked in learning', 'linkedin cdc', 'linkedin', 'linked in'
+    ]
+  },
+  {
+    canonical: 'Program Pengembangan Softskill',
+    type: 'campus_service',
+    family: 'campus_service',
+    aliases: [
+      'program pengembangan soft skill', 'program pengembangan softskill',
+      'pengembangan soft skill', 'pengembangan softskill',
+      'soft skill', 'softskill', 'soft skills',
+      'program pengembangan mahasiswa', 'pengembangan mahasiswa'
     ]
   },
   {
