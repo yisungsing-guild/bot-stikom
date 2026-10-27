@@ -357,6 +357,21 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
       return failVerification('partner_name_contradiction_bali_instead_of_bandung');
     }
 
+    // Cannot mention international partners (HELP / DNUI) for national double degree query
+    if (/\b(?:HELP\s+University|DNUI|Dalian)\b/i.test(text) && !/\b(?:pilihan\s+internasional|selain\s+nasional)\b/i.test(text)) {
+      return failVerification('international_partner_contamination_for_national_double_degree');
+    }
+
+    // Cannot claim S.Kom for UTB National Double Degree (only S.Bns and S.Ds)
+    if (/\bS\.Kom\b/i.test(text)) {
+      return failVerification('incorrect_degree_award_for_national_double_degree');
+    }
+
+    // Cannot claim 4 years full offline study duration from unrelated programs
+    if (/\b(?:full\s+offline|selama\s+4\s+tahun|4\s+tahun\s+di\s+kampus\s+itb\s+stikom\s+bali)\b/i.test(text)) {
+      return failVerification('fabricated_study_duration_for_national_double_degree');
+    }
+
     // Cannot use facility framing ("daftar program/fasilitas kampus") as substitute for program
     if (/daftar\s+(?:program\s*\/\s*)?fasilitas\s+kampus/i.test(text)) {
       return failVerification('forbidden_facility_framing_for_national_double_degree');

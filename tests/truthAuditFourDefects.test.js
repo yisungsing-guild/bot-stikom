@@ -405,21 +405,35 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
       }
     });
 
-    test('6b: Multi-turn contact follow-up preserves Double Degree context and gives honest contact info', async () => {
+    test('6b: Multi-turn contact follow-up preserves Double Degree UTB context and gives honest contact info', async () => {
       // Turn 1: user asks about national double degree
       const turn1Query = 'Apakah ada double degree nasional?';
       const frame1 = resolveSemanticFrame(turn1Query, {});
       expect(frame1.domain).not.toBe('UNSUPPORTED_PROGRAM');
+      // Must resolve to Dual Degree UTB, NOT generic International Dual Degree
+      expect(frame1.entities.length).toBeGreaterThan(0);
+      expect(frame1.entities[0].canonical).toBe('Dual Degree UTB');
 
       const synth1 = await synthesizeAnswer(frame1, {
         accepted: [{ text: 'Program Dual Degree UTB bekerja sama dengan Universitas Teknologi Bandung.' }]
       });
       expect(synth1.answer).toMatch(/UTB|Universitas Teknologi Bandung/i);
+      expect(synth1.answer).toMatch(/Bisnis Digital/i);
+      expect(synth1.answer).toMatch(/Desain Komunikasi Visual|DKV/i);
+      expect(synth1.answer).toMatch(/S\.Bns/i);
+      expect(synth1.answer).toMatch(/S\.Ds/i);
 
-      // Session after Turn 1
+      // Must NOT contain international partner claims or unrelated S.Kom / 4-year offline claims
+      expect(synth1.answer).not.toMatch(/HELP\s+University/i);
+      expect(synth1.answer).not.toMatch(/DNUI/i);
+      expect(synth1.answer).not.toMatch(/S\.Kom/);
+      expect(synth1.answer).not.toMatch(/full offline/i);
+      expect(synth1.answer).not.toMatch(/selama 4 tahun/i);
+
+      // Session after Turn 1 (inherits actual canonical from frame1)
       const sessionAfterTurn1 = {
-        activeEntity: { canonical: 'Dual Degree UTB', type: 'international_program' },
-        activeDomain: 'INTERNATIONAL',
+        activeEntity: frame1.entities[0].canonical,
+        activeDomain: frame1.domain,
         lastQuery: turn1Query,
         lastAnswer: synth1.answer
       };
@@ -433,6 +447,7 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
 
       const contextDep = evaluateContextDependency(turn2Query, sessionAfterTurn1);
       expect(contextDep.shouldInherit).toBe(true);
+      expect(contextDep.inheritedEntity).toBe('Dual Degree UTB');
 
       const synth2 = await synthesizeAnswer(frame2, {
         sessionData: sessionAfterTurn1,
@@ -440,13 +455,76 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
       });
       expect(synth2.success).toBe(true);
       // Must maintain reference to Dual Degree UTB / program
-      expect(synth2.answer).toMatch(/Dual Degree|UTB/i);
+      expect(synth2.answer).toMatch(/Dual Degree UTB/i);
       // Must state limitation honestly (no separate program contact)
       expect(synth2.answer).toMatch(/belum tercantum nomor kontak khusus|layanan admisi pusat/i);
       // Must provide verified central PMB portal & verified central telephone
       expect(synth2.answer).toMatch(/pmb\.stikom-bali\.ac\.id/i);
       expect(synth2.answer).toMatch(/\(0361\)\s*244445/);
       expect(synth2.answer).not.toMatch(/0813\s*3898\s*8358/);
+    });
+
+    test('6b-1: Explicit HELP queries route to Double Degree HELP University', () => {
+      const queries = [
+        'Apakah ada double degree ke Malaysia?',
+        'Program double degree HELP University',
+        'dual degree help university'
+      ];
+      for (const q of queries) {
+        const frame = resolveSemanticFrame(q, {});
+        expect(frame.entities.some(e => e.canonical === 'Double Degree HELP University')).toBe(true);
+        expect(frame.entities.some(e => e.canonical === 'Dual Degree UTB')).toBe(false);
+      }
+    });
+
+    test('6b-2: Explicit DNUI queries route to Double Degree DNUI', () => {
+      const queries = [
+        'Apakah ada double degree ke China?',
+        'Double Degree DNUI',
+        'dual degree dalian neusoft'
+      ];
+      for (const q of queries) {
+        const frame = resolveSemanticFrame(q, {});
+        expect(frame.entities.some(e => e.canonical === 'Double Degree DNUI')).toBe(true);
+        expect(frame.entities.some(e => e.canonical === 'Dual Degree UTB')).toBe(false);
+      }
+    });
+
+    test('6b-3: Explicit degree and duration queries for international programs extract correct attributes', async () => {
+      // HELP degree query
+      const helpDegreeQuery = 'Gelar apa yang didapat dari double degree HELP University?';
+      const frameHelp = resolveSemanticFrame(helpDegreeQuery, {});
+      const synthHelp = await synthesizeAnswer(frameHelp, {
+        accepted: [{
+          text: 'Program Double Degree HELP University: S1 Sistem Informasi ITB STIKOM Bali dan Bachelor of Information Technology (BIT) HELP University Malaysia. Gelar: Sarjana Komputer (S.Kom.) dan Bachelor of Information Technology (BIT).'
+        }]
+      });
+      expect(synthHelp.answer).toMatch(/S\.Kom/i);
+      expect(synthHelp.answer).toMatch(/Bachelor of Information Technology|BIT/i);
+
+      // DNUI duration/modality query
+      const dnuiDurationQuery = 'Berapa lama masa studi program double degree DNUI?';
+      const frameDnui = resolveSemanticFrame(dnuiDurationQuery, {});
+      const synthDnui = await synthesizeAnswer(frameDnui, {
+        accepted: [{
+          text: 'Program Double Degree DNUI skema 2+2: 2 tahun di ITB STIKOM Bali dan 2 tahun di kampus DNUI di Dalian, China.'
+        }]
+      });
+      expect(synthDnui.answer).toMatch(/2\s*\+\s*2/);
+      expect(synthDnui.answer).toMatch(/Dalian|China/i);
+    });
+
+    test('6b-4: Generic double degree inquiry presents both national and international options without bias', async () => {
+      const genericQuery = 'Apakah ada program double degree?';
+      const frame = resolveSemanticFrame(genericQuery, {});
+      const synth = await synthesizeAnswer(frame, {
+        accepted: [{ text: 'Program double degree nasional UTB dan internasional DNUI dan HELP University.' }]
+      });
+      expect(synth.answer).toMatch(/Dual Degree Nasional/i);
+      expect(synth.answer).toMatch(/Universitas Teknologi Bandung|UTB/i);
+      expect(synth.answer).toMatch(/International Dual Degree/i);
+      expect(synth.answer).toMatch(/DNUI/i);
+      expect(synth.answer).toMatch(/HELP/i);
     });
 
     test('6c: Wisuda inquiry distinguishes from PMB, removes extraction tags, and states date limitation', async () => {

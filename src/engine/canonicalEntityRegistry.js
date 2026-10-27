@@ -443,7 +443,11 @@ const CANONICAL_ENTITIES = [
       'Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali',
       'Bachelor of Management (B.M) dari DNUI China'
     ],
-    aliases: ['dnui', 'dalian neusoft', 'dalian', 'double degree dnui', 'dual degree dnui']
+    aliases: [
+      'dnui', 'dalian neusoft', 'dalian', 'double degree dnui', 'dual degree dnui',
+      'double degree china', 'dual degree china', 'double degree cina', 'dual degree cina',
+      'double degree ke china', 'dual degree ke china', 'double degree ke cina', 'dual degree ke cina'
+    ]
   },
   {
     canonical: 'Double Degree HELP University',
@@ -459,7 +463,11 @@ const CANONICAL_ENTITIES = [
       'Sarjana Komputer (S.Kom) dari ITB STIKOM Bali',
       'Bachelor of Information Technology (BIT) dari HELP University Malaysia'
     ],
-    aliases: ['help university', 'help', 'double degree help', 'dual degree help', 'double degree malaysia', 'dual degree malaysia']
+    aliases: [
+      'help university', 'help', 'double degree help', 'dual degree help',
+      'double degree malaysia', 'dual degree malaysia',
+      'double degree ke malaysia', 'dual degree ke malaysia'
+    ]
   },
   {
     canonical: 'Dual Degree UTB',
@@ -470,13 +478,16 @@ const CANONICAL_ENTITIES = [
     country: 'Indonesia',
     partnerName: 'Universitas Teknologi Bandung (UTB)',
     credentials: [
-      'Sarjana Desain (S.Ds) dari UTB (pada peminatan Desain Komunikasi Visual)',
-      'Sarjana Komputer (S.Kom) atau Sarjana Bisnis dari ITB STIKOM Bali sesuai program kemitraan'
+      'Sarjana Desain (S.Ds) dari UTB (pada program studi Desain Komunikasi Visual)',
+      'Sarjana Bisnis (S.Bns) dari ITB STIKOM Bali (pada program studi Bisnis Digital)'
     ],
     aliases: [
       'utb', 'universitas teknologi bandung', 'dual degree utb', 'double degree utb',
       'dkv', 'desain komunikasi visual', 'prodi dkv', 'jurusan dkv',
-      'double degree dkv', 'dual degree dkv', 'double degree utb dkv', 'dual degree utb dkv'
+      'double degree dkv', 'dual degree dkv', 'double degree utb dkv', 'dual degree utb dkv',
+      'double degree nasional', 'dual degree nasional',
+      'program double degree nasional', 'program dual degree nasional',
+      'double degree dalam negeri', 'dual degree dalam negeri'
     ]
   },
   {
@@ -874,10 +885,16 @@ function matchCanonicalEntities(text, options = {}) {
     });
   });
 
+  // If a specific double degree program matched (e.g. HELP, DNUI, UTB), eliminate the generic umbrella 'International Dual Degree'
+  const hasSpecificDoubleDegree = filtered.some(e => ['Double Degree HELP University', 'Double Degree DNUI', 'Dual Degree UTB'].includes(e.canonical));
+  const finalMatches = hasSpecificDoubleDegree
+    ? filtered.filter(e => e.canonical !== 'International Dual Degree')
+    : filtered;
+
   // Deduplicate by canonical identity: each canonical entity appears at most once
   const deduplicated = [];
   const seenCanonicals = new Set();
-  for (const item of filtered) {
+  for (const item of finalMatches) {
     const key = item.canonical.toLowerCase().trim();
     if (!seenCanonicals.has(key)) {
       seenCanonicals.add(key);

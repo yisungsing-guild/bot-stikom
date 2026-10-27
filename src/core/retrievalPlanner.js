@@ -41,7 +41,9 @@ function buildRetrievalPlan(semanticFrame) {
   const GENERIC_COMMON_WORDS = new Set([
     'akademik', 'kuliah', 'kampus', 'stikom', 'bali', 'mahasiswa', 'program',
     'studi', 'jurusan', 'fakultas', 'pendidikan', 'kurikulum', 'biaya', 'beasiswa',
-    'fasilitas', 'gedung', 'kegiatan', 'organisasi'
+    'fasilitas', 'gedung', 'kegiatan', 'organisasi',
+    'double degree', 'dual degree', 'dua gelar', 'gelar ganda', 'national class', 'international',
+    'program double degree', 'program dual degree', 'international dual degree', 'international double degree'
   ]);
 
   // Generic discovery of conflicting / sibling entities to exclude across mutually exclusive families
@@ -266,8 +268,18 @@ function buildRetrievalPlan(semanticFrame) {
     }
   }
 
-  // International Program & Student Exchange query variants
-  if (domain === 'INTERNATIONAL' || (aspects && (aspects.includes('international') || aspects.includes('student_exchange')))) {
+  // DKV / Dual Degree UTB query variants prioritized
+  const isDkvOrUtb = targetEntities.some(e => /utb|dkv|desain\s+komunikasi\s+visual|Dual Degree UTB/i.test(String(e))) ||
+    /\b(?:dkv|desain\s+komunikasi\s+visual|utb|double\s+degree\s+nasional|dual\s+degree\s+nasional)\b/i.test(normalizedText);
+  if (isDkvOrUtb) {
+    queryVariants.push('rincian biaya pendidikan mahasiswa baru dual degree national class universitas teknologi bandung UTB S.Bns S.Ds');
+    queryVariants.push('dual degree nasional universitas teknologi bandung UTB desain komunikasi visual dkv bisnis digital');
+    queryVariants.push('program dual degree nasional UTB STIKOM Bali');
+    queryVariants.push('rincian Biaya UTB Tahun Ajaran 2026-2027.pdf');
+  }
+
+  // International Program & Student Exchange query variants (guarded: do not inject generic student exchange for UTB/DKV)
+  if (!isDkvOrUtb && (domain === 'INTERNATIONAL' || (aspects && (aspects.includes('international') || aspects.includes('student_exchange'))))) {
     queryVariants.push('apa itu student exchange di ITB STIKOM Bali alur dan syarat');
     queryVariants.push('syarat mengikuti program student exchange pertukaran mahasiswa pelajar internasional');
     queryVariants.push('program internasional pertukaran mahasiswa student exchange kampus mitra luar negeri');

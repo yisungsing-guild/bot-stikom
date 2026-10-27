@@ -859,9 +859,13 @@ Ada yang ingin Kakak tanyakan lebih lanjut, seperti rincian biaya kuliah per pro
   }
 
   // 1d. Degree Award and Study Duration Inquiries
-  const isDegreeOrDuration = semanticFrame.intent === 'DEGREE_AWARD' ||
+  const cleanQueryForDegree = (rawQuery + ' ' + (semanticFrame.normalizedQuery || ''))
+    .replace(/\b(?:double|dual)\s+degree\b/gi, 'dd_prog');
+  const isDoubleDegreeTarget = targetEntities.some(e => /Double Degree|Dual Degree|UTB|DNUI|HELP/i.test(String(e))) ||
+    /\b(?:double\s+degree|dual\s+degree)\b/i.test(rawQuery);
+  const isDegreeOrDuration = !isDoubleDegreeTarget && (semanticFrame.intent === 'DEGREE_AWARD' ||
     (semanticFrame.aspects && semanticFrame.aspects.some(a => ['degree_award', 'study_duration', 'degree'].includes(a))) ||
-    /\b(?:gelar|sebutan\s+lulusan|masa\s+studi|lama\s+studi|durasi\s+studi|degree|study\s+duration|duration|how\s+long)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+    /\b(?:gelar|sebutan\s+lulusan|masa\s+studi|lama\s+studi|durasi\s+studi|degree|study\s+duration|duration|how\s+long)\b/i.test(cleanQueryForDegree));
   if (isDegreeOrDuration) {
     let degreeFound = null;
     let durationFound = null;
@@ -1705,20 +1709,47 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
         `Untuk persyaratan lengkap dan jadwal seleksi angkatan terbaru, mahasiswa dapat menghubungi Bagian Urusan Internasional atau Career Center ITB STIKOM Bali.`;
       return appendMissingAspectNote(japanAnswer);
     }
+    // Generic Double Degree without national/international or partner specification:
+    // Present supported choices without prematurely assuming international-only
+    const isGenericDoubleDegree = /\b(?:double\s*degree|dual\s*degree|gelar\s+ganda|dua\s+gelar)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) &&
+      !isDnui && !isHelp && !isGccp && !isJapan && !isStudentExchange &&
+      !/\b(?:utb|bandung|dkv|nasional|dalam\s+negeri|china|cina|dalian|malaysia)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+
+    if (isGenericDoubleDegree) {
+      const genericDdAnswer = `ITB STIKOM Bali menyelenggarakan program **Double Degree (Dual Degree / Gelar Ganda)** baik jalur nasional maupun internasional yang bekerja sama dengan universitas mitra resmi:\n\n` +
+        `1. **Program Dual Degree Nasional**:\n` +
+        `   • Bekerja sama dengan **Universitas Teknologi Bandung (UTB)**.\n` +
+        `   • Mahasiswa menempuh perkuliahan pada prodi **S1 Bisnis Digital** (ITB STIKOM Bali) dan **S1 Desain Komunikasi Visual / DKV** (UTB), dengan gelar ganda **S.Bns.** dan **S.Ds.**\n\n` +
+        `2. **Program International Dual Degree**:\n` +
+        `   • **Dalian Neusoft University of Information (DNUI), China**: Program untuk **S1 Bisnis Digital** (skema 2+2, perkuliahan di Bali dan Dalian, gelar **S.Bns.** dan **B.M.**).\n` +
+        `   • **HELP University, Malaysia**: Program untuk **S1 Sistem Informasi** (kurikulum terintegrasi HELP University di Bali, gelar **S.Kom.** dan **BIT**).\n\n` +
+        `Apakah Kakak tertarik untuk mengetahui lebih lanjut mengenai program Double Degree nasional (UTB) atau internasional (DNUI / HELP)?`;
+      return appendMissingAspectNote(genericDdAnswer);
+    }
   }
 
-  // 7d-1. DKV / Desain Komunikasi Visual (Dual Degree UTB)
+  // 7d-1. Dual Degree UTB / Double Degree Nasional / DKV
+  const isUtbInquiry = targetEntities.some(e => /Dual Degree UTB|UTB/i.test(String(e))) ||
+    /\b(?:double\s+degree\s+nasional|dual\s+degree\s+nasional|program\s+double\s+degree\s+nasional|program\s+dual\s+degree\s+nasional|utb|universitas\s+teknologi\s+bandung)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
   const isDkvInquiry = /\b(?:dkv|desain\s+komunikasi\s+visual)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || '')) ||
     (targetEntities && targetEntities.some(e => /dkv|desain\s+komunikasi\s+visual/i.test(String(e))));
 
-  if (isDkvInquiry) {
-    const dkvAnswer = `Program studi **Desain Komunikasi Visual (DKV)** bukan merupakan program studi mandiri di ITB STIKOM Bali, melainkan diselenggarakan melalui jalur kemitraan resmi **Program Dual Degree (Gelar Ganda) Nasional** bekerja sama dengan **Universitas Teknologi Bandung (UTB)**:\n\n` +
+  const isContact = semanticFrame.intent === 'CONTACT_INQUIRY' ||
+    /\b(?:kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp)?(?:nya)?|telepon(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|hubungi|narahubung(?:nya)?|contact(?:s)?)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+
+  if (!isContact && (isUtbInquiry || isDkvInquiry)) {
+    const isSpecificDkvQuery = isDkvInquiry && !/\b(?:double\s+degree|dual\s+degree)\b/i.test(rawQuery);
+    const utbIntro = isSpecificDkvQuery
+      ? `Program studi **Desain Komunikasi Visual (DKV)** bukan merupakan program studi mandiri di ITB STIKOM Bali, melainkan diselenggarakan melalui jalur kemitraan resmi **Program Dual Degree (Gelar Ganda) Nasional** bekerja sama dengan **Universitas Teknologi Bandung (UTB)**:\n\n`
+      : `Ya, ITB STIKOM Bali menyelenggarakan **Program Dual Degree (Gelar Ganda) Nasional** bekerja sama dengan **Universitas Teknologi Bandung (UTB)**:\n\n`;
+
+    const utbAnswer = `${utbIntro}` +
       `• **Mekanisme Program**: Mahasiswa menempuh perkuliahan pada program studi **S1 Bisnis Digital** di ITB STIKOM Bali dan program studi **S1 Desain Komunikasi Visual (DKV)** di Universitas Teknologi Bandung (UTB).\n` +
       `• **Gelar Kelulusan**: Setelah menyelesaikan beban studi, lulusan memperoleh dua gelar sarjana sekaligus, yaitu:\n` +
       `  - **Sarjana Bisnis (S.Bns.)** dari ITB STIKOM Bali\n` +
       `  - **Sarjana Desain (S.Ds.)** dari Universitas Teknologi Bandung (UTB)\n\n` +
-      `Jalur ini memadukan keahlian bisnis digital dan desain komunikasi visual kreatif. Informasi kurikulum dan pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
-    return appendMissingAspectNote(dkvAnswer);
+      `Sebagai informasi, prodi DKV diselenggarakan melalui jalur kemitraan ini (bukan program studi mandiri di ITB STIKOM Bali). Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
+    return appendMissingAspectNote(utbAnswer);
   }
 
   // 7d-2. LLC (Language Learning Center)
@@ -1755,8 +1786,12 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
 
   if (isContactInquiry) {
     const activeProgram = (targetEntities && targetEntities[0]) ||
-      (arbitratedEvidence?.sessionData?.activeEntity?.canonical) ||
-      (semanticFrame.activeEntity?.canonical) ||
+      (typeof arbitratedEvidence?.sessionData?.activeEntity === 'string'
+        ? arbitratedEvidence.sessionData.activeEntity
+        : arbitratedEvidence?.sessionData?.activeEntity?.canonical) ||
+      (typeof semanticFrame.activeEntity === 'string'
+        ? semanticFrame.activeEntity
+        : semanticFrame.activeEntity?.canonical) ||
       null;
 
     let contactIntro = '';
@@ -2218,7 +2253,10 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   const isContactInquiry = semanticFrame.intent === 'CONTACT_INQUIRY' ||
     /\b(?:kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp)?(?:nya)?|telepon(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|hubungi|narahubung(?:nya)?|contact(?:s)?)\b/i.test(queryAll);
 
-  if (isLlcInquiry || isDkvInquiry || isWisudaInquiry || isSoftSkillInquiry || isContactInquiry) {
+  const isUtbDualDegreeInquiry = !isContactInquiry && (frameEntities.some(e => /dual\s+degree\s+utb|utb/i.test(e.canonical || e.name || String(e))) ||
+    /\b(?:double\s+degree\s+nasional|dual\s+degree\s+nasional|program\s+double\s+degree\s+nasional|program\s+dual\s+degree\s+nasional|utb|universitas\s+teknologi\s+bandung)\b/i.test(queryAll));
+
+  if (isLlcInquiry || isDkvInquiry || isUtbDualDegreeInquiry || isWisudaInquiry || isSoftSkillInquiry || isContactInquiry) {
     const synthesizedText = buildGroundedDeterministicSummary(semanticFrame, arbitratedEvidence.accepted || [], arbitratedEvidence);
     if (synthesizedText) {
       return {
