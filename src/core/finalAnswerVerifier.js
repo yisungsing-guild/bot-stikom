@@ -659,7 +659,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
             compType = 'upfront_cash';
           } else if (/pendaftaran|uang\s+daftar/i.test(currentClause)) {
             compType = 'pendaftaran';
-          } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester|pembayaran\s+semester|per\s+semester/i.test(currentClause)) {
+          } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester/i.test(currentClause)) {
             compType = 'semester';
           } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(currentClause) && !/biaya\s+registrasi/i.test(currentClause)) {
             compType = 'perlengkapan';
@@ -678,7 +678,6 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
           );
           const lastSemesterIdx = Math.max(
             immPreceding.lastIndexOf('per semester'),
-            immPreceding.lastIndexOf('pembayaran semester'),
             immPreceding.lastIndexOf('spp')
           );
           if (lastPackageIdx > -1 && lastPackageIdx > lastSemesterIdx) {
@@ -689,7 +688,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
             compType = 'upfront_cash';
           } else if (/bahasa|mandarin|inggris/i.test(immPreceding)) {
             compType = 'bahasa';
-          } else if (/biaya\s+pendidikan\s+per\s+semester|pembayaran\s+semester|per\s+semester|\bspp\b/i.test(immPreceding) && !/mulai\s+semester/i.test(immPreceding)) {
+          } else if (/biaya\s+pendidikan\s+per\s+semester|per\s+semester|\bspp\b/i.test(immPreceding) && !/mulai\s+semester/i.test(immPreceding)) {
             compType = 'semester';
           } else if (/\bdpp\b|dana\s+pendidikan\s+pokok|biaya\s+registrasi/i.test(immPreceding)) {
             compType = 'dpp';
@@ -703,7 +702,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
         }
 
         if (compType === 'unknown') {
-          if (PACKAGE_LUMP_SUM_REGEX.test(currentLine) && !/per\s+semester|pembayaran\s+semester|\bspp\b/i.test(currentClause) && !/per\s+semester|tiap\s+semester/i.test(followingClause)) {
+          if (PACKAGE_LUMP_SUM_REGEX.test(currentLine) && !/per\s+semester/i.test(currentClause)) {
             compType = 'package_lump_sum';
           } else if (/total\s+(?:kewajiban|biaya\s+awal)/i.test(currentLine) && !/tunai|langsung|kewajiban\s+dpp|registrasi\s*\(jas/i.test(currentClause)) {
             compType = 'total_initial';
@@ -717,7 +716,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
             compType = 'dpp';
           } else if (/perlengkapan|jas|topi|kaos|tas|gmti/i.test(currentLine) && !/biaya\s+registrasi/i.test(currentLine)) {
             compType = 'perlengkapan';
-          } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester|pembayaran\s+semester/i.test(currentLine)) {
+          } else if (/\bspp\b|biaya\s+pendidikan\s+per\s+semester/i.test(currentLine)) {
             compType = 'semester';
           } else if (/pendaftaran|uang\s+daftar/i.test(currentLine)) {
             compType = 'pendaftaran';

@@ -9184,8 +9184,8 @@ function buildSourceGroundedRequestedFieldAnswer(question, canonical, indexForQu
     };
   }
 
-  // 0a) Faculty Program Mapping Grounded in Official Decree (FIK and FBV)
-  if (academicTopic === 'faculty_program_mapping' || intent === 'ask_faculty_program_list' || fields.has('facultyProgramMapping')) {
+  // 0a) Faculty Program Mapping (Fakultas Informatika dan Komputer vs Fakultas Bisnis dan Vokasi)
+  if (academicTopic === 'faculty_program_mapping' || intent === 'ask_faculty_program_list' || fields.has('facultyProgramMapping') || /\b(?:prodi|jurusan|program\s+studi)\b/i.test(q) && /\b(?:fakultas|fik|fbv)\b/i.test(q)) {
     const isFBV = /\b(?:fakultas\s+bisnis|bisnis\s+dan\s+vokasi|fbv|bisvo)\b/i.test(q);
     const isFIK = /\b(?:fakultas\s+informatika|informatika\s+dan\s+komputer|fik|infokom)\b/i.test(q);
 

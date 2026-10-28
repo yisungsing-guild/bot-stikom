@@ -1275,13 +1275,9 @@ describe('Chat Engine V2 — Cross-Domain Architecture Regression Suite', () => 
   // =========================================================================
   // GROUP J: UKM & UNSUPPORTED PROGRAM DOMAIN INVARIANTS & ASYNC RESOLUTION
   // Invariants:
-  // 1. UKM queries (arts/culture, sports, campus activities) must NEVER be hijacked
-  //    into UNSUPPORTED_PROGRAM.
-  // 2. Genuine unoffered academic programs (kedokteran, farmasi, hukum) must remain
-  //    correctly classified as UNSUPPORTED_PROGRAM.
-  // 3. Tuition fee and campus facility queries must strictly preserve their domains.
-  // 4. Synchronous resolver fallback must NOT leak false unsupportedProgramName
-  //    into valid asynchronous model interpretations.
+  // - UKM art/sports queries must strictly map to ORGANIZATION_UKM, not UNSUPPORTED_PROGRAM
+  // - Genuinely unsupported study programs (e.g. Kedokteran, Farmasi, Hukum) must map to UNSUPPORTED_PROGRAM
+  // - Async model resolver cannot overturn valid ORGANIZATION_UKM, TUITION_FEE, or FACILITIES frames
   // =========================================================================
   describe('Group J: UKM & Unsupported Program Domain Invariants & Async Resolution', () => {
 

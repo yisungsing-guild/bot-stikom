@@ -27,6 +27,9 @@ const { resolveSemanticFrame } = require('../src/core/semanticFrameResolver');
 const { buildRetrievalPlan } = require('../src/core/retrievalPlanner');
 const { evaluateContextDependency } = require('../src/core/contextResolver');
 const { verifyFinalAnswer } = require('../src/core/finalAnswerVerifier');
+const { detectQueryLanguage } = require('../src/utils/languageDetector');
+const { sanitizeOutboundWhatsappText } = require('../src/utils/whatsappFormatter');
+const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('../src/core/answerabilityGate');
 
 describe('Systemic Double Degree Architecture & Conversational Integrity', () => {
   jest.setTimeout(30000);
@@ -250,6 +253,117 @@ describe('Systemic Double Degree Architecture & Conversational Integrity', () =>
       const verifResult = verifyFinalAnswer(conflictingAnswer, mockFrame, mockEvidence);
       expect(['ESCALATION_GUIDANCE', 'SAFE_UNKNOWN', 'VERIFICATION_FAILED']).toContain(verifResult.outcome);
       expect(verifResult.reason).toMatch(/entity_contradiction_conflicting_sibling_in_answer: dnui/);
+    });
+
+    test('7c: Campus contact channels do NOT satisfy specific partner admission requirements without evidence', () => {
+      const frame = {
+        domain: 'PMB',
+        intent: 'ADMISSION_REQUIREMENTS',
+        rawQuery: 'Apa saja syarat masuk program UTB Bandung?',
+        entities: [{ canonical: 'Dual Degree UTB' }],
+        aspects: ['requirements']
+      };
+
+      // Evidence only contains central campus contact numbers, no requirement keywords
+      const evidenceList = [
+        { text: 'Informasi PMB ITB STIKOM Bali hubungi (0361) 244445 atau kunjungi pmb.stikom-bali.ac.id' }
+      ];
+
+      const res = evaluateAnswerability(frame, { accepted: evidenceList });
+      expect(res.status).toBe(ANSWERABILITY_STATUS.UNKNOWN);
+      expect(res.reason).toBe('insufficient_aspect_evidence');
+      expect(res.missingAspects).toContain('requirements');
+    });
+
+    test('7d: Campus contact channels do NOT satisfy tuition fee inquiries without fee evidence', () => {
+      const frame = {
+        domain: 'TUITION_FEE',
+        intent: 'FEE_INQUIRY',
+        rawQuery: 'Berapa biaya kuliah Dual Degree UTB?',
+        entities: [{ canonical: 'Dual Degree UTB' }],
+        aspects: ['fee', 'tuition']
+      };
+
+      const evidenceList = [
+        { text: 'Informasi pendaftaran hubungi saluran telepon kampus (0361) 244445' }
+      ];
+
+      const res = evaluateAnswerability(frame, { accepted: evidenceList });
+      expect(res.status).toBe(ANSWERABILITY_STATUS.UNKNOWN);
+      expect(res.reason).toBe('insufficient_fee_aspect_coverage');
+      expect(res.missingAspects).toContain('fee');
+    });
+
+    test('7e: Private or personal contact requests are strictly gated as unrecorded', () => {
+      const frame = {
+        domain: 'CAMPUS_SERVICE',
+        intent: 'CONTACT_INQUIRY',
+        rawQuery: 'Boleh minta nomor WA pribadi kepala program UTB?',
+        entities: [{ canonical: 'Dual Degree UTB' }],
+        aspects: ['contact']
+      };
+
+      const evidenceList = [
+        { text: 'Program Dual Degree UTB bekerja sama dengan Universitas Teknologi Bandung.' }
+      ];
+
+      const res = evaluateAnswerability(frame, { accepted: evidenceList });
+      expect(res.status).toBe(ANSWERABILITY_STATUS.UNKNOWN);
+      expect(res.reason).toBe('corpus_gap_private_contact_not_published');
+    });
+  });
+
+  describe('8. Language Detection: Robustness against Academic & Institutional Loanwords', () => {
+    test('8a: Indonesian inquiries mentioning HELP, University, and Double Degree remain classified as "id"', () => {
+      expect(detectQueryLanguage('Bagaimana program double degree dengan HELP University?')).toBe('id');
+      expect(detectQueryLanguage('Double degree HELP Malaysia seperti apa?')).toBe('id');
+      expect(detectQueryLanguage('Program dual degree nasional ada jurusan apa saja?')).toBe('id');
+      expect(detectQueryLanguage('Apakah ada exchange program ke luar negeri?')).toBe('id');
+      expect(detectQueryLanguage('Berapa biaya kuliah untuk program international?')).toBe('id');
+    });
+
+    test('8b: Queries with English functional structure are properly classified as "en"', () => {
+      expect(detectQueryLanguage('What is the tuition fee for the international double degree program?')).toBe('en');
+      expect(detectQueryLanguage('How to register for HELP University dual degree?')).toBe('en');
+      expect(detectQueryLanguage('Could you explain the admission requirements for international students?')).toBe('en');
+    });
+  });
+
+  describe('9. Multi-turn Contact Phrasing Variations', () => {
+    test('9a: Varied follow-up contact inquiries inherit active entity and provide grounded admissions contact', async () => {
+      const contactVariations = [
+        'Boleh minta nomor kontaknya?',
+        'Kontak yang bisa dihubungi kemana ya?',
+        'Ada nomor WhatsApp atau telepon resminya?'
+      ];
+
+      for (const query of contactVariations) {
+        const chatId = `sys_dd_contact_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        // Turn 1: Establish UTB
+        await processTurn(chatId, 'Apakah ada program double degree nasional?', { executeDispatch: false });
+        // Turn 2: Follow-up with variation
+        const result = await processTurn(chatId, query, { executeDispatch: false });
+        const sub = result.subQueryResults?.[0] || {};
+        const answer = sub.answer || '';
+
+        expect(answer).toMatch(/Dual Degree UTB/i);
+        expect(answer).toMatch(/pmb\.stikom-bali\.ac\.id/i);
+        expect(answer).toMatch(/\(0361\)\s*244445/i);
+
+        const session = await getSession(chatId);
+        expect(session?.data?.activeEntity).toBe('Dual Degree UTB');
+      }
+    });
+  });
+
+  describe('10. Document & Announcement Sanitization', () => {
+    test('10a: Outbound sanitization cleanly strips raw sheet tags, OCR markers, and column dumps', () => {
+      const dirtyOutput = '[Sheet: Sheet1] Penjelasan Prodi\n[Sheet: Data PMB]\n| col2 : Gelar Ganda UTB | col3 : S.Bns\nInformasi mengenai wisuda.';
+      const clean = sanitizeOutboundWhatsappText(dirtyOutput);
+      expect(clean).not.toMatch(/\[Sheet:/i);
+      expect(clean).not.toMatch(/\|\s*col\d+/i);
+      expect(clean).toContain('Gelar Ganda UTB');
+      expect(clean).toContain('Informasi mengenai wisuda.');
     });
   });
 });

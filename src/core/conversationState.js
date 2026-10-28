@@ -17,33 +17,22 @@ const DEFAULT_SESSION_DATA = Object.freeze({
   activeDomain: null,
   activeEntity: null,
   activeProgram: null,
-  pendingClarification: null,
-  clarificationTurnCount: 0,
   lastQuery: null,
   lastAnswer: null,
   lastTurnTs: null,
   turnCount: 0
 });
 
-const memorySessionStore = new Map();
-const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes TTL baseline
-
-function isSessionExpired(sessionRecord) {
-  if (!sessionRecord?.data?.lastTurnTs) return false;
-  return (Date.now() - sessionRecord.data.lastTurnTs) > SESSION_TTL_MS;
-}
+// Test-only memory store for fast, isolated test execution without external DB latency
+const testMemorySessionStore = new Map();
 
 async function getSession(chatId) {
   if (!chatId) return { chatId: null, state: 'root', data: { ...DEFAULT_SESSION_DATA } };
 
+  // Strict isolation: only use in-memory store in test environment
   if (process.env.NODE_ENV === 'test') {
-    if (memorySessionStore.has(String(chatId))) {
-      const cached = memorySessionStore.get(String(chatId));
-      if (isSessionExpired(cached)) {
-        memorySessionStore.delete(String(chatId));
-      } else {
-        return cached;
-      }
+    if (testMemorySessionStore.has(String(chatId))) {
+      return testMemorySessionStore.get(String(chatId));
     }
     return {
       chatId: String(chatId),
@@ -52,52 +41,21 @@ async function getSession(chatId) {
     };
   }
 
+  // Production: PostgreSQL is the single source of truth
   try {
     const session = await prisma.session.findUnique({
       where: { chatId: String(chatId) }
     });
 
     if (session) {
-      const dbData = session.data && typeof session.data === 'object' ? session.data : { ...DEFAULT_SESSION_DATA };
-      const cached = memorySessionStore.get(String(chatId));
-
-      const dbTs = dbData.lastTurnTs || 0;
-      const memTs = cached?.data?.lastTurnTs || 0;
-
-      // If cached memory record has a newer turn timestamp than DB (e.g. previous DB write timed out), preserve newer
-      if (cached && memTs > dbTs && !isSessionExpired(cached)) {
-        return cached;
-      }
-
-      const res = {
+      return {
         chatId: session.chatId,
         state: session.state || 'root',
-        data: dbData
+        data: session.data && typeof session.data === 'object' ? session.data : { ...DEFAULT_SESSION_DATA }
       };
-
-      if (!isSessionExpired(res)) {
-        memorySessionStore.set(String(chatId), res);
-        return res;
-      } else {
-        memorySessionStore.delete(String(chatId));
-        return {
-          chatId: String(chatId),
-          state: 'root',
-          data: { ...DEFAULT_SESSION_DATA }
-        };
-      }
     }
   } catch (err) {
     logger.warn({ err: err.message, chatId }, '[ConversationState] Failed to fetch session from DB');
-  }
-
-  if (memorySessionStore.has(String(chatId))) {
-    const cached = memorySessionStore.get(String(chatId));
-    if (isSessionExpired(cached)) {
-      memorySessionStore.delete(String(chatId));
-    } else {
-      return cached;
-    }
   }
 
   return {
@@ -123,12 +81,14 @@ async function updateSession(chatId, { state = 'root', dataPatch = {} } = {}) {
     state,
     data: updatedData
   };
-  memorySessionStore.set(String(chatId), sessionObj);
 
+  // Strict isolation: test environment updates in-memory store only
   if (process.env.NODE_ENV === 'test') {
+    testMemorySessionStore.set(String(chatId), sessionObj);
     return sessionObj;
   }
 
+  // Production: PostgreSQL upsert with explicit failure handling
   try {
     const result = await prisma.session.upsert({
       where: { chatId: String(chatId) },
@@ -145,13 +105,16 @@ async function updateSession(chatId, { state = 'root', dataPatch = {} } = {}) {
 
     return result;
   } catch (err) {
-    logger.error({ err: err.message, chatId }, '[ConversationState] Failed to update session');
-    return sessionObj;
+    logger.error({ err: err.message, chatId }, '[ConversationState] Failed to update session in DB');
+    // Return null so production callers explicitly know database write failed
+    return null;
   }
 }
 
 async function resetSession(chatId) {
-  if (chatId) memorySessionStore.delete(String(chatId));
+  if (process.env.NODE_ENV === 'test' && chatId) {
+    testMemorySessionStore.delete(String(chatId));
+  }
   return updateSession(chatId, {
     state: 'root',
     dataPatch: { ...DEFAULT_SESSION_DATA }

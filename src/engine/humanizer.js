@@ -118,15 +118,16 @@ function buildUkmConfirmation(userQuery) {
 }
 function buildAkademikConfirmation(userQuery) {
   const topicMap = [
+    { pattern: /\b(wisuda|yudisium)\b/i, reply: 'pelaksanaan wisuda dan yudisium' },
     { pattern: /\b(kurikulum|mata\s+kuliah|dipelajari|materi|belajar)\b/i, reply: 'mengenai kurikulum dan mata kuliah' },
     { pattern: /\b(prospek\s+kerja|karir|pekerjaan)\b/i, reply: 'mengenai prospek kerja' },
     { pattern: /\b(syarat|persyaratan|apa\s+saja)\b/i, reply: 'mengenai informasi program studi' }
   ];
   
   const matched = topicMap.find(m => m.pattern.test(userQuery));
-  const topic = matched ? matched.reply : 'tentang program studi yang tersedia';
+  const topic = matched ? matched.reply : 'informasi akademik';
   
-  return `Saya bantu jelaskan ${topic} di ITB STIKOM Bali ya Kak.`;
+  return `Saya bantu jelaskan mengenai ${topic} di ITB STIKOM Bali ya Kak.`;
 }
 
 function buildFeeConfirmation(userQuery, context) {
@@ -356,6 +357,17 @@ function getIntentSpecificFollowUps(intent, context) {
       q.push('Kapan pendaftaran dibuka?');
       break;
       
+    case 'akademik':
+      if (/\b(wisuda|yudisium)\b/i.test(userQuery)) {
+        q.push('Berapa biaya wisuda di ITB STIKOM Bali?');
+        q.push('Apa saja persyaratan pendaftaran wisuda?');
+        q.push('Di mana informasi pengumuman jadwal wisuda terbaru?');
+      } else {
+        q.push('Bagaimana struktur kurikulumnya?');
+        q.push('Berapa total SKS yang harus ditempuh?');
+      }
+      break;
+
     case 'jadwal_pendaftaran':
       q.push('Apa saja gelombang pendaftaran yang ada?');
       q.push('Kapan deadline pendaftaran terakhir?');

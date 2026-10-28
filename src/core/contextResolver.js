@@ -56,9 +56,6 @@ const NON_REFERENTIAL_NYA_WORDS = new Set([
 const GENUINE_ELLIPSIS_REGEX = /^(kalau|bagaimana\s+dengan|gimana\s+dengan|lalu|kalo|what\s+about|how\s+about|and)\s+(the\s+|yang\s+)?([a-z0-9\s]+)\??$/i;
 const PREDICATE_ELLIPSIS_REGEX = /^(?:bagaimana\s+cara\s+bergabung|gimana\s+cara\s+bergabung|cara\s+bergabungnya(?:\s+gimana)?|cara\s+bergabung|masih\s+bisa\s+daftar|bisa\s+daftar\s+sekarang|kapan\s+jadwalnya|kapan\s+batasnya|kapan\s+buka|syaratnya\s+apa|biayanya\s+berapa|cara\s+daftarnya\s+gimana)\??$/i;
 
-const SHORTHAND_ELLIPSIS_REGEX = /^(?:yang\s+)?(?:tingkat\s+|jenjang\s+)?(s1|s2|d3|sarjana|diploma|magister|reguler|internasional|pagi|malam|karyawan|gelombang\s*(?:[0-9]+|[ivx]+)|gelombang\s+ke\s*(?:[0-9]+|[ivx]+))\??$/i;
-const SHORT_AFFIRMATION_REGEX = /^(?:iya|ya|betul|benar|yes|oke|ok)\??$/i;
-
 function hasExplicitPronounReference(query) {
   if (!query || typeof query !== 'string') return false;
   const q = query.trim().toLowerCase();
@@ -115,32 +112,6 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   // If session has no prior state, cannot inherit
   if (!sessionData || (!sessionData.activeDomain && !sessionData.activeEntity && !sessionData.lastQuery)) {
     return { shouldInherit: false, reason: 'no_session_history' };
-  }
-
-  // Check 0: Pending Clarification Response
-  if (sessionData && sessionData.pendingClarification) {
-    const isGreeting = /^(halo|hai|pagi|siang|sore|malam|hello|hi)\b/i.test(query);
-    if (!isGreeting) {
-      return {
-        shouldInherit: true,
-        reason: 'clarification_response',
-        pendingClarification: sessionData.pendingClarification,
-        inheritedDomain: sessionData.pendingClarification.frame?.domain || sessionData.activeDomain,
-        inheritedEntity: sessionData.pendingClarification.frame?.entities?.[0] || sessionData.activeEntity
-      };
-    }
-  }
-
-  // Check 0b: Shorthand Ellipsis (e.g. "yang S1", "S1", "gelombang II", "iya")
-  if (sessionData && (sessionData.activeDomain || sessionData.activeEntity)) {
-    if (SHORTHAND_ELLIPSIS_REGEX.test(query) || SHORT_AFFIRMATION_REGEX.test(query)) {
-      return {
-        shouldInherit: true,
-        reason: 'shorthand_ellipsis',
-        inheritedDomain: sessionData.activeDomain,
-        inheritedEntity: sessionData.activeEntity
-      };
-    }
   }
 
   const isAcademicActiveEntity = sessionData.activeEntity && (
@@ -208,38 +179,26 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     };
   }
 
-  // Check 3: Attribute Continuation without explicit entity (e.g. "gelar apa yang didapat dan berapa lama masa studi?" / "what degree would I receive and how long would the program take?")
-  const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|rincian\s+biaya|biaya(?:\s+kuliah)?|spp|dpp|kontak(?:nya)?|nomor(?:nya)?|telepon|whatsapp|wa|narahubung(?:nya)?|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation|contact(?:s)?)\b/i.test(query);
-  const isProceduralInquiry = /\b(?:bagaimana\s+cara\s+(?:daftar|mendaftar)|cara\s+(?:daftar|mendaftar|pendaftaran)|alur\s+pendaftaran|prosedur\s+pendaftaran|syarat(?:\s+pendaftaran|\s+masuk|\s+daftar)?|persyaratan(?:\s+pendaftaran|\s+masuk|\s+daftar)?|kapan\s+pendaftaran|jadwal\s+pendaftaran|tahapan\s+pendaftaran|how\s+to\s+apply|how\s+to\s+register|admission\s+procedure|registration\s+procedure|admission\s+requirements)\b/i.test(query);
+  // Check 3: Attribute or Procedural Continuation without explicit entity
+  const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|rincian\s+biaya|biaya(?:\s+kuliah)?|spp|dpp|kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp|\s+hp)?(?:nya)?|telepon(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|narahubung(?:nya)?|hubungi|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation|contact(?:s)?)\b/i.test(query);
+  const isProceduralInquiry = /\b(?:bagaimana\s+cara\s+(?:daftar|mendaftar)|cara\s+(?:daftar|mendaftar|pendaftaran)|alur\s+pendaftaran|prosedur\s+pendaftaran|syarat(?:\s+pendaftaran|\s+masuk|\s+daftar)?|persyaratan(?:\s+pendaftaran|\s+masuk|\s+daftar)?|berkas|dokumen(?:\s+persyaratan)?|kapan\s+pendaftaran|jadwal\s+pendaftaran|tahapan\s+pendaftaran|how\s+to\s+apply|how\s+to\s+register|admission\s+procedure|registration\s+procedure|admission\s+requirements)\b/i.test(query);
 
   if ((isAttributeInquiry || isProceduralInquiry) && sessionData.activeEntity) {
     const isFee = /\b(rincian\s+biaya|biaya|spp|dpp)\b/i.test(query);
+    const isContact = /\b(kontak|nomor|telepon|wa|whatsapp|narahubung|hubungi|contact)\b/i.test(query);
+    const isAdmission = isProceduralInquiry || /\b(daftar|pendaftaran|syarat|persyaratan|berkas|dokumen)\b/i.test(query);
+
+    let inheritedDomain = sessionData.activeDomain || 'ACADEMIC_PROGRAM';
+    if (isFee) inheritedDomain = 'TUITION_FEE';
+    else if (isContact) inheritedDomain = 'CAMPUS_SERVICE';
+    else if (isAdmission && inheritedDomain !== 'INTERNATIONAL') inheritedDomain = 'PMB';
+
     return {
       shouldInherit: true,
       reason: isAttributeInquiry ? 'attribute_continuation' : 'procedural_continuation',
-      inheritedDomain: isFee ? 'TUITION_FEE' : (sessionData.activeDomain || 'ACADEMIC_PROGRAM'),
+      inheritedDomain,
       inheritedEntity: sessionData.activeEntity
     };
-  }
-
-  // Check 4: Elliptical / Shorthand Faculty or Program inquiry referencing active program entity
-  // (e.g. Turn 1: "Teknologi Informasi masuk fakultas apa?" -> Turn 2: "Teknologi masuk fakultas apa?")
-  const isFacultyOrProgramInquiry = /\b(?:fakultas|masuk\s+fakultas|jurusan|bernaung)\b/i.test(query);
-  if (isFacultyOrProgramInquiry && sessionData.activeEntity) {
-    const activeName = (sessionData.activeEntity.canonical || sessionData.activeEntity.name || String(sessionData.activeEntity)).toLowerCase();
-    const queryTokens = query.split(/\s+/).filter(w => w.length >= 4 && !['masuk', 'fakultas', 'mana', 'apa', 'yang', 'itu'].includes(w));
-    const sharesToken = queryTokens.some(tok => activeName.includes(tok));
-    const mentionsOtherProgram = /\b(?:sistem\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika|komputer|bisnis|vokasi)\b/i.test(query) &&
-      !activeName.includes(query.match(/\b(?:sistem\s+informasi|sistem\s+komputer|bisnis\s+digital|manajemen\s+informatika)\b/i)?.[0] || '');
-
-    if (sharesToken && !mentionsOtherProgram) {
-      return {
-        shouldInherit: true,
-        reason: 'faculty_shorthand_continuation',
-        inheritedDomain: sessionData.activeDomain || 'ACADEMIC_PROGRAM',
-        inheritedEntity: sessionData.activeEntity
-      };
-    }
   }
 
   // DEFAULT: Current turn is independent and authoritative!

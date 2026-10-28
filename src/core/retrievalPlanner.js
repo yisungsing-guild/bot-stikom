@@ -48,7 +48,6 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Generic discovery of conflicting / sibling entities to exclude across mutually exclusive families
   // INVARIANT: Explicitly requested entities in targetEntities must NEVER be excluded!
-  // Invariant: Non-mutually-exclusive families like campus facilities or scholarships do not exclude each other
   const isFacultyInquiry = intent === 'FACULTY_INQUIRY' || (aspects && aspects.includes('faculty'));
   const MUTUALLY_EXCLUSIVE_FAMILIES = isFacultyInquiry ? new Set() : new Set(['academic_program']);
   const targetEntitySet = new Set(targetEntities.map(t => t.toLowerCase()));
@@ -126,16 +125,7 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Tuition fee query variants prioritized
   if (domain === 'TUITION_FEE' || (aspects && (aspects.includes('fee') || aspects.includes('tuition')))) {
-    const isS2Fee = targetEntities.some(e => /s2|magister|pascasarjana/i.test(e)) ||
-      semanticFrame.academicLevel === 'S2' ||
-      /\b(?:s2|magister|pascasarjana)\b/i.test(normalizedText);
-
-    if (isS2Fee) {
-      queryVariants.push('BIAYA PENDIDIKAN MAHASISWA BARU PASCASARJANA');
-      queryVariants.push('biaya kuliah pascasarjana magister sistem informasi per semester lunas 2 tahun');
-      queryVariants.push('biaya pendidikan mahasiswa baru pascasarjana pendaftaran spp');
-      queryVariants.push('rincian biaya S2 Magister Sistem Informasi');
-    } else if (targetEntities.length > 0) {
+    if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`rincian biaya pendidikan ${ent}`);
         queryVariants.push(`biaya kuliah ${ent} per semester`);
@@ -157,7 +147,7 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // Facilities query variants
-  if (domain === 'FACILITIES' || (aspects && (aspects.includes('facilities') || aspects.includes('lab')) && /\b(?:fasilitas|laboratorium|lab|sarana|prasarana|gedung|ruang|perpustakaan|asrama|dormitory)\b/i.test(normalizedText))) {
+  if (domain === 'FACILITIES' || (aspects && (aspects.includes('facilities') || aspects.includes('lab')))) {
     queryVariants.push('fasilitas laboratorium praktikum mahasiswa hardware networking database smart intelligent system ITB STIKOM Bali');
     queryVariants.push('laboratorium riset dan praktik mahasiswa embedded system IoT mobile technology');
     queryVariants.push('fasilitas laboratorium komputer perpustakaan asrama kampus ITB STIKOM Bali');
@@ -193,23 +183,12 @@ function buildRetrievalPlan(semanticFrame) {
     queryVariants.push('daftar organisasi kemahasiswaan himaprodi SK PEMBINA ORMAWA');
   }
 
-  // Career Center & Service / Internship query variants
-  if (domain === 'CAREER_CENTER' || domain === 'CAMPUS_SERVICE' || (aspects && (aspects.includes('career') || aspects.includes('internship') || aspects.includes('career_prospects')))) {
+  // Career Center & Internship query variants
+  if (domain === 'CAREER_CENTER' || (aspects && (aspects.includes('career') || aspects.includes('internship') || aspects.includes('career_prospects')))) {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
-        const isAcademic = (semanticFrame.entities || []).some(e =>
-          (e.name === ent || e.canonical === ent) && (e.family === 'academic_program' || e.type === 'program')
-        );
-
-        if (isAcademic) {
-          queryVariants.push(`peluang karir prospek kerja profesi lulusan ${ent}`);
-          queryVariants.push(`peluang pekerjaan ${ent}`);
-        } else {
-          queryVariants.push(`program ${ent} ITB STIKOM Bali`);
-          queryVariants.push(`layanan ${ent} mahasiswa alumni sertifikasi pelatihan kerja sama`);
-          queryVariants.push(`${ent} career development center STIKOM Bali`);
-          queryVariants.push(`${ent} kursus sertifikasi pelatihan profesional`);
-        }
+        queryVariants.push(`peluang karir prospek kerja profesi lulusan ${ent}`);
+        queryVariants.push(`peluang pekerjaan ${ent}`);
       }
     } else {
       queryVariants.push('career center inkubator bisnis inbis magang kerja sama industri ITB STIKOM Bali');

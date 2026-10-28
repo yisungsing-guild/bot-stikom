@@ -53,12 +53,12 @@ function getProgramCodeFromEntity(entityStr) {
   };
   if (PROGRAM_CODE_MAP[entityStr]) return PROGRAM_CODE_MAP[entityStr];
   const norm = entityStr.toLowerCase();
-  if (/\b(?:magister|pascasarjana|s2)\b/i.test(norm)) return 'S2';
   if (/\b(?:sistem\s+komputer|sk)\b/i.test(norm)) return 'SK';
   if (/\b(?:sistem\s+informasi|si)\b/i.test(norm)) return 'SI';
   if (/\b(?:teknologi\s+informasi|ti)\b/i.test(norm)) return 'TI';
   if (/\b(?:bisnis\s+digital|bd)\b/i.test(norm)) return 'BD';
   if (/\b(?:manajemen\s+informatika|mi)\b/i.test(norm)) return 'MI';
+  if (/\b(?:magister|pascasarjana|s2)\b/i.test(norm)) return 'S2';
   return null;
 }
 
@@ -429,16 +429,15 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
       (targetEntities.some(e => /^D3\b/i.test(e)) ? 'D3' : null)));
 
   // If candidate has an explicit conflicting academicLevel (e.g. S1 for an S2 query, or S2 for an S1 query), reject it!
-  const isFacultyQuery = retrievalPlan.intent === 'FACULTY_INQUIRY';
   const candLevelRaw = candidate.academicLevel || candidate.level || (candidate.metadata && (candidate.metadata.academicLevel || candidate.metadata.level));
-  if (!isFacultyQuery && academicLevel && candLevelRaw) {
+  if (academicLevel && candLevelRaw) {
     const candLvl = String(candLevelRaw).toUpperCase();
     const targetLvl = String(academicLevel).toUpperCase();
     const isMultiLevel = candidate.scope === 'PROGRAM_MULTI' &&
       (candidate.correctedLevel === 'S1_D3' ||
        (Array.isArray(candidate.supportedPrograms) && candidate.supportedPrograms.includes('MI') && ['S1', 'D3'].includes(targetLvl)));
-    // Institutional / Student Org documents (e.g. HIMAPRODI profile with level Umum/ALL) should not be rejected for S1 queries
-    const isInstOrOrgGeneral = (candLvl === 'UMUM' || candLvl === 'ALL') &&
+    // Institutional / Student Org documents (e.g. HIMAPRODI profile with level Umum) should not be rejected for S1 queries
+    const isInstOrOrgGeneral = candLvl === 'UMUM' &&
       (candidate.scope === 'INSTITUTIONAL_OR_ORG' || /buku ormawa himaprodi|profile hima/i.test(candidateFile));
     if (candLvl !== targetLvl && !isMultiLevel && !isInstOrOrgGeneral) {
       return {
@@ -479,12 +478,12 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
   const isCandidateS2 = candidate?.academicLevel === 'S2' || candidate?.level === 'S2' ||
     /(?:pascasarjana|magister)/i.test(candidate?.source_file || candidate?.filename || candidate?.sourceDocument || '') ||
-    /\b(?:(?:program\s+)?pascasarjana|magister(?:\s+sistem\s+informasi)?|s2(?:\s+sistem\s+informasi)?)\b/i.test(candidate?.text || candidate?.chunk || '');
+    /\b(?:program pascasarjana|magister sistem informasi|s2 sistem informasi)\b/i.test(candidate?.text || candidate?.chunk || '');
   if (isCandidateS2 && (candProgCode === 'SI' || candRawProg === 'SI' || !candProgCode)) {
     candProgCode = 'S2';
   }
 
-  if (Array.isArray(targetEntities) && targetEntities.length > 0 && candProgCode && !isFacultyQuery) {
+  if (Array.isArray(targetEntities) && targetEntities.length > 0 && candProgCode) {
     const targetCodes = targetEntities.map(te => getProgramCodeFromEntity(te)).filter(Boolean);
     if (targetCodes.length > 0 && !targetCodes.includes(candProgCode)) {
       return {
@@ -538,7 +537,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
   // 1.5 Academic Level Isolation Gate: Conflicting non-Umum academic levels must be REJECTED
   const planLevel = retrievalPlan.academicLevel || retrievalPlan.targetLevel;
-  if (planLevel && planLevel !== 'Umum' && !isFacultyQuery) {
+  if (planLevel && planLevel !== 'Umum') {
     const candLevel = candidate.academicLevel;
     if (candLevel && candLevel !== 'Umum' && candLevel !== planLevel) {
       return {
@@ -550,7 +549,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   }
 
   // 2. Target Entity & Scope Compatibility Check
-  if (Array.isArray(targetEntities) && targetEntities.length > 0 && !isFacultyQuery) {
+  if (Array.isArray(targetEntities) && targetEntities.length > 0) {
     // Group target entities by family to prevent cross-family false positive matches
     const familyMap = new Map();
     for (const ent of targetEntities) {
@@ -614,14 +613,6 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   const isPaymentProcedureChunk = /\b(konfirmasi\s+pembayaran|bukti\s+bayar|transfer|tata\s+cara\s+pembayaran|rekening|waktu\s+pembayaran)\b/i.test(text);
   const isAccreditationChunk = /\b(akreditasi|terakreditasi|ban-?pt|lam-?infokom|peringkat\s+akreditasi|sk\s+akreditasi|\/sk\/ban-pt\/|\/sk\/lam-infokom\/|terakreditasi\s+(?:baik|unggul|a|b))\b/i.test(text);
 
-  const isLocationChunk = /\b(kampus\s+(?:renon|jimbaran|abiansemal)|jalan\s+raya\s+puputan|renon|jimbaran|abiansemal|alamat|lokasi\s+kampus)\b/i.test(text) ||
-    (candidateFile && /fasilitas-stikom|profil/i.test(candidateFile)) ||
-    (retrievalPlan.intent === 'STUDY_LOCATION' && /\b(bali|china|cina|dalian|malaysia|stikom|kampus|luar\s+negeri|neusoft)\b/i.test(text));
-  if (isLocationChunk) providedAspects.push('location', 'campus_location', 'address', 'study_location');
-
-  const isFacultyChunk = /\b(fakultas\s+(?:informatika\s+dan\s+komputer|bisnis\s+dan\s+vokasi|fik|fbv)|dekan|struktur\s+organisasi|fakultas)\b/i.test(text);
-  if (isFacultyChunk) providedAspects.push('faculty', 'academic_structure', 'faculty_mapping');
-
   if (isFeeChunk) providedAspects.push('fee', 'tuition', 'dpp', 'components');
   if (isCurriculumChunk) providedAspects.push('curriculum', 'courses', 'competencies');
   if (isOverviewChunk) providedAspects.push('overview', 'definition', 'curriculum_difference', 'curriculum', 'courses', 'career', 'competencies');
@@ -637,7 +628,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   if (/\b(?:wisuda|yudisium)\b/i.test(candTextLower)) {
     providedAspects.push('procedure', 'requirements', 'event_info', 'graduation', 'schedule');
   }
-  if (isOrganizationChunk) providedAspects.push('student_organization', 'organization', 'general_organization', 'activities', 'ukm', 'membership', 'category', 'ukm_list');
+  if (isOrganizationChunk) providedAspects.push('student_organization', 'organization', 'general_organization', 'activities', 'ukm');
   if (isPmbGeneralChunk) providedAspects.push('admission_overview', 'procedure', 'admission_pathways', 'requirements', 'documents');
   if (isProgramListChunk) providedAspects.push('program_list', 'degrees');
   if (isStudyModeChunk) providedAspects.push('class_schedule', 'working_students', 'evening_class');
@@ -708,8 +699,6 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
   // Strict aspect matching against retrievalPlan.requiredAspects
   if (Array.isArray(requiredAspects) && requiredAspects.length > 0 && !requiredAspects.includes('general')) {
-    const wantsLocation = requiredAspects.some(a => ['location', 'campus_location', 'address'].includes(a)) || retrievalPlan.intent === 'CAMPUS_LOCATION';
-    const wantsFaculty = requiredAspects.some(a => ['faculty', 'academic_structure', 'faculty_mapping'].includes(a)) || retrievalPlan.intent === 'FACULTY_INQUIRY';
     const wantsContact = requiredAspects.some(a => ['contact', 'helpdesk'].includes(a)) || retrievalPlan.intent === 'PMB_CONTACT_INQUIRY';
     const wantsSchedule = requiredAspects.some(a => ['schedule', 'wave_info'].includes(a)) || retrievalPlan.intent === 'ADMISSION_SCHEDULE';
     const wantsFee = requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)) || retrievalPlan.domain === 'TUITION_FEE';
@@ -717,27 +706,11 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     const wantsCurriculum = !wantsCareer && (requiredAspects.some(a => ['curriculum', 'courses'].includes(a)) || retrievalPlan.domain === 'ACADEMIC_CURRICULUM');
     const wantsOverview = requiredAspects.some(a => ['overview', 'definition', 'curriculum_difference'].includes(a));
     const wantsScholarship = requiredAspects.some(a => ['scholarship', 'discount'].includes(a)) || retrievalPlan.domain === 'SCHOLARSHIP';
-    const wantsFacilities = !wantsLocation && (requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES');
-    const wantsOrg = requiredAspects.some(a => ['student_organization', 'ukm', 'membership', 'category', 'ukm_list'].includes(a)) || retrievalPlan.domain === 'ORGANIZATION_UKM';
+    const wantsFacilities = requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES';
+    const wantsOrg = requiredAspects.some(a => ['student_organization', 'ukm'].includes(a)) || retrievalPlan.domain === 'ORGANIZATION_UKM';
     const wantsPmbGeneral = requiredAspects.some(a => ['admission_overview', 'procedure', 'admission_pathways'].includes(a)) || (retrievalPlan.domain === 'PMB' && (retrievalPlan.intent === 'GENERAL_PMB_INQUIRY' || retrievalPlan.intent === 'ADMISSION_PROCEDURE'));
 
-    if (wantsLocation) {
-      if (!isLocationChunk) {
-        return {
-          accepted: false,
-          disposition: 'REJECT_ASPECT_MISMATCH',
-          reason: 'evidence_does_not_contain_campus_location_aspect'
-        };
-      }
-    } else if (wantsFaculty) {
-      if (!isFacultyChunk) {
-        return {
-          accepted: false,
-          disposition: 'REJECT_ASPECT_MISMATCH',
-          reason: 'evidence_does_not_contain_faculty_aspect'
-        };
-      }
-    } else if (wantsContact) {
+    if (wantsContact) {
       const hasContactSignal = /\b(whatsapp|wa|telepon|telp|call\s*center|email|kontak|08\d{8,}|\+62|0361|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
       if (!hasContactSignal || isHobbyChunk || isCurriculumChunk) {
         return {
@@ -872,37 +845,6 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
           disposition: 'REJECT_ASPECT_MISMATCH',
           reason: 'evidence_does_not_contain_organization_aspect'
         };
-      }
-      const isMembershipCheck = retrievalPlan.intent === 'ORGANIZATION_MEMBERSHIP_CHECK';
-      if (!isMembershipCheck) {
-        const wantsSports = (retrievalPlan.aspects && retrievalPlan.aspects.includes('sports')) ||
-          /\b(?:olahraga|olah\s*raga|sport|sports)\b/i.test(retrievalPlan.rawQuery || '');
-        const wantsArts = (retrievalPlan.aspects && retrievalPlan.aspects.includes('arts_culture')) ||
-          /\b(?:seni|kesenian|budaya|kebudayaan|tari|musik|teater)\b/i.test(retrievalPlan.rawQuery || '');
-        const wantsEsports = (retrievalPlan.aspects && retrievalPlan.aspects.includes('esports_gaming')) ||
-          /\b(?:esport|esports|gaming)\b/i.test(retrievalPlan.rawQuery || '');
-
-        if (wantsSports && !isSportsChunk && !/olahraga/i.test(text)) {
-          return {
-            accepted: false,
-            disposition: 'REJECT_ASPECT_MISMATCH',
-            reason: 'evidence_does_not_match_sports_ukm_aspect'
-          };
-        }
-        if (wantsArts && !/\b(?:seni|budaya|tari|musik|teater|paduan\s+suara|vokal|karawitan|tabuh|fotografi|multimedia|dance|drama|lukis)\b/i.test(text)) {
-          return {
-            accepted: false,
-            disposition: 'REJECT_ASPECT_MISMATCH',
-            reason: 'evidence_does_not_match_arts_culture_ukm_aspect'
-          };
-        }
-        if (wantsEsports && !isEsportsChunk) {
-          return {
-            accepted: false,
-            disposition: 'REJECT_ASPECT_MISMATCH',
-            reason: 'evidence_does_not_match_esports_ukm_aspect'
-          };
-        }
       }
     } else if (wantsPmbGeneral) {
       const satisfiesForeign = querySpecificallyAsksForeign && isForeignStudentChunk;
@@ -1128,9 +1070,7 @@ function arbitrateEvidence(candidates = [], retrievalPlan = {}) {
     unsupportedEntityName: retrievalPlan.unsupportedEntityName || retrievalPlan.unsupportedProgramName || null,
     entityResolutionStatus: retrievalPlan.entityResolutionStatus || 'RESOLVED',
     shadowContractArbitration,
-    shadowComparison,
-    corpusUnavailable: Boolean(candidates && candidates.corpusUnavailable),
-    retrievalStatus: (candidates && candidates.retrievalStatus) || 'OK'
+    shadowComparison
   };
 }
 

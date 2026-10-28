@@ -61,10 +61,11 @@ const CANONICAL_DOMAIN_LEXICON = [
   'biaya', 'bayar', 'cicilan', 'angsuran', 'beasiswa',
   'daftar', 'pendaftaran', 'syarat', 'persyaratan', 'dokumen', 'berkas', 'gelombang', 'jadwal',
   'kurikulum', 'kuliah', 'kelulusan', 'skripsi', 'akreditasi',
-  'fasilitas', 'laboratorium', 'perpustakaan', 'organisasi'
+  'fasilitas', 'laboratorium', 'perpustakaan', 'organisasi',
+  'kontak', 'telepon', 'whatsapp', 'alamat', 'narahubung', 'softskill', 'soft'
 ];
 
-const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking|undergraduate|bachelor|master|postgraduate|study\s+programs?|academic\s+programs?|degree\s+programs?|majors?)\b/i;
+const INSTITUTIONAL_ANCHOR_REGEX = /\b(?:stikom|kampus|kuliah|perkuliahan|akademik|pmb|mahasiswa|dosen|prodi|jurusan|fakultas|sarjana|diploma|magister|pascasarjana|s1|s2|d3|biaya|spp|dpp|uang\s+kuliah|uang\s+gedung|beasiswa|pendaftaran|daftar|syarat|persyaratan|berkas|dokumen|gelombang|jadwal|kurikulum|matkul|mata\s+kuliah|sks|akreditasi|ban-?pt|lam-?infokom|fasilitas|laboratorium|lab|perpustakaan|asrama|parkir|ukm|ormawa|organisasi|wisuda|yudisium|rpl|magang|lulus|lulusan|kelulusan|karir|karier|alumni|universitas|institut|sekolah\s+tinggi|dual\s+degree|double\s+degree|degree|gelar|ijazah|sebutan|durasi|program\s+studi|studi|masa\s+studi|lama\s+studi|waktu\s+studi|university|college|campus|student|students|lecturer|professor|tuition|fee|fees|scholarship|admission|admissions|register|registration|curriculum|course|courses|credit|credits|accreditation|facility|facilities|laboratory|laboratories|library|dormitory|dorm|graduation|graduate|graduating|thesis|final\s+project|defense|internship|career|careers|degree|duration|study\s+duration|student\s+exchange|parking|undergraduate|bachelor|master|postgraduate|study\s+programs?|academic\s+programs?|degree\s+programs?|majors?|soft\s*skills?|pengembangan\s+(?:soft\s*skills?|karakter|mahasiswa)|pelatihan\s+soft\s*skills?|career\s+center|pusat\s+karier|cdc|kontak|telepon|whatsapp|narahubung)\b/i;
 
 const PROTECTED_CANONICAL_WORDS = new Set([
   'dan', 'atau', 'ke', 'di', 'dari', 'pada', 'untuk', 'dengan', 'ada', 'bisa', 'boleh', 'mau', 'ingin', 'saya', 'kami', 'kita', 'dia', 'ini', 'itu', 'apa', 'siapa', 'mana', 'kapan', 'sudah', 'belum', 'tidak', 'bukan'
@@ -193,7 +194,7 @@ function detectUnsupportedProgram(rawQuery, entities = []) {
   }
 
   // Pattern 4: Direct inquiry of well-known non-offered academic disciplines (e.g. "kedokteran", "farmasi", "kebidanan", "keperawatan", "hukum", "psikologi", "akuntansi", "arsitektur")
-  const commonDisciplines = /\b(kedokteran(?:\s+gigi|\s+hewan)?|farmasi|kebidanan|keperawatan|hukum|psikologi|akuntansi|arsitektur|pertanian|peternakan)\b/i;
+  const commonDisciplines = /\b(kedokteran(?:\s+gigi|\s+hewan)?|farmasi|kebidanan|keperawatan|hukum|psikologi|akuntansi|arsitektur|pertanian|peternakan|teknik\s+nuklir)\b/i;
   const directMatch = q.match(commonDisciplines);
   if (directMatch && directMatch[1]) {
     const candidate = directMatch[1].trim();
@@ -343,35 +344,18 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   // 1. Specialized Campus Service / Career Center (Takes precedence over generic vocabulary like "fasilitas", "biaya", "cara")
   const campusServiceEntity = entities.find(e => e.family === 'campus_service');
   if (campusServiceEntity || /\b(?:career\s+center|cdc\b|inbis|inkubator\s+bisnis|magang|internship|campus\s+hiring|rekrutmen|kerja\s+sama|mitra\s+industri|penyaluran\s+kerja|perusahaan\s+kami)\b/i.test(normalized)) {
-    const isCareer = (campusServiceEntity && (campusServiceEntity.canonical.includes('CDC') || campusServiceEntity.canonical.includes('Career') || campusServiceEntity.canonical.includes('Bursa Kerja'))) ||
+    const isCareer = (campusServiceEntity && (campusServiceEntity.canonical.includes('CDC') || campusServiceEntity.canonical.includes('Career') || campusServiceEntity.canonical.includes('LinkedIn'))) ||
       /\b(?:career|cdc\b|magang|internship|campus\s+hiring|rekrutmen|penyaluran\s+kerja)\b/i.test(normalized);
-
-    const isCertification = /\b(?:sertifikasi|sertifikat|learning|course|kursus|upskilling|reskilling)\b/i.test(normalized);
-    const isTraining = /\b(?:pelatihan|training|optimalisasi|cv|wawancara|branding|profil)\b/i.test(normalized);
-    const isCooperation = /\b(?:kerja\s*sama|kerjasama|mitra|kemitraan|industri)\b/i.test(normalized);
-    const isInternship = /\b(?:magang|internship|praktik\s+kerja)\b/i.test(normalized);
-
-    const dynamicAspects = [];
-    if (isCertification) dynamicAspects.push('certification');
-    if (isTraining) dynamicAspects.push('training');
-    if (isCooperation) dynamicAspects.push('cooperation');
-    if (isInternship) dynamicAspects.push('internship');
-    if (isCareer) dynamicAspects.push('career_services');
-    dynamicAspects.push('service_info', 'program_info');
-
-    // Generic broad inquiry detection: asks about program/service broadly without specifying a concrete sub-aspect
-    const isBroadProgramInquiry = !isCertification && !isTraining && !isCooperation && !isInternship &&
-      /\b(?:program|info|informasi|tentang|apa\s+itu|ada\s+apa|tersedia)\b/i.test(normalized);
-
+    const isLLC = (campusServiceEntity && /language\s+learning\s+center|llc/i.test(campusServiceEntity.canonical)) ||
+      /\b(?:llc|language\s+learning\s+center)\b/i.test(normalized);
     return {
       domain: isCareer ? 'CAREER_CENTER' : 'CAMPUS_SERVICE',
       intent: isCareer ? 'CAREER_CENTER_INQUIRY' : 'CAMPUS_SERVICE_INQUIRY',
       retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: isCareer ? 'PROVIDE_CAREER_CENTER_INFO' : 'PROVIDE_CAMPUS_SERVICE_INFO',
-      aspects: dynamicAspects,
-      relation: isCareer ? 'CAREER_SERVICES' : 'CAMPUS_SERVICE',
-      isBroadInquiry: Boolean(isBroadProgramInquiry)
+      aspects: isCareer ? ['internship', 'career_services', 'cooperation', 'facilities'] : (isLLC ? ['facilities', 'campus_service', 'service_info'] : ['service_info', 'support', 'facilities']),
+      relation: isCareer ? 'CAREER_SERVICES' : 'CAMPUS_SERVICE'
     };
   }
 
@@ -406,7 +390,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
     if (hasLocationSignal) {
       intent = 'STUDY_LOCATION';
-      aspects.push('location', 'study_location');
+      aspects.push('location');
       relation = 'LOCATION_MODE';
     } else if (/\b(keuntungan(?:nya)?|manfaat(?:nya)?|benefit(?:nya)?|kelebihan(?:nya)?|gelar(?:nya)?)\b/i.test(normalized) ||
                /\b(keuntungan|manfaat|benefit|kelebihan|gelar)\b/i.test(unstemmed)) {
@@ -717,15 +701,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 13. Tuition Fee / Biaya Kuliah (Prioritized before PMB schedule when cost/fee is asked)
-  const isFeeContextFollowUp = (sessionData.activeDomain === 'TUITION_FEE' || sessionData.activeIntent === 'TUITION_FEE_INQUIRY') &&
-    /\b(?:gelombang|gel)\b/i.test(normalized) &&
-    !/\b(?:jadwal|kapan|tanggal|periode|deadline|batas|buka|tutup|dibuka|ditutup)\b/i.test(normalized);
-
-  const isWaveCostInquiry = /\b(?:gelombang|gel)\s+(?:khusus|sisipan|[0-9]+|[ivx]+)\s+(?:berapa|ada\s+potongan|ada\s+diskon|dapat\s+diskon|dapat\s+potongan)\b/i.test(normalized) ||
-    /\b(?:berapa|potongan|diskon)\b.*\b(?:gelombang|gel)\s+(?:khusus|sisipan|[0-9]+|[ivx]+)\b/i.test(normalized);
-
-  if (/\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized) ||
-      isFeeContextFollowUp || isWaveCostInquiry) {
+  if (/\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized)) {
     const isInstallmentProcedure =
       /\b(?:syarat|persyaratan|prosedur|tata\s*cara|cara(?:\s+mengajukan)?|bagaimana\s+mengajukan|pengajuan|dokumen|berkas|formulir)\b/i.test(normalized) &&
       /\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|mengangsur)\b/i.test(normalized);
@@ -788,8 +764,22 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 14b. Academic Events & Ceremonies (Yudisium, Wisuda, Academic Calendar)
   const isDegreeInquiry = /\b(?:gelar(?:\s+apa|nya)?|title)\b/i.test(normalized);
-  const hasAcademicEvent = !isDegreeInquiry && (entities.some(e => e.type === 'academic_event' || e.canonical === 'Yudisium' || e.canonical === 'Wisuda') ||
-    /\b(?:yudisium|wisuda|kalender\s+akademik)\b/i.test(normalized));
+  const isWisudaOrYudisium = !isDegreeInquiry && (entities.some(e => e.canonical === 'Yudisium' || e.canonical === 'Wisuda') ||
+    /\b(?:yudisium|wisuda)\b/i.test(normalized));
+  if (isWisudaOrYudisium) {
+    return {
+      domain: 'ACADEMIC_EVENT',
+      intent: 'GRADUATION_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_GRADUATION_INFO',
+      aspects: ['procedure', 'requirements'],
+      relation: 'ACADEMIC_GRADUATION'
+    };
+  }
+
+  const hasAcademicEvent = !isDegreeInquiry && (entities.some(e => e.type === 'academic_event') ||
+    /\b(?:kalender\s+akademik)\b/i.test(normalized));
   if (hasAcademicEvent) {
     return {
       domain: 'ACADEMIC_SCHEDULE',
@@ -818,8 +808,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   // 15. Admission / PMB Schedule & General Topic Opener
   if (/\b(?:pmb|pendaftaran|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
       (/\bdaftar\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized))) {
-    const isNow = TEMPORAL_NOW_REGEX.test(normalized) || /\b(?:masih|sekarang|saat ini)\b/i.test(normalized);
-    if (isNow && /\b(?:gelombang|buka|dibuka|tutup|ditutup|jadwal|periode|kapan)\b/i.test(normalized)) {
+    const isNow = TEMPORAL_NOW_REGEX.test(normalized);
+    if (isNow && /\b(?:gelombang|buka|tutup|jadwal|periode|kapan)\b/i.test(normalized)) {
       return {
         domain: 'PMB',
         intent: 'CURRENT_ENROLLMENT_STATUS',
@@ -1204,12 +1194,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     unsupportedEntityName: unsupportedName,
     entityResolutionStatus: isUnsupported ? 'UNSUPPORTED' : (effectiveTargetEntities.length > 0 ? 'RESOLVED' : 'UNRESOLVED'),
     isUnsupportedEntity: isUnsupported,
-    unsupportedProgramName: unsupportedName,
-    isBroadInquiry: Boolean(inferred.isBroadInquiry),
-    requiresClarification: Boolean(inferred.requiresClarification),
-    clarificationReason: inferred.clarificationReason || null,
-    clarificationPrompt: inferred.clarificationPrompt || null,
-    clarificationOptions: inferred.clarificationOptions || []
+    unsupportedProgramName: unsupportedName
   };
 
   // Synchronous shadow record if precomputed interpretation provided

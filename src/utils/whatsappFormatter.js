@@ -948,11 +948,18 @@ function sanitizeOutboundWhatsappText(text) {
   str = str.replace(/\[?DEBUG_TELEMETRY_[A-Z0-9_]+\]?:?\s*/gi, '');
   str = str.replace(/\{?\s*["']?(?:chatId|mappedIncomingIntent|incomingConfidence|effectiveSessionChatId)["']?\s*:[^,\n}]+,?\s*\}?/gi, '');
 
-  // 2. Strip string concatenation artifacts (e.g. '\n' + '... or ' + '...)
+  // 2. Strip raw spreadsheet, OCR, and table markers
+  str = str.replace(/\[Sheet:\s*[^\]]+\]\s*(?:Penjelasan\s+Prodi[^\n]*)?/gi, '');
+  str = str.replace(/\[Sheet:\s*[^\]]+\]/gi, '');
+  str = str.replace(/\[Program:\s*[^\]]+\]/gi, '');
+  str = str.replace(/\[(?:Bukti|Fakta|Tabel)\s*\d+\]/gi, '');
+  str = str.replace(/\|\s*col\d+\s*:\s*/gi, ' ');
+
+  // 3. Strip string concatenation artifacts (e.g. '\n' + '... or ' + '...)
   str = str.replace(/(?:['"`]\s*\+\s*['"`]|['"`]\s*\+\s*\\n\s*\+\s*['"`]|\\n\s*\+\s*['"`])/g, '\n');
   str = str.replace(/['"`]\s*\+\s*['"`]/g, '');
 
-  // 3. Strip stray trailing/leading braces from leaked objects
+  // 4. Strip stray trailing/leading braces from leaked objects
   str = str.replace(/^\s*\{+\s*/, '').replace(/\s*\}+\s*$/, '');
 
   return str.trim();

@@ -21,7 +21,7 @@
 const { getSession, updateSession } = require('./conversationState');
 const { decomposeQuery, decomposeQueryAsync, hasMultipleIntents } = require('./multiIntentResolver');
 const { buildRetrievalPlan } = require('./retrievalPlanner');
-const { retrieveCandidates, verifyCorpusReadiness } = require('./retrievalService');
+const { retrieveCandidates } = require('./retrievalService');
 const { arbitrateEvidence } = require('./evidenceArbiter');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('./answerabilityGate');
 const groundedAnswerGenerator = require('./groundedAnswerGenerator');
@@ -282,29 +282,19 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     : await getSession(chatId);
   const sessionData = session ? (session.data || {}) : {};
 
-  // Check if current turn is responding to a pending clarification (Retrieve Clarification)
-  let effectiveQuery = rawQuery;
-  const { evaluateContextDependency } = require('./contextResolver');
-  const contextDep = evaluateContextDependency(rawQuery, sessionData);
-
-  if (contextDep && contextDep.reason === 'clarification_response' && sessionData.pendingClarification) {
-    const origQ = sessionData.pendingClarification.originalQuery || '';
-    effectiveQuery = `${origQ} ${rawQuery}`.trim();
-  }
-
   // 1. Decompose Query into SemanticFrames
   let subFrames;
   const isFrameReusable = options.semanticFrame &&
-    isSemanticFrameMatchingQuery(options.semanticFrame, effectiveQuery) &&
+    isSemanticFrameMatchingQuery(options.semanticFrame, rawQuery) &&
     typeof hasMultipleIntents === 'function' &&
-    !hasMultipleIntents(effectiveQuery);
+    !hasMultipleIntents(rawQuery);
 
   if (isFrameReusable) {
     subFrames = [options.semanticFrame];
   } else {
     subFrames = (typeof decomposeQueryAsync === 'function' && !options.syncOnly)
-      ? await decomposeQueryAsync(effectiveQuery, sessionData, options)
-      : decomposeQuery(effectiveQuery, sessionData);
+      ? await decomposeQueryAsync(rawQuery, sessionData, options)
+      : decomposeQuery(rawQuery, sessionData);
   }
 
   const subQueryResults = [];
@@ -450,47 +440,12 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     frame.retrievalPlan = plan;
 
     // 3. Stage A: Wide Candidate Recall (fetch top 16 candidates)
-    const isCorpusReady = verifyCorpusReadiness(options.context || {}).isReady;
-    let candidates = await retrieveCandidates(plan, { topK: 16 });
+    const candidates = await retrieveCandidates(plan, { topK: 16 });
 
     // 4. Stage B: Strict Evidence Arbitration (Hard Entity Lock, Temporal, Aspect)
-    let arbitrated = arbitrateEvidence(candidates, plan);
-
-    // ReAct Reflection: If arbitration accepted 0 candidates, evaluate whether to retry with relaxed plan (Missing Evidence? -> Re-retrieve)
-    if (arbitrated.accepted.length === 0 && !frame.requiresClarification && isCorpusReady) {
-      const relaxedPlan = {
-        ...plan,
-        requiredAspects: [],
-        queryVariants: [
-          ...(plan.targetEntities || []),
-          rawQuery,
-          effectiveQuery
-        ].filter(Boolean)
-      };
-      if (relaxedPlan.retrievalContract) {
-        relaxedPlan.retrievalContract = {
-          ...relaxedPlan.retrievalContract,
-          aspectFilter: null,
-          metadataPolicy: {
-            ...relaxedPlan.retrievalContract.metadataPolicy,
-            hardFilters: ['entity']
-          }
-        };
-      }
-      const retryCandidates = await retrieveCandidates(relaxedPlan, { topK: 16 });
-      if (retryCandidates && retryCandidates.length > 0) {
-        const retryArbitrated = arbitrateEvidence(retryCandidates, relaxedPlan);
-        if (retryArbitrated.accepted.length > 0) {
-          candidates = retryCandidates;
-          arbitrated = retryArbitrated;
-        }
-      }
-    }
-
+    const arbitrated = arbitrateEvidence(candidates, plan);
     arbitrated.retrievalPlan = plan;
     arbitrated.sessionData = sessionData;
-    arbitrated.corpusUnavailable = !isCorpusReady;
-    arbitrated.retrievalStatus = isCorpusReady ? 'OK' : 'CORPUS_UNAVAILABLE';
     arbitrated.rawAccepted = [...arbitrated.accepted];
     if (arbitrated.accepted.length > 10) {
       arbitrated.accepted = arbitrated.accepted.slice(0, 10);
@@ -522,9 +477,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         const verifFn = options.finalAnswerVerifier || finalAnswerVerifier.verifyFinalAnswer || verifyFinalAnswer;
         verification = verifFn(synthesis.answer, frame, arbitrated);
 
-        // Deterministic Recovery if synthesis failed verification or yielded unjustified SAFE_UNKNOWN on ANSWERABLE/PARTIAL turn
-        const isUnjustifiedSafeUnknown = (verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN || !verification.pass) &&
-          (answerability.status === ANSWERABILITY_STATUS.ANSWERABLE || answerability.status === ANSWERABILITY_STATUS.PARTIAL);
+        // Deterministic Recovery if synthesis failed verification or yielded unjustified SAFE_UNKNOWN on ANSWERABLE turn
+        const isUnjustifiedSafeUnknown = verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN &&
+          answerability.status === ANSWERABILITY_STATUS.ANSWERABLE;
 
         if (verification.outcome === VERIFICATION_OUTCOME.VERIFICATION_FAILED || isUnjustifiedSafeUnknown) {
           logger.warn({ reason: verification.reason, outcome: verification.outcome }, '[Orchestrator] Synthesized answer flagged by verifier, attempting deterministic recovery');
@@ -574,8 +529,6 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
             /\b(?:perwalian|dosen\s*wali|bimbingan\s+perwalian)\b/i.test(frame.rawQuery || '');
           if (isAdvisingInquiry) {
             answer = answerability.guidance || 'Bimbingan perwalian dengan Dosen Wali di ITB STIKOM Bali merupakan proses akademik wajib sebelum perkuliahan semester baru untuk menyetujui Kartu Rencana Studi (KRS). Rincian prosedur resmi penanganan keterlambatan perwalian maupun kontak bantuan teknis belum dapat dipastikan dari dokumen resmi yang terverifikasi saat ini. Mahasiswa disarankan untuk langsung berkonsultasi dengan Dosen Wali masing-masing atau menghubungi Bagian Layanan Akademik (BAAK) ITB STIKOM Bali.';
-          } else if (synthesis && (synthesis.budgetExceeded || synthesis.budgetReason)) {
-            answer = 'Mohon maaf, layanan asisten cerdas saat ini mencapai batas kuota operasional harian. Silakan hubungi bagian informasi kampus ITB STIKOM Bali untuk bantuan langsung.';
           } else {
             answer = answerability.guidance || 'Informasi resmi mengenai hal tersebut belum tercantum secara lengkap dalam panduan yang tersedia.';
           }
@@ -591,16 +544,6 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
           };
         }
       }
-    } else if (answerability.status === ANSWERABILITY_STATUS.CLARIFY) {
-      answer = answerability.guidance || 'Mohon maaf, bisakah diperjelas informasi spesifik apa yang Kakak butuhkan terkait hal tersebut agar dapat dibantu dengan tepat?';
-      verification = {
-        pass: true,
-        outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
-        status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
-        reason: 'clarification_requested',
-        isGrounded: true,
-        handledSafely: true
-      };
     } else if (answerability.status === ANSWERABILITY_STATUS.ESCALATE) {
       answer = answerability.guidance || 'Untuk kendala perwalian atau administrasi, silakan menghubungi dosen wali atau bagian akademik kampus.';
       verification = {
@@ -625,11 +568,9 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       };
     }
 
-    const subStatus = answerability.status === ANSWERABILITY_STATUS.CLARIFY
-      ? 'needs_clarification'
-      : ((answerability.status === ANSWERABILITY_STATUS.UNKNOWN || verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN)
-        ? 'corpus_gap'
-        : undefined);
+    const subStatus = (answerability.status === ANSWERABILITY_STATUS.UNKNOWN || verification.outcome === VERIFICATION_OUTCOME.SAFE_UNKNOWN)
+      ? 'corpus_gap'
+      : undefined;
 
     subQueryResults.push({
       frame,
@@ -682,13 +623,18 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       else newActiveEntity = sessionData.activeEntity || null;
       newPreservedEntity = null;
     } else if (isCampusWide) {
-      // Campus-wide query without explicit entity: isolate activeEntity to background
-      newActiveEntity = null;
-      if (sessionData.activeEntity) {
-        newPreservedEntity = sessionData.activeEntity;
+      if (primaryFrame.intent === 'CONTACT_INQUIRY' && sessionData.activeEntity) {
+        newActiveEntity = sessionData.activeEntity;
+      } else {
+        // Campus-wide query without explicit entity: isolate activeEntity to background
+        newActiveEntity = null;
+        if (sessionData.activeEntity) {
+          newPreservedEntity = sessionData.activeEntity;
+        }
       }
     } else if (primaryFrame.domain === sessionData.activeDomain ||
-               ['ACADEMIC_CURRICULUM', 'TUITION_FEE', 'ACADEMIC_PROGRAM', 'ACADEMIC_ADMISSION', 'PMB', 'INTERNATIONAL'].includes(primaryFrame.domain)) {
+               ['ACADEMIC_CURRICULUM', 'TUITION_FEE', 'ACADEMIC_PROGRAM', 'ACADEMIC_ADMISSION', 'PMB', 'INTERNATIONAL'].includes(primaryFrame.domain) ||
+               ['CONTACT_INQUIRY', 'ADMISSION_PROCEDURE', 'ADMISSION_REQUIREMENTS'].includes(primaryFrame.intent)) {
       newActiveEntity = sessionData.activeEntity || null;
     } else {
       newActiveEntity = null;
@@ -708,20 +654,6 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       }
     }
 
-    const needsClarify = subQueryResults.some(s => s.status === 'needs_clarification');
-    const newPendingClarification = needsClarify
-      ? {
-          originalQuery: rawQuery,
-          frame: primaryFrame,
-          clarificationPrompt: finalAnswer,
-          options: subQueryResults[0]?.answerabilityDetails?.options || []
-        }
-      : null;
-
-    const newClarificationTurnCount = needsClarify
-      ? ((sessionData.clarificationTurnCount || 0) + 1)
-      : 0;
-
     await updateSession(chatId, {
       dataPatch: {
         activeDomain: primaryFrame.domain,
@@ -731,8 +663,6 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         activeEntity: newActiveEntity,
         preservedBackgroundEntity: newPreservedEntity,
         lastActiveWave: currentWave || sessionData.lastActiveWave || null,
-        pendingClarification: newPendingClarification,
-        clarificationTurnCount: newClarificationTurnCount,
         lastQuery: rawQuery,
         lastAnswer: finalAnswer
       }
