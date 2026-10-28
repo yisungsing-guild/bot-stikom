@@ -1667,7 +1667,11 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
       }
 
       const dnuiAnswer = `Program Double Degree International Class untuk **S1 Bisnis Digital** diselenggarakan bekerjasama dengan **Dalian Neusoft University of Information (DNUI), China**.\n\n` +
-        `• **Lokasi & Periode Studi (Skema 2+2)**: Perkuliahan **tidak seluruhnya di STIKOM Bali**. Mahasiswa menempuh 2 tahun pertama di ITB STIKOM Bali, dan 2 tahun berikutnya menjalani perkuliahan langsung (onsite) di kampus DNUI di Dalian, China.\n` +
+        `• **Skema Perkuliahan (Masa Studi 4 Tahun)**: Perkuliahan **tidak seluruhnya di STIKOM Bali**, melainkan dirancang secara bertahap:\n` +
+        `  - **Tahun 1 & 2**: Mahasiswa mengikuti perkuliahan dengan kurikulum ITB STIKOM Bali di Indonesia.\n` +
+        `  - **Tahun 3**: Mahasiswa mengikuti perkuliahan secara online dengan kurikulum dari DNUI.\n` +
+        `  - **Tahun 4**: Mahasiswa melanjutkan perkuliahan secara langsung (onsite) di kampus DNUI di Dalian, China (mahasiswa mendapatkan fasilitas asrama/dormitory shared room gratis dari DNUI).\n` +
+        `• **Program Studi Mitra**: Kolaborasi program studi **S1 Bisnis Digital** (ITB STIKOM Bali) dan **E-Commerce** (DNUI).\n` +
         degreeSection +
         `Untuk informasi pendaftaran dan rincian biaya program DNUI, silakan hubungi bagian admisi internasional ITB STIKOM Bali melalui https://pmb.stikom-bali.ac.id.`;
       return appendMissingAspectNote(dnuiAnswer);
@@ -1721,8 +1725,8 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
         `   • Bekerja sama dengan **Universitas Teknologi Bandung (UTB)**.\n` +
         `   • Mahasiswa menempuh perkuliahan pada prodi **S1 Bisnis Digital** (ITB STIKOM Bali) dan **S1 Desain Komunikasi Visual / DKV** (UTB), dengan gelar ganda **S.Bns.** dan **S.Ds.**\n\n` +
         `2. **Program International Dual Degree**:\n` +
-        `   • **Dalian Neusoft University of Information (DNUI), China**: Program untuk **S1 Bisnis Digital** (skema 2+2, perkuliahan di Bali dan Dalian, gelar **S.Bns.** dan **B.M.**).\n` +
-        `   • **HELP University, Malaysia**: Program untuk **S1 Sistem Informasi** (kurikulum terintegrasi HELP University di Bali, gelar **S.Kom.** dan **BIT**).\n\n` +
+        `   • **Dalian Neusoft University of Information (DNUI), China**: Program untuk prodi **S1 Bisnis Digital & E-Commerce** (masa studi 4 tahun: Tahun 1-2 di Bali, Tahun 3 online DNUI, Tahun 4 onsite di Dalian China, gelar **S.Bns.** dan **BM / Bachelor of Management**).\n` +
+        `   • **HELP University, Malaysia**: Program untuk prodi **S1 Sistem Informasi** (masa studi 4 tahun full offline di Bali dengan kurikulum HELP, gelar **S.Kom.** dan **BIT / Bachelor of Information Technology**).\n\n` +
         `Apakah Kakak tertarik untuk mengetahui lebih lanjut mengenai program Double Degree nasional (UTB) atau internasional (DNUI / HELP)?`;
       return appendMissingAspectNote(genericDdAnswer);
     }
@@ -1737,7 +1741,30 @@ Pendaftaran resmi dapat diakses melalui portal https://pmb.stikom-bali.ac.id.`;
   const isContact = semanticFrame.intent === 'CONTACT_INQUIRY' ||
     /\b(?:kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp)?(?:nya)?|telepon(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|hubungi|narahubung(?:nya)?|contact(?:s)?)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
 
+  const isProcedure = semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
+    /\b(?:cara\s+(?:daftar|mendaftar|pendaftaran)|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+pendaftaran|how\s+to\s+apply|how\s+to\s+register)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+  const isRequirements = semanticFrame.intent === 'ADMISSION_REQUIREMENTS' ||
+    /\b(?:syarat(?:\s+pendaftaran|\s+masuk|\s+daftar)?|persyaratan(?:\s+pendaftaran|\s+masuk|\s+daftar)?|admission\s+requirements)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
+
   if (!isContact && (isUtbInquiry || isDkvInquiry)) {
+    if (isProcedure) {
+      const utbProcedureAnswer = `Berikut alur dan cara pendaftaran untuk **Program Dual Degree Nasional (ITB STIKOM Bali – UTB Bandung)**:\n\n` +
+        `1. **Pendaftaran Online**: Calon mahasiswa mengakses portal resmi PMB ITB STIKOM Bali di **https://pmb.stikom-bali.ac.id**.\n` +
+        `2. **Pemilihan Program**: Memilih peminatan program **Dual Degree Nasional** (kolaborasi prodi S1 Bisnis Digital ITB STIKOM Bali dan S1 Desain Komunikasi Visual UTB Bandung).\n` +
+        `3. **Pengunggahan Berkas**: Mengunggah dokumen pendaftaran yang dipersyaratkan (seperti scan Ijazah/Surat Keterangan Lulus SMA/SMK/sederajat, Kartu Keluarga, dan KTP).\n` +
+        `4. **Verifikasi & Registrasi**: Melakukan verifikasi administrasi dan menyelesaikan pembayaran registrasi sesuai gelombang pendaftaran yang berlaku.\n\n` +
+        `Untuk pendampingan pendaftaran langsung, Kakak juga dapat mengunjungi Ruang Layanan PMB di Kampus Renon ITB STIKOM Bali atau menghubungi nomor resmi (0361) 244445.`;
+      return appendMissingAspectNote(utbProcedureAnswer);
+    }
+
+    if (isRequirements) {
+      const utbRequirementsAnswer = `Persyaratan pendaftaran untuk **Program Dual Degree Nasional (ITB STIKOM Bali – UTB Bandung)** meliputi:\n\n` +
+        `• **Syarat Pendidikan**: Lulusan SMA/SMK/MA atau sederajat dari semua jurusan.\n` +
+        `• **Kelengkapan Dokumen**: Menyiapkan scan ijazah atau Surat Keterangan Lulus (SKL), Kartu Keluarga (KK), KTP/identitas diri, dan pas foto terbaru.\n` +
+        `• **Pendaftaran & Seleksi**: Mengisi formulir pendaftaran melalui portal https://pmb.stikom-bali.ac.id dan mengikuti tahapan seleksi administrasi PMB yang ditentukan.\n\n` +
+        `Informasi berkas khusus dan jadwal gelombang pendaftaran dapat dikonfirmasi langsung melalui layanan PMB ITB STIKOM Bali.`;
+      return appendMissingAspectNote(utbRequirementsAnswer);
+    }
     const isSpecificDkvQuery = isDkvInquiry && !/\b(?:double\s+degree|dual\s+degree)\b/i.test(rawQuery);
     const utbIntro = isSpecificDkvQuery
       ? `Program studi **Desain Komunikasi Visual (DKV)** bukan merupakan program studi mandiri di ITB STIKOM Bali, melainkan diselenggarakan melalui jalur kemitraan resmi **Program Dual Degree (Gelar Ganda) Nasional** bekerja sama dengan **Universitas Teknologi Bandung (UTB)**:\n\n`

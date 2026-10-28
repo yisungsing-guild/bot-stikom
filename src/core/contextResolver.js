@@ -209,12 +209,14 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
   }
 
   // Check 3: Attribute Continuation without explicit entity (e.g. "gelar apa yang didapat dan berapa lama masa studi?" / "what degree would I receive and how long would the program take?")
-  const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|rincian\s+biaya|biaya(?:\s+kuliah)?|spp|dpp|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation)\b/i.test(query);
-  if (isAttributeInquiry && sessionData.activeEntity) {
+  const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|rincian\s+biaya|biaya(?:\s+kuliah)?|spp|dpp|kontak(?:nya)?|nomor(?:nya)?|telepon|whatsapp|wa|narahubung(?:nya)?|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation|contact(?:s)?)\b/i.test(query);
+  const isProceduralInquiry = /\b(?:bagaimana\s+cara\s+(?:daftar|mendaftar)|cara\s+(?:daftar|mendaftar|pendaftaran)|alur\s+pendaftaran|prosedur\s+pendaftaran|syarat(?:\s+pendaftaran|\s+masuk|\s+daftar)?|persyaratan(?:\s+pendaftaran|\s+masuk|\s+daftar)?|kapan\s+pendaftaran|jadwal\s+pendaftaran|tahapan\s+pendaftaran|how\s+to\s+apply|how\s+to\s+register|admission\s+procedure|registration\s+procedure|admission\s+requirements)\b/i.test(query);
+
+  if ((isAttributeInquiry || isProceduralInquiry) && sessionData.activeEntity) {
     const isFee = /\b(rincian\s+biaya|biaya|spp|dpp)\b/i.test(query);
     return {
       shouldInherit: true,
-      reason: 'attribute_continuation',
+      reason: isAttributeInquiry ? 'attribute_continuation' : 'procedural_continuation',
       inheritedDomain: isFee ? 'TUITION_FEE' : (sessionData.activeDomain || 'ACADEMIC_PROGRAM'),
       inheritedEntity: sessionData.activeEntity
     };

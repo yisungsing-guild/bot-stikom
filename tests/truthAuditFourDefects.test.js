@@ -507,10 +507,13 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
       const frameDnui = resolveSemanticFrame(dnuiDurationQuery, {});
       const synthDnui = await synthesizeAnswer(frameDnui, {
         accepted: [{
-          text: 'Program Double Degree DNUI skema 2+2: 2 tahun di ITB STIKOM Bali dan 2 tahun di kampus DNUI di Dalian, China.'
+          text: 'Program Double Degree DNUI: masa studi 4 tahun. Tahun 1 & 2 di Indonesia, Tahun 3 online DNUI, Tahun 4 onsite di kampus DNUI di Dalian, China.'
         }]
       });
-      expect(synthDnui.answer).toMatch(/2\s*\+\s*2/);
+      expect(synthDnui.answer).toMatch(/4\s+Tahun/i);
+      expect(synthDnui.answer).toMatch(/Tahun\s+1\s*&\s*2/i);
+      expect(synthDnui.answer).toMatch(/Tahun\s+3.*online/i);
+      expect(synthDnui.answer).toMatch(/Tahun\s+4.*onsite/i);
       expect(synthDnui.answer).toMatch(/Dalian|China/i);
     });
 
@@ -526,6 +529,7 @@ describe('Targeted Regression Tests: 4 Truth Audit Defect Fixes', () => {
       expect(synth.answer).toMatch(/DNUI/i);
       expect(synth.answer).toMatch(/HELP/i);
     });
+
 
     test('6c: Wisuda inquiry distinguishes from PMB, removes extraction tags, and states date limitation', async () => {
       const query = 'Kapan jadwal wisuda?';

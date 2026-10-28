@@ -421,6 +421,12 @@ const CANONICAL_ENTITIES = [
     role: 'double_degree',
     family: 'international_program',
     scope: 'international',
+    isUmbrella: true,
+    memberEntities: [
+      'Dual Degree UTB',
+      'Double Degree HELP University',
+      'Double Degree DNUI'
+    ],
     aliases: [
       'international dual degree',
       'dual degree',
@@ -446,7 +452,9 @@ const CANONICAL_ENTITIES = [
     aliases: [
       'dnui', 'dalian neusoft', 'dalian', 'double degree dnui', 'dual degree dnui',
       'double degree china', 'dual degree china', 'double degree cina', 'dual degree cina',
-      'double degree ke china', 'dual degree ke china', 'double degree ke cina', 'dual degree ke cina'
+      'double degree ke china', 'dual degree ke china', 'double degree ke cina', 'dual degree ke cina',
+      'program china', 'program cina', 'program ke china', 'program ke cina',
+      'ke china', 'ke cina', 'kuliah ke china', 'kuliah ke cina'
     ]
   },
   {
@@ -466,7 +474,8 @@ const CANONICAL_ENTITIES = [
     aliases: [
       'help university', 'help', 'double degree help', 'dual degree help',
       'double degree malaysia', 'dual degree malaysia',
-      'double degree ke malaysia', 'dual degree ke malaysia'
+      'double degree ke malaysia', 'dual degree ke malaysia',
+      'program malaysia', 'program ke malaysia', 'ke malaysia', 'kuliah ke malaysia'
     ]
   },
   {

@@ -58,8 +58,10 @@ function buildRetrievalPlan(semanticFrame) {
     const isMutuallyExclusive = canonicalObj && canonicalObj.family &&
       (MUTUALLY_EXCLUSIVE_FAMILIES.has(canonicalObj.family) || (canonicalObj.role && canonicalObj.role === 'double_degree'));
     if (isMutuallyExclusive) {
+      const memberSet = new Set((canonicalObj.memberEntities || []).map(m => m.toLowerCase()));
       const siblings = CANONICAL_ENTITIES.filter(other => {
         if (targetEntitySet.has(other.canonical.toLowerCase())) return false;
+        if (canonicalObj.isUmbrella && memberSet.has(other.canonical.toLowerCase())) return false;
         if (other.family !== canonicalObj.family) return false;
         if (canonicalObj.role && other.role) {
           return other.role === canonicalObj.role;
@@ -278,8 +280,32 @@ function buildRetrievalPlan(semanticFrame) {
     queryVariants.push('rincian Biaya UTB Tahun Ajaran 2026-2027.pdf');
   }
 
-  // International Program & Student Exchange query variants (guarded: do not inject generic student exchange for UTB/DKV)
-  if (!isDkvOrUtb && (domain === 'INTERNATIONAL' || (aspects && (aspects.includes('international') || aspects.includes('student_exchange'))))) {
+  // International Program & Double Degree query variants
+  const isDDInquiry = targetEntities.some(e => /double\s*degree|dual\s*degree/i.test(String(e))) ||
+    /\b(?:double\s+degree|dual\s+degree|dua\s+gelar|gelar\s+ganda)\b/i.test(normalizedText);
+  const isHelpInquiry = targetEntities.some(e => /HELP/i.test(String(e))) || /\bhelp(?:\s+university)?\b/i.test(normalizedText);
+  const isDnuiInquiry = targetEntities.some(e => /DNUI|Dalian/i.test(String(e))) || /\b(?:dnui|dalian(?:\s+neusoft)?)\b/i.test(normalizedText);
+
+  if (isDDInquiry) {
+    if (isHelpInquiry) {
+      queryVariants.push('program double degree HELP University Malaysia S1 Sistem Informasi Bachelor of Information Technology BIT');
+      queryVariants.push('CHATBOT - Double Degree.docx HELP University Malaysia');
+    }
+    if (isDnuiInquiry) {
+      queryVariants.push('program double degree Dalian Neusoft University of Information DNUI China S1 Bisnis Digital Bachelor of Management BM');
+      queryVariants.push('CHATBOT - Double Degree.docx DNUI China Dalian Neusoft');
+    }
+    if (!isHelpInquiry && !isDnuiInquiry && !isDkvOrUtb) {
+      queryVariants.push('program double degree gelar ganda ITB STIKOM Bali universitas teknologi bandung UTB HELP University Malaysia DNUI China');
+      queryVariants.push('CHATBOT - Double Degree.docx');
+      queryVariants.push('rincian Biaya UTB Tahun Ajaran 2026-2027.pdf');
+    }
+  }
+
+  // Student Exchange query variants (guarded: do not inject generic student exchange for UTB/DKV or Double Degree)
+  const isExchange = targetEntities.some(e => /exchange|pertukaran/i.test(String(e))) ||
+    /\b(?:exchange|pertukaran\s+(?:mahasiswa|pelajar)|gccp|study\s+abroad)\b/i.test(normalizedText);
+  if (!isDkvOrUtb && !isDDInquiry && (isExchange || domain === 'INTERNATIONAL' || (aspects && (aspects.includes('international') || aspects.includes('student_exchange'))))) {
     queryVariants.push('apa itu student exchange di ITB STIKOM Bali alur dan syarat');
     queryVariants.push('syarat mengikuti program student exchange pertukaran mahasiswa pelajar internasional');
     queryVariants.push('program internasional pertukaran mahasiswa student exchange kampus mitra luar negeri');
@@ -295,7 +321,7 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // PMB Inquiry & Procedure query variants
-  if (domain === 'PMB' || intent === 'GENERAL_PMB_INQUIRY' || intent === 'ADMISSION_PROCEDURE') {
+  if (domain === 'PMB' || intent === 'GENERAL_PMB_INQUIRY' || intent === 'ADMISSION_PROCEDURE' || intent === 'PROGRAM_PROCEDURE' || (aspects && (aspects.includes('procedure') || aspects.includes('requirements')))) {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`syarat pendaftaran dan prosedur alur ${ent}`);

@@ -677,7 +677,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     } else if (primaryFrame.domain === 'INTERNATIONAL') {
       const isDD = /\b(double\s*degree|dual\s*degree)\b/i.test(rawQuery);
       const isExchange = /\b(student\s*exchange|pertukaran\s*(?:pelajar|mahasiswa)|gccp)\b/i.test(rawQuery);
-      if (isDD) newActiveEntity = 'Double Degree';
+      if (isDD) newActiveEntity = 'International Dual Degree';
       else if (isExchange) newActiveEntity = 'Student Exchange';
       else newActiveEntity = sessionData.activeEntity || null;
       newPreservedEntity = null;
@@ -688,7 +688,7 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         newPreservedEntity = sessionData.activeEntity;
       }
     } else if (primaryFrame.domain === sessionData.activeDomain ||
-               ['ACADEMIC_CURRICULUM', 'TUITION_FEE', 'ACADEMIC_PROGRAM', 'ACADEMIC_ADMISSION'].includes(primaryFrame.domain)) {
+               ['ACADEMIC_CURRICULUM', 'TUITION_FEE', 'ACADEMIC_PROGRAM', 'ACADEMIC_ADMISSION', 'PMB', 'INTERNATIONAL'].includes(primaryFrame.domain)) {
       newActiveEntity = sessionData.activeEntity || null;
     } else {
       newActiveEntity = null;

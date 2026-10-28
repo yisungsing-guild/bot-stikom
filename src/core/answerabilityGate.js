@@ -293,6 +293,14 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
       if (Array.isArray(chunk.providedAspects)) {
         chunk.providedAspects.forEach(a => allProvidedAspects.add(a));
       }
+      const text = (chunk.text || '').toLowerCase();
+      if (/\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+pendaftaran|cara\s+mendaftar|pendaftaran\s+online|pmb\.stikom-bali\.ac\.id)\b/i.test(text)) {
+        allProvidedAspects.add('procedure');
+        allProvidedAspects.add('admission');
+      }
+      if (/\b(?:syarat|persyaratan|ijazah|berkas\s+pendaftaran|kelengkapan\s+dokumen)\b/i.test(text)) {
+        allProvidedAspects.add('requirements');
+      }
     }
 
     // Fallback: If metadata tags were missing but accepted evidence text contains the required content

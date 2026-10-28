@@ -177,6 +177,7 @@ tests/*
 !tests/feeComparisonEngine.paymentEvidence.test.js
 !tests/conversationalAcceptanceEngine.test.js
 !tests/comprehensiveMultiDomainAcceptance.test.js
+!tests/doubleDegreeSystemicContract.test.js
 !tests/fixtures/
 !tests/fixtures/candidateMetadataFixture.json
 

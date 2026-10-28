@@ -143,11 +143,23 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     'sarjana bisnis digital', 'sarjana sistem informasi', 'prodi bd', 'prodi si'
   ]);
 
+  const isUmbrellaInquiry = entities.some(e => {
+    const canon = e.canonical || e.name || String(e);
+    return /International Dual Degree/i.test(canon);
+  }) || (!entities.some(e => /UTB|DNUI|HELP/i.test(e.canonical || e.name || String(e))) && isDDInquiry);
+
+  const DD_MEMBER_ENTITIES = new Set([
+    'utb', 'universitas teknologi bandung', 'dual degree utb', 'double degree utb',
+    'dkv', 'desain komunikasi visual',
+    'help university', 'help', 'double degree help', 'dual degree help',
+    'dnui', 'dalian neusoft', 'dalian', 'double degree dnui', 'dual degree dnui'
+  ]);
+
   const isS2Target = entities.some(e => /s2|magister|pascasarjana/i.test(e.canonical || e.name || String(e)));
 
   function isComparativeSentence(sentence, excluded) {
     const hasContrast = /\b(berbeda\s+(?:dengan|halnya)|dibandingkan|perbedaan(?:nya)?|sedangkan|sementara|tidak\s+seperti|differs?\s+(?:from)?|compared\s+(?:to|with)|whereas|while|unlike|contrast|difference)\b/i.test(sentence);
-    const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan|pendaftar|calon\s+mahasiswa|matrikulasi|s1\s*\/\s*d4|d4|graduate|graduates|degree|background|bachelor|prerequisite|requirements)\b/i.test(sentence);
+    const isPrerequisite = /\b(?:lulusan|ijazah|latar\s+belakang|sarjana|prasyarat|syarat\s+masuk|persyaratan|pendaftar|calon\s+mahasiswa|matrikulasi|s1\s*\/\s*d4|d4|graduate|graduates|prior\s+degree|background|bachelor|prerequisite|requirements)\b/i.test(sentence) && !/\b(?:double|dual)\s+degree\b/i.test(sentence);
     const isInstitutionalListing = /\b(?:pilih\s+(?:program\s+studi|prodi)|pilihan\s+(?:prodi|program|jenjang)|jenjang\s+dan\s+program\s+studi|daftar\s+pilihan\s+prodi|ringkasan\s+dokumen)\b/i.test(sentence);
     const isS1PrereqForS2 = isS2Target && /^(?:s1|sarjana)\b/i.test(excluded) && (
       isPrerequisite ||
@@ -161,7 +173,7 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
   for (const excluded of excludedEntities) {
     if (excluded && excluded.length >= 4) {
       if (GENERIC_COMMON_WORDS.has(excluded.toLowerCase().trim())) continue;
-      if (isDDInquiry && DD_COLLABORATING_PROGRAMS.has(excluded.toLowerCase().trim())) continue;
+      if (isDDInquiry && (DD_COLLABORATING_PROGRAMS.has(excluded.toLowerCase().trim()) || (isUmbrellaInquiry && DD_MEMBER_ENTITIES.has(excluded.toLowerCase().trim())))) continue;
       const escaped = excluded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`\\b${escaped}\\b`, 'i');
       if (regex.test(text)) {
