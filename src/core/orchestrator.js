@@ -596,8 +596,19 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
     });
   }
 
-  // Combine answers if multiple subqueries
-  const finalAnswer = subQueryResults.map(r => r.answer).filter(Boolean).join('\n\n');
+  // Combine answers if multiple subqueries with deduplication
+  const seenAnswerNorms = new Set();
+  const uniqueAnswers = [];
+  for (const r of subQueryResults) {
+    const ans = (r.answer || '').trim();
+    if (!ans) continue;
+    const norm = ans.toLowerCase().replace(/\s+/g, ' ');
+    if (!seenAnswerNorms.has(norm)) {
+      seenAnswerNorms.add(norm);
+      uniqueAnswers.push(ans);
+    }
+  }
+  const finalAnswer = uniqueAnswers.join('\n\n');
 
   // Update session state with authoritative current turn domain & entity
   const owner = (turnControl && turnControl.isFallbackAccepted()) ? 'fallback' : 'phase1';

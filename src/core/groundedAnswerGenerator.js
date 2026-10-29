@@ -629,6 +629,10 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
   // Helper to append missing aspect notes
   function appendMissingAspectNote(answerText) {
     if (!missingAspects || missingAspects.length === 0) return answerText;
+    // Suppress redundant admissions contact note if answer already provides verified official contacts or admissions guidance
+    if (/\(0361\)\s*244445|info@stikom-bali\.ac\.id|admisi\s+kampus|layanan\s+pmb|ruang\s+layanan\s+pmb/i.test(answerText)) {
+      return answerText;
+    }
     if (userLang === 'en') {
       const aspectLabelsEn = {
         career_prospects: 'career prospects / job opportunities',
@@ -689,11 +693,22 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     }
   }
 
-  // Campus Location Inquiry
-  if (semanticFrame.intent === 'CAMPUS_LOCATION' ||
-      /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus\s+(?:renon|jimbaran|abiansemal)|dimana\s+kampus)\b/i.test(rawQuery)) {
+  // Campus Location & Count Inquiry
+  const isAskingLocationOrCount = semanticFrame.intent === 'CAMPUS_LOCATION' ||
+    /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus\s+(?:renon|jimbaran|abiansemal)|dimana\s+kampus|berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|jumlah\s+kampus|lokasi(?:nya)?\s+di\s*mana|di\s*mana(?:\s+saja)?\s+lokasi(?:nya)?)\b/i.test(rawQuery);
+
+  if (isAskingLocationOrCount) {
+    const isCountQuery = /\b(?:berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|berapa\s+jumlah\s+kampus|jumlah\s+kampus|berapa\s+banyak\s+kampus|berapa\s+(?:ada\s+)?cabang|ada\s+berapa\s+cabang)\b/i.test(rawQuery);
+    const countIntro = isCountQuery
+      ? (userLang === 'en'
+          ? `ITB STIKOM Bali has **3 (three)** strategic campus locations in Bali:\n\n`
+          : `ITB STIKOM Bali memiliki **3 (tiga)** lokasi kampus yang strategis di Bali:\n\n`)
+      : (userLang === 'en'
+          ? `ITB STIKOM Bali has three strategic campus locations in Bali:\n\n`
+          : `ITB STIKOM Bali memiliki tiga lokasi kampus yang strategis di Bali:\n\n`);
+
     const campusLocationAnswer = userLang === 'en'
-      ? `ITB STIKOM Bali has three strategic campus locations in Bali:\n\n` +
+      ? `${countIntro}` +
         `1. **Kampus Renon (Main Campus)**:\n` +
         `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
         `2. **Kampus Jimbaran**:\n` +
@@ -701,7 +716,7 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
         `3. **Kampus Abiansemal**:\n` +
         `   Jl. Jenderal Sudirman, Blahkiuh, Abiansemal, Badung, Bali.\n\n` +
         `All three campus locations provide academic consultation, student services, and PMB registration. Feel free to ask if you need further directions or information!`
-      : `ITB STIKOM Bali memiliki tiga lokasi kampus yang strategis di Bali:\n\n` +
+      : `${countIntro}` +
         `1. **Kampus Renon (Kampus Pusat)**:\n` +
         `   Jl. Raya Puputan No. 86, Renon, Denpasar, Bali.\n\n` +
         `2. **Kampus Jimbaran**:\n` +

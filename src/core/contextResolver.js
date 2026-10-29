@@ -60,6 +60,13 @@ function hasExplicitPronounReference(query) {
   if (!query || typeof query !== 'string') return false;
   const q = query.trim().toLowerCase();
 
+  // If "itu" is used as a topicalizer after an explicit noun/program phrase (e.g., "kalau double degree dengan utb itu...", "kalau prodi x itu..."),
+  // it is not an anaphoric pronoun referring to a prior turn entity.
+  const hasTopicalizedSubjectBeforeItu = /\b(?:kalau|kalo|tentang|mengenai)\s+([a-z0-9\s]{3,})\s+itu\b/i.test(q);
+  if (hasTopicalizedSubjectBeforeItu) {
+    return false;
+  }
+
   // 1. Explicit standalone pronouns & demonstratives (Indonesian & English)
   if (/\b(?:itu|tersebut|tadi|yang\s+itu|dengannya|nya|the\s+program|the\s+major|the\s+degree|it|that|this)\b/i.test(q)) {
     return true;
@@ -141,28 +148,48 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     };
   }
 
-  // Cross-domain isolation from non-academic session (UKM / facility / scholarship) to academic fee / program inquiry
-  const isAcademicProgramOrFeeQuery = /\b(?:biaya(?:\s+kuliah)?|spp|sks|kurikulum|matkul|prodi|jurusan|pmb|pendaftaran\s+mahasiswa)\b/i.test(query) &&
+  // Cross-domain isolation: Explicit academic / international program inquiries must NOT inherit non-academic session context (UKM, facilities, etc.)
+  const hasExplicitAcademicOrInternationalTopic = /\b(?:double\s+degree|dual\s+degree|gelar\s+ganda|utb|universitas\s+teknologi\s+bandung|dnui|help\s+university|program\s+internasional|kelas\s+internasional|pertukaran\s+mahasiswa|student\s+exchange|prodi|jurusan|program\s+studi|s1|s2|d3|d4|sarjana|diploma|magister|biaya(?:\s+kuliah)?|spp|sks|kurikulum|matkul|pmb|pendaftaran\s+mahasiswa)\b/i.test(query) &&
     !/\b(?:biaya\s+parkir|sewa\s+gedung)\b/i.test(query);
+
   const isNonAcademicSession = sessionData.activeDomain && (
     sessionData.activeDomain.startsWith('ORGANIZATION') ||
     sessionData.activeDomain === 'FACILITIES' ||
     sessionData.activeDomain === 'CAMPUS_SERVICE' ||
     sessionData.activeEntity?.family === 'student_organization' ||
     sessionData.activeEntity?.family === 'campus_service' ||
-    sessionData.activeEntity?.family === 'facility'
+    sessionData.activeEntity?.family === 'facility' ||
+    sessionData.activeEntity === 'Kampus ITB STIKOM Bali'
   );
 
-  if (isAcademicProgramOrFeeQuery && isNonAcademicSession && !query.includes('tari') && !query.includes('ukm')) {
+  if (hasExplicitAcademicOrInternationalTopic && isNonAcademicSession && !query.includes('tari') && !query.includes('ukm')) {
     return {
       shouldInherit: false,
       reason: 'cross_domain_isolation'
     };
   }
 
+  // Campus count follow-up check (e.g. "Berapa ada kampus?", "Berapa jumlah kampus?")
+  const isCampusCountFollowup = (
+    /\b(?:berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|berapa\s+jumlah\s+kampus|jumlah\s+kampus|berapa\s+banyak\s+kampus|berapa\s+(?:ada\s+)?cabang|ada\s+berapa\s+cabang)\b/i.test(query) ||
+    (/\b(?:berapa\s+ada|ada\s+berapa|berapa\s+jumlah|berapa\s+banyak)\b/i.test(query) && /\b(?:kampus|cabang)\b/i.test(query)) ||
+    ((sessionData.activeDomain === 'FACILITIES' || sessionData.activeIntent === 'CAMPUS_LOCATION' || (sessionData.activeEntity && (sessionData.activeEntity.family === 'campus_location' || sessionData.activeEntity.type === 'campus' || String(sessionData.activeEntity).toLowerCase().includes('kampus')))) &&
+     /\b(?:berapa\s+ada|ada\s+berapa|berapa\s+jumlah|berapa\s+banyak|jumlahnya|banyaknya)\b/i.test(query))
+  );
+
+  if (isCampusCountFollowup) {
+    return {
+      shouldInherit: true,
+      reason: 'campus_count_followup',
+      inheritedDomain: 'FACILITIES',
+      inheritedIntent: 'CAMPUS_LOCATION',
+      inheritedEntity: sessionData.activeEntity || 'Kampus ITB STIKOM Bali'
+    };
+  }
+
   // Campus location follow-up check (e.g. "Lokasinya di mana saja?", "Di mana lokasinya?")
-  const isLocationFollowup = /\b(?:lokasi(?:nya)?|alamat(?:nya)?|di\s*mana(?:\s+saja)?|dimana(?:\s+saja)?)\b/i.test(query) &&
-    /\b(?:lokasi|alamat|di\s*mana|dimana|saja)\b/i.test(query) &&
+  const isLocationFollowup = (
+    /\b(?:lokasi(?:nya)?|alamat(?:nya)?|di\s*mana(?:\s+saja)?|dimana(?:\s+saja)?|mana\s+saja)\b/i.test(query) &&
     (sessionData.activeDomain === 'FACILITIES' ||
      sessionData.activeIntent === 'CAMPUS_LOCATION' ||
      (sessionData.activeEntity && (
@@ -170,7 +197,8 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
        sessionData.activeEntity.type === 'campus' ||
        sessionData.activeEntity === 'Kampus ITB STIKOM Bali' ||
        String(sessionData.activeEntity).toLowerCase().includes('kampus')
-     )));
+     )))
+  );
 
   if (isLocationFollowup) {
     return {

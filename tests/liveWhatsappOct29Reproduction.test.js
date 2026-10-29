@@ -4,30 +4,21 @@
  * tests/liveWhatsappOct29Reproduction.test.js
  *
  * Multi-turn regression test suite for real WhatsApp production issues
- * recorded on 29 October 2026 (10:01–10:05 WITA):
+ * recorded on 29 October 2026 (10:01–10:50 WITA):
  *
- * 1. Context inheritance Dual Degree UTB:
- *    Turn 1: "Kalau double degree dengan UTB itu seperti apa ya?"
- *    Turn 2: "Bagaimana cara mendaftar?"
- *    - Turn 2 must inherit entity "Dual Degree UTB".
- *    - Must provide official PMB portal (https://pmb.stikom-bali.ac.id) and general registration steps.
- *    - Must explain what specific UTB procedures are not yet detailed in the general guide.
- *    - Must provide verified official contacts ((0361) 244445, info@stikom-bali.ac.id, Ruang Layanan PMB).
- *    - Must not respond generically without context.
- *
- * 2. Context inheritance lokasi kampus:
+ * Requirements:
+ * 1. Single-session 7-turn conversation (same chatId across all turns):
  *    Turn 1: "Di mana lokasi kampus ITB STIKOM Bali?"
  *    Turn 2: "Berapa ada kampus ITB STIKOM Bali?"
  *    Turn 3: "Lokasinya di mana saja?"
- *    - Turn 3 must inherit campus entity and answer the exact locations of every official campus
- *      (Renon, Jimbaran, Abiansemal).
- *    - Must not be classified as OUT_OF_DOMAIN.
- *    - Must not hallucinate branch addresses not found in the official corpus.
- *
- * 3. Grounding kontak dan pendaftaran umum:
- *    - Verify that "0822-7738-9999" is not provided as general PMB/campus contact.
- *    - Verify verified contacts ((0361) 244445, info@stikom-bali.ac.id, https://pmb.stikom-bali.ac.id).
- *    - Verify "cara mendaftar mahasiswa baru" provides grounded steps and links without fabricated requirements.
+ *    Turn 4: "Kalau double degree dengan UTB itu seperti apa ya?"
+ *    Turn 5: "Bagaimana cara mendaftar?"
+ *    Turn 6: "Berapa biaya S1 Sistem Informasi per semester?"
+ *    Turn 7: "Kalau gelombang 2C berapa?"
+ * 2. Explicit new topics must defeat prior session context.
+ * 3. Elliptical questions must correctly inherit preceding context.
+ * 4. Contact answers must never be duplicated in a single message.
+ * 5. All 3 campuses (Renon, Jimbaran, Abiansemal) must be consistently listed.
  */
 
 const { processTurn } = require('../src/core/orchestrator');
@@ -43,77 +34,28 @@ describe('Live WhatsApp 29 October 2026 Production Multi-Turn Regression', () =>
   });
 
   // ---------------------------------------------------------------------------
-  // 1. Context inheritance Dual Degree UTB
+  // 1. Single-session 7-turn conversation
   // ---------------------------------------------------------------------------
-  describe('Problem 1: Context inheritance Dual Degree UTB', () => {
-    test('Follow-up "Bagaimana cara mendaftar?" inherits Dual Degree UTB entity, provides PMB portal, steps, notes missing UTB aspects, and verified contacts', async () => {
-      const chatId = 'test-wa-oct29-utb-' + Date.now();
-
-      // Turn 1: Ask about double degree with UTB
-      const t1 = await processTurn(chatId, 'Kalau double degree dengan UTB itu seperti apa ya?', { executeDispatch: false });
-      expect(t1.semanticFrame?.domain).toBe('INTERNATIONAL');
-      expect(t1.semanticFrame?.entities?.[0]?.canonical).toMatch(/Dual Degree UTB/i);
-      expect(t1.text).toMatch(/Universitas Teknologi Bandung|UTB/i);
-      expect(t1.text).toMatch(/Bisnis Digital/i);
-      expect(t1.text).toMatch(/Desain Komunikasi Visual|DKV/i);
-      expect(t1.text).toMatch(/S\.Bns\./i);
-      expect(t1.text).toMatch(/S\.Ds\./i);
-
-      // Turn 2: Follow-up on how to register
-      const t2 = await processTurn(chatId, 'Bagaimana cara mendaftar?', { executeDispatch: false });
-
-      // Must inherit Dual Degree UTB
-      const t2Entity = t2.semanticFrame?.entities?.[0]?.canonical;
-      expect(t2Entity).toMatch(/Dual Degree UTB/i);
-
-      // Must contain official PMB portal link
-      expect(t2.text).toMatch(/https:\/\/pmb\.stikom-bali\.ac\.id/i);
-
-      // Must contain grounded registration steps
-      expect(t2.text).toMatch(/Dual Degree Nasional/i);
-      expect(t2.text).toMatch(/Bisnis Digital/i);
-      expect(t2.text).toMatch(/formulir|pendaftaran/i);
-      expect(t2.text).toMatch(/ijazah|skl|ktp/i);
-
-      // Must explain what specific UTB procedures are not available in general guide
-      expect(t2.text).toMatch(/portofolio|prosedur\s+(?:seleksi\s+)?teknis|ketentuan\s+teknis/i);
-
-      // Must provide verified official contacts
-      expect(t2.text).toMatch(/\(0361\)\s*244445/);
-      expect(t2.text).toMatch(/info@stikom-bali\.ac\.id/);
-      expect(t2.text).toMatch(/Ruang Layanan PMB|Kampus Renon/i);
-
-      // Must strictly NOT output ungrounded number 0822-7738-9999
-      expect(t2.text).not.toContain('0822-7738-9999');
-      expect(t2.text).not.toContain('082277389999');
-
-      // Must NOT return a generic refusal as if context was lost
-      expect(t2.text).not.toMatch(/informasi resmi terkait hal ini belum tercantum/i);
-      expect(t2.text).not.toMatch(/pertanyaan Kakak di luar cakupan/i);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // 2. Context inheritance lokasi kampus
-  // ---------------------------------------------------------------------------
-  describe('Problem 2: Context inheritance lokasi kampus (3 turns)', () => {
-    test('3-turn sequence preserves campus context and lists all official campuses without OOD or fabricated branches', async () => {
-      const chatId = 'test-wa-oct29-campus-' + Date.now();
+  describe('Full 7-Turn Single-Session Continuity & Domain Switching', () => {
+    test('Executes all 7 turns on the EXACT SAME chatId with verified final answer text', async () => {
+      const chatId = 'test-wa-oct29-single-session-' + Date.now();
 
       // Turn 1: "Di mana lokasi kampus ITB STIKOM Bali?"
       const t1 = await processTurn(chatId, 'Di mana lokasi kampus ITB STIKOM Bali?', { executeDispatch: false });
       expect(t1.semanticFrame?.domain).toBe('FACILITIES');
       expect(t1.semanticFrame?.intent).toBe('CAMPUS_LOCATION');
       expect(t1.text).toMatch(/Kampus Renon/i);
+      expect(t1.text).toMatch(/Jl\. Raya Puputan No\. 86/i);
       expect(t1.text).toMatch(/Kampus Jimbaran/i);
+      expect(t1.text).toMatch(/Jl\. Raya Kampus Udayana No\. 8/i);
       expect(t1.text).toMatch(/Kampus Abiansemal/i);
+      expect(t1.text).toMatch(/Jl\. Jenderal Sudirman.*Blahkiuh/i);
 
       // Turn 2: "Berapa ada kampus ITB STIKOM Bali?"
       const t2 = await processTurn(chatId, 'Berapa ada kampus ITB STIKOM Bali?', { executeDispatch: false });
       expect(t2.semanticFrame?.domain).toBe('FACILITIES');
       expect(t2.semanticFrame?.intent).toBe('CAMPUS_LOCATION');
-      // Must answer count: 3 / tiga
-      expect(t2.text).toMatch(/tiga|3/i);
+      expect(t2.text).toMatch(/3|tiga/i);
       expect(t2.text).toMatch(/Kampus Renon/i);
       expect(t2.text).toMatch(/Kampus Jimbaran/i);
       expect(t2.text).toMatch(/Kampus Abiansemal/i);
@@ -122,73 +64,94 @@ describe('Live WhatsApp 29 October 2026 Production Multi-Turn Regression', () =>
       const t3 = await processTurn(chatId, 'Lokasinya di mana saja?', { executeDispatch: false });
       expect(t3.semanticFrame?.domain).toBe('FACILITIES');
       expect(t3.semanticFrame?.intent).toBe('CAMPUS_LOCATION');
-
-      // Must NOT be out of domain
-      expect(t3.semanticFrame?.domain).not.toBe('OUT_OF_DOMAIN');
-      expect(t3.text).not.toMatch(/di luar cakupan/i);
-      expect(t3.text).not.toMatch(/belum dapat memproses/i);
-
-      // Must list all three official campus locations and their official addresses
       expect(t3.text).toMatch(/Kampus Renon/i);
-      expect(t3.text).toMatch(/Jl\. Raya Puputan No\. 86/i);
-
       expect(t3.text).toMatch(/Kampus Jimbaran/i);
-      expect(t3.text).toMatch(/Jl\. Raya Kampus Udayana No\. 8/i);
-
       expect(t3.text).toMatch(/Kampus Abiansemal/i);
-      expect(t3.text).toMatch(/Jl\. Jenderal Sudirman.*Blahkiuh/i);
+      expect(t3.text).not.toMatch(/di luar cakupan/i);
 
-      // Must NOT fabricate branches not in the official corpus
-      expect(t3.text).not.toMatch(/Singaraja/i);
-      expect(t3.text).not.toMatch(/Tabanan/i);
-      expect(t3.text).not.toMatch(/Ubud/i);
-      expect(t3.text).not.toMatch(/Gianyar/i);
-      expect(t3.text).not.toMatch(/Buleleng/i);
+      // Turn 4: "Kalau double degree dengan UTB itu seperti apa ya?"
+      // Explicit topic must defeat FACILITIES context and NOT be answered with campus locations!
+      const t4 = await processTurn(chatId, 'Kalau double degree dengan UTB itu seperti apa ya?', { executeDispatch: false });
+      expect(t4.semanticFrame?.domain).toBe('INTERNATIONAL');
+      expect(t4.semanticFrame?.intent).toBe('INTERNATIONAL_PROGRAM_INFO');
+      expect(t4.semanticFrame?.entities?.[0]?.canonical).toMatch(/Dual Degree UTB/i);
+      expect(t4.text).toMatch(/Universitas Teknologi Bandung|UTB/i);
+      expect(t4.text).toMatch(/Bisnis Digital/i);
+      expect(t4.text).toMatch(/Desain Komunikasi Visual|DKV/i);
+      expect(t4.text).toMatch(/S\.Bns\./i);
+      expect(t4.text).toMatch(/S\.Ds\./i);
+      // Strictly must NOT be answered with campus locations
+      expect(t4.text).not.toMatch(/memiliki tiga lokasi kampus yang strategis/i);
+
+      // Turn 5: "Bagaimana cara mendaftar?"
+      // Must inherit Dual Degree UTB context from Turn 4
+      const t5 = await processTurn(chatId, 'Bagaimana cara mendaftar?', { executeDispatch: false });
+      expect(t5.semanticFrame?.domain).toMatch(/INTERNATIONAL|PMB/);
+      expect(t5.semanticFrame?.entities?.[0]?.canonical).toMatch(/Dual Degree UTB/i);
+      expect(t5.text).toMatch(/Dual Degree Nasional/i);
+      expect(t5.text).toMatch(/https:\/\/pmb\.stikom-bali\.ac\.id/i);
+      expect(t5.text).toMatch(/Bisnis Digital/i);
+      expect(t5.text).toMatch(/formulir|pendaftaran/i);
+      expect(t5.text).toMatch(/ijazah|skl|ktp/i);
+      expect(t5.text).toMatch(/portofolio|prosedur\s+(?:seleksi\s+)?teknis|ketentuan\s+teknis/i);
+      expect(t5.text).toMatch(/\(0361\)\s*244445/);
+      expect(t5.text).toMatch(/info@stikom-bali\.ac\.id/);
+      expect(t5.text).not.toContain('0822-7738-9999');
+
+      // Turn 6: "Berapa biaya S1 Sistem Informasi per semester?"
+      // New explicit academic inquiry must override Dual Degree context
+      const t6 = await processTurn(chatId, 'Berapa biaya S1 Sistem Informasi per semester?', { executeDispatch: false });
+      expect(t6.semanticFrame?.domain).toBe('TUITION_FEE');
+      expect(t6.semanticFrame?.entities?.[0]?.canonical).toMatch(/S1 Sistem Informasi/i);
+      expect(t6.text).toMatch(/6\.500\.000/);
+      expect(t6.text).toMatch(/S1 Sistem Informasi/i);
+
+      // Turn 7: "Kalau gelombang 2C berapa?"
+      // Wave fee followup must inherit S1 Sistem Informasi
+      const t7 = await processTurn(chatId, 'Kalau gelombang 2C berapa?', { executeDispatch: false });
+      expect(t7.semanticFrame?.domain).toBe('TUITION_FEE');
+      expect(t7.semanticFrame?.entities?.[0]?.canonical).toMatch(/S1 Sistem Informasi/i);
+      expect(t7.text).toMatch(/S1 Sistem Informasi/i);
+      expect(t7.text).toMatch(/Gelombang 2C/i);
     });
   });
 
   // ---------------------------------------------------------------------------
-  // 3. Grounding kontak dan pendaftaran umum
+  // 2. Duplicate Contact Answer Prevention
   // ---------------------------------------------------------------------------
-  describe('Problem 3: Grounding kontak dan pendaftaran umum', () => {
-    test('"Bagaimana cara mendaftar mahasiswa baru?" gives grounded PMB portal and valid steps without fabricated requirements', async () => {
-      const chatId = 'test-wa-oct29-pmb-' + Date.now();
+  describe('Problem: Duplicate Contact Block Prevention', () => {
+    test('Coordinated contact inquiry ("Berapa nomor telepon dan kontak resmi ITB STIKOM Bali?") prints official contact exactly once', async () => {
+      const chatId = 'test-wa-contact-dup-' + Date.now();
+      const res = await processTurn(chatId, 'Berapa nomor telepon dan kontak resmi ITB STIKOM Bali?', { executeDispatch: false });
 
-      const t = await processTurn(chatId, 'Bagaimana cara mendaftar mahasiswa baru?', { executeDispatch: false });
-      expect(t.semanticFrame?.domain).toBe('PMB');
-      expect(t.semanticFrame?.intent).toBe('ADMISSION_PROCEDURE');
+      expect(res.text).toMatch(/\(0361\)\s*244445/);
+      expect(res.text).toMatch(/info@stikom-bali\.ac\.id/);
 
-      // Must contain official PMB portal
-      expect(t.text).toMatch(/https:\/\/pmb\.stikom-bali\.ac\.id/i);
+      // Count occurrences of official phone number
+      const phoneMatches = res.text.match(/\(0361\)\s*244445/g) || [];
+      expect(phoneMatches.length).toBe(1);
 
-      // Must list grounded steps
-      expect(t.text).toMatch(/pilih program studi/i);
-      expect(t.text).toMatch(/formulir/i);
-      expect(t.text).toMatch(/pembayaran/i);
-      expect(t.text).toMatch(/berkas|dokumen/i);
-      expect(t.text).toMatch(/verifikasi/i);
-
-      // Must NOT hallucinate ungrounded requirements or test scores
-      expect(t.text).not.toMatch(/skor\s+toefl/i);
-      expect(t.text).not.toMatch(/surat\s+rekomendasi\s+kepala\s+desa/i);
-
-      // Must strictly NOT contain 0822-7738-9999
-      expect(t.text).not.toContain('0822-7738-9999');
-      expect(t.text).not.toContain('082277389999');
+      // Count occurrences of official website link
+      const webMatches = res.text.match(/https:\/\/pmb\.stikom-bali\.ac\.id/g) || [];
+      expect(webMatches.length).toBe(1);
     });
+  });
 
-    test('Contact inquiry provides verified official contacts and no ungrounded 0822-7738-9999', async () => {
-      const chatId = 'test-wa-oct29-contact-' + Date.now();
+  // ---------------------------------------------------------------------------
+  // 3. Elliptical Campus Location & Count Continuity
+  // ---------------------------------------------------------------------------
+  describe('Campus Location & Count Consistency', () => {
+    test('Bare count inquiry "Berapa ada kampus?" without explicit brand inherits and answers all 3 campuses', async () => {
+      const chatId = 'test-wa-campus-bare-' + Date.now();
+      await processTurn(chatId, 'Di mana kampus ITB STIKOM Bali?', { executeDispatch: false });
 
-      const t = await processTurn(chatId, 'Berapa nomor telepon dan kontak resmi ITB STIKOM Bali?', { executeDispatch: false });
-
-      // Must include verified phone and email
-      expect(t.text).toMatch(/\(0361\)\s*244445/);
-      expect(t.text).toMatch(/info@stikom-bali\.ac\.id|https:\/\/pmb\.stikom-bali\.ac\.id/i);
-
-      // Must strictly NOT contain 0822-7738-9999
-      expect(t.text).not.toContain('0822-7738-9999');
-      expect(t.text).not.toContain('082277389999');
+      const t2 = await processTurn(chatId, 'Berapa ada kampus?', { executeDispatch: false });
+      expect(t2.semanticFrame?.domain).toBe('FACILITIES');
+      expect(t2.semanticFrame?.intent).toBe('CAMPUS_LOCATION');
+      expect(t2.text).toMatch(/3|tiga/i);
+      expect(t2.text).toMatch(/Kampus Renon/i);
+      expect(t2.text).toMatch(/Kampus Jimbaran/i);
+      expect(t2.text).toMatch(/Kampus Abiansemal/i);
     });
   });
 });

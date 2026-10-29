@@ -1080,12 +1080,16 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   }
 
   if (effectiveTargetEntities.length === 0 && (contextDep.inheritedIntent === 'CAMPUS_LOCATION' || contextDep.inheritedEntity === 'Kampus ITB STIKOM Bali' || (contextDep.shouldInherit && contextDep.inheritedDomain === 'FACILITIES'))) {
-    effectiveTargetEntities.push({
-      canonical: 'Kampus ITB STIKOM Bali',
-      type: 'campus',
-      family: 'campus_location',
-      inherited: true
-    });
+    // Only inherit campus entity if query does not already have specific academic/international program entities
+    const hasExplicitProgramEntity = entities.some(e => e.family === 'academic_program' || e.family === 'international_program');
+    if (!hasExplicitProgramEntity) {
+      effectiveTargetEntities.push({
+        canonical: 'Kampus ITB STIKOM Bali',
+        type: 'campus',
+        family: 'campus_location',
+        inherited: true
+      });
+    }
   }
 
   // 3. Temporal Resolution
@@ -1110,9 +1114,22 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     } else if (contextDep.inheritedDomain === 'ACADEMIC_EVENT' && !/\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|kuliah\s+di|masuk\s+stikom)\b/i.test(normalized)) {
       domain = 'ACADEMIC_EVENT';
       intent = 'GRADUATION_INQUIRY';
-    } else if (contextDep.inheritedDomain === 'FACILITIES') {
+    } else if (contextDep.inheritedDomain === 'FACILITIES' && (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN')) {
       domain = 'FACILITIES';
       intent = contextDep.inheritedIntent || 'CAMPUS_LOCATION';
+    }
+  }
+
+  // Ensure campus entity is present for genuine CAMPUS_LOCATION inquiries without overriding academic entities
+  if (intent === 'CAMPUS_LOCATION' || domain === 'FACILITIES') {
+    const hasAcademicEntity = effectiveTargetEntities.some(e => e.family === 'academic_program' || e.family === 'international_program');
+    if (!hasAcademicEntity && !effectiveTargetEntities.some(e => e.family === 'campus_location' || e.type === 'campus')) {
+      effectiveTargetEntities.push({
+        canonical: 'Kampus ITB STIKOM Bali',
+        type: 'campus',
+        family: 'campus_location',
+        inherited: true
+      });
     }
   }
 

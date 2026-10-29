@@ -34,9 +34,13 @@ function decomposeQuery(rawQuery, sessionData = {}) {
     parts = query.split('?').map(p => p.trim()).filter(Boolean).map(p => p + '?');
   } else if (MULTI_INTENT_CONJUNCTION_REGEX.test(query)) {
     const rawParts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
+    // Guard against splitting compound contact phrases (e.g. "Berapa nomor telepon dan kontak resmi...")
+    const isContactCoordination = /\b(?:nomor|telepon|telp|wa|whatsapp|hp)\s+(?:dan|serta|plus)\s+(?:kontak|nomor|telepon|wa|whatsapp)\b/i.test(query) ||
+      /\bkontak\s+(?:dan|serta|plus)\s+(?:nomor|telepon|wa|whatsapp)\b/i.test(query);
+
     // Guard against splitting compound noun phrases (e.g. "Profesi dan peluang kerja apa saja...")
     // A valid first subquery must have at least 3 words and a verb/interrogative pronoun, or not end as a bare noun fragment
-    if (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
+    if (isContactCoordination || (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0]))) {
       parts = [query];
     } else {
       parts = rawParts;
@@ -85,7 +89,10 @@ async function decomposeQueryAsync(rawQuery, sessionData = {}, options = {}) {
     parts = query.split('?').map(p => p.trim()).filter(Boolean).map(p => p + '?');
   } else if (MULTI_INTENT_CONJUNCTION_REGEX.test(query)) {
     const rawParts = query.split(MULTI_INTENT_CONJUNCTION_REGEX).map(p => p.trim()).filter(Boolean);
-    if (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0])) {
+    const isContactCoordination = /\b(?:nomor|telepon|telp|wa|whatsapp|hp)\s+(?:dan|serta|plus)\s+(?:kontak|nomor|telepon|wa|whatsapp)\b/i.test(query) ||
+      /\bkontak\s+(?:dan|serta|plus)\s+(?:nomor|telepon|wa|whatsapp)\b/i.test(query);
+
+    if (isContactCoordination || (rawParts.length >= 2 && rawParts[0].split(/\s+/).length < 3 && !/\b(apa|berapa|bagaimana|kapan|apakah|ada)\b/i.test(rawParts[0]))) {
       parts = [query];
     } else {
       parts = rawParts;
