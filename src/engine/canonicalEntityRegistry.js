@@ -413,6 +413,12 @@ const CANONICAL_ENTITIES = [
     family: 'campus_location',
     aliases: ['kampus abiansemal', 'abiansemal', 'kampus badung']
   },
+  {
+    canonical: 'Kampus ITB STIKOM Bali',
+    type: 'campus',
+    family: 'campus_location',
+    aliases: ['kampus itb stikom bali', 'kampus itb stikom', 'kampus stikom bali', 'kampus stikom', 'lokasi kampus', 'cabang kampus']
+  },
 
   // International Programs & Collaborations
   {
@@ -528,7 +534,7 @@ const CANONICAL_ENTITIES = [
     canonical: 'BCCP',
     type: 'international_program',
     family: 'international_program',
-    aliases: ['bccp']
+    aliases: ['bccp', 'bali cross culture program', 'bali cross cultural program', 'bali cross culture']
   },
 
   // Campus Services / Units
@@ -687,6 +693,18 @@ const CANONICAL_ENTITIES = [
     type: 'academic_event',
     family: 'academic_scope',
     aliases: ['yudisium', 'pendaftaran yudisium', 'pelaksanaan yudisium', 'jadwal yudisium', 'acara yudisium']
+  },
+  {
+    canonical: 'UAS',
+    type: 'academic_event',
+    family: 'academic_scope',
+    aliases: ['uas', 'ujian akhir semester', 'pelaksanaan uas', 'jadwal uas', 'tanggal uas']
+  },
+  {
+    canonical: 'UTS',
+    type: 'academic_event',
+    family: 'academic_scope',
+    aliases: ['uts', 'ujian tengah semester', 'pelaksanaan uts', 'jadwal uts', 'tanggal uts']
   },
   {
     canonical: 'UKM Khusus (Special UKM)',

@@ -7449,10 +7449,10 @@ function tryPmbContactAnswer(question) {
       header,
       '',
       '- Telepon: (0361) 244445',
-      '- Hotline / WhatsApp PMB & Pascasarjana: 082277389999',
-      '- Website Pendaftaran: https://siap.stikom-bali.ac.id',
+      '- Email: info@stikom-bali.ac.id',
+      '- Website PMB: https://pmb.stikom-bali.ac.id',
       '',
-      'Kakak juga bisa datang langsung ke kampus Renon Denpasar, Jimbaran, atau Abiansemal untuk berkonsultasi langsung dengan petugas PMB.'
+      'Kakak juga bisa datang langsung ke kampus Renon Denpasar (Jl. Raya Puputan No. 86), Jimbaran, atau Abiansemal untuk berkonsultasi langsung dengan petugas PMB.'
     ].join('\n'),
     source: 'semantic-rag-pmb-contact',
     frameSource: 'semantic-rag-pmb-contact'

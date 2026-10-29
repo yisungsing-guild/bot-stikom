@@ -120,8 +120,9 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     sessionData.activeEntity.type === 'program' ||
     sessionData.activeEntity.type === 'international_program' ||
     (typeof sessionData.activeEntity === 'string' &&
-     !['Wisuda', 'Yudisium'].includes(sessionData.activeEntity) &&
-     !sessionData.activeDomain?.startsWith('ORGANIZATION'))
+     !['Wisuda', 'Yudisium', 'Kampus ITB STIKOM Bali'].includes(sessionData.activeEntity) &&
+     !sessionData.activeDomain?.startsWith('ORGANIZATION') &&
+     sessionData.activeDomain !== 'FACILITIES')
   );
 
   // Guard: Campus-wide service domain inquiries must not inherit academic program entities
@@ -156,6 +157,28 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     return {
       shouldInherit: false,
       reason: 'cross_domain_isolation'
+    };
+  }
+
+  // Campus location follow-up check (e.g. "Lokasinya di mana saja?", "Di mana lokasinya?")
+  const isLocationFollowup = /\b(?:lokasi(?:nya)?|alamat(?:nya)?|di\s*mana(?:\s+saja)?|dimana(?:\s+saja)?)\b/i.test(query) &&
+    /\b(?:lokasi|alamat|di\s*mana|dimana|saja)\b/i.test(query) &&
+    (sessionData.activeDomain === 'FACILITIES' ||
+     sessionData.activeIntent === 'CAMPUS_LOCATION' ||
+     (sessionData.activeEntity && (
+       sessionData.activeEntity.family === 'campus_location' ||
+       sessionData.activeEntity.type === 'campus' ||
+       sessionData.activeEntity === 'Kampus ITB STIKOM Bali' ||
+       String(sessionData.activeEntity).toLowerCase().includes('kampus')
+     )));
+
+  if (isLocationFollowup) {
+    return {
+      shouldInherit: true,
+      reason: 'campus_location_followup',
+      inheritedDomain: 'FACILITIES',
+      inheritedIntent: 'CAMPUS_LOCATION',
+      inheritedEntity: sessionData.activeEntity || 'Kampus ITB STIKOM Bali'
     };
   }
 

@@ -146,8 +146,8 @@ function buildRetrievalPlan(semanticFrame) {
     }
   }
 
-  // Facilities query variants
-  if (domain === 'FACILITIES' || (aspects && (aspects.includes('facilities') || aspects.includes('lab')))) {
+  // Facilities query variants (guarded: campus location queries must not retrieve lab equipment)
+  if ((domain === 'FACILITIES' && intent !== 'CAMPUS_LOCATION') || (aspects && (aspects.includes('facilities') || aspects.includes('lab')) && intent !== 'CAMPUS_LOCATION')) {
     queryVariants.push('fasilitas laboratorium praktikum mahasiswa hardware networking database smart intelligent system ITB STIKOM Bali');
     queryVariants.push('laboratorium riset dan praktik mahasiswa embedded system IoT mobile technology');
     queryVariants.push('fasilitas laboratorium komputer perpustakaan asrama kampus ITB STIKOM Bali');
@@ -405,15 +405,22 @@ function buildRetrievalPlan(semanticFrame) {
 
   // Location / Campus query variants
   if (intent === 'CAMPUS_LOCATION' || intent === 'STUDY_LOCATION' || (aspects && (aspects.includes('location') || aspects.includes('study_location')))) {
-    queryVariants.push('lokasi kampus ITB STIKOM Bali Renon Jimbaran Abiansemal');
-    queryVariants.push('alamat kampus Jalan Raya Puputan Renon Denpasar Kampus Jimbaran Abiansemal');
+    const locQueries = [
+      'lokasi kampus ITB STIKOM Bali Renon Jimbaran Abiansemal',
+      'alamat kampus Jalan Raya Puputan Renon Denpasar Kampus Jimbaran Abiansemal'
+    ];
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
-        queryVariants.push(`lokasi kampus tempat kuliah ${ent}`);
-        queryVariants.push(`alamat kampus tempat studi ${ent}`);
+        locQueries.push(`lokasi kampus tempat kuliah ${ent}`);
+        locQueries.push(`alamat kampus tempat studi ${ent}`);
       }
     } else {
-      queryVariants.push('lokasi kampus tempat kuliah alamat');
+      locQueries.push('lokasi kampus tempat kuliah alamat');
+    }
+    if (intent === 'CAMPUS_LOCATION') {
+      queryVariants.unshift(...locQueries);
+    } else {
+      queryVariants.push(...locQueries);
     }
   }
 

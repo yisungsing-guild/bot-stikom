@@ -73,6 +73,9 @@ const CATEGORY_ASPECT_COMPATIBILITY = Object.freeze({
   external_partner: Object.freeze([
     'general', 'location', 'requirements', 'contact'
   ]),
+  academic_event: Object.freeze([
+    'schedule', 'procedure', 'requirements', 'fee', 'general', 'contact'
+  ]),
   unknown: Object.freeze(['general', 'contact'])
 });
 
@@ -511,9 +514,7 @@ function validateSemanticInterpretation(interpretation, priorContext = null, opt
 
   // Resolve primary domain
   let resolvedDomain = 'GENERAL';
-  if (finalEntities.some(e => e.inferredCategory === 'student_organization') || (Array.isArray(interpretation.requestedAspects) && interpretation.requestedAspects.includes('organization'))) {
-    resolvedDomain = 'ORGANIZATION_UKM';
-  } else if (interpretation.semanticConcepts.length > 0) {
+  if (interpretation.semanticConcepts.length > 0) {
     resolvedDomain = CONCEPT_TO_DOMAIN_MAP[interpretation.semanticConcepts[0]] || 'GENERAL';
   } else if (normPrior.priorDomain && isEligibleForInheritance) {
     resolvedDomain = normPrior.priorDomain;

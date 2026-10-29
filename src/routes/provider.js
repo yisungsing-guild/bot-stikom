@@ -15345,7 +15345,7 @@ Saya belum menemukan data yang cukup spesifik untuk bagian ini pada sumber yang 
               'Baik, info tambahan Kampus Denpasar:\n' +
               '- Email: info@stikom-bali.ac.id\n' +
               '- Website: www.stikom-bali.ac.id\n' +
-              '- Hotline: 082277389999\n\n' +
+              '- Telepon: (0361) 244445\n\n' +
               'Kalau mau, sebutkan info apa yang dicari (mis. layanan PMB, jam operasional, atau lokasi di maps).'
             );
             return res.send({ ok: true, source: 'campus_followup', campus: 'denpasar' });

@@ -224,7 +224,10 @@ function computeContextDelta(previousSession = {}, currentTurn = {}) {
   // 4. CURRENT TURN EXPLICIT ENTITY DETECTION
   // Use matchCanonicalEntities on the query directly to discern explicit vs inherited entities
   const explicitEntityMatches = matchCanonicalEntities(query);
-  const explicitEntities = explicitEntityMatches.map(m => m.canonical);
+  const explicitProgramMatches = explicitEntityMatches.filter(
+    m => m.family === 'academic_program' || m.family === 'international_program' || m.family === 'student_organization'
+  );
+  const explicitEntities = explicitProgramMatches.map(m => m.canonical);
 
   if (explicitEntities.length > 0) {
     const firstExplicitEntity = explicitEntities[0];

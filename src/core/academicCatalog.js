@@ -461,13 +461,29 @@ function generateGroundedFacultySummary(query, userLang = 'id') {
       return qLower.includes(p.toLowerCase()) || qLower.includes(clean);
     }) || targetedFaculty.programs[0];
 
+    const asksCareer = /\b(?:prospek|peluang\s+kerja|karir|karier|profesi|kerja\s+(?:sebagai|menjadi)?|bekerja\s+(?:sebagai|menjadi)?)\b/i.test(qLower);
+    let careerSection = '';
+    if (asksCareer) {
+      if (/bisnis\s+digital/i.test(matchedProg)) {
+        careerSection = isEn
+          ? `\n\n• **Graduate Career Prospects**: Graduates of S1 Digital Business can pursue careers as Digital Business Specialists, Technopreneurs / Startup Founders, Digital Marketing Strategists, E-Commerce Specialists, and Business Development Analysts.`
+          : `\n\n• **Prospek Karier Lulusan**: Lulusan S1 Bisnis Digital memiliki peluang karier luas sebagai Digital Business Specialist, Technopreneur / Startup Founder, Digital Marketing Strategist, E-Commerce Specialist, Business Development Analyst, hingga Konsultan Bisnis Digital.`;
+      } else if (/sistem\s+informasi/i.test(matchedProg)) {
+        careerSection = isEn
+          ? `\n\n• **Graduate Career Prospects**: Systems Analysts, IT Consultants, Business Process Analysts, Database Administrators, and IT Project Managers.`
+          : `\n\n• **Prospek Karier Lulusan**: Systems Analyst, Konsultan TI, Business Process Analyst, Administrator Basis Data, ERP Specialist, dan IT Project Manager.`;
+      }
+    }
+
     if (isEn) {
       return `At ITB STIKOM Bali, the study program **${matchedProg}** is under the **${targetedFaculty.canonical} (${targetedFaculty.shortName})**.\n\nOther study programs under this faculty include:\n` +
         targetedFaculty.programs.map((p, idx) => `${idx + 1}. ${p}`).join('\n') +
+        careerSection +
         `\n\nWould you like more details about admission or curriculum for this program?`;
     }
     return `Di ITB STIKOM Bali, program studi **${matchedProg}** bernaung di bawah **${targetedFaculty.canonical} (${targetedFaculty.shortName})**.\n\nProgram studi yang berada di bawah fakultas ini meliputi:\n` +
       targetedFaculty.programs.map((p, idx) => `${idx + 1}. ${p}`).join('\n') +
+      careerSection +
       `\n\nAda yang ingin Kakak tanyakan lebih lanjut mengenai kurikulum atau pendaftaran prodi ini?`;
   }
 

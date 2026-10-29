@@ -960,9 +960,15 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     };
   }
 
-  // 19. Campus Location / Address Inquiry
+  // 19. Campus Location / Address / Count Inquiry
   const isAskingCampusLocation = /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus(?:nya)?\s+di\s*mana|dimana\s+kampus|letak\s+kampus|gedung\s+kampus\s+di\s*mana|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(normalized) ||
-    (/\b(?:lokasi|alamat|di\s*mana|dimana)\b/i.test(normalized) && /\b(?:kampus|stikom|itb\s+stikom)\b/i.test(normalized));
+    (/\b(?:lokasi|alamat|di\s*mana|dimana)\b/i.test(normalized) && /\b(?:kampus|stikom|itb\s+stikom)\b/i.test(normalized)) ||
+    (/\b(?:berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|berapa\s+jumlah\s+kampus|jumlah\s+kampus|berapa\s+banyak\s+kampus|berapa\s+(?:ada\s+)?cabang|ada\s+berapa\s+cabang)\b/i.test(normalized)) ||
+    (/\b(?:berapa\s+ada|ada\s+berapa|berapa\s+jumlah|berapa\s+banyak)\b/i.test(normalized) && /\b(?:kampus|cabang)\b/i.test(normalized)) ||
+    (/\b(?:lokasi(?:nya)?\s+di\s*mana(?:\s+saja)?|di\s*mana(?:\s+saja)?\s+lokasi(?:nya)?|dimana(?:\s+saja)?\s+lokasi(?:nya)?|lokasi(?:nya)?\s+mana\s+saja)\b/i.test(raw + ' ' + normalized)) ||
+    ((sessionData.activeDomain === 'FACILITIES' || sessionData.activeIntent === 'CAMPUS_LOCATION' || (sessionData.activeEntity && (sessionData.activeEntity.family === 'campus_location' || sessionData.activeEntity.type === 'campus' || String(sessionData.activeEntity).toLowerCase().includes('kampus')))) &&
+     /\b(?:lokasi|alamat|di\s*mana|dimana|cabang|ada\s+berapa|berapa\s+ada)\b/i.test(normalized));
+
   if (isAskingCampusLocation) {
     return {
       domain: 'FACILITIES',
@@ -1063,7 +1069,7 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
 
   if (effectiveTargetEntities.length === 0 && contextDep.shouldInherit && contextDep.inheritedEntity && !isCampusWideQuery && !isConversationalQuery) {
     const inheritedCanon = findCanonicalEntity(contextDep.inheritedEntity);
-    if (inheritedCanon && (inheritedCanon.family === 'academic_program' || inheritedCanon.family === 'international_program')) {
+    if (inheritedCanon && (inheritedCanon.family === 'academic_program' || inheritedCanon.family === 'international_program' || inheritedCanon.family === 'campus_location' || inheritedCanon.type === 'campus')) {
       effectiveTargetEntities.push({
         canonical: inheritedCanon.canonical,
         type: inheritedCanon.type,
@@ -1071,6 +1077,15 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
         inherited: true
       });
     }
+  }
+
+  if (effectiveTargetEntities.length === 0 && (contextDep.inheritedIntent === 'CAMPUS_LOCATION' || contextDep.inheritedEntity === 'Kampus ITB STIKOM Bali' || (contextDep.shouldInherit && contextDep.inheritedDomain === 'FACILITIES'))) {
+    effectiveTargetEntities.push({
+      canonical: 'Kampus ITB STIKOM Bali',
+      type: 'campus',
+      family: 'campus_location',
+      inherited: true
+    });
   }
 
   // 3. Temporal Resolution
@@ -1089,9 +1104,15 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   if (contextDep.shouldInherit && contextDep.inheritedDomain) {
     if (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN') {
       domain = contextDep.inheritedDomain;
+      if (contextDep.inheritedIntent) {
+        intent = contextDep.inheritedIntent;
+      }
     } else if (contextDep.inheritedDomain === 'ACADEMIC_EVENT' && !/\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|kuliah\s+di|masuk\s+stikom)\b/i.test(normalized)) {
       domain = 'ACADEMIC_EVENT';
       intent = 'GRADUATION_INQUIRY';
+    } else if (contextDep.inheritedDomain === 'FACILITIES') {
+      domain = 'FACILITIES';
+      intent = contextDep.inheritedIntent || 'CAMPUS_LOCATION';
     }
   }
 

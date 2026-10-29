@@ -48,7 +48,7 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
 
   // Institutional Campus Locations (Renon, Jimbaran, Abiansemal) can authoritatively answer campus location queries
   if (semanticFrame.intent === 'CAMPUS_LOCATION' ||
-      /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus\s+(?:renon|jimbaran|abiansemal)|dimana\s+kampus)\b/i.test(semanticFrame.rawQuery || '')) {
+      /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus\s+(?:renon|jimbaran|abiansemal)|(?:di\s*mana|dimana)\s+kampus|lokasi(?:nya)?\s+di\s*mana|di\s*mana(?:\s+saja)?\s+lokasi(?:nya)?|berapa\s+(?:ada\s+)?kampus|ada\s+berapa\s+kampus|jumlah\s+kampus)\b/i.test(semanticFrame.rawQuery || '')) {
     return {
       status: ANSWERABILITY_STATUS.ANSWERABLE,
       reason: 'institutional_campus_locations',

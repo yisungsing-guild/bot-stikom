@@ -634,7 +634,7 @@ class InstitutionalContactEvidenceProvider {
     this.capabilities = Object.freeze({
       domains: ['campus_contact', 'institution'],
       entityFamilies: ['institution', 'campus_location'],
-      fields: ['phone', 'whatsapp', 'website', 'contact', 'address', 'foundingDate', 'legalDecreeDate', 'establishment'],
+      fields: ['phone', 'email', 'website', 'contact', 'address', 'foundingDate', 'legalDecreeDate', 'establishment'],
       fieldFamilies: ['contact', 'institution_history'],
       relations: ['contact_for', 'located_at', 'founded_in', 'decreed_in'],
       numericSemantics: ['phone_number', 'year', 'date']
@@ -663,15 +663,15 @@ class InstitutionalContactEvidenceProvider {
         sourceDocumentOrRecord: 'ISIAN WEBSITE (1).pdf',
         provenance: 'Dokumen Resmi Profil & Isian Website ITB STIKOM Bali (Layanan Telepon)'
       },
-      whatsapp: {
-        value: '082277389999',
+      email: {
+        value: 'info@stikom-bali.ac.id',
         sourceId: 'ISIAN WEBSITE (1).pdf',
         sourceType: 'official_contact_directory',
         sourceDocumentOrRecord: 'ISIAN WEBSITE (1).pdf',
-        provenance: 'Dokumen Resmi Profil & Isian Website ITB STIKOM Bali (Layanan WhatsApp PMB)'
+        provenance: 'Dokumen Resmi Profil & Isian Website ITB STIKOM Bali (Layanan Email Resmi)'
       },
       website: {
-        value: 'https://siap.stikom-bali.ac.id',
+        value: 'https://pmb.stikom-bali.ac.id',
         sourceId: 'ISIAN WEBSITE (1).pdf',
         sourceType: 'official_contact_directory',
         sourceDocumentOrRecord: 'ISIAN WEBSITE (1).pdf',
@@ -680,8 +680,8 @@ class InstitutionalContactEvidenceProvider {
       contact: {
         value: {
           phone: '(0361) 244445',
-          whatsapp: '082277389999',
-          website: 'https://siap.stikom-bali.ac.id'
+          email: 'info@stikom-bali.ac.id',
+          website: 'https://pmb.stikom-bali.ac.id'
         },
         sourceId: 'ISIAN WEBSITE (1).pdf',
         sourceType: 'official_contact_directory',
