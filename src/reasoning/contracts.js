@@ -76,7 +76,9 @@ const CAMPUS_WIDE_DOMAINS = Object.freeze([
   'PMB_SCHEDULE',
   'CAMPUS_LIFE',
   'CAMPUS_SERVICE',
-  'GENERAL_ADMISSION'
+  'GENERAL_ADMISSION',
+  'ACADEMIC_EVENT',
+  'CAMPUS_LOCATION'
 ]);
 
 function validateContextDelta(delta) {

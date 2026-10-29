@@ -967,6 +967,30 @@ function verifyFinalAnswer(candidateAnswer, semanticFrame = {}, arbitratedEviden
     }
   }
 
+  // 7f. Academic Event & Graduation Verification Guards
+  const isWisudaEventInquiry = semanticFrame.domain === 'ACADEMIC_EVENT' ||
+    semanticFrame.intent === 'GRADUATION_INQUIRY' ||
+    /\b(?:wisuda|yudisium)\b/i.test(rawQuery);
+
+  if (isWisudaEventInquiry) {
+    // 1. Prohibit fabricated calendar dates without evidence backing
+    const hasSpecificCalendarDate = /\b\d{1,2}\s+(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+\d{4}\b/i.test(text) ||
+      /\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/.test(text);
+    if (hasSpecificCalendarDate) {
+      const acceptedTexts = (arbitratedEvidence.accepted || []).map(c => (c.text || c.chunk || '').toLowerCase()).join(' ');
+      const matchedDates = text.match(/\b\d{1,2}\s+(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+\d{4}\b/gi) || [];
+      const hasUnbackedDate = matchedDates.some(d => !acceptedTexts.includes(d.toLowerCase()));
+      if (hasUnbackedDate) {
+        return failVerification('unsupported_factual_claim_graduation_date: fabricated specific calendar date');
+      }
+    }
+
+    // 2. Prohibit treating wisuda as PMB new student admission
+    if (/\b(?:pmb\.stikom-bali\.ac\.id|dana\s+pendidikan\s+pokok|ijazah\s+sma)\b/i.test(text)) {
+      return failVerification('domain_conflation_wisuda_answered_with_pmb');
+    }
+  }
+
   // Outcome Classification (when all structural failure gates pass)
   if (isUnsupported) {
     return {

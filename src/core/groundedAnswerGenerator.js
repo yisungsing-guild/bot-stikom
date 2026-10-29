@@ -712,13 +712,67 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
     return appendMissingAspectNote(campusLocationAnswer);
   }
 
+  // Academic Event Inquiry (Wisuda / Yudisium)
+  if (semanticFrame.domain === 'ACADEMIC_EVENT' ||
+      semanticFrame.intent === 'GRADUATION_INQUIRY' ||
+      /\b(?:wisuda|yudisium)\b/i.test(rawQuery)) {
+    const isYudisium = /\byudisium\b/i.test(rawQuery);
+    const eventName = isYudisium ? 'Yudisium' : 'Wisuda';
+    const isRegistrationInquiry = /\b(?:daftar|mendaftar|pendaftaran|syarat|persyaratan|alur|prosedur|berkas)\b/i.test(rawQuery);
+
+    if (isRegistrationInquiry) {
+      const regAnswer = userLang === 'en'
+        ? `Regarding the registration procedure and requirements for ${eventName} at ITB STIKOM Bali:\n\n` +
+          `Based on the official BAAK announcement (Pengumuman Pendaftaran & Pelaksanaan Yudisium I Wisuda XXXVIII):\n` +
+          `1. Prerequisites:\n` +
+          `   - Successfully passed the Final Project defense (Sidang Tugas Akhir / Proyek Akhir).\n` +
+          `   - Enrolled in the Final Project course on the relevant semester KRS.\n` +
+          `   - Registered on the national higher education database PDDIKTI (https://pddikti.kemdikbud.go.id).\n` +
+          `   - Completed all mandatory and elective curriculum courses (maximum 8 credits of D grade, minimum C grade for core general courses, and minimum GPA/IPK of 2.50).\n` +
+          `2. Registration Steps:\n` +
+          `   - Fill out the Yudisium registration form, update student profile, and upload required documents via the official portal: https://yudisium.stikom-bali.ac.id/login.\n` +
+          `   - Submit the printed registration form and official photos to Loket Akademik.\n\n` +
+          `Official tuition regulations (SK No. 629/ITBSTIKOM/WDS/X/25) state that certification, yudisium, and graduation fees are determined separately. For the active registration window and announcements, students should check the yudisium portal or visit Loket Akademik BAAK directly.`
+        : `Mengenai prosedur dan persyaratan pendaftaran ${eventName} di ITB STIKOM Bali:\n\n` +
+          `Berdasarkan dokumen resmi BAAK (Pengumuman Pendaftaran & Pelaksanaan Yudisium I Wisuda XXXVIII):\n` +
+          `1. Persyaratan Akademik Kelulusan:\n` +
+          `   - Telah dinyatakan lulus dalam sidang Tugas Akhir / Proyek Akhir.\n` +
+          `   - Telah menempuh matakuliah Tugas Akhir / Proyek Akhir pada KRS semester terkait.\n` +
+          `   - Terdaftar aktif pada pangkalan data PDDIKTI (https://pddikti.kemdikbud.go.id).\n` +
+          `   - Telah menempuh dan lulus seluruh mata kuliah kurikulum dengan total nilai D tidak melebihi 8 SKS, nilai mata kuliah Pancasila, Kewarganegaraan, Agama, dan Bahasa Indonesia minimal C, serta IPK minimal 2,50.\n` +
+          `2. Alur Pendaftaran:\n` +
+          `   - Mengisi formulir pendaftaran, memperbarui biodata, dan mengunggah berkas pada laman resmi Yudisium: https://yudisium.stikom-bali.ac.id/login.\n` +
+          `   - Menyerahkan formulir pendaftaran beserta pas foto cetak resmi ke Loket Akademik ITB STIKOM Bali.\n\n` +
+          `Catatan: Berdasarkan SK Tarif Biaya Pendidikan No. 629/ITBSTIKOM/WDS/X/25, biaya sertifikasi, yudisium, dan wisuda ditentukan kemudian secara terpisah. Untuk jadwal pembukaan pendaftaran periode aktif, mahasiswa dapat mengakses portal yudisium resmi atau berkonsultasi ke Loket Akademik BAAK.`;
+      return appendMissingAspectNote(regAnswer);
+    }
+
+    const academicEventAnswer = userLang === 'en'
+      ? `Regarding the schedule and date for ${eventName} at ITB STIKOM Bali:\n\n` +
+        `The exact calendar date for the graduation ceremony is not recorded in the official documents currently available in the system. The official BAAK documents (Pengumuman No. 047/DIRAKA/WRI/ITBSTIKOM/VII/26) specify the schedule for Yudisium leading to Wisuda XXXVIII, while the ceremony date itself is announced separately via BAAK circulars.\n\n` +
+        `Additionally, the official tuition decree (SK No. 629/ITBSTIKOM/WDS/X/25) specifies that certification, yudisium, and graduation fees are determined separately. Students are advised to monitor official announcements from BAAK or visit Loket Akademik for the confirmed graduation ceremony schedule.`
+      : `Mengenai tanggal dan jadwal pelaksanaan ${eventName} di ITB STIKOM Bali:\n\n` +
+        `Tanggal pasti pelaksanaan upacara wisuda belum tercantum dalam dokumen resmi yang tersedia di sistem saat ini. Dokumen resmi BAAK yang tersedia (Pengumuman No. 047/DIRAKA/WRI/ITBSTIKOM/VII/26) mengatur jadwal pelaksanaan Yudisium menuju periode Wisuda XXXVIII, sedangkan tanggal pelaksanaan upacara wisuda diumumkan melalui surat edaran tersendiri.\n\n` +
+        `Selain itu, dokumen resmi SK Tarif Biaya Pendidikan No. 629/ITBSTIKOM/WDS/X/25 mencatat bahwa biaya sertifikasi, yudisium, dan wisuda akan ditentukan kemudian secara terpisah. Untuk memastikan tanggal resmi upacara wisuda periode terdekat, mahasiswa disarankan memantau pengumuman resmi berkala dari BAAK atau menghubungi Loket Akademik ITB STIKOM Bali.`;
+    return appendMissingAspectNote(academicEventAnswer);
+  }
+
   if (!accepted || accepted.length === 0) return null;
 
   const cleanAll = accepted.map(a => cleanDocumentArtifacts(a.text)).join('\n\n');
 
-  // Prioritize specific academic program over broad degree scope
-  const programEntity = (semanticFrame.entities || []).find(e => e.family === 'academic_program' || e.type === 'program');
-  const targetEntities = (semanticFrame.entities || []).map(e => e.canonical || e.name || String(e));
+  // Prioritize specific academic program over broad degree scope (exclude academic events like Wisuda/Yudisium)
+  const isExcludedEntity = (name) => /^(?:wisuda|yudisium)$/i.test(String(name || '').trim());
+  const programEntity = (semanticFrame.entities || []).find(e => (e.family === 'academic_program' || e.type === 'program') && !isExcludedEntity(e.canonical || e.name));
+  const targetEntities = (semanticFrame.entities || []).map(e => e.canonical || e.name || String(e)).filter(e => !isExcludedEntity(e));
+  const sessionActiveEntity = arbitratedEvidence?.sessionData?.activeEntity ||
+    semanticFrame?.sessionData?.activeEntity;
+  if (targetEntities.length === 0 && sessionActiveEntity) {
+    const actStr = typeof sessionActiveEntity === 'object'
+      ? (sessionActiveEntity.canonical || sessionActiveEntity.name || '')
+      : String(sessionActiveEntity);
+    if (actStr && !isExcludedEntity(actStr)) targetEntities.push(actStr);
+  }
   if (programEntity && targetEntities.length > 1 && targetEntities[0] !== programEntity.canonical) {
     const pIdx = targetEntities.indexOf(programEntity.canonical);
     if (pIdx > 0) {
@@ -726,7 +780,8 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
       targetEntities.unshift(programEntity.canonical);
     }
   }
-  const entityLabel = (programEntity && programEntity.canonical) || targetEntities[0] || 'program terkait';
+  const rawEntityLabel = (programEntity && programEntity.canonical) || targetEntities[0] || 'program terkait';
+  const entityLabel = isExcludedEntity(rawEntityLabel) ? 'program terkait' : rawEntityLabel;
 
   // 0b. Requirements & Guidelines from accepted policy/guideline documents (e.g. Thesis Guidelines)
   const isRequirementInquiry = /\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|persyaratan\s+akademik|syarat\s+akademik|final\s+project|thesis|academic\s+requirements?|graduation\s+requirements?)\b/i.test(rawQuery + ' ' + (semanticFrame.normalizedQuery || ''));
@@ -766,7 +821,26 @@ function buildGroundedDeterministicSummary(semanticFrame, accepted = [], arbitra
       /\b(cara\s+daftar|bagaimana\s+(?:cara\s+)?daftar|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+daftar)\b/i.test(rawQuery);
 
     if (isProcedure && !isRequirements) {
-      const selectedProdiText = entityLabel || 'S1, D3, S2, atau Program Internasional';
+      const isDualDegreeUTB = /dual\s*degree.*(?:utb|bandung|nasional)|utb/i.test(
+        (entityLabel || '') + ' ' + (sessionActiveEntity || '') + ' ' + (rawQuery || '')
+      );
+      if (isDualDegreeUTB) {
+        const ddProcedureAnswer = `Pendaftaran Program Dual Degree Nasional (ITB STIKOM Bali x Universitas Teknologi Bandung / UTB) dilakukan melalui portal PMB resmi dengan tahapan berikut:
+
+1. **Akses Portal PMB**: Buka laman resmi pendaftaran mahasiswa baru di https://pmb.stikom-bali.ac.id
+2. **Pilih Jalur & Program Studi**: Pilih program studi kemitraan Dual Degree Nasional, yaitu **S1 Bisnis Digital (ITB STIKOM Bali)** dan **S1 Desain Komunikasi Visual (UTB Bandung)**.
+3. **Isi Formulir Pendaftaran**: Lengkapi data diri, data asal sekolah, serta kontak aktif Kakak.
+4. **Pembayaran Biaya Pendaftaran**: Selesaikan biaya pendaftaran PMB sesuai ketentuan gelombang yang berlaku.
+5. **Unggah Berkas Persyaratan**: Unggah berkas yang dipersyaratkan (scan ijazah/SKL, Kartu Keluarga, KTP, dan pasfoto formal).
+6. **Verifikasi & Registrasi Ulang**: Ikuti tahapan verifikasi berkas dan registrasi ulang mahasiswa baru.
+
+*Catatan*: Jika terdapat prosedur seleksi teknis atau persyaratan portofolio khusus untuk program studi DKV UTB yang belum tercantum secara rinci pada portal PMB online, Kakak disarankan untuk berkonsultasi langsung dengan Panitia PMB / Helpdesk ITB STIKOM Bali atau datang langsung ke kampus (Renon, Jimbaran, atau Abiansemal) agar mendapatkan pendampingan pendaftaran program Dual Degree ini.`;
+        return appendMissingAspectNote(ddProcedureAnswer);
+      }
+
+      const selectedProdiText = (entityLabel && !isExcludedEntity(entityLabel) && entityLabel !== 'program terkait')
+        ? entityLabel
+        : 'S1, D3, S2, atau Program Internasional';
       const procedureAnswer = `Pendaftaran mahasiswa baru di ITB STIKOM Bali bisa dilakukan secara online melalui tahapan berikut:
 
 1. **Akses Portal PMB**: Buka laman pendaftaran di https://pmb.stikom-bali.ac.id

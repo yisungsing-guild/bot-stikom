@@ -178,6 +178,7 @@ tests/*
 !tests/conversationalAcceptanceEngine.test.js
 !tests/comprehensiveMultiDomainAcceptance.test.js
 !tests/doubleDegreeSystemicContract.test.js
+!tests/productionOct29FailureRemediation.test.js
 !tests/fixtures/
 !tests/fixtures/candidateMetadataFixture.json
 

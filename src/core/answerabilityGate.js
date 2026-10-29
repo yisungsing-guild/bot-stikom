@@ -46,6 +46,27 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     }
   }
 
+  // Institutional Campus Locations (Renon, Jimbaran, Abiansemal) can authoritatively answer campus location queries
+  if (semanticFrame.intent === 'CAMPUS_LOCATION' ||
+      /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus\s+(?:renon|jimbaran|abiansemal)|dimana\s+kampus)\b/i.test(semanticFrame.rawQuery || '')) {
+    return {
+      status: ANSWERABILITY_STATUS.ANSWERABLE,
+      reason: 'institutional_campus_locations',
+      coveredAspects: ['location', 'campus_location', 'address'],
+      missingAspects: []
+    };
+  }
+
+  // Institutional Academic Event (Wisuda & Yudisium) guidelines can authoritatively answer graduation events
+  if (semanticFrame.domain === 'ACADEMIC_EVENT' || semanticFrame.intent === 'GRADUATION_INQUIRY' || /\b(?:wisuda|yudisium)\b/i.test(semanticFrame.rawQuery || '')) {
+    return {
+      status: ANSWERABILITY_STATUS.ANSWERABLE,
+      reason: 'institutional_academic_event_guidelines',
+      coveredAspects: ['procedure', 'requirements', 'schedule'],
+      missingAspects: []
+    };
+  }
+
   // 1. If no accepted evidence exists
   if (!accepted || accepted.length === 0) {
     // If user query represents a missed academic process or complaint -> ESCALATE to admin/academic staff

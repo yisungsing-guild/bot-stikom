@@ -343,7 +343,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
 
   // 1. Specialized Campus Service / Career Center (Takes precedence over generic vocabulary like "fasilitas", "biaya", "cara")
   const campusServiceEntity = entities.find(e => e.family === 'campus_service');
-  if (campusServiceEntity || /\b(?:career\s+center|cdc\b|inbis|inkubator\s+bisnis|magang|internship|campus\s+hiring|rekrutmen|kerja\s+sama|mitra\s+industri|penyaluran\s+kerja|perusahaan\s+kami)\b/i.test(normalized)) {
+  const isInternationalInternship = /\b(?:magang\s+(?:di\s+|ke\s+)?(?:luar\s+negeri|jepang)|bekerja\s+(?:di\s+|ke\s+)?luar\s+negeri|hi-?think)\b/i.test(normalized);
+  if (!isInternationalInternship && (campusServiceEntity || /\b(?:career\s+center|cdc\b|inbis|inkubator\s+bisnis|magang|internship|campus\s+hiring|rekrutmen|kerja\s+sama|mitra\s+industri|penyaluran\s+kerja|perusahaan\s+kami)\b/i.test(normalized))) {
     const isCareer = (campusServiceEntity && (campusServiceEntity.canonical.includes('CDC') || campusServiceEntity.canonical.includes('Career') || campusServiceEntity.canonical.includes('LinkedIn'))) ||
       /\b(?:career|cdc\b|magang|internship|campus\s+hiring|rekrutmen|penyaluran\s+kerja)\b/i.test(normalized);
     const isLLC = (campusServiceEntity && /language\s+learning\s+center|llc/i.test(campusServiceEntity.canonical)) ||
@@ -378,7 +379,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 3. International Programs & Collaborations (Double Degree, Magang Luar Negeri, GCCP, Student Exchange)
-  if (entities.some(e => e.family === 'international_program') || /\b(double degree|dual degree|international program|pertukaran\s+(?:pelajar|mahasiswa)|student exchange|gccp|bccp|magang\s+(?:ke\s+)?jepang|hi-?think|international\s+student\s+exchange|exchange\s+options?|study\s+abroad)\b/i.test(normalized)) {
+  if (entities.some(e => e.family === 'international_program') || /\b(double degree|dual degree|international program|pertukaran\s+(?:pelajar|mahasiswa)|student exchange|gccp|bccp|magang\s+(?:ke\s+)?jepang|magang\s+(?:di\s+|ke\s+)?luar\s+negeri|bekerja\s+(?:di\s+|ke\s+)?luar\s+negeri|hi-?think|international\s+student\s+exchange|exchange\s+options?|study\s+abroad)\b/i.test(normalized)) {
     let intent = 'INTERNATIONAL_PROGRAM_INFO';
     const aspects = [];
     let relation = 'PROGRAM_DETAILS';
@@ -436,7 +437,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 4b. Thesis / Final Project / Skripsi Requirements & Academic Guidelines (e.g. Q056)
-  if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|final\s+project|thesis|thesis\s+defense|final\s+project\s+defense)\b/i.test(normalized)) {
+  if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta|menulis\s+ta|syarat\s+ta|\bta\b|final\s+project|thesis|thesis\s+defense|final\s+project\s+defense)\b/i.test(normalized)) {
     return {
       domain: 'ACADEMIC_CURRICULUM',
       intent: 'THESIS_REQUIREMENTS',
@@ -545,8 +546,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   // 7. Program Overview / Definition / Profile / Career / Degree (Generic across academic programs)
   const hasAcademicProgram = entities.some(e => e.family === 'academic_program' || e.type === 'program');
   const hasStudentOrg = entities.some(e => e.family === 'student_organization') || /\b(himpunan\s+mahasiswa|himaprodi|hima\b|ukm\b|ormawa)\b/i.test(normalized);
-  if (!hasStudentOrg && ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|deskripsi|belajar\s+apa|mempelajari\s+apa|fokus(?:nya)?(?:\s+apa|\s+jurusan)?|kuliah\s+tentang\s+apa|prospek(?:nya)?|peluang\s+kerja|lulusan(?:nya)?\s+(?:bisa\s+)?jadi\s+apa|lulusan|kerja\s+(?:sebagai\s+)?apa|jadi\s+apa|profesi|karir|karier|gelar(?:nya)?)\b/i.test(normalized) && hasAcademicProgram) ||
-      (/\b(apa\s+itu\s+program\s+studi|profil\s+prodi|profil\s+program\s+studi)\b/i.test(normalized)))) {
+  if (!hasStudentOrg && ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|deskripsi|gambaran|belajar\s+apa|mempelajari\s+apa|fokus(?:nya)?(?:\s+apa|\s+jurusan)?|kuliah\s+tentang\s+apa|prospek(?:nya)?|peluang\s+kerja|lulusan(?:nya)?\s+(?:bisa\s+)?jadi\s+apa|lulusan|kerja\s+(?:sebagai\s+|menjadi\s+)?apa|bekerja\s+(?:sebagai\s+|menjadi\s+)?apa|jadi\s+apa|profesi|karir|karier|gelar(?:nya)?)\b/i.test(normalized) && hasAcademicProgram) ||
+      (/\b(apa\s+itu\s+program\s+studi|profil\s+prodi|profil\s+program\s+studi|gambaran\s+program\s+studi|gambaran\s+prodi)\b/i.test(normalized)))) {
     const isDegreeInquiry = /\b(gelar(?:nya)?)\b/i.test(normalized);
     return {
       domain: 'ACADEMIC_PROGRAM',
@@ -569,6 +570,21 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       desiredAction: 'PROVIDE_LIVE_STATUS',
       aspects: ['quota', 'dynamic_availability', 'live_status'],
       relation: 'LIVE_ENROLLMENT_AVAILABILITY'
+    };
+  }
+
+  // 8b. Student Count / Campus Population Inquiry
+  if (/\b(?:jumlah|total|banyaknya)\s+mahasiswa(?:\s+(?:aktif|yang\s+sedang\s+kuliah|kuliah))?\b/i.test(normalized) ||
+      /\b(?:berapa\s+(?:banyak\s+)?mahasiswa(?:\s+yang\s+(?:sedang\s+)?kuliah)?)\b/i.test(normalized) ||
+      /\bmahasiswa\b.*?\b(?:ada\s+berapa|berapa\s+banyak|jumlahnya\s+berapa)\b/i.test(normalized)) {
+    return {
+      domain: 'CAMPUS_INFO',
+      intent: 'STUDENT_COUNT_INQUIRY',
+      retrievalRequired: true,
+      userState: 'INQUIRING',
+      desiredAction: 'PROVIDE_STUDENT_COUNT_INFO',
+      aspects: ['student_count', 'campus_statistics'],
+      relation: 'CAMPUS_STATISTICS'
     };
   }
 
@@ -658,8 +674,9 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     const isMembershipCheck = /\b(?:apakah\s+.*?\s+termasuk|termasuk\s+(?:ukm|kategori|bidang)|is\s+.*?\s+(?:a|part\s+of)\b)/i.test(normalized) ||
       /\b(?:apakah\s+.*?\s+termasuk|termasuk\s+(?:ukm|kategori|bidang)|is\s+.*?\s+(?:a|part\s+of)\b)/i.test(raw);
 
-    const isOrgList = /\b(?:apa\s+(?:saja\s+)?(?:ormawa|ukm|organisasi)|(?:ormawa|ukm|organisasi)\s+apa\s+saja|daftar\s+(?:ormawa|ukm|organisasi)|ada\s+(?:ormawa|ukm|organisasi)\s+apa)\b/i.test(normalized) ||
-      /\b(?:apa\s+(?:saja\s+)?(?:ormawa|ukm|organisasi)|(?:ormawa|ukm|organisasi)\s+apa\s+saja|daftar\s+(?:ormawa|ukm|organisasi)|ada\s+(?:ormawa|ukm|organisasi)\s+apa)\b/i.test(raw);
+    const orgTerm = '(?:unit\\s+kegiatan\\s+mahasiswa|ormawa|ukm|organisasi)';
+    const orgListRe = new RegExp('(?:apa\\s+(?:saja\\s+)?' + orgTerm + '|' + orgTerm + '\\s+(?:ada\\s+)?apa\\s+saja|daftar\\s+(?:seluruh\\s+)?' + orgTerm + '|ada\\s+' + orgTerm + '\\s+apa)', 'i');
+    const isOrgList = orgListRe.test(normalized) || orgListRe.test(raw);
 
     let orgIntent = 'ORGANIZATION_INQUIRY';
     if (isMembershipCheck) {
@@ -701,7 +718,13 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 13. Tuition Fee / Biaya Kuliah (Prioritized before PMB schedule when cost/fee is asked)
-  if (/\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized)) {
+  const isWaveFeeFollowup = (
+    (/\b(?:kalau\s+)?gelombang\s*(?:[1-4]|i{1,4}|khusus|awal|sisipan)\s*(?:berapa|biaya|potongan|diskon|dpp|total)\b/i.test(normalized)) ||
+    (/\bgelombang\b/i.test(normalized) && /\b(?:berapa|biaya|potongan|diskon)\b/i.test(normalized)) ||
+    (sessionData?.activeDomain === 'TUITION_FEE' && /\b(?:kalau\s+)?(?:gelombang|semester|cicilan|angsuran|berapa)\b/i.test(normalized) && !/\b(?:kapan|tanggal|jadwal)\b/i.test(normalized))
+  );
+
+  if (isWaveFeeFollowup || /\b(biaya(?:nya)?|biaya\s+kuliah|spp(?:nya)?|dpp(?:nya)?|uang\s+kuliah(?:nya)?|uang\s+pangkal|uang\s+gedung|biaya\s+gedung|bayar\s+kuliah|bayar\s+berapa|angsuran|potongan\s+biaya|cicilan|tuition(?:\s+fee)?|tuition\s+cost|cost\s+of\s+study|fees?|fee\s+per\s+semester|semester\s+fee|pay\s+each\s+semester|installment)\b/i.test(normalized)) {
     const isInstallmentProcedure =
       /\b(?:syarat|persyaratan|prosedur|tata\s*cara|cara(?:\s+mengajukan)?|bagaimana\s+mengajukan|pengajuan|dokumen|berkas|formulir)\b/i.test(normalized) &&
       /\b(?:di)?(?:cicil(?:an)?|angsur(?:an)?|mengangsur)\b/i.test(normalized);
@@ -719,6 +742,9 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     }
 
     const feeAspects = ['fee', 'dpp', 'tuition'];
+    if (isWaveFeeFollowup) {
+      feeAspects.push('wave_discount');
+    }
     if (/\b(komponen|rincian|unsur|apa\s+saja|components?|details?|breakdown)\b/i.test(normalized)) {
       feeAspects.push('components');
     }
@@ -779,7 +805,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   const hasAcademicEvent = !isDegreeInquiry && (entities.some(e => e.type === 'academic_event') ||
-    /\b(?:kalender\s+akademik)\b/i.test(normalized));
+    /\b(?:uas|uts|ujian\s+akhir\s+semester|ujian\s+tengah\s+semester|kalender\s+akademik)\b/i.test(normalized));
   if (hasAcademicEvent) {
     return {
       domain: 'ACADEMIC_SCHEDULE',
@@ -806,8 +832,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   }
 
   // 15. Admission / PMB Schedule & General Topic Opener
-  if (/\b(?:pmb|pendaftaran|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
-      (/\bdaftar\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized))) {
+  if (/\b(?:pmb|pendaftaran|mendaftar|daftar\s+(?:kuliah|online|ulang|pmb|mahasiswa|stikom)|syarat|persyaratan|dokumen|berkas|gelombang|masih dibuka|kapan buka|jalur pendaftaran|mulai dari mana|proses masuk|cara masuk)\b/i.test(normalized) ||
+      (/\b(?:daftar|mendaftar)\b/i.test(normalized) && !/\b(?:daftar\s+harga|daftar\s+menu|daftar\s+matkul|daftar\s+mata\s+kuliah|daftar\s+prodi|daftar\s+jurusan|daftar\s+program)\b/i.test(normalized))) {
     const isNow = TEMPORAL_NOW_REGEX.test(normalized);
     if (isNow && /\b(?:gelombang|buka|tutup|jadwal|periode|kapan)\b/i.test(normalized)) {
       return {
@@ -821,7 +847,7 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
       };
     }
 
-    const isProcedureOrRequirements = /\b(?:cara\s+daftar|bagaimana\s+(?:cara\s+)?daftar|syarat|persyaratan|dokumen|berkas|alur|prosedur|mulai\s+dari\s+mana|proses\s+masuk|cara\s+masuk)\b/i.test(normalized);
+    const isProcedureOrRequirements = /\b(?:cara\s+(?:daftar|mendaftar)|bagaimana\s+(?:cara\s+)?(?:daftar|mendaftar)|syarat|persyaratan|dokumen|berkas|alur|prosedur|mulai\s+dari\s+mana|proses\s+masuk|cara\s+masuk)\b/i.test(normalized);
     const isTopicOpener = isProcedureOrRequirements ||
       /\b(saya\s+ingin\s+bertanya\s+tentang\s+pmb|mau\s+tanya\s+pmb|info\s+pmb|tentang\s+pmb|informasi\s+pmb|bagaimana\s+pmb|pendaftaran\s+stikom|daftar\s+stikom)\b/i.test(normalized) ||
       (!/\b(gelombang|kapan|jadwal|tanggal|buka sampai|periode)\b/i.test(normalized) && /\b(pmb|pendaftaran)\b/i.test(normalized) && !/\b(biaya|bayar|kurikulum|beasiswa)\b/i.test(normalized));
@@ -1060,8 +1086,13 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
   let domain = inferred.domain;
   let intent = inferred.intent;
 
-  if (contextDep.shouldInherit && contextDep.inheritedDomain && (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN')) {
-    domain = contextDep.inheritedDomain;
+  if (contextDep.shouldInherit && contextDep.inheritedDomain) {
+    if (domain === 'GENERAL' || domain === 'OUT_OF_DOMAIN') {
+      domain = contextDep.inheritedDomain;
+    } else if (contextDep.inheritedDomain === 'ACADEMIC_EVENT' && !/\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|kuliah\s+di|masuk\s+stikom)\b/i.test(normalized)) {
+      domain = 'ACADEMIC_EVENT';
+      intent = 'GRADUATION_INQUIRY';
+    }
   }
 
   // Extract Academic Level
@@ -1466,9 +1497,15 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     } else if (syncFrame.intent === 'ORGANIZATION_MEMBERSHIP_CHECK') {
       intent = 'ORGANIZATION_MEMBERSHIP_CHECK';
       domain = 'ORGANIZATION_UKM';
-    } else if (syncFrame.intent === 'CAMPUS_LOCATION') {
+    } else if (syncFrame.intent === 'CAMPUS_LOCATION' || /\b(?:lokasi\s+kampus|alamat\s+kampus|kampus(?:nya)?\s+di\s*mana|dimana\s+kampus)\b/i.test(rawQuery)) {
       intent = 'CAMPUS_LOCATION';
       domain = 'FACILITIES';
+    } else if (syncFrame.domain === 'ACADEMIC_EVENT' || syncFrame.intent === 'GRADUATION_INQUIRY' || /\b(?:wisuda|yudisium)\b/i.test(rawQuery)) {
+      domain = 'ACADEMIC_EVENT';
+      intent = syncFrame.intent || 'GRADUATION_INQUIRY';
+    } else if (syncFrame.domain === 'TUITION_FEE' || syncFrame.intent === 'TUITION_FEE_INQUIRY' || primaryConcept === 'FINANCIAL_COST') {
+      domain = 'TUITION_FEE';
+      intent = syncFrame.intent || 'TUITION_FEE_INQUIRY';
     } else if (domain === 'OUT_OF_DOMAIN' && !isContextInheritedTurn) {
       intent = 'OUT_OF_DOMAIN_INQUIRY';
       domain = 'OUT_OF_DOMAIN';
@@ -1561,6 +1598,12 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       } else if (domain === 'INTERNATIONAL' || syncFrame.domain === 'INTERNATIONAL' || primaryConcept === 'INTERNATIONAL_STUDY' || resolvedEntities.some(e => e.family === 'international_program') || /\b(pertukaran\s+(?:pelajar|mahasiswa)|student\s+exchange)\b/i.test(rawQuery)) {
         intent = 'INTERNATIONAL_PROGRAM_INFO';
         domain = 'INTERNATIONAL';
+      } else if (domain === 'ACADEMIC_EVENT' || syncFrame.domain === 'ACADEMIC_EVENT' || syncFrame.intent === 'GRADUATION_INQUIRY' || /\b(?:wisuda|yudisium)\b/i.test(rawQuery)) {
+        domain = 'ACADEMIC_EVENT';
+        intent = 'GRADUATION_INQUIRY';
+      } else if (domain === 'TUITION_FEE' || syncFrame.domain === 'TUITION_FEE' || primaryConcept === 'FINANCIAL_COST' || aspects.includes('fee')) {
+        intent = (syncFrame.domain === 'TUITION_FEE' && syncFrame.intent) ? syncFrame.intent : 'TUITION_FEE_INQUIRY';
+        domain = 'TUITION_FEE';
       } else if (aspects.includes('procedure')) {
         if (aspects.includes('fee') || domain === 'TUITION_FEE' || primaryConcept === 'FINANCIAL_COST') {
           intent = 'PAYMENT_CONFIRMATION_PROCEDURE';
@@ -1575,9 +1618,6 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       } else if (aspects.includes('schedule')) {
         intent = 'ADMISSION_SCHEDULE';
         domain = 'PMB';
-      } else if (aspects.includes('fee')) {
-        intent = 'TUITION_FEE_INQUIRY';
-        domain = 'TUITION_FEE';
       } else if (aspects.includes('requirements')) {
         if (/\b(?:tugas\s+akhir|skripsi|pedoman\s+ta)\b/i.test(rawQuery)) {
           intent = 'THESIS_REQUIREMENTS';

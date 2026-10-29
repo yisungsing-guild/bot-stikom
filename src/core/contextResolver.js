@@ -54,7 +54,7 @@ const NON_REFERENTIAL_NYA_WORDS = new Set([
 
 // Genuine ellipsis starts (e.g. "bagaimana dengan...", "kalau yang...", "what about...", "how about...")
 const GENUINE_ELLIPSIS_REGEX = /^(kalau|bagaimana\s+dengan|gimana\s+dengan|lalu|kalo|what\s+about|how\s+about|and)\s+(the\s+|yang\s+)?([a-z0-9\s]+)\??$/i;
-const PREDICATE_ELLIPSIS_REGEX = /^(?:bagaimana\s+cara\s+bergabung|gimana\s+cara\s+bergabung|cara\s+bergabungnya(?:\s+gimana)?|cara\s+bergabung|masih\s+bisa\s+daftar|bisa\s+daftar\s+sekarang|kapan\s+jadwalnya|kapan\s+batasnya|kapan\s+buka|syaratnya\s+apa|biayanya\s+berapa|cara\s+daftarnya\s+gimana)\??$/i;
+const PREDICATE_ELLIPSIS_REGEX = /^(?:bagaimana\s+cara\s+bergabung|gimana\s+cara\s+bergabung|cara\s+bergabungnya(?:\s+gimana)?|cara\s+bergabung|masih\s+bisa\s+daftar|bisa\s+daftar\s+sekarang|kapan\s+jadwalnya|kapan\s+batasnya|kapan\s+buka|syaratnya\s+apa|biayanya\s+berapa|cara\s+daftarnya\s+gimana|tanggal\s+berapa(?:\s+ya)?|kapan\s+tanggalnya(?:\s+ya)?|untuk\s+biaya\s+berapa(?:\s+ya)?|biaya\s+berapa(?:\s+ya)?)\??$/i;
 
 function hasExplicitPronounReference(query) {
   if (!query || typeof query !== 'string') return false;
@@ -179,11 +179,52 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     };
   }
 
+  // Explicit academic event check: wisuda/yudisium must NOT inherit previous PMB or program entity
+  const hasExplicitAcademicEvent = /\b(?:wisuda|yudisium)\b/i.test(query);
+  if (hasExplicitAcademicEvent) {
+    return {
+      shouldInherit: false,
+      reason: 'explicit_academic_event'
+    };
+  }
+
+  // Wave fee follow-up check (e.g. "Kalau gelombang 2 berapa?", "Kalau gelombang 1?")
+  const isWaveFeeFollowup = (
+    (/\b(?:kalau\s+)?gelombang\s*(?:[1-4]|i{1,4}|khusus|awal|sisipan)\s*(?:berapa|biaya|potongan|diskon|dpp|total)\b/i.test(query)) ||
+    (/\bgelombang\b/i.test(query) && /\b(?:berapa|biaya|potongan|diskon)\b/i.test(query)) ||
+    (sessionData.activeDomain === 'TUITION_FEE' && /\b(?:kalau\s+)?(?:gelombang|semester|cicilan|angsuran|berapa)\b/i.test(query) && !/\b(?:kapan|tanggal|jadwal)\b/i.test(query))
+  );
+
+  if (isWaveFeeFollowup && sessionData.activeEntity) {
+    return {
+      shouldInherit: true,
+      reason: 'wave_fee_continuation',
+      inheritedDomain: 'TUITION_FEE',
+      inheritedEntity: sessionData.activeEntity
+    };
+  }
+
   // Check 3: Attribute or Procedural Continuation without explicit entity
   const isAttributeInquiry = /\b(gelar(?:\s+apa)?|masa\s+studi|durasi\s+studi|lama\s+studi|prospek\s+lulusan|rincian\s+biaya|biaya(?:\s+kuliah)?|spp|dpp|kontak(?:nya)?|nomor(?:\s+telepon|\s+wa|\s+whatsapp|\s+hp)?(?:nya)?|telepon(?:nya)?|whatsapp(?:nya)?|wa(?:nya)?|narahubung(?:nya)?|hubungi|degree(?:s)?(?:\s+awarded|\s+received)?|qualification(?:s)?|study\s+duration|study\s+length|duration(?:\s+of\s+study)?|how\s+long\b|graduate(?:s)?|graduation|contact(?:s)?)\b/i.test(query);
   const isProceduralInquiry = /\b(?:bagaimana\s+cara\s+(?:daftar|mendaftar)|cara\s+(?:daftar|mendaftar|pendaftaran)|alur\s+pendaftaran|prosedur\s+pendaftaran|syarat(?:\s+pendaftaran|\s+masuk|\s+daftar)?|persyaratan(?:\s+pendaftaran|\s+masuk|\s+daftar)?|berkas|dokumen(?:\s+persyaratan)?|kapan\s+pendaftaran|jadwal\s+pendaftaran|tahapan\s+pendaftaran|how\s+to\s+apply|how\s+to\s+register|admission\s+procedure|registration\s+procedure|admission\s+requirements)\b/i.test(query);
+  const isDateInquiry = /\b(tanggal(?:\s+berapa)?|kapan|jadwal|waktu|hari\s+apa|pelaksanaan)\b/i.test(query);
 
-  if ((isAttributeInquiry || isProceduralInquiry) && sessionData.activeEntity) {
+  // Academic Event Continuation (Wisuda / Yudisium)
+  const isExplicitPMB = /\b(?:pmb|mahasiswa\s+baru|calon\s+mahasiswa|kuliah\s+di|masuk\s+stikom)\b/i.test(query);
+  const isAcademicEventSession = (sessionData.activeDomain === 'ACADEMIC_EVENT' || sessionData.activeIntent === 'GRADUATION_INQUIRY' || /\b(?:wisuda|yudisium)\b/i.test(sessionData.lastQuery || ''));
+
+  if (isAcademicEventSession && (isProceduralInquiry || isDateInquiry || isAttributeInquiry)) {
+    if (!isExplicitPMB) {
+      return {
+        shouldInherit: true,
+        reason: 'academic_event_continuation',
+        inheritedDomain: 'ACADEMIC_EVENT',
+        inheritedEntity: null
+      };
+    }
+  }
+
+  if ((isAttributeInquiry || isProceduralInquiry || isDateInquiry) && sessionData.activeEntity) {
     const isFee = /\b(rincian\s+biaya|biaya|spp|dpp)\b/i.test(query);
     const isContact = /\b(kontak|nomor|telepon|wa|whatsapp|narahubung|hubungi|contact)\b/i.test(query);
     const isAdmission = isProceduralInquiry || /\b(daftar|pendaftaran|syarat|persyaratan|berkas|dokumen)\b/i.test(query);
@@ -192,10 +233,13 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     if (isFee) inheritedDomain = 'TUITION_FEE';
     else if (isContact) inheritedDomain = 'CAMPUS_SERVICE';
     else if (isAdmission && inheritedDomain !== 'INTERNATIONAL') inheritedDomain = 'PMB';
+    else if (isDateInquiry && (sessionData.activeDomain === 'ACADEMIC_EVENT' || sessionData.activeDomain === 'ACADEMIC_SCHEDULE' || /^(?:wisuda|yudisium)$/i.test(String(sessionData.activeEntity?.canonical || sessionData.activeEntity || '')))) {
+      inheritedDomain = 'ACADEMIC_EVENT';
+    }
 
     return {
       shouldInherit: true,
-      reason: isAttributeInquiry ? 'attribute_continuation' : 'procedural_continuation',
+      reason: isDateInquiry ? 'date_continuation' : (isAttributeInquiry ? 'attribute_continuation' : 'procedural_continuation'),
       inheritedDomain,
       inheritedEntity: sessionData.activeEntity
     };

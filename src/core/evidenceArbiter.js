@@ -609,6 +609,10 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   const isSportsChunk = /\b(olahraga|futsal|basket|bulutangkis|badminton|fitness|gym)\b/i.test(text);
 
   const isContactChunk = /\b(hotline|kontak|telepon|telp|whatsapp|wa|email|humas|08\d{8,}|\+62|0361|call\s*center)\b/i.test(text);
+  const isLocationChunk = candidate.docCategory === 'LOKASI' ||
+    candidate.category === 'LOKASI' ||
+    (candidate.metadata && (candidate.metadata.docCategory === 'LOKASI' || candidate.metadata.category === 'LOKASI')) ||
+    /\b(lokasi\s+kampus|alamat\s+kampus|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal|jl\.\s*raya\s+puputan|jl\.\s*raya\s+kampus\s+udayana)\b/i.test(text);
   const isScheduleChunk = /\b(gelombang|jadwal|kalender\s+pendaftaran|periode|tahap\s+\d|waktu\s+pendaftaran)\b/i.test(text);
   const isPaymentProcedureChunk = /\b(konfirmasi\s+pembayaran|bukti\s+bayar|transfer|tata\s+cara\s+pembayaran|rekening|waktu\s+pembayaran)\b/i.test(text);
   const isAccreditationChunk = /\b(akreditasi|terakreditasi|ban-?pt|lam-?infokom|peringkat\s+akreditasi|sk\s+akreditasi|\/sk\/ban-pt\/|\/sk\/lam-infokom\/|terakreditasi\s+(?:baik|unggul|a|b))\b/i.test(text);
@@ -618,6 +622,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   if (isOverviewChunk) providedAspects.push('overview', 'definition', 'curriculum_difference', 'curriculum', 'courses', 'career', 'competencies');
   if (isCareerChunk) providedAspects.push('career_prospects', 'career');
   if (isContactChunk) providedAspects.push('contact');
+  if (isLocationChunk) providedAspects.push('location', 'campus_location', 'address');
   if (isScheduleChunk) providedAspects.push('schedule', 'waves', 'wave_info');
   if (isPaymentProcedureChunk) providedAspects.push('procedure', 'payment_procedure');
   if (isScholarshipChunk) providedAspects.push('scholarship', 'discount', 'requirements');
@@ -699,18 +704,27 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
 
   // Strict aspect matching against retrievalPlan.requiredAspects
   if (Array.isArray(requiredAspects) && requiredAspects.length > 0 && !requiredAspects.includes('general')) {
-    const wantsContact = requiredAspects.some(a => ['contact', 'helpdesk'].includes(a)) || retrievalPlan.intent === 'PMB_CONTACT_INQUIRY';
+    const wantsLocation = requiredAspects.some(a => ['location', 'campus_location', 'address'].includes(a)) || retrievalPlan.intent === 'CAMPUS_LOCATION';
+    const wantsContact = !wantsLocation && (requiredAspects.some(a => ['contact', 'helpdesk'].includes(a)) || retrievalPlan.intent === 'PMB_CONTACT_INQUIRY');
     const wantsSchedule = requiredAspects.some(a => ['schedule', 'wave_info'].includes(a)) || retrievalPlan.intent === 'ADMISSION_SCHEDULE';
     const wantsFee = requiredAspects.some(a => ['fee', 'tuition', 'dpp'].includes(a)) || retrievalPlan.domain === 'TUITION_FEE';
     const wantsCareer = requiredAspects.some(a => ['career', 'career_prospects', 'prospek_karir'].includes(a)) || retrievalPlan.intent === 'CAREER_PROSPECTS_INQUIRY';
     const wantsCurriculum = !wantsCareer && (requiredAspects.some(a => ['curriculum', 'courses'].includes(a)) || retrievalPlan.domain === 'ACADEMIC_CURRICULUM');
     const wantsOverview = requiredAspects.some(a => ['overview', 'definition', 'curriculum_difference'].includes(a));
     const wantsScholarship = requiredAspects.some(a => ['scholarship', 'discount'].includes(a)) || retrievalPlan.domain === 'SCHOLARSHIP';
-    const wantsFacilities = requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES';
+    const wantsFacilities = !wantsLocation && (requiredAspects.some(a => ['facilities', 'lab'].includes(a)) || retrievalPlan.domain === 'FACILITIES');
     const wantsOrg = requiredAspects.some(a => ['student_organization', 'ukm'].includes(a)) || retrievalPlan.domain === 'ORGANIZATION_UKM';
     const wantsPmbGeneral = requiredAspects.some(a => ['admission_overview', 'procedure', 'admission_pathways'].includes(a)) || (retrievalPlan.domain === 'PMB' && (retrievalPlan.intent === 'GENERAL_PMB_INQUIRY' || retrievalPlan.intent === 'ADMISSION_PROCEDURE'));
 
-    if (wantsContact) {
+    if (wantsLocation) {
+      if (!isLocationChunk) {
+        return {
+          accepted: false,
+          disposition: 'REJECT_ASPECT_MISMATCH',
+          reason: 'evidence_does_not_contain_location_aspect'
+        };
+      }
+    } else if (wantsContact) {
       const hasContactSignal = /\b(whatsapp|wa|telepon|telp|call\s*center|email|kontak|08\d{8,}|\+62|0361|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
       if (!hasContactSignal || isHobbyChunk || isCurriculumChunk) {
         return {

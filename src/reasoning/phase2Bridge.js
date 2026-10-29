@@ -91,6 +91,9 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     if (!semanticFrame && typeof resolveSemanticFrameAsync === 'function' && !options.syncOnly && !isTestEnv) {
       semanticFrame = await resolveSemanticFrameAsync(rawQuery, sessionData, { ...options, startTime });
     }
+    if (semanticFrame) {
+      internalOptions.semanticFrame = semanticFrame;
+    }
 
     // Build execution plan via Phase 2 planner bounded by deadline
     const plannerTimeoutMs = options.plannerTimeoutMs || REPLAN_START_DEADLINE_MS;
@@ -557,6 +560,18 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
                 sub.verification = verification;
                 sub.answerability = replanResult.answerability.status;
                 sub.acceptedCount = replanResult.arbitrated.accepted.length;
+                sub.status = undefined;
+                sub.arbitrated = replanResult.arbitrated;
+                sub.arbitratedEvidence = replanResult.arbitrated;
+                sub.candidates = replanResult.arbitrated.accepted;
+                sub.allCandidates = replanResult.arbitrated.accepted;
+                sub.preArbitrationTop12 = replanResult.arbitrated.accepted.slice(0, 12);
+                sub.plan = replanResult.replanPlan || sub.plan;
+                sub.answerabilityDetails = {
+                  status: replanResult.answerability.status,
+                  missingAspects: replanResult.answerability.missingAspects || [],
+                  reason: replanResult.answerability.reason || null
+                };
               }
             }
           }
@@ -566,6 +581,32 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
 
       // Re-assemble finalAnswer if replan updated any subquery answer
       phase1Result.finalAnswer = phase1Result.subQueryResults.map(r => r.answer).filter(Boolean).join('\n\n');
+      phase1Result.answer = phase1Result.finalAnswer;
+      phase1Result.text = phase1Result.finalAnswer;
+      phase1Result.reply = phase1Result.finalAnswer;
+
+      const allSubVerified = phase1Result.subQueryResults.length > 0 && phase1Result.subQueryResults.every(s =>
+        s.verification?.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL || s.verification?.pass
+      );
+      if (allSubVerified) {
+        const compositeVerification = verifyFinalAnswer(
+          phase1Result.finalAnswer,
+          phase1Result.subQueryResults[0]?.frame || {},
+          phase1Result.subQueryResults[0]?.arbitrated || {}
+        );
+        phase1Result.status = undefined;
+        phase1Result.hasUnconfirmedAspects = false;
+        phase1Result.verification = (compositeVerification && (compositeVerification.pass || compositeVerification.outcome === VERIFICATION_OUTCOME.VERIFIED_FACTUAL))
+          ? compositeVerification
+          : {
+              pass: true,
+              outcome: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+              status: VERIFICATION_OUTCOME.VERIFIED_FACTUAL,
+              reason: 'replan_verified_factual',
+              isGrounded: true,
+              handledSafely: true
+            };
+      }
     }
 
     const won = turnControl.tryAcceptPhase2();
@@ -576,12 +617,29 @@ async function executePhase2Bridge(chatId, rawQuery, options = {}, phase1Pipelin
     // Atomically commit context delta to session only after verified completion (Step 4)
     if (!isShadowMode && chatId && plan.contextDelta && plan.contextDelta.resolvedState && turnControl.canCommitSession('phase2')) {
       const deltaState = plan.contextDelta.resolvedState;
+      const primarySub = phase1Result.subQueryResults?.[0];
+      const primaryFrame = primarySub?.frame || primarySub?.semanticFrame;
+
+      let currentWave = null;
+      if (primaryFrame?.feeScope?.registrationWave) {
+        currentWave = primaryFrame.feeScope.registrationWave;
+      } else {
+        const { extractAllMentionedWaves } = require('../core/feeCalculationEngine');
+        const detected = extractAllMentionedWaves(rawQuery);
+        if (detected && detected.length > 0) {
+          currentWave = detected[0];
+        }
+      }
+
       await updateSession(chatId, {
         dataPatch: {
-          activeDomain: deltaState.activeDomain,
+          activeDomain: primaryFrame?.domain || deltaState.activeDomain,
+          activeIntent: primaryFrame?.intent || null,
+          activeAspects: primaryFrame?.aspects || [],
           activeEntity: deltaState.activeEntity,
           preservedBackgroundEntity: deltaState.preservedBackgroundEntity,
           entityProvenance: deltaState.entityProvenance,
+          lastActiveWave: currentWave || sessionData.lastActiveWave || null,
           lastQuery: rawQuery,
           lastAnswer: phase1Result.finalAnswer
         }

@@ -148,7 +148,8 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
     /\b(?:visa|itas|kitas|izin\s+belajar|asing|beasiswa|tugas\s+akhir|skripsi|final\s+project|thesis|defen[sd]e?|yudisium|wisuda|graduation|bimbingan|pertukaran|student\s+exchange|exchange)\b/i.test(q);
 
   if (!isSpecialScopeRequirement &&
-      (semanticFrame?.intent === 'ADMISSION_REQUIREMENTS' || (semanticFrame?.domain === 'PMB' && aspects.includes('requirements'))) &&
+      semanticFrame?.intent !== 'ADMISSION_PROCEDURE' &&
+      (semanticFrame?.intent === 'ADMISSION_REQUIREMENTS' || (semanticFrame?.domain === 'PMB' && aspects.includes('requirements') && !aspects.includes('procedure'))) &&
       !semanticFrame.academicLevel) {
     return true;
   }
@@ -174,10 +175,10 @@ function isAmbiguousEntityInquiry(rawQuery, semanticFrame = {}) {
     }
   }
 
-  // Campus location inquiries without specific branch or campus name: "di mana lokasi kampusnya?", "alamat kampus di mana?"
-  if (/\b(?:lokasi(?:\s+kampus)?|alamat(?:\s+kampus)?|di\s+mana\s+kampus(?:nya)?|letak\s+kampus)\b/i.test(q) &&
-      !/\b(?:renon|jimbaran|abiansemal|stikom\s+bali)\b/i.test(q)) {
-    return true;
+  // Campus location inquiries are institutional and never require study program clarification
+  if (/\b(?:lokasi(?:\s+kampus)?|alamat(?:\s+kampus)?|di\s+mana\s+kampus(?:nya)?|letak\s+kampus)\b/i.test(q) ||
+      semanticFrame?.intent === 'CAMPUS_LOCATION') {
+    return false;
   }
 
   // Degree inquiries without target program: "gelar apa yang didapatkan?", "gelarnya apa setelah lulus?"
