@@ -26,6 +26,15 @@ function sanitizeOpenAiChatPayload(payload = {}) {
     p.reasoning_effort = 'none';
   }
 
+  // 1b. Structured JSON-schema extraction (e.g. semantic parsing) on GPT-6 / reasoning models:
+  // with a small max_completion_tokens budget, hidden reasoning can consume the entire budget
+  // (finish_reason="length", empty content). Default to reasoning_effort "none" unless the caller
+  // explicitly requested a reasoning level.
+  const hasJsonSchema = Boolean(p.response_format && p.response_format.type === 'json_schema');
+  if (hasJsonSchema && isGpt6OrReasoning && p.reasoning_effort === undefined) {
+    p.reasoning_effort = 'none';
+  }
+
   // 2. For GPT-6 Luna and reasoning models (or active reasoning_effort),
   // strip temperature and top_p completely to avoid 400 Bad Request
   // ("Unsupported value: 'temperature' does not support 0 with this model. Only the default (1) value is supported.")

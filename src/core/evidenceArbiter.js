@@ -320,6 +320,15 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
   const { targetEntities = [], excludedConflictingEntities = [], temporalConstraint, requiredAspects } = retrievalPlan;
   const queryText = (retrievalPlan.query || retrievalPlan.rawQuery || (retrievalPlan.queryVariants && retrievalPlan.queryVariants.join(' ')) || '').toLowerCase();
 
+  // 0.0 Synthetic OCR / ingestion instruction placeholder noise gate
+  if (/Gunakan nama file, caption, atau input manual tambahan untuk memberi konteks spesifik/i.test(candidateText)) {
+    return {
+      accepted: false,
+      disposition: 'REJECT_ASPECT_MISMATCH',
+      reason: 'synthetic_ocr_instruction_placeholder'
+    };
+  }
+
   // 0.1 Orphan Header Noise Gate (Headers lacking substantive facts/criteria/benefits)
   const trimmed = candidateText.trim();
   const isOrphanHeader = (trimmed.endsWith(':') || /^(?:\d+[\.\)]|\-|\*)\s*[^:\n]+:$/.test(trimmed)) &&
@@ -504,6 +513,18 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
     /\b(?:program pascasarjana|magister sistem informasi|s2 sistem informasi)\b/i.test(candidate?.text || candidate?.chunk || '');
   if (isCandidateS2 && (candProgCode === 'SI' || candRawProg === 'SI' || !candProgCode)) {
     candProgCode = 'S2';
+  }
+
+  const querySpecificallyAsksS2 = academicLevel === 'S2' ||
+    /\b(?:s2|pascasarjana|magister)\b/i.test(queryText) ||
+    /\b(?:s2|pascasarjana|magister)\b/i.test(userQueryLower);
+
+  if (isCandidateS2 && !querySpecificallyAsksS2) {
+    return {
+      accepted: false,
+      disposition: 'REJECT_ACADEMIC_LEVEL_MISMATCH',
+      reason: 'candidate_level_S2_conflicts_with_general_or_undergraduate_query'
+    };
   }
 
   if (Array.isArray(targetEntities) && targetEntities.length > 0 && candProgCode) {
@@ -777,6 +798,17 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         reason: 'evidence_is_thesis_or_graduation_not_admission'
       };
     }
+
+    const isStudentExchange = (candidateFile && /student\s+exchange/i.test(candidateFile)) ||
+      /\b(?:student\s+exchange|gccp|global\s+cross\s+cultural)\b/i.test(text);
+    const queryAsksExchange = /\b(?:student\s+exchange|pertukaran\s+mahasiswa|gccp)\b/i.test(queryText);
+    if (isStudentExchange && !queryAsksExchange) {
+      return {
+        accepted: false,
+        disposition: 'REJECT_DOMAIN_MISMATCH',
+        reason: 'student_exchange_not_applicable_to_pmb_new_student_admission'
+      };
+    }
   }
 
   // Strict aspect matching against retrievalPlan.requiredAspects
@@ -810,7 +842,8 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
       }
     } else if (wantsContact) {
       const hasContactSignal = /\b(whatsapp|wa|telepon|telp|call\s*center|email|kontak|08\d{8,}|\+62|0361|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
-      if (!hasContactSignal || isHobbyChunk || isCurriculumChunk) {
+      const hasExplicitPhoneOrContact = /\b(telepon|telp|hotline|\(0361\)|08\d{8,}|info@stikom-bali\.ac\.id)\b/i.test(text);
+      if (!hasContactSignal || isHobbyChunk || (isCurriculumChunk && !hasExplicitPhoneOrContact)) {
         return {
           accepted: false,
           disposition: 'REJECT_ASPECT_MISMATCH',
@@ -950,7 +983,7 @@ function evaluateEvidenceCompatibility(candidate, retrievalPlan = {}) {
         retrievalPlan.intent === 'PROGRAM_PROCEDURE' ||
         (requiredAspects.includes('procedure') && !wantsFee && retrievalPlan.intent !== 'GENERAL_PMB_INQUIRY');
       const hasRegistrationProcedureOrPathway = isPmbGeneralChunk ||
-        /\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|cara\s+(?:daftar|mendaftar|pendaftaran)|tahapan\s+pendaftaran|syarat\s+(?:masuk|pendaftaran)|persyaratan\s+(?:masuk|pendaftaran)|jalur\s+pendaftaran|pmb\.stikom-bali\.ac\.id|program\s+(?:double|dual)\s+degree)\b/i.test(text);
+        /\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|cara\s+(?:daftar|mendaftar|pendaftaran)|tahapan\s+pendaftaran|syarat\s+(?:masuk|pendaftaran)|persyaratan\s+(?:masuk|pendaftaran)|jalur\s+pendaftaran|pmb\.stikom-bali\.ac\.id)\b/i.test(text);
 
       if (isSpecificProcedureInquiry) {
         const isPureFeeWithoutProcedure = isFeeChunk && !isPmbGeneralChunk &&

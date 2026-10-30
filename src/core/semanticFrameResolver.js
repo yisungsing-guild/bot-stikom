@@ -478,10 +478,11 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
     }
   } catch (_) {}
 
-  const isRecommendationInquiry = !isNonAcademicInquiry && (
+  const isRecommendationInquiry = !hasSpecificProgramEntity && !isNonAcademicInquiry && (
     (/\b(?:rekomendasi|rekomendasikan|cocok(?:nya)?|saran|bingung\s+pilih|pas)\b/i.test(normalized) &&
      (/\b(?:prodi|jurusan|program\s*studi|kuliah)\b/i.test(normalized) || /\b(?:suka|minat|hobi|bakat|passion)\b/i.test(normalized))) ||
-    (hasFitSignals && /\b(?:suka|minat|hobi|bakat|passion|tertarik|senang|ingin|cita-?cita|pas|cocok)\b/i.test(normalized))
+    (/\b(?:suka|minat|hobi|bakat|passion|tertarik|senang|cita-?cita)\b/i.test(normalized) &&
+     /\b(?:prodi|jurusan|program\s*studi|kuliah|pilih(?:an)?|ambil|masuk)\b/i.test(normalized))
   );
 
   if (isRecommendationInquiry) {
@@ -547,7 +548,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
   // 7. Program Overview / Definition / Profile / Career / Degree (Generic across academic programs)
   const hasAcademicProgram = entities.some(e => e.family === 'academic_program' || e.type === 'program');
   const hasStudentOrg = entities.some(e => e.family === 'student_organization') || /\b(himpunan\s+mahasiswa|himaprodi|hima\b|ukm\b|ormawa)\b/i.test(normalized);
-  if (!hasStudentOrg && ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|deskripsi|gambaran|belajar\s+apa|mempelajari\s+apa|fokus(?:nya)?(?:\s+apa|\s+jurusan)?|kuliah\s+tentang\s+apa|prospek(?:nya)?|peluang\s+kerja|lulusan(?:nya)?\s+(?:bisa\s+)?jadi\s+apa|lulusan|kerja\s+(?:sebagai\s+|menjadi\s+)?apa|bekerja\s+(?:sebagai\s+|menjadi\s+)?apa|jadi\s+apa|profesi|karir|karier|gelar(?:nya)?)\b/i.test(normalized) && hasAcademicProgram) ||
+  const isFeeInquiry = /\b(?:biaya|bayar|uang|spp|dpp|tarif|cicilan|harga|cost|fee)\b/i.test(normalized);
+  if (!isFeeInquiry && !hasStudentOrg && ((/\b(apa\s+itu|pengertian|definisi|profil|tentang|penjelasan|deskripsi|gambaran|belajar\s+apa|mempelajari\s+apa|fokus(?:nya)?(?:\s+apa|\s+jurusan)?|kuliah\s+tentang\s+apa|prospek(?:nya)?|peluang\s+kerja|lulusan(?:nya)?\s+(?:bisa\s+)?jadi\s+apa|lulusan|kerja\s+(?:sebagai\s+|menjadi\s+)?apa|bekerja\s+(?:sebagai\s+|menjadi\s+)?apa|jadi\s+apa|profesi|karir|karier|gelar(?:nya)?|(?:ingin|mau)\s+tahu\s+(?:tentang\s+)?(?:prodi|program\s*studi|jurusan)?|(?:info|informasi)\s+(?:tentang|lengkap|seputar)\s+(?:prodi|program\s*studi|jurusan)?)\b/i.test(normalized) && hasAcademicProgram) ||
       (/\b(apa\s+itu\s+program\s+studi|profil\s+prodi|profil\s+program\s+studi|gambaran\s+program\s+studi|gambaran\s+prodi)\b/i.test(normalized)))) {
     const isDegreeInquiry = /\b(gelar(?:nya)?)\b/i.test(normalized);
     return {
@@ -980,13 +982,19 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
      /\b(?:lokasi|alamat|di\s*mana|dimana|cabang|ada\s+berapa|berapa\s+ada)\b/i.test(normalized));
 
   if (isAskingCampusLocation) {
+    const isAllLocations = /\b(?:semua|seluruh|lengkap|daftar|berapa|ada\s+berapa|berapa\s+ada|mana\s+saja|di\s*mana(?:\s+saja)?)\b/i.test(raw + ' ' + normalized);
+    const targetBranch = /\brenon\b/i.test(normalized) ? 'renon' : (/\bjimbaran\b/i.test(normalized) ? 'jimbaran' : (/\babiansemal\b/i.test(normalized) ? 'abiansemal' : null));
+    const aspects = ['location', 'campus_location', 'address'];
+    if (isAllLocations) aspects.push('all_locations');
     return {
       domain: 'FACILITIES',
       intent: 'CAMPUS_LOCATION',
       retrievalRequired: true,
       userState: 'INQUIRING',
       desiredAction: 'PROVIDE_LOCATION_INFO',
-      aspects: ['location', 'campus_location', 'address'],
+      aspects,
+      locationScope: isAllLocations ? 'ALL' : (targetBranch ? 'SINGLE' : 'GENERAL'),
+      targetBranch,
       relation: 'CAMPUS_LOCATION'
     };
   }
@@ -1454,6 +1462,15 @@ async function resolveSemanticFrameWithShadow(rawQuery, sessionData = {}, shadow
  * validated by semanticInterpretationValidator and mapped to canonical entities.
  * Fails closed safely to deterministic fallback on AI timeout or error.
  */
+// Specific international intents already resolved upstream must not be collapsed back
+// into the generic INTERNATIONAL_PROGRAM_INFO bucket by later speech-act fallbacks.
+const SPECIFIC_INTERNATIONAL_INTENTS = new Set(['PROGRAM_PROCEDURE', 'STUDY_LOCATION', 'PROGRAM_BENEFIT', 'DEFINITION']);
+function resolveSpecificInternationalIntent(currentIntent, syncFrame = {}) {
+  if (SPECIFIC_INTERNATIONAL_INTENTS.has(currentIntent)) return currentIntent;
+  if (syncFrame.domain === 'INTERNATIONAL' && SPECIFIC_INTERNATIONAL_INTENTS.has(syncFrame.intent)) return syncFrame.intent;
+  return 'INTERNATIONAL_PROGRAM_INFO';
+}
+
 async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {}) {
   const syncFrame = resolveSemanticFrame(rawQuery, sessionData, options);
 
@@ -1489,7 +1506,14 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     // Determine model intent, aspects, and topic continuity BEFORE inheriting prior session entities
     const modelPrimaryIntent = validated.primaryIntent && validated.primaryIntent !== 'UNKNOWN' ? validated.primaryIntent : null;
     const modelContinuity = validated.contextDependency?.topicContinuity || (validated.contextDependency?.isFollowUp ? 'CONTINUATION' : 'NEW_TOPIC');
-    const isTopicSwitch = modelContinuity === 'NEW_TOPIC' || (!validated.contextDependency?.isFollowUp && validated.contextDependency?.referenceType === 'none');
+    const modelSaysTopicSwitch = modelContinuity === 'NEW_TOPIC' || (!validated.contextDependency?.isFollowUp && validated.contextDependency?.referenceType === 'none');
+    // Context binding contract: when the structural context resolver detected an explicit
+    // reference to the prior entity (enclitic/pronoun/ellipsis) and the model extracted no new
+    // entity, the model's NEW_TOPIC label alone must not discard the inherited entity.
+    const syncBoundPriorEntity = Array.isArray(syncFrame.contextDependencies) &&
+      syncFrame.contextDependencies.some(d => d && d.shouldInherit && d.inheritedEntity);
+    const modelFoundNoNewEntity = !Array.isArray(validated.candidateEntities) || validated.candidateEntities.length === 0;
+    const isTopicSwitch = modelSaysTopicSwitch && !(syncBoundPriorEntity && modelFoundNoNewEntity);
 
     const speechAct = validated.speechAct;
     const primaryConcept = interpretation.semanticConcepts?.[0] || null;
@@ -1596,7 +1620,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     if (syncFrame.intent === 'ADVERSARIAL_INJECTION_DEFENSE') {
       domain = 'CONVERSATIONAL';
       intent = 'ADVERSARIAL_INJECTION_DEFENSE';
-    } else if (modelPrimaryIntent === 'CONVERSATIONAL_GREETING' || speechAct === 'GENERAL_GREETING') {
+    } else if (modelPrimaryIntent === 'CONVERSATIONAL_GREETING' || (!modelPrimaryIntent && speechAct === 'GENERAL_GREETING')) {
       domain = 'CONVERSATIONAL';
       intent = 'CONVERSATIONAL_GREETING';
     } else if (modelPrimaryIntent === 'CONVERSATIONAL_SMALL_TALK') {
@@ -1605,7 +1629,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
     } else if (modelPrimaryIntent === 'CONVERSATIONAL_ACKNOWLEDGEMENT') {
       domain = 'CONVERSATIONAL';
       intent = 'CONVERSATIONAL_ACKNOWLEDGEMENT';
-    } else if (modelPrimaryIntent === 'PROGRAM_RECOMMENDATION' || speechAct === 'SEEK_ADVICE') {
+    } else if (modelPrimaryIntent === 'PROGRAM_RECOMMENDATION' || (!modelPrimaryIntent && speechAct === 'SEEK_ADVICE')) {
       domain = 'ACADEMIC_RECOMMENDATION';
       intent = 'PROGRAM_RECOMMENDATION';
     } else if (modelPrimaryIntent === 'CURRENT_ENROLLMENT_STATUS') {
@@ -1774,7 +1798,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         intent = 'PROGRAM_OVERVIEW';
         domain = 'ACADEMIC_PROGRAM';
       } else if (domain === 'INTERNATIONAL' || primaryConcept === 'INTERNATIONAL_STUDY' || resolvedEntities.some(e => e.family === 'international_program')) {
-        intent = 'INTERNATIONAL_PROGRAM_INFO';
+        intent = resolveSpecificInternationalIntent(intent, syncFrame);
         domain = 'INTERNATIONAL';
       } else if (resolvedEntities.length > 0 && !resolvedEntities.every(e => e.type === 'academic_scope' || e.family === 'academic_scope' || e.type === 'academic_level')) {
         intent = 'PROGRAM_OVERVIEW';
@@ -1802,7 +1826,7 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         intent = 'THESIS_REQUIREMENTS';
         domain = 'ACADEMIC_CURRICULUM';
       } else if (domain === 'INTERNATIONAL' || syncFrame.domain === 'INTERNATIONAL' || primaryConcept === 'INTERNATIONAL_STUDY' || resolvedEntities.some(e => e.family === 'international_program') || /\b(pertukaran\s+(?:pelajar|mahasiswa)|student\s+exchange)\b/i.test(rawQuery)) {
-        intent = 'INTERNATIONAL_PROGRAM_INFO';
+        intent = resolveSpecificInternationalIntent(intent, syncFrame);
         domain = 'INTERNATIONAL';
       } else if (domain === 'ACADEMIC_EVENT' || syncFrame.domain === 'ACADEMIC_EVENT' || syncFrame.intent === 'GRADUATION_INQUIRY' || /\b(?:wisuda|yudisium)\b/i.test(rawQuery)) {
         domain = 'ACADEMIC_EVENT';
@@ -1867,6 +1891,55 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
         : (syncFrame.scopeLevel ||
           (effectiveLevel === 'S1' ? 'S1' : (effectiveLevel === 'S2' ? 'S2' : (effectiveLevel === 'D3' ? 'D3' : (intent === 'AVAILABLE_PROGRAMS_LIST' ? 'ALL' : null))))));
 
+    // Semantic location resolution: AI model interpretation takes precedence over deterministic regex
+    const isModelParsed = !interpretation.metadata?.fallbackInvoked && validationResult.isValid;
+    let resolvedLocationScope;
+    let resolvedTargetBranch;
+
+    if (isModelParsed && validated.scopeConstraints?.locationScope) {
+      resolvedLocationScope = validated.scopeConstraints.locationScope;
+      const rawConstraint = validated.scopeConstraints.locationConstraint;
+      if (rawConstraint && rawConstraint.toLowerCase() !== 'all') {
+        const canonicalEntity = findCanonicalEntity(rawConstraint.trim());
+        if (canonicalEntity && (canonicalEntity.family === 'campus_location' || canonicalEntity.type === 'campus')) {
+          const canon = canonicalEntity.canonical;
+          if (/renon/i.test(canon)) {
+            resolvedTargetBranch = 'renon';
+          } else if (/jimbaran/i.test(canon)) {
+            resolvedTargetBranch = 'jimbaran';
+          } else if (/abiansemal/i.test(canon)) {
+            resolvedTargetBranch = 'abiansemal';
+          } else {
+            resolvedTargetBranch = null;
+          }
+        } else {
+          resolvedTargetBranch = null;
+        }
+      } else {
+        resolvedTargetBranch = null;
+      }
+
+      if (resolvedLocationScope === 'ALL') {
+        if (!aspects.includes('all_locations')) aspects.push('all_locations');
+      } else {
+        // Enforce: AI SINGLE or GENERAL must NOT have all_locations aspect (prevents sync regex override)
+        const allLocIdx = aspects.indexOf('all_locations');
+        if (allLocIdx !== -1) aspects.splice(allLocIdx, 1);
+      }
+    } else {
+      // Deterministic fallback when AI model interpretation is unavailable or invalid
+      resolvedLocationScope = syncFrame.locationScope || (syncFrame.targetBranch ? 'SINGLE' : (aspects.includes('all_locations') ? 'ALL' : 'GENERAL'));
+      resolvedTargetBranch = syncFrame.targetBranch || null;
+    }
+
+    if (resolvedLocationScope === 'ALL' || resolvedLocationScope === 'SINGLE' || aspects.includes('location')) {
+      if (!domain || domain === 'FACILITIES' || primaryConcept === 'CAMPUS_LIFE' || syncFrame.domain === 'FACILITIES') {
+        domain = 'FACILITIES';
+        intent = 'CAMPUS_LOCATION';
+        ['location', 'campus_location', 'address'].forEach(a => { if (!aspects.includes(a)) aspects.push(a); });
+      }
+    }
+
     return {
       rawQuery,
       speechAct,
@@ -1892,6 +1965,8 @@ async function resolveSemanticFrameAsync(rawQuery, sessionData = {}, options = {
       participantScope,
       isMultiTarget: resolvedEntities.length > 1,
       relation: syncFrame.relation,
+      locationScope: resolvedLocationScope,
+      targetBranch: resolvedTargetBranch,
       aspects: aspects.length > 0 ? aspects : syncFrame.aspects,
       temporal: syncFrame.temporal,
       userState: syncFrame.userState,

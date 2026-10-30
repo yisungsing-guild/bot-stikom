@@ -984,6 +984,12 @@ function normalizeEntityPhrase(str) {
 
 function findCanonicalEntity(identifier) {
   if (!identifier) return null;
+  // Session state may persist entities as structured objects ({ canonical, type, family }).
+  // Unwrap to the canonical label so String() coercion never yields "[object Object]".
+  if (typeof identifier === 'object') {
+    identifier = identifier.canonical || identifier.name || identifier.rawMention || identifier.mention || '';
+    if (!identifier) return null;
+  }
   const target = normalizeText(identifier);
   for (const entry of CANONICAL_ENTITIES) {
     if (normalizeText(entry.canonical) === target) return entry;

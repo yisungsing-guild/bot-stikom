@@ -123,6 +123,7 @@ tests/*
 !tests/pgvectorHybridContract.test.js
 !tests/uat30DefectRemediation.test.js
 !tests/phase2UatRemediation.test.js
+!tests/oct30SpecificSemanticRegression.test.js
 !tests/officialFacultyReconciliation.test.js
 !tests/fonnteWebhookAuthRotation.test.js
 !tests/clarificationAndReRetrievalV2.test.js

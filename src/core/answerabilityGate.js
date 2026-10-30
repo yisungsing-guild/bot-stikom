@@ -123,13 +123,23 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     }
 
     // Default when no evidence proves the question
-    if (semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' || semanticFrame.domain === 'PMB') {
+    if (
+      semanticFrame.intent === 'CURRENT_ENROLLMENT_STATUS' ||
+      semanticFrame.domain === 'PMB' ||
+      semanticFrame.intent === 'ADMISSION_PROCEDURE' ||
+      semanticFrame.intent === 'PROGRAM_PROCEDURE'
+    ) {
+      const entityLabel = (semanticFrame.entities && semanticFrame.entities[0]) ? (semanticFrame.entities[0].canonical || semanticFrame.entities[0]) : '';
+      const isUtb = /utb/i.test(entityLabel);
+      const entityDesc = isUtb ? 'Program Dual Degree UTB (S1 Bisnis Digital)' : (entityLabel ? `program ${entityLabel}` : '');
+      const entityPart = entityDesc ? ` untuk ${entityDesc}` : '';
+
       return {
         status: ANSWERABILITY_STATUS.UNKNOWN,
         reason: 'corpus_gap',
         guidance: isEn
-          ? 'Official information regarding current admission status or schedule has not been verified from the available documents. Please contact campus PMB admissions directly.'
-          : 'Informasi resmi mengenai jadwal atau status gelombang pendaftaran saat ini belum dapat diverifikasi dari dokumen yang tersedia. Silakan hubungi layanan admisi PMB ITB STIKOM Bali untuk konfirmasi langsung.'
+          ? `Official detailed registration steps${entityPart} are not fully listed in the available guidelines. Registration can be accessed online at https://pmb.stikom-bali.ac.id or by contacting campus admissions directly.`
+          : `Tahapan prosedur pendaftaran rinci${entityPart} belum tercantum lengkap dalam panduan yang tersedia. Pendaftaran resmi dapat diakses secara online melalui portal https://pmb.stikom-bali.ac.id atau berkonsultasi langsung ke layanan admisi kampus ITB STIKOM Bali.`
       };
     }
 
@@ -229,14 +239,18 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         chunk.providedAspects.forEach(a => allProvidedAspects.add(a));
       }
       const text = (chunk.text || '').toLowerCase();
-      if (/\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+pendaftaran|cara\s+mendaftar|pendaftaran\s+online|pmb\.stikom-bali\.ac\.id)\b/i.test(text)) {
+      if (/\b(?:alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+pendaftaran|langkah(?:-langkah)?\s+pendaftaran|tata\s+cara\s+(?:daftar|mendaftar|pendaftaran)|mekanisme\s+pendaftaran)\b/i.test(text)) {
         allProvidedAspects.add('procedure');
         allProvidedAspects.add('admission');
       }
-      if (/\b(?:syarat|persyaratan|ijazah|berkas\s+pendaftaran|kelengkapan\s+dokumen)\b/i.test(text)) {
+      if (/\b(?:pmb\.stikom-bali\.ac\.id|portal\s+pmb|link\s+pendaftaran)\b/i.test(text)) {
+        allProvidedAspects.add('admission_portal');
+        allProvidedAspects.add('portal');
+      }
+      if (/\b(?:syarat\s+pendaftaran|persyaratan\s+pendaftaran|berkas\s+pendaftaran|kelengkapan\s+dokumen|ijazah|fotokopi|dokumen\s+persyaratan)\b/i.test(text)) {
         allProvidedAspects.add('requirements');
       }
-      if (/\b(?:kampus|jalan\s+raya\s+puputan|renon|jimbaran|abiansemal)\b/i.test(text)) {
+      if (/\b(?:jalan\s+raya\s+puputan|renon|kampus\s+renon|raya\s+kampus\s+udayana|kampus\s+jimbaran|abiansemal|kampus\s+abiansemal|dauh\s+yeh\s+cani)\b/i.test(text) && /(?:\bjl\.?|\bjalan\b|\balamat\b|\blokasi\b)/i.test(text)) {
         allProvidedAspects.add('location');
         allProvidedAspects.add('campus_location');
         allProvidedAspects.add('address');
@@ -279,17 +293,137 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
         allProvidedAspects.add('student_organization');
         allProvidedAspects.add('ukm');
       }
+      if (/\b(?:gelombang|potongan|diskon|promo|cashback|periode)\b/i.test(text)) {
+        allProvidedAspects.add('wave_discount');
+        allProvidedAspects.add('discount');
+        allProvidedAspects.add('admission_wave');
+        allProvidedAspects.add('timeline');
+      }
+      if (/\b(?:biaya|uang\s+kuliah|tarif|spp)\b/i.test(text)) {
+        allProvidedAspects.add('fee');
+        allProvidedAspects.add('tuition');
+      }
+      if (/\b(?:rincian\s+biaya|komponen\s+biaya|struktur\s+biaya|skema\s+biaya|angsuran|tahap\s+pembayaran)\b/i.test(text)) {
+        allProvidedAspects.add('fee_structure');
+      }
+      if (/\b(?:dpp\s+dan\s+spp|registrasi.*dpp|komponen\s+biaya|rincian\s+biaya|biaya\s+sks|biaya\s+praktikum)\b/i.test(text)) {
+        allProvidedAspects.add('fee_components');
+      }
+      if (/\b(?:total\s+(?:biaya|kewajiban|keseluruhan|pembayaran)|jumlah\s+kewajiban|total\s+keseluruhan|biaya\s+total)\b/i.test(text)) {
+        allProvidedAspects.add('total_cost');
+      }
+      if (/\b(?:beasiswa|kip\s*kuliah|kartu\s+indonesia\s+pintar|bantuan\s+dana\s+pendidikan)\b/i.test(text)) {
+        allProvidedAspects.add('scholarship');
+        allProvidedAspects.add('scholarship_types');
+        if (/\b(?:daftar\s+beasiswa|jenis\s+beasiswa|beasiswa\s+berikut|antara\s+lain\s*:|yayasan|prestasi)\b/i.test(text)) {
+          allProvidedAspects.add('scholarship_list');
+        }
+      }
+      if (/\b(?:pmb|pendaftaran|jalur|syarat|prosedur|jadwal|gelombang|penerimaan)\b/i.test(text)) {
+        allProvidedAspects.add('admission_overview');
+        allProvidedAspects.add('admission_pathways');
+      }
     }
 
-    // Canonical Institutional Aspects:
-    // If accepted evidence grounds the existence of the program/entity:
-    // Official campus contact channels (PMB portal & phone) satisfy general institutional contact inquiries
-    // only when the inquiry is specifically for contact/phone/communication, and not for private numbers.
-    if (semanticFrame.intent === 'CONTACT_INQUIRY' || requiredAspects.some(a => ['contact', 'phone', 'whatsapp'].includes(a))) {
-      if (!isPrivateContact) {
-        allProvidedAspects.add('contact');
-        allProvidedAspects.add('phone');
-        allProvidedAspects.add('whatsapp');
+    // Contact Aspect verification:
+    // Only satisfy contact aspects if an accepted chunk contains contact/phone info
+    const hasContactEvidence = accepted.some(chunk => {
+      const text = (chunk.text || '').toLowerCase();
+      return /\b(?:telepon|telp|hotline|email|\(0361\)|08\d{8,}|info@stikom-bali\.ac\.id)\b/i.test(text);
+    });
+    if (hasContactEvidence && !isPrivateContact) {
+      allProvidedAspects.add('contact');
+      allProvidedAspects.add('phone');
+      allProvidedAspects.add('whatsapp');
+    }
+
+    // Campus Location Entity Coverage Evaluation:
+    if (semanticFrame.intent === 'CAMPUS_LOCATION' || requiredAspects.some(a => ['location', 'campus_location', 'address'].includes(a))) {
+      const isAllLocationsRequested = semanticFrame.locationScope === 'ALL' ||
+        requiredAspects.includes('all_locations') ||
+        semanticFrame.scope === 'ALL';
+      const targetBranch = semanticFrame.targetBranch || null;
+
+      const hasRenonEvidence = accepted.some(chunk => {
+        const text = (chunk.text || '').toLowerCase();
+        return /\b(?:kampus\s+renon|puputan|renon)\b/i.test(text) && /\b(?:jl\.|jalan|no\.|raya|denpasar)\b/i.test(text);
+      });
+
+      const hasJimbaranEvidence = accepted.some(chunk => {
+        const text = (chunk.text || '').toLowerCase();
+        const isUnivUdayanaOtherContext = /\buniversitas\s+udayana\b/i.test(text) && !/\b(?:kampus\s+jimbaran|(?:jl\.|jalan|raya)\s+kampus\s+udayana)\b/i.test(text);
+        if (isUnivUdayanaOtherContext) return false;
+        return (
+          (/\b(?:kampus\s+jimbaran|kuta\s+selatan|jimbaran)\b/i.test(text) && /\b(?:udayana|raya\s+kampus|jl\.|jalan)\b/i.test(text)) ||
+          /\b(?:jl\.|jalan|raya)\s+kampus\s+udayana\b/i.test(text)
+        );
+      });
+
+      const hasAbiansemalEvidence = accepted.some(chunk => {
+        const text = (chunk.text || '').toLowerCase();
+        return /\b(?:kampus\s+abiansemal|abiansemal|dauh\s+yeh\s+cani)\b/i.test(text) && /\b(?:janger|jl\.|jalan|badung)\b/i.test(text);
+      });
+
+      const coveredBranches = [];
+      const missingBranches = [];
+      if (hasRenonEvidence) coveredBranches.push('Kampus Renon'); else missingBranches.push('Kampus Renon');
+      if (hasJimbaranEvidence) coveredBranches.push('Kampus Jimbaran'); else missingBranches.push('Kampus Jimbaran');
+      if (hasAbiansemalEvidence) coveredBranches.push('Kampus Abiansemal'); else missingBranches.push('Kampus Abiansemal');
+
+      if (targetBranch) {
+        const branchMap = { renon: hasRenonEvidence, jimbaran: hasJimbaranEvidence, abiansemal: hasAbiansemalEvidence };
+        if (branchMap[targetBranch] === false) {
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: `insufficient_${targetBranch}_location_evidence`,
+            coveredAspects: [],
+            missingAspects: [`${targetBranch}_campus_location`],
+            guidance: isEn
+              ? `Official address for ${targetBranch.toUpperCase()} campus is not confirmed in the available guidelines.`
+              : `Informasi resmi mengenai alamat Kampus ${targetBranch.toUpperCase()} belum tercantum secara lengkap dalam panduan yang tersedia.`
+          };
+        }
+      }
+
+      if (isAllLocationsRequested) {
+        if (coveredBranches.length === 3) {
+          allProvidedAspects.add('all_locations');
+          allProvidedAspects.add('location');
+          allProvidedAspects.add('campus_location');
+          allProvidedAspects.add('address');
+        } else if (coveredBranches.length > 0) {
+          return {
+            status: ANSWERABILITY_STATUS.PARTIAL,
+            reason: 'partial_campus_locations_coverage',
+            coveredAspects: ['location', 'campus_location'],
+            missingAspects: missingBranches,
+            coveredBranches,
+            missingBranches,
+            guidance: isEn
+              ? `Official location details are currently available for ${coveredBranches.join(' and ')}, while information for ${missingBranches.join(' and ')} is not fully verified in the available guidelines.`
+              : `Informasi lokasi resmi saat ini baru memuat alamat untuk ${coveredBranches.join(' dan ')}, sedangkan rincian alamat resmi untuk ${missingBranches.join(' dan ')} belum tercantum secara lengkap dalam panduan yang tersedia.`
+          };
+        } else {
+          return {
+            status: ANSWERABILITY_STATUS.UNKNOWN,
+            reason: 'insufficient_campus_locations_evidence',
+            coveredAspects: [],
+            missingAspects: requiredAspects,
+            guidance: isEn
+              ? 'Official campus locations are not confirmed in the available guidelines.'
+              : 'Informasi mengenai lokasi kampus ITB STIKOM Bali belum tercantum dalam panduan resmi yang tersedia.'
+          };
+        }
+      } else if (coveredBranches.length === 0) {
+        return {
+          status: ANSWERABILITY_STATUS.UNKNOWN,
+          reason: 'insufficient_campus_location_evidence',
+          coveredAspects: [],
+          missingAspects: requiredAspects,
+          guidance: isEn
+            ? 'Official campus location information is not confirmed in the available guidelines.'
+            : 'Informasi mengenai lokasi kampus ITB STIKOM Bali belum tercantum dalam panduan resmi yang tersedia.'
+        };
       }
     }
 

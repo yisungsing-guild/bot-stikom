@@ -24,8 +24,10 @@ const {
   ALLOWED_INFERRED_CATEGORIES,
   ALLOWED_AMBIGUITY_LEVELS,
   ALLOWED_REFERENCE_TYPES,
+  ALLOWED_LOCATION_SCOPES,
   buildSafeUnknownInterpretation
 } = require('./modelSemanticParser');
+const { findCanonicalEntity } = require('../engine/canonicalEntityRegistry');
 
 /**
  * Failure classifications for shadow evaluation tracing.
@@ -287,6 +289,26 @@ function validateSchemaAndEnums(data) {
     }
     if (sc.locationConstraint !== null && typeof sc.locationConstraint !== 'string') {
       errors.push('scopeConstraints.locationConstraint must be string or null');
+    }
+    if (sc.locationScope !== undefined && sc.locationScope !== null && !ALLOWED_LOCATION_SCOPES.includes(sc.locationScope)) {
+      errors.push(`scopeConstraints.locationScope "${sc.locationScope}" is invalid. Expected ALL, SINGLE, or GENERAL`);
+    }
+    // Consistency rules
+    if (sc.locationScope === 'SINGLE') {
+      if (!sc.locationConstraint || typeof sc.locationConstraint !== 'string' || sc.locationConstraint.trim() === '') {
+        errors.push('scopeConstraints.locationConstraint must be a non-empty string when locationScope is "SINGLE"');
+      } else {
+        const campusEntity = findCanonicalEntity(sc.locationConstraint.trim());
+        if (!campusEntity || (campusEntity.family !== 'campus_location' && campusEntity.type !== 'campus')) {
+          errors.push(`scopeConstraints.locationConstraint "${sc.locationConstraint}" is not a recognized campus location`);
+        }
+      }
+    }
+    if (sc.locationScope === 'ALL' && sc.locationConstraint && sc.locationConstraint.toLowerCase() !== 'all') {
+      errors.push('scopeConstraints.locationConstraint must be null or "all" when locationScope is "ALL"');
+    }
+    if (sc.locationScope === 'GENERAL' && sc.locationConstraint !== null && sc.locationConstraint !== undefined && sc.locationConstraint.trim?.() !== '') {
+      errors.push('scopeConstraints.locationConstraint must be null or empty when locationScope is "GENERAL"');
     }
   }
 
@@ -558,7 +580,8 @@ function validateSemanticInterpretation(interpretation, priorContext = null, opt
     scopeConstraints: {
       academicLevel: effectiveCurrentLevel || (isEligibleForInheritance ? (normPrior.priorAcademicLevel || null) : null),
       studyMode: interpretation.scopeConstraints?.studyMode || null,
-      locationConstraint: interpretation.scopeConstraints?.locationConstraint || null
+      locationConstraint: interpretation.scopeConstraints?.locationConstraint || null,
+      locationScope: interpretation.scopeConstraints?.locationScope || 'GENERAL'
     },
     contextDependency: {
       isFollowUp: interpretation.contextDependency?.isFollowUp || false,

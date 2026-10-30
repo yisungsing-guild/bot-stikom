@@ -2983,6 +2983,7 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
+  const rawQuery = (semanticFrame?.rawQuery || semanticFrame?.query || arbitratedEvidence?.rawQuery || '').toLowerCase();
   const cleanPassages = [];
   const seenFingerprints = new Set();
 
@@ -2993,8 +2994,8 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     const bCat = (b.docCategory || b.category || b.metadata?.docCategory || '').toLowerCase();
 
     if (semanticFrame?.intent === 'CAMPUS_LOCATION') {
-      const aIsLoc = aCat === 'lokasi' || /\b(?:kontak\s*&\s*lokasi|lokasi\s+kampus|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(aText);
-      const bIsLoc = bCat === 'lokasi' || /\b(?:kontak\s*&\s*lokasi|lokasi\s+kampus|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal)\b/i.test(bText);
+      const aIsLoc = aCat === 'lokasi' || /\b(?:kontak\s*&\s*lokasi|lokasi\s+kampus|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal|puputan|udayana|janger)\b/i.test(aText);
+      const bIsLoc = bCat === 'lokasi' || /\b(?:kontak\s*&\s*lokasi|lokasi\s+kampus|kampus\s+renon|kampus\s+jimbaran|kampus\s+abiansemal|puputan|udayana|janger)\b/i.test(bText);
       if (aIsLoc && !bIsLoc) return -1;
       if (!aIsLoc && bIsLoc) return 1;
     }
@@ -3005,23 +3006,42 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
       if (!aIsProg && bIsProg) return 1;
     }
     if (semanticFrame?.intent === 'CONTACT_INQUIRY') {
+      const aHasPhone = /\b(?:telepon|\(0361\)|hotline)\b/i.test(aText);
+      const bHasPhone = /\b(?:telepon|\(0361\)|hotline)\b/i.test(bText);
+      if (aHasPhone && !bHasPhone) return -1;
+      if (!aHasPhone && bHasPhone) return 1;
       const aIsContact = /\b(?:hotline|telepon|email|call\s*center|\(0361\))\b/i.test(aText);
       const bIsContact = /\b(?:hotline|telepon|email|call\s*center|\(0361\))\b/i.test(bText);
       if (aIsContact && !bIsContact) return -1;
       if (!aIsContact && bIsContact) return 1;
+    }
+    if (semanticFrame?.domain === 'PMB' || semanticFrame?.intent === 'ADMISSION_PROCEDURE') {
+      const aIsPmb = /\b(?:pmb\.stikom-bali\.ac\.id|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+pendaftaran)\b/i.test(aText);
+      const bIsPmb = /\b(?:pmb\.stikom-bali\.ac\.id|alur\s+pendaftaran|prosedur\s+pendaftaran|tahapan\s+pendaftaran)\b/i.test(bText);
+      if (aIsPmb && !bIsPmb) return -1;
+      if (!aIsPmb && bIsPmb) return 1;
     }
     return 0;
   });
 
   const isTargetSpecific = (sent) => {
     if (semanticFrame?.intent === 'CAMPUS_LOCATION') {
-      return /\b(?:alamat|lokasi|kampus|jl\.|jalan|renon|jimbaran|abiansemal)\b/i.test(sent);
+      const isUnivUdayanaIrrelevant = /\buniversitas\s+udayana\b/i.test(sent) && !/\b(?:kampus\s+jimbaran|(?:jl\.|jalan|raya)\s+kampus\s+udayana)\b/i.test(sent);
+      if (isUnivUdayanaIrrelevant) return false;
+      const isLocWord = /\b(?:alamat|lokasi|jl\.|jalan|puputan|raya\s+kampus\s+udayana|janger|dauh\s+yeh\s+cani)\b/i.test(sent);
+      const isCampusBranch = /\bkampus\s+(?:renon|jimbaran|abiansemal|denpasar|pusat)\b/i.test(sent);
+      return isLocWord || isCampusBranch;
     }
     if (semanticFrame?.intent === 'AVAILABLE_PROGRAMS_LIST') {
       return /\((?:S1|D3|S2)\)/i.test(sent) || /^(?:•\s*)?(?:S1|D3|S2)\s+/i.test(sent);
     }
     if (semanticFrame?.intent === 'CONTACT_INQUIRY') {
-      return /\b(?:telepon|telp|hotline|email|kontak|\(0361\)|08\d{8,})\b/i.test(sent);
+      return /\b(?:telepon|telp|hotline|email|kontak|call\s*center|\(0361\)|08\d{8,}|info@stikom-bali\.ac\.id|pmb\.stikom-bali\.ac\.id)\b/i.test(sent);
+    }
+    if (semanticFrame?.intent === 'GRADUATION_INQUIRY') {
+      if (!/\b(?:biaya|bayar|tarif|uang)\b/i.test(rawQuery) && /\b(?:biaya\s+pendaftaran|uang\s+pendaftaran)\b/i.test(sent)) {
+        return false;
+      }
     }
     return true;
   };
@@ -3036,22 +3056,23 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
       const rawSegments = clean.split(/\n+/).flatMap(line => {
         line = line.trim();
         if (!line) return [];
-        const sents = line.split(/(?<!\b(?:jl|no|dr|ir|prof|st|s|d))\.\s+/i);
+        const sents = line.split(/(?<!\b(?:jl|no|dr|ir|prof|st|s|d|kec))\.\s+/i);
         return sents.map(s => s.trim()).filter(s => s.length >= 10);
       });
 
       for (let sent of rawSegments) {
         if (!isTargetSpecific(sent)) continue;
+        if (/^(?:kontak\s*&\s*lokasi|abiansemal[,.]*)$/i.test(sent.trim())) continue;
         if (!/[.!?]$/.test(sent)) sent += '.';
         const norm = sent.toLowerCase().replace(/[^a-z0-9]/g, '');
         if (norm.length < 8 || seenFingerprints.has(norm)) continue;
         seenFingerprints.add(norm);
         cleanPassages.push(sent);
-        if (cleanPassages.length >= 6) break;
+        if (cleanPassages.length >= 16) break;
       }
-      if (cleanPassages.length >= 6) break;
+      if (cleanPassages.length >= 16) break;
     }
-    if (cleanPassages.length >= 6) break;
+    if (cleanPassages.length >= 16) break;
   }
 
   if (cleanPassages.length === 0) {
@@ -3066,7 +3087,41 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
-  let extractiveText = cleanPassages.join('\n\n');
+  let extractiveText;
+  if (semanticFrame?.intent === 'CAMPUS_LOCATION') {
+    const branchPassages = [];
+    let renonFound = false;
+    let jimbaranFound = false;
+    let abiansemalFound = false;
+
+    for (const p of cleanPassages) {
+      const isUnivUdayanaOtherContext = /\buniversitas\s+udayana\b/i.test(p) && !/\b(?:kampus\s+jimbaran|(?:jl\.|jalan|raya)\s+kampus\s+udayana)\b/i.test(p);
+      if (isUnivUdayanaOtherContext) continue;
+
+      const isRenon = /\b(?:kampus\s+renon|puputan|renon)\b/i.test(p) && /\b(?:jl\.|jalan|no\.|raya|denpasar)\b/i.test(p);
+      const isJimbaran = (
+        /\b(?:kampus\s+jimbaran|kuta\s+selatan|jimbaran)\b/i.test(p) &&
+        /\b(?:udayana|raya\s+kampus|jl\.|jalan)\b/i.test(p)
+      ) || /\b(?:jl\.|jalan|raya)\s+kampus\s+udayana\b/i.test(p);
+      const isAbiansemal = /\b(?:kampus\s+abiansemal|abiansemal|dauh\s+yeh\s+cani)\b/i.test(p) && /\b(?:janger|jl\.|jalan|badung)\b/i.test(p);
+
+      if (isRenon && !renonFound) {
+        branchPassages.push(p);
+        renonFound = true;
+      } else if (isJimbaran && !jimbaranFound) {
+        branchPassages.push(p);
+        jimbaranFound = true;
+      } else if (isAbiansemal && !abiansemalFound) {
+        branchPassages.push(p);
+        abiansemalFound = true;
+      } else if (!isRenon && !isJimbaran && !isAbiansemal) {
+        if (branchPassages.length < 6) branchPassages.push(p);
+      }
+    }
+    extractiveText = (branchPassages.length > 0 ? branchPassages : cleanPassages).join('\n\n');
+  } else {
+    extractiveText = cleanPassages.slice(0, 8).join('\n\n');
+  }
 
   const missingAspects = arbitratedEvidence?.missingAspects || [];
   if (missingAspects.length > 0) {
@@ -3078,6 +3133,31 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
       ? `\n\n_Note: Details regarding ${missingNames.join(', ')} are not listed in the available verified excerpt._`
       : `\n\n_Catatan: Rincian mengenai ${missingNames.join(', ')} belum tercantum dalam kutipan panduan resmi di atas._`;
     extractiveText += note;
+  }
+
+  if (semanticFrame?.intent === 'GRADUATION_INQUIRY') {
+    extractiveText += isEn
+      ? '\n\nFor official graduation dates, schedule updates, and ceremony confirmation, please monitor the SION portal or contact the BAAK office at ITB STIKOM Bali.'
+      : '\n\nUntuk kepastian tanggal dan jadwal pelaksanaan wisuda terdekat, silakan memantau pengumuman resmi melalui portal SION atau menghubungi bagian BAAK ITB STIKOM Bali.';
+  }
+
+  if (semanticFrame?.domain === 'INTERNATIONAL' || semanticFrame?.intent === 'INTERNATIONAL_PROGRAM_INFO') {
+    const isUtb = (arbitratedEvidence?.targetEntities || []).some(e => String(e).toLowerCase().includes('utb')) ||
+      (semanticFrame?.entities || []).some(e => String(e.canonical || e).toLowerCase().includes('utb')) ||
+      /utb|universitas teknologi bandung/i.test(semanticFrame?.rawQuery || '');
+    if (isUtb && !/Bisnis Digital/i.test(extractiveText)) {
+      extractiveText += isEn
+        ? '\n\nThis Dual Degree (National Class) program is conducted in partnership with Universitas Teknologi Bandung (UTB), awarding dual bachelor degrees: S.Bns in Bisnis Digital from ITB STIKOM Bali and S.Ds in Desain Komunikasi Visual from UTB.'
+        : '\n\nProgram Dual Degree (National Class) ini diselenggarakan melalui kerja sama dengan Universitas Teknologi Bandung (UTB), menghasilkan dua gelar sarjana: S.Bns pada program studi Bisnis Digital dari ITB STIKOM Bali dan S.Ds pada program studi Desain Komunikasi Visual dari UTB.';
+    }
+  }
+
+  if (semanticFrame?.domain === 'PMB' && (semanticFrame?.intent === 'ADMISSION_PROCEDURE' || semanticFrame?.intent === 'GENERAL_PMB_INQUIRY')) {
+    if (!extractiveText.includes('pmb.stikom-bali.ac.id')) {
+      extractiveText += isEn
+        ? '\n\nOfficial PMB registration portal: https://pmb.stikom-bali.ac.id'
+        : '\n\nPendaftaran online dapat diakses melalui portal resmi PMB ITB STIKOM Bali: https://pmb.stikom-bali.ac.id';
+    }
   }
 
   return {

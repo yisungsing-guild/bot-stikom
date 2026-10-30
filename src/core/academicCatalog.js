@@ -95,7 +95,7 @@ function resolveAcademicScope(input) {
   // 2. Check for explicit supported degrees
   // S1 / Sarjana / Bachelor / Undergraduate
   if (/\b(?:s[- ]?1|sarjana|bachelor(?:'s)?|undergraduate|strata\s*[- ]?1)\b/i.test(lower) &&
-      !/\b(?:s[- ]?2|d[- ]?3|master|graduate|postgraduate|diploma|associate)\b/i.test(lower)) {
+    !/\b(?:s[- ]?2|d[- ]?3|master|graduate|postgraduate|diploma|associate)\b/i.test(lower)) {
     return {
       status: ACADEMIC_SCOPE_STATUS.SUPPORTED,
       level: 'S1',
@@ -126,7 +126,7 @@ function resolveAcademicScope(input) {
 
   // ALL / Institutional / Complete Catalog
   if (/^(?:all|semua|lengkap|seluruh|institutional|any|general|semuanya)$/i.test(lower) ||
-      /\b(?:semua\s+(?:jenjang|program|prodi)|seluruh\s+(?:jenjang|program)|all\s+(?:academic\s+)?degrees?|all\s+programs?)\b/i.test(lower)) {
+    /\b(?:semua\s+(?:jenjang|program|prodi)|seluruh\s+(?:jenjang|program)|all\s+(?:academic\s+)?degrees?|all\s+programs?)\b/i.test(lower)) {
     return {
       status: ACADEMIC_SCOPE_STATUS.SUPPORTED,
       level: 'ALL',
@@ -526,11 +526,80 @@ function generateGroundedFacultySummary(query, userLang = 'id') {
     `Apakah ada fakultas atau program studi tertentu yang ingin Kakak ketahui lebih lanjut?`;
 }
 
+/**
+ * Structured Official Campus Locations with Provenance.
+ */
+const INSTITUTIONAL_CAMPUS_LOCATIONS = Object.freeze([
+  {
+    name: 'Kampus Renon (Kampus Pusat)',
+    canonical: 'Kampus Denpasar (Renon)',
+    address: 'Jl. Raya Puputan No. 86 Renon, Denpasar, Bali',
+    provenance: 'ISIAN WEBSITE (1).pdf (Section 6: Kontak & Lokasi Kampus)'
+  },
+  {
+    name: 'Kampus Jimbaran',
+    canonical: 'Kampus Jimbaran',
+    address: 'Jl. Raya Kampus Udayana, Jimbaran, Kuta Selatan, Badung, Bali',
+    provenance: 'ISIAN WEBSITE (1).pdf (Section 6: Kontak & Lokasi Kampus)'
+  },
+  {
+    name: 'Kampus Abiansemal',
+    canonical: 'Kampus Abiansemal',
+    address: 'Jl. Janger, Dauh Yeh Cani, Kec. Abiansemal, Kabupaten Badung, Bali',
+    provenance: 'ISIAN WEBSITE (1).pdf (Section 6: Kontak & Lokasi Kampus)'
+  }
+]);
+
+function generateGroundedCampusLocationSummary(userLang = 'id') {
+  const isEn = userLang === 'en';
+  if (isEn) {
+    return 'ITB STIKOM Bali campus locations:\n\n' +
+      INSTITUTIONAL_CAMPUS_LOCATIONS.map((loc, idx) =>
+        `${idx + 1}. **${loc.name}**:\n   ${loc.address}.`
+      ).join('\n\n');
+  }
+  return 'Lokasi kampus ITB STIKOM Bali:\n\n' +
+    INSTITUTIONAL_CAMPUS_LOCATIONS.map((loc, idx) =>
+      `${idx + 1}. **${loc.name}**:\n   ${loc.address}.`
+    ).join('\n\n');
+}
+
+/**
+ * Structured Official Contact Channels with Provenance.
+ */
+const INSTITUTIONAL_CONTACTS = Object.freeze({
+  telephone: '(0361) 244445',
+  email: 'info@stikom-bali.ac.id',
+  pmbPortal: 'https://pmb.stikom-bali.ac.id',
+  mainCampusAddress: 'Jl. Raya Puputan No. 86, Renon, Denpasar, Bali',
+  provenance: 'Pedoman & Informasi Resmi Kampus ITB STIKOM Bali'
+});
+
+function generateGroundedContactSummary(userLang = 'id') {
+  const isEn = userLang === 'en';
+  if (isEn) {
+    return 'You can reach official ITB STIKOM Bali campus services through the following verified channels:\n\n' +
+      `• **PMB Portal**: ${INSTITUTIONAL_CONTACTS.pmbPortal}\n` +
+      `• **Campus Telephone (Main Campus)**: ${INSTITUTIONAL_CONTACTS.telephone}\n` +
+      `• **Email**: ${INSTITUTIONAL_CONTACTS.email}\n` +
+      `• **Main Campus Location**: ${INSTITUTIONAL_CONTACTS.mainCampusAddress}\n\n` +
+      'Our campus admissions team is ready to assist with information regarding enrollment, entrance requirements, and academic programs.';
+  }
+  return 'Kakak dapat menghubungi layanan resmi Kampus ITB STIKOM Bali melalui kanal yang terverifikasi berikut:\n\n' +
+    `• **Website PMB**: ${INSTITUTIONAL_CONTACTS.pmbPortal}\n` +
+    `• **Telepon Kampus (Pusat)**: ${INSTITUTIONAL_CONTACTS.telephone}\n` +
+    `• **Email**: ${INSTITUTIONAL_CONTACTS.email}\n` +
+    `• **Lokasi Kampus Pusat**: ${INSTITUTIONAL_CONTACTS.mainCampusAddress}\n\n` +
+    'Layanan kampus siap membantu pertanyaan seputar pendaftaran, persyaratan masuk, dan informasi program perkuliahan.';
+}
+
 module.exports = {
   ACADEMIC_SCOPE_STATUS,
   SUPPORTED_CANONICAL_DEGREES,
   INSTITUTIONAL_ACADEMIC_CATALOG,
   INSTITUTIONAL_FACULTIES,
+  INSTITUTIONAL_CAMPUS_LOCATIONS,
+  INSTITUTIONAL_CONTACTS,
   resolveAcademicScope,
   normalizeAcademicScope,
   getCatalogEntriesByScope,
@@ -538,5 +607,7 @@ module.exports = {
   resolveFaculty,
   getFacultyForProgram,
   getProgramsForFaculty,
-  generateGroundedFacultySummary
+  generateGroundedFacultySummary,
+  generateGroundedCampusLocationSummary,
+  generateGroundedContactSummary
 };

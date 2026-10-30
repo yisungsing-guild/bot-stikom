@@ -138,6 +138,8 @@ function buildRetrievalPlan(semanticFrame) {
   // Scholarship query variants
   if (domain === 'SCHOLARSHIP' || (aspects && aspects.includes('scholarship'))) {
     queryVariants.push('informasi beasiswa potongan DPP KIP Kuliah STIKOM Bali');
+    queryVariants.push('program beasiswa KIP Kuliah beasiswa yayasan beasiswa prestasi ITB STIKOM Bali');
+    queryVariants.push('beasiswa dana pendidikan pokok DPP potongan biaya pendaftaran ITB STIKOM Bali');
     queryVariants.push('syarat pendaftaran beasiswa mahasiswa baru');
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
@@ -311,7 +313,7 @@ function buildRetrievalPlan(semanticFrame) {
   }
 
   // PMB Inquiry & Procedure query variants
-  if (domain === 'PMB' || intent === 'GENERAL_PMB_INQUIRY' || intent === 'ADMISSION_PROCEDURE' || intent === 'PROGRAM_PROCEDURE' || (aspects && (aspects.includes('procedure') || aspects.includes('requirements')))) {
+  if ((domain === 'PMB' || intent === 'GENERAL_PMB_INQUIRY' || intent === 'ADMISSION_PROCEDURE' || intent === 'PROGRAM_PROCEDURE' || (aspects && (aspects.includes('procedure') || aspects.includes('requirements')))) && domain !== 'SCHOLARSHIP' && intent !== 'SCHOLARSHIP_INQUIRY') {
     if (targetEntities.length > 0) {
       for (const ent of targetEntities) {
         queryVariants.push(`syarat pendaftaran dan prosedur alur ${ent}`);

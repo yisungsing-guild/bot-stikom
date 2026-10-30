@@ -102,6 +102,12 @@ const ALLOWED_EXECUTION_ROUTES = Object.freeze([
   'UNKNOWN'
 ]);
 
+const ALLOWED_LOCATION_SCOPES = Object.freeze([
+  'ALL',
+  'SINGLE',
+  'GENERAL'
+]);
+
 const SEMANTIC_INTERPRETATION_JSON_SCHEMA = {
   name: 'semantic_interpretation',
   strict: true,
@@ -164,9 +170,13 @@ const SEMANTIC_INTERPRETATION_JSON_SCHEMA = {
           },
           locationConstraint: {
             type: ['string', 'null']
+          },
+          locationScope: {
+            type: 'string',
+            enum: ALLOWED_LOCATION_SCOPES
           }
         },
-        required: ['academicLevel', 'studyMode', 'locationConstraint'],
+        required: ['academicLevel', 'studyMode', 'locationConstraint', 'locationScope'],
         additionalProperties: false
       },
       contextDependency: {
@@ -227,7 +237,7 @@ Concepts:
 - TRANSFER_CREDIT: Recognition of Prior Learning (RPL), credit transfer, alih jenjang.
 - INTERNATIONAL_STUDY: Dual degree, global programs, overseas exchange/internships.
 - CAREER_EMPLOYMENT: Career prospects, alumni professions, career center.
-- CAMPUS_LIFE: Facilities, labs, student organizations, sports, UKM.
+- CAMPUS_LIFE: Facilities, labs, student organizations, sports, UKM, campus branches and locations.
 
 Speech Acts:
 - DISCOVER_LIST: Exploring choices, available offerings, what exists.
@@ -249,6 +259,14 @@ Aspects:
 - accreditation: Accreditation rank, institutional status, ban-pt certificates.
 - facilities: Campus facilities, labs, dormitories, library.
 - organization: Student clubs, UKM, student government, ormawa.
+- location: Campus addresses, physical branches, campus location (e.g. alamat, lokasi, cabang kampus).
+
+Scope Constraints & Location Scopes:
+- scopeConstraints.locationScope: Enum ["ALL", "SINGLE", "GENERAL"].
+  * ALL: The user's semantic intent seeks exhaustive information or the complete list of all campus branches/locations (e.g., "alamat semua kampus", "sebutkan lokasi kampus yang ada", "ada cabang di mana saja", "kampus STIKOM ada di mana saja", "daftar alamat kampus"). Set locationScope="ALL" and locationConstraint=null.
+  * SINGLE: The user's semantic intent inquires about one specific campus branch (e.g., "di mana kampus Jimbaran?", "alamat kampus Renon", "lokasi kampus Abiansemal"). Set locationScope="SINGLE" and set locationConstraint to the normalized target branch name (e.g., "jimbaran", "renon", "abiansemal").
+  * GENERAL: General or broad location inquiry without exhaustive intent or single branch constraint (e.g., "Saya ingin tahu tentang lokasi kampus", "apakah kampusnya strategis?"). Set locationScope="GENERAL" and locationConstraint=null.
+- scopeConstraints.locationConstraint: Target branch name when locationScope="SINGLE" (e.g. "renon", "jimbaran", "abiansemal"), otherwise null.
 
 Execution Routes:
 - RAG_RETRIEVAL: Factual query requiring verified retrieval from knowledge base.
@@ -287,7 +305,8 @@ function buildSafeUnknownInterpretation(rawQuery, reason = 'unknown', extraMeta 
     scopeConstraints: {
       academicLevel: null,
       studyMode: null,
-      locationConstraint: null
+      locationConstraint: null,
+      locationScope: 'GENERAL'
     },
     contextDependency: {
       isFollowUp: false,
@@ -351,6 +370,12 @@ function validateInterpretationSchema(data) {
 
   if (!data.scopeConstraints || typeof data.scopeConstraints !== 'object') {
     return { valid: false, reason: 'invalid_scopeConstraints' };
+  }
+  if (data.scopeConstraints.locationScope && !ALLOWED_LOCATION_SCOPES.includes(data.scopeConstraints.locationScope)) {
+    return { valid: false, reason: `invalid_locationScope: ${data.scopeConstraints.locationScope}` };
+  }
+  if (!data.scopeConstraints.locationScope) {
+    data.scopeConstraints.locationScope = 'GENERAL';
   }
 
   if (!data.contextDependency || typeof data.contextDependency !== 'object' || typeof data.contextDependency.isFollowUp !== 'boolean') {
@@ -698,6 +723,7 @@ module.exports = {
   ALLOWED_REFERENCE_TYPES,
   ALLOWED_TOPIC_CONTINUITY,
   ALLOWED_EXECUTION_ROUTES,
+  ALLOWED_LOCATION_SCOPES,
   SEMANTIC_INTERPRETATION_JSON_SCHEMA,
   SYSTEM_PARSER_INSTRUCTION,
   _resetSharedClientForTesting
