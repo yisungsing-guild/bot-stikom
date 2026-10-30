@@ -982,8 +982,8 @@ function inferDomainAndIntent(normalized, entities = [], sessionData = {}, unste
      /\b(?:lokasi|alamat|di\s*mana|dimana|cabang|ada\s+berapa|berapa\s+ada)\b/i.test(normalized));
 
   if (isAskingCampusLocation) {
-    const isAllLocations = /\b(?:semua|seluruh|lengkap|daftar|berapa|ada\s+berapa|berapa\s+ada|mana\s+saja|di\s*mana(?:\s+saja)?)\b/i.test(raw + ' ' + normalized);
     const targetBranch = /\brenon\b/i.test(normalized) ? 'renon' : (/\bjimbaran\b/i.test(normalized) ? 'jimbaran' : (/\babiansemal\b/i.test(normalized) ? 'abiansemal' : null));
+    const isAllLocations = !targetBranch && /\b(?:semua|seluruh|lengkap|daftar|berapa|ada\s+berapa|berapa\s+ada|mana\s+saja|di\s*mana(?:\s+saja)?)\b/i.test(raw + ' ' + normalized);
     const aspects = ['location', 'campus_location', 'address'];
     if (isAllLocations) aspects.push('all_locations');
     return {
@@ -1274,6 +1274,8 @@ function resolveSemanticFrame(rawQuery, sessionData = {}, options = {}) {
     },
     isMultiTarget,
     relation: inferred.relation,
+    locationScope: inferred.locationScope || (inferred.targetBranch ? 'SINGLE' : (finalAspects.includes('all_locations') ? 'ALL' : 'GENERAL')),
+    targetBranch: inferred.targetBranch || null,
     aspects: finalAspects,
     temporal,
     userState: inferred.userState,

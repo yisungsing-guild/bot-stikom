@@ -696,4 +696,215 @@ describe('30 October Specific Semantic Understanding & Regression Suite', () => 
       expect(fallback.answer).not.toMatch(/mars/i);
     });
   });
+
+  describe('7. Extractive Fallback Strict Scope & Address Isolation Regression Suite', () => {
+    const renonEvidence = {
+      id: 'ed2aa278-bfe0-4db9-b132-9102eec6a906',
+      sourceDocument: 'BROSUR_BIAYA_KULIAH_2026.pdf',
+      text: 'Kampus I: Jl. Raya Puputan No. 86 Renon, Denpasar. Telp: (0361) 226127, Fax: (0361) 235105, WhatsApp: 081529000000, Email: info@stikom-bali.ac.id, Website: https://stikom-bali.ac.id'
+    };
+
+    const jimbaranAbiansemalEvidence = {
+      id: '1aef0c6a-8f8f-431a-af9b-2e7f62c60c7a',
+      sourceDocument: 'ISIAN WEBSITE (1).pdf',
+      text: 'Kampus II (Jimbaran): Jl. Raya Kampus Udayana, Jimbaran. Kampus III (Abiansemal): Jl. Janger, Dauh Yeh Cani, Abiansemal.'
+    };
+
+    const allEvidence = [renonEvidence, jimbaranAbiansemalEvidence];
+
+    test('1. SINGLE Jimbaran outputs ONLY Jimbaran address and excludes other campuses', () => {
+      const frame = {
+        domain: 'CAMPUS_LIFE',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'SINGLE',
+        targetBranch: 'jimbaran',
+        rawQuery: 'Di mana kampus Jimbaran?'
+      };
+      const ans = { status: ANSWERABILITY_STATUS.ANSWERABLE };
+      const fallback = buildGenericExtractiveFallback(frame, allEvidence, ans);
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('Jl. Raya Kampus Udayana, Jimbaran');
+      expect(fallback.answer).not.toContain('Jl. Raya Puputan');
+      expect(fallback.answer).not.toContain('Jl. Janger');
+      expect(fallback.answer).not.toMatch(/renon/i);
+      expect(fallback.answer).not.toMatch(/abiansemal/i);
+    });
+
+    test('2. SINGLE Abiansemal outputs ONLY Abiansemal address and excludes other campuses', () => {
+      const frame = {
+        domain: 'CAMPUS_LIFE',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'SINGLE',
+        targetBranch: 'abiansemal',
+        rawQuery: 'Di mana kampus Abiansemal?'
+      };
+      const ans = { status: ANSWERABILITY_STATUS.ANSWERABLE };
+      const fallback = buildGenericExtractiveFallback(frame, allEvidence, ans);
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('Jl. Janger, Dauh Yeh Cani, Abiansemal');
+      expect(fallback.answer).not.toContain('Jl. Raya Puputan');
+      expect(fallback.answer).not.toContain('Jl. Raya Kampus Udayana');
+      expect(fallback.answer).not.toMatch(/renon/i);
+      expect(fallback.answer).not.toMatch(/jimbaran/i);
+    });
+
+    test('3. ALL complete outputs all 3 branches paired with verified addresses', () => {
+      const frame = {
+        domain: 'CAMPUS_LIFE',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'ALL',
+        targetBranch: null,
+        rawQuery: 'Sebutkan alamat semua kampus ITB STIKOM Bali.'
+      };
+      const ans = { status: ANSWERABILITY_STATUS.ANSWERABLE };
+      const fallback = buildGenericExtractiveFallback(frame, allEvidence, ans);
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('Kampus Renon (Pusat)');
+      expect(fallback.answer).toContain('Jl. Raya Puputan No. 86 Renon, Denpasar');
+      expect(fallback.answer).toContain('Kampus Jimbaran');
+      expect(fallback.answer).toContain('Jl. Raya Kampus Udayana, Jimbaran');
+      expect(fallback.answer).toContain('Kampus Abiansemal');
+      expect(fallback.answer).toContain('Jl. Janger, Dauh Yeh Cani, Abiansemal');
+      expect(fallback.answer).not.toContain('Catatan: Rincian alamat resmi untuk');
+    });
+
+    test('4. GENERAL scope provides overview and clarifying prompt without dumping full address list', () => {
+      const frame = {
+        domain: 'CAMPUS_LIFE',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'GENERAL',
+        targetBranch: null,
+        rawQuery: 'Di mana lokasi kampus ITB STIKOM Bali?'
+      };
+      const ans = { status: ANSWERABILITY_STATUS.ANSWERABLE };
+      const fallback = buildGenericExtractiveFallback(frame, allEvidence, ans);
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('ITB STIKOM Bali memiliki kampus yang berlokasi di');
+      expect(fallback.answer).toContain('Renon (Pusat di Denpasar)');
+      expect(fallback.answer).toContain('Jimbaran');
+      expect(fallback.answer).toContain('Abiansemal');
+      expect(fallback.answer).toContain('boleh tahu lokasi kampus mana yang ingin Kakak ketahui?');
+      expect(fallback.answer).not.toContain('Jl. Raya Puputan');
+      expect(fallback.answer).not.toContain('Jl. Raya Kampus Udayana');
+      expect(fallback.answer).not.toContain('Jl. Janger');
+    });
+
+    test('5. GENERAL scope ignores regional/collaboration mentions that lack campus address evidence', () => {
+      const nonAddressEvidence = [
+        {
+          id: 'collab-chunk-1',
+          sourceDocument: 'KERJASAMA.pdf',
+          text: 'ITB STIKOM Bali menjalin kerja sama penelitian dengan Universitas Udayana di kawasan Jimbaran untuk pertukaran mahasiswa.'
+        },
+        {
+          id: 'activity-chunk-2',
+          sourceDocument: 'KEGIATAN.pdf',
+          text: 'Kegiatan pengabdian masyarakat diadakan oleh mahasiswa di daerah Abiansemal Badung pada bulan lalu.'
+        }
+      ];
+      const frame = {
+        domain: 'CAMPUS_LIFE',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'GENERAL',
+        targetBranch: null,
+        rawQuery: 'Kampus STIKOM ada di mana saja?'
+      };
+      const ans = { status: ANSWERABILITY_STATUS.UNKNOWN };
+      const fallback = buildGenericExtractiveFallback(frame, nonAddressEvidence, ans);
+
+      expect(fallback.success).toBe(false);
+      expect(fallback.handledSafely).toBe(true);
+      expect(fallback.answer).toContain('belum dapat diverifikasi dari dokumen yang tersedia');
+      expect(fallback.answer).not.toContain('Jl.');
+    });
+
+    test('6. PARTIAL scope lists available campuses and explicitly notes missing branch', () => {
+      const partialEvidence = [
+        renonEvidence,
+        {
+          id: 'jimbaran-only',
+          sourceDocument: 'ISIAN_WEBSITE_PARTIAL.pdf',
+          text: 'Kampus II (Jimbaran): Jl. Raya Kampus Udayana, Jimbaran.'
+        }
+      ];
+      const frame = {
+        domain: 'CAMPUS_LIFE',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'ALL',
+        targetBranch: null,
+        rawQuery: 'Sebutkan alamat semua kampus ITB STIKOM Bali.'
+      };
+      const ans = { status: ANSWERABILITY_STATUS.PARTIAL };
+      const fallback = buildGenericExtractiveFallback(frame, partialEvidence, ans);
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('Kampus Renon (Pusat)');
+      expect(fallback.answer).toContain('Jl. Raya Puputan No. 86 Renon, Denpasar');
+      expect(fallback.answer).toContain('Kampus Jimbaran');
+      expect(fallback.answer).toContain('Jl. Raya Kampus Udayana, Jimbaran');
+      expect(fallback.answer).toContain('Catatan: Rincian alamat resmi untuk Kampus Abiansemal belum tercantum dalam panduan resmi yang tersedia saat ini.');
+      expect(fallback.answer).not.toContain('Jl. Janger');
+    });
+
+    test('7. Footer contact filters strip Telepon, Hotline, Fax, WA, Email, and Website', () => {
+      const frame = {
+        domain: 'CAMPUS_LIFE',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'SINGLE',
+        targetBranch: 'renon',
+        rawQuery: 'Di mana kampus Renon?'
+      };
+      const ans = { status: ANSWERABILITY_STATUS.ANSWERABLE };
+      const fallback = buildGenericExtractiveFallback(frame, [renonEvidence], ans);
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('Jl. Raya Puputan No. 86 Renon, Denpasar');
+      expect(fallback.answer).not.toMatch(/\(?0361\)?\s*226127/);
+      expect(fallback.answer).not.toMatch(/\(?0361\)?\s*235105/);
+      expect(fallback.answer).not.toMatch(/081529000000/);
+      expect(fallback.answer).not.toMatch(/telp|fax|whatsapp|email|website/i);
+    });
+
+    test('8. Accepted evidence empty fails closed safely', () => {
+      const frame = {
+        domain: 'CAMPUS_LIFE',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'ALL',
+        targetBranch: null,
+        rawQuery: 'Sebutkan alamat kampus.'
+      };
+      const ans = { status: ANSWERABILITY_STATUS.UNKNOWN };
+      const fallback = buildGenericExtractiveFallback(frame, [], ans);
+
+      expect(fallback.success).toBe(false);
+      expect(fallback.handledSafely).toBe(true);
+      expect(fallback.answer).toContain('belum dapat diverifikasi dari dokumen yang tersedia');
+    });
+
+    test('9. SINGLE scope without valid targetBranch fails closed with clarifying prompt', () => {
+      const frame = {
+        domain: 'CAMPUS_LIFE',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'SINGLE',
+        targetBranch: null,
+        rawQuery: 'Di mana kampusnya?'
+      };
+      const ans = { status: ANSWERABILITY_STATUS.UNKNOWN };
+      const fallback = buildGenericExtractiveFallback(frame, allEvidence, ans);
+
+      expect(fallback.success).toBe(false);
+      expect(fallback.handledSafely).toBe(true);
+      expect(fallback.answer).toContain('boleh diperjelas kampus atau cabang ITB STIKOM Bali mana yang ingin Kakak tanyakan?');
+      expect(fallback.answer).not.toMatch(/renon/i);
+      expect(fallback.answer).not.toMatch(/jimbaran/i);
+      expect(fallback.answer).not.toMatch(/abiansemal/i);
+      expect(fallback.answer).not.toContain('Jl. Raya Puputan');
+      expect(fallback.answer).not.toContain('Jl. Raya Kampus Udayana');
+      expect(fallback.answer).not.toContain('Jl. Janger');
+    });
+  });
 });

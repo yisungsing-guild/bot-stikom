@@ -2906,6 +2906,64 @@ async function synthesizeAnswer(semanticFrame, arbitratedEvidence = {}, comparis
   }
 }
 
+const ADDRESS_CONTACT_TERMINATOR_PATTERN = /(?:\s*(?:\||;|\b(?:Telepon|Telp|Phone|Ph|Hotline|Fax|Faks|WhatsApp|WA|Website|Web|URL|Email|E-mail)\b|\(0361\)|0361[\s\-\.]?\d+|08\d{8,}|https?:\/\/|www\.|\S+@\S+|\S+\.ac\.id|\S+\.com|\b\d{3,4}[\s\-\.]\d{5,}\b|(?:\.|\b)\s*(?:Kampus\s+(?:I{1,3}|Renon|Jimbaran|Abiansemal|Pusat)|Cabang\s+[A-Z]))[\s\S]*$)/i;
+
+function cleanAddressPart(str) {
+  let cleaned = str.replace(ADDRESS_CONTACT_TERMINATOR_PATTERN, '').trim();
+  cleaned = cleaned.replace(/[.,;|\-]+$/, '').trim();
+  return cleaned;
+}
+
+/**
+ * Extracts verified campus street addresses from accepted evidence chunks without phone/hotline tokens.
+ */
+function extractGroundedCampusAddresses(evidenceList = []) {
+  let renon = null;
+  let jimbaran = null;
+  let abiansemal = null;
+
+  for (const chunk of evidenceList) {
+    const raw = (chunk.text || chunk.chunk || chunk.content || '').replace(/&amp;/g, '&');
+
+    // 1. Renon Address Extraction
+    if (!renon && /\b(?:puputan|renon)\b/i.test(raw) && /\b(?:jl\.|jalan|raya|no\.)\b/i.test(raw)) {
+      const m = raw.match(/(?:(?:Jl\.?|Jalan)\s+)?(?:Raya\s+Puputan|Puputan\s+Raya)\b[^\n]+/i);
+      if (m) {
+        let addr = cleanAddressPart(m[0]);
+        if (!/^Jl/i.test(addr)) addr = 'Jl. ' + addr;
+        if (addr.length >= 15) renon = addr;
+      }
+    }
+
+    // 2. Jimbaran Address Extraction
+    if (!jimbaran && /\b(?:jimbaran|kuta\s+selatan|udayana)\b/i.test(raw) && /\b(?:jl\.|jalan|raya|kampus\s+udayana)\b/i.test(raw)) {
+      const isUnivUdayanaIrrelevant = /\buniversitas\s+udayana\b/i.test(raw) && !/\b(?:kampus\s+jimbaran|(?:jl\.|jalan|raya|1\.|3L)\s*kampus\s+udayana)\b/i.test(raw);
+      if (!isUnivUdayanaIrrelevant) {
+        const m = raw.match(/(?:(?:Jl\.?|Jalan|1\.|3L|l\.)\s*)?(?:Raya\s+Kampus\s+Udayana|Kampus\s+Udayana)\b[^\n]+/i);
+        if (m) {
+          let addr = cleanAddressPart(m[0]);
+          addr = addr.replace(/^(?:1\.|3L|l\.)\s*/i, '');
+          if (!/^Jl/i.test(addr)) addr = 'Jl. ' + addr;
+          if (addr.length >= 15) jimbaran = addr;
+        }
+      }
+    }
+
+    // 3. Abiansemal Address Extraction
+    if (!abiansemal && /\b(?:abiansemal|dauh\s+yeh\s+cani|janger)\b/i.test(raw)) {
+      const m = raw.match(/(?:(?:Jl\.?|Jalan|31\.3|l\.)\s*)?(?:Janger|3anger)\b[^\n]+/i);
+      if (m) {
+        let addr = cleanAddressPart(m[0]);
+        addr = addr.replace(/^(?:31\.3|l\.)\s*/i, '').replace(/^3anger/i, 'Janger');
+        if (!/^Jl/i.test(addr)) addr = 'Jl. ' + addr;
+        if (addr.length >= 15) abiansemal = addr;
+      }
+    }
+  }
+
+  return { renon, jimbaran, abiansemal };
+}
+
 /**
  * Generic Extractive Fallback based purely on verified evidence passages.
  * Extracts clean, deduplicated factual passages without domain-specific templates.
@@ -2984,6 +3042,162 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
   }
 
   const rawQuery = (semanticFrame?.rawQuery || semanticFrame?.query || arbitratedEvidence?.rawQuery || '').toLowerCase();
+
+  // Structured grounded response for campus location inquiries
+  if (semanticFrame?.intent === 'CAMPUS_LOCATION') {
+    const targetBranch = semanticFrame?.targetBranch ||
+      (semanticFrame?.entities || []).find(e => /jimbaran|renon|abiansemal/i.test(e.canonical || e.name || String(e)))?.canonical?.toLowerCase()?.match(/renon|jimbaran|abiansemal/)?.[0] ||
+      (/\brenon\b/i.test(rawQuery) ? 'renon' : (/\bjimbaran\b/i.test(rawQuery) ? 'jimbaran' : (/\babiansemal\b/i.test(rawQuery) ? 'abiansemal' : null)));
+
+    // AI locationScope is the primary authority; fallback to deterministic resolution only if absent
+    let effectiveScope = semanticFrame?.locationScope;
+    if (!effectiveScope) {
+      if (targetBranch) {
+        effectiveScope = 'SINGLE';
+      } else if (semanticFrame?.aspects?.includes('all_locations') || semanticFrame?.scope === 'ALL' || /\b(?:semua|seluruh|lengkap|daftar|ada\s+berapa|berapa\s+kampus|cabang)\b/i.test(rawQuery)) {
+        effectiveScope = 'ALL';
+      } else {
+        effectiveScope = 'GENERAL';
+      }
+    }
+
+    const addresses = extractGroundedCampusAddresses(evidenceList);
+
+    // 1. SINGLE Scope: Only answers the targeted branch; fails closed if targetBranch is missing
+    if (effectiveScope === 'SINGLE') {
+      if (!targetBranch) {
+        const text = isEn
+          ? 'Could you please specify which campus location or branch you are inquiring about?'
+          : 'Mohon maaf Kak, boleh diperjelas kampus atau cabang ITB STIKOM Bali mana yang ingin Kakak tanyakan?';
+        return {
+          success: false,
+          answer: text,
+          source: 'unanswerable_natural_guidance',
+          isExtractive: false,
+          handledSafely: true
+        };
+      }
+
+      const branchNames = {
+        renon: { id: 'Kampus Renon (Pusat)', en: 'Renon (Main) Campus' },
+        jimbaran: { id: 'Kampus Jimbaran', en: 'Jimbaran Campus' },
+        abiansemal: { id: 'Kampus Abiansemal', en: 'Abiansemal Campus' }
+      };
+      const label = branchNames[targetBranch] || { id: `Kampus ${targetBranch}`, en: `${targetBranch} Campus` };
+      const addr = addresses[targetBranch];
+
+      if (addr) {
+        const text = isEn
+          ? `ITB STIKOM Bali ${label.en} is located at:\n*${addr}*.`
+          : `${label.id} ITB STIKOM Bali beralamat di:\n*${addr}*.`;
+        return {
+          success: true,
+          answer: text,
+          source: 'generic_extractive_fallback',
+          isExtractive: true,
+          handledSafely: true
+        };
+      } else {
+        const text = isEn
+          ? `Official address details for ITB STIKOM Bali ${label.en} are not confirmed in the available documents. Please consult campus admissions directly.`
+          : `Mohon maaf Kak, rincian alamat resmi untuk ${label.id} ITB STIKOM Bali belum tercantum dalam dokumen yang tersedia saat ini. Silakan hubungi bagian admisi kampus untuk konfirmasi langsung ya.`;
+        return {
+          success: true,
+          answer: text,
+          source: 'unanswerable_natural_guidance',
+          isExtractive: false,
+          handledSafely: true
+        };
+      }
+    }
+
+    // 2. ALL Scope: Structured listing of all branches with accepted address evidence
+    if (effectiveScope === 'ALL') {
+      const branchEntries = [
+        { key: 'renon', name: 'Kampus Renon (Pusat)', nameEn: 'Renon (Main) Campus', addr: addresses.renon },
+        { key: 'jimbaran', name: 'Kampus Jimbaran', nameEn: 'Jimbaran Campus', addr: addresses.jimbaran },
+        { key: 'abiansemal', name: 'Kampus Abiansemal', nameEn: 'Abiansemal Campus', addr: addresses.abiansemal }
+      ];
+
+      const covered = branchEntries.filter(b => Boolean(b.addr));
+      const missing = branchEntries.filter(b => !b.addr);
+
+      if (covered.length === 0) {
+        return {
+          success: false,
+          answer: isEn
+            ? 'I apologize, but verified official information regarding campus addresses could not be confirmed from the available documents. Please consult our admissions office directly.'
+            : 'Mohon maaf Kak, informasi resmi mengenai alamat kampus belum dapat dipastikan secara lengkap dari dokumen yang tersedia saat ini. Silakan hubungi bagian admisi kampus ITB STIKOM Bali untuk konfirmasi langsung ya.',
+          source: 'unanswerable_natural_guidance',
+          isExtractive: false,
+          handledSafely: true
+        };
+      }
+
+      const items = covered.map((b, idx) => {
+        return `${idx + 1}. *${isEn ? b.nameEn : b.name}*\n- ${isEn ? 'Address' : 'Alamat'}: ${b.addr}`;
+      }).join('\n\n');
+
+      let responseText = isEn
+        ? `Here are the official campus addresses of ITB STIKOM Bali:\n\n${items}`
+        : `Berikut adalah alamat resmi kampus ITB STIKOM Bali:\n\n${items}`;
+
+      if (missing.length > 0) {
+        const missingNames = missing.map(m => isEn ? m.nameEn : m.name).join(isEn ? ' and ' : ' dan ');
+        const note = isEn
+          ? `\n\n_Note: Official address details for ${missingNames} are not listed in the available verified excerpt._`
+          : `\n\n_Catatan: Rincian alamat resmi untuk ${missingNames} belum tercantum dalam panduan resmi yang tersedia saat ini._`;
+        responseText += note;
+      }
+
+      return {
+        success: true,
+        answer: responseText,
+        source: 'generic_extractive_fallback',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
+
+    // 3. GENERAL Scope: High-level overview without dumping the full address catalog
+    // Grounded strictly on verified campus location/address evidence from extractGroundedCampusAddresses
+    const knownBranches = [];
+    if (addresses.renon) {
+      knownBranches.push(isEn ? 'Renon (Main Campus in Denpasar)' : 'Renon (Pusat di Denpasar)');
+    }
+    if (addresses.jimbaran) {
+      knownBranches.push('Jimbaran');
+    }
+    if (addresses.abiansemal) {
+      knownBranches.push('Abiansemal');
+    }
+
+    if (knownBranches.length === 0) {
+      return {
+        success: false,
+        answer: isEn
+          ? 'I apologize, but verified official information regarding campus locations is currently not available in our records. Please contact campus admissions directly.'
+          : 'Mohon maaf Kak, informasi resmi mengenai lokasi kampus saat ini belum dapat diverifikasi dari dokumen yang tersedia. Silakan hubungi bagian admisi kampus ITB STIKOM Bali untuk konfirmasi langsung ya.',
+        source: 'unanswerable_natural_guidance',
+        isExtractive: false,
+        handledSafely: true
+      };
+    }
+
+    const branchSummary = knownBranches.join(isEn ? ', ' : ', ');
+    const generalReply = isEn
+      ? `ITB STIKOM Bali operates campuses in ${branchSummary}.\n\nTo provide the specific address or directions you need, could you please specify which campus you would like to know about?`
+      : `ITB STIKOM Bali memiliki kampus yang berlokasi di ${branchSummary}.\n\nAgar kami dapat memberikan alamat dan petunjuk yang tepat, boleh tahu lokasi kampus mana yang ingin Kakak ketahui?`;
+
+    return {
+      success: true,
+      answer: generalReply,
+      source: 'generic_extractive_fallback',
+      isExtractive: true,
+      handledSafely: true
+    };
+  }
+
   const cleanPassages = [];
   const seenFingerprints = new Set();
 
@@ -3087,41 +3301,7 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
-  let extractiveText;
-  if (semanticFrame?.intent === 'CAMPUS_LOCATION') {
-    const branchPassages = [];
-    let renonFound = false;
-    let jimbaranFound = false;
-    let abiansemalFound = false;
-
-    for (const p of cleanPassages) {
-      const isUnivUdayanaOtherContext = /\buniversitas\s+udayana\b/i.test(p) && !/\b(?:kampus\s+jimbaran|(?:jl\.|jalan|raya)\s+kampus\s+udayana)\b/i.test(p);
-      if (isUnivUdayanaOtherContext) continue;
-
-      const isRenon = /\b(?:kampus\s+renon|puputan|renon)\b/i.test(p) && /\b(?:jl\.|jalan|no\.|raya|denpasar)\b/i.test(p);
-      const isJimbaran = (
-        /\b(?:kampus\s+jimbaran|kuta\s+selatan|jimbaran)\b/i.test(p) &&
-        /\b(?:udayana|raya\s+kampus|jl\.|jalan)\b/i.test(p)
-      ) || /\b(?:jl\.|jalan|raya)\s+kampus\s+udayana\b/i.test(p);
-      const isAbiansemal = /\b(?:kampus\s+abiansemal|abiansemal|dauh\s+yeh\s+cani)\b/i.test(p) && /\b(?:janger|jl\.|jalan|badung)\b/i.test(p);
-
-      if (isRenon && !renonFound) {
-        branchPassages.push(p);
-        renonFound = true;
-      } else if (isJimbaran && !jimbaranFound) {
-        branchPassages.push(p);
-        jimbaranFound = true;
-      } else if (isAbiansemal && !abiansemalFound) {
-        branchPassages.push(p);
-        abiansemalFound = true;
-      } else if (!isRenon && !isJimbaran && !isAbiansemal) {
-        if (branchPassages.length < 6) branchPassages.push(p);
-      }
-    }
-    extractiveText = (branchPassages.length > 0 ? branchPassages : cleanPassages).join('\n\n');
-  } else {
-    extractiveText = cleanPassages.slice(0, 8).join('\n\n');
-  }
+  let extractiveText = cleanPassages.slice(0, 8).join('\n\n');
 
   const missingAspects = arbitratedEvidence?.missingAspects || [];
   if (missingAspects.length > 0) {
