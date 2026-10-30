@@ -3029,6 +3029,28 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     };
   }
 
+  const rawQuery = (semanticFrame?.rawQuery || semanticFrame?.query || arbitratedEvidence?.rawQuery || '').toLowerCase();
+
+  // If query is a proximity query without specified origin, request clarification first even before checking evidenceList
+  const isAskingProximityWithoutOrigin = Boolean(
+    (semanticFrame?.isProximityComparison || semanticFrame?.aspects?.includes('proximity_comparison') || /\b(?:lebih\s+dekat|terdekat|jarak\s+terdekat)\b/i.test(rawQuery)) &&
+    !(semanticFrame?.userOrigin || arbitratedEvidence?.userOrigin || (semanticFrame?.rawQuery && require('./semanticFrameResolver').extractUserOriginLocation(semanticFrame.rawQuery)))
+  );
+
+  if (isAskingProximityWithoutOrigin) {
+    const clarifyText = isEn
+      ? 'Could you please let us know which city or area you are residing in (for example Denpasar, Badung, Gianyar, Tabanan, or other regions)?\n\nThat way, you can easily check which ITB STIKOM Bali campus is closest to your location.'
+      : 'Mohon maaf Kak, boleh diinfokan Kakak tinggal atau berdomisili di kota/kabupaten mana (misalnya Denpasar, Badung, Gianyar, Tabanan, atau wilayah lainnya)?\n\nDengan begitu, Kakak dapat mengetahui kampus ITB STIKOM Bali mana yang lokasinya paling dekat dari tempat tinggal Kakak.';
+
+    return {
+      success: true,
+      answer: clarifyText,
+      source: 'unanswerable_natural_guidance',
+      isExtractive: false,
+      handledSafely: true
+    };
+  }
+
   if (!evidenceList || evidenceList.length === 0) {
     return {
       success: false,
@@ -3040,8 +3062,6 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
       handledSafely: true
     };
   }
-
-  const rawQuery = (semanticFrame?.rawQuery || semanticFrame?.query || arbitratedEvidence?.rawQuery || '').toLowerCase();
 
   // Structured grounded response for campus location inquiries
   if (semanticFrame?.intent === 'CAMPUS_LOCATION') {
@@ -3062,6 +3082,101 @@ function buildGenericExtractiveFallback(semanticFrame, evidenceList = [], arbitr
     }
 
     const addresses = extractGroundedCampusAddresses(evidenceList);
+
+    // Proximity / Nearest Campus Comparison: explains limitation & provides all official campus addresses
+    const isProximity = Boolean(
+      semanticFrame?.isProximityComparison ||
+      semanticFrame?.aspects?.includes('proximity_comparison') ||
+      /\b(?:lebih\s+dekat|terdekat|jarak\s+terdekat)\b/i.test(rawQuery)
+    );
+
+    if (isProximity) {
+      const origin = semanticFrame?.userOrigin ||
+        arbitratedEvidence?.userOrigin ||
+        (semanticFrame?.rawQuery && require('./semanticFrameResolver').extractUserOriginLocation(semanticFrame.rawQuery)) ||
+        null;
+
+      // Fail-closed: If geographical origin is unknown or only specified as generic relative noun ("rumah saya"), ask for clarification
+      if (!origin) {
+        const clarifyText = isEn
+          ? 'Could you please let us know which city or area you are residing in (for example Denpasar, Badung, Gianyar, Tabanan, or other regions)?\n\nThat way, you can easily check which ITB STIKOM Bali campus is closest to your location.'
+          : 'Mohon maaf Kak, boleh diinfokan Kakak tinggal atau berdomisili di kota/kabupaten mana (misalnya Denpasar, Badung, Gianyar, Tabanan, atau wilayah lainnya)?\n\nDengan begitu, Kakak dapat mengetahui kampus ITB STIKOM Bali mana yang lokasinya paling dekat dari tempat tinggal Kakak.';
+
+        return {
+          success: true,
+          answer: clarifyText,
+          source: 'unanswerable_natural_guidance',
+          isExtractive: false,
+          handledSafely: true
+        };
+      }
+
+      const originLabel = origin
+        .split(/\s+/)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+
+      const branchEntries = [
+        { key: 'renon', name: 'Kampus Renon (Pusat)', nameEn: 'Renon (Main) Campus', addr: addresses.renon },
+        { key: 'jimbaran', name: 'Kampus Jimbaran', nameEn: 'Jimbaran Campus', addr: addresses.jimbaran },
+        { key: 'abiansemal', name: 'Kampus Abiansemal', nameEn: 'Abiansemal Campus', addr: addresses.abiansemal }
+      ];
+
+      const covered = branchEntries.filter(b => Boolean(b.addr));
+      const missing = branchEntries.filter(b => !b.addr);
+
+      // Fail-closed: If no campus address is available in accepted evidence, do not display addresses or guess locations
+      if (covered.length === 0) {
+        const noAddrText = isEn
+          ? `According to official ITB STIKOM Bali documents, there is no official nearest-campus prescription based on residence areas, and this assistant does not have an integrated live routing or navigation service.\n\n` +
+            `Currently, official campus address data is not confirmed in the available documents to compare location distances for **${originLabel}**. Please consult campus admissions directly.`
+          : `Berdasarkan dokumen resmi kampus ITB STIKOM Bali, tidak terdapat ketentuan kampus terdekat khusus berdasarkan wilayah tempat tinggal calon mahasiswa, dan sistem layanan informasi ini tidak memiliki integrasi perhitungan rute/jarak langsung.\n\n` +
+            `Saat ini data alamat resmi kampus belum cukup terkonfirmasi dalam dokumen yang tersedia untuk membandingkan lokasi dari titik asal **${originLabel}**. Silakan hubungi bagian admisi kampus untuk konfirmasi langsung ya.`;
+
+        return {
+          success: true,
+          answer: noAddrText,
+          source: 'unanswerable_natural_guidance',
+          isExtractive: false,
+          handledSafely: true
+        };
+      }
+
+      // If all or partial addresses are verified from accepted evidence
+      let proximityText = '';
+      if (missing.length === 0) {
+        // All campus addresses available
+        proximityText = isEn
+          ? `According to official ITB STIKOM Bali documents, there is no official nearest-campus prescription based on residence areas, and this assistant does not have an integrated live routing or navigation service.\n\n` +
+            `For **${originLabel}**, you can check the exact route, distance, and real-time travel time directly via a navigation map application (such as Google Maps) to our official campus addresses:\n\n` +
+            covered.map((b, idx) => `${idx + 1}. *${b.nameEn}*:\n   - Address: ${b.addr}`).join('\n\n')
+          : `Berdasarkan dokumen resmi kampus ITB STIKOM Bali, tidak terdapat ketentuan kampus terdekat khusus berdasarkan wilayah tempat tinggal calon mahasiswa, dan sistem layanan informasi ini tidak memiliki integrasi perhitungan rute/jarak langsung.\n\n` +
+            `Untuk titik asal **${originLabel}**, Kakak dapat memeriksa rute, jarak, dan estimasi waktu tempuh secara langsung melalui aplikasi peta/navigasi (seperti Google Maps) menuju alamat resmi kampus ITB STIKOM Bali berikut:\n\n` +
+            covered.map((b, idx) => `${idx + 1}. *${b.name}*:\n   - Alamat: ${b.addr}`).join('\n\n');
+      } else {
+        // Partial addresses available (1 or 2 available)
+        const missingNamesId = missing.map(b => b.name).join(', ');
+        const missingNamesEn = missing.map(b => b.nameEn).join(', ');
+
+        proximityText = isEn
+          ? `According to official ITB STIKOM Bali documents, there is no official nearest-campus prescription based on residence areas, and this assistant does not have an integrated live routing or navigation service.\n\n` +
+            `For **${originLabel}**, you can check the exact route and travel time directly via a navigation map application to our verified official campus addresses:\n\n` +
+            covered.map((b, idx) => `${idx + 1}. *${b.nameEn}*:\n   - Address: ${b.addr}`).join('\n\n') +
+            `\n\n*(Note: Official address details for ${missingNamesEn} are not confirmed in the available documents.)*`
+          : `Berdasarkan dokumen resmi kampus ITB STIKOM Bali, tidak terdapat ketentuan kampus terdekat khusus berdasarkan wilayah tempat tinggal calon mahasiswa, dan sistem layanan informasi ini tidak memiliki integrasi perhitungan rute/jarak langsung.\n\n` +
+            `Untuk titik asal **${originLabel}**, Kakak dapat memeriksa rute, jarak, dan estimasi waktu tempuh secara langsung melalui aplikasi peta/navigasi (seperti Google Maps) menuju alamat resmi kampus ITB STIKOM Bali yang terverifikasi berikut:\n\n` +
+            covered.map((b, idx) => `${idx + 1}. *${b.name}*:\n   - Alamat: ${b.addr}`).join('\n\n') +
+            `\n\n*(Catatan: Alamat resmi untuk ${missingNamesId} belum tercantum dalam dokumen yang tersedia saat ini.)*`;
+      }
+
+      return {
+        success: true,
+        answer: proximityText,
+        source: 'generic_extractive_fallback',
+        isExtractive: true,
+        handledSafely: true
+      };
+    }
 
     // 1. SINGLE Scope: Only answers the targeted branch; fails closed if targetBranch is missing
     if (effectiveScope === 'SINGLE') {

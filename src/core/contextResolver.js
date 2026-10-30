@@ -253,9 +253,9 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
     };
   }
 
-  // Campus location follow-up check (e.g. "Lokasinya di mana saja?", "Di mana lokasinya?")
+  // Campus location follow-up check (e.g. "Lokasinya di mana saja?", "Di mana lokasinya?", proximity)
   const isLocationFollowup = (
-    /\b(?:lokasi(?:nya)?|alamat(?:nya)?|di\s*mana(?:\s+saja)?|dimana(?:\s+saja)?|mana\s+saja)\b/i.test(query) &&
+    /\b(?:lokasi(?:nya)?|alamat(?:nya)?|di\s*mana(?:\s+saja)?|dimana(?:\s+saja)?|mana\s+saja|lebih\s+dekat|terdekat|jarak\s+terdekat)\b/i.test(query) &&
     isCampusLocationActiveEntity
   );
 
@@ -275,6 +275,7 @@ function evaluateContextDependency(currentQuery, sessionData = {}) {
       shouldInherit: true,
       reason: 'genuine_ellipsis',
       inheritedDomain: isInternationalActiveEntity && !hasFeeFocus ? 'INTERNATIONAL' : sessionData.activeDomain,
+      inheritedIntent: sessionData.activeIntent || (sessionData.activeDomain === 'FACILITIES' ? 'CAMPUS_LOCATION' : null),
       inheritedEntity: sessionData.activeEntity
     };
   }

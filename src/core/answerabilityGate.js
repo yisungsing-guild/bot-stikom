@@ -232,6 +232,11 @@ function evaluateAnswerability(semanticFrame, arbitratedEvidence = {}) {
     // In membership verification, the category aspect being questioned is the hypothesis under test, not an evidence requirement
     requiredAspects = requiredAspects.filter(a => !['arts_culture', 'sports', 'reasoning_tech', 'religious'].includes(a));
   }
+  if (/\b(?:apa\s+saja|ada\s+apa(?:\s+saja)?|daftar|jenis(?:-jenis)?)\b/i.test(rawQ) && /\bbeasiswa\b/i.test(rawQ)) {
+    if (!requiredAspects.includes('scholarship_list')) {
+      requiredAspects.push('scholarship_list');
+    }
+  }
   if (requiredAspects.length > 0) {
     const allProvidedAspects = new Set();
     for (const chunk of accepted) {

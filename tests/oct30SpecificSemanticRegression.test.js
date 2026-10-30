@@ -13,7 +13,7 @@
  */
 
 const { processTurn } = require('../src/core/orchestrator');
-const { resolveSemanticFrame, resolveSemanticFrameAsync } = require('../src/core/semanticFrameResolver');
+const { resolveSemanticFrame, resolveSemanticFrameAsync, extractUserOriginLocation } = require('../src/core/semanticFrameResolver');
 const { evaluateAnswerability, ANSWERABILITY_STATUS } = require('../src/core/answerabilityGate');
 const { buildGenericExtractiveFallback } = require('../src/core/groundedAnswerGenerator');
 const { validateSemanticInterpretation } = require('../src/core/semanticInterpretationValidator');
@@ -905,6 +905,379 @@ describe('30 October Specific Semantic Understanding & Regression Suite', () => 
       expect(fallback.answer).not.toContain('Jl. Raya Puputan');
       expect(fallback.answer).not.toContain('Jl. Raya Kampus Udayana');
       expect(fallback.answer).not.toContain('Jl. Janger');
+    });
+  });
+
+  describe('8. Follow-Up Root Cause Regression Suite (Social Inquiry, Proximity Routing, Provenance & Completeness)', () => {
+    test('1. Follow-up greeting does not repeat full initial PMB onboarding intro', async () => {
+      const chatId = 'test-greeting-seq-' + Date.now();
+      const firstTurn = await processTurn(chatId, 'Halo', { executeDispatch: false });
+      expect(firstTurn.text).toMatch(/Selamat datang di layanan informasi resmi ITB STIKOM Bali/i);
+
+      const secondTurn = await processTurn(chatId, 'Halo', { executeDispatch: false });
+      expect(secondTurn.text).toMatch(/Halo kembali/i);
+      expect(secondTurn.text).not.toMatch(/Selamat datang di layanan informasi resmi ITB STIKOM Bali/i);
+    });
+
+    test('2. Social inquiry ("Apa khabar?") routes to CONVERSATIONAL_SMALL_TALK with warm, concise reply', async () => {
+      const mockClient = createMockOpenAIClient({
+        speechAct: 'SOCIAL_INQUIRY',
+        primaryIntent: 'CONVERSATIONAL_SMALL_TALK',
+        userInterest: null,
+        semanticConcepts: [],
+        candidateEntities: [],
+        requestedAspects: [],
+        scopeConstraints: {
+          academicLevel: null,
+          studyMode: null,
+          locationConstraint: null,
+          locationScope: 'GENERAL'
+        },
+        contextDependency: {
+          isFollowUp: false,
+          referenceType: 'none',
+          topicContinuity: 'NEW_TOPIC',
+          relevantPriorContext: null
+        },
+        executionRoute: 'CONVERSATIONAL',
+        confidence: 0.98,
+        ambiguityLevel: 'LOW'
+      });
+
+      const frame = await resolveSemanticFrameAsync('Apa khabar?', {}, { customClient: mockClient });
+      expect(frame.domain).toBe('CONVERSATIONAL');
+      expect(frame.intent).toBe('CONVERSATIONAL_SMALL_TALK');
+      expect(frame.retrievalRequired).toBe(false);
+
+      const chatId = 'test-smalltalk-' + Date.now();
+      const res = await processTurn(chatId, 'Apa kabar?', { executeDispatch: false });
+      expect(res.text).toMatch(/Kabar baik/i);
+      expect(res.text).not.toMatch(/pendaftaran mahasiswa baru \(PMB\), program studi, biaya kuliah/i);
+    });
+
+    test('3. Specific origin location updates location context (Gianyar -> Ubud refinement)', () => {
+      const sessionData = {};
+      const frame1 = resolveSemanticFrame('Kalau saya tinggal di Gianyar saya lebih dekat kampus mana?', sessionData);
+      expect(frame1.intent).toBe('CAMPUS_LOCATION');
+      expect(frame1.isProximityComparison).toBe(true);
+      expect(frame1.userOrigin).toMatch(/Gianyar/i);
+
+      sessionData.activeDomain = frame1.domain;
+      sessionData.activeIntent = frame1.intent;
+      sessionData.userOrigin = frame1.userOrigin;
+
+      const frame2 = resolveSemanticFrame('Saya dari Gianyar Ubud jadi lebih dekat kampus mana?', sessionData);
+      expect(frame2.intent).toBe('CAMPUS_LOCATION');
+      expect(frame2.isProximityComparison).toBe(true);
+      expect(frame2.userOrigin).toMatch(/Ubud/i);
+    });
+
+    test('3b. Origin location changes cleanly without merging (Gianyar -> Denpasar)', () => {
+      const sessionData = { userOrigin: 'Gianyar' };
+      const frame = resolveSemanticFrame('Kalau saya dari Denpasar lebih dekat kampus mana?', sessionData);
+      expect(frame.userOrigin).toBe('Denpasar');
+      expect(frame.userOrigin).not.toContain('Gianyar');
+    });
+
+    test('3c. Follow-up query without new origin retains active relevant origin context', () => {
+      const sessionData = { userOrigin: 'Denpasar' };
+      const frame = resolveSemanticFrame('Terus kalau naik motor kira-kira bagaimana ya?', sessionData);
+      expect(frame.userOrigin).toBe('Denpasar');
+    });
+
+    test('3d. Ambiguous or invalid origin extraction attempt yields null', () => {
+      expect(extractUserOriginLocation('Saya dari mana ya?')).toBeNull();
+      expect(extractUserOriginLocation('Saya tinggal di kampus')).toBeNull();
+      expect(extractUserOriginLocation('Dari rumah saya lebih dekat mana?')).toBeNull();
+      expect(extractUserOriginLocation('Dari tempat tinggal saya lebih dekat mana?')).toBeNull();
+    });
+
+    test('3e. F.1: Proximity ellipsis "Kalau dari Denpasar bagaimana?" inherits proximity and updates origin to Denpasar', () => {
+      const sessionData = {
+        activeDomain: 'FACILITIES',
+        activeIntent: 'CAMPUS_LOCATION',
+        isProximityComparison: true,
+        activeAspects: ['location', 'campus_location', 'address', 'all_locations', 'proximity_comparison'],
+        userOrigin: 'Gianyar'
+      };
+
+      const frame = resolveSemanticFrame('Kalau dari Denpasar bagaimana?', sessionData);
+      expect(frame.domain).toBe('FACILITIES');
+      expect(frame.intent).toBe('CAMPUS_LOCATION');
+      expect(frame.isProximityComparison).toBe(true);
+      expect(frame.userOrigin).toBe('Denpasar');
+      expect(frame.userOrigin).not.toContain('Gianyar');
+      expect(frame.userOrigin).not.toContain('bagaimana');
+    });
+
+    test('3f. F.2: Ellipsis "Kalau begitu bagaimana?" retains prior origin (Gianyar) when context is active', () => {
+      const sessionData = {
+        activeDomain: 'FACILITIES',
+        activeIntent: 'CAMPUS_LOCATION',
+        isProximityComparison: true,
+        activeAspects: ['location', 'campus_location', 'address', 'all_locations', 'proximity_comparison'],
+        userOrigin: 'Gianyar'
+      };
+
+      const frame = resolveSemanticFrame('Kalau begitu bagaimana?', sessionData);
+      expect(frame.domain).toBe('FACILITIES');
+      expect(frame.intent).toBe('CAMPUS_LOCATION');
+      expect(frame.isProximityComparison).toBe(true);
+      expect(frame.userOrigin).toBe('Gianyar');
+    });
+
+    test('3g. F.3: Switching from proximity to explicit branch inquiry "Kampus Jimbaran di mana?" switches to SINGLE branch', () => {
+      const sessionData = {
+        activeDomain: 'FACILITIES',
+        activeIntent: 'CAMPUS_LOCATION',
+        isProximityComparison: true,
+        activeAspects: ['location', 'campus_location', 'address', 'all_locations', 'proximity_comparison'],
+        userOrigin: 'Gianyar'
+      };
+
+      const frame = resolveSemanticFrame('Kampus Jimbaran di mana?', sessionData);
+      expect(frame.domain).toBe('FACILITIES');
+      expect(frame.intent).toBe('CAMPUS_LOCATION');
+      expect(frame.locationScope).toBe('SINGLE');
+      expect(frame.targetBranch).toBe('jimbaran');
+      expect(frame.isProximityComparison).toBe(false);
+    });
+
+    test('3h. F.4: Switching from proximity to academic inquiry "Apa saja program studi yang tersedia?" switches domain', () => {
+      const sessionData = {
+        activeDomain: 'FACILITIES',
+        activeIntent: 'CAMPUS_LOCATION',
+        isProximityComparison: true,
+        activeAspects: ['location', 'campus_location', 'address', 'all_locations', 'proximity_comparison'],
+        userOrigin: 'Gianyar'
+      };
+
+      const frame = resolveSemanticFrame('Apa saja program studi yang tersedia?', sessionData);
+      expect(frame.domain).toBe('ACADEMIC_PROGRAM');
+      expect(frame.intent).toBe('AVAILABLE_PROGRAMS_LIST');
+      expect(frame.isProximityComparison).toBe(false);
+    });
+
+    test('3i. F.5: "Kampus terdekat dari rumah saya" rejects relative noun "rumah" as origin and asks for clarification', () => {
+      const origin = extractUserOriginLocation('Kampus mana yang paling dekat dari rumah saya?');
+      expect(origin).toBeNull();
+      expect(origin).not.toBe('Rumah');
+
+      const frame = resolveSemanticFrame('Kampus mana yang paling dekat dari rumah saya?', {});
+      expect(frame.intent).toBe('CAMPUS_LOCATION');
+      expect(frame.isProximityComparison).toBe(true);
+      expect(frame.userOrigin).toBeNull();
+
+      const fallbackRes = buildGenericExtractiveFallback(frame, [], {});
+      expect(fallbackRes.handledSafely).toBe(true);
+      expect(fallbackRes.answer).toMatch(/boleh diinfokan Kakak tinggal atau berdomisili di kota\/kabupaten mana/i);
+      expect(fallbackRes.answer).not.toMatch(/\bRumah\b/);
+    });
+
+    test('3j. F.6: Repeated location changes (Gianyar -> Denpasar -> Badung) update cleanly without blending', () => {
+      const session1 = {};
+      const f1 = resolveSemanticFrame('Saya tinggal di Gianyar, lebih dekat mana?', session1);
+      expect(f1.userOrigin).toBe('Gianyar');
+
+      const session2 = { ...session1, userOrigin: f1.userOrigin, activeDomain: f1.domain, activeIntent: f1.intent, isProximityComparison: true };
+      const f2 = resolveSemanticFrame('Kalau dari Denpasar bagaimana?', session2);
+      expect(f2.userOrigin).toBe('Denpasar');
+      expect(f2.userOrigin).not.toContain('Gianyar');
+
+      const session3 = { ...session2, userOrigin: f2.userOrigin, activeDomain: f2.domain, activeIntent: f2.intent, isProximityComparison: true };
+      const f3 = resolveSemanticFrame('Kalau dari Badung gimana?', session3);
+      expect(f3.userOrigin).toBe('Badung');
+      expect(f3.userOrigin).not.toContain('Denpasar');
+      expect(f3.userOrigin).not.toContain('Gianyar');
+    });
+
+    test('4. Proximity query explains routing limitation safely without fabricating distance or travel times', () => {
+      const frame = {
+        domain: 'FACILITIES',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'ALL',
+        isProximityComparison: true,
+        userOrigin: 'Gianyar Ubud',
+        rawQuery: 'Saya dari Gianyar Ubud jadi lebih dekat kampus mana?'
+      };
+
+      const mockEvidence = [
+        { text: 'Kampus Renon: Jl. Raya Puputan No. 86 Renon, Denpasar' },
+        { text: 'Kampus Jimbaran: Jl. Raya Kampus Udayana No. 8, Jimbaran' },
+        { text: 'Kampus Abiansemal: Jl. Janger, Dauh Yeh Cani, Abiansemal' }
+      ];
+
+      const res = buildGenericExtractiveFallback(frame, mockEvidence, {});
+      expect(res.success).toBe(true);
+      expect(res.answer).toMatch(/tidak terdapat ketentuan kampus terdekat khusus/i);
+      expect(res.answer).toMatch(/tidak memiliki integrasi perhitungan rute\/jarak langsung/i);
+      expect(res.answer).toMatch(/Gianyar Ubud/i);
+      expect(res.answer).toContain('Jl. Raya Puputan No. 86');
+      expect(res.answer).toContain('Jl. Raya Kampus Udayana No. 8');
+      expect(res.answer).toContain('Jl. Janger, Dauh Yeh Cani');
+      expect(res.answer).toMatch(/aplikasi peta\/navigasi|Google Maps/i);
+
+      // Invariant: MUST NOT fabricate speculative distances or drive times
+      expect(res.answer).not.toMatch(/\b\d+\s*(?:km|kilometer)\b/i);
+      expect(res.answer).not.toMatch(/\b\d+\s*(?:menit|jam)\b/i);
+
+      // Invariant: MUST NOT assert ungrounded campus service claims
+      expect(res.answer).not.toMatch(/Seluruh kampus melayani/i);
+      expect(res.answer).not.toMatch(/administrasi perkuliahan/i);
+    });
+
+    test('4b. Proximity query with only partial addresses available displays only verified addresses and notes unconfirmed branches', () => {
+      const frame = {
+        domain: 'FACILITIES',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'ALL',
+        isProximityComparison: true,
+        userOrigin: 'Tabanan',
+        rawQuery: 'Saya dari Tabanan lebih dekat kampus mana ya?'
+      };
+
+      // Only Renon and Jimbaran present, Abiansemal missing from evidence
+      const partialEvidence = [
+        { text: 'Kampus Renon: Jl. Raya Puputan No. 86 Renon, Denpasar' },
+        { text: 'Kampus Jimbaran: Jl. Raya Kampus Udayana No. 8, Jimbaran' }
+      ];
+
+      const res = buildGenericExtractiveFallback(frame, partialEvidence, {});
+      expect(res.success).toBe(true);
+      expect(res.answer).toContain('Jl. Raya Puputan No. 86');
+      expect(res.answer).toContain('Jl. Raya Kampus Udayana No. 8');
+
+      // Abiansemal address must NOT leak from literal fallback
+      expect(res.answer).not.toContain('Jl. Janger');
+      expect(res.answer).toMatch(/Catatan: Alamat resmi untuk Kampus Abiansemal belum tercantum dalam dokumen yang tersedia/i);
+      // No ungrounded branch service claims
+      expect(res.answer).not.toMatch(/Seluruh kampus melayani/i);
+    });
+
+    test('4c. Proximity query with zero addresses available fails closed without displaying fabricated addresses', () => {
+      const frame = {
+        domain: 'FACILITIES',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'ALL',
+        isProximityComparison: true,
+        userOrigin: 'Singaraja',
+        rawQuery: 'Saya dari Singaraja lebih dekat ke kampus mana?'
+      };
+
+      // Evidence exists but contains NO campus addresses (e.g. general text)
+      const nonAddressEvidence = [
+        { text: 'ITB STIKOM Bali adalah perguruan tinggi teknologi informasi terkemuka di Bali.' }
+      ];
+
+      const res = buildGenericExtractiveFallback(frame, nonAddressEvidence, {});
+      expect(res.handledSafely).toBe(true);
+      expect(res.source).toBe('unanswerable_natural_guidance');
+      expect(res.answer).toMatch(/data alamat resmi kampus belum cukup terkonfirmasi dalam dokumen yang tersedia untuk membandingkan lokasi/i);
+
+      // Must NOT contain any hardcoded street names
+      expect(res.answer).not.toContain('Jl. Raya Puputan');
+      expect(res.answer).not.toContain('Jl. Raya Kampus Udayana');
+      expect(res.answer).not.toContain('Jl. Janger');
+      expect(res.answer).not.toMatch(/Seluruh kampus melayani/i);
+    });
+
+    test('5. Contact numbers have traceable provenance to official document letterheads', () => {
+      const jimbaranDocSnippet = 'Kampus II : Jl. Raya Kampus Udayana No. 8 Jimbaran - Kuta Selatan (0361) 8953534 Hotline : 081288778840';
+      const abiansemalDocSnippet = 'Kampus III : Jl. Janger, Dauh Yeh Cani, Abiansemal - Badung (0361) 4790925 Hotline : 082145099633';
+
+      expect(jimbaranDocSnippet).toMatch(/\(0361\)\s*8953534/);
+      expect(jimbaranDocSnippet).toMatch(/081288778840/);
+      expect(abiansemalDocSnippet).toMatch(/\(0361\)\s*4790925/);
+      expect(abiansemalDocSnippet).toMatch(/082145099633/);
+    });
+
+    test('6. Conflicting or unverified contact numbers do not produce definitive claims', () => {
+      const frame = {
+        domain: 'CAMPUS_SERVICE',
+        intent: 'CONTACT_INQUIRY',
+        rawQuery: 'Berapa nomor telepon kampus Jimbaran?'
+      };
+
+      const fallback = buildGenericExtractiveFallback(frame, [
+        { text: 'Kampus Jimbaran: Jl. Raya Kampus Udayana No. 8 (0361) 8953534 Hotline: 081288778840' }
+      ], {});
+
+      expect(fallback.success).toBe(true);
+      expect(fallback.answer).toContain('(0361) 8953534');
+    });
+
+    test('7. Addresses are not merged across documents without evidence', () => {
+      const jimbaranEvidence = {
+        text: 'Kampus Jimbaran beralamat di Jl. Raya Kampus Udayana No. 8, Jimbaran, Kuta Selatan, Badung.'
+      };
+      const abiansemalEvidence = {
+        text: 'Kampus Abiansemal beralamat di Jl. Janger, Dauh Yeh Cani, Abiansemal, Badung.'
+      };
+
+      const frameJimbaran = {
+        domain: 'FACILITIES',
+        intent: 'CAMPUS_LOCATION',
+        locationScope: 'SINGLE',
+        targetBranch: 'jimbaran',
+        rawQuery: 'Di mana kampus Jimbaran?'
+      };
+
+      const resJimbaran = buildGenericExtractiveFallback(frameJimbaran, [jimbaranEvidence, abiansemalEvidence], {});
+      expect(resJimbaran.answer).toContain('Jl. Raya Kampus Udayana');
+      expect(resJimbaran.answer).not.toContain('Jl. Janger');
+    });
+
+    test('8. "Beasiswa apa saja" does not claim completeness from single partial research evidence', () => {
+      const frame = {
+        domain: 'SCHOLARSHIP',
+        intent: 'SCHOLARSHIP_INQUIRY',
+        aspects: ['scholarship'],
+        rawQuery: 'Beasiswa apa saja yang ada di STIKOM Bali?'
+      };
+
+      const partialResearchEvidence = [
+        {
+          text: 'ITB STIKOM Bali memberikan Beasiswa Penelitian bagi dosen dan mahasiswa untuk publikasi jurnal nasional terakreditasi.',
+          providedAspects: ['scholarship']
+        }
+      ];
+
+      const evalRes = evaluateAnswerability(frame, { accepted: partialResearchEvidence, rejected: [] });
+      expect(evalRes.status).toBe(ANSWERABILITY_STATUS.PARTIAL);
+      expect(evalRes.missingAspects).toContain('scholarship_list');
+    });
+
+    test('9. Model failure fails closed safely to UNKNOWN without guessing', async () => {
+      const { parseSemanticInterpretation } = require('../src/core/modelSemanticParser');
+      const interp = await parseSemanticInterpretation(
+        { rawQuery: 'Pertanyaan acak yang tidak dapat diproses' },
+        {
+          customClient: {
+            chat: {
+              completions: {
+                create: async () => { throw new Error('API timeout simulation'); }
+              }
+            }
+          }
+        }
+      );
+
+      expect(interp.ambiguityLevel).toBe('HIGH');
+      expect(interp.confidence).toBe(0.0);
+      expect(interp.speechAct).toBe('UNKNOWN');
+      expect(interp.executionRoute).toBe('UNKNOWN');
+      expect(interp.metadata.fallbackInvoked).toBe(true);
+
+      const frame = await resolveSemanticFrameAsync('Pertanyaan acak yang tidak dapat diproses', {}, {
+        customClient: {
+          chat: {
+            completions: {
+              create: async () => { throw new Error('API timeout simulation'); }
+            }
+          }
+        }
+      });
+      expect(frame.traceMeta.resolverEngine).toBe('deterministic_fallback');
     });
   });
 });

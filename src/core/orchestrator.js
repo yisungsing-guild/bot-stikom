@@ -523,13 +523,20 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
       let reply = '';
       const isEnglish = frame.language === 'en' || frame.detectedLanguage === 'en';
       if (frame.intent === 'CONVERSATIONAL_GREETING') {
-        reply = isEnglish
-          ? 'Hello! Welcome to the official information service of ITB STIKOM Bali. How can I assist you with admissions (PMB), study programs, tuition fees, or campus academic details?'
-          : 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
+        const hasPriorTurns = (Array.isArray(sessionData?.conversationHistory) && sessionData.conversationHistory.length > 0) || Boolean(sessionData?.lastQuery);
+        if (hasPriorTurns) {
+          reply = isEnglish
+            ? 'Hello again! How can I assist you further with campus information or admissions at ITB STIKOM Bali?'
+            : 'Halo kembali! Ada yang bisa kami bantu lagi terkait informasi kampus atau PMB ITB STIKOM Bali?';
+        } else {
+          reply = isEnglish
+            ? 'Hello! Welcome to the official information service of ITB STIKOM Bali. How can I assist you with admissions (PMB), study programs, tuition fees, or campus academic details?'
+            : 'Halo! Selamat datang di layanan informasi resmi ITB STIKOM Bali. Ada yang bisa kami bantu terkait pendaftaran mahasiswa baru (PMB), program studi, biaya kuliah, atau informasi akademik lainnya?';
+        }
       } else if (frame.intent === 'CONVERSATIONAL_SMALL_TALK') {
         reply = isEnglish
-          ? 'I am doing great, thank you! I am the official virtual assistant of ITB STIKOM Bali. Is there any campus information you would like to know today?'
-          : 'Kabar baik! Terima kasih sudah menyapa. Saya adalah asisten virtual resmi ITB STIKOM Bali. Ada informasi kampus yang ingin Anda tanyakan hari ini?';
+          ? 'I am doing great, thank you! How can I assist you with information about ITB STIKOM Bali today?'
+          : 'Kabar baik, terima kasih! Ada yang bisa saya bantu terkait informasi kampus ITB STIKOM Bali?';
       } else if (frame.intent === 'CONVERSATIONAL_ACKNOWLEDGEMENT') {
         reply = isEnglish
           ? "You're very welcome! Glad I could help. Is there anything else you would like to know about ITB STIKOM Bali?"
@@ -845,6 +852,8 @@ async function runPhase1DeterministicPipeline(chatId, rawQuery, options = {}) {
         requestedAspects: primaryFrame.aspects || [],
         activeEntity: newActiveEntity,
         preservedBackgroundEntity: newPreservedEntity,
+        isProximityComparison: Boolean(primaryFrame.isProximityComparison || primaryFrame.aspects?.includes('proximity_comparison')),
+        userOrigin: primaryFrame.userOrigin || sessionData.userOrigin || null,
         lastActiveWave: currentWave || sessionData.lastActiveWave || null,
         lastQuery: rawQuery,
         lastAnswer: finalAnswer,

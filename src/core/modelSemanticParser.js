@@ -29,6 +29,7 @@ const ALLOWED_SPEECH_ACTS = Object.freeze([
   'SEEK_ADVICE',
   'COMPARE',
   'GENERAL_GREETING',
+  'SOCIAL_INQUIRY',
   'UNKNOWN'
 ]);
 
@@ -246,7 +247,8 @@ Speech Acts:
 - VERIFY_STATUS: Inquiring whether something is allowed, possible, or active.
 - EXPLAIN_PROCEDURE: Asking for steps, procedures, how-to.
 - SEEK_ADVICE: Asking for recommendation based on personal background.
-- GENERAL_GREETING: Sapaan atau salam pembuka.
+- GENERAL_GREETING: Sapaan atau salam pembuka (e.g. Halo, Hai, Selamat pagi).
+- SOCIAL_INQUIRY: Pertanyaan sosial, sapaan basa-basi atau menanyakan kabar/kondisi personal (e.g. Apa kabar?, Bagaimana kabarnya?, Sehat?, How are you?).
 
 Aspects:
 - schedule: Dates, waves, opening/closing periods, calendars, timeline (e.g. kapan dibuka/ditutup, jadwal, gelombang).
@@ -401,12 +403,15 @@ function validateInterpretationSchema(data) {
     return { valid: false, reason: `invalid_executionRoute: ${data.executionRoute}` };
   }
   if (!data.executionRoute) {
-    if (data.speechAct === 'GENERAL_GREETING') data.executionRoute = 'CONVERSATIONAL';
+    if (data.speechAct === 'GENERAL_GREETING' || data.speechAct === 'SOCIAL_INQUIRY') data.executionRoute = 'CONVERSATIONAL';
     else if (data.speechAct === 'SEEK_ADVICE') data.executionRoute = 'ACADEMIC_RECOMMENDATION';
     else data.executionRoute = 'RAG_RETRIEVAL';
   }
   if (!data.primaryIntent) {
-    data.primaryIntent = data.speechAct === 'GENERAL_GREETING' ? 'CONVERSATIONAL_GREETING' : (data.speechAct === 'SEEK_ADVICE' ? 'PROGRAM_RECOMMENDATION' : 'UNKNOWN');
+    if (data.speechAct === 'GENERAL_GREETING') data.primaryIntent = 'CONVERSATIONAL_GREETING';
+    else if (data.speechAct === 'SOCIAL_INQUIRY') data.primaryIntent = 'CONVERSATIONAL_SMALL_TALK';
+    else if (data.speechAct === 'SEEK_ADVICE') data.primaryIntent = 'PROGRAM_RECOMMENDATION';
+    else data.primaryIntent = 'UNKNOWN';
   }
 
   if (typeof data.confidence !== 'number' || Number.isNaN(data.confidence)) {
